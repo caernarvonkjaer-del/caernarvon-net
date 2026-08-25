@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clerk of Court Helper Apps &mdash; caernarvon.net</title>
+<style>
+  :root{
+    --maroon:#7a1f3d;
+    --maroon-dark:#5c1730;
+    --navy:#1c2b39;
+    --cream:#f6f3ee;
+    --card:#ffffff;
+    --ink:#22262b;
+    --muted:#5a6270;
+    --gold:#b78a3d;
+    --border:#e3ddd2;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Georgia','Times New Roman',serif;
+    background:var(--cream);
+    color:var(--ink);
+    line-height:1.6;
+  }
+  .sans{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;}
+  a{color:var(--maroon);}
+  a:hover{color:var(--maroon-dark);}
+
+  header.site{
+    background:var(--navy);
+    color:#f2f0ea;
+    padding:28px 24px;
+  }
+  .header-inner{
+    max-width:1080px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    gap:18px;
+  }
+  .seal{
+    width:56px;height:56px;border-radius:50%;
+    border:2px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;flex:none;
+    background:#22334333;
+  }
+  .header-text h1{
+    margin:0;
+    font-size:1.5rem;
+    letter-spacing:.3px;
+  }
+  .header-text p{
+    margin:2px 0 0;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.85rem;
+    color:#c9cdd4;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+  }
+
+  .hero{
+    background:linear-gradient(135deg,var(--maroon) 0%,var(--maroon-dark) 100%);
+    color:#fbf6ee;
+    padding:64px 24px 56px;
+    text-align:center;
+  }
+  .hero-inner{max-width:760px;margin:0 auto;}
+  .hero h2{
+    font-size:2.1rem;
+    margin:0 0 14px;
+  }
+  .hero p{
+    font-size:1.08rem;
+    color:#f0dfe4;
+    margin:0;
+  }
+
+  main{max-width:1080px;margin:0 auto;padding:0 24px;}
+  section{padding:56px 0;border-bottom:1px solid var(--border);}
+  section:last-of-type{border-bottom:none;}
+
+  h2.section-title{
+    font-size:1.6rem;
+    color:var(--navy);
+    margin:0 0 8px;
+  }
+  .section-kicker{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1.6px;
+    font-size:.78rem;
+    color:var(--gold);
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  .section-intro{
+    max-width:700px;
+    color:var(--muted);
+    margin:0 0 32px;
+  }
+
+  /* App cards */
+  .apps-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:22px;
+  }
+  .app-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:26px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .app-card .tag{
+    align-self:flex-start;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    font-weight:700;
+    background:#fbe9c7;
+    color:#7a5a12;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+  .app-card h3{margin:0;font-size:1.25rem;color:var(--navy);}
+  .app-card p{margin:0;color:var(--muted);font-size:.98rem;}
+  .app-card .stack{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.8rem;
+    color:#7a8290;
+  }
+  .app-card .cta{
+    margin-top:auto;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-weight:600;
+    text-decoration:none;
+    color:var(--maroon);
+    font-size:.95rem;
+  }
+  .app-card .cta:hover{color:var(--maroon-dark);}
+
+  /* Pipeline steps */
+  .pipeline{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:16px;
+    margin-top:8px;
+  }
+  .pipeline .step{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 16px;
+    text-align:center;
+  }
+  .pipeline .step .num{
+    display:inline-flex;
+    align-items:center;justify-content:center;
+    width:28px;height:28px;
+    border-radius:50%;
+    background:var(--navy);
+    color:#fff;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.85rem;
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .pipeline .step h4{
+    margin:0 0 6px;
+    font-size:.98rem;
+    color:var(--navy);
+  }
+  .pipeline .step p{
+    margin:0;
+    font-size:.85rem;
+    color:var(--muted);
+  }
+
+  /* Cloud comparison table */
+  .cloud-table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
+  table.cloud-table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--card);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.92rem;
+    min-width:640px;
+  }
+  table.cloud-table th, table.cloud-table td{
+    padding:14px 16px;
+    text-align:left;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  table.cloud-table thead th{
+    background:var(--navy);
+    color:#f2f0ea;
+    font-weight:600;
+  }
+  table.cloud-table tbody tr:last-child td{border-bottom:none;}
+  table.cloud-table td.role{font-weight:700;color:var(--navy);white-space:nowrap;}
+  table.cloud-table tr:nth-child(even){background:#faf8f4;}
+
+  .note{
+    background:#fdf6e9;
+    border:1px solid #eeddb2;
+    border-radius:var(--radius);
+    padding:16px 20px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.92rem;
+    color:#6b5417;
+    margin-top:28px;
+  }
+
+  footer{
+    background:var(--navy);
+    color:#c9cdd4;
+    padding:34px 24px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    font-size:.85rem;
+  }
+  footer .footer-inner{
+    max-width:1080px;margin:0 auto;
+    display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;
+  }
+  footer a{color:#e6c98f;}
+
+  @media (max-width:600px){
+    .hero h2{font-size:1.6rem;}
+    section{padding:40px 0;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-inner">
+    <div class="seal sans">&#9878;</div>
+    <div class="header-text">
+      <h1>Clerk of the Circuit Court &mdash; Technology Notes</h1>
+      <p class="sans">caernarvon.net</p>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h2>Building Helper Apps for the Clerk of Court</h2>
+    <p>Small, focused, container-based tools that make day-to-day Clerk of Court work &mdash; document review, case audits, records handling &mdash; faster and more consistent, without the overhead of a monolithic case management system.</p>
+  </div>
+</div>
+
+<main>
+
+  <section id="about">
+    <p class="section-kicker sans">Why these apps exist</p>
+    <h2 class="section-title">Purpose-built tools, not another giant system</h2>
+    <p class="section-intro">
+      Clerk of Court offices already run large case management systems. What's often missing are small,
+      well-scoped tools for specific recurring tasks &mdash; redacting sensitive information from a scanned
+      filing, auditing a batch of guardianship cases, tracking who reviewed what and when. This site collects
+      a few of those helper apps, built as independent, containerized services rather than bolted onto an
+      existing platform. Each one is scoped to a single job, deployable on its own, and disposable if it stops
+      being useful.
+    </p>
+  </section>
+
+  <section id="examples">
+    <p class="section-kicker sans">Live examples</p>
+    <h2 class="section-title">Apps running on this domain</h2>
+    <p class="section-intro">
+      Both apps below are early-stage prototypes running on synthetic, made-up case data &mdash; not real
+      court records &mdash; while the workflows and access controls are being worked out.
+    </p>
+
+    <div class="apps-grid">
+
+      <div class="app-card">
+        <span class="tag">Prototype &middot; Synthetic data</span>
+        <h3>Redaction Reviewer</h3>
+        <p>
+          Walks a reviewer through a filing before it goes on the public record, applying different redaction
+          standards depending on case type &mdash; standard financial-identifier redaction, or a heightened
+          standard for sexual-offense and child-abuse cases. Includes an admin panel for managing reviewers
+          and the underlying redaction rule sets.
+        </p>
+        <p class="stack">Frontend: Azure Static Web Apps &nbsp;&bull;&nbsp; API: FastAPI on Azure Container Apps &nbsp;&bull;&nbsp; Auth: Microsoft Entra ID</p>
+        <a class="cta" href="https://app.caernarvon.net" target="_blank" rel="noopener">Open app.caernarvon.net &rarr;</a>
+      </div>
+
+      <div class="app-card">
+        <span class="tag">Prototype &middot; Synthetic data</span>
+        <h3>Guardianship Audit</h3>
+        <p>
+          A workflow tool for auditing guardianship case files: creating audits, assigning them to reviewers,
+          uploading supporting documents, and tracking status &mdash; including take-over and unlock actions
+          when an audit needs to be reassigned. Every view and status change is logged for accountability.
+        </p>
+        <p class="stack">Frontend: Azure Static Web Apps &nbsp;&bull;&nbsp; API: FastAPI on Azure Container Apps &nbsp;&bull;&nbsp; Auth: Microsoft Entra ID</p>
+        <a class="cta" href="https://gaapp.caernarvon.net" target="_blank" rel="noopener">Open gaapp.caernarvon.net &rarr;</a>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="build">
+    <p class="section-kicker sans">Development</p>
+    <h2 class="section-title">How these apps get built</h2>
+    <p class="section-intro">
+      Each helper app is two small services &mdash; a browser frontend and a backend API &mdash; both
+      packaged as Docker containers from day one, even during local development, so "it works on my machine"
+      also means "it works in the cloud."
+    </p>
+    <div class="pipeline">
+      <div class="step">
+        <span class="num sans">1</span>
+        <h4 class="sans">Scope narrowly</h4>
+        <p>One app, one job &mdash; e.g. "review and redact a filing," not "manage every case."</p>
+      </div>
+      <div class="step">
+        <span class="num sans">2</span>
+        <h4 class="sans">Build in containers</h4>
+        <p>API and frontend each get a Dockerfile; a docker-compose file runs the whole stack locally.</p>
+      </div>
+      <div class="step">
+        <span class="num sans">3</span>
+        <h4 class="sans">Use synthetic data</h4>
+        <p>Development and demo environments run on fake case data &mdash; never real filings.</p>
+      </div>
+      <div class="step">
+        <span class="num sans">4</span>
+        <h4 class="sans">Layer in auth</h4>
+        <p>Single sign-on (Entra ID / OIDC) is added early, not bolted on before launch.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="testing">
+    <p class="section-kicker sans">Testing</p>
+    <h2 class="section-title">Testing before anything touches real records</h2>
+    <p class="section-intro">
+      Because these tools eventually sit near sensitive court records, testing leans conservative:
+    </p>
+    <div class="pipeline">
+      <div class="step">
+        <span class="num sans">1</span>
+        <h4 class="sans">Unit tests</h4>
+        <p>Redaction rules, audit-state transitions, and permission checks are tested in isolation.</p>
+      </div>
+      <div class="step">
+        <span class="num sans">2</span>
+        <h4 class="sans">Integration tests</h4>
+        <p>The containerized API and a test database run together in CI, exercising real HTTP calls.</p>
+      </div>
+      <div class="step">
+        <span class="num sans">3</span>
+        <h4 class="sans">Container scanning</h4>
+        <p>Every image is scanned for known vulnerabilities before it's allowed to deploy.</p>
+      </div>
+      <div class="step">
+        <span class="num sans">4</span>
+        <h4 class="sans">Staging with fake data</h4>
+        <p>A staging deployment, identical to production, runs on synthetic cases for sign-off.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="deploy">
+    <p class="section-kicker sans">Deployment</p>
+    <h2 class="section-title">Container-based deployment, cloud-agnostic by design</h2>
+    <p class="section-intro">
+      Because everything ships as a Docker container, the same image can run on any major cloud with only
+      configuration changes &mdash; no rewrite. The apps above currently run on Azure; the table shows the
+      equivalent building blocks on AWS and Google Cloud if a future app needs to land elsewhere.
+    </p>
+
+    <div class="cloud-table-wrap">
+      <table class="cloud-table">
+        <thead>
+          <tr>
+            <th>Building block</th>
+            <th>Microsoft Azure</th>
+            <th>Amazon Web Services</th>
+            <th>Google Cloud</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">Run the container</td>
+            <td>Azure Container Apps</td>
+            <td>ECS on Fargate / App Runner</td>
+            <td>Cloud Run</td>
+          </tr>
+          <tr>
+            <td class="role">Host the static frontend</td>
+            <td>Azure Static Web Apps</td>
+            <td>Amplify Hosting / S3 + CloudFront</td>
+            <td>Firebase Hosting / Cloud Storage + CDN</td>
+          </tr>
+          <tr>
+            <td class="role">Store container images</td>
+            <td>Azure Container Registry</td>
+            <td>Elastic Container Registry (ECR)</td>
+            <td>Artifact Registry</td>
+          </tr>
+          <tr>
+            <td class="role">Sign-in / identity</td>
+            <td>Microsoft Entra ID</td>
+            <td>Amazon Cognito</td>
+            <td>Identity Platform</td>
+          </tr>
+          <tr>
+            <td class="role">App database</td>
+            <td>Azure Database for PostgreSQL</td>
+            <td>RDS for PostgreSQL / Aurora</td>
+            <td>Cloud SQL for PostgreSQL</td>
+          </tr>
+          <tr>
+            <td class="role">Secrets</td>
+            <td>Azure Key Vault</td>
+            <td>Secrets Manager</td>
+            <td>Secret Manager</td>
+          </tr>
+          <tr>
+            <td class="role">CI/CD pipeline</td>
+            <td>GitHub Actions &rarr; ACR &rarr; Container Apps</td>
+            <td>GitHub Actions &rarr; ECR &rarr; ECS/App Runner</td>
+            <td>GitHub Actions &rarr; Artifact Registry &rarr; Cloud Run</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      In practice, a release means: build the Docker image in CI, run the automated test suite against it,
+      push the image to the cloud's container registry, then point the container service at the new image tag.
+      Rolling the app back is just pointing the service at the previous tag &mdash; no server to patch, no
+      manual redeploy steps.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>&copy; 2026 Clerk of the Circuit Court &mdash; Technology Notes</span>
+    <span>All linked apps are prototypes running on synthetic data only.</span>
+  </div>
+</footer>
+
+</body>
+</html>
