@@ -7,15 +7,17 @@
 // flash of the wrong theme on load. Deliberately synchronous, deliberately
 // first in <head> (right after the encoding declaration, which must stay
 // first) — an inline <script> in <head> blocks the parser until it
-// finishes, which is exactly what's wanted here: nothing paints before this
-// runs. localStorage (not the async IndexedDB store used for ward data)
-// because this must be readable instantly, with no await possible this
-// early. An explicit stored choice always wins; absent one, the app opens
-// light rather than following the OS preference.
+// finishes, which is exactly what's wanted here: nothing paints before
+// this runs.
+// This app writes nothing to browser storage, so there is no stored theme
+// choice to read this early — whatever was picked last session lives only
+// in the .sav file, which isn't opened (and can't be, synchronously) until
+// well after first paint. This falls back to the OS's prefers-color-scheme
+// instead; applyTheme() may flip it once the file's own choice is known,
+// same as any other in-memory state this app has.
 (function(){
   try{
-    var stored=localStorage.getItem('pg-theme');
-    var dark=stored==='dark';
+    var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.setAttribute('data-theme',dark?'dark':'light');
   }catch(e){}
 })();
@@ -746,11 +748,10 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     </div>
   </div>
 </div>
-<div id="storage-warning-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9997;background:linear-gradient(180deg,#8a5a12,#6f470d);color:#fff;padding:.7rem 1rem;font-size:.84rem;font-weight:500;text-align:center;box-shadow:0 6px 20px -6px rgba(111,71,13,.55);">
-  <span id="storage-warning-text"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4.2 21 19.8H3Z"/><path d="M12 10v4.2"/><circle cx="12" cy="17.4" r=".9" fill="currentColor" stroke="none"/></svg> Storage is filling up.</span>
-  <button onclick="exportGuardianDataZip()" style="margin-left:1rem;background:#fff;color:#6f470d;border:none;border-radius:5px;padding:.2rem .7rem;font-size:.79rem;cursor:pointer;font-weight:650;">Save Backup</button>
-  <button onclick="dismissStorageWarning()" style="margin-left:.5rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:5px;padding:.2rem .7rem;font-size:.79rem;cursor:pointer;">Dismiss</button>
-</div>
+<!-- The storage-quota warning banner that used to live here was removed along
+     with IndexedDB: browser-storage quota has no bearing on this app's
+     persistence anymore (a user-chosen .sav file, not an origin-quota-bounded
+     storage bucket). See the STORAGE STRATEGY comment in the script below. -->
 <div id="dropzone-overlay" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(26,45,74,.9);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;align-items:center;justify-content:center;font-size:1.35rem;font-weight:650;letter-spacing:-.01em;text-align:center;pointer-events:none;">
   <div style="border:2px dashed rgba(255,255,255,.5);border-radius:16px;padding:2.5rem 4rem;"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Drop .sav file to import case data</div>
 </div>
@@ -867,12 +868,44 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 
 <div id="pdf-content" style="display:none;"></div>
 
+<!-- Open / Start at Launch — shown first, every session, before anything
+     else: with no browser storage left, the app has no case data to show
+     until it's handed a .sav file. See promptOpenOrStartAtLaunch(). -->
+<div id="startup-choice-overlay" class="modal-overlay" style="z-index:10002;">
+  <div class="modal-box" style="max-width:520px;">
+    <h1 style="margin-bottom:.5rem;color:var(--ink);">Probate Guardian</h1>
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app keeps nothing in this browser between visits — every case lives entirely in a .sav file you choose and control. Open one to continue where you left off, or start a brand-new case.</p>
+    <button class="security-choice-option" onclick="openCaseFileAtLaunch()">
+      <div class="security-choice-header">
+        <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/></svg></span>
+        <span class="security-choice-title">Open a Case File (.sav)</span>
+      </div>
+      <ul class="security-choice-list">
+        <li>Resume an existing case exactly where it was last saved.</li>
+        <li>In Chrome or Edge, auto-save re-arms automatically once opened.</li>
+        <li>In Firefox or Safari, this browser can only read the file — save/export it again manually before closing this tab.</li>
+      </ul>
+    </button>
+    <button class="security-choice-option" onclick="startNewCaseAtLaunch()">
+      <div class="security-choice-header">
+        <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg></span>
+        <span class="security-choice-title">Start a New Case</span>
+      </div>
+      <ul class="security-choice-list">
+        <li>Begin with no wards and no file open yet.</li>
+        <li>You'll be asked how to protect the data, then where to save it.</li>
+      </ul>
+    </button>
+    <input type="file" id="startup-open-input" accept=".sav,.zip" style="display:none" onchange="handleStartupOpenInputChange(this)">
+  </div>
+</div>
+
 <!-- Data Protection Level Overlay — shown once, before the first master
      password screen, on a truly fresh install. -->
 <div id="security-choice-overlay" class="modal-overlay" style="z-index:10001;">
   <div class="modal-box" style="max-width:560px;">
     <h1 style="margin-bottom:.5rem;color:var(--ink);">Choose How to Protect This Data</h1>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app stores sensitive information (Social Security Numbers, financial records, case details) on this computer. Pick how it should be protected. <strong>This choice applies to all data going forward and cannot be changed later without starting over.</strong></p>
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This case holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this case going forward and cannot be changed later without starting over.</strong></p>
     <button class="security-choice-option" onclick="selectSecurityMode('none')">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/></svg></span>
@@ -1242,7 +1275,7 @@ function currentTheme(){
 function applyTheme(theme,persist){
   document.documentElement.setAttribute('data-theme',theme);
   if(persist){
-    try{localStorage.setItem('pg-theme',theme);}catch(e){}
+    saveAppState('theme',theme); // lands in the .sav file's appState section on the next write
   }
   const btn=document.getElementById('theme-toggle-btn');
   if(btn){
@@ -1859,7 +1892,7 @@ function endWalkthrough(){
   walkthroughActive=false;
   document.getElementById('walkthrough-overlay').classList.remove('active');
   document.getElementById('walkthrough-tooltip').style.display='none';
-  if(_walkthroughAutoTriggered)localStorage.setItem('walkthroughCompleted','true');
+  if(_walkthroughAutoTriggered)saveAppState('walkthroughCompleted','true');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2100,40 +2133,51 @@ let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appSta
 let _lastExportAt = null; // ms epoch of last successful export, or null if never
 
 // ═══════════════════════════════════════════════════════
-// STORAGE STRATEGY — Phase 3: IndexedDB Single Source of Truth
+// STORAGE STRATEGY — the .sav file is the only persistence
 // ═══════════════════════════════════════════════════════
 //
-// INDEXEDDB (Primary Store):
-//   - wards store: All ward data (inventory forms, assets, etc.)
-//     Supports ~20 wards × 2MB each = 40MB+ capacity
-//   - appState store: Guardian info, active ward ID, UI prefs
+// This app writes nothing to IndexedDB, localStorage, or sessionStorage.
+// Everything lives in memory for the length of the session and is written
+// to the user's .sav file (see EXPORT / IMPORT below) — nowhere else.
+// Two consequences follow directly from that, and both are accepted:
 //
-// LOCALSTORAGE (Deprecated for Ward Data):
-//   - Reserved for ONLY non-growing app state (~10KB max)
-//   - Legacy migration marker only
-//   - Never write new ward data here
+//   - A FileSystemFileHandle (the writable handle behind silent auto-save)
+//     can only be persisted in IndexedDB — there is no other mechanism —
+//     so the auto-save target does not survive a page reload. _zipFileHandle
+//     is a plain in-memory variable; reloading the page means re-opening
+//     the .sav file, same as any other in-memory state. See
+//     promptOpenOrStartAtLaunch().
+//   - With nothing written to browser storage, there is no crash recovery:
+//     closing the tab loses anything typed since the last successful write
+//     to the file. updateLastSavedIndicator()/refreshAutoSaveArmedStatus()
+//     and the beforeunload warning (see warnBeforeUnloadIfDirty()) exist
+//     specifically so that state is never silent.
 //
-// MIGRATION:
-//   - One-time migration reads old localStorage keys (guardianInventory_v2, etc.)
-//   - Imports each as a separate ward into IndexedDB
-//   - Marks complete with migrationComplete flag
-//   - Old localStorage keys kept for safety (can be manually cleared)
+// wards live in guardianData.wards, already the in-memory object the whole
+// UI reads and writes — there is no separate store to copy them into or
+// out of. Everything that used to be its own IndexedDB object store is one
+// of the three plain containers below instead.
 //
+// A one-time startup routine (runLegacyBrowserStorageMigrationIfNeeded())
+// reads whatever a pre-this-release install left in IndexedDB/localStorage,
+// offers to export it as a .sav file, and clears both. It is the only code
+// left that touches those APIs, and only to read them and delete what it
+// read — never to write new data into them. See its own comment for why it
+// can be deleted outright in a later release.
 // ═══════════════════════════════════════════════════════
 
-const DB_NAME = 'ProbateGuardian';
-const DB_VERSION = 3;
-const STORES = {
-  wards: 'wards',        // {wardId, wardName, inventoryType, ...all inventory data...}
-  appState: 'appState',  // {key: value} — guardianName, activeWardId, theme, etc.
-  templates: 'templates',// {type, b64} — cached blank Excel templates per inventory type
-  auditLog: 'auditLog'   // {id (auto), timestamp, eventType, details, success} — browser fallback
-                         // for auditLog() when Tauri's audit_log command isn't available
-};
+let _appState = {};        // key -> value; replaces the old `appState` IDB store
+let _templateCache = {};   // type -> base64; replaces the old `templates` IDB store
+let _auditLogEntries = []; // {id, timestamp, eventType, details, success}; replaces `auditLog`
+let _auditLogNextId = 1;
 
-let db = null;
-
-// Legacy storage keys (for one-time migration only, then ignored)
+// Legacy storage keys — no longer written, kept only so
+// runLegacyBrowserStorageMigrationIfNeeded() knows what to look for on an
+// upgrading install. The IndexedDB name/version they went with is right
+// below it, for the same reason.
+const LEGACY_DB_NAME = 'ProbateGuardian';
+const LEGACY_DB_VERSION = 3;
+const LEGACY_STORES = { wards:'wards', appState:'appState', templates:'templates', auditLog:'auditLog' };
 const LEGACY_KEYS = {
   guardian: 'guardianInventory_v2',
   simplified: 'simplifiedAccounting_v1',
@@ -2775,7 +2819,7 @@ async function auditLog(eventType, details, success = true) {
   // of silently dropping the event, so DATA_EXPORT/DATA_IMPORT/UNLOCK_* etc.
   // are still recorded when running as a plain web app.
   try {
-    await appendAuditLogIDB({timestamp: new Date().toISOString(), eventType, details, success});
+    await appendAuditLogEntry({timestamp: new Date().toISOString(), eventType, details, success});
   } catch (e) {
     console.warn('Audit log fallback failed:', e);
   }
@@ -2787,8 +2831,8 @@ async function auditLog(eventType, details, success = true) {
 // ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)
 // ═══════════════════════════════════════════════════════
 // Every ward, and the guardian's own name/email, are encrypted before they
-// touch disk — IndexedDB and the Tauri filesystem autosave backup both only
-// ever see ciphertext. The AES key is derived from a user-chosen master
+// touch disk — the .sav file and the Tauri filesystem autosave backup both
+// only ever see ciphertext. The AES key is derived from a user-chosen master
 // password via PBKDF2 and lives ONLY in memory for the session (`_cryptoKey`
 // below); it is never written anywhere by default. Closing the app or
 // clicking "Lock" forgets it, so the password must be re-entered next time.
@@ -2896,31 +2940,13 @@ async function decryptJSON(packed){
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
-// Reads the wards store without decrypting — used once, at startup, only to
-// detect pre-encryption plaintext wards left over from before this feature
-// existed (see ensureUnlocked()). Never used in the normal load path.
-function peekRawWardRows(){
-  return new Promise((resolve)=>{
-    const tx=db.transaction([STORES.wards],'readonly');
-    const req=tx.objectStore(STORES.wards).getAll();
-    req.onsuccess=()=>resolve(req.result||[]);
-    req.onerror=()=>resolve([]);
-  });
-}
-
-// Runs once, only when ensureUnlocked() finds wards already sitting in
-// IndexedDB as plaintext from before encryption-at-rest existed. Re-saves
-// each one through the now-encrypting saveWardToIDB/autosaveWardToFile so
-// both the IndexedDB row and the on-disk Tauri backup become ciphertext.
-async function migrateExistingPlaintextWardsToEncrypted(rawRows){
-  for(const row of rawRows){
-    if(row&&row.enc)continue; // already encrypted somehow, leave it
-    try{
-      await saveWardToIDB(row);
-      await autosaveWardToFile(row);
-    }catch(e){console.warn('Failed to encrypt existing ward during migration',row&&row.wardId,e);}
-  }
-}
+// peekRawWardRows()/migrateExistingPlaintextWardsToEncrypted() used to live
+// here: a one-time check for wards sitting in IndexedDB as plaintext from
+// before encryption-at-rest existed. That concern was specific to IndexedDB
+// storage and cannot recur now that IndexedDB is gone — any such wards on
+// an upgrading install are swept up (encrypted or not) by
+// runLegacyBrowserStorageMigrationIfNeeded() instead, before ensureUnlocked()
+// ever runs.
 
 // Decides whether the user needs to create a master password (fresh install,
 // or an existing pre-encryption install with plaintext wards) or unlock with
@@ -2942,25 +2968,38 @@ async function ensureUnlocked(skipAutoUnlock){
     document.getElementById('sidebar').style.display='none';
     throw new Error('window.crypto.subtle unavailable (insecure context)');
   }
-  const storedMode=await loadAppStateFromIDB('securityMode');
-  const salt=await loadAppStateFromIDB('cryptoSalt');
-  const verifier=await loadAppStateFromIDB('cryptoVerifier');
+  // promptOpenOrStartAtLaunch() already ran by this point. If the user
+  // opened an existing case file, loadCaseFileAtLaunch() already asked for
+  // (and verified) its password — _launchStateResolved says so, and this
+  // is skipped entirely rather than asking a second time. If they started
+  // a new case instead, nothing was resolved and this proceeds exactly as
+  // it always has for a fresh install.
+  if(_launchStateResolved){
+    _launchStateResolved=false; // consume once — a later lockApp() must go through the normal flow below
+    updateLockButtonVisibility();
+    resetAutoLockTimer();
+    return;
+  }
+  const storedMode=await loadAppState('securityMode');
+  const salt=await loadAppState('cryptoSalt');
+  const verifier=await loadAppState('cryptoVerifier');
 
   if(!storedMode&&!(salt&&verifier)){
     // Truly fresh install — no mode chosen yet, and no legacy encrypted
     // install to infer 'encrypted' from. Ask once, before anything else.
-    const rawRows=await peekRawWardRows();
+    // guardianData.wards can only be non-empty here if promptOpenOrStartAtLaunch()
+    // already loaded a 'none'-mode file with no securityMode of its own
+    // recorded (a pre-securityMode-feature file) — hasExistingData reflects
+    // that rather than the plaintext-IndexedDB case this used to check for,
+    // which cannot happen anymore now that IndexedDB is gone.
     _securityMode=await promptChooseSecurityMode();
-    await saveAppStateToIDB('securityMode',_securityMode); // stored in the
+    await saveAppState('securityMode',_securityMode); // stored in the
     // clear, like cryptoSalt — must be readable before any password exists
     if(_securityMode==='none'){
       updateLockButtonVisibility();
       return; // no password, no encryption key, nothing further to do
     }
-    await promptCreatePassword(rawRows.length>0);
-    if(rawRows.length>0){
-      await migrateExistingPlaintextWardsToEncrypted(rawRows);
-    }
+    await promptCreatePassword(guardianData.wards.length>0);
     updateLockButtonVisibility();
     return;
   }
@@ -2990,11 +3029,7 @@ async function ensureUnlocked(skipAutoUnlock){
     await promptUnlock(salt,verifier);
     return;
   }
-  const rawRows=await peekRawWardRows();
-  await promptCreatePassword(rawRows.length>0);
-  if(rawRows.length>0){
-    await migrateExistingPlaintextWardsToEncrypted(rawRows);
-  }
+  await promptCreatePassword(guardianData.wards.length>0);
 }
 
 let _securityChoiceResolve=null;
@@ -3042,6 +3077,34 @@ async function promptUnlock(saltB64,verifierPacked){
   });
 }
 
+// Same overlay, a different question: not "unlock THIS device's data" but
+// "what's the password for the file you just picked". Kept separate from
+// promptUnlock() rather than reusing its verifier-equality check, because a
+// version-1 .sav file has no dedicated verifier field to compare
+// against — see deriveAndVerifyKey(), which this delegates the actual
+// check to via the 'openFile' branch of submitUnlockForm(). remember-me/
+// keychain is hidden: this password belongs to the file, not necessarily
+// to this device's own install.
+let _pendingOpenManifest=null,_pendingOpenZip=null;
+function promptPasswordForFile(manifest,zip){
+  return new Promise((resolve)=>{
+    _unlockMode='openFile';
+    _unlockResolve=resolve;
+    _pendingOpenManifest=manifest;
+    _pendingOpenZip=zip;
+    const overlay=document.getElementById('unlock-overlay');
+    document.getElementById('unlock-title').textContent='Enter Password';
+    document.getElementById('unlock-subtitle').textContent='This case file is encrypted. Enter the master password it was saved under.';
+    document.getElementById('unlock-confirm-row').style.display='none';
+    document.getElementById('unlock-password').value='';
+    document.getElementById('unlock-error').style.display='none';
+    document.getElementById('unlock-remember-row').style.display='none';
+    overlay.dataset.salt=manifest.salt||'';
+    overlay.classList.add('show');
+    document.getElementById('unlock-password').focus();
+  });
+}
+
 function promptCreatePassword(hasExistingData){
   return new Promise((resolve)=>{
     _unlockMode='create';
@@ -3074,18 +3137,20 @@ function showUnlockError(msg){
 // outside the app (PBKDF2's 210k iterations is the only defense against
 // that) — it stops someone with physical access to a locked screen from
 // just sitting there trying passwords one after another through the UI.
-// State persists in IndexedDB (not memory) so restarting the app doesn't
-// reset the counter.
+// State lives in _appState and, once written, in the .sav file itself — a
+// closed tab or reload only resets the counter if it happened before the
+// next debounced save landed, same "no crash recovery" tradeoff as
+// everything else this app persists now.
 const UNLOCK_FAIL_THRESHOLD=5;
 const UNLOCK_LOCKOUT_BASE_MS=30*1000;
 const UNLOCK_LOCKOUT_MAX_MS=5*60*1000;
 
 async function getUnlockFailState(){
-  const state=await loadAppStateFromIDB('unlockFailState');
+  const state=await loadAppState('unlockFailState');
   return state||{count:0,lockoutUntil:0};
 }
 async function saveUnlockFailState(state){
-  await saveAppStateToIDB('unlockFailState',state);
+  await saveAppState('unlockFailState',state);
 }
 function formatLockoutRemaining(ms){
   const s=Math.ceil(ms/1000);
@@ -3105,8 +3170,8 @@ async function submitUnlockForm(){
       const saltB64=generateSaltB64();
       _cryptoKey=await deriveKeyFromPassword(pw,saltB64);
       const verifier=await encryptJSON(CRYPTO_VERIFIER_PLAINTEXT);
-      await saveAppStateToIDB('cryptoSalt',saltB64);
-      await saveAppStateToIDB('cryptoVerifier',verifier);
+      await saveAppState('cryptoSalt',saltB64);
+      await saveAppState('cryptoVerifier',verifier);
       await auditLog('PASSWORD_CREATED', 'Master password created', true);
       if(remember){await keychainSave(pw);}else{await keychainDelete();}
       resetAutoLockTimer();
@@ -3155,6 +3220,19 @@ async function submitUnlockForm(){
       document.getElementById('unlock-overlay').classList.remove('show');
       const resolve=_unlockResolve;_unlockResolve=null;
       resolve();
+    }else if(_unlockMode==='openFile'){
+      if(!pw){showUnlockError('Please enter your password.');return;}
+      try{
+        _cryptoKey=await deriveAndVerifyKey(pw,_pendingOpenManifest,_pendingOpenZip);
+      }catch(e){
+        _cryptoKey=null;
+        showUnlockError('Incorrect password for this file.');
+        return;
+      }
+      _pendingOpenManifest=null;_pendingOpenZip=null;
+      document.getElementById('unlock-overlay').classList.remove('show');
+      const resolve=_unlockResolve;_unlockResolve=null;
+      resolve();
     }
   }finally{
     btn.disabled=false;
@@ -3170,8 +3248,22 @@ document.addEventListener('keydown',(e)=>{
 
 // Forgets the in-memory key and reloads the unlock gate. Re-derives nothing
 // automatically — the whole point is that the password must be typed again.
+// Wiping guardianData/window.D below is a deliberate security property, not
+// incidental: it's what makes "locked" mean the decrypted SSNs are actually
+// gone from JS-inspectable memory, not just hidden behind the "Locked"
+// overlay. IndexedDB used to make that free — the wipe was safe because
+// loadGuardianData() could always pull the latest saved copy straight back
+// out of it, independent of the .sav file. With IndexedDB gone, the .sav
+// file IS that copy, so flushPendingSave() must land BEFORE the key
+// disappears and memory is cleared, or up to a debounce's worth of edits
+// (autoSave()'s 1-second timer) would be gone for good — this app has no
+// crash recovery, but locking is a deliberate action, not a crash, and
+// should not cost the last few keystrokes just because they hadn't been
+// written out yet.
 async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
+  await flushPendingSave();
+  const handle=_zipFileHandle; // read again after re-unlocking, once _cryptoKey exists again
   _cryptoKey=null;
   guardianData={guardianName:'',guardianEmail:'',wards:[],activeWardId:null};
   window.D={};
@@ -3179,6 +3271,23 @@ async function lockApp(){
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
   await ensureUnlocked(true);
+  // Memory really was wiped above — unlike the IndexedDB-backed version,
+  // there is no separate store still holding the data, so it has to come
+  // back from the .sav file flushPendingSave() just wrote it to (if one is
+  // open) now that _cryptoKey exists again. With no file open there is
+  // nothing to recover from; that risk is called out in the docs and by
+  // the sidebar's own auto-save-armed indicator rather than solved here.
+  if(handle){
+    try{
+      const file=await handle.getFile();
+      const zip=await JSZip.loadAsync(file);
+      const manifestEntry=zip.file('manifest.json');
+      if(manifestEntry){
+        const manifest=JSON.parse(await manifestEntry.async('string'));
+        await loadStateFromSavZip(zip,manifest,_cryptoKey);
+      }
+    }catch(e){console.error('Could not reload case data after unlocking',e);}
+  }
   await loadGuardianData();
   const activeWard=getActiveWard();
   if(activeWard){
@@ -3206,254 +3315,92 @@ function resetAutoLockTimer(){
 });
 
 // ═══════════════════════════════════════════════════════
-// INDEXEDDB OPERATIONS
+// IN-MEMORY STATE OPERATIONS
+// Replaces the old IndexedDB object stores one-for-one. Every function here
+// keeps the name/signature shape its IDB predecessor had (some call sites
+// still `await` these — kept as async so none of those call sites needed
+// to change) but none of them touch a database: appState/templates/the
+// audit log are the plain containers declared above, and wards live in
+// guardianData.wards already. Durability comes from autoSave()'s debounce
+// writing the whole in-memory state to the .sav file, not from anything
+// happening inside these functions.
 // ═══════════════════════════════════════════════════════
-// Shows a full takeover message when IndexedDB can't be opened because
-// another open tab of this app is holding a connection at an older schema
-// version — this blocks indefinitely with no error and no event otherwise,
-// which looks exactly like the app being stuck on "Loading…" forever.
-function showIndexedDBBlockedMessage(){
-  const el=document.getElementById('main-content');
-  if(!el)return;
-  el.innerHTML='<div style="max-width:520px;margin:3rem auto;text-align:center;color:var(--ink);">'
-    +'<h2>Please close other open tabs/windows</h2>'
-    +'<p>Probate Guardian needs to update its local storage, but another open tab or '
-    +'window of this app is still using the older version.</p>'
-    +'<p>Close every other Probate Guardian tab, then reload this page.</p>'
-    +'<button class="btn btn-primary btn-sm" onclick="window.location.reload()">Reload</button></div>';
-}
 
-// IndexedDB defaults to "best-effort" storage, which browsers are free to
-// evict on their own when the device runs low on disk — silently, and with
-// no way to get the data back. This app is the ONLY copy of a guardian's
-// case data unless they've been diligent about .sav backups, so that
-// default is not acceptable here. Requesting persistence upgrades the
-// origin so the browser won't evict it automatically.
-//
-// Deliberately non-blocking and never fatal: Chrome decides from its own
-// heuristics (installed/bookmarked//high engagement) and usually answers
-// without prompting, Firefox may prompt, Safari and file:// may not
-// support the API at all. A denial isn't an error state worth interrupting
-// anyone over — the app works exactly the same either way, it's just the
-// eviction guarantee that's missing — so the result is only logged, and
-// surfaced in the Activity Log where it's inspectable after the fact.
-async function requestPersistentStorage(){
-  try{
-    if(!navigator.storage||!navigator.storage.persist)return null;
-    // Already granted on a previous run — asking again just burns a
-    // permission check, and in Firefox could re-prompt.
-    if(navigator.storage.persisted&&await navigator.storage.persisted()){
-      console.log('Persistent storage: already granted');
-      return true;
-    }
-    const granted=await navigator.storage.persist();
-    console.log('Persistent storage:',granted?'granted':'denied (data may be evicted under disk pressure)');
-    // Only record a CHANGE in status. A denial repeats on every single
-    // startup (Chrome re-evaluates its heuristics each time), and logging
-    // each one would bury the unlock/backup events the Activity Log
-    // exists to make findable.
-    try{
-      const last=await loadAppStateFromIDB('storagePersistedState');
-      const now=granted?'granted':'denied';
-      if(last!==now){
-        await saveAppStateToIDB('storagePersistedState',now);
-        auditLog('STORAGE_PERSIST',granted?'Browser granted persistent storage for this app':'Browser denied persistent storage — case data could be evicted if the device runs low on disk',granted);
-      }
-    }catch(e){console.warn('Could not record persistent-storage status',e);}
-    return granted;
-  }catch(e){
-    console.warn('Persistent storage request failed',e);
-    return null;
-  }
-}
-
-// ── Storage quota ─────────────────────────────────────
-// Wards were small text records until supporting-document uploads landed:
-// files are stored base64 (≈+33%), up to 15MB each, across ~31 schedules,
-// multiplied by every archived accounting year. Running the origin out of
-// quota is now genuinely reachable, and the failure mode is bad — the
-// IndexedDB write rejects and the user sees only the generic "could not be
-// saved" banner, with nothing telling them the disk is the problem or what
-// to remove. Warning ahead of the wall is much kinder than explaining the
-// wreck afterwards.
-const STORAGE_WARN_THRESHOLD=0.8;
-let _storageWarningDismissed=false;
-
-async function getStorageEstimate(){
-  try{
-    if(!navigator.storage||!navigator.storage.estimate)return null;
-    const {usage,quota}=await navigator.storage.estimate();
-    if(!quota)return null;
-    return {usage:usage||0,quota,pct:(usage||0)/quota};
-  }catch(e){return null;}
-}
-
-function fmtBytes(b){
-  if(b==null)return '—';
-  if(b<1024)return b+' B';
-  if(b<1048576)return (b/1024).toFixed(1)+' KB';
-  if(b<1073741824)return (b/1048576).toFixed(1)+' MB';
-  return (b/1073741824).toFixed(2)+' GB';
-}
-
-function dismissStorageWarning(){
-  _storageWarningDismissed=true;
-  const el=document.getElementById('storage-warning-banner');
-  if(el)el.style.display='none';
-}
-
-// Checked at startup and periodically — not on every keystroke-triggered
-// save, since estimate() is comparatively expensive and the number moves
-// slowly.
-async function checkStorageQuota(){
-  const est=await getStorageEstimate();
-  const el=document.getElementById('storage-warning-banner');
-  if(!el||!est)return est;
-  if(est.pct>=STORAGE_WARN_THRESHOLD&&!_storageWarningDismissed){
-    const txt=document.getElementById('storage-warning-text');
-    if(txt)txt.innerHTML=`${ic('alert',15)} Storage is ${Math.round(est.pct*100)}% full (${fmtBytes(est.usage)} of ${fmtBytes(est.quota)}). Save a backup now, then free space by deleting old accounting years or their uploaded documents.`;
-    el.style.display='block';
-  }else{
-    el.style.display='none';
-  }
-  return est;
-}
-
-async function initIndexedDB(){
-  return new Promise((resolve,reject)=>{
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onerror=()=>reject(req.error);
-    req.onblocked=()=>{
-      console.warn('IndexedDB upgrade blocked — another tab is holding an older connection open');
-      showIndexedDBBlockedMessage();
-    };
-    req.onsuccess=()=>{
-      db=req.result;
-      // If a NEWER tab later needs to upgrade the schema further, this
-      // connection must close itself — otherwise it becomes the very
-      // "other tab" that blocks that future upgrade the same way.
-      db.onversionchange=()=>{
-        db.close();
-        showIndexedDBBlockedMessage();
-      };
-      resolve(db);
-    };
-    req.onupgradeneeded=(e)=>{
-      const database=e.target.result;
-      // Create wards store
-      if(!database.objectStoreNames.contains(STORES.wards)){
-        const wardStore=database.createObjectStore(STORES.wards,{keyPath:'wardId'});
-        wardStore.createIndex('createdDate','createdDate');
-        wardStore.createIndex('caseNumber','caseNumber');
-      }
-      // Create appState store
-      if(!database.objectStoreNames.contains(STORES.appState)){
-        database.createObjectStore(STORES.appState,{keyPath:'key'});
-      }
-      // Create templates store (cached blank Excel templates, one per inventory type)
-      if(!database.objectStoreNames.contains(STORES.templates)){
-        database.createObjectStore(STORES.templates,{keyPath:'type'});
-      }
-      // Create auditLog store (browser fallback for auditLog(), since Tauri's
-      // audit_log command isn't available in the plain web app)
-      if(!database.objectStoreNames.contains(STORES.auditLog)){
-        const auditStore=database.createObjectStore(STORES.auditLog,{keyPath:'id',autoIncrement:true});
-        auditStore.createIndex('timestamp','timestamp');
-      }
-    };
-  });
-}
-
-async function saveWardToIDB(ward){
-  if(!db)throw new Error('IndexedDB not initialized');
+async function saveWardToState(ward){
+  if(!ward)return false;
   ward.lastModified=new Date().toISOString();
-  // wardId stays in the clear (it's the store's keyPath, and just a random
-  // generated id — not sensitive); everything else about the ward is encrypted
-  // into a single opaque string before it ever reaches IndexedDB.
-  const packed={wardId:ward.wardId,enc:await encryptJSON(ward)};
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction([STORES.wards],'readwrite');
-    const store=tx.objectStore(STORES.wards);
-    store.put(packed);
-    tx.oncomplete=()=>resolve(true);
-    tx.onerror=()=>reject(tx.error);
-  });
+  // No separate store to put this into — ward is already the live object
+  // sitting in guardianData.wards. What every call site actually wants is
+  // "persist this now": schedule the same debounced write-through to the
+  // .sav file that any other edit would.
+  autoSave();
+  return true;
 }
 
-async function loadWardsFromIDB(){
-  if(!db)return [];
-  const rows=await new Promise((resolve)=>{
-    const tx=db.transaction([STORES.wards],'readonly');
-    const store=tx.objectStore(STORES.wards);
-    const req=store.getAll();
-    req.onsuccess=()=>resolve(req.result||[]);
-    req.onerror=()=>{console.warn('IDB load failed');resolve([]);}
-  });
-  const wards=[];
-  for(const row of rows){
-    try{
-      // A row with no `.enc` is pre-encryption plaintext left over from
-      // before this feature existed — ensureUnlocked()'s migration step
-      // re-saves those encrypted on first unlock, but tolerate reading an
-      // unmigrated one here too rather than losing it.
-      wards.push(row&&row.enc?await decryptJSON(row.enc):row);
-    }catch(e){console.warn('Failed to decrypt ward',row&&row.wardId,e);}
-  }
-  return wards;
+async function loadWardsFromState(){
+  // guardianData.wards IS the in-memory ward store; there is nothing
+  // else to read it from. Populated either by promptOpenOrStartAtLaunch()
+  // (an existing .sav file) or left empty for a brand-new case.
+  return guardianData.wards;
 }
 
-async function deleteWardFromIDB(wardId){
-  if(!db)return false;
-  return new Promise((resolve)=>{
-    const tx=db.transaction([STORES.wards],'readwrite');
-    const store=tx.objectStore(STORES.wards);
-    store.delete(wardId);
-    tx.oncomplete=()=>resolve(true);
-    tx.onerror=()=>resolve(false);
-  });
+async function deleteWardFromState(wardId){
+  // The caller (deleteWard()) already splices guardianData.wards itself —
+  // it's the same in-memory array this would otherwise re-filter — so all
+  // that's left to do is schedule the write-through that makes the
+  // deletion durable, same as any other edit.
+  autoSave();
+  return true;
 }
 
-async function saveAppStateToIDB(key,value){
-  if(!db)throw new Error('IndexedDB not initialized');
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction([STORES.appState],'readwrite');
-    const store=tx.objectStore(STORES.appState);
-    store.put({key,value});
-    tx.oncomplete=()=>resolve(true);
-    tx.onerror=()=>reject(tx.error);
-  });
+async function saveAppState(key,value){
+  _appState[key]=value;
+  autoSave();
+  return true;
 }
 
-// Browser fallback log used by auditLog() when Tauri's audit_log command
-// isn't available (i.e. running as a plain web app, not the desktop build).
-// Kept as plain JSON, matching the desktop backend's own audit.log format —
-// neither is encrypted at rest, both rely on being inside a protected
-// storage location (Tauri's app-data folder / this browser's IndexedDB) for
-// their protection, since encrypting would require a key that isn't always
-// available yet (e.g. logging a failed unlock attempt, before any key exists).
-async function appendAuditLogIDB(entry){
-  if(!db)throw new Error('IndexedDB not initialized');
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction([STORES.auditLog],'readwrite');
-    tx.objectStore(STORES.auditLog).add(entry);
-    tx.oncomplete=()=>resolve(true);
-    tx.onerror=()=>reject(tx.error);
-  });
+async function loadAppState(key){
+  return (key in _appState)?_appState[key]:null;
 }
 
-async function loadAuditLogIDB(){
-  if(!db)return [];
-  return new Promise((resolve)=>{
-    const tx=db.transaction([STORES.auditLog],'readonly');
-    const req=tx.objectStore(STORES.auditLog).getAll();
-    req.onsuccess=()=>resolve(req.result||[]);
-    req.onerror=()=>resolve([]);
-  });
+async function saveTemplate(type,b64){
+  _templateCache[type]=b64;
+  autoSave();
+  return true;
+}
+
+async function loadTemplate(type){
+  return _templateCache[type]||null;
+}
+
+// In memory, entries are kept unencrypted, on purpose, the same way the old
+// IDB store held them: a failed-unlock attempt has to be logged before any
+// password has been verified, so no encryption key can be assumed to exist
+// yet. That's only true of memory, though — by the time any of this reaches
+// a .sav file, a real save is happening, which (see saveData()'s own guard)
+// cannot happen at all in 'encrypted' mode without _cryptoKey already set.
+// buildExportZipBlob() encrypts the whole log at that point, same as
+// appState, rather than leaving ward names and other case details sitting
+// in plaintext inside a file this app actively encourages emailing and
+// copying around. Deliberately does NOT call autoSave() itself:
+// writeArchiveToHandle() logs its own DATA_EXPORT entry as part of every
+// save, and having that schedule another save would loop forever, one save
+// always triggering the next. An entry logged for any other reason rides
+// along in whatever save happens next instead — exactly as independent of
+// the ward-edit debounce as the old IDB store's own audit log always was.
+async function appendAuditLogEntry(entry){
+  entry.id=_auditLogNextId++;
+  _auditLogEntries.push(entry);
+  return true;
+}
+
+async function loadAuditLogEntries(){
+  return _auditLogEntries;
 }
 
 // ═══════════════════════════════════════════════════════
 // ACTIVITY LOG — VIEWER
-// auditLog()/appendAuditLogIDB() have recorded every unlock, backup, and
+// auditLog()/appendAuditLogEntry() have recorded every unlock, backup, and
 // restore since the app's earliest versions, but nothing ever displayed the
 // result — it was write-only. This is the read side: a page a guardian can
 // open to answer "did my backup actually save?" or to show a record of
@@ -3471,7 +3418,7 @@ let _activityLogEntries=[]; // newest-first, loaded once per page visit
 const ACTIVITY_LOG_RENDER_CAP=300; // safety cap on DOM rows, not on what's exported
 
 async function loadAndRenderActivityLog(){
-  const raw=await loadAuditLogIDB();
+  const raw=await loadAuditLogEntries();
   // Newest first, by the store's auto-increment id — not the timestamp
   // string. Millisecond-resolution ISO timestamps collide under rapid
   // succession (confirmed: several real events logged back-to-back landed on
@@ -3485,21 +3432,21 @@ async function loadAndRenderActivityLog(){
 
 // Plain statement of how much room the app is using, so it's checkable
 // before the warning banner ever appears rather than only after.
+// Was a browser-storage-quota readout; there is no browser storage left to
+// measure, so this now answers the question this page actually exists for
+// ("did my backup actually save?") directly: which file, and when.
 async function renderStorageReadout(){
   const host=document.getElementById('storage-usage-readout');
   if(!host)return;
-  const est=await getStorageEstimate();
-  if(!est){host.textContent='Storage usage is not reported by this browser.';return;}
-  const pct=Math.round(est.pct*100);
-  const persisted=(navigator.storage&&navigator.storage.persisted)?await navigator.storage.persisted():null;
-  const persistNote=persisted===true
-    ? 'Storage is marked persistent, so the browser will not clear it automatically.'
-    : persisted===false
-      ? 'Storage is <strong>not</strong> marked persistent — the browser may clear it if the device runs very low on disk. Keep saving .sav backups.'
-      : '';
-  host.innerHTML=`${ic('chart',14)} Using <strong>${fmtBytes(est.usage)}</strong> of about ${fmtBytes(est.quota)} available (${pct}%)`
-    +(pct>=STORAGE_WARN_THRESHOLD*100?' — <strong>running low.</strong> Delete old accounting years or their uploaded documents to free space.':'')
-    +(persistNote?`<br><span class="storage-readout-sub">${persistNote}</span>`:'');
+  if(!_zipFileHandle){
+    host.textContent='No case file is open this session. Use "Open Data File (.sav)" to resume auto-save, or "Save Data File (.sav)" to start one.';
+    return;
+  }
+  const fileName=_zipFileHandle.name||'your .sav file';
+  const savedNote=_lastExportAt
+    ? `last saved ${formatRelativeTime(_lastExportAt)}`
+    : 'not saved yet this session';
+  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> — ${_autoSaveArmed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
 }
 
 function activityLogFiltered(){
@@ -3613,39 +3560,6 @@ function pageActivityLog(){
   </div>`;
 }
 
-async function loadAppStateFromIDB(key){
-  if(!db)return null;
-  return new Promise((resolve)=>{
-    const tx=db.transaction([STORES.appState],'readonly');
-    const store=tx.objectStore(STORES.appState);
-    const req=store.get(key);
-    req.onsuccess=()=>resolve(req.result?.value||null);
-    req.onerror=()=>resolve(null);
-  });
-}
-
-async function saveTemplateToIDB(type,b64){
-  if(!db)return false;
-  return new Promise((resolve)=>{
-    const tx=db.transaction([STORES.templates],'readwrite');
-    const store=tx.objectStore(STORES.templates);
-    store.put({type,b64});
-    tx.oncomplete=()=>resolve(true);
-    tx.onerror=()=>resolve(false);
-  });
-}
-
-async function loadTemplateFromIDB(type){
-  if(!db)return null;
-  return new Promise((resolve)=>{
-    const tx=db.transaction([STORES.templates],'readonly');
-    const store=tx.objectStore(STORES.templates);
-    const req=store.get(type);
-    req.onsuccess=()=>resolve(req.result?.b64||null);
-    req.onerror=()=>resolve(null);
-  });
-}
-
 async function autoSave(){
   _dirtySinceExport=true;
   updateLastSavedIndicator();
@@ -3683,83 +3597,55 @@ function hideSaveError(){
 let _consecutiveSaveFailures=0;
 const SAVE_FAILURE_THRESHOLD=2;
 
+// Writes the ENTIRE current in-memory state (every ward, guardian info,
+// appState, cached templates, the audit log) to the .sav file this session
+// has open — the only persistence this app has left. There is no
+// IndexedDB underneath this to fall back to, so "no file is open" is not
+// an error: it just means there is nowhere to write yet, which the
+// sidebar's auto-save-armed indicator and the "Save Your First Backup"
+// reminder banner already say plainly. A .sav write is necessarily a
+// whole-file rewrite (there is no way to patch one entry of a zip in
+// place through the File System Access API), so unlike the old per-ward
+// IndexedDB put, every debounced save here re-encrypts every ward — an
+// accepted cost of the file being the only source of truth now.
 async function saveData(){
   // Nothing should be persisted while the app is locked — there's no
-  // in-memory data to save, and no encryption key to save it with. This
-  // isn't a failure (e.g. autoSave() debounced from an edit made right
-  // before auto-lock kicked in), so it must not trip the save-error
-  // banner the way an actual storage problem would.
+  // encryption key to write with. This isn't a failure (e.g. autoSave()
+  // debounced from an edit made right before auto-lock kicked in), so it
+  // must not trip the save-error banner the way an actual write problem would.
   if(_securityMode==='encrypted'&&!_cryptoKey)return;
-  if(!db){
-    console.error('IndexedDB not initialized, skipping save');
-    _consecutiveSaveFailures++;
-    if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
-    return;
+  const activeWard=getActiveWard();
+  if(activeWard){
+    activeWard.lastModified=new Date().toISOString();
+    autosaveWardToFile(activeWard); // Tauri-only best-effort backup; no-op in the browser build
   }
+  const handle=_zipFileHandle;
+  if(!handle)return; // nothing open to write to yet — see the function comment above
   try{
-    // Save active ward to IndexedDB (only if one exists)
-    const activeWard=getActiveWard();
-    if(activeWard){
-      await saveWardToIDB(activeWard);
-      autosaveWardToFile(activeWard);
+    const perm=await handle.queryPermission({mode:'readwrite'});
+    if(perm!=='granted'){
+      refreshAutoSaveArmedStatus(); // needs a user gesture to re-grant; surfaced, not fatal
+      return;
     }
-    // Save guardian info & active ward ID to IndexedDB (name/email are
-    // encrypted like ward data; activeWardId is just a pointer, not sensitive)
-    if(guardianData.guardianName){
-      await saveAppStateToIDB('guardianName',await encryptJSON(guardianData.guardianName));
-    }
-    if(guardianData.guardianEmail){
-      await saveAppStateToIDB('guardianEmail',await encryptJSON(guardianData.guardianEmail));
-    }
-    if(guardianData.activeWardId){
-      await saveAppStateToIDB('activeWardId',guardianData.activeWardId);
-    }
+    await writeArchiveToHandle(handle,true);
     _consecutiveSaveFailures=0;
     hideSaveError();
   }catch(e){
     console.error('save failed',e);
-    // Running out of disk is the one save failure with a specific,
-    // actionable cause, and the generic "check your connection/storage"
-    // banner is useless for it — surface it immediately (no waiting for a
-    // second consecutive failure) and say what to delete. Firefox reports
-    // this as NS_ERROR_DOM_QUOTA_REACHED rather than a DOMException named
-    // QuotaExceededError, so match on both.
-    const quotaHit=e&&(e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED'||/quota/i.test(e.message||''));
-    if(quotaHit){
-      _storageWarningDismissed=false; // a real failure overrides an earlier dismissal
-      const est=await getStorageEstimate();
-      const txt=document.getElementById('storage-warning-text');
-      const el=document.getElementById('storage-warning-banner');
-      if(txt)txt.innerHTML=`${ic('alert',15)} <strong>Out of storage — your last change was NOT saved.</strong> ${est?`Using ${fmtBytes(est.usage)} of ${fmtBytes(est.quota)}. `:''}Save a backup, then delete old accounting years or their uploaded documents to free space.`;
-      if(el)el.style.display='block';
-      auditLog('STORAGE_QUOTA_EXCEEDED','A save failed because the browser storage quota was reached',false);
-      return;
-    }
     _consecutiveSaveFailures++;
     if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
   }
 }
 
-// Decrypts a value saved by saveData() above; tolerates a plain (unencrypted)
-// string left over from before this feature existed rather than discarding it.
-async function _decryptAppStateValue(raw){
-  if(!raw)return '';
-  try{return await decryptJSON(raw);}
-  catch(e){return raw;}
-}
-
+// guardianData/_appState/_templateCache/_auditLogEntries are already fully
+// populated by this point — either by loadCaseFileAtLaunch() (an existing
+// .sav file was opened) or left at their empty defaults (a brand-new case,
+// same as a fresh install always started from). There is nothing separate
+// to load them FROM the way IndexedDB once was; this exists only so
+// initApp()'s call site reads the same either way and its return value
+// still answers "is there anything here".
 async function loadGuardianData(){
-  if(!db)return false;
-  try{
-    // Load wards from IndexedDB
-    const wards=await loadWardsFromIDB();
-    guardianData.wards=wards;
-    // Load app state from IndexedDB
-    guardianData.guardianName=await _decryptAppStateValue(await loadAppStateFromIDB('guardianName'));
-    guardianData.guardianEmail=await _decryptAppStateValue(await loadAppStateFromIDB('guardianEmail'));
-    guardianData.activeWardId=await loadAppStateFromIDB('activeWardId')||null;
-    return wards.length>0||guardianData.guardianName;
-  }catch(e){console.warn('load failed',e);return false;}
+  return guardianData.wards.length>0||!!guardianData.guardianName;
 }
 
 function getActiveWard(){
@@ -3823,26 +3709,21 @@ async function saveBlobAs(blob,suggestedName){
   return null;
 }
 
-// The handle is kept in a plain variable for the CURRENT session — that
-// always works and is what silent auto-save actually relies on. IndexedDB
-// persistence is only best-effort, for surviving a page reload; storing a
-// FileSystemFileHandle in IDB can fail in some Chromium configurations, and
-// before this variable existed, that failure silently killed auto-save for
-// the whole session even though the handle was available in memory.
+// A FileSystemFileHandle can only be persisted in IndexedDB — there is no
+// other mechanism — so with IndexedDB gone, this plain in-memory variable
+// IS the only place it lives. That is a deliberate consequence of this app
+// writing nothing to browser storage, not an oversight: it means auto-save
+// cannot survive a page reload, and promptOpenOrStartAtLaunch() exists
+// specifically so reopening the .sav file is a normal, expected part of
+// starting a new session rather than a surprise. refreshAutoSaveArmedStatus()
+// keeps the sidebar honest about this every time it changes.
 let _zipFileHandle=null;
 async function rememberZipHandle(handle){
   _zipFileHandle=handle;
   refreshAutoSaveArmedStatus();
-  try{await saveAppStateToIDB('zipFileHandle',handle);}
-  catch(e){console.warn('Could not persist zip file handle across reloads (in-session auto-save still works)',e);}
 }
 async function loadZipHandle(){
-  if(_zipFileHandle)return _zipFileHandle;
-  try{
-    const stored=await loadAppStateFromIDB('zipFileHandle');
-    if(stored)_zipFileHandle=stored;
-    return stored;
-  }catch(e){return null;}
+  return _zipFileHandle;
 }
 
 // True when a background write can happen with no user interaction: a file
@@ -3859,25 +3740,51 @@ async function refreshAutoSaveArmedStatus(){
   _autoSaveArmed=armed;
   const el=document.getElementById('auto-save-armed-indicator');
   if(el){
+    const fileName=_zipFileHandle&&_zipFileHandle.name;
     if(armed){
-      el.textContent='Auto-save: ready ✓';
+      el.textContent=fileName?`Auto-save: ready ✓ (${fileName})`:'Auto-save: ready ✓';
       el.style.color='var(--ok-text)';
     }else if(_zipFileHandle){
-      el.textContent='Auto-save: click Save Backup once to re-enable';
+      el.textContent=`Auto-save: click Save Backup once to re-enable (${fileName})`;
       el.style.color='var(--warn-text)';
-    }else{
+    }else if(window.showSaveFilePicker){
       el.textContent='Auto-save: needs one manual save first';
       el.style.color='var(--ink-3)';
+    }else{
+      // Firefox/Safari: there is no writable handle this browser can grant at
+      // all, ever — say so plainly instead of implying one manual save away.
+      el.textContent='Auto-save: not available in this browser — use Save/Export before closing this tab';
+      el.style.color='var(--warn-text)';
     }
   }
 }
 
+// FORMAT_VERSION 2: the .sav file grew from "wards + guardian name/email"
+// into the app's only persistence, so it now also carries everything that
+// used to be its own IndexedDB store (appState, cached templates, the
+// audit log) plus what it takes to unlock the file without any other state
+// already in memory (securityMode, salt, verifier — see
+// loadStateFromSavZip()). Reading stays backward-compatible with a version-1
+// file: those fields are simply absent, and every reader below treats an
+// absent field as "not set" rather than failing. version bumps again the
+// next time the shape of this manifest changes in a way a reader needs to
+// know about going in, before it's touched a single byte of the ward data.
+const SAV_FORMAT_VERSION=2;
+
 async function buildExportZipBlob(){
-  await flushPendingSave();
-  // The salt is embedded so the archive is portable to a fresh install:
-  // it's needed (along with the password) to re-derive the key there.
-  // A salt is not a secret — it already sits unencrypted in IndexedDB.
-  const salt=await loadAppStateFromIDB('cryptoSalt');
+  // Cancel (not flush) any pending debounce: guardianData/_appState/etc. are
+  // already the live, current, in-memory state by the time this runs — there
+  // is nothing separate to flush INTO memory the way there was when
+  // IndexedDB lagged behind it. flushPendingSave() would call saveData(),
+  // which calls writeArchiveToHandle(), which calls back into this very
+  // function — an infinite loop. Clearing the timer directly just avoids a
+  // redundant follow-up write of the same state a moment later.
+  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
+  // The salt is embedded so the archive is portable to a fresh install: it's
+  // needed (along with the password) to re-derive the key there. A salt is
+  // not a secret — 'none'-mode installs never generate one, hence the null.
+  const salt=(await loadAppState('cryptoSalt'))||null;
+  const verifier=(await loadAppState('cryptoVerifier'))||null;
   const zip=new JSZip();
   const wardIndex=[];
   for(const ward of guardianData.wards){
@@ -3885,22 +3792,50 @@ async function buildExportZipBlob(){
     zip.file(file,await encryptJSON(ward));
     wardIndex.push({wardId:ward.wardId,file});
   }
+  // Everything appState used to hold except the three fields above (which
+  // need to be readable before any password is entered) and the guardian's
+  // own name/email (kept as their own top-level `guardian` field, matching
+  // the version-1 shape exactly, since existing readers already expect it
+  // there). zipFileHandle is deliberately excluded — a FileSystemFileHandle
+  // isn't JSON-serializable and re-opening this very file is what would
+  // reconstruct it anyway.
+  const appStateBlob={
+    activeWardId:guardianData.activeWardId,
+    theme:await loadAppState('theme'),
+    walkthroughCompleted:await loadAppState('walkthroughCompleted'),
+    firstLaunchSeen:await loadAppState('firstLaunchSeen'),
+    continuePromptShown:await loadAppState('continuePromptShown'),
+    recentWards:await loadAppState('recentWards'),
+    autoExportIntervalMinutes:_autoExportIntervalMinutes,
+    lastExportAt:_lastExportAt,
+    unlockFailState:await loadAppState('unlockFailState')
+  };
+  const templateTypes=Object.keys(_templateCache).filter(t=>_templateCache[t]);
+  for(const type of templateTypes){
+    zip.file(`templates/${type}.b64`,_templateCache[type]);
+  }
+  // Encrypted here even though it's kept plain in memory (see
+  // appendAuditLogEntry()'s comment) — this app actively encourages emailing
+  // and copying the .sav file around, and entries can carry a ward's real
+  // name (exportSingleWardZip's own DATA_EXPORT message, for one). A key is
+  // always available by the time a real save reaches this point (or
+  // securityMode is 'none', in which case encryptJSON's PLAIN: prefix
+  // applies here exactly as it does to every other field).
+  zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
   zip.file('manifest.json',JSON.stringify({
     format:'probate-guardian-export',
-    version:1,
+    version:SAV_FORMAT_VERSION,
     exportedAt:new Date().toISOString(),
+    securityMode:_securityMode,
     salt,
+    verifier,
     guardian:await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail}),
+    appState:await encryptJSON(appStateBlob),
+    templates:templateTypes,
     wards:wardIndex
   },null,2));
   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
   return {blob,count:wardIndex.length};
-}
-
-async function recordExportTimestamp(){
-  _lastExportAt=Date.now();
-  try{await saveAppStateToIDB('lastExportAt',_lastExportAt);}catch(e){/* non-critical */}
-  updateLastSavedIndicator();
 }
 
 // "3 minutes ago" / "2 hours ago" / "5 days ago" style relative timestamp.
@@ -3929,18 +3864,42 @@ function updateLastSavedIndicator(){
   }
 }
 
+// Records this save's timestamp and audit entry BEFORE the save itself
+// happens, so the file this save produces contains its own record of
+// itself — not only the previous save's. Recording afterward (as this used
+// to) meant a session that saved once and then closed had recorded that
+// save nowhere at all: the in-memory update happened, but the file already
+// written a moment earlier never got it, and there was no session left to
+// write it in a later save. Returns a rollback closure, used if the write
+// that follows fails, so a failed save is never recorded as having succeeded.
+async function beginRecordingExport(message){
+  const previousLastExportAt=_lastExportAt;
+  const auditLenBefore=_auditLogEntries.length;
+  _lastExportAt=Date.now();
+  _appState.lastExportAt=_lastExportAt;
+  await auditLog('DATA_EXPORT',message,true);
+  return function rollback(){
+    _lastExportAt=previousLastExportAt;
+    _appState.lastExportAt=previousLastExportAt;
+    _auditLogEntries.length=auditLenBefore; // no-op if auditLog() went to Tauri instead of the local array
+  };
+}
+
 async function exportGuardianDataZip(){
+  let rollback=null;
   try{
     if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export.');return;}
-    const {blob,count}=await buildExportZipBlob();
+    const count=guardianData.wards.length;
+    rollback=await beginRecordingExport(`Exported ${count} ward(s) to archive`);
+    const {blob}=await buildExportZipBlob();
     const handle=await saveBlobAs(blob,'guardianshipwarddata.sav');
     if(handle)await rememberZipHandle(handle);
     _dirtySinceExport=false;
-    await recordExportTimestamp();
     hideAutoExportReminder();
-    auditLog('DATA_EXPORT',`Exported ${count} ward(s) to archive`,true);
+    updateLastSavedIndicator();
     alert(`Export complete: ${count} ward(s) saved to guardianshipwarddata.sav`);
   }catch(e){
+    if(rollback)rollback();
     if(e&&e.name==='AbortError')return; // user cancelled the Save As dialog
     console.error('export failed',e);
     auditLog('DATA_EXPORT',String(e&&e.message||e),false);
@@ -3951,15 +3910,22 @@ async function exportGuardianDataZip(){
 // Writes the full archive to an already-authorized handle. Shared by the
 // background timer and the banner's Save Backup Now button.
 async function writeArchiveToHandle(handle,viaTimer){
-  const {blob,count}=await buildExportZipBlob();
-  const writable=await handle.createWritable();
-  await writable.write(blob);
-  await writable.close();
+  const count=guardianData.wards.length;
+  const message=viaTimer?`Auto-saved ${count} ward(s) in the background`:`Saved ${count} ward(s) to existing backup file`;
+  const rollback=await beginRecordingExport(message);
+  try{
+    const {blob}=await buildExportZipBlob();
+    const writable=await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }catch(e){
+    rollback();
+    throw e;
+  }
   _dirtySinceExport=false;
-  await recordExportTimestamp();
   hideAutoExportReminder();
   refreshAutoSaveArmedStatus();
-  auditLog('DATA_EXPORT',viaTimer?`Auto-saved ${count} ward(s) in the background`:`Saved ${count} ward(s) to existing backup file`,true);
+  updateLastSavedIndicator();
   return count;
 }
 
@@ -4029,9 +3995,9 @@ function hideAutoExportReminder(){
 
 async function loadAutoExportPrefs(){
   try{
-    const savedMinutes=await loadAppStateFromIDB('autoExportIntervalMinutes');
+    const savedMinutes=await loadAppState('autoExportIntervalMinutes');
     _autoExportIntervalMinutes=(savedMinutes===null||savedMinutes===undefined)?10:Number(savedMinutes);
-    const savedLast=await loadAppStateFromIDB('lastExportAt');
+    const savedLast=await loadAppState('lastExportAt');
     _lastExportAt=savedLast?Number(savedLast):null;
   }catch(e){console.warn('Could not load auto-export preferences',e);}
   const sel=document.getElementById('auto-export-interval-select');
@@ -4042,7 +4008,7 @@ async function loadAutoExportPrefs(){
 
 async function saveAutoExportIntervalPref(minutes){
   _autoExportIntervalMinutes=minutes;
-  try{await saveAppStateToIDB('autoExportIntervalMinutes',minutes);}catch(e){/* non-critical */}
+  try{await saveAppState('autoExportIntervalMinutes',minutes);}catch(e){/* non-critical */}
   setupAutoExportTimer();
 }
 
@@ -4080,7 +4046,7 @@ async function importGuardianDataZip(file){
 
     // Same install (same salt) → current key works. Different install →
     // ask for the password the archive was exported under and re-derive.
-    const currentSalt=await loadAppStateFromIDB('cryptoSalt');
+    const currentSalt=await loadAppState('cryptoSalt');
     let key=_cryptoKey;
     if(manifest.salt!==currentSalt){
       const pw=prompt('This archive came from a different installation.\nEnter the master password that was in use when it was exported:');
@@ -4121,7 +4087,7 @@ async function importGuardianDataZip(file){
     for(const ward of imported){
       const idx=guardianData.wards.findIndex(x=>x.wardId===ward.wardId);
       if(idx>=0)guardianData.wards[idx]=ward;else guardianData.wards.push(ward);
-      await saveWardToIDB(ward); // re-encrypts under THIS install's key
+      await saveWardToState(ward); // schedules a write of the merged state to the .sav file
     }
     if(guardianInfo&&guardianInfo.guardianName)guardianData.guardianName=guardianInfo.guardianName;
     if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
@@ -4143,6 +4109,202 @@ async function importGuardianDataZip(file){
     auditLog('DATA_IMPORT',String(e&&e.message||e),false);
     alert('Import failed: '+(e&&e.message||e));
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// OPEN / START AT LAUNCH
+// With nothing left in browser storage, the app has no way to know what
+// case data exists until it's handed a .sav file — there is nothing left
+// to silently load the way IndexedDB used to. This runs once, at the very
+// top of initApp(), before ensureUnlocked(): "Open" populates
+// guardianData/_appState/_templateCache/_auditLogEntries/_cryptoKey/
+// _securityMode directly from the chosen file, so ensureUnlocked() sees a
+// securityMode/salt/verifier already in place (via _launchStateResolved)
+// and skips straight past its own prompt; "Start New" leaves everything at
+// its empty default, so ensureUnlocked() takes the same "fresh install"
+// branch it always has.
+// ═══════════════════════════════════════════════════════
+
+let _launchStateResolved=false;
+let _startupChoiceResolve=null;
+function promptOpenOrStartAtLaunch(){
+  return new Promise((resolve)=>{
+    _startupChoiceResolve=resolve;
+    document.getElementById('startup-choice-overlay').classList.add('show');
+  });
+}
+function _resolveStartupChoice(){
+  document.getElementById('startup-choice-overlay').classList.remove('show');
+  const resolve=_startupChoiceResolve;_startupChoiceResolve=null;
+  if(resolve)resolve();
+}
+function startNewCaseAtLaunch(){
+  _resolveStartupChoice();
+}
+
+// Chrome/Edge: showOpenFilePicker() returns a handle that supports
+// createWritable(), so opening a file arms silent auto-save immediately.
+// Firefox/Safari implement neither picker — fall back to a plain
+// <input type=file>, which can only ever hand back a read-only File.
+// Those browsers can open a case file but can never auto-save it (see
+// refreshAutoSaveArmedStatus() and the note on _zipFileHandle above); that
+// is stated on screen once the file is open, not hidden.
+async function openCaseFileAtLaunch(){
+  if(window.showOpenFilePicker){
+    try{
+      const [handle]=await window.showOpenFilePicker({
+        types:[{description:'Probate Guardian data file',accept:{'application/octet-stream':['.sav']}}]
+      });
+      const file=await handle.getFile();
+      const ok=await loadCaseFileAtLaunch(file);
+      if(ok){
+        await rememberZipHandle(handle);
+        _resolveStartupChoice();
+      }
+    }catch(e){
+      if(e&&e.name==='AbortError')return; // user cancelled the picker — leave the choice screen up
+      console.error('Open case file failed',e);
+      alert('Could not open that file: '+(e&&e.message||e));
+    }
+    return;
+  }
+  document.getElementById('startup-open-input').click();
+}
+async function handleStartupOpenInputChange(input){
+  const file=input.files[0];
+  input.value='';
+  if(!file)return;
+  // No handle to remember here — a plain <input> never yields a writable
+  // one. loadCaseFileAtLaunch() -> refreshAutoSaveArmedStatus() already
+  // says so on screen once this resolves.
+  const ok=await loadCaseFileAtLaunch(file);
+  if(ok)_resolveStartupChoice();
+}
+
+// Shared by both pickers above: validate, parse, ask for a password if the
+// file is encrypted, then hand off to loadStateFromSavZip(). Returns true
+// on success (state is now populated and _cryptoKey is set if needed) or
+// false (already reported to the user; the startup choice screen stays up
+// so they can try again or start a new case instead).
+async function loadCaseFileAtLaunch(file){
+  try{
+    const check=await validateImportFile(file,'sav');
+    if(!check.ok){alert(check.message);return false;}
+    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot open this file.');return false;}
+    const zip=await JSZip.loadAsync(file);
+    const manifestEntry=zip.file('manifest.json');
+    if(!manifestEntry){alert('Not a Probate Guardian data file (no manifest.json inside).');return false;}
+    const manifest=JSON.parse(await manifestEntry.async('string'));
+    if(manifest.format!=='probate-guardian-export'){alert('Not a Probate Guardian data file.');return false;}
+    _securityMode=manifest.securityMode||(manifest.salt?'encrypted':'none');
+    if(_securityMode==='encrypted'){
+      await promptPasswordForFile(manifest,zip); // sets _cryptoKey; only resolves on a verified password
+    }else{
+      _cryptoKey=null;
+    }
+    // Hydrate _appState directly (not via saveAppState()) so ensureUnlocked()
+    // finds securityMode/cryptoSalt/cryptoVerifier already in place without
+    // this counting as an edit that needs writing straight back out.
+    _appState.securityMode=_securityMode;
+    _appState.cryptoSalt=manifest.salt||null;
+    _appState.cryptoVerifier=manifest.verifier||null;
+    await loadStateFromSavZip(zip,manifest,_cryptoKey);
+    if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
+    _launchStateResolved=true;
+    refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
+    return true;
+  }catch(e){
+    console.error('Failed to open case file',e);
+    alert('Could not open that file: '+(e&&e.message||e));
+    return false;
+  }
+}
+
+// The counterpart to buildExportZipBlob(): reads wards, guardian info,
+// appState, cached templates, and the audit log out of an already-parsed
+// .sav zip into memory. `key` may be null in 'none' mode — decryptJSONWithKey
+// checks for the PLAIN: prefix before ever touching it. Tolerates a
+// version-1 file (no appState/templates/auditLog sections, no verifier)
+// by treating each absent piece as simply not set, per SAV_FORMAT_VERSION's
+// own comment.
+async function loadStateFromSavZip(zip,manifest,key){
+  guardianData.wards=[];
+  for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
+    const f=zip.file(entry.file);
+    if(!f){console.warn('Archive entry missing:',entry.file);continue;}
+    try{
+      const ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
+      if(ward&&ward.wardId)guardianData.wards.push(ward);
+    }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);}
+  }
+  guardianData.guardianName='';
+  guardianData.guardianEmail='';
+  if(manifest.guardian){
+    try{
+      const g=await decryptJSONWithKey(manifest.guardian,key);
+      guardianData.guardianName=g.guardianName||'';
+      guardianData.guardianEmail=g.guardianEmail||'';
+    }catch(e){console.warn('Could not read guardian info from .sav file',e);}
+  }
+  _appState.activeWardId=null;
+  _autoExportIntervalMinutes=10;
+  _lastExportAt=null;
+  if(manifest.appState){
+    try{
+      const a=await decryptJSONWithKey(manifest.appState,key);
+      guardianData.activeWardId=a.activeWardId||null;
+      _appState.theme=a.theme;
+      _appState.walkthroughCompleted=a.walkthroughCompleted;
+      _appState.firstLaunchSeen=a.firstLaunchSeen;
+      _appState.continuePromptShown=a.continuePromptShown;
+      _appState.recentWards=a.recentWards;
+      _appState.unlockFailState=a.unlockFailState;
+      _autoExportIntervalMinutes=(a.autoExportIntervalMinutes==null)?10:Number(a.autoExportIntervalMinutes);
+      _lastExportAt=a.lastExportAt||null;
+    }catch(e){console.warn('Could not read app preferences from .sav file',e);}
+  }else{
+    // Version-1 file: activeWardId was never in the export at all (it lived
+    // only in IndexedDB) — default to the first ward rather than none.
+    guardianData.activeWardId=(guardianData.wards[0]&&guardianData.wards[0].wardId)||null;
+  }
+  _templateCache={};
+  for(const type of (Array.isArray(manifest.templates)?manifest.templates:[])){
+    const f=zip.file(`templates/${type}.b64`);
+    if(f)_templateCache[type]=await f.async('string');
+  }
+  _auditLogEntries=[];
+  _auditLogNextId=1;
+  const auditFile=zip.file('auditLog.enc');
+  if(auditFile){
+    try{
+      const entries=await decryptJSONWithKey(await auditFile.async('string'),key);
+      if(Array.isArray(entries)){
+        _auditLogEntries=entries;
+        _auditLogNextId=entries.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
+      }
+    }catch(e){console.warn('Could not read audit log from .sav file',e);}
+  }
+}
+
+// Derives a key from a candidate password and confirms it's the right one
+// for this manifest before returning it. A version-2+ file carries its own
+// verifier (the same PG_VERIFIER_V1 trick ensureUnlocked() uses); a
+// version-1 file has none, so the guardian-info blob — or, failing that,
+// the first ward — doubles as the check instead: GCM's auth tag fails
+// decryption for any wrong key, exactly what importGuardianDataZip() has
+// always relied on for the same reason.
+async function deriveAndVerifyKey(password,manifest,zip){
+  const key=await deriveKeyFromPassword(password,manifest.salt);
+  if(manifest.verifier){
+    const decoded=await decryptJSONWithKey(manifest.verifier,key);
+    if(decoded!==CRYPTO_VERIFIER_PLAINTEXT)throw new Error('Incorrect password.');
+  }else if(manifest.guardian){
+    await decryptJSONWithKey(manifest.guardian,key);
+  }else if(Array.isArray(manifest.wards)&&manifest.wards.length){
+    const f=zip.file(manifest.wards[0].file);
+    if(f)await decryptJSONWithKey(await f.async('string'),key);
+  }
+  return key;
 }
 
 // Lets a user drag a .zip data file straight onto the app window instead of
@@ -4200,11 +4362,11 @@ function clearAllData(){
 // FILESYSTEM AUTOSAVE (Tauri desktop only — no-op when run in a plain browser)
 // ═══════════════════════════════════════════════════════
 // Backs up each ward to its own JSON file at Documents/ProbateGuardian/<wardId>.json,
-// in addition to the existing IndexedDB save, so a case survives even if the Tauri
-// app's IndexedDB profile is ever lost or corrupted. IndexedDB remains the single
-// source of truth for everything the UI reads and edits — this is a best-effort
-// backup only. Every function here fails soft: errors are logged to the console,
-// never surfaced as a blocking alert, and never prevent the IndexedDB save from
+// alongside the .sav file, so a case survives even between .sav saves on the
+// desktop build specifically. The .sav file remains the single source of
+// truth for everything the UI reads and edits — this is a best-effort backup
+// only. Every function here fails soft: errors are logged to the console,
+// never surfaced as a blocking alert, and never prevent the real save from
 // completing. See capabilities/default.json for the (deliberately narrow) fs scope.
 const AUTOSAVE_DIR='ProbateGuardian';
 let _autosaveDirPath=null;
@@ -4242,11 +4404,11 @@ async function autosaveWardToFile(ward){
     if(!(await ensureAutosaveDir()))return;
     const path=tauriPath();
     const filePath=await path.join(await getAutosaveDirPath(),`${ward.wardId}.json`);
-    // Same AES-256-GCM encryption as the IndexedDB copy — this file sits as a
+    // Same AES-256-GCM encryption as the .sav file — this file sits as a
     // plain visible .json in the user's Documents folder, so it's actually the
     // more exposed of the two at-rest copies if left in plaintext.
     await fs.writeTextFile(filePath,await encryptJSON(ward));
-  }catch(e){autosaveWarn('autosaveWardToFile failed (IndexedDB save was not affected)',e);}
+  }catch(e){autosaveWarn('autosaveWardToFile failed (the .sav save was not affected)',e);}
 }
 
 async function deleteAutosaveFile(wardId){
@@ -4263,9 +4425,10 @@ async function deleteAutosaveFile(wardId){
   }catch(e){autosaveWarn('failed to remove backup file for deleted ward',e);}
 }
 
-// Only runs when IndexedDB has no wards at all (fresh install, or the app's data
-// directory was cleared) — recovers whatever backup files are on disk. Never
-// overwrites existing IndexedDB data, so it can't clobber a case already in progress.
+// Only runs when the current session has no wards at all (a brand-new case,
+// or the desktop app's data directory was cleared) — recovers whatever
+// backup files are on disk. Never overwrites wards already in memory, so it
+// can't clobber a case already in progress or one just loaded from a .sav file.
 async function restoreFromFileBackupIfEmpty(){
   if(guardianData.wards.length>0)return;
   const fs=tauriFs();
@@ -4285,13 +4448,13 @@ async function restoreFromFileBackupIfEmpty(){
         catch{ward=JSON.parse(raw);} // legacy plaintext backup from before encryption existed
         if(ward&&ward.wardId&&ward.inventoryType){
           guardianData.wards.push(ward);
-          await saveWardToIDB(ward); // re-saves it encrypted going forward
+          await saveWardToState(ward); // re-saves it encrypted going forward
         }
       }catch(e){console.warn('skipping unreadable backup file',entry.name,e);}
     }
     if(guardianData.wards.length>0){
       guardianData.activeWardId=guardianData.wards[0].wardId;
-      await saveAppStateToIDB('activeWardId',guardianData.activeWardId);
+      await saveAppState('activeWardId',guardianData.activeWardId);
       console.info(`Restored ${guardianData.wards.length} ward(s) from on-disk backup.`);
     }
   }catch(e){console.warn('restore-from-backup failed',e);}
@@ -4616,7 +4779,7 @@ async function doLoadWardInfo(){
   closeModal('loadWardInfoModal');
   Object.assign(window.D,carryOverFields(src,activeInventoryType));
   autoSave();
-  await saveWardToIDB(window.D);
+  await saveWardToState(window.D);
   renderPage(currentPage);
   updateSidebar();
   updateNavDots();
@@ -4652,30 +4815,23 @@ function pageIntroRow(accordionHTML){
   return `<div class="dashboard-top-row${banner?'':' single-col'}" style="margin-bottom:1.25rem;">${accordionHTML}${banner}</div>`;
 }
 
-// "Recently Opened Wards" — a small localStorage-backed MRU list (device-
-// local, not synced with the encrypted ward data itself) so the dashboard
-// can offer quick access to whichever wards were actually worked on
-// recently, not just alphabetical or last-modified order.
-const RECENT_WARDS_KEY='pg-recent-wards';
+// "Recently Opened Wards" — a small MRU list living in the .sav file's
+// appState section (see buildExportZipBlob()) so the dashboard can offer
+// quick access to whichever wards were actually worked on recently, not
+// just alphabetical or last-modified order. This used to be a
+// localStorage list kept deliberately device-local, separate from the
+// encrypted case data; it now travels with the file instead, along with
+// everything else that used to be its own IndexedDB/localStorage entry.
 const RECENT_WARDS_MAX=5;
 
 function loadRecentlyOpenedWards(){
-  try{
-    const raw=localStorage.getItem(RECENT_WARDS_KEY);
-    const list=raw?JSON.parse(raw):[];
-    return Array.isArray(list)?list:[];
-  }catch(e){
-    console.warn('Failed to read recently-opened wards',e);
-    return [];
-  }
+  const list=_appState.recentWards;
+  return Array.isArray(list)?list:[];
 }
 
 function saveRecentlyOpenedWards(list){
-  try{
-    localStorage.setItem(RECENT_WARDS_KEY,JSON.stringify(list));
-  }catch(e){
-    console.warn('Failed to save recently-opened wards',e);
-  }
+  _appState.recentWards=list;
+  saveAppState('recentWards',list);
 }
 
 function addToRecentlyOpened(ward){
@@ -4687,7 +4843,7 @@ function addToRecentlyOpened(ward){
 
 // Re-derives name/type from the live ward record (in case it was renamed
 // or converted since being logged) and drops entries for wards that no
-// longer exist, rather than trusting the stale snapshot in localStorage.
+// longer exist, rather than trusting the stale snapshot in appState.
 function getRecentlyOpenedWards(){
   return loadRecentlyOpenedWards()
     .map(r=>{
@@ -4714,8 +4870,8 @@ async function addWard(wardName,inventoryType){
   window.D=newWard;
   _visitedPages.clear();
   addToRecentlyOpened(newWard);
-  await saveWardToIDB(newWard);
-  await saveAppStateToIDB('activeWardId',wardId);
+  await saveWardToState(newWard);
+  await saveAppState('activeWardId',wardId);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
   updateSidebar();
@@ -4860,9 +5016,8 @@ async function switchWard(wardId){
   activeInventoryType=ward.inventoryType;
   window.D=ward;
 
-  // Save to IDB
   try{
-    await saveAppStateToIDB('activeWardId',wardId);
+    await saveAppState('activeWardId',wardId);
   }catch(e){
     console.error('switchWard save failed',e);
     showSaveError();
@@ -4892,7 +5047,7 @@ async function deleteWard(wardId){
   const idx=guardianData.wards.findIndex(w=>w.wardId===wardId);
   if(idx===-1)return;
   guardianData.wards.splice(idx,1);
-  await deleteWardFromIDB(wardId);
+  await deleteWardFromState(wardId);
   deleteAutosaveFile(wardId);
 
   if(guardianData.activeWardId===wardId){
@@ -4901,11 +5056,11 @@ async function deleteWard(wardId){
   if(guardianData.activeWardId){
     window.D=getActiveWard();
     activeInventoryType=getActiveWard().inventoryType;
-    await saveAppStateToIDB('activeWardId',guardianData.activeWardId);
+    await saveAppState('activeWardId',guardianData.activeWardId);
   }else{
     window.D={};
     activeInventoryType=null;
-    await saveAppStateToIDB('activeWardId',null);
+    await saveAppState('activeWardId',null);
   }
   updateSidebar();
   navigate('/');
@@ -4915,7 +5070,7 @@ async function renameWard(wardId,newName){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   ward.wardName=newName;
-  await saveWardToIDB(ward);
+  await saveWardToState(ward);
   updateSidebar();
 }
 
@@ -5390,7 +5545,7 @@ async function doAddWard(){
         Object.assign(ward,carryOverFields(src,type));
         if(ward.wardName!==name)ward.wardName=name;
         window.D=ward;
-        await saveWardToIDB(ward);
+        await saveWardToState(ward);
         renderPage('/');
         updateSidebar();
       }
@@ -5450,7 +5605,7 @@ async function doConfirmSimplifiedEligibility(){
           if(window.D.wardName!==name)window.D.wardName=name;
         }
       }
-      await saveWardToIDB(window.D);
+      await saveWardToState(window.D);
     }else{
       await addWard(name,'annual');
       // Carry over to the Annual too — the guardian picked a source ward
@@ -5461,7 +5616,7 @@ async function doConfirmSimplifiedEligibility(){
         if(src){
           Object.assign(window.D,carryOverFields(src,'annual'));
           if(window.D.wardName!==name)window.D.wardName=name;
-          await saveWardToIDB(window.D);
+          await saveWardToState(window.D);
         }
       }
       alert('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.');
@@ -5531,103 +5686,204 @@ async function doGuardianSetup(){
 }
 
 // ═══════════════════════════════════════════════════════
-// ONE-TIME MIGRATION (localStorage → IndexedDB)
-// ═══════════════════════════════════════════════════════
-async function migrateFromLocalStorage(){
-  if(localStorage.getItem(LEGACY_KEYS.migrationComplete))return; // Already migrated
+// ONE-TIME LEGACY BROWSER-STORAGE MIGRATION (Part B cutover)
+// Every install before this release kept everything in IndexedDB (wards,
+// appState, cached templates, the audit log) plus a handful of
+// localStorage/sessionStorage keys (theme, walkthrough state, the
+// recently-opened list, and migrateFromLocalStorage's own even-older
+// migration flag). This release removes all of that in favor of the .sav
+// file being the only persistence, so an install upgrading from before
+// this release must not silently lose whatever is still sitting in its
+// browser storage. This runs once, before promptOpenOrStartAtLaunch():
+// if anything old is found, it offers to save it as a .sav file, then
+// deletes the old database and clears the old keys either way (once the
+// user has answered), so this never has anything to do again after that.
+//
+// This is the ONLY code left in the app that touches
+// indexedDB/localStorage/sessionStorage, and only to read them and then
+// delete what it read — never to write new data into them. It has nothing
+// left to do once every real install has passed through it once; delete
+// this whole function (and its call in initApp()) in a later release.
+//
+// Known gap: detecting the old IndexedDB database without indexedDB.
+// databases() (Safari does not implement it, as of this writing) would
+// mean calling indexedDB.open() blind, which creates an empty database of
+// its own if none existed — the opposite of what this function exists to
+// avoid. Rather than risk that, this skips the IndexedDB check entirely
+// wherever databases() is unavailable; the localStorage/sessionStorage
+// check below is unaffected and still runs.
+async function legacyIndexedDBExists(){
+  try{
+    if(!indexedDB.databases)return null;
+    const dbs=await indexedDB.databases();
+    return dbs.some(d=>d.name===LEGACY_DB_NAME);
+  }catch(e){return null;}
+}
+function openLegacyIDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(LEGACY_DB_NAME,LEGACY_DB_VERSION);
+    req.onerror=()=>reject(req.error);
+    req.onsuccess=()=>resolve(req.result);
+    // Only reachable if legacyIndexedDBExists() said yes but the database
+    // turned out not to actually have this store — leaving this empty
+    // means nothing gets fabricated here; the getAll() calls below just
+    // see whatever object stores genuinely exist.
+    req.onupgradeneeded=()=>{};
+  });
+}
+function legacyIDBGetAll(db,storeName){
+  return new Promise((resolve)=>{
+    if(!db.objectStoreNames.contains(storeName)){resolve([]);return;}
+    const tx=db.transaction([storeName],'readonly');
+    const req=tx.objectStore(storeName).getAll();
+    req.onsuccess=()=>resolve(req.result||[]);
+    req.onerror=()=>resolve([]);
+  });
+}
 
-  const legacyGuardian=localStorage.getItem(LEGACY_KEYS.guardian);
-  const legacySimplified=localStorage.getItem(LEGACY_KEYS.simplified);
-  const legacyAnnual=localStorage.getItem(LEGACY_KEYS.annual);
-  const legacyGuardianTemplate=localStorage.getItem(LEGACY_KEYS.guardianTemplate);
-  const legacySimplifiedTemplate=localStorage.getItem(LEGACY_KEYS.simplifiedTemplate);
-  const legacyAnnualTemplate=localStorage.getItem(LEGACY_KEYS.annualTemplate);
+async function runLegacyBrowserStorageMigrationIfNeeded(){
+  const legacyLocalStorageKeys=[
+    LEGACY_KEYS.guardian,LEGACY_KEYS.simplified,LEGACY_KEYS.annual,
+    LEGACY_KEYS.migrationComplete,LEGACY_KEYS.guardianTemplate,
+    LEGACY_KEYS.simplifiedTemplate,LEGACY_KEYS.annualTemplate,
+    'pg-theme','walkthroughCompleted','firstLaunchSeen','pg-recent-wards'
+  ];
+  let hasLegacyLocalStorage=false;
+  try{hasLegacyLocalStorage=legacyLocalStorageKeys.some(k=>localStorage.getItem(k)!=null);}
+  catch(e){/* localStorage unavailable — nothing to migrate from it */}
 
-  if(!legacyGuardian&&!legacySimplified&&!legacyAnnual&&!legacyGuardianTemplate&&!legacySimplifiedTemplate&&!legacyAnnualTemplate){
-    localStorage.setItem(LEGACY_KEYS.migrationComplete,'true');
-    return; // Nothing to migrate
+  let legacyDb=null;
+  let legacyWardRows=[],legacyAppStateRows=[],legacyTemplateRows=[],legacyAuditRows=[];
+  try{
+    if(await legacyIndexedDBExists()){
+      legacyDb=await openLegacyIDB();
+      legacyWardRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.wards);
+      legacyAppStateRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.appState);
+      legacyTemplateRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.templates);
+      legacyAuditRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.auditLog);
+    }
+  }catch(e){console.warn('Could not inspect legacy IndexedDB',e);}
+
+  const hasLegacyIDB=legacyWardRows.length>0||legacyAppStateRows.length>0||legacyTemplateRows.length>0||legacyAuditRows.length>0;
+  if(!hasLegacyIDB&&!hasLegacyLocalStorage){
+    if(legacyDb)legacyDb.close();
+    return; // the common case for any install that has been through this once, and every fresh one
   }
 
-  console.log('Migrating legacy localStorage data to IndexedDB...');
+  const proceed=confirm(
+    'This browser has case data saved by an earlier version of Probate Guardian.\n\n'+
+    'This version keeps nothing in browser storage — everything now lives in a .sav file you control.\n\n'+
+    'Click OK to save that existing data as a .sav file now (recommended), or Cancel to discard it and start fresh.'
+  );
 
-  // Migrate guardian inventory
-  if(legacyGuardian){
+  if(proceed){
     try{
-      const data=JSON.parse(legacyGuardian);
-      const wardId=createWardId();
-      const ward={
-        wardId,
-        wardName:data.wardName||'Initial Inventory (Migrated)',
-        inventoryType:'guardian',
-        createdDate:new Date().toISOString().split('T')[0],
-        ...data
-      };
-      guardianData.wards.push(ward);
-      await saveWardToIDB(ward);
-    }catch(e){console.warn('Guardian inventory migration failed',e);}
+      const appStateMap={};
+      for(const row of legacyAppStateRows)appStateMap[row.key]=row.value;
+
+      // Borrows the OLD app's own crypto scheme rather than re-implementing
+      // it: a plaintext row decodes via encryptJSON's 'none'-mode PLAIN:
+      // prefix regardless of key, so only an actually-encrypted install
+      // needs a password prompt here at all.
+      const legacySecurityMode=appStateMap.securityMode||(appStateMap.cryptoSalt&&appStateMap.cryptoVerifier?'encrypted':'none');
+      let legacyKey=null;
+      if(legacySecurityMode==='encrypted'){
+        const pw=prompt('Enter the master password this data was encrypted with, to save it as a .sav file:');
+        if(!pw){if(legacyDb)legacyDb.close();return;} // backed out — leave the old data in place, ask again next launch
+        legacyKey=await deriveKeyFromPassword(pw,appStateMap.cryptoSalt);
+        if(appStateMap.cryptoVerifier){
+          try{
+            const decoded=await decryptJSONWithKey(appStateMap.cryptoVerifier,legacyKey);
+            if(decoded!==CRYPTO_VERIFIER_PLAINTEXT)throw new Error('wrong password');
+          }catch(e){
+            alert('Incorrect password — could not export the existing data. It has been left in place; you will be asked again next time the app opens.');
+            if(legacyDb)legacyDb.close();
+            return;
+          }
+        }
+      }
+
+      // Reuses buildExportZipBlob()'s exact zip-building logic rather than
+      // duplicating it, by temporarily pointing the globals it reads from
+      // at the legacy data. This session's real state is still at its
+      // empty startup default at this point (promptOpenOrStartAtLaunch()
+      // hasn't run yet) — restored in `finally` regardless.
+      const saved={guardianData,appState:_appState,templateCache:_templateCache,
+        auditLog:_auditLogEntries,auditNextId:_auditLogNextId,securityMode:_securityMode,key:_cryptoKey};
+      let exportedHandle=null,exportedCount=0;
+      try{
+        guardianData={guardianName:'',guardianEmail:'',wards:[],activeWardId:appStateMap.activeWardId||null};
+        for(const row of legacyWardRows){
+          try{
+            const ward=row&&row.enc?await decryptJSONWithKey(row.enc,legacyKey):row;
+            if(ward&&ward.wardId)guardianData.wards.push(ward);
+          }catch(e){console.warn('Skipping unreadable legacy ward',row&&row.wardId,e);}
+        }
+        if(appStateMap.guardianName){
+          try{guardianData.guardianName=await decryptJSONWithKey(appStateMap.guardianName,legacyKey);}catch(e){}
+        }
+        if(appStateMap.guardianEmail){
+          try{guardianData.guardianEmail=await decryptJSONWithKey(appStateMap.guardianEmail,legacyKey);}catch(e){}
+        }
+        _appState={cryptoSalt:appStateMap.cryptoSalt||null,cryptoVerifier:appStateMap.cryptoVerifier||null};
+        try{_appState.theme=localStorage.getItem('pg-theme')||null;}catch(e){}
+        try{_appState.walkthroughCompleted=localStorage.getItem('walkthroughCompleted')||null;}catch(e){}
+        try{const raw=localStorage.getItem('pg-recent-wards');_appState.recentWards=raw?JSON.parse(raw):null;}catch(e){}
+        _templateCache={};
+        for(const row of legacyTemplateRows)if(row&&row.type)_templateCache[row.type]=row.b64;
+        _auditLogEntries=legacyAuditRows;
+        _auditLogNextId=legacyAuditRows.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
+        _securityMode=legacySecurityMode;
+        _cryptoKey=legacyKey;
+
+        const {blob,count}=await buildExportZipBlob();
+        exportedHandle=await saveBlobAs(blob,'guardianshipwarddata.sav');
+        exportedCount=count;
+      }finally{
+        guardianData=saved.guardianData;_appState=saved.appState;_templateCache=saved.templateCache;
+        _auditLogEntries=saved.auditLog;_auditLogNextId=saved.auditNextId;_securityMode=saved.securityMode;_cryptoKey=saved.key;
+      }
+      if(!exportedHandle){
+        // No showSaveFilePicker on this browser — saveBlobAs() fell back to
+        // a plain download, which this page has no way to confirm actually
+        // reached disk (a blocked pop-up, a cancelled "Save As", a full
+        // disk all look identical to a successful click from here). Deleting
+        // the only other copy on an unconfirmed download is exactly the
+        // silent data loss this whole routine exists to prevent, so this
+        // asks outright instead of assuming.
+        const confirmedDownload=confirm(
+          `A download of "guardianshipwarddata.sav" (${exportedCount} ward(s)) should have just started.\n\n`+
+          'Please check your Downloads folder and confirm the file is actually there before continuing.\n\n'+
+          'Click OK once you have verified it downloaded successfully, or Cancel to leave your old data in place and try again later.'
+        );
+        if(!confirmedDownload){
+          alert('Your existing data has been left in place. You will be asked again next time the app opens.');
+          if(legacyDb)legacyDb.close();
+          return;
+        }
+      }
+      alert(`Saved ${exportedCount} ward(s) from your previous version to guardianshipwarddata.sav.`);
+    }catch(e){
+      console.error('Legacy data export failed',e);
+      alert('Could not export the existing data ('+(e&&e.message||e)+'). It has been left in place; you will be asked again next time the app opens.');
+      if(legacyDb)legacyDb.close();
+      return; // do not clear anything if the export failed
+    }
   }
 
-  // Migrate simplified accounting
-  if(legacySimplified){
+  if(legacyDb){
+    legacyDb.close();
     try{
-      const data=JSON.parse(legacySimplified);
-      const wardId=createWardId();
-      const ward={
-        wardId,
-        wardName:data.wardName||'Simplified Accounting (Migrated)',
-        inventoryType:'simplified',
-        createdDate:new Date().toISOString().split('T')[0],
-        ...data
-      };
-      guardianData.wards.push(ward);
-      await saveWardToIDB(ward);
-    }catch(e){console.warn('Simplified accounting migration failed',e);}
+      await new Promise((resolve)=>{
+        const req=indexedDB.deleteDatabase(LEGACY_DB_NAME);
+        req.onsuccess=resolve;req.onerror=resolve;req.onblocked=resolve;
+      });
+    }catch(e){console.warn('Could not delete legacy IndexedDB database',e);}
   }
-
-  // Migrate annual accounting
-  if(legacyAnnual){
-    try{
-      const data=JSON.parse(legacyAnnual);
-      const wardId=createWardId();
-      const ward={
-        wardId,
-        wardName:data.wardName||'Annual Accounting (Migrated)',
-        inventoryType:'annual',
-        createdDate:new Date().toISOString().split('T')[0],
-        ...data
-      };
-      guardianData.wards.push(ward);
-      await saveWardToIDB(ward);
-    }catch(e){console.warn('Annual accounting migration failed',e);}
-  }
-
-  // Migrate cached Excel templates (blank workbook per inventory type)
-  if(legacyGuardianTemplate){
-    try{await saveTemplateToIDB('guardian',legacyGuardianTemplate);}
-    catch(e){console.warn('Guardian template migration failed',e);}
-  }
-  if(legacySimplifiedTemplate){
-    try{await saveTemplateToIDB('simplified',legacySimplifiedTemplate);}
-    catch(e){console.warn('Simplified template migration failed',e);}
-  }
-  if(legacyAnnualTemplate){
-    try{await saveTemplateToIDB('annual',legacyAnnualTemplate);}
-    catch(e){console.warn('Annual template migration failed',e);}
-  }
-  localStorage.removeItem(LEGACY_KEYS.guardianTemplate);
-  localStorage.removeItem(LEGACY_KEYS.simplifiedTemplate);
-  localStorage.removeItem(LEGACY_KEYS.annualTemplate);
-
-  // Set active ward
-  if(guardianData.wards.length>0){
-    guardianData.activeWardId=guardianData.wards[0].wardId;
-    try{await saveAppStateToIDB('activeWardId',guardianData.activeWardId);}
-    catch(e){console.warn('Failed to set active ward after migration',e);}
-  }
-
-  // Mark migration complete
-  localStorage.setItem(LEGACY_KEYS.migrationComplete,'true');
-  console.log(`Migration complete: ${guardianData.wards.length} ward(s) imported`);
+  try{
+    for(const k of legacyLocalStorageKeys)localStorage.removeItem(k);
+    sessionStorage.removeItem('pg-continue-prompt-shown');
+  }catch(e){/* localStorage/sessionStorage unavailable — nothing to clear */}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5867,22 +6123,22 @@ function renderDashboardSummary(){
   </div>`;
 }
 
-// Shows a one-time-per-session "Continue where you left off" banner when
-// the app resumes on a different ward than the one most recently worked
-// on — e.g. it reopened to whatever was active last save, but that's not
-// necessarily what was being edited right before closing. Gated on
-// sessionStorage so it doesn't reappear every time the dashboard re-renders
-// within the same session (switching wards, editing fields, etc.).
-const CONTINUE_PROMPT_SHOWN_KEY='pg-continue-prompt-shown';
+// Shows a one-time "Continue where you left off" banner when the app
+// resumes on a different ward than the one most recently worked on — e.g.
+// it reopened to whatever was active last save, but that's not necessarily
+// what was being edited right before closing. Gated on _appState.
+// continuePromptShown (part of the .sav file now, not sessionStorage) so
+// it doesn't reappear every time the dashboard re-renders.
 function showContinuePromptIfNeeded(){
   const container=document.getElementById('continue-prompt-container');
   if(!container)return;
   container.innerHTML='';
-  if(sessionStorage.getItem(CONTINUE_PROMPT_SHOWN_KEY))return;
+  if(_appState.continuePromptShown)return;
   const recent=getRecentlyOpenedWards().filter(r=>!r.archived);
   const last=recent[0];
   if(!last||last.wardId===guardianData.activeWardId)return;
-  sessionStorage.setItem(CONTINUE_PROMPT_SHOWN_KEY,'1');
+  _appState.continuePromptShown=true;
+  saveAppState('continuePromptShown',true);
   const typeLabel=INVENTORY_TYPES[last.inventoryType]?.name||last.inventoryType;
   container.innerHTML=`<div class="continue-prompt-banner" id="continue-prompt-banner">
     <div class="continue-prompt-content">
@@ -6115,7 +6371,7 @@ async function toggleWardArchived(wardId){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   ward.archived=!ward.archived;
-  await saveWardToIDB(ward);
+  await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
   renderDashboardSummary();
@@ -6134,7 +6390,7 @@ async function exportSingleWardZip(wardId){
   try{
     if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export.');return;}
     if(ward.wardId===guardianData.activeWardId)await flushPendingSave();
-    const salt=await loadAppStateFromIDB('cryptoSalt');
+    const salt=await loadAppState('cryptoSalt');
     const zip=new JSZip();
     const file=`wards/${ward.wardId}.enc`;
     zip.file(file,await encryptJSON(ward));
@@ -6675,8 +6931,8 @@ async function convertExistingWard(sourceWardId,targetType){
   guardianData.activeWardId=wardId;
   activeInventoryType=targetType;
   window.D=newWard;
-  await saveWardToIDB(newWard);
-  await saveAppStateToIDB('activeWardId',wardId);
+  await saveWardToState(newWard);
+  await saveAppState('activeWardId',wardId);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
   updateSidebar();
@@ -6928,7 +7184,7 @@ async function switchWardYear(wardId,targetKey){
   ward.years.splice(idx,1);
   applyYearData(ward,target.data);
   ward.activeYearKey=target.key;
-  await saveWardToIDB(ward);
+  await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
 }
@@ -6952,7 +7208,7 @@ async function startNewWardYear(wardId){
   applyYearData(ward,seed);
   ward.yearCounter=(ward.yearCounter||1)+1;
   ward.activeYearKey='Year '+ward.yearCounter;
-  await saveWardToIDB(ward);
+  await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
 }
@@ -7032,7 +7288,7 @@ async function deleteWardYear(wardId,yearKey){
     }
   }
   ward.years.splice(idx,1);
-  await saveWardToIDB(ward);
+  await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
 }
@@ -13444,9 +13700,6 @@ const calc={
 };
 
 // ═══════════════════════════════════════════════════════
-// Storage and auto-save handled by app shell (IndexedDB)
-
-// ═══════════════════════════════════════════════════════
 // Page navigation helper (used by Guardian page renderers)
 function pageNav(current){
   const PAGES=[
@@ -15516,7 +15769,7 @@ async function importExcelFile(input){
 // Extracts the Initial Inventory fields from an already-loaded workbook.
 // Takes the ExcelJS.Workbook directly (not a base64 string) — the previous
 // version round-tripped the whole file through base64 solely to hand it to
-// this function and to cache it via saveTemplateToIDB; neither is done
+// this function and to cache it via saveTemplate; neither is done
 // anymore (see importExcelFile above), so there is no longer a buffer to
 // smuggle across, and the raw workbook bytes are not retained past this call.
 function parseInitialInventoryWorkbook(wb){
@@ -15683,8 +15936,9 @@ function handleHash(){
   currentPage=page;
   renderPage(page);
   updateNavActive(page);
-  if(!localStorage.getItem('walkthroughCompleted')&&!localStorage.getItem('firstLaunchSeen')){
-    localStorage.setItem('firstLaunchSeen','true');
+  if(!_appState.walkthroughCompleted&&!_appState.firstLaunchSeen){
+    _appState.firstLaunchSeen=true;
+    saveAppState('firstLaunchSeen',true);
     _walkthroughAutoTriggered=true;
     setTimeout(startWalkthrough,1000);
   }
@@ -15693,6 +15947,18 @@ function handleHash(){
 window.addEventListener('hashchange',handleHash);
 window.addEventListener('beforeunload',flushPendingSave);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flushPendingSave();});
+
+// flushPendingSave() above is best-effort — a beforeunload handler can't
+// reliably await async work (there is no IndexedDB write to race anymore;
+// it's a full file write now, which takes longer, not less). With no
+// crash recovery underneath it, this is the difference between that write
+// silently not finishing and the guardian at least being asked first.
+// Wired up in initApp() so it isn't armed before there's anything to lose.
+function warnBeforeUnloadIfDirty(e){
+  if(!_dirtySinceExport)return;
+  e.preventDefault();
+  e.returnValue=''; // required for Chrome to show its native confirmation
+}
 
 const TEMPLATE_FILES={
   simplified:'SimplifiedAccounting.xlsx',
@@ -15713,8 +15979,8 @@ async function fetchAndCacheTemplate(type,filename){
       reader.onload=async(e)=>{
         try{
           const b64=e.target.result.split(',')[1];
-          console.log(`Saving ${type} to IndexedDB...`);
-          await saveTemplateToIDB(type,b64);
+          console.log(`Caching ${type} template...`);
+          await saveTemplate(type,b64);
           console.log(`${type} template auto-loaded successfully`);
           resolve(b64);
         }catch(err){console.warn(`Failed to save ${type}:`,err);resolve(null);}
@@ -15725,9 +15991,9 @@ async function fetchAndCacheTemplate(type,filename){
   }catch(e){console.warn(`Failed to auto-load ${type} template:`,e);return null;}
 }
 
-// Loads a template's base64 from IndexedDB, falling back to fetching the
-// bundled .xlsx on demand (e.g. the app-init pre-warm in autoLoadTemplates
-// hasn't run yet, or previously failed for this type only).
+// Loads a template's base64 from the in-memory cache, falling back to
+// fetching the bundled .xlsx on demand (e.g. the app-init pre-warm in
+// autoLoadTemplates hasn't run yet, or previously failed for this type only).
 // Blank templates bundled with the app (see src/templates/*.js). Checked
 // before any network fetch so export works with nothing imported first, and
 // so it still works when the app is opened straight from disk, where
@@ -15738,22 +16004,22 @@ function embeddedTemplate(type){
 }
 
 // The three Excel importers (importExcelFile/Simplified/Annual) used to
-// also call saveTemplateToIDB with the raw file a guardian imported, so a
+// also call saveTemplate with the raw file a guardian imported, so a
 // custom court template stuck around and got reused for every later
 // export. That meant a full copy of whatever was imported — good or bad —
 // sat in IndexedDB indefinitely, base64-inflated by ~33%, with no path back
 // out; a single oversized import could burn through the storage quota on
 // its own. That call was removed from all three importers: an import is
-// now extract-then-discard, and saveTemplateToIDB is called from exactly
+// now extract-then-discard, and saveTemplate is called from exactly
 // one place — just below, and only ever with the bundled blank template.
 async function ensureTemplate(type){
-  const existing=await loadTemplateFromIDB(type);
+  const existing=await loadTemplate(type);
   if(existing)return existing;
   const bundled=embeddedTemplate(type);
   if(bundled){
     // Cache it so later exports skip the decode, and so a template the user
     // imports themselves later cleanly overwrites this default.
-    try{await saveTemplateToIDB(type,bundled);}catch(e){console.warn('Could not cache bundled template',type,e);}
+    try{await saveTemplate(type,bundled);}catch(e){console.warn('Could not cache bundled template',type,e);}
     return bundled;
   }
   return fetchAndCacheTemplate(type,TEMPLATE_FILES[type]);
@@ -15763,7 +16029,7 @@ async function autoLoadTemplates(){
   if(location.protocol==='file:'){console.log('Skipping auto-load on file:// protocol');return;}
   for(const type of Object.keys(TEMPLATE_FILES)){
     console.log(`Checking for existing ${type} template...`);
-    const existing=await loadTemplateFromIDB(type);
+    const existing=await loadTemplate(type);
     if(existing){console.log(`${type} template already exists`);continue;}
     if(embeddedTemplate(type)){
       // Bundled with the app — no fetch needed. ensureTemplate() will pick
@@ -15776,14 +16042,17 @@ async function autoLoadTemplates(){
 }
 
 async function initApp(){
-  await initIndexedDB();
-  // After initIndexedDB so the audit-log write inside it has a live db,
-  // and not awaited so a slow/prompting permission check can't delay the
-  // unlock gate — nothing downstream depends on the answer.
-  requestPersistentStorage();
+  // Order matters: the legacy sweep must see the browser's IndexedDB/
+  // localStorage before anything else touches them (there is nothing else
+  // left that does — see its own comment), and it must run before the
+  // open-or-start prompt so an upgrading install is offered its old data
+  // before being asked what to do this session. ensureUnlocked() comes
+  // after that prompt so it can skip straight past its own prompt when
+  // opening a file already resolved the password (_launchStateResolved).
+  await runLegacyBrowserStorageMigrationIfNeeded();
   try { await window.tauriInvoke('set_secure_permissions'); } catch (e) { console.warn('Could not set secure permissions:', e); }
+  await promptOpenOrStartAtLaunch();
   await ensureUnlocked(); // blocks until a valid master-password key is in memory
-  await migrateFromLocalStorage();
   await loadGuardianData();
   await restoreFromFileBackupIfEmpty();
   await autoLoadTemplates();
@@ -15800,10 +16069,7 @@ async function initApp(){
   setupAutoExportTimer();
   setupLastSavedTicker();
   setupDragAndDropImport();
-  // Once at startup, then occasionally — usage only moves when documents
-  // are uploaded or years archived, so polling hard would be wasteful.
-  checkStorageQuota();
-  setInterval(checkStorageQuota,5*60*1000);
+  window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
 }
 
 // Accessibility: Link labels to inputs that have IDs but no for attribute
