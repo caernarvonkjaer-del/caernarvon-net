@@ -1,7 +1,7 @@
 {
   "name": "Probate Guardian",
   "short_name": "Probate Guardian",
-  "version": "1.5.26",
+  "version": "1.5.30",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",

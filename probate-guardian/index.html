@@ -642,6 +642,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
      "Save as PDF" (window.print / Ctrl+P) doesn't split a guardian's
      signature block or a schedule row across a page boundary. */
   tr,.doc-table-div .tr,.doc-signature-block,.doc-section-block{page-break-inside:avoid!important;break-inside:avoid!important;}
+  .doc-block{page-break-inside:avoid!important;break-inside:avoid!important;}
   .doc-table-div{display:block!important;width:100%!important;}
   .doc-table-div .tr{display:block!important;overflow:hidden!important;line-height:1.4!important;}
   .doc-table-div .td{float:left!important;width:50%!important;padding:.28rem .38rem!important;border-bottom:1px solid #ddd!important;word-break:break-word!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
@@ -660,6 +661,9 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 .pdf-export-mode .doc-page{width:7.5in!important;max-width:100%!important;margin:0 auto!important;padding:.5in!important;background:#fff!important;border:none!important;}
 .pdf-export-mode .schedule-page:not(.doc-page){margin-top:0!important;padding-top:.75in!important;}
 .pdf-export-mode tr,.pdf-export-mode .doc-table-div .tr,.pdf-export-mode .doc-signature-block,.pdf-export-mode .doc-section-block{page-break-inside:avoid!important;break-inside:avoid!important;}
+/* A schedule's title and its table move as one unit, so html2pdf breaks
+   BETWEEN schedules and never inside a table. See groupScheduleBlocksForPdf(). */
+.pdf-export-mode .doc-block{page-break-inside:avoid!important;break-inside:avoid!important;}
 .pdf-export-mode .doc-table th{background-color:#820024!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 .pdf-export-mode .doc-table-div{display:block!important;width:100%!important;}
 .pdf-export-mode .doc-table-div .tr{display:block!important;overflow:hidden!important;line-height:1.4!important;}
@@ -869,18 +873,6 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
   <div class="modal-box" style="max-width:560px;">
     <h1 style="margin-bottom:.5rem;color:var(--ink);">Choose How to Protect This Data</h1>
     <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app stores sensitive information (Social Security Numbers, financial records, case details) on this computer. Pick how it should be protected. <strong>This choice applies to all data going forward and cannot be changed later without starting over.</strong></p>
-    <button class="security-choice-option security-choice-recommended" onclick="selectSecurityMode('encrypted')">
-      <div class="security-choice-header">
-        <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg></span>
-        <span class="security-choice-title">Encrypted &amp; Password Protected</span>
-        <span class="badge bg-primary">Recommended</span>
-      </div>
-      <ul class="security-choice-list">
-        <li>All case data is encrypted (AES-256) in a file on your local computer and is unreadable without your master password.</li>
-        <li>There is no requirement to encrypt this data and if you do, a master password is required every time you open the app.</li>
-        <li>If the password is lost, the data cannot be recovered unless you save ward data to an excel sheet manually — there is no reset option.</li>
-      </ul>
-    </button>
     <button class="security-choice-option" onclick="selectSecurityMode('none')">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/></svg></span>
@@ -889,7 +881,18 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
       <ul class="security-choice-list">
         <li>No password is ever required — the app opens straight to your data.</li>
         <li>Case data is stored as plain, readable text on this computer — anyone with access to this device or its files can read it.</li>
-        <li>Faster and simpler, but offers none of the protections above. Not recommended for sensitive data such as SSNs.</li>
+        <li>Faster and simpler, but offers none of the protections below.</li>
+      </ul>
+    </button>
+    <button class="security-choice-option" onclick="selectSecurityMode('encrypted')">
+      <div class="security-choice-header">
+        <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg></span>
+        <span class="security-choice-title">Encrypted &amp; Password Protected</span>
+      </div>
+      <ul class="security-choice-list">
+        <li>All case data is encrypted (AES-256) in a file on your local computer and is unreadable without your master password.</li>
+        <li>There is no requirement to encrypt this data and if you do, a master password is required every time you open the app.</li>
+        <li>If the password is lost, the data cannot be recovered unless you save ward data to an excel sheet manually — there is no reset option.</li>
       </ul>
     </button>
   </div>
@@ -945,11 +948,6 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 .security-choice-option{display:block;width:100%;border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;margin-bottom:.9rem;cursor:pointer;transition:border-color .15s,box-shadow .15s,background .15s;background:var(--surface);font:inherit;color:inherit;text-align:left;box-shadow:var(--sh-1);}
 .security-choice-option:hover{border-color:var(--accent-text);background:var(--accent-050);box-shadow:var(--sh-2);}
 .security-choice-option:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
-.security-choice-recommended{border-color:#bcdcc4;background:#f5faf6;}
-.security-choice-recommended:hover{border-color:var(--ok-text);background:#f0f8f2;box-shadow:0 1px 3px rgba(31,122,61,.12),0 6px 18px -8px rgba(31,122,61,.4);}
-.security-choice-recommended:focus-visible{outline:2px solid var(--ok-text);outline-offset:2px;}
-[data-theme="dark"] .security-choice-recommended{border-color:#2f5c3f;background:#16231b;}
-[data-theme="dark"] .security-choice-recommended:hover{background:#1a2a20;}
 .security-choice-header{display:flex;align-items:center;gap:.55rem;margin-bottom:.55rem;}
 .security-choice-icon{display:inline-flex;color:var(--ink-2);}
 .security-choice-title{font-weight:700;font-size:.94rem;color:var(--ink);letter-spacing:-.01em;}
@@ -1868,7 +1866,7 @@ function endWalkthrough(){
 // PDF GUIDE EXPORT (Phase 5)
 // ═══════════════════════════════════════════════════════
 async function exportHelpGuideAsPDF(){
-  const VER='1.5.26';
+  const VER='1.5.30';
   const stamp=new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
   const guide=`
     <style>
@@ -12471,6 +12469,46 @@ function validateAnnual(){
 }
 
 
+// html2pdf picks page breaks by walking every element and inserting a spacer
+// <div> before any one that straddles a page edge. That walk is destructive
+// inside a table: a <table> whose top lands a few pixels above the edge is
+// pushed down by its own spacer, lands a sub-pixel amount past the next edge,
+// and the walk carries on into it — inserting a div into the <table>, into the
+// <thead>, and once before every <th>. Those stray divs become anonymous table
+// cells, so the header row grows a phantom column in front of each real one and
+// stops lining up with the body underneath. That is what scrambled the Schedule
+// B-4 header in filed accountings.
+//
+// Wrapping each schedule title together with its table in one block that
+// carries page-break-inside:avoid makes the whole schedule the thing that
+// moves, so the break lands between schedules and the walk never reaches into
+// a table. It also stops a title stranding alone at the foot of a page.
+// Returns a function that puts the DOM back the way it was.
+function groupScheduleBlocksForPdf(container){
+  const wrappers=[];
+  container.querySelectorAll('.doc-page').forEach(page=>{
+    let block=null;
+    [...page.children].forEach(child=>{
+      if(child.classList.contains('doc-schedule-title')){
+        block=document.createElement('div');
+        block.className='doc-block';
+        page.insertBefore(block,child);
+        wrappers.push(block);
+      }
+      // Everything after a title belongs to that schedule until the next one.
+      if(block)block.appendChild(child);
+    });
+  });
+  return function ungroup(){
+    wrappers.forEach(block=>{
+      const parent=block.parentNode;
+      if(!parent)return;
+      while(block.firstChild)parent.insertBefore(block.firstChild,block);
+      parent.removeChild(block);
+    });
+  };
+}
+
 async function doSavePdfAnnual(){
   const errors=validateAnnual();
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
@@ -12479,18 +12517,23 @@ async function doSavePdfAnnual(){
   const container=document.getElementById('print-doc-container');
   const ward=(window.D.wardName||'Accounting').replace(/[^a-z0-9]/gi,'_');
   const formSlug=formDisplayName(window.D.inventoryType||activeInventoryType).replace(/[^a-z0-9]/gi,'');
+  const ungroup=groupScheduleBlocksForPdf(container);
   try{
     await html2pdf().set({
       margin:0, filename:`${ward}_${formSlug}.pdf`,
       image:{type:'jpeg',quality:0.98},
       html2canvas:{scale:2,useCORS:true,logging:false},
       jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
-      pagebreak:{mode:'avoid-all',before:'.schedule-page:not(:first-of-type)'}
+      // Not 'avoid-all': that makes every element a break candidate, table
+      // internals included, which is what wrecked the Schedule B-4 header.
+      // The elements that may carry a break are the ones the .pdf-export-mode
+      // stylesheet marks page-break-inside:avoid, all of them block-level.
+      pagebreak:{mode:['css','legacy'],before:'.schedule-page:not(:first-of-type)'}
     }).from(container).save();
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);
-  }finally{document.body.classList.remove('pdf-export-mode');}
+  }finally{ungroup();document.body.classList.remove('pdf-export-mode');}
 }
 
 
@@ -14779,6 +14822,13 @@ function buildPrintHTML(){
     ${td('Name of Bonding Company',esc(d.bondingCompany))}
     ${d.bondWaivedDate?td('Bond Waived — Order Date',esc(d.bondWaivedDate)):''}
   </div>
+  </div>`;
+
+  // Part VI on its own page. It used to sit on the end of the Audit Fee page,
+  // where a filled-in bond section pushed the attorney signature past the foot
+  // of the sheet: the filing then ended on a continuation page, which gets
+  // neither the court header nor the half-inch margin, and read as cut off.
+  html+=`<div class="schedule-page doc-page">${docHeader(ward,caseNo,'Certificate of Service','5')}
   <div class="doc-schedule-title">Part VI — GUARDIAN ATTORNEY — CERTIFICATE OF SERVICE</div>
   <p style="font-size:.78rem;margin-bottom:1rem;">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this inventory has been furnished to:</p>
   <div class="row mb-3">
@@ -14865,15 +14915,19 @@ async function doSavePdf(){
   const filename=`${stem}_InitialInventory.pdf`;
   const pdfDiv=document.getElementById('print-doc-container');
   if(!pdfDiv){alert('PDF export failed: content not found');return;}
-  const opt={margin:0,filename,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true,logging:false},jsPDF:{unit:'in',format:'letter',orientation:'portrait'},pagebreak:{mode:'avoid-all',before:'.schedule-page:not(:first-of-type)'}};
+  // Not 'avoid-all' — see the note in doSavePdfAnnual().
+  const opt={margin:0,filename,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true,logging:false},jsPDF:{unit:'in',format:'letter',orientation:'portrait'},pagebreak:{mode:['css','legacy'],before:'.schedule-page:not(:first-of-type)'}};
+  let ungroup=()=>{};
   try{
     pvShowAll(); // never export a filtered preview
     document.body.classList.add('pdf-export-mode');
+    ungroup=groupScheduleBlocksForPdf(pdfDiv);
     await html2pdf().set(opt).from(pdfDiv).save();
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);
   }finally{
+    ungroup();
     document.body.classList.remove('pdf-export-mode');
     if(stat)stat.textContent='';
   }

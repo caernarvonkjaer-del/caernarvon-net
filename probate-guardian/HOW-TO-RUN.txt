@@ -1,11 +1,11 @@
-Probate Guardian — Web App (v1.5.26)
+Probate Guardian — Web App (v1.5.30)
 =====================================
 
 QUICK START
 ===========
 
 EASIEST WAY TO RUN IT (no install, works from a thumb drive):
-1. Unzip ProbateGuardian-web-v1.5.26.zip into any folder (or straight onto
+1. Unzip ProbateGuardian-web-v1.5.30.zip into any folder (or straight onto
    a USB drive).
 2. Double-click index.html. Use Chrome or Edge (Firefox's support for
    this is inconsistent — test it once before relying on it there).
@@ -47,7 +47,7 @@ MAC:
    (Macs block unsigned downloads by default.)
 
 LINUX:
-1. Unzip the file: unzip ProbateGuardian-web-v1.5.26.zip
+1. Unzip the file: unzip ProbateGuardian-web-v1.5.30.zip
 2. Open index.html with Chrome: google-chrome path/to/index.html
 3. Or run a local server: cd path/to/folder && python3 -m http.server 8000
    Then open http://localhost:8000 in your browser.
@@ -60,17 +60,17 @@ On your very first launch:
 1. Choose your data protection level. This CANNOT be changed later without
    starting over:
 
-   ✓ "Encrypted & Password Protected" (RECOMMENDED)
-     - Master password required every time you open the app
-     - All case data is encrypted (AES-256) on your computer
-     - If you forget the password, data cannot be recovered
-     - Best for sensitive guardianship cases
-
    ○ "No Password / No Encryption"
      - App opens immediately, no password ever needed
      - All data stored as plain readable text on your computer
      - Anyone with access to your device can read case data
      - Faster but not secure for sensitive information
+
+   ○ "Encrypted & Password Protected"
+     - Master password required every time you open the app
+     - All case data is encrypted (AES-256) on your computer
+     - If you forget the password, data cannot be recovered
+     - Best for sensitive guardianship cases
 
 2. If using encryption, create a strong master password (8+ characters).
    Write it down and store it safely.
@@ -355,6 +355,51 @@ Sharing:
 
 VERSION HISTORY
 ===============
+
+New in 1.5.30:
+- Changed: removed the "Not recommended for sensitive data such as
+  SSNs" line from the No Password / No Encryption option on the
+  first-launch screen
+
+New in 1.5.29:
+- Changed: the first-launch data-protection screen no longer labels
+  either option "Recommended" — it presents No Password/No Encryption
+  and Encrypted & Password Protected as two plain choices and lets you
+  decide, in that order
+- Changed: "No Password / No Encryption" is now listed first, ahead of
+  "Encrypted & Password Protected"
+
+New in 1.5.28:
+- Fixed: the Initial Inventory's last PDF page looked chopped off
+  * Part VI (Certificate of Service) and the attorney's signature used
+    to sit on the end of the Audit Fee page. Once the bond section was
+    filled in there was no room left, so the signature spilled onto a
+    continuation page - and a continuation page carries neither the
+    court header nor the half-inch margin, so the filing ended on what
+    looked like a cut-off strip of paper
+  * Nothing was ever missing from those filings; the pieces were all
+    there, just split across the join in an ugly way
+  * Part VI now gets its own numbered page, headed the same way as
+    every other page of the filing
+  * The Initial Inventory also picks up the Schedule B-4 page-break fix
+    from 1.5.27, so a schedule heading stays with its table and a page
+    break never lands inside one
+
+New in 1.5.27:
+- Fixed: Schedule B-4's table came out scrambled in "Export as PDF"
+  * On the Schedule B page, when the B-4 summary table happened to begin
+    within a few pixels of the bottom of a printed page, its column
+    headings came out shifted sideways: the maroon heading bar ran off
+    past the right edge of the table and "#", "Category" and "Amount" no
+    longer sat above the figures they label
+  * The page-break step was reaching inside the table and adding empty
+    cells to the heading row. Each schedule's heading and its table are
+    now treated as one piece, so a page break falls between schedules
+    instead of inside a table
+  * A schedule heading also no longer strands by itself at the foot of a
+    page with its table starting on the next one
+  * Checked against every table in the Annual Accounting: headings line
+    up with their columns, and the filing came out the same length
 
 New in 1.5.26:
 - Fixed: exporting an Annual Accounting to Excel no longer requires you to
