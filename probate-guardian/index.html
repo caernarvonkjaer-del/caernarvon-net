@@ -2219,6 +2219,119 @@ function validateSecurityInput(fieldName,value){
   return sanitizeInput(v);
 }
 
+// ── IMPORTED FILE HARDENING ──────────────────────────
+// Every import entry point (the three Excel importers, their drag-and-drop
+// equivalent, and the .sav/.zip picker) hands this module a file chosen by
+// whoever is sitting at the browser — including a guardian who was emailed
+// a "fixed" template by someone else. Nothing here assumes the extension
+// matches the content, or that the content is well-formed.
+const IMPORT_SIZE_LIMITS={
+  xlsx:10*1024*1024,  // court templates run well under 1MB; 10MB is generous headroom
+  sav:50*1024*1024    // a .sav can bundle many wards plus attachments (15MB cap each, see SCHEDULE_DOC_MAX_FILE_BYTES)
+};
+const ZIP_MAGIC=[0x50,0x4B,0x03,0x04]; // local-file-header signature 'PK\x03\x04' — every .xlsx and .sav is a ZIP container
+
+// Rejects a file before it ever reaches ExcelJS/JSZip: empty, over the size
+// ceiling for its kind, or not actually a ZIP (accept=".xlsx" is only a
+// filename hint — the browser does not enforce it, and a court-issued
+// template you were emailed could be anything with that extension slapped
+// on). Checking the first 4 bytes rather than trusting file.name/file.type
+// means a renamed non-ZIP file fails fast with a clear message instead of
+// reaching the parser at all.
+async function validateImportFile(file,kind){
+  if(!file)return{ok:false,message:'No file was selected.'};
+  if(file.size===0)return{ok:false,message:'That file is empty.'};
+  const limit=IMPORT_SIZE_LIMITS[kind]||IMPORT_SIZE_LIMITS.xlsx;
+  if(file.size>limit){
+    return{ok:false,message:`That file is ${(file.size/1024/1024).toFixed(1)} MB, which is over the ${(limit/1024/1024)|0} MB limit for this kind of import.`};
+  }
+  let head;
+  try{
+    head=new Uint8Array(await file.slice(0,4).arrayBuffer());
+  }catch(e){
+    return{ok:false,message:'That file could not be read.'};
+  }
+  if(head.length<4||!ZIP_MAGIC.every((b,i)=>head[i]===b)){
+    return{ok:false,message:'That file is not a valid Excel/.sav file (its contents do not match a ZIP archive, regardless of its name).'};
+  }
+  return{ok:true};
+}
+
+// Several pages embed their own copy of an import zone, each with its own
+// #import-progress(-simplified|-annual) div sitting next to the file input
+// (see pageCover/pageSimplified/pageAnnual) — walk up from the input that
+// actually fired rather than assuming a single global id, or status text
+// meant for one copy of the zone can silently land in a different one (or
+// nowhere, if this page happens not to render the first id at all).
+function getImportProgressEl(input){
+  const scope=input&&input.closest?input.closest('.accordion-body'):null;
+  return (scope&&scope.querySelector('[id^="import-progress"]'))||document.getElementById('import-progress');
+}
+
+// Defense-in-depth after a workbook otherwise passes the size/magic-byte
+// gate above: a small ZIP can still decompress into a workbook with an
+// enormous used range (a "sheet with a huge used range" — the case this
+// guards against). This app's own readers only ever touch a fixed, known
+// set of cell addresses per template — they were never the unbounded
+// `sheet.rowCount`/`eachRow` loops that would normally need capping here —
+// so the real risk is ExcelJS itself materializing that whole range during
+// .load(). This can't stop that first pass (see the accompanying report for
+// why: it would need the parse moved into a Worker), but it does stop this
+// app from doing anything further with a workbook shaped nothing like a
+// Clerk of Court template, with a plain-language reason instead of it just
+// silently working through something enormous.
+const EXCEL_IMPORT_LIMITS={maxSheets:60,maxRowsPerSheet:5000};
+function assertWorkbookWithinLimits(workbook){
+  const sheets=workbook.worksheets||[];
+  if(sheets.length>EXCEL_IMPORT_LIMITS.maxSheets){
+    throw new Error(`This file has ${sheets.length} sheets — far more than a Clerk of Court template ever has. It was not imported.`);
+  }
+  for(const ws of sheets){
+    const n=ws.actualRowCount||ws.rowCount||0;
+    if(n>EXCEL_IMPORT_LIMITS.maxRowsPerSheet){
+      throw new Error(`Sheet "${ws.name}" has ${n} rows — far more than a Clerk of Court template ever has. It was not imported.`);
+    }
+  }
+}
+
+// Resolves a raw ExcelJS cell value down to a plain scalar or Date,
+// unwrapping every non-literal shape ExcelJS hands back: {formula,result}
+// (a formula cell — prefer the computed result), {richText:[...]} (join the
+// runs' text), {text,hyperlink} (the link's display text), and {error}
+// (a cell showing #REF!/#DIV0!/etc — nothing sensible to import). A formula
+// result can itself be any of these shapes, so this recurses once on
+// .result. Returns null instead of ever handing back a raw object — a
+// shape this doesn't recognize should import as blank, not as "[object
+// Object]" in a case number or a ward's name.
+function unwrapCellValue(v){
+  if(v==null)return null;
+  if(v instanceof Date)return v;
+  if(typeof v!=='object')return v;
+  if('error' in v)return null;
+  if('result' in v)return unwrapCellValue(v.result);
+  if(Array.isArray(v.richText))return v.richText.map(r=>r&&r.text||'').join('');
+  if('hyperlink' in v){
+    const t=v.text;
+    return Array.isArray(t)?t.map(r=>r&&r.text||'').join(''):t;
+  }
+  return null;
+}
+
+// Text form of an ExcelJS cell — the replacement for the `const gc=addr=>
+// {const c=ws.getCell(addr);return c.value!=null?String(c.value).trim()
+// :'';}` pattern that used to be redefined at every import site. That
+// pattern printed the literal string "[object Object]" into whatever field
+// it fed whenever the cell held a formula, rich text, a hyperlink, or an
+// error — all of which a real court-issued template can contain. Dates are
+// normalized through the app's own fmtDate (YYYY-MM-DD) instead of a
+// locale/timezone-dependent Date#toString().
+function readCellText(cell){
+  const v=unwrapCellValue(cell?cell.value:null);
+  if(v==null)return '';
+  if(v instanceof Date)return fmtDate(v.toISOString());
+  return String(v).trim();
+}
+
 // Recursively sanitize all string fields in an object (for loaded data)
 function sanitizeObjectData(obj){
   if(!obj||typeof obj!=='object')return obj;
@@ -2235,6 +2348,32 @@ function sanitizeObjectData(obj){
     }
   }
   return sanitized;
+}
+
+// In-place counterpart to sanitizeObjectData, for a caller holding a live
+// reference that must keep its identity — window.D during an Excel import
+// is literally the object sitting in guardianData.wards, and sanitizeObjectData
+// returning a NEW object would silently detach window.D from that array
+// entry, so the next saveData() would persist the OLD, un-sanitized ward.
+// importExcelFile builds a fresh object and can use sanitizeObjectData
+// before ever touching window.D; importExcelSimplified/importExcelAnnual
+// write straight onto window.D field-by-field across the whole function, so
+// this mutates it afterward instead.
+function sanitizeObjectDataInPlace(obj){
+  if(!obj||typeof obj!=='object')return obj;
+  if(Array.isArray(obj)){
+    for(let i=0;i<obj.length;i++){
+      if(typeof obj[i]==='string')obj[i]=sanitizeInput(obj[i]);
+      else if(obj[i]&&typeof obj[i]==='object')sanitizeObjectDataInPlace(obj[i]);
+    }
+    return obj;
+  }
+  for(const key of Object.keys(obj)){
+    const val=obj[key];
+    if(typeof val==='string')obj[key]=sanitizeInput(val);
+    else if(val&&typeof val==='object')sanitizeObjectDataInPlace(val);
+  }
+  return obj;
 }
 
 // Format phone as (123) 456-7890 — accepts only digits, pads/truncates to 10
@@ -3930,6 +4069,8 @@ function triggerImportZip(){
 async function importGuardianDataZip(file){
   try{
     if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot import.');return;}
+    const check=await validateImportFile(file,'sav');
+    if(!check.ok){alert(check.message);return;}
     if(_securityMode==='encrypted'&&!_cryptoKey){alert('Please unlock the app before importing a data file.');return;}
     const zip=await JSZip.loadAsync(file);
     const manifestEntry=zip.file('manifest.json');
@@ -7992,22 +8133,30 @@ async function doSaveExcelSimplified(){
 async function importExcelSimplified(input){
   const file=input.files[0];
   if(!file)return;
+  const prog=getImportProgressEl(input);
+  if(prog)prog.textContent='Checking file…';
+  const check=await validateImportFile(file,'xlsx');
+  if(!check.ok){
+    if(prog)prog.textContent='✗ '+check.message;
+    input.value='';
+    return;
+  }
   const reader=new FileReader();
+  reader.onerror=()=>{
+    if(prog)prog.textContent='✗ That file could not be read.';
+    input.value='';
+  };
   reader.onload=async(e)=>{
+    if(prog)prog.textContent='Parsing Excel…';
     try{
-      const uint8=new Uint8Array(e.target.result);
-      let b64='';
-      for(let i=0;i<uint8.length;i+=0x8000){
-        b64+=String.fromCharCode.apply(null,uint8.subarray(i,i+0x8000));
-      }
-      const b64Final=btoa(b64);
-      await saveTemplateToIDB('simplified',b64Final);
-
+      // No template-cache write here — an imported file is extracted and
+      // discarded, never retained (see the note above ensureTemplate()).
       const workbook=new ExcelJS.Workbook();
       await workbook.xlsx.load(e.target.result);
+      assertWorkbookWithinLimits(workbook);
       const p1=workbook.getWorksheet('PARTS I, II ');
       if(p1){
-        const gc=addr=>{const c=p1.getCell(addr);return c.value!=null?String(c.value).trim():'';};
+        const gc=addr=>readCellText(p1.getCell(addr));
         window.D.wardName=gc('C4');
         window.D.caseNumber=gc('H4');
         window.D.ssn=gc('D13');
@@ -8029,7 +8178,7 @@ async function importExcelSimplified(input){
       // PARTS III, IV — Guardians
       const p34=workbook.getWorksheet('PARTS III, IV');
       if(p34){
-        const gc34=(addr)=>{const c=p34.getCell(addr);return c.value!=null?String(c.value).trim():'';};
+        const gc34=(addr)=>readCellText(p34.getCell(addr));
         const g1=window.D.guardians[0]||{};
         g1.signatureDate=gc34('D15').substring(0,10);
         g1.name=gc34('F15');
@@ -8076,7 +8225,7 @@ async function importExcelSimplified(input){
       // PARTS V, VI — Attorney and Certificate of Service
       const p56=workbook.getWorksheet('PARTS V, VI ');
       if(p56){
-        const gc56=(addr)=>{const c=p56.getCell(addr);return c.value!=null?String(c.value).trim():'';};
+        const gc56=(addr)=>readCellText(p56.getCell(addr));
         // Part V (the attorney's own signature block) lives at B19/B21/J19/
         // J21; Part VI (certificate of service) repeats the attorney at
         // B43/B45/J43/J45. These are separate blocks and can legitimately
@@ -8125,7 +8274,7 @@ async function importExcelSimplified(input){
       // PART VII — Remuneration
       const p7=workbook.getWorksheet('PART VII');
       if(p7){
-        const gc7=(addr)=>{const c=p7.getCell(addr);return c.value!=null?String(c.value).trim():'';};
+        const gc7=(addr)=>readCellText(p7.getCell(addr));
         window.D.remuneration=[];
         for(let row=6;row<=32;row++){
           const val=gc7(`A${row}`);
@@ -8159,12 +8308,23 @@ async function importExcelSimplified(input){
       }
 
       capitalizeImportedFields(window.D);
+      // capitalizeImportedFields only reformats fields whose name looks like
+      // a name/address (see its own keyword list) — it happens to strip
+      // <>"'` from those via formatName/formatAddress, but fields outside
+      // that list (caseNumber, county, amendedForm, ssn, remuneration…)
+      // never went through any of that. This is the same stripping
+      // importExcelFile already applies to every field via sanitizeObjectData;
+      // in-place because window.D is the live object saveData() persists.
+      sanitizeObjectDataInPlace(window.D);
       autoSave();
-      alert('Template loaded and data imported successfully.');
+      if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
+      setTimeout(()=>{if(prog)prog.textContent='';},3000);
       renderPage(currentPage);
     }catch(err){
-      console.error('Import error:',err);
-      alert('Import failed: '+err.message);
+      console.error('Simplified Accounting import failed:',err);
+      if(prog)prog.textContent='✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.');
+    }finally{
+      input.value='';
     }
   };
   reader.readAsArrayBuffer(file);
@@ -11874,12 +12034,12 @@ function buildPrintHTMLAnnual(){
   html+=`<div class="schedule-page doc-page">${docHdr(W,CN,'Summary','1')}
   <div class="doc-schedule-title">Part I — REQUIRED INFORMATION</div>
   <div class="doc-table-div mb-2">
-    ${sl('IN RE: GUARDIANSHIP OF',d.wardName)} ${sl('Case Number',d.caseNumber)}
+    ${sl('IN RE: GUARDIANSHIP OF',esc(d.wardName))} ${sl('Case Number',esc(d.caseNumber))}
     ${sl('For the Period',`From: ${fmtD(d.periodFrom)} &nbsp;&nbsp; To: ${fmtD(d.periodTo)}`)}
-    ${sl('Guardian',d.guardian)} ${sl('Attorney for Guardian',d.attorney)}
-    ${sl('Type of Guardianship',d.typeOfGuardianship)} ${sl('County',d.county)}
-    ${sl('Filing Type',d.filingType)} ${sl('Amended Form?',d.amendedForm)}
-    ${d.relatedCaseNumbers?sl('Related Case Numbers',d.relatedCaseNumbers):''}
+    ${sl('Guardian',esc(d.guardian))} ${sl('Attorney for Guardian',esc(d.attorney))}
+    ${sl('Type of Guardianship',esc(d.typeOfGuardianship))} ${sl('County',esc(d.county))}
+    ${sl('Filing Type',esc(d.filingType))} ${sl('Amended Form?',esc(d.amendedForm))}
+    ${d.relatedCaseNumbers?sl('Related Case Numbers',esc(d.relatedCaseNumbers)):''}
   </div>
   <div class="doc-schedule-title">Part II — GUARDIAN CERTIFICATION &amp; AUDIT FEE</div>
   <p style="font-size:.75rem;font-style:italic;margin-bottom:.4rem">The undersigned guardian certifies that said guardian has obtained a receipt or canceled check for all expenditures and disbursements made on behalf of the ward, which said guardian will preserve along with other substantiating papers for a three (3) year period after discharge.</p>
@@ -12074,7 +12234,7 @@ function buildPrintHTMLAnnual(){
   <table class="doc-table">
     <caption class="visually-hidden">Schedule D-1: Cash Assets</caption>
     <thead><tr><th>#</th><th>Description</th><th>Account #</th><th>Restricted?</th><th>Type</th><th class="right">Full Amount</th><th class="right">Ward's %</th><th class="right">Ward's Amount</th></tr></thead>
-    <tbody>${d.schD1.length?d.schD1.map((r,i)=>{const wa=n(r.fullAmount)*pct(r.wardPct);return`<tr><td>${i+1}</td><td>${esc(r.description)}</td><td>${esc(r.accountNo)}</td><td>${r.restricted}</td><td>${esc(r.type)}</td><td class="right">${fmtAnnual(r.fullAmount)}</td><td class="right">${r.wardPct}</td><td class="right">${fmtAnnual(wa)}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--ink-3);font-style:italic">No entries</td></tr>'}
+    <tbody>${d.schD1.length?d.schD1.map((r,i)=>{const wa=n(r.fullAmount)*pct(r.wardPct);return`<tr><td>${i+1}</td><td>${esc(r.description)}</td><td>${esc(r.accountNo)}</td><td>${esc(r.restricted)}</td><td>${esc(r.type)}</td><td class="right">${fmtAnnual(r.fullAmount)}</td><td class="right">${r.wardPct}</td><td class="right">${fmtAnnual(wa)}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--ink-3);font-style:italic">No entries</td></tr>'}
     <tr class="total-row"><td colspan="6">Cash Assets — Restricted Depository</td><td colspan="2" style="text-align:right">${fmtAnnual(t.schD1_restricted)}</td></tr>
     <tr class="total-row"><td colspan="6">Cash Assets Total (Ward's Amount)</td><td colspan="2" style="text-align:right">${fmtAnnual(t.schD1_total)}</td></tr>
     </tbody>
@@ -12083,7 +12243,7 @@ function buildPrintHTMLAnnual(){
   <table class="doc-table">
     <caption class="visually-hidden">Schedule D-2: Real Estate and Real Property Assets</caption>
     <thead><tr><th>#</th><th>Description / Address</th><th>Residence?</th><th>Income?</th><th class="right">Full Value</th><th class="right">Ward's %</th><th class="right">Carrying Value</th><th class="right">Ward's Value</th></tr></thead>
-    <tbody>${d.schD2.length?d.schD2.map((r,i)=>{const wv=n(r.fullValue)*pct(r.wardPct);const cv=n(r.carryingValue)*pct(r.wardPct);return`<tr><td>${i+1}</td><td>${esc(r.description)}</td><td>${r.residence}</td><td>${r.income}</td><td class="right">${fmtAnnual(r.fullValue)}</td><td class="right">${r.wardPct}</td><td class="right">${fmtAnnual(cv)}</td><td class="right">${fmtAnnual(wv)}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--ink-3);font-style:italic">No entries</td></tr>'}
+    <tbody>${d.schD2.length?d.schD2.map((r,i)=>{const wv=n(r.fullValue)*pct(r.wardPct);const cv=n(r.carryingValue)*pct(r.wardPct);return`<tr><td>${i+1}</td><td>${esc(r.description)}</td><td>${esc(r.residence)}</td><td>${esc(r.income)}</td><td class="right">${fmtAnnual(r.fullValue)}</td><td class="right">${r.wardPct}</td><td class="right">${fmtAnnual(cv)}</td><td class="right">${fmtAnnual(wv)}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--ink-3);font-style:italic">No entries</td></tr>'}
     <tr class="total-row"><td colspan="6">Totals</td><td class="right">${fmtAnnual(t.schD2_carrying)}</td><td class="right">${fmtAnnual(t.schD2_ward)}</td></tr>
     </tbody>
   </table>
@@ -12099,7 +12259,7 @@ function buildPrintHTMLAnnual(){
   <table class="doc-table">
     <caption class="visually-hidden">Schedule D-4: Intangible Assets</caption>
     <thead><tr><th>#</th><th>Description</th><th>Restricted?</th><th class="right">Full Amount</th><th class="right">Ward's %</th><th class="right">Carrying Value</th><th class="right">Ward's Value</th><th class="right">Restricted Amt</th></tr></thead>
-    <tbody>${d.schD4.length?d.schD4.map((r,i)=>{const wv=n(r.fullAmount)*pct(r.wardPct);const cv=n(r.carryingValue)*pct(r.wardPct);const ra=r.restricted==='Yes'?cv:0;return`<tr><td>${i+1}</td><td>${esc(r.description)}</td><td>${r.restricted}</td><td class="right">${fmtAnnual(r.fullAmount)}</td><td class="right">${r.wardPct}</td><td class="right">${fmtAnnual(cv)}</td><td class="right">${fmtAnnual(wv)}</td><td class="right">${ra>0?fmtAnnual(ra):'—'}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--ink-3);font-style:italic">No entries</td></tr>'}
+    <tbody>${d.schD4.length?d.schD4.map((r,i)=>{const wv=n(r.fullAmount)*pct(r.wardPct);const cv=n(r.carryingValue)*pct(r.wardPct);const ra=r.restricted==='Yes'?cv:0;return`<tr><td>${i+1}</td><td>${esc(r.description)}</td><td>${esc(r.restricted)}</td><td class="right">${fmtAnnual(r.fullAmount)}</td><td class="right">${r.wardPct}</td><td class="right">${fmtAnnual(cv)}</td><td class="right">${fmtAnnual(wv)}</td><td class="right">${ra>0?fmtAnnual(ra):'—'}</td></tr>`;}).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--ink-3);font-style:italic">No entries</td></tr>'}
     <tr class="total-row"><td colspan="5">Totals</td><td class="right">${fmtAnnual(t.schD4_carrying)}</td><td class="right">${fmtAnnual(t.schD4_ward)}</td><td class="right">${fmtAnnual(t.schD4_restricted)}</td></tr>
     </tbody>
   </table>
@@ -12163,9 +12323,9 @@ function buildPrintHTMLAnnual(){
   ${d.trusts.filter(t=>t.name).map((t,i)=>`
   <div class="doc-schedule-title" style="font-size:.76rem">Trust ${i+1}</div>
   <div class="doc-table-div mb-2">
-    ${sl('#2. Created after GID?',t.createdAfterGID)} ${sl('Name of Trust',t.name)} ${sl('Trustee',t.trustee)}
-    ${sl('Account Number',t.accountNo)} ${sl('Date Created',fmtD(t.dateCreated))} ${sl('Type',t.trustType)}
-    ${sl("Ward's % Interest",t.wardPct)} ${sl("Amount (Ward's Interest)",fmtAnnual(t.wardAmount))}
+    ${sl('#2. Created after GID?',esc(t.createdAfterGID))} ${sl('Name of Trust',esc(t.name))} ${sl('Trustee',esc(t.trustee))}
+    ${sl('Account Number',esc(t.accountNo))} ${sl('Date Created',fmtD(t.dateCreated))} ${sl('Type',esc(t.trustType))}
+    ${sl("Ward's % Interest",esc(t.wardPct))} ${sl("Amount (Ward's Interest)",fmtAnnual(t.wardAmount))}
   </div>`).join('')}
   <div class="doc-schedule-title mt-2">Part IX — OTHER INFORMATION &amp; BOND CALCULATION</div>
   <div class="doc-table-div mb-1">
@@ -12869,19 +13029,27 @@ async function doSaveExcelAnnual(){
 
 async function importExcelAnnual(input){
   const file=input.files[0]; if(!file)return;
+  const prog=getImportProgressEl(input);
+  if(prog)prog.textContent='Checking file…';
+  const check=await validateImportFile(file,'xlsx');
+  if(!check.ok){
+    if(prog)prog.textContent='✗ '+check.message;
+    input.value='';
+    return;
+  }
   const reader=new FileReader();
+  reader.onerror=()=>{
+    if(prog)prog.textContent='✗ That file could not be read.';
+    input.value='';
+  };
   reader.onload=async(e)=>{
+    if(prog)prog.textContent='Parsing Excel…';
     try{
-      const uint8=new Uint8Array(e.target.result);
-      let b64='';
-      for(let i=0;i<uint8.length;i+=0x8000){
-        b64+=String.fromCharCode.apply(null,uint8.subarray(i,i+0x8000));
-      }
-      const b64Final=btoa(b64);
-      await saveTemplateToIDB('annual',b64Final);
-
+      // No template-cache write here — an imported file is extracted and
+      // discarded, never retained (see the note above ensureTemplate()).
       const workbook=new ExcelJS.Workbook();
       await workbook.xlsx.load(e.target.result);
+      assertWorkbookWithinLimits(workbook);
 
       // Cell readers. Court templates aren't all filled the same way —
       // a date cell may come back as a real Date (typed into Excel
@@ -12890,9 +13058,11 @@ async function importExcelAnnual(input){
       // this app's internal YYYY-MM-DD rather than assumed to be one
       // format. Plain gcv()/gcStr() intentionally do NOT do this
       // normalization: only fields the app treats as dates should have
-      // it applied.
-      const gcv=(ws,addr)=>{if(!ws)return null;const c=ws.getCell(addr);const v=c.value;return (v&&typeof v==='object'&&v.result!==undefined)?v.result:v;};
-      const gcStr=(ws,addr)=>{const v=gcv(ws,addr);return v!=null?String(v).trim():'';};
+      // it applied. gcv resolves formula/richtext/hyperlink/error shapes
+      // via unwrapCellValue (see IMPORTED FILE HARDENING above) rather
+      // than only unwrapping {formula,result} the way this used to.
+      const gcv=(ws,addr)=>ws?unwrapCellValue(ws.getCell(addr).value):null;
+      const gcStr=(ws,addr)=>ws?readCellText(ws.getCell(addr)):'';
       const gcDate=(ws,addr)=>{
         const v=gcv(ws,addr);
         if(v==null||v==='')return '';
@@ -13140,12 +13310,21 @@ async function importExcelAnnual(input){
       // reliable cell range to read entries back from.
 
       capitalizeImportedFields(D);
+      // See the matching note in importExcelSimplified: capitalizeImportedFields
+      // only reaches name/address-shaped fields, so this closes the gap for
+      // caseNumber, county, filingType, amendedForm, the trust fields, and
+      // the D-1/D-2/D-4 restricted/residence/income columns — none of which
+      // that keyword list matches. In-place because D is window.D itself.
+      sanitizeObjectDataInPlace(D);
       autoSave();
-      alert('Template loaded and data imported successfully.');
+      if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
+      setTimeout(()=>{if(prog)prog.textContent='';},3000);
       renderPage(currentPage);
     }catch(err){
-      console.error('Import error:',err);
-      alert('Import failed: '+err.message);
+      console.error('Annual Accounting import failed:',err);
+      if(prog)prog.textContent='✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.');
+    }finally{
+      input.value='';
     }
   };
   reader.readAsArrayBuffer(file);
@@ -15307,42 +15486,45 @@ async function doSaveExcel(){
 async function importExcelFile(input){
   const file=input.files[0];
   if(!file)return;
-  const prog=document.getElementById('import-progress');
-  if(prog)prog.textContent='Reading file…';
+  const prog=getImportProgressEl(input);
   try{
+    if(prog)prog.textContent='Checking file…';
+    const check=await validateImportFile(file,'xlsx');
+    if(!check.ok){if(prog)prog.textContent='✗ '+check.message;return;}
+    if(prog)prog.textContent='Reading file…';
     const buf=await file.arrayBuffer();
-    const bin=new Uint8Array(buf);
-    let binStr='';
-    for(let i=0;i<bin.length;i+=0x8000){
-      binStr+=String.fromCharCode.apply(null,bin.subarray(i,i+0x8000));
-    }
-    const b64=btoa(binStr);
-    await saveTemplateToIDB('guardian',b64);
+    const workbook=new ExcelJS.Workbook();
     if(prog)prog.textContent='Parsing Excel…';
-    const jsonStr=await window._importExcelFromB64(b64);
-    const importedData=sanitizeObjectData(JSON.parse(jsonStr));
+    await workbook.xlsx.load(buf);
+    assertWorkbookWithinLimits(workbook);
+    // No template cache write here — see the note above ensureTemplate():
+    // an imported file is never retained past this parse, so the app's own
+    // bundled blank template is what every later "Export as Excel" uses.
+    const importedData=sanitizeObjectData(parseInitialInventoryWorkbook(workbook));
     Object.assign(window.D,importedData);
     saveData();
     if(prog)prog.textContent='✓ Import complete!';
     setTimeout(()=>{if(prog)prog.textContent='';},3000);
     navigate('/');
   }catch(e){
-    if(prog)prog.textContent='✗ Import failed: '+e.message;
-    console.error(e);
+    console.error('Initial Inventory import failed:',e);
+    if(prog)prog.textContent='✗ Import failed: '+(e&&e.message?e.message:'the file could not be parsed.');
+  }finally{
+    input.value='';
   }
-  input.value='';
 }
-window._importExcelFromB64=async(base64)=>{
-  const bin=atob(base64);
-  const buf=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
-  const wb=new ExcelJS.Workbook();
-  await wb.xlsx.load(buf.buffer);
+// Extracts the Initial Inventory fields from an already-loaded workbook.
+// Takes the ExcelJS.Workbook directly (not a base64 string) — the previous
+// version round-tripped the whole file through base64 solely to hand it to
+// this function and to cache it via saveTemplateToIDB; neither is done
+// anymore (see importExcelFile above), so there is no longer a buffer to
+// smuggle across, and the raw workbook bytes are not retained past this call.
+function parseInitialInventoryWorkbook(wb){
   const ws=name=>wb.getWorksheet(name);
-  const raw=(sheet,addr)=>{if(!sheet)return null;const v=sheet.getCell(addr).value;if(v==null)return null;if(typeof v==='object'&&!(v instanceof Date)&&v.result!==undefined)return v.result;return v;};
-  const txt=(s,a)=>{const v=raw(s,a);return(v==null||v instanceof Date)?'':String(v).trim();};
-  const num=(s,a)=>Number(raw(s,a))||0;
-  const dt=(s,a)=>{const v=raw(s,a);if(!v)return null;if(v instanceof Date)return v.toISOString().substring(0,10);if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}return typeof v==='string'?v.substring(0,10):null;};
+  const rawv=(sheet,addr)=>sheet?unwrapCellValue(sheet.getCell(addr).value):null;
+  const txt=(s,a)=>s?readCellText(s.getCell(a)):'';
+  const num=(s,a)=>Number(rawv(s,a))||0;
+  const dt=(s,a)=>{const v=rawv(s,a);if(!v)return null;if(v instanceof Date)return v.toISOString().substring(0,10);if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}return typeof v==='string'?v.substring(0,10):null;};
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
   const pct=(s,a)=>Math.round(num(s,a)*100*1e6)/1e6;
   const readRows=(pages,reader)=>{const out=[];for(const{sheet:name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
@@ -15371,8 +15553,8 @@ window._importExcelFromB64=async(base64)=>{
     serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G26'),name:txt(p6,'J27'),barNumber:txt(p6,'J29'),streetAddress:txt(p6,'J28'),phone:txt(p6,'B30'),cityStateZip:txt(p6,'J30')};})()
   };
   capitalizeImportedFields(inv);
-  return JSON.stringify(inv);
-};
+  return inv;
+}
 
 // ═══════════════════════════════════════════════════════
 // INIT
@@ -15555,6 +15737,15 @@ function embeddedTemplate(type){
   return (typeof t==='string'&&t.length)?t:null;
 }
 
+// The three Excel importers (importExcelFile/Simplified/Annual) used to
+// also call saveTemplateToIDB with the raw file a guardian imported, so a
+// custom court template stuck around and got reused for every later
+// export. That meant a full copy of whatever was imported — good or bad —
+// sat in IndexedDB indefinitely, base64-inflated by ~33%, with no path back
+// out; a single oversized import could burn through the storage quota on
+// its own. That call was removed from all three importers: an import is
+// now extract-then-discard, and saveTemplateToIDB is called from exactly
+// one place — just below, and only ever with the bundled blank template.
 async function ensureTemplate(type){
   const existing=await loadTemplateFromIDB(type);
   if(existing)return existing;
