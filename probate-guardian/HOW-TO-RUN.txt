@@ -1,0 +1,1513 @@
+Probate Guardian — Web App (v1.5.26)
+=====================================
+
+QUICK START
+===========
+
+EASIEST WAY TO RUN IT (no install, works from a thumb drive):
+1. Unzip ProbateGuardian-web-v1.5.26.zip into any folder (or straight onto
+   a USB drive).
+2. Double-click index.html. Use Chrome or Edge (Firefox's support for
+   this is inconsistent — test it once before relying on it there).
+That's it — no terminal, no Node.js, nothing else to install.
+
+ALTERNATIVE (if you prefer running it through a local server):
+1. Unzip into any folder.
+2. Open a terminal.
+3. Navigate to the unzipped folder:  cd path/to/unzipped/folder
+4. Run:  npx http-server . -p 8420 -c-1
+5. Open http://localhost:8420 in Chrome or Edge.
+
+IMPORTANT SECURITY NOTES
+========================
+- Do NOT open via a network IP address (e.g. 192.168.x.x) or remote URL.
+  Only open the file directly from disk or via localhost.
+  The app requires "secure context" to encrypt your data.
+- If using file:// directly, Chrome and Edge work fine. Firefox may have
+  limitations with IndexedDB, so test it first before relying on it.
+- Your master password cannot be reset. If you forget it, your data cannot
+  be recovered. Keep your password safe or use "No Password" mode.
+
+
+DETAILED SETUP FOR DIFFERENT OPERATING SYSTEMS
+===============================================
+
+WINDOWS:
+1. Download the .zip file.
+2. Right-click → Extract All → Choose destination.
+3. Open the folder and double-click index.html.
+4. If you get a Windows Defender warning, click "More info" → "Run anyway".
+   (The file is safe; this is just Windows being cautious about downloaded files.)
+
+MAC:
+1. Download the .zip file.
+2. Double-click to auto-extract (or use Archive Utility).
+3. Open the folder and double-click index.html.
+4. If you get a "can't open" dialog, right-click → Open With → Chrome or Safari.
+   (Macs block unsigned downloads by default.)
+
+LINUX:
+1. Unzip the file: unzip ProbateGuardian-web-v1.5.26.zip
+2. Open index.html with Chrome: google-chrome path/to/index.html
+3. Or run a local server: cd path/to/folder && python3 -m http.server 8000
+   Then open http://localhost:8000 in your browser.
+
+
+FIRST-TIME SETUP
+================
+
+On your very first launch:
+1. Choose your data protection level. This CANNOT be changed later without
+   starting over:
+
+   ✓ "Encrypted & Password Protected" (RECOMMENDED)
+     - Master password required every time you open the app
+     - All case data is encrypted (AES-256) on your computer
+     - If you forget the password, data cannot be recovered
+     - Best for sensitive guardianship cases
+
+   ○ "No Password / No Encryption"
+     - App opens immediately, no password ever needed
+     - All data stored as plain readable text on your computer
+     - Anyone with access to your device can read case data
+     - Faster but not secure for sensitive information
+
+2. If using encryption, create a strong master password (8+ characters).
+   Write it down and store it safely.
+
+3. Click "+ Add Ward" to create your first guardianship case.
+
+4. Choose an inventory type:
+
+   📋 Guardian Inventory (Initial Inventory)
+      - Complete assets as of guardianship inception date
+      - Most detailed form, covers all asset types
+      - Includes Parts I-VI (attestations & filings)
+      - For initial filing when guardianship begins
+
+   📊 Simplified Annual Accounting
+      - Simple income/expenses summary only
+      - Only available for guardianships UNDER $1M
+      - Limited transactions (interest, settlements, taxes)
+      - Quicker to complete if you qualify
+
+   📈 Annual Accounting
+      - Full year-by-year accounting with detailed schedules
+      - For ongoing guardianships (after initial inventory)
+      - Includes income, expenses, assets, and reconciliation
+      - Most comprehensive option
+
+   🛡 Simplified Annual Plan
+      - Reports on the ward as a PERSON, not their money
+      - Where they lived, their medical care, diagnosis, social life,
+        and whether any rights should be restored
+      - A separate court filing from the accountings above
+      - If you are guardian of both person and property, you file a Plan
+        AND an Accounting; create one record for each, give them the same
+        case number, and use the dashboard's "Grouped by Case" view
+
+5. Enter the ward's name and click "Create Ward".
+
+6. IMMEDIATELY save a backup:
+   - Click "Save Data File (.sav)" in the sidebar
+   - Save it to a safe location (NOT on the computer it's running on)
+   - This is your insurance policy. Store it securely.
+
+
+FILLING IN YOUR FORMS
+=====================
+
+Understanding Your Inventory Type
+
+GUARDIAN INVENTORY (Initial):
+- Work through Schedules A-1 → A-2 → B-1 → B-2 → B-3 → B-4 → C-1 → C-2 → C-3 → C-4 → C-5
+- Then complete Parts III-VI (Signatures & Attestations)
+- Each schedule shows: ✓ (complete), ⚠ (incomplete), or nothing (not started)
+- Schedule indicators help you track progress
+
+SIMPLIFIED ANNUAL ACCOUNTING:
+- Start with Part I (cover page information)
+- Fill Part II (income/expenses summary)
+- Part III (signatures) last
+- Much faster than full accounting if you qualify
+
+ANNUAL ACCOUNTING:
+- Start with Part II (Guardian Certification)
+- Add guardian signatures in Part III
+- Fill asset schedules as needed (no required order)
+- Reconciliation happens automatically
+
+Common Fields You'll Encounter
+
+Ward's %: The percentage of an asset that belongs to the ward. Enter as plain
+         numbers (50, not 0.50). Example: if ward owns 50% of a house, enter 50.
+
+Restricted: Assets that cannot be sold without court permission. Usually real
+           estate that must go through court approval process. Mark "Yes" only
+           if court order restricts use.
+
+Carrying Value: The depreciated/adjusted value for accounting. May differ from
+               current market value. Use book value, not sales price.
+
+Personal Residence: The main home where the ward lives. Mark "Yes" only for
+                   the primary residence, not investment properties.
+
+Income Property: Property held for income (rental, lease). Mark "Yes" if the
+                property generates rents or other returns.
+
+Depository: The bank or institution holding ward's money. For Simplified
+           Accounting, ALL money must be in a court-designated depository.
+
+SSN/EIN: Social Security Number (individuals) or Employer ID (businesses/trusts).
+        Required for most court filings.
+
+Signature Date: Must be within the accounting period or filing deadline.
+
+Hover over any "?" icon for instant field explanations.
+
+
+SAVING AND BACKING UP YOUR DATA
+================================
+
+How Auto-Save Works:
+- Changes are saved automatically to your computer as you type
+- Sidebar shows: "Last backup: X minutes ago" or "Unsaved changes"
+- You can change Auto-Save frequency: 5 min / 10 min / 30 min / Off
+
+Creating Backups (CRITICAL):
+1. Click "Save Data File (.sav)" in the sidebar
+2. Choose a location OUTSIDE this folder (external drive, cloud sync, email)
+3. The .sav file contains all your wards, encrypted if you set a password
+4. Store multiple copies in different locations
+
+Restoring from Backup:
+1. Click "Open Data File (.sav)"
+2. Choose your .sav backup file
+3. All wards and data are restored immediately
+
+Emergency Recovery:
+- If your device fails or the file is lost, you can only restore from backups
+- If you lose all backups AND forget your password, the data is gone forever
+- Always keep at least 2 copies in different locations
+
+
+EXPORTING FOR FILING
+====================
+
+When ready to file with the court:
+
+1. Click "📄 Print Preview" at the bottom of the sidebar
+2. Review your forms for errors (fields marked in red are incomplete)
+3. Check your court's requirements:
+   - Some courts want PDF (use "Export as PDF")
+   - Some want Excel (use "Export as Excel")
+4. "Export as Excel" fills in the official blank Clerk of Court workbook.
+   A blank copy is included with the app for the Initial Inventory, the
+   Simplified Accounting and the Annual Accounting, so there is nothing to
+   import first — just click "Export as Excel".
+5. If your court uses its own version of the form:
+   - Use the "📥 Import Excel File" button to upload their blank workbook
+   - The app remembers it and uses it for every later export
+   - App fills it with your data
+   - Export and submit
+
+Tips:
+- Always review Print Preview before exporting—catch errors there
+- PDF is best for most filings (easier to read)
+- Keep a PDF copy for your records
+- Export early and often (don't wait until the last moment)
+
+
+TROUBLESHOOTING
+===============
+
+"App shows 'Loading...' and doesn't proceed"
+→ You probably have another tab open with Probate Guardian running.
+  Close all other tabs and reload this one.
+
+"Password incorrect — please try again"
+→ Check your caps lock
+→ If you forget your password, the data cannot be recovered
+→ You'll need to clear all data and start over
+
+"Changes aren't saving"
+→ Check sidebar for status. If it says "needs one manual save first",
+  click "Save Data File (.sav)" once to activate auto-save.
+→ Make sure you have space on your hard drive (a full disk stops saves)
+→ Try closing other browser tabs
+
+"Form fields are too small / hard to read"
+→ Zoom in: Ctrl+Plus (Windows) or Cmd+Plus (Mac)
+→ Zoom out: Ctrl+Minus or Cmd+Minus
+→ These are browser zoom controls, not app settings
+
+"Export to Excel/PDF doesn't work"
+→ Check Print Preview for red validation errors (required fields)
+→ If fields show validation errors, fill them in first
+→ Try a different browser (Chrome and Edge work best)
+
+"I lost my backup file and can't remember my password"
+→ Unfortunately, your data cannot be recovered. The password cannot be reset.
+→ Clear all data (⚠ this is permanent) and start fresh
+→ Or use "No Password" mode (also starting fresh)
+
+"The app looks different than before"
+→ Updates happen automatically when you reload
+→ If something changed unexpectedly, check the version number
+→ Try clearing your browser cache: Ctrl+Shift+Delete
+
+
+FREQUENTLY ASKED QUESTIONS
+==========================
+
+Q: Can I use this app on multiple computers?
+A: Yes. Save your data file (.sav) and open it on any computer. The data
+   travels with you. You can also email the .sav to yourself.
+
+Q: What if I'm using a Chromebook?
+A: This works great on Chromebooks! Double-click the index.html file or
+   run it via a local server. Encryption and backup work normally.
+
+Q: Can I share this app with other guardians?
+A: Yes, but each guardian should use their own master password. Do NOT
+   share passwords. Each person should keep their own backup.
+
+Q: Do I have to import the court's Excel template before exporting?
+A: No. A blank copy of the official workbook ships with the app for all
+   three filing types, so "Export as Excel" works straight away.
+
+Q: What if my court requires its own version of the Excel template?
+A: Use the "Import Excel File" button to upload their blank workbook. The
+   app remembers it, fills it with your data and exports it back to them.
+
+Q: Can I merge two wards' data?
+A: Not directly. You'll need to manually re-enter data or copy values between
+   wards. Plan to do this carefully to avoid errors.
+
+Q: How long can I keep working on the same ward?
+A: As long as you want. There's no time limit. Auto-save keeps your work safe.
+
+Q: What happens if I close the browser/computer?
+A: Your data is stored on your computer (not the internet), so it persists.
+   When you reopen, your data is still there.
+
+Q: Do I need an internet connection?
+A: No. This app works 100% offline. No data ever leaves your computer.
+
+Q: Is my data really encrypted?
+A: Yes, if you choose "Encrypted & Password Protected". All data is encrypted
+   with AES-256 encryption before it's stored on your computer.
+
+Q: Can you recover my data if something goes wrong?
+A: Only if you have a backup (.sav file). There are no cloud backups or
+   recovery options. Backups are YOUR responsibility.
+
+Q: What if I want to stop using the app?
+A: Export all your forms as PDF and keep them. Your .sav file is your backup
+   forever. You can reopen the app anytime to access that .sav file.
+
+
+KEYBOARD SHORTCUTS & TIPS
+=========================
+
+Browser Shortcuts:
+Ctrl+P (or Cmd+P):    Print / Save as PDF (keyboard shortcut)
+Ctrl+Plus:             Zoom in (larger text)
+Ctrl+Minus:            Zoom out (smaller text)
+Ctrl+0:                Reset zoom to normal
+F12:                   Open browser developer tools (advanced troubleshooting)
+
+App Tips:
+- Use the sidebar navigation to jump between sections quickly
+- Green checkmarks show completed schedules (all fields filled)
+- Red warnings show incomplete schedules (fill them before exiting)
+- Click "?" for instant help on any confusing field
+- Use Print Preview to catch errors before exporting
+- Save backups BEFORE you close the app
+
+
+SECURITY & PRIVACY
+==================
+
+Data Location:
+- Your data is stored on YOUR computer only (not the cloud)
+- No data is ever sent to servers or the internet
+- This is more private than online applications
+
+Encryption:
+- If you choose "Encrypted & Password Protected", data is encrypted with
+  AES-256 (same as banks use)
+- Only your master password unlocks it
+- Even if someone has physical access to your computer, they can't read
+  encrypted data without the password
+
+Password Security:
+- Create a strong password (8+ characters, mix of letters/numbers)
+- Write it down and store safely (not on the computer)
+- If you forget it, data cannot be recovered
+- There is NO password reset option
+
+Sharing:
+- Do NOT share your master password
+- Each person should use their own .sav backup
+- If you need to share a case with an attorney, export the PDF and email it
+
+
+VERSION HISTORY
+===============
+
+New in 1.5.26:
+- Fixed: exporting an Annual Accounting to Excel no longer requires you to
+  import the court's blank workbook first
+  * The Initial Inventory and the Simplified Accounting already kept a
+    copy of their blank court form, so "Export as Excel" worked on a
+    fresh install with nothing imported. The Annual Accounting did not,
+    and stopped with "Template not loaded. Please import the Excel
+    template first."
+  * The blank Annual Accounting workbook is now included with the app,
+    exactly as the Clerk of Court publishes it. It is the empty form —
+    it holds no ward information
+  * The first export saves it alongside the other two, so later exports
+    are as fast as before
+  * If your court uses its own version of the form, importing it still
+    works and still takes priority over the included copy
+
+New in 1.5.25:
+- New: the app now works properly on phones and tablets
+  * The sidebar used to be a fixed column that stayed on screen at
+    every size. On a phone it took up most of the width and squeezed
+    the form itself into an unreadable strip down the side. It is now
+    a slide-out menu opened from a "hamburger" button in a new bar
+    across the top, so the form gets the full width of the screen
+  * The menu closes on its own once you pick a page or switch wards,
+    and can also be closed by tapping the dimmed area beside it
+  * On a tablet the schedule fields used to jump straight to the full
+    six-across desktop layout the moment the screen passed a certain
+    width, leaving each field about an inch wide — labels broke onto
+    two lines and dollar amounts were cut off mid-figure. Narrow
+    fields now sit three-across until the screen is genuinely wide
+    enough for the desktop layout
+  * The guided tour's pop-up could be pushed off the right edge of a
+    phone screen, because it always reserved room for a sidebar that
+    is no longer there at that size. It now measures the sidebar's
+    real position and always stays on screen
+  * Checked on every schedule of every filing type at phone and
+    tablet sizes: nothing runs off the side of the screen
+- Fixed: "Save Data File (.sav)" failed with a "request is not allowed"
+  error in some embedded browsers
+  * Affected browser windows built into other programs — Visual
+    Studio Code's built-in browser, for example. Those windows allow
+    the Save As dialog to open but then refuse the write itself, so
+    the export died at the last step and no file was produced
+  * The app now falls back to saving into your Downloads folder in
+    that situation, the same way Firefox and Safari have always been
+    handled, instead of failing outright
+- New: the Active Ward box in the sidebar can now be typed into
+  * It used to be a plain dropdown. You can now type part of a ward's
+    name to filter the list, or click the box to browse every ward as
+    before. Long lists scroll after the first three names
+- New: the ward name box now offers the names already on file
+  * Clicking the box on "Add New Ward" (and on the Simplified
+    eligibility screen) lists the wards you already have, so a new
+    filing for an existing ward can be picked rather than retyped.
+    Matching an existing name exactly is what groups a ward's filings
+    together on the dashboard, so this also guards against typos
+- New: picking an existing ward name now fills in the new form
+  automatically
+  * Choosing a name that already has one earlier filing selects that
+    filing in "Load Ward Info From" for you and says so, so the case
+    number, county, and guardian/attorney contact details carry over
+    without a second, separate choice
+  * When that ward has more than one earlier filing, the app does not
+    guess. The picker narrows to just that ward's filings and waits
+    for you to choose which one to copy from
+- Changed: clearer wording for creating another filing for a ward
+  * The dashboard panel now reads "Select an Existing Ward" with a
+    "Select Ward" button, and its dialog is now titled "Create New
+    Form for Existing Ward" — the old "Convert" wording suggested the
+    original filing was being changed or replaced, when in fact a new
+    separate filing is created and the original is left alone
+  * Inside that dialog, "Ward to Convert" is now simply "Ward" and
+    can be typed into and searched like the other two ward boxes, and
+    "Convert To" is now "New Form"
+- Changed: the Annual Accounting's reconciliation message no longer
+  refers to "Line 20" and "Line 30"
+  * On screen it now names what is actually being compared — "Net
+    Assets from Changes" (the running total of income, disbursements
+    and gains/losses) against "Net Assets from Balances" (the total of
+    the Schedule D listings) — and shows both figures, whether they
+    agree or not
+  * If the two do not agree, the warning states the exact difference
+    and a required explanation box appears. That explanation is
+    printed on the finished document, and export stays blocked until
+    the schedules are corrected or the difference is explained, the
+    same as before
+  * The printed court document still carries the official Line 20 and
+    Line 30 numbering, which is what the Clerk audits against
+- Removed: unused leftover code
+  * An empty bundle.js, an unreferenced js/help-enhancements.js, and
+    several style rules left behind by earlier redesigns (badge
+    colours never applied, a page-break rule never inserted into any
+    export, and an arrow for a tour pop-up that was redrawn as a
+    plain card back in 1.4.28)
+  * Verified nothing referenced any of them and that the app loads
+    with no failed requests. Printed and exported documents are
+    unchanged
+
+New in 1.5.24:
+- Changed: the form picker now reads "Select the form type for a
+  ward" instead of "Select the inventory type for this ward"
+- New: typing a ward name when starting a new form now suggests the
+  ward names already on file
+  * A ward usually has several forms under one name, so the list
+    shows each distinct name once. Matching an existing name exactly
+    is what groups a ward's filings together on the dashboard, so
+    the suggestions also guard against near-miss typos
+  * Works on both the Add Ward box and the Simplified eligibility box
+
+New in 1.5.23:
+- Changed: the button on each form card now reads "Create Form for a
+  Ward" instead of "Create Ward", and the picker heading now reads
+  "Start New Ward"
+- New: two additional filing types - Final Accounting and Trust
+  Accounting - bringing the total to nine
+  * Both use the same form, schedules, totals and validation as the
+    Annual Accounting. Only the name differs, and it follows through
+    to the sidebar, the printed document title and export filenames
+- New: a new form can now be started from an earlier filing for the
+  same ward, not just from its matching Plan
+  * An Initial Inventory can now populate a new Simplified, Annual,
+    Final or Trust Accounting, and last period's Annual can populate
+    this period's. Ward name, case number, county, guardianship type
+    and guardian/attorney contact details carry over; schedules,
+    period dates, balances and signatures stay blank because they
+    belong to the new filing
+  * The "Load Ward Info From" picker is now always visible. It used
+    to hide itself when there was nothing to pull from yet, which
+    made it look like the feature was missing on a new install; it
+    now shows greyed out and says so
+  * The "Load Ward Info From" picker is now always visible. It used
+    to hide itself whenever there was nothing to pull from yet, which
+    made the feature look missing on a new install; it now appears
+    greyed out reading "- No other forms yet to pull from -"
+  * On the Simplified eligibility screen this list was previously
+    limited to the matching Plan only. If the answers mean an Annual
+    Accounting is created instead, the source you picked is applied
+    to that form as well
+- New: Line 20 and Line 30 on the Annual Accounting must now be
+  reconciled before export
+  * Parts VI & VII confirms when the two agree. When they do not, it
+    shows the exact difference and requires a written explanation,
+    which is printed on the finished document so the discrepancy is
+    disclosed rather than hidden. Previously a difference blocked
+    export with no way to document it
+
+New in 1.5.22:
+- Fixed: Guardian remuneration amounts were being lost when a Simplified
+  Annual Accounting was saved to Excel and later read back in
+  * Part VII packs several fields into one text column. The dollar
+    amount was never written into it, so re-importing a file you had
+    exported returned the guardian, type and description but silently
+    dropped the amount. The amount is now written into the filed
+    document as well, where it belongs. Files exported by earlier
+    versions still import correctly
+- Fixed: On a Simplified Annual Accounting, the attorney details in
+  Part V (bar number, phone, address) were written to the spreadsheet
+  but read back from the Certificate of Service block in Part VI
+  * If the two blocks named different attorneys, re-importing
+    overwrote the Part V details with the Part VI ones. Each block is
+    now read from its own cells. The attorney signature date is also
+    no longer dropped on import
+- Fixed: On an Annual Accounting, the county and any related case
+  numbers were written to the spreadsheet but never read back when the
+  file was re-imported
+- Fixed: Converting an existing ward into an "Annual Plan - Minors"
+  produced a completely blank form
+  * Ward name, case number, county, guardian and attorney details now
+    carry over, the same as the other plan types already did
+
+New in 1.5.21:
+- Changed: The Back/Next bar now sits at the same height from the
+  bottom of the screen on every page, short or long
+  * Short pages (just a handful of fields) used to leave the nav bar
+    stranded right under the last field, with empty space below it.
+    It now sits flush with the bottom of the visible area, matching
+    where it naturally lands on a page with enough content to fill
+    the screen. Long/scrolling pages are unaffected — the nav bar
+    still appears right after the last field, same as before
+
+New in 1.5.20:
+- Changed: "Import Excel File" is now open by default on the Cover
+  pages, so it fills its column next to "Load Ward Info" instead of
+  sitting collapsed to a single line. Still collapsible if you'd
+  rather tuck it away
+
+New in 1.5.19:
+- Changed: "Import Excel File" and "Load Ward Info" now sit side by
+  side on the Cover pages, same two-column treatment as the
+  dashboard's Upcoming Deadlines / Convert Ward row
+  * Applies to Initial Inventory, Simplified Annual Accounting, and
+    Annual Accounting — the three types that have both. Falls back to
+    a single full-width column when there's no matching Plan ward to
+    load from
+
+New in 1.5.18:
+- New: A "Continue to Schedules" button on the Initial Inventory's
+  Cover page, right below the required fields
+  * Previously the only way to move on was to scroll past the entire
+    Summary I/II schedule recap to reach the Back/Next bar at the very
+    bottom. Now you can continue immediately after filling in the
+    cover fields; the summary and the original nav bar are still below
+    for reference
+
+New in 1.5.17:
+- Changed: The Back/Next bar at the bottom of each page no longer
+  floats over your content while scrolling
+  * It used to stay pinned to the bottom of the screen with a blurred
+    background as you scrolled, covering whatever was underneath it.
+    It now sits in its normal place at the end of the page, like any
+    other element — only visible once you actually reach the bottom
+
+New in 1.5.16:
+- New: "Switch Ward" now prompts you if you're already on that ward
+  * Clicking "Switch Ward" while the dropdown is still set to your
+    currently active ward used to do nothing with no feedback. It now
+    opens a small picker listing your other wards to jump to instead
+
+New in 1.5.15:
+- Changed: The "Unsaved Changes" backup reminder no longer covers the
+  page
+  * Was a full-width bar fixed to the bottom of the screen, sitting on
+    top of whatever was underneath it. Now a small card in the
+    bottom-right corner, styled to match the app's own modals and
+    dropdowns instead of standing out as a loud colored strip
+
+New in 1.5.14:
+- Changed: Dashboard tightened up — "Upcoming Deadlines" and "Recently
+  Opened" merged into a single tabbed panel instead of two separate
+  boxes
+  * Same information as before, just one card with a tab switcher
+    instead of two stacked ones. Defaults to whichever tab actually has
+    something to show
+
+New in 1.5.13:
+- New: "Recently Opened" list on the dashboard
+  * Shows up to 5 wards you've most recently switched into or created,
+    soonest first, with type icon and relative time ("5 minutes ago").
+    Stored locally on this device (not part of the encrypted case data),
+    so it's per-browser, not per-backup
+  * Click any entry to jump straight into that ward
+- New: "Continue where you left off" banner
+  * If the app reopens on a different ward than the one you were last
+    actually working in, a dismissible banner offers to jump back to
+    it. Shown at most once per session
+- Fixed: cleaned up debris (dead CSS, stray scratch scripts, a mangled
+  comment, and an undefined --brand-300 CSS variable) left behind by an
+  incomplete local-model edit attempt at this same feature
+
+New in 1.5.12:
+- Changed: Dashboard sections ("Grouped by Type" / "Grouped by Case")
+  now start collapsed
+  * Cuts down on whitespace when you have several types or cases on
+    file — click any section's header to expand it and see its ward
+    cards, click again to collapse
+
+New in 1.5.11:
+- Fixed: "Convert an Existing Ward" was still dropping to its own row
+  below "Upcoming Deadlines" instead of sitting beside it — a leftover
+  "always full width" rule from the banner's other usage was
+  overriding the new two-column layout. It now correctly sits to the
+  right, and still expands to fill the row when there are no
+  deadlines to show.
+
+New in 1.5.10:
+- Changed: "Upcoming Deadlines" and "Convert an Existing Ward" now sit
+  side by side on the dashboard, instead of stacked
+  * When there are no upcoming deadlines yet, the Convert banner
+    expands to fill the full row on its own
+
+New in 1.5.9:
+- New: "Upcoming Deadlines" panel on the dashboard
+  * The per-ward deadline badges added in 1.5.8 now also roll up into a
+    single sorted worklist at the top of the dashboard — soonest due
+    date first, across every active ward, up to 8 shown at a time
+  * Click any row to jump straight into that ward
+  * The panel is hidden entirely when nothing has a computable deadline
+    yet, and skips archived/closed wards, same as the card badges
+
+New in 1.5.8:
+- New: Ward info now carries over in BOTH directions between an
+  Accounting and its matching Plan
+  * Previously the "Load Ward Info From" picker (Add Ward), Convert
+    Existing Ward, and the in-place "Load Ward Info" banner only carried
+    Accounting → Plan (e.g. Initial Inventory → Initial Guardianship
+    Plan). They now also work Plan → Accounting, for guardians who file
+    the person-side plan first
+  * Covers all three pairs: Initial Inventory <-> Initial Guardianship
+    Plan, Simplified Annual Accounting <-> Simplified Annual Plan
+    (including the Simplified eligibility screen), and Annual Accounting
+    <-> Annual Guardianship Plan
+- New: Filing deadline badges on every ward card
+  * Each ward card now shows "Due in N days," "N days overdue," or the
+    due date, computed from a date you've already entered — the
+    Guardianship Inception Date, Letters-signed date, or reporting
+    period, depending on the filing type. Nothing new to type in, and
+    the badge is hidden until that date is filled in
+  * Overdue filings are shown in red, filings due within two weeks in
+    amber; closed/archived wards never show a badge
+  * The dashboard summary strip adds a "Due Within 14 Days" count when
+    any active ward has one coming up
+
+New in 1.5.7:
+- New: "Load Ward Info" on a Plan's Cover page, for wards created before
+  this feature existed
+  * If you already created an Initial Guardianship Plan, Simplified
+    Annual Plan, or Annual Guardianship Plan before the carry-over
+    feature shipped (or just created it blank), its Cover page now
+    shows a "Load Ward Info" banner whenever a matching Accounting
+    ward exists
+  * Works in place — no need to delete the ward and recreate it via
+    Add Ward or Convert Existing Ward. Carries the same fields (name,
+    case number, county, guardian contact details) directly onto the
+    ward you're already on
+
+New in 1.5.6:
+- Fixed: "Convert Existing Ward" can now create a Guardianship Plan from
+  its matching Accounting ward
+  * Previously, converting an Initial Inventory, Simplified Annual
+    Accounting, or Annual Accounting ward into its matching Plan type
+    was offered in the Convert dialog but silently wrote to the wrong
+    field names, so nothing actually carried over
+  * Now it correctly carries the ward's name, case number, county, and
+    guardian contact details into a new Plan ward — the same carry-over
+    used by the "Load Ward Info From" picker in Add Ward, so if you
+    already created a blank Plan ward before this fix, you can convert
+    your Accounting ward into a properly-populated one and delete the
+    blank one
+  * A Plan ward itself can no longer be offered as a Convert source,
+    since converting a Plan into anything else was never supported
+
+New in 1.5.5:
+- New: "Load Ward Info From" when creating a Guardianship Plan
+  * When you create an Initial Guardianship Plan, Simplified Annual Plan,
+    or Annual Guardianship Plan, and you already have a matching
+    Accounting ward on file (Initial Inventory, Simplified Annual
+    Accounting, or Annual Accounting), the Add Ward dialog now offers to
+    carry over that ward's name, case number, county, and guardian
+    contact details instead of you retyping them
+  * Signature dates are never carried over — every filing still needs
+    its own fresh signature
+  * Choosing "— Start Blank —" (the default) works exactly as before
+
+New in 1.5.4:
+- New: Annual Plan — Minors — the fourth and final Guardianship Plan,
+  used when the ward is a minor
+  * Unlike the other Plans, this one was sourced from a non-fillable
+    (flat) court PDF, so its field layout was reconstructed from the
+    document's page text rather than extracted form fields
+  * Covers the minor's current and prior-year residences, medical and
+    mental-health treatment providers, proposed medical services, and —
+    unique to this form — the minor's education and social development
+    (school progress, social development, communication, interpersonal
+    relationships, and unmet social needs)
+  * Has no rights-restoration table or activities-of-daily-living
+    ratings, unlike the Simplified and Annual Plans
+  * Adds a separate Preparer certification alongside the guardian and
+    attorney certifications, since the preparer of this filing may not
+    be the guardian
+  * Gets a general filing-readiness checklist on Print Preview (this
+    form's official Clerk's Review checklist was not available to build
+    an exact-match check against)
+  * Exports as PDF; no Excel version
+  * This completes the Guardianship Plan family: Simplified Annual Plan,
+    Annual Guardianship Plan, Initial Guardianship Plan, and now Annual
+    Plan — Minors, covering the full range of person-side filings
+    alongside the existing Initial Inventory, Simplified Annual
+    Accounting, and Annual Accounting for the property side
+
+New in 1.5.3:
+- New: Initial Guardianship Plan — the third Guardianship Plan, filed as
+  the very first person-side report after Letters of Guardianship are
+  signed
+  * Due within 60 days of the Letters being signed (a shorter deadline
+    than the Annual Plan's 90 days), and remains in effect until amended
+    or replaced by an Annual Guardianship Plan
+  * Covers where the ward lives, the medical, mental-health, personal-care
+    and socialization services proposed, the ward's insurance and
+    governmental benefits, every examining provider, fifteen activities of
+    daily living, mental and physical disabilities, assistive devices used
+    and needed, pre-existing advance directives (or how their absence was
+    verified), and signatures for up to four guardians plus the attorney
+  * Gets its own "Clerk's review readiness" check on Print Preview, and a
+    reminder that a separate Disaster Plan must be filed alongside it per
+    Administrative Order 2019-005
+  * Exports as PDF, same as the other Plans; no Excel version
+
+New in 1.5.2:
+- Fixed: Creating a Simplified Annual Plan or Annual Guardianship Plan
+  ward from the "Add Ward" quick-add dialog showed a blank, invalid
+  Inventory Type dropdown instead of the correct type
+  * The dialog's dropdown list had not been updated when the two
+    Guardianship Plan types were added, so selecting either from the
+    type-selector cards passed in a value the dropdown didn't recognize
+  * Both Plan types now appear correctly in this dropdown and select as
+    expected
+
+New in 1.5.1:
+- New: Annual Guardianship Plan — the second Guardianship Plan, for the
+  ward's yearly report on the person (not just the short Simplified form)
+  * Covers all eleven sections of the real form: residences, address
+    changes, care of the residential setting, government/medical
+    benefits, treatment providers, social skills and interactions,
+    rights that may need restoring, activities of daily living ratings,
+    disabilities and assistive devices, advance directives, and
+    remuneration
+  * The rights-restoration table and the daily-living ratings mirror the
+    official form's exact wording and scoring choices
+  * Gets its own "Clerk's review readiness" check on Print Preview, mined
+    from the Clerk of Court's actual audit checklist for this form
+  * Exports as PDF, same as the Simplified Plan; no Excel version
+
+New in 1.5.0:
+- New: Guardianship Plans — the app now covers the PERSON side of a
+  guardianship, not just the money
+  * Until now every document here reported on the ward's property (the
+    Initial Inventory and the two Accountings). A Guardianship Plan
+    reports on the ward as a person: where they have lived, the care and
+    treatment they received, their diagnosis, their social life, and
+    whether any of their rights should be restored. It is a separate
+    court filing
+  * If you are guardian of both the person and the property, you file one
+    of each. Create a record for each filing and give them the same case
+    number — see the new "Grouped by Case" view below
+  * The first Plan is available now: the SIMPLIFIED ANNUAL PLAN, the
+    short three-page form. Choose it from the Create Ward screen
+  * Covers the form's nine questions with full-size writing space, the
+    advance-directive checklist, and both guardian signature blocks
+  * Exports as PDF. Unlike the accountings there is no Excel version of
+    this form, so no Excel button is offered
+- New: "Clerk's review readiness" check on Print Preview
+  * Mirrors what the Clerk of Court actually looks for when reviewing a
+    filed plan, so you can spot problems before you file rather than
+    after
+  * Split into two lists: items checked automatically from what you've
+    entered, and reminders for the things the app genuinely cannot verify
+    (serving copies on interested persons, registration status, whether
+    the Clerk's records match your address). The second list is shown as
+    reminders, never as passes — the app will not tell you something is
+    done when it has no way of knowing
+- New: Dashboard can group wards by case number
+  * The grouping button now cycles: by Type → by Case → Flat Grid.
+    "By Case" puts every filing for the same person together, so an
+    Accounting and a Plan for one ward sit side by side
+- Changed: Plans show filing progress instead of a dollar total
+  * A Plan holds no money, so showing "$0.00" or a blank total would be
+    misleading. Plan cards and the sidebar show how much of the filing is
+    complete instead, and a group of Plans has no subtotal
+
+New in 1.4.54:
+- Fixed: Annual Accounting's Excel export was writing many fields into
+  the wrong cells — some silently lost entirely
+  * The official court template merges several cells per row (e.g. Bank
+    Account Number spans two columns), and several fields were being
+    written one column into that merge instead of the real, separate
+    value cell next to it. In practice this meant Schedule D-1's account
+    numbers, Schedule D-5's loan numbers, Schedule E's "Transfer In"
+    dates, and Part IX's Bonding Company name never actually appeared in
+    an exported file — every other field in Schedule A, B-1, B-2, B-3,
+    D-5, F-1, and F-2 was shifted into a neighboring field
+  * Verified every corrected cell against the real official template
+    (cross-checked its merged-cell ranges directly) and against a real
+    filled-out accounting, confirming each field now lands exactly where
+    the template's own printed headers say it should
+- Fixed: Importing an Excel file for Annual Accounting only pulled in the
+  cover page and part of Schedule A — everything else was silently
+  skipped
+  * Import now reads all 14 schedules, the guardians, preparer, attorney,
+    trusts, bond information, and certificate of service — using the
+    same corrected cell mapping as the export fix above
+  * Dates are recognized whether Excel stored them as a real date, an
+    ISO string, or typed US-format text (MM/DD/YYYY or MM/DD/YY)
+  * Verified end-to-end against a real filled-out Annual Accounting file:
+    every schedule with data imported correctly, and empty schedules
+    correctly stayed empty
+
+New in 1.4.53:
+- New: Storage space warnings
+  * Uploaded supporting documents are stored on this device, and every
+    archived accounting year keeps its own copy of that year's data — so
+    a long-running case can now use real space. The app watches how much
+    room is left and warns before it runs out, rather than only failing
+    once it already has
+  * A warning appears once storage passes 80% full, with a button to save
+    a backup and a reminder that deleting old accounting years or their
+    uploaded documents frees space
+  * If a save ever does fail because the device is out of space, you now
+    get a clear "Out of storage — your last change was NOT saved" message
+    instead of the generic save-failure notice
+  * The Activity Log page now shows exactly how much storage the app is
+    using, and whether the browser has marked it as protected from being
+    cleared automatically
+
+New in 1.4.52:
+- Fixed: Initial Inventory Excel export failed with an unreadable error
+  * If a schedule had more entries than its Excel template could hold
+    (Schedule C-2 Lawsuits Against Ward holds 13, C-1 Income holds 14,
+    A-2 holds 14, and so on), the export crashed. All you saw was a raw
+    error message in small text that erased itself after three seconds,
+    and no file was produced
+  * Initial Inventory now gets the same check added to the other two
+    filing types in 1.4.51: Print Preview lists exactly which schedules
+    are over and by how much, Save as Excel is blocked, and Save as PDF
+    stays available with every entry included
+
+New in 1.4.51:
+- Fixed: Excel export could silently leave entries out of a filing
+  * The court's Excel templates have a fixed number of rows per schedule
+    (for example Schedule D-3 Personal Property holds 4 entries, and
+    Schedule C Capital Adjustments holds 6). Anything beyond that was
+    quietly dropped from the exported file with no warning at all
+  * Print Preview now checks this before you export. If any schedule has
+    more entries than its Excel template can hold, it lists exactly which
+    ones and by how many, with a link straight to each
+  * Save as Excel is blocked in that situation, but Save as PDF stays
+    available and always includes every entry — so you can still produce
+    a complete filing
+- New: The app now asks the browser to keep your data permanently
+  * Browsers are normally allowed to clear locally stored data on their
+    own when a device runs low on disk space. The app now requests
+    "persistent" storage so your case data is not evicted this way
+  * The result (granted or denied) is recorded in the Activity Log. Keep
+    saving .sav backups regardless — that remains your real safety net
+
+New in 1.4.50:
+- Fixed: The red "Your work could not be saved" banner could appear
+  when nothing was actually wrong
+  * A stray autosave landing right as the app auto-locked was being
+    treated as a storage failure and shown to the user, even though
+    there was nothing to save while locked — this is now silently
+    skipped instead
+  * A single transient save hiccup no longer triggers the banner by
+    itself; it now only appears once saves have failed twice in a row,
+    so a genuine, ongoing problem still gets flagged clearly
+
+New in 1.4.49:
+- New: Delete a single prior year
+  * The "Prior Years" list on a ward's dashboard card now has a delete
+    button next to each year, for removing one year's saved accounting
+    without touching the ward or its other years
+  * Deleting a year also deletes any supporting documents/comments that
+    were uploaded specifically for that year
+  * Requires confirmation on a dedicated screen naming the year before
+    anything is deleted
+- New: Delete a ward directly from the dashboard card
+  * Previously only available from the sidebar for the currently active
+    ward; now every ward card has its own Delete button
+  * The confirmation screen now also warns how many prior years of saved
+    accounting will be deleted along with the ward
+
+New in 1.4.48:
+- Changed: Prior years are now labeled by actual year instead of "Year 1",
+  "Year 2"
+  * Annual/Simplified show the real accounting period, e.g. "2025-2026"
+    when it spans two calendar years (the normal case for a guardianship's
+    anniversary-based reporting period) or just "2025" when it doesn't
+  * Initial Inventory (no accounting period) is labeled by the calendar
+    year that snapshot was recorded in
+
+New in 1.4.47:
+- New: Save, switch, and edit a ward's accounting by year
+  * Every ward (Initial Inventory, Simplified, and Annual Accounting) can
+    now keep a full, independently editable copy of its accounting for
+    each year — not just the current one
+  * A new "New Year" button on each ward's dashboard card archives the
+    current year exactly as it stands and opens a blank new year:
+    - Annual/Simplified: Starting Balance is pre-filled from this year's
+      ending total; income, disbursements, and other transaction schedules
+      reset empty for the new period. Asset/liability schedules (Annual's
+      Schedule D) carry forward as the new period's starting holdings.
+    - Initial Inventory: schedules A-1 through C-5 carry forward as a
+      starting point to edit down, since there's no starting/ending
+      balance to hand off instead
+    - Signatures, dates, the accounting period, and remuneration always
+      reset for the new, unsigned filing
+  * A "N prior year(s)" link on the dashboard card lists every earlier
+    year; opening one makes it the active year again, fully editable —
+    nothing is locked or read-only, and switching back and forth never
+    loses data
+  * Supporting documents/comments uploaded per schedule stay attached to
+    the specific year they were added in, including for Initial Inventory
+
+New in 1.4.46:
+- Fixed: Green checkmarks on Initial Inventory schedules required optional
+  fields to be filled
+  * Schedules A-1, A-2, B-1, B-4, and C-4 wrongly required their optional
+    fields (Notes, Account Number) to be filled in before showing complete
+    — those fields are optional and no longer block the checkmark
+- Changed: Removed the Amount field from Simplified Accounting's
+  Remuneration (Part VII)
+  * That field isn't part of the official spreadsheet for this
+    declaration; only Guardian Name, Type, and Description remain
+
+New in 1.4.45:
+- New: Initial Inventory wards show their Guardianship Inception Date (GID)
+  * Same dashboard card spot used for Annual/Simplified's accounting
+    period now shows "GID: <date>" for Initial Inventory wards, once set
+    on the Cover page — the equivalent point-in-time anchor for that
+    one-time filing
+
+New in 1.4.44:
+- New: Ward dashboard shows the accounting period
+  * Annual and Simplified Accounting wards now show their accounting
+    period (e.g. "FY 2025-01-01 – 2025-12-31") right on the dashboard
+    card, under the inventory type
+  * Only shown once Period From/To are set on the Cover page; Initial
+    Inventory wards are unaffected since that filing has no period
+
+New in 1.4.43:
+- Changed: The app now opens in light mode by default
+  * Previously, if you'd never explicitly picked a theme, the app followed
+    your operating system's light/dark setting
+  * Now it always opens in light mode until you use the sun/moon button in
+    the sidebar to choose dark — that choice is still remembered from then on
+
+New in 1.4.42:
+- New: Supporting documents and comments on every schedule
+  * Every schedule across all three filing types (Initial Inventory,
+    Simplified Accounting, and Annual Accounting) now has an upload area
+    at the bottom for supporting documents — receipts, statements, closing
+    disclosures, anything backing up what's entered above
+  * A free-text Comments box was also added to every schedule for notes
+    that don't fit a specific field
+  * Files and comments are stored on this device only, encrypted the same
+    as the rest of your case data (15MB limit per file)
+  * For Annual and Simplified Accounting, uploads/comments are kept per
+    accounting period: when you start next year's accounting (by updating
+    the Period From/To dates on the Cover page), last year's attachments
+    stay archived under the old dates and each schedule opens with a
+    fresh, empty upload area for the new year — nothing is overwritten or
+    lost when you move to a new year's filing
+
+New in 1.4.41:
+- Fixed: Guided tour skipped most of the Annual Accounting walkthrough
+  * The step-by-step tour for Annual Accounting was silently jumping past
+    8 of its 12 steps due to a selector mismatch, ending abruptly right
+    after the signature section
+  * All three guided tours (Initial Inventory, Simplified, and Annual)
+    now walk through every step, including the theme toggle, filing
+    progress bar, and Activity Log
+  * Tour and Help panel text for Annual Accounting was also corrected to
+    describe the actual schedules (Income, Disbursements, Capital
+    Adjustments, Assets & Liabilities, Transfers, Sales) rather than an
+    outdated description
+- New: Help panel now mentions dark mode, filing progress, and the
+  Activity Log so they're easier to discover
+
+New in 1.4.40:
+- New: Activity Log
+  * A new "View activity log" link in the Help panel shows every unlock,
+    failed password attempt, and backup saved or restored on this device
+  * The app has quietly recorded these events since early versions, but
+    there was previously no way to see them — this is the first release
+    where you actually can
+  * Filter by outcome (successful/failed), event type, or search the
+    details; export the current view as a plain text file, useful as a
+    record if your recordkeeping is ever questioned
+  * Nothing here is transmitted anywhere — it is stored on this device
+    only, the same as your case data
+
+New in 1.4.39:
+- New: Duplicate an entry instead of re-typing it
+  * Every schedule entry now has a "Duplicate" button that adds a copy of
+    that entry directly below it
+  * Built for repetitive filings — twelve monthly disbursements to the same
+    payee that differ only in date and check number no longer mean twelve
+    full manual entries
+  * Available on all Initial Inventory schedules and all Annual Accounting
+    schedules
+- Fixed: An Annual Accounting that does not balance can no longer be exported
+  * Line 20 (net assets from the accounting) and Line 30 (net assets from the
+    Schedule D listings) must agree. Previously a mismatch was only a warning
+    on the Parts VI & VII page, so an accounting that did not balance could
+    still be exported and filed — which is the first thing the Clerk's audit
+    checks
+  * A mismatch now appears in the missing-fields list on Print Preview, with
+    a link straight to the page, and blocks export like any missing field
+  * Only raised once figures have been entered, and ignores differences under
+    one cent so ordinary rounding does not trigger it
+- Fixed: Dark mode appearance of buttons
+  * Outline-style buttons ("+ Add Ward", "Rename", "Delete", "Backup", "PDF",
+    "Archive", "Convert Ward" and others) kept a white background in dark
+    mode, appearing as light patches on a dark page
+  * Greyed-out buttons showed leftover blue and green instead of the app's
+    own muted colour
+
+New in 1.4.38:
+- Fixed: The Prev/Next buttons on the print-preview pager moved up and
+  down the screen depending on how tall the page you were viewing was,
+  so clicking through several pages meant repeatedly re-aiming the mouse
+  * The "Viewing" bar now stays pinned at a fixed spot on screen instead
+    of scrolling with the page — confirmed the Next button lands at the
+    exact same screen position across pages ranging from short (a summary)
+    to long (a full schedule)
+  * You can now click Next repeatedly without moving the cursor to page
+    quickly through a filing
+
+New in 1.4.37:
+- Fixed: The "Print Preview" sidebar link had its icon and text pushed
+  apart instead of sitting together like every other sidebar item
+- Fixed: Clicking Next/Prev on the print-preview pager scrolled the page
+  past the "Viewing" controls instead of keeping them in view — it now
+  scrolls just enough to bring the pager back to the top of the screen
+- Removed: The "Dismiss" button on the missing-fields warning. Dismissing
+  it didn't change anything — the ward still can't be exported until the
+  fields are filled in, so the button implied an action it didn't perform
+
+New in 1.4.36:
+- New: Filing-progress summary in the sidebar
+  * The Active Ward card now shows a progress bar and "X of Y sections
+    complete" count for the current filing
+  * A "Jump to [next section]" link takes you straight to the first
+    incomplete section
+  * Updates live as you fill in fields — nothing to save or refresh
+  * This is computed from your actual filing data, the same check that
+    already puts a checkmark or warning icon next to each section in the
+    sidebar — it is not separate, secondary data, so it can never
+    disagree with what's actually in your forms
+
+New in 1.4.35:
+- New: Light and dark theme, with a toggle in the sidebar
+  * Click the sun/moon icon next to "All Wards" to switch between light
+    and dark. Your choice is remembered the next time you open the app
+  * If you have never chosen, the app follows your Windows/browser dark
+    mode setting automatically, and keeps following it live if you change
+    that setting while the app is open
+  * Every screen was redesigned for dark mode, not just inverted — the
+    sidebar, dashboard, schedule pages, forms, dropdowns, checkboxes,
+    tooltips, the guided tour, and all pop-up dialogs
+  * All text in dark mode meets the same WCAG 2.1 AA contrast standard as
+    light mode (verified: 83 elements checked, none below 4.5:1)
+- Unchanged: Printed court documents, PDF exports, and the downloadable
+  PDF User Guide are byte-for-byte identical regardless of which theme is
+  active. Court filings always print on white paper with black text — the
+  theme only affects what you see on screen while working
+
+New in 1.4.34:
+- Improved: Accessibility of toggle-style controls throughout the app
+  * The Help ("?") button now announces open/closed state to screen
+    readers, moves focus into the panel when opened, and Escape closes it
+    and returns focus to the button — standard behavior for this kind
+    of panel
+  * The dashboard's "Grouped by Type" / "Flat Grid" button and the
+    "Archived / Closed Wards" section now announce their current
+    on/off state to screen readers
+  * Each ward's Archive/Restore button announces whether that ward is
+    currently archived
+  * The active page in the sidebar is now marked for screen readers, not
+    just shown with color, so assistive technology always knows which
+    section you're on
+  * All of these were already reachable and usable by keyboard (native
+    buttons handle Tab, Enter, and Space automatically) and already met
+    WCAG 2.1 AA contrast from the 1.4.31–1.4.32 redesign; this release
+    adds the screen-reader announcements and focus handling on top
+
+New in 1.4.33:
+- Improved: Print Preview no longer makes you scroll through every page
+  * A "Viewing" dropdown at the top of the preview lets you jump straight to
+    any page of the filing by name (e.g. "Schedule A-1 — Page 1")
+  * Prev / Next buttons step through the pages one at a time
+  * Choose "All pages (continuous)" to go back to one long scroll whenever
+    you want it
+  * Works for all three form types
+  * IMPORTANT: this changes only what you see on screen. Save as PDF, Save as
+    Excel and Print always produce the complete filing with every page
+    included, no matter which page you happen to be viewing
+
+New in 1.4.32:
+- Redesigned: A cleaner, more professional interface throughout
+  * Every emoji icon in the app has been replaced with a matching set of
+    drawn icons. Emoji appear as a different picture on each computer and
+    look informal in a tool used for court filings; these are one
+    consistent weight and style everywhere
+  * The sidebar now shows the product name and your name at all times.
+    Previously the form type replaced the app name at the top, so the
+    program never identified itself; the active form now has its own
+    labelled strip beneath
+  * Schedule totals are now a clean white panel with a burgundy rule
+    instead of a solid burgundy block, so the figures stand out rather
+    than the box around them
+  * Empty schedules show a proper "nothing added yet" panel instead of a
+    line of italic text
+  * The ward search box now has a search icon inside it and highlights
+    when you click into it
+  * The selected ward card is marked more subtly, so it reads as selected
+    rather than outlined
+  * The "missing required fields" list on Print Preview is now grouped by
+    section instead of one long flat list. Each section shows how many
+    fields it is missing, lists just the field names (previously every
+    line repeated its own section name), and has a "Go to section" link
+    that takes you straight to the page that needs work
+- Fixed: The backup reminder bar at the bottom of the screen briefly showed
+  raw markup instead of its icon
+- Unchanged: Printed court documents and PDF exports are identical to
+  1.4.31 — none of the redesign touches filing output
+- Accessibility: all text still meets WCAG 2.1 AA contrast (verified across
+  every screen; the lightest text in the app is 4.8:1)
+
+New in 1.4.31:
+- Redesigned: Application-wide visual refresh for a more professional look
+  * Unified color, spacing, corner-radius, and shadow system applied across
+    every screen — the app now reads as one consistent product
+  * Sidebar is now clean white with a hairline divider instead of a flat
+    blue-grey panel
+  * Navigation highlights the current page with a maroon left rail and a
+    soft tint, replacing the solid maroon bar that covered the whole row
+    (completion checkmarks stay clearly visible)
+  * Ward cards: rounded color accent bar, layered shadows, and a subtle
+    lift on hover; balance figure is now high-contrast for easier reading
+  * All dollar amounts use aligned (tabular) figures, so columns of money
+    line up properly
+  * Refreshed page headings, form fields, buttons, modals, help panel,
+    tooltips, and guided tour
+  * Bottom action bar is now frosted, so content reads as passing beneath it
+- Accessibility: All text now meets WCAG 2.1 AA contrast (4.5:1)
+  * Small grey labels throughout the app were too faint to read — they
+    sat around 2.5:1, well under the 4.5:1 standard. Every one has been
+    darkened; the lightest text in the app is now 4.8:1
+  * Input and dropdown borders darkened to meet the 3:1 standard for
+    form controls, so fields are easier to locate on the page
+  * Keyboard focus is now a clear maroon outline on every control,
+    replacing a faint tint that was hard to see
+  * Buttons and badges no longer use the stock blue/red, which sat right
+    at the minimum; destructive "Delete" buttons went from 4.5:1 to 7.8:1
+  * Closed/archived wards are no longer dimmed — they are marked by a grey
+    accent and the "Closed" tag instead, so their details stay readable
+  * Section status marks pair a colour with a ✓ or ⚠ symbol, so they can
+    be read without relying on colour vision
+- Improved: The downloadable PDF User Guide is more polished
+  * Now sized for US Letter paper instead of A4, so it prints correctly
+    without scaling or shifted margins
+  * Every page carries a footer rule with "Probate Guardian — User Guide"
+    and "Page X of Y", drawn as crisp text that stays sharp at any zoom
+  * Section titles can no longer be stranded alone at the foot of a page —
+    each title now stays with its opening paragraph
+  * Tighter, more even spacing throughout; the guide still fits 3 pages
+  * Proper typographic quotation marks and apostrophes
+  * Short introductions added to the "Key terms" and "Troubleshooting"
+    sections
+- Unchanged: Printed court documents and PDF exports are byte-for-byte
+  identical to 1.4.30 — the redesign does not touch filing output
+
+New in 1.4.30:
+- Redesigned: Sidebar ward panel for a more professional appearance
+  * Cleaner top navigation — "All Wards" and Help buttons as tidy pills
+    (no more two-line wrapping)
+  * "Active Ward" refined as a small uppercase eyebrow label
+  * Rounded, better-padded ward selector dropdown
+  * "Switch Ward" primary button with subtle depth (clear main action)
+  * "+ Add Ward" now full-width on its own row; Rename/Delete paired
+    neatly below — a clearer action hierarchy
+  * Ward info restyled as a "hero value" card: prominent balance figure
+    with a quiet type label and color-coded accent per inventory type
+  * Consistent rounded corners, spacing, and borders throughout the panel
+
+New in 1.4.29:
+- Fixed: PDF section headings no longer split across a page break
+  * Added page-break-inside:avoid to section (h2) and sub (h3) headings
+  * A heading that would land on a page boundary now moves to the next page
+    intact instead of being sliced in half
+  * Targeted fix — does not reintroduce large whitespace gaps
+
+New in 1.4.28:
+- Restyled: Guided tour and Help panel to match the new professional look
+  * Unified design language across help, tour, and PDF (brand burgundy)
+  Help panel:
+  * New header with a burgundy "?" badge, title, and subtitle
+  * Cleaner typography, small-caps section labels, refined bullet points
+  * Dedicated action footer — "Start guided tour" and "Download PDF guide"
+    buttons are now always visible below the scrolling content
+  * Content resets to the top when the guide changes
+  Guided tour:
+  * Replaced navy-and-gold tooltip with a clean white card
+  * Burgundy progress bar and subtle step counter
+  * Refined burgundy highlight ring with a soft glow (no more harsh flashing)
+  * Professional primary/ghost buttons with smooth hover states
+  * Tooltip positioning tuned to the new card size
+
+New in 1.4.27:
+- Rebuilt: PDF user guide from the ground up — concise and professional
+  * Editorial layout: sans-serif headings paired with Georgia serif body
+  * Cohesive with the app — uses the brand burgundy (#820024) accent
+  * Clean cover with kicker, title, one-line summary, and version stamp
+  * Numbered table of contents and numbered section headings
+  * Tightened copy throughout — every section trimmed to essentials
+  * Definition rows, numbered steps, and minimal left-rule callouts
+  * No heavy boxes or background fills (prevents text-clipping in export)
+  * Auto-stamped with version number and current month/year
+  * Improved html2pdf settings with proper page-break handling
+  * Renders reliably and reads like a real quick-reference manual
+
+New in 1.4.26:
+- Improved: Walkthrough tooltip header styling and accessibility
+  * Removed restrictive inline styles
+  * Better visual hierarchy with gold accent border separator
+  * Improved progress counter styling (larger, bolder)
+  * Better spacing between title and progress info
+  * Fixed ADA accessibility issue: added aria-label to heading
+  * Added default text "Tour Step" to h3 for screen readers
+  * Added aria-live="polite" to progress counter for announcements
+  * Cleaner, more professional appearance
+  * Better readability during walkthrough tours
+  * Fully accessible for assistive technology
+
+New in 1.4.25:
+- Redesigned: Bottom navigation bar for professional appearance
+  * Light gray background (#f8f9fa) instead of plain white
+  * Better spacing and padding throughout
+  * Improved button styling with rounded corners
+  * Stronger top border (2px) for clear visual separation
+  * Enhanced shadow for depth and visual hierarchy
+  * Better hover states with smooth transitions
+  * Primary button: Deep burgundy (#820024) with hover effect
+  * Secondary button: Outline style with burgundy border
+  * Properly aligned spacing between buttons
+  * More polished, modern look
+
+New in 1.4.24:
+- Fixed: Help panel now shows correct content based on current context
+  * Dashboard/no ward selected → Shows "Welcome" help
+  * Guardian Inventory ward → Shows "Initial Inventory Guide"
+  * Simplified Accounting ward → Shows "Simplified Accounting Guide"
+  * Annual Accounting ward → Shows "Annual Accounting Guide"
+  * Auto-detects context when opening help panel
+  * Auto-updates when switching between different ward types
+  * Always shows relevant help for current ward type
+
+New in 1.4.23:
+- Improved: Help panel now updates when switching between wards
+  * Help content dynamically changes based on inventory type of new ward
+  * Works even when help panel is already open
+  * Guardian Inventory help ↔ Simplified Accounting help updates instantly
+  * No need to close and reopen help panel
+  * Seamless experience when working with multiple ward types
+
+New in 1.4.22:
+- Fixed: PDF text rendering cutoff issue in topic cards and callout boxes
+  * Removed problematic background colors that were causing text clipping
+  * Added word-wrap and proper overflow handling
+  * Improved padding and spacing to ensure text visibility
+  * Added page-break-inside:avoid to prevent card breaks
+  * Increased line-height for better readability (.93em body text)
+  * Ensured all text renders completely and readably in PDF export
+  * Better font sizing hierarchy
+
+New in 1.4.21:
+- Fixed: PDF help guide rendering quality and professionalism
+  * Simplified CSS for reliable html2pdf rendering
+  * Clean white background with navy blue (#003366) accents
+  * Professional typography hierarchy with clear visual structure
+  * Light gray section boxes for information grouping
+  * Navy blue borders and headers for official appearance
+  * Proper spacing and margins for readability
+  * Left-border accent styling for callouts and topic cards
+  * Clean, minimalist design that renders perfectly in PDF
+  * Print-ready professional appearance
+
+New in 1.4.20:
+- Redesigned: PDF help guide with professional government document styling
+  * Dark charcoal background (#2a2a2a) with white text
+  * Official dark-themed layout matching legal/government document standards
+  * Blue hyperlinks (#7db8ff) for key terms and references
+  * Bold section headers with blue accent underlines
+  * Darker content sections (#1a1a1a) with left blue borders
+  * Calibri font for formal, professional appearance
+  * Clean hierarchical structure with clear visual separation
+  * Dark borders and accents matching official document aesthetic
+  * Professional footer with page information
+  * Print-ready dark theme suitable for formal filing
+
+New in 1.4.19:
+- Refined: PDF help guide typography and spacing for condensed professional layout
+  * Reduced margins and padding throughout (40% less whitespace)
+  * Tightened line-height from 1.6 to 1.4 for denser text
+  * Reduced section spacing and header margins
+  * Smaller font sizes while maintaining readability (.95em for body, .9em for cards)
+  * Condensed topic card and callout box padding
+  * More compact table of contents
+  * Professional, print-ready appearance with efficient page usage
+  * Better information density without sacrificing clarity
+
+New in 1.4.18:
+- Redesigned: PDF help guide with Apple-style professional layout
+  * Table of Contents with topic overview cards
+  * Clean, minimal header matching Apple's support guide aesthetic
+  * Topic cards with descriptions for easy scanning
+  * Apple system fonts (-apple-system, BlinkMacSystemFont) for native look
+  * Blue accent colors (#007AFF) matching Apple's design language
+  * Professional callout boxes with left border accent
+  * Generous margins and spacing for readability
+  * Improved typography hierarchy and visual organization
+  * Enhanced structure with practical tip boxes
+  * Professional footer with support information
+
+New in 1.4.17:
+- Redesigned: PDF Help Guide export for professional appearance
+  * Professional gradient header with app branding
+  * Section headers with accent bars and background
+  * Styled information cards for important details
+  * Color-coded tips with emoji indicators (💡)
+  * Professional typography and hierarchy
+  * Better spacing and layout throughout
+  * Formatted field definitions with highlighted terms
+  * Organized troubleshooting section
+  * Professional footer with contact info
+  * Justified text and proper line-height
+  * Print-ready styling for professional appearance
+
+New in 1.4.16:
+- Fixed: Field tooltip visibility on hover
+  * Tooltips now reliably appear when hovering over "?" icons
+  * Improved positioning with calc() for better spacing
+  * Added visibility property for better rendering
+  * Changed text wrapping to prevent tooltip width issues
+  * Larger, more visible "?" icons (1.2rem)
+  * Better arrow pointer styling
+  * Improved shadow and contrast for readability
+
+New in 1.4.15:
+- Redesigned: Help panel UI for professional appearance
+  * Wider panel (380px) for better readability
+  * Improved typography hierarchy and spacing
+  * Compact, clean layout with better visual hierarchy
+  * Professional color scheme (darker text, better contrast)
+  * Refined section dividers and spacing
+  * Improved bullet points with arrow indicators
+  * Enhanced button styling with hover effects
+  * Better header design with close button
+  * Consistent padding and margins throughout
+  * More polished, modern look and feel
+
+New in 1.4.14:
+- Fixed: Walkthrough tooltip positioning respects sidebar
+  * Tooltip prefers right positioning (away from sidebar)
+  * Collision detection includes sidebar boundaries
+  * Tooltip never covers content or sidebar
+  * Falls back to bottom, top, left if right isn't available
+  * Minimum left position set to sidebar width (prevents overlap)
+  * Ensures tooltip stays in main content area
+
+New in 1.4.13:
+- Improved: Walkthrough UX and positioning
+  * Page auto-scrolls to center highlighted elements (smooth scroll)
+  * Intelligent tooltip positioning with collision detection
+  * Tooltip never covers the content it's explaining
+  * Tries all four directions (top/bottom/left/right) and picks best fit
+  * Increased spacing (25px gap) between tooltip and highlighted element
+  * Waits for scroll to complete before positioning tooltip
+  * Better boundary detection with proper padding from edges
+
+New in 1.4.12:
+- Major enhancement: Type-specific comprehensive walkthroughs (Phase 4 Upgrade)
+  * Guardian Inventory tour: 20 detailed steps covering all schedules A-D
+    - Covers Cover & Summary, all real estate, personal property, assets, income,
+      lawsuits, trusts, joint owners, and attestations
+    - Each step explains purpose, what to enter, and why it matters
+  * Simplified Annual Accounting tour: 6-step streamlined guide
+    - Fast walkthrough for users who qualify for simplified accounting
+    - Covers cover page, accounting summary, signatures, and export
+  * Annual Accounting tour: 12-step comprehensive guide
+    - Detailed guide for ongoing annual accountings
+    - Covers guardian certification, signatures, asset schedules, and reconciliation
+  * Enhanced UI with:
+    - Progress bar showing completion percentage
+    - Step counter (e.g., "5/20") showing current position
+    - Larger, more readable tooltips (380px wide)
+    - Improved styling with golden yellow accents
+    - Better positioning that accounts for viewport boundaries
+  * Tours auto-detect inventory type and load appropriate version
+  * Manual restarts always work (unlimited retries)
+
+New in 1.4.11:
+- Fixed: "Start Tour" button now works every time
+  * Auto-triggered tour on first launch saves completion state
+  * Manual "Start Tour" clicks can be repeated unlimited times
+  * Improved localStorage logic to separate auto-trigger from manual restarts
+
+New in 1.4.10:
+- Fixed: "Start Tour" button now works every time
+  * Auto-triggered tour on first launch saves completion state
+  * Manual "Start Tour" clicks can be repeated unlimited times
+  * Improved localStorage logic to separate auto-trigger from manual restarts
+
+New in 1.4.10:
+- Fixed: Walkthrough tooltip positioning now stays within viewport
+  * Tooltips no longer hang off-screen on small windows
+  * Better centering relative to highlighted elements
+  * Added boundary checking with 10px padding from edges
+
+New in 1.4.9:
+- Added: Walkthrough tour for first-time users (Phase 4)
+  * Highlights key features and helps new users get started
+  * "Start Tour" button in help panel
+  * Auto-plays on first launch (can be skipped)
+- Added: PDF help guide export (Phase 5)
+  * "Download PDF Guide" button in help panel
+  * Complete user guide downloadable for offline reference
+- Expanded: HOW-TO-RUN.txt documentation (Phase 6)
+  * Detailed setup for Windows, Mac, and Linux
+  * Comprehensive field definitions and workflow guides
+  * Extensive troubleshooting and FAQ section
+
+New in 1.4.8:
+- Added: Tooltip icons (?) on confusing form fields throughout all inventory types
+  * Hover over the small "?" icon next to field labels to see explanations
+  * Tooltips explain: Ward's %, Restricted Assets, Carrying Value, Personal
+    Residence, Income Property, Signature Date, SSN/EIN, Case Number, Full
+    Debt Amount, and other key fields
+  * Tooltips appear on Guardian Inventory (Initial), Simplified Annual
+    Accounting, and Annual Accounting forms
+  * Smooth animations and dark styling for easy visibility
+
+New in 1.4.7:
+- Added: Built-in Help System (Phase 1 & 2 Infrastructure)
+  * Click the "?" button in the sidebar to open the help panel
+  * Help panel shows contextual information based on which inventory type
+    you're working with (Initial, Simplified, or Annual Accounting)
+  * Includes guides for choosing inventory type, understanding key terms
+    (Ward's %, Restricted Assets, Depository), and backing up your data
+  * Automatically updates help content as you navigate through the app
+
+New in 1.4.6:
+- Fixed: Warning indicators never displayed for Initial Inventory (Guardian) wards
+  because the page-tracking logic used the wrong path format for that inventory
+  type's schedules (A-1, B-1, D-1, etc. use unprefixed paths like /a1, /b1, /d1
+  rather than the /sch* paths used by Simplified and Annual). Warnings now work
+  correctly across all three inventory types.
+
+New in 1.4.5:
+- Fixed: Warning indicators now appear correctly for all inventory types
+  (Initial, Simplified, and Annual). Warnings now display when you navigate
+  away from any partially-filled section.
+
+New in 1.4.4:
+- Fixed: Warning indicators on incomplete schedules now only appear after the user
+  has visited and navigated away from them. Fresh wards show no warnings until
+  you actually start working on sections.
+- Removed: "Scroll to continue" indicator from Cover & Summary page — sticky
+  navigation buttons are sufficient guidance.
+
+New in 1.4.3:
+- Fixed: fresh app start with no existing wards now displays the "Create New Ward"
+  page instead of an empty dashboard. Users can immediately create their first
+  ward without confusion.
+- Improved: Cover & Summary page now has sticky navigation buttons that stay
+  visible while scrolling, plus a bouncing "Scroll to continue" indicator to
+  guide users that there's a Next button below the schedule summaries.
+- Added: Schedule sidebar indicators now show incomplete status. A green checkmark
+  (✓) means complete (all fields in all rows filled), a red warning (⚠) indicates
+  partial data that needs finishing, and no indicator means not started. Users can
+  instantly see which schedules need attention.
+- Comprehensive accessibility improvements and readability enhancements.
+
+For earlier versions and additional information, see the GitHub repository at:
+https://github.com/anthropics/probate-guardian
