@@ -6805,6 +6805,32 @@ function syncActiveWardNameDisplay(){
   if(inp&&window.D)inp.value=window.D.wardName||'';
 }
 
+// The header's "Guardian: —" line used to show only guardianData.guardianName
+// -- the app-level "your name" entered once at setup, never anything about
+// the CURRENT form. Every form type's Cover page has its own field for the
+// guardian actually identified on THIS filing (named differently per type:
+// guardian, guardianName, or guardianNames -- see each emptyDataXxx()), so
+// that's tried first, in the order it's most likely to already be filled
+// in (the simple Cover-page field, before the more detailed guardians[]
+// signature-page array some types also have); the app-level name is still
+// the fallback for a form with nothing entered yet, or the rare type
+// (Simplified Plan) that never asks for a guardian name at all.
+function getPrimaryGuardianDisplayName(){
+  const d=window.D;
+  if(!d)return guardianData.guardianName||'';
+  return d.guardian||d.guardianName||d.guardianNames
+    ||(Array.isArray(d.guardians)&&d.guardians[0]&&d.guardians[0].name)
+    ||guardianData.guardianName||'';
+}
+// Same "sync just this one element" reasoning as syncActiveWardNameDisplay()
+// above -- typing in a guardian-name field never triggers a full
+// updateSidebar() rebuild, so this is wired into every place one of those
+// fields can actually be edited instead.
+function syncGuardianNameDisplay(){
+  const el=document.getElementById('guardian-name-display');
+  if(el)el.textContent=`Guardian: ${getPrimaryGuardianDisplayName()||'—'}`;
+}
+
 function refreshWardInfoCard(){
   const wardInfo=document.getElementById('ward-info-display');
   if(!wardInfo)return;
@@ -6892,7 +6918,7 @@ function updateSidebar(){
   sidebar.style.display='';
 
   // Update guardian name
-  document.getElementById('guardian-name-display').textContent=`Guardian: ${guardianData.guardianName||'—'}`;
+  syncGuardianNameDisplay();
 
   // Update ward selector
   const selector=document.getElementById('ward-selector');
@@ -7943,7 +7969,8 @@ function inpS(id,label,val,req=false,type='text'){
   }else if(isPhone){
     oninput=`this.value=formatPhone(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }else if(isName){
-    oninput=`this.value=formatName(this.value);D['${id}']=this.value;autoSave();updateNavDots()${id==='wardName'?';syncActiveWardNameDisplay()':''}`;
+    const guardianSync=(id==='guardian'||id==='guardianName'||id==='guardianNames')?';syncGuardianNameDisplay()':'';
+    oninput=`this.value=formatName(this.value);D['${id}']=this.value;autoSave();updateNavDots()${id==='wardName'?';syncActiveWardNameDisplay()':''}${guardianSync}`;
   }else if(isZip){
     oninput=`applyZipLimit(this);this.value=formatCityStateZip(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }else if(isAddress){
@@ -8005,6 +8032,30 @@ function chkP(id,label,checked){
     <input class="form-check-input" type="checkbox" id="${id}" ${checked?'checked':''} onchange="D['${id}']=this.checked;autoSave();updateNavDots()">
     <label class="form-check-label" for="${id}">${label}</label>
   </div>`;
+}
+// Yes/No fields that were a 2-option select or radio pair, now a single
+// checkbox -- but unlike chkP() above, these keep writing the literal
+// 'Yes'/'No' STRING the rest of the app already reads everywhere (required-
+// field checks, d.field==='Yes' conditionals gating other rendered
+// content, PDF/Excel export cells expecting that exact text) rather than
+// switching to a JS boolean, so nothing downstream needs to change to
+// match. `writeExpr` takes a literal "%V%" placeholder standing in for
+// whichever of 'Yes'/'No' the checkbox resolves to; the two wrappers below
+// cover this app's two setter conventions (a fixed D['id']=, or a custom
+// setter string) the same way countyInputS()/countyInputD() do for county.
+function yesNoCheckboxHTML(id,label,val,writeExpr,req){
+  const onchange=writeExpr.replace(/%V%/g,`(this.checked?'Yes':'No')`);
+  return `<div class="form-check plan-check">
+    <input class="form-check-input" type="checkbox" id="${id}" ${val==='Yes'?'checked':''} onchange="${onchange}">
+    <label class="form-check-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
+  </div>`;
+}
+function yesNoCheckboxS(id,label,val,req=false){
+  return yesNoCheckboxHTML(id,label,val,`D['${id}']=%V%;autoSave();updateNavDots()`,req);
+}
+function yesNoCheckboxD(label,val,setter,req=false){
+  const id='chk_'+Math.random().toString(36).slice(2,9);
+  return yesNoCheckboxHTML(id,label,val,`${setter.replace(/this\.value/g,'%V%')};autoSave();updateNavDots()`,req);
 }
 
 // Inline radio group. Also used later for the Annual/Initial plans' 3-way
@@ -8075,8 +8126,8 @@ function pageCover(){
       <h2 class="subsection-heading">Eligibility — Fla. Stat. § 744.3679</h2>
       <div class="schedule-instructions" style="margin-bottom:.75rem;">The simplified form may only be used when <strong>all</strong> property of the estate is held in a designated depository under § 69.031, and the <strong>only</strong> transactions in that account are interest accrual, deposits from a settlement, or financial institution service charges. If either answer below is "No," use the standard Annual Accounting instead.</div>
       <div class="row g-3">
-        <div class="col-md-6">${selS('eligDepository','All estate property is held in a designated depository under § 69.031',d.eligDepository,['Yes','No'],true)}</div>
-        <div class="col-md-6">${selS('eligOnlyTransactions','The only account transactions are interest accrual, settlement deposits, and/or service charges',d.eligOnlyTransactions,['Yes','No'],true)}</div>
+        <div class="col-md-6">${yesNoCheckboxS('eligDepository','All estate property is held in a designated depository under § 69.031',d.eligDepository,true)}</div>
+        <div class="col-md-6">${yesNoCheckboxS('eligOnlyTransactions','The only account transactions are interest accrual, settlement deposits, and/or service charges',d.eligOnlyTransactions,true)}</div>
       </div>
       ${(d.eligDepository==='No'||d.eligOnlyTransactions==='No')?'<div class="mt-2" style="color:var(--danger-text);font-weight:600;font-size:.85rem;">⚠ This guardianship does not appear to qualify for the simplified form. Please use the standard Annual Accounting.</div>':''}
     </div>
@@ -8091,7 +8142,7 @@ function pageCover(){
       <div class="col-md-6">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
       <div class="col-md-6">${inpS('typeOfGuardianship','Type of Guardianship',d.typeOfGuardianship,true)}</div>
       <div class="col-md-3">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-3">${selS('amendedForm','Amended Form?',d.amendedForm,['Yes','No'],true)}</div>
+      <div class="col-md-3">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true)}</div>
     </div>
     <div style="position:relative;min-height:200px;">
       <div class="summary-box mt-3">
@@ -9022,7 +9073,7 @@ function pagePlanSQuestions(){
       txtP('q6Interaction','Interaction with others',d.q6Interaction,4,true,'If the ward is not able to interact, state why.'))}
 
     ${q(7,'Should any of the rights previously delegated to the guardian advocate(s) / guardian(s) be restored to the ward at this time?',
-      radioP('q7RestoreRights','Restore any rights?',d.q7RestoreRights,['Yes','No'],true)
+      yesNoCheckboxS('q7RestoreRights','Restore any rights?',d.q7RestoreRights,true)
       +(d.q7RestoreRights==='Yes'?`<div class="plan-conditional">${txtP('q7RestoreExplain','Identify the specific right(s) and explain why they should be restored',d.q7RestoreExplain,4,true,'For example: to consent to medical treatment, to determine residence, to manage property.')}</div>`:''))}
 
     ${q(8,'Since the guardianship was established or the last annual report, the following was executed by or on behalf of the ward:',
@@ -9037,7 +9088,7 @@ function pagePlanSQuestions(){
 
     ${q(9,'As the guardian advocate(s) / guardian(s), have you received any payments, goods, or services for work or care provided on behalf of the ward?',
       `<div class="plan-field-hint">This does <strong>not</strong> include payments, goods, or services received from a government benefits program such as Social Security, Medicaid, Medicare, or the Agency for Persons with Disabilities.</div>`
-      +radioP('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,['Yes','No'],true)
+      +yesNoCheckboxS('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,true)
       +(d.q9Remuneration==='Yes'?`<div class="plan-conditional">${txtP('q9RemunerationExplain','Please explain',d.q9RemunerationExplain,3,true)}</div>`:''))}
 
     ${renderScheduleDocsSection('planQuestions')}
@@ -10194,11 +10245,8 @@ function pagePlanIDirectives(){
         <div class="col-md-6"><label class="form-label">Name of Designated Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.agents||'')}" oninput="${set('agents')}"></div>
         <div class="col-md-6"><label class="form-label">Name of any Alternate Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" oninput="${set('alternates')}"></div>
         <div class="col-md-6"><label class="form-label">Contact information for Agent(s)/Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" oninput="${set('contact')}"></div>
-        <div class="col-md-6"><label class="form-label">Has a Court suspended or revoked the Order/Directive?</label>
-          <div class="plan-radio-row">
-            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="radio_q11dir_${i}_revoked" id="q11dir_${i}_revoked_yes" value="Yes" ${r.courtRevoked==='Yes'?'checked':''} onchange="D.q11Directives[${i}].courtRevoked=this.value;autoSave();updateNavDots()"><label class="form-check-label" for="q11dir_${i}_revoked_yes">Yes</label></div>
-            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="radio_q11dir_${i}_revoked" id="q11dir_${i}_revoked_no" value="No" ${r.courtRevoked==='No'?'checked':''} onchange="D.q11Directives[${i}].courtRevoked=this.value;autoSave();updateNavDots()"><label class="form-check-label" for="q11dir_${i}_revoked_no">No</label></div>
-          </div>
+        <div class="col-md-6"><label class="form-label" for="q11dir_${i}_revoked">Has a Court suspended or revoked the Order/Directive?</label>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="q11dir_${i}_revoked" ${r.courtRevoked==='Yes'?'checked':''} onchange="D.q11Directives[${i}].courtRevoked=(this.checked?'Yes':'No');autoSave();updateNavDots()"></div>
         </div>
         <div class="col-md-6"><label class="form-label">Date of Order</label><input type="date" class="form-control" value="${esc(r.orderDate||'')}" oninput="${set('orderDate')}"></div>
         <div class="col-md-6"><label class="form-label">County/State entered</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" oninput="${set('orderCounty')}"></div>
@@ -10238,7 +10286,7 @@ function pagePlanIDirectives(){
         +cb('needsOther','Other'),
         'needsExplain',d.needsExplain,d.needsOther))}
     ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
-      radioP('committeeIncorporated','',d.committeeIncorporated,['Yes','No'])
+      yesNoCheckboxS('committeeIncorporated','',d.committeeIncorporated)
       +(d.committeeIncorporated==='No'?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
     ${renderScheduleDocsSection('planIDirectives')}
     ${pageNavS('/p7','/p9')}
@@ -10424,12 +10472,12 @@ function pagePlanMCover(){
       <div class="col-md-6">${inpS('guardianName','Guardian Name(s)',d.guardianName,true)}</div>
     </div>
     <div class="row g-3 mt-1">
-      <div class="col-md-4">${radioP('amendedForm','Amended Form?',d.amendedForm,['Yes','No'])}</div>
+      <div class="col-md-4">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm)}</div>
       <div class="col-md-4">${d.amendedForm==='Yes'?radioP('amendedVersion','Version',d.amendedVersion,['1st','2nd','3rd']):''}</div>
     </div>
     <div class="row g-3">
-      <div class="col-md-6">${radioP('professionalGuardian','Professional Guardian?',d.professionalGuardian,['Yes','No'])}</div>
-      <div class="col-md-6">${radioP('publicGuardian','Public Guardian?',d.publicGuardian,['Yes','No'])}</div>
+      <div class="col-md-6">${yesNoCheckboxS('professionalGuardian','Professional Guardian?',d.professionalGuardian)}</div>
+      <div class="col-md-6">${yesNoCheckboxS('publicGuardian','Public Guardian?',d.publicGuardian)}</div>
     </div>
     <h2 class="subsection-heading mt-4">1. Where the Minor Presently Resides</h2>
     <div class="row g-3">
@@ -11819,7 +11867,8 @@ function inpD(label,val,setter,req=false,type='text'){
     oninput=`this.value=formatPhone(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isName){
     const isWardNameField=/\bwardName\b/.test(setter);
-    oninput=`this.value=formatName(this.value);${setter};autoSave();updateNavDots()${isWardNameField?';syncActiveWardNameDisplay()':''}`;
+    const isGuardianField=/D\.guardian(Name|Names)?=/.test(setter)||/D\.guardians\[0\]\.name=/.test(setter);
+    oninput=`this.value=formatName(this.value);${setter};autoSave();updateNavDots()${isWardNameField?';syncActiveWardNameDisplay()':''}${isGuardianField?';syncGuardianNameDisplay()':''}`;
   }else if(isZip){
     oninput=`applyZipLimit(this);this.value=formatCityStateZip(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isAddress){
@@ -11894,7 +11943,7 @@ function pagePart1Annual(){
     <div class="col-md-3">${inpD('Period From',d.periodFrom,"D.periodFrom=this.value",false,'date')}</div>
     <div class="col-md-3">${inpD('Period To',d.periodTo,"D.periodTo=this.value",false,'date')}</div>
     <div class="col-md-3">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'])}</div>
-    <div class="col-md-3">${selD('Amended Form?',d.amendedForm,"D.amendedForm=this.value",['No','Yes'])}</div>
+    <div class="col-md-3">${yesNoCheckboxD('Amended Form?',d.amendedForm,"D.amendedForm=this.value")}</div>
     <div class="col-md-5">${inpD('Guardian',d.guardian,"D.guardian=this.value")}</div>
     <div class="col-md-5">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
     <div class="col-md-2">${countyInputD('County',d.county,"D.county=this.value")}</div>
@@ -12195,7 +12244,7 @@ function pageSchD1Annual(){
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schD1[${i}].accountNo=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><select class="form-select" id="schD1_restricted_${i}" onchange="D.schD1[${i}].restricted=this.value;autoSave()"><option value="No" ${r.restricted==='No'?'selected':''}>No</option><option value="Yes" ${r.restricted==='Yes'?'selected':''}>Yes</option></select></div>
+        <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD1_restricted_${i}" ${r.restricted==='Yes'?'checked':''} onchange="D.schD1[${i}].restricted=(this.checked?'Yes':'No');autoSave()"></div>
         <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
@@ -12228,8 +12277,8 @@ function pageSchD2Annual(){
       <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD2',${i},'/schd2')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD2.splice(${i},1);autoSave();navigate('/schd2')">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><select class="form-select" id="schD2_residence_${i}" onchange="D.schD2[${i}].residence=this.value;autoSave()"><option value="No" ${r.residence==='No'?'selected':''}>No</option><option value="Yes" ${r.residence==='Yes'?'selected':''}>Yes</option></select></div>
-        <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><select class="form-select" id="schD2_income_${i}" onchange="D.schD2[${i}].income=this.value;autoSave()"><option value="No" ${r.income==='No'?'selected':''}>No</option><option value="Yes" ${r.income==='Yes'?'selected':''}>Yes</option></select></div>
+        <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><input class="form-check-input" type="checkbox" id="schD2_residence_${i}" ${r.residence==='Yes'?'checked':''} onchange="D.schD2[${i}].residence=(this.checked?'Yes':'No');autoSave()"></div>
+        <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><input class="form-check-input" type="checkbox" id="schD2_income_${i}" ${r.income==='Yes'?'checked':''} onchange="D.schD2[${i}].income=(this.checked?'Yes':'No');autoSave()"></div>
         <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
         <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
         <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -12292,7 +12341,7 @@ function pageSchD4Annual(){
       <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD4',${i},'/schd4')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD4.splice(${i},1);autoSave();navigate('/schd4')">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><select class="form-select" id="schD4_restricted_${i}" onchange="D.schD4[${i}].restricted=this.value;autoSave()"><option value="No" ${r.restricted==='No'?'selected':''}>No</option><option value="Yes" ${r.restricted==='Yes'?'selected':''}>Yes</option></select></div>
+        <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD4_restricted_${i}" ${r.restricted==='Yes'?'checked':''} onchange="D.schD4[${i}].restricted=(this.checked?'Yes':'No');autoSave()"></div>
         <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -12510,7 +12559,7 @@ function pagePart8Annual(){
   <h1>Part VIII — Trust Information</h1>
   <div class="schedule-instructions">If a trust was created after the Guardianship Inception Date, you MUST file a separate trust accounting for that trust.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-4">${selD('#1. Does the Ward have one or more Trusts?',d.trusts[0]&&d.trusts[0].hasTrust||'No',"D.trusts[0].hasTrust=this.value;autoSave();navigate('/p8')",['Yes','No'])}</div>
+    <div class="col-md-4">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts[0]&&d.trusts[0].hasTrust||'No',"D.trusts[0].hasTrust=this.value;autoSave();navigate('/p8')")}</div>
   </div>`;
   ['Trust 1','Trust 2','Trust 3'].forEach((label,i)=>{
     const t=d.trusts[i];
@@ -12518,7 +12567,7 @@ function pagePart8Annual(){
       <div class="entry-card-header">${label}</div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-4">${selD(`Was ${label} created after the GID?`,t.createdAfterGID,`D.trusts[${i}].createdAfterGID=this.value;autoSave()`,['Yes','No'])}</div>
+          <div class="col-md-4">${yesNoCheckboxD(`Was ${label} created after the GID?`,t.createdAfterGID,`D.trusts[${i}].createdAfterGID=this.value;autoSave()`)}</div>
           <div class="col-md-4">${inpD('Name of the Trust',t.name,`D.trusts[${i}].name=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Name of the Trustee',t.trustee,`D.trusts[${i}].trustee=this.value`,true)}</div>
           <div class="col-md-3">${inpD('Trustee Account Number',t.accountNo,`D.trusts[${i}].accountNo=this.value`,true)}</div>
@@ -14698,6 +14747,7 @@ function afterChange(path){
   updateNavDots();
   refreshWardInfoCard();
   if(path==='wardName')syncActiveWardNameDisplay();
+  if(path==='guardianName'||path==='guardians.0.name')syncGuardianNameDisplay();
   // Update live summary displays
   const els={
     'totalA1':calc.totalA1(),'totalA2':calc.totalA2(),'netA':calc.netA(),
@@ -14800,6 +14850,20 @@ function calcInput(calcbind){
 function selectInput(bind,opts){
   const options=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
   return `<select class="custom-select form-select" data-bind="${bind}">${options}</select>`;
+}
+// Checkbox counterpart to selectInput() for a true/false field -- the
+// Guardian form's own schedule flags (isPersonalResidence, isRestricted,
+// inSafeDepositBox, etc.) already store a real JS boolean, never a 'Yes'/
+// 'No' string, so bindForms()'s existing native checkbox handling
+// (el.type==='checkbox' -> setPath(...,e.target.checked)) is already the
+// exact right fit -- this only needed the HTML, not a new bindForms branch.
+// Every call site already has its own reqLabel()/optLabel() heading right
+// above it (the Guardian form's grid puts a label over every field, checkbox
+// or not), so this renders a bare checkbox -- `label` becomes an aria-label
+// for accessibility, not a second visible label repeating the same text.
+function checkboxInput(bind,label){
+  const inputId='chk_'+Math.random().toString(36).slice(2,9);
+  return `<div class="form-check"><input class="form-check-input" type="checkbox" id="${inputId}" data-bind="${bind}" aria-label="${esc(label)}"></div>`;
 }
 // County-field counterpart to selectInput() -- data-bind driven like every
 // other Guardian-form field (bindForms() below wires the actual read/write
@@ -15040,7 +15104,7 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Case Number')+textInput('caseNumber','','caseNumber')))}
         ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid')))}
         ${formRow(col(6,reqLabel('County')+countyInputBind('county')))}
-        ${formRow(col(6,reqLabel('Amended Form?')+selectInput('isAmended',[['false','No'],['true','Yes']])))}
+        ${formRow(col(6,reqLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
       </div>
     </div>
     <div class="col-md-6">
@@ -15049,9 +15113,9 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
         ${formRow(col(12,reqLabel('Type of Guardianship')+textInput('typeOfGuardianship','e.g., Plenary Guardian of Person and Property')))}
-        ${formRow(col(6,reqLabel('Safe Deposit Box?')+selectInput('hasSafeDepositBox',[['false','No'],['true','Yes']])))}
+        ${formRow(col(6,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
         <div id="sdb-filed-row" style="${sdbFiledRow}">
-          ${formRow(col(6,reqLabel('SDB Inventory Filed?')+selectInput('safeDepositBoxFiled',[['false','No'],['true','Yes']])))}
+          ${formRow(col(6,reqLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
         </div>
       </div>
     </div>
@@ -15122,7 +15186,7 @@ function pageHome(){
 // ═══════════════════════════════════════════════════════
 function pageScheduleA1(){
   const entries=D.scheduleA1.map((e,i)=>entryCard(`Property ${i+1}`,i,'a1',`
-    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,reqLabel('Personal Residence?')+selectInput(`scheduleA1.${i}.isPersonalResidence`,[['false','No'],['true','Yes']])),col(3,reqLabel('Income Property?')+selectInput(`scheduleA1.${i}.isIncomeProperty`,[['false','No'],['true','Yes']])))}
+    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,reqLabel('Personal Residence?')+checkboxInput(`scheduleA1.${i}.isPersonalResidence`,'Personal Residence?')),col(3,reqLabel('Income Property?')+checkboxInput(`scheduleA1.${i}.isIncomeProperty`,'Income Property?')))}
     ${formRow(col(12,reqLabel('Street Address')+textInput(`scheduleA1.${i}.streetAddress`,'','address')))}
     ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`scheduleA1.${i}.cityStateZip`,'','zip')),col(6,optLabel('Notes (joint ownership, etc.)')+textInput(`scheduleA1.${i}.notes`)))}
     ${formRow(col(4,reqLabel('Full Asset Value as of GID ($)')+numInput(`scheduleA1.${i}.fullAssetValue`)),col(4,reqLabel("Ward's Ownership % (0-100)")+numInput(`scheduleA1.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleA1.${i}.wardValue`)))}
@@ -15154,7 +15218,7 @@ function pageScheduleA2(){
 
 function pageScheduleB1(){
   const entries=D.scheduleB1.map((e,i)=>entryCard(`Account ${i+1}`,i,'b1',`
-    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,reqLabel('Restricted?')+selectInput(`scheduleB1.${i}.isRestricted`,[['false','No'],['true','Yes (Restricted)']])),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
+    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,reqLabel('Restricted?')+checkboxInput(`scheduleB1.${i}.isRestricted`,'Restricted')),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
     ${formRow(col(6,reqLabel('Street Address of Institution')+textInput(`scheduleB1.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB1.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Full Asset Amount ($)')+numInput(`scheduleB1.${i}.fullAssetAmount`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB1.${i}.wardPercent`)),col(4,optLabel("Ward's Amount (calculated)")+calcInput(`scheduleB1.${i}.wardAmt`)))}
   `)).join('');
@@ -15172,7 +15236,7 @@ function pageScheduleB2(){
     ${formRow(col(12,reqLabel('Description (include VIN/odometer for vehicles, model/serial for equipment)')+`<input class="form-control" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
     ${formRow(col(6,reqLabel('Location – Street Address')+textInput(`scheduleB2.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB2.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(6,reqLabel('Valuation Method &amp; Condition')+textInput(`scheduleB2.${i}.valuationMethod`,'e.g., Kelly Blue Book — fair condition')))}
-    ${formRow(col(3,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),col(3,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`)),col(3,optLabel('In Safe Deposit Box?')+selectInput(`scheduleB2.${i}.inSafeDepositBox`,[['false','No'],['true','Yes']])))}
+    ${formRow(col(3,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),col(3,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`)),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB2.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule B-2: Personal Property Assets</h1>
@@ -15187,7 +15251,7 @@ function pageScheduleB3(){
   const entries=D.scheduleB3.map((e,i)=>entryCard(`Asset ${i+1}`,i,'b3',`
     ${formRow(col(12,reqLabel('Description (include account, policy, or certificate number)')+`<input class="form-control" data-bind="scheduleB3.${i}.description" data-input-type="name">`))}
     ${formRow(col(6,reqLabel('Street Address / Custodian Address')+textInput(`scheduleB3.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB3.${i}.cityStateZip`,'','zip')))}
-    ${formRow(col(3,reqLabel('Restricted?')+selectInput(`scheduleB3.${i}.isRestricted`,[['false','No'],['true','Yes (Restricted)']])),col(3,optLabel('In Safe Deposit Box?')+selectInput(`scheduleB3.${i}.inSafeDepositBox`,[['false','No'],['true','Yes']])))}
+    ${formRow(col(3,reqLabel('Restricted?')+checkboxInput(`scheduleB3.${i}.isRestricted`,'Restricted')),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB3.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
     ${formRow(col(4,reqLabel('Full Asset Value ($)')+numInput(`scheduleB3.${i}.fullAssetValue`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB3.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB3.${i}.wardB3`)))}
   `)).join('');
   return `<div class="schedule-page">
@@ -15362,9 +15426,9 @@ function pageD3(){
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Safe Deposit Box</h2>
     <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4))</p>
-    ${formRow(col(4,reqLabel('Safe Deposit Box?')+selectInput('hasSafeDepositBox',[['false','No'],['true','Yes']])))}
+    ${formRow(col(4,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
     <div id="sdb-filed-row" style="${D.hasSafeDepositBox?'':'display:none;'}">
-      ${formRow(col(4,reqLabel('SDB Inventory Filed?')+selectInput('safeDepositBoxFiled',[['false','No'],['true','Yes']])))}
+      ${formRow(col(4,reqLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
     </div>
   </div>
   ${pageNav('/d3')}</div>`;
