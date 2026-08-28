@@ -460,6 +460,13 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .sched-doc-empty{color:var(--ink-3);font-style:italic;font-size:.85rem;margin-bottom:.5rem;}
 .dashboard-empty-inline{grid-column:1/-1;text-align:center;padding:1.5rem 1rem;color:var(--ink-4);font-style:italic;font-size:.88rem;}
 .summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;box-shadow:var(--sh-1);}
+/* Summary page's burgundy total card, last in its column -- shorter
+   top/bottom padding than the default .summary-box so its bottom edge
+   lines up with Summary II's bottom in the other column at desktop
+   widths (both columns are flex-stretched to equal overall height, but
+   the individual cards inside aren't, so their content determines where
+   each one actually ends). */
+.summary-inventory-total{padding-top:.71rem;padding-bottom:.71rem;}
 /* Cover page's Required Information / Guardian & Attorney pair only --
    .row's default flex stretch already equalizes the two .col-md-6
    heights, but .summary-box itself still sized to its own content,
@@ -15371,7 +15378,7 @@ function pageSummary(){
         <div class="summary-line"><a href="#" onclick="navigate('/d4');return false;">D-4 — Bond &amp; Surety Info</a>${status(hasBond)}</div>
         <div class="summary-line"><a href="#" onclick="navigate('/d5');return false;">D-5 — Certificate of Service</a>${status(hasService)}</div>
       </div>
-      <div class="summary-box" style="background:#820024;color:#fff;">
+      <div class="summary-box summary-inventory-total" style="background:#820024;color:#fff;">
         <div class="summary-line total" style="color:#fff;border-color:rgba(255,255,255,.2);">
           <span>VERIFIED INITIAL INVENTORY TOTAL</span>
           <span id="totalInventory" style="font-size:1.05rem;">${fmt(calc.total())}</span>
