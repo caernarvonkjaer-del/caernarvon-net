@@ -334,7 +334,9 @@
     <p class="section-intro">
       Each helper app is two small services &mdash; a browser frontend and a backend API &mdash; both
       packaged as Docker containers from day one, even during local development, so "it works on my machine"
-      also means "it works in the cloud."
+      also means "it works in the cloud." Probate Guardian is the exception: it's a single static, client-side
+      app with no backend or API of its own, so it skips the container/auth pipeline below entirely and ships
+      as plain files.
     </p>
     <div class="pipeline">
       <div class="step">
@@ -396,7 +398,9 @@
     <p class="section-intro">
       Because everything ships as a Docker container, the same image can run on any major cloud with only
       configuration changes &mdash; no rewrite. The apps above currently run on Azure; the table shows the
-      equivalent building blocks on AWS and Google Cloud if a future app needs to land elsewhere.
+      equivalent building blocks on AWS and Google Cloud if a future app needs to land elsewhere. Probate
+      Guardian isn't part of this table &mdash; as a static client-side app it's just files served alongside
+      this site, with nothing to containerize or run server-side.
     </p>
 
     <div class="cloud-table-wrap">
