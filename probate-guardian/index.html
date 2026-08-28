@@ -6634,6 +6634,8 @@ function renderPage(page){
   }
 
   if(!activeInventoryType){
+    currentPage='/inventory-select';
+    window.location.hash='/inventory-select';
     updateHelpContext('inventory-select');
     el.innerHTML=pageInventorySelector();
     linkLabelsToInputs();
@@ -16080,7 +16082,11 @@ function handleHash(){
   if(SPECIAL_PAGES.includes(h)){
     currentPage=h;
     renderPage(h);
-    updateNavActive(h);
+    // renderPage() may have redirected (e.g. /dashboard with no wards yet
+    // lands on /inventory-select instead) and updated currentPage itself —
+    // reflect wherever it actually landed, not the hash this call started
+    // with, or the nav highlight points at a page nothing rendered.
+    updateNavActive(currentPage);
     return;
   }
   const wizardPages=PAGES[activeInventoryType]||PAGES_GUARDIAN;
@@ -16088,7 +16094,7 @@ function handleHash(){
   const page=valid.includes(h)?h:'/';
   currentPage=page;
   renderPage(page);
-  updateNavActive(page);
+  updateNavActive(currentPage);
   if(!_appState.walkthroughCompleted&&!_appState.firstLaunchSeen){
     _appState.firstLaunchSeen=true;
     saveAppState('firstLaunchSeen',true);
