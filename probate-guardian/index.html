@@ -2144,22 +2144,18 @@ let _lastExportAt = null; // ms epoch of last successful export, or null if neve
 // STORAGE STRATEGY — the .sav file is the only persistence
 // ═══════════════════════════════════════════════════════
 //
-// This app writes nothing to IndexedDB, localStorage, or sessionStorage.
-// Everything lives in memory for the length of the session and is written
-// to the user's .sav file (see EXPORT / IMPORT below) — nowhere else.
-// Two consequences follow directly from that, and both are accepted:
+// This app writes no CASE DATA to IndexedDB, localStorage, or
+// sessionStorage. Everything about a case lives in memory for the length
+// of the session and is written to the user's .sav file (see EXPORT /
+// IMPORT below) — nowhere else. One consequence follows directly from
+// that, and is accepted:
 //
-//   - A FileSystemFileHandle (the writable handle behind silent auto-save)
-//     can only be persisted in IndexedDB — there is no other mechanism —
-//     so the auto-save target does not survive a page reload. _zipFileHandle
-//     is a plain in-memory variable; reloading the page means re-opening
-//     the .sav file, same as any other in-memory state. See
-//     promptOpenOrStartAtLaunch().
-//   - With nothing written to browser storage, there is no crash recovery:
-//     closing the tab loses anything typed since the last successful write
-//     to the file. updateLastSavedIndicator()/refreshAutoSaveArmedStatus()
-//     and the beforeunload warning (see warnBeforeUnloadIfDirty()) exist
-//     specifically so that state is never silent.
+//   - With nothing about the case written to browser storage, there is no
+//     crash recovery: closing the tab loses anything typed since the last
+//     successful write to the file. updateLastSavedIndicator()/
+//     refreshAutoSaveArmedStatus() and the beforeunload warning (see
+//     warnBeforeUnloadIfDirty()) exist specifically so that state is never
+//     silent.
 //
 // wards live in guardianData.wards, already the in-memory object the whole
 // UI reads and writes — there is no separate store to copy them into or
@@ -2173,16 +2169,28 @@ let _lastExportAt = null; // ms epoch of last successful export, or null if neve
 // it. See its own comment for why it can be deleted outright in a later
 // release.
 //
-// One deliberate exception to all of the above: hasOpenedCaseBefore() /
-// markCaseOpenedBefore() store a single boolean in their own small
-// IndexedDB database (never the legacy one above) — nothing else, never
-// the file handle, filename, or any case data — recording only that this
-// browser has successfully opened or saved a .sav file before. The
-// startup screen (promptOpenOrStartAtLaunch()) uses it to skip straight to
-// the file picker instead of asking Open-vs-Start-New on every visit. This
-// is a real, considered tradeoff against the zero-storage guarantee above,
-// made because the boolean itself reveals nothing about who the guardian
-// is or what case they hold — see the comment on those two functions.
+// Two deliberate exceptions to all of the above, both in their own small
+// IndexedDB database (never the legacy one above, never any case data):
+//
+//   - hasOpenedCaseBefore() / markCaseOpenedBefore() store a single
+//     boolean recording only that this browser has successfully opened or
+//     saved a .sav file before. promptOpenOrStartAtLaunch() uses it to
+//     skip straight to the file picker instead of asking Open-vs-Start-New
+//     on every visit.
+//   - savePersistedZipHandle() / loadPersistedZipHandle() store the actual
+//     FileSystemFileHandle from the last opened or saved file (Chrome/Edge
+//     only — Firefox/Safari have no equivalent handle to persist).
+//     trySilentReopen() uses it to try reading that same file again with
+//     no picker and no prompt at all, when the browser still honors the
+//     earlier permission grant (typically true within one browser session,
+//     typically not after a full restart — see the comment on
+//     _zipFileHandle for what "typically" covers).
+//
+// Both are a real, considered tradeoff against the zero-case-data guarantee
+// above: the boolean reveals nothing about who the guardian is or what
+// case they hold, and the handle is a capability the browser polices
+// independently, not a copy of the file's contents — see the comments on
+// those functions.
 // ═══════════════════════════════════════════════════════
 
 let _appState = {};        // key -> value; replaces the old `appState` IDB store
@@ -3728,17 +3736,24 @@ async function saveBlobAs(blob,suggestedName){
   return null;
 }
 
-// A FileSystemFileHandle can only be persisted in IndexedDB — there is no
-// other mechanism — so with IndexedDB gone, this plain in-memory variable
-// IS the only place it lives. That is a deliberate consequence of this app
-// writing nothing to browser storage, not an oversight: it means auto-save
-// cannot survive a page reload, and promptOpenOrStartAtLaunch() exists
-// specifically so reopening the .sav file is a normal, expected part of
-// starting a new session rather than a surprise. refreshAutoSaveArmedStatus()
-// keeps the sidebar honest about this every time it changes.
+// _zipFileHandle itself is a plain in-memory variable and does not survive
+// a page reload on its own. A copy of the handle IS additionally persisted
+// to IndexedDB (see savePersistedZipHandle()/loadPersistedZipHandle(), the
+// same deliberate exception documented above hasOpenedCaseBefore()) so
+// trySilentReopen() can try to read the file again on the next launch
+// without the file picker. That reuse is READ access only, and only when
+// the browser still honors the earlier grant — typically true within the
+// same browser session, typically reset to "ask again" after a full
+// browser restart. WRITE access (silent auto-save) always needs its own
+// fresh grant either way; requestPermission() for either mode always needs
+// a user gesture, so a browser restart still costs one click — just a
+// small native "Allow?" prompt reusing the remembered handle, not the full
+// picker dialog. refreshAutoSaveArmedStatus() keeps the sidebar honest
+// about the write side of this every time it changes.
 let _zipFileHandle=null;
 async function rememberZipHandle(handle){
   _zipFileHandle=handle;
+  savePersistedZipHandle(handle); // best-effort; a failed write just means next launch shows the picker again
   refreshAutoSaveArmedStatus();
 }
 async function loadZipHandle(){
@@ -4149,19 +4164,30 @@ async function importGuardianDataZip(file){
 // branch it always has.
 // ═══════════════════════════════════════════════════════
 
-// hasOpenedCaseBefore() / markCaseOpenedBefore() — the one exception to
-// this app's zero-browser-storage rule (see the comment above _appState).
-// A single boolean, in its own tiny IndexedDB database, meaning nothing
-// more than "this browser has successfully opened or saved a .sav file at
-// least once." Never the file handle (that still can't survive a reload —
-// see the note on _zipFileHandle), never a filename, never anything about
-// the case itself. A browser's file system offers no "does this file
-// exist" check without a picker dialog anyway, so this can't skip the
-// click every launch still needs — it only decides which screen that
-// click lands on: a full Open-vs-Start-New choice the first time, or
-// straight to the file picker (with Start New one click further away)
-// once this browser has shown it has a real file to come back to.
-const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags', LAUNCH_PREF_KEY='hasOpenedBefore';
+// hasOpenedCaseBefore()/markCaseOpenedBefore() and
+// savePersistedZipHandle()/loadPersistedZipHandle() — the two exceptions
+// to this app's zero-browser-storage rule (see the comment above
+// _appState), both small values in the same tiny IndexedDB database, keyed
+// separately: a boolean ("has this browser opened or saved a .sav file
+// before") and the actual FileSystemFileHandle from the last one. Neither
+// is a filename or anything about the case itself, and a browser's file
+// system offers no "does this file exist" check without a picker dialog
+// anyway — so this still can't guarantee skipping the click every launch
+// needs. What it buys, in order of how good the outcome is:
+//   1. trySilentReopen() finds the remembered handle, the browser still
+//      honors its read permission (typically true within one browser
+//      session) — the file loads with no picker and no prompt at all.
+//   2. The grant has lapsed (typically after a full restart) — clicking
+//      Open re-requests it on the SAME remembered handle, which is a
+//      small native "Allow?" prompt, not the full file-picker dialog.
+//   3. No handle was ever remembered, or it's stale (file moved/deleted) —
+//      falls back to the full picker, same as always.
+// Either way, the startup screen also skips straight to a single Open
+// button (Start New one click further away) once this browser has shown
+// it has a real file to come back to, instead of asking Open-vs-Start-New
+// every visit.
+const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags';
+const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle';
 function _launchPrefDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(LAUNCH_PREF_DB,1);
@@ -4170,32 +4196,62 @@ function _launchPrefDb(){
     req.onerror=()=>reject(req.error);
   });
 }
+async function _launchPrefGet(key){
+  const db=await _launchPrefDb();
+  return new Promise((resolve)=>{
+    const req=db.transaction(LAUNCH_PREF_STORE,'readonly').objectStore(LAUNCH_PREF_STORE).get(key);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>resolve(undefined);
+  });
+}
+async function _launchPrefPut(key,value){
+  const db=await _launchPrefDb();
+  return new Promise((resolve)=>{
+    const tx=db.transaction(LAUNCH_PREF_STORE,'readwrite');
+    tx.objectStore(LAUNCH_PREF_STORE).put(value,key);
+    tx.oncomplete=resolve;
+    tx.onerror=resolve; // non-critical either way — next launch just falls back
+  });
+}
 async function hasOpenedCaseBefore(){
-  try{
-    const db=await _launchPrefDb();
-    return await new Promise((resolve)=>{
-      const req=db.transaction(LAUNCH_PREF_STORE,'readonly').objectStore(LAUNCH_PREF_STORE).get(LAUNCH_PREF_KEY);
-      req.onsuccess=()=>resolve(req.result===true);
-      req.onerror=()=>resolve(false);
-    });
-  }catch(e){return false;} // IndexedDB unavailable (private browsing, etc.) — fall back to the full choice screen
+  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_OPENED))===true;}
+  catch(e){return false;} // IndexedDB unavailable (private browsing, etc.) — fall back to the full choice screen
 }
 async function markCaseOpenedBefore(){
+  try{await _launchPrefPut(LAUNCH_PREF_KEY_OPENED,true);}catch(e){/* non-critical */}
+}
+async function savePersistedZipHandle(handle){
+  try{await _launchPrefPut(LAUNCH_PREF_KEY_HANDLE,handle);}catch(e){/* non-critical */}
+}
+async function loadPersistedZipHandle(){
+  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_HANDLE))||null;}
+  catch(e){return null;}
+}
+
+// Case 1 above: a remembered handle whose read permission the browser
+// still honors with no prompt at all. Runs before the startup screen even
+// shows, so this is the only path that can be truly zero-click; everywhere
+// else still needs the gesture openCaseFileAtLaunch() provides.
+async function trySilentReopen(){
   try{
-    const db=await _launchPrefDb();
-    await new Promise((resolve)=>{
-      const tx=db.transaction(LAUNCH_PREF_STORE,'readwrite');
-      tx.objectStore(LAUNCH_PREF_STORE).put(true,LAUNCH_PREF_KEY);
-      tx.oncomplete=resolve;
-      tx.onerror=resolve; // non-critical either way — next launch just asks again
-    });
-  }catch(e){/* non-critical */}
+    const handle=await loadPersistedZipHandle();
+    if(!handle||!handle.queryPermission)return false;
+    if((await handle.queryPermission({mode:'read'}))!=='granted')return false;
+    const file=await handle.getFile();
+    const ok=await loadCaseFileAtLaunch(file);
+    if(ok)await rememberZipHandle(handle);
+    return ok;
+  }catch(e){
+    console.warn('Silent reopen of remembered file failed, falling back to the startup screen',e);
+    return false;
+  }
 }
 
 let _launchStateResolved=false;
 let _openedFileAtLaunch=false; // set by loadCaseFileAtLaunch() on success; initApp() lands on the dashboard instead of the default page when this is true
 let _startupChoiceResolve=null;
 async function promptOpenOrStartAtLaunch(){
+  if(await trySilentReopen())return;
   const fastPath=await hasOpenedCaseBefore();
   document.getElementById('startup-newcase-btn').style.display=fastPath?'none':'';
   document.getElementById('startup-newcase-link').style.display=fastPath?'':'none';
@@ -4220,7 +4276,31 @@ function startNewCaseAtLaunch(){
 // Those browsers can open a case file but can never auto-save it (see
 // refreshAutoSaveArmedStatus() and the note on _zipFileHandle above); that
 // is stated on screen once the file is open, not hidden.
+//
+// trySilentReopen() already tried the fully-silent path with no prompt at
+// all before this screen ever showed; reaching here means that either
+// failed or was never possible (this is a first visit, a different
+// browser, or the earlier grant lapsed). This click is still a real user
+// gesture, so it can re-request permission on that SAME remembered
+// handle — a small native "Allow?" prompt, not the full picker — before
+// falling back to showOpenFilePicker() itself.
 async function openCaseFileAtLaunch(){
+  const remembered=await loadPersistedZipHandle();
+  if(remembered&&remembered.requestPermission){
+    try{
+      if((await remembered.requestPermission({mode:'read'}))==='granted'){
+        const file=await remembered.getFile();
+        const ok=await loadCaseFileAtLaunch(file);
+        if(ok){
+          await rememberZipHandle(remembered);
+          _resolveStartupChoice();
+          return;
+        }
+      }
+    }catch(e){
+      console.warn('Could not reuse remembered file handle, falling back to the file picker',e);
+    }
+  }
   if(window.showOpenFilePicker){
     try{
       const [handle]=await window.showOpenFilePicker({
