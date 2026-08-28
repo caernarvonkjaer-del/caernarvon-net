@@ -789,7 +789,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <div id="ward-selector-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
       <button class="btn btn-sm btn-primary w-100 ward-picker-switch-btn" onclick="handleSwitchWardClick()">Switch Ward</button>
-      <button class="btn btn-outline-primary w-100 ward-add-btn" onclick="navigate('/inventory-select')">+ Add Ward</button>
+      <button class="btn btn-outline-primary w-100 ward-add-btn" onclick="navigate('/inventory-select')">+ New Form</button>
       <div class="ward-picker-actions">
         <button class="btn btn-outline-secondary" id="rename-ward-btn" onclick="showRenameWardModal()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/></svg> Rename</button>
         <button class="btn btn-outline-danger" id="delete-ward-btn" onclick="confirmDeleteWard()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
@@ -995,7 +995,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <div id="convertWardModal" class="modal-overlay">
   <div class="modal-box" style="max-width:480px;">
     <h2 style="margin-bottom:.5rem;color:var(--ink);">Create New Form for Existing Ward</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Creates a new ward of a different inventory type, with data carried over from the one you pick below.</p>
+    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Creates a new form of a different inventory type, with data carried over from the one you pick below.</p>
     <div class="mb-3">
       <label class="form-label" for="convert-source-ward">Ward</label>
       <div class="ward-combobox-wrap" id="convert-source-ward-wrap">
@@ -1010,7 +1010,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     <div id="convert-note" style="font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;"></div>
     <div class="d-flex gap-2">
       <button class="btn btn-secondary flex-fill" onclick="closeModal('convertWardModal')">Cancel</button>
-      <button class="btn btn-primary flex-fill" onclick="doConvertWard()">Convert</button>
+      <button class="btn btn-primary flex-fill" onclick="doConvertWard()">Create Form</button>
     </div>
   </div>
 </div>
@@ -1084,7 +1084,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <!-- Add Ward Modal -->
 <div id="addWardModal" class="modal-overlay">
   <div class="modal-box">
-    <h2 style="margin-bottom:1rem;color:var(--ink);">Add New Ward</h2>
+    <h2 style="margin-bottom:1rem;color:var(--ink);">Add New Form</h2>
     <div class="mb-3">
       <label class="form-label">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
@@ -1116,7 +1116,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
       <div id="carry-source-autonote" style="font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;"></div>
     </div>
     <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" onclick="doAddWard()" style="flex:1;">Add Ward</button>
+      <button class="btn btn-primary" onclick="doAddWard()" style="flex:1;">Create Form</button>
       <button class="btn btn-outline-secondary" onclick="closeModal('addWardModal')" style="flex:1;">Cancel</button>
     </div>
   </div>
@@ -1184,10 +1184,10 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <!-- Confirm Delete Modal -->
 <div id="deleteWardModal" class="modal-overlay">
   <div class="modal-box">
-    <h2 style="margin-bottom:1rem;color:var(--danger-text);">Delete Ward?</h2>
-    <p id="delete-ward-msg" style="margin-bottom:1rem;color:var(--ink-3);">Are you sure you want to delete this ward? This action cannot be undone.</p>
+    <h2 style="margin-bottom:1rem;color:var(--danger-text);">Delete Form?</h2>
+    <p id="delete-ward-msg" style="margin-bottom:1rem;color:var(--ink-3);">Are you sure you want to delete this form? This action cannot be undone.</p>
     <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-danger" onclick="doDeleteWard()" style="flex:1;">Delete Ward</button>
+      <button class="btn btn-danger" onclick="doDeleteWard()" style="flex:1;">Delete Form</button>
       <button class="btn btn-outline-secondary" onclick="closeModal('deleteWardModal')" style="flex:1;">Cancel</button>
     </div>
   </div>
@@ -1407,7 +1407,7 @@ const HELP_CONTENT = {
     title: 'Welcome to Probate Guardian',
     content: `<p><strong>Probate Guardian</strong> helps you prepare court-required guardianship documents for Florida probate court.</p>
     <div class="help-section-title">Getting Started</div>
-    <p>1. Create a new ward using the <strong>+ Add Ward</strong> button</p>
+    <p>1. Create a new form using the <strong>+ New Form</strong> button</p>
     <p>2. Choose your inventory type (Initial, Simplified, or Annual)</p>
     <p>3. Fill out each section using the sidebar navigation</p>
     <p>4. Look for the <strong>green checkmarks</strong> — they indicate completed sections</p>
@@ -2000,7 +2000,7 @@ async function exportHelpGuideAsPDF(){
         <h3>At first launch</h3>
         <div class="steps">
           <div class="step"><span class="num">1</span>Choose a data-protection level. <span class="k">Encrypted</span> locks everything behind a master password; <span class="k">No Password</span> opens instantly but stores data as plain text. This choice is permanent.</div>
-          <div class="step"><span class="num">2</span>Click <span class="k">+ Add Ward</span> and pick the inventory type that matches your filing.</div>
+          <div class="step"><span class="num">2</span>Click <span class="k">+ New Form</span> and pick the inventory type that matches your filing.</div>
           <div class="step"><span class="num">3</span>Work down the sidebar. A green check marks a finished section; an amber warning means it was started but left incomplete.</div>
         </div>
         <div class="note"><span class="nl">Tip</span>Save a backup the moment your first ward exists. See <em>Saving &amp; backups</em>.</div>
@@ -5659,7 +5659,7 @@ function confirmDeleteWard(wardId){
   const ward=wardId?guardianData.wards.find(w=>w.wardId===wardId):getActiveWard();
   if(!ward)return;
   _pendingDeleteWardId=ward.wardId;
-  const yearNote=(ward.years&&ward.years.length)?` This will also permanently delete ${ward.years.length} prior year${ward.years.length===1?'':'s'} of saved accounting for this ward.`:'';
+  const yearNote=(ward.years&&ward.years.length)?` This will also permanently delete ${ward.years.length} prior year${ward.years.length===1?'':'s'} of saved accounting for this form.`:'';
   document.getElementById('delete-ward-msg').textContent=`Are you sure you want to delete "${ward.wardName}"?${yearNote} This action cannot be undone.`;
   showModal('deleteWardModal');
 }
@@ -6090,7 +6090,7 @@ function wardCardHTML(ward){
       <button class="btn btn-sm btn-outline-secondary" title="Open Print Preview to export a PDF" onclick="quickExportPdf('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> PDF</button>
       <button class="btn btn-sm btn-outline-secondary" title="Archive this year and open a new one" onclick="showStartNewYearModal('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg> New Year</button>
       <button class="btn btn-sm btn-outline-secondary" title="${ward.archived?'Move back to active caseload':'Mark this case as closed'}" onclick="toggleWardArchived('${ward.wardId}')" aria-pressed="${!!ward.archived}">${ward.archived?ic('undo',14)+' Restore':ic('archive',14)+' Archive'}</button>
-      <button class="btn btn-sm btn-outline-danger" title="Permanently delete this ward" onclick="confirmDeleteWard('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
+      <button class="btn btn-sm btn-outline-danger" title="Permanently delete this form" onclick="confirmDeleteWard('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
     </div>
     <div class="ward-card-footer">
       <button class="btn btn-sm btn-primary w-100" onclick="switchWard('${ward.wardId}')">${isActive?'Continue Editing →':'Open Ward →'}</button>
@@ -7326,7 +7326,7 @@ async function doDeleteWardYear(){
 // ═══════════════════════════════════════════════════════
 function pageInventorySelector(){
   return `<div style="max-width:900px;margin:0 auto;">
-  <h1 style="font-size:1.8rem;color:var(--ink);margin-bottom:2rem;text-align:center;">Start New Ward</h1>
+  <h1 style="font-size:1.8rem;color:var(--ink);margin-bottom:2rem;text-align:center;">Start New Form</h1>
   <p style="text-align:center;color:var(--ink-3);margin-bottom:2rem;font-size:.95rem;">Select the form type for a ward. You can manage multiple wards of different types.</p>
   <div class="inventory-selector">
     <div class="inventory-card" onclick="showAddWardModalForType('guardian')" role="button" tabindex="0" aria-label="Create Initial Inventory ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('guardian');}">
