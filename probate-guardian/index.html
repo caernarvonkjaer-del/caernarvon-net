@@ -170,6 +170,11 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .sidebar-context{padding:.5rem 1.1rem;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.45rem;color:var(--ink-3);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;}
 .sidebar-context .ic{color:var(--accent-text);}
 .nav-section{padding:.4rem 0;}
+/* Separates the ward metrics card (net assets, filing progress) above from
+   the form navigation below -- previously just stacked directly on top of
+   each other with no visual break between "info about this ward" and
+   "pages within this ward's form". */
+#nav-sections{border-top:1px solid var(--line);margin-top:.6rem;padding-top:.5rem;}
 .nav-section-label{padding:.85rem .95rem .3rem;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);}
 .nav-section-label.nav-section-toggle{display:flex;align-items:center;gap:.35rem;cursor:pointer;user-select:none;}
 .nav-section-label.nav-section-toggle:hover{color:var(--ink-2);}
@@ -467,6 +472,10 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    the individual cards inside aren't, so their content determines where
    each one actually ends). */
 .summary-inventory-total{padding-top:.71rem;padding-bottom:.71rem;}
+.ssn-mask-wrap{position:relative;}
+.ssn-mask-wrap input{padding-right:2.4rem;}
+.ssn-reveal-btn{position:absolute;top:0;right:0;bottom:0;width:2.4rem;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-4);cursor:pointer;padding:0;}
+.ssn-reveal-btn:hover{color:var(--ink-2);}
 /* Cover page's Required Information / Guardian & Attorney pair only --
    .row's default flex stretch already equalizes the two .col-md-6
    heights, but .summary-box itself still sized to its own content,
@@ -497,6 +506,22 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 .custom-select{display:block;width:100%;padding:.42rem .75rem;font-size:.88rem;border:1px solid var(--field);border-radius:var(--r-sm);background-color:var(--surface);}
 .form-check-input{border-color:var(--field);}
 .form-check-input:focus{border-color:var(--brand-text);box-shadow:0 0 0 3px rgba(130,0,36,.14);}
+/* WCAG 2.5.5 wants at least a 44x44 tap target -- a bare native checkbox
+   is much smaller than that. Rather than visually enlarging the box
+   itself, give the row it sits in (and, where there's visible label
+   text, the label) enough padded height that clicking/tapping near the
+   checkbox -- not just squarely on its tiny square -- still hits it.
+   checkboxInput() wraps its bare checkbox in a <label> specifically so
+   this padding is itself clickable, not just decorative. */
+/* Overrides Bootstrap's own .form-check block+float+padding-left:1.5em
+   layout (the checkbox floats left into that padding, offset by a
+   matching negative margin on .form-check-input) -- floats don't apply
+   inside a flex container, so padding-left/float/margin-left are reset
+   here to avoid stacking Bootstrap's placeholder spacing on top of the
+   gap this flex row already provides. */
+.form-check{display:flex;align-items:center;gap:.5rem;min-height:2.75rem;margin:0;padding-left:0;cursor:pointer;}
+.form-check .form-check-input{float:none;margin-left:0;flex-shrink:0;}
+.form-check-label{cursor:pointer;padding:.6rem 0;line-height:1.3;margin:0;}
 .req{color:var(--brand-text);font-weight:700;margin-left:2px;}
 /* ── Buttons ──────────────────────────────────────────── */
 .btn{--bs-btn-font-weight:600;--bs-btn-border-radius:var(--r-sm);transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .1s;}
@@ -2289,6 +2314,20 @@ const r2=(v)=>Math.round(v*100)/100;
 const fmt=(v)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v||0);
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmtDate(s){return s?String(s).substring(0,10):'';}
+// Dashboard-card-only variant: treats an implausible year (e.g. the
+// "0002-05-10" a native <input type="date"> would happily store if a
+// user typed "2" into the year segment and tabbed away -- see the
+// document-level 'change' guard further down that now blocks this going
+// forward) the same as a missing date, so a summary card degrades to
+// "?" instead of displaying obvious garbage. Left as its own function
+// rather than changed in fmtDate() itself, which prints elsewhere
+// (forms, print preview, exports) where a bad value should stay visible
+// so the filer notices and fixes it before filing, not get hidden.
+function fmtDateCard(s){
+  const d=fmtDate(s);
+  const y=+d.slice(0,4);
+  return (d&&(y<1900||y>new Date().getFullYear()+30))?'':d;
+}
 
 // Neutralizes formula/CSV injection: a cell value starting with =, +, -, or @
 // would otherwise be interpreted as a formula by Excel/Sheets when the
@@ -6355,8 +6394,8 @@ function wardCardHTML(ward){
   const isActive=ward.wardId===guardianData.activeWardId;
   const hasPeriod=ward.inventoryType!=='guardian'&&(ward.periodFrom||ward.periodTo);
   const hasGid=ward.inventoryType==='guardian'&&ward.gid;
-  const periodHTML=hasPeriod?`<div class="ward-card-period">FY ${esc(fmtDate(ward.periodFrom)||'?')} – ${esc(fmtDate(ward.periodTo)||'?')}</div>`
-    :hasGid?`<div class="ward-card-period">GID: ${esc(fmtDate(ward.gid))}</div>`:'';
+  const periodHTML=hasPeriod?`<div class="ward-card-period">FY ${esc(fmtDateCard(ward.periodFrom)||'?')} – ${esc(fmtDateCard(ward.periodTo)||'?')}</div>`
+    :hasGid?`<div class="ward-card-period">GID: ${esc(fmtDateCard(ward.gid)||'?')}</div>`:'';
   // A Plan holds no money, so a dollar headline would be meaningless (and a
   // bare "—" under a "Total" label reads as a real, zero figure). Show how
   // much of the filing is done instead.
@@ -14383,55 +14422,30 @@ function bindForms(){
 // WITHOUT that ward being the active one — see getWardProgress().
 function computeNavChecks(){
   if(activeInventoryType==='guardian'){
-    const filled=v=>v!==''&&v!==null&&v!==undefined;
-    // Fields the schedule pages themselves mark optional (optLabel, not
-    // reqLabel) — these must not block a schedule's green checkmark just
-    // because they're blank. Keyed by schedule so each row only excludes
-    // the fields that are actually optional for it.
-    const OPTIONAL_ROW_FIELDS={
-      scheduleA1:['notes'], scheduleA2:['accountNumber','notes'],
-      scheduleB1:['accountNumber'], scheduleB4:['accountNumber'],
-      scheduleC4:['accountNumber'],
-    };
-    const rowComplete=(r,optional)=>Object.entries(r).every(([k,v])=>(optional&&optional.includes(k))||filled(v));
-    const rowHasAnyData=r=>Object.values(r).some(v=>filled(v));
-    // A schedule counts as complete either the normal way (at least one
-    // fully-filled row) or via the "I verify there are no items of this
-    // type" checkbox (scheduleEmptyHTML() / setScheduleNoItems()) -- the
-    // short nav key ('a1') is just `key` with the 'schedule' prefix
-    // stripped and lowercased, so no separate short-key param is needed.
-    const scheduleComplete=(s,key)=>{
-      const navKey=key.replace('schedule','').toLowerCase();
-      if(D.scheduleNoItems&&D.scheduleNoItems[navKey])return true;
-      return (s||[]).length>0&&(s||[]).every(r=>rowComplete(r,OPTIONAL_ROW_FIELDS[key]));
-    };
-    const checks={
-      a1:scheduleComplete(D.scheduleA1,'scheduleA1'), a2:scheduleComplete(D.scheduleA2,'scheduleA2'),
-      b1:scheduleComplete(D.scheduleB1,'scheduleB1'), b2:scheduleComplete(D.scheduleB2,'scheduleB2'),
-      b3:scheduleComplete(D.scheduleB3,'scheduleB3'), b4:scheduleComplete(D.scheduleB4,'scheduleB4'),
-      c1:scheduleComplete(D.scheduleC1,'scheduleC1'), c2:scheduleComplete(D.scheduleC2,'scheduleC2'),
-      c3:scheduleComplete(D.scheduleC3,'scheduleC3'), c4:scheduleComplete(D.scheduleC4,'scheduleC4'),
-      c5:scheduleComplete(D.scheduleC5,'scheduleC5'),
-      d1:D.guardians.some(g=>g.name),
-      d2:!!(D.preparer.name||D.attorney.name),
-      d3:D.hasSafeDepositBox!==undefined,
-      d4:!!(D.bondAmount||D.bondWaivedDate),
-      d5:D.serviceRecipients.some(r=>r.name),
-    };
-    const incomplete={
-      a1:!checks.a1&&(D.scheduleA1||[]).some(rowHasAnyData),
-      a2:!checks.a2&&(D.scheduleA2||[]).some(rowHasAnyData),
-      b1:!checks.b1&&(D.scheduleB1||[]).some(rowHasAnyData),
-      b2:!checks.b2&&(D.scheduleB2||[]).some(rowHasAnyData),
-      b3:!checks.b3&&(D.scheduleB3||[]).some(rowHasAnyData),
-      b4:!checks.b4&&(D.scheduleB4||[]).some(rowHasAnyData),
-      c1:!checks.c1&&(D.scheduleC1||[]).some(rowHasAnyData),
-      c2:!checks.c2&&(D.scheduleC2||[]).some(rowHasAnyData),
-      c3:!checks.c3&&(D.scheduleC3||[]).some(rowHasAnyData),
-      c4:!checks.c4&&(D.scheduleC4||[]).some(rowHasAnyData),
-      c5:!checks.c5&&(D.scheduleC5||[]).some(rowHasAnyData),
-    };
-    return {checks,incomplete};
+    // Single source of truth: every section's ✓/− here comes from the SAME
+    // errors validate() produces and Print Preview's export gate checks --
+    // not a second, separately-maintained set of looser rules. That older
+    // approach let a schedule row with e.g. $0 for a required dollar amount,
+    // or a D-2/D-4/D-5 page with only some of its required fields filled,
+    // show a green ✓ in the sidebar while validate() still listed it as
+    // missing on Print Preview, with no way to know the two disagreed until
+    // export was blocked there. errorRoute() already turns each error's
+    // "<Section> — <field>" prefix into a route ("A-1 row 2"->"/a1", "D-2
+    // Preparer"->"/d2", "Cover"->"/") for the validation panel's own "Go to
+    // section" links -- reused here to bucket every error onto the same key
+    // the sidebar and Next-button gating use, so the two can't drift apart.
+    const trackedKeys=['cover',...SCHEDULE_NAV_KEYS,'d1','d2','d3','d4','d5'];
+    const checks={};
+    trackedKeys.forEach(k=>checks[k]=true);
+    validate().forEach(e=>{
+      const str=String(e);
+      const i=str.indexOf(' — ');
+      const section=i>-1?str.slice(0,i).trim():'';
+      const route=errorRoute(section);
+      const key=route==='/'?'cover':route?route.slice(1):null;
+      if(key&&key in checks)checks[key]=false;
+    });
+    return {checks,incomplete:{}};
   } else if(activeInventoryType==='simplified'){
     const filled=v=>v!==''&&v!==null&&v!==undefined;
     const hasAny=(...vals)=>vals.some(v=>filled(v));
@@ -14839,7 +14853,12 @@ function renderProgressSummary(checks){
 function getCurrentPageKey(){
   const page=currentPage.split('?')[0];
   if(activeInventoryType==='guardian'){
-    // Guardian nav keys are unprefixed and match the page path directly (e.g. '/a1' -> 'a1')
+    // Guardian nav keys are unprefixed and match the page path directly (e.g. '/a1' -> 'a1').
+    // '/' and '/summary' both map to 'cover' -- Summary has no required fields
+    // of its own (it's a read-only rollup of the other pages), so it isn't
+    // separately tracked in computeNavChecks(), but should still count as
+    // "inside" the Case Info section for the sidebar's active-page auto-expand.
+    if(page==='/'||page==='/summary')return 'cover';
     const guardianPages=['/a1','/a2','/b1','/b2','/b3','/b4','/c1','/c2','/c3','/c4','/c5','/d1','/d2','/d3','/d4','/d5'];
     return guardianPages.includes(page)?page.slice(1):'';
   }
@@ -14996,7 +15015,22 @@ function col(n,html){return `<div class="col-md-${n}">${html}</div>`;}
 function textInput(bind,placeholder='',type=''){
   const inputId='txt_'+Math.random().toString(36).slice(2,9);
   const dataType=type?` data-input-type="${type}"`:' data-input-type="text"';
+  // SSN/EIN is real PII -- masked by default (type="password" only hides
+  // the rendering; .value, oninput/data-bind, and formatSSN()'s live
+  // dash-insertion all keep working exactly as for a text input) with a
+  // lock/unlock toggle button to reveal it on demand. See toggleSsnReveal().
+  if(type==='ssn'){
+    return `<div class="ssn-mask-wrap"><input class="form-control" id="${inputId}" type="password" autocomplete="off" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`
+      +`<button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`;
+  }
   return `<input class="form-control" id="${inputId}" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`;
+}
+function toggleSsnReveal(btn){
+  const input=btn.previousElementSibling;
+  const revealing=input.type==='password';
+  input.type=revealing?'text':'password';
+  btn.setAttribute('aria-label',revealing?'Hide SSN/EIN':'Show SSN/EIN');
+  btn.innerHTML=ic(revealing?'unlock':'lock',14);
 }
 function numInput(bind){
   const isPercent=/Percent$/i.test(bind);
@@ -15038,7 +15072,13 @@ function selectInput(bind,opts,currentVal){
 // for accessibility, not a second visible label repeating the same text.
 function checkboxInput(bind,label){
   const inputId='chk_'+Math.random().toString(36).slice(2,9);
-  return `<div class="form-check"><input class="form-check-input" type="checkbox" id="${inputId}" data-bind="${bind}" aria-label="${esc(label)}"></div>`;
+  // <label>, not <div>, wrapping the input as a descendant -- clicking
+  // anywhere in its padded area (see .form-check's min-height/touch
+  // padding) toggles the checkbox even though there's no visible text,
+  // not just the tiny native checkbox square itself. Standard technique
+  // for meeting the 44x44 touch-target minimum without visually
+  // enlarging the checkbox.
+  return `<label class="form-check"><input class="form-check-input" type="checkbox" id="${inputId}" data-bind="${bind}" aria-label="${esc(label)}"></label>`;
 }
 // County-field counterpart to selectInput() -- data-bind driven like every
 // other Guardian-form field (bindForms() below wires the actual read/write
@@ -15716,6 +15756,23 @@ function validate(){
   req(d.guardianName,'Cover — Guardian Name(s) is required.');
   req(d.attorneyForGuardian,'Cover — Attorney for Guardian is required.');
   req(d.typeOfGuardianship,'Cover — Type of Guardianship is required.');
+  // A schedule left totally untouched -- no rows, and the "I verify there
+  // are no X to report" checkbox (scheduleEmptyHTML()/setScheduleNoItems())
+  // never checked -- produced NO validate() errors before this, since every
+  // per-row check below is inside a .forEach() that simply never runs on an
+  // empty array. That's what let a schedule sit blank-and-unconfirmed while
+  // still showing 100% complete in the sidebar (computeNavChecks() derives
+  // its checks from these same errors) and passing Print Preview's export
+  // gate. Mirrors the same "row or checkbox" rule the schedule's own Next
+  // button already enforces (isScheduleIncomplete()), so there's exactly
+  // one definition of "done" for a schedule, not two that can disagree.
+  SCHEDULE_NAV_KEYS.forEach(key=>{
+    const dataKey='schedule'+key[0].toUpperCase()+key.slice(1);
+    if((d[dataKey]||[]).length===0&&!(d.scheduleNoItems&&d.scheduleNoItems[key])){
+      const route=key[0].toUpperCase()+'-'+key.slice(1);
+      errors.push(`${route} — Add at least one entry, or check the box verifying there are none, before this schedule counts as complete.`);
+    }
+  });
   d.scheduleA1.forEach((e,i)=>{const p=`A-1 row ${i+1}`;req(e.propertyDescription,`${p} — Property Description`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);if(e.wardPercent<=0)errors.push(`${p} — Ward's % must be > 0.`);});
   d.scheduleA2.forEach((e,i)=>{const p=`A-2 row ${i+1}`;req(e.lenderName,`${p} — Lender Name`);req(e.lenderAddress,`${p} — Lender Address`);req(e.lenderCityStateZip,`${p} — Lender City/State/Zip`);if(e.fullDebtBalance<=0)errors.push(`${p} — Full Debt Balance must be > 0.`);});
   d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`;req(e.institutionName,`${p} — Institution Name`);req(e.accountType,`${p} — Account Type`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetAmount<=0)errors.push(`${p} — Full Asset Amount must be > 0.`);});
@@ -16914,6 +16971,30 @@ function wireDateRangePair(fromInp,toInp){
     }
   });
 }
+
+// Guards against a native <input type="date"> committing an implausible
+// year (e.g. "0002-05-10" from a user typing "2" into the year segment
+// and tabbing away before finishing it) -- HTML5 date inputs treat any
+// 1-4 digit year as a "complete", non-empty value, so nothing else in
+// the app ever sees this as invalid or unanswered. One delegated
+// capture-phase listener on `document`, registered once here rather
+// than per input, so it runs before EVERY date field's own oninput/
+// data-bind change handler regardless of which of the app's several
+// wiring conventions that field uses -- catching this everywhere without
+// touching each of the ~50 individual date inputs. Deliberately hooks
+// 'change' (fires on blur/commit), not 'input' (fires per keystroke) --
+// min/max attributes on the element itself were tried for this same
+// problem and reverted (see enforceDateRanges() above): Chrome refuses
+// digit-by-digit typing into a date field once min/max are set. Blanking
+// the field here doesn't touch the attribute, so typing stays unaffected.
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.tagName!=='INPUT'||el.type!=='date'||!el.value)return;
+  const m=el.value.match(/^(\d{4})-\d{2}-\d{2}$/);
+  if(m&&(+m[1]<1900||+m[1]>new Date().getFullYear()+30)){
+    el.value='';
+  }
+},true);
 
 // Start
 setTimeout(()=>{
