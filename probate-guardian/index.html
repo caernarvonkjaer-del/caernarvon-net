@@ -788,7 +788,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     </div>
 
     <div class="sidebar-topnav">
-      <button class="topnav-btn" onclick="navigate('/dashboard')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg> All Wards</button>
+      <button class="topnav-btn ward-collapsible" onclick="navigate('/dashboard')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg> All Wards</button>
       <button class="topnav-btn topnav-theme" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch theme" aria-label="Switch to dark theme" aria-pressed="false"></button>
       <button class="topnav-btn topnav-help" id="help-toggle-btn" onclick="toggleHelpPanel()" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="false" aria-controls="help-panel">?</button>
     </div>
@@ -800,9 +800,14 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <input type="text" id="ward-selector" class="form-control form-control-sm ward-picker-select" placeholder="Type or select a ward…" autocomplete="off" oninput="onWardSelectorInput()" onfocus="onWardSelectorFocus()" onkeydown="onWardSelectorKeydown(event)">
         <div id="ward-selector-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
-      <button class="btn btn-sm btn-primary w-100 ward-picker-switch-btn" onclick="handleSwitchWardClick()">Switch Ward</button>
-      <button class="btn btn-outline-primary w-100 ward-add-btn" onclick="navigate('/inventory-select')">+ New Form</button>
-      <div class="ward-picker-actions">
+      <!-- Hidden (along with the rest of .ward-collapsible) while a form is
+           being filled out, to give the schedule list below more room --
+           see applyWardControlsCollapsedState(). Not shown at all until a
+           ward exists, same as the controls it toggles. -->
+      <button type="button" class="btn btn-sm btn-link w-100 ward-controls-toggle" id="ward-controls-toggle-btn" onclick="toggleWardControls()" style="display:none;padding:.2rem 0;font-size:.72rem;" aria-expanded="true">Hide ward controls ▴</button>
+      <button class="btn btn-sm btn-primary w-100 ward-picker-switch-btn ward-collapsible" onclick="handleSwitchWardClick()">Switch Ward</button>
+      <button class="btn btn-outline-primary w-100 ward-add-btn ward-collapsible" onclick="navigate('/inventory-select')">+ New Form</button>
+      <div class="ward-picker-actions ward-collapsible">
         <button class="btn btn-outline-secondary" id="rename-ward-btn" onclick="showRenameWardModal()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/></svg> Rename</button>
         <button class="btn btn-outline-danger" id="delete-ward-btn" onclick="confirmDeleteWard()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
       </div>
@@ -2561,13 +2566,16 @@ function capitalizeImportedFields(obj){
   return obj;
 }
 
-// Limit digits in a City/State/Zip field to 5 (the zip portion)
+// Limit digits in a City/State/Zip field to 9 (a 5-digit ZIP, or a full
+// ZIP+4) -- was capped at 5, which silently mangled any ZIP+4 entry
+// ("33756-4321" loses its last 4 digits mid-keystroke instead of just
+// rejecting the extra ones cleanly).
 function applyZipLimit(el){
   const digitCount=(el.value.match(/\d/g)||[]).length;
-  if(digitCount>5){
+  if(digitCount>9){
     const arr=el.value.split('');
     let removed=0;
-    for(let i=arr.length-1;i>=0&&removed<digitCount-5;i--){
+    for(let i=arr.length-1;i>=0&&removed<digitCount-9;i--){
       if(/\d/.test(arr[i])){arr.splice(i,1);removed++;}
     }
     el.value=arr.join('');
@@ -6721,6 +6729,31 @@ function refreshWardInfoCard(){
   updateNavDots(); // populates #ward-progress from the same completion check as the nav ✓/⚠ marks
 }
 
+// Ward-management controls (All Wards / Switch Ward / +New Form /
+// Rename+Delete -- everything tagged .ward-collapsible) collapse
+// automatically the first time a form becomes active, to give the
+// schedule/certification/output list below more room while it's actually
+// being filled out. _wardControlsUserToggled latches once the user clicks
+// the toggle so their choice sticks for the rest of the session, including
+// across switching to a different ward, instead of silently re-collapsing
+// under them every time updateSidebar() runs.
+let _wardControlsCollapsed=false;
+let _wardControlsUserToggled=false;
+function applyWardControlsCollapsedState(){
+  document.querySelectorAll('.ward-collapsible').forEach(el=>{
+    el.style.display=_wardControlsCollapsed?'none':'';
+  });
+  const btn=document.getElementById('ward-controls-toggle-btn');
+  if(!btn)return;
+  btn.textContent=_wardControlsCollapsed?'Show ward controls ▾':'Hide ward controls ▴';
+  btn.setAttribute('aria-expanded',String(!_wardControlsCollapsed));
+}
+function toggleWardControls(){
+  _wardControlsCollapsed=!_wardControlsCollapsed;
+  _wardControlsUserToggled=true;
+  applyWardControlsCollapsedState();
+}
+
 function updateSidebar(){
   const sidebar=document.getElementById('sidebar');
   if(guardianData.wards.length===0){
@@ -6751,6 +6784,13 @@ function updateSidebar(){
     renameBtn.style.display='none';
     deleteBtn.style.display='none';
   }
+
+  // The toggle itself only makes sense once there's something to toggle --
+  // hidden on a fresh install with no ward selected yet.
+  const toggleBtn=document.getElementById('ward-controls-toggle-btn');
+  if(toggleBtn)toggleBtn.style.display=activeWardId?'block':'none';
+  if(activeInventoryType&&!_wardControlsUserToggled)_wardControlsCollapsed=true;
+  applyWardControlsCollapsedState();
 
   if(!activeInventoryType)return;
   const typeConfig=INVENTORY_TYPES[activeInventoryType];
