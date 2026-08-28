@@ -787,8 +787,8 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
       <span id="sidebar-context-icon"></span><span id="sidebar-context-label"></span>
     </div>
 
-    <div class="sidebar-topnav">
-      <button class="topnav-btn ward-collapsible" onclick="navigate('/dashboard')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg> All Wards</button>
+    <div class="sidebar-topnav ward-collapsible">
+      <button class="topnav-btn" onclick="navigate('/dashboard')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg> All Wards</button>
       <button class="topnav-btn topnav-theme" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch theme" aria-label="Switch to dark theme" aria-pressed="false"></button>
       <button class="topnav-btn topnav-help" id="help-toggle-btn" onclick="toggleHelpPanel()" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="false" aria-controls="help-panel">?</button>
     </div>
@@ -6729,9 +6729,10 @@ function refreshWardInfoCard(){
   updateNavDots(); // populates #ward-progress from the same completion check as the nav ✓/⚠ marks
 }
 
-// Ward-management controls (All Wards / Switch Ward / +New Form /
-// Rename+Delete -- everything tagged .ward-collapsible) collapse
-// automatically the first time a form becomes active, to give the
+// Ward-management controls (the whole topnav row -- All Wards, theme,
+// help -- plus Switch Ward / +New Form / Rename+Delete -- everything tagged
+// .ward-collapsible) collapse automatically the first time a form becomes
+// active, to give the
 // schedule/certification/output list below more room while it's actually
 // being filled out. _wardControlsUserToggled latches once the user clicks
 // the toggle so their choice sticks for the rest of the session, including
@@ -16415,29 +16416,29 @@ function enforceDateRanges(){
     wireDateRangePair(fromInp,toInp);
   });
 }
+// Was also setting min/max attributes on each other (toInp.min =
+// fromInp.value, fromInp.max = toInp.value) to block out-of-order entry at
+// the browser level. Dropped: a native <input type="date"> with a min/max
+// set is the known cause of Chrome refusing straight digit-by-digit typing
+// into that field (reported against Part I's Period To, which is exactly
+// a paired field here) -- the swap-on-change below already keeps the pair
+// sane without ever touching the HTML attribute that was blocking typing.
 function wireDateRangePair(fromInp,toInp){
   const fire=el=>{
     el.dispatchEvent(new Event('input',{bubbles:true}));
     el.dispatchEvent(new Event('change',{bubbles:true}));
   };
-  const sync=()=>{
-    if(fromInp.value)toInp.min=fromInp.value;else toInp.removeAttribute('min');
-    if(toInp.value)fromInp.max=toInp.value;else fromInp.removeAttribute('max');
-  };
-  sync();
   fromInp.addEventListener('change',()=>{
     if(fromInp.value&&toInp.value&&fromInp.value>toInp.value){
       toInp.value=fromInp.value;
       fire(toInp);
     }
-    sync();
   });
   toInp.addEventListener('change',()=>{
     if(fromInp.value&&toInp.value&&toInp.value<fromInp.value){
       fromInp.value=toInp.value;
       fire(fromInp);
     }
-    sync();
   });
 }
 
