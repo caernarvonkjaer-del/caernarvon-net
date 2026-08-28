@@ -14888,6 +14888,42 @@ function renderPageGuardian(page){
   bindForms();
   afterChange('');
   el.scrollTop=0;
+  if(page==='/')linkAccordions('instructionsZone','importZone');
+}
+
+// Keeps two Bootstrap accordion panels showing/hiding together -- built for
+// Cover & Summary's "General Instructions" and "Import Excel File" panels,
+// which the user wants to always open and close as a pair rather than
+// independently. Listens on Bootstrap's pre-transition show/hide events
+// (not shown/hidden) so both panels start animating together instead of
+// the second one waiting for the first's transition to finish; also
+// catches a panel being toggled programmatically, not just by click.
+// The `syncing` flag is load-bearing, not decorative: Collapse.show()
+// fires its 'show.bs.collapse' event BEFORE marking itself as shown/
+// transitioning, so without this guard elA's handler opening elB
+// re-enters elB's handler opening elA while elA's own show() call is
+// still on the stack and hasn't set its own guard yet -- an infinite
+// mutual recursion (confirmed with Playwright: "Maximum call stack size
+// exceeded" without this flag). One shared flag blocks the re-entrant
+// leg while still letting the first hop's side effect (starting the
+// other panel's transition) happen exactly once.
+function linkAccordions(idA,idB){
+  const elA=document.getElementById(idA),elB=document.getElementById(idB);
+  if(!elA||!elB||elA.dataset.linked)return;
+  elA.dataset.linked='1';elB.dataset.linked='1';
+  let syncing=false;
+  const mirror=(target,open)=>{
+    if(syncing)return;
+    syncing=true;
+    try{
+      const inst=bootstrap.Collapse.getOrCreateInstance(target,{toggle:false});
+      if(open)inst.show();else inst.hide();
+    }finally{syncing=false;}
+  };
+  elA.addEventListener('show.bs.collapse',()=>mirror(elB,true));
+  elA.addEventListener('hide.bs.collapse',()=>mirror(elB,false));
+  elB.addEventListener('show.bs.collapse',()=>mirror(elA,true));
+  elB.addEventListener('hide.bs.collapse',()=>mirror(elA,false));
 }
 
 // ── helpers ────────────────────────────────────────────
@@ -14913,8 +14949,21 @@ function dateInput(bind){
 function calcInput(calcbind){
   return `<input class="form-control" readonly data-calcbind="${calcbind}" style="background:var(--accent-050);font-weight:600;">`;
 }
-function selectInput(bind,opts){
-  const options=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
+// currentVal is optional -- pass the field's live D value when the option
+// list is a fixed/curated set (as opposed to grown organically from user
+// entries) so a .sav file saved before that list existed, or before a
+// free-text field was converted to this dropdown, doesn't silently show a
+// blank/wrong selection: bindForms() sets select.value=String(cur), and a
+// value with no matching <option> leaves the control showing nothing
+// selected even though the real data is still intact underneath. Injecting
+// the stored value as its own selected option keeps the display honest
+// until the user actively picks one of the real choices.
+function selectInput(bind,opts,currentVal){
+  let list=opts;
+  if(currentVal!==undefined&&currentVal!==null&&currentVal!==''&&!opts.some(([v])=>v===currentVal)){
+    list=[[currentVal,currentVal],...opts];
+  }
+  const options=list.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('');
   return `<select class="custom-select form-select" data-bind="${bind}">${options}</select>`;
 }
 // Checkbox counterpart to selectInput() for a true/false field -- the
@@ -15134,15 +15183,25 @@ function pageHome(){
   return `<div class="schedule-page">
   <h1>Verified Initial Inventory — Case Information</h1>
   <div class="instructions-import-row">
-    <div class="schedule-instructions">
-      <strong>GENERAL INSTRUCTIONS</strong>
-      <ul style="margin:.35rem 0 0 1.4rem;font-size:.8rem;">
-        <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
-        <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
-        <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, Attorney, County).</li>
-        <li>Work through Schedules A-1 through C-5, then complete Parts III–VI (Attestations &amp; Filings).</li>
-        <li>Use Print Preview to save as PDF or Excel for filing.</li>
-      </ul>
+    <div class="accordion mb-0">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#instructionsZone" aria-expanded="false">
+            ${ic('clipboard',15)} General Instructions
+          </button>
+        </h2>
+        <div id="instructionsZone" class="accordion-collapse collapse">
+          <div class="accordion-body" style="padding:1rem 1.25rem;">
+            <ul style="margin:0;padding-left:1.4rem;font-size:.8rem;">
+              <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
+              <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
+              <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, Attorney, County).</li>
+              <li>Work through Schedules A-1 through C-5, then complete Parts III–VI (Attestations &amp; Filings).</li>
+              <li>Use Print Preview to save as PDF or Excel for filing.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="accordion mb-0">
       <div class="accordion-item">
@@ -15173,7 +15232,6 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Case Number')+textInput('caseNumber','','caseNumber')))}
         ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid')))}
         ${formRow(col(6,reqLabel('County')+countyInputBind('county')))}
-        ${formRow(col(6,reqLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
       </div>
     </div>
     <div class="col-md-6">
@@ -15181,8 +15239,8 @@ function pageHome(){
         <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
-        ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',[['Plenary','Plenary'],['Limited','Limited'],['Voluntary','Voluntary'],['Minor - Person','Minor - Person'],['Minor - Property','Minor - Property'],['Minor - Person - Property','Minor - Person - Property']])))}
-        ${formRow(col(6,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
+        ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',[['Plenary','Plenary'],['Limited','Limited'],['Voluntary','Voluntary'],['Minor - Person','Minor - Person'],['Minor - Property','Minor - Property'],['Minor - Person - Property','Minor - Person - Property']],D.typeOfGuardianship)))}
+        ${formRow(col(6,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')),col(6,reqLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
         <div id="sdb-filed-row" style="${sdbFiledRow}">
           ${formRow(col(6,reqLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
         </div>
