@@ -124,6 +124,17 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 [data-theme="dark"] .sidebar::-webkit-scrollbar-thumb,[data-theme="dark"] .main-content::-webkit-scrollbar-thumb,[data-theme="dark"] .help-panel-content::-webkit-scrollbar-thumb{background:#3a4556;background-clip:content-box;}
 [data-theme="dark"] .sidebar::-webkit-scrollbar-thumb:hover,[data-theme="dark"] .main-content::-webkit-scrollbar-thumb:hover,[data-theme="dark"] .help-panel-content::-webkit-scrollbar-thumb:hover{background:#4c5975;background-clip:content-box;}
 .sidebar{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;flex-shrink:0;}
+/* The preferred scroll region -- header/ward-picker/ward-summary above it
+   and the backup/auto-save controls below it (both plain flow children of
+   the same flex column) stay pinned while this scrolls on its own.
+   min-height:0 is required for a flex child to actually shrink below its
+   content height rather than just growing the column past the viewport.
+   .sidebar keeps its own overflow-y:auto too, deliberately not hidden: on
+   a short enough viewport this can shrink to (near) nothing and still not
+   leave room for the fixed top+bottom content, and the outer scroll is
+   what keeps the bottom controls reachable rather than clipped off with
+   no way back to them. */
+.sidebar-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;}
 /* Mobile/tablet: the sidebar becomes an off-canvas drawer opened by the
    hamburger button below, instead of permanently eating ~40-70% of a narrow
    screen's width. Hidden on wider screens where the sidebar is always shown. */
@@ -798,8 +809,8 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
       <div id="ward-info-display" class="ward-info-card" style="display:none;"></div>
     </div>
 
-    <div class="nav-section" id="nav-sections"></div>
-    <div class="nav-section" style="padding:1rem .8rem 1.1rem;margin-top:auto;border-top:1px solid var(--line);background:var(--surface-2);">
+    <div class="nav-section sidebar-scroll" id="nav-sections"></div>
+    <div class="nav-section" style="padding:1rem .8rem 1.1rem;border-top:1px solid var(--line);background:var(--surface-2);">
       <small id="last-saved-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.15rem;font-size:.72rem;color:var(--ink-3);">No backup saved yet</small>
       <small id="auto-save-armed-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.65rem;font-size:.68rem;color:var(--ink-4);">Auto-save: needs one manual save first</small>
       <label for="auto-export-interval-select" style="display:block;font-size:.7rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;">Auto-Save Every</label>
