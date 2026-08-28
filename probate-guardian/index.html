@@ -206,6 +206,13 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .ward-picker-switch-btn{margin-bottom:.5rem;font-weight:650;border-radius:var(--r);padding:.55rem;letter-spacing:.01em;box-shadow:0 1px 2px rgba(130,0,36,.2),0 6px 16px -6px rgba(130,0,36,.45);}
 .ward-add-btn{margin-bottom:.5rem;font-weight:600;border-radius:var(--r);padding:.48rem;font-size:.79rem;}
 .ward-picker-actions{display:flex;gap:.4rem;margin-bottom:.75rem;}
+/* Bootstrap's .btn-link focus style is a colored box-shadow ring, not just
+   the outline property -- suppressing only outline leaves it showing. Both
+   collapse toggles share this styling, so both get it removed; requested
+   specifically for the ward-controls one after it kept appearing at odd
+   moments, but the save-controls toggle would show the identical ring. */
+#ward-controls-toggle-btn,#save-controls-toggle-btn{outline:none!important;box-shadow:none!important;}
+#ward-controls-toggle-btn:focus,#save-controls-toggle-btn:focus{outline:none!important;box-shadow:none!important;}
 .ward-picker-actions .btn{flex:1;padding:.4rem .3rem;font-size:.69rem;font-weight:600;border-radius:var(--r-sm);}
 .ward-info-card{background:linear-gradient(180deg,var(--surface-2),var(--surface-3));border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r);padding:.75rem .85rem;}
 .ward-info-head{display:flex;align-items:center;gap:.45rem;margin-bottom:.6rem;}
@@ -818,18 +825,27 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     <div class="nav-section" style="padding:1rem .8rem 1.1rem;border-top:1px solid var(--line);background:var(--surface-2);">
       <small id="last-saved-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.15rem;font-size:.72rem;color:var(--ink-3);">No backup saved yet</small>
       <small id="auto-save-armed-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.65rem;font-size:.68rem;color:var(--ink-4);">Auto-save: needs one manual save first</small>
-      <label for="auto-export-interval-select" style="display:block;font-size:.7rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;">Auto-Save Every</label>
-      <select id="auto-export-interval-select" class="form-select form-select-sm mb-2" style="font-size:.72rem;" onchange="saveAutoExportIntervalPref(parseInt(this.value,10))">
-        <option value="5">5 minutes</option>
-        <option value="10" selected>10 minutes</option>
-        <option value="30">30 minutes</option>
-        <option value="0">Off</option>
-      </select>
-      <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="exportGuardianDataZip()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Save Data File (.sav)</button>
-      <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="triggerImportZip()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Open Data File (.sav)</button>
-      <input type="file" id="zip-import-input" accept=".sav,.zip" aria-label="Choose a data backup .sav file to import" style="display:none" onchange="if(this.files&&this.files[0])importGuardianDataZip(this.files[0])">
-      <button id="lock-app-btn" class="btn btn-outline-secondary btn-sm w-100 mb-2" onclick="lockApp()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg> Lock</button>
-      <button class="btn btn-outline-danger btn-sm w-100" onclick="clearAllData()">Clear All Data</button>
+      <button type="button" class="btn btn-sm btn-link w-100 save-controls-toggle" id="save-controls-toggle-btn" onclick="toggleSaveControls()" style="display:none;padding:.2rem 0;font-size:.72rem;" aria-expanded="true">Hide save controls ▴</button>
+      <!-- A plain block-level wrapper, toggled as one unit, rather than
+           setting style.display on each child directly -- several of them
+           (the label especially) hardcode display:block inline already,
+           and clearing that back to '' on re-expand would fall through to
+           the browser's inline-by-default styling for a <label> instead of
+           restoring the block layout this row needs. -->
+      <div id="save-controls-body">
+        <label for="auto-export-interval-select" style="display:block;font-size:.7rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;">Auto-Save Every</label>
+        <select id="auto-export-interval-select" class="form-select form-select-sm mb-2" style="font-size:.72rem;" onchange="saveAutoExportIntervalPref(parseInt(this.value,10))">
+          <option value="5">5 minutes</option>
+          <option value="10" selected>10 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="0">Off</option>
+        </select>
+        <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="exportGuardianDataZip()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Save Data File (.sav)</button>
+        <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="triggerImportZip()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Open Data File (.sav)</button>
+        <input type="file" id="zip-import-input" accept=".sav,.zip" aria-label="Choose a data backup .sav file to import" style="display:none" onchange="if(this.files&&this.files[0])importGuardianDataZip(this.files[0])">
+        <button id="lock-app-btn" class="btn btn-outline-secondary btn-sm w-100 mb-2" onclick="lockApp()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg> Lock</button>
+        <button class="btn btn-outline-danger btn-sm w-100" onclick="clearAllData()">Clear All Data</button>
+      </div>
     </div>
   </nav>
 
@@ -6755,6 +6771,28 @@ function toggleWardControls(){
   applyWardControlsCollapsedState();
 }
 
+// Same pattern as the ward controls above, for the backup/auto-save block
+// at the bottom of the sidebar: collapses automatically once a form is
+// active, leaving just the two status lines (last-saved / auto-save-armed)
+// visible, so the schedule list gets the room back at both ends of the
+// sidebar rather than just the top. #save-controls-body is one plain div
+// toggled as a unit -- see the HTML comment above it for why not per-child.
+let _saveControlsCollapsed=false;
+let _saveControlsUserToggled=false;
+function applySaveControlsCollapsedState(){
+  const body=document.getElementById('save-controls-body');
+  if(body)body.style.display=_saveControlsCollapsed?'none':'';
+  const btn=document.getElementById('save-controls-toggle-btn');
+  if(!btn)return;
+  btn.textContent=_saveControlsCollapsed?'Show save controls ▾':'Hide save controls ▴';
+  btn.setAttribute('aria-expanded',String(!_saveControlsCollapsed));
+}
+function toggleSaveControls(){
+  _saveControlsCollapsed=!_saveControlsCollapsed;
+  _saveControlsUserToggled=true;
+  applySaveControlsCollapsedState();
+}
+
 function updateSidebar(){
   const sidebar=document.getElementById('sidebar');
   if(guardianData.wards.length===0){
@@ -6792,6 +6830,11 @@ function updateSidebar(){
   if(toggleBtn)toggleBtn.style.display=activeWardId?'block':'none';
   if(activeInventoryType&&!_wardControlsUserToggled)_wardControlsCollapsed=true;
   applyWardControlsCollapsedState();
+
+  const saveToggleBtn=document.getElementById('save-controls-toggle-btn');
+  if(saveToggleBtn)saveToggleBtn.style.display=activeWardId?'block':'none';
+  if(activeInventoryType&&!_saveControlsUserToggled)_saveControlsCollapsed=true;
+  applySaveControlsCollapsedState();
 
   if(!activeInventoryType)return;
   const typeConfig=INVENTORY_TYPES[activeInventoryType];
