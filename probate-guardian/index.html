@@ -889,7 +889,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <li>In Firefox or Safari, this browser can only read the file — save/export it again manually before closing this tab.</li>
       </ul>
     </button>
-    <button class="security-choice-option" onclick="startNewCaseAtLaunch()">
+    <button id="startup-newcase-btn" class="security-choice-option" onclick="startNewCaseAtLaunch()">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg></span>
         <span class="security-choice-title">Start a New Case</span>
@@ -899,6 +899,11 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <li>You'll be asked how to protect the data, then where to save it.</li>
       </ul>
     </button>
+    <!-- Shown instead of the full Start a New Case card once this browser
+         has opened or saved a real .sav file before (see
+         hasOpenedCaseBefore()) — Open is the fast path by then, so Start
+         New only needs a small way out, not equal billing. -->
+    <button id="startup-newcase-link" type="button" class="btn btn-link" style="display:none;padding-left:0;" onclick="startNewCaseAtLaunch()">Start a new case instead</button>
     <input type="file" id="startup-open-input" accept=".sav,.zip" style="display:none" onchange="handleStartupOpenInputChange(this)">
   </div>
 </div>
@@ -2163,10 +2168,21 @@ let _lastExportAt = null; // ms epoch of last successful export, or null if neve
 //
 // A one-time startup routine (runLegacyBrowserStorageMigrationIfNeeded())
 // reads whatever a pre-this-release install left in IndexedDB/localStorage,
-// offers to export it as a .sav file, and clears both. It is the only code
-// left that touches those APIs, and only to read them and delete what it
-// read — never to write new data into them. See its own comment for why it
-// can be deleted outright in a later release.
+// offers to export it as a .sav file, and clears both. It only ever reads
+// that legacy data and deletes what it read — never writes new data into
+// it. See its own comment for why it can be deleted outright in a later
+// release.
+//
+// One deliberate exception to all of the above: hasOpenedCaseBefore() /
+// markCaseOpenedBefore() store a single boolean in their own small
+// IndexedDB database (never the legacy one above) — nothing else, never
+// the file handle, filename, or any case data — recording only that this
+// browser has successfully opened or saved a .sav file before. The
+// startup screen (promptOpenOrStartAtLaunch()) uses it to skip straight to
+// the file picker instead of asking Open-vs-Start-New on every visit. This
+// is a real, considered tradeoff against the zero-storage guarantee above,
+// made because the boolean itself reveals nothing about who the guardian
+// is or what case they hold — see the comment on those two functions.
 // ═══════════════════════════════════════════════════════
 
 let _appState = {};        // key -> value; replaces the old `appState` IDB store
@@ -3900,6 +3916,7 @@ async function exportGuardianDataZip(){
     _dirtySinceExport=false;
     hideAutoExportReminder();
     updateLastSavedIndicator();
+    markCaseOpenedBefore(); // a real .sav now exists — next launch offers the fast-path Open screen
     alert(`Export complete: ${count} form(s) saved to guardianshipwarddata.sav`);
   }catch(e){
     if(rollback)rollback();
@@ -4120,9 +4137,9 @@ async function importGuardianDataZip(file){
 
 // ═══════════════════════════════════════════════════════
 // OPEN / START AT LAUNCH
-// With nothing left in browser storage, the app has no way to know what
-// case data exists until it's handed a .sav file — there is nothing left
-// to silently load the way IndexedDB used to. This runs once, at the very
+// With no case data left in browser storage, the app has no way to know
+// WHICH file to load until it's handed one — there is nothing left to
+// silently load the way IndexedDB used to. This runs once, at the very
 // top of initApp(), before ensureUnlocked(): "Open" populates
 // guardianData/_appState/_templateCache/_auditLogEntries/_cryptoKey/
 // _securityMode directly from the chosen file, so ensureUnlocked() sees a
@@ -4132,9 +4149,56 @@ async function importGuardianDataZip(file){
 // branch it always has.
 // ═══════════════════════════════════════════════════════
 
+// hasOpenedCaseBefore() / markCaseOpenedBefore() — the one exception to
+// this app's zero-browser-storage rule (see the comment above _appState).
+// A single boolean, in its own tiny IndexedDB database, meaning nothing
+// more than "this browser has successfully opened or saved a .sav file at
+// least once." Never the file handle (that still can't survive a reload —
+// see the note on _zipFileHandle), never a filename, never anything about
+// the case itself. A browser's file system offers no "does this file
+// exist" check without a picker dialog anyway, so this can't skip the
+// click every launch still needs — it only decides which screen that
+// click lands on: a full Open-vs-Start-New choice the first time, or
+// straight to the file picker (with Start New one click further away)
+// once this browser has shown it has a real file to come back to.
+const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags', LAUNCH_PREF_KEY='hasOpenedBefore';
+function _launchPrefDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(LAUNCH_PREF_DB,1);
+    req.onupgradeneeded=()=>req.result.createObjectStore(LAUNCH_PREF_STORE);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function hasOpenedCaseBefore(){
+  try{
+    const db=await _launchPrefDb();
+    return await new Promise((resolve)=>{
+      const req=db.transaction(LAUNCH_PREF_STORE,'readonly').objectStore(LAUNCH_PREF_STORE).get(LAUNCH_PREF_KEY);
+      req.onsuccess=()=>resolve(req.result===true);
+      req.onerror=()=>resolve(false);
+    });
+  }catch(e){return false;} // IndexedDB unavailable (private browsing, etc.) — fall back to the full choice screen
+}
+async function markCaseOpenedBefore(){
+  try{
+    const db=await _launchPrefDb();
+    await new Promise((resolve)=>{
+      const tx=db.transaction(LAUNCH_PREF_STORE,'readwrite');
+      tx.objectStore(LAUNCH_PREF_STORE).put(true,LAUNCH_PREF_KEY);
+      tx.oncomplete=resolve;
+      tx.onerror=resolve; // non-critical either way — next launch just asks again
+    });
+  }catch(e){/* non-critical */}
+}
+
 let _launchStateResolved=false;
+let _openedFileAtLaunch=false; // set by loadCaseFileAtLaunch() on success; initApp() lands on the dashboard instead of the default page when this is true
 let _startupChoiceResolve=null;
-function promptOpenOrStartAtLaunch(){
+async function promptOpenOrStartAtLaunch(){
+  const fastPath=await hasOpenedCaseBefore();
+  document.getElementById('startup-newcase-btn').style.display=fastPath?'none':'';
+  document.getElementById('startup-newcase-link').style.display=fastPath?'':'none';
   return new Promise((resolve)=>{
     _startupChoiceResolve=resolve;
     document.getElementById('startup-choice-overlay').classList.add('show');
@@ -4218,6 +4282,8 @@ async function loadCaseFileAtLaunch(file){
     await loadStateFromSavZip(zip,manifest,_cryptoKey);
     if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
     _launchStateResolved=true;
+    _openedFileAtLaunch=true;
+    markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
     return true;
   }catch(e){
@@ -16071,6 +16137,7 @@ async function initApp(){
   }
 
   updateSidebar();
+  if(_openedFileAtLaunch)window.location.hash='/dashboard'; // opened an existing case — land on All Wards, not wherever it was last saved mid-edit
   handleHash();
   await loadAutoExportPrefs();
   setupAutoExportTimer();
