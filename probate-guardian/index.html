@@ -15080,11 +15080,11 @@ function pageHome(){
   ${pageIntroRow(`<div class="accordion mb-0">
     <div class="accordion-item">
       <h2 class="accordion-header">
-        <button class="accordion-button py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZone" aria-expanded="true">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZone" aria-expanded="false">
           <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing guardian inventory template)
         </button>
       </h2>
-      <div id="importZone" class="accordion-collapse collapse show">
+      <div id="importZone" class="accordion-collapse collapse">
         <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
           <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
             <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
@@ -15112,7 +15112,7 @@ function pageHome(){
         <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
-        ${formRow(col(12,reqLabel('Type of Guardianship')+textInput('typeOfGuardianship','e.g., Plenary Guardian of Person and Property')))}
+        ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',[['Plenary','Plenary'],['Limited','Limited'],['Voluntary','Voluntary'],['Minor - Person','Minor - Person'],['Minor - Property','Minor - Property'],['Minor - Person - Property','Minor - Person - Property']])))}
         ${formRow(col(6,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
         <div id="sdb-filed-row" style="${sdbFiledRow}">
           ${formRow(col(6,reqLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
@@ -15120,8 +15120,8 @@ function pageHome(){
       </div>
     </div>
   </div>
-  <div class="d-flex justify-content-end mb-3">
-    <button class="btn btn-primary btn-sm" onclick="navigate('/a1')">Continue to Schedules →</button>
+  <div class="mb-3">
+    ${pageNav('/')}
   </div>
   <!-- Summary I -->
   <div class="row g-3">
@@ -15177,7 +15177,6 @@ function pageHome(){
       </div>
     </div>
   </div>
-  ${pageNav('/')}
 </div>`;
 }
 
