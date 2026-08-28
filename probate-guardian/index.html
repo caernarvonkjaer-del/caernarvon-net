@@ -175,7 +175,9 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .nav-section-label.nav-section-toggle:hover{color:var(--ink-2);}
 .nav-section-label-text{flex:1 1 auto;}
 .nav-section-chevron{flex-shrink:0;font-size:.6rem;color:var(--ink-4);}
-.nav-section-check{flex-shrink:0;color:var(--ok-text);font-weight:700;font-size:.78rem;}
+.nav-section-check{flex-shrink:0;font-weight:700;font-size:.78rem;}
+.nav-section-check.complete{color:var(--ok-text);}
+.nav-section-check.incomplete{color:var(--danger-text);}
 .nav-section.collapsed>.nav-link-item{display:none;}
 /* Active state is a left rail + tint, not a maroon flood — it marks position
    without shouting, and keeps the label readable at small sizes. */
@@ -184,13 +186,15 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .nav-link-item:hover{background:var(--surface-3);color:var(--ink);}
 .nav-link-item.active{background:var(--brand-050);color:var(--brand-text);font-weight:650;}
 .nav-link-item.active:before{background:var(--brand);}
-/* Status is carried by the glyph (✓ / ⚠) as well as the colour, so it survives
-   colour-blindness and greyscale printing. Both clear AA on white. */
+/* Status is carried by the glyph (✓ / −) as well as the colour, so it survives
+   colour-blindness and greyscale printing. Both clear AA on white. Every
+   trackable item shows one or the other by default now (never blank) --
+   red − until its schedule/section is actually complete, then green ✓. */
 .nav-check{font-weight:700;font-size:.78rem;margin-left:.25rem;line-height:1;}
 .nav-check.complete{color:var(--ok-text);}
-.nav-check.incomplete{color:var(--warn-text);}
+.nav-check.incomplete{color:var(--danger-text);}
 .nav-link-item.active .nav-check.complete{color:var(--ok-text);}
-.nav-link-item.active .nav-check.incomplete{color:var(--warn-text);}
+.nav-link-item.active .nav-check.incomplete{color:var(--danger-text);}
 .sidebar-topnav{padding:.85rem .8rem .35rem;display:flex;gap:.45rem;}
 .topnav-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.52rem .7rem;font-size:.78rem;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer;transition:border-color .15s,color .15s,box-shadow .15s,background .15s;font-family:inherit;line-height:1.15;white-space:nowrap;box-shadow:var(--sh-1);}
 .topnav-btn:hover{border-color:var(--brand-200);color:var(--brand-text);background:var(--brand-050);box-shadow:var(--sh-2);}
@@ -444,6 +448,8 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .schedule-empty{display:flex;align-items:center;gap:.65rem;padding:1rem 1.15rem;margin-bottom:1rem;border:1px dashed #d4dbe6;border-radius:var(--r);background:var(--surface);color:var(--ink-3);font-size:.86rem;}
 [data-theme="dark"] .schedule-empty{border-color:#2c3648;}
 .schedule-empty .ic{color:var(--ink-4);}
+.schedule-empty-check{display:flex;align-items:center;gap:.6rem;margin:0;cursor:pointer;color:var(--ink-2);}
+.schedule-empty-check input{flex-shrink:0;width:1.05rem;height:1.05rem;cursor:pointer;}
 .schedule-docs-section{margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--line);}
 .schedule-docs-section h4{font-size:.7rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin:0 0 .45rem;}
 .schedule-docs-section h4.mt{margin-top:1.2rem;}
@@ -1725,7 +1731,7 @@ const WALKTHROUGH_GUARDIAN=[
   {element:'.ward-picker-select',title:'2. Your Active Ward',text:'This dropdown shows your current ward. You can switch between multiple guardianship cases here, and each one saves independently.',position:'right'},
   {element:'#theme-toggle-btn',title:'3. Light & Dark Mode',text:'Switch between light and dark appearance here. Your choice is remembered, and the app opens in light mode until you choose otherwise.',position:'left'},
   {element:'.ward-progress',title:'4. Filing Progress',text:'Tracks how many sections of this ward\'s filing are complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next incomplete section.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover & Summary Page',text:'Start here. This is where you enter basic case information: Ward name, Case Number, Guardianship Inception Date, County, and Guardian details.',position:'bottom'},
+  {element:'[data-page="/"]',title:'5. Cover Page',text:'Start here. This is where you enter basic case information: Ward name, Case Number, Guardianship Inception Date, County, and Guardian details. The Summary page next to it totals every schedule once you\'ve filled them in.',position:'bottom'},
   {element:'[data-nav="a1"]',title:'6. Schedule A-1: Real Estate Assets',text:'List all real estate owned by or with the ward\'s interest. Include properties, residences, and land. Enter the ward\'s percentage ownership.',position:'right'},
   {element:'[data-nav="a2"]',title:'7. Schedule A-2: Real Estate Liabilities',text:'List mortgages, liens, and debts against real estate. The app calculates net real estate value automatically.',position:'right'},
   {element:'[data-nav="b1"]',title:'8. Schedule B-1: Cash Assets',text:'List all bank accounts, savings, checking, CDs, money market accounts. Include each account separately with the ward\'s percentage. If several accounts are nearly identical, use the "Duplicate" button on an entry instead of re-typing it.',position:'right'},
@@ -7806,6 +7812,11 @@ function emptyDataGuardian(){
     safeDepositBoxFiled:false,isAmended:false,
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
     scheduleB4:[],scheduleC1:[],scheduleC2:[],scheduleC3:[],scheduleC4:[],scheduleC5:[],
+    // Per-schedule "I verify there are no items of this type" checkbox --
+    // missing keys read as false, so a .sav saved before this existed just
+    // treats every schedule as unconfirmed (matches its actual pre-existing
+    // state: not yet reviewed), never as falsely confirmed empty.
+    scheduleNoItems:{},
     guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null}],
     preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null},
     attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null},
@@ -7816,7 +7827,8 @@ function emptyDataGuardian(){
 }
 
 const PAGES_GUARDIAN=[
-  {id:'/',    label:'Cover & Summary'},
+  {id:'/',    label:'Cover'},
+  {id:'/summary', label:'Summary'},
   {id:'/a1',  label:'Schedule A-1: Real Estate'},
   {id:'/a2',  label:'Schedule A-2: RE Liabilities'},
   {id:'/b1',  label:'Schedule B-1: Cash'},
@@ -7901,7 +7913,8 @@ function buildNavGuardian(container){
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">Case Info</div>
-      <button class="nav-link-item" data-page="/" data-nav="cover" onclick="navigate('/')">Cover &amp; Summary</button>
+      <button class="nav-link-item" data-page="/" data-nav="cover" onclick="navigate('/')">Cover</button>
+      <button class="nav-link-item" data-page="/summary" data-nav="summary" onclick="navigate('/summary')">Summary</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Schedule A — Real Estate</div>
@@ -14189,35 +14202,31 @@ const calc={
 };
 
 // ═══════════════════════════════════════════════════════
-// Page navigation helper (used by Guardian page renderers)
+// Page navigation helper (used by Guardian page renderers). Reuses
+// PAGES_GUARDIAN (defined alongside emptyDataGuardian()) rather than its
+// own copy of the same list -- this used to keep two hardcoded route
+// lists in sync by hand.
+const SCHEDULE_NAV_KEYS=['a1','a2','b1','b2','b3','b4','c1','c2','c3','c4','c5'];
+// A schedule's own "Next" button is disabled until computeNavChecks()
+// says that schedule is complete (a real row, or the "no items" checkbox
+// -- see scheduleComplete() there). Only gates the 11 schedule pages;
+// Cover, Summary, D-1..D-5, and Print are never gated this way.
+function isScheduleIncomplete(route){
+  const key=route.startsWith('/')?route.slice(1):route;
+  if(!SCHEDULE_NAV_KEYS.includes(key))return false;
+  const r=computeNavChecks();
+  return !!(r&&!r.checks[key]);
+}
 function pageNav(current){
-  const PAGES=[
-    {id:'/',    label:'Cover & Summary'},
-    {id:'/a1',  label:'Schedule A-1: Real Estate'},
-    {id:'/a2',  label:'Schedule A-2: RE Liabilities'},
-    {id:'/b1',  label:'Schedule B-1: Cash'},
-    {id:'/b2',  label:'Schedule B-2: Personal Property'},
-    {id:'/b3',  label:'Schedule B-3: Intangibles'},
-    {id:'/b4',  label:'Schedule B-4: PP Liabilities'},
-    {id:'/c1',  label:'Schedule C-1: Income'},
-    {id:'/c2',  label:'Schedule C-2: Lawsuits Against'},
-    {id:'/c3',  label:'Schedule C-3: Lawsuits By Ward'},
-    {id:'/c4',  label:'Schedule C-4: Trusts'},
-    {id:'/c5',  label:'Schedule C-5: Joint Owners'},
-    {id:'/d1',  label:'D-1: Guardian Attestation'},
-    {id:'/d2',  label:'D-2: Preparer & Attorney'},
-    {id:'/d3',  label:'D-3: Audit Fee & Safe Deposit'},
-    {id:'/d4',  label:'D-4: Bond & Surety Info'},
-    {id:'/d5',  label:'D-5: Certificate of Service'},
-    {id:'/print',label:'Print Preview'},
-  ];
+  const PAGES=PAGES_GUARDIAN;
   const idx=PAGES.findIndex(p=>p.id===current);
   const prev=idx>0?PAGES[idx-1]:null;
   const next=idx<PAGES.length-1?PAGES[idx+1]:null;
+  const nextDisabled=isScheduleIncomplete(current);
   return `<div class="page-nav no-print d-flex justify-content-between align-items-center">
     <div>${prev?`<button class="btn btn-outline-primary btn-sm" onclick="navigate('${prev.id}')">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>
     <small style="color:var(--ink-3);">Page ${idx+1} of ${PAGES.length}</small>
-    <div>${next?`<button class="btn btn-primary btn-sm" onclick="navigate('${next.id}')">Next: ${next.label} →</button>`:'&nbsp;'}</div>
+    <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?'disabled title="Add at least one item, or check the box verifying there are none, before continuing."':''} onclick="navigate('${next.id}')">Next: ${next.label} →</button>`:'&nbsp;'}</div>
   </div>`;
 }
 
@@ -14370,7 +14379,16 @@ function computeNavChecks(){
     };
     const rowComplete=(r,optional)=>Object.entries(r).every(([k,v])=>(optional&&optional.includes(k))||filled(v));
     const rowHasAnyData=r=>Object.values(r).some(v=>filled(v));
-    const scheduleComplete=(s,key)=>(s||[]).length>0&&(s||[]).every(r=>rowComplete(r,OPTIONAL_ROW_FIELDS[key]));
+    // A schedule counts as complete either the normal way (at least one
+    // fully-filled row) or via the "I verify there are no items of this
+    // type" checkbox (scheduleEmptyHTML() / setScheduleNoItems()) -- the
+    // short nav key ('a1') is just `key` with the 'schedule' prefix
+    // stripped and lowercased, so no separate short-key param is needed.
+    const scheduleComplete=(s,key)=>{
+      const navKey=key.replace('schedule','').toLowerCase();
+      if(D.scheduleNoItems&&D.scheduleNoItems[navKey])return true;
+      return (s||[]).length>0&&(s||[]).every(r=>rowComplete(r,OPTIONAL_ROW_FIELDS[key]));
+    };
     const checks={
       a1:scheduleComplete(D.scheduleA1,'scheduleA1'), a2:scheduleComplete(D.scheduleA2,'scheduleA2'),
       b1:scheduleComplete(D.scheduleB1,'scheduleB1'), b2:scheduleComplete(D.scheduleB2,'scheduleB2'),
@@ -14653,6 +14671,20 @@ function computeNavChecks(){
 function updateNavDots(){
   const r=computeNavChecks();
   if(r)applyNavChecks(r.checks,r.incomplete);
+  updateCurrentScheduleNextButton();
+}
+// Live-patches the current page's own "Next" button (see pageNav())
+// without a full re-render -- needed because checking a schedule's "no
+// items" checkbox (setScheduleNoItems()) and editing a row's fields both
+// go through afterChange()->updateNavDots() rather than renderPage(), so
+// the button rendered at page-load time would otherwise go stale until
+// the next full navigation.
+function updateCurrentScheduleNextButton(){
+  const btn=document.getElementById('page-next-btn');
+  if(!btn)return;
+  const disabled=isScheduleIncomplete(currentPage.split('?')[0]);
+  btn.disabled=disabled;
+  btn.title=disabled?'Add at least one item, or check the box verifying there are none, before continuing.':'';
 }
 
 // Filing progress for ANY ward, active or not. Same window.D swap trick
@@ -14675,17 +14707,15 @@ function getWardProgress(ward){
 }
 
 function applyNavChecks(checks,incomplete={}){
-  // Only show incomplete warnings for pages the user has visited (and then left incomplete)
-  const currentPageKey=getCurrentPageKey();
+  // Every tracked item shows a mark by default now -- red − until its own
+  // schedule/section is complete, then green ✓ -- rather than staying
+  // blank until visited-and-started. `incomplete` is kept as a parameter
+  // for callers/back-compat but no longer changes what renders here.
   for(const[k,v] of Object.entries(checks)){
     const el=document.querySelector(`[data-nav="${k}"]`);
     if(!el)continue;
     el.innerHTML=el.innerHTML.replace(/\s*<span class="nav-check.*?<\/span>/,'');
-    if(v){
-      el.innerHTML+=` <span class="nav-check complete">✓</span>`;
-    }else if(incomplete[k]&&k!==currentPageKey&&_visitedPages.has(k)){
-      el.innerHTML+=` <span class="nav-check incomplete">⚠</span>`;
-    }
+    el.innerHTML+=v?` <span class="nav-check complete">✓</span>`:` <span class="nav-check incomplete">−</span>`;
   }
   applyNavSectionCollapse(checks);
   renderProgressSummary(checks);
@@ -14707,9 +14737,12 @@ function toggleNavSection(key){
 // stops eating vertical space. Reads DOM structure only (no hardcoded
 // per-form-type section map) -- works for every buildNav*() sidebar as
 // long as it follows the existing .nav-section > .nav-section-label +
-// [data-nav] buttons shape. Sections with no data-nav children (Output,
-// Case Info) or that aren't fully complete are left exactly as before:
-// plain label, all items visible with their own individual ✓/⚠ marks.
+// [data-nav] buttons shape. An incomplete section stays plain (not
+// collapsible -- only a fully-complete section becomes a toggleable
+// accordion) but now always carries a red − badge in the same spot the
+// green ✓ will occupy once it's done, rather than no badge at all.
+// Sections with no data-nav children (Output, Case Info) get neither,
+// since they were never eligible for the ✓ in the first place.
 function applyNavSectionCollapse(checks){
   const container=document.getElementById('nav-sections');
   if(!container)return;
@@ -14718,19 +14751,19 @@ function applyNavSectionCollapse(checks){
     if(!label)return;
     if(label.dataset.origHtml===undefined)label.dataset.origHtml=label.innerHTML;
     const navKeys=[...section.querySelectorAll('[data-nav]')].map(el=>el.dataset.nav).filter(k=>k in checks);
-    const reset=()=>{
+    const plain=badgeHtml=>{
       section.classList.remove('collapsed');
       label.classList.remove('nav-section-toggle');
       label.removeAttribute('role');label.removeAttribute('tabindex');label.removeAttribute('aria-expanded');
-      label.onclick=null;
-      label.innerHTML=label.dataset.origHtml;
+      label.onclick=null;label.onkeydown=null;
+      label.innerHTML=`<span class="nav-section-label-text">${label.dataset.origHtml}</span>${badgeHtml}`;
     };
-    if(!navKeys.length){reset();return;}
+    if(!navKeys.length){plain('');return;}
     const allComplete=navKeys.every(k=>checks[k]);
     const sectionKey=`${guardianData.activeWardId||''}:${label.dataset.origHtml}`;
     if(!allComplete){
       _navSectionExpanded.delete(sectionKey);
-      reset();
+      plain('<span class="nav-section-check incomplete">−</span>');
       return;
     }
     const expanded=_navSectionExpanded.has(sectionKey);
@@ -14741,7 +14774,7 @@ function applyNavSectionCollapse(checks){
     label.setAttribute('aria-expanded',String(expanded));
     label.innerHTML=`<span class="nav-section-chevron">${expanded?'▾':'▸'}</span>`
       +`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`
-      +(expanded?'':'<span class="nav-section-check">✓</span>');
+      +(expanded?'':'<span class="nav-section-check complete">✓</span>');
     label.onclick=()=>toggleNavSection(sectionKey);
     label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleNavSection(sectionKey);}};
   });
@@ -14866,6 +14899,7 @@ function renderPageGuardian(page){
   sanitizeNegativeAmounts();
   switch(page){
     case '/':     el.innerHTML=pageHome();break;
+    case '/summary':el.innerHTML=pageSummary();break;
     case '/a1':   el.innerHTML=pageScheduleA1();break;
     case '/a2':   el.innerHTML=pageScheduleA2();break;
     case '/b1':   el.innerHTML=pageScheduleB1();break;
@@ -15036,6 +15070,28 @@ function removeEntry(schedule,idx){
   autoSave();
   renderPage(currentPage);
 }
+// Empty-state for a schedule with zero rows: a checkbox the filer checks
+// to affirmatively state there's nothing to report, replacing the old
+// folder-icon placeholder. Checking it satisfies computeNavChecks()'s
+// scheduleComplete() the same as adding a real row would (see there),
+// which is what ungates that schedule's own "Next" button and turns its
+// sidebar/section checkmark green -- and prints a verification sentence
+// in place of the schedule's table on the final printout (printEmptyRow()).
+function scheduleEmptyHTML(key,noun){
+  const checked=!!(D.scheduleNoItems&&D.scheduleNoItems[key]);
+  return `<div class="schedule-empty">
+    <label class="schedule-empty-check">
+      <input type="checkbox" ${checked?'checked':''} onchange="setScheduleNoItems('${key}',this.checked)">
+      <span>I verify there are no ${noun} to report for this schedule.</span>
+    </label>
+  </div>`;
+}
+function setScheduleNoItems(key,val){
+  if(!D.scheduleNoItems)D.scheduleNoItems={};
+  D.scheduleNoItems[key]=val;
+  autoSave();
+  afterChange(`scheduleNoItems.${key}`);
+}
 // Copies an entry and inserts the copy directly beneath the original.
 // Real filings are full of near-identical rows — twelve monthly
 // disbursements to the same payee differing only in date and check number —
@@ -15171,15 +15227,10 @@ function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5
 function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPage('/d5');}
 
 // ═══════════════════════════════════════════════════════
-// PAGE: HOME / COVER & SUMMARY
+// PAGE: HOME / COVER
 // ═══════════════════════════════════════════════════════
 function pageHome(){
   const sdbFiledRow=D.hasSafeDepositBox?'':'display:none;';
-  const hasAttest=D.guardians.some(g=>g.name);
-  const hasPreparer=!!(D.preparer.name||D.attorney.name);
-  const hasBond=!!(D.bondAmount||D.bondWaivedDate);
-  const hasService=D.serviceRecipients.some(r=>r.name);
-  function status(v){return v?`<span style="color:var(--ok-text);font-weight:600;">✓ Entered</span>`:`<span style="color:var(--danger-text);font-weight:600;">Incomplete</span>`;}
   return `<div class="schedule-page">
   <h1>Verified Initial Inventory — Case Information</h1>
   <div class="instructions-import-row">
@@ -15250,6 +15301,20 @@ function pageHome(){
   <div class="mb-3">
     ${pageNav('/')}
   </div>
+</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// PAGE: SUMMARY
+// ═══════════════════════════════════════════════════════
+function pageSummary(){
+  const hasAttest=D.guardians.some(g=>g.name);
+  const hasPreparer=!!(D.preparer.name||D.attorney.name);
+  const hasBond=!!(D.bondAmount||D.bondWaivedDate);
+  const hasService=D.serviceRecipients.some(r=>r.name);
+  function status(v){return v?`<span style="color:var(--ok-text);font-weight:600;">✓ Entered</span>`:`<span style="color:var(--danger-text);font-weight:600;">Incomplete</span>`;}
+  return `<div class="schedule-page">
+  <h1>Verified Initial Inventory — Summary</h1>
   <!-- Summary I -->
   <div class="row g-3">
     <div class="col-md-6">
@@ -15304,6 +15369,9 @@ function pageHome(){
       </div>
     </div>
   </div>
+  <div class="mb-3 mt-3">
+    ${pageNav('/summary')}
+  </div>
 </div>`;
 }
 
@@ -15320,7 +15388,7 @@ function pageScheduleA1(){
   return `<div class="schedule-page">
   <h1>Schedule A-1: Real Estate / Real Property</h1>
   <div class="schedule-instructions">List all real property owned by the ward as of the GID. Attach Property Appraiser records. Ward's Value = Full Asset Value × Ward's % / 100.</div>
-  ${addBtn('a1','Property')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No properties added.</span></div>`}
+  ${addBtn('a1','Property')}${entries||scheduleEmptyHTML('a1','real estate properties')}
   ${totalsBox([["Schedule A-1 Total (Ward's Value)",'totalA1']])}
   ${renderScheduleDocsSection('a1')}
   ${pageNav('/a1')}</div>`;
@@ -15336,7 +15404,7 @@ function pageScheduleA2(){
   return `<div class="schedule-page">
   <h1>Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)</h1>
   <div class="schedule-instructions">List in the same order as Schedule A-1. Attach mortgage statement or deed for each.</div>
-  ${addBtn('a2','Liability')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No liabilities added.</span></div>`}
+  ${addBtn('a2','Liability')}${entries||scheduleEmptyHTML('a2','real estate liabilities')}
   ${totalsBox([["Schedule A-2 Total (Ward's Debt)",'totalA2']])}
   ${renderScheduleDocsSection('a2')}
   ${pageNav('/a2')}</div>`;
@@ -15351,7 +15419,7 @@ function pageScheduleB1(){
   return `<div class="schedule-page">
   <h1>Schedule B-1: Cash Assets / Cash Equivalent Assets</h1>
   <div class="schedule-instructions">Mark Restricted if funds are in a court-supervised restricted depository. This affects the bond calculation.</div>
-  ${addBtn('b1','Account')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No accounts added.</span></div>`}
+  ${addBtn('b1','Account')}${entries||scheduleEmptyHTML('b1','cash accounts')}
   ${totalsBox([["Schedule B-1 Total (Ward's Amount)",'totalB1'],['— of which Restricted','restrictedCash'],['— of which Unrestricted','unrestrictedCash']])}
   ${renderScheduleDocsSection('b1')}
   ${pageNav('/b1')}</div>`;
@@ -15367,7 +15435,7 @@ function pageScheduleB2(){
   return `<div class="schedule-page">
   <h1>Schedule B-2: Personal Property Assets</h1>
   <div class="schedule-instructions">List household goods, vehicles, jewelry, etc. Include items in safe deposit boxes (also list separately on SDB inventory).</div>
-  ${addBtn('b2','Item')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No items added.</span></div>`}
+  ${addBtn('b2','Item')}${entries||scheduleEmptyHTML('b2','personal property items')}
   ${totalsBox([["Schedule B-2 Total (Ward's Value)",'totalB2']])}
   ${renderScheduleDocsSection('b2')}
   ${pageNav('/b2')}</div>`;
@@ -15383,7 +15451,7 @@ function pageScheduleB3(){
   return `<div class="schedule-page">
   <h1>Schedule B-3: Intangible Assets</h1>
   <div class="schedule-instructions">List stocks, bonds, IRAs, insurance policies, etc. Mark Restricted if in a court-supervised account.</div>
-  ${addBtn('b3','Asset')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No intangible assets added.</span></div>`}
+  ${addBtn('b3','Asset')}${entries||scheduleEmptyHTML('b3','intangible assets')}
   ${totalsBox([["Schedule B-3 Total (Ward's Value)",'totalB3'],['— of which Restricted','restrictedIntang'],['— of which Unrestricted','unrestrictedIntang']])}
   ${renderScheduleDocsSection('b3')}
   ${pageNav('/b3')}</div>`;
@@ -15399,7 +15467,7 @@ function pageScheduleB4(){
   return `<div class="schedule-page">
   <h1>Schedule B-4: Liabilities / Secured and Unsecured Debts / Notes / Loans</h1>
   <div class="schedule-instructions">List personal property liabilities only. Real estate liabilities go on Schedule A-2.</div>
-  ${addBtn('b4','Liability')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No liabilities added.</span></div>`}
+  ${addBtn('b4','Liability')}${entries||scheduleEmptyHTML('b4','personal property liabilities')}
   ${totalsBox([["Schedule B-4 Total (Ward's Liability)",'totalB4']])}
   ${renderScheduleDocsSection('b4')}
   ${pageNav('/b4')}</div>`;
@@ -15415,7 +15483,7 @@ function pageScheduleC1(){
   return `<div class="schedule-page">
   <h1>Schedule C-1: Income (Annualized)</h1>
   <div class="schedule-instructions">Annualize all amounts. Example: $600/month × 12 = $7,200/year.</div>
-  ${addBtn('c1','Income Source')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No income sources added.</span></div>`}
+  ${addBtn('c1','Income Source')}${entries||scheduleEmptyHTML('c1','income sources')}
   ${totalsBox([["Schedule C-1 Total Annualized Income (Ward's Share)",'totalC1']])}
   ${renderScheduleDocsSection('c1')}
   ${pageNav('/c1')}</div>`;
@@ -15430,7 +15498,7 @@ function pageScheduleC2(){
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-2: Lawsuits Pending Against the Ward</h1>
-  ${addBtn('c2','Lawsuit')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No lawsuits against the ward.</span></div>`}
+  ${addBtn('c2','Lawsuit')}${entries||scheduleEmptyHTML('c2','lawsuits pending against the ward')}
   ${totalsBox([["Schedule C-2 Total (Ward's Share of Claims)",'totalC2']])}
   ${renderScheduleDocsSection('c2')}
   ${pageNav('/c2')}</div>`;
@@ -15445,7 +15513,7 @@ function pageScheduleC3(){
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-3: Lawsuits Pending by the Ward</h1>
-  ${addBtn('c3','Action')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No pending actions by the ward.</span></div>`}
+  ${addBtn('c3','Action')}${entries||scheduleEmptyHTML('c3','lawsuits pending by the ward')}
   ${totalsBox([["Schedule C-3 Total (Ward's Estimated Share)",'totalC3']])}
   ${renderScheduleDocsSection('c3')}
   ${pageNav('/c3')}</div>`;
@@ -15460,7 +15528,7 @@ function pageScheduleC4(){
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-4: Value of Trusts for the Ward</h1>
-  ${addBtn('c4','Trust')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No trusts added.</span></div>`}
+  ${addBtn('c4','Trust')}${entries||scheduleEmptyHTML('c4','trusts')}
   ${totalsBox([["Schedule C-4 Total (Ward's Share of Trusts)",'totalC4']])}
   ${renderScheduleDocsSection('c4')}
   ${pageNav('/c4')}</div>`;
@@ -15476,7 +15544,7 @@ function pageScheduleC5(){
   return `<div class="schedule-page">
   <h1>Schedule C-5: Joint Owners of Ward's Assets</h1>
   <div class="schedule-instructions">Cross-reference each asset to the schedule and item number where it appears.</div>
-  ${addBtn('c5','Joint Owner')}${entries||`<div class="schedule-empty">${ic('folder',17)}<span>No joint ownership entries added.</span></div>`}
+  ${addBtn('c5','Joint Owner')}${entries||scheduleEmptyHTML('c5','joint ownership entries')}
   ${totalsBox([["Schedule C-5 Total (Joint Owners' Combined Value)",'totalC5']])}
   ${renderScheduleDocsSection('c5')}
   ${pageNav('/c5')}</div>`;
@@ -15657,6 +15725,16 @@ function tdR(...cols){// last col right-aligned
   return `<div class="tr">${all.join('')}</div>`;
 }
 function totRow(label,val,span){return `<tr class="total-row"><td colspan="${span}">${label}</td><td class="right">${fmt(val)}</td></tr>`;}
+// Print-time counterpart to the Cover-page checkbox verifying a schedule
+// has no items (see scheduleEmptyHTML()) -- an empty schedule the filer
+// has confirmed prints a plain-language verification statement instead of
+// the bare "No entries" placeholder, so the filed document itself reflects
+// that the blank schedule was reviewed, not just skipped.
+function printEmptyRow(key,colspan,noun){
+  const confirmed=window.D.scheduleNoItems&&window.D.scheduleNoItems[key];
+  const text=confirmed?`The filer verifies there are no ${noun} to report for this schedule.`:'No entries';
+  return `<tr class="doc-empty-row"><td colspan="${colspan}">${text}</td></tr>`;
+}
 function docHeader(ward,caseNo,schedule,page){
   return `<div class="doc-header">
     <div class="court-title">IN THE CIRCUIT COURT, SIXTH JUDICIAL CIRCUIT, FLORIDA</div>
@@ -15730,7 +15808,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule A-1: Real Estate / Real Property</caption>
     <thead>${th('#','Description / Address / Notes','Residence?','Income?','Full Value','Ward %',"Ward's Value")}</thead>
     <tbody>
-    ${d.scheduleA1.length?d.scheduleA1.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.propertyDescription)}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small>${e.notes?`<br><small><em>${esc(e.notes)}</em></small>`:''}</td><td>${e.isPersonalResidence?'Yes':'No'}</td><td>${e.isIncomeProperty?'Yes':'No'}</td><td class="right">${fmt(e.fullAssetValue)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardVal(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="7">No entries</td></tr>'}
+    ${d.scheduleA1.length?d.scheduleA1.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.propertyDescription)}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small>${e.notes?`<br><small><em>${esc(e.notes)}</em></small>`:''}</td><td>${e.isPersonalResidence?'Yes':'No'}</td><td>${e.isIncomeProperty?'Yes':'No'}</td><td class="right">${fmt(e.fullAssetValue)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardVal(e))}</td></tr>`).join(''):printEmptyRow('a1',7,'real estate assets')}
     ${totRow("Schedule A-1 Total",c.totalA1(),6)}
     </tbody>
   </table>
@@ -15739,7 +15817,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)</caption>
     <thead>${th('#','Lender / Description / Account','Type','Full Balance','Ward %',"Ward's Balance")}</thead>
     <tbody>
-    ${d.scheduleA2.length?d.scheduleA2.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.lenderName)}<br><small>${esc(e.lenderAddress)} ${esc(e.lenderCityStateZip)}</small>${e.accountNumber?`<br><small>Acct: ${esc(e.accountNumber)}</small>`:''}</td><td>${esc(e.liabilityType)}</td><td class="right">${fmt(e.fullDebtBalance)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardDebt(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="6">No entries</td></tr>'}
+    ${d.scheduleA2.length?d.scheduleA2.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.lenderName)}<br><small>${esc(e.lenderAddress)} ${esc(e.lenderCityStateZip)}</small>${e.accountNumber?`<br><small>Acct: ${esc(e.accountNumber)}</small>`:''}</td><td>${esc(e.liabilityType)}</td><td class="right">${fmt(e.fullDebtBalance)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardDebt(e))}</td></tr>`).join(''):printEmptyRow('a2',6,'real estate liabilities')}
     ${totRow("Schedule A-2 Total",c.totalA2(),5)}
     </tbody>
   </table>`;
@@ -15751,7 +15829,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule B-1: Cash Assets / Cash Equivalent Assets</caption>
     <thead>${th('#','Institution / Account / Address','Type','Restricted?','Full Amount','Ward %',"Ward's Amount","Restricted Amt")}</thead>
     <tbody>
-    ${d.scheduleB1.length?d.scheduleB1.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.institutionName)}${e.accountNumber?`<br><small>Acct: ${esc(e.accountNumber)}</small>`:''}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small></td><td>${esc(e.accountType)}</td><td>${e.isRestricted?'Yes':'No'}</td><td class="right">${fmt(e.fullAssetAmount)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardAmt(e))}</td><td class="right">${e.isRestricted?fmt(calc.wardAmt(e)):'—'}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="8">No entries</td></tr>'}
+    ${d.scheduleB1.length?d.scheduleB1.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.institutionName)}${e.accountNumber?`<br><small>Acct: ${esc(e.accountNumber)}</small>`:''}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small></td><td>${esc(e.accountType)}</td><td>${e.isRestricted?'Yes':'No'}</td><td class="right">${fmt(e.fullAssetAmount)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardAmt(e))}</td><td class="right">${e.isRestricted?fmt(calc.wardAmt(e)):'—'}</td></tr>`).join(''):printEmptyRow('b1',8,'cash assets')}
     <tr class="total-row"><td colspan="6">Schedule B-1 Total</td><td class="right">${fmt(c.totalB1())}</td><td class="right">${fmt(c.restrictedCash())}</td></tr>
     </tbody>
   </table>
@@ -15760,7 +15838,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule B-2: Personal Property Assets</caption>
     <thead>${th('#','Description / Location / Valuation','Full Value','Ward %',"Ward's Value",'In SDB?','SDB Amt')}</thead>
     <tbody>
-    ${d.scheduleB2.length?d.scheduleB2.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.description)}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small>${e.valuationMethod?`<br><small><em>${esc(e.valuationMethod)}</em></small>`:''}</td><td class="right">${fmt(e.fullAssetValue)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardB2(e))}</td><td>${e.inSafeDepositBox?'Yes':'No'}</td><td class="right">${e.inSafeDepositBox?fmt(e.amountInSDB):'—'}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="7">No entries</td></tr>'}
+    ${d.scheduleB2.length?d.scheduleB2.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.description)}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small>${e.valuationMethod?`<br><small><em>${esc(e.valuationMethod)}</em></small>`:''}</td><td class="right">${fmt(e.fullAssetValue)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardB2(e))}</td><td>${e.inSafeDepositBox?'Yes':'No'}</td><td class="right">${e.inSafeDepositBox?fmt(e.amountInSDB):'—'}</td></tr>`).join(''):printEmptyRow('b2',7,'personal property assets')}
     <tr class="total-row"><td colspan="4">Schedule B-2 Total</td><td class="right">${fmt(c.totalB2())}</td><td colspan="2"></td></tr>
     </tbody>
   </table>
@@ -15769,7 +15847,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule B-3: Intangible Assets</caption>
     <thead>${th('#','Description / Location','Restricted?','Full Value','Ward %',"Ward's Value","Restricted Amt",'In SDB?')}</thead>
     <tbody>
-    ${d.scheduleB3.length?d.scheduleB3.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.description)}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small></td><td>${e.isRestricted?'Yes':'No'}</td><td class="right">${fmt(e.fullAssetValue)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardB3(e))}</td><td class="right">${e.isRestricted?fmt(calc.wardB3(e)):'—'}</td><td>${e.inSafeDepositBox?'Yes':'No'}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="8">No entries</td></tr>'}
+    ${d.scheduleB3.length?d.scheduleB3.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.description)}<br><small>${esc(e.streetAddress)} ${esc(e.cityStateZip)}</small></td><td>${e.isRestricted?'Yes':'No'}</td><td class="right">${fmt(e.fullAssetValue)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardB3(e))}</td><td class="right">${e.isRestricted?fmt(calc.wardB3(e)):'—'}</td><td>${e.inSafeDepositBox?'Yes':'No'}</td></tr>`).join(''):printEmptyRow('b3',8,'intangible assets')}
     <tr class="total-row"><td colspan="5">Schedule B-3 Total</td><td class="right">${fmt(c.totalB3())}</td><td class="right">${fmt(c.restrictedIntang())}</td><td></td></tr>
     </tbody>
   </table>
@@ -15778,7 +15856,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule B-4: Liabilities / Secured and Unsecured Debts / Notes / Loans</caption>
     <thead>${th('#','Creditor / Related Property / Account','Type','Full Balance','Ward %',"Ward's Balance")}</thead>
     <tbody>
-    ${d.scheduleB4.length?d.scheduleB4.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.lenderName)}${e.relatedProperty?`<br><small>Re: ${esc(e.relatedProperty)}</small>`:''} ${e.accountNumber?`<br><small>Acct: ${esc(e.accountNumber)}</small>`:''}${e.lenderAddress?`<br><small>${esc(e.lenderAddress)}</small>`:''}</td><td>${esc(e.liabilityType)}</td><td class="right">${fmt(e.fullLiabilityBalance)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardB4(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="6">No entries</td></tr>'}
+    ${d.scheduleB4.length?d.scheduleB4.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.lenderName)}${e.relatedProperty?`<br><small>Re: ${esc(e.relatedProperty)}</small>`:''} ${e.accountNumber?`<br><small>Acct: ${esc(e.accountNumber)}</small>`:''}${e.lenderAddress?`<br><small>${esc(e.lenderAddress)}</small>`:''}</td><td>${esc(e.liabilityType)}</td><td class="right">${fmt(e.fullLiabilityBalance)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardB4(e))}</td></tr>`).join(''):printEmptyRow('b4',6,'personal property liabilities')}
     ${totRow("Schedule B-4 Total",c.totalB4(),5)}
     </tbody>
   </table>
@@ -15791,7 +15869,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule C-1: Income (Annualized)</caption>
     <thead>${th('#','Payer / Address','Type','Frequency','Basis','Annual Amount','Ward %',"Ward's Income")}</thead>
     <tbody>
-    ${d.scheduleC1.length?d.scheduleC1.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.payerName)}<br><small>${esc(e.payerAddress)} ${esc(e.payerCityStateZip)}</small></td><td>${esc(e.typeOfIncome)}</td><td>${esc(e.frequencyOfPayment)}</td><td>${esc(e.paymentBasis)}</td><td class="right">${fmt(e.annualIncomeAmount)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC1(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="8">No entries</td></tr>'}
+    ${d.scheduleC1.length?d.scheduleC1.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.payerName)}<br><small>${esc(e.payerAddress)} ${esc(e.payerCityStateZip)}</small></td><td>${esc(e.typeOfIncome)}</td><td>${esc(e.frequencyOfPayment)}</td><td>${esc(e.paymentBasis)}</td><td class="right">${fmt(e.annualIncomeAmount)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC1(e))}</td></tr>`).join(''):printEmptyRow('c1',8,'income sources')}
     ${totRow("Schedule C-1 Total (Annualized)",c.totalC1(),7)}
     </tbody>
   </table>
@@ -15800,7 +15878,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule C-2: Lawsuits Pending Against the Ward</caption>
     <thead>${th('#','Claimant / Court / Case #','Date Filed','Claim Amount','Ward %',"Ward's Share")}</thead>
     <tbody>
-    ${d.scheduleC2.length?d.scheduleC2.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.claimantName)} — ${esc(e.lawsuitDescription)}<br><small>${esc(e.courtJurisdiction)}</small>${e.caseNumber?`<br><small>Case #: ${esc(e.caseNumber)}</small>`:''}${e.claimantAddress?`<br><small>${esc(e.claimantAddress)}</small>`:''}</td><td>${fmtDate(e.dateFiled)}</td><td class="right">${fmt(e.amountOfClaim)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC2(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="6">No entries</td></tr>'}
+    ${d.scheduleC2.length?d.scheduleC2.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.claimantName)} — ${esc(e.lawsuitDescription)}<br><small>${esc(e.courtJurisdiction)}</small>${e.caseNumber?`<br><small>Case #: ${esc(e.caseNumber)}</small>`:''}${e.claimantAddress?`<br><small>${esc(e.claimantAddress)}</small>`:''}</td><td>${fmtDate(e.dateFiled)}</td><td class="right">${fmt(e.amountOfClaim)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC2(e))}</td></tr>`).join(''):printEmptyRow('c2',6,'lawsuits pending against the ward')}
     ${totRow("Schedule C-2 Total",c.totalC2(),5)}
     </tbody>
   </table>
@@ -15809,7 +15887,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule C-3: Lawsuits Pending by the Ward</caption>
     <thead>${th('#','Defendant / Description / Status','Action Date','Est. Settlement','Ward %',"Ward's Share")}</thead>
     <tbody>
-    ${d.scheduleC3.length?d.scheduleC3.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.defendantName)} — ${esc(e.actionDescription)}<br><small>${esc(e.status)}</small><br><small>${esc(e.courtJurisdiction)}${e.caseNumber?' | Case #: '+esc(e.caseNumber):''}</small></td><td>${fmtDate(e.actionDate)}</td><td class="right">${fmt(e.estimatedSettlement)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC3(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="6">No entries</td></tr>'}
+    ${d.scheduleC3.length?d.scheduleC3.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.defendantName)} — ${esc(e.actionDescription)}<br><small>${esc(e.status)}</small><br><small>${esc(e.courtJurisdiction)}${e.caseNumber?' | Case #: '+esc(e.caseNumber):''}</small></td><td>${fmtDate(e.actionDate)}</td><td class="right">${fmt(e.estimatedSettlement)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC3(e))}</td></tr>`).join(''):printEmptyRow('c3',6,'lawsuits pending by the ward')}
     ${totRow("Schedule C-3 Total",c.totalC3(),5)}
     </tbody>
   </table>
@@ -15818,7 +15896,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule C-4: Value of Trusts for the Ward</caption>
     <thead>${th('#','Trust Name / Trustee / Address','Type','Date Created','Acct #','Trust Amount','Ward %',"Ward's Share")}</thead>
     <tbody>
-    ${d.scheduleC4.length?d.scheduleC4.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.trustName)}<br><small>${esc(e.trusteeName)}</small><br><small>${esc(e.trusteeAddress)} ${esc(e.trusteeCityStateZip)}</small></td><td>${esc(e.trustType)}</td><td>${fmtDate(e.dateCreated)}</td><td>${esc(e.accountNumber)}</td><td class="right">${fmt(e.trustAmount)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC4(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="8">No entries</td></tr>'}
+    ${d.scheduleC4.length?d.scheduleC4.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.trustName)}<br><small>${esc(e.trusteeName)}</small><br><small>${esc(e.trusteeAddress)} ${esc(e.trusteeCityStateZip)}</small></td><td>${esc(e.trustType)}</td><td>${fmtDate(e.dateCreated)}</td><td>${esc(e.accountNumber)}</td><td class="right">${fmt(e.trustAmount)}</td><td class="right">${e.wardPercent}%</td><td class="right">${fmt(calc.wardC4(e))}</td></tr>`).join(''):printEmptyRow('c4',8,'trusts')}
     ${totRow("Schedule C-4 Total",c.totalC4(),7)}
     </tbody>
   </table>
@@ -15827,7 +15905,7 @@ function buildPrintHTML(){
     <caption class="visually-hidden">Schedule C-5: Joint Owners of Ward's Assets</caption>
     <thead>${th('#','Asset / Owner / Address','Relationship','Total Asset Value',"Owner %","Owner's Value")}</thead>
     <tbody>
-    ${d.scheduleC5.length?d.scheduleC5.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.assetDescription)}<br><small>${esc(e.ownerName)}</small><br><small>${esc(e.ownerAddress)} ${esc(e.ownerCityStateZip)}</small></td><td>${esc(e.relationshipToWard)}</td><td class="right">${fmt(e.totalAssetValue)}</td><td class="right">${e.jointOwnerPercent}%</td><td class="right">${fmt(calc.wardC5(e))}</td></tr>`).join(''):'<tr class="doc-empty-row"><td colspan="6">No entries</td></tr>'}
+    ${d.scheduleC5.length?d.scheduleC5.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(e.assetDescription)}<br><small>${esc(e.ownerName)}</small><br><small>${esc(e.ownerAddress)} ${esc(e.ownerCityStateZip)}</small></td><td>${esc(e.relationshipToWard)}</td><td class="right">${fmt(e.totalAssetValue)}</td><td class="right">${e.jointOwnerPercent}%</td><td class="right">${fmt(calc.wardC5(e))}</td></tr>`).join(''):printEmptyRow('c5',6,'joint ownership entries')}
     ${totRow("Schedule C-5 Total",c.totalC5(),5)}
     </tbody>
   </table>
