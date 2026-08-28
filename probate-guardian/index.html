@@ -337,6 +337,9 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .dashboard-top-row.single-col{grid-template-columns:1fr;}
 .dashboard-top-row .inventory-convert-banner{height:100%;grid-column:auto;}
 @media (max-width:900px){.dashboard-top-row{grid-template-columns:1fr;}}
+.instructions-import-row{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:1.1rem;margin-bottom:1.25rem;}
+.instructions-import-row>.schedule-instructions{margin-bottom:0;}
+@media (max-width:900px){.instructions-import-row{grid-template-columns:1fr;}}
 .dashboard-deadlines-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:.9rem 1.1rem;box-shadow:var(--sh-1);height:100%;}
 .dashboard-worklist-tabs{display:flex;gap:.3rem;margin-bottom:.7rem;border-bottom:1px solid var(--line);}
 .dashboard-worklist-tab{background:none;border:none;border-bottom:2px solid transparent;padding:.35rem .2rem .5rem;margin-bottom:-1px;font-size:.82rem;font-weight:600;color:var(--ink-3);cursor:pointer;display:flex;align-items:center;gap:.35rem;transition:color .15s,border-color .15s;}
@@ -15067,35 +15070,38 @@ function pageHome(){
   function status(v){return v?`<span style="color:var(--ok-text);font-weight:600;">✓ Entered</span>`:`<span style="color:var(--danger-text);font-weight:600;">Incomplete</span>`;}
   return `<div class="schedule-page">
   <h1>Verified Initial Inventory — Case Information</h1>
-  <div class="schedule-instructions">
-    <strong>GENERAL INSTRUCTIONS</strong>
-    <ul style="margin:.35rem 0 0 1.4rem;font-size:.8rem;">
-      <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
-      <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
-      <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, Attorney, County).</li>
-      <li>Work through Schedules A-1 through C-5, then complete Parts III–VI (Attestations &amp; Filings).</li>
-      <li>Use Print Preview to save as PDF or Excel for filing.</li>
-    </ul>
-  </div>
-  ${pageIntroRow(`<div class="accordion mb-0">
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZone" aria-expanded="false">
-          <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing guardian inventory template)
-        </button>
-      </h2>
-      <div id="importZone" class="accordion-collapse collapse">
-        <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
-          <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
-            <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-            <input type="file" accept=".xlsx" style="display:none" onchange="importExcelFile(this)">
-          </label>
-          <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the court-issued Initial Inventory Excel template</p>
-          <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
+  <div class="instructions-import-row">
+    <div class="schedule-instructions">
+      <strong>GENERAL INSTRUCTIONS</strong>
+      <ul style="margin:.35rem 0 0 1.4rem;font-size:.8rem;">
+        <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
+        <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
+        <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, Attorney, County).</li>
+        <li>Work through Schedules A-1 through C-5, then complete Parts III–VI (Attestations &amp; Filings).</li>
+        <li>Use Print Preview to save as PDF or Excel for filing.</li>
+      </ul>
+    </div>
+    <div class="accordion mb-0">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZone" aria-expanded="false">
+            <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing guardian inventory template)
+          </button>
+        </h2>
+        <div id="importZone" class="accordion-collapse collapse">
+          <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
+            <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
+              <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
+              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelFile(this)">
+            </label>
+            <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the court-issued Initial Inventory Excel template</p>
+            <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>`)}
+  </div>
+  ${loadWardInfoBanner()}
   <div class="row g-3 mb-3">
     <div class="col-md-6">
       <div class="summary-box">
