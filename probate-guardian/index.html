@@ -6715,6 +6715,18 @@ function renderPage(page){
 // / ward switch) and afterChange() (on every Initial Inventory field edit,
 // so the headline total there updates live as the user types) — a single
 // function so both call sites can't drift into showing different content.
+// The "Name of Ward" field on Cover & Summary writes D.wardName directly --
+// the same object reference guardianData.wards holds, so the underlying
+// data is always correct -- but the sidebar's Active Ward selector only
+// gets its displayed text from the last full updateSidebar() render, which
+// typing in that field never triggers. A full re-render on every keystroke
+// would be a lot of needless DOM work (rebuilds the whole nav list) just to
+// keep one text input in sync, so this only touches that one input.
+function syncActiveWardNameDisplay(){
+  const inp=document.getElementById('ward-selector');
+  if(inp&&window.D)inp.value=window.D.wardName||'';
+}
+
 function refreshWardInfoCard(){
   const wardInfo=document.getElementById('ward-info-display');
   if(!wardInfo)return;
@@ -7852,7 +7864,7 @@ function inpS(id,label,val,req=false,type='text'){
   }else if(isPhone){
     oninput=`this.value=formatPhone(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }else if(isName){
-    oninput=`this.value=formatName(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
+    oninput=`this.value=formatName(this.value);D['${id}']=this.value;autoSave();updateNavDots()${id==='wardName'?';syncActiveWardNameDisplay()':''}`;
   }else if(isZip){
     oninput=`applyZipLimit(this);this.value=formatCityStateZip(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }else if(isAddress){
@@ -11718,7 +11730,8 @@ function inpD(label,val,setter,req=false,type='text'){
   }else if(isPhone){
     oninput=`this.value=formatPhone(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isName){
-    oninput=`this.value=formatName(this.value);${setter};autoSave();updateNavDots()`;
+    const isWardNameField=/\bwardName\b/.test(setter);
+    oninput=`this.value=formatName(this.value);${setter};autoSave();updateNavDots()${isWardNameField?';syncActiveWardNameDisplay()':''}`;
   }else if(isZip){
     oninput=`applyZipLimit(this);this.value=formatCityStateZip(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isAddress){
@@ -14577,6 +14590,7 @@ function afterChange(path){
   updateCalcFields();
   updateNavDots();
   refreshWardInfoCard();
+  if(path==='wardName')syncActiveWardNameDisplay();
   // Update live summary displays
   const els={
     'totalA1':calc.totalA1(),'totalA2':calc.totalA2(),'netA':calc.netA(),
