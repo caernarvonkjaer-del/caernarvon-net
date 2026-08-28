@@ -279,8 +279,10 @@
     <p class="section-kicker sans">Live examples</p>
     <h2 class="section-title">Apps running on this domain</h2>
     <p class="section-intro">
-      Both apps below are early-stage prototypes running on synthetic, made-up case data &mdash; not real
-      court records &mdash; while the workflows and access controls are being worked out.
+      The Redaction Reviewer and Guardianship Audit below are early-stage prototypes running on synthetic,
+      made-up case data &mdash; not real court records &mdash; while the workflows and access controls are
+      being worked out. Probate Guardian is a standalone client-side tool with no backend of its own, so it
+      isn't part of that same synthetic-data staging process.
     </p>
 
     <div class="apps-grid">
@@ -308,6 +310,19 @@
         </p>
         <p class="stack">Frontend: Azure Static Web Apps &nbsp;&bull;&nbsp; API: FastAPI on Azure Container Apps &nbsp;&bull;&nbsp; Auth: Microsoft Entra ID</p>
         <a class="cta" href="https://gaapp.caernarvon.net" target="_blank" rel="noopener">Open gaapp.caernarvon.net &rarr;</a>
+      </div>
+
+      <div class="app-card">
+        <span class="tag">Standalone &middot; Runs offline</span>
+        <h3>Probate Guardian</h3>
+        <p>
+          A guardianship accounting and reporting tool that runs entirely in the browser &mdash; no backend,
+          no account, no data ever leaving the device. Walks a guardian through initial inventories, annual
+          accountings, and guardianship plans, then exports directly to the Clerk's official PDF and Excel
+          forms. Case data is stored locally, optionally behind AES-256 password encryption.
+        </p>
+        <p class="stack">Client-side only &nbsp;&bull;&nbsp; Installable PWA &nbsp;&bull;&nbsp; Local encrypted storage, no server</p>
+        <a class="cta" href="/probate-guardian/">Open Probate Guardian &rarr;</a>
       </div>
 
     </div>
