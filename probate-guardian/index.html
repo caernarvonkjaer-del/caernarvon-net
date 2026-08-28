@@ -460,6 +460,15 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .sched-doc-empty{color:var(--ink-3);font-style:italic;font-size:.85rem;margin-bottom:.5rem;}
 .dashboard-empty-inline{grid-column:1/-1;text-align:center;padding:1.5rem 1rem;color:var(--ink-4);font-style:italic;font-size:.88rem;}
 .summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;box-shadow:var(--sh-1);}
+/* Cover page's Required Information / Guardian & Attorney pair only --
+   .row's default flex stretch already equalizes the two .col-md-6
+   heights, but .summary-box itself still sized to its own content,
+   leaving the shorter card's border visibly shorter than the other.
+   Scoped to .cover-info-row so it doesn't touch the many other places
+   .summary-box is stacked multiple-per-column (e.g. the Summary page). */
+.cover-info-row{align-items:stretch;}
+.cover-info-row>.col-md-6{display:flex;}
+.cover-info-row>.col-md-6>.summary-box{flex:1;margin-bottom:0;}
 .summary-box h2,.subsection-heading{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);margin-bottom:.6rem;}
 .summary-line{display:flex;justify-content:space-between;gap:1rem;font-size:.83rem;padding:.32rem 0;border-bottom:1px solid var(--line-2);color:var(--ink-2);}
 .summary-line:last-child{border-bottom:none;}
@@ -14739,10 +14748,11 @@ function toggleNavSection(key){
 // long as it follows the existing .nav-section > .nav-section-label +
 // [data-nav] buttons shape. An incomplete section stays plain (not
 // collapsible -- only a fully-complete section becomes a toggleable
-// accordion) but now always carries a red − badge in the same spot the
-// green ✓ will occupy once it's done, rather than no badge at all.
-// Sections with no data-nav children (Output, Case Info) get neither,
-// since they were never eligible for the ✓ in the first place.
+// accordion) and gets NO badge: each of its child items already shows
+// its own red −/green ✓ (applyNavChecks() above), so a section-level −
+// on top of those would just be a redundant second mark for the same
+// information. The green ✓ is the exception -- it's the only indicator
+// left once the section collapses and hides those child marks.
 function applyNavSectionCollapse(checks){
   const container=document.getElementById('nav-sections');
   if(!container)return;
@@ -14751,19 +14761,19 @@ function applyNavSectionCollapse(checks){
     if(!label)return;
     if(label.dataset.origHtml===undefined)label.dataset.origHtml=label.innerHTML;
     const navKeys=[...section.querySelectorAll('[data-nav]')].map(el=>el.dataset.nav).filter(k=>k in checks);
-    const plain=badgeHtml=>{
+    const plain=()=>{
       section.classList.remove('collapsed');
       label.classList.remove('nav-section-toggle');
       label.removeAttribute('role');label.removeAttribute('tabindex');label.removeAttribute('aria-expanded');
       label.onclick=null;label.onkeydown=null;
-      label.innerHTML=`<span class="nav-section-label-text">${label.dataset.origHtml}</span>${badgeHtml}`;
+      label.innerHTML=`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`;
     };
-    if(!navKeys.length){plain('');return;}
+    if(!navKeys.length){plain();return;}
     const allComplete=navKeys.every(k=>checks[k]);
     const sectionKey=`${guardianData.activeWardId||''}:${label.dataset.origHtml}`;
     if(!allComplete){
       _navSectionExpanded.delete(sectionKey);
-      plain('<span class="nav-section-check incomplete">−</span>');
+      plain();
       return;
     }
     const expanded=_navSectionExpanded.has(sectionKey);
@@ -15275,7 +15285,7 @@ function pageHome(){
     </div>
   </div>
   ${loadWardInfoBanner()}
-  <div class="row g-3 mb-3">
+  <div class="row g-3 mb-3 cover-info-row">
     <div class="col-md-6">
       <div class="summary-box">
         <h2 class="subsection-heading">Required Information</h2>
@@ -15332,14 +15342,6 @@ function pageSummary(){
         <div class="summary-line"><a href="#" onclick="navigate('/b4');return false;">Schedule B-4 — Personal Property Liabilities</a><span id="totalB4">${fmt(calc.totalB4())}</span></div>
         <div class="summary-line total"><span>Cash / Pers. Property, Net of Liabilities</span><span id="netB">${fmt(calc.netB())}</span></div>
       </div>
-      <div class="summary-box" style="background:#820024;color:#fff;">
-        <div class="summary-line total" style="color:#fff;border-color:rgba(255,255,255,.2);">
-          <span>VERIFIED INITIAL INVENTORY TOTAL</span>
-          <span id="totalInventory" style="font-size:1.05rem;">${fmt(calc.total())}</span>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6">
       <div class="summary-box">
         <h2 class="subsection-heading">Summary II — Schedule C: Other Financial Information</h2>
         <div class="summary-line"><a href="#" onclick="navigate('/c1');return false;">Schedule C-1 — Income (Annualized)</a><span id="totalC1">${fmt(calc.totalC1())}</span></div>
@@ -15348,6 +15350,8 @@ function pageSummary(){
         <div class="summary-line"><a href="#" onclick="navigate('/c4');return false;">Schedule C-4 — Trusts</a><span id="totalC4">${fmt(calc.totalC4())}</span></div>
         <div class="summary-line"><a href="#" onclick="navigate('/c5');return false;">Schedule C-5 — Joint Owners</a><span id="totalC5">${fmt(calc.totalC5())}</span></div>
       </div>
+    </div>
+    <div class="col-md-6">
       <div class="summary-box">
         <h2 class="subsection-heading">Part V — Audit Fee &amp; Bond Calculation</h2>
         <div class="summary-line"><span>Audit Fee (inventory &gt; $25,000)</span><span id="auditFee">${fmt(calc.auditFee())}</span></div>
@@ -15366,6 +15370,12 @@ function pageSummary(){
         <div class="summary-line"><a href="#" onclick="navigate('/d3');return false;">D-3 — Audit Fee &amp; Safe Deposit</a>${status(D.hasSafeDepositBox!==undefined?true:false)}</div>
         <div class="summary-line"><a href="#" onclick="navigate('/d4');return false;">D-4 — Bond &amp; Surety Info</a>${status(hasBond)}</div>
         <div class="summary-line"><a href="#" onclick="navigate('/d5');return false;">D-5 — Certificate of Service</a>${status(hasService)}</div>
+      </div>
+      <div class="summary-box" style="background:#820024;color:#fff;">
+        <div class="summary-line total" style="color:#fff;border-color:rgba(255,255,255,.2);">
+          <span>VERIFIED INITIAL INVENTORY TOTAL</span>
+          <span id="totalInventory" style="font-size:1.05rem;">${fmt(calc.total())}</span>
+        </div>
       </div>
     </div>
   </div>
