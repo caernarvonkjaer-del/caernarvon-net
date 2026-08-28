@@ -79,10 +79,11 @@
   --ease:cubic-bezier(.16,1,.3,1);
   color-scheme:light;
 }
-/* Dark palette. Applied via a JS-set attribute (see the pre-paint script in
-   <head>, which reads localStorage synchronously so there is no flash of
-   the wrong theme) rather than gated purely on prefers-color-scheme, so an
-   explicit in-app choice always wins over the OS setting. */
+/* Dark palette. Applied via a JS-set attribute — the pre-paint script in
+   <head> sets it from the OS's prefers-color-scheme before first paint,
+   since this app keeps no browser storage to read synchronously that
+   early. applyTheme() may flip it once the .sav file's own saved choice
+   is known, so an explicit in-app choice still wins once the file loads. */
 :root[data-theme="dark"]{
   --brand-text:#e8879c;      /* 6.06:1 worst-case vs surface/brand-050/100 */
   --brand-050:#241620;--brand-100:#33202b;--brand-200:#5c3341;
