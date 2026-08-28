@@ -171,6 +171,12 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .sidebar-context .ic{color:var(--accent-text);}
 .nav-section{padding:.4rem 0;}
 .nav-section-label{padding:.85rem .95rem .3rem;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);}
+.nav-section-label.nav-section-toggle{display:flex;align-items:center;gap:.35rem;cursor:pointer;user-select:none;}
+.nav-section-label.nav-section-toggle:hover{color:var(--ink-2);}
+.nav-section-label-text{flex:1 1 auto;}
+.nav-section-chevron{flex-shrink:0;font-size:.6rem;color:var(--ink-4);}
+.nav-section-check{flex-shrink:0;color:var(--ok-text);font-weight:700;font-size:.78rem;}
+.nav-section.collapsed>.nav-link-item{display:none;}
 /* Active state is a left rail + tint, not a maroon flood — it marks position
    without shouting, and keeps the label readable at small sizes. */
 .nav-link-item{position:relative;display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:1px .5rem;padding:.42rem .6rem;color:var(--ink-2);text-decoration:none;font-size:.8rem;cursor:pointer;border:none;background:none;width:calc(100% - 1rem);text-align:left;border-radius:var(--r-sm);transition:background .13s,color .13s;}
@@ -14681,7 +14687,64 @@ function applyNavChecks(checks,incomplete={}){
       el.innerHTML+=` <span class="nav-check incomplete">⚠</span>`;
     }
   }
+  applyNavSectionCollapse(checks);
   renderProgressSummary(checks);
+}
+
+// Session-only memory of which fully-complete nav sections the user has
+// manually re-opened (keyed by ward + section label, so one ward's choice
+// doesn't leak onto another's identically-labeled section) -- mirrors
+// _dashboardExpandedSections' pattern but inverted: a complete section
+// defaults to COLLAPSED, and membership here means "force it back open".
+let _navSectionExpanded=new Set();
+function toggleNavSection(key){
+  if(_navSectionExpanded.has(key))_navSectionExpanded.delete(key);
+  else _navSectionExpanded.add(key);
+  updateNavDots();
+}
+// Collapses a sidebar nav-section into a single green ✓ once every one of
+// its data-nav children is complete, so a finished Schedule A/B/C block
+// stops eating vertical space. Reads DOM structure only (no hardcoded
+// per-form-type section map) -- works for every buildNav*() sidebar as
+// long as it follows the existing .nav-section > .nav-section-label +
+// [data-nav] buttons shape. Sections with no data-nav children (Output,
+// Case Info) or that aren't fully complete are left exactly as before:
+// plain label, all items visible with their own individual ✓/⚠ marks.
+function applyNavSectionCollapse(checks){
+  const container=document.getElementById('nav-sections');
+  if(!container)return;
+  container.querySelectorAll('.nav-section').forEach(section=>{
+    const label=section.querySelector(':scope > .nav-section-label');
+    if(!label)return;
+    if(label.dataset.origHtml===undefined)label.dataset.origHtml=label.innerHTML;
+    const navKeys=[...section.querySelectorAll('[data-nav]')].map(el=>el.dataset.nav).filter(k=>k in checks);
+    const reset=()=>{
+      section.classList.remove('collapsed');
+      label.classList.remove('nav-section-toggle');
+      label.removeAttribute('role');label.removeAttribute('tabindex');label.removeAttribute('aria-expanded');
+      label.onclick=null;
+      label.innerHTML=label.dataset.origHtml;
+    };
+    if(!navKeys.length){reset();return;}
+    const allComplete=navKeys.every(k=>checks[k]);
+    const sectionKey=`${guardianData.activeWardId||''}:${label.dataset.origHtml}`;
+    if(!allComplete){
+      _navSectionExpanded.delete(sectionKey);
+      reset();
+      return;
+    }
+    const expanded=_navSectionExpanded.has(sectionKey);
+    section.classList.toggle('collapsed',!expanded);
+    label.classList.add('nav-section-toggle');
+    label.setAttribute('role','button');
+    label.setAttribute('tabindex','0');
+    label.setAttribute('aria-expanded',String(expanded));
+    label.innerHTML=`<span class="nav-section-chevron">${expanded?'▾':'▸'}</span>`
+      +`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`
+      +(expanded?'':'<span class="nav-section-check">✓</span>');
+    label.onclick=()=>toggleNavSection(sectionKey);
+    label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleNavSection(sectionKey);}};
+  });
 }
 
 // Filing-progress summary in the ward-info card. Reuses `checks` — the same
