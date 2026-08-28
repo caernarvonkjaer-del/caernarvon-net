@@ -197,6 +197,10 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 [data-theme="dark"] .ward-picker-select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238b98aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");}
 .ward-combobox-wrap{position:relative;}
 .ward-combobox-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:60;margin-top:.2rem;max-height:calc(3 * 2.26rem);overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2);}
+.county-combobox-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:60;margin-top:.2rem;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2);}
+.county-combobox-dropdown.show{display:block;}
+.county-combobox-item{display:block;width:100%;text-align:left;padding:.4rem .65rem;font-size:.85rem;font:inherit;border:none;background:none;color:inherit;cursor:pointer;}
+.county-combobox-item:hover,.county-combobox-item:focus{background:var(--surface-2);}
 .ward-combobox-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem .7rem;cursor:pointer;font-size:.84rem;color:var(--ink);}
 .ward-combobox-item:hover{background:var(--brand-050);}
 [data-theme="dark"] .ward-combobox-item:hover{background:var(--brand-100);}
@@ -2497,19 +2501,93 @@ function formatSSN(s){
   return `${digits.slice(0,3)}-${digits.slice(3,5)}-${digits.slice(5)}`;
 }
 
-// Format Case Number as 11-111111-AA (2 digits, dash, 6 digits, dash, 2 uppercase letters)
+// Case Number format is YY-######-GD: a 2-digit year, a sequentially
+// issued 6-digit case number, and "GD" for Guardianship -- the only case
+// type this app produces, so it's never something the guardian types
+// themselves. Typing-time only inserts the dash after the year and caps
+// input at 8 digits (2 + 6); it deliberately does NOT pad the sequence or
+// append "-GD" here, so the field doesn't jump to "12-000000-GD" while
+// the guardian is still in the middle of typing the sequence. That
+// happens once in finalizeCaseNumber() below, on blur.
 function formatCaseNumber(s){
-  const str=String(s||'').toUpperCase().replace(/[^A-Z0-9-]/g,'');
-  const parts=str.split('-');
-  let nums='',letters='';
-  for(const c of str.replace(/-/g,'')){
-    if(/[0-9]/.test(c)&&nums.length<8)nums+=c;
-    else if(/[A-Z]/.test(c)&&letters.length<2)letters+=c;
-  }
-  if(nums.length===0)return '';
-  if(nums.length<=2)return nums;
-  if(nums.length<=8)return `${nums.slice(0,2)}-${nums.slice(2)}${letters?('-'+letters):''}`;
-  return `${nums.slice(0,2)}-${nums.slice(2,8)}-${letters.length===2?letters:''}`;
+  const digits=String(s||'').replace(/\D/g,'').slice(0,8);
+  if(digits.length<=2)return digits;
+  return `${digits.slice(0,2)}-${digits.slice(2)}`;
+}
+
+// Blur-time finalization: left-pads the sequence to 6 digits and appends
+// the fixed "-GD" suffix, so "3-14-GD" from a guardian who typed "3145"
+// becomes the properly formed "03-000145-GD". Only a bare year (0-2
+// digits, nothing typed for the sequence yet) is left alone -- forcing a
+// dangling "03--GD" onto a case number with no sequence at all would be
+// worse than just leaving it incomplete for the required-field check to
+// catch.
+function finalizeCaseNumber(s){
+  const digits=String(s||'').replace(/\D/g,'').slice(0,8);
+  if(digits.length<=2)return digits;
+  const year=digits.slice(0,2);
+  const seq=digits.slice(2).padStart(6,'0');
+  return `${year}-${seq}-GD`;
+}
+
+// ═══════════════════════════════════════════════════════
+// COUNTY AUTOCOMPLETE — every County field, previously a <select> hardcoded
+// to just Pinellas/Pasco, is now a free-text input with a filtered dropdown
+// of Florida's 67 counties (never more than 4 shown, narrowing as the
+// guardian types), so the app isn't limited to those two counties anymore.
+// Deliberately permissive rather than a locked-down <select>, matching the
+// sidebar's own "type or select a ward" combobox elsewhere in the app: a
+// suggestion list, not a hard constraint, since a guardian who knows their
+// county correctly (the overwhelmingly common case) shouldn't be blocked
+// by an autocomplete that doesn't yet match what they've typed so far.
+// ═══════════════════════════════════════════════════════
+const FL_COUNTIES=['Alachua','Baker','Bay','Bradford','Brevard','Broward','Calhoun','Charlotte','Citrus','Clay','Collier','Columbia','DeSoto','Dixie','Duval','Escambia','Flagler','Franklin','Gadsden','Gilchrist','Glades','Gulf','Hamilton','Hardee','Hendry','Hernando','Highlands','Hillsborough','Holmes','Indian River','Jackson','Jefferson','Lafayette','Lake','Lee','Leon','Levy','Liberty','Madison','Manatee','Marion','Martin','Miami-Dade','Monroe','Nassau','Okaloosa','Okeechobee','Orange','Osceola','Palm Beach','Pasco','Pinellas','Polk','Putnam','St. Johns','St. Lucie','Santa Rosa','Sarasota','Seminole','Sumter','Suwannee','Taylor','Union','Volusia','Wakulla','Walton','Washington'];
+
+// Shared markup: a plain text input plus an initially-empty dropdown right
+// after it, both wrapped so the dropdown can be absolutely positioned
+// against the input (see .ward-combobox-wrap, reused as-is here — the
+// positioning rule was never ward-specific). `writeExpr` is whatever this
+// particular field's own data-write convention is (D['field']=this.value,
+// a custom setter string, or nothing at all for data-bind fields, which
+// wire their own listener in bindForms() instead) — this function only
+// ever concerns itself with the dropdown, never how the value gets saved.
+function countyAutocompleteHTML(id,val,writeExpr){
+  const filterCall=`filterCountyDropdown(this)`;
+  const oninput=writeExpr?`${writeExpr};${filterCall}`:filterCall;
+  return `<div class="ward-combobox-wrap county-combobox-wrap">
+    <input type="text" class="form-control" id="${id}" autocomplete="off" value="${esc(val||'')}"
+      oninput="${oninput}" onfocus="${filterCall}" onblur="setTimeout(()=>hideCountyDropdown('${id}'),150)">
+    <div class="county-combobox-dropdown" id="${id}-dropdown"></div>
+  </div>`;
+}
+// Up to 4 counties whose name starts with what's typed so far (case-
+// insensitive); with nothing typed yet, the first 4 alphabetically, so
+// focusing an empty field isn't just a dead dropdown.
+function filterCountyDropdown(inp){
+  const dd=document.getElementById(inp.id+'-dropdown');
+  if(!dd)return;
+  const q=inp.value.trim().toLowerCase();
+  const matches=(q?FL_COUNTIES.filter(c=>c.toLowerCase().startsWith(q)):FL_COUNTIES).slice(0,4);
+  if(!matches.length){dd.classList.remove('show');dd.innerHTML='';return;}
+  dd.innerHTML=matches.map(c=>`<button type="button" class="county-combobox-item" onmousedown="event.preventDefault();selectCountyOption('${inp.id}','${c.replace(/'/g,"\\'")}')">${esc(c)}</button>`).join('');
+  dd.classList.add('show');
+}
+function hideCountyDropdown(id){
+  const dd=document.getElementById(id+'-dropdown');
+  if(dd)dd.classList.remove('show');
+}
+// onmousedown+preventDefault on each item (above) stops the input's blur
+// from firing before the click registers, the standard combobox trick —
+// dispatching a real 'input' event here re-runs whatever write-expr this
+// field was wired with in countyAutocompleteHTML() rather than duplicating
+// that logic, and also re-triggers filterCountyDropdown(), which
+// hideCountyDropdown() right after this correctly closes back up.
+function selectCountyOption(id,county){
+  const inp=document.getElementById(id);
+  if(!inp)return;
+  inp.value=county;
+  inp.dispatchEvent(new Event('input',{bubbles:true}));
+  hideCountyDropdown(id);
 }
 
 // Format Florida Bar Number — digits only, max 6 (Fla. Bar member numbers are 6-digit numeric IDs)
@@ -7850,13 +7928,14 @@ function renderPageSimplified(page){
 function fmtS(n){if(n===''||n===null||n===undefined)return '';const v=parseFloat(n);if(isNaN(v))return '';return v<0?`($${Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`$${v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
 function inpS(id,label,val,req=false,type='text'){
   let oninput=type==='text'?`this.value=validateSecurityInput('${id}',this.value);D['${id}']=this.value;autoSave();updateNavDots()`:`D['${id}']=this.value;autoSave();updateNavDots()`;
+  let onblur='';
   const isEmail=label.toLowerCase().includes('email');
   const isPhone=!isEmail&&label.toLowerCase().includes('phone');
   const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
   const isZip=!isEmail&&label.toLowerCase().includes('zip');
   const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
   const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security'));
-  const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number');
+  const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
   const isBarNumber=!isEmail&&label.toLowerCase().includes('bar number');
   const isAmountField=type==='number';
   if(isAmountField){
@@ -7873,6 +7952,7 @@ function inpS(id,label,val,req=false,type='text'){
     oninput=`this.value=formatSSN(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }else if(isCaseNumber){
     oninput=`this.value=formatCaseNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
+    onblur=`this.value=finalizeCaseNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }else if(isBarNumber){
     oninput=`this.value=formatBarNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }
@@ -7882,11 +7962,17 @@ function inpS(id,label,val,req=false,type='text'){
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" oninput="${oninput}">`;
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
 function selS(id,label,val,opts,req=false){return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label><select class="form-select" id="${id}" onchange="D['${id}']=this.value;autoSave();updateNavDots()"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;}
+// County-field counterpart to selS() -- same D['id']=this.value write
+// convention, but a filtered-autocomplete text input instead of a <select>.
+function countyInputS(id,label,val,req=false){
+  const writeExpr=`D['${id}']=this.value;autoSave();updateNavDots()`;
+  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${countyAutocompleteHTML(id,val,writeExpr)}</div>`;
+}
 function inpSWithTooltip(id,label,tooltipKey,val,req=false,type='text'){
   const html=inpS(id,label,val,req,type);
   const tooltipHtml=tooltip(tooltipKey);
@@ -8004,7 +8090,7 @@ function pageCover(){
       <div class="col-md-6">${inpS('guardian','Guardian',d.guardian,true)}</div>
       <div class="col-md-6">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
       <div class="col-md-6">${inpS('typeOfGuardianship','Type of Guardianship',d.typeOfGuardianship,true)}</div>
-      <div class="col-md-3">${selS('county','County',d.county,['Pinellas','Pasco'],true)}</div>
+      <div class="col-md-3">${countyInputS('county','County',d.county,true)}</div>
       <div class="col-md-3">${selS('amendedForm','Amended Form?',d.amendedForm,['Yes','No'],true)}</div>
     </div>
     <div style="position:relative;min-height:200px;">
@@ -8901,7 +8987,7 @@ function pagePlanSCover(){
     <div class="row g-3">
       <div class="col-md-6">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
       <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-      <div class="col-md-4">${selS('county','County',d.county,['Pinellas','Pasco'],true)}</div>
+      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
       <div class="col-md-4">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
       <div class="col-md-4">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
     </div>
@@ -9104,7 +9190,7 @@ function pagePlanACover(){
       <div class="col-md-6">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
       <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
       <div class="col-md-4">${inpS('ssn','Social Security Number',d.ssn)}</div>
-      <div class="col-md-4">${selS('county','County',d.county,['Pinellas','Pasco'],true)}</div>
+      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
       <div class="col-md-4">${inpS('gid','Guardianship Inception Date',d.gid,true,'date')}</div>
       <div class="col-md-6">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
       <div class="col-md-6">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
@@ -9893,7 +9979,7 @@ function pagePlanICover(){
     ${loadWardInfoBanner()}
     <div class="row g-3">
       <div class="col-md-8">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-4">${selS('county','County',d.county,['Pinellas','Pasco'],true)}</div>
+      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
       <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
       <div class="col-md-6">${inpS('successorGuardianship','Successor Guardianship? (if applicable)',d.successorGuardianship)}</div>
       <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
@@ -10330,7 +10416,7 @@ function pagePlanMCover(){
     <div class="schedule-instructions">This is the Annual Guardianship Plan used when the ward is a <strong>minor</strong>. It has no rights-restoration table or ADL ratings — instead it covers residence, medical care, and the minor's education and social development.</div>
     <div class="row g-3">
       <div class="col-md-8">${inpS('wardName',"Minor's Name",d.wardName,true)}</div>
-      <div class="col-md-4">${selS('county','County',d.county,['Pinellas','Pasco'],true)}</div>
+      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
       <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
       <div class="col-md-6">${inpS('ref','REF #',d.ref)}</div>
       <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,true,'date')}</div>
@@ -11704,6 +11790,7 @@ function inp(field,label,val,path,req=false,type='text'){
 function inpD(label,val,setter,req=false,type='text'){
   const inputId='inp_'+Math.random().toString(36).slice(2,9);
   let oninput=type==='text'?`this.value=validateSecurityInput('${label}',this.value);${setter};autoSave();updateNavDots()`:`${setter};autoSave();updateNavDots()`;
+  let onblur='';
   const isEmail=label.toLowerCase().includes('email');
   const isPhone=!isEmail&&label.toLowerCase().includes('phone');
   const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
@@ -11719,6 +11806,7 @@ function inpD(label,val,setter,req=false,type='text'){
     oninput=`this.value=formatSSN(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isCaseNumber){
     oninput=`this.value=formatCaseNumber(this.value);${setter};autoSave();updateNavDots()`;
+    onblur=`this.value=finalizeCaseNumber(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isBarNumber){
     oninput=`this.value=formatBarNumber(this.value);${setter};autoSave();updateNavDots()`;
   }else if(isAccountNumber){
@@ -11743,13 +11831,20 @@ function inpD(label,val,setter,req=false,type='text'){
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}"${inputMode} value="${esc(cleanedValue)}" oninput="${oninput}">`;
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}"${inputMode} value="${esc(cleanedValue)}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
 function selD(label,val,setter,opts){
   const selectId='sel_'+Math.random().toString(36).slice(2,9);
   return `<div class="mb-2"><label class="form-label" for="${selectId}">${label}</label><select class="form-select" id="${selectId}" onchange="${setter};autoSave();updateNavDots()"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+}
+// County-field counterpart to selD() -- same custom-setter-string
+// convention, but a filtered-autocomplete text input instead of a <select>.
+function countyInputD(label,val,setter){
+  const inputId='cty_'+Math.random().toString(36).slice(2,9);
+  const writeExpr=`${setter};autoSave();updateNavDots()`;
+  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}</label>${countyAutocompleteHTML(inputId,val,writeExpr)}</div>`;
 }
 function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
   const html=inpD(label,val,setter,req,type);
@@ -11802,7 +11897,7 @@ function pagePart1Annual(){
     <div class="col-md-3">${selD('Amended Form?',d.amendedForm,"D.amendedForm=this.value",['No','Yes'])}</div>
     <div class="col-md-5">${inpD('Guardian',d.guardian,"D.guardian=this.value")}</div>
     <div class="col-md-5">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
-    <div class="col-md-2">${selD('County',d.county,"D.county=this.value",['Pinellas','Pasco'])}</div>
+    <div class="col-md-2">${countyInputD('County',d.county,"D.county=this.value")}</div>
     <div class="col-md-6">${inpD('Type of Guardianship',d.typeOfGuardianship,"D.typeOfGuardianship=this.value")}</div>
     <div class="col-md-6">${inpD('Related Case Numbers (siblings/relatives with guardianships)',d.relatedCaseNumbers,"D.relatedCaseNumbers=this.value")}</div>
   </div>
@@ -11902,7 +11997,7 @@ function pagePart5Annual(){
     <div class="col-md-4">${inpD("Phone Number ",d.attorney_phone,"D.attorney_phone=this.value")}</div>
     <div class="col-md-8">${inpD("Street Address ",d.attorney_street,"D.attorney_street=this.value")}</div>
     <div class="col-md-10">${inpD("City / State / Zip Code ",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value")}</div>
-    <div class="col-md-2">${selD("County",d.attorney_county,"D.attorney_county=this.value",['Pinellas','Pasco'])}</div>
+    <div class="col-md-2">${countyInputD("County",d.attorney_county,"D.attorney_county=this.value")}</div>
   </div>
   ${pageNavAnnual('/p4','/scha')}
   </div>`;
@@ -14175,6 +14270,8 @@ function bindForms(){
           applyZipLimit(e.target);
           e.target.value=formatCityStateZip(e.target.value);
           val=e.target.value;
+        }else if(inputType==='county'){
+          filterCountyDropdown(e.target);
         }
         // Prevent negative values in number inputs
         if(el.type==='number'){
@@ -14183,6 +14280,16 @@ function bindForms(){
         }
         setPath(window.D,path,val);afterChange(path);
       });
+      // Case Number only fully resolves to YY-######-GD (padded sequence,
+      // fixed GD suffix) on blur -- see finalizeCaseNumber()'s own comment
+      // for why that can't happen on every keystroke like the other
+      // inputType formatters above do.
+      if(inputType==='caseNumber'){
+        el.addEventListener('blur',()=>{
+          el.value=finalizeCaseNumber(el.value);
+          setPath(window.D,path,el.value);afterChange(path);
+        });
+      }
     }
   });
 }
@@ -14694,6 +14801,21 @@ function selectInput(bind,opts){
   const options=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');
   return `<select class="custom-select form-select" data-bind="${bind}">${options}</select>`;
 }
+// County-field counterpart to selectInput() -- data-bind driven like every
+// other Guardian-form field (bindForms() below wires the actual read/write
+// via data-input-type="county"), but a filtered-autocomplete text input
+// instead of a <select>. No initial value or write-expr here: bindForms()
+// sets the starting value itself from window.D, same as every other bound
+// field, and dispatching 'input' on selectCountyOption() reaches its
+// listener exactly like typing would.
+function countyInputBind(bind){
+  const inputId='cty_'+Math.random().toString(36).slice(2,9);
+  return `<div class="ward-combobox-wrap county-combobox-wrap">
+    <input type="text" class="form-control" id="${inputId}" data-bind="${bind}" data-input-type="county" autocomplete="off"
+      onfocus="filterCountyDropdown(this)" onblur="setTimeout(()=>hideCountyDropdown('${inputId}'),150)">
+    <div class="county-combobox-dropdown" id="${inputId}-dropdown"></div>
+  </div>`;
+}
 function entryCard(title,idx,schedule,bodyHtml,footerHtml=''){
   return `<div class="entry-card mb-2">
     <div class="entry-card-header">
@@ -14917,7 +15039,7 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Name of Ward')+textInput('wardName','Full legal name of ward','name')))}
         ${formRow(col(12,reqLabel('Case Number')+textInput('caseNumber','','caseNumber')))}
         ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid')))}
-        ${formRow(col(6,reqLabel('County')+selectInput('county',[['Pinellas','Pinellas'],['Pasco','Pasco']])))}
+        ${formRow(col(6,reqLabel('County')+countyInputBind('county')))}
         ${formRow(col(6,reqLabel('Amended Form?')+selectInput('isAmended',[['false','No'],['true','Yes']])))}
       </div>
     </div>
