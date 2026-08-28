@@ -14763,6 +14763,15 @@ function toggleNavSection(key){
 function applyNavSectionCollapse(checks){
   const container=document.getElementById('nav-sections');
   if(!container)return;
+  // If the page currently on screen belongs to this section, it stays
+  // expanded regardless of the completed/collapsed default -- otherwise
+  // navigating (e.g. the page footer's own Next button) into a finished
+  // section's next schedule would land you on a page with no visible
+  // highlight in the sidebar. Deliberately NOT recorded in
+  // _navSectionExpanded: it's not a manual choice, so leaving that page
+  // lets the section collapse again on its own, same as if it had never
+  // been opened.
+  const currentKey=getCurrentPageKey();
   container.querySelectorAll('.nav-section').forEach(section=>{
     const label=section.querySelector(':scope > .nav-section-label');
     if(!label)return;
@@ -14783,7 +14792,7 @@ function applyNavSectionCollapse(checks){
       plain();
       return;
     }
-    const expanded=_navSectionExpanded.has(sectionKey);
+    const expanded=_navSectionExpanded.has(sectionKey)||navKeys.includes(currentKey);
     section.classList.toggle('collapsed',!expanded);
     label.classList.add('nav-section-toggle');
     label.setAttribute('role','button');
