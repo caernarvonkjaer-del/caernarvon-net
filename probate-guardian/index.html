@@ -894,7 +894,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <span class="security-choice-title">Start a New Case</span>
       </div>
       <ul class="security-choice-list">
-        <li>Begin with no wards and no file open yet.</li>
+        <li>Begin with no forms and no file open yet.</li>
         <li>You'll be asked how to protect the data, then where to save it.</li>
       </ul>
     </button>
@@ -1484,7 +1484,7 @@ const HELP_CONTENT = {
     title: 'Simplified Annual Plan Guide',
     content: `<div class="help-section-title">Plan vs. Accounting</div>
     <p>A <strong>Plan</strong> reports on the ward as a person — where they live, the care they receive, how they are doing. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
-    <p>If you are guardian of both the person and the property, you file one of each. Create a separate ward record for each filing and give both the same case number — the dashboard will group them together.</p>
+    <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each filing and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">What This Form Covers</div>
     <p>Nine questions about the past year: where the ward lived and why that placement suits them, the medical and mental-health treatment they received, their current diagnosis, the social activities provided, how they interact with others, whether any rights should be restored, any advance directives executed, and any payment you received for caring for them.</p>
     <div class="help-section-title">Answering the Questions</div>
@@ -1497,7 +1497,7 @@ const HELP_CONTENT = {
     title: 'Annual Guardianship Plan Guide',
     content: `<div class="help-section-title">Plan vs. Accounting</div>
     <p>A <strong>Plan</strong> reports on the ward as a person — where they live, the care they receive, their abilities and rights. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
-    <p>If you are guardian of both the person and the property, you file one of each. Create a separate ward record for each and give both the same case number — the dashboard will group them together.</p>
+    <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">Filed With the Physician's Report</div>
     <p>This plan is only half of the Annual Report of the Guardian of the Person. A physician who examined the ward no more than 90 days before the reporting period began must file a separate report at the same time. <strong>The app does not produce that report</strong> — you obtain it from the physician.</p>
     <div class="help-section-title">When It's Due</div>
@@ -1513,7 +1513,7 @@ const HELP_CONTENT = {
     title: 'Initial Guardianship Plan Guide',
     content: `<div class="help-section-title">Plan vs. Accounting</div>
     <p>A <strong>Plan</strong> reports on the ward as a person — where they live, the care they receive, their abilities. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
-    <p>If you are guardian of both the person and the property, you file one of each. Create a separate ward record for each and give both the same case number — the dashboard will group them together.</p>
+    <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">When It's Due</div>
     <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.632) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
     <div class="help-section-title">Don't Forget the Disaster Plan</div>
@@ -1529,7 +1529,7 @@ const HELP_CONTENT = {
     title: 'Annual Plan — Minors Guide',
     content: `<div class="help-section-title">Plan vs. Accounting</div>
     <p>A <strong>Plan</strong> reports on the minor as a person — where they live, the care they receive, their education and social development. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
-    <p>If you are guardian of both the person and the property, you file one of each. Create a separate ward record for each and give both the same case number — the dashboard will group them together.</p>
+    <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">Why This Form Is Different</div>
     <p>This is the Annual Guardianship Plan used specifically for a <strong>minor</strong> ward. It has no rights-restoration table and no activities-of-daily-living ratings — instead it focuses on the minor's residence, medical/mental-health care, and — uniquely — their <strong>education and social development</strong>.</p>
     <div class="help-section-title">The Preparer Certification</div>
@@ -2003,7 +2003,7 @@ async function exportHelpGuideAsPDF(){
           <div class="step"><span class="num">2</span>Click <span class="k">+ New Form</span> and pick the inventory type that matches your filing.</div>
           <div class="step"><span class="num">3</span>Work down the sidebar. A green check marks a finished section; an amber warning means it was started but left incomplete.</div>
         </div>
-        <div class="note"><span class="nl">Tip</span>Save a backup the moment your first ward exists. See <em>Saving &amp; backups</em>.</div>
+        <div class="note"><span class="nl">Tip</span>Save a backup the moment your first form exists. See <em>Saving &amp; backups</em>.</div>
       </div>
 
       <div class="sec">
@@ -3892,14 +3892,14 @@ async function exportGuardianDataZip(){
   try{
     if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export.');return;}
     const count=guardianData.wards.length;
-    rollback=await beginRecordingExport(`Exported ${count} ward(s) to archive`);
+    rollback=await beginRecordingExport(`Exported ${count} form(s) to archive`);
     const {blob}=await buildExportZipBlob();
     const handle=await saveBlobAs(blob,'guardianshipwarddata.sav');
     if(handle)await rememberZipHandle(handle);
     _dirtySinceExport=false;
     hideAutoExportReminder();
     updateLastSavedIndicator();
-    alert(`Export complete: ${count} ward(s) saved to guardianshipwarddata.sav`);
+    alert(`Export complete: ${count} form(s) saved to guardianshipwarddata.sav`);
   }catch(e){
     if(rollback)rollback();
     if(e&&e.name==='AbortError')return; // user cancelled the Save As dialog
@@ -3913,7 +3913,7 @@ async function exportGuardianDataZip(){
 // background timer and the banner's Save Backup Now button.
 async function writeArchiveToHandle(handle,viaTimer){
   const count=guardianData.wards.length;
-  const message=viaTimer?`Auto-saved ${count} ward(s) in the background`:`Saved ${count} ward(s) to existing backup file`;
+  const message=viaTimer?`Auto-saved ${count} form(s) in the background`:`Saved ${count} form(s) to existing backup file`;
   const rollback=await beginRecordingExport(message);
   try{
     const {blob}=await buildExportZipBlob();
@@ -3965,7 +3965,7 @@ async function saveBackupNow(){
       const perm=await handle.requestPermission({mode:'readwrite'});
       if(perm==='granted'){
         const count=await writeArchiveToHandle(handle,false);
-        alert(`Backup saved: ${count} ward(s) written to your backup file.`);
+        alert(`Backup saved: ${count} form(s) written to your backup file.`);
         return;
       }
     }
@@ -4081,7 +4081,7 @@ async function importGuardianDataZip(file){
 
     const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
     const adding=imported.length-replacing;
-    if(!confirm(`Import ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} will replace existing ward(s) with the same ID`))return;
+    if(!confirm(`Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`))return;
 
     // Flush BEFORE swapping array entries so in-progress edits save under the
     // old objects and can't overwrite freshly imported data afterwards.
@@ -4104,8 +4104,8 @@ async function importGuardianDataZip(file){
     }else{
       updateSidebar();
     }
-    auditLog('DATA_IMPORT',`Imported ${imported.length} ward(s) from archive`,true);
-    alert(`Import complete: ${imported.length} ward(s) loaded.`);
+    auditLog('DATA_IMPORT',`Imported ${imported.length} form(s) from archive`,true);
+    alert(`Import complete: ${imported.length} form(s) loaded.`);
   }catch(e){
     console.error('import failed',e);
     auditLog('DATA_IMPORT',String(e&&e.message||e),false);
@@ -4349,7 +4349,7 @@ function setupDragAndDropImport(){
 }
 
 function clearAllData(){
-  if(!confirm('Clear all data for current ward? This cannot be undone.'))return;
+  if(!confirm('Clear all data for current form? This cannot be undone.'))return;
   const ward=getActiveWard();
   if(!ward)return;
   const {wardId,wardName,inventoryType,createdDate}=ward;
@@ -5555,7 +5555,7 @@ async function doAddWard(){
     closeModal('addWardModal');
   }catch(e){
     console.error('Failed to add ward',e);
-    alert('Failed to add ward. Check console.');
+    alert('Failed to add form. Check console.');
   }
 }
 
@@ -5626,7 +5626,7 @@ async function doConfirmSimplifiedEligibility(){
     closeModal('simplifiedEligibilityModal');
   }catch(e){
     console.error('Failed to add ward',e);
-    alert('Failed to add ward. Check console.');
+    alert('Failed to add form. Check console.');
   }
 }
 
@@ -5673,7 +5673,7 @@ async function doDeleteWard(){
     if(wasOnDashboard)navigate('/dashboard');
   }catch(e){
     console.error('Failed to delete ward',e);
-    alert('Failed to delete ward. Check console.');
+    alert('Failed to delete form. Check console.');
   }
 }
 
@@ -5854,7 +5854,7 @@ async function runLegacyBrowserStorageMigrationIfNeeded(){
         // silent data loss this whole routine exists to prevent, so this
         // asks outright instead of assuming.
         const confirmedDownload=confirm(
-          `A download of "guardianshipwarddata.sav" (${exportedCount} ward(s)) should have just started.\n\n`+
+          `A download of "guardianshipwarddata.sav" (${exportedCount} form(s)) should have just started.\n\n`+
           'Please check your Downloads folder and confirm the file is actually there before continuing.\n\n'+
           'Click OK once you have verified it downloaded successfully, or Cancel to leave your old data in place and try again later.'
         );
@@ -5864,7 +5864,7 @@ async function runLegacyBrowserStorageMigrationIfNeeded(){
           return;
         }
       }
-      alert(`Saved ${exportedCount} ward(s) from your previous version to guardianshipwarddata.sav.`);
+      alert(`Saved ${exportedCount} form(s) from your previous version to guardianshipwarddata.sav.`);
     }catch(e){
       console.error('Legacy data export failed',e);
       alert('Could not export the existing data ('+(e&&e.message||e)+'). It has been left in place; you will be asked again next time the app opens.');
@@ -6655,7 +6655,7 @@ document.addEventListener('click',e=>{
 
 function showConvertWardModal(){
   if(!guardianData.wards.length){
-    alert('You don\'t have any existing wards yet to convert. Create a ward first using one of the options above, then come back here to convert it later if needed.');
+    alert('You don\'t have any existing forms yet to convert. Create a form first using one of the options above, then come back here to convert it later if needed.');
     return;
   }
   const first=guardianData.wards[0];
@@ -6939,7 +6939,7 @@ async function convertExistingWard(sourceWardId,targetType){
   updateLastSavedIndicator();
   updateSidebar();
   navigate('/');
-  alert(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} ward.\n\n${describeConversion(srcType,targetType)}`);
+  alert(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
 }
 
 async function doConvertWard(){
@@ -7381,12 +7381,12 @@ function pageInventorySelector(){
     <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Probate Guardian helps guardians — and the attorneys who assist them — prepare the court-required filings for guardianship cases in Pinellas and Pasco County, Florida. It walks you through each required field, calculates totals automatically, and produces a filing-ready PDF or the official Clerk of Court Excel template.</p>
 
     <h2 class="subsection-heading mt-3">Who Should Use This</h2>
-    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardians of the <strong>property</strong>, who file an <strong>Initial Inventory</strong>, a <strong>Simplified Annual Accounting</strong>, or a full <strong>Annual Accounting</strong> — and guardians of the <strong>person</strong>, who file a <strong>Plan</strong> reporting on the ward's residence, care, and wellbeing. If you are guardian of both, you file one of each; create a separate record for each filing and give them the same case number, and the dashboard will keep them together.</p>
+    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardians of the <strong>property</strong>, who file an <strong>Initial Inventory</strong>, a <strong>Simplified Annual Accounting</strong>, or a full <strong>Annual Accounting</strong> — and guardians of the <strong>person</strong>, who file a <strong>Plan</strong> reporting on the ward's residence, care, and wellbeing. If you are guardian of both, you file one of each; create a separate form for each filing and give them the same case number, and the dashboard will keep them together.</p>
 
     <h2 class="subsection-heading mt-3">Which Type Do I Need?</h2>
     <ul style="font-size:.88rem;color:var(--ink-2);line-height:1.6;padding-left:1.2rem;">
       <li><strong>Initial Inventory</strong> — the initial inventory of the ward's assets, filed as of the Guardianship Inception Date. Every new guardianship of property starts here.</li>
-      <li><strong>Simplified Annual Accounting</strong> — a short-form yearly accounting, but only when <strong>all</strong> estate property is held in a designated depository under Fla. Stat. § 69.031 and the <strong>only</strong> account activity is interest accrual, settlement deposits, or service charges. The app asks two qualifying questions when you create this type of ward and will route you to a standard Annual Accounting automatically if the guardianship doesn't qualify.</li>
+      <li><strong>Simplified Annual Accounting</strong> — a short-form yearly accounting, but only when <strong>all</strong> estate property is held in a designated depository under Fla. Stat. § 69.031 and the <strong>only</strong> account activity is interest accrual, settlement deposits, or service charges. The app asks two qualifying questions when you create this type of form and will route you to a standard Annual Accounting automatically if the guardianship doesn't qualify.</li>
       <li><strong>Annual Accounting</strong> — the full yearly accounting with detailed schedules, required whenever the simplified form doesn't apply.</li>
       <li><strong>Simplified Annual Plan</strong> — the short yearly report on the ward as a person: where they have lived, the medical care they received, their diagnosis, social activities, and whether any rights should be restored. This is a <em>separate filing</em> from the accountings above and reports on care rather than money.</li>
     </ul>
