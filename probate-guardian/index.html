@@ -4049,9 +4049,13 @@ async function importGuardianDataZip(file){
 
     // Same install (same salt) → current key works. Different install →
     // ask for the password the archive was exported under and re-derive.
+    // A 'none'-mode archive has no salt and no password to ask for at all —
+    // checking securityMode first (rather than comparing salts alone) keeps
+    // that case from prompting for a password that doesn't exist, matching
+    // how loadCaseFileAtLaunch() decides the same thing.
     const currentSalt=await loadAppState('cryptoSalt');
     let key=_cryptoKey;
-    if(manifest.salt!==currentSalt){
+    if(manifest.securityMode!=='none'&&manifest.salt!==currentSalt){
       const pw=prompt('This archive came from a different installation.\nEnter the master password that was in use when it was exported:');
       if(!pw)return;
       key=await deriveKeyFromPassword(pw,manifest.salt);
