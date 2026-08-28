@@ -6043,6 +6043,10 @@ async function runLegacyBrowserStorageMigrationIfNeeded(){
 // ROUTER
 // ═══════════════════════════════════════════════════════
 function navigate(page){
+  // Only when actually leaving the page, not when a +Add button's own
+  // onclick calls navigate() back to the SAME page to render the row it
+  // just pushed — see pruneBlankScheduleEntries().
+  if(page!==currentPage)pruneBlankScheduleEntries();
   currentPage=page;
   window.location.hash=page;
   renderPage(page);
@@ -13816,6 +13820,75 @@ const mk = {
   c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'Pooled',trustAmount:0,wardPercent:100}),
   c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),
 };
+
+// Schedules covered by pruneBlankScheduleEntries() (see navigate()): the
+// repeatable financial line-item schedules only, keyed by their property on
+// D, each mapped to the exact blank object its own +Add button pushes.
+// Deliberately NOT the guardian/preparer/attorney/recipient "party" arrays
+// (guardians, serviceRecipients) -- several pages assume those always hold
+// at least one entry, and pruning one to empty risks breaking that, not
+// just tidying an unused row. Also deliberately not `remuneration`, which
+// two different form engines push a different shape into (Plan forms:
+// guardian/type/description; Annual Accounting: +amount) -- one template
+// can't safely match both.
+const BLANK_SCHEDULE_ENTRY = {
+  // Guardian form (Initial Inventory) -- same factory addEntry() already uses.
+  scheduleA1:mk.a1, scheduleA2:mk.a2, scheduleB1:mk.b1, scheduleB2:mk.b2, scheduleB3:mk.b3,
+  scheduleB4:mk.b4, scheduleC1:mk.c1, scheduleC2:mk.c2, scheduleC3:mk.c3, scheduleC4:mk.c4, scheduleC5:mk.c5,
+  // Annual Accounting -- copied verbatim from each schedule's own +Add button.
+  schA:()=>({payer:'',description:'',bank:'',accountNo:'',amount:''}),
+  schB1:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB2:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB4:()=>({checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
+  schC:()=>({description:'',date:'',gain:'',loss:''}),
+  schD1:()=>({description:'',accountNo:'',restricted:'No',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
+  schD2:()=>({description:'',residence:'No',income:'No',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
+  schD3:()=>({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
+  schD4:()=>({description:'',restricted:'No',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
+  schD5:()=>({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
+  schE:()=>({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
+  schF1:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+  schF2:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+};
+
+// Deep-equals the schedule's own blank-entry template above -- not a
+// generic "is this value empty" guess, since several schedules default a
+// field to something other than '' (Guardian's wardPercent starts at 100,
+// several Annual Yes/No fields start at 'No') and a generic check would
+// never recognize those as untouched.
+function isBlankScheduleEntry(key,entry){
+  const template=BLANK_SCHEDULE_ENTRY[key];
+  if(!template||!entry||typeof entry!=='object')return false;
+  const blank=template();
+  for(const k of new Set([...Object.keys(blank),...Object.keys(entry)])){
+    if(entry[k]!==blank[k])return false;
+  }
+  return true;
+}
+
+// Removes any entry in a covered schedule that's still exactly what +Add
+// left it as. Without this, clicking +Add and then navigating to another
+// tab without typing anything left that row permanently counted against
+// the schedule -- a false "started but incomplete" warning in the sidebar
+// forever, and (had the guardian not noticed) an empty numbered line item
+// in the PDF/Excel export. Called from navigate() only when actually
+// leaving the current page, never when a +Add button's own onclick
+// re-navigates to the SAME page to show the row it just added.
+function pruneBlankScheduleEntries(){
+  if(!window.D)return;
+  let changed=false;
+  for(const key of Object.keys(BLANK_SCHEDULE_ENTRY)){
+    const arr=window.D[key];
+    if(!Array.isArray(arr)||!arr.length)continue;
+    const kept=arr.filter(e=>!isBlankScheduleEntry(key,e));
+    if(kept.length!==arr.length){
+      window.D[key]=kept;
+      changed=true;
+    }
+  }
+  if(changed)autoSave();
+}
 
 // ═══════════════════════════════════════════════════════
 // CALCULATIONS
