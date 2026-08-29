@@ -47,6 +47,13 @@ export function loadPlanMinorFeature() {
   return import('./features/plan-minor/index.js');
 }
 
+// Annual Accounting (Milestone 7, Phase A) -- same reasoning. Also covers
+// the finalAccounting/trustAccounting aliases (formEngine() maps both to
+// 'annual' everywhere the app dispatches on type).
+export function loadAnnualFeature() {
+  return import('./features/annual-accounting/index.js');
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
@@ -55,3 +62,4 @@ window.loadPlanSimplifiedFeature = loadPlanSimplifiedFeature;
 window.loadPlanAnnualFeature = loadPlanAnnualFeature;
 window.loadPlanInitialFeature = loadPlanInitialFeature;
 window.loadPlanMinorFeature = loadPlanMinorFeature;
+window.loadAnnualFeature = loadAnnualFeature;

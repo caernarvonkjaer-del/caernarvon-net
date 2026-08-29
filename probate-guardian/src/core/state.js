@@ -307,15 +307,68 @@ export function emptyDataPlanMinor() {
   };
 }
 
+// Blank-ward data factory for the Annual Accounting feature (Milestone 7,
+// Phase A) -- also used unchanged for the finalAccounting/trustAccounting
+// aliases (formEngine() maps all three to 'annual' everywhere the app
+// dispatches on type; there is no separate data shape for the aliases).
+// Not pure data: reaches back into window.emptyRowAnnual('trust'/'remun'),
+// which stays a legacy global in legacy-app.js because
+// convertGuardianSchedulesToAnnual() and resetYearlyFieldsForNewYear()'s
+// annual branch call it directly (Milestone 7 plan's "Confirmed facts").
+export function emptyDataAnnual() {
+  return {
+    // Part I
+    wardName:'', caseNumber:'', gid:'', periodFrom:'', periodTo:'',
+    guardian:'', attorney:'', typeOfGuardianship:'', county:'Pinellas',
+    amendedForm:'No', filingType:'Annual', relatedCaseNumbers:'',
+    // Part II
+    startingBalance:'',
+    // Part III – guardians (up to 3)
+    guardians:[
+      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''},
+      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''},
+      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''}
+    ],
+    // Part IV – preparer
+    preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:''},
+    // Part V – attorney
+    attorney_bar:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
+    attorney_county:'Pinellas', attorney_signatureDate:'',
+    // Schedules
+    schA:[], schB1:[], schB2:[], schB3:[], schB4:[],
+    schC:[], schD1:[], schD2:[], schD3:[], schD4:[], schD5:[],
+    schE:[], schF1:[], schF2:[],
+    // Parts VI & VII – reconciliation. Line 20 (net assets computed from the
+    // accounting) and Line 30 (net assets from the Schedule D listings) are
+    // both derived, so there is nothing to store for them. What IS stored is
+    // the guardian's written explanation when the two do not agree — the
+    // court needs the discrepancy documented, and export requires it.
+    reconcileExplanation:'',
+    // Part VIII – Trusts (up to 3)
+    trusts:[window.emptyRowAnnual('trust'),window.emptyRowAnnual('trust'),window.emptyRowAnnual('trust')],
+    // Part IX – Bond
+    guardianRelationship:'Professional Guardian',
+    restrictedDepositoryReceiptDate:'',
+    bondAmount:'', bondPeriodFrom:'', bondPeriodTo:'', bondingCompany:'',
+    // Part X – Cert of Service
+    certDate:'', certIndicator:'',
+    certAttySignDate:'',
+    certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
+    // Part XI – Remuneration
+    remuneration:[window.emptyRowAnnual('remun')]
+  };
+}
+
 // Temporary: legacy-app.js stays a classic (non-module) script per
 // Milestone 1's recorded decision, so it can't `import` this module
 // directly -- initializeEmptyData()'s 'simplified'/'planSimplified'/
-// 'planAnnual'/'planInitial'/'planMinor' cases reach these via window
-// instead, the same pattern src/fragment-loader.js uses for loadFragment().
-// Remove once a real src/main.js bootstrap exists to own this wiring
-// explicitly.
+// 'planAnnual'/'planInitial'/'planMinor'/'annual' cases reach these via
+// window instead, the same pattern src/fragment-loader.js uses for
+// loadFragment(). Remove once a real src/main.js bootstrap exists to own
+// this wiring explicitly.
 window.emptyDataSimplified = emptyDataSimplified;
 window.emptyDataPlanSimplified = emptyDataPlanSimplified;
 window.emptyDataPlanAnnual = emptyDataPlanAnnual;
 window.emptyDataPlanInitial = emptyDataPlanInitial;
 window.emptyDataPlanMinor = emptyDataPlanMinor;
+window.emptyDataAnnual = emptyDataAnnual;
