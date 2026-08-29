@@ -300,6 +300,41 @@ export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> 
   await page.evaluate(() => (window as any).flushPendingSave());
 }
 
+export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const d = (window as any).D;
+    Object.assign(d, {
+      wardName: d.wardName || 'Plan Minor Export Test Ward',
+      county: 'Pinellas',
+      periodFrom: '2026-01-01',
+      periodTo: '2026-12-31',
+      guardianName: 'Sample Guardian',
+      q1ResidenceName: 'Sample Residence',
+      q1Street: '123 Main St',
+      q1City: 'Clearwater',
+      q1State: 'FL',
+      q1Zip: '33755',
+      q3Providers: [{ first: 'Sample', mi: '', last: 'Provider', street: '', city: '', state: '', zip: '', phone: '', providerType: 'Primary Care Physician', visits: '4' }],
+      q4Primary: true,
+      q5SchoolProgress: 'Progressing well in all subjects.',
+      q5SocialDevelopment: 'Age-appropriate social development.',
+      q5Communicates: 'Communicates clearly with peers and adults.',
+      q5Interpersonal: 'Maintains healthy relationships with family and friends.',
+      q5NoUnmetNeeds: true,
+      certConsulted: true,
+      preparer_name: 'Sample Preparer',
+      attorney_name: 'Sample Attorney',
+      attorney_signatureDate: '2026-01-12',
+    });
+    d.planGuardians = [
+      { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2026-01-11' },
+      { name: '', tin: '', phone: '', mailingStreet: '', mailingCityStateZip: '', relationship: '', email: '', signatureDate: '' },
+    ];
+    (window as any).autoSave();
+  });
+  await page.evaluate(() => (window as any).flushPendingSave());
+}
+
 export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void> {
   await page.evaluate(() => {
     const d = (window as any).D;
