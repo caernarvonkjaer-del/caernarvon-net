@@ -32,8 +32,14 @@ export function loadPlanSimplifiedFeature() {
   return import('./features/plan-simplified/index.js');
 }
 
+// Plan Annual (Milestone 4, Phase A) -- same reasoning.
+export function loadPlanAnnualFeature() {
+  return import('./features/plan-annual/index.js');
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
 window.loadSimplifiedFeature = loadSimplifiedFeature;
 window.loadPlanSimplifiedFeature = loadPlanSimplifiedFeature;
+window.loadPlanAnnualFeature = loadPlanAnnualFeature;
