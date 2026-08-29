@@ -1,5 +1,5 @@
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
-// Phase A/B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
+// Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
 // bridge (built on src/core/feature-bridge.js), never statically imported.
 //
@@ -23,28 +23,51 @@ const {
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
 } = window;
 
-// Print/PDF export (docHeaderPlanAnnual, buildPrintHTMLPlanAnnual,
-// pagePrintPlanAnnual, doSavePdfPlanAnnual, planReadinessChecksAnnual) has
-// not moved out of legacy-app.js yet -- that is Milestone 4's Phase B. Until
-// then, the '/print' route delegates to the legacy global exactly as it did
-// before extraction, mirroring Plan Simplified's Phase B interim state.
+// print.js is dynamically imported only when the user reaches /print or
+// triggers PDF export (Milestone 4, Phase B) -- same lazy boundary as the
+// other two extracted features. No excel.js: no Plan filing type has Excel
+// support (confirmed by grep -- see the Milestone 4 plan's "Confirmed
+// facts").
+let _printModule = null;
+let _printModulePromise = null;
+function ensurePrintModule() {
+  if (_printModule) return Promise.resolve();
+  if (!_printModulePromise) {
+    _printModulePromise = import('./print.js').then((mod) => {
+      _printModule = mod;
+      // Referenced by name from rendered onclick="..." HTML attributes
+      // (doSavePdfPlanAnnual) or from legacy-app.js's shared
+      // planReadinessChecks() dispatcher (planReadinessChecksAnnual, still
+      // called for the two not-yet-extracted Plan types too) -- both only
+      // ever resolve against the global scope, never a module's own scope,
+      // so both must be real `window` properties.
+      window.doSavePdfPlanAnnual = () => _printModule.doSavePdf();
+      window.planReadinessChecksAnnual = () => _printModule.planReadinessChecksAnnual();
+    });
+  }
+  return _printModulePromise;
+}
 
 export async function mount(container, page) {
   let html;
-  switch (page) {
-    case '/':      html = pagePlanACover(); break;
-    case '/p2':    html = pagePlanAResidences(); break;
-    case '/p3':    html = pagePlanACarePlan(); break;
-    case '/p4':    html = pagePlanABenefits(); break;
-    case '/p5':    html = pagePlanAProviders(); break;
-    case '/p6':    html = pagePlanARights(); break;
-    case '/p7':    html = pagePlanAADLs(); break;
-    case '/p8':    html = pagePlanADisabilities(); break;
-    case '/p9':    html = pagePlanADirectives(); break;
-    case '/p10':   html = pagePlanARemuneration(); break;
-    case '/p11':   html = pagePlanASignatures(); break;
-    case '/print': html = window.pagePrintPlanAnnual(); break;
-    default:       html = pagePlanACover();
+  if (page === '/print') {
+    await ensurePrintModule();
+    html = _printModule.pagePrintPlanAnnual();
+  } else {
+    switch (page) {
+      case '/':    html = pagePlanACover(); break;
+      case '/p2':  html = pagePlanAResidences(); break;
+      case '/p3':  html = pagePlanACarePlan(); break;
+      case '/p4':  html = pagePlanABenefits(); break;
+      case '/p5':  html = pagePlanAProviders(); break;
+      case '/p6':  html = pagePlanARights(); break;
+      case '/p7':  html = pagePlanAADLs(); break;
+      case '/p8':  html = pagePlanADisabilities(); break;
+      case '/p9':  html = pagePlanADirectives(); break;
+      case '/p10': html = pagePlanARemuneration(); break;
+      case '/p11': html = pagePlanASignatures(); break;
+      default:     html = pagePlanACover();
+    }
   }
   container.innerHTML = html;
   container.scrollTop = 0;
@@ -568,9 +591,3 @@ export function validatePlanAnnual(){
   req(g0.signatureDate,'Signatures — Guardian date signed is required');
   return errs;
 }
-
-// Temporary: legacy-app.js's pagePrintPlanAnnual()/doSavePdfPlanAnnual()
-// (not yet moved -- Phase B) call this across the module boundary via
-// window. Removed once Phase B's print.js statically imports
-// validatePlanAnnual directly, same as the other two extracted features.
-window.validatePlanAnnual = validatePlanAnnual;
