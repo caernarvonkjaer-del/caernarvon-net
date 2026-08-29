@@ -380,3 +380,51 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
   });
   await page.evaluate(() => (window as any).flushPendingSave());
 }
+
+/**
+ * Covers every field validateAnnual() requires. Also works unchanged for
+ * finalAccounting/trustAccounting wards (formEngine() aliases -- same data
+ * shape, same validator). No schedule rows are required by validateAnnual()
+ * itself (rows are only checked for completeness if they have any data), so
+ * one populated Schedule A row is added to exercise duplicateAnnualRow/the
+ * row-add path, matching the pattern used for the other Excel-capable type
+ * (Simplified Accounting).
+ */
+export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const d = (window as any).D;
+    Object.assign(d, {
+      wardName: d.wardName || 'Annual Export Test Ward',
+      caseNumber: '2026-CP-000789',
+      guardian: 'Sample Guardian',
+      periodFrom: '2026-01-01',
+      periodTo: '2026-12-31',
+      gid: '2025-01-01',
+      county: 'Pinellas',
+      filingType: 'Annual',
+      startingBalance: '10000',
+      bondAmount: '5000',
+      bondingCompany: 'Sample Bonding Co.',
+      certDate: '2026-12-31',
+      schA: [{ payer: 'Social Security', description: 'Monthly benefit', bank: 'Sample Bank', accountNo: '1234', amount: '500' }],
+      // Line 20 (starting balance + income - disbursements) won't equal
+      // Line 30 (sum of Schedule D listings) unless the D schedules are
+      // populated to match -- simpler to provide the required written
+      // explanation for the (realistic) discrepancy than to hand-balance
+      // every schedule.
+      reconcileExplanation: 'Test fixture: Schedule D listings intentionally left blank.',
+    });
+    d.guardians[0] = { ...d.guardians[0], name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-12-30' };
+    d.preparer = { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-12-30' };
+    Object.assign(d, {
+      attorney_bar: '123456',
+      attorney_phone: '555-555-5555',
+      attorney_street: '123 Main St',
+      attorney_cityStateZip: 'Clearwater, FL 33755',
+      attorney_signatureDate: '2026-12-30',
+    });
+    d.certRecipients[0] = { ...d.certRecipients[0], name: 'Sample Recipient' };
+    (window as any).autoSave();
+  });
+  await page.evaluate(() => (window as any).flushPendingSave());
+}
