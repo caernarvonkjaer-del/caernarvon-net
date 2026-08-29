@@ -14137,57 +14137,6 @@ async function importExcelAnnual(input){
   reader.readAsArrayBuffer(file);
 }
 
-function renderPageGuardian(page){
-  const el=document.getElementById('main-content');
-  sanitizeNegativeAmounts();
-  switch(page){
-    case '/':     el.innerHTML=pageGuardianHome();break;
-    case '/a1':   el.innerHTML=pageGuardianA1();break;
-    case '/a2':   el.innerHTML=pageGuardianA2();break;
-    case '/b1':   el.innerHTML=pageGuardianB1();break;
-    case '/b2':   el.innerHTML=pageGuardianB2();break;
-    case '/b3':   el.innerHTML=pageGuardianB3();break;
-    case '/b4':   el.innerHTML=pageGuardianB4();break;
-    case '/c1':   el.innerHTML=pageGuardianC1();break;
-    case '/c2':   el.innerHTML=pageGuardianC2();break;
-    case '/c3':   el.innerHTML=pageGuardianC3();break;
-    case '/c4':   el.innerHTML=pageGuardianC4();break;
-    case '/c5':   el.innerHTML=pageGuardianC5();break;
-    case '/d1':   el.innerHTML=pageGuardianD1();break;
-    case '/d2':   el.innerHTML=pageGuardianD2();break;
-    case '/d3':   el.innerHTML=pageGuardianD3();break;
-    case '/d4':   el.innerHTML=pageGuardianD4();break;
-    case '/d5':   el.innerHTML=pageGuardianD5();break;
-    case '/print':el.innerHTML=pageGuardianPrint();break;
-    default:      el.innerHTML='<p>Page not found</p>';
-  }
-  bindForms();
-  el.scrollTop=0;
-}
-
-// Placeholder pages for Initial Inventory (will be populated with actual content)
-function pageGuardianHome(){
-  return `<div class="schedule-page"><h1>Initial Inventory — Cover & Summary</h1><p>This is a placeholder. Initial Inventory wizard content goes here.</p></div>`;
-}
-function pageGuardianA1(){return `<div class="schedule-page"><h1>Schedule A-1: Real Estate</h1><p>Placeholder</p></div>`;}
-function pageGuardianA2(){return `<div class="schedule-page"><h1>Schedule A-2: RE Liabilities</h1><p>Placeholder</p></div>`;}
-function pageGuardianB1(){return `<div class="schedule-page"><h1>Schedule B-1: Cash</h1><p>Placeholder</p></div>`;}
-function pageGuardianB2(){return `<div class="schedule-page"><h1>Schedule B-2: Personal Property</h1><p>Placeholder</p></div>`;}
-function pageGuardianB3(){return `<div class="schedule-page"><h1>Schedule B-3: Intangibles</h1><p>Placeholder</p></div>`;}
-function pageGuardianB4(){return `<div class="schedule-page"><h1>Schedule B-4: Liabilities</h1><p>Placeholder</p></div>`;}
-function pageGuardianC1(){return `<div class="schedule-page"><h1>Schedule C-1: Income</h1><p>Placeholder</p></div>`;}
-function pageGuardianC2(){return `<div class="schedule-page"><h1>Schedule C-2: Lawsuits Against</h1><p>Placeholder</p></div>`;}
-function pageGuardianC3(){return `<div class="schedule-page"><h1>Schedule C-3: Lawsuits By Ward</h1><p>Placeholder</p></div>`;}
-function pageGuardianC4(){return `<div class="schedule-page"><h1>Schedule C-4: Trusts</h1><p>Placeholder</p></div>`;}
-function pageGuardianC5(){return `<div class="schedule-page"><h1>Schedule C-5: Joint Owners</h1><p>Placeholder</p></div>`;}
-function pageGuardianD1(){return `<div class="schedule-page"><h1>D-1: Guardian Attestation</h1><p>Placeholder</p></div>`;}
-function pageGuardianD2(){return `<div class="schedule-page"><h1>D-2: Preparer & Attorney</h1><p>Placeholder</p></div>`;}
-function pageGuardianD3(){return `<div class="schedule-page"><h1>D-3: Audit Fee & Safe Deposit</h1><p>Placeholder</p></div>`;}
-function pageGuardianD4(){return `<div class="schedule-page"><h1>D-4: Bond & Surety Info</h1><p>Placeholder</p></div>`;}
-function pageGuardianD5(){return `<div class="schedule-page"><h1>D-5: Certificate of Service</h1><p>Placeholder</p></div>`;}
-function pageGuardianPrint(){return `<div class="schedule-page"><h1>Print Preview</h1><p>Placeholder</p></div>`;}
-
-
 // ═══════════════════════════════════════════════════════
 // WIZARD: GUARDIAN INVENTORY - FULL IMPLEMENTATION
 // ═══════════════════════════════════════════════════════
