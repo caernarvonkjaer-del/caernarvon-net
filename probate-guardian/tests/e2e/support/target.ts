@@ -240,3 +240,62 @@ export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<vo
   });
   await page.evaluate(() => (window as any).flushPendingSave());
 }
+
+/**
+ * Plan Annual has no eligibility redirect either -- same confirmation as
+ * Plan Simplified, createWard() above works unchanged for this type.
+ *
+ * Fills every field validatePlanAnnual() (src/features/plan-annual/index.js)
+ * requires, directly on window.D. Answers every window.PLAN_RIGHTS/
+ * window.PLAN_ADLS key generically (reading the live constant rather than
+ * hardcoding its 12/16 keys, so this doesn't silently go stale if the form
+ * changes) rather than enumerating them here. Populates one row each in the
+ * three repeating tables (residences, providers, directives) so the
+ * extracted row-CRUD path (addPlanRow/removePlanRow/duplicatePlanRow) is
+ * actually exercised, not just flat fields.
+ */
+export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const d = (window as any).D;
+    const rights: Record<string, string> = {};
+    for (const [k] of (window as any).PLAN_RIGHTS) rights[k] = 'Not removed';
+    const adls: Record<string, string> = {};
+    for (const [k] of (window as any).PLAN_ADLS) adls[k] = 'Ward needs no help';
+    Object.assign(d, {
+      wardName: d.wardName || 'Plan Annual Export Test Ward',
+      caseNumber: '2026-CP-000321',
+      county: 'Pinellas',
+      gid: '2025-01-01',
+      periodFrom: '2026-01-01',
+      periodTo: '2026-12-31',
+      guardian: 'Sample Guardian',
+      wardLiving: 'In a facility (skilled nursing, assisted living, etc.)',
+      residenceAddress: '123 Main St',
+      residenceCityStateZip: 'Clearwater, FL 33755',
+      q1Residences: [{ name: 'Sample Facility', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', phone: '555-555-5555', facilityType: 'Assisted Living', from: '2026-01-01', to: '' }],
+      q2NoMove: true,
+      q3SettingALF: true,
+      q4Providers: [{ name: 'Dr. Sample Provider', street: '', cityStateZip: '', phone: '', providerType: 'Primary Care Physician', visits: '4' }],
+      q5SocialSkills: 'Communicates well and enjoys group activities.',
+      q5Activities: 'Weekly physical therapy; effective at maintaining mobility.',
+      rights,
+      adls,
+      q9MentalNone: true,
+      q9PhysNone: true,
+      q10NoDirectives: false,
+      q10Executed: true,
+      q10ExecDNR: true,
+      q10Directives: [{ title: 'Do Not Resuscitate Order', dateSigned: '2025-06-01', signedBy: 'Sample Guardian', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: 'No', orderDate: '', orderCounty: '' }],
+      q11NoRemuneration: true,
+      q11NoRemunerationName: 'Sample Guardian',
+      certPhysicianAttached: true,
+    });
+    d.planGuardians = [
+      { name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', signatureDate: '2026-01-02', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', officeStreet: '', officeCityStateZip: '', relationship: 'Professional Guardian' },
+      { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
+      { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
+    ];
+    (window as any).autoSave();
+  });
+  await page.evaluate(() => (window as any).flushPendingSave());
+}
