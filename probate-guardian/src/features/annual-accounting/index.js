@@ -1,6 +1,6 @@
-// Annual Accounting — the sixth feature extraction (Milestone 7, Phase A of
-// INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/validate;
-// print/PDF and Excel import/export are Phase B). Also covers the
+// Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
+// and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
+// validate, and print/PDF/Excel import/export). Also covers the
 // finalAccounting/trustAccounting aliases -- formEngine(type) maps all
 // three to 'annual' everywhere the app dispatches on type, so there is no
 // separate code path for them anywhere in this module. Dynamically
@@ -32,18 +32,37 @@ const {
   toggleSsnReveal, tooltip, countyAutocompleteHTML, yesNoCheckboxD,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
-  guardianHasAnyData,
+  guardianHasAnyData, checkExcelCapacity,
 } = window;
 
 // print.js/excel.js are dynamically imported once, together, the first time
 // this feature mounts -- same reasoning as Simplified Accounting's
 // ensureLazyModules(): Part I (pagePart1Annual) has its own Excel-import
 // dropzone that must work immediately, so deferring excel.js further would
-// mean a second, separate lazy-load path for just that one control. Phase A
-// only: not wired up yet -- the '/print' route still calls the still-legacy
-// window.pagePrintAnnual() below. Phase B wires this in for real.
+// mean a second, separate lazy-load path for just that one control.
+let _printModule = null;
+let _excelModule = null;
+let _lazyModulesPromise = null;
+function ensureLazyModules() {
+  if (_printModule && _excelModule) return Promise.resolve();
+  if (!_lazyModulesPromise) {
+    _lazyModulesPromise = Promise.all([import('./print.js'), import('./excel.js')]).then(([print, excel]) => {
+      _printModule = print;
+      _excelModule = excel;
+      // Referenced by name from rendered onclick="..."/onchange="..." HTML
+      // attributes, which the browser only ever resolves against the
+      // global scope -- never a module's own scope -- so these must be
+      // real `window` properties, not just exports.
+      window.doSavePdfAnnual = () => _printModule.doSavePdf();
+      window.doSaveExcelAnnual = () => _excelModule.doSaveExcel();
+      window.importExcelAnnual = (input) => _excelModule.importExcel(input);
+    });
+  }
+  return _lazyModulesPromise;
+}
 
 export async function mount(container, page) {
+  await ensureLazyModules();
   window.sanitizeNegativeAmounts();
   let html;
   switch (page) {
@@ -71,7 +90,11 @@ export async function mount(container, page) {
     case '/p9':    html = pagePart9Annual(); break;
     case '/p10':   html = pagePart10Annual(); break;
     case '/p11':   html = pagePart11Annual(); break;
-    case '/print': html = window.pagePrintAnnual(); break;
+    case '/print': {
+      const capOver = checkExcelCapacity(_excelModule.ANNUAL_EXCEL_CAPS);
+      html = _printModule.pagePrintAnnual(capOver);
+      break;
+    }
     default:       html = pagePart1Annual();
   }
   container.innerHTML = html;
@@ -148,8 +171,11 @@ function buildNavAnnual(container){
     </div>
   `;
 }
-function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return x<0?`(${Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`${x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
-function fmtD(s){return s?String(s).substring(0,10):'';}
+// Exported (not just module-local) because print.js also needs these --
+// statically imported back from here rather than duplicated, same
+// safe-circularity pattern as validateAnnual.
+export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return x<0?`(${Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`${x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+export function fmtD(s){return s?String(s).substring(0,10):'';}
 function inpD(label,val,setter,req=false,type='text'){
   const inputId='inp_'+Math.random().toString(36).slice(2,9);
   let oninput=type==='text'?`this.value=validateSecurityInput('${label}',this.value);${setter};autoSave();updateNavDots()`:`${setter};autoSave();updateNavDots()`;
@@ -223,7 +249,10 @@ function pageNavAnnual(prev,next){
     ${next?`<button class="btn btn-primary btn-sm" onclick="navigate('${next}')">Next →</button>`:`<button class="btn btn-primary btn-sm" onclick="navigate('/print')">Preview & Export →</button>`}
   </div>`;
 }
-const DISB_CATS=['Accounting','Bank Service Charges','Care Facility','Clothing / Personal Needs','Entertainment / Travel','Food / Meals','Insurance: Automobile / Property','Insurance: Health / Life','Medical / Pharmacy','Mortgage','Nurse / Care Giver / Employer Tax','Other Legal Expenses','Rent','Repairs / Maintenance','Taxes: Income','Taxes: Intangible','Utilities','Other'];
+// Exported (not just module-local) because print.js's buildPrintHTMLAnnual()
+// also needs it, for the same Schedule B-4 category-total table --
+// statically imported back from here, same pattern as fmtAnnual/fmtD above.
+export const DISB_CATS=['Accounting','Bank Service Charges','Care Facility','Clothing / Personal Needs','Entertainment / Travel','Food / Meals','Insurance: Automobile / Property','Insurance: Health / Life','Medical / Pharmacy','Mortgage','Nurse / Care Giver / Employer Tax','Other Legal Expenses','Rent','Repairs / Maintenance','Taxes: Income','Taxes: Intangible','Utilities','Other'];
 const LIAB_TYPES=['Mortgage','Note','Loan','Other'];
 const GUARDIAN_REL=['Professional Guardian','Family/Non-Professional Guardian','Other/Non-Professional Guardian'];
 
@@ -1073,14 +1102,3 @@ export function validateAnnual(){
 
   return errs;
 }
-
-// Phase A only: the still-legacy pagePrintAnnual()/doSavePdfAnnual()/
-// doSaveExcelAnnual() (legacy-app.js, not yet moved) call
-// window.validateAnnual() in the interim -- an ES module's `export` does
-// NOT make a binding a real `window` property on its own (unlike a classic
-// script's top-level function declarations), so this needs an explicit
-// assignment. Phase B moves those three functions into print.js/excel.js,
-// which statically `import { validateAnnual } from './index.js'` instead
-// (the safe-circularity pattern used by every other extracted feature) --
-// this window assignment can be deleted once Phase B lands.
-window.validateAnnual = validateAnnual;
