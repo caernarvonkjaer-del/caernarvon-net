@@ -4157,7 +4157,7 @@ async function switchWard(wardId){
     case 'annual': renderPageAnnual('/');break;
     case 'planSimplified': mountPlanSimplifiedFeature('/');break;
     case 'planAnnual': mountPlanAnnualFeature('/');break;
-    case 'planInitial': renderPagePlanInitial('/');break;
+    case 'planInitial': mountPlanInitialFeature('/');break;
     case 'planMinor': renderPagePlanMinor('/');break;
   }
   linkLabelsToInputs();
@@ -4289,14 +4289,16 @@ function emptyPlanResidence(){return {name:'',street:'',cityStateZip:'',phone:''
 function emptyPlanProvider(){return {name:'',street:'',cityStateZip:'',phone:'',providerType:'',visits:''};}
 function emptyPlanDirective(){return {title:'',dateSigned:'',signedBy:'',agents:'',alternates:'',relationship:'',contact:'',courtRevoked:'',orderDate:'',orderCounty:''};}
 
-// emptyDataPlanAnnual() moved to src/core/state.js (Milestone 4, Phase A),
-// reached via window.emptyDataPlanAnnual() from initializeEmptyData() below
-// -- needed synchronously at ward-creation time, before the lazily-imported
-// feature module loads. It reaches back into PLAN_RIGHTS/PLAN_ADLS/
-// PLAN_BENEFITS and emptyPlanResidence/emptyPlanProvider/emptyPlanDirective
-// above via window, since all of those stay legacy globals here (needed by
-// computeNavChecks()/resetYearlyFieldsForNewYear(), and emptyPlanDirective
-// by the not-yet-extracted emptyDataPlanInitial()).
+// emptyDataPlanAnnual() and emptyDataPlanInitial() moved to
+// src/core/state.js (Milestones 4 and 5, both Phase A), reached via
+// window.emptyDataPlanAnnual()/window.emptyDataPlanInitial() from
+// initializeEmptyData() below -- needed synchronously at ward-creation time,
+// before the lazily-imported feature module loads. Both reach back into
+// legacy globals here (PLAN_RIGHTS/PLAN_ADLS/PLAN_BENEFITS/
+// emptyPlanResidence/emptyPlanProvider/emptyPlanDirective for the former,
+// INITIAL_ADLS/emptyInitialProvider/emptyPlanDirective for the latter) that
+// stay in this file because computeNavChecks()/resetYearlyFieldsForNewYear()
+// need them directly.
 
 const INITIAL_ADLS=[
   ['lightHousekeeping','Light Housekeeping'],['medication','Administration of Medication'],
@@ -4309,77 +4311,15 @@ const INITIAL_ADLS=[
   ['heavyChores','Heavy Chores'],
 ];
 const INITIAL_ADL_RATINGS=['','Ward needs no help','Ward needs some assistance','Ward cannot do at all'];
+// Bare top-level consts are not real `window` properties on their own (see
+// core/state.js's file header) -- computeNavChecks()'s planInitial branch
+// reads these via the plain identifier since it's the same classic script,
+// but the lazily-imported features/plan-initial/ module can only reach them
+// through window, so both need an explicit assignment here.
+window.INITIAL_ADLS=INITIAL_ADLS;
+window.INITIAL_ADL_RATINGS=INITIAL_ADL_RATINGS;
 
 function emptyInitialProvider(){return {name:'',providerType:'',examDate:'',street:'',cityStateZip:'',phone:''};}
-
-function emptyDataPlanInitial(){
-  const adls={}; INITIAL_ADLS.forEach(([k])=>adls[k]='');
-  return {
-    // Cover
-    wardName:'', caseNumber:'', county:'Pinellas', periodFrom:'', periodTo:'',
-    inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
-    guardianNames:'', attorneyName:'',
-    wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
-    mailingAddress:'', mailingCityStateZip:'',
-    q1PreexistingDirectives:'',
-    // Q2 — residential setting best suited to the ward
-    q2Setting:'', q2Explain:'',
-    // Q3 — medical services
-    q3MedPrimary:false, q3MedDentist:false, q3MedOphthalmologist:false,
-    q3MedSpecialist:false, q3MedSpecialistArea:'', q3MedPT:false,
-    q3MedST:false, q3MedOT:false, q3MedWardDecides:false, q3MedOther:false, q3MedExplain:'',
-    // Q4 — mental health services
-    q4Mental:'', q4Explain:'',
-    // Q5 — personal care
-    q5Personal:'', q5Explain:'',
-    // Q6 — socialization / recreation
-    q6CareFacility:false, q6NursesAides:false, q6FamilyFriends:false, q6DayProgram:false,
-    q6WardDecides:false, q6Other:false, q6Explain:'',
-    // Q7 — insurance / benefits
-    q7SocialSecurity:false, q7Ssdi:false, q7Hmo:false, q7Ssi:false,
-    q7StateSupplement:false, q7InstitutionalCare:false, q7SupplementalIns:false,
-    q7Pension:false, q7Medicare:false, q7Medicaid:false, q7Va:false,
-    q7Trusts:false, q7PendingBenefits:false, q7Other:false, q7Explain:'',
-    // Q9 — examining physicians/providers
-    q9Providers:[emptyInitialProvider()],
-    // Q10A — activities of daily living
-    adls,
-    // Q10B/C — disabilities
-    mentalAlzheimers:false, mentalAutism:false, mentalClosedHeadInjury:false,
-    mentalDementia:false, mentalDepression:false, mentalDevelopmental:false,
-    mentalSubstance:false, mentalSchizophrenia:false, mentalOther:false, mentalExplain:'',
-    physMobility:false, physBlindness:false, physDeafness:false, physDiabetic:false,
-    physParkinsons:false, physArthritis:false, physOther:false, physExplain:'',
-    // Q10D — assistive devices currently used
-    usesDentures:false, usesHearingAid:false, usesWheelchair:false, usesWalker:false,
-    usesCrutches:false, usesProsthetics:false, usesGlasses:false, usesNone:false,
-    usesOther:false, usesExplain:'',
-    // Q10E — assistive devices needed
-    needsDentures:false, needsHearingAid:false, needsWheelchair:false, needsWalker:false,
-    needsCrutches:false, needsProsthetics:false, needsGlasses:false, needsNone:false,
-    needsOther:false, needsExplain:'',
-    // Q10F — examining committee recommendations
-    committeeIncorporated:'', committeeExplain:'',
-    // Q11 — pre-existing DNR / advance directives verification
-    q11NoDirectives:false, q11StepResidence:false, q11StepSafeDeposit:false,
-    q11StepInterviewed:false, q11StepMedicalProviders:false, q11StepAttorney:false,
-    q11Executed:false, q11ExecDNR:false, q11ExecHealthcare:false,
-    q11ExecPOA:false, q11ExecOther:false, q11ExecOtherText:'',
-    q11Directives:[emptyPlanDirective(),emptyPlanDirective()],
-    // Certification — six "check all that apply" statements
-    certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
-    certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
-    // Guardians (form provides up to four signature blocks) + attorney
-    planGuardians:[
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}
-    ],
-    attorney_name:'', attorney_bar:'', attorney_phone:'',
-    attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:''
-  };
-}
 
 function emptyMinorResidence(){return {name:'',street:'',city:'',state:'',zip:'',phone:''};}
 function emptyMinorProvider(){return {first:'',mi:'',last:'',street:'',city:'',state:'',zip:'',phone:'',providerType:'',visits:''};}
@@ -4475,7 +4415,7 @@ function initializeEmptyData(type){
     case 'annual': return emptyDataAnnual();
     case 'planSimplified': return window.emptyDataPlanSimplified();
     case 'planAnnual': return window.emptyDataPlanAnnual();
-    case 'planInitial': return emptyDataPlanInitial();
+    case 'planInitial': return window.emptyDataPlanInitial();
     case 'planMinor': return emptyDataPlanMinor();
     default: return emptyDataGuardian();
   }
@@ -5532,7 +5472,7 @@ function renderPage(page){
     case 'annual': renderPageAnnual(page);break;
     case 'planSimplified': mountPlanSimplifiedFeature(page);break;
     case 'planAnnual': mountPlanAnnualFeature(page);break;
-    case 'planInitial': renderPagePlanInitial(page);break;
+    case 'planInitial': mountPlanInitialFeature(page);break;
     case 'planMinor': renderPagePlanMinor(page);break;
   }
   linkLabelsToInputs();
@@ -5725,7 +5665,7 @@ function updateSidebar(){
     case 'annual': buildNavAnnual(navContainer);break;
     case 'planSimplified': mountPlanSimplifiedNav(navContainer);break;
     case 'planAnnual': mountPlanAnnualNav(navContainer);break;
-    case 'planInitial': buildNavPlanInitial(navContainer);break;
+    case 'planInitial': mountPlanInitialNav(navContainer);break;
     case 'planMinor': buildNavPlanMinor(navContainer);break;
   }
 }
@@ -6873,7 +6813,9 @@ function tdSig(label,val){return td(label,val);}
 // export). See src/features/simplified-accounting/index.js's header
 // comment and the Milestone 3 plan for the pattern and reasoning. txtP/
 // chkP/yesNoCheckboxS/radioP/pageNavS above stay here because they're
-// shared with the three not-yet-extracted Plan types (Problem 3).
+// still shared with the one remaining not-yet-extracted Plan type, planMinor
+// (Problem 3; planAnnual and planInitial no longer need this sharing as of
+// Milestones 4 and 5).
 // ═══════════════════════════════════════════════════════
 // window.createFeatureBridge() is constructed lazily, not at this file's
 // top level -- see getSimplifiedFeatureBridge()'s comment above for why
@@ -6896,10 +6838,11 @@ async function mountPlanSimplifiedNav(container){
 // export). See src/features/plan-simplified/index.js's header comment and
 // the Milestone 4 plan for the pattern and reasoning. planQ/planCheckGroup
 // immediately below, and planEmptyRow/addPlanRow/removePlanRow/
-// duplicatePlanRow further down, stay here because they're shared with the
-// two not-yet-extracted Plan types (planInitial, planMinor) -- despite
+// duplicatePlanRow further down, stay here because they're still shared with
+// the one remaining not-yet-extracted Plan type, planMinor -- despite
 // sitting in what reads as "this section," they are not planAnnual-
-// exclusive (Milestone 4 plan's "Design decisions").
+// exclusive (Milestone 4 plan's "Design decisions"; planInitial no longer
+// needs this sharing as of Milestone 5).
 //
 // window.createFeatureBridge() is constructed lazily, not at this file's
 // top level -- see getSimplifiedFeatureBridge()'s comment (above, in the
@@ -6984,12 +6927,13 @@ function duplicatePlanRow(arrName,idx,route){
 // Each plan has its own Clerk's Review form with its own required items,
 // so the lists genuinely differ rather than being one shared set.
 function planReadinessChecks(){
-  // planReadinessChecksSimplified()/planReadinessChecksAnnual() moved to
-  // their respective feature modules' print.js (Milestones 3 and 4),
-  // reached via window since this dispatcher is shared with the two
-  // not-yet-extracted Plan types and can't import them directly.
+  // planReadinessChecksSimplified()/planReadinessChecksAnnual()/
+  // planReadinessChecksInitial() moved to their respective feature modules'
+  // print.js (Milestones 3, 4 and 5), reached via window since this
+  // dispatcher is shared with the one remaining not-yet-extracted Plan type
+  // (planMinor) and can't import them directly.
   return activeInventoryType==='planAnnual'  ? window.planReadinessChecksAnnual()
-    : activeInventoryType==='planInitial'    ? planReadinessChecksInitial()
+    : activeInventoryType==='planInitial'    ? window.planReadinessChecksInitial()
     : activeInventoryType==='planMinor'      ? planReadinessChecksMinor()
     : window.planReadinessChecksSimplified();
 }
@@ -7034,446 +6978,34 @@ function planReadinessPanel(){
 // planReadinessChecks() dispatcher and the print page's
 // onclick="doSavePdfPlanAnnual()" still resolve.
 
-function buildNavPlanInitial(container){
-  const item=(route,nav,label)=>`<button class="nav-link-item" data-page="${route}" data-nav="${nav}" onclick="navigate('${route}')">${label}</button>`;
-  container.innerHTML=`
-    <div class="nav-section">
-      <div class="nav-section-label">Initial Guardianship Plan</div>
-      ${item('/','pi-cover','Cover')}
-      ${item('/p2','pi-p2','2–3&nbsp;&nbsp;Setting &amp; Medical Care')}
-      ${item('/p3','pi-p3','4–5&nbsp;&nbsp;Mental Health &amp; Personal Care')}
-      ${item('/p4','pi-p4','6–7&nbsp;&nbsp;Socialization &amp; Benefits')}
-      ${item('/p5','pi-p5','9&nbsp;&nbsp;Examining Providers')}
-      ${item('/p6','pi-p6','10A&nbsp;&nbsp;Daily Living')}
-      ${item('/p7','pi-p7','10B–D&nbsp;&nbsp;Disabilities &amp; Devices')}
-      ${item('/p8','pi-p8','11&nbsp;&nbsp;Advance Directives')}
-      ${item('/p9','pi-p9','Signatures')}
-      ${item('/p10','pi-p10','Attorney Certification')}
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
-    </div>
-  `;
+// ═══════════════════════════════════════════════════════
+// Initial Guardianship Plan is extracted into src/features/plan-initial/
+// (Milestone 5, Phase A -- data/validation/pages; print/PDF export stays
+// here as legacy until Phase B). See src/features/plan-simplified/index.js's
+// header comment and the Milestone 5 plan for the pattern and reasoning.
+// planQ/planCheckGroup (defined above, in the Plan Annual section) now stay
+// legacy only because they're still shared with the one remaining
+// not-yet-extracted Plan type, planMinor; planEmptyRow/addPlanRow/
+// removePlanRow/duplicatePlanRow further below stay legacy for the same
+// reason. INITIAL_ADLS/INITIAL_ADL_RATINGS/emptyInitialProvider stay legacy
+// because computeNavChecks()'s planInitial branch reads them directly.
+//
+// window.createFeatureBridge() is constructed lazily, not at this file's
+// top level -- see getSimplifiedFeatureBridge()'s comment (above, in the
+// Simplified Accounting section) for why.
+let _planInitialFeatureBridge=null;
+function getPlanInitialFeatureBridge(){
+  return _planInitialFeatureBridge??=window.createFeatureBridge(()=>window.loadPlanInitialFeature());
+}
+async function mountPlanInitialFeature(page){
+  await getPlanInitialFeatureBridge().mountPage(document.getElementById('main-content'),page);
+}
+async function mountPlanInitialNav(container){
+  await getPlanInitialFeatureBridge().mountNav(container);
 }
 
-function renderPagePlanInitial(page){
-  const el=document.getElementById('main-content');
-  switch(page){
-    case '/':      el.innerHTML=pagePlanICover();break;
-    case '/p2':    el.innerHTML=pagePlanISettingMedical();break;
-    case '/p3':    el.innerHTML=pagePlanIMentalPersonal();break;
-    case '/p4':    el.innerHTML=pagePlanISocialBenefits();break;
-    case '/p5':    el.innerHTML=pagePlanIProviders();break;
-    case '/p6':    el.innerHTML=pagePlanIADLs();break;
-    case '/p7':    el.innerHTML=pagePlanIDisabilities();break;
-    case '/p8':    el.innerHTML=pagePlanIDirectives();break;
-    case '/p9':    el.innerHTML=pagePlanISignatures();break;
-    case '/p10':   el.innerHTML=pagePlanIAttorney();break;
-    case '/print': el.innerHTML=pagePrintPlanInitial();break;
-    default:       el.innerHTML=pagePlanICover();
-  }
-  el.scrollTop=0;
-}
-
-function pagePlanICover(){
-  const d=window.D;
-  return `<div class="schedule-page">
-    <h1>Initial Guardianship Plan — Cover</h1>
-    <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan. Per Administrative Order 2019-005, a separate Disaster Plan must also be filed — the app does not produce that document.</div>
-    ${loadWardInfoBanner()}
-    <div class="row g-3">
-      <div class="col-md-8">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-      <div class="col-md-6">${inpS('successorGuardianship','Successor Guardianship? (if applicable)',d.successorGuardianship)}</div>
-      <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
-      <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,false,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Through',d.periodTo,false,'date')}</div>
-      <div class="col-md-6">${inpS('guardianNames','Guardian Name(s)',d.guardianNames,true)}</div>
-      <div class="col-md-6">${inpS('attorneyName','Attorney Name',d.attorneyName)}</div>
-    </div>
-    <h2 class="subsection-heading mt-4">Where the Ward Currently Lives</h2>
-    ${radioP('wardLiving','The ward is living:',d.wardLiving,[
-      'In a private residence leased or owned by them (house, condo or apartment)',
-      'In a private residence not leased or owned by them (such as family member)',
-      'In a facility (Skilled Nursing, Assisted Living, etc.)'],true)}
-    <div class="row g-3">
-      <div class="col-12">${inpS('residenceAddress','Address Where Ward Is Currently Residing',d.residenceAddress,true)}</div>
-      <div class="col-md-8">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
-      <div class="col-md-4">${inpS('residencePhone','Phone',d.residencePhone)}</div>
-      <div class="col-12">${inpS('mailingAddress','Mailing Address for Ward (if different from above)',d.mailingAddress)}</div>
-      <div class="col-md-8">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
-    </div>
-    ${txtP('q1PreexistingDirectives','List any preexisting orders not to resuscitate or preexisting advance directives, the date signed, whether suspended by the court, and the steps taken to identify and locate them. Attach a copy of any directives to the plan.',d.q1PreexistingDirectives,5)}
-    ${renderScheduleDocsSection('planICover')}
-    ${pageNavS(null,'/p2')}
-  </div>`;
-}
-
-function pagePlanISettingMedical(){
-  const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
-  return `<div class="schedule-page">
-    <h1>2–3. Residential Setting &amp; Medical Services</h1>
-    ${planQ('2','The guardian states the place and kind of residential setting best suited for the needs of the Ward is:',
-      radioP('q2Setting','',d.q2Setting,['Assisted Living (ALF)','Group Home','Intermediate','Private Residence','Skilled Nursing','Specialized','State Hospital','Other'])
-      +(d.q2Setting==='Other'?`<div class="plan-conditional mt-2">${txtP('q2Explain','Explanation',d.q2Explain,3)}</div>`:''))}
-    ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:',
-      planCheckGroup('',
-        cb('q3MedPrimary','Routine examination by primary care physician')
-        +cb('q3MedDentist','Routine examination by dentist')
-        +cb('q3MedOphthalmologist','Routine examination by Ophthalmologist')
-        +cb('q3MedSpecialist','Routine examination by Specialist')
-        +cb('q3MedPT','Physical Therapy')
-        +cb('q3MedST','Speech Therapy')
-        +cb('q3MedOT','Occupational Therapy')
-        +cb('q3MedWardDecides','The ward retains the right to make their own decision')
-        +cb('q3MedOther','Other'),
-        'q3MedExplain',d.q3MedExplain,d.q3MedOther)
-      +(d.q3MedSpecialist?`<div class="plan-conditional mt-2">${inpS('q3MedSpecialistArea','Specialist — area of specialty',d.q3MedSpecialistArea)}</div>`:''))}
-    ${renderScheduleDocsSection('planISettingMedical')}
-    ${pageNavS('/','/p3')}
-  </div>`;
-}
-
-function pagePlanIMentalPersonal(){
-  const d=window.D;
-  return `<div class="schedule-page">
-    <h1>4–5. Mental Health &amp; Personal Care</h1>
-    ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:',
-      radioP('q4Mental','',d.q4Mental,['Routine examination by Psychiatrist/Psychologist','Ongoing Treatment Outpatient','Ongoing Treatment Inpatient','None','Other'])
-      +((d.q4Mental==='Other'||d.q4Mental==='None')?`<div class="plan-conditional mt-2">${txtP('q4Explain','Explanation',d.q4Explain,3)}</div>`:''))}
-    ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:',
-      radioP('q5Personal','',d.q5Personal,['Care Facility','Nurses and Aides','Family and Friends','Other'])
-      +(d.q5Personal==='Other'?`<div class="plan-conditional mt-2">${txtP('q5Explain','Explanation',d.q5Explain,3)}</div>`:''))}
-    ${renderScheduleDocsSection('planIMentalPersonal')}
-    ${pageNavS('/p2','/p4')}
-  </div>`;
-}
-
-function pagePlanISocialBenefits(){
-  const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
-  return `<div class="schedule-page">
-    <h1>6–7. Socialization &amp; Benefits</h1>
-    ${planQ('6','For the plan period, the guardian proposes the following to provide for socialization and/or recreational services for the Ward (e.g.: arranging friends and family to visit, encourage participation in facility or day program activities):',
-      planCheckGroup('',
-        cb('q6CareFacility','Care Facility')
-        +cb('q6NursesAides','Nurses and Aides')
-        +cb('q6FamilyFriends','Family and Friends')
-        +cb('q6DayProgram','Day Program')
-        +cb('q6WardDecides','The Ward retains the right to make their own decision')
-        +cb('q6Other','Other'),
-        'q6Explain',d.q6Explain,d.q6Other))}
-    ${planQ('7','The Ward has the following health insurance, accident insurance, private benefits, or governmental benefits received to meet any part of the costs of medical, mental health or related services:',
-      planCheckGroup('',
-        cb('q7SocialSecurity','Social Security')
-        +cb('q7Ssdi','Social Security Disability Income (SSDI)')
-        +cb('q7Hmo','Health Maintenance Organization (HMO)')
-        +cb('q7Ssi','Supplemental Security Income (SSI)')
-        +cb('q7StateSupplement','Optional State Supplement')
-        +cb('q7InstitutionalCare','Institutional Care Program')
-        +cb('q7SupplementalIns','Supplemental Insurance')
-        +cb('q7Pension','Pension')
-        +cb('q7Medicare','Medicare')
-        +cb('q7Medicaid','Medicaid')
-        +cb('q7Va','VA')
-        +cb('q7Trusts','Trusts (explain type and how it covers costs below)')
-        +cb('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)')
-        +cb('q7Other','Other'),
-        'q7Explain',d.q7Explain,d.q7Trusts||d.q7PendingBenefits||d.q7Other,
-        'If Trusts or Pending Benefits is checked, explain below.'))}
-    ${renderScheduleDocsSection('planISocialBenefits')}
-    ${pageNavS('/p3','/p5')}
-  </div>`;
-}
-
-function pagePlanIProviders(){
-  const d=window.D;
-  const rows=(d.q9Providers||[]).map((r,i)=>{
-    const set=f=>`D.q9Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
-      <div class="entry-card-header">Provider ${i+1}
-        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" onclick="duplicatePlanRow('q9Providers',${i},'/p5')">${ic('copy',13)}</button>
-        <button class="btn btn-sm btn-outline-danger" onclick="removePlanRow('q9Providers',${i},'/p5')">×</button>
-      </div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Provider's first name, last name, and middle initial<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.name||'')}" oninput="${set('name')}"></div>
-        <div class="col-md-3"><label class="form-label">Type of Provider</label><input type="text" class="form-control" value="${esc(r.providerType||'')}" oninput="${set('providerType')}"></div>
-        <div class="col-md-3"><label class="form-label">Approximate Date of Exam</label><input type="date" class="form-control" value="${esc(r.examDate||'')}" oninput="${set('examDate')}"></div>
-        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" oninput="${set('street')}"></div>
-        <div class="col-md-6"><label class="form-label">City, State and Zip Code</label><input type="text" class="form-control" value="${esc(r.cityStateZip||'')}" oninput="${set('cityStateZip')}"></div>
-        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
-      </div></div>
-    </div>`;
-  }).join('');
-  return `<div class="schedule-page">
-    <h1>9. Examinations to Determine Treatment Needs</h1>
-    <div class="schedule-instructions">List every physical and/or mental examination the guardian will secure or has secured to determine the Ward's medical and mental health treatment needs.</div>
-    ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
-    <button class="btn btn-outline-primary btn-sm mb-2" onclick="addPlanRow('q9Providers','initialProvider','/p5')">+ Add Provider</button>
-    ${renderScheduleDocsSection('planIProviders')}
-    ${pageNavS('/p4','/p6')}
-  </div>`;
-}
-
-function pagePlanIADLs(){
-  const d=window.D;
-  const adls=d.adls||{};
-  const ratings=INITIAL_ADL_RATINGS.slice(1);
-  const rows=INITIAL_ADLS.map(([k,label])=>{
-    const btns=ratings.map((o,i)=>`
-      <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio" name="radio_adl_${k}" id="adl_${k}_${i}" value="${esc(o)}" ${adls[k]===o?'checked':''} onchange="D.adls['${k}']=this.value;autoSave();updateNavDots()">
-        <label class="form-check-label" for="adl_${k}_${i}">${esc(o)}</label>
-      </div>`).join('');
-    return `<tr><td>${esc(label)}</td><td><div class="plan-radio-row">${btns}</div></td></tr>`;
-  }).join('');
-  return `<div class="schedule-page">
-    <h1>10A. Activities of Daily Living</h1>
-    <div class="schedule-instructions">To assist the Court with review of the initial plan, rate the ability of the Ward to engage in each activity of daily living honestly — these ratings become the baseline that future Annual Plans are compared against.</div>
-    <div class="table-responsive"><table class="table plan-adl-table"><thead><tr><th style="width:45%;">Activity</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>
-    ${renderScheduleDocsSection('planIADLs')}
-    ${pageNavS('/p5','/p7')}
-  </div>`;
-}
-
-function pagePlanIDisabilities(){
-  const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
-  return `<div class="schedule-page">
-    <h1>10B–D. Disabilities &amp; Assistive Devices</h1>
-    ${planQ('B','The mental disabilities of the Ward are:',
-      planCheckGroup('',
-        cb('mentalAlzheimers',"Alzheimer's type of dementia")
-        +cb('mentalAutism','Autism Spectrum Disorders')
-        +cb('mentalClosedHeadInjury','Closed Head Injury')
-        +cb('mentalDementia','Dementia')
-        +cb('mentalDepression','Depression')
-        +cb('mentalDevelopmental','Developmental Disabilities')
-        +cb('mentalSubstance','Induced by substance abuse')
-        +cb('mentalSchizophrenia','Schizophrenia or related disorders')
-        +cb('mentalOther','Other'),
-        'mentalExplain',d.mentalExplain,d.mentalOther))}
-    ${planQ('C','The physical disabilities of the Ward are:',
-      planCheckGroup('',
-        cb('physMobility','Mobility')
-        +cb('physBlindness','Blindness')
-        +cb('physDeafness','Deafness')
-        +cb('physDiabetic','Diabetic')
-        +cb('physParkinsons',"Parkinson's disease")
-        +cb('physArthritis','Severe arthritis')
-        +cb('physOther','Other'),
-        'physExplain',d.physExplain,d.physOther))}
-    ${planQ('D','The assistive devices currently used by the Ward are:',
-      planCheckGroup('',
-        cb('usesDentures','Dentures')
-        +cb('usesHearingAid','Hearing Aid')
-        +cb('usesWheelchair','Wheelchair')
-        +cb('usesWalker','Walker/Cane')
-        +cb('usesCrutches','Crutches')
-        +cb('usesProsthetics','Prosthetics')
-        +cb('usesGlasses','Glasses')
-        +cb('usesNone','None')
-        +cb('usesOther','Other'),
-        'usesExplain',d.usesExplain,d.usesOther))}
-    ${renderScheduleDocsSection('planIDisabilities')}
-    ${pageNavS('/p6','/p8')}
-  </div>`;
-}
-
-function pagePlanIDirectives(){
-  const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
-  const dirs=(d.q11Directives||[]).map((r,i)=>{
-    const set=f=>`D.q11Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
-      <div class="entry-card-header">Advance Directive ${i+1}</div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" oninput="${set('title')}"></div>
-        <div class="col-md-6"><label class="form-label">Date executed/signed</label><input type="date" class="form-control" value="${esc(r.dateSigned||'')}" oninput="${set('dateSigned')}"></div>
-        <div class="col-md-6"><label class="form-label">Name of person who signed</label><input type="text" class="form-control" value="${esc(r.signedBy||'')}" oninput="${set('signedBy')}"></div>
-        <div class="col-md-6"><label class="form-label">Relationship of Agent(s)/Surrogate(s) to the Ward</label><input type="text" class="form-control" value="${esc(r.relationship||'')}" oninput="${set('relationship')}"></div>
-        <div class="col-md-6"><label class="form-label">Name of Designated Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.agents||'')}" oninput="${set('agents')}"></div>
-        <div class="col-md-6"><label class="form-label">Name of any Alternate Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" oninput="${set('alternates')}"></div>
-        <div class="col-md-6"><label class="form-label">Contact information for Agent(s)/Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" oninput="${set('contact')}"></div>
-        <div class="col-md-6"><label class="form-label" for="q11dir_${i}_revoked">Has a Court suspended or revoked the Order/Directive?</label>
-          <div class="form-check"><input class="form-check-input" type="checkbox" id="q11dir_${i}_revoked" ${r.courtRevoked==='Yes'?'checked':''} onchange="D.q11Directives[${i}].courtRevoked=(this.checked?'Yes':'No');autoSave();updateNavDots()"></div>
-        </div>
-        <div class="col-md-6"><label class="form-label">Date of Order</label><input type="date" class="form-control" value="${esc(r.orderDate||'')}" oninput="${set('orderDate')}"></div>
-        <div class="col-md-6"><label class="form-label">County/State entered</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" oninput="${set('orderCounty')}"></div>
-      </div></div>
-    </div>`;
-  }).join('');
-  return `<div class="schedule-page">
-    <h1>11. Advance Directives</h1>
-    ${planQ('11a','There are NO pre-existing orders Not To Resuscitate ("DNR") or any other advance directive, and I have taken the following steps to verify there are none:',
-      chkP('q11NoDirectives','There are no pre-existing orders or advance directives',d.q11NoDirectives)
-      +planCheckGroup('',
-        cb('q11StepResidence',"Search of ward's prior and current residence")
-        +cb('q11StepSafeDeposit',"Inventory of ward's safe deposit box")
-        +cb('q11StepInterviewed','Interviewed family and friends')
-        +cb('q11StepMedicalProviders',"Requested documents from the ward's medical providers")
-        +cb('q11StepAttorney',"Requested documents from the ward's attorney"),
-        null,null,false))}
-    ${planQ('11b','The ward executed the following advance directives:',
-      chkP('q11Executed','The ward executed advance directives (complete below)',d.q11Executed)
-      +planCheckGroup('',
-        cb('q11ExecDNR','Order Not to Resuscitate, F.S. 401.45(3) ("DNR")')
-        +cb('q11ExecHealthcare','Advance Directive for Healthcare (healthcare surrogate, living will, or anatomical gift)')
-        +cb('q11ExecPOA','Durable Power of Attorney, F.S. Chapter 709')
-        +cb('q11ExecOther','Other'),
-        'q11ExecOtherText',d.q11ExecOtherText,d.q11ExecOther,'Describe the "Other" directive.')
-      +dirs)}
-    ${planQ('E','The assistive devices needed by the Ward (devices needed but not currently owned) are:',
-      planCheckGroup('',
-        cb('needsDentures','Dentures')
-        +cb('needsHearingAid','Hearing Aid')
-        +cb('needsWheelchair','Wheelchair')
-        +cb('needsWalker','Walker/Cane')
-        +cb('needsCrutches','Crutches')
-        +cb('needsProsthetics','Prosthetics')
-        +cb('needsGlasses','Glasses')
-        +cb('needsNone','None')
-        +cb('needsOther','Other'),
-        'needsExplain',d.needsExplain,d.needsOther))}
-    ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
-      yesNoCheckboxS('committeeIncorporated','',d.committeeIncorporated)
-      +(d.committeeIncorporated==='No'?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
-    ${renderScheduleDocsSection('planIDirectives')}
-    ${pageNavS('/p7','/p9')}
-  </div>`;
-}
-
-function pagePlanISignatures(){
-  const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
-  const g=(i,title)=>{
-    const gd=(d.planGuardians||[])[i]||{};
-    const set=f=>`D.planGuardians[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="plan-sig-block">
-      <h3>${title}</h3>
-      <div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" oninput="this.value=formatName(this.value);${set('name')}"></div>
-        <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" oninput="${set('relationship')}"></div>
-        <div class="col-md-4"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(gd.ssn||'')}" oninput="${set('ssn')}"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
-        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
-        <div class="col-md-4"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
-        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" oninput="${set('street')}"></div>
-        <div class="col-md-6"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" oninput="${set('cityStateZip')}"></div>
-      </div>
-    </div>`;
-  };
-  return `<div class="schedule-page">
-    <h1>Certification and Signature of Guardian(s)</h1>
-    <div class="schedule-instructions">If the Ward's ability to exercise rights has changed since the Order Determining Capacity and Appointing Guardian, the guardian must file a Petition to Remove or Petition to Restore Rights, as appropriate.</div>
-    ${planCheckGroup('Check all that apply:',
-      cb('certIncapacitatedNoCopy','The Ward was declared totally incapacitated and has not been given a copy of this plan')
-      +cb('certMinorNoCopy','The Ward is a minor under the age of 14 and has not been given a copy of this plan')
-      +cb('certConsulted',"The guardian has consulted with the Ward, to the extent reasonable, has honored the Ward's wishes, and to the maximum extent possible the plan is in accordance with the Ward's wishes or consistent with the rights retained by the Ward")
-      +cb('certRecognizeRights','In exercising his or her powers, the guardian shall recognize any rights retained by the ward (F.S. 744.363(6))')
-      +cb('certNoRestriction','The plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease')
-      +cb('certProvidesCare',"The plan provides for the Ward's medical care and mental health treatment"),
-      null,null,false)}
-    <p style="font-size:.85rem;color:var(--ink-3);margin:.5rem 0 1rem;">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
-    ${g(0,'Guardian')}
-    ${g(1,'Co-Guardian')}
-    ${g(2,'Co-Guardian')}
-    ${g(3,'Co-Guardian')}
-    <div class="schedule-instructions mt-2">All guardians of the person must sign and provide their most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.</div>
-    ${renderScheduleDocsSection('planISignatures')}
-    ${pageNavS('/p8','/p10')}
-  </div>`;
-}
-
-function pagePlanIAttorney(){
-  const d=window.D;
-  return `<div class="schedule-page">
-    <h1>Certification and Signature of Guardian's Attorney</h1>
-    <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
-      <div class="col-md-6">${inpS('attorney_bar','Attorney Bar Number',d.attorney_bar)}</div>
-      <div class="col-12">${inpS('attorney_street','Attorney Address',d.attorney_street)}</div>
-      <div class="col-md-8">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
-      <div class="col-md-4">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>
-      <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
-    </div>
-    ${renderScheduleDocsSection('planIAttorney')}
-    ${pageNavS('/p9','/print')}
-  </div>`;
-}
-
-function validatePlanInitial(){
-  const d=window.D;
-  const errs=[];
-  const req=(v,label)=>{if(v===''||v===null||v===undefined||v===false)errs.push(label);};
-  req(d.wardName,'Cover — Name of Ward is required');
-  req(d.caseNumber,'Cover — Case Number is required');
-  req(d.county,'Cover — County is required');
-  req(d.inceptionDate,'Cover — Guardianship Inception Date is required');
-  req(d.lettersSignedDate,'Cover — Date Letters Were Signed is required');
-  req(d.guardianNames,'Cover — Guardian Name(s) is required');
-  req(d.wardLiving,'Cover — Where the ward is living is required');
-  req(d.residenceAddress,'Cover — Address where ward resides is required');
-  req(d.residenceCityStateZip,'Cover — City/State/ZIP is required');
-
-  req(d.q2Setting,'2–3. Setting & Medical Care — Best-suited residential setting is required');
-  if(d.q2Setting==='Other')req(d.q2Explain,'2–3. Setting & Medical Care — Explanation for "Other" residential setting is required');
-  const anyMed=d.q3MedPrimary||d.q3MedDentist||d.q3MedOphthalmologist||d.q3MedSpecialist||d.q3MedPT||d.q3MedST||d.q3MedOT||d.q3MedWardDecides||d.q3MedOther;
-  if(!anyMed)errs.push('2–3. Setting & Medical Care — At least one medical service option is required');
-  if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Setting & Medical Care — Specialist area of specialty is required');
-  if(d.q3MedOther)req(d.q3MedExplain,'2–3. Setting & Medical Care — Explanation for "Other" medical service is required');
-
-  req(d.q4Mental,'4–5. Mental Health & Personal Care — Mental health service provision is required');
-  if(d.q4Mental==='Other'||d.q4Mental==='None')req(d.q4Explain,'4–5. Mental Health & Personal Care — Explanation is required');
-  req(d.q5Personal,'4–5. Mental Health & Personal Care — Personal care provision is required');
-  if(d.q5Personal==='Other')req(d.q5Explain,'4–5. Mental Health & Personal Care — Explanation for "Other" personal care is required');
-
-  const anySocial=d.q6CareFacility||d.q6NursesAides||d.q6FamilyFriends||d.q6DayProgram||d.q6WardDecides||d.q6Other;
-  if(!anySocial)errs.push('6–7. Socialization & Benefits — At least one socialization/recreation option is required');
-  if(d.q6Other)req(d.q6Explain,'6–7. Socialization & Benefits — Explanation for "Other" socialization is required');
-  if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)req(d.q7Explain,'6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other');
-
-  (d.q9Providers||[]).forEach((r,i)=>{
-    if(r&&(r.providerType||r.examDate||r.street||r.cityStateZip||r.phone)&&!r.name)
-      errs.push(`9. Examining Providers — Row ${i+1}: Provider name is required`);
-  });
-
-  const missingAdls=INITIAL_ADLS.filter(([k])=>!d.adls||!d.adls[k]).length;
-  if(missingAdls>0)errs.push(`10A. Daily Living — ${missingAdls} of ${INITIAL_ADLS.length} activities not yet rated`);
-
-  const anyMental=d.mentalAlzheimers||d.mentalAutism||d.mentalClosedHeadInjury||d.mentalDementia||d.mentalDepression||d.mentalDevelopmental||d.mentalSubstance||d.mentalSchizophrenia||d.mentalOther;
-  if(!anyMental)errs.push('10B–D. Disabilities & Devices — At least one mental disability option is required (or note none apply)');
-  if(d.mentalOther)req(d.mentalExplain,'10B–D. Disabilities & Devices — Explanation for "Other" mental disability is required');
-  const anyPhys=d.physMobility||d.physBlindness||d.physDeafness||d.physDiabetic||d.physParkinsons||d.physArthritis||d.physOther;
-  if(!anyPhys)errs.push('10B–D. Disabilities & Devices — At least one physical disability option is required (or note none apply)');
-  if(d.physOther)req(d.physExplain,'10B–D. Disabilities & Devices — Explanation for "Other" physical disability is required');
-  const anyUses=d.usesDentures||d.usesHearingAid||d.usesWheelchair||d.usesWalker||d.usesCrutches||d.usesProsthetics||d.usesGlasses||d.usesNone||d.usesOther;
-  if(!anyUses)errs.push('10B–D. Disabilities & Devices — Assistive devices currently used is required (or select None)');
-  if(d.usesOther)req(d.usesExplain,'10B–D. Disabilities & Devices — Explanation for "Other" device currently used is required');
-
-  if(!!d.q11NoDirectives===!!d.q11Executed)errs.push('11. Advance Directives — Select exactly one: no pre-existing directives, or directives were executed');
-  if(d.q11ExecOther)req(d.q11ExecOtherText,'11. Advance Directives — Description of "Other" advance directive is required');
-  const anyNeeds=d.needsDentures||d.needsHearingAid||d.needsWheelchair||d.needsWalker||d.needsCrutches||d.needsProsthetics||d.needsGlasses||d.needsNone||d.needsOther;
-  if(!anyNeeds)errs.push('11. Advance Directives — Assistive devices needed is required (or select None)');
-  if(d.needsOther)req(d.needsExplain,'11. Advance Directives — Explanation for "Other" device needed is required');
-  req(d.committeeIncorporated,'11. Advance Directives — Whether examining-committee recommendations are incorporated is required');
-  if(d.committeeIncorporated==='No')req(d.committeeExplain,'11. Advance Directives — Explanation is required when recommendations are not incorporated');
-
-  const anyCert=d.certIncapacitatedNoCopy||d.certMinorNoCopy||d.certConsulted||d.certRecognizeRights||d.certNoRestriction||d.certProvidesCare;
-  if(!anyCert)errs.push('Signatures — At least one certification statement must be checked');
-  const g0=(d.planGuardians||[])[0]||{};
-  req(g0.name,'Signatures — Guardian name is required');
-  req(g0.signatureDate,'Signatures — Guardian signature date is required');
-
-  req(d.attorney_name,'Attorney Certification — Attorney name is required');
-  req(d.attorney_signatureDate,'Attorney Certification — Attorney signature date is required');
-
-  return errs;
-}
+// buildNavPlanInitial()..pagePlanIAttorney()/validatePlanInitial() moved to
+// src/features/plan-initial/index.js (Milestone 5, Phase A).
 
 function buildNavPlanMinor(container){
   const item=(route,nav,label)=>`<button class="nav-link-item" data-page="${route}" data-nav="${nav}" onclick="navigate('${route}')">${label}</button>`;
@@ -7773,367 +7305,13 @@ function validatePlanMinor(){
   return errs;
 }
 
-
-function planReadinessChecksInitial(){
-  const d=window.D;
-  const has=v=>!!(v!==''&&v!==null&&v!==undefined);
-  const g0=(d.planGuardians||[])[0]||{};
-  const provs=(d.q9Providers||[]).filter(r=>r&&r.name);
-  const adls=d.adls||{};
-  const directives=(d.q11Directives||[]).filter(r=>r&&(r.title||r.dateSigned||r.signedBy));
-  const auto=[
-    {label:'Ward name, case number and county are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.county)},
-    {label:'Guardianship Inception Date and date Letters were signed are stated',ok:has(d.inceptionDate)&&has(d.lettersSignedDate)},
-    {label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
-    {label:'Guardian address, phone and SSN/EIN provided',ok:has(g0.street)&&has(g0.phone)&&has(g0.ssn)},
-    {label:"Ward's current living arrangement and address stated",ok:has(d.wardLiving)&&has(d.residenceAddress)},
-    {label:'Question 2 — best-suited residential setting selected',ok:has(d.q2Setting)},
-    {label:'Question 3 — medical service provisions selected',ok:!!(d.q3MedPrimary||d.q3MedDentist||d.q3MedOphthalmologist||d.q3MedSpecialist||d.q3MedPT||d.q3MedST||d.q3MedOT||d.q3MedWardDecides||d.q3MedOther)},
-    {label:'Question 4 — mental health service provision selected',ok:has(d.q4Mental)},
-    {label:'Question 5 — personal care provision selected',ok:has(d.q5Personal)},
-    {label:`Question 9 — examining providers listed (${provs.length})`,ok:provs.length>0},
-    {label:`Question 10A — all fifteen activities of daily living rated`,ok:INITIAL_ADLS.every(([k])=>has(adls[k]))},
-    {label:'Question 10B/C — mental and physical disabilities answered',ok:!!((d.mentalAlzheimers||d.mentalAutism||d.mentalClosedHeadInjury||d.mentalDementia||d.mentalDepression||d.mentalDevelopmental||d.mentalSubstance||d.mentalSchizophrenia||d.mentalOther)&&(d.physMobility||d.physBlindness||d.physDeafness||d.physDiabetic||d.physParkinsons||d.physArthritis||d.physOther))},
-    {label:'Question 11 — advance directives answered (none, or executed directives listed)',ok:!!d.q11NoDirectives!==!!d.q11Executed},
-    {label:'Question 10F — examining committee recommendation question answered',ok:has(d.committeeIncorporated)},
-    {label:'Attorney certification signed and dated',ok:has(d.attorney_name)&&has(d.attorney_signatureDate)},
-  ];
-  const manual=[
-    'File within 60 days after the Letters of Guardianship are signed (F.S. 744.632).',
-    'File a separate Disaster Plan alongside this report, per Administrative Order 2019-005.',
-    'Serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).',
-    'Attach a copy of any pre-existing advance directive described in the Question 1 narrative.',
-    'Confirm the guardian address on file with the Clerk matches the address on this plan.',
-    'If you are a professional guardian, confirm your OPPG registration is current.',
-    'Only reports with original signatures will be audited by the Clerk of Court.',
-  ];
-  return {auto,manual};
-}
-
-function docHeaderPlanInitial(ward,caseNo,section,page){
-  return `<div class="doc-header">
-    <div class="court-title">${circuitCourtCaption(window.D.county,true)}</div>
-    <div class="doc-title">INITIAL GUARDIANSHIP PLAN</div>
-    <div class="doc-meta">
-      <span>IN RE: GUARDIANSHIP OF <strong>${ward}</strong></span>
-      <span>${section}${page?' — Page '+page:''}</span>
-      <span>Case Number: <strong>${caseNo}</strong></span>
-    </div>
-  </div>`;
-}
-
-function buildPrintHTMLPlanInitial(){
-  const d=window.D;
-  const ward=esc(d.wardName||'');
-  const caseNo=esc(d.caseNumber||'');
-  const H=docHeaderPlanInitial;
-  const y=v=>v?'☒':'☐';
-  const line=v=>`<div class="doc-answer">${esc(v||'')||'&nbsp;'}</div>`;
-  const fld=(label,val)=>`<div class="doc-field-label">${label}</div><div class="doc-signature-line">${esc(val||'')}</div>`;
-  const boxes=(items)=>`<div class="doc-checklist">${items.map(([on,label])=>`<div class="doc-check-row">${y(on)} ${esc(label)}</div>`).join('')}</div>`;
-  let html='';
-
-  // ── Page 1: cover ─────────────────────────────────────
-  html+=`<div class="doc-page">${H(ward,caseNo,'Cover','1')}
-  <p style="font-size:.76rem;margin-bottom:.6rem;">Pursuant to F.S. 744.632, this report with original signatures is due within 60 days after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.</p>
-  <div class="doc-table-div"><div class="tbl">
-    <div class="tr"><div class="td">Case Number</div><div class="td">${caseNo}</div></div>
-    <div class="tr"><div class="td">Successor Guardianship</div><div class="td">${esc(d.successorGuardianship||'')}</div></div>
-    <div class="tr"><div class="td">Guardianship Inception Date</div><div class="td">${fmtDate(d.inceptionDate)||''}</div></div>
-    <div class="tr"><div class="td">Date Letters Were Signed</div><div class="td">${fmtDate(d.lettersSignedDate)||''}</div></div>
-    <div class="tr"><div class="td">For the period</div><div class="td">${fmtDate(d.periodFrom)||''} through ${fmtDate(d.periodTo)||''}</div></div>
-    <div class="tr"><div class="td">Guardian Name(s)</div><div class="td">${esc(d.guardianNames||'')}</div></div>
-    <div class="tr"><div class="td">Attorney Name</div><div class="td">${esc(d.attorneyName||'')}</div></div>
-  </div></div>
-  <div class="doc-schedule-title">The Ward Is Living</div>
-  ${boxes([
-    [d.wardLiving==='In a private residence leased or owned by them (house, condo or apartment)','In a private residence leased or owned by them (house, condo or apartment).'],
-    [d.wardLiving==='In a private residence not leased or owned by them (such as family member)','In a private residence not leased or owned by them (such as family member).'],
-    [d.wardLiving==='In a facility (Skilled Nursing, Assisted Living, etc.)','In a facility (Skilled Nursing, Assisted Living, etc.).'],
-  ])}
-  <div class="doc-schedule-title">Address Where Ward Currently Resides</div>
-  <div class="doc-table-div"><div class="tbl">
-    <div class="tr"><div class="td">Address</div><div class="td">${esc(d.residenceAddress||'')}</div></div>
-    <div class="tr"><div class="td">City, State, ZIP</div><div class="td">${esc(d.residenceCityStateZip||'')}</div></div>
-    <div class="tr"><div class="td">Phone</div><div class="td">${esc(d.residencePhone||'')}</div></div>
-    <div class="tr"><div class="td">Mailing Address (if different)</div><div class="td">${esc(d.mailingAddress||'')}</div></div>
-    <div class="tr"><div class="td">Mailing City, State, ZIP</div><div class="td">${esc(d.mailingCityStateZip||'')}</div></div>
-  </div></div>
-  <div class="doc-schedule-title">Pre-existing Orders Not to Resuscitate / Advance Directives</div>
-  ${line(d.q1PreexistingDirectives)}
-  </div>`;
-
-  // ── Page 2: Q2–Q5 ──────────────────────────────────────
-  html+=`<div class="doc-page">${H(ward,caseNo,'Questions 2–5','2')}
-  <div class="doc-schedule-title">2. Residential Setting Best Suited to the Ward's Needs</div>
-  ${boxes([
-    [d.q2Setting==='Assisted Living (ALF)','Assisted Living (ALF)'],[d.q2Setting==='Group Home','Group Home'],
-    [d.q2Setting==='Intermediate','Intermediate'],[d.q2Setting==='Private Residence','Private Residence'],
-    [d.q2Setting==='Skilled Nursing','Skilled Nursing'],[d.q2Setting==='Specialized','Specialized'],
-    [d.q2Setting==='State Hospital','State Hospital'],[d.q2Setting==='Other','Other'],
-  ])}
-  ${d.q2Explain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.q2Explain)}</p>`:''}
-  <div class="doc-schedule-title">3. Provision of Medical Services</div>
-  ${boxes([
-    [d.q3MedPrimary,'Routine examination by primary care physician'],
-    [d.q3MedDentist,'Routine examination by dentist'],
-    [d.q3MedOphthalmologist,'Routine examination by Ophthalmologist'],
-    [d.q3MedSpecialist,'Routine examination by specialist'+(d.q3MedSpecialistArea?' — '+d.q3MedSpecialistArea:'')],
-    [d.q3MedPT,'Physical Therapy'],[d.q3MedST,'Speech Therapy'],[d.q3MedOT,'Occupational Therapy'],
-    [d.q3MedWardDecides,'The ward retains the right to make their own decision'],
-    [d.q3MedOther,'Other'],
-  ])}
-  ${d.q3MedExplain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.q3MedExplain)}</p>`:''}
-  <div class="doc-schedule-title">4. Provision of Mental Health Services</div>
-  ${boxes([
-    [d.q4Mental==='Routine examination by Psychiatrist/Psychologist','Routine examination by Psychiatrist/Psychologist'],
-    [d.q4Mental==='Ongoing Treatment Outpatient','Ongoing Treatment Outpatient'],
-    [d.q4Mental==='Ongoing Treatment Inpatient','Ongoing Treatment Inpatient'],
-    [d.q4Mental==='None','None'],[d.q4Mental==='Other','Other'],
-  ])}
-  ${d.q4Explain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.q4Explain)}</p>`:''}
-  <div class="doc-schedule-title">5. Provision of Personal Care</div>
-  ${boxes([
-    [d.q5Personal==='Care Facility','Care Facility'],[d.q5Personal==='Nurses and Aides','Nurses and Aides'],
-    [d.q5Personal==='Family and Friends','Family and Friends'],[d.q5Personal==='Other','Other'],
-  ])}
-  ${d.q5Explain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.q5Explain)}</p>`:''}
-  </div>`;
-
-  // ── Page 3: Q6–Q7 ──────────────────────────────────────
-  html+=`<div class="doc-page">${H(ward,caseNo,'Questions 6–7','3')}
-  <div class="doc-schedule-title">6. Socialization / Recreational Services</div>
-  ${boxes([
-    [d.q6CareFacility,'Care Facility'],[d.q6NursesAides,'Nurses and Aides'],
-    [d.q6FamilyFriends,'Family and Friends'],[d.q6DayProgram,'Day Program'],
-    [d.q6WardDecides,'The Ward retains the right to make their own decision'],[d.q6Other,'Other'],
-  ])}
-  ${d.q6Explain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.q6Explain)}</p>`:''}
-  <div class="doc-schedule-title">7. Insurance / Governmental Benefits</div>
-  ${boxes([
-    [d.q7SocialSecurity,'Social Security'],[d.q7Ssdi,'Social Security Disability Income (SSDI)'],
-    [d.q7Hmo,'Health Maintenance Organization (HMO)'],[d.q7Ssi,'Supplemental Security Income (SSI)'],
-    [d.q7StateSupplement,'Optional State Supplement'],[d.q7InstitutionalCare,'Institutional Care Program'],
-    [d.q7SupplementalIns,'Supplemental Insurance'],[d.q7Pension,'Pension'],
-    [d.q7Medicare,'Medicare'],[d.q7Medicaid,'Medicaid'],[d.q7Va,'VA'],
-    [d.q7Trusts,'Trusts'],[d.q7PendingBenefits,'Pending Benefits'],[d.q7Other,'Other'],
-  ])}
-  ${d.q7Explain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.q7Explain)}</p>`:''}
-  </div>`;
-
-  // ── Page 4: Q9 providers ───────────────────────────────
-  const provRows=(d.q9Providers||[]).filter(r=>r&&(r.name||r.providerType||r.examDate));
-  html+=`<div class="doc-page">${H(ward,caseNo,'Question 9','4')}
-  <div class="doc-schedule-title">9. Examinations to Determine Treatment Needs</div>
-  <table class="doc-table">
-    <thead><tr><th style="width:2rem">#</th><th>Provider</th><th>Type</th><th style="width:6rem">Exam Date</th></tr></thead>
-    <tbody>${provRows.length?provRows.map((r,i)=>`<tr>
-      <td>${i+1}</td>
-      <td>${esc(r.name||'')}${r.street?'<br>'+esc(r.street):''}${r.cityStateZip?'<br>'+esc(r.cityStateZip):''}${r.phone?'<br>'+esc(r.phone):''}</td>
-      <td>${esc(r.providerType||'')}</td>
-      <td>${fmtDate(r.examDate)||''}</td></tr>`).join('')
-      :'<tr><td colspan="4" style="text-align:center;font-style:italic">No providers listed</td></tr>'}
-    </tbody>
-  </table>
-  </div>`;
-
-  // ── Page 5: Q10A ADLs ──────────────────────────────────
-  const adls=d.adls||{};
-  html+=`<div class="doc-page">${H(ward,caseNo,'Question 10A','5')}
-  <div class="doc-schedule-title">10A. Activities of Daily Living</div>
-  <table class="doc-table">
-    <thead><tr><th>Activity</th><th style="width:14rem">Rating</th></tr></thead>
-    <tbody>${INITIAL_ADLS.map(([k,label])=>`<tr><td>${esc(label)}</td><td>${esc(adls[k]||'')}</td></tr>`).join('')}</tbody>
-  </table>
-  </div>`;
-
-  // ── Page 6: Q10B–D disabilities & current devices ─────
-  html+=`<div class="doc-page">${H(ward,caseNo,'Question 10B–D','6')}
-  <div class="doc-schedule-title">B. Mental Disabilities of the Ward</div>
-  ${boxes([
-    [d.mentalAlzheimers,"Alzheimer's type of dementia"],[d.mentalAutism,'Autism Spectrum Disorders'],
-    [d.mentalClosedHeadInjury,'Closed Head Injury'],[d.mentalDementia,'Dementia'],
-    [d.mentalDepression,'Depression'],[d.mentalDevelopmental,'Developmental Disabilities'],
-    [d.mentalSubstance,'Induced by substance abuse'],[d.mentalSchizophrenia,'Schizophrenia or related disorders'],
-    [d.mentalOther,'Other'],
-  ])}
-  ${d.mentalExplain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.mentalExplain)}</p>`:''}
-  <div class="doc-schedule-title">C. Physical Disabilities of the Ward</div>
-  ${boxes([
-    [d.physMobility,'Mobility'],[d.physBlindness,'Blindness'],[d.physDeafness,'Deafness'],
-    [d.physDiabetic,'Diabetic'],[d.physParkinsons,"Parkinson's disease"],[d.physArthritis,'Severe arthritis'],
-    [d.physOther,'Other'],
-  ])}
-  ${d.physExplain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.physExplain)}</p>`:''}
-  <div class="doc-schedule-title">D. Assistive Devices Currently Used</div>
-  ${boxes([
-    [d.usesDentures,'Dentures'],[d.usesHearingAid,'Hearing Aid'],[d.usesWheelchair,'Wheelchair'],
-    [d.usesWalker,'Walker/Cane'],[d.usesCrutches,'Crutches'],[d.usesProsthetics,'Prosthetics'],
-    [d.usesGlasses,'Glasses'],[d.usesNone,'None'],[d.usesOther,'Other'],
-  ])}
-  ${d.usesExplain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.usesExplain)}</p>`:''}
-  </div>`;
-
-  // ── Page 7: Q11 (no-directives / executed) + Q10E/F ────
-  html+=`<div class="doc-page">${H(ward,caseNo,'Question 11 & 10E–F','7')}
-  <div class="doc-schedule-title">11. Pre-existing Orders / Advance Directives</div>
-  ${boxes([[d.q11NoDirectives,'There are NO pre-existing orders Not To Resuscitate (DNR) or any other advance directive, and I have taken the following steps to verify there are none:']])}
-  ${d.q11NoDirectives?boxes([
-    [d.q11StepResidence,"Search of ward's prior and current residence"],
-    [d.q11StepSafeDeposit,"Inventory of ward's safe deposit box"],
-    [d.q11StepInterviewed,'Interviewed family and friends'],
-    [d.q11StepMedicalProviders,"Requested documents from the ward's medical providers"],
-    [d.q11StepAttorney,"Requested documents from the ward's attorney"],
-  ]):''}
-  ${boxes([[d.q11Executed,'The ward executed the following advance directives:']])}
-  ${d.q11Executed?boxes([
-    [d.q11ExecDNR,'Order Not to Resuscitate (DNR), F.S. 401.45(3)'],
-    [d.q11ExecHealthcare,'Advance Directive for Healthcare (surrogate, living will, anatomical gift)'],
-    [d.q11ExecPOA,'Durable Power of Attorney, F.S. Chapter 709'],
-    [d.q11ExecOther,'Other'+(d.q11ExecOtherText?' — '+d.q11ExecOtherText:'')],
-  ]):''}
-  <div class="doc-schedule-title">E. Assistive Devices Needed But Not Currently Owned</div>
-  ${boxes([
-    [d.needsDentures,'Dentures'],[d.needsHearingAid,'Hearing Aid'],[d.needsWheelchair,'Wheelchair'],
-    [d.needsWalker,'Walker/Cane'],[d.needsCrutches,'Crutches'],[d.needsProsthetics,'Prosthetics'],
-    [d.needsGlasses,'Glasses'],[d.needsNone,'None'],[d.needsOther,'Other'],
-  ])}
-  ${d.needsExplain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.needsExplain)}</p>`:''}
-  <div class="doc-schedule-title">F. Examining Committee Recommendations Incorporated?</div>
-  ${boxes([[d.committeeIncorporated==='Yes','Yes'],[d.committeeIncorporated==='No','No']])}
-  ${d.committeeExplain?`<p style="font-size:.76rem;"><em>Explanation:</em> ${esc(d.committeeExplain)}</p>`:''}
-  </div>`;
-
-  // ── Page 8: advance directive detail slots ─────────────
-  const dirs=(d.q11Directives||[]).filter(r=>r&&(r.title||r.dateSigned||r.signedBy));
-  html+=`<div class="doc-page">${H(ward,caseNo,'Advance Directive Detail','8')}
-  <div class="doc-schedule-title">Advance Directive Detail (for any directive listed on the prior page)</div>
-  ${dirs.length?dirs.map((r,i)=>`<div class="doc-section-block" style="margin-top:.6rem">
-    <p style="font-size:.76rem;font-weight:650;margin-bottom:.2rem;">Directive ${i+1}</p>
-    <div class="doc-table-div"><div class="tbl">
-      <div class="tr"><div class="td">Title of order or directive</div><div class="td">${esc(r.title||'')}</div></div>
-      <div class="tr"><div class="td">Date executed / signed</div><div class="td">${fmtDate(r.dateSigned)||''}</div></div>
-      <div class="tr"><div class="td">Name of person who signed</div><div class="td">${esc(r.signedBy||'')}</div></div>
-      <div class="tr"><div class="td">Designated agent(s) / surrogate(s)</div><div class="td">${esc(r.agents||'')}</div></div>
-      <div class="tr"><div class="td">Alternate agent(s) / surrogate(s)</div><div class="td">${esc(r.alternates||'')}</div></div>
-      <div class="tr"><div class="td">Relationship to the ward</div><div class="td">${esc(r.relationship||'')}</div></div>
-      <div class="tr"><div class="td">Contact information</div><div class="td">${esc(r.contact||'')}</div></div>
-      <div class="tr"><div class="td">Suspended or revoked by a court?</div><div class="td">${esc(r.courtRevoked||'')}${r.orderDate?' — '+fmtDate(r.orderDate):''}${r.orderCounty?', '+esc(r.orderCounty):''}</div></div>
-    </div></div>
-  </div>`).join(''):'<p style="font-size:.76rem;font-style:italic;">No advance directives on file.</p>'}
-  </div>`;
-
-  // ── Page 9: certification + guardian signature ─────────
-  const g=d.planGuardians||[];
-  const sigBlock=(p,label)=>`<div class="doc-signature-block">
-    <p style="font-size:.76rem;font-weight:650;margin-bottom:.3rem;">${label}</p>
-    <div class="row">
-      <div class="col-6">${fld('Signature','')}</div>
-      <div class="col-3">${fld('Date Signed',fmtDate(p.signatureDate))}</div>
-      <div class="col-3">${fld('Printed Name',p.name)}</div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-4">${fld('SSN / EIN',p.ssn)}</div>
-      <div class="col-4">${fld('Phone Number',p.phone)}</div>
-      <div class="col-4">${fld('Relationship to Ward',p.relationship)}</div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-6">${fld('Street Address',p.street)}</div>
-      <div class="col-6">${fld('City / State / ZIP',p.cityStateZip)}</div>
-    </div>
-  </div>`;
-  html+=`<div class="doc-page">${H(ward,caseNo,'Certification','9')}
-  <div class="doc-schedule-title">Certification and Signature of Guardian(s)</div>
-  ${boxes([
-    [d.certIncapacitatedNoCopy,'The Ward was declared totally incapacitated and has not been given a copy of this plan.'],
-    [d.certMinorNoCopy,'The Ward is a minor under the age of 14 and has not been given a copy of this plan.'],
-    [d.certConsulted,"The guardian has consulted with the Ward, to the extent reasonable, has honored the Ward's wishes, and to the maximum extent possible the plan is in accordance with them."],
-    [d.certRecognizeRights,'In exercising his or her powers, the guardian shall recognize any rights retained by the ward [F.S. 744.363(6)].'],
-    [d.certNoRestriction,'The plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease.'],
-    [d.certProvidesCare,"The plan provides for the Ward's medical care and mental health treatment."],
-  ])}
-  <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.</div>
-  ${sigBlock(g[0]||{},'Guardian')}
-  ${sigBlock(g[1]||{},'Co-Guardian')}
-  </div>`;
-
-  // ── Page 10: additional co-guardian signatures ─────────
-  const extras=(g||[]).slice(2).filter(p=>p&&(p.name||p.signatureDate));
-  if(extras.length){
-    html+=`<div class="doc-page">${H(ward,caseNo,'Certification (cont.)','10')}
-    <div class="doc-schedule-title">Additional Guardian Signatures</div>
-    ${extras.map((p,i)=>sigBlock(p,`Co-Guardian ${i+3}`)).join('')}
-    <p style="font-size:.74rem;margin-top:.6rem;font-style:italic;">All guardians of person must sign and provide the most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.</p>
-    </div>`;
-  }
-
-  // ── Final page: attorney certification ─────────────────
-  html+=`<div class="doc-page">${H(ward,caseNo,'Attorney Certification',String(extras.length?11:10))}
-  <div class="doc-schedule-title">Certification and Signature of Guardian's Attorney</div>
-  <p style="font-size:.76rem;">The undersigned hereby notifies the court of the filing of the initial guardianship plan for the period <strong>${fmtDate(d.periodFrom)||''}</strong> through <strong>${fmtDate(d.periodTo)||''}</strong>.</p>
-  <p style="font-size:.76rem;">This initial guardianship plan is the representation of the guardian. I have not audited the accompanying initial plan. The undersigned attorney represents that he/she has examined the contents of the initial guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for the plans in ${esc(d.county||'')} County.</p>
-  <div class="doc-signature-block">
-    <div class="row">
-      <div class="col-6">${fld('Attorney Signature','')}</div>
-      <div class="col-3">${fld('Date Signed',fmtDate(d.attorney_signatureDate))}</div>
-      <div class="col-3">${fld('Attorney Name',d.attorney_name)}</div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-4">${fld('Bar Number',d.attorney_bar)}</div>
-      <div class="col-4">${fld('Phone Number',d.attorney_phone)}</div>
-      <div class="col-4">${fld('Street Address',d.attorney_street)}</div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-6">${fld('City / State / ZIP',d.attorney_cityStateZip)}</div>
-    </div>
-    <p class="mt-3" style="font-size:.76rem;text-align:center;font-weight:700;">(End of Initial Guardianship Plan)</p>
-  </div>
-  </div>`;
-
-  return html;
-}
-
-function pagePrintPlanInitial(){
-  const errors=validatePlanInitial();
-  highlightErrors(errors);
-  return `<div>
-    <h1 class="visually-hidden">Print Preview</h1>
-    <div class="print-preview-banner no-print">
-      <div><strong>Preview &amp; Export</strong> ${errors.length?`<span style="color:var(--danger-text)"> — ${errors.length} issue(s)</span>`:' — Ready to export'}</div>
-      <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-primary btn-sm" onclick="doSavePdfPlanInitial()" ${errors.length?'disabled':''}>Save as PDF</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="pvShowAll();window.print()">Print</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="openFloridaCourtPortal()" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
-      </div>
-    </div>
-    ${errors.length?validationPanel(errors):''}
-    ${planReadinessPanel()}
-    <div id="print-doc-container">${buildPrintHTMLPlanInitial()}</div>
-  </div>`;
-}
-
-async function doSavePdfPlanInitial(){
-  const errors=validatePlanInitial();
-  if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
-  pvShowAll();
-  document.body.classList.add('pdf-export-mode');
-  const container=document.getElementById('print-doc-container');
-  const ward=(window.D.wardName||'InitialGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
-  try{
-    await html2pdf().set({
-      margin:0,filename:`${ward}_InitialGuardianshipPlan.pdf`,
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,logging:false},
-      jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
-      pagebreak:{mode:'avoid-all',before:'.doc-page:not(:first-of-type)'}
-    }).from(container).save();
-  }catch(e){
-    console.error('PDF export failed',e);
-    alert('PDF export failed: '+e.message);
-  }finally{
-    document.body.classList.remove('pdf-export-mode');
-  }
-}
+// planReadinessChecksInitial()/docHeaderPlanInitial()/buildPrintHTMLPlanInitial()/
+// pagePrintPlanInitial()/doSavePdfPlanInitial() moved to
+// src/features/plan-initial/print.js (Milestone 5, Phase B). The lazy
+// module bridge in that feature's index.js exposes doSavePdfPlanInitial and
+// planReadinessChecksInitial on window so legacy-app.js's shared
+// planReadinessChecks() dispatcher and the print page's
+// onclick="doSavePdfPlanInitial()" still resolve.
 
 function planReadinessChecksMinor(){
   const d=window.D;

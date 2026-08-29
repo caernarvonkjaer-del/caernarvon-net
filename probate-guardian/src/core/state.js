@@ -111,8 +111,7 @@ export function emptyDataPlanSimplified() {
 // management code that must stay eagerly available, same as calcTotals() in
 // Milestone 2) read PLAN_RIGHTS/PLAN_ADLS/PLAN_BENEFITS and the three
 // factories directly; and emptyPlanDirective() is separately reused by
-// emptyDataPlanInitial(), which hasn't been extracted yet (Milestone 4
-// plan's "Design decisions").
+// emptyDataPlanInitial() below (Milestone 4 plan's "Design decisions").
 export function emptyDataPlanAnnual() {
   const rights = {}; window.PLAN_RIGHTS.forEach(([k]) => rights[k] = '');
   const adls = {}; window.PLAN_ADLS.forEach(([k]) => adls[k] = '');
@@ -191,12 +190,89 @@ export function emptyDataPlanAnnual() {
   };
 }
 
+// Blank-ward data factory for the Plan Initial feature (Milestone 5, Phase A).
+// Same non-pure-data shape as emptyDataPlanAnnual above: reaches back into
+// window.INITIAL_ADLS and window.emptyInitialProvider/emptyPlanDirective,
+// which stay legacy globals in legacy-app.js because
+// computeNavChecks()'s planInitial branch reads INITIAL_ADLS directly, and
+// emptyPlanDirective() is also used by emptyDataPlanAnnual() above (Milestone
+// 5 plan's "Confirmed facts" / "Design decisions").
+export function emptyDataPlanInitial() {
+  const adls = {}; window.INITIAL_ADLS.forEach(([k]) => adls[k] = '');
+  return {
+    // Cover
+    wardName:'', caseNumber:'', county:'Pinellas', periodFrom:'', periodTo:'',
+    inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
+    guardianNames:'', attorneyName:'',
+    wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
+    mailingAddress:'', mailingCityStateZip:'',
+    q1PreexistingDirectives:'',
+    // Q2 — residential setting best suited to the ward
+    q2Setting:'', q2Explain:'',
+    // Q3 — medical services
+    q3MedPrimary:false, q3MedDentist:false, q3MedOphthalmologist:false,
+    q3MedSpecialist:false, q3MedSpecialistArea:'', q3MedPT:false,
+    q3MedST:false, q3MedOT:false, q3MedWardDecides:false, q3MedOther:false, q3MedExplain:'',
+    // Q4 — mental health services
+    q4Mental:'', q4Explain:'',
+    // Q5 — personal care
+    q5Personal:'', q5Explain:'',
+    // Q6 — socialization / recreation
+    q6CareFacility:false, q6NursesAides:false, q6FamilyFriends:false, q6DayProgram:false,
+    q6WardDecides:false, q6Other:false, q6Explain:'',
+    // Q7 — insurance / benefits
+    q7SocialSecurity:false, q7Ssdi:false, q7Hmo:false, q7Ssi:false,
+    q7StateSupplement:false, q7InstitutionalCare:false, q7SupplementalIns:false,
+    q7Pension:false, q7Medicare:false, q7Medicaid:false, q7Va:false,
+    q7Trusts:false, q7PendingBenefits:false, q7Other:false, q7Explain:'',
+    // Q9 — examining physicians/providers
+    q9Providers:[window.emptyInitialProvider()],
+    // Q10A — activities of daily living
+    adls,
+    // Q10B/C — disabilities
+    mentalAlzheimers:false, mentalAutism:false, mentalClosedHeadInjury:false,
+    mentalDementia:false, mentalDepression:false, mentalDevelopmental:false,
+    mentalSubstance:false, mentalSchizophrenia:false, mentalOther:false, mentalExplain:'',
+    physMobility:false, physBlindness:false, physDeafness:false, physDiabetic:false,
+    physParkinsons:false, physArthritis:false, physOther:false, physExplain:'',
+    // Q10D — assistive devices currently used
+    usesDentures:false, usesHearingAid:false, usesWheelchair:false, usesWalker:false,
+    usesCrutches:false, usesProsthetics:false, usesGlasses:false, usesNone:false,
+    usesOther:false, usesExplain:'',
+    // Q10E — assistive devices needed
+    needsDentures:false, needsHearingAid:false, needsWheelchair:false, needsWalker:false,
+    needsCrutches:false, needsProsthetics:false, needsGlasses:false, needsNone:false,
+    needsOther:false, needsExplain:'',
+    // Q10F — examining committee recommendations
+    committeeIncorporated:'', committeeExplain:'',
+    // Q11 — pre-existing DNR / advance directives verification
+    q11NoDirectives:false, q11StepResidence:false, q11StepSafeDeposit:false,
+    q11StepInterviewed:false, q11StepMedicalProviders:false, q11StepAttorney:false,
+    q11Executed:false, q11ExecDNR:false, q11ExecHealthcare:false,
+    q11ExecPOA:false, q11ExecOther:false, q11ExecOtherText:'',
+    q11Directives:[window.emptyPlanDirective(),window.emptyPlanDirective()],
+    // Certification — six "check all that apply" statements
+    certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
+    certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
+    // Guardians (form provides up to four signature blocks) + attorney
+    planGuardians:[
+      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
+      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
+      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
+      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}
+    ],
+    attorney_name:'', attorney_bar:'', attorney_phone:'',
+    attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:''
+  };
+}
+
 // Temporary: legacy-app.js stays a classic (non-module) script per
 // Milestone 1's recorded decision, so it can't `import` this module
 // directly -- initializeEmptyData()'s 'simplified'/'planSimplified'/
-// 'planAnnual' cases reach these via window instead, the same pattern
-// src/fragment-loader.js uses for loadFragment(). Remove once a real
+// 'planAnnual'/'planInitial' cases reach these via window instead, the same
+// pattern src/fragment-loader.js uses for loadFragment(). Remove once a real
 // src/main.js bootstrap exists to own this wiring explicitly.
 window.emptyDataSimplified = emptyDataSimplified;
 window.emptyDataPlanSimplified = emptyDataPlanSimplified;
 window.emptyDataPlanAnnual = emptyDataPlanAnnual;
+window.emptyDataPlanInitial = emptyDataPlanInitial;
