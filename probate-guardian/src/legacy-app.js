@@ -4273,6 +4273,18 @@ const PLAN_BENEFITS=[
   ['medicare','Medicare'],['medicaid','Medicaid'],['trusts','Trusts'],
 ];
 
+// Explicit window assignments: these are bare top-level `const`s, which
+// (unlike function declarations) do NOT become `window` properties on their
+// own -- see src/core/state.js's file header for the full explanation. Both
+// src/core/state.js's emptyDataPlanAnnual() and
+// src/features/plan-annual/index.js read these via window, so they need to
+// be real window properties (Milestone 4, Phase A).
+window.PLAN_RIGHTS=PLAN_RIGHTS;
+window.PLAN_RIGHT_STATES=PLAN_RIGHT_STATES;
+window.PLAN_ADLS=PLAN_ADLS;
+window.PLAN_ADL_RATINGS=PLAN_ADL_RATINGS;
+window.PLAN_BENEFITS=PLAN_BENEFITS;
+
 function emptyPlanResidence(){return {name:'',street:'',cityStateZip:'',phone:'',facilityType:'',from:'',to:''};}
 function emptyPlanProvider(){return {name:'',street:'',cityStateZip:'',phone:'',providerType:'',visits:''};}
 function emptyPlanDirective(){return {title:'',dateSigned:'',signedBy:'',agents:'',alternates:'',relationship:'',contact:'',courtRevoked:'',orderDate:'',orderCounty:''};}
