@@ -9,24 +9,30 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 //   - dist/web      chunked build served over HTTPS/localhost (Cloudflare Pages)
 //   - dist/portable  self-contained folder for the file:// double-click workflow
 //
-// index.html loads 7 files (lib/*, templates/*) as classic (non-module)
-// <script src> tags. Vite's HTML pipeline refuses to bundle those at all --
-// "can't be bundled without type='module' attribute" -- it neither inlines
-// nor copies them, which silently produced a build missing JSZip/ExcelJS/
-// html2pdf/Bootstrap/the print templates until this was caught. They're
-// copied here as static passthrough assets instead. That also means
-// dist/portable is not yet a literal single .html file: it's index.html
-// plus a copied lib/templates/icons folder, functionally identical to
-// today's existing file:// distribution. True single-file inlining of
-// those 7 files needs them to become real ES modules first, which is
-// step 6 of INDEX-SPLIT-PLAN.md's migration sequence (later milestone),
-// not something to force here by changing untouched application code.
+// index.html loads several files (lib/*, templates/*, src/legacy-app.js) as
+// classic (non-module) <script src> tags. Vite's HTML pipeline refuses to
+// bundle those at all -- "can't be bundled without type='module' attribute"
+// -- it neither inlines nor copies them, which silently produced a build
+// missing JSZip/ExcelJS/html2pdf/Bootstrap/the print templates until this
+// was caught. They're copied here as static passthrough assets instead.
+// That also means dist/portable is not yet a literal single .html file:
+// it's index.html plus a copied lib/templates/icons/src folder, functionally
+// identical to today's existing file:// distribution. True single-file
+// inlining of those needs them to become real ES modules first, which is
+// step 6 of INDEX-SPLIT-PLAN.md's migration sequence (later milestone), not
+// something to force here by changing untouched application code.
+//
+// Only src/legacy-app.js is copied this way, not all of src/ -- Milestone 2
+// phases B/D add real ES modules under src/core/ and src/features/ that
+// Vite's own import() analysis must actually process (bundle, hash,
+// code-split), not bypass as an opaque static file.
 const STATIC_COPY_TARGETS = [
   { src: 'lib', dest: '.' },
   { src: 'templates', dest: '.' },
   { src: 'icons', dest: '.' },
   { src: 'manifest.json', dest: '.' },
   { src: 'sw.js', dest: '.' },
+  { src: 'src/legacy-app.js', dest: '.' },
 ];
 
 export default defineConfig(({ mode }) => {
