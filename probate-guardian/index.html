@@ -455,6 +455,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .schedule-empty .ic{color:var(--ink-4);}
 .schedule-empty-check{display:flex;align-items:center;gap:.6rem;margin:0;cursor:pointer;color:var(--ink-2);}
 .schedule-empty-check input{flex-shrink:0;width:1.05rem;height:1.05rem;cursor:pointer;}
+.vehicle-value-links{font-size:.79rem;color:var(--ink-3);line-height:1.55;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:.6rem .8rem;margin:.2rem 0 .75rem;}
 .schedule-docs-section{margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--line);}
 .schedule-docs-section h4{font-size:.7rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin:0 0 .45rem;}
 .schedule-docs-section h4.mt{margin-top:1.2rem;}
@@ -14158,7 +14159,7 @@ const mk = {
   a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',isPersonalResidence:false,isIncomeProperty:false,fullAssetValue:0,wardPercent:100}),
   a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
   b1:()=>({institutionName:'',isRestricted:false,accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
-  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0}),
+  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:''}),
   b3:()=>({description:'',streetAddress:'',cityStateZip:'',isRestricted:false,fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0}),
   b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
   c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
@@ -15375,9 +15376,9 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
         ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',[['Plenary','Plenary'],['Limited','Limited'],['Voluntary','Voluntary'],['Minor - Person','Minor - Person'],['Minor - Property','Minor - Property'],['Minor - Person - Property','Minor - Person - Property']],D.typeOfGuardianship)))}
-        ${formRow(col(6,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')),col(6,reqLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
+        ${formRow(col(6,optLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')),col(6,optLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
         <div id="sdb-filed-row" style="${sdbFiledRow}">
-          ${formRow(col(6,reqLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
+          ${formRow(col(6,optLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
         </div>
       </div>
     </div>
@@ -15464,7 +15465,7 @@ function pageSummary(){
 // ═══════════════════════════════════════════════════════
 function pageScheduleA1(){
   const entries=D.scheduleA1.map((e,i)=>entryCard(`Property ${i+1}`,i,'a1',`
-    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,reqLabel('Personal Residence?')+checkboxInput(`scheduleA1.${i}.isPersonalResidence`,'Personal Residence?')),col(3,reqLabel('Income Property?')+checkboxInput(`scheduleA1.${i}.isIncomeProperty`,'Income Property?')))}
+    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,optLabel('Personal Residence?')+checkboxInput(`scheduleA1.${i}.isPersonalResidence`,'Personal Residence?')),col(3,optLabel('Income Property?')+checkboxInput(`scheduleA1.${i}.isIncomeProperty`,'Income Property?')))}
     ${formRow(col(12,reqLabel('Street Address')+textInput(`scheduleA1.${i}.streetAddress`,'','address')))}
     ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`scheduleA1.${i}.cityStateZip`,'','zip')),col(6,optLabel('Notes (joint ownership, etc.)')+textInput(`scheduleA1.${i}.notes`)))}
     ${formRow(col(4,reqLabel('Full Asset Value as of GID ($)')+numInput(`scheduleA1.${i}.fullAssetValue`)),col(4,reqLabel("Ward's Ownership % (0-100)")+numInput(`scheduleA1.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleA1.${i}.wardValue`)))}
@@ -15496,7 +15497,7 @@ function pageScheduleA2(){
 
 function pageScheduleB1(){
   const entries=D.scheduleB1.map((e,i)=>entryCard(`Account ${i+1}`,i,'b1',`
-    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,reqLabel('Restricted?')+checkboxInput(`scheduleB1.${i}.isRestricted`,'Restricted')),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
+    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,optLabel('Restricted?')+checkboxInput(`scheduleB1.${i}.isRestricted`,'Restricted')),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
     ${formRow(col(6,reqLabel('Street Address of Institution')+textInput(`scheduleB1.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB1.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Full Asset Amount ($)')+numInput(`scheduleB1.${i}.fullAssetAmount`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB1.${i}.wardPercent`)),col(4,optLabel("Ward's Amount (calculated)")+calcInput(`scheduleB1.${i}.wardAmt`)))}
   `)).join('');
@@ -15509,13 +15510,48 @@ function pageScheduleB1(){
   ${pageNav('/b1')}</div>`;
 }
 
+// Recomposes the free-text `description` field (still the field every
+// other consumer of B-2 -- validate(), the print document, the Excel
+// export -- reads) from the structured vehicle fields, so splitting Year/
+// Make/Model/VIN into their own inputs didn't require touching any of
+// those downstream readers.
+function syncB2VehicleDescription(i){
+  const e=D.scheduleB2[i];
+  if(!e)return;
+  const parts=[e.vehicleYear,e.vehicleMake,e.vehicleModel].filter(Boolean).join(' ');
+  e.description=parts+(e.vehicleVin?(parts?' — VIN: ':'VIN: ')+e.vehicleVin:'');
+}
+// Bespoke handler (not data-bind) because checking this box must trigger a
+// full re-render to swap the free-text Description field for the Year/
+// Make/Model/VIN fields -- bindForms()'s generic checkbox wiring only
+// calls afterChange(), which never re-renders the page.
+function toggleB2Vehicle(i,checked){
+  D.scheduleB2[i].isVehicle=checked;
+  if(checked)syncB2VehicleDescription(i);
+  autoSave();
+  renderPage(currentPage);
+}
 function pageScheduleB2(){
-  const entries=D.scheduleB2.map((e,i)=>entryCard(`Item ${i+1}`,i,'b2',`
-    ${formRow(col(12,reqLabel('Description (include VIN/odometer for vehicles, model/serial for equipment)')+`<input class="form-control" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
+  const entries=D.scheduleB2.map((e,i)=>{
+    const vehicleFields=e.isVehicle?`
+    ${formRow(
+      col(3,reqLabel('Year')+`<input class="form-control" inputmode="numeric" maxlength="4" value="${esc(e.vehicleYear)}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4);D.scheduleB2[${i}].vehicleYear=this.value;syncB2VehicleDescription(${i});autoSave()">`),
+      col(3,reqLabel('Make')+`<input class="form-control" value="${esc(e.vehicleMake)}" oninput="D.scheduleB2[${i}].vehicleMake=this.value;syncB2VehicleDescription(${i});autoSave()">`),
+      col(3,reqLabel('Model')+`<input class="form-control" value="${esc(e.vehicleModel)}" oninput="D.scheduleB2[${i}].vehicleModel=this.value;syncB2VehicleDescription(${i});autoSave()">`),
+      col(3,reqLabel('VIN')+`<input class="form-control" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,17);D.scheduleB2[${i}].vehicleVin=this.value;syncB2VehicleDescription(${i});autoSave()">`)
+    )}
+    <div class="vehicle-value-links">Look up a value at <a href="https://www.kbb.com/" target="_blank" rel="noopener noreferrer">Kelley Blue Book</a> or <a href="https://www.carfax.com/" target="_blank" rel="noopener noreferrer">Carfax</a> — both are non-affiliated commercial sites, offered only as a convenience; either generally provides an acceptable value. Print or save the page showing the final value you used and upload it below under Supporting Documents.</div>
+    `:`
+    ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
+    `;
+    return entryCard(`Item ${i+1}`,i,'b2',`
+    ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" onchange="toggleB2Vehicle(${i},this.checked)"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
+    ${vehicleFields}
     ${formRow(col(6,reqLabel('Location – Street Address')+textInput(`scheduleB2.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB2.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(6,reqLabel('Valuation Method &amp; Condition')+textInput(`scheduleB2.${i}.valuationMethod`,'e.g., Kelly Blue Book — fair condition')))}
     ${formRow(col(3,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),col(3,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`)),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB2.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
-  `)).join('');
+  `);
+  }).join('');
   return `<div class="schedule-page">
   <h1>Schedule B-2: Personal Property Assets</h1>
   <div class="schedule-instructions">List household goods, vehicles, jewelry, etc. Include items in safe deposit boxes (also list separately on SDB inventory).</div>
@@ -15529,7 +15565,7 @@ function pageScheduleB3(){
   const entries=D.scheduleB3.map((e,i)=>entryCard(`Asset ${i+1}`,i,'b3',`
     ${formRow(col(12,reqLabel('Description (include account, policy, or certificate number)')+`<input class="form-control" data-bind="scheduleB3.${i}.description" data-input-type="name">`))}
     ${formRow(col(6,reqLabel('Street Address / Custodian Address')+textInput(`scheduleB3.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB3.${i}.cityStateZip`,'','zip')))}
-    ${formRow(col(3,reqLabel('Restricted?')+checkboxInput(`scheduleB3.${i}.isRestricted`,'Restricted')),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB3.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
+    ${formRow(col(3,optLabel('Restricted?')+checkboxInput(`scheduleB3.${i}.isRestricted`,'Restricted')),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB3.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
     ${formRow(col(4,reqLabel('Full Asset Value ($)')+numInput(`scheduleB3.${i}.fullAssetValue`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB3.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB3.${i}.wardB3`)))}
   `)).join('');
   return `<div class="schedule-page">
@@ -15704,9 +15740,9 @@ function pageD3(){
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Safe Deposit Box</h2>
     <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4))</p>
-    ${formRow(col(4,reqLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
+    ${formRow(col(4,optLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
     <div id="sdb-filed-row" style="${D.hasSafeDepositBox?'':'display:none;'}">
-      ${formRow(col(4,reqLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
+      ${formRow(col(4,optLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
     </div>
   </div>
   ${pageNav('/d3')}</div>`;
@@ -15794,7 +15830,13 @@ function validate(){
   d.scheduleA1.forEach((e,i)=>{const p=`A-1 row ${i+1}`;req(e.propertyDescription,`${p} — Property Description`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);if(e.wardPercent<=0)errors.push(`${p} — Ward's % must be > 0.`);});
   d.scheduleA2.forEach((e,i)=>{const p=`A-2 row ${i+1}`;req(e.lenderName,`${p} — Lender Name`);req(e.lenderAddress,`${p} — Lender Address`);req(e.lenderCityStateZip,`${p} — Lender City/State/Zip`);if(e.fullDebtBalance<=0)errors.push(`${p} — Full Debt Balance must be > 0.`);});
   d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`;req(e.institutionName,`${p} — Institution Name`);req(e.accountType,`${p} — Account Type`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetAmount<=0)errors.push(`${p} — Full Asset Amount must be > 0.`);});
-  d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`;req(e.description,`${p} — Description`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);req(e.valuationMethod,`${p} — Valuation Method`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);});
+  d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`;
+    if(e.isVehicle){
+      req(e.vehicleYear,`${p} — Year`);req(e.vehicleMake,`${p} — Make`);req(e.vehicleModel,`${p} — Model`);req(e.vehicleVin,`${p} — VIN`);
+    }else{
+      req(e.description,`${p} — Description`);
+    }
+    req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);req(e.valuationMethod,`${p} — Valuation Method`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);});
   d.scheduleB3.forEach((e,i)=>{const p=`B-3 row ${i+1}`;req(e.description,`${p} — Description`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);});
   d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`;req(e.lenderName,`${p} — Lender Name`);req(e.relatedProperty,`${p} — Related Property`);req(e.lenderAddress,`${p} — Lender Address`);if(e.fullLiabilityBalance<=0)errors.push(`${p} — Full Liability Balance must be > 0.`);});
   d.scheduleC1.forEach((e,i)=>{const p=`C-1 row ${i+1}`;req(e.payerName,`${p} — Payer Name`);req(e.typeOfIncome,`${p} — Type of Income`);req(e.payerAddress,`${p} — Payer Address`);req(e.paymentBasis,`${p} — Basis for Payment`);if(e.annualIncomeAmount<=0)errors.push(`${p} — Annual Income Amount must be > 0.`);});
