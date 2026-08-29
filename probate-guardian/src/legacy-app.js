@@ -3427,12 +3427,17 @@ async function deriveAndVerifyKey(password,manifest,zip){
 // fire once per element boundary crossed, not just once for the window.
 function setupDragAndDropImport(){
   let dragCounter=0;
-  const overlay=document.getElementById('dropzone-overlay');
+  // #dropzone-overlay lives in the lazy 'common-modals' fragment, not yet
+  // in the DOM when this runs at startup -- a reference captured once here
+  // would stay null forever. Look it up fresh each time instead, after
+  // ensureFragment() (idempotent) confirms it exists.
   const isFileDrag=e=>Array.from(e.dataTransfer?.types||[]).includes('Files');
-  window.addEventListener('dragenter',e=>{
+  window.addEventListener('dragenter',async e=>{
     if(!isFileDrag(e))return;
     e.preventDefault();
     dragCounter++;
+    await ensureFragment('common-modals');
+    const overlay=document.getElementById('dropzone-overlay');
     if(overlay)overlay.style.display='flex';
   });
   window.addEventListener('dragover',e=>{
@@ -3443,12 +3448,14 @@ function setupDragAndDropImport(){
     if(!isFileDrag(e))return;
     e.preventDefault();
     dragCounter=Math.max(0,dragCounter-1);
+    const overlay=document.getElementById('dropzone-overlay');
     if(dragCounter===0&&overlay)overlay.style.display='none';
   });
   window.addEventListener('drop',async e=>{
     if(!isFileDrag(e)){return;}
     e.preventDefault();
     dragCounter=0;
+    const overlay=document.getElementById('dropzone-overlay');
     if(overlay)overlay.style.display='none';
     const files=Array.from(e.dataTransfer.files||[]);
     const zipFile=files.find(f=>{const n=f.name.toLowerCase();return n.endsWith('.sav')||n.endsWith('.zip');});
@@ -3870,7 +3877,8 @@ function onCarrySourceChange(){
 // this feature shipped) rather than being created fresh. Carries the same
 // identity/contact fields directly onto the ACTIVE ward instead of creating
 // a new one. Works for both directions (Accounting<->Plan).
-function showLoadWardInfoModal(){
+async function showLoadWardInfoModal(){
+  await ensureFragment('common-modals');
   const sourceType=carrySourcesFor(activeInventoryType)[0];
   const matches=carryWardsFor(activeInventoryType,guardianData.activeWardId);
   if(!matches.length){
@@ -4084,7 +4092,8 @@ function handleSwitchWardClick(){
   switchWard(wardId);
 }
 
-function showSwitchWardPickerModal(){
+async function showSwitchWardPickerModal(){
+  await ensureFragment('common-modals');
   const current=guardianData.wards.find(w=>w.wardId===guardianData.activeWardId);
   const nameEl=document.getElementById('switch-ward-picker-current-name');
   if(nameEl)nameEl.textContent=current&&current.wardName?`"${current.wardName}"`:'This ward';
@@ -4577,7 +4586,22 @@ function closeModal(modalId){
   document.getElementById(modalId).classList.remove('show');
 }
 
-function showModal(modalId){
+// Every modal showModal() is ever called with lives in the lazy
+// 'common-modals' fragment (src/fragment-loader.js) -- the three overlays
+// needed on every session (startup-choice, security-choice, unlock) are
+// shown via direct classList manipulation elsewhere, never through this
+// function. Fetched and appended into #lazy-fragment-host on first use only;
+// _fragmentAppended memoizes so a repeat open doesn't re-fetch or re-append.
+const _fragmentAppended={};
+async function ensureFragment(name){
+  if(_fragmentAppended[name])return;
+  const content=await window.loadFragment(name);
+  document.getElementById('lazy-fragment-host').appendChild(content);
+  _fragmentAppended[name]=true;
+}
+
+async function showModal(modalId){
+  await ensureFragment('common-modals');
   document.getElementById(modalId).classList.add('show');
 }
 
@@ -4624,7 +4648,8 @@ function initWardNameCombobox(inputId,dropdownId,onPick){
   });
 }
 
-function showAddWardModal(){
+async function showAddWardModal(){
+  await ensureFragment('common-modals');
   document.getElementById('new-ward-name').value='';
   populateWardNameSuggestions('ward-name-suggestions');
   initWardNameCombobox('new-ward-name','new-ward-name-dropdown',()=>updateCarrySourcePicker());
@@ -4674,7 +4699,8 @@ function refreshEligCarrySource(){
   refreshCarrySourceSelect(document.getElementById('elig-carry-source-ward'),document.getElementById('elig-carry-source-wrap'),'simplified',name,document.getElementById('elig-carry-source-autonote'));
 }
 
-function showSimplifiedEligibilityModal(name,carrySourceId){
+async function showSimplifiedEligibilityModal(name,carrySourceId){
+  await ensureFragment('common-modals');
   document.getElementById('elig-ward-name').value=name||'';
   populateWardNameSuggestions('elig-ward-name-suggestions');
   initWardNameCombobox('elig-ward-name','elig-ward-name-dropdown',()=>refreshEligCarrySource());
@@ -4736,9 +4762,10 @@ async function doConfirmSimplifiedEligibility(){
   }
 }
 
-function showRenameWardModal(){
+async function showRenameWardModal(){
   const ward=getActiveWard();
   if(!ward)return;
+  await ensureFragment('common-modals');
   document.getElementById('rename-ward-input').value=ward.wardName;
   showModal('renameWardModal');
 }
@@ -4761,9 +4788,10 @@ let _pendingDeleteWardId=null;
 // ever acts on the currently active ward) keeps working unchanged, while
 // the dashboard card's own Delete button can target any ward regardless
 // of which one is currently active.
-function confirmDeleteWard(wardId){
+async function confirmDeleteWard(wardId){
   const ward=wardId?guardianData.wards.find(w=>w.wardId===wardId):getActiveWard();
   if(!ward)return;
+  await ensureFragment('common-modals');
   _pendingDeleteWardId=ward.wardId;
   const yearNote=(ward.years&&ward.years.length)?` This will also permanently delete ${ward.years.length} prior year${ward.years.length===1?'':'s'} of saved accounting for this form.`:'';
   document.getElementById('delete-ward-msg').textContent=`Are you sure you want to delete "${ward.wardName}"?${yearNote} This action cannot be undone.`;
@@ -5845,11 +5873,12 @@ document.addEventListener('click',e=>{
   if(wrap&&!wrap.contains(e.target))comboboxHide(document.getElementById('convert-source-ward-dropdown'));
 });
 
-function showConvertWardModal(){
+async function showConvertWardModal(){
   if(!guardianData.wards.length){
     alert('You don\'t have any existing forms yet to convert. Create a form first using one of the options above, then come back here to convert it later if needed.');
     return;
   }
+  await ensureFragment('common-modals');
   const first=guardianData.wards[0];
   const input=document.getElementById('convert-source-ward');
   input.value=first.wardName||'(unnamed)';
@@ -6409,9 +6438,10 @@ async function startNewWardYear(wardId){
 
 let _yearModalWardId=null;
 
-function showStartNewYearModal(wardId){
+async function showStartNewYearModal(wardId){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
+  await ensureFragment('common-modals');
   _yearModalWardId=wardId;
   const note=ward.inventoryType==='guardian'
     ?"The new year opens with a copy of this year's schedules (A-1 through C-5) so you can edit down what's changed, instead of re-entering everything. Signatures and dates are cleared for the new filing."
@@ -6444,9 +6474,10 @@ function renderPriorYearsList(ward){
   document.getElementById('prior-years-list').innerHTML=rows.join('');
 }
 
-function showPriorYearsModal(wardId){
+async function showPriorYearsModal(wardId){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
+  await ensureFragment('common-modals');
   _yearModalWardId=wardId;
   document.getElementById('prior-years-ward-name').textContent=ward.wardName||'(unnamed ward)';
   renderPriorYearsList(ward);
@@ -6489,10 +6520,11 @@ async function deleteWardYear(wardId,yearKey){
 
 let _pendingDeleteYear=null;
 
-function confirmDeleteWardYear(wardId,yearKey){
+async function confirmDeleteWardYear(wardId,yearKey){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   const entry=ward&&ward.years&&ward.years.find(y=>y.key===yearKey);
   if(!ward||!entry)return;
+  await ensureFragment('common-modals');
   _pendingDeleteYear={wardId,yearKey};
   document.getElementById('delete-year-msg').textContent=`Are you sure you want to delete the ${entry.label} accounting for "${ward.wardName}"? Any supporting documents or comments uploaded for that year will be deleted too. This action cannot be undone.`;
   showModal('deleteYearModal');
@@ -6596,11 +6628,12 @@ function pageInventorySelector(){
   </div>`;
 }
 
-function showAddWardModalForType(type){
+async function showAddWardModalForType(type){
   if(type==='simplified'){
     showSimplifiedEligibilityModal('');
     return;
   }
+  await ensureFragment('common-modals');
   document.getElementById('new-ward-name').value='';
   populateWardNameSuggestions('ward-name-suggestions');
   initWardNameCombobox('new-ward-name','new-ward-name-dropdown',()=>updateCarrySourcePicker());

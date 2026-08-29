@@ -33,6 +33,13 @@ const STATIC_COPY_TARGETS = [
   { src: 'manifest.json', dest: '.' },
   { src: 'sw.js', dest: '.' },
   { src: 'src/legacy-app.js', dest: '.' },
+  // fragments/*.html: src/fragment-loader.js fetches these as plain static
+  // files everywhere except file:// (see the comment there for the full
+  // reasoning -- fetch() must keep working with zero Vite processing, since
+  // that's how Cloudflare Pages actually serves this repo today). Needed
+  // here for dist/web; dist/portable's own copy is unused at runtime (that
+  // build takes the `?raw` dynamic-import branch instead) but harmless.
+  { src: 'fragments', dest: '.' },
 ];
 
 export default defineConfig(({ mode }) => {
