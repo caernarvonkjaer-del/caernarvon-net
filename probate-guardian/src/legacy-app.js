@@ -6829,9 +6829,8 @@ function inpS(id,label,val,req=false,type='text'){
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
-function selS(id,label,val,opts,req=false){return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label><select class="form-select" id="${id}" onchange="D['${id}']=this.value;autoSave();updateNavDots()"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;}
-// County-field counterpart to selS() -- same D['id']=this.value write
-// convention, but a filtered-autocomplete text input instead of a <select>.
+// Filtered-autocomplete text input for county fields, using the same
+// D['id']=this.value write convention as the other Simplified/Plan field helpers.
 function countyInputS(id,label,val,req=false){
   const writeExpr=`D['${id}']=this.value;autoSave();updateNavDots()`;
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${countyAutocompleteHTML(id,val,writeExpr)}</div>`;
@@ -6850,7 +6849,7 @@ function inpSWithTooltip(id,label,tooltipKey,val,req=false,type='text'){
 // the schedule-comments box; the only checkbox was the unlock dialog), so
 // these three are the shared foundation for all four Plan types.
 //
-// They follow the same convention as inpS/selS above: write straight to
+// They follow the same convention as inpS above: write straight to
 // D['id'] inline, then autoSave() and refresh the completion checkmarks.
 // Values are escaped on the way out; free text is deliberately NOT run
 // through formatName/formatAddress the way inpS guesses by label, because
