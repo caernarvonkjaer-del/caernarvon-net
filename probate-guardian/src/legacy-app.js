@@ -4155,7 +4155,7 @@ async function switchWard(wardId){
     case 'guardian': renderPageGuardian('/');break;
     case 'simplified': mountSimplifiedFeature('/');break;
     case 'annual': renderPageAnnual('/');break;
-    case 'planSimplified': renderPagePlanSimplified('/');break;
+    case 'planSimplified': mountPlanSimplifiedFeature('/');break;
     case 'planAnnual': renderPagePlanAnnual('/');break;
     case 'planInitial': renderPagePlanInitial('/');break;
     case 'planMinor': renderPagePlanMinor('/');break;
@@ -4224,29 +4224,10 @@ function emptyRowAnnual(type){
 }
 
 // Simplified Annual Plan — the person-side counterpart to the accountings.
-// Field names mirror the official fillable PDF's own questions; the `q1..q9`
-// numbering matches the numbered questions printed on the form so the code,
-// the screen, and the filed document all line up.
-function emptyDataPlanSimplified(){
-  return {
-    wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'Pinellas',
-    // Q1-Q6: narrative answers
-    q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
-    q5SocialServices:'', q6Interaction:'',
-    // Q7: rights restoration
-    q7RestoreRights:'', q7RestoreExplain:'',
-    // Q8: advance directives executed since the last report
-    q8DNR:false, q8LivingWill:false, q8Surrogate:false, q8POA:false,
-    q8Other:false, q8OtherText:'', q8None:false,
-    // Q9: remuneration received by the guardian
-    q9Remuneration:'', q9RemunerationExplain:'',
-    // Signatures — the form provides two guardian/guardian-advocate blocks
-    planGuardians:[
-      {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''},
-      {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}
-    ]
-  };
-}
+// emptyDataPlanSimplified() moved to src/core/state.js (Milestone 3, Phase
+// B), reached via window.emptyDataPlanSimplified() from
+// initializeEmptyData() below -- pure data, needed synchronously at
+// ward-creation time, before the lazily-imported feature module loads.
 
 // ── Annual Guardianship Plan ─────────────────────────────
 // The court form's 11 numbered questions, in its own order. Two of them
@@ -4549,7 +4530,7 @@ function initializeEmptyData(type){
     // for why this bridge is temporary/necessary.
     case 'simplified': return window.emptyDataSimplified();
     case 'annual': return emptyDataAnnual();
-    case 'planSimplified': return emptyDataPlanSimplified();
+    case 'planSimplified': return window.emptyDataPlanSimplified();
     case 'planAnnual': return emptyDataPlanAnnual();
     case 'planInitial': return emptyDataPlanInitial();
     case 'planMinor': return emptyDataPlanMinor();
@@ -5589,14 +5570,14 @@ function renderPage(page){
     return;
   }
 
-  // Update help context based on inventory type
-  if(activeInventoryType==='guardian')updateHelpContext('guardian-inventory');
-  else if(activeInventoryType==='simplified')updateHelpContext('simplified-accounting');
-  else if(formEngine(activeInventoryType)==='annual')updateHelpContext('annual-accounting');
-  else if(activeInventoryType==='planSimplified')updateHelpContext('plan-simplified');
-  else if(activeInventoryType==='planAnnual')updateHelpContext('plan-annual');
-  else if(activeInventoryType==='planInitial')updateHelpContext('plan-initial');
-  else if(activeInventoryType==='planMinor')updateHelpContext('plan-minor');
+  // Update help context based on inventory type. updateHelpContext() takes
+  // no arguments and re-derives the context from activeInventoryType
+  // itself (see its definition) -- every branch below was passing it a
+  // string it silently ignored, a duplicate of logic that already lives in
+  // that one function. Found while extracting Plan Simplified (Milestone 3,
+  // Phase B); fixed for all types, not just that one, since the same
+  // ignored-argument pattern applied to every branch here.
+  updateHelpContext();
 
   // Track this page as visited
   const pageKey=getCurrentPageKey();
@@ -5606,7 +5587,7 @@ function renderPage(page){
     case 'guardian': renderPageGuardian(page);break;
     case 'simplified': mountSimplifiedFeature(page);break;
     case 'annual': renderPageAnnual(page);break;
-    case 'planSimplified': renderPagePlanSimplified(page);break;
+    case 'planSimplified': mountPlanSimplifiedFeature(page);break;
     case 'planAnnual': renderPagePlanAnnual(page);break;
     case 'planInitial': renderPagePlanInitial(page);break;
     case 'planMinor': renderPagePlanMinor(page);break;
@@ -5799,7 +5780,7 @@ function updateSidebar(){
     case 'guardian': buildNavGuardian(navContainer);break;
     case 'simplified': mountSimplifiedNav(navContainer);break;
     case 'annual': buildNavAnnual(navContainer);break;
-    case 'planSimplified': buildNavPlanSimplified(navContainer);break;
+    case 'planSimplified': mountPlanSimplifiedNav(navContainer);break;
     case 'planAnnual': buildNavPlanAnnual(navContainer);break;
     case 'planInitial': buildNavPlanInitial(navContainer);break;
     case 'planMinor': buildNavPlanMinor(navContainer);break;
@@ -6926,166 +6907,25 @@ function tdSig(label,val){return td(label,val);}
 
 
 // ═══════════════════════════════════════════════════════
-// WIZARD: SIMPLIFIED ANNUAL PLAN
-// The person-side filing. Unlike the accountings there is no arithmetic
-// here at all — it's nine narrative/checkbox questions plus signatures —
-// so this type has no totals, no Excel template, and no reconciliation.
+// Simplified Annual Plan is extracted into src/features/plan-simplified/
+// (Milestone 3, Phase B -- data/validation/pages; print/PDF export follows
+// in Phase C). See src/features/simplified-accounting/index.js's header
+// comment and the Milestone 3 plan for the pattern and reasoning. txtP/
+// chkP/yesNoCheckboxS/radioP/pageNavS above stay here because they're
+// shared with the three not-yet-extracted Plan types (Problem 3).
+//
+// pagePrintPlanSimplified()/doSavePdfPlanSimplified() further down in this
+// file haven't moved yet (Phase C) -- the extracted module's mount()
+// delegates '/print' to window.pagePrintPlanSimplified() in the meantime,
+// and those two legacy functions call window.validatePlanSimplified() to
+// reach the validator that has already moved.
 // ═══════════════════════════════════════════════════════
-
-function buildNavPlanSimplified(container){
-  container.innerHTML=`
-    <div class="nav-section">
-      <div class="nav-section-label">Simplified Annual Plan</div>
-      <button class="nav-link-item" data-page="/" data-nav="ps-cover" onclick="navigate('/')">Cover</button>
-      <button class="nav-link-item" data-page="/p2" data-nav="ps-p2" onclick="navigate('/p2')">The Plan — Questions 1–9</button>
-      <button class="nav-link-item" data-page="/p3" data-nav="ps-p3" onclick="navigate('/p3')">Signatures</button>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
-    </div>
-  `;
+const _planSimplifiedFeatureBridge=window.createFeatureBridge(()=>window.loadPlanSimplifiedFeature());
+async function mountPlanSimplifiedFeature(page){
+  await _planSimplifiedFeatureBridge.mountPage(document.getElementById('main-content'),page);
 }
-
-function renderPagePlanSimplified(page){
-  const el=document.getElementById('main-content');
-  switch(page){
-    case '/':      el.innerHTML=pagePlanSCover();break;
-    case '/p2':    el.innerHTML=pagePlanSQuestions();break;
-    case '/p3':    el.innerHTML=pagePlanSSignatures();break;
-    case '/print': el.innerHTML=pagePrintPlanSimplified();break;
-    default:       el.innerHTML=pagePlanSCover();
-  }
-  el.scrollTop=0;
-}
-
-function pagePlanSCover(){
-  const d=window.D;
-  return `<div class="schedule-page">
-    <h1>Simplified Annual Plan — Cover</h1>
-    <div class="schedule-instructions">This plan reports on the ward as a person: where they have lived, the care they received, and how they are doing. It is a separate filing from any accounting, which reports on their money and property.</div>
-    ${loadWardInfoBanner()}
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-4">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
-      <div class="col-md-4">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
-    </div>
-    ${renderScheduleDocsSection('planCover')}
-    ${pageNavS(null,'/p2')}
-  </div>`;
-}
-
-function pagePlanSQuestions(){
-  const d=window.D;
-  const q=(n,title,body)=>`<div class="plan-question"><div class="plan-question-num">Question ${n}</div><h3 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h3>${body}</div>`;
-  return `<div class="schedule-page">
-    <h1>The Plan — Questions 1–9</h1>
-    <div class="schedule-instructions">Answer in plain, specific language. "Saw Dr. Alvarez for a check-up in March and a follow-up in September" tells the court far more than "routine care."</div>
-
-    ${q(1,'The name and address of all places the ward has resided during the preceding year.',
-      txtP('q1Residences','Places resided',d.q1Residences,4,true,'List each residence with its address. Include the dates if the ward moved during the year.'))}
-
-    ${q(2,'Why is this the best placement for the ward?',
-      txtP('q2BestPlacement','Why this placement',d.q2BestPlacement,4,true))}
-
-    ${q(3,'List all professional medical / mental health treatment the ward has received during the past year.',
-      txtP('q3MedicalTreatment','Medical and mental health treatment',d.q3MedicalTreatment,5,true,'Did the ward see a doctor, dentist, or mental health professional — and if so, when?'))}
-
-    ${q(4,"What is the ward's current diagnosis and the conditions which cause them to continue to need a guardian advocate / guardian?",
-      txtP('q4Diagnosis','Current diagnosis and conditions',d.q4Diagnosis,5,true))}
-
-    ${q(5,'What personal and social services were provided for the ward in the past year?',
-      txtP('q5SocialServices','Personal and social services',d.q5SocialServices,4,true,'Programs attended, vacations, in-home and out-of-home activities, and what the ward likes to do for entertainment or in their free time.'))}
-
-    ${q(6,'In the past year, how has the ward interacted with others, including the guardian(s) and family members?',
-      txtP('q6Interaction','Interaction with others',d.q6Interaction,4,true,'If the ward is not able to interact, state why.'))}
-
-    ${q(7,'Should any of the rights previously delegated to the guardian advocate(s) / guardian(s) be restored to the ward at this time?',
-      yesNoCheckboxS('q7RestoreRights','Restore any rights?',d.q7RestoreRights,true)
-      +(d.q7RestoreRights==='Yes'?`<div class="plan-conditional">${txtP('q7RestoreExplain','Identify the specific right(s) and explain why they should be restored',d.q7RestoreExplain,4,true,'For example: to consent to medical treatment, to determine residence, to manage property.')}</div>`:''))}
-
-    ${q(8,'Since the guardianship was established or the last annual report, the following was executed by or on behalf of the ward:',
-      `<div class="plan-field-hint">Attach and file copies of any documents referenced below if not previously filed with the Court.</div>`
-      +chkP('q8DNR','Do Not Resuscitate ("DNR")',d.q8DNR)
-      +chkP('q8LivingWill','Living Will / Anatomical Gift',d.q8LivingWill)
-      +chkP('q8Surrogate','Healthcare Surrogate Designation',d.q8Surrogate)
-      +chkP('q8POA','Power of Attorney',d.q8POA)
-      +chkP('q8Other','Other Advance Directive',d.q8Other)
-      +(d.q8Other?`<div class="plan-conditional mt-2">${inpS('q8OtherText','Describe the other advance directive',d.q8OtherText,true)}</div>`:'')
-      +chkP('q8None','NONE',d.q8None))}
-
-    ${q(9,'As the guardian advocate(s) / guardian(s), have you received any payments, goods, or services for work or care provided on behalf of the ward?',
-      `<div class="plan-field-hint">This does <strong>not</strong> include payments, goods, or services received from a government benefits program such as Social Security, Medicaid, Medicare, or the Agency for Persons with Disabilities.</div>`
-      +yesNoCheckboxS('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,true)
-      +(d.q9Remuneration==='Yes'?`<div class="plan-conditional">${txtP('q9RemunerationExplain','Please explain',d.q9RemunerationExplain,3,true)}</div>`:''))}
-
-    ${renderScheduleDocsSection('planQuestions')}
-    ${pageNavS('/','/p3')}
-  </div>`;
-}
-
-function pagePlanSSignatures(){
-  const d=window.D;
-  const g=d.planGuardians||[];
-  const block=(i,label)=>{
-    const p=g[i]||{};
-    const set=f=>`D.planGuardians[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="plan-sig-block">
-      <h3>${label}</h3>
-      <div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" oninput="this.value=formatName(this.value);${set('name')}"></div>
-        <div class="col-md-6"><label class="form-label">Date Signed${i===0?'<span class="req">*</span>':''}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
-        <div class="col-md-6"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" oninput="${set('email')}"></div>
-        <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
-        <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingAddress||''))}" oninput="this.value=formatAddress(this.value);${set('mailingAddress')}"></div>
-      </div>
-    </div>`;
-  };
-  return `<div class="schedule-page">
-    <h1>Signatures</h1>
-    <div class="attestation-text">Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.</div>
-    <div class="schedule-instructions">The form provides space for two guardians or guardian advocates. Fill in the second block only if there is a co-guardian.</div>
-    ${block(0,'Guardian / Guardian Advocate 1')}
-    ${block(1,'Guardian / Guardian Advocate 2 (if any)')}
-    ${renderScheduleDocsSection('planSignatures')}
-    ${pageNavS('/p2',null)}
-  </div>`;
-}
-
-function validatePlanSimplified(){
-  const d=window.D;
-  const errs=[];
-  const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
-  req(d.wardName,'Cover — Name of Ward is required');
-  req(d.caseNumber,'Cover — Case Number is required');
-  req(d.county,'Cover — County is required');
-  req(d.periodFrom,'Cover — Reporting Period From is required');
-  req(d.periodTo,'Cover — Reporting Period To is required');
-  req(d.q1Residences,'The Plan — Question 1 (places resided) is required');
-  req(d.q2BestPlacement,'The Plan — Question 2 (why this placement) is required');
-  req(d.q3MedicalTreatment,'The Plan — Question 3 (medical treatment) is required');
-  req(d.q4Diagnosis,'The Plan — Question 4 (diagnosis and conditions) is required');
-  req(d.q5SocialServices,'The Plan — Question 5 (personal and social services) is required');
-  req(d.q6Interaction,'The Plan — Question 6 (interaction with others) is required');
-  req(d.q7RestoreRights,'The Plan — Question 7 (restore rights) must be answered');
-  if(d.q7RestoreRights==='Yes')req(d.q7RestoreExplain,'The Plan — Question 7 explanation is required when rights should be restored');
-  // Q8 is a "check all that apply" list, but leaving every box blank means the
-  // question was skipped rather than answered "none" — NONE is its own box.
-  if(!(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None)){
-    errs.push('The Plan — Question 8 (advance directives) must have at least one box checked, or NONE');
-  }
-  if(d.q8Other)req(d.q8OtherText,'The Plan — Question 8 requires a description when "Other Advance Directive" is checked');
-  if(d.q8None&&(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other)){
-    errs.push('The Plan — Question 8 cannot be NONE and also list directives');
-  }
-  req(d.q9Remuneration,'The Plan — Question 9 (remuneration) must be answered');
-  if(d.q9Remuneration==='Yes')req(d.q9RemunerationExplain,'The Plan — Question 9 explanation is required when payment was received');
-  const g=(d.planGuardians||[])[0]||{};
-  req(g.name,'Signatures — Guardian 1 printed name is required');
-  req(g.signatureDate,'Signatures — Guardian 1 date signed is required');
-  return errs;
+async function mountPlanSimplifiedNav(container){
+  await _planSimplifiedFeatureBridge.mountNav(container);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7827,7 +7667,10 @@ function planReadinessPanel(){
 }
 
 function pagePrintPlanSimplified(){
-  const errors=validatePlanSimplified();
+  // validatePlanSimplified moved to src/features/plan-simplified/index.js
+  // (Milestone 3, Phase B) -- reached via window since this function hasn't
+  // moved yet (Phase C). See that module's file header.
+  const errors=window.validatePlanSimplified();
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -7846,7 +7689,7 @@ function pagePrintPlanSimplified(){
 }
 
 async function doSavePdfPlanSimplified(){
-  const errors=validatePlanSimplified();
+  const errors=window.validatePlanSimplified();
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   pvShowAll();
   document.body.classList.add('pdf-export-mode');

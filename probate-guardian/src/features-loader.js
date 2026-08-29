@@ -25,7 +25,15 @@ export function loadSimplifiedFeature() {
   return import('./features/simplified-accounting/index.js');
 }
 
+// Plan Simplified (Milestone 3, Phase B) -- same reasoning as
+// loadSimplifiedFeature above: legacy-app.js can't perform this import()
+// itself and have Vite discover it.
+export function loadPlanSimplifiedFeature() {
+  return import('./features/plan-simplified/index.js');
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
 window.loadSimplifiedFeature = loadSimplifiedFeature;
+window.loadPlanSimplifiedFeature = loadPlanSimplifiedFeature;

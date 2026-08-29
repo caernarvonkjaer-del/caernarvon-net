@@ -79,10 +79,32 @@ export function emptyDataSimplified() {
   };
 }
 
+// Blank-ward data factory for the Plan Simplified feature (Milestone 3,
+// Phase B). Same reasoning as emptyDataSimplified above -- pure data, needed
+// synchronously at ward-creation time, before the lazily-imported
+// features/plan-simplified/index.js is ever loaded (Milestone 3 plan's
+// "Confirmed facts" / recurring Problem 1).
+export function emptyDataPlanSimplified() {
+  return {
+    wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'Pinellas',
+    q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
+    q5SocialServices:'', q6Interaction:'',
+    q7RestoreRights:'', q7RestoreExplain:'',
+    q8DNR:false, q8LivingWill:false, q8Surrogate:false, q8POA:false,
+    q8Other:false, q8OtherText:'', q8None:false,
+    q9Remuneration:'', q9RemunerationExplain:'',
+    planGuardians:[
+      {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''},
+      {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}
+    ]
+  };
+}
+
 // Temporary: legacy-app.js stays a classic (non-module) script per
 // Milestone 1's recorded decision, so it can't `import` this module
-// directly -- initializeEmptyData()'s 'simplified' case reaches this via
-// window instead, the same pattern src/fragment-loader.js uses for
-// loadFragment(). Remove once a real src/main.js bootstrap exists to own
-// this wiring explicitly.
+// directly -- initializeEmptyData()'s 'simplified'/'planSimplified' cases
+// reach these via window instead, the same pattern src/fragment-loader.js
+// uses for loadFragment(). Remove once a real src/main.js bootstrap exists
+// to own this wiring explicitly.
 window.emptyDataSimplified = emptyDataSimplified;
+window.emptyDataPlanSimplified = emptyDataPlanSimplified;
