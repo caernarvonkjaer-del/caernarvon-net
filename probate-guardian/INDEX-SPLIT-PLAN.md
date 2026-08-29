@@ -2,10 +2,32 @@
 
 ## Review summary
 
-`index.html` is currently about 1.1 MB and 17,100 lines. It contains the app
-shell, three CSS blocks, static overlays/modals, and nearly all application
-JavaScript in one inline script. The browser must parse that script at startup,
-including form types the current user may never open.
+`index.html` is currently 17,180 lines / 1.13 MB. The head has two CSS blocks
+(777 + 31 lines) and roughly 230 lines of static modal markup, followed by one
+single `<script>` block spanning lines 1,311–17,177 (15,866 lines) that holds
+essentially the entire application: 589 function declarations, 291 inline
+`onclick=` handlers, and 150 inline `oninput=` handlers. There is no
+`package.json`, no bundler, and no CSP meta tag anywhere — the build tooling
+and CSP work in this plan are greenfield additions, not a tightening of
+something that already exists.
+
+The script's own section-banner comments show its de facto structure: icon
+set, theme, global state/config, help/tooltip/walkthrough systems, the
+storage-strategy trio (`.sav` + session-restore cache + launch-preferences
+db), county/circuit tables, validation summary, print-pager, security/crypto/
+audit, in-memory state ops, export/import, ward management, modal functions,
+legacy-storage migration, router, convert-ward, multi-year accounting,
+Excel-capacity checks, the form-binding engine, then per-feature page
+renderers and print/export for all nine filing types, closing with PDF/Excel
+export/import and init. This matches the feature inventory used throughout
+this plan.
+
+There are 17 modals total. `startup-choice-overlay`, `security-choice-overlay`,
+and `unlock-overlay` are the three always-needed ones this plan keeps inline
+(see "Extract the shell and static fragments" below); the other 14
+(add/convert/delete/rename ward, prior-years, new-year, eligibility,
+load-ward-info, walkthrough, fallback-save, dropzone) are the real
+fragment-extraction candidates.
 
 The largest practical saving will come from splitting JavaScript by feature and
 loading it with dynamic `import()`. Moving markup into separate files helps only
@@ -24,23 +46,27 @@ itself is ever required, the only real options are a full page navigation
 between separate applications, or running suitable Excel/ZIP work in a
 short-lived Web Worker that is terminated after use.
 
-## Required decision before implementation
+## Required decision before implementation — RESOLVED: dual distribution
 
-The current package supports double-clicking `index.html` from `file://`.
-JavaScript modules and `fetch()`-loaded HTML fragments are restricted on
-`file://` in common browsers. Choose one of these release models:
+The current package supports double-clicking `index.html` from `file://` —
+that is `HOW-TO-RUN.txt`'s primary, "easiest" documented workflow today, so
+this choice is not a formality; it decides whether step 6 needs a bundler at
+all. JavaScript modules and `fetch()`-loaded HTML fragments are restricted on
+`file://` in common browsers, so this plan chose between:
 
-1. **Recommended: hosted/local-server app.** Serve the modular files over HTTPS
-   or `http://localhost`. This gives real lazy loading with the least complexity.
-2. **Dual distribution.** Develop as modules, then use a build tool to publish:
-   a chunked hosted/PWA build and a bundled single-file portable build. The
-   portable build will still load most code at startup.
+1. Hosted/local-server app. Serve the modular files over HTTPS or
+   `http://localhost`. Simplest, but drops the `file://` double-click workflow.
+2. **Dual distribution (chosen).** Develop as modules, then use a build tool to
+   publish a chunked hosted/PWA build (`dist/web/`) and a bundled single-file
+   portable build (`dist/portable/`) that preserves the `file://` double-click
+   workflow. The portable build will still load most code at startup — see the
+   portable-build acceptance criteria later in this plan for the accepted
+   tradeoff.
 
-Do not begin fragment extraction until this decision is recorded. The current
-`HOW-TO-RUN.txt` makes `file://` the primary workflow, so silently dropping it
-would be a compatibility break. Update `HOW-TO-RUN.txt` only after this
-decision is made, since hosted-only vs. dual distribution determines what
-instructions are still accurate.
+This decision unblocks fragment extraction and fixes step 2's bundler
+requirement as necessary rather than optional. Update `HOW-TO-RUN.txt` to
+document both the hosted/PWA and portable release paths once step 2's build
+outputs exist.
 
 A second decision must also be recorded before step 2 (Introduce the build
 system) starts: whether the legacy entry point (`src/legacy-app.js`) stays a
@@ -578,6 +604,16 @@ second feature proves what is genuinely shared.
   evaluated JavaScript bytes, initial request count, and the warmed-heap bound
   used in step 8's leak tests. Extraction does not start until these numbers
   are written down.
+- Delete known-dead code before it can be migrated as if it were live:
+  `index.html:14140` declares `renderPageGuardian(page)` with 18 placeholder
+  stub pages (`pageGuardianHome()`, etc. — each just `<p>Placeholder</p>`), but
+  a second, real `function renderPageGuardian` is declared later at
+  `index.html:15005`. Function-declaration hoisting means the second
+  definition silently wins at runtime, so the entire first ~50-line block is
+  unreachable today. Confirm this with a coverage run, delete the dead block,
+  and add a regression test/lint rule against duplicate top-level function
+  declarations so a stub doesn't accidentally get carried into a feature
+  module as though it were the real renderer.
 
 ### 2. Introduce the build system without restructuring behavior
 
