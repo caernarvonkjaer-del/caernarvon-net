@@ -199,3 +199,44 @@ export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> 
   });
   await page.evaluate(() => (window as any).flushPendingSave());
 }
+
+/**
+ * Plan Simplified has no eligibility redirect like Simplified Accounting --
+ * showAddWardModalForType('planSimplified') goes straight to the generic
+ * Add Ward modal (confirmed by reading that function: only 'simplified' is
+ * special-cased), so the existing createWard() helper above works unchanged
+ * for this type; no dedicated creation helper is needed.
+ *
+ * Fills every field validatePlanSimplified()
+ * (src/features/plan-simplified/index.js) requires, directly on window.D --
+ * same reasoning as the other fillMinimalValid* helpers. q7/q9 are answered
+ * 'No' and q8 is answered via the NONE box, so no conditional explanation
+ * fields are required on top of the base set.
+ */
+export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const d = (window as any).D;
+    Object.assign(d, {
+      wardName: d.wardName || 'Plan Simplified Export Test Ward',
+      caseNumber: '2026-CP-000789',
+      county: 'Pinellas',
+      periodFrom: '2026-01-01',
+      periodTo: '2026-12-31',
+      q1Residences: '123 Main St, Clearwater, FL 33755 (all year)',
+      q2BestPlacement: 'Familiar setting close to family and medical providers.',
+      q3MedicalTreatment: 'Annual check-up with Dr. Alvarez in March.',
+      q4Diagnosis: 'Stable; continues to require assistance with daily decisions.',
+      q5SocialServices: 'Weekly day program and family visits.',
+      q6Interaction: 'Regular positive contact with guardian and family.',
+      q7RestoreRights: 'No',
+      q8DNR: false, q8LivingWill: false, q8Surrogate: false, q8POA: false, q8Other: false, q8None: true,
+      q9Remuneration: 'No',
+    });
+    d.planGuardians = [
+      { name: 'Sample Guardian', signatureDate: '2026-01-02', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
+      { name: '', signatureDate: '', email: '', phone: '', mailingAddress: '' },
+    ];
+    (window as any).autoSave();
+  });
+  await page.evaluate(() => (window as any).flushPendingSave());
+}

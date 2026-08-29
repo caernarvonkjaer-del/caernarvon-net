@@ -6673,12 +6673,27 @@ const PAGES_GUARDIAN=[
 // target files would simply be missing from dist/web and dist/portable. See
 // features-loader.js's own comment for the full reasoning, including why
 // dist/portable specifically needs this.
-const _simplifiedFeatureBridge=window.createFeatureBridge(()=>window.loadSimplifiedFeature());
+//
+// window.createFeatureBridge() itself must NOT be called at this file's top
+// level: legacy-app.js is a classic, parser-blocking <script src> that runs
+// synchronously as the parser reaches it, while `<script type="module">`
+// tags (core/feature-bridge.js included) are implicitly deferred and don't
+// execute until after the whole document has finished parsing -- strictly
+// AFTER this file's top-level code runs, even though they appear earlier in
+// index.html. window.createFeatureBridge is not yet a function at that
+// point. Constructing the bridge lazily, on first actual call (which only
+// happens later, in response to user navigation, long after the deferred
+// module scripts have run), sidesteps this ordering entirely -- the same
+// safe pattern window.loadFragment/window.emptyDataSimplified already use.
+let _simplifiedFeatureBridge=null;
+function getSimplifiedFeatureBridge(){
+  return _simplifiedFeatureBridge??=window.createFeatureBridge(()=>window.loadSimplifiedFeature());
+}
 async function mountSimplifiedFeature(page){
-  await _simplifiedFeatureBridge.mountPage(document.getElementById('main-content'),page);
+  await getSimplifiedFeatureBridge().mountPage(document.getElementById('main-content'),page);
 }
 async function mountSimplifiedNav(container){
-  await _simplifiedFeatureBridge.mountNav(container);
+  await getSimplifiedFeatureBridge().mountNav(container);
 }
 
 function buildNavAnnual(container){
@@ -6914,12 +6929,19 @@ function tdSig(label,val){return td(label,val);}
 // chkP/yesNoCheckboxS/radioP/pageNavS above stay here because they're
 // shared with the three not-yet-extracted Plan types (Problem 3).
 // ═══════════════════════════════════════════════════════
-const _planSimplifiedFeatureBridge=window.createFeatureBridge(()=>window.loadPlanSimplifiedFeature());
+// window.createFeatureBridge() is constructed lazily, not at this file's
+// top level -- see getSimplifiedFeatureBridge()'s comment above for why
+// (module <script> tags are deferred and run after this classic script's
+// top-level code, so window.createFeatureBridge isn't a function yet then).
+let _planSimplifiedFeatureBridge=null;
+function getPlanSimplifiedFeatureBridge(){
+  return _planSimplifiedFeatureBridge??=window.createFeatureBridge(()=>window.loadPlanSimplifiedFeature());
+}
 async function mountPlanSimplifiedFeature(page){
-  await _planSimplifiedFeatureBridge.mountPage(document.getElementById('main-content'),page);
+  await getPlanSimplifiedFeatureBridge().mountPage(document.getElementById('main-content'),page);
 }
 async function mountPlanSimplifiedNav(container){
-  await _planSimplifiedFeatureBridge.mountNav(container);
+  await getPlanSimplifiedFeatureBridge().mountNav(container);
 }
 
 // ═══════════════════════════════════════════════════════
