@@ -1,0 +1,24 @@
+{
+  "name": "probate-guardian",
+  "private": true,
+  "version": "1.5.30",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:web": "vite build",
+    "build:portable": "vite build --mode portable",
+    "build": "npm run build:web && npm run build:portable",
+    "preview:web": "vite preview --outDir dist/web",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "measure:baseline": "node scripts/measure-baseline.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "vite": "^8.2.2",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vite-plugin-static-copy": "^4.1.1",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,48 @@
+name: probate-guardian tests
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'probate-guardian/**'
+      - '.github/workflows/probate-guardian-tests.yml'
+  pull_request:
+    paths:
+      - 'probate-guardian/**'
+      - '.github/workflows/probate-guardian-tests.yml'
+
+defaults:
+  run:
+    working-directory: probate-guardian
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: probate-guardian/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build (web + portable)
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: probate-guardian/playwright-report/
+          retention-days: 14

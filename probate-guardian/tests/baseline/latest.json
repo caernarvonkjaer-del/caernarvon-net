@@ -1,0 +1,22 @@
+{
+  "target": "source",
+  "measuredAt": "2026-08-29T15:39:53.981Z",
+  "gitSha": "30dc907",
+  "staticInlineScriptBytes": 1010181,
+  "JSHeapUsedSize": 21255244,
+  "Nodes": 2472,
+  "ScriptDuration": 0.008997,
+  "navigation": {
+    "transferSize": 0,
+    "encodedBodySize": 1125820,
+    "duration": 40.09999999962747
+  },
+  "resourceCount": 9,
+  "heapAfterRouteCycles": [
+    9291904,
+    9308944,
+    9403104,
+    9424808,
+    9573044
+  ]
+}
