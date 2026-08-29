@@ -129,3 +129,73 @@ export async function fillMinimalValidGuardianWard(page: Page): Promise<void> {
   });
   await page.evaluate(() => (window as any).flushPendingSave());
 }
+
+/**
+ * Simplified Accounting has its own dedicated creation flow --
+ * showAddWardModalForType('simplified') redirects straight to the
+ * eligibility modal instead of the generic Add Ward modal (index.html's
+ * doConfirmSimplifiedEligibility() then creates a 'simplified' ward if both
+ * answers are 'Yes', or falls back to a plain 'annual' ward otherwise), so
+ * createWard() above can't be used for this type. Always answers both
+ * eligibility questions 'Yes' so the resulting ward is genuinely Simplified.
+ */
+export async function createSimplifiedWard(page: Page, name: string): Promise<void> {
+  await page.evaluate(() => (window as any).showAddWardModalForType('simplified'));
+  await page.locator('#simplifiedEligibilityModal.show').waitFor({ state: 'visible' });
+  await page.fill('#elig-ward-name', name);
+  await page.selectOption('#elig-depository', 'Yes');
+  await page.selectOption('#elig-only-transactions', 'Yes');
+  await page.click('#simplifiedEligibilityModal button[onclick="doConfirmSimplifiedEligibility()"]');
+  await page.locator('#simplifiedEligibilityModal').waitFor({ state: 'hidden' });
+}
+
+/**
+ * Fills every field validateSimplified() (src/features/simplified-
+ * accounting/index.js) requires for a Simplified Accounting ward, directly
+ * on window.D via evaluate -- same reasoning as fillMinimalValidGuardianWard.
+ */
+export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const d = (window as any).D;
+    Object.assign(d, {
+      wardName: d.wardName || 'Simplified Export Test Ward',
+      caseNumber: '2026-CP-000456',
+      ssn: '123-45-6789',
+      gid: '2026-01-01',
+      periodFrom: '2026-01-01',
+      periodTo: '2026-12-31',
+      guardian: 'Sample Guardian',
+      attorney: 'Sample Attorney',
+      typeOfGuardianship: 'Plenary',
+      county: 'Pinellas',
+      amendedForm: 'No',
+      eligDepository: 'Yes',
+      eligOnlyTransactions: 'Yes',
+      startingBalance: '1000',
+      interestIncome: '10',
+      depositsSettlement: '0',
+      serviceCharges: '5',
+      federalIncomeTax: '0',
+      attorney_barNumber: '123456',
+      attorney_phone: '555-555-5557',
+      attorney_street: '123 Main St',
+      attorney_cityStateZip: 'Clearwater, FL 33755',
+      certServiceDate: '2026-01-02',
+      certIndicator: 'Mailed',
+    });
+    d.guardians = [{
+      name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com',
+      mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755',
+      residenceStreet: '123 Main St', residenceCityStateZip: 'Clearwater, FL 33755',
+      signatureDate: '2026-01-02',
+    }];
+    d.certRecipients = [
+      { name: 'Recipient One', line2: '', line3: '' },
+      { name: '', line2: '', line3: '' },
+      { name: 'Recipient Three', line2: '', line3: '' },
+      { name: '', line2: '', line3: '' },
+    ];
+    (window as any).autoSave();
+  });
+  await page.evaluate(() => (window as any).flushPendingSave());
+}

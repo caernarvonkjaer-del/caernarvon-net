@@ -907,6 +907,12 @@ let activeInventoryType = null;
 window.D = {}; // Current active ward's data
 let _saveTimer = null;
 let currentPage = '/';
+// A bare top-level `let`, like activeInventoryType above, isn't reachable
+// from an ES module (see src/core/state.js's file header) -- this tiny
+// accessor (a function declaration, so it's a real window property) is
+// what the Simplified Accounting feature module reaches for after an Excel
+// import, to re-render whichever page was already open.
+function getCurrentPage(){return currentPage;}
 let _visitedPages = new Set(); // Track which pages user has visited
 let _dirtySinceExport = false; // true once data changes after the last .sav export
 let _autoExportTimer = null;
@@ -4147,7 +4153,7 @@ async function switchWard(wardId){
   const el=document.getElementById('main-content');
   switch(formEngine(activeInventoryType)){
     case 'guardian': renderPageGuardian('/');break;
-    case 'simplified': renderPageSimplified('/');break;
+    case 'simplified': mountSimplifiedFeature('/');break;
     case 'annual': renderPageAnnual('/');break;
     case 'planSimplified': renderPagePlanSimplified('/');break;
     case 'planAnnual': renderPagePlanAnnual('/');break;
@@ -4194,40 +4200,6 @@ async function renameWard(wardId,newName){
 // ═══════════════════════════════════════════════════════
 // INVENTORY TYPE MANAGEMENT
 // ═══════════════════════════════════════════════════════
-function emptyDataSimplified(){
-  return {
-    wardName:'', ssn:'', caseNumber:'', periodFrom:'', periodTo:'',
-    attorney:'', guardian:'', typeOfGuardianship:'', county:'Pinellas',
-    amendedForm:'No', gid:'',
-    eligDepository:'', eligOnlyTransactions:'',
-    startingBalance:'',
-    interestIncome:'',
-    depositsSettlement:'',
-    serviceCharges:'',
-    federalIncomeTax:'',
-    guardians:[
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''},
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''},
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''}
-    ],
-    attorney_barNumber:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
-    attorney_signatureDate:'',
-    certServiceDate:'',
-    certAttySignDate:'',
-    certAttyBarNumber:'', certAttyPhone:'', certAttyStreet:'', certAttyCityStateZip:'',
-    certRecipients:[
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''}
-    ],
-    certIndicator:'',
-    remuneration:[
-      {guardian:'',type:'',description:''},
-      {guardian:'',type:'',description:''}
-    ]
-  };
-}
 
 function emptyRowAnnual(type){
   switch(type){
@@ -4569,7 +4541,13 @@ function emptyDataAnnual(){
 function initializeEmptyData(type){
   switch(formEngine(type)){
     case 'guardian': return emptyDataGuardian();
-    case 'simplified': return emptyDataSimplified();
+    // emptyDataSimplified() moved to src/core/state.js (an ES module) --
+    // pure data, needed at ward-creation time, before this ward's feature
+    // module is ever mounted. window.emptyDataSimplified is assigned there
+    // (loaded via a <script type="module"> tag in index.html) the same way
+    // fragment-loader.js exposes loadFragment; see that file's own comment
+    // for why this bridge is temporary/necessary.
+    case 'simplified': return window.emptyDataSimplified();
     case 'annual': return emptyDataAnnual();
     case 'planSimplified': return emptyDataPlanSimplified();
     case 'planAnnual': return emptyDataPlanAnnual();
@@ -5626,7 +5604,7 @@ function renderPage(page){
 
   switch(formEngine(activeInventoryType)){
     case 'guardian': renderPageGuardian(page);break;
-    case 'simplified': renderPageSimplified(page);break;
+    case 'simplified': mountSimplifiedFeature(page);break;
     case 'annual': renderPageAnnual(page);break;
     case 'planSimplified': renderPagePlanSimplified(page);break;
     case 'planAnnual': renderPagePlanAnnual(page);break;
@@ -5819,7 +5797,7 @@ function updateSidebar(){
 
   switch(formEngine(activeInventoryType)){
     case 'guardian': buildNavGuardian(navContainer);break;
-    case 'simplified': buildNavSimplified(navContainer);break;
+    case 'simplified': mountSimplifiedNav(navContainer);break;
     case 'annual': buildNavAnnual(navContainer);break;
     case 'planSimplified': buildNavPlanSimplified(navContainer);break;
     case 'planAnnual': buildNavPlanAnnual(navContainer);break;
@@ -6695,23 +6673,35 @@ const PAGES_GUARDIAN=[
   {id:'/print',label:'Print Preview'},
 ];
 
-function buildNavSimplified(container){
-  container.innerHTML=`
-    <div class="nav-section">
-      <div class="nav-section-label">Simplified Annual Accounting</div>
-      <button class="nav-link-item" data-page="/" data-nav="s-cover" onclick="navigate('/')">Cover &amp; Part I</button>
-      <button class="nav-link-item" data-page="/p2" data-nav="s-p2" onclick="navigate('/p2')">Part II — Accounting</button>
-      <button class="nav-link-item" data-page="/p3" data-nav="s-p3" onclick="navigate('/p3')">Part III — Declaration</button>
-      <button class="nav-link-item" data-page="/p4" data-nav="s-p4" onclick="navigate('/p4')">Part IV — Guardians</button>
-      <button class="nav-link-item" data-page="/p5" data-nav="s-p5" onclick="navigate('/p5')">Part V — Atty Signature</button>
-      <button class="nav-link-item" data-page="/p6" data-nav="s-p6" onclick="navigate('/p6')">Part VI — Cert. of Service</button>
-      <button class="nav-link-item" data-page="/p7" data-nav="s-p7" onclick="navigate('/p7')">Part VII — Remuneration</button>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
-    </div>
-  `;
+// Simplified Accounting is extracted into src/features/simplified-accounting/
+// (Milestone 2, Phase D) -- these two bridges dynamically import it, cache
+// the module, and delegate. See src/features/simplified-accounting/index.js
+// for the module itself; see the Milestone 2 plan's "Problem 2" for why this
+// hand-rolled bridge exists instead of INDEX-SPLIT-PLAN.md's full
+// staging-host router (that router arbitrates between several competing
+// lazy features; this milestone has exactly one).
+let _simplifiedFeaturePromise=null;
+function _loadSimplifiedFeature(){
+  if(!_simplifiedFeaturePromise){
+    // Routed through window.loadSimplifiedFeature (src/features-loader.js)
+    // rather than a direct import() here -- this file is an opaque classic-
+    // script static passthrough Vite never processes, so a dynamic import()
+    // written directly in this file would be invisible to Vite's build and
+    // the target files would simply be missing from dist/web and
+    // dist/portable. See features-loader.js's own comment for the full
+    // reasoning, including why dist/portable specifically needs this.
+    _simplifiedFeaturePromise=window.loadSimplifiedFeature();
+  }
+  return _simplifiedFeaturePromise;
+}
+async function mountSimplifiedFeature(page){
+  const el=document.getElementById('main-content');
+  const mod=await _loadSimplifiedFeature();
+  await mod.mount(el,page);
+}
+async function mountSimplifiedNav(container){
+  const mod=await _loadSimplifiedFeature();
+  mod.mountNav(container);
 }
 
 function buildNavAnnual(container){
@@ -6798,29 +6788,6 @@ function buildNavGuardian(container){
   `;
 }
 
-function renderPageSimplified(page){
-  const el=document.getElementById('main-content');
-  sanitizeNegativeAmounts();
-  switch(page){
-    case '/':      el.innerHTML=pageCover();break;
-    case '/p2':    el.innerHTML=pagePart2();break;
-    case '/p3':    el.innerHTML=pagePart3();break;
-    case '/p4':    el.innerHTML=pagePart4();break;
-    case '/p5':    el.innerHTML=pagePart5();break;
-    case '/p6':    el.innerHTML=pagePart6();break;
-    case '/p7':    el.innerHTML=pagePart7();break;
-    case '/print': el.innerHTML=pagePrintSimplified();break;
-    default:       el.innerHTML=pageCover();
-  }
-  el.scrollTop=0;
-}
-
-// ═══════════════════════════════════════════════════════
-// WIZARD: SIMPLIFIED ACCOUNTING - PAGE RENDERERS
-// (Using app shell helper functions: fmt, fmtDate, inp, sel, pageNav)
-// ═══════════════════════════════════════════════════════
-
-function fmtS(n){if(n===''||n===null||n===undefined)return '';const v=parseFloat(n);if(isNaN(v))return '';return v<0?`($${Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`$${v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
 function inpS(id,label,val,req=false,type='text'){
   let oninput=type==='text'?`this.value=validateSecurityInput('${id}',this.value);D['${id}']=this.value;autoSave();updateNavDots()`:`D['${id}']=this.value;autoSave();updateNavDots()`;
   let onblur='';
@@ -6867,13 +6834,6 @@ function inpS(id,label,val,req=false,type='text'){
 function countyInputS(id,label,val,req=false){
   const writeExpr=`D['${id}']=this.value;autoSave();updateNavDots()`;
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${countyAutocompleteHTML(id,val,writeExpr)}</div>`;
-}
-function inpSWithTooltip(id,label,tooltipKey,val,req=false,type='text'){
-  const html=inpS(id,label,val,req,type);
-  const tooltipHtml=tooltip(tooltipKey);
-  if(!tooltipHtml)return html;
-  const escapedLabel=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return html.replace(new RegExp(`(>)(${escapedLabel})(<span class="req">\\*</span>)?(<\/label>)`),`$1$2${tooltipHtml}$3$4`);
 }
 // ── Plan form controls ───────────────────────────────────
 // The Guardianship Plans are narrative documents — long free-text answers,
@@ -6964,905 +6924,10 @@ function calcTotals(){
   return {starting,interest,deposits,totalIncome,serviceCharges,fedTax,totalDisbursements,remaining};
 }
 
-// ── Cover / Part I ──────────────────────────────────────
-function pageCover(){
-  const d=window.D;
-  const t=calcTotals();
-  return `<div class="schedule-page">
-    <h1>Cover &amp; Part I — Required Information</h1>
-    ${browserRecommendationNotice()}
-    <div class="schedule-instructions">Fields marked <span class="req">*</span> are required before export.</div>
-    ${pageIntroRow(`<div class="accordion mb-0">
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZoneCover" aria-expanded="true">
-            <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing simplified accounting template)
-          </button>
-        </h2>
-        <div id="importZoneCover" class="accordion-collapse collapse show">
-          <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
-            <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
-              <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelSimplified(this)">
-            </label>
-            <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the previously exported Simplified Accounting Excel file</p>
-            <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
-          </div>
-        </div>
-      </div>
-    </div>`)}
-    <div class="summary-box mb-3">
-      <h2 class="subsection-heading">Eligibility — Fla. Stat. § 744.3679</h2>
-      <div class="schedule-instructions" style="margin-bottom:.75rem;">The simplified form may only be used when <strong>all</strong> property of the estate is held in a designated depository under § 69.031, and the <strong>only</strong> transactions in that account are interest accrual, deposits from a settlement, or financial institution service charges. If either answer below is "No," use the standard Annual Accounting instead.</div>
-      <div class="row g-3">
-        <div class="col-md-6">${yesNoCheckboxS('eligDepository','All estate property is held in a designated depository under § 69.031',d.eligDepository,true)}</div>
-        <div class="col-md-6">${yesNoCheckboxS('eligOnlyTransactions','The only account transactions are interest accrual, settlement deposits, and/or service charges',d.eligOnlyTransactions,true)}</div>
-      </div>
-      ${(d.eligDepository==='No'||d.eligOnlyTransactions==='No')?'<div class="mt-2" style="color:var(--danger-text);font-weight:600;font-size:.85rem;">⚠ This guardianship does not appear to qualify for the simplified form. Please use the standard Annual Accounting.</div>':''}
-    </div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-6">${inpSWithTooltip('caseNumber','Case Number','case_number',d.caseNumber,true)}</div>
-      <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn,true)}</div>
-      <div class="col-md-6">${inpS('gid','Guardianship Inception Date (GID)',d.gid,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodFrom','Accounting Period From',d.periodFrom,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Accounting Period To',d.periodTo,true,'date')}</div>
-      <div class="col-md-6">${inpS('guardian','Guardian',d.guardian,true)}</div>
-      <div class="col-md-6">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
-      <div class="col-md-6">${inpS('typeOfGuardianship','Type of Guardianship',d.typeOfGuardianship,true)}</div>
-      <div class="col-md-3">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-3">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true)}</div>
-    </div>
-    <div style="position:relative;min-height:200px;">
-      <div class="summary-box mt-3">
-        <h2 class="subsection-heading">Part II — Accounting Summary</h2>
-        <div class="summary-line"><span>Starting Balance (Line 1)</span><span>${fmtS(d.startingBalance)||'—'}</span></div>
-      <div class="summary-line"><span>Interest Income (Line 2)</span><span>${fmtS(d.interestIncome)||'—'}</span></div>
-      <div class="summary-line"><span>Deposits from Settlement (Line 3)</span><span>${fmtS(d.depositsSettlement)||'—'}</span></div>
-      <div class="summary-line"><span>Total Income (Line 4)</span><span>${fmtS(t.totalIncome)}</span></div>
-      <div class="summary-line"><span>Service Charges (Line 5)</span><span>${fmtS(d.serviceCharges)||'—'}</span></div>
-      <div class="summary-line"><span>Federal Income Tax (Line 6)</span><span>${fmtS(d.federalIncomeTax)||'—'}</span></div>
-      <div class="summary-line"><span>Total Disbursements (Line 7)</span><span>${fmtS(t.totalDisbursements)}</span></div>
-      <div class="summary-line total"><span>Remaining Assets On Hand (Line 8)</span><span>${fmtS(t.remaining)}</span></div>
-    </div>
-    </div>
-    ${pageNavS(null,'/p2')}
-  </div>`;
-}
-
-// ── Part II – Accounting ────────────────────────────────
-function pagePart2(){
-  const d=window.D;
-  const t=calcTotals();
-  return `<div class="schedule-page">
-    <h1>Part II — Accounting Summary &amp; Remaining Assets On Hand</h1>
-    <div class="schedule-instructions">Only interest income, deposits from settlement, financial institution service charges, and payment of federal income tax qualify for this simplified form.</div>
-    <div class="entry-card">
-      <div class="entry-card-header">Assets On Hand</div>
-      <div class="entry-card-body">
-        <div class="line-row">
-          <span class="line-tag">Line 1</span>
-          <span class="line-label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="startingBalance" value="${esc(sanitizeNonNegativeDecimal(d.startingBalance))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.startingBalance=this.value;autoSave();updateNavDots();document.getElementById('line8').textContent=fmtS(calcTotals().remaining)"></div></div>
-        </div>
-      </div>
-    </div>
-    <div class="entry-card">
-      <div class="entry-card-header">Income — Only the following receipts qualify</div>
-      <div class="entry-card-body">
-        <div class="line-row">
-          <span class="line-tag">Line 2</span>
-          <span class="line-label">Interest Income<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" value="${esc(sanitizeNonNegativeDecimal(d.interestIncome))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.interestIncome=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
-        </div>
-        <div class="line-row">
-          <span class="line-tag">Line 3</span>
-          <span class="line-label">Deposits Pursuant to Settlement<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" value="${esc(sanitizeNonNegativeDecimal(d.depositsSettlement))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.depositsSettlement=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
-        </div>
-        <div class="line-row total-line">
-          <span class="line-tag">Line 4</span>
-          <span class="line-label">Total Income</span>
-          <span class="line-val" id="line4">${fmtS(t.totalIncome)}</span>
-        </div>
-      </div>
-    </div>
-    <div class="entry-card">
-      <div class="entry-card-header">Disbursements — Only the following qualify</div>
-      <div class="entry-card-body">
-        <div class="line-row">
-          <span class="line-tag">Line 5</span>
-          <span class="line-label">Financial Institution Service Charges<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" value="${esc(sanitizeNonNegativeDecimal(d.serviceCharges))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.serviceCharges=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
-        </div>
-        <div class="line-row">
-          <span class="line-tag">Line 6</span>
-          <span class="line-label">Federal Income Tax<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" value="${esc(sanitizeNonNegativeDecimal(d.federalIncomeTax))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.federalIncomeTax=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
-        </div>
-        <div class="line-row total-line">
-          <span class="line-tag">Line 7</span>
-          <span class="line-label">Total Disbursements</span>
-          <span class="line-val" id="line7">${fmtS(t.totalDisbursements)}</span>
-        </div>
-      </div>
-    </div>
-    <div class="schedule-totals">
-      <div class="tbl"><div class="tr"><div class="td"><strong>Line 8 — Remaining Assets On Hand</strong></div><div class="td" id="line8">${fmtS(t.remaining)}</div></div></div>
-    </div>
-    ${renderScheduleDocsSection('p2')}
-    ${pageNavS('/p2','/p3')}
-  </div>`;
-}
-
-function refreshPart2(){
-  const t=calcTotals();
-  const l4=document.getElementById('line4');
-  const l7=document.getElementById('line7');
-  const l8=document.getElementById('line8');
-  if(l4)l4.textContent=fmtS(t.totalIncome);
-  if(l7)l7.textContent=fmtS(t.totalDisbursements);
-  if(l8)l8.textContent=fmtS(t.remaining);
-}
-
-// ── Part III – Declaration ──────────────────────────────
-function pagePart3(){
-  const d=window.D;
-  return `<div class="schedule-page">
-    <h1>Part III — Guardian(s) Declaration</h1>
-    <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.</div>
-    <div class="schedule-instructions">These dates should match the accounting period on the Cover page. They will appear in the printed Part III declaration.</div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('periodFrom','Period From',d.periodFrom,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Period To',d.periodTo,true,'date')}</div>
-    </div>
-    ${renderScheduleDocsSection('p3')}
-    ${pageNavS('/p2','/p4')}
-  </div>`;
-}
-
-// ── Part IV – Guardians ─────────────────────────────────
-function pagePart4(){
-  const d=window.D;
-  let html=`<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
-  <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>`;
-  const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
-  d.guardians.forEach((g,i)=>{
-    html+=`<div class="entry-card mb-3">
-      <div class="entry-card-header">${labels[i]}</div>
-      <div class="entry-card-body">
-        <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" oninput="this.value=formatName(this.value);D.guardians[${i}].name=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-3"><label class="form-label">Signature Date<span class="req">*</span></label><input type="date" class="form-control" value="${esc(g.signatureDate)}" oninput="D.guardians[${i}].signatureDate=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(formatSSN(g.ssn||''))}" oninput="this.value=formatSSN(this.value);D.guardians[${i}].ssn=this.value;autoSave();updateNavDots()"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
-          <div class="col-md-4"><label class="form-label">Phone Number<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatPhone(g.phone||''))}" oninput="this.value=formatPhone(this.value);D.guardians[${i}].phone=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-8"><label class="form-label">Email Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(g.email)}" oninput="D.guardians[${i}].email=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Mailing Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.mailingStreet||''))}" oninput="this.value=formatAddress(this.value);D.guardians[${i}].mailingStreet=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Mailing City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.mailingCityStateZip||''))}" oninput="applyZipLimit(this);this.value=formatCityStateZip(this.value);D.guardians[${i}].mailingCityStateZip=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Residence / Corporate Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.residenceStreet||''))}" oninput="this.value=formatAddress(this.value);D.guardians[${i}].residenceStreet=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Residence / Corporate City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.residenceCityStateZip||''))}" oninput="applyZipLimit(this);this.value=formatCityStateZip(this.value);D.guardians[${i}].residenceCityStateZip=this.value;autoSave();updateNavDots()"></div>
-        </div>
-      </div>
-    </div>`;
-  });
-  html+=`${renderScheduleDocsSection('p4')}${pageNavS('/p3','/p5')}</div>`;
-  return html;
-}
-
-// ── Part V – Attorney Signature ─────────────────────────
-function pagePart5(){
-  const d=window.D;
-  return `<div class="schedule-page">
-    <h1>Part V — Guardian Attorney Signature</h1>
-    <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
-      <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
-      <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,true)}</div>
-      <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,true)}</div>
-      <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street,true)}</div>
-      <div class="col-md-12">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,true)}</div>
-    </div>
-    ${renderScheduleDocsSection('p5')}
-    ${pageNavS('/p4','/p6')}
-  </div>`;
-}
-
-function pagePart6(){
-  const d=window.D;
-  function recipCard(i){
-    const r=d.certRecipients[i];
-    const req=(i===0||i===2)?'<span class="req">*</span>':'';
-    return `<div class="entry-card mb-2">
-      <div class="entry-card-header">Recipient ${i+1}</div>
-      <div class="entry-card-body">
-        <div class="row g-2">
-          <div class="col-12"><label class="form-label">Name and Address Line 1${req}</label><input type="text" class="form-control" value="${esc(formatName(r.name||''))}" oninput="this.value=formatName(this.value);D.certRecipients[${i}].name=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-12"><label class="form-label">Line 2</label><input type="text" class="form-control" value="${esc(formatAddress(r.line2||''))}" oninput="this.value=formatAddress(this.value);D.certRecipients[${i}].line2=this.value;autoSave()"></div>
-          <div class="col-12"><label class="form-label">Line 3</label><input type="text" class="form-control" value="${esc(formatAddress(r.line3||''))}" oninput="this.value=formatAddress(this.value);D.certRecipients[${i}].line3=this.value;autoSave()"></div>
-        </div>
-      </div>
-    </div>`;
-  }
-  return `<div class="schedule-page">
-    <h1>Part VI (Part X) — Guardian Attorney Certificate of Service</h1>
-    <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
-    <div class="row g-3 mb-3">
-      <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>
-      <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
-    </div>
-    <div class="row g-3">
-      <div class="col-md-6">${recipCard(0)}</div>
-      <div class="col-md-6">${recipCard(1)}</div>
-      <div class="col-md-6">${recipCard(2)}</div>
-      <div class="col-md-6">${recipCard(3)}</div>
-    </div>
-    <h2 class="mt-3" style="font-size:.8rem;font-weight:700;">Attorney Signature</h2>
-    <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
-    <div class="row g-3">
-      <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" oninput="this.value=formatName(this.value);D.attorney=this.value;autoSave()"></div>
-      <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
-      <div class="col-md-3">${inpS('certAttyBarNumber','Bar Number',d.certAttyBarNumber)}</div>
-      <div class="col-md-4">${inpS('certAttyPhone','Phone Number',d.certAttyPhone)}</div>
-      <div class="col-md-8">${inpS('certAttyStreet','Street Address',d.certAttyStreet)}</div>
-      <div class="col-md-12">${inpS('certAttyCityStateZip','City / State / Zip Code',d.certAttyCityStateZip)}</div>
-    </div>
-    ${renderScheduleDocsSection('p6')}
-    ${pageNavS('/p5','/p7')}
-  </div>`;
-}
-
-// ── Part VII – Remuneration ─────────────────────────────
-function pagePart7(){
-  const d=window.D;
-  let rows='';
-  d.remuneration.forEach((r,i)=>{
-    rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Remuneration Entry ${i+1} <button class="btn btn-sm btn-outline-danger" onclick="D.remuneration.splice(${i},1);autoSave();navigate('/p7')">Remove</button></div>
-      <div class="entry-card-body">
-        <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" oninput="this.value=formatName(this.value);D.remuneration[${i}].guardian=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" oninput="this.value=formatName(this.value);D.remuneration[${i}].type=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(formatName(r.description||''))}" oninput="this.value=formatName(this.value);D.remuneration[${i}].description=this.value;autoSave()"></div>
-        </div>
-      </div>
-    </div>`;
-  });
-  return `<div class="schedule-page">
-    <h1>Part VII — Guardian(s) Declaration of Remuneration</h1>
-    <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.</div>
-    ${rows}
-    <button class="btn btn-outline-primary btn-sm mb-3" onclick="D.remuneration.push({guardian:'',type:'',description:''});autoSave();navigate('/p7')">+ Add Entry</button>
-    ${renderScheduleDocsSection('p7')}
-    ${pageNavS('/p6','/print')}
-  </div>`;
-}
-
-// ═══════════════════════════════════════════════════════
-// PRINT / PDF
-// ═══════════════════════════════════════════════════════
-function docHeaderSimplified(ward,caseNo,section,page){
-  return `<div class="doc-header">
-    <div class="court-title">${circuitCourtCaption(window.D.county)}</div>
-    <div class="doc-title">SIMPLIFIED ANNUAL ACCOUNTING</div>
-    <div class="doc-meta">
-      <span>Name of Ward: <strong>${ward}</strong></span>
-      <span>${section}${page?' — Page '+page:''}</span>
-      <span>Case Number: <strong>${caseNo}</strong></span>
-    </div>
-  </div>`;
-}
-
+// Still used by Plan Annual's print builder (a not-yet-extracted feature) --
+// stays here rather than moving into features/simplified-accounting/print.js.
 function tdSig(label,val){return td(label,val);}
 
-function buildPrintHTMLSimplified(){
-  const d=window.D;
-  const t=calcTotals();
-  const ward=esc(d.wardName);
-  const caseNo=esc(d.caseNumber);
-
-  let html='';
-
-  // Page 1 – Parts I & II
-  html+=`<div class="doc-page">${docHeaderSimplified(ward,caseNo,'Summary','1')}
-  <div class="doc-schedule-title">Part I — REQUIRED INFORMATION</div>
-  <div class="doc-table-div mb-2" style="font-size:.76rem;">
-    ${tdSig('IN RE: GUARDIANSHIP OF',esc(d.wardName))}
-    ${tdSig('Social Security Number',esc(d.ssn))}
-    ${tdSig('For the Period',`From: ${fmtDate(d.periodFrom)}&nbsp;&nbsp;&nbsp;To: ${fmtDate(d.periodTo)}`)}
-    ${tdSig('Case Number',esc(d.caseNumber))}
-    ${tdSig('Attorney for Guardian',esc(d.attorney))}
-    ${tdSig('Guardian',esc(d.guardian))}
-    ${tdSig('Type of Guardianship',esc(d.typeOfGuardianship))}
-    ${tdSig('County',esc(d.county))}
-    ${tdSig('Amended Form?',esc(d.amendedForm))}
-  </div>
-  <div class="attestation-text" style="font-size:.74rem;">Eligibility under § 744.3679: all estate property is held in a designated depository under § 69.031 (<strong>${esc(d.eligDepository)||'—'}</strong>); the only account transactions are interest accrual, settlement deposits, and/or financial institution service charges (<strong>${esc(d.eligOnlyTransactions)||'—'}</strong>).</div>
-  <div class="doc-schedule-title">Part II — ACCOUNTING SUMMARY AND REMAINING ASSETS ON HAND</div>
-  <table class="doc-table">
-    <caption class="visually-hidden">Part II — Accounting Summary and Remaining Assets on Hand</caption>
-    <thead><tr><th class="visually-hidden">Line</th><th class="visually-hidden">Description</th><th class="right visually-hidden">Amount</th></tr></thead>
-    <tbody>
-    <tr><td><strong>Line 1</strong></td><td>Starting Balance [Net Assets per the Prior Report]</td><td class="right">${fmtS(d.startingBalance)}</td></tr>
-    <tr><td colspan="3" style="font-size:.75rem;color:var(--ink-3);padding:.15rem .38rem;">Income (Only the following receipts qualify)</td></tr>
-    <tr><td><strong>Line 2</strong></td><td>Interest Income</td><td class="right">${fmtS(d.interestIncome)}</td></tr>
-    <tr><td><strong>Line 3</strong></td><td>Deposits Pursuant to Settlement</td><td class="right">${fmtS(d.depositsSettlement)}</td></tr>
-    <tr class="total-row"><td><strong>Line 4</strong></td><td>Total Income</td><td class="right">${fmtS(t.totalIncome)}</td></tr>
-    <tr><td colspan="3" style="font-size:.75rem;color:var(--ink-3);padding:.15rem .38rem;">Less Disbursements (Only the following qualify)</td></tr>
-    <tr><td><strong>Line 5</strong></td><td>Financial Institution Service Charges</td><td class="right">${fmtS(d.serviceCharges)}</td></tr>
-    <tr><td><strong>Line 6</strong></td><td>Federal Income Tax</td><td class="right">${fmtS(d.federalIncomeTax)}</td></tr>
-    <tr class="total-row"><td><strong>Line 7</strong></td><td>Total Disbursements</td><td class="right">${fmtS(t.totalDisbursements)}</td></tr>
-    <tr class="total-row"><td colspan="2"><strong>Line 8 — Remaining Assets On Hand</strong></td><td class="right">${fmtS(t.remaining)}</td></tr>
-    </tbody>
-  </table>
-  </div>`;
-
-  // Page 2 – Part III & IV (Guardian declarations)
-  html+=`<div class="doc-page">${docHeaderSimplified(ward,caseNo,'Part III &amp; IV','2')}
-  <div class="doc-schedule-title">Part III — GUARDIAN(S) DECLARATION</div>
-  <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements by me from <strong>${fmtDate(d.periodFrom)}</strong> through <strong>${fmtDate(d.periodTo)}</strong>.</div>
-  <div class="doc-schedule-title">Part IV — GUARDIAN(S) INFORMATION</div>
-  <p style="font-size:.7rem;color:var(--ink-3);margin-bottom:.5rem;">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</p>
-  ${d.guardians.filter(g=>g.name).map((g,i)=>{const gLabel=['Guardian #1','Co-Guardian #2','Co-Guardian #3'][i];return `
-    <div class="doc-signature-block mb-4">
-      <div class="row">
-        <div class="col-6"><div class="doc-field-label">${gLabel}'s Signature</div><div class="doc-signature-line"></div></div>
-        <div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(g.signatureDate)}</div></div>
-        <div class="col-3"><div class="doc-field-label">${gLabel}'s Name</div><div class="doc-signature-line">${esc(g.name)}</div></div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-4"><div class="doc-field-label">SSN / EIN</div><div class="doc-signature-line">${esc(g.ssn)}</div></div>
-        <div class="col-4"><div class="doc-field-label">Phone Number</div><div class="doc-signature-line">${esc(g.phone)}</div></div>
-        <div class="col-4"><div class="doc-field-label">Mailing Street Address</div><div class="doc-signature-line">${esc(g.mailingStreet)}</div></div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-6"><div class="doc-field-label">Email Address</div><div class="doc-signature-line">${esc(g.email)}</div></div>
-        <div class="col-6"><div class="doc-field-label">Mailing City / State / Zip</div><div class="doc-signature-line">${esc(g.mailingCityStateZip)}</div></div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-6"><div class="doc-field-label">Residence / Corporate Street Address</div><div class="doc-signature-line">${esc(g.residenceStreet)}</div></div>
-        <div class="col-6"><div class="doc-field-label">Residence / Corporate City / State / Zip</div><div class="doc-signature-line">${esc(g.residenceCityStateZip)}</div></div>
-      </div>
-    </div>`;}).join('')}
-  </div>`;
-
-  // Page 3 – Part V & VI (Attorney + Cert of Service)
-  html+=`<div class="doc-page">${docHeaderSimplified(ward,caseNo,'Part V &amp; VI','3')}
-  <div class="doc-schedule-title">Part V — SIGNATURE OF GUARDIAN ATTORNEY</div>
-  <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian <strong>${ward}</strong> for the period <strong>${fmtDate(d.periodFrom)}</strong> through <strong>${fmtDate(d.periodTo)}</strong>. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in <strong>${esc(d.county)}</strong> County, Florida.</div>
-  <div class="doc-signature-block">
-    <div class="row">
-      <div class="col-6"><div class="doc-field-label">Attorney Signature &nbsp;/s/</div><div class="doc-signature-line"></div></div>
-      <div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(d.attorney_signatureDate)||''}</div></div>
-      <div class="col-3"><div class="doc-field-label">Attorney's Name</div><div class="doc-signature-line">${esc(d.attorney)}</div></div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-4"><div class="doc-field-label">Bar Number</div><div class="doc-signature-line">${esc(d.attorney_barNumber)}</div></div>
-      <div class="col-4"><div class="doc-field-label">Phone</div><div class="doc-signature-line">${esc(d.attorney_phone)}</div></div>
-      <div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(d.attorney_street)}</div></div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(d.attorney_cityStateZip)}</div></div>
-    </div>
-  </div>
-  <div class="doc-schedule-title">Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE</div>
-  <p style="font-size:.78rem;margin-bottom:1rem;">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to:</p>
-  <div class="row mb-3">
-    ${d.certRecipients.slice(0,2).map((r,i)=>`<div class="col-6 mb-2"><div class="doc-field-label">Recipient ${i+1}</div><div class="doc-signature-line">${esc(r.name)}</div><div class="doc-signature-line">${esc(r.line2)}</div><div class="doc-signature-line">${esc(r.line3)}</div></div>`).join('')}
-  </div>
-  <div class="row mb-3">
-    ${d.certRecipients.slice(2,4).map((r,i)=>`<div class="col-6 mb-2"><div class="doc-field-label">Recipient ${i+3}</div><div class="doc-signature-line">${esc(r.name)}</div><div class="doc-signature-line">${esc(r.line2)}</div><div class="doc-signature-line">${esc(r.line3)}</div></div>`).join('')}
-  </div>
-  <p style="font-size:.78rem;">on this date: ${fmtDate(d.certServiceDate)||''}${d.certIndicator?` &nbsp;|&nbsp; Indicate if: ${esc(d.certIndicator)}`:''}</p>
-  <div class="doc-signature-block">
-    <div class="row">
-      <div class="col-6"><div class="doc-field-label">Attorney Signature &nbsp;/s/</div><div class="doc-signature-line"></div></div>
-      <div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(d.certAttySignDate)||''}</div></div>
-      <div class="col-3"><div class="doc-field-label">Attorney's Name</div><div class="doc-signature-line">${esc(d.attorney)}</div></div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-4"><div class="doc-field-label">Bar Number</div><div class="doc-signature-line">${esc(d.certAttyBarNumber)}</div></div>
-      <div class="col-4"><div class="doc-field-label">Phone</div><div class="doc-signature-line">${esc(d.certAttyPhone)}</div></div>
-      <div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(d.certAttyStreet)}</div></div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(d.certAttyCityStateZip)}</div></div>
-    </div>
-    <p class="mt-3" style="font-size:.76rem;text-align:center;font-weight:700;">(End of Simplified Annual Accounting)</p>
-  </div>
-  </div>`;
-
-  // Page 4 – Part VII (Remuneration)
-  if(d.remuneration.some(r=>r.guardian||r.type||r.description)){
-    html+=`<div class="doc-page">${docHeaderSimplified(ward,caseNo,"Summary (Cont'd)",'4')}
-    <div class="doc-schedule-title">Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION</div>
-    <p style="font-size:.73rem;margin-bottom:.5rem;">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward. As used in this paragraph, the term "remuneration" means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian.</p>
-    <table class="doc-table">
-      <thead><tr><th>#</th><th>Guardian Name</th><th>Type</th><th>Description</th></tr></thead>
-      <tbody>${d.remuneration.filter(r=>r.guardian||r.type||r.description).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.guardian)}</td><td>${esc(r.type)}</td><td>${esc(r.description)}</td></tr>`).join('')}</tbody>
-    </table>
-    </div>`;
-  }
-
-  return html;
-}
-
-function pagePrintSimplified(){
-  const errors=validateSimplified();
-  highlightErrors(errors);
-  const capOver=checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS);
-  return `<div>
-    <h1 class="visually-hidden">Print Preview</h1>
-    <div class="print-preview-banner no-print">
-      <div><strong>Preview &amp; Export</strong>${errors.length?` — <span style="color:var(--danger-text)">${errors.length} issue(s)</span>`:capOver.length?` — <span style="color:var(--danger-text)">too many entries for Excel; use PDF</span>`:' — Ready to export'}</div>
-      <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-outline-primary btn-sm" onclick="doSavePdfSimplified()" ${errors.length?'disabled':''}>Save as PDF</button>
-        <button class="btn btn-primary btn-sm" onclick="doSaveExcelSimplified()" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="More remuneration entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="openFloridaCourtPortal()" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
-      </div>
-    </div>
-    <div class="accordion mb-3 no-print">
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZoneSimplified">
-            <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing simplified accounting template)
-          </button>
-        </h2>
-        <div id="importZoneSimplified" class="accordion-collapse collapse">
-          <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
-            <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
-              <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelSimplified(this)">
-            </label>
-            <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the previously exported Simplified Accounting Excel file</p>
-            <div id="import-progress-simplified" style="margin-top:.5rem;font-size:.8rem;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    ${errors.length?validationPanel(errors):''}
-    ${capOver.length?excelCapacityPanel(capOver):''}
-    <div id="print-doc-container">${buildPrintHTMLSimplified()}</div>
-  </div>`;
-}
-
-function validateSimplified(){
-  const d=window.D;
-  const errs=[];
-  const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
-  const reqYes=(v,label)=>{if(v!=='Yes')errs.push(label);};
-  reqYes(d.eligDepository,'Cover — Eligibility: all estate property must be held in a designated depository under § 69.031 — otherwise use the standard Annual Accounting');
-  reqYes(d.eligOnlyTransactions,'Cover — Eligibility: only interest accrual, settlement deposits, and financial institution service charges may occur in the account — otherwise use the standard Annual Accounting');
-  req(d.wardName,'Cover — Name of Ward');
-  req(d.caseNumber,'Cover — Case Number');
-  req(d.ssn,'Cover — Social Security Number');
-  req(d.gid,'Cover — Guardianship Inception Date (GID)');
-  req(d.periodFrom,'Cover — Accounting Period From');
-  req(d.periodTo,'Cover — Accounting Period To');
-  req(d.guardian,'Cover — Guardian');
-  req(d.attorney,'Cover — Attorney for Guardian');
-  req(d.typeOfGuardianship,'Cover — Type of Guardianship');
-  req(d.county,'Cover — County');
-  req(d.amendedForm,'Cover — Amended Form?');
-  req(d.startingBalance,'Part II — Starting Balance (Line 1)');
-  req(d.interestIncome,'Part II — Interest Income (Line 2)');
-  req(d.depositsSettlement,'Part II — Deposits Pursuant to Settlement (Line 3)');
-  req(d.serviceCharges,'Part II — Financial Institution Service Charges (Line 5)');
-  req(d.federalIncomeTax,'Part II — Federal Income Tax (Line 6)');
-  const gLabel=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
-  d.guardians.forEach((g,i)=>{
-    if(i>0&&!guardianHasAnyData(g))return;
-    const p=gLabel[i];
-    req(g.name,`Part IV — ${p} — Name`);
-    req(g.signatureDate,`Part IV — ${p} — Signature Date`);
-    req(g.ssn,`Part IV — ${p} — SSN/EIN`);
-    req(g.phone,`Part IV — ${p} — Phone Number`);
-    req(g.email,`Part IV — ${p} — Email Address`);
-    req(g.mailingStreet,`Part IV — ${p} — Mailing Street Address`);
-    req(g.mailingCityStateZip,`Part IV — ${p} — Mailing City/State/Zip`);
-    req(g.residenceStreet,`Part IV — ${p} — Residence Street Address`);
-    req(g.residenceCityStateZip,`Part IV — ${p} — Residence City/State/Zip`);
-  });
-  req(d.attorney_barNumber,'Part V — Attorney Bar Number');
-  req(d.attorney_phone,'Part V — Attorney Phone Number');
-  req(d.attorney_street,'Part V — Attorney Street Address');
-  req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
-  req(d.certServiceDate,'Part VI — Date of Service');
-  req(d.certIndicator,'Part VI — "Indicate if"');
-  req(d.certRecipients[0].name,'Part VI — Recipient 1 — Name and Address');
-  req(d.certRecipients[2].name,'Part VI — Recipient 3 — Name and Address');
-  return errs;
-}
-
-async function doSavePdfSimplified(){
-  const errors=validateSimplified();
-  if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
-  pvShowAll(); // never export a filtered preview
-  document.body.classList.add('pdf-export-mode');
-  const container=document.getElementById('print-doc-container');
-  const ward=(window.D.wardName||'SimplifiedAccounting').replace(/[^a-z0-9]/gi,'_');
-  try{
-    await html2pdf().set({
-      margin:0,filename:`${ward}_SimplifiedAccounting.pdf`,
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,logging:false},
-      jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
-      pagebreak:{mode:'avoid-all',before:'.schedule-page:not(:first-of-type)'}
-    }).from(container).save();
-  }catch(e){
-    console.error('PDF export failed',e);
-    alert('PDF export failed: '+e.message);
-  }finally{
-    document.body.classList.remove('pdf-export-mode');
-  }
-}
-
-async function doSaveExcelSimplified(){
-  const errors=validateSimplified();
-  if(errors.length){renderPage('/print');return;}
-  const capOver=checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS);
-  if(capOver.length){
-    alert('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
-      +capOver.map(o=>`• ${o.label}: ${o.count} entries (template holds ${o.cap})`).join('\n')
-      +'\n\nSave as PDF instead — the PDF includes every entry.');
-    renderPage('/print');
-    return;
-  }
-  const stat=document.getElementById('export-status');
-  try{
-    const inv=window.D;
-    const templateB64=await ensureTemplate('simplified');
-    if(!templateB64){alert('Template not loaded. Please import the Excel template first.');return;}
-
-    const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
-    const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
-    const n=v=>parseFloat(v)||0;
-
-    const bin=atob(templateB64);
-    const buf=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
-
-    const workbook=new ExcelJS.Workbook();
-    await workbook.xlsx.load(buf.buffer);
-
-    const p1=workbook.getWorksheet('PARTS I, II ');
-    if(p1){
-      setCell(p1,'C4',inv.wardName||'');
-      setCell(p1,'H4',inv.caseNumber||'');
-      setCell(p1,'D13',inv.ssn||'');
-      setCell(p1,'E14',fmtD(inv.periodFrom));
-      setCell(p1,'H14',fmtD(inv.periodTo));
-      setCell(p1,'D15',inv.caseNumber||'');
-      setCell(p1,'D16',inv.attorney||'');
-      setCell(p1,'D17',inv.guardian||'');
-      setCell(p1,'D18',inv.typeOfGuardianship||'');
-      setCell(p1,'F4',fmtD(inv.gid));
-      setCell(p1,'G2',inv.county||'');
-      setCell(p1,'I5',inv.amendedForm||'No');
-      const t=calcTotals();
-      setCell(p1,'H20',n(inv.startingBalance));
-      setCell(p1,'G23',n(inv.interestIncome));
-      setCell(p1,'G24',n(inv.depositsSettlement));
-      setCell(p1,'G28',n(inv.serviceCharges));
-      setCell(p1,'G29',n(inv.federalIncomeTax));
-    }
-
-    const p34=workbook.getWorksheet('PARTS III, IV');
-    if(p34){
-      setCell(p34,'C10',fmtD(inv.periodFrom));
-      setCell(p34,'F10',fmtD(inv.periodTo));
-      const g1=inv.guardians[0]||{};
-      setCell(p34,'D15',fmtD(g1.signatureDate));
-      setCell(p34,'F15',g1.name||'');
-      setCell(p34,'B17',g1.ssn||'');
-      setCell(p34,'B19',g1.phone||'');
-      setCell(p34,'B21',g1.email||'');
-      setCell(p34,'F17',g1.mailingStreet||'');
-      setCell(p34,'F19',g1.mailingCityStateZip||'');
-      setCell(p34,'F21',g1.residenceStreet||'');
-      setCell(p34,'F23',g1.residenceCityStateZip||'');
-      const g2=inv.guardians[1]||{};
-      if(guardianHasAnyData(g2)){
-        setCell(p34,'D25',fmtD(g2.signatureDate));
-        setCell(p34,'F25',g2.name||'');
-        setCell(p34,'B27',g2.ssn||'');
-        setCell(p34,'B29',g2.phone||'');
-        setCell(p34,'B31',g2.email||'');
-        setCell(p34,'F27',g2.mailingStreet||'');
-        setCell(p34,'F29',g2.mailingCityStateZip||'');
-        setCell(p34,'F31',g2.residenceStreet||'');
-        setCell(p34,'F33',g2.residenceCityStateZip||'');
-      }
-      const g3=inv.guardians[2]||{};
-      if(guardianHasAnyData(g3)){
-        setCell(p34,'D35',fmtD(g3.signatureDate));
-        setCell(p34,'F35',g3.name||'');
-        setCell(p34,'B37',g3.ssn||'');
-        setCell(p34,'B39',g3.phone||'');
-        setCell(p34,'B41',g3.email||'');
-        setCell(p34,'F37',g3.mailingStreet||'');
-        setCell(p34,'F39',g3.mailingCityStateZip||'');
-        setCell(p34,'F41',g3.residenceStreet||'');
-        setCell(p34,'F43',g3.residenceCityStateZip||'');
-      }
-    }
-
-    const p56=workbook.getWorksheet('PARTS V, VI ');
-    if(p56){
-      setCell(p56,'C12',fmtD(inv.periodFrom));
-      setCell(p56,'J12',fmtD(inv.periodTo));
-      setCell(p56,'B17','/s/');
-      setCell(p56,'J17',inv.attorney||'');
-      setCell(p56,'B19',inv.attorney_barNumber||'');
-      setCell(p56,'B21',inv.attorney_phone||'');
-      setCell(p56,'J19',inv.attorney_street||'');
-      setCell(p56,'J21',inv.attorney_cityStateZip||'');
-      setCell(p56,'H39',fmtD(inv.certServiceDate));
-      setCell(p56,'J39',inv.certIndicator||'');
-      const r=inv.certRecipients;
-      [[27,28,29,30],[27,28,29,30]].forEach((_,side)=>{
-        const ri=r[side]||{};
-        const col=side===0?'B':'J';
-        setCell(p56,`${col}27`,ri.name||'');
-        setCell(p56,`${col}28`,ri.line2||'');
-        setCell(p56,`${col}29`,ri.line3||'');
-      });
-      [[33,34,35,36],[33,34,35,36]].forEach((_,side)=>{
-        const ri=r[side+2]||{};
-        const col=side===0?'B':'J';
-        setCell(p56,`${col}33`,ri.name||'');
-        setCell(p56,`${col}34`,ri.line2||'');
-        setCell(p56,`${col}35`,ri.line3||'');
-      });
-      setCell(p56,'B41','/s/');
-      setCell(p56,'J41',inv.attorney||'');
-      setCell(p56,'H41',fmtD(inv.certAttySignDate||inv.attorney_signatureDate));
-      setCell(p56,'B43',inv.certAttyBarNumber||inv.attorney_barNumber||'');
-      setCell(p56,'B45',inv.certAttyPhone||inv.attorney_phone||'');
-      setCell(p56,'J43',inv.certAttyStreet||inv.attorney_street||'');
-      setCell(p56,'J45',inv.certAttyCityStateZip||inv.attorney_cityStateZip||'');
-    }
-
-    const p7=workbook.getWorksheet('PART VII');
-    if(p7){
-      const entries=(inv.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
-      entries.forEach((r,i)=>{
-        const row=6+i;
-        if(row>32)return;
-        // The court's template gives this part a single free-text column, so
-        // the fields are packed into one cell. Amount goes in as a segment
-        // after the type (it's disclosable remuneration — it belongs in the
-        // filed document, not just the round-trip). Empty segments are
-        // omitted rather than left blank, so the filed line never reads
-        // "—    —"; the importer tells the layouts apart by segment count
-        // plus whether the third segment is shaped like a currency figure.
-        const amt=(r.amount===''||r.amount==null)?'':`$${(parseFloat(r.amount)||0).toFixed(2)}`;
-        const parts=[r.guardian||'',r.type||''];
-        if(amt)parts.push(amt);
-        if(r.description)parts.push(r.description);
-        setCell(p7,`A${row}`,parts.join('  —  '));
-      });
-    }
-
-    const ward2=(inv.wardName||'SimplifiedAccounting').replace(/[^a-z0-9]/gi,'_');
-    try{workbook.definedNames.model=[];}catch(e){}
-    const outBuf=await workbook.xlsx.writeBuffer();
-    const blob=new Blob([outBuf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`${ward2}_SimplifiedAccounting.xlsx`;a.click();
-    URL.revokeObjectURL(url);
-  }catch(err){
-    console.error('Excel export failed:',err);
-    alert('Excel export failed: '+err.message);
-  }
-}
-
-async function importExcelSimplified(input){
-  const file=input.files[0];
-  if(!file)return;
-  const prog=getImportProgressEl(input);
-  if(prog)prog.textContent='Checking file…';
-  const check=await validateImportFile(file,'xlsx');
-  if(!check.ok){
-    if(prog)prog.textContent='✗ '+check.message;
-    input.value='';
-    return;
-  }
-  const reader=new FileReader();
-  reader.onerror=()=>{
-    if(prog)prog.textContent='✗ That file could not be read.';
-    input.value='';
-  };
-  reader.onload=async(e)=>{
-    if(prog)prog.textContent='Parsing Excel…';
-    try{
-      // No template-cache write here — an imported file is extracted and
-      // discarded, never retained (see the note above ensureTemplate()).
-      const workbook=new ExcelJS.Workbook();
-      await workbook.xlsx.load(e.target.result);
-      assertWorkbookWithinLimits(workbook);
-      const p1=workbook.getWorksheet('PARTS I, II ');
-      if(p1){
-        const gc=addr=>readCellText(p1.getCell(addr));
-        window.D.wardName=gc('C4');
-        window.D.caseNumber=gc('H4');
-        window.D.ssn=gc('D13');
-        window.D.periodFrom=gc('E14').substring(0,10);
-        window.D.periodTo=gc('H14').substring(0,10);
-        window.D.attorney=gc('D16');
-        window.D.guardian=gc('D17');
-        window.D.typeOfGuardianship=gc('D18');
-        window.D.gid=gc('F4').substring(0,10);
-        window.D.county=gc('G2')||'Pinellas';
-        window.D.amendedForm=gc('I5')||'No';
-        window.D.startingBalance=gc('H20');
-        window.D.interestIncome=gc('G23');
-        window.D.depositsSettlement=gc('G24');
-        window.D.serviceCharges=gc('G28');
-        window.D.federalIncomeTax=gc('G29');
-      }
-
-      // PARTS III, IV — Guardians
-      const p34=workbook.getWorksheet('PARTS III, IV');
-      if(p34){
-        const gc34=(addr)=>readCellText(p34.getCell(addr));
-        const g1=window.D.guardians[0]||{};
-        g1.signatureDate=gc34('D15').substring(0,10);
-        g1.name=gc34('F15');
-        g1.ssn=gc34('B17');
-        g1.phone=gc34('B19');
-        g1.email=gc34('B21');
-        g1.mailingStreet=gc34('F17');
-        g1.mailingCityStateZip=gc34('F19');
-        g1.residenceStreet=gc34('F21');
-        g1.residenceCityStateZip=gc34('F23');
-        if(!window.D.guardians[0])window.D.guardians[0]=g1;
-
-        const g2Data=gc34('F25');
-        if(g2Data){
-          const g2=window.D.guardians[1]||{};
-          g2.signatureDate=gc34('D25').substring(0,10);
-          g2.name=g2Data;
-          g2.ssn=gc34('B27');
-          g2.phone=gc34('B29');
-          g2.email=gc34('B31');
-          g2.mailingStreet=gc34('F27');
-          g2.mailingCityStateZip=gc34('F29');
-          g2.residenceStreet=gc34('F31');
-          g2.residenceCityStateZip=gc34('F33');
-          if(!window.D.guardians[1])window.D.guardians[1]=g2;
-        }
-
-        const g3Data=gc34('F35');
-        if(g3Data){
-          const g3=window.D.guardians[2]||{};
-          g3.signatureDate=gc34('D35').substring(0,10);
-          g3.name=g3Data;
-          g3.ssn=gc34('B37');
-          g3.phone=gc34('B39');
-          g3.email=gc34('B41');
-          g3.mailingStreet=gc34('F37');
-          g3.mailingCityStateZip=gc34('F39');
-          g3.residenceStreet=gc34('F41');
-          g3.residenceCityStateZip=gc34('F43');
-          if(!window.D.guardians[2])window.D.guardians[2]=g3;
-        }
-      }
-
-      // PARTS V, VI — Attorney and Certificate of Service
-      const p56=workbook.getWorksheet('PARTS V, VI ');
-      if(p56){
-        const gc56=(addr)=>readCellText(p56.getCell(addr));
-        // Part V (the attorney's own signature block) lives at B19/B21/J19/
-        // J21; Part VI (certificate of service) repeats the attorney at
-        // B43/B45/J43/J45. These are separate blocks and can legitimately
-        // differ, so each is read from its own cells — falling back to the
-        // Part VI copy only when Part V is blank, which is how hand-filled
-        // forms and pre-fix exports tend to arrive.
-        window.D.attorney_barNumber=gc56('B19')||gc56('B43');
-        window.D.attorney_phone=gc56('B21')||gc56('B45');
-        window.D.attorney_street=gc56('J19')||gc56('J43');
-        window.D.attorney_cityStateZip=gc56('J21')||gc56('J45');
-        window.D.certServiceDate=gc56('H39').substring(0,10);
-        window.D.certIndicator=gc56('J39');
-        const attySignDate=gc56('H41').substring(0,10);
-        window.D.certAttySignDate=attySignDate;
-        // The template exposes only one attorney signature-date cell (H41),
-        // which the export fills from certAttySignDate falling back to
-        // attorney_signatureDate. Mirroring it back into both keeps the value
-        // from being dropped entirely on a round-trip.
-        window.D.attorney_signatureDate=attySignDate;
-        window.D.certAttyBarNumber=gc56('B43');
-        window.D.certAttyPhone=gc56('B45');
-        window.D.certAttyStreet=gc56('J43');
-        window.D.certAttyCityStateZip=gc56('J45');
-
-        // Certificate recipients
-        const r=window.D.certRecipients||[];
-        r[0]=r[0]||{};
-        r[0].name=gc56('B27');
-        r[0].line2=gc56('B28');
-        r[0].line3=gc56('B29');
-        r[1]=r[1]||{};
-        r[1].name=gc56('J27');
-        r[1].line2=gc56('J28');
-        r[1].line3=gc56('J29');
-        r[2]=r[2]||{};
-        r[2].name=gc56('B33');
-        r[2].line2=gc56('B34');
-        r[2].line3=gc56('B35');
-        r[3]=r[3]||{};
-        r[3].name=gc56('J33');
-        r[3].line2=gc56('J34');
-        r[3].line3=gc56('J35');
-        window.D.certRecipients=r;
-      }
-
-      // PART VII — Remuneration
-      const p7=workbook.getWorksheet('PART VII');
-      if(p7){
-        const gc7=(addr)=>readCellText(p7.getCell(addr));
-        window.D.remuneration=[];
-        for(let row=6;row<=32;row++){
-          const val=gc7(`A${row}`);
-          if(val){
-            // Parse the combined "guardian — type — amount — description"
-            // cell. Files exported before the amount was included carry the
-            // description in position 2 instead, so detect which layout this
-            // is by shape — that keeps older backups importing correctly.
-            const parts=val.split('  —  ');
-            const looksLikeAmount=s=>/^\$?\s*[\d,]+(\.\d{1,2})?$/.test(String(s||'').trim());
-            const money=s=>String(s).replace(/[^0-9.]/g,'');
-            let amount='',description='';
-            if(parts.length>=4){
-              // guardian — type — amount — description
-              if(looksLikeAmount(parts[2]))amount=money(parts[2]);
-              description=parts[3]||'';
-            }else if(parts.length===3){
-              // Third segment is either the amount (description omitted) or
-              // the description (no amount, or a pre-fix 3-segment file).
-              if(looksLikeAmount(parts[2]))amount=money(parts[2]);
-              else description=parts[2];
-            }
-            window.D.remuneration.push({
-              guardian:parts[0]||'',
-              type:parts[1]||'',
-              amount,
-              description
-            });
-          }
-        }
-      }
-
-      capitalizeImportedFields(window.D);
-      // capitalizeImportedFields only reformats fields whose name looks like
-      // a name/address (see its own keyword list) — it happens to strip
-      // <>"'` from those via formatName/formatAddress, but fields outside
-      // that list (caseNumber, county, amendedForm, ssn, remuneration…)
-      // never went through any of that. This is the same stripping
-      // importExcelFile already applies to every field via sanitizeObjectData;
-      // in-place because window.D is the live object saveData() persists.
-      sanitizeObjectDataInPlace(window.D);
-      autoSave();
-      if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
-      setTimeout(()=>{if(prog)prog.textContent='';},3000);
-      renderPage(currentPage);
-    }catch(err){
-      console.error('Simplified Accounting import failed:',err);
-      if(prog)prog.textContent='✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.');
-    }finally{
-      input.value='';
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-// ═══════════════════════════════════════════════════════
-// VALIDATION
-// ═══════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════
 // WIZARD: SIMPLIFIED ANNUAL PLAN
@@ -11964,9 +11029,6 @@ const ANNUAL_EXCEL_CAPS={
   schF1:{cap:8,label:'Schedule F-1 — Sales of Real Property',route:'/schf1'},
   schF2:{cap:11,label:'Schedule F-2 — Sales of Personal Property',route:'/schf2'},
   remuneration:{cap:25,label:'Part XI — Remuneration',route:'/p11'},
-};
-const SIMPLIFIED_EXCEL_CAPS={
-  remuneration:{cap:27,label:'Part VII — Remuneration',route:'/p7'},
 };
 // Initial Inventory overflows differently from the other two types: its
 // fillScheduleXX() helpers walk a fixed list of template pages, and once
