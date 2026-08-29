@@ -2385,6 +2385,24 @@ function sanitizeNonNegativeDecimal(s){
   }
   return v;
 }
+// Same as sanitizeNonNegativeDecimal but keeps a single leading '-' -- for
+// the couple of fields (Annual Schedule C's Loss/Reduction, Schedule E's
+// Transfer Out Amt) that are explicitly entered as negative. Those used to
+// be native type="number" instead, which is exactly the pattern the
+// comment above sanitizeNonNegativeDecimal explains this app moved away
+// from app-wide (inconsistent '-' handling and no keydown events from the
+// spinner buttons across WebView versions) -- these two were simply never
+// migrated when the rest of the app was.
+function sanitizeDecimal(s){
+  const str=String(s||'');
+  const neg=str.trim().startsWith('-');
+  const digits=sanitizeNonNegativeDecimal(str);
+  // Keep a lone '-' even before any digits are typed (a valid, if
+  // incomplete, intermediate state) -- requiring digits first would wipe
+  // the sign the instant it's typed, before the digits that are supposed
+  // to follow it exist yet.
+  return neg?'-'+digits:digits;
+}
 
 // Validate field value for security and format
 function validateSecurityInput(fieldName,value){
@@ -12291,7 +12309,7 @@ function pageSchCAnnual(){
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
-        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><input type="number" class="form-control" value="${esc(r.loss)}" oninput="D.schC[${i}].loss=this.value;autoSave()"></div>
+        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" oninput="this.value=sanitizeDecimal(this.value);D.schC[${i}].loss=this.value;autoSave()"></div></div>
       </div></div>
     </div>`;
   });
@@ -12484,7 +12502,7 @@ function pageSchEAnnual(){
         <div class="col-md-2">${inpD('Transfer In Date',r.transferInDate,`D.schE[${i}].transferInDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Transfer In Amount',r.transferInAmt,`D.schE[${i}].transferInAmt=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpD('Transfer Out Date',r.transferOutDate,`D.schE[${i}].transferOutDate=this.value`,true,'date')}</div>
-        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><input type="number" class="form-control" value="${esc(r.transferOutAmt)}" oninput="D.schE[${i}].transferOutAmt=this.value;autoSave()"></div>
+        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" oninput="this.value=sanitizeDecimal(this.value);D.schE[${i}].transferOutAmt=this.value;autoSave()"></div></div>
       </div></div>
     </div>`;
   });
