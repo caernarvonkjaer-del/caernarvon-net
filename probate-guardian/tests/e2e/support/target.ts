@@ -299,3 +299,49 @@ export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> 
   });
   await page.evaluate(() => (window as any).flushPendingSave());
 }
+
+export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const d = (window as any).D;
+    const adls: Record<string, string> = {};
+    for (const [k] of (window as any).INITIAL_ADLS) adls[k] = 'Ward needs no help';
+    Object.assign(d, {
+      wardName: d.wardName || 'Plan Initial Export Test Ward',
+      caseNumber: '2026-CP-000654',
+      county: 'Pinellas',
+      inceptionDate: '2026-01-05',
+      lettersSignedDate: '2026-01-06',
+      guardianNames: 'Sample Guardian',
+      wardLiving: 'In a facility (Skilled Nursing, Assisted Living, etc.)',
+      residenceAddress: '123 Main St',
+      residenceCityStateZip: 'Clearwater, FL 33755',
+      q2Setting: 'Assisted Living (ALF)',
+      q3MedPrimary: true,
+      q4Mental: 'Routine examination by Psychiatrist/Psychologist',
+      q5Personal: 'Care Facility',
+      q6CareFacility: true,
+      q9Providers: [{ name: 'Dr. Sample Provider', providerType: 'Primary Care Physician', examDate: '2026-01-10', street: '', cityStateZip: '', phone: '' }],
+      adls,
+      mentalDementia: true,
+      physMobility: true,
+      usesNone: true,
+      needsNone: true,
+      q11NoDirectives: false,
+      q11Executed: true,
+      q11ExecDNR: true,
+      q11Directives: [{ title: 'Do Not Resuscitate Order', dateSigned: '2025-06-01', signedBy: 'Sample Guardian', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: 'No', orderDate: '', orderCounty: '' }],
+      committeeIncorporated: 'Yes',
+      certConsulted: true,
+      attorney_name: 'Sample Attorney',
+      attorney_signatureDate: '2026-01-12',
+    });
+    d.planGuardians = [
+      { name: 'Sample Guardian', ssn: '123-45-6789', street: '123 Main St', phone: '555-555-5555', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-11', relationship: 'Parent' },
+      { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+      { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+      { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+    ];
+    (window as any).autoSave();
+  });
+  await page.evaluate(() => (window as any).flushPendingSave());
+}
