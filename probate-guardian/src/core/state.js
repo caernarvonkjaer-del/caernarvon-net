@@ -266,13 +266,56 @@ export function emptyDataPlanInitial() {
   };
 }
 
+// Blank-ward data factory for the Plan Minor feature (Milestone 6, Phase A).
+// Needed synchronously at ward-creation time, same reasoning as the three
+// factories above -- but this one is genuinely pure data, unlike
+// emptyDataPlanAnnual()/emptyDataPlanInitial(): it only calls
+// window.emptyMinorResidence()/emptyMinorProvider()/emptyMinorGuardianSig()
+// (plain factory functions), never a bare top-level const, because Plan
+// Minor's computeNavChecks() branch has no rights/ADLs-style rating array to
+// read directly (Milestone 6 plan's "Confirmed facts").
+export function emptyDataPlanMinor() {
+  return {
+    // Cover
+    wardName:'', county:'Pinellas', ucn:'', ref:'', periodFrom:'', periodTo:'',
+    amendedForm:'', amendedVersion:'', professionalGuardian:'', publicGuardian:'',
+    guardianName:'',
+    // Q1 — current residence
+    q1ResidenceName:'', q1Street:'', q1City:'', q1State:'', q1Zip:'', q1Phone:'',
+    // Q2 — residences during the preceding 12 months
+    q2Residences:[window.emptyMinorResidence()],
+    // Q3 — medical/mental health treatment providers
+    q3Providers:[window.emptyMinorProvider()],
+    // Q4 — provision of medical services for the plan period
+    q4Primary:false, q4PrimaryFreq:'', q4Dentist:false, q4DentistFreq:'',
+    q4Specialist:false, q4SpecialistFreq:'',
+    q4PT:false, q4ST:false, q4OT:false, q4MinorDecides:false, q4Other:false, q4Explain:'',
+    // Q5 — education and social development
+    q5SchoolProgress:'', q5SocialDevelopment:'', q5Communicates:'', q5Interpersonal:'',
+    q5NoUnmetNeeds:false, q5DoesNotCareToSocialize:false, q5UnmetNeeds:false, q5Other:false, q5Explain:'',
+    // Certification — six "check all that apply" statements
+    certIncapacitated:false, certMinor:false, certConsulted:false,
+    certNoRestriction:false, certProvidesCare:false, certPhysicianAttached:false,
+    // Guardian + Co-Guardian signature blocks
+    planGuardians:[window.emptyMinorGuardianSig(),window.emptyMinorGuardianSig()],
+    // Preparer certification
+    preparer_name:'', preparer_tin:'', preparer_phone:'',
+    preparer_mailingStreet:'', preparer_cityStateZip:'', preparer_email:'', preparer_signatureDate:'',
+    // Attorney certification
+    attorney_name:'', attorney_bar:'', attorney_phone:'',
+    attorney_street:'', attorney_cityStateZip:'', attorney_email:'', attorney_signatureDate:''
+  };
+}
+
 // Temporary: legacy-app.js stays a classic (non-module) script per
 // Milestone 1's recorded decision, so it can't `import` this module
 // directly -- initializeEmptyData()'s 'simplified'/'planSimplified'/
-// 'planAnnual'/'planInitial' cases reach these via window instead, the same
-// pattern src/fragment-loader.js uses for loadFragment(). Remove once a real
-// src/main.js bootstrap exists to own this wiring explicitly.
+// 'planAnnual'/'planInitial'/'planMinor' cases reach these via window
+// instead, the same pattern src/fragment-loader.js uses for loadFragment().
+// Remove once a real src/main.js bootstrap exists to own this wiring
+// explicitly.
 window.emptyDataSimplified = emptyDataSimplified;
 window.emptyDataPlanSimplified = emptyDataPlanSimplified;
 window.emptyDataPlanAnnual = emptyDataPlanAnnual;
 window.emptyDataPlanInitial = emptyDataPlanInitial;
+window.emptyDataPlanMinor = emptyDataPlanMinor;
