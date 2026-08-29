@@ -3,18 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <script>
-// Sets data-theme on <html> before any stylesheet parses, so there is no
-// flash of the wrong theme on load. Deliberately synchronous, deliberately
-// first in <head> (right after the encoding declaration, which must stay
-// first) — an inline <script> in <head> blocks the parser until it
-// finishes, which is exactly what's wanted here: nothing paints before
-// this runs.
-// This app writes nothing to browser storage, so there is no stored theme
-// choice to read this early — whatever was picked last session lives only
-// in the .sav file, which isn't opened (and can't be, synchronously) until
-// well after first paint. This falls back to the OS's prefers-color-scheme
-// instead; applyTheme() may flip it once the file's own choice is known,
-// same as any other in-memory state this app has.
+// Apply the OS color scheme before CSS is parsed to prevent a first-paint
+// flash. The saved theme is inside the .sav file, so applyTheme() restores
+// it only after that file has been opened.
 (function(){
   try{
     var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -79,17 +70,16 @@
   --ease:cubic-bezier(.16,1,.3,1);
   color-scheme:light;
 }
-/* Dark palette. Applied via a JS-set attribute — the pre-paint script in
-   <head> sets it from the OS's prefers-color-scheme before first paint,
-   since this app keeps no browser storage to read synchronously that
-   early. applyTheme() may flip it once the .sav file's own saved choice
-   is known, so an explicit in-app choice still wins once the file loads. */
+/* Dark palette. The pre-paint script starts with the OS preference;
+   applyTheme() restores the .sav file's setting after the file loads. */
 :root[data-theme="dark"]{
   --brand-text:#e8879c;      /* 6.06:1 worst-case vs surface/brand-050/100 */
   --brand-050:#241620;--brand-100:#33202b;--brand-200:#5c3341;
-  --ink:#eef1f6;--ink-2:#c3ccd9;--ink-3:#93a0b3;--ink-4:#8b98aa;
-  /* ink   16.2 · ink-2 8.6 · ink-3 5.2 · ink-4 4.7 — worst case across
-     surface / surface-2 / surface-3, mirroring the light-mode ramp. */
+  --ink:#eef1f6;--ink-2:#c3ccd9;--ink-3:#dfe8f5;--ink-4:#edf3ff;
+  /* ink   16.2 · ink-2 8.6 · ink-3 7.0 · ink-4 8.4 — worst case across
+     surface / surface-2 / surface-3, mirroring the light-mode ramp while
+     keeping the sidebar micro-labels and toggles readable against dark UI
+     surfaces. */
   --line:#2b3546;--line-2:#212a38;--field:#69758a; /* field: 3.43:1 worst */
   --surface:#1a2230;--surface-2:#10151d;--surface-3:#232d3d;
   --accent-050:#111d2b;--accent-text:#7cb0e0;   /* 6.04:1 worst-case */
@@ -207,7 +197,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .topnav-help{flex:0 0 auto;width:2.45rem;padding:.52rem 0;font-weight:700;font-size:.95rem;}
 .topnav-theme{flex:0 0 auto;width:2.45rem;padding:.52rem 0;}
 .ward-picker-section{padding:1rem .8rem 1.1rem;background:var(--surface);border-bottom:1px solid var(--line);}
-.ward-picker-label{display:block;font-size:.67rem;font-weight:700;color:var(--ink-4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.11em;}
+.ward-picker-label{display:block;font-size:.75rem;font-weight:700;color:var(--ink-4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.11em;}
 .ward-picker-select{font-size:.86rem;margin-bottom:.6rem;border-color:var(--field);border-radius:var(--r);padding:.5rem 1.8rem .5rem .65rem;color:var(--ink);font-weight:600;box-shadow:var(--sh-1);background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23820024' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right .65rem center;background-size:14px 14px;}
 [data-theme="dark"] .ward-picker-select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238b98aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");}
 .ward-combobox-wrap{position:relative;}
@@ -232,12 +222,12 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    moments, but the save-controls toggle would show the identical ring. */
 #ward-controls-toggle-btn,#save-controls-toggle-btn{outline:none!important;box-shadow:none!important;}
 #ward-controls-toggle-btn:focus,#save-controls-toggle-btn:focus{outline:none!important;box-shadow:none!important;}
-.ward-picker-actions .btn{flex:1;padding:.4rem .3rem;font-size:.69rem;font-weight:600;border-radius:var(--r-sm);}
+.ward-picker-actions .btn{flex:1;padding:.4rem .3rem;font-size:.75rem;font-weight:600;border-radius:var(--r-sm);}
 .ward-info-card{background:linear-gradient(180deg,var(--surface-2),var(--surface-3));border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r);padding:.75rem .85rem;}
 .ward-info-head{display:flex;align-items:center;gap:.45rem;margin-bottom:.6rem;}
 .ward-info-icon{display:inline-flex;line-height:1;}
 .ward-info-type{font-size:.8rem;font-weight:700;letter-spacing:.01em;color:var(--ink);}
-.ward-info-total-label{font-size:.7rem;color:var(--ink-4);text-transform:uppercase;letter-spacing:.11em;font-weight:700;margin-bottom:.15rem;}
+.ward-info-total-label{font-size:.75rem;color:var(--ink-4);text-transform:uppercase;letter-spacing:.11em;font-weight:700;margin-bottom:.15rem;}
 .ward-info-total{font-size:1.4rem;font-weight:700;color:var(--ink);line-height:1.1;letter-spacing:-.02em;}
 /* Filing-progress summary — lives inside the existing ward-info card rather
    than as a separate panel. Computed live from the same per-section
@@ -246,12 +236,12 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    drift out of sync with the ward's actual data. */
 .ward-progress{margin-top:.65rem;padding-top:.6rem;border-top:1px solid var(--line);}
 .ward-progress-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.35rem;}
-.ward-progress-label{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);}
-.ward-progress-pct{font-size:.78rem;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+.ward-progress-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);}
+.ward-progress-pct{font-size:.8rem;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums;}
 .ward-progress-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;}
 .ward-progress-fill{height:100%;border-radius:99px;background:var(--brand);transition:width .25s var(--ease);}
 .ward-progress-fill.ward-progress-done{background:var(--ok-text);}
-.ward-progress-count{font-size:.74rem;color:var(--ink-3);margin-top:.35rem;}
+.ward-progress-count{font-size:.75rem;color:var(--ink-3);margin-top:.35rem;}
 .ward-progress-jump{display:flex;align-items:center;gap:.3rem;font-size:.75rem;font-weight:600;color:var(--accent-text);background:none;border:none;padding:.3rem 0 0;cursor:pointer;font-family:inherit;width:100%;text-align:left;}
 .ward-progress-jump:hover{text-decoration:underline;}
 .ward-progress-jump .ic{flex:0 0 auto;}
@@ -817,7 +807,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <body>
 <div id="save-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(180deg,#a3122f,#8b0f28);color:#fff;padding:.7rem 1rem;font-size:.84rem;font-weight:500;text-align:center;box-shadow:0 6px 20px -6px rgba(163,18,47,.6);">
   <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4.2 21 19.8H3Z"/><path d="M12 10v4.2"/><circle cx="12" cy="17.4" r=".9" fill="currentColor" stroke="none"/></svg> Your work could not be saved. Check your connection/storage and try again.
-  <button onclick="document.getElementById('save-error-banner').style.display='none'" style="margin-left:1rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:5px;padding:.15rem .6rem;font-size:.75rem;font-weight:600;cursor:pointer;">Dismiss</button>
+  <button type="button" onclick="document.getElementById('save-error-banner').style.display='none'" style="margin-left:1rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:5px;padding:.15rem .6rem;font-size:.75rem;font-weight:600;cursor:pointer;">Dismiss</button>
 </div>
 <div id="auto-export-reminder" class="app-toast">
   <span class="app-toast-icon"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg></span>
@@ -825,15 +815,14 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     <div id="auto-export-reminder-title" class="app-toast-title">Unsaved Changes</div>
     <div id="auto-export-reminder-text" class="app-toast-desc">You have changes since your last backup file.</div>
     <div class="app-toast-actions">
-      <button class="btn btn-primary btn-sm" onclick="saveBackupNow()">Save Backup Now</button>
-      <button class="btn btn-outline-secondary btn-sm" onclick="hideAutoExportReminder()">Remind Me Later</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="saveBackupNow()">Save Backup Now</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="hideAutoExportReminder()">Remind Me Later</button>
     </div>
   </div>
 </div>
-<!-- The storage-quota warning banner that used to live here was removed along
-     with IndexedDB: browser-storage quota has no bearing on this app's
-     persistence anymore (a user-chosen .sav file, not an origin-quota-bounded
-     storage bucket). See the STORAGE STRATEGY comment in the script below. -->
+<!-- Durable case saves use a user-chosen .sav file, so the old browser-quota
+     warning was removed. IndexedDB is still used for temporary recovery and
+     launch preferences; see STORAGE STRATEGY below. -->
 <div id="dropzone-overlay" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(26,45,74,.9);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;align-items:center;justify-content:center;font-size:1.35rem;font-weight:650;letter-spacing:-.01em;text-align:center;pointer-events:none;">
   <div style="border:2px dashed rgba(255,255,255,.5);border-radius:16px;padding:2.5rem 4rem;"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Drop .sav file to import case data</div>
 </div>
@@ -856,9 +845,9 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     </div>
 
     <div class="sidebar-topnav ward-collapsible">
-      <button class="topnav-btn" onclick="navigate('/dashboard')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg> All Wards</button>
-      <button class="topnav-btn topnav-theme" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch theme" aria-label="Switch to dark theme" aria-pressed="false"></button>
-      <button class="topnav-btn topnav-help" id="help-toggle-btn" onclick="toggleHelpPanel()" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="false" aria-controls="help-panel">?</button>
+      <button type="button" class="topnav-btn" onclick="navigate('/dashboard')"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg> All Wards</button>
+      <button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch theme" aria-label="Switch to dark theme" aria-pressed="false"></button>
+      <button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" onclick="toggleHelpPanel()" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="false" aria-controls="help-panel">?</button>
     </div>
 
     <!-- Ward Picker -->
@@ -872,21 +861,21 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
            being filled out, to give the schedule list below more room --
            see applyWardControlsCollapsedState(). Not shown at all until a
            ward exists, same as the controls it toggles. -->
-      <button type="button" class="btn btn-sm btn-link w-100 ward-controls-toggle" id="ward-controls-toggle-btn" onclick="toggleWardControls()" style="display:none;padding:.2rem 0;font-size:.72rem;" aria-expanded="true">Hide ward controls ▴</button>
-      <button class="btn btn-sm btn-primary w-100 ward-picker-switch-btn ward-collapsible" onclick="handleSwitchWardClick()">Switch Ward</button>
-      <button class="btn btn-outline-primary w-100 ward-add-btn ward-collapsible" onclick="navigate('/inventory-select')">+ New Form</button>
+      <button type="button" class="btn btn-sm btn-link w-100 ward-controls-toggle" id="ward-controls-toggle-btn" onclick="toggleWardControls()" style="display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);" aria-expanded="true">Hide ward controls ▴</button>
+      <button type="button" class="btn btn-sm btn-primary w-100 ward-picker-switch-btn ward-collapsible" onclick="handleSwitchWardClick()">Switch Ward</button>
+      <button type="button" class="btn btn-outline-primary w-100 ward-add-btn ward-collapsible" onclick="navigate('/inventory-select')">+ New Form</button>
       <div class="ward-picker-actions ward-collapsible">
-        <button class="btn btn-outline-secondary" id="rename-ward-btn" onclick="showRenameWardModal()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/></svg> Rename</button>
-        <button class="btn btn-outline-danger" id="delete-ward-btn" onclick="confirmDeleteWard()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
+        <button type="button" class="btn btn-outline-secondary" id="rename-ward-btn" onclick="showRenameWardModal()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/></svg> Rename</button>
+        <button type="button" class="btn btn-outline-danger" id="delete-ward-btn" onclick="confirmDeleteWard()" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
       </div>
       <div id="ward-info-display" class="ward-info-card" style="display:none;"></div>
     </div>
 
     <div class="nav-section sidebar-scroll" id="nav-sections"></div>
     <div class="nav-section" style="padding:1rem .8rem 1.1rem;border-top:1px solid var(--line);background:var(--surface-2);">
-      <small id="last-saved-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.15rem;font-size:.72rem;color:var(--ink-3);">No backup saved yet</small>
-      <small id="auto-save-armed-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.65rem;font-size:.68rem;color:var(--ink-4);">Auto-save: needs one manual save first</small>
-      <button type="button" class="btn btn-sm btn-link w-100 save-controls-toggle" id="save-controls-toggle-btn" onclick="toggleSaveControls()" style="display:none;padding:.2rem 0;font-size:.72rem;" aria-expanded="true">Hide save controls ▴</button>
+      <small id="last-saved-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.15rem;font-size:.75rem;color:var(--ink-3);">No backup saved yet</small>
+      <small id="auto-save-armed-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.65rem;font-size:.75rem;color:var(--ink-4);">Auto-save: needs one manual save first</small>
+      <button type="button" class="btn btn-sm btn-link w-100 save-controls-toggle" id="save-controls-toggle-btn" onclick="toggleSaveControls()" style="display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);" aria-expanded="true">Hide save controls ▴</button>
       <!-- A plain block-level wrapper, toggled as one unit, rather than
            setting style.display on each child directly -- several of them
            (the label especially) hardcode display:block inline already,
@@ -894,13 +883,14 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
            the browser's inline-by-default styling for a <label> instead of
            restoring the block layout this row needs. -->
       <div id="save-controls-body">
-        <label for="auto-export-interval-select" style="display:block;font-size:.7rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;">Auto-Save Every</label>
-        <select id="auto-export-interval-select" class="form-select form-select-sm mb-2" style="font-size:.72rem;" onchange="saveAutoExportIntervalPref(parseInt(this.value,10))">
+        <label for="auto-export-interval-select" style="display:block;font-size:.75rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;">Auto-Save Every</label>
+        <select id="auto-export-interval-select" class="form-select form-select-sm mb-2" style="font-size:.75rem;" onchange="saveAutoExportIntervalPref(parseInt(this.value,10))" aria-describedby="auto-save-interval-help">
           <option value="5">5 minutes</option>
           <option value="10" selected>10 minutes</option>
           <option value="30">30 minutes</option>
           <option value="0">Off</option>
         </select>
+        <small id="auto-save-interval-help" class="visually-hidden">How often this device tries to save a backup automatically, when a backup file is already open.</small>
         <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="exportGuardianDataZip()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Save Data File (.sav)</button>
         <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="triggerImportZip()"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Open Data File (.sav)</button>
         <input type="file" id="zip-import-input" accept=".sav,.zip" aria-label="Choose a data backup .sav file to import" style="display:none" onchange="if(this.files&&this.files[0])importGuardianDataZip(this.files[0])">
@@ -932,20 +922,20 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
           <span class="sub">Probate Guardian</span>
         </div>
       </div>
-      <button class="help-panel-close" onclick="toggleHelpPanel()" aria-label="Close help">&times;</button>
+      <button type="button" class="help-panel-close" onclick="toggleHelpPanel()" aria-label="Close help">&times;</button>
     </div>
     <div class="help-panel-content" id="help-panel-content">
       <p style="color:var(--ink-3);font-size:.9rem;">Select a section to see help information.</p>
     </div>
     <div class="help-panel-footer">
-      <button class="help-btn help-btn-primary" onclick="startWalkthrough()">Start guided tour</button>
-      <button class="help-btn help-btn-ghost" onclick="exportHelpGuideAsPDF()">Download PDF guide</button>
-      <button class="help-btn help-btn-ghost" onclick="toggleHelpPanel();navigate('/activity-log')">View activity log</button>
+      <button type="button" class="help-btn help-btn-primary" onclick="startWalkthrough()">Start guided tour</button>
+      <button type="button" class="help-btn help-btn-ghost" onclick="exportHelpGuideAsPDF()">Download PDF guide</button>
+      <button type="button" class="help-btn help-btn-ghost" onclick="toggleHelpPanel();navigate('/activity-log')">View activity log</button>
     </div>
   </div>
 </div>
 
-<!-- Walkthrough Overlay (Phase 4) -->
+<!-- Walkthrough overlay -->
 <div class="walkthrough-overlay" id="walkthrough-overlay"></div>
 <div class="walkthrough-tooltip" id="walkthrough-tooltip" style="display:none;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;gap:.8rem;">
@@ -957,21 +947,19 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
   </div>
   <p id="walkthrough-text" style="margin:.9rem 0 0 0;line-height:1.6;"></p>
   <div class="walkthrough-buttons">
-    <button class="walkthrough-skip" onclick="skipWalkthrough()">Skip Tour</button>
-    <button class="walkthrough-next" onclick="nextWalkthroughStep()">Next →</button>
+    <button type="button" class="walkthrough-skip" onclick="skipWalkthrough()">Skip Tour</button>
+    <button type="button" class="walkthrough-next" onclick="nextWalkthroughStep()">Next →</button>
   </div>
 </div>
 
 <div id="pdf-content" style="display:none;"></div>
 
-<!-- Open / Start at Launch — shown first, every session, before anything
-     else: with no browser storage left, the app has no case data to show
-     until it's handed a .sav file. See promptOpenOrStartAtLaunch(). -->
+<!-- Open/start screen shown after the recovery and remembered-handle checks. -->
 <div id="startup-choice-overlay" class="modal-overlay" style="z-index:10002;">
   <div class="modal-box" style="max-width:520px;">
-    <h1 style="margin-bottom:.5rem;color:var(--ink);">Probate Guardian</h1>
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Probate Guardian</h2>
     <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app keeps nothing in this browser between visits — every case lives entirely in a .sav file you choose and control. Open one to continue where you left off, or start a brand-new case.</p>
-    <button class="security-choice-option" onclick="openCaseFileAtLaunch()">
+    <button type="button" class="security-choice-option" onclick="openCaseFileAtLaunch()">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/></svg></span>
         <span class="security-choice-title">Open a Case File (.sav)</span>
@@ -982,7 +970,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <li>In Firefox or Safari, this browser can only read the file — save/export it again manually before closing this tab.</li>
       </ul>
     </button>
-    <button id="startup-newcase-btn" class="security-choice-option" onclick="startNewCaseAtLaunch()">
+    <button type="button" id="startup-newcase-btn" class="security-choice-option" onclick="startNewCaseAtLaunch()">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg></span>
         <span class="security-choice-title">Start a New Case</span>
@@ -1005,9 +993,9 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
      password screen, on a truly fresh install. -->
 <div id="security-choice-overlay" class="modal-overlay" style="z-index:10001;">
   <div class="modal-box" style="max-width:560px;">
-    <h1 style="margin-bottom:.5rem;color:var(--ink);">Choose How to Protect This Data</h1>
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Choose How to Protect This Data</h2>
     <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This case holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this case going forward and cannot be changed later without starting over.</strong></p>
-    <button class="security-choice-option" onclick="selectSecurityMode('none')">
+    <button type="button" class="security-choice-option" onclick="selectSecurityMode('none')">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/></svg></span>
         <span class="security-choice-title">No Password / No Encryption</span>
@@ -1018,7 +1006,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
         <li>Faster and simpler, but offers none of the protections below.</li>
       </ul>
     </button>
-    <button class="security-choice-option" onclick="selectSecurityMode('encrypted')">
+    <button type="button" class="security-choice-option" onclick="selectSecurityMode('encrypted')">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg></span>
         <span class="security-choice-title">Encrypted &amp; Password Protected</span>
@@ -1052,7 +1040,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
       </label>
     </div>
     <div id="unlock-error" style="display:none;color:var(--danger-text);font-size:.83rem;margin-bottom:.75rem;"></div>
-    <button class="btn btn-primary w-100" id="unlock-submit-btn" onclick="submitUnlockForm()">Continue</button>
+    <button type="button" class="btn btn-primary w-100" id="unlock-submit-btn" onclick="submitUnlockForm()">Continue</button>
   </div>
 </div>
 
@@ -1090,6 +1078,17 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 </style>
 
 <!-- MODALS -->
+<!-- 15-minute dirty-state reminder for browsers without writable file handles. -->
+<div id="fallbackSaveModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:460px;">
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Save Your Work</h2>
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">This browser can't automatically save your work in the background — only Chrome and Edge support that. You have changes that haven't been saved to a backup file (.sav) yet. Save now to avoid losing them.</p>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary flex-fill" onclick="closeModal('fallbackSaveModal');saveBackupNow()">Save Now</button>
+      <button class="btn btn-outline-secondary flex-fill" onclick="closeModal('fallbackSaveModal')">Remind Me Later</button>
+    </div>
+  </div>
+</div>
 <!-- Convert Existing Ward Modal -->
 <div id="convertWardModal" class="modal-overlay">
   <div class="modal-box" style="max-width:480px;">
@@ -1359,16 +1358,9 @@ function ic(n,size){
 }
 // ═══════════════════════════════════════════════════════
 // THEME (light / dark)
-// The actual attribute-setting that avoids a flash of the wrong theme on
-// load happens in a tiny synchronous script at the very top of <head> —
-// this is deliberately separate from the encrypted ward data / IndexedDB
-// persistence used elsewhere in the app: it must run before any stylesheet
-// paints and before anything async could possibly be ready. This block only
-// handles in-session toggling and keeping the button's own state in sync.
-// Every colour this touches is confined to the CSS custom properties
-// audited in the :root[data-theme="dark"] block — none of it reaches the
-// court-document or PDF-export paths, which stay hardcoded light/black
-// regardless of what this sets on <html>.
+// The synchronous head script sets the OS preference before first paint.
+// This block handles runtime changes and restores the saved .sav setting.
+// Court-document and PDF styles remain hardcoded for light output.
 // ═══════════════════════════════════════════════════════
 function currentTheme(){
   return document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
@@ -2234,56 +2226,22 @@ let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appSta
 let _lastExportAt = null; // ms epoch of last successful export, or null if never
 
 // ═══════════════════════════════════════════════════════
-// STORAGE STRATEGY — the .sav file is the only persistence
+// STORAGE STRATEGY — canonical .sav file plus temporary recovery
 // ═══════════════════════════════════════════════════════
 //
-// This app writes no CASE DATA to IndexedDB, localStorage, or
-// sessionStorage. Everything about a case lives in memory for the length
-// of the session and is written to the user's .sav file (see EXPORT /
-// IMPORT below) — nowhere else. One consequence follows directly from
-// that, and is accepted:
+// Live case data is held in guardianData and the containers below. A .sav
+// file is the authoritative durable record and receives full-state writes.
 //
-//   - With nothing about the case written to browser storage, there is no
-//     crash recovery: closing the tab loses anything typed since the last
-//     successful write to the file. updateLastSavedIndicator()/
-//     refreshAutoSaveArmedStatus() and the beforeunload warning (see
-//     warnBeforeUnloadIfDirty()) exist specifically so that state is never
-//     silent.
+// Browser storage has two current, limited uses:
+//   - pg-session-cache holds a temporary full-state recovery snapshot while
+//     changes are unsaved. It uses the case's encrypted-or-plain mode and is
+//     cleared after a successful .sav save.
+//   - pg-launch-pref holds a has-opened flag and, where supported, the last
+//     FileSystemFileHandle. It never stores the file's contents.
 //
-// wards live in guardianData.wards, already the in-memory object the whole
-// UI reads and writes — there is no separate store to copy them into or
-// out of. Everything that used to be its own IndexedDB object store is one
-// of the three plain containers below instead.
-//
-// A one-time startup routine (runLegacyBrowserStorageMigrationIfNeeded())
-// reads whatever a pre-this-release install left in IndexedDB/localStorage,
-// offers to export it as a .sav file, and clears both. It only ever reads
-// that legacy data and deletes what it read — never writes new data into
-// it. See its own comment for why it can be deleted outright in a later
-// release.
-//
-// Two deliberate exceptions to all of the above, both in their own small
-// IndexedDB database (never the legacy one above, never any case data):
-//
-//   - hasOpenedCaseBefore() / markCaseOpenedBefore() store a single
-//     boolean recording only that this browser has successfully opened or
-//     saved a .sav file before. promptOpenOrStartAtLaunch() uses it to
-//     skip straight to the file picker instead of asking Open-vs-Start-New
-//     on every visit.
-//   - savePersistedZipHandle() / loadPersistedZipHandle() store the actual
-//     FileSystemFileHandle from the last opened or saved file (Chrome/Edge
-//     only — Firefox/Safari have no equivalent handle to persist).
-//     trySilentReopen() uses it to try reading that same file again with
-//     no picker and no prompt at all, when the browser still honors the
-//     earlier permission grant (typically true within one browser session,
-//     typically not after a full restart — see the comment on
-//     _zipFileHandle for what "typically" covers).
-//
-// Both are a real, considered tradeoff against the zero-case-data guarantee
-// above: the boolean reveals nothing about who the guardian is or what
-// case they hold, and the handle is a capability the browser polices
-// independently, not a copy of the file's contents — see the comments on
-// those functions.
+// runLegacyBrowserStorageMigrationIfNeeded() separately reads and removes
+// data left by older versions in ProbateGuardian/localStorage/sessionStorage.
+// The Tauri build also maintains an encrypted best-effort file backup.
 // ═══════════════════════════════════════════════════════
 
 let _appState = {};        // key -> value; replaces the old `appState` IDB store
@@ -2291,10 +2249,7 @@ let _templateCache = {};   // type -> base64; replaces the old `templates` IDB s
 let _auditLogEntries = []; // {id, timestamp, eventType, details, success}; replaces `auditLog`
 let _auditLogNextId = 1;
 
-// Legacy storage keys — no longer written, kept only so
-// runLegacyBrowserStorageMigrationIfNeeded() knows what to look for on an
-// upgrading install. The IndexedDB name/version they went with is right
-// below it, for the same reason.
+// Read-only identifiers for migrating storage created by older releases.
 const LEGACY_DB_NAME = 'ProbateGuardian';
 const LEGACY_DB_VERSION = 3;
 const LEGACY_STORES = { wards:'wards', appState:'appState', templates:'templates', auditLog:'auditLog' };
@@ -3169,13 +3124,9 @@ async function decryptJSON(packed){
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
-// peekRawWardRows()/migrateExistingPlaintextWardsToEncrypted() used to live
-// here: a one-time check for wards sitting in IndexedDB as plaintext from
-// before encryption-at-rest existed. That concern was specific to IndexedDB
-// storage and cannot recur now that IndexedDB is gone — any such wards on
-// an upgrading install are swept up (encrypted or not) by
-// runLegacyBrowserStorageMigrationIfNeeded() instead, before ensureUnlocked()
-// ever runs.
+// Legacy plaintext wards are handled by
+// runLegacyBrowserStorageMigrationIfNeeded() before this unlock flow. The
+// current recovery and launch-preference databases use separate names.
 
 // Decides whether the user needs to create a master password (fresh install,
 // or an existing pre-encryption install with plaintext wards) or unlock with
@@ -3214,13 +3165,8 @@ async function ensureUnlocked(skipAutoUnlock){
   const verifier=await loadAppState('cryptoVerifier');
 
   if(!storedMode&&!(salt&&verifier)){
-    // Truly fresh install — no mode chosen yet, and no legacy encrypted
-    // install to infer 'encrypted' from. Ask once, before anything else.
-    // guardianData.wards can only be non-empty here if promptOpenOrStartAtLaunch()
-    // already loaded a 'none'-mode file with no securityMode of its own
-    // recorded (a pre-securityMode-feature file) — hasExistingData reflects
-    // that rather than the plaintext-IndexedDB case this used to check for,
-    // which cannot happen anymore now that IndexedDB is gone.
+    // No mode has been selected. A ward can already be present only when an
+    // older .sav file omitted securityMode; otherwise this is a new case.
     _securityMode=await promptChooseSecurityMode();
     await saveAppState('securityMode',_securityMode); // stored in the
     // clear, like cryptoSalt — must be readable before any password exists
@@ -3366,10 +3312,8 @@ function showUnlockError(msg){
 // outside the app (PBKDF2's 210k iterations is the only defense against
 // that) — it stops someone with physical access to a locked screen from
 // just sitting there trying passwords one after another through the UI.
-// State lives in _appState and, once written, in the .sav file itself — a
-// closed tab or reload only resets the counter if it happened before the
-// next debounced save landed, same "no crash recovery" tradeoff as
-// everything else this app persists now.
+// The counter lives in _appState and is included in the next .sav write or
+// temporary recovery snapshot.
 const UNLOCK_FAIL_THRESHOLD=5;
 const UNLOCK_LOCKOUT_BASE_MS=30*1000;
 const UNLOCK_LOCKOUT_MAX_MS=5*60*1000;
@@ -3475,20 +3419,9 @@ document.addEventListener('keydown',(e)=>{
   }
 });
 
-// Forgets the in-memory key and reloads the unlock gate. Re-derives nothing
-// automatically — the whole point is that the password must be typed again.
-// Wiping guardianData/window.D below is a deliberate security property, not
-// incidental: it's what makes "locked" mean the decrypted SSNs are actually
-// gone from JS-inspectable memory, not just hidden behind the "Locked"
-// overlay. IndexedDB used to make that free — the wipe was safe because
-// loadGuardianData() could always pull the latest saved copy straight back
-// out of it, independent of the .sav file. With IndexedDB gone, the .sav
-// file IS that copy, so flushPendingSave() must land BEFORE the key
-// disappears and memory is cleared, or up to a debounce's worth of edits
-// (autoSave()'s 1-second timer) would be gone for good — this app has no
-// crash recovery, but locking is a deliberate action, not a crash, and
-// should not cost the last few keystrokes just because they hadn't been
-// written out yet.
+// Flushes pending work, clears the key and decrypted case data from memory,
+// then requires the password again. After unlock, this flow reloads from the
+// open .sav handle; the temporary session-recovery cache is not used here.
 async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
   await flushPendingSave();
@@ -3500,12 +3433,8 @@ async function lockApp(){
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
   await ensureUnlocked(true);
-  // Memory really was wiped above — unlike the IndexedDB-backed version,
-  // there is no separate store still holding the data, so it has to come
-  // back from the .sav file flushPendingSave() just wrote it to (if one is
-  // open) now that _cryptoKey exists again. With no file open there is
-  // nothing to recover from; that risk is called out in the docs and by
-  // the sidebar's own auto-save-armed indicator rather than solved here.
+  // Rebuild memory from the open .sav file now that the key is available.
+  // With no file handle, this lock flow has no source from which to reload.
   if(handle){
     try{
       const file=await handle.getFile();
@@ -3545,39 +3474,26 @@ function resetAutoLockTimer(){
 
 // ═══════════════════════════════════════════════════════
 // IN-MEMORY STATE OPERATIONS
-// Replaces the old IndexedDB object stores one-for-one. Every function here
-// keeps the name/signature shape its IDB predecessor had (some call sites
-// still `await` these — kept as async so none of those call sites needed
-// to change) but none of them touch a database: appState/templates/the
-// audit log are the plain containers declared above, and wards live in
-// guardianData.wards already. Durability comes from autoSave()'s debounce
-// writing the whole in-memory state to the .sav file, not from anything
-// happening inside these functions.
+// Compatibility facade for the former IndexedDB store API. Wards, settings,
+// templates, and audit entries remain in memory here; saveData() writes the
+// authoritative .sav file and manages the separate recovery snapshot.
 // ═══════════════════════════════════════════════════════
 
 async function saveWardToState(ward){
   if(!ward)return false;
   ward.lastModified=new Date().toISOString();
-  // No separate store to put this into — ward is already the live object
-  // sitting in guardianData.wards. What every call site actually wants is
-  // "persist this now": schedule the same debounced write-through to the
-  // .sav file that any other edit would.
+  // The ward is already live in guardianData; schedule persistence.
   autoSave();
   return true;
 }
 
 async function loadWardsFromState(){
-  // guardianData.wards IS the in-memory ward store; there is nothing
-  // else to read it from. Populated either by promptOpenOrStartAtLaunch()
-  // (an existing .sav file) or left empty for a brand-new case.
+  // Opening or restoring a case populates this in-memory collection.
   return guardianData.wards;
 }
 
 async function deleteWardFromState(wardId){
-  // The caller (deleteWard()) already splices guardianData.wards itself —
-  // it's the same in-memory array this would otherwise re-filter — so all
-  // that's left to do is schedule the write-through that makes the
-  // deletion durable, same as any other edit.
+  // deleteWard() already updates the live array; schedule persistence.
   autoSave();
   return true;
 }
@@ -3648,22 +3564,15 @@ const ACTIVITY_LOG_RENDER_CAP=300; // safety cap on DOM rows, not on what's expo
 
 async function loadAndRenderActivityLog(){
   const raw=await loadAuditLogEntries();
-  // Newest first, by the store's auto-increment id — not the timestamp
-  // string. Millisecond-resolution ISO timestamps collide under rapid
-  // succession (confirmed: several real events logged back-to-back landed on
-  // the identical millisecond), which would make timestamp order ambiguous
-  // for events that need to read as strictly ordered. id is monotonic and
-  // assigned by IndexedDB itself, so it can't collide.
+  // Sort by the in-memory monotonic id; timestamps can collide within one
+  // millisecond and are therefore not a reliable ordering key.
   _activityLogEntries=raw.slice().sort((a,b)=>(b.id||0)-(a.id||0));
   renderActivityLogList();
   renderStorageReadout();
 }
 
-// Plain statement of how much room the app is using, so it's checkable
-// before the warning banner ever appears rather than only after.
-// Was a browser-storage-quota readout; there is no browser storage left to
-// measure, so this now answers the question this page actually exists for
-// ("did my backup actually save?") directly: which file, and when.
+// Reports the authoritative .sav file and last-save status. Temporary
+// recovery storage is intentionally not presented as a durable backup.
 async function renderStorageReadout(){
   const host=document.getElementById('storage-usage-readout');
   if(!host)return;
@@ -3817,26 +3726,14 @@ function hideSaveError(){
   if(el)el.style.display='none';
 }
 
-// A single failed save is often just a transient blip (a stray autosave
-// racing the DB connection reopening, a momentary lock-contention error
-// from another tab) rather than a real, ongoing problem — the very next
-// debounced save 1s later usually succeeds fine. Only surface the scary
-// red banner once saves have failed BACK TO BACK, so it means what it
-// says instead of flashing on every harmless one-off hiccup.
+// Show the error banner only after consecutive failures; a single file or
+// permission error may be transient.
 let _consecutiveSaveFailures=0;
 const SAVE_FAILURE_THRESHOLD=2;
 
-// Writes the ENTIRE current in-memory state (every ward, guardian info,
-// appState, cached templates, the audit log) to the .sav file this session
-// has open — the only persistence this app has left. There is no
-// IndexedDB underneath this to fall back to, so "no file is open" is not
-// an error: it just means there is nowhere to write yet, which the
-// sidebar's auto-save-armed indicator and the "Save Your First Backup"
-// reminder banner already say plainly. A .sav write is necessarily a
-// whole-file rewrite (there is no way to patch one entry of a zip in
-// place through the File System Access API), so unlike the old per-ward
-// IndexedDB put, every debounced save here re-encrypts every ward — an
-// accepted cost of the file being the only source of truth now.
+// Captures dirty state in the temporary recovery cache, then rewrites the
+// complete .sav archive when a writable handle is available. No open handle
+// is a normal pre-save state, not an error.
 async function saveData(){
   // Nothing should be persisted while the app is locked — there's no
   // encryption key to write with. This isn't a failure (e.g. autoSave()
@@ -3848,6 +3745,9 @@ async function saveData(){
     activeWard.lastModified=new Date().toISOString();
     autosaveWardToFile(activeWard); // Tauri-only best-effort backup; no-op in the browser build
   }
+  // Best-effort recovery snapshot for dirty data; successful .sav writes
+  // clear it. See SESSION-RESTORE CACHE.
+  if(_dirtySinceExport)saveSessionRestoreCache();
   const handle=_zipFileHandle;
   if(!handle)return; // nothing open to write to yet — see the function comment above
   try{
@@ -3866,13 +3766,8 @@ async function saveData(){
   }
 }
 
-// guardianData/_appState/_templateCache/_auditLogEntries are already fully
-// populated by this point — either by loadCaseFileAtLaunch() (an existing
-// .sav file was opened) or left at their empty defaults (a brand-new case,
-// same as a fresh install always started from). There is nothing separate
-// to load them FROM the way IndexedDB once was; this exists only so
-// initApp()'s call site reads the same either way and its return value
-// still answers "is there anything here".
+// State is already populated by .sav load, session recovery, or new-case
+// defaults. Retained as an async compatibility check for initApp().
 async function loadGuardianData(){
   return guardianData.wards.length>0||!!guardianData.guardianName;
 }
@@ -3938,20 +3833,9 @@ async function saveBlobAs(blob,suggestedName){
   return null;
 }
 
-// _zipFileHandle itself is a plain in-memory variable and does not survive
-// a page reload on its own. A copy of the handle IS additionally persisted
-// to IndexedDB (see savePersistedZipHandle()/loadPersistedZipHandle(), the
-// same deliberate exception documented above hasOpenedCaseBefore()) so
-// trySilentReopen() can try to read the file again on the next launch
-// without the file picker. That reuse is READ access only, and only when
-// the browser still honors the earlier grant — typically true within the
-// same browser session, typically reset to "ask again" after a full
-// browser restart. WRITE access (silent auto-save) always needs its own
-// fresh grant either way; requestPermission() for either mode always needs
-// a user gesture, so a browser restart still costs one click — just a
-// small native "Allow?" prompt reusing the remembered handle, not the full
-// picker dialog. refreshAutoSaveArmedStatus() keeps the sidebar honest
-// about the write side of this every time it changes.
+// The active handle lives in memory and is also saved in pg-launch-pref when
+// supported. A later launch may reuse it if the browser still grants access;
+// write permission can still require a fresh user gesture.
 let _zipFileHandle=null;
 async function rememberZipHandle(handle){
   _zipFileHandle=handle;
@@ -4131,6 +4015,7 @@ async function exportGuardianDataZip(){
     const handle=await saveBlobAs(blob,'guardianshipwarddata.sav');
     if(handle)await rememberZipHandle(handle);
     _dirtySinceExport=false;
+    clearSessionRestoreCache(); // this state is now safely in a .sav file
     hideAutoExportReminder();
     updateLastSavedIndicator();
     markCaseOpenedBefore(); // a real .sav now exists — next launch offers the fast-path Open screen
@@ -4160,6 +4045,7 @@ async function writeArchiveToHandle(handle,viaTimer){
     throw e;
   }
   _dirtySinceExport=false;
+  clearSessionRestoreCache(); // this state is now safely in a .sav file
   hideAutoExportReminder();
   refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
@@ -4264,6 +4150,18 @@ function setupLastSavedTicker(){
   _lastSavedTickTimer=setInterval(updateLastSavedIndicator,30*1000);
 }
 
+// Browsers without writable file handles cannot background-save a .sav file,
+// so show a stronger reminder every 15 minutes while changes are dirty.
+let _fallbackReminderTimer=null;
+function showFallbackSaveModal(){showModal('fallbackSaveModal');}
+function setupFallbackSaveReminder(){
+  if(window.showSaveFilePicker)return; // Chrome/Edge — real autosave covers this
+  if(_fallbackReminderTimer)clearInterval(_fallbackReminderTimer);
+  _fallbackReminderTimer=setInterval(()=>{
+    if(_dirtySinceExport)showFallbackSaveModal();
+  },15*60*1000);
+}
+
 function triggerImportZip(){
   const inp=document.getElementById('zip-import-input');
   if(inp){inp.value='';inp.click();}
@@ -4353,41 +4251,128 @@ async function importGuardianDataZip(file){
 }
 
 // ═══════════════════════════════════════════════════════
+// SESSION-RESTORE CACHE (crash recovery)
+// ═══════════════════════════════════════════════════════
+// Stores a temporary full-case snapshot in pg-session-cache while changes
+// are not yet in a .sav file. Encrypted mode uses AES-256-GCM; none mode uses
+// the PLAIN format. A successful .sav save clears the snapshot, and startup
+// offers any remaining snapshot before the normal Open/Start flow.
+const SESSION_CACHE_DB='pg-session-cache', SESSION_CACHE_STORE='snapshot';
+function _sessionCacheDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(SESSION_CACHE_DB,1);
+    req.onupgradeneeded=()=>req.result.createObjectStore(SESSION_CACHE_STORE);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function _sessionCacheGet(){
+  try{
+    const db=await _sessionCacheDb();
+    return await new Promise(resolve=>{
+      const req=db.transaction(SESSION_CACHE_STORE,'readonly').objectStore(SESSION_CACHE_STORE).get('current');
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>resolve(null);
+    });
+  }catch(e){return null;}
+}
+async function _sessionCachePut(val){
+  try{
+    const db=await _sessionCacheDb();
+    await new Promise(resolve=>{
+      const tx=db.transaction(SESSION_CACHE_STORE,'readwrite');
+      tx.objectStore(SESSION_CACHE_STORE).put(val,'current');
+      tx.oncomplete=resolve;tx.onerror=resolve;
+    });
+  }catch(e){/* non-critical -- see saveSessionRestoreCache()'s own catch */}
+}
+async function _sessionCacheClear(){
+  try{
+    const db=await _sessionCacheDb();
+    await new Promise(resolve=>{
+      const tx=db.transaction(SESSION_CACHE_STORE,'readwrite');
+      tx.objectStore(SESSION_CACHE_STORE).delete('current');
+      tx.oncomplete=resolve;tx.onerror=resolve;
+    });
+  }catch(e){/* non-critical */}
+}
+
+// Snapshot the current case without ZIP wrapping. saveData() calls this only
+// for dirty state.
+async function saveSessionRestoreCache(){
+  if(_securityMode==='encrypted'&&!_cryptoKey)return;
+  if(!guardianData.wards.length)return; // nothing worth recovering yet
+  try{
+    const salt=await loadAppState('cryptoSalt');
+    const verifier=await loadAppState('cryptoVerifier');
+    const wards=[];
+    for(const ward of guardianData.wards)wards.push({wardId:ward.wardId,enc:await encryptJSON(ward)});
+    const guardian=await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail});
+    await _sessionCachePut({
+      savedAt:Date.now(),securityMode:_securityMode,salt:salt||null,verifier:verifier||null,
+      guardian,wards,activeWardId:guardianData.activeWardId||null
+    });
+  }catch(e){console.warn('session-restore cache write failed',e);}
+}
+async function clearSessionRestoreCache(){await _sessionCacheClear();}
+
+// Check before Open/Start so unsaved work is not bypassed. Return true only
+// after a successful restore.
+async function checkSessionRestoreCacheAtLaunch(){
+  let cache;
+  try{cache=await _sessionCacheGet();}catch(e){return false;}
+  if(!cache||!Array.isArray(cache.wards)||!cache.wards.length)return false;
+  const proceed=confirm(
+    `This browser has unsaved work from a previous session (last changed ${formatRelativeTime(cache.savedAt)}) that was never saved to a .sav file — most likely because the tab was closed or crashed before a backup was made.\n\n`+
+    'Click OK to restore that work now, or Cancel to discard it and start fresh.'
+  );
+  if(!proceed){await clearSessionRestoreCache();return false;}
+  try{
+    let key=null;
+    if(cache.securityMode==='encrypted'){
+      const pw=prompt('Enter the master password to restore this session:');
+      if(!pw)return false; // leave the cache in place -- ask again next launch
+      key=await deriveAndVerifyKey(pw,{salt:cache.salt,verifier:cache.verifier,guardian:cache.guardian},null);
+    }
+    const restoredWards=[];
+    for(const w of cache.wards){
+      const ward=sanitizeObjectData(await decryptJSONWithKey(w.enc,key));
+      if(ward&&ward.wardId)restoredWards.push(ward);
+    }
+    if(!restoredWards.length)throw new Error('Archive contained no readable data.');
+    const g=await decryptJSONWithKey(cache.guardian,key);
+    guardianData.wards=restoredWards;
+    guardianData.guardianName=(g&&g.guardianName)||'';
+    guardianData.guardianEmail=(g&&g.guardianEmail)||'';
+    guardianData.activeWardId=cache.activeWardId||restoredWards[0].wardId;
+    _securityMode=cache.securityMode;
+    _cryptoKey=key;
+    _appState.securityMode=cache.securityMode;
+    _appState.cryptoSalt=cache.salt;
+    _appState.cryptoVerifier=cache.verifier;
+    _launchStateResolved=true;
+    _openedFileAtLaunch=true;
+    _dirtySinceExport=true; // this state has never actually landed in a .sav file
+    updateLastSavedIndicator();
+    alert(`Restored ${restoredWards.length} form(s) from your last unsaved session. Please save a backup file now.`);
+    return true;
+  }catch(e){
+    console.error('session restore failed',e);
+    alert('Could not restore the previous session (wrong password, or the cached data is corrupted). It has been left in place; you can try again next time the app opens.');
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
 // OPEN / START AT LAUNCH
-// With no case data left in browser storage, the app has no way to know
-// WHICH file to load until it's handed one — there is nothing left to
-// silently load the way IndexedDB used to. This runs once, at the very
-// top of initApp(), before ensureUnlocked(): "Open" populates
-// guardianData/_appState/_templateCache/_auditLogEntries/_cryptoKey/
-// _securityMode directly from the chosen file, so ensureUnlocked() sees a
-// securityMode/salt/verifier already in place (via _launchStateResolved)
-// and skips straight past its own prompt; "Start New" leaves everything at
-// its empty default, so ensureUnlocked() takes the same "fresh install"
-// branch it always has.
+// After session recovery is checked, try the remembered handle or ask the
+// user to open a .sav file or start a new case. Opening a file hydrates state
+// and resolves its security mode before ensureUnlocked().
 // ═══════════════════════════════════════════════════════
 
-// hasOpenedCaseBefore()/markCaseOpenedBefore() and
-// savePersistedZipHandle()/loadPersistedZipHandle() — the two exceptions
-// to this app's zero-browser-storage rule (see the comment above
-// _appState), both small values in the same tiny IndexedDB database, keyed
-// separately: a boolean ("has this browser opened or saved a .sav file
-// before") and the actual FileSystemFileHandle from the last one. Neither
-// is a filename or anything about the case itself, and a browser's file
-// system offers no "does this file exist" check without a picker dialog
-// anyway — so this still can't guarantee skipping the click every launch
-// needs. What it buys, in order of how good the outcome is:
-//   1. trySilentReopen() finds the remembered handle, the browser still
-//      honors its read permission (typically true within one browser
-//      session) — the file loads with no picker and no prompt at all.
-//   2. The grant has lapsed (typically after a full restart) — clicking
-//      Open re-requests it on the SAME remembered handle, which is a
-//      small native "Allow?" prompt, not the full file-picker dialog.
-//   3. No handle was ever remembered, or it's stale (file moved/deleted) —
-//      falls back to the full picker, same as always.
-// Either way, the startup screen also skips straight to a single Open
-// button (Start New one click further away) once this browser has shown
-// it has a real file to come back to, instead of asking Open-vs-Start-New
-// every visit.
+// pg-launch-pref stores a has-opened flag and the last FileSystemFileHandle.
+// A valid remembered grant permits silent reopen; an expired grant needs a
+// user click, and a missing or stale handle falls back to the file picker.
 const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags';
 const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle';
 function _launchPrefDb(){
@@ -5170,13 +5155,7 @@ function pageIntroRow(accordionHTML){
   return `<div class="dashboard-top-row${banner?'':' single-col'}" style="margin-bottom:1.25rem;">${accordionHTML}${banner}</div>`;
 }
 
-// "Recently Opened Wards" — a small MRU list living in the .sav file's
-// appState section (see buildExportZipBlob()) so the dashboard can offer
-// quick access to whichever wards were actually worked on recently, not
-// just alphabetical or last-modified order. This used to be a
-// localStorage list kept deliberately device-local, separate from the
-// encrypted case data; it now travels with the file instead, along with
-// everything else that used to be its own IndexedDB/localStorage entry.
+// Most-recently-used ward list stored in the .sav file's appState section.
 const RECENT_WARDS_MAX=5;
 
 function loadRecentlyOpenedWards(){
@@ -6041,32 +6020,14 @@ async function doGuardianSetup(){
 }
 
 // ═══════════════════════════════════════════════════════
-// ONE-TIME LEGACY BROWSER-STORAGE MIGRATION (Part B cutover)
-// Every install before this release kept everything in IndexedDB (wards,
-// appState, cached templates, the audit log) plus a handful of
-// localStorage/sessionStorage keys (theme, walkthrough state, the
-// recently-opened list, and migrateFromLocalStorage's own even-older
-// migration flag). This release removes all of that in favor of the .sav
-// file being the only persistence, so an install upgrading from before
-// this release must not silently lose whatever is still sitting in its
-// browser storage. This runs once, before promptOpenOrStartAtLaunch():
-// if anything old is found, it offers to save it as a .sav file, then
-// deletes the old database and clears the old keys either way (once the
-// user has answered), so this never has anything to do again after that.
+// LEGACY BROWSER-STORAGE MIGRATION
+// Older releases stored case data in ProbateGuardian IndexedDB and several
+// local/session-storage keys. Before normal startup, offer to export that
+// data to .sav, then remove only those legacy stores. Current recovery and
+// launch-preference databases use different names and are not migrated.
 //
-// This is the ONLY code left in the app that touches
-// indexedDB/localStorage/sessionStorage, and only to read them and then
-// delete what it read — never to write new data into them. It has nothing
-// left to do once every real install has passed through it once; delete
-// this whole function (and its call in initApp()) in a later release.
-//
-// Known gap: detecting the old IndexedDB database without indexedDB.
-// databases() (Safari does not implement it, as of this writing) would
-// mean calling indexedDB.open() blind, which creates an empty database of
-// its own if none existed — the opposite of what this function exists to
-// avoid. Rather than risk that, this skips the IndexedDB check entirely
-// wherever databases() is unavailable; the localStorage/sessionStorage
-// check below is unaffected and still runs.
+// Browsers without indexedDB.databases() cannot safely probe for the legacy
+// database without creating it, so only legacy local/session keys are checked.
 async function legacyIndexedDBExists(){
   try{
     if(!indexedDB.databases)return null;
@@ -7896,7 +7857,12 @@ function emptyDataGuardian(){
     attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null},
     bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaivedDate:'',
     serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
-    serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:''}
+    serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:''},
+    // Witnesses present during the physical inventory of the ward's personal
+    // effects. Optional (not export-blocking) -- the Cover page reminder
+    // states the requirement, but not every inventory necessarily has a
+    // witness present, and the app shouldn't second-guess that on its own.
+    witnesses:[]
   };
 }
 
@@ -8056,7 +8022,7 @@ function inpS(id,label,val,req=false,type='text'){
   const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
   const isZip=!isEmail&&label.toLowerCase().includes('zip');
   const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
-  const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security'));
+  const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
   const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
   const isBarNumber=!isEmail&&label.toLowerCase().includes('bar number');
   const isAmountField=type==='number';
@@ -8080,13 +8046,13 @@ function inpS(id,label,val,req=false,type='text'){
     oninput=`this.value=formatBarNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
   }
   const formatted=isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
-  const inputType=isAmountField?'text':type;
+  const inputType=isAmountField?'text':isSSN?'password':type;
   const inputMode=isAmountField?' inputmode="decimal"':'';
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
-  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:inputHtml;
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
+  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
 function selS(id,label,val,opts,req=false){return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label><select class="form-select" id="${id}" onchange="D['${id}']=this.value;autoSave();updateNavDots()"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;}
@@ -8198,6 +8164,7 @@ function pageCover(){
   const t=calcTotals();
   return `<div class="schedule-page">
     <h1>Cover &amp; Part I — Required Information</h1>
+    ${browserRecommendationNotice()}
     <div class="schedule-instructions">Fields marked <span class="req">*</span> are required before export.</div>
     ${pageIntroRow(`<div class="accordion mb-0">
       <div class="accordion-item">
@@ -8361,7 +8328,7 @@ function pagePart4(){
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" oninput="this.value=formatName(this.value);D.guardians[${i}].name=this.value;autoSave();updateNavDots()"></div>
           <div class="col-md-3"><label class="form-label">Signature Date<span class="req">*</span></label><input type="date" class="form-control" value="${esc(g.signatureDate)}" oninput="D.guardians[${i}].signatureDate=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatSSN(g.ssn||''))}" oninput="this.value=formatSSN(this.value);D.guardians[${i}].ssn=this.value;autoSave();updateNavDots()"></div>
+          <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(formatSSN(g.ssn||''))}" oninput="this.value=formatSSN(this.value);D.guardians[${i}].ssn=this.value;autoSave();updateNavDots()"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
           <div class="col-md-4"><label class="form-label">Phone Number<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatPhone(g.phone||''))}" oninput="this.value=formatPhone(this.value);D.guardians[${i}].phone=this.value;autoSave();updateNavDots()"></div>
           <div class="col-md-8"><label class="form-label">Email Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(g.email)}" oninput="D.guardians[${i}].email=this.value;autoSave();updateNavDots()"></div>
           <div class="col-md-6"><label class="form-label">Mailing Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.mailingStreet||''))}" oninput="this.value=formatAddress(this.value);D.guardians[${i}].mailingStreet=this.value;autoSave();updateNavDots()"></div>
@@ -9689,7 +9656,7 @@ function pagePlanASignatures(){
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" oninput="this.value=formatName(this.value);${set('name')}"></div>
         <div class="col-md-3"><label class="form-label">Date Signed${reqMark}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
-        <div class="col-md-3"><label class="form-label">SSN / EIN</label><input type="text" class="form-control" value="${esc(formatSSN(p.ssn||''))}" oninput="this.value=formatSSN(this.value);${set('ssn')}"></div>
+        <div class="col-md-3"><label class="form-label">SSN / EIN</label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(formatSSN(p.ssn||''))}" oninput="this.value=formatSSN(this.value);${set('ssn')}"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
         <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
         <div class="col-md-8"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" oninput="${set('email')}"></div>
         <div class="col-md-6"><label class="form-label">Mailing Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingStreet||''))}" oninput="this.value=formatAddress(this.value);${set('mailingStreet')}"></div>
@@ -10400,7 +10367,7 @@ function pagePlanISignatures(){
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" oninput="this.value=formatName(this.value);${set('name')}"></div>
         <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" oninput="${set('relationship')}"></div>
-        <div class="col-md-4"><label class="form-label">SSN/EIN</label><input type="text" class="form-control" value="${esc(gd.ssn||'')}" oninput="${set('ssn')}"></div>
+        <div class="col-md-4"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(gd.ssn||'')}" oninput="${set('ssn')}"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
         <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
         <div class="col-md-4"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
         <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" oninput="${set('street')}"></div>
@@ -10714,7 +10681,7 @@ function pagePlanMSignatures(){
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" oninput="this.value=formatName(this.value);${set('name')}"></div>
         <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" oninput="${set('relationship')}"></div>
-        <div class="col-md-4"><label class="form-label">Taxpayer ID #</label><input type="text" class="form-control" value="${esc(gd.tin||'')}" oninput="${set('tin')}"></div>
+        <div class="col-md-4"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(gd.tin||'')}" oninput="${set('tin')}"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
         <div class="col-md-4"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
         <div class="col-md-4"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
         <div class="col-md-6"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" oninput="${set('mailingStreet')}"></div>
@@ -11940,7 +11907,7 @@ function inpD(label,val,setter,req=false,type='text'){
   const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
   const isZip=!isEmail&&label.toLowerCase().includes('zip');
   const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
-  const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security'));
+  const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
   const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
   const isBarNumber=!isEmail&&label.toLowerCase().includes('bar number');
   const isAccountNumber=!isEmail&&!label.toLowerCase().includes('bank name')&&!label.toLowerCase().includes('loan')&&(label.toLowerCase().includes('account number')||label.toLowerCase().includes('account #')||label.toLowerCase().includes('bank account'));
@@ -11971,13 +11938,13 @@ function inpD(label,val,setter,req=false,type='text'){
     oninput=`this.value=formatAddress(this.value);${setter};autoSave();updateNavDots()`;
   }
   const formatted=isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
-  const inputType=isAmountField?'text':type;
+  const inputType=isAmountField?'text':isSSN?'password':type;
   const inputMode=isAmountField?' inputmode="decimal"':'';
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}"${inputMode} value="${esc(cleanedValue)}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
-  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:inputHtml;
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}" autocomplete="off"${inputMode} value="${esc(cleanedValue)}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
+  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
 function selD(label,val,setter,opts){
@@ -12012,6 +11979,7 @@ function pagePart1Annual(){
   const d=window.D; const t=calcTotalsAnnual();
   return `<div class="schedule-page">
   <h1>Part I — Required Information</h1>
+  ${browserRecommendationNotice()}
   <div class="schedule-instructions">Fields marked <span class="req">*</span> are required before export. Ward Name and Case Number auto-populate all schedule headers.</div>
   ${pageIntroRow(`<div class="accordion mb-0">
     <div class="accordion-item">
@@ -14159,7 +14127,7 @@ const mk = {
   a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',isPersonalResidence:false,isIncomeProperty:false,fullAssetValue:0,wardPercent:100}),
   a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
   b1:()=>({institutionName:'',isRestricted:false,accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
-  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:''}),
+  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
   b3:()=>({description:'',streetAddress:'',cityStateZip:'',isRestricted:false,fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0}),
   b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
   c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
@@ -15025,6 +14993,12 @@ function linkAccordions(idA,idB){
 }
 
 // ── helpers ────────────────────────────────────────────
+// Chrome and Edge support writable file handles for background .sav updates.
+// Other browsers require deliberate exports, so show this notice on every
+// form's Case Info or Cover page.
+function browserRecommendationNotice(){
+  return `<div class="schedule-instructions" style="margin-bottom:1rem;">${ic('alert',15)} <strong>Chrome or Microsoft Edge is recommended</strong> for the best experience — only those browsers support automatically saving your work in the background as you go. Firefox and Safari work fine too, but you'll need to save a backup file (.sav) manually and more often.</div>`;
+}
 function reqLabel(text){return `<label class="form-label"><strong>${text}</strong><span class="req">*</span></label>`;}
 function optLabel(text){return `<label class="form-label">${text}</label>`;}
 function formRow(...cols){
@@ -15311,6 +15285,33 @@ function removeGuardian(i){D.guardians.splice(i,1);autoSave();renderPage('/d1');
 function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5');}
 function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPage('/d5');}
 
+// Witnesses present during the physical inventory of the ward's personal
+// effects (Cover page reminder). Kept separate from the entryCard()/
+// addEntry()/removeEntry() machinery used by the 11 numbered schedules --
+// witnesses aren't a "schedule" in that sense (no dollar total, not part
+// of the schedule/route map those helpers key off of).
+function mkWitness(){return {name:'',address:'',occupation:''};}
+function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());autoSave();renderPage('/');}
+function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);autoSave();renderPage('/');}
+function witnessCardsHTML(){
+  const list=D.witnesses||[];
+  return list.map((w,i)=>`<div class="entry-card mb-2">
+    <div class="entry-card-header">
+      <span>Inventory Witness ${i+1}</span>
+      <span class="entry-card-actions">
+        <button class="btn btn-sm btn-outline-danger no-print" onclick="removeWitness(${i})">✕ Remove</button>
+      </span>
+    </div>
+    <div class="entry-card-body">
+      ${formRow(
+        col(5,reqLabel('Name')+`<input class="form-control" value="${esc(w.name)}" oninput="this.value=formatName(this.value);D.witnesses[${i}].name=this.value;autoSave()">`),
+        col(4,reqLabel('Address')+`<input class="form-control" value="${esc(w.address)}" oninput="this.value=formatAddress(this.value);D.witnesses[${i}].address=this.value;autoSave()">`),
+        col(3,reqLabel('Occupation')+`<input class="form-control" value="${esc(w.occupation)}" oninput="D.witnesses[${i}].occupation=this.value;autoSave()">`)
+      )}
+    </div>
+  </div>`).join('');
+}
+
 // ═══════════════════════════════════════════════════════
 // PAGE: HOME / COVER
 // ═══════════════════════════════════════════════════════
@@ -15318,6 +15319,7 @@ function pageHome(){
   const sdbFiledRow=D.hasSafeDepositBox?'':'display:none;';
   return `<div class="schedule-page">
   <h1>Verified Initial Inventory — Case Information</h1>
+  ${browserRecommendationNotice()}
   <div class="instructions-import-row">
     <div class="accordion mb-0">
       <div class="accordion-item">
@@ -15382,6 +15384,12 @@ function pageHome(){
         </div>
       </div>
     </div>
+  </div>
+  <div class="summary-box mb-3">
+    <h2 class="subsection-heading">Inventory Witnesses</h2>
+    <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
+    ${witnessCardsHTML()}
+    <button class="btn btn-outline-primary btn-sm no-print" onclick="addWitness()">+ Add Witness</button>
   </div>
   <div class="mb-3">
     ${pageNav('/')}
@@ -15519,7 +15527,9 @@ function syncB2VehicleDescription(i){
   const e=D.scheduleB2[i];
   if(!e)return;
   const parts=[e.vehicleYear,e.vehicleMake,e.vehicleModel].filter(Boolean).join(' ');
-  e.description=parts+(e.vehicleVin?(parts?' — VIN: ':'VIN: ')+e.vehicleVin:'');
+  let desc=parts+(e.vehicleVin?(parts?' — VIN: ':'VIN: ')+e.vehicleVin:'');
+  if(e.odometerMileage)desc+=(desc?' — ':'')+'Odometer: '+e.odometerMileage+' mi';
+  e.description=desc;
 }
 // Bespoke handler (not data-bind) because checking this box must trigger a
 // full re-render to swap the free-text Description field for the Year/
@@ -15547,6 +15557,7 @@ function pageScheduleB2(){
       col(3,reqLabel('Model')+`<input class="form-control" value="${esc(e.vehicleModel)}" oninput="D.scheduleB2[${i}].vehicleModel=this.value;syncB2VehicleDescription(${i});autoSave()">`),
       col(3,reqLabel('VIN')+`<input class="form-control" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,17);D.scheduleB2[${i}].vehicleVin=this.value;syncB2VehicleDescription(${i});autoSave()">`)
     )}
+    ${formRow(col(4,reqLabel('Odometer Mileage')+`<input class="form-control" inputmode="numeric" value="${esc(e.odometerMileage)}" oninput="this.value=this.value.replace(/[^0-9,]/g,'');D.scheduleB2[${i}].odometerMileage=this.value;syncB2VehicleDescription(${i});autoSave()">`))}
     <div class="vehicle-value-links">Look up a value at <a href="https://www.kbb.com/" target="_blank" rel="noopener noreferrer">Kelley Blue Book</a> or <a href="https://www.carfax.com/" target="_blank" rel="noopener noreferrer">Carfax</a> — both are non-affiliated commercial sites, offered only as a convenience; either generally provides an acceptable value. Print or save the page showing the final value you used and upload it below under Supporting Documents.</div>
     `:`
     ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
@@ -15839,7 +15850,7 @@ function validate(){
   d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`;req(e.institutionName,`${p} — Institution Name`);req(e.accountType,`${p} — Account Type`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetAmount<=0)errors.push(`${p} — Full Asset Amount must be > 0.`);});
   d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`;
     if(e.isVehicle){
-      req(e.vehicleYear,`${p} — Year`);req(e.vehicleMake,`${p} — Make`);req(e.vehicleModel,`${p} — Model`);req(e.vehicleVin,`${p} — VIN`);
+      req(e.vehicleYear,`${p} — Year`);req(e.vehicleMake,`${p} — Make`);req(e.vehicleModel,`${p} — Model`);req(e.vehicleVin,`${p} — VIN`);req(e.odometerMileage,`${p} — Odometer Mileage`);
     }else{
       req(e.description,`${p} — Description`);
     }
@@ -15919,6 +15930,12 @@ function buildPrintHTML(){
     ${td('Safe Deposit Box?',d.hasSafeDepositBox?'Yes — Inventory Filed: '+(d.safeDepositBoxFiled?'Yes':'No'):'No')}
     ${td('Amended Form?',d.isAmended?'Yes':'No')}
   </div>
+  ${(d.witnesses||[]).length?`<div class="doc-schedule-title">Inventory Witnesses</div>
+  <table class="doc-table">
+    <caption class="visually-hidden">Inventory Witnesses</caption>
+    <thead>${th('#','Name','Address','Occupation')}</thead>
+    <tbody>${d.witnesses.map((w,i)=>`<tr><td>${i+1}</td><td>${esc(w.name)}</td><td>${esc(w.address)}</td><td>${esc(w.occupation)}</td></tr>`).join('')}</tbody>
+  </table>`:''}
   <div class="doc-schedule-title mt-2">Part II — SUMMARY I</div>
   <div class="doc-schedule-title">SCHEDULE A: Real Estate Assets / Liabilities</div>
   <div class="doc-table-div mb-2">
@@ -16829,12 +16846,9 @@ window.addEventListener('hashchange',handleHash);
 window.addEventListener('beforeunload',flushPendingSave);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flushPendingSave();});
 
-// flushPendingSave() above is best-effort — a beforeunload handler can't
-// reliably await async work (there is no IndexedDB write to race anymore;
-// it's a full file write now, which takes longer, not less). With no
-// crash recovery underneath it, this is the difference between that write
-// silently not finishing and the guardian at least being asked first.
-// Wired up in initApp() so it isn't armed before there's anything to lose.
+// beforeunload cannot reliably await either file or IndexedDB writes. The
+// recovery snapshot is best-effort, so retain the native dirty-state warning.
+// initApp() arms it only after startup completes.
 function warnBeforeUnloadIfDirty(e){
   if(!_dirtySinceExport)return;
   e.preventDefault();
@@ -16884,22 +16898,14 @@ function embeddedTemplate(type){
   return (typeof t==='string'&&t.length)?t:null;
 }
 
-// The three Excel importers (importExcelFile/Simplified/Annual) used to
-// also call saveTemplate with the raw file a guardian imported, so a
-// custom court template stuck around and got reused for every later
-// export. That meant a full copy of whatever was imported — good or bad —
-// sat in IndexedDB indefinitely, base64-inflated by ~33%, with no path back
-// out; a single oversized import could burn through the storage quota on
-// its own. That call was removed from all three importers: an import is
-// now extract-then-discard, and saveTemplate is called from exactly
-// one place — just below, and only ever with the bundled blank template.
+// Imported spreadsheets are parsed and discarded. Only bundled blank
+// templates enter the in-memory template cache and subsequent .sav writes.
 async function ensureTemplate(type){
   const existing=await loadTemplate(type);
   if(existing)return existing;
   const bundled=embeddedTemplate(type);
   if(bundled){
-    // Cache it so later exports skip the decode, and so a template the user
-    // imports themselves later cleanly overwrites this default.
+    // Cache the bundled template so later exports skip the lookup.
     try{await saveTemplate(type,bundled);}catch(e){console.warn('Could not cache bundled template',type,e);}
     return bundled;
   }
@@ -16923,16 +16929,13 @@ async function autoLoadTemplates(){
 }
 
 async function initApp(){
-  // Order matters: the legacy sweep must see the browser's IndexedDB/
-  // localStorage before anything else touches them (there is nothing else
-  // left that does — see its own comment), and it must run before the
-  // open-or-start prompt so an upgrading install is offered its old data
-  // before being asked what to do this session. ensureUnlocked() comes
-  // after that prompt so it can skip straight past its own prompt when
-  // opening a file already resolved the password (_launchStateResolved).
+  // Migrate deprecated stores before current recovery/launch databases are
+  // consulted. Resolve recovery or file selection before the unlock flow.
   await runLegacyBrowserStorageMigrationIfNeeded();
   try { await window.tauriInvoke('set_secure_permissions'); } catch (e) { console.warn('Could not set secure permissions:', e); }
-  await promptOpenOrStartAtLaunch();
+  // Offer any unsaved recovery snapshot before the normal Open/Start choice.
+  const restoredFromSessionCache=await checkSessionRestoreCacheAtLaunch();
+  if(!restoredFromSessionCache)await promptOpenOrStartAtLaunch();
   await ensureUnlocked(); // blocks until a valid master-password key is in memory
   await loadGuardianData();
   await restoreFromFileBackupIfEmpty();
@@ -16950,6 +16953,7 @@ async function initApp(){
   await loadAutoExportPrefs();
   setupAutoExportTimer();
   setupLastSavedTicker();
+  setupFallbackSaveReminder();
   setupDragAndDropImport();
   window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
 }
@@ -17040,28 +17044,39 @@ function wireDateRangePair(fromInp,toInp){
 }
 
 // Guards against a native <input type="date"> committing an implausible
-// year (e.g. "0002-05-10" from a user typing "2" into the year segment
-// and tabbing away before finishing it) -- HTML5 date inputs treat any
-// 1-4 digit year as a "complete", non-empty value, so nothing else in
-// the app ever sees this as invalid or unanswered. One delegated
-// capture-phase listener on `document`, registered once here rather
-// than per input, so it runs before EVERY date field's own oninput/
-// data-bind change handler regardless of which of the app's several
-// wiring conventions that field uses -- catching this everywhere without
-// touching each of the ~50 individual date inputs. Deliberately hooks
-// 'change' (fires on blur/commit), not 'input' (fires per keystroke) --
-// min/max attributes on the element itself were tried for this same
-// problem and reverted (see enforceDateRanges() above): Chrome refuses
-// digit-by-digit typing into a date field once min/max are set. Blanking
-// the field here doesn't touch the attribute, so typing stays unaffected.
-document.addEventListener('change',e=>{
+// year (e.g. "0002-05-10" left behind by a stray keystroke) -- HTML5 date
+// inputs treat any 1-4 digit year as a "complete", non-empty value, so
+// nothing else in the app ever sees this as invalid or unanswered. One
+// delegated listener on `document`, registered once here rather than per
+// input, so it covers every date field regardless of which of the app's
+// several wiring conventions that field uses -- catching this everywhere
+// without touching each of the ~50 individual date inputs.
+// MUST be 'focusout', not 'change': Chrome fires 'change' on a date input
+// the instant the year segment LOOKS complete, including every transient
+// state while the user is still typing it digit-by-digit (typing "2026"
+// passes through "0002", "0020", "0202" first). Hooking 'change' here
+// blanked the field mid-keystroke on that transient "0002", which the
+// browser's date control then treated as a fresh, empty field and
+// restarted segment focus from the month -- so the rest of what the user
+// was typing landed in the wrong segments (reported: typing "05102026"
+// kept "0510" but the year ended up "0026" with month/day scrambled).
+// 'focusout' only fires once the user actually leaves the control -- HTML5
+// date inputs keep focus on the whole control while moving between their
+// internal month/day/year segments, so this never fires mid-entry, only
+// once a real (if implausible) value has actually been committed.
+// Bubbles on its own (unlike 'blur'), so no capture flag is needed.
+// Re-dispatches 'change' after clearing so bindForms()'s own listener
+// (and anything else watching 'change') sees the correction and doesn't
+// leave the blanked-out DOM value out of sync with window.D.
+document.addEventListener('focusout',e=>{
   const el=e.target;
-  if(el.tagName!=='INPUT'||el.type!=='date'||!el.value)return;
+  if(!el||el.tagName!=='INPUT'||el.type!=='date'||!el.value)return;
   const m=el.value.match(/^(\d{4})-\d{2}-\d{2}$/);
   if(m&&(+m[1]<1900||+m[1]>new Date().getFullYear()+30)){
     el.value='';
+    el.dispatchEvent(new Event('change',{bubbles:true}));
   }
-},true);
+});
 
 // Start
 setTimeout(()=>{
