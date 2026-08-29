@@ -170,9 +170,19 @@ SAVING AND BACKING UP YOUR DATA
 ================================
 
 How Auto-Save Works:
-- Changes are saved automatically to your computer as you type
+- In Chrome and Edge, once you've saved a .sav file once, later changes are
+  written back to that same file automatically as you work — no further
+  action needed
+- Firefox and Safari cannot write to your .sav file silently in the
+  background. On those browsers a reminder to save manually pops up every
+  15 minutes whenever there are unsaved changes
 - Sidebar shows: "Last backup: X minutes ago" or "Unsaved changes"
-- You can change Auto-Save frequency: 5 min / 10 min / 30 min / Off
+- You can change Auto-Save frequency: 5 min / 10 min / 30 min / Off (Chrome/Edge only)
+- If a tab is closed or crashes before you ever save a .sav file, reopening
+  the app in the SAME browser may offer to restore that unsaved work from a
+  temporary local cache. This is a short-term safety net, not a backup — it
+  disappears once you save (or decline the offer), and it never leaves your
+  device
 
 Creating Backups (CRITICAL):
 1. Click "Save Data File (.sav)" in the sidebar
@@ -186,6 +196,9 @@ Restoring from Backup:
 3. All wards and data are restored immediately
 
 Emergency Recovery:
+- The temporary local cache described above only survives a crash or an
+  accidentally closed tab in the SAME browser on the SAME device, and only
+  until the app is next opened there — it is not a substitute for a .sav backup
 - If your device fails or the file is lost, you can only restore from backups
 - If you lose all backups AND forget your password, the data is gone forever
 - Always keep at least 2 copies in different locations
@@ -288,8 +301,14 @@ Q: How long can I keep working on the same ward?
 A: As long as you want. There's no time limit. Auto-save keeps your work safe.
 
 Q: What happens if I close the browser/computer?
-A: Your data is stored on your computer (not the internet), so it persists.
-   When you reopen, your data is still there.
+A: Your data only lives in memory and in whatever .sav file you've saved —
+   it is not stored anywhere else automatically. In Chrome/Edge, once you've
+   saved a .sav file once, later changes keep writing back to that file, so
+   reopening it picks up where you left off. If you close or crash before
+   ever saving, the app may offer to recover the unsaved work from a
+   temporary local cache the next time you open it in the same browser — but
+   that's a short-term safety net, not a substitute for saving a .sav backup
+   yourself.
 
 Q: Do I need an internet connection?
 A: No. This app works 100% offline. No data ever leaves your computer.
@@ -331,6 +350,9 @@ SECURITY & PRIVACY
 
 Data Location:
 - Your data is stored on YOUR computer only (not the cloud)
+- The .sav file you save is the durable copy; the browser also keeps a
+  short-lived, encrypted local cache of unsaved changes purely for crash
+  recovery, cleared automatically as soon as you save a .sav file
 - No data is ever sent to servers or the internet
 - This is more private than online applications
 

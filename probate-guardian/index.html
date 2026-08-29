@@ -3474,7 +3474,9 @@ document.addEventListener('keydown',(e)=>{
 
 // Flushes pending work, clears the key and decrypted case data from memory,
 // then requires the password again. After unlock, this flow reloads from the
-// open .sav handle; the temporary session-recovery cache is not used here.
+// open .sav handle; with no handle yet, it falls back to the temporary
+// session-recovery cache flushPendingSave() just wrote (same password means
+// same derived key, so it decrypts with the key ensureUnlocked() produces).
 async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
   await flushPendingSave();
@@ -3486,9 +3488,8 @@ async function lockApp(){
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
   await ensureUnlocked(true);
-  // Rebuild memory from the open .sav file now that the key is available.
-  // With no file handle, this lock flow has no source from which to reload.
   if(handle){
+    // Rebuild memory from the open .sav file now that the key is available.
     try{
       const file=await handle.getFile();
       const zip=await JSZip.loadAsync(file);
@@ -3498,6 +3499,26 @@ async function lockApp(){
         await loadStateFromSavZip(zip,manifest,_cryptoKey);
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
+  }else{
+    // No .sav has ever been saved for this case, so the only place this
+    // data can come from is the recovery cache saved just above.
+    try{
+      const cache=await _sessionCacheGet();
+      if(cache&&Array.isArray(cache.wards)&&cache.wards.length){
+        const restoredWards=[];
+        for(const w of cache.wards){
+          const ward=sanitizeObjectData(await decryptJSONWithKey(w.enc,_cryptoKey));
+          if(ward&&ward.wardId)restoredWards.push(ward);
+        }
+        if(restoredWards.length){
+          const g=await decryptJSONWithKey(cache.guardian,_cryptoKey);
+          guardianData.wards=restoredWards;
+          guardianData.guardianName=(g&&g.guardianName)||'';
+          guardianData.guardianEmail=(g&&g.guardianEmail)||'';
+          guardianData.activeWardId=cache.activeWardId||restoredWards[0].wardId;
+        }
+      }
+    }catch(e){console.error('Could not reload case data from the recovery cache after unlocking',e);}
   }
   await loadGuardianData();
   const activeWard=getActiveWard();
@@ -3799,8 +3820,10 @@ async function saveData(){
     autosaveWardToFile(activeWard); // Tauri-only best-effort backup; no-op in the browser build
   }
   // Best-effort recovery snapshot for dirty data; successful .sav writes
-  // clear it. See SESSION-RESTORE CACHE.
-  if(_dirtySinceExport)saveSessionRestoreCache();
+  // clear it. See SESSION-RESTORE CACHE. Awaited so callers that depend on
+  // it having landed before acting further (lockApp() wiping memory,
+  // beforeunload) aren't racing an in-flight IndexedDB write.
+  if(_dirtySinceExport)await saveSessionRestoreCache();
   const handle=_zipFileHandle;
   if(!handle)return; // nothing open to write to yet — see the function comment above
   try{
@@ -6141,7 +6164,7 @@ async function runLegacyBrowserStorageMigrationIfNeeded(){
 
   const proceed=confirm(
     'This browser has case data saved by an earlier version of Probate Guardian.\n\n'+
-    'This version keeps nothing in browser storage — everything now lives in a .sav file you control.\n\n'+
+    'This version only keeps a full copy of your data in a .sav file you control. It also keeps a temporary recovery snapshot in this browser until you save one, but that snapshot is not a substitute for a .sav backup.\n\n'+
     'Click OK to save that existing data as a .sav file now (recommended), or Cancel to discard it and start fresh.'
   );
 
