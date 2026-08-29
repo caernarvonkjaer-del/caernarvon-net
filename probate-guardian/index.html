@@ -3320,6 +3320,15 @@ function promptPasswordForFile(manifest,zip){
     _unlockResolve=resolve;
     _pendingOpenManifest=manifest;
     _pendingOpenZip=zip;
+    // This can fire while #startup-choice-overlay is still up (its own
+    // z-index is higher, since it's normally hidden by the time any later
+    // overlay shows) -- opening a file is the one path where that hasn't
+    // happened yet, since _resolveStartupChoice() only runs once
+    // loadCaseFileAtLaunch() fully succeeds, i.e. after this password is
+    // entered. Left showing, it would sit on top and silently swallow every
+    // click meant for the password field below. Hiding it here is safe: this
+    // flow has no "go back" from an in-progress file open.
+    document.getElementById('startup-choice-overlay').classList.remove('show');
     const overlay=document.getElementById('unlock-overlay');
     document.getElementById('unlock-title').textContent='Enter Password';
     document.getElementById('unlock-subtitle').textContent='This case file is encrypted. Enter the master password it was saved under.';
