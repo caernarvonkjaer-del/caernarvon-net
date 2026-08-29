@@ -21,21 +21,43 @@ const {
   formatName, formatPhone, formatAddress,
 } = window;
 
-// Print/PDF export (docHeaderPlanSimplified, buildPrintHTMLPlanSimplified,
-// pagePrintPlanSimplified, doSavePdfPlanSimplified, planReadinessChecksSimplified)
-// has not moved out of legacy-app.js yet -- that is Milestone 3's Phase C.
-// Until then, the '/print' route delegates to the legacy global exactly as
-// it did before extraction, and validatePlanSimplified is exposed on
-// window so legacy-app.js's still-resident print functions (which call it)
-// keep working across this module boundary.
+// print.js is dynamically imported only when the user reaches /print or
+// triggers PDF export (Milestone 3, Phase C) -- same lazy boundary as
+// src/features/simplified-accounting/print.js. There is no excel.js for
+// this type: no Plan filing has Excel support (confirmed by grep and by
+// the app's own help copy -- see the Milestone 3 plan's "Confirmed facts").
+let _printModule = null;
+let _printModulePromise = null;
+function ensurePrintModule() {
+  if (_printModule) return Promise.resolve();
+  if (!_printModulePromise) {
+    _printModulePromise = import('./print.js').then((mod) => {
+      _printModule = mod;
+      // Referenced by name from rendered onclick="..." HTML attributes
+      // (doSavePdfPlanSimplified) or from legacy-app.js's shared
+      // planReadinessChecks() dispatcher (planReadinessChecksSimplified,
+      // still called for the other 3 not-yet-extracted Plan types too) --
+      // both only ever resolve against the global scope, never a module's
+      // own scope, so both must be real `window` properties.
+      window.doSavePdfPlanSimplified = () => _printModule.doSavePdf();
+      window.planReadinessChecksSimplified = () => _printModule.planReadinessChecksSimplified();
+    });
+  }
+  return _printModulePromise;
+}
+
 export async function mount(container, page) {
   let html;
-  switch (page) {
-    case '/':      html = pagePlanSCover(); break;
-    case '/p2':    html = pagePlanSQuestions(); break;
-    case '/p3':    html = pagePlanSSignatures(); break;
-    case '/print': html = window.pagePrintPlanSimplified(); break;
-    default:       html = pagePlanSCover();
+  if (page === '/print') {
+    await ensurePrintModule();
+    html = _printModule.pagePrintPlanSimplified();
+  } else {
+    switch (page) {
+      case '/':   html = pagePlanSCover(); break;
+      case '/p2': html = pagePlanSQuestions(); break;
+      case '/p3': html = pagePlanSSignatures(); break;
+      default:    html = pagePlanSCover();
+    }
   }
   container.innerHTML = html;
   container.scrollTop = 0;
@@ -197,8 +219,3 @@ export function validatePlanSimplified(){
   req(g.signatureDate,'Signatures — Guardian 1 date signed is required');
   return errs;
 }
-
-// legacy-app.js's pagePrintPlanSimplified()/doSavePdfPlanSimplified() (not
-// yet moved -- Phase C) call this across the module boundary; see this
-// file's header comment.
-window.validatePlanSimplified = validatePlanSimplified;
