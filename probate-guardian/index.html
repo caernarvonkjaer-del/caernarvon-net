@@ -15525,9 +15525,16 @@ function syncB2VehicleDescription(i){
 // full re-render to swap the free-text Description field for the Year/
 // Make/Model/VIN fields -- bindForms()'s generic checkbox wiring only
 // calls afterChange(), which never re-renders the page.
+// Deliberately does NOT call syncB2VehicleDescription() here: on an
+// existing row the vehicle fields start blank, so syncing immediately
+// would overwrite (and silently lose) whatever free-text description was
+// already there before any Year/Make/Model/VIN has been typed. Syncing
+// only on those fields' own oninput (see pageScheduleB2()) means
+// description is only touched once the guardian has actually entered
+// replacement data -- unchecking the box before then leaves the original
+// description untouched.
 function toggleB2Vehicle(i,checked){
   D.scheduleB2[i].isVehicle=checked;
-  if(checked)syncB2VehicleDescription(i);
   autoSave();
   renderPage(currentPage);
 }
