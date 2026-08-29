@@ -6676,32 +6676,28 @@ const PAGES_GUARDIAN=[
 // Simplified Accounting is extracted into src/features/simplified-accounting/
 // (Milestone 2, Phase D) -- these two bridges dynamically import it, cache
 // the module, and delegate. See src/features/simplified-accounting/index.js
-// for the module itself; see the Milestone 2 plan's "Problem 2" for why this
-// hand-rolled bridge exists instead of INDEX-SPLIT-PLAN.md's full
-// staging-host router (that router arbitrates between several competing
-// lazy features; this milestone has exactly one).
-let _simplifiedFeaturePromise=null;
-function _loadSimplifiedFeature(){
-  if(!_simplifiedFeaturePromise){
-    // Routed through window.loadSimplifiedFeature (src/features-loader.js)
-    // rather than a direct import() here -- this file is an opaque classic-
-    // script static passthrough Vite never processes, so a dynamic import()
-    // written directly in this file would be invisible to Vite's build and
-    // the target files would simply be missing from dist/web and
-    // dist/portable. See features-loader.js's own comment for the full
-    // reasoning, including why dist/portable specifically needs this.
-    _simplifiedFeaturePromise=window.loadSimplifiedFeature();
-  }
-  return _simplifiedFeaturePromise;
-}
+// for the module itself; see the Milestone 2 plan's "Problem 2" (and the
+// Milestone 3 plan's "Problem 2", which generalized this into
+// window.createFeatureBridge once a second feature proved the shape was
+// genuinely duplicated) for why this hand-rolled bridge exists instead of
+// INDEX-SPLIT-PLAN.md's full staging-host router (that router arbitrates
+// between several *concurrently competing* lazy features -- this app never
+// mounts two features racing for the same container, since switchWard()
+// always fully changes the active ward before any render happens).
+//
+// Routed through window.loadSimplifiedFeature (src/features-loader.js)
+// rather than a direct import() here -- this file is an opaque classic-
+// script static passthrough Vite never processes, so a dynamic import()
+// written directly in this file would be invisible to Vite's build and the
+// target files would simply be missing from dist/web and dist/portable. See
+// features-loader.js's own comment for the full reasoning, including why
+// dist/portable specifically needs this.
+const _simplifiedFeatureBridge=window.createFeatureBridge(()=>window.loadSimplifiedFeature());
 async function mountSimplifiedFeature(page){
-  const el=document.getElementById('main-content');
-  const mod=await _loadSimplifiedFeature();
-  await mod.mount(el,page);
+  await _simplifiedFeatureBridge.mountPage(document.getElementById('main-content'),page);
 }
 async function mountSimplifiedNav(container){
-  const mod=await _loadSimplifiedFeature();
-  mod.mountNav(container);
+  await _simplifiedFeatureBridge.mountNav(container);
 }
 
 function buildNavAnnual(container){
