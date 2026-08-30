@@ -1,56 +1,156 @@
-// Versioned app-shell cache for offline startup. Bump CACHE_VERSION on any
-// deploy that changes a precached file — that both changes this file's bytes
-// (so the browser detects an update) and gives activate() a new cache name
-// to switch to, so the old one gets cleaned up.
-const CACHE_VERSION='v1';
-const CACHE_NAME=`pg-shell-${CACHE_VERSION}`;
-const PRECACHE_URLS=[
-  './',
-  'index.html',
-  'manifest.json',
-  'lib/bootstrap.min.css',
-  'lib/bootstrap.bundle.min.js',
-  'lib/html2pdf.bundle.min.js',
-  'lib/exceljs.min.js',
-  'lib/jszip.min.js',
-  'templates/annual-template.js',
-  'templates/simplified-template.js',
-  'templates/guardian-template.js',
-  'icons/icon-192.png',
-  'icons/icon-512.png'
-];
+// dist/web/sw.js is generated from this source file after Vite has emitted
+// every hashed chunk. The token below is replaced with one content-revisioned
+// manifest whose entries are classified as either critical or offline.
+const PRECACHE_MANIFEST=/*__PG_PRECACHE_MANIFEST__*/ null;
+const CACHE_PREFIX='pg-';
+const CACHE_VERSION=PRECACHE_MANIFEST&&PRECACHE_MANIFEST.cacheVersion;
+const SHELL_CACHE=`${CACHE_PREFIX}shell-${CACHE_VERSION}`;
+const OFFLINE_CACHE=`${CACHE_PREFIX}offline-${CACHE_VERSION}`;
+const READY_MARKER_URL=new URL(`__pg_offline_ready__/${CACHE_VERSION}`,self.registration.scope).href;
+const entries=PRECACHE_MANIFEST?PRECACHE_MANIFEST.entries:[];
+const criticalEntries=entries.filter(entry=>entry.tier==='critical');
+const offlineEntries=entries.filter(entry=>entry.tier==='offline');
+const entryByUrl=new Map(entries.map(entry=>[new URL(entry.url,self.registration.scope).href,entry]));
+let offlinePackPromise=null;
 
-self.addEventListener('install',e=>{
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(PRECACHE_URLS)));
+function requestFor(entry){
+  return new Request(new URL(entry.url,self.registration.scope),{cache:'reload'});
+}
+
+async function responseRevision(response){
+  const digest=await crypto.subtle.digest('SHA-256',await response.clone().arrayBuffer());
+  return [...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('').slice(0,16);
+}
+
+async function fetchVerified(entry,request=requestFor(entry)){
+  const response=await fetch(request);
+  if(!response.ok)throw new Error(`HTTP ${response.status}`);
+  const actualRevision=await responseRevision(response);
+  if(actualRevision!==entry.revision)throw new Error(`Revision mismatch for ${entry.url}`);
+  return response;
+}
+
+function isUserDataUrl(url){
+  return url.protocol==='blob:'||/\.sav$/i.test(url.pathname)||/(^|\/)case-data(?:\/|$)/i.test(url.pathname);
+}
+
+async function installCriticalShell(){
+  if(!PRECACHE_MANIFEST)throw new Error('This service worker has no generated precache manifest.');
+  const cache=await caches.open(SHELL_CACHE);
+  try{
+    const responses=await Promise.all(criticalEntries.map(async entry=>({entry,response:await fetchVerified(entry)})));
+    await Promise.all(responses.map(({entry,response})=>cache.put(requestFor(entry),response)));
+  }catch(error){
+    await caches.delete(SHELL_CACHE);
+    throw error;
+  }
+}
+
+async function offlineStatus(){
+  if(!PRECACHE_MANIFEST)return {ready:false,available:false,cacheVersion:null,criticalCount:0,offlineCount:0,cachedCount:0};
+  const cache=await caches.open(OFFLINE_CACHE);
+  const marker=await cache.match(READY_MARKER_URL);
+  let ready=false;
+  if(marker){
+    try{
+      const value=await marker.json();
+      ready=value.ready===true&&value.cacheVersion===CACHE_VERSION;
+    }catch{}
+  }
+  const cached=await cache.keys();
+  return {
+    ready,
+    available:true,
+    cacheVersion:CACHE_VERSION,
+    criticalCount:criticalEntries.length,
+    offlineCount:offlineEntries.length,
+    cachedCount:cached.filter(request=>request.url!==READY_MARKER_URL).length,
+  };
+}
+
+async function downloadOfflinePack(){
+  const existing=await offlineStatus();
+  if(existing.ready)return existing;
+  const cache=await caches.open(OFFLINE_CACHE);
+  const failures=[];
+  for(const entry of offlineEntries){
+    const request=requestFor(entry);
+    if(await cache.match(request))continue;
+    try{
+      const response=await fetchVerified(entry,request);
+      await cache.put(request,response);
+    }catch(error){
+      failures.push(`${entry.url}: ${error&&error.message||error}`);
+    }
+  }
+  if(failures.length)throw new Error(`Offline pack incomplete (${failures.length} failed): ${failures.join('; ')}`);
+  await cache.put(READY_MARKER_URL,new Response(JSON.stringify({ready:true,cacheVersion:CACHE_VERSION}),{
+    headers:{'Content-Type':'application/json'},
+  }));
+  return offlineStatus();
+}
+
+function reply(event,message){
+  if(event.ports&&event.ports[0])event.ports[0].postMessage(message);
+  else if(event.source)event.source.postMessage(message);
+}
+
+self.addEventListener('install',event=>{
+  event.waitUntil(installCriticalShell());
 });
 
-self.addEventListener('activate',e=>{
-  e.waitUntil(
-    caches.keys()
-      .then(names=>Promise.all(names.filter(n=>n!==CACHE_NAME).map(n=>caches.delete(n))))
-      .then(()=>self.clients.claim())
-  );
+// Do not claim existing clients. On an update, tabs running the previous
+// JavaScript remain controlled by their matching worker until they reload.
+// The tab that explicitly approves an update reloads after activation.
+
+self.addEventListener('message',event=>{
+  if(event.data&&event.data.type==='GET_OFFLINE_STATUS'){
+    event.waitUntil(offlineStatus().then(status=>reply(event,{type:'OFFLINE_STATUS',...status})));
+    return;
+  }
+  if(event.data&&event.data.type==='DOWNLOAD_OFFLINE_PACK'){
+    const attempt=offlinePackPromise??=downloadOfflinePack();
+    event.waitUntil(
+      attempt
+        .then(status=>reply(event,{type:'OFFLINE_PACK_READY',...status}))
+        .catch(error=>reply(event,{type:'OFFLINE_PACK_FAILED',message:String(error&&error.message||error)}))
+        .finally(()=>{if(offlinePackPromise===attempt)offlinePackPromise=null;})
+    );
+    return;
+  }
+  if(event.data&&event.data.type==='ACTIVATE_UPDATE'){
+    event.waitUntil(self.skipWaiting());
+  }
 });
 
-// Cache-first for the app shell, with the network response cached for next
-// time when something wasn't precached. Case data never flows through
-// fetch() — it lives in memory and in .sav files written directly via the
-// File System Access API — so this only ever handles static asset requests.
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const url=new URL(e.request.url);
-  if(url.origin!==self.location.origin)return;
-  e.respondWith(
-    caches.match(e.request).then(cached=>{
+self.addEventListener('fetch',event=>{
+  if(!PRECACHE_MANIFEST||event.request.method!=='GET')return;
+  const url=new URL(event.request.url);
+  if(url.origin!==self.location.origin||isUserDataUrl(url))return;
+
+  if(event.request.mode==='navigate'){
+    event.respondWith(
+      caches.open(SHELL_CACHE)
+        .then(cache=>cache.match(new URL('./index.html',self.registration.scope)))
+        .then(cached=>cached||fetch(event.request))
+    );
+    return;
+  }
+
+  const normalized=new URL(url.href);normalized.search='';normalized.hash='';
+  const entry=entryByUrl.get(normalized.href);
+  if(!entry)return;
+  const cacheName=entry.tier==='critical'?SHELL_CACHE:OFFLINE_CACHE;
+  event.respondWith(
+    caches.open(cacheName).then(async cache=>{
+      const cached=await cache.match(normalized.href);
       if(cached)return cached;
-      return fetch(e.request).then(res=>{
-        if(res.ok){
-          const copy=res.clone();
-          caches.open(CACHE_NAME).then(cache=>cache.put(e.request,copy));
-        }
-        return res;
-      }).catch(()=>cached);
+      const response=await fetch(event.request);
+      if(response.ok){
+        const actualRevision=await responseRevision(response);
+        if(actualRevision===entry.revision)await cache.put(normalized.href,response.clone());
+      }
+      return response;
     })
   );
 });

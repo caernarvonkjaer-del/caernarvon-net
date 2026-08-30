@@ -20,13 +20,47 @@ export function createFeatureBridge(loader) {
   function load() {
     return modulePromise ??= loader();
   }
+  function showLoadFailure(container) {
+    container.replaceChildren();
+    const panel = document.createElement('div');
+    panel.className = 'alert alert-danger';
+    panel.setAttribute('role', 'alert');
+    const title = document.createElement('strong');
+    title.textContent = 'This section could not be loaded.';
+    const detail = document.createElement('p');
+    detail.className = 'mb-2';
+    detail.textContent = 'Check your connection or finish downloading offline access, then reload this page.';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-sm btn-outline-danger';
+    button.textContent = 'Reload';
+    button.addEventListener('click', () => window.location.reload(), { once: true });
+    panel.append(title, detail, button);
+    container.append(panel);
+  }
+  async function mountPage(container, page) {
+    let mod;
+    try {
+      mod = await load();
+    } catch (error) {
+      modulePromise = null;
+      console.warn('Feature load failed', error);
+      showLoadFailure(container);
+      return;
+    }
+    await mod.mount(container, page);
+  }
   return {
-    async mountPage(container, page) {
-      const mod = await load();
-      await mod.mount(container, page);
-    },
+    mountPage,
     async mountNav(container) {
-      const mod = await load();
+      let mod;
+      try {
+        mod = await load();
+      } catch (error) {
+        modulePromise = null;
+        console.warn('Feature navigation load failed', error);
+        return;
+      }
       mod.mountNav(container);
     },
   };

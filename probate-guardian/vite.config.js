@@ -31,6 +31,8 @@ const STATIC_COPY_TARGETS = [
   { src: 'templates', dest: '.' },
   { src: 'icons', dest: '.' },
   { src: 'manifest.json', dest: '.' },
+  // build:web runs scripts/generate-service-worker.mjs after Vite copies
+  // this source template, injecting a manifest derived from dist/web.
   { src: 'sw.js', dest: '.' },
   { src: 'src/legacy-app.js', dest: '.' },
   // fragments/*.html: src/fragment-loader.js fetches these as plain static

@@ -946,21 +946,24 @@ silently.
 
 ### Milestone 10: Rebuild the service worker (step 7)
 
-`sw.js` is still the pre-plan version: one flat `cache.addAll()`, immediate
-`skipWaiting()`, no offline-pack tier, no version-atomic ready marker. None of
-step 7's design has been implemented yet. Needed:
+**Implemented:** `build:web` now runs `scripts/generate-service-worker.mjs`
+after Vite. The script inventories and content-hashes the actual `dist/web`
+runtime artifacts, derives critical/offline subsets from that one manifest,
+and injects it into the copied worker template. The hosted build registers
+that generated worker; source/dev builds do not register it, and `file://`
+portable remains explicitly service-worker-free.
 
 - Split into critical-shell (atomic, blocks install) vs. offline-pack
   (nonblocking, `DOWNLOAD_OFFLINE_PACK` message-triggered, `event.waitUntil()`
-  tracked) tiers.
-- Build-generated precache manifest (both lists as subsets of one manifest)
-  instead of the current hand-maintained `PRECACHE_URLS` array — this has
-  already gone stale relative to the split (it precaches whole libraries, not
-  feature chunks) and will only get worse by hand.
-- Version-atomic "offline ready" marker, deferred `skipWaiting()`/update
-  prompt, and the retry-after-partial-failure behavior documented above.
-- Never cache `.sav`/case data/blob URLs (current `sw.js` doesn't, and that
-  must not regress).
+  tracked) tiers: complete.
+- Build-generated, content-revisioned manifest and byte verification for both
+  tiers: complete.
+- Version-atomic ready marker, visible failure/retry state, and user-triggered
+  activation of a waiting update: complete. Old version caches are retained
+  while older clients may still need them; bounded stale-cache cleanup remains
+  a future storage-maintenance refinement.
+- `.sav`, case-data, blob, cross-origin, and non-manifest requests are never
+  cached: covered by focused hosted-build tests.
 
 ### Milestone 11: CSP and inline-handler removal
 
