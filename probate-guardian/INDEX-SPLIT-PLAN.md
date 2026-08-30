@@ -902,3 +902,108 @@ release.
   confirmed to be served with correct JavaScript MIME types.
 - A chunk load failure shows a visible error state with a retry action instead
   of a blank screen (see router error handling above).
+
+## Current status and remaining work (as of Milestone 8)
+
+Milestones 1–8 are shipped and live: build system, pilot (Simplified
+Accounting), all four Plan variants, Annual Accounting, and Guardian
+Inventory — every feature-pack extraction from step 5 except Dashboard/
+ward-management is done. `src/legacy-app.js` is down to ~8,060 lines (from
+17,180). Each extracted feature's `print.js`/`excel.js` load together via one
+`Promise.all()` at first mount, matching step 6.
+
+**Design correction versus the router section above:** the shipped router is
+`src/core/feature-bridge.js`'s small `createFeatureBridge()` factory
+(`mountPage()`/`mountNav()`, cache the load promise, no `dispose()`), not the
+detached-staging-host/`pendingController`/`navSeq` router documented earlier
+in this file. That design was deliberately not built: this app never mounts
+two features racing for the same container — `switchWard()` fully completes
+before any render starts — so the concurrent-candidate arbitration the
+staging-host router exists to solve doesn't apply here. Extracted renderers
+also return HTML strings with inline `onclick=`/`oninput=` attributes, so
+`dispose()` is just `container.replaceChildren()` at the three call sites
+identified when this shape was promoted to shared code (Milestone 3). Treat
+the earlier router section as an alternative that was considered and
+consciously simplified away, not as an outstanding gap — do not "fix" the
+code to match it.
+
+### Milestone 9: Dashboard and ward-management extraction
+
+The last item on step 5's list. Currently in `legacy-app.js`:
+`pageDashboard()`, `renderDashboardGrid()`, `renderDashboardSummary()`,
+ward-card rendering, and the ward-management flows (`addWard`, `switchWard`,
+`convertWard`, archive/delete). Follow the same shape as every prior
+extraction: `src/features/dashboard/index.js` with `mount()`/`mountNav()`,
+promoted through `createFeatureBridge()`, with an `ensureXFeatureReady()`-style
+pre-load only if some other still-legacy code needs dashboard data
+synchronously before this module loads (check `getWardHeadlineTotal()` and
+nav-dot code first — this exact pattern bit Guardian Inventory in Milestone 8
+and is worth checking up front this time instead of discovering it via a
+crash). Sweep for the same three bug classes every milestone has hit: an
+unbridged `window.*` reference, a moved `const`/`let` that isn't a `window`
+property, and a `window.validate*`-style wrapper that needs to fail loud, not
+silently.
+
+### Milestone 10: Rebuild the service worker (step 7)
+
+`sw.js` is still the pre-plan version: one flat `cache.addAll()`, immediate
+`skipWaiting()`, no offline-pack tier, no version-atomic ready marker. None of
+step 7's design has been implemented yet. Needed:
+
+- Split into critical-shell (atomic, blocks install) vs. offline-pack
+  (nonblocking, `DOWNLOAD_OFFLINE_PACK` message-triggered, `event.waitUntil()`
+  tracked) tiers.
+- Build-generated precache manifest (both lists as subsets of one manifest)
+  instead of the current hand-maintained `PRECACHE_URLS` array — this has
+  already gone stale relative to the split (it precaches whole libraries, not
+  feature chunks) and will only get worse by hand.
+- Version-atomic "offline ready" marker, deferred `skipWaiting()`/update
+  prompt, and the retry-after-partial-failure behavior documented above.
+- Never cache `.sav`/case data/blob URLs (current `sw.js` doesn't, and that
+  must not regress).
+
+### Milestone 11: CSP and inline-handler removal
+
+Currently 47 inline `onclick=`/similar handlers remain in `legacy-app.js` and
+30 in `index.html` (down from the original 291+150, since every extracted
+feature's *own* handlers moved with it, but shell-level and still-legacy
+dashboard/ward-management markup have not been converted). No CSP meta tag
+exists yet. This is the step 2 "remove those handlers in a later pass" and
+the acceptance criteria's CSP/MIME-type items, both still open. Do this after
+Milestone 9, since dashboard/ward-management extraction will move a
+meaningful fraction of the remaining 47 along with it — converting handlers
+in code about to move is wasted work.
+
+### Milestone 12: Shrink the legacy entry, evaluate a real `main.js`
+
+Once Milestones 9–11 land, re-assess `legacy-app.js`'s remaining size and
+whether it's small enough to represent genuinely shared core (state, crypto,
+persistence, audit log, router bridge, shell rendering) rather than a
+monolith with holes cut out of it. If so, this is the point to revisit
+step 2's classic-script-vs-`window`-shim decision: `legacy-app.js` has stayed
+a classic script through every milestone (the shim option was never taken),
+which has worked because the shared code genuinely needs to expose real
+globals for inline handlers. Converting to a real ES-module `src/main.js`
+bootstrap only makes sense once inline handlers are gone (Milestone 11) and
+is optional cleanup, not a blocker for anything else in this plan.
+
+### Milestone 13: Measure and finish (step 8), then acceptance-criteria sign-off
+
+- Re-run the step-1 baseline measurements (transfer size, parse/evaluate
+  time, heap, DOM-node count) and compare against the numeric targets
+  recorded before extraction began.
+- Run the warmed-baseline leak-test procedure (mount/dispose 20 cycles per
+  feature) for every extracted feature, not just the ones checked
+  incidentally during their own milestone.
+- Offline PWA test (first-use-never-opened-feature precondition) against the
+  Milestone 10 service worker, plus the fail-then-retry `DOWNLOAD_OFFLINE_PACK`
+  test.
+- Cross-browser pass (Chrome, Edge, Firefox, Safari) — writable-file-handle
+  behavior differs, and this has only been spot-checked in Chromium so far
+  via the Playwright suite's `chromium` project.
+- Update `HOW-TO-RUN.txt` to document the hosted/PWA and portable release
+  paths now that `dist/web`/`dist/portable` both exist — still pending since
+  the "Required decision" section's dual-distribution choice was recorded.
+- Walk the acceptance-criteria list above item by item and mark each resolved
+  or explicitly deferred with a reason, rather than assuming completion.
+
