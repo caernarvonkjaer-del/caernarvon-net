@@ -8,9 +8,17 @@
 // for the same container. The limitation and the decision not to widen this
 // milestone into a router rewrite are recorded under Milestone 12.
 //
-// dispose() is deliberately not part of this factory. Callers clear their own
-// container, shared event delegates are registered once, and extracted form
-// features replace their container-local delegates with AbortControllers.
+// Track the mounted module per shared host so changing features tears down
+// container-local delegates before the next renderer takes ownership.
+const activeFeatureByContainer = new WeakMap();
+
+export function disposeActiveFeature(container, nextModule = null) {
+  const activeModule = activeFeatureByContainer.get(container);
+  if (!activeModule || activeModule === nextModule) return;
+  activeModule.dispose?.(container);
+  activeFeatureByContainer.delete(container);
+}
+
 export function createFeatureBridge(loader) {
   let modulePromise = null;
   function load() {
@@ -44,7 +52,9 @@ export function createFeatureBridge(loader) {
       showLoadFailure(container);
       return;
     }
+    disposeActiveFeature(container, mod);
     await mod.mount(container, page);
+    activeFeatureByContainer.set(container, mod);
   }
   return {
     mountPage,
@@ -67,3 +77,4 @@ export function createFeatureBridge(loader) {
 // directly -- see src/fragment-loader.js's window.loadFragment comment for
 // the same pattern. Remove once a real src/main.js bootstrap exists.
 window.createFeatureBridge = createFeatureBridge;
+window.disposeActiveFeature = disposeActiveFeature;

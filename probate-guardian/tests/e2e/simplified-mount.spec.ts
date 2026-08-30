@@ -37,7 +37,10 @@ test.describe('simplified-accounting feature module', () => {
 
     let alertMessage = '';
     page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.evaluate(() => (window as any).doSavePdfSimplified());
+    await page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    });
     await page.waitForTimeout(500);
 
     expect(alertMessage).toContain('Cannot export');
@@ -50,7 +53,7 @@ test.describe('simplified-accounting feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSavePdfSimplified());
+    await page.locator('[data-simplified-action="save-pdf"]').click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
@@ -69,7 +72,7 @@ test.describe('simplified-accounting feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSaveExcelSimplified());
+    await page.locator('[data-simplified-action="save-excel"]').click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
     const xlsxPath = path.join(os.tmpdir(), `pg-simplified-excel-${Date.now()}.xlsx`);
@@ -125,6 +128,18 @@ test.describe('simplified-accounting feature module', () => {
     const mainContentCount = await page.locator('#main-content').count();
     expect(mainContentCount).toBe(1);
     await expect(page.locator('#main-content')).not.toBeEmpty();
+
+    const staleDelegateCalls = await page.evaluate(() => {
+      let calls = 0;
+      (window as any).openFloridaCourtPortal = () => { calls += 1; };
+      const probe = document.createElement('button');
+      probe.dataset.simplifiedAction = 'open-court-portal';
+      document.getElementById('main-content')?.append(probe);
+      probe.click();
+      probe.remove();
+      return calls;
+    });
+    expect(staleDelegateCalls).toBe(0);
 
     const heapUsed = await page.evaluate(() => (performance as any).memory?.usedJSHeapSize ?? null);
     // Informational, not a hard gate this milestone (see the Milestone 2

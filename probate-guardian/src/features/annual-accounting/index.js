@@ -50,9 +50,6 @@ function ensureLazyModules() {
     _lazyModulesPromise = Promise.all([import('./print.js'), import('./excel.js')]).then(([print, excel]) => {
       _printModule = print;
       _excelModule = excel;
-      window.doSavePdfAnnual = () => _printModule.doSavePdf();
-      window.doSaveExcelAnnual = () => _excelModule.doSaveExcel();
-      window.importExcelAnnual = (input) => _excelModule.importExcel(input);
     });
   }
   return _lazyModulesPromise;

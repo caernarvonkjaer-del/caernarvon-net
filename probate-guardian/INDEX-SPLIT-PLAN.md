@@ -1021,8 +1021,9 @@ than feature implementations left behind by the split.
   and Playwright setup. These are current cross-boundary contracts, not all
   accidental leftovers.
 - Classic-only shims are narrower: the eight feature-loader functions,
-  `createFeatureBridge`, `loadFragment`, and the six `emptyData*` factories are
-  assigned to `window` because the classic entry cannot import their modules.
+  `createFeatureBridge`, `disposeActiveFeature`, `loadFragment`, and the six
+  `emptyData*` factories are assigned to `window` because the classic entry
+  cannot import their modules.
 - Top-level classic function declarations also become implicit globals. The
   four event modules alone currently depend on roughly sixty such APIs, while
   extracted features consume additional shared services. Converting the file
@@ -1041,13 +1042,15 @@ than feature implementations left behind by the split.
 
 **Architectural debt**
 
-- `createFeatureBridge()` caches and mounts modules but assumes sequential
-  navigation. It does not use navigation sequence tokens or detached staging
-  hosts, so arbitrary overlapping programmatic route/ward changes are not a
-  supported contract. Existing stress tests wait for initial lazy readiness
-  before switching. Milestone 12 defers a concurrency router rewrite because
-  no normal user-path failure has been demonstrated; the earlier concurrent
-  acceptance criterion remains explicitly unresolved.
+- `createFeatureBridge()` caches and mounts modules and now disposes the module
+  previously active in a shared container, so departed feature delegates do not
+  remain live. It still assumes sequential navigation: it does not use
+  navigation sequence tokens or detached staging hosts, so arbitrary overlapping
+  programmatic route/ward changes are not a supported contract. Existing stress
+  tests wait for initial lazy readiness before switching. Milestone 12 defers a
+  concurrency router rewrite because no normal user-path failure has been
+  demonstrated; the earlier concurrent acceptance criterion remains explicitly
+  unresolved.
 - The classic bootstrap, implicit global namespace, module-to-classic
   `window.*` shims, and script publication ordering remain debt. A real
   `src/main.js` should be reconsidered after Milestone 13 supplies startup and

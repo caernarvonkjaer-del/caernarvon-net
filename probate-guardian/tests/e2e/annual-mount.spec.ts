@@ -43,7 +43,10 @@ test.describe('annual-accounting feature module', () => {
 
     let alertMessage = '';
     page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.evaluate(() => (window as any).doSavePdfAnnual());
+    await page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    });
     await page.waitForTimeout(500);
 
     expect(alertMessage).toContain('Cannot export');
@@ -56,7 +59,7 @@ test.describe('annual-accounting feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSavePdfAnnual());
+    await page.locator('[data-annual-action="save-pdf"]').click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
@@ -75,7 +78,7 @@ test.describe('annual-accounting feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSaveExcelAnnual());
+    await page.locator('[data-annual-action="save-excel"]').click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
     const xlsxPath = path.join(os.tmpdir(), `pg-annual-excel-${Date.now()}.xlsx`);

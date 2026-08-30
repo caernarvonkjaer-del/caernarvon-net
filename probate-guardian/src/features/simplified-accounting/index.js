@@ -27,10 +27,10 @@ const {
 
 // print.js/excel.js are dynamically imported once, together, the first time
 // this feature mounts (not deferred further to an actual /print visit or
-// export click) -- the Cover page's own "Import Excel File" dropzone can
-// invoke importExcelSimplified before the user ever navigates to /print, so
-// deferring excel.js past first mount would mean wiring a second, separate
-// lazy-load path for just that one control. This still gets the real win:
+// export click) -- the Cover page's own "Import Excel File" dropzone needs
+// excel.js before the user ever navigates to /print, so deferring it past
+// first mount would mean wiring a second, separate lazy-load path for just
+// that one control. This still gets the real win:
 // nothing here loads until a Simplified ward is actually opened or created.
 let _printModule = null;
 let _excelModule = null;
@@ -71,13 +71,6 @@ function ensureLazyModules() {
     _lazyModulesPromise = Promise.all([import('./print.js'), import('./excel.js')]).then(([print, excel]) => {
       _printModule = print;
       _excelModule = excel;
-      // These three are referenced by name from rendered onclick="..."/
-      // onchange="..." HTML attributes, which the browser only ever
-      // resolves against the global scope -- never a module's own scope --
-      // so they must be real `window` properties, not just exports.
-      window.doSavePdfSimplified = () => _printModule.doSavePdf();
-      window.doSaveExcelSimplified = () => _excelModule.doSaveExcel();
-      window.importExcelSimplified = (input) => _excelModule.importExcel(input);
     });
   }
   return _lazyModulesPromise;
@@ -290,7 +283,6 @@ function refreshPart2(){
   if(l7)l7.textContent=fmtS(t.totalDisbursements);
   if(l8)l8.textContent=fmtS(t.remaining);
 }
-window.refreshPart2 = refreshPart2; // called from inline oninput= attributes, see pagePart2()
 
 // ── Part III – Declaration ──────────────────────────────
 function pagePart3(){

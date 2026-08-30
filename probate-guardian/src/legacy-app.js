@@ -146,7 +146,7 @@ window.INVENTORY_TYPES=INVENTORY_TYPES;
 const ANNUAL_FORM_ALIASES = ['finalAccounting','trustAccounting'];
 
 // ANNUAL_P67_CELLS moved to src/features/annual-accounting/excel.js
-// (Milestone 7, Phase B) -- doSaveExcelAnnual() there is its only caller.
+// (Milestone 7, Phase B) -- Annual Excel export is its only consumer.
 
 // Maps a ward's inventoryType to the form engine that drives it. Use this
 // for behaviour; use the raw inventoryType for naming/identity.
@@ -1196,9 +1196,8 @@ function sanitizeObjectData(obj){
 // returning a NEW object would silently detach window.D from that array
 // entry, so the next saveData() would persist the OLD, un-sanitized ward.
 // importExcelFile builds a fresh object and can use sanitizeObjectData
-// before ever touching window.D; importExcelSimplified/importExcelAnnual
-// write straight onto window.D field-by-field across the whole function, so
-// this mutates it afterward instead.
+// before ever touching window.D; the extracted Simplified and Annual importers
+// write straight onto window.D field-by-field, so this mutates it afterward.
 function sanitizeObjectDataInPlace(obj){
   if(!obj||typeof obj!=='object')return obj;
   if(Array.isArray(obj)){
@@ -4885,6 +4884,7 @@ function formatDashboardCurrency(v){
 
 function renderPage(page){
   const el=document.getElementById('main-content');
+  window.disposeActiveFeature?.(el);
 
   if(page==='/dashboard'){
     updateHelpContext('default');
@@ -6403,10 +6403,7 @@ function planReadinessPanel(){
 }
 
 // pagePrintPlanSimplified()/doSavePdfPlanSimplified() moved to
-// src/features/plan-simplified/print.js (Milestone 3, Phase C). The lazy
-// module bridge in that feature's index.js exposes doSavePdfPlanSimplified
-// on window so the print page's onclick="doSavePdfPlanSimplified()" still
-// resolves.
+// src/features/plan-simplified/print.js (Milestone 3, Phase C).
 
 // planReadinessChecksAnnual()/docHeaderPlanAnnual()/buildPrintHTMLPlanAnnual()/
 // pagePrintPlanAnnual()/doSavePdfPlanAnnual() moved to
@@ -6626,9 +6623,7 @@ function excelCapacityPanel(over){
 
 
 // pagePrintAnnual()/doSavePdfAnnual() moved to
-// src/features/annual-accounting/print.js (Milestone 7, Phase B). The lazy
-// module bridge in that feature's index.js exposes doSavePdfAnnual on
-// window so the print page's onclick="doSavePdfAnnual()" still resolves.
+// src/features/annual-accounting/print.js (Milestone 7, Phase B).
 
 // html2pdf picks page breaks by walking every element and inserting a spacer
 // <div> before any one that straddles a page edge. That walk is destructive
@@ -6671,10 +6666,7 @@ function groupScheduleBlocksForPdf(container){
 }
 
 // doSaveExcelAnnual()/importExcelAnnual() moved to
-// src/features/annual-accounting/excel.js (Milestone 7, Phase B). The lazy
-// module bridge in that feature's index.js exposes doSaveExcelAnnual and
-// importExcelAnnual on window so the print page's export button and the
-// Excel-import dropzone's onchange="..." still resolve.
+// src/features/annual-accounting/excel.js (Milestone 7, Phase B).
 
 
 // ═══════════════════════════════════════════════════════

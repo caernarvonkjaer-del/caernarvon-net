@@ -43,7 +43,7 @@ test.describe('routes', () => {
 
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Dashboard Smoke Test Ward', 'guardian'));
-      await page.waitForFunction(() => typeof (window as any).doSavePdfGuardian === 'function');
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).navigate('/dashboard'));
 
     await expect(page).toHaveURL(/#\/dashboard/);
@@ -54,7 +54,7 @@ test.describe('routes', () => {
   test('dashboard controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));
-    await page.waitForFunction(() => typeof (window as any).doSavePdfGuardian === 'function');
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).addWard('Beta Dashboard Ward', 'annual'));
     await expect(page.locator('#main-content').getByRole('heading', { name: 'Part I — Required Information' })).toBeVisible();
     await page.evaluate(() => (window as any).navigate('/dashboard'));
@@ -81,15 +81,15 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/inventory-select'));
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await expect(page.locator('#dashboard-group-toggle')).toContainText('Flat Grid');
-    await page.locator('#dashboard-group-toggle').dispatchEvent('click');
     await expect(page.locator('#dashboard-group-toggle')).toContainText('Grouped by Type');
+    await page.locator('#dashboard-group-toggle').dispatchEvent('click');
+    await expect(page.locator('#dashboard-group-toggle')).toContainText('Grouped by Case');
   });
 
   test('shell controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Shell Ward', 'guardian'));
-    await page.waitForFunction(() => typeof (window as any).doSavePdfGuardian === 'function');
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).addWard('Beta Shell Ward', 'annual'));
     await expect(page.locator('#main-content').getByRole('heading', { name: 'Part I — Required Information' })).toBeVisible();
     await page.evaluate(() => (window as any).navigate('/dashboard'));

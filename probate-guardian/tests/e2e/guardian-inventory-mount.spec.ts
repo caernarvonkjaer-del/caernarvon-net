@@ -20,39 +20,22 @@ const GUARDIAN_PAGES = [
 ];
 
 test.describe('guardian-inventory feature module', () => {
-  test('print.js and excel.js are not loaded until a Guardian ward is opened, then load together at first mount', async ({ page }) => {
-    // Asserts the functional guarantee (bridge functions absent, then both
-    // present together) rather than literal network-panel request counts --
-    // neither page.on('request')/page.route() nor a raw CDP
-    // Network.requestWillBeSent session reliably observed this SPA's
-    // client-side dynamic import() calls in this harness (all three were
-    // tried; each reported zero requests for resources known to have
-    // loaded, including this file's own earlier-passing tests' PDF/Excel
-    // exports). The function-existence signal below is what the app itself
-    // uses to know these modules are ready (see ensureLazyModules() in
-    // src/features/guardian-inventory/index.js) and is unaffected by that
-    // observability gap.
+  test('first Guardian mount exposes import and print actions without compatibility globals', async ({ page }) => {
     await freshStartNoPassword(page);
 
-    // Creating and navigating an Annual ward first must not load Guardian's
-    // feature module or its print/excel pair.
     await createWard(page, 'Annual Before Guardian', 'annual');
     await page.evaluate(() => (window as any).navigate('/p2'));
-    const bridgeBefore = await page.evaluate(() => ({
-      pdf: typeof (window as any).doSavePdfGuardian,
-      excel: typeof (window as any).importExcelGuardian,
-    }));
-    expect(bridgeBefore).toEqual({ pdf: 'undefined', excel: 'undefined' });
+    await expect(page.locator('[data-inventory-change="import-excel"]')).toHaveCount(0);
 
     await createWard(page, 'Guardian Lazy Load Ward', 'guardian');
-    // First mount of the Guardian feature triggers ensureLazyModules(),
-    // which imports print.js and excel.js together via one Promise.all() --
-    // both bridge functions become available at the same time, not one
-    // before the other.
-    await page.waitForFunction(
-      () => typeof (window as any).doSavePdfGuardian === 'function' && typeof (window as any).importExcelGuardian === 'function',
-      { timeout: 10_000 }
-    );
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+    expect(await page.evaluate(() => [
+      typeof (window as any).doSavePdfGuardian,
+      typeof (window as any).doSaveExcelGuardian,
+      typeof (window as any).importExcelGuardian,
+    ])).toEqual(['undefined', 'undefined', 'undefined']);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('[data-inventory-action="save-pdf"]')).toBeVisible();
   });
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {
     const errors: string[] = [];
@@ -102,7 +85,10 @@ test.describe('guardian-inventory feature module', () => {
 
     let alertMessage = '';
     page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.evaluate(() => (window as any).doSavePdfGuardian());
+    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    });
     await page.waitForTimeout(500);
 
     expect(alertMessage).toContain('Cannot export');
@@ -115,7 +101,7 @@ test.describe('guardian-inventory feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSavePdfGuardian());
+    await page.locator('[data-inventory-action="save-pdf"]').click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
@@ -177,7 +163,7 @@ test.describe('guardian-inventory feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSaveExcelGuardian());
+    await page.locator('[data-inventory-action="save-excel"]').click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
     const xlsxPath = path.join(os.tmpdir(), `pg-guardian-excel-${Date.now()}.xlsx`);

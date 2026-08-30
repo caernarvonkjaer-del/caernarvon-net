@@ -34,7 +34,10 @@ test.describe('plan-simplified feature module', () => {
 
     let alertMessage = '';
     page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.evaluate(() => (window as any).doSavePdfPlanSimplified());
+    await page.locator('[data-plan-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    });
     await page.waitForTimeout(500);
 
     expect(alertMessage).toContain('Cannot export');
@@ -47,7 +50,7 @@ test.describe('plan-simplified feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSavePdfPlanSimplified());
+    await page.locator('[data-plan-simplified-action="save-pdf"]').click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);

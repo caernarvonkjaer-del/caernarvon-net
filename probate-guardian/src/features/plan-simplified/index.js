@@ -49,13 +49,7 @@ function ensurePrintModule() {
   if (!_printModulePromise) {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
-      // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanSimplified) or from legacy-app.js's shared
-      // planReadinessChecks() dispatcher (planReadinessChecksSimplified,
-      // still called for the other 3 not-yet-extracted Plan types too) --
-      // both only ever resolve against the global scope, never a module's
-      // own scope, so both must be real `window` properties.
-      window.doSavePdfPlanSimplified = () => _printModule.doSavePdf();
+      // The shared legacy readiness dispatcher still resolves this by name.
       window.planReadinessChecksSimplified = () => _printModule.planReadinessChecksSimplified();
     });
   }
