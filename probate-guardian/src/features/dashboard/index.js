@@ -82,15 +82,25 @@ function roleControlHTML() {
   </select></label>`;
 }
 
-function triageControlsHTML() {
-  const rows = projectWards(getGuardianData().wards).filter(row => !row.isArchived);
-  const contacts = uniqueFilterOptions(rows, row => row.filingContacts.map(item => ({ key: item.filterKey, label: item.name })));
+function assignmentFilterHTML(rows, label, extraClass = '') {
   const assignees = uniqueFilterOptions(rows, row => row.assigneeKey ? [{ key: row.assigneeKey, label: row.assigneeName }] : []);
-  if (_dashboardContactFilter !== 'all' && !contacts.some(([key]) => key === _dashboardContactFilter)) _dashboardContactFilter = 'all';
   if (!['all', 'unassigned'].includes(_dashboardAssignmentFilter) && !assignees.some(([key]) => key === _dashboardAssignmentFilter)) {
     _dashboardAssignmentFilter = 'all';
   }
-  const assignmentLabel = _dashboardPreferences.role === 'assistant' ? 'Supervisor' : 'Assignment';
+  return `<label class="dashboard-control${extraClass ? ` ${extraClass}` : ''}"><span>${esc(label)}</span><select id="dashboard-assignment-filter" class="form-select form-select-sm">
+    ${option('all', label === 'Working on behalf of' ? 'All professionals' : 'All assignments', _dashboardAssignmentFilter)}
+    ${option('unassigned', 'Unassigned', _dashboardAssignmentFilter)}
+    ${assignees.map(([key, name]) => option(key, name, _dashboardAssignmentFilter)).join('')}
+  </select></label>`;
+}
+
+function triageControlsHTML() {
+  const rows = projectWards(getGuardianData().wards).filter(row => !row.isArchived);
+  const contacts = uniqueFilterOptions(rows, row => row.filingContacts.map(item => ({ key: item.filterKey, label: item.name })));
+  if (_dashboardContactFilter !== 'all' && !contacts.some(([key]) => key === _dashboardContactFilter)) _dashboardContactFilter = 'all';
+  const assignmentFilter = _dashboardPreferences.role === 'professional'
+    ? assignmentFilterHTML(rows, 'Assignment')
+    : '';
   return `
     <label class="dashboard-control"><span>Status</span><select id="dashboard-status-filter" class="form-select form-select-sm">
       ${option('all', 'All statuses', _dashboardStatusFilter)}
@@ -107,11 +117,7 @@ function triageControlsHTML() {
       ${option('all', 'All contacts', _dashboardContactFilter)}
       ${contacts.map(([key, label]) => option(key, label, _dashboardContactFilter)).join('')}
     </select></label>
-    <label class="dashboard-control"><span>${assignmentLabel}</span><select id="dashboard-assignment-filter" class="form-select form-select-sm">
-      ${option('all', `All ${assignmentLabel.toLowerCase()}s`, _dashboardAssignmentFilter)}
-      ${option('unassigned', 'Unassigned', _dashboardAssignmentFilter)}
-      ${assignees.map(([key, label]) => option(key, label, _dashboardAssignmentFilter)).join('')}
-    </select></label>
+    ${assignmentFilter}
     <label class="dashboard-control"><span>Sort</span><select id="dashboard-triage-sort" class="form-select form-select-sm">
       ${option('priority', 'Priority', _dashboardTriageSort)}
       ${option('deadline', 'Deadline', _dashboardTriageSort)}
@@ -122,14 +128,33 @@ function triageControlsHTML() {
 
 function dashboardToolbarHTML() {
   const search = `<span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search wards by name…" aria-label="Search wards by name" value="${esc(_dashboardSearch)}"></span>`;
-  if (isTriageRole()) return `${search}${roleControlHTML()}${triageControlsHTML()}`;
-  return `${search}${roleControlHTML()}
+  if (isTriageRole()) return `${search}${triageControlsHTML()}`;
+  return `${search}
     <select id="dashboard-sort" class="form-select form-select-sm dashboard-sort-select" aria-label="Sort wards by">
       ${option('lastModified', 'Sort: Last Modified', _dashboardSort)}
       ${option('name', 'Sort: Name (A–Z)', _dashboardSort)}
       ${option('total', 'Sort: Total (High–Low)', _dashboardSort)}
     </select>
     <button id="dashboard-group-toggle" class="btn btn-sm ${_dashboardGroupMode === 'flat' ? 'btn-outline-secondary' : 'btn-secondary'}" data-dashboard-action="group" aria-pressed="${_dashboardGroupMode !== 'flat'}" title="Cycle between grouping wards by type, by case number, and a flat grid">${dashboardGroupLabel(_dashboardGroupMode)}</button>`;
+}
+
+function dashboardHeaderHTML() {
+  const activeRows = projectWards(getGuardianData().wards).filter(row => !row.isArchived);
+  const supervisorFilter = _dashboardPreferences.role === 'assistant'
+    ? assignmentFilterHTML(activeRows, 'Working on behalf of', 'dashboard-supervisor-control')
+    : '';
+  return `<header class="dashboard-page-header">
+    <div class="dashboard-page-title">
+      <div class="dashboard-page-kicker">Compliance overview</div>
+      <h1>All Wards — Dashboard</h1>
+      <p>Review exceptions, deadlines, and court status across active filings.</p>
+    </div>
+    <div class="dashboard-header-actions">
+      ${roleControlHTML()}
+      ${supervisorFilter}
+      <button type="button" class="btn btn-sm btn-primary dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>
+    </div>
+  </header>`;
 }
 
 function onboardingHTML() {
@@ -184,6 +209,38 @@ function toggleArchivedSection() {
   renderDashboardGrid();
 }
 
+function dashboardPriority(row) {
+  if (row.isArchived) return 'archived';
+  if (row.workflowStatus === 'disapproved-needs-correction') return 'urgent';
+  if (row.isDeadlineActionable && row.deadlineBucket === 'overdue') return 'urgent';
+  if (row.isDeadlineActionable && (row.deadlineBucket === 'today' || row.deadlineBucket === 'due-soon')) return 'warning';
+  if (row.workflowStatus === 'pending-court-review') return 'pending';
+  if (row.workflowStatus === 'approved') return 'approved';
+  return 'standard';
+}
+
+function priorityBadgeHTML(row, includeWorkflowStates = false) {
+  if (row.workflowStatus === 'disapproved-needs-correction') {
+    return '<span class="dashboard-priority-badge dashboard-priority-badge-urgent">Needs correction</span>';
+  }
+  if (row.isDeadlineActionable && row.deadlineBucket === 'overdue') {
+    return '<span class="dashboard-priority-badge dashboard-priority-badge-urgent">Overdue</span>';
+  }
+  if (row.isDeadlineActionable && row.deadlineBucket === 'today') {
+    return '<span class="dashboard-priority-badge dashboard-priority-badge-warning">Due today</span>';
+  }
+  if (row.isDeadlineActionable && row.deadlineBucket === 'due-soon') {
+    return '<span class="dashboard-priority-badge dashboard-priority-badge-warning">Due soon</span>';
+  }
+  if (includeWorkflowStates && row.workflowStatus === 'pending-court-review') {
+    return '<span class="dashboard-priority-badge dashboard-priority-badge-pending">Pending review</span>';
+  }
+  if (includeWorkflowStates && row.workflowStatus === 'approved') {
+    return '<span class="dashboard-priority-badge dashboard-priority-badge-approved">Approved</span>';
+  }
+  return '';
+}
+
 // Small badge shown on a ward card: overdue (red), due within two weeks
 // (amber), or a plain future date (muted) — closed/archived cases never show
 // one, since a deadline on a case that's already done is just noise.
@@ -226,7 +283,9 @@ function wardCardHTML(projectedWard) {
     : `<div class="ward-card-total-label">${esc(meta.totalLabel)}</div>
        <div class="ward-card-total">${prog ? prog.pct : 0}<span style="font-size:1rem;font-weight:600;">%</span></div>
        ${prog ? `<div class="ward-card-modified">${prog.complete} of ${prog.total} sections complete</div>` : ''}`;
-  return `<div class="ward-card${isActive ? ' ward-card-active' : ''}${projectedWard.isArchived ? ' ward-card-archived' : ''}" style="--card-accent:${meta.accent}">
+  const priority = dashboardPriority(projectedWard);
+  const priorityBadge = priorityBadgeHTML(projectedWard, true);
+  return `<div class="ward-card dashboard-priority-${priority}${isActive ? ' ward-card-active' : ''}${projectedWard.isArchived ? ' ward-card-archived' : ''}" data-dashboard-priority="${priority}" style="--card-accent:${meta.accent}">
     <div class="ward-card-header">
       <span class="ward-card-icon">${typeIcon(projectedWard.inventoryType, 20)}</span>
       <div class="ward-card-title">
@@ -235,7 +294,7 @@ function wardCardHTML(projectedWard) {
         ${periodHTML}
         ${formatDeadlineBadge(projectedWard)}
       </div>
-      ${isActive ? '<span class="badge bg-primary ward-card-badge">Active</span>' : projectedWard.isArchived ? '<span class="badge bg-secondary ward-card-badge">Closed</span>' : ''}
+      <span class="ward-card-badges">${isActive ? '<span class="badge bg-primary ward-card-badge">Active</span>' : projectedWard.isArchived ? '<span class="badge bg-secondary ward-card-badge">Closed</span>' : ''}${priorityBadge}</span>
     </div>
     <div class="ward-card-body">
       ${headlineHTML}
@@ -259,32 +318,15 @@ function renderDashboardSummary() {
   const container = document.getElementById('dashboard-summary-strip-container');
   if (!container) return;
   const activeWards = projectWards(getGuardianData().wards).filter(w => !w.isArchived);
-  if (isTriageRole()) {
-    const metrics = getDashboardMetrics(activeWards);
-    container.innerHTML = `<div class="dashboard-summary-strip dashboard-triage-summary">
-      <div class="dashboard-stat"><div class="dashboard-stat-num dashboard-metric-alert">${metrics.actionItems}</div><div class="dashboard-stat-label">Action Items / Exceptions</div></div>
-      <div class="dashboard-stat"><div class="dashboard-stat-num dashboard-metric-warn">${metrics.approachingDeadlines}</div><div class="dashboard-stat-label">Approaching Deadlines</div></div>
-      <div class="dashboard-stat"><div class="dashboard-stat-num">${metrics.pendingCourtReview}</div><div class="dashboard-stat-label">Pending Court Review</div></div>
-      <div class="dashboard-stat"><div class="dashboard-stat-num">${activeWards.length}</div><div class="dashboard-stat-label">Active Filings</div></div>
-    </div>`;
-    return;
-  }
+  const metrics = getDashboardMetrics(activeWards);
   const combinedTotal = activeWards.reduce((s, w) => s + (w.total || 0), 0);
-  const typeCounts = activeWards.reduce((acc, w) => { acc[w.inventoryType] = (acc[w.inventoryType] || 0) + 1; return acc; }, {});
-  const typeChipsStr = Object.keys(typeCounts).map(t => {
-    const label = INVENTORY_TYPES[t]?.name || t;
-    return `<span class="dashboard-type-chip" title="${esc(label)}">${typeIcon(t, 13)}<span>${typeCounts[t]}</span></span>`;
-  }).join('');
-  const dueSoonCount = activeWards.filter(w => w.isDeadlineActionable && w.deadlineDate && w.daysUntilDeadline <= 14).length;
-  const dueSoonHTML = dueSoonCount > 0
-    ? `<div class="dashboard-stat"><div class="dashboard-stat-num" style="color:var(--warn-text);">${dueSoonCount}</div><div class="dashboard-stat-label">Due Within 14 Days</div></div>`
-    : '';
-  container.innerHTML = `<div class="dashboard-summary-strip">
-    <div class="dashboard-stat"><div class="dashboard-stat-num">${activeWards.length}</div><div class="dashboard-stat-label">Active Wards</div></div>
-    <div class="dashboard-stat"><div class="dashboard-stat-num">${formatDashboardCurrency(activeWards.length ? combinedTotal : null)}</div><div class="dashboard-stat-label">Combined Total</div></div>
-    ${dueSoonHTML}
-    <div class="dashboard-stat dashboard-stat-wide"><div class="dashboard-type-chips">${typeChipsStr || '—'}</div><div class="dashboard-stat-label">By Inventory Type</div></div>
-  </div>`;
+  container.innerHTML = `<div class="dashboard-summary-strip dashboard-triage-summary">
+    <div class="dashboard-stat dashboard-stat-action"><div class="dashboard-stat-num dashboard-metric-alert">${metrics.actionItems}</div><div class="dashboard-stat-label">Action Items / Exceptions</div></div>
+    <div class="dashboard-stat dashboard-stat-deadline"><div class="dashboard-stat-num dashboard-metric-warn">${metrics.approachingDeadlines}</div><div class="dashboard-stat-label">Approaching Deadlines</div></div>
+    <div class="dashboard-stat dashboard-stat-pending"><div class="dashboard-stat-num dashboard-metric-pending">${metrics.pendingCourtReview}</div><div class="dashboard-stat-label">Pending Court Review</div></div>
+    <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${activeWards.length}</div><div class="dashboard-stat-label">Active Filings</div></div>
+  </div>
+  <div class="dashboard-summary-secondary">Combined total <strong>${formatDashboardCurrency(activeWards.length ? combinedTotal : null)}</strong></div>`;
 }
 
 // Shows a one-time "Continue where you left off" banner when the app
@@ -487,15 +529,16 @@ function deadlineDisplay(row) {
   if (!row.deadlineDate) return '<span class="dashboard-triage-muted">No deadline</span>';
   const date = row.deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   if (!row.isDeadlineActionable) return `<span class="dashboard-triage-muted">${esc(date)}</span>`;
-  if (row.deadlineBucket === 'overdue') return `<span class="deadline-overdue">${Math.abs(row.daysUntilDeadline)} day${Math.abs(row.daysUntilDeadline) === 1 ? '' : 's'} overdue</span>`;
-  if (row.deadlineBucket === 'today') return '<span class="deadline-soon">Due today</span>';
-  if (row.deadlineBucket === 'due-soon') return `<span class="deadline-soon">Due in ${row.daysUntilDeadline} days</span>`;
+  if (row.workflowStatus === 'disapproved-needs-correction') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason">Needs correction</strong>`;
+  if (row.deadlineBucket === 'overdue') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason deadline-overdue">${Math.abs(row.daysUntilDeadline)} day${Math.abs(row.daysUntilDeadline) === 1 ? '' : 's'} overdue</strong>`;
+  if (row.deadlineBucket === 'today') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason deadline-soon">Due today</strong>`;
+  if (row.deadlineBucket === 'due-soon') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason deadline-soon">Due in ${row.daysUntilDeadline} days</strong>`;
   return `<span class="dashboard-triage-muted">${esc(date)}</span>`;
 }
 
 function workflowStatusControl(row) {
   const selectedStatus = row.workflowSource === 'explicit' ? row.workflowStatus : 'auto';
-  return `<select class="form-select form-select-sm dashboard-workflow-select" data-dashboard-change="workflow-status" data-ward-id="${esc(row.wardId)}" aria-label="Workflow status for ${esc(row.wardName || 'ward')}">
+  return `<select class="form-select form-select-sm dashboard-workflow-select dashboard-workflow-${esc(row.workflowStatus)}" data-dashboard-change="workflow-status" data-ward-id="${esc(row.wardId)}" aria-label="Workflow status for ${esc(row.wardName || 'ward')}">
     ${option('auto', `Automatic (${WORKFLOW_LABELS[row.workflowStatus] || row.workflowStatus})`, selectedStatus)}
     ${Object.entries(WORKFLOW_LABELS).filter(([key]) => key !== 'closed').map(([key, label]) => option(key, label, selectedStatus)).join('')}
   </select>`;
@@ -509,7 +552,7 @@ function triageActionButtons(row) {
   const id = esc(row.wardId);
   const priorYears = row.sourceWard.years?.length
     ? `<button class="btn btn-sm btn-outline-secondary" data-dashboard-action="prior-years" data-ward-id="${id}">Prior years</button>` : '';
-  return `<div class="dashboard-triage-actions">
+  return `<div class="dashboard-triage-actions dashboard-triage-cell" data-label="Actions">
     <button class="btn btn-sm btn-primary" data-dashboard-action="open-ward" data-ward-id="${id}">Open</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="backup" data-ward-id="${id}">Backup</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="pdf" data-ward-id="${id}">PDF</button>
@@ -548,18 +591,19 @@ function getTriageRows(rows) {
 function renderTriageQueue(projectedWards) {
   const rows = getTriageRows(projectedWards);
   const body = rows.map(row => {
+    const priority = dashboardPriority(row);
     const contacts = row.filingContacts.length
       ? row.filingContacts.map(item => `<span>${esc(item.name)} <small>${esc(item.role)}</small></span>`).join('')
       : '<span class="dashboard-triage-muted">No filing contact</span>';
-    return `<article class="dashboard-triage-row" data-dashboard-ward-id="${esc(row.wardId)}">
-      <div class="dashboard-triage-identity">
+    return `<article class="dashboard-triage-row dashboard-priority-${priority}" data-dashboard-priority="${priority}" data-dashboard-ward-id="${esc(row.wardId)}">
+      <div class="dashboard-triage-identity dashboard-triage-cell" data-label="Filing">
         <strong>${esc(row.wardName || '(unnamed)')}</strong>
         <span>${esc(row.displayType)}${row.caseNumber ? ` · ${esc(row.caseNumber)}` : ''}</span>
       </div>
-      <div>${workflowStatusControl(row)}</div>
-      <div class="dashboard-triage-deadline">${deadlineDisplay(row)}</div>
-      <div class="dashboard-triage-contacts">${contacts}</div>
-      <div class="dashboard-triage-assignee">${assignmentControl(row)}</div>
+      <div class="dashboard-triage-cell" data-label="Status">${workflowStatusControl(row)}</div>
+      <div class="dashboard-triage-deadline dashboard-triage-cell" data-label="Deadline">${deadlineDisplay(row)}</div>
+      <div class="dashboard-triage-contacts dashboard-triage-cell" data-label="Contacts">${contacts}</div>
+      <div class="dashboard-triage-assignee dashboard-triage-cell" data-label="Assignment">${assignmentControl(row)}</div>
       ${triageActionButtons(row)}
     </article>`;
   }).join('');
@@ -574,13 +618,17 @@ function renderFamilyDashboard(projectedWards) {
   const activeWardId = getGuardianData().activeWardId;
   const featured = filtered.find(row => row.wardId === activeWardId)
     || filtered.slice().sort(compareDashboardPriority)[0];
-  const list = filtered.map(row => `<button type="button" class="dashboard-family-row" data-dashboard-action="open-ward" data-ward-id="${esc(row.wardId)}">
+  const list = filtered.map(row => {
+    const priority = dashboardPriority(row);
+    const nextAction = priorityBadgeHTML(row, true) || `<span class="dashboard-family-progress">${row.progressPercent}% complete</span>`;
+    return `<button type="button" class="dashboard-family-row dashboard-priority-${priority}" data-dashboard-priority="${priority}" data-dashboard-action="open-ward" data-ward-id="${esc(row.wardId)}">
     <span class="dashboard-family-icon">${typeIcon(row.inventoryType, 17)}</span>
     <span class="dashboard-family-info"><strong>${esc(row.wardName || '(unnamed)')}</strong><small>${esc(row.displayType)}${row.caseNumber ? ` · ${esc(row.caseNumber)}` : ''}</small></span>
-    <span class="dashboard-family-progress">${row.progressPercent}%</span>
+    <span class="dashboard-family-next">${nextAction}</span>
     <span class="btn btn-sm btn-outline-primary" aria-hidden="true">Open</span>
-  </button>`).join('');
-  return `${featured ? `<section class="dashboard-family-feature"><h2>Current filing</h2><div class="dashboard-grid dashboard-family-feature-grid">${wardCardHTML(featured)}</div></section>` : ''}
+  </button>`;
+  }).join('');
+  return `${featured ? `<section class="dashboard-family-feature"><h2>Next filing to review</h2><div class="dashboard-grid dashboard-family-feature-grid">${wardCardHTML(featured)}</div></section>` : ''}
     <section class="dashboard-family-list"><h2>All active filings</h2>${list || '<div class="dashboard-empty-inline">No matching active filings.</div>'}</section>`;
 }
 
@@ -813,20 +861,12 @@ function unbindDashboardEvents(container) {
 function pageDashboard() {
   return `<div class="schedule-page" data-dashboard-root>
     <div id="continue-prompt-container"></div>
-    <h1>All Wards — Dashboard</h1>
+    ${dashboardHeaderHTML()}
     ${onboardingHTML()}
     <div class="dashboard-toolbar">${dashboardToolbarHTML()}</div>
     <div id="dashboard-summary-strip-container"></div>
-    <div class="dashboard-top-row" id="dashboard-top-row">
+    <div class="dashboard-top-row single-col" id="dashboard-top-row">
       <div id="dashboard-worklist-container"></div>
-      <div class="inventory-convert-banner" data-dashboard-action="select-existing" role="button" tabindex="0" aria-label="Select an existing ward to create a new form for">
-        <span class="inventory-convert-icon"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/></svg></span>
-        <div class="inventory-convert-text">
-          <div class="inventory-convert-title">Select an Existing Ward</div>
-          <div class="inventory-convert-desc">Select any ward below to create a new form of a different inventory type — e.g. Initial Inventory → Annual Accounting — and carry its data over instead of starting from scratch.</div>
-        </div>
-        <span class="btn btn-outline-primary btn-sm" aria-hidden="true">Select Ward</span>
-      </div>
     </div>
     <div id="dashboard-grid-container"></div>
   </div>`;

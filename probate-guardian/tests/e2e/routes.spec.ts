@@ -92,36 +92,79 @@ test.describe('routes', () => {
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).addWard('Beta Ward', 'annual'));
     await page.evaluate(() => (window as any).addWard('Gamma Ward', 'planSimplified'));
+    await page.evaluate(() => (window as any).addWard('Delta Ward', 'annual'));
     const beforePreferences = await page.evaluate(() => {
       const wards = (window as any).getGuardianData().wards;
+      const periodTo = new Date();
+      periodTo.setDate(periodTo.getDate() - 90);
+      const dueTodayPeriodEnd = [periodTo.getFullYear(), String(periodTo.getMonth() + 1).padStart(2, '0'), String(periodTo.getDate()).padStart(2, '0')].join('-');
       wards[0].gid = '2026-01-01';
       wards[0].dashboardWorkflow = { status: 'disapproved-needs-correction', assigneeName: 'Alex Attorney' };
-      wards[1].periodTo = '2026-06-01';
+      wards[1].periodTo = dueTodayPeriodEnd;
       wards[1].dashboardWorkflow = { status: 'pending-court-review' };
+      wards[2].periodTo = dueTodayPeriodEnd;
+      wards[3].periodTo = dueTodayPeriodEnd;
+      wards[3].dashboardWorkflow = { status: 'approved' };
       return JSON.stringify(wards);
     });
     await page.evaluate(() => (window as any).navigate('/dashboard'));
 
     const main = page.locator('#main-content');
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await expect(main.locator('.dashboard-family-row')).toHaveCount(3);
+    const expectPrimaryMetricStrip = async () => {
+      const primaryMetrics = main.locator('.dashboard-triage-summary .dashboard-stat:not(.dashboard-stat-secondary)');
+      await expect(primaryMetrics).toHaveCount(3);
+      await expect(primaryMetrics.filter({ hasText: 'Action Items / Exceptions' })).toContainText('1');
+      await expect(primaryMetrics.filter({ hasText: 'Approaching Deadlines' })).toContainText('1');
+      await expect(primaryMetrics.filter({ hasText: 'Pending Court Review' })).toContainText('1');
+      await expect(main.locator('.dashboard-triage-summary')).not.toContainText('Combined total');
+      await expect(main.locator('.dashboard-summary-secondary')).toContainText('Combined total');
+    };
+
+    await expect(main.locator('.dashboard-family-row')).toHaveCount(4);
+    await expect(main.locator('#dashboard-role')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header #dashboard-role')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(0);
+    await expect(main.locator('[data-dashboard-action="select-existing"]')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header [data-dashboard-action="select-existing"]')).toHaveText(/New Filing from Existing/);
+    await expect(main.locator('.inventory-convert-banner')).toHaveCount(0);
     await expect(main.locator('img[src="x"]')).toHaveCount(0);
     await expect(main).toContainText('<img src=x onerror=alert(1)> Alpha Ward');
-    await expect(main.locator('.dashboard-worklist-tab').filter({ hasText: 'Deadlines' })).toContainText('1');
+    await expectPrimaryMetricStrip();
+    await expect(main.locator('.dashboard-worklist-tab').filter({ hasText: 'Deadlines' })).toContainText('2');
     await expect(main.locator('.dashboard-deadlines-list')).not.toContainText('Beta Ward');
+    await expect(main.locator('.dashboard-deadlines-list')).not.toContainText('Delta Ward');
+    await expect(main.locator('[data-dashboard-action="select-existing"]')).toHaveCount(1);
+    await expect(main.locator('.dashboard-family-row').filter({ hasText: 'Alpha Ward' })).toHaveAttribute('data-dashboard-priority', 'urgent');
+    await expect(main.locator('.dashboard-family-row').filter({ hasText: 'Gamma Ward' })).toHaveAttribute('data-dashboard-priority', 'warning');
 
     await page.locator('#dashboard-role').selectOption('professional');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
-    await expect(main.locator('.dashboard-stat').filter({ hasText: 'Action Items / Exceptions' })).toContainText('1');
-    await expect(main.locator('.dashboard-stat').filter({ hasText: 'Pending Court Review' })).toContainText('1');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
+    await expect(main.locator('#dashboard-role')).toHaveCount(1);
+    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(0);
+    await expectPrimaryMetricStrip();
+    await expect(main.locator('[data-dashboard-change="workflow-status"]')).toHaveCount(4);
+    await expect(main.locator('[data-dashboard-change="assignee"]')).toHaveCount(4);
+    await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Alpha Ward' })).toHaveAttribute('data-dashboard-priority', 'urgent');
+    await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Beta Ward' })).toHaveAttribute('data-dashboard-priority', 'pending');
+    await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Gamma Ward' })).toHaveAttribute('data-dashboard-priority', 'warning');
+    await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Delta Ward' })).toHaveAttribute('data-dashboard-priority', 'approved');
     await page.locator('#dashboard-deadline-filter').selectOption('due-soon');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(0);
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(1);
+    await expect(main.locator('.dashboard-triage-row')).toContainText('Gamma Ward');
+    await expect(main.locator('.dashboard-triage-row')).not.toContainText('Beta Ward');
+    await expect(main.locator('.dashboard-triage-row')).not.toContainText('Delta Ward');
     await page.locator('#dashboard-deadline-filter').selectOption('all');
 
     await page.locator('#dashboard-role').selectOption('assistant');
+    await expect(main.locator('#dashboard-role')).toHaveCount(1);
+    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(1);
+    await expectPrimaryMetricStrip();
     await expect(page.locator('#dashboard-assignment-filter')).toContainText('Alex Attorney');
     await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(2);
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
     await expect(page.evaluate(() => localStorage.getItem('pg-dashboard-preferences-v1'))).resolves.toContain('assistant');
 
     const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards));
@@ -134,7 +177,7 @@ test.describe('routes', () => {
     await main.locator('[data-dashboard-bound="true"]').waitFor();
     await page.locator('#dashboard-assignment-filter').selectOption('all');
     await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getGuardianData().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(2);
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
     expect(await page.evaluate(() => (window as any).getGuardianData().wards[2].archived)).toBe(true);
   });
 

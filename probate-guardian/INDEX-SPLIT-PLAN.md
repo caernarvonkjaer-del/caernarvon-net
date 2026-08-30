@@ -1216,3 +1216,57 @@ progress/deadlines, cross-device preference synchronization, targeted per-card
 render optimization, and production sample data. The two repository-adjacent
 workbook files remain untouched and excluded.
 
+### Milestone 15: Dashboard UX redesign
+
+**Complete.** Implementation was validated on 2026-08-30. Scope and guardrails
+are recorded in `MILESTONE-15-PROPOSAL.md`.
+
+Implementation summary:
+
+- Rebalanced every role around three primary compliance signals: action items /
+  exceptions, approaching deadlines, and pending court review. Active filings
+  remains quieter, and the combined financial total is now secondary text.
+- Moved role selection, assistant `Working on behalf of` filtering, and the
+  compact `New Filing from Existing` action into a dedicated dashboard header.
+  Exact-count tests prevent duplicate controls.
+- Refined family priority cards and the professional/assistant CSS Grid queue
+  with priority ordering, restrained rails and tints, urgency badges, styled
+  editable workflow selectors, and responsive field labels.
+- Kept pending review informational rather than urgent, due-soon items amber,
+  correction/overdue items rose, and approved/archived items visually quiet.
+  Pending and approved dates remain excluded from actionable deadline metrics.
+- Preserved all existing delegated dashboard actions and change hooks. Queue
+  grouping remains intentionally unnecessary for professional/assistant mode;
+  existing ward-card grouping and archived access remain available.
+
+Visual validation:
+
+- Captured the required light and dark screenshots at 1920 x 1080, 1366 x 768,
+  768 x 1024, and 390 x 844, plus assistant desktop/mobile and scrolled mobile
+  row evidence.
+- The triage metrics dominate the first scan while the combined total is quiet.
+  Priority rails/badges communicate filing state without resembling application
+  errors. Workflow status remains visibly editable.
+- Tablet and mobile layouts reflow without horizontal overflow. Row labels,
+  assignment controls, and all six actions remain readable and usable. Assistant
+  filtering is clear in the header and does not crowd queue rows.
+- The screenshot harness now dismisses the timed walkthrough through its real
+  delegated shell action before capture and asserts that no full-viewport layer
+  obscures a frame.
+
+Validation completed:
+
+- Vitest: 2 files / 21 tests passed. Focused route coverage: 16/16 passed.
+- Full Chromium matrices: source 71 passed / 5 target-specific skipped; dev 70
+  passed / 6 skipped; rebuilt web 75 passed / 1 skipped; rebuilt portable
+  `file://` 70 passed / 6 skipped.
+- Both production builds passed. Hosted offline, CSP, lazy-route lifecycle,
+  current-format plain/encrypted `.sav`, recovery, and portable checks remain
+  green within those matrices.
+- `SAV_FORMAT_VERSION` remains 2. The milestone diff does not touch archive
+  hydration, ward factories, or workflow persistence rules. Edited source/test
+  files use consistent checkout line endings, and `git diff --check` passes.
+
+No Milestone 15 behavior is deferred. The two repository-adjacent workbook
+files remain untouched and excluded.
+
