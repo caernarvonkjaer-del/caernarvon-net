@@ -1,15 +1,17 @@
-// Guardian Inventory -- Milestone 8A page/nav/validation extraction.
-// Dynamically imported by legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge,
-// using the same window.createFeatureBridge() pattern as Simplified, Plan, and Annual features.
-// Print/PDF/Excel import/export intentionally stay in legacy-app.js until Milestone 8B.
+// Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
+// Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
+// legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
+// the same window.createFeatureBridge() pattern as Simplified, Plan, and
+// Annual features.
 const {
   esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange,
   sanitizeNegativeAmounts, linkLabelsToInputs, enforceDateRanges, setupAmountFieldValidation,
-  updateNavDots, initPrintPager, computeNavChecks, pagePrint, linkAccordions,
+  updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
   browserRecommendationNotice, toggleSsnReveal, loadWardInfoBanner, renderScheduleDocsSection,
   formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
   formatAccountNumber, formatCheckNumber, formatCityStateZip, finalizeCaseNumber, applyZipLimit,
   sanitizeNonNegativeDecimal, calc, mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
+  checkExcelCapacity,
 } = window;
 
 const D = new Proxy({}, {
@@ -17,7 +19,34 @@ const D = new Proxy({}, {
   set: (_target, prop, value) => { if (window.D) window.D[prop] = value; return true; },
 });
 
+// print.js/excel.js are dynamically imported once, together, the first time
+// this feature mounts -- same reasoning as Simplified/Annual's
+// ensureLazyModules(): the Cover page (pageHome()) has its own Excel-import
+// dropzone that must work immediately, so deferring excel.js further would
+// mean a second, separate lazy-load path for just that one control.
+let _printModule = null;
+let _excelModule = null;
+let _lazyModulesPromise = null;
+function ensureLazyModules() {
+  if (_printModule && _excelModule) return Promise.resolve();
+  if (!_lazyModulesPromise) {
+    _lazyModulesPromise = Promise.all([import('./print.js'), import('./excel.js')]).then(([print, excel]) => {
+      _printModule = print;
+      _excelModule = excel;
+      // Referenced by name from rendered onclick="..."/onchange="..." HTML
+      // attributes, which the browser only ever resolves against the
+      // global scope -- never a module's own scope -- so these must be
+      // real `window` properties, not just exports.
+      window.doSavePdfGuardian = () => _printModule.doSavePdf();
+      window.doSaveExcelGuardian = () => _excelModule.doSaveExcel();
+      window.importExcelGuardian = (input) => _excelModule.importExcel(input);
+    });
+  }
+  return _lazyModulesPromise;
+}
+
 export async function mount(container, page) {
+  await ensureLazyModules();
   sanitizeNegativeAmounts();
   let html;
   switch(page){
@@ -39,7 +68,11 @@ export async function mount(container, page) {
     case '/d3':   html=pageD3();break;
     case '/d4':   html=pageD4();break;
     case '/d5':   html=pageD5();break;
-    case '/print':html=pagePrint();break;
+    case '/print': {
+      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS);
+      html = _printModule.pagePrint(capOver);
+      break;
+    }
     default:      html='<p>Page not found</p>';
   }
   container.innerHTML = html;
@@ -114,7 +147,7 @@ function isScheduleIncomplete(route){
   const r=computeNavChecks();
   return !!(r&&!r.checks[key]);
 }
-function pageNav(current){
+export function pageNav(current){
   const PAGES=PAGES_GUARDIAN;
   const idx=PAGES.findIndex(p=>p.id===current);
   const prev=idx>0?PAGES[idx-1]:null;
@@ -371,7 +404,7 @@ function pageHome(){
           <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
             <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelFile(this)">
+              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelGuardian(this)">
             </label>
             <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the court-issued Initial Inventory Excel template</p>
             <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>

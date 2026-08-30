@@ -1,9 +1,14 @@
 import { test, expect } from '@playwright/test';
+import path from 'node:path';
+import os from 'node:os';
 import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
 
-// Guardian Inventory is Milestone 8A of INDEX-SPLIT-PLAN.md: page/nav/
-// validation/row UI move into src/features/guardian-inventory/index.js,
-// while print/PDF/Excel stay in legacy-app.js until Phase B.
+// Guardian Inventory is Milestone 8 of INDEX-SPLIT-PLAN.md: Phase A moved
+// page/nav/validation/row UI into src/features/guardian-inventory/index.js;
+// Phase B moved print/PDF/Excel import-export into that same feature's
+// print.js/excel.js (mirroring Annual's/Simplified's shape -- both load
+// together via one Promise.all() at first mount, since the Cover page has
+// its own Excel-import control that must work immediately).
 
 const GUARDIAN_PAGES = [
   '/', '/summary',
@@ -15,6 +20,40 @@ const GUARDIAN_PAGES = [
 ];
 
 test.describe('guardian-inventory feature module', () => {
+  test('print.js and excel.js are not loaded until a Guardian ward is opened, then load together at first mount', async ({ page }) => {
+    // Asserts the functional guarantee (bridge functions absent, then both
+    // present together) rather than literal network-panel request counts --
+    // neither page.on('request')/page.route() nor a raw CDP
+    // Network.requestWillBeSent session reliably observed this SPA's
+    // client-side dynamic import() calls in this harness (all three were
+    // tried; each reported zero requests for resources known to have
+    // loaded, including this file's own earlier-passing tests' PDF/Excel
+    // exports). The function-existence signal below is what the app itself
+    // uses to know these modules are ready (see ensureLazyModules() in
+    // src/features/guardian-inventory/index.js) and is unaffected by that
+    // observability gap.
+    await freshStartNoPassword(page);
+
+    // Creating and navigating an Annual ward first must not load Guardian's
+    // feature module or its print/excel pair.
+    await createWard(page, 'Annual Before Guardian', 'annual');
+    await page.evaluate(() => (window as any).navigate('/p2'));
+    const bridgeBefore = await page.evaluate(() => ({
+      pdf: typeof (window as any).doSavePdfGuardian,
+      excel: typeof (window as any).importExcelGuardian,
+    }));
+    expect(bridgeBefore).toEqual({ pdf: 'undefined', excel: 'undefined' });
+
+    await createWard(page, 'Guardian Lazy Load Ward', 'guardian');
+    // First mount of the Guardian feature triggers ensureLazyModules(),
+    // which imports print.js and excel.js together via one Promise.all() --
+    // both bridge functions become available at the same time, not one
+    // before the other.
+    await page.waitForFunction(
+      () => typeof (window as any).doSavePdfGuardian === 'function' && typeof (window as any).importExcelGuardian === 'function',
+      { timeout: 10_000 }
+    );
+  });
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -63,7 +102,7 @@ test.describe('guardian-inventory feature module', () => {
 
     let alertMessage = '';
     page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.evaluate(() => (window as any).doSavePdf());
+    await page.evaluate(() => (window as any).doSavePdfGuardian());
     await page.waitForTimeout(500);
 
     expect(alertMessage).toContain('Cannot export');
@@ -76,7 +115,7 @@ test.describe('guardian-inventory feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.evaluate(() => (window as any).doSavePdf());
+    await page.evaluate(() => (window as any).doSavePdfGuardian());
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
@@ -129,5 +168,40 @@ test.describe('guardian-inventory feature module', () => {
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('exporting to the bundled blank template then re-importing round-trips key fields', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Excel Roundtrip Guardian Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
+    await page.evaluate(() => (window as any).doSaveExcelGuardian());
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
+    const xlsxPath = path.join(os.tmpdir(), `pg-guardian-excel-${Date.now()}.xlsx`);
+    await download.saveAs(xlsxPath);
+
+    // A second, blank Guardian ward to import into.
+    await createWard(page, 'Blank Guardian Import Target', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/'));
+
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000123', { timeout: 10_000 });
+
+    const imported = await page.evaluate(() => ({
+      wardName: (window as any).D.wardName,
+      caseNumber: (window as any).D.caseNumber,
+      county: (window as any).D.county,
+      guardianName: (window as any).D.guardianName,
+    }));
+    expect(imported.caseNumber).toBe('2026-CP-000123');
+    expect(imported.county).toBe('Pinellas');
+    expect(imported.guardianName).toBe('Sample Guardian');
+
+    expect(errors, `console/page errors during Excel import: ${errors.join('\n')}`).toEqual([]);
   });
 });
