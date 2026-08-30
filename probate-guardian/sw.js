@@ -24,10 +24,18 @@ async function responseRevision(response){
 
 async function fetchVerified(entry,request=requestFor(entry)){
   const response=await fetch(request);
+  if(response.redirected)throw new Error(`Redirected response for ${entry.url} was not cached.`);
   if(!response.ok)throw new Error(`HTTP ${response.status}`);
   const actualRevision=await responseRevision(response);
   if(actualRevision!==entry.revision)throw new Error(`Revision mismatch for ${entry.url}`);
   return response;
+}
+
+function recoveryResponse(message,status=502){
+  return new Response(`<!doctype html><html><head><meta charset="utf-8"><title>Probate Guardian loading problem</title></head><body><h1>Probate Guardian could not load this page</h1><p>${message}</p><p>Save any downloaded work, check that you are using the current Probate Guardian address, and reload when your connection is stable.</p></body></html>`,{
+    status,
+    headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'},
+  });
 }
 
 function isUserDataUrl(url){
@@ -129,10 +137,20 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin||isUserDataUrl(url))return;
 
   if(event.request.mode==='navigate'){
+    if(event.request.redirect==='error'){
+      event.respondWith(
+        fetch(event.request)
+          .then(response=>response.redirected?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
+          .catch(()=>recoveryResponse('The navigation failed before the app shell could be loaded.'))
+      );
+      return;
+    }
     event.respondWith(
       caches.open(SHELL_CACHE)
         .then(cache=>cache.match(new URL('./index.html',self.registration.scope)))
-        .then(cached=>cached||fetch(event.request))
+        .then(cached=>cached&&!cached.redirected?cached:fetch(event.request))
+        .then(response=>response.redirected?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
+        .catch(()=>recoveryResponse('The app shell was not available from the cache or the network.'))
     );
     return;
   }
@@ -144,9 +162,9 @@ self.addEventListener('fetch',event=>{
   event.respondWith(
     caches.open(cacheName).then(async cache=>{
       const cached=await cache.match(normalized.href);
-      if(cached)return cached;
+      if(cached&&!cached.redirected)return cached;
       const response=await fetch(event.request);
-      if(response.ok){
+      if(response.ok&&!response.redirected){
         const actualRevision=await responseRevision(response);
         if(actualRevision===entry.revision)await cache.put(normalized.href,response.clone());
       }

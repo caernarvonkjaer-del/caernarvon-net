@@ -912,6 +912,7 @@ let _autoExportTimer = null;
 let _lastSavedTickTimer = null;
 let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appState
 let _lastExportAt = null; // ms epoch of last successful export, or null if never
+window.PG_APP_VERSION = '1.5.30';
 
 // ═══════════════════════════════════════════════════════
 // STORAGE STRATEGY — canonical .sav file plus temporary recovery
@@ -2456,6 +2457,7 @@ function pageActivityLog(){
 async function autoSave(){
   _dirtySinceExport=true;
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
   if(_saveTimer)clearTimeout(_saveTimer);
   _saveTimer=setTimeout(()=>{_saveTimer=null;saveData();},1000);
 }
@@ -2534,6 +2536,26 @@ function getActiveWard(){
   return guardianData.wards.find(w=>w.wardId===guardianData.activeWardId);
 }
 
+function getProbateGuardianTabState(){
+  const activeWard=getActiveWard();
+  return {
+    hasActiveCase: guardianData.wards.length>0,
+    activeCase: activeWard?{
+      wardId: activeWard.wardId||'',
+      wardName: activeWard.wardName||'',
+      caseNumber: activeWard.caseNumber||'',
+      inventoryType: activeWard.inventoryType||''
+    }:null,
+    dirty: _dirtySinceExport,
+    appVersion: window.PG_APP_VERSION||''
+  };
+}
+window.getProbateGuardianTabState=getProbateGuardianTabState;
+function notifyProbateGuardianTabStateChanged(){
+  document.dispatchEvent(new CustomEvent('probate-guardian-state-change',{detail:getProbateGuardianTabState()}));
+}
+window.pgHasUnsavedChanges=function(){return _dirtySinceExport;};
+
 // guardianData is a top-level `let`, reassigned wholesale in several places
 // (lock/reset/load-from-.sav) -- a one-time `window.guardianData=guardianData`
 // bridge would go stale after any of those. This accessor always returns the
@@ -2553,7 +2575,7 @@ function markContinuePromptShown(){
 }
 window.markContinuePromptShown=markContinuePromptShown;
 
-function markDirtySinceExport(){ _dirtySinceExport=true; }
+function markDirtySinceExport(){ _dirtySinceExport=true; notifyProbateGuardianTabStateChanged(); }
 window.markDirtySinceExport=markDirtySinceExport;
 
 // ═══════════════════════════════════════════════════════
@@ -2797,6 +2819,7 @@ async function exportGuardianDataZip(){
     clearSessionRestoreCache(); // this state is now safely in a .sav file
     hideAutoExportReminder();
     updateLastSavedIndicator();
+    notifyProbateGuardianTabStateChanged();
     markCaseOpenedBefore(); // a real .sav now exists — next launch offers the fast-path Open screen
     alert(`Export complete: ${count} form(s) saved to guardianshipwarddata.sav`);
   }catch(e){
@@ -2828,6 +2851,7 @@ async function writeArchiveToHandle(handle,viaTimer){
   hideAutoExportReminder();
   refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
   return count;
 }
 
@@ -3133,6 +3157,7 @@ async function checkSessionRestoreCacheAtLaunch(){
     _openedFileAtLaunch=true;
     _dirtySinceExport=true; // this state has never actually landed in a .sav file
     updateLastSavedIndicator();
+    notifyProbateGuardianTabStateChanged();
     alert(`Restored ${restoredWards.length} form(s) from your last unsaved session. Please save a backup file now.`);
     return true;
   }catch(e){
@@ -4037,6 +4062,7 @@ async function addWard(wardName,inventoryType){
   await saveAppState('activeWardId',wardId);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
   updateSidebar();
   navigate('/');
   // Nudge a brand-new user to make their first backup right away, rather
@@ -4192,6 +4218,7 @@ async function switchWard(wardId){
   updateSidebar();
   currentPage='/';
   window.location.hash='';
+  notifyProbateGuardianTabStateChanged();
   const el=document.getElementById('main-content');
   switch(formEngine(activeInventoryType)){
     case 'guardian':
@@ -4232,6 +4259,7 @@ async function deleteWard(wardId){
     await saveAppState('activeWardId',null);
   }
   updateSidebar();
+  notifyProbateGuardianTabStateChanged();
   navigate('/');
 }
 
@@ -4240,6 +4268,7 @@ async function renameWard(wardId,newName){
   if(!ward)return;
   ward.wardName=newName;
   await saveWardToState(ward);
+  notifyProbateGuardianTabStateChanged();
   updateSidebar();
 }
 
@@ -5514,6 +5543,7 @@ async function convertExistingWard(sourceWardId,targetType){
   await saveAppState('activeWardId',wardId);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
   updateSidebar();
   navigate('/');
   alert(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
@@ -5771,6 +5801,7 @@ async function switchWardYear(wardId,targetKey){
   await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
 }
 
 // Archives the current year (carrying forward everything by default) and
@@ -5795,6 +5826,7 @@ async function startNewWardYear(wardId){
   await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
 }
 
 let _yearModalWardId=null;
@@ -5877,6 +5909,7 @@ async function deleteWardYear(wardId,yearKey){
   await saveWardToState(ward);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
 }
 
 let _pendingDeleteYear=null;
@@ -7967,6 +8000,7 @@ async function initApp(){
   setupLastSavedTicker();
   setupFallbackSaveReminder();
   setupDragAndDropImport();
+  notifyProbateGuardianTabStateChanged();
   window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
 }
 

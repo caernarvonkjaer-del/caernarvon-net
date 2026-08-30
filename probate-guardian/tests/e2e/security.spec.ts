@@ -89,6 +89,13 @@ test.describe('Milestone 11 security boundaries', () => {
     expect(fragmentRequests).toEqual([]);
   });
 
+  test('service worker guards redirect-sensitive navigations', () => {
+    const worker = fs.readFileSync(path.join(projectRoot, 'sw.js'), 'utf8');
+    expect(worker).toContain("event.request.redirect==='error'");
+    expect(worker).toContain('response.redirected?recoveryResponse');
+    expect(worker).toContain('Redirected response for ${entry.url} was not cached.');
+  });
+
   test('hosted script and module responses use JavaScript MIME types', async ({ page }) => {
     const wrongMime: string[] = [];
     const checks: Promise<void>[] = [];
