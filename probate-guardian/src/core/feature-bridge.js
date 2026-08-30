@@ -3,18 +3,14 @@
 // the load-once-cache-the-promise / mount-mountNav shape was genuinely
 // duplicated, not just superficially similar. See the Milestone 3 plan's
 // "Problem 2" for why this stays a small factory rather than
-// INDEX-SPLIT-PLAN.md's full staging-host router: this app never mounts two
-// features racing for the same container (switchWard() always fully
-// changes the active ward before any render happens), so the
-// detached-host/pendingController/navSeq machinery that router uses to
-// arbitrate concurrent candidates would be solving a problem this app
-// doesn't have.
+// INDEX-SPLIT-PLAN.md's full staging-host router. This factory deliberately
+// assumes sequential navigation; it does not arbitrate two async mounts racing
+// for the same container. The limitation and the decision not to widen this
+// milestone into a router rewrite are recorded under Milestone 12.
 //
-// dispose() is deliberately not part of this factory -- callers clear their
-// own container (container.replaceChildren()) at the three dispose-trigger
-// points identified in Milestone 2's Problem 2, since extracted renderers
-// return HTML strings with inline onclick=/oninput= attributes rather than
-// addEventListener-bound listeners, so there is nothing else to tear down.
+// dispose() is deliberately not part of this factory. Callers clear their own
+// container, shared event delegates are registered once, and extracted form
+// features replace their container-local delegates with AbortControllers.
 export function createFeatureBridge(loader) {
   let modulePromise = null;
   function load() {

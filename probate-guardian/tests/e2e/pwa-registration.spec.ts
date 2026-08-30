@@ -15,7 +15,14 @@ test('service worker registration is limited to the hosted web build', async ({ 
 
   const hasRegistration = await page.evaluate(async () => {
     if (!('serviceWorker' in navigator)) return false;
-    return Boolean(await navigator.serviceWorker.getRegistration());
+    try {
+      return Boolean(await navigator.serviceWorker.getRegistration());
+    } catch (error) {
+      if (location.protocol === 'file:' && error instanceof DOMException && error.name === 'SecurityError') {
+        return false;
+      }
+      throw error;
+    }
   });
   expect(hasRegistration).toBe(false);
 });

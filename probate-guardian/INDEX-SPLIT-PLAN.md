@@ -916,16 +916,14 @@ ward-management is done. `src/legacy-app.js` is down to ~8,060 lines (from
 `src/core/feature-bridge.js`'s small `createFeatureBridge()` factory
 (`mountPage()`/`mountNav()`, cache the load promise, no `dispose()`), not the
 detached-staging-host/`pendingController`/`navSeq` router documented earlier
-in this file. That design was deliberately not built: this app never mounts
-two features racing for the same container — `switchWard()` fully completes
-before any render starts — so the concurrent-candidate arbitration the
-staging-host router exists to solve doesn't apply here. Extracted renderers
-also return HTML strings with inline `onclick=`/`oninput=` attributes, so
-`dispose()` is just `container.replaceChildren()` at the three call sites
-identified when this shape was promoted to shared code (Milestone 3). Treat
-the earlier router section as an alternative that was considered and
-consciously simplified away, not as an outstanding gap — do not "fix" the
-code to match it.
+in this file. At Milestone 8 that design was deliberately not built under the
+assumption that user navigation would remain sequential; arbitrary overlapping
+programmatic switches were outside the shipped contract. Extracted renderers
+at that milestone also returned HTML strings with inline event attributes.
+Milestone 11 replaced those attributes with shared delegates and abortable
+feature-local delegates, but did not change the bridge's sequential-navigation
+contract. Milestone 12 records that limitation as architectural debt rather
+than claiming the full concurrent router's acceptance criterion is met.
 
 ### Milestone 9: Dashboard and ward-management extraction
 
@@ -977,16 +975,88 @@ is a separate style-migration task, not part of Milestone 11.
 
 ### Milestone 12: Shrink the legacy entry, evaluate a real `main.js`
 
-Once Milestones 9–11 land, re-assess `legacy-app.js`'s remaining size and
-whether it's small enough to represent genuinely shared core (state, crypto,
-persistence, audit log, router bridge, shell rendering) rather than a
-monolith with holes cut out of it. If so, this is the point to revisit
-step 2's classic-script-vs-`window`-shim decision: `legacy-app.js` has stayed
-a classic script through every milestone (the shim option was never taken),
-which has worked because the shared code genuinely needs to expose real
-globals for inline handlers. Converting to a real ES-module `src/main.js`
-bootstrap only makes sense once inline handlers are gone (Milestone 11) and
-is optional cleanup, not a blocker for anything else in this plan.
+**Complete. Decision: path A plus path D — keep the shared classic core, make
+only bounded cleanup, and defer `main.js` until after Milestone 13 measurement.**
+This is a deferral, not a rejection of modules. A module bootstrap is optional
+cleanup and is not justified merely by making the file tree look tidier.
+
+The audit began with `legacy-app.js` at 8,184 logical lines / 454,619 bytes.
+Removing two dead declarations and extracting the self-contained hosted PWA
+notifier/update workflow to `src/pwa-ui.js` leaves it at 8,059 logical lines /
+449,060 bytes. Its remaining size is substantial, but the map below shows that
+it is now predominantly shared application core and shell workflow rather
+than feature implementations left behind by the split.
+
+**True shared core**
+
+- Application state and type identity: `guardianData`, `window.D`, inventory
+  metadata/aliases, active route/type state, and blank-data factories needed
+  synchronously when a ward is created.
+- Persistence and lifecycle: in-memory stores, debounced writes, canonical
+  `.sav` archive creation/opening, remembered file handles, temporary recovery,
+  legacy browser-storage migration, launch selection, and initialization.
+- Security: input/import hardening, AES-GCM/PBKDF2, unlock/lockout/auto-lock,
+  optional OS keychain access, encrypted audit records, and Tauri backup hooks.
+- Cross-feature services: form binding/formatting, validation summaries,
+  print-preview paging, calculations/reconciliation, navigation completion,
+  schedule attachments/comments, template lookup, and shared export helpers.
+- Hosted offline/update UI remains shared core, but is now the bounded
+  `src/pwa-ui.js` module because it has no dependency on legacy lexical state.
+
+**Shell workflow**
+
+- Theme, icons, contextual help, walkthroughs, help-guide export, activity-log
+  view, top navigation, sidebar/progress UI, and mobile shell controls.
+- Ward selection and creation, carry-over, conversion, rename/delete,
+  multi-year switching, startup/unlock/modals, and the inventory-type chooser.
+- The dashboard implementation is already extracted. The legacy entry retains
+  only its shell route and lazy bridge entry points, alongside equivalent
+  bridge entry points for the filing features.
+
+**Compatibility globals**
+
+- Intentional state/service APIs include `window.D`, selected metadata and
+  factory constants, live state accessors, persistence adapters, formatter and
+  renderer services consumed by feature modules, declarative event modules,
+  and Playwright setup. These are current cross-boundary contracts, not all
+  accidental leftovers.
+- Classic-only shims are narrower: the eight feature-loader functions,
+  `createFeatureBridge`, `loadFragment`, and the six `emptyData*` factories are
+  assigned to `window` because the classic entry cannot import their modules.
+- Top-level classic function declarations also become implicit globals. The
+  four event modules alone currently depend on roughly sixty such APIs, while
+  extracted features consume additional shared services. Converting the file
+  to a module today would require an equally large explicit compatibility
+  facade before it removed any meaningful coupling.
+
+**Still extractable islands**
+
+- Extracted now: the hosted-only PWA registration, offline-pack prompt, retry,
+  and update-ready UI in `src/pwa-ui.js`; it is Vite-managed and does not add a
+  `window` shim.
+- Possible later islands: help/walkthrough registries and guide export, plus
+  groups of pure formatting/calculation helpers. They are not moved now because
+  their consumers still span classic shell code and lazy features; moving them
+  before measuring would mostly add adapters rather than reduce startup work.
+
+**Architectural debt**
+
+- `createFeatureBridge()` caches and mounts modules but assumes sequential
+  navigation. It does not use navigation sequence tokens or detached staging
+  hosts, so arbitrary overlapping programmatic route/ward changes are not a
+  supported contract. Existing stress tests wait for initial lazy readiness
+  before switching. Milestone 12 defers a concurrency router rewrite because
+  no normal user-path failure has been demonstrated; the earlier concurrent
+  acceptance criterion remains explicitly unresolved.
+- The classic bootstrap, implicit global namespace, module-to-classic
+  `window.*` shims, and script publication ordering remain debt. A real
+  `src/main.js` should be reconsidered after Milestone 13 supplies startup and
+  evaluation measurements and only with a staged service API plus source/web/
+  portable tests. Final recommendation for this milestone: **defer `main.js`**.
+
+Two declarations were removed after repository-wide `rg -w` checks found only
+their definitions: `computeHMAC` and `loadWardsFromState`. A post-removal scan
+for both names returns no matches. No `.sav` format or case-data behavior changed.
 
 ### Milestone 13: Measure and finish (step 8), then acceptance-criteria sign-off
 
