@@ -27,16 +27,13 @@ const D = new Proxy({}, {
 let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
+const eventControllers = new WeakMap();
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
     _lazyModulesPromise = Promise.all([import('./print.js'), import('./excel.js')]).then(([print, excel]) => {
       _printModule = print;
       _excelModule = excel;
-      // Referenced by name from rendered onclick="..."/onchange="..." HTML
-      // attributes, which the browser only ever resolves against the
-      // global scope -- never a module's own scope -- so these must be
-      // real `window` properties, not just exports.
       window.doSavePdfGuardian = () => _printModule.doSavePdf();
       window.doSaveExcelGuardian = () => _excelModule.doSaveExcel();
       window.importExcelGuardian = (input) => _excelModule.importExcel(input);
@@ -76,6 +73,7 @@ export async function mount(container, page) {
     default:      html='<p>Page not found</p>';
   }
   container.innerHTML = html;
+  bindEvents(container);
   bindForms();
   afterChange('');
   container.scrollTop = 0;
@@ -88,7 +86,57 @@ export async function mount(container, page) {
 }
 
 export function dispose(container) {
+  eventControllers.get(container)?.abort();
+  eventControllers.delete(container);
   container.replaceChildren();
+}
+
+function bindEvents(container) {
+  eventControllers.get(container)?.abort();
+  const controller = new AbortController();
+  eventControllers.set(container, controller);
+  const options = { signal: controller.signal };
+
+  container.addEventListener('click', (event) => {
+    const control = event.target instanceof Element ? event.target.closest('[data-inventory-action]') : null;
+    if (!control) return;
+    event.preventDefault();
+    const index = Number.parseInt(control.dataset.index, 10);
+    switch (control.dataset.inventoryAction) {
+      case 'add-entry': addEntry(control.dataset.schedule); break;
+      case 'add-guardian': addGuardian(); break;
+      case 'add-recipient': addRecipient(); break;
+      case 'add-witness': addWitness(); break;
+      case 'duplicate-entry': duplicateEntry(control.dataset.schedule, index); break;
+      case 'navigate': navigate(control.dataset.route); break;
+      case 'remove-entry': removeEntry(control.dataset.schedule, index); break;
+      case 'remove-guardian': removeGuardian(index); break;
+      case 'remove-recipient': removeRecipient(index); break;
+      case 'remove-witness': removeWitness(index); break;
+      case 'save-excel': _excelModule.doSaveExcel(); break;
+      case 'save-pdf': _printModule.doSavePdf(); break;
+    }
+  }, options);
+
+  container.addEventListener('change', (event) => {
+    const control = event.target;
+    if (!(control instanceof HTMLInputElement)) return;
+    if (control.dataset.inventoryChange === 'import-excel') _excelModule.importExcel(control);
+    if (control.dataset.inventoryChange === 'schedule-no-items') setScheduleNoItems(control.dataset.schedule, control.checked);
+    if (control.dataset.inventoryChange === 'toggle-vehicle') toggleB2Vehicle(Number.parseInt(control.dataset.index, 10), control.checked);
+  }, options);
+
+  container.addEventListener('input', (event) => {
+    const control = event.target;
+    if (!(control instanceof HTMLInputElement) || control.dataset.inventoryInput !== 'vehicle') return;
+    if (control.dataset.inventoryFormat === 'year') control.value = control.value.replace(/[^0-9]/g, '').slice(0, 4);
+    if (control.dataset.inventoryFormat === 'vin') control.value = control.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
+    if (control.dataset.inventoryFormat === 'mileage') control.value = control.value.replace(/[^0-9,]/g, '');
+    const index = Number.parseInt(control.dataset.index, 10);
+    D.scheduleB2[index][control.dataset.field] = control.value;
+    syncB2VehicleDescription(index);
+    autoSave();
+  }, options);
 }
 
 export function mountNav(container) {
@@ -99,40 +147,40 @@ function buildNavGuardian(container){
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">Case Info</div>
-      <button class="nav-link-item" data-page="/" data-nav="cover" onclick="navigate('/')">Cover</button>
-      <button class="nav-link-item" data-page="/summary" data-nav="summary" onclick="navigate('/summary')">Summary</button>
+      <button class="nav-link-item" data-page="/" data-nav="cover" data-form-action="navigate" data-route="/">Cover</button>
+      <button class="nav-link-item" data-page="/summary" data-nav="summary" data-form-action="navigate" data-route="/summary">Summary</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Schedule A — Real Estate</div>
-      <button class="nav-link-item" data-page="/a1" data-nav="a1" onclick="navigate('/a1')">A-1&nbsp;&nbsp;Real Estate Assets</button>
-      <button class="nav-link-item" data-page="/a2" data-nav="a2" onclick="navigate('/a2')">A-2&nbsp;&nbsp;Real Estate Liabilities</button>
+      <button class="nav-link-item" data-page="/a1" data-nav="a1" data-form-action="navigate" data-route="/a1">A-1&nbsp;&nbsp;Real Estate Assets</button>
+      <button class="nav-link-item" data-page="/a2" data-nav="a2" data-form-action="navigate" data-route="/a2">A-2&nbsp;&nbsp;Real Estate Liabilities</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Schedule B — Personal &amp; Cash</div>
-      <button class="nav-link-item" data-page="/b1" data-nav="b1" onclick="navigate('/b1')">B-1&nbsp;&nbsp;Cash / Cash Equivalents</button>
-      <button class="nav-link-item" data-page="/b2" data-nav="b2" onclick="navigate('/b2')">B-2&nbsp;&nbsp;Personal Property</button>
-      <button class="nav-link-item" data-page="/b3" data-nav="b3" onclick="navigate('/b3')">B-3&nbsp;&nbsp;Intangible Assets</button>
-      <button class="nav-link-item" data-page="/b4" data-nav="b4" onclick="navigate('/b4')">B-4&nbsp;&nbsp;Pers. Prop. Liabilities</button>
+      <button class="nav-link-item" data-page="/b1" data-nav="b1" data-form-action="navigate" data-route="/b1">B-1&nbsp;&nbsp;Cash / Cash Equivalents</button>
+      <button class="nav-link-item" data-page="/b2" data-nav="b2" data-form-action="navigate" data-route="/b2">B-2&nbsp;&nbsp;Personal Property</button>
+      <button class="nav-link-item" data-page="/b3" data-nav="b3" data-form-action="navigate" data-route="/b3">B-3&nbsp;&nbsp;Intangible Assets</button>
+      <button class="nav-link-item" data-page="/b4" data-nav="b4" data-form-action="navigate" data-route="/b4">B-4&nbsp;&nbsp;Pers. Prop. Liabilities</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Schedule C — Other Info</div>
-      <button class="nav-link-item" data-page="/c1" data-nav="c1" onclick="navigate('/c1')">C-1&nbsp;&nbsp;Income (Annualized)</button>
-      <button class="nav-link-item" data-page="/c2" data-nav="c2" onclick="navigate('/c2')">C-2&nbsp;&nbsp;Lawsuits Against Ward</button>
-      <button class="nav-link-item" data-page="/c3" data-nav="c3" onclick="navigate('/c3')">C-3&nbsp;&nbsp;Lawsuits by Ward</button>
-      <button class="nav-link-item" data-page="/c4" data-nav="c4" onclick="navigate('/c4')">C-4&nbsp;&nbsp;Trusts</button>
-      <button class="nav-link-item" data-page="/c5" data-nav="c5" onclick="navigate('/c5')">C-5&nbsp;&nbsp;Joint Owners</button>
+      <button class="nav-link-item" data-page="/c1" data-nav="c1" data-form-action="navigate" data-route="/c1">C-1&nbsp;&nbsp;Income (Annualized)</button>
+      <button class="nav-link-item" data-page="/c2" data-nav="c2" data-form-action="navigate" data-route="/c2">C-2&nbsp;&nbsp;Lawsuits Against Ward</button>
+      <button class="nav-link-item" data-page="/c3" data-nav="c3" data-form-action="navigate" data-route="/c3">C-3&nbsp;&nbsp;Lawsuits by Ward</button>
+      <button class="nav-link-item" data-page="/c4" data-nav="c4" data-form-action="navigate" data-route="/c4">C-4&nbsp;&nbsp;Trusts</button>
+      <button class="nav-link-item" data-page="/c5" data-nav="c5" data-form-action="navigate" data-route="/c5">C-5&nbsp;&nbsp;Joint Owners</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Attestations &amp; Filings</div>
-      <button class="nav-link-item" data-page="/d1" data-nav="d1" onclick="navigate('/d1')">D-1&nbsp;&nbsp;Guardian Attestation</button>
-      <button class="nav-link-item" data-page="/d2" data-nav="d2" onclick="navigate('/d2')">D-2&nbsp;&nbsp;Preparer &amp; Attorney</button>
-      <button class="nav-link-item" data-page="/d3" data-nav="d3" onclick="navigate('/d3')">D-3&nbsp;&nbsp;Audit Fee &amp; Safe Deposit</button>
-      <button class="nav-link-item" data-page="/d4" data-nav="d4" onclick="navigate('/d4')">D-4&nbsp;&nbsp;Bond &amp; Surety Info</button>
-      <button class="nav-link-item" data-page="/d5" data-nav="d5" onclick="navigate('/d5')">D-5&nbsp;&nbsp;Certificate of Service</button>
+      <button class="nav-link-item" data-page="/d1" data-nav="d1" data-form-action="navigate" data-route="/d1">D-1&nbsp;&nbsp;Guardian Attestation</button>
+      <button class="nav-link-item" data-page="/d2" data-nav="d2" data-form-action="navigate" data-route="/d2">D-2&nbsp;&nbsp;Preparer &amp; Attorney</button>
+      <button class="nav-link-item" data-page="/d3" data-nav="d3" data-form-action="navigate" data-route="/d3">D-3&nbsp;&nbsp;Audit Fee &amp; Safe Deposit</button>
+      <button class="nav-link-item" data-page="/d4" data-nav="d4" data-form-action="navigate" data-route="/d4">D-4&nbsp;&nbsp;Bond &amp; Surety Info</button>
+      <button class="nav-link-item" data-page="/d5" data-nav="d5" data-form-action="navigate" data-route="/d5">D-5&nbsp;&nbsp;Certificate of Service</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
+      <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
 }
@@ -154,9 +202,9 @@ export function pageNav(current){
   const next=idx<PAGES.length-1?PAGES[idx+1]:null;
   const nextDisabled=isScheduleIncomplete(current);
   return `<div class="page-nav no-print d-flex justify-content-between align-items-center">
-    <div>${prev?`<button class="btn btn-outline-primary btn-sm" onclick="navigate('${prev.id}')">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>
+    <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev.id}">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>
     <small style="color:var(--ink-3);">Page ${idx+1} of ${PAGES.length}</small>
-    <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?'disabled title="Add at least one item, or check the box verifying there are none, before continuing."':''} onclick="navigate('${next.id}')">Next: ${next.label} →</button>`:'&nbsp;'}</div>
+    <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?'disabled title="Add at least one item, or check the box verifying there are none, before continuing."':''} data-form-action="navigate" data-route="${next.id}">Next: ${next.label} →</button>`:'&nbsp;'}</div>
   </div>`;
 }
 
@@ -176,7 +224,7 @@ function textInput(bind,placeholder='',type=''){
   // lock/unlock toggle button to reveal it on demand. See toggleSsnReveal().
   if(type==='ssn'){
     return `<div class="ssn-mask-wrap"><input class="form-control" id="${inputId}" type="password" autocomplete="off" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`
-      +`<button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`;
+      +`<button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`;
   }
   return `<input class="form-control" id="${inputId}" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`;
 }
@@ -240,8 +288,7 @@ function checkboxInput(bind,label){
 function countyInputBind(bind){
   const inputId='cty_'+Math.random().toString(36).slice(2,9);
   return `<div class="ward-combobox-wrap county-combobox-wrap">
-    <input type="text" class="form-control" id="${inputId}" data-bind="${bind}" data-input-type="county" autocomplete="off"
-      onfocus="filterCountyDropdown(this)" onblur="setTimeout(()=>hideCountyDropdown('${inputId}'),150)">
+    <input type="text" class="form-control" id="${inputId}" data-bind="${bind}" data-input-type="county" data-form-control="county" autocomplete="off">
     <div class="county-combobox-dropdown" id="${inputId}-dropdown"></div>
   </div>`;
 }
@@ -250,8 +297,8 @@ function entryCard(title,idx,schedule,bodyHtml,footerHtml=''){
     <div class="entry-card-header">
       <span>${title}</span>
       <span class="entry-card-actions">
-        <button class="btn btn-sm btn-outline-secondary no-print" title="Add a copy of this entry below" onclick="duplicateEntry('${schedule}',${idx})">${ic('copy',14)} Duplicate</button>
-        <button class="btn btn-sm btn-outline-danger no-print" onclick="removeEntry('${schedule}',${idx})">✕ Remove</button>
+        <button class="btn btn-sm btn-outline-secondary no-print" title="Add a copy of this entry below" data-inventory-action="duplicate-entry" data-schedule="${schedule}" data-index="${idx}">${ic('copy',14)} Duplicate</button>
+        <button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-entry" data-schedule="${schedule}" data-index="${idx}">✕ Remove</button>
       </span>
     </div>
     <div class="entry-card-body">${bodyHtml}</div>
@@ -259,7 +306,7 @@ function entryCard(title,idx,schedule,bodyHtml,footerHtml=''){
   </div>`;
 }
 function addBtn(schedule,label){
-  return `<button class="btn btn-primary btn-sm mb-3 no-print" onclick="addEntry('${schedule}')">+ Add ${label}</button>`;
+  return `<button class="btn btn-primary btn-sm mb-3 no-print" data-inventory-action="add-entry" data-schedule="${schedule}">+ Add ${label}</button>`;
 }
 function totalsBox(rows){
   const trs=rows.map(([label,id])=>`<div class="tr"><div class="td">${label}</div><div class="td" id="${id}">${fmt(0)}</div></div>`).join('');
@@ -297,7 +344,7 @@ function scheduleEmptyHTML(key,noun){
   const checked=!!(D.scheduleNoItems&&D.scheduleNoItems[key]);
   return `<div class="schedule-empty">
     <label class="schedule-empty-check">
-      <input type="checkbox" ${checked?'checked':''} onchange="setScheduleNoItems('${key}',this.checked)">
+      <input type="checkbox" ${checked?'checked':''} data-inventory-change="schedule-no-items" data-schedule="${key}">
       <span>I verify there are no ${noun} to report for this schedule.</span>
     </label>
   </div>`;
@@ -351,14 +398,14 @@ function witnessCardsHTML(){
     <div class="entry-card-header">
       <span>Inventory Witness ${i+1}</span>
       <span class="entry-card-actions">
-        <button class="btn btn-sm btn-outline-danger no-print" onclick="removeWitness(${i})">✕ Remove</button>
+        <button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-witness" data-index="${i}">✕ Remove</button>
       </span>
     </div>
     <div class="entry-card-body">
       ${formRow(
-        col(5,reqLabel('Name')+`<input class="form-control" value="${esc(w.name)}" oninput="this.value=formatName(this.value);D.witnesses[${i}].name=this.value;autoSave()">`),
-        col(4,reqLabel('Address')+`<input class="form-control" value="${esc(w.address)}" oninput="this.value=formatAddress(this.value);D.witnesses[${i}].address=this.value;autoSave()">`),
-        col(3,reqLabel('Occupation')+`<input class="form-control" value="${esc(w.occupation)}" oninput="D.witnesses[${i}].occupation=this.value;autoSave()">`)
+        col(5,reqLabel('Name')+textInput(`witnesses.${i}.name`,'','name')),
+        col(4,reqLabel('Address')+textInput(`witnesses.${i}.address`,'','address')),
+        col(3,reqLabel('Occupation')+textInput(`witnesses.${i}.occupation`))
       )}
     </div>
   </div>`).join('');
@@ -404,7 +451,7 @@ function pageHome(){
           <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
             <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelGuardian(this)">
+              <input type="file" accept=".xlsx" style="display:none" data-inventory-change="import-excel">
             </label>
             <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the court-issued Initial Inventory Excel template</p>
             <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
@@ -441,7 +488,7 @@ function pageHome(){
     <h2 class="subsection-heading">Inventory Witnesses</h2>
     <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
     ${witnessCardsHTML()}
-    <button class="btn btn-outline-primary btn-sm no-print" onclick="addWitness()">+ Add Witness</button>
+    <button class="btn btn-outline-primary btn-sm no-print" data-inventory-action="add-witness">+ Add Witness</button>
   </div>
   <div class="mb-3">
     ${pageNav('/')}
@@ -465,25 +512,25 @@ function pageSummary(){
     <div class="col-md-6">
       <div class="summary-box">
         <h2 class="subsection-heading">Summary I — Schedule A: Real Estate</h2>
-        <div class="summary-line"><a href="#" onclick="navigate('/a1');return false;">Schedule A-1 — Real Estate Assets</a><span id="totalA1">${fmt(calc.totalA1())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/a2');return false;">Schedule A-2 — Real Estate Liabilities</a><span id="totalA2">${fmt(calc.totalA2())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/a1">Schedule A-1 — Real Estate Assets</a><span id="totalA1">${fmt(calc.totalA1())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/a2">Schedule A-2 — Real Estate Liabilities</a><span id="totalA2">${fmt(calc.totalA2())}</span></div>
         <div class="summary-line total"><span>Real Estate, Net of Liabilities</span><span id="netA">${fmt(calc.netA())}</span></div>
       </div>
       <div class="summary-box">
         <h2 class="subsection-heading">Summary I — Schedule B: Cash / Personal Property</h2>
-        <div class="summary-line"><a href="#" onclick="navigate('/b1');return false;">Schedule B-1 — Cash &amp; Cash Equivalents</a><span id="totalB1">${fmt(calc.totalB1())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/b2');return false;">Schedule B-2 — Personal Property Assets</a><span id="totalB2">${fmt(calc.totalB2())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/b3');return false;">Schedule B-3 — Intangible Assets</a><span id="totalB3">${fmt(calc.totalB3())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/b4');return false;">Schedule B-4 — Personal Property Liabilities</a><span id="totalB4">${fmt(calc.totalB4())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b1">Schedule B-1 — Cash &amp; Cash Equivalents</a><span id="totalB1">${fmt(calc.totalB1())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b2">Schedule B-2 — Personal Property Assets</a><span id="totalB2">${fmt(calc.totalB2())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b3">Schedule B-3 — Intangible Assets</a><span id="totalB3">${fmt(calc.totalB3())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b4">Schedule B-4 — Personal Property Liabilities</a><span id="totalB4">${fmt(calc.totalB4())}</span></div>
         <div class="summary-line total"><span>Cash / Pers. Property, Net of Liabilities</span><span id="netB">${fmt(calc.netB())}</span></div>
       </div>
       <div class="summary-box">
         <h2 class="subsection-heading">Summary II — Schedule C: Other Financial Information</h2>
-        <div class="summary-line"><a href="#" onclick="navigate('/c1');return false;">Schedule C-1 — Income (Annualized)</a><span id="totalC1">${fmt(calc.totalC1())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/c2');return false;">Schedule C-2 — Lawsuits Against Ward</a><span id="totalC2">${fmt(calc.totalC2())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/c3');return false;">Schedule C-3 — Lawsuits by Ward</a><span id="totalC3">${fmt(calc.totalC3())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/c4');return false;">Schedule C-4 — Trusts</a><span id="totalC4">${fmt(calc.totalC4())}</span></div>
-        <div class="summary-line"><a href="#" onclick="navigate('/c5');return false;">Schedule C-5 — Joint Owners</a><span id="totalC5">${fmt(calc.totalC5())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c1">Schedule C-1 — Income (Annualized)</a><span id="totalC1">${fmt(calc.totalC1())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c2">Schedule C-2 — Lawsuits Against Ward</a><span id="totalC2">${fmt(calc.totalC2())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c3">Schedule C-3 — Lawsuits by Ward</a><span id="totalC3">${fmt(calc.totalC3())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c4">Schedule C-4 — Trusts</a><span id="totalC4">${fmt(calc.totalC4())}</span></div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c5">Schedule C-5 — Joint Owners</a><span id="totalC5">${fmt(calc.totalC5())}</span></div>
       </div>
     </div>
     <div class="col-md-6">
@@ -496,15 +543,15 @@ function pageSummary(){
         <div class="summary-line"><span>Personal Property (B-2)</span><span></span></div>
         <div class="summary-line"><span>Unrestricted Intangibles (B-3)</span><span id="unrestrictedIntang">${fmt(calc.unrestrictedIntang())}</span></div>
         <div class="summary-line total"><span>Bond Requirement (liquid, unrestricted)</span><span id="bondRequired">${fmt(calc.bondRequired())}</span></div>
-        <div style="margin-top:.5rem;font-size:.78rem;"><a href="#" onclick="navigate('/d4');return false;">→ Complete Bond &amp; Surety Info (D-4)</a></div>
+        <div style="margin-top:.5rem;font-size:.78rem;"><a href="#" data-inventory-action="navigate" data-route="/d4">→ Complete Bond &amp; Surety Info (D-4)</a></div>
       </div>
       <div class="summary-box">
         <h2 class="subsection-heading">Attestations &amp; Filings Completion</h2>
-        <div class="summary-line"><a href="#" onclick="navigate('/d1');return false;">D-1 — Guardian Attestation</a>${status(hasAttest)}</div>
-        <div class="summary-line"><a href="#" onclick="navigate('/d2');return false;">D-2 — Preparer &amp; Attorney</a>${status(hasPreparer)}</div>
-        <div class="summary-line"><a href="#" onclick="navigate('/d3');return false;">D-3 — Audit Fee &amp; Safe Deposit</a>${status(D.hasSafeDepositBox!==undefined?true:false)}</div>
-        <div class="summary-line"><a href="#" onclick="navigate('/d4');return false;">D-4 — Bond &amp; Surety Info</a>${status(hasBond)}</div>
-        <div class="summary-line"><a href="#" onclick="navigate('/d5');return false;">D-5 — Certificate of Service</a>${status(hasService)}</div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d1">D-1 — Guardian Attestation</a>${status(hasAttest)}</div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d2">D-2 — Preparer &amp; Attorney</a>${status(hasPreparer)}</div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d3">D-3 — Audit Fee &amp; Safe Deposit</a>${status(D.hasSafeDepositBox!==undefined?true:false)}</div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d4">D-4 — Bond &amp; Surety Info</a>${status(hasBond)}</div>
+        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d5">D-5 — Certificate of Service</a>${status(hasService)}</div>
       </div>
       <div class="summary-box summary-inventory-total" style="background:#820024;color:#fff;">
         <div class="summary-line total" style="color:#fff;border-color:rgba(255,255,255,.2);">
@@ -604,18 +651,18 @@ function pageScheduleB2(){
   const entries=D.scheduleB2.map((e,i)=>{
     const vehicleFields=e.isVehicle?`
     ${formRow(
-      col(3,reqLabel('Year')+`<input class="form-control" inputmode="numeric" maxlength="4" value="${esc(e.vehicleYear)}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4);D.scheduleB2[${i}].vehicleYear=this.value;syncB2VehicleDescription(${i});autoSave()">`),
-      col(3,reqLabel('Make')+`<input class="form-control" value="${esc(e.vehicleMake)}" oninput="D.scheduleB2[${i}].vehicleMake=this.value;syncB2VehicleDescription(${i});autoSave()">`),
-      col(3,reqLabel('Model')+`<input class="form-control" value="${esc(e.vehicleModel)}" oninput="D.scheduleB2[${i}].vehicleModel=this.value;syncB2VehicleDescription(${i});autoSave()">`),
-      col(3,reqLabel('VIN')+`<input class="form-control" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,17);D.scheduleB2[${i}].vehicleVin=this.value;syncB2VehicleDescription(${i});autoSave()">`)
+      col(3,reqLabel('Year')+`<input class="form-control" inputmode="numeric" maxlength="4" value="${esc(e.vehicleYear)}" data-inventory-input="vehicle" data-inventory-format="year" data-index="${i}" data-field="vehicleYear">`),
+      col(3,reqLabel('Make')+`<input class="form-control" value="${esc(e.vehicleMake)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleMake">`),
+      col(3,reqLabel('Model')+`<input class="form-control" value="${esc(e.vehicleModel)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleModel">`),
+      col(3,reqLabel('VIN')+`<input class="form-control" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" data-inventory-input="vehicle" data-inventory-format="vin" data-index="${i}" data-field="vehicleVin">`)
     )}
-    ${formRow(col(4,reqLabel('Odometer Mileage')+`<input class="form-control" inputmode="numeric" value="${esc(e.odometerMileage)}" oninput="this.value=this.value.replace(/[^0-9,]/g,'');D.scheduleB2[${i}].odometerMileage=this.value;syncB2VehicleDescription(${i});autoSave()">`))}
+    ${formRow(col(4,reqLabel('Odometer Mileage')+`<input class="form-control" inputmode="numeric" value="${esc(e.odometerMileage)}" data-inventory-input="vehicle" data-inventory-format="mileage" data-index="${i}" data-field="odometerMileage">`))}
     <div class="vehicle-value-links">Look up a value at <a href="https://www.kbb.com/" target="_blank" rel="noopener noreferrer">Kelley Blue Book</a> or <a href="https://www.carfax.com/" target="_blank" rel="noopener noreferrer">Carfax</a> — both are non-affiliated commercial sites, offered only as a convenience; either generally provides an acceptable value. Print or save the page showing the final value you used and upload it below under Supporting Documents.</div>
     `:`
     ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
     `;
     return entryCard(`Item ${i+1}`,i,'b2',`
-    ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" onchange="toggleB2Vehicle(${i},this.checked)"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
+    ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" data-inventory-change="toggle-vehicle" data-index="${i}"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
     ${vehicleFields}
     ${formRow(col(6,reqLabel('Location – Street Address')+textInput(`scheduleB2.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB2.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(6,reqLabel('Valuation Method &amp; Condition')+textInput(`scheduleB2.${i}.valuationMethod`,'e.g., Kelly Blue Book — fair condition')))}
@@ -747,7 +794,7 @@ function pageD1(){
   const cards=D.guardians.map((g,i)=>{
     const isFirst=i===0;
     const title=isFirst?'Guardian #1':`Co-Guardian #${i+1}`;
-    const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" onclick="removeGuardian(${i})">✕ Remove</button>`;
+    const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
     return `<div class="entry-card mb-3">
       <div class="entry-card-header"><span>${title}</span>${removeBtn}</div>
       <div class="entry-card-body">
@@ -757,7 +804,7 @@ function pageD1(){
       </div>
     </div>`;
   }).join('');
-  const addCoBtn=D.guardians.length<3?`<button class="btn btn-outline-secondary btn-sm mb-3 no-print" onclick="addGuardian()">+ Add Co-Guardian</button>`:'';
+  const addCoBtn=D.guardians.length<3?`<button class="btn btn-outline-secondary btn-sm mb-3 no-print" data-inventory-action="add-guardian">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
   <h1>Part III: Guardian(s) Attestation</h1>
   <div class="schedule-instructions">
@@ -841,7 +888,7 @@ function pageD4(){
 
 function pageD5(){
   const cards=D.serviceRecipients.map((r,i)=>{
-    const removeBtn=D.serviceRecipients.length>1?`<button class="btn btn-sm btn-outline-danger no-print" onclick="removeRecipient(${i})">✕ Remove</button>`:'';
+    const removeBtn=D.serviceRecipients.length>1?`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-recipient" data-index="${i}">✕ Remove</button>`:'';
     return `<div class="entry-card mb-2">
       <div class="entry-card-header"><span>Recipient ${i+1}</span>${removeBtn}</div>
       <div class="entry-card-body">
@@ -849,7 +896,7 @@ function pageD5(){
       </div>
     </div>`;
   }).join('');
-  const addBtn2=D.serviceRecipients.length<4?`<button class="btn btn-outline-secondary btn-sm mb-4 no-print" onclick="addRecipient()">+ Add Recipient</button>`:'';
+  const addBtn2=D.serviceRecipients.length<4?`<button class="btn btn-outline-secondary btn-sm mb-4 no-print" data-inventory-action="add-recipient">+ Add Recipient</button>`:'';
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>

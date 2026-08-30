@@ -237,9 +237,9 @@ export function pagePrintPlanMinor(){
     <div class="print-preview-banner no-print">
       <div><strong>Preview &amp; Export</strong> ${errors.length?`<span style="color:var(--danger-text)"> — ${errors.length} issue(s)</span>`:' — Ready to export'}</div>
       <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-primary btn-sm" onclick="doSavePdfPlanMinor()" ${errors.length?'disabled':''}>Save as PDF</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="pvShowAll();window.print()">Print</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="openFloridaCourtPortal()" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
+        <button class="btn btn-primary btn-sm" data-form-action="save-pdf-plan-minor" ${errors.length?'disabled':''}>Save as PDF</button>
+        <button class="btn btn-outline-secondary btn-sm" data-form-action="print">Print</button>
+        <button class="btn btn-outline-secondary btn-sm" data-form-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
       </div>
     </div>
     ${errors.length?validationPanel(errors):''}

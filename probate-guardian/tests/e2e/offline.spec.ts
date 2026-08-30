@@ -132,7 +132,7 @@ test.describe('hosted offline cache', () => {
       await fetch('probe.sav').catch(() => undefined);
       await fetch('case-data/probe.json').catch(() => undefined);
       const blobUrl = URL.createObjectURL(new Blob(['private case data']));
-      try { await fetch(blobUrl); } finally { URL.revokeObjectURL(blobUrl); }
+      try { await fetch(blobUrl).catch(() => undefined); } finally { URL.revokeObjectURL(blobUrl); }
     });
 
     const cachedUrls = await page.evaluate(async () => {

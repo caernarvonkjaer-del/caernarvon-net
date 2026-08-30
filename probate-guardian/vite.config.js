@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import { createHash } from 'node:crypto';
 
 // Milestone 1 (see INDEX-SPLIT-PLAN.md): index.html is still the untouched
 // monolith. This config exists to prove the dual-output build pipeline
@@ -35,6 +36,7 @@ const STATIC_COPY_TARGETS = [
   // this source template, injecting a manifest derived from dist/web.
   { src: 'sw.js', dest: '.' },
   { src: 'src/legacy-app.js', dest: '.' },
+  { src: 'src/prepaint.js', dest: 'src', rename: { stripBase: true, name: 'prepaint.js' } },
   // fragments/*.html: src/fragment-loader.js fetches these as plain static
   // files everywhere except file:// (see the comment there for the full
   // reasoning -- fetch() must keep working with zero Vite processing, since
@@ -43,6 +45,22 @@ const STATIC_COPY_TARGETS = [
   // build takes the `?raw` dynamic-import branch instead) but harmless.
   { src: 'fragments', dest: '.' },
 ];
+
+function portableCspHashes() {
+  return {
+    name: 'portable-csp-hashes',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      for (const asset of Object.values(bundle)) {
+        if (asset.type !== 'asset' || !asset.fileName.endsWith('.html')) continue;
+        const html = String(asset.source);
+        const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
+          .map((match) => `'sha256-${createHash('sha256').update(match[1]).digest('base64')}'`);
+        asset.source = html.replace("script-src 'self'", `script-src 'self' ${hashes.join(' ')}`);
+      }
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const portable = mode === 'portable';
@@ -55,7 +73,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       viteStaticCopy({ targets: STATIC_COPY_TARGETS }),
-      ...(portable ? [viteSingleFile()] : []),
+      ...(portable ? [viteSingleFile(), portableCspHashes()] : []),
     ],
   };
 });

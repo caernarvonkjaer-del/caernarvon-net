@@ -70,11 +70,6 @@ export async function mount(container, page) {
 }
 
 export function dispose(container) {
-  // All pagePlanM*() renderers return HTML strings with inline onclick=/
-  // oninput= attributes, not addEventListener-bound listeners -- clearing
-  // the container is genuinely sufficient cleanup. See INDEX-SPLIT-PLAN.md's
-  // module contract, the renderTrustedHtml() accommodation for migrated
-  // string-returning renderers.
   container.replaceChildren();
 }
 
@@ -83,7 +78,7 @@ export function mountNav(container) {
 }
 
 function buildNavPlanMinor(container){
-  const item=(route,nav,label)=>`<button class="nav-link-item" data-page="${route}" data-nav="${nav}" onclick="navigate('${route}')">${label}</button>`;
+  const item=(route,nav,label)=>`<button class="nav-link-item" data-page="${route}" data-nav="${nav}" data-form-action="navigate" data-route="${route}">${label}</button>`;
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">Annual Plan — Minors</div>
@@ -97,7 +92,7 @@ function buildNavPlanMinor(container){
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
+      <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
 }
@@ -144,16 +139,16 @@ function pagePlanMResidences(){
     const set=f=>`D.q2Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="entry-card mb-2">
       <div class="entry-card-header">Residence ${i+1}
-        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" onclick="duplicatePlanRow('q2Residences',${i},'/p2')">${ic('copy',13)}</button>
-        <button class="btn btn-sm btn-outline-danger" onclick="removePlanRow('q2Residences',${i},'/p2')">×</button>
+        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q2Residences" data-index="${i}" data-route="/p2">${ic('copy',13)}</button>
+        <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q2Residences" data-index="${i}" data-route="/p2">×</button>
       </div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Residence Name</label><input type="text" class="form-control" value="${esc(r.name||'')}" oninput="${set('name')}"></div>
-        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" oninput="${set('street')}"></div>
-        <div class="col-md-5"><label class="form-label">City</label><input type="text" class="form-control" value="${esc(r.city||'')}" oninput="${set('city')}"></div>
-        <div class="col-md-3"><label class="form-label">State</label><input type="text" class="form-control" value="${esc(r.state||'')}" oninput="${set('state')}"></div>
-        <div class="col-md-4"><label class="form-label">Zip</label><input type="text" class="form-control" value="${esc(r.zip||'')}" oninput="${set('zip')}"></div>
-        <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
+        <div class="col-md-6"><label class="form-label">Residence Name</label><input type="text" class="form-control" value="${esc(r.name||'')}" data-form-path="q2Residences.${i}.name"></div>
+        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" data-form-path="q2Residences.${i}.street"></div>
+        <div class="col-md-5"><label class="form-label">City</label><input type="text" class="form-control" value="${esc(r.city||'')}" data-form-path="q2Residences.${i}.city"></div>
+        <div class="col-md-3"><label class="form-label">State</label><input type="text" class="form-control" value="${esc(r.state||'')}" data-form-path="q2Residences.${i}.state"></div>
+        <div class="col-md-4"><label class="form-label">Zip</label><input type="text" class="form-control" value="${esc(r.zip||'')}" data-form-path="q2Residences.${i}.zip"></div>
+        <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q2Residences.${i}.phone" data-form-format="phone"></div>
       </div></div>
     </div>`;
   }).join('');
@@ -161,7 +156,7 @@ function pagePlanMResidences(){
     <h1>2. Residences During the Preceding 12 Months</h1>
     <div class="schedule-instructions">List every place the minor resided during the prior 12 months, if different from the current residence on the cover page. Leave blank if the minor has not moved.</div>
     ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No prior residences listed.</span></div>`}
-    <button class="btn btn-outline-primary btn-sm mb-2" onclick="addPlanRow('q2Residences','minorResidence','/p2')">+ Add Residence</button>
+    <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q2Residences" data-row-type="minorResidence" data-route="/p2">+ Add Residence</button>
     ${renderScheduleDocsSection('planMResidences')}
     ${pageNavS('/','/p3')}
   </div>`;
@@ -173,20 +168,20 @@ function pagePlanMProviders(){
     const set=f=>`D.q3Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="entry-card mb-2">
       <div class="entry-card-header">Provider ${i+1}
-        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" onclick="duplicatePlanRow('q3Providers',${i},'/p3')">${ic('copy',13)}</button>
-        <button class="btn btn-sm btn-outline-danger" onclick="removePlanRow('q3Providers',${i},'/p3')">×</button>
+        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q3Providers" data-index="${i}" data-route="/p3">${ic('copy',13)}</button>
+        <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q3Providers" data-index="${i}" data-route="/p3">×</button>
       </div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-4"><label class="form-label">First Name</label><input type="text" class="form-control" value="${esc(r.first||'')}" oninput="${set('first')}"></div>
-        <div class="col-md-2"><label class="form-label">MI</label><input type="text" class="form-control" value="${esc(r.mi||'')}" oninput="${set('mi')}"></div>
-        <div class="col-md-6"><label class="form-label">Last Name<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.last||'')}" oninput="${set('last')}"></div>
-        <div class="col-md-6"><label class="form-label">Type of Provider</label><input type="text" class="form-control" placeholder="e.g. Primary Care Physician" value="${esc(r.providerType||'')}" oninput="${set('providerType')}"></div>
-        <div class="col-md-6"><label class="form-label">Number of Visits</label><input type="text" class="form-control" value="${esc(r.visits||'')}" oninput="${set('visits')}"></div>
-        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" oninput="${set('street')}"></div>
-        <div class="col-md-3"><label class="form-label">City</label><input type="text" class="form-control" value="${esc(r.city||'')}" oninput="${set('city')}"></div>
-        <div class="col-md-2"><label class="form-label">State</label><input type="text" class="form-control" value="${esc(r.state||'')}" oninput="${set('state')}"></div>
-        <div class="col-md-3"><label class="form-label">Zip</label><input type="text" class="form-control" value="${esc(r.zip||'')}" oninput="${set('zip')}"></div>
-        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
+        <div class="col-md-4"><label class="form-label">First Name</label><input type="text" class="form-control" value="${esc(r.first||'')}" data-form-path="q3Providers.${i}.first"></div>
+        <div class="col-md-2"><label class="form-label">MI</label><input type="text" class="form-control" value="${esc(r.mi||'')}" data-form-path="q3Providers.${i}.mi"></div>
+        <div class="col-md-6"><label class="form-label">Last Name<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.last||'')}" data-form-path="q3Providers.${i}.last"></div>
+        <div class="col-md-6"><label class="form-label">Type of Provider</label><input type="text" class="form-control" placeholder="e.g. Primary Care Physician" value="${esc(r.providerType||'')}" data-form-path="q3Providers.${i}.providerType"></div>
+        <div class="col-md-6"><label class="form-label">Number of Visits</label><input type="text" class="form-control" value="${esc(r.visits||'')}" data-form-path="q3Providers.${i}.visits"></div>
+        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" data-form-path="q3Providers.${i}.street"></div>
+        <div class="col-md-3"><label class="form-label">City</label><input type="text" class="form-control" value="${esc(r.city||'')}" data-form-path="q3Providers.${i}.city"></div>
+        <div class="col-md-2"><label class="form-label">State</label><input type="text" class="form-control" value="${esc(r.state||'')}" data-form-path="q3Providers.${i}.state"></div>
+        <div class="col-md-3"><label class="form-label">Zip</label><input type="text" class="form-control" value="${esc(r.zip||'')}" data-form-path="q3Providers.${i}.zip"></div>
+        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q3Providers.${i}.phone" data-form-format="phone"></div>
       </div></div>
     </div>`;
   }).join('');
@@ -194,7 +189,7 @@ function pagePlanMProviders(){
     <h1>3. Medical &amp; Mental Health Treatment Providers</h1>
     <div class="schedule-instructions">Every provider who treated the minor during the preceding 12 months.</div>
     ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
-    <button class="btn btn-outline-primary btn-sm mb-2" onclick="addPlanRow('q3Providers','minorProvider','/p3')">+ Add Provider</button>
+    <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q3Providers" data-row-type="minorProvider" data-route="/p3">+ Add Provider</button>
     ${renderScheduleDocsSection('planMProviders')}
     ${pageNavS('/p2','/p4')}
   </div>`;
@@ -261,14 +256,14 @@ function pagePlanMSignatures(){
     return `<div class="plan-sig-block">
       <h3>${title}</h3>
       <div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" oninput="this.value=formatName(this.value);${set('name')}"></div>
-        <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" oninput="${set('relationship')}"></div>
-        <div class="col-md-4"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(gd.tin||'')}" oninput="${set('tin')}"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
-        <div class="col-md-4"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
-        <div class="col-md-4"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
-        <div class="col-md-6"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" oninput="${set('mailingStreet')}"></div>
-        <div class="col-md-6"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.mailingCityStateZip||'')}" oninput="${set('mailingCityStateZip')}"></div>
-        <div class="col-md-6"><label class="form-label">Email Address</label><input type="email" class="form-control" value="${esc(gd.email||'')}" oninput="${set('email')}"></div>
+        <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
+        <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
+        <div class="col-md-4"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(gd.tin||'')}" data-form-path="planGuardians.${i}.tin" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
+        <div class="col-md-4"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
+        <div class="col-md-4"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
+        <div class="col-md-6"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" data-form-path="planGuardians.${i}.mailingStreet"></div>
+        <div class="col-md-6"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip"></div>
+        <div class="col-md-6"><label class="form-label">Email Address</label><input type="email" class="form-control" value="${esc(gd.email||'')}" data-form-path="planGuardians.${i}.email"></div>
       </div>
     </div>`;
   };

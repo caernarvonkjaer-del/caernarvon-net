@@ -17,7 +17,7 @@
 // card total *before* this module is ever loaded (see the Milestone 2 plan's
 // "Problem 1" and "Problem 3").
 const {
-  esc, ic, tooltip,
+  esc, ic, tooltip, autoSave, navigate,
   formatName, formatSSN, formatPhone, formatAddress, formatCityStateZip,
   sanitizeNonNegativeDecimal, sanitizeNegativeAmounts,
   renderScheduleDocsSection, browserRecommendationNotice, pageIntroRow,
@@ -35,6 +35,35 @@ const {
 let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
+const eventControllers = new WeakMap();
+
+function bindEvents(container) {
+  eventControllers.get(container)?.abort();
+  const controller = new AbortController();
+  eventControllers.set(container, controller);
+  const options = { signal: controller.signal };
+
+  container.addEventListener('click', (event) => {
+    const actionElement = event.target instanceof Element ? event.target.closest('[data-simplified-action]') : null;
+    if (!actionElement) return;
+    const index = Number.parseInt(actionElement.dataset.index, 10);
+    switch (actionElement.dataset.simplifiedAction) {
+      case 'add-remuneration': window.D.remuneration.push({ guardian: '', type: '', description: '' }); autoSave(); navigate('/p7'); break;
+      case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
+      case 'open-court-portal': window.openFloridaCourtPortal(); break;
+      case 'remove-remuneration': window.D.remuneration.splice(index, 1); autoSave(); navigate('/p7'); break;
+      case 'save-excel': _excelModule.doSaveExcel(); break;
+      case 'save-pdf': _printModule.doSavePdf(); break;
+    }
+  }, options);
+  container.addEventListener('change', (event) => {
+    const input = event.target;
+    if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'import-excel') _excelModule.importExcel(input);
+  }, options);
+  container.addEventListener('input', (event) => {
+    if (event.target instanceof HTMLElement && event.target.dataset.simplifiedRefresh === 'part2') queueMicrotask(refreshPart2);
+  }, options);
+}
 
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
@@ -74,16 +103,13 @@ export async function mount(container, page) {
     default: html = pageCover();
   }
   container.innerHTML = html;
+  bindEvents(container);
   container.scrollTop = 0;
 }
 
 export function dispose(container) {
-  // pageCover()..pagePart7()/pagePrintSimplified() all return HTML strings
-  // with inline onclick=/oninput= attributes, not addEventListener-bound
-  // listeners -- clearing the container is genuinely sufficient cleanup,
-  // no separate listener bookkeeping needed. See INDEX-SPLIT-PLAN.md's
-  // module contract, the renderTrustedHtml() accommodation for migrated
-  // string-returning renderers.
+  eventControllers.get(container)?.abort();
+  eventControllers.delete(container);
   container.replaceChildren();
 }
 
@@ -109,17 +135,17 @@ function buildNavSimplified(container){
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">Simplified Annual Accounting</div>
-      <button class="nav-link-item" data-page="/" data-nav="s-cover" onclick="navigate('/')">Cover &amp; Part I</button>
-      <button class="nav-link-item" data-page="/p2" data-nav="s-p2" onclick="navigate('/p2')">Part II — Accounting</button>
-      <button class="nav-link-item" data-page="/p3" data-nav="s-p3" onclick="navigate('/p3')">Part III — Declaration</button>
-      <button class="nav-link-item" data-page="/p4" data-nav="s-p4" onclick="navigate('/p4')">Part IV — Guardians</button>
-      <button class="nav-link-item" data-page="/p5" data-nav="s-p5" onclick="navigate('/p5')">Part V — Atty Signature</button>
-      <button class="nav-link-item" data-page="/p6" data-nav="s-p6" onclick="navigate('/p6')">Part VI — Cert. of Service</button>
-      <button class="nav-link-item" data-page="/p7" data-nav="s-p7" onclick="navigate('/p7')">Part VII — Remuneration</button>
+      <button class="nav-link-item" data-page="/" data-nav="s-cover" data-form-action="navigate" data-route="/">Cover &amp; Part I</button>
+      <button class="nav-link-item" data-page="/p2" data-nav="s-p2" data-form-action="navigate" data-route="/p2">Part II — Accounting</button>
+      <button class="nav-link-item" data-page="/p3" data-nav="s-p3" data-form-action="navigate" data-route="/p3">Part III — Declaration</button>
+      <button class="nav-link-item" data-page="/p4" data-nav="s-p4" data-form-action="navigate" data-route="/p4">Part IV — Guardians</button>
+      <button class="nav-link-item" data-page="/p5" data-nav="s-p5" data-form-action="navigate" data-route="/p5">Part V — Atty Signature</button>
+      <button class="nav-link-item" data-page="/p6" data-nav="s-p6" data-form-action="navigate" data-route="/p6">Part VI — Cert. of Service</button>
+      <button class="nav-link-item" data-page="/p7" data-nav="s-p7" data-form-action="navigate" data-route="/p7">Part VII — Remuneration</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
+      <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
 }
@@ -143,7 +169,7 @@ function pageCover(){
           <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
             <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelSimplified(this)">
+              <input type="file" accept=".xlsx" style="display:none" data-simplified-change="import-excel">
             </label>
             <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the previously exported Simplified Accounting Excel file</p>
             <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
@@ -203,7 +229,7 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 1</span>
           <span class="line-label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="startingBalance" value="${esc(sanitizeNonNegativeDecimal(d.startingBalance))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.startingBalance=this.value;autoSave();updateNavDots();document.getElementById('line8').textContent=fmtS(calcTotals().remaining)"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="startingBalance" value="${esc(sanitizeNonNegativeDecimal(d.startingBalance))}" data-form-path="startingBalance" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
       </div>
     </div>
@@ -213,12 +239,12 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 2</span>
           <span class="line-label">Interest Income<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" value="${esc(sanitizeNonNegativeDecimal(d.interestIncome))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.interestIncome=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" value="${esc(sanitizeNonNegativeDecimal(d.interestIncome))}" data-form-path="interestIncome" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 3</span>
           <span class="line-label">Deposits Pursuant to Settlement<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" value="${esc(sanitizeNonNegativeDecimal(d.depositsSettlement))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.depositsSettlement=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" value="${esc(sanitizeNonNegativeDecimal(d.depositsSettlement))}" data-form-path="depositsSettlement" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 4</span>
@@ -233,12 +259,12 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 5</span>
           <span class="line-label">Financial Institution Service Charges<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" value="${esc(sanitizeNonNegativeDecimal(d.serviceCharges))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.serviceCharges=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" value="${esc(sanitizeNonNegativeDecimal(d.serviceCharges))}" data-form-path="serviceCharges" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 6</span>
           <span class="line-label">Federal Income Tax<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" value="${esc(sanitizeNonNegativeDecimal(d.federalIncomeTax))}" oninput="this.value=sanitizeNonNegativeDecimal(this.value);D.federalIncomeTax=this.value;autoSave();updateNavDots();refreshPart2()"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" value="${esc(sanitizeNonNegativeDecimal(d.federalIncomeTax))}" data-form-path="federalIncomeTax" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 7</span>
@@ -293,15 +319,15 @@ function pagePart4(){
       <div class="entry-card-header">${labels[i]}</div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" oninput="this.value=formatName(this.value);D.guardians[${i}].name=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-3"><label class="form-label">Signature Date<span class="req">*</span></label><input type="date" class="form-control" value="${esc(g.signatureDate)}" oninput="D.guardians[${i}].signatureDate=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(formatSSN(g.ssn||''))}" oninput="this.value=formatSSN(this.value);D.guardians[${i}].ssn=this.value;autoSave();updateNavDots()"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div></div>
-          <div class="col-md-4"><label class="form-label">Phone Number<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatPhone(g.phone||''))}" oninput="this.value=formatPhone(this.value);D.guardians[${i}].phone=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-8"><label class="form-label">Email Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(g.email)}" oninput="D.guardians[${i}].email=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Mailing Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.mailingStreet||''))}" oninput="this.value=formatAddress(this.value);D.guardians[${i}].mailingStreet=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Mailing City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.mailingCityStateZip||''))}" oninput="applyZipLimit(this);this.value=formatCityStateZip(this.value);D.guardians[${i}].mailingCityStateZip=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Residence / Corporate Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.residenceStreet||''))}" oninput="this.value=formatAddress(this.value);D.guardians[${i}].residenceStreet=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Residence / Corporate City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.residenceCityStateZip||''))}" oninput="applyZipLimit(this);this.value=formatCityStateZip(this.value);D.guardians[${i}].residenceCityStateZip=this.value;autoSave();updateNavDots()"></div>
+          <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-form-format="name"></div>
+          <div class="col-md-3"><label class="form-label">Signature Date<span class="req">*</span></label><input type="date" class="form-control" value="${esc(g.signatureDate)}" data-form-path="guardians.${i}.signatureDate"></div>
+          <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><div class="ssn-mask-wrap"><input type="password" autocomplete="off" class="form-control" value="${esc(formatSSN(g.ssn||''))}" data-form-path="guardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
+          <div class="col-md-4"><label class="form-label">Phone Number<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatPhone(g.phone||''))}" data-form-path="guardians.${i}.phone" data-form-format="phone"></div>
+          <div class="col-md-8"><label class="form-label">Email Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(g.email)}" data-form-path="guardians.${i}.email"></div>
+          <div class="col-md-6"><label class="form-label">Mailing Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.mailingStreet||''))}" data-form-path="guardians.${i}.mailingStreet" data-form-format="address"></div>
+          <div class="col-md-6"><label class="form-label">Mailing City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.mailingCityStateZip||''))}" data-form-path="guardians.${i}.mailingCityStateZip" data-form-format="city-state-zip"></div>
+          <div class="col-md-6"><label class="form-label">Residence / Corporate Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.residenceStreet||''))}" data-form-path="guardians.${i}.residenceStreet" data-form-format="address"></div>
+          <div class="col-md-6"><label class="form-label">Residence / Corporate City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.residenceCityStateZip||''))}" data-form-path="guardians.${i}.residenceCityStateZip" data-form-format="city-state-zip"></div>
         </div>
       </div>
     </div>`;
@@ -338,9 +364,9 @@ function pagePart6(){
       <div class="entry-card-header">Recipient ${i+1}</div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Name and Address Line 1${req}</label><input type="text" class="form-control" value="${esc(formatName(r.name||''))}" oninput="this.value=formatName(this.value);D.certRecipients[${i}].name=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-12"><label class="form-label">Line 2</label><input type="text" class="form-control" value="${esc(formatAddress(r.line2||''))}" oninput="this.value=formatAddress(this.value);D.certRecipients[${i}].line2=this.value;autoSave()"></div>
-          <div class="col-12"><label class="form-label">Line 3</label><input type="text" class="form-control" value="${esc(formatAddress(r.line3||''))}" oninput="this.value=formatAddress(this.value);D.certRecipients[${i}].line3=this.value;autoSave()"></div>
+          <div class="col-12"><label class="form-label">Name and Address Line 1${req}</label><input type="text" class="form-control" value="${esc(formatName(r.name||''))}" data-form-path="certRecipients.${i}.name" data-form-format="name"></div>
+          <div class="col-12"><label class="form-label">Line 2</label><input type="text" class="form-control" value="${esc(formatAddress(r.line2||''))}" data-form-path="certRecipients.${i}.line2" data-form-format="address"></div>
+          <div class="col-12"><label class="form-label">Line 3</label><input type="text" class="form-control" value="${esc(formatAddress(r.line3||''))}" data-form-path="certRecipients.${i}.line3" data-form-format="address"></div>
         </div>
       </div>
     </div>`;
@@ -361,7 +387,7 @@ function pagePart6(){
     <h2 class="mt-3" style="font-size:.8rem;font-weight:700;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
     <div class="row g-3">
-      <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" oninput="this.value=formatName(this.value);D.attorney=this.value;autoSave()"></div>
+      <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
       <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
       <div class="col-md-3">${inpS('certAttyBarNumber','Bar Number',d.certAttyBarNumber)}</div>
       <div class="col-md-4">${inpS('certAttyPhone','Phone Number',d.certAttyPhone)}</div>
@@ -379,12 +405,12 @@ function pagePart7(){
   let rows='';
   d.remuneration.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Remuneration Entry ${i+1} <button class="btn btn-sm btn-outline-danger" onclick="D.remuneration.splice(${i},1);autoSave();navigate('/p7')">Remove</button></div>
+      <div class="entry-card-header">Remuneration Entry ${i+1} <button class="btn btn-sm btn-outline-danger" data-simplified-action="remove-remuneration" data-index="${i}">Remove</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" oninput="this.value=formatName(this.value);D.remuneration[${i}].guardian=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" oninput="this.value=formatName(this.value);D.remuneration[${i}].type=this.value;autoSave();updateNavDots()"></div>
-          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(formatName(r.description||''))}" oninput="this.value=formatName(this.value);D.remuneration[${i}].description=this.value;autoSave()"></div>
+          <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" data-form-path="remuneration.${i}.guardian" data-form-format="name"></div>
+          <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" data-form-path="remuneration.${i}.type" data-form-format="name"></div>
+          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(formatName(r.description||''))}" data-form-path="remuneration.${i}.description" data-form-format="name"></div>
         </div>
       </div>
     </div>`;
@@ -393,7 +419,7 @@ function pagePart7(){
     <h1>Part VII — Guardian(s) Declaration of Remuneration</h1>
     <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.</div>
     ${rows}
-    <button class="btn btn-outline-primary btn-sm mb-3" onclick="D.remuneration.push({guardian:'',type:'',description:''});autoSave();navigate('/p7')">+ Add Entry</button>
+    <button class="btn btn-outline-primary btn-sm mb-3" data-simplified-action="add-remuneration">+ Add Entry</button>
     ${renderScheduleDocsSection('p7')}
     ${pageNavS('/p6','/print')}
   </div>`;

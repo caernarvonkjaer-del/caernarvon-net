@@ -967,15 +967,13 @@ portable remains explicitly service-worker-free.
 
 ### Milestone 11: CSP and inline-handler removal
 
-Currently 47 inline `onclick=`/similar handlers remain in `legacy-app.js` and
-30 in `index.html` (down from the original 291+150, since every extracted
-feature's *own* handlers moved with it, but shell-level and still-legacy
-dashboard/ward-management markup have not been converted). No CSP meta tag
-exists yet. This is the step 2 "remove those handlers in a later pass" and
-the acceptance criteria's CSP/MIME-type items, both still open. Do this after
-Milestone 9, since dashboard/ward-management extraction will move a
-meaningful fraction of the remaining 47 along with it — converting handlers
-in code about to move is wasted work.
+Complete. Executable inline event attributes have been replaced by fixed,
+declarative actions and registered listeners. The CSP now keeps scripts strict
+(`script-src 'self'`, with exact SHA-256 authorization for the portable build's
+generated inline module) and does not allow inline or evaluated script. Inline
+styles remain temporarily allowed by `style-src 'self' 'unsafe-inline'` because
+legacy rendering still emits dynamic style attributes; removing that exception
+is a separate style-migration task, not part of Milestone 11.
 
 ### Milestone 12: Shrink the legacy entry, evaluate a real `main.js`
 

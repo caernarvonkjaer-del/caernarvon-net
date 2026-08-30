@@ -166,9 +166,9 @@ export function pagePrintSimplified(capOver){
     <div class="print-preview-banner no-print">
       <div><strong>Preview &amp; Export</strong>${errors.length?` — <span style="color:var(--danger-text)">${errors.length} issue(s)</span>`:capOver.length?` — <span style="color:var(--danger-text)">too many entries for Excel; use PDF</span>`:' — Ready to export'}</div>
       <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-outline-primary btn-sm" onclick="doSavePdfSimplified()" ${errors.length?'disabled':''}>Save as PDF</button>
-        <button class="btn btn-primary btn-sm" onclick="doSaveExcelSimplified()" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="More remuneration entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="openFloridaCourtPortal()" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
+        <button class="btn btn-outline-primary btn-sm" data-simplified-action="save-pdf" ${errors.length?'disabled':''}>Save as PDF</button>
+        <button class="btn btn-primary btn-sm" data-simplified-action="save-excel" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="More remuneration entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
+        <button class="btn btn-outline-secondary btn-sm" data-simplified-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
       </div>
     </div>
     <div class="accordion mb-3 no-print">
@@ -182,7 +182,7 @@ export function pagePrintSimplified(capOver){
           <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
             <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" onchange="importExcelSimplified(this)">
+              <input type="file" accept=".xlsx" style="display:none" data-simplified-change="import-excel">
             </label>
             <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the previously exported Simplified Accounting Excel file</p>
             <div id="import-progress-simplified" style="margin-top:.5rem;font-size:.8rem;"></div>

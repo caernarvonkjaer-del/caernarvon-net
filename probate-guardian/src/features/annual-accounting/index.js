@@ -43,16 +43,13 @@ const {
 let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
+const eventControllers = new WeakMap();
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
     _lazyModulesPromise = Promise.all([import('./print.js'), import('./excel.js')]).then(([print, excel]) => {
       _printModule = print;
       _excelModule = excel;
-      // Referenced by name from rendered onclick="..."/onchange="..." HTML
-      // attributes, which the browser only ever resolves against the
-      // global scope -- never a module's own scope -- so these must be
-      // real `window` properties, not just exports.
       window.doSavePdfAnnual = () => _printModule.doSavePdf();
       window.doSaveExcelAnnual = () => _excelModule.doSaveExcel();
       window.importExcelAnnual = (input) => _excelModule.importExcel(input);
@@ -98,16 +95,91 @@ export async function mount(container, page) {
     default:       html = pagePart1Annual();
   }
   container.innerHTML = html;
+  bindEvents(container);
   container.scrollTop = 0;
 }
 
 export function dispose(container) {
-  // All pagePartXAnnual()/pageSchXAnnual() renderers return HTML strings
-  // with inline onclick=/oninput= attributes, not addEventListener-bound
-  // listeners -- clearing the container is genuinely sufficient cleanup.
-  // See INDEX-SPLIT-PLAN.md's module contract, the renderTrustedHtml()
-  // accommodation for migrated string-returning renderers.
+  eventControllers.get(container)?.abort();
+  eventControllers.delete(container);
   container.replaceChildren();
+}
+
+function setterPath(setter) {
+  const assignment = setter.split(';', 1)[0];
+  const match = /^D((?:\.[A-Za-z_$][\w$]*|\[\d+\])+)=this\.value$/.exec(assignment);
+  if (!match) throw new Error(`Unsupported Annual field binding: ${assignment}`);
+  return match[1].replace(/^\./, '').replace(/\[(\d+)\]/g, '.$1');
+}
+
+function persistAnnualControl(control, applyFormat = true) {
+  const path = control.dataset.annualPath;
+  if (!path) return;
+  let value = control.type === 'checkbox'
+    ? (control.dataset.annualValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
+    : control.value;
+  const formatters = {
+    account: formatAccountNumber,
+    address: formatAddress,
+    bar: formatBarNumber,
+    case: formatCaseNumber,
+    check: formatCheckNumber,
+    decimal: sanitizeNonNegativeDecimal,
+    'signed-decimal': sanitizeDecimal,
+    name: formatName,
+    phone: formatPhone,
+    security: (current) => validateSecurityInput(control.dataset.annualLabel, current),
+    ssn: formatSSN,
+    zip: (current) => { applyZipLimit(control); return formatCityStateZip(current); },
+  };
+  const formatter = applyFormat && formatters[control.dataset.annualFormat];
+  if (formatter) {
+    value = formatter(value);
+    control.value = value;
+  }
+  window.setPath(window.D, path, value);
+  autoSave();
+  updateNavDots();
+  if (control.dataset.syncWardName) syncActiveWardNameDisplay();
+  if (control.dataset.syncGuardianName) syncGuardianNameDisplay();
+  const scheduleATotal = document.getElementById('schA_total');
+  if (scheduleATotal && path.startsWith('schA.')) scheduleATotal.textContent = fmtAnnual(calcTotalsAnnual().schA);
+}
+
+function bindEvents(container) {
+  eventControllers.get(container)?.abort();
+  const controller = new AbortController();
+  eventControllers.set(container, controller);
+  const options = { signal: controller.signal };
+  container.addEventListener('input', (event) => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) persistAnnualControl(event.target);
+  }, options);
+  container.addEventListener('change', (event) => {
+    const control = event.target;
+    if (control instanceof HTMLSelectElement || (control instanceof HTMLInputElement && ['checkbox', 'radio'].includes(control.type))) persistAnnualControl(control);
+    if (control instanceof HTMLInputElement && control.dataset.annualChange === 'import-excel') _excelModule.importExcel(control);
+  }, options);
+  container.addEventListener('focusout', (event) => {
+    const control = event.target;
+    if (!(control instanceof HTMLInputElement) || control.dataset.annualFormat !== 'case') return;
+    control.value = finalizeCaseNumber(control.value);
+    persistAnnualControl(control, false);
+  }, options);
+  container.addEventListener('click', (event) => {
+    const control = event.target instanceof Element ? event.target.closest('[data-annual-action]') : null;
+    if (!control) return;
+    event.preventDefault();
+    const collection = control.dataset.collection;
+    const index = Number.parseInt(control.dataset.index, 10);
+    switch (control.dataset.annualAction) {
+      case 'add-row': addAnnualRow(collection, control.dataset.route); break;
+      case 'duplicate-row': duplicateAnnualRow(collection, index, control.dataset.route); break;
+      case 'navigate': navigate(control.dataset.route); break;
+      case 'remove-row': removeAnnualRow(collection, index, control.dataset.route); break;
+      case 'save-excel': _excelModule.doSaveExcel(); break;
+      case 'save-pdf': _printModule.doSavePdf(); break;
+    }
+  }, options);
 }
 
 export function mountNav(container) {
@@ -117,10 +189,7 @@ export function mountNav(container) {
 // Same idea as the Plan-family's planEmptyRow-family row CRUD, but for the
 // Annual Accounting schedules, which store their rows in D.schA/D.schB1/…
 // and are rendered inline rather than through a shared row factory. Takes
-// the array name so one function serves all 14 schedules. Referenced from
-// rendered onclick="..." HTML attributes, which the browser only ever
-// resolves against the global scope -- never a module's own scope -- so it
-// must be a real `window` property, not just a module-local declaration.
+// the array name so one function serves all 14 schedules.
 function duplicateAnnualRow(arrName,idx,route){
   const list=window.D&&window.D[arrName];
   if(!list||!list[idx])return;
@@ -130,44 +199,75 @@ function duplicateAnnualRow(arrName,idx,route){
 }
 window.duplicateAnnualRow = duplicateAnnualRow;
 
+const annualRowFactories = {
+  remuneration: () => ({guardian:'',type:'',amount:'',description:''}),
+  schA: () => ({payer:'',description:'',bank:'',accountNo:'',amount:''}),
+  schB1: () => ({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB2: () => ({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB3: () => ({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB4: () => ({checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
+  schC: () => ({description:'',date:'',gain:'',loss:''}),
+  schD1: () => ({description:'',accountNo:'',restricted:'No',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
+  schD2: () => ({description:'',residence:'No',income:'No',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
+  schD3: () => ({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
+  schD4: () => ({description:'',restricted:'No',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
+  schD5: () => ({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
+  schE: () => ({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
+  schF1: () => ({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+  schF2: () => ({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+};
+function addAnnualRow(collection, route) {
+  const factory = annualRowFactories[collection];
+  if (!factory || !Array.isArray(window.D?.[collection])) return;
+  window.D[collection].push(factory());
+  autoSave();
+  navigate(route);
+}
+function removeAnnualRow(collection, index, route) {
+  if (!annualRowFactories[collection] || !Array.isArray(window.D?.[collection])) return;
+  window.D[collection].splice(index, 1);
+  autoSave();
+  navigate(route);
+}
+
 function buildNavAnnual(container){
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">${esc(formDisplayName(window.D.inventoryType))}</div>
-      <button class="nav-link-item" data-page="/" data-nav="a-p1" onclick="navigate('/')">Part I — Case Info</button>
-      <button class="nav-link-item" data-page="/p2" data-nav="a-p2" onclick="navigate('/p2')">Part II — Accounting</button>
-      <button class="nav-link-item" data-page="/p3" data-nav="a-p3" onclick="navigate('/p3')">Part III — Guardians</button>
-      <button class="nav-link-item" data-page="/p4" data-nav="a-p4" onclick="navigate('/p4')">Part IV — Preparer</button>
-      <button class="nav-link-item" data-page="/p5" data-nav="a-p5" onclick="navigate('/p5')">Part V — Attorney</button>
+      <button class="nav-link-item" data-page="/" data-nav="a-p1" data-form-action="navigate" data-route="/">Part I — Case Info</button>
+      <button class="nav-link-item" data-page="/p2" data-nav="a-p2" data-form-action="navigate" data-route="/p2">Part II — Accounting</button>
+      <button class="nav-link-item" data-page="/p3" data-nav="a-p3" data-form-action="navigate" data-route="/p3">Part III — Guardians</button>
+      <button class="nav-link-item" data-page="/p4" data-nav="a-p4" data-form-action="navigate" data-route="/p4">Part IV — Preparer</button>
+      <button class="nav-link-item" data-page="/p5" data-nav="a-p5" data-form-action="navigate" data-route="/p5">Part V — Attorney</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Schedules</div>
-      <button class="nav-link-item" data-page="/scha" data-nav="a-scha" onclick="navigate('/scha')">Sch A — Income</button>
-      <button class="nav-link-item" data-page="/schb1" data-nav="a-schb1" onclick="navigate('/schb1')">Sch B1 — Disbursements</button>
-      <button class="nav-link-item" data-page="/schb2" data-nav="a-schb2" onclick="navigate('/schb2')">Sch B2 — Disbursements</button>
-      <button class="nav-link-item" data-page="/schb3" data-nav="a-schb3" onclick="navigate('/schb3')">Sch B3 — Disbursements</button>
-      <button class="nav-link-item" data-page="/schb4" data-nav="a-schb4" onclick="navigate('/schb4')">Sch B4 — Disbursements</button>
-      <button class="nav-link-item" data-page="/schc" data-nav="a-schc" onclick="navigate('/schc')">Sch C — Gains/Losses</button>
-      <button class="nav-link-item" data-page="/schd1" data-nav="a-schd1" onclick="navigate('/schd1')">Sch D1 — Assets</button>
-      <button class="nav-link-item" data-page="/schd2" data-nav="a-schd2" onclick="navigate('/schd2')">Sch D2 — Real Property</button>
-      <button class="nav-link-item" data-page="/schd3" data-nav="a-schd3" onclick="navigate('/schd3')">Sch D3 — Other Assets</button>
-      <button class="nav-link-item" data-page="/schd4" data-nav="a-schd4" onclick="navigate('/schd4')">Sch D4 — Restricted Assets</button>
-      <button class="nav-link-item" data-page="/schd5" data-nav="a-schd5" onclick="navigate('/schd5')">Sch D5 — Liabilities</button>
-      <button class="nav-link-item" data-page="/sche" data-nav="a-sche" onclick="navigate('/sche')">Sch E — Transfers</button>
-      <button class="nav-link-item" data-page="/schf1" data-nav="a-schf1" onclick="navigate('/schf1')">Sch F1 — Sales</button>
-      <button class="nav-link-item" data-page="/schf2" data-nav="a-schf2" onclick="navigate('/schf2')">Sch F2 — Sales</button>
+      <button class="nav-link-item" data-page="/scha" data-nav="a-scha" data-form-action="navigate" data-route="/scha">Sch A — Income</button>
+      <button class="nav-link-item" data-page="/schb1" data-nav="a-schb1" data-form-action="navigate" data-route="/schb1">Sch B1 — Disbursements</button>
+      <button class="nav-link-item" data-page="/schb2" data-nav="a-schb2" data-form-action="navigate" data-route="/schb2">Sch B2 — Disbursements</button>
+      <button class="nav-link-item" data-page="/schb3" data-nav="a-schb3" data-form-action="navigate" data-route="/schb3">Sch B3 — Disbursements</button>
+      <button class="nav-link-item" data-page="/schb4" data-nav="a-schb4" data-form-action="navigate" data-route="/schb4">Sch B4 — Disbursements</button>
+      <button class="nav-link-item" data-page="/schc" data-nav="a-schc" data-form-action="navigate" data-route="/schc">Sch C — Gains/Losses</button>
+      <button class="nav-link-item" data-page="/schd1" data-nav="a-schd1" data-form-action="navigate" data-route="/schd1">Sch D1 — Assets</button>
+      <button class="nav-link-item" data-page="/schd2" data-nav="a-schd2" data-form-action="navigate" data-route="/schd2">Sch D2 — Real Property</button>
+      <button class="nav-link-item" data-page="/schd3" data-nav="a-schd3" data-form-action="navigate" data-route="/schd3">Sch D3 — Other Assets</button>
+      <button class="nav-link-item" data-page="/schd4" data-nav="a-schd4" data-form-action="navigate" data-route="/schd4">Sch D4 — Restricted Assets</button>
+      <button class="nav-link-item" data-page="/schd5" data-nav="a-schd5" data-form-action="navigate" data-route="/schd5">Sch D5 — Liabilities</button>
+      <button class="nav-link-item" data-page="/sche" data-nav="a-sche" data-form-action="navigate" data-route="/sche">Sch E — Transfers</button>
+      <button class="nav-link-item" data-page="/schf1" data-nav="a-schf1" data-form-action="navigate" data-route="/schf1">Sch F1 — Sales</button>
+      <button class="nav-link-item" data-page="/schf2" data-nav="a-schf2" data-form-action="navigate" data-route="/schf2">Sch F2 — Sales</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Certification</div>
-      <button class="nav-link-item" data-page="/p67" data-nav="a-p67" onclick="navigate('/p67')">Parts VI &amp; VII</button>
-      <button class="nav-link-item" data-page="/p8" data-nav="a-p8" onclick="navigate('/p8')">Part VIII — Trusts</button>
-      <button class="nav-link-item" data-page="/p9" data-nav="a-p9" onclick="navigate('/p9')">Part IX — Bond</button>
-      <button class="nav-link-item" data-page="/p10" data-nav="a-p10" onclick="navigate('/p10')">Part X — Cert. of Service</button>
-      <button class="nav-link-item" data-page="/p11" data-nav="a-p11" onclick="navigate('/p11')">Part XI — Remuneration</button>
+      <button class="nav-link-item" data-page="/p67" data-nav="a-p67" data-form-action="navigate" data-route="/p67">Parts VI &amp; VII</button>
+      <button class="nav-link-item" data-page="/p8" data-nav="a-p8" data-form-action="navigate" data-route="/p8">Part VIII — Trusts</button>
+      <button class="nav-link-item" data-page="/p9" data-nav="a-p9" data-form-action="navigate" data-route="/p9">Part IX — Bond</button>
+      <button class="nav-link-item" data-page="/p10" data-nav="a-p10" data-form-action="navigate" data-route="/p10">Part X — Cert. of Service</button>
+      <button class="nav-link-item" data-page="/p11" data-nav="a-p11" data-form-action="navigate" data-route="/p11">Part XI — Remuneration</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
+      <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
 }
@@ -178,8 +278,7 @@ export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const 
 export function fmtD(s){return s?String(s).substring(0,10):'';}
 function inpD(label,val,setter,req=false,type='text'){
   const inputId='inp_'+Math.random().toString(36).slice(2,9);
-  let oninput=type==='text'?`this.value=validateSecurityInput('${label}',this.value);${setter};autoSave();updateNavDots()`:`${setter};autoSave();updateNavDots()`;
-  let onblur='';
+  const path=setterPath(setter);
   const isEmail=label.toLowerCase().includes('email');
   const isPhone=!isEmail&&label.toLowerCase().includes('phone');
   const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
@@ -191,50 +290,28 @@ function inpD(label,val,setter,req=false,type='text'){
   const isAccountNumber=!isEmail&&!label.toLowerCase().includes('bank name')&&!label.toLowerCase().includes('loan')&&(label.toLowerCase().includes('account number')||label.toLowerCase().includes('account #')||label.toLowerCase().includes('bank account'));
   const isCheckNumber=!isEmail&&label.toLowerCase().includes('check #');
   const isAmountField=type==='number';
-  if(isSSN){
-    oninput=`this.value=formatSSN(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isCaseNumber){
-    oninput=`this.value=formatCaseNumber(this.value);${setter};autoSave();updateNavDots()`;
-    onblur=`this.value=finalizeCaseNumber(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isBarNumber){
-    oninput=`this.value=formatBarNumber(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isAccountNumber){
-    oninput=`this.value=formatAccountNumber(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isCheckNumber){
-    oninput=`this.value=formatCheckNumber(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isAmountField){
-    oninput=`this.value=sanitizeNonNegativeDecimal(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isPhone){
-    oninput=`this.value=formatPhone(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isName){
-    const isWardNameField=/\bwardName\b/.test(setter);
-    const isGuardianField=/D\.guardian(Name|Names)?=/.test(setter)||/D\.guardians\[0\]\.name=/.test(setter);
-    oninput=`this.value=formatName(this.value);${setter};autoSave();updateNavDots()${isWardNameField?';syncActiveWardNameDisplay()':''}${isGuardianField?';syncGuardianNameDisplay()':''}`;
-  }else if(isZip){
-    oninput=`applyZipLimit(this);this.value=formatCityStateZip(this.value);${setter};autoSave();updateNavDots()`;
-  }else if(isAddress){
-    oninput=`this.value=formatAddress(this.value);${setter};autoSave();updateNavDots()`;
-  }
+  const format=isSSN?'ssn':isCaseNumber?'case':isBarNumber?'bar':isAccountNumber?'account':isCheckNumber?'check':isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':type==='text'?'security':'';
+  const isWardNameField=path==='wardName';
+  const isGuardianField=/^guardian(Name|Names)?$/.test(path)||path==='guardians.0.name';
   const formatted=isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
   const inputType=isAmountField?'text':isSSN?'password':type;
   const inputMode=isAmountField?' inputmode="decimal"':'';
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}" autocomplete="off"${inputMode} value="${esc(cleanedValue)}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
-  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`:inputHtml;
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}" autocomplete="off"${inputMode} value="${esc(cleanedValue)}" data-annual-path="${path}" data-annual-label="${esc(label)}"${format?` data-annual-format="${format}"`:''}${isWardNameField?' data-sync-ward-name="true"':''}${isGuardianField?' data-sync-guardian-name="true"':''}>`;
+  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
 function selD(label,val,setter,opts){
   const selectId='sel_'+Math.random().toString(36).slice(2,9);
-  return `<div class="mb-2"><label class="form-label" for="${selectId}">${label}</label><select class="form-select" id="${selectId}" onchange="${setter};autoSave();updateNavDots()"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  return `<div class="mb-2"><label class="form-label" for="${selectId}">${label}</label><select class="form-select" id="${selectId}" data-annual-path="${setterPath(setter)}"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
 }
 // County-field counterpart to selD() -- same custom-setter-string
 // convention, but a filtered-autocomplete text input instead of a <select>.
 function countyInputD(label,val,setter){
   const inputId='cty_'+Math.random().toString(36).slice(2,9);
-  const writeExpr=`${setter};autoSave();updateNavDots()`;
-  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}</label>${countyAutocompleteHTML(inputId,val,writeExpr)}</div>`;
+  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}</label>${countyAutocompleteHTML(inputId,val,setterPath(setter))}</div>`;
 }
 function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
   const html=inpD(label,val,setter,req,type);
@@ -245,8 +322,8 @@ function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
 }
 function pageNavAnnual(prev,next){
   return `<div class="page-nav d-flex justify-content-between">
-    ${prev?`<button class="btn btn-outline-primary btn-sm" onclick="navigate('${prev}')">← Back</button>`:'<span></span>'}
-    ${next?`<button class="btn btn-primary btn-sm" onclick="navigate('${next}')">Next →</button>`:`<button class="btn btn-primary btn-sm" onclick="navigate('/print')">Preview & Export →</button>`}
+    ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev}">← Back</button>`:'<span></span>'}
+    ${next?`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${next}">Next →</button>`:`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="/print">Preview & Export →</button>`}
   </div>`;
 }
 // Exported (not just module-local) because print.js's buildPrintHTMLAnnual()
@@ -273,7 +350,7 @@ function pagePart1Annual(){
         <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
           <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
             <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-            <input type="file" accept=".xlsx" style="display:none" onchange="importExcelAnnual(this)">
+            <input type="file" accept=".xlsx" style="display:none" data-annual-change="import-excel">
           </label>
           <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the previously exported Annual Accounting Excel file</p>
           <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
@@ -288,7 +365,7 @@ function pagePart1Annual(){
     <div class="col-md-3">${inpD('Period From',d.periodFrom,"D.periodFrom=this.value",false,'date')}</div>
     <div class="col-md-3">${inpD('Period To',d.periodTo,"D.periodTo=this.value",false,'date')}</div>
     <div class="col-md-3">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'])}</div>
-    <div class="col-md-3">${yesNoCheckboxD('Amended Form?',d.amendedForm,"D.amendedForm=this.value")}</div>
+    <div class="col-md-3">${yesNoCheckboxD('Amended Form?',d.amendedForm,'amendedForm')}</div>
     <div class="col-md-5">${inpD('Guardian',d.guardian,"D.guardian=this.value")}</div>
     <div class="col-md-5">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
     <div class="col-md-2">${countyInputD('County',d.county,"D.county=this.value")}</div>
@@ -403,7 +480,7 @@ function pageSchAAnnual(){
   let rows='';
   d.schA.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schA',${i},'/scha')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schA.splice(${i},1);autoSave();navigate('/scha')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schA" data-index="${i}" data-route="/scha">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schA" data-index="${i}" data-route="/scha">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Income Source / Payer',r.payer,`D.schA[${i}].payer=this.value`,true)}</div>
         <div class="col-md-4">${inpD('Description',r.description,`D.schA[${i}].description=this.value`,true)}</div>
@@ -417,7 +494,7 @@ function pageSchAAnnual(){
   <h1>Schedule A — Income Received During Period</h1>
   <div class="schedule-instructions">Include all types of income such as SSI, Retirement, Disability benefits, interest or rental income. Do NOT include receipts from sale/disposal of principal assets (those go in Schedule C).</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schA.push({payer:'',description:'',bank:'',accountNo:'',amount:''});autoSave();navigate('/scha')">+ Add Income Line</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schA" data-route="/scha">+ Add Income Line</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule A Total — Income/Receipts Received During Period</div><div class="td" id="schA_total">${fmtAnnual(t.schA)}</div></div></div></div>
   ${renderScheduleDocsSection('schA')}
   ${pageNavAnnual('/p5','/schb1')}
@@ -430,7 +507,7 @@ function pageSchB1Annual(){
   let rows='';
   d.schB1.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schB1',${i},'/schb1')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schB1.splice(${i},1);autoSave();navigate('/schb1')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB1" data-index="${i}" data-route="/schb1">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB1" data-index="${i}" data-route="/schb1">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB1[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB1[${i}].checkNo=this.value`,true)}</div>
@@ -447,7 +524,7 @@ function pageSchB1Annual(){
   <h1>Schedule B-1 — Attorney Fees and Costs</h1>
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schB1.push({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''});autoSave();navigate('/schb1')">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB1" data-route="/schb1">+ Add Entry</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-1 Total — Attorney Fees and Costs</div><div class="td">${fmtAnnual(t.schB1)}</div></div></div></div>
   ${renderScheduleDocsSection('schB1')}
   ${pageNavAnnual('/scha','/schb2')}
@@ -460,7 +537,7 @@ function pageSchB2Annual(){
   let rows='';
   d.schB2.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schB2',${i},'/schb2')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schB2.splice(${i},1);autoSave();navigate('/schb2')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB2" data-index="${i}" data-route="/schb2">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB2" data-index="${i}" data-route="/schb2">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB2[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB2[${i}].checkNo=this.value`,true)}</div>
@@ -477,7 +554,7 @@ function pageSchB2Annual(){
   <h1>Schedule B-2 — Guardian Fees and Costs</h1>
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schB2.push({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''});autoSave();navigate('/schb2')">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB2" data-route="/schb2">+ Add Entry</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-2 Total — Guardian Fees and Costs</div><div class="td">${fmtAnnual(t.schB2)}</div></div></div></div>
   ${renderScheduleDocsSection('schB2')}
   ${pageNavAnnual('/schb1','/schb3')}
@@ -490,7 +567,7 @@ function pageSchB3Annual(){
   let rows='';
   d.schB3.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schB3',${i},'/schb3')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schB3.splice(${i},1);autoSave();navigate('/schb3')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB3" data-index="${i}" data-route="/schb3">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB3" data-index="${i}" data-route="/schb3">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB3[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB3[${i}].checkNo=this.value`,true)}</div>
@@ -505,7 +582,7 @@ function pageSchB3Annual(){
   <h1>Schedule B-3 — Other Court-Ordered Disbursements</h1>
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schB3.push({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''});autoSave();navigate('/schb3')">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB3" data-route="/schb3">+ Add Entry</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-3 Total — Other Court-Ordered Disbursements</div><div class="td">${fmtAnnual(t.schB3)}</div></div></div></div>
   ${renderScheduleDocsSection('schB3')}
   ${pageNavAnnual('/schb2','/schb4')}
@@ -522,11 +599,11 @@ function pageSchB4Annual(){
   let rows='';
   d.schB4.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schB4',${i},'/schb4')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schB4.splice(${i},1);autoSave();navigate('/schb4')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB4" data-index="${i}" data-route="/schb4">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB4" data-index="${i}" data-route="/schb4">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB4[${i}].checkNo=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB4[${i}].datePaid=this.value`,true,'date')}</div>
-        <div class="col-md-3"><label class="form-label" for="schB4_category_${i}">Category <span class="req">*</span></label><select class="form-select" id="schB4_category_${i}" onchange="D.schB4[${i}].category=this.value;autoSave()"><option value="">— select —</option>${DISB_CATS.map(c=>`<option value="${c}" ${r.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div class="col-md-3"><label class="form-label" for="schB4_category_${i}">Category <span class="req">*</span></label><select class="form-select" id="schB4_category_${i}" data-annual-path="schB4.${i}.category"><option value="">— select —</option>${DISB_CATS.map(c=>`<option value="${c}" ${r.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
         <div class="col-md-3">${inpD('Payee',r.payee,`D.schB4[${i}].payee=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Amount',r.amount,`D.schB4[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
@@ -540,7 +617,7 @@ function pageSchB4Annual(){
   <h1>Schedule B-4 — All Other Disbursements</h1>
   <div class="schedule-instructions">Receipts, checks, and substantiating papers need not be filed with the court but shall be made available for inspection. List disbursements in check number order. If category is "Other," provide details in payee field.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schB4.push({checkNo:'',datePaid:'',category:'',payee:'',amount:''});autoSave();navigate('/schb4')">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB4" data-route="/schb4">+ Add Entry</button>
   <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td">${fmtAnnual(t.schB4)}</div></div></div></div>
   <div class="summary-box"><h2 class="subsection-heading">Category Summary</h2>${catSummary}</div>
   ${renderScheduleDocsSection('schB4')}
@@ -554,12 +631,12 @@ function pageSchCAnnual(){
   let rows='';
   d.schC.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schC',${i},'/schc')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schC.splice(${i},1);autoSave();navigate('/schc')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schC" data-index="${i}" data-route="/schc">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schC" data-index="${i}" data-route="/schc">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
-        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" oninput="this.value=sanitizeDecimal(this.value);D.schC[${i}].loss=this.value;autoSave()"></div></div>
+        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
       </div></div>
     </div>`;
   });
@@ -567,7 +644,7 @@ function pageSchCAnnual(){
   <h1>Schedule C — Capital Adjustments During Period</h1>
   <div class="schedule-instructions">Include gains/losses in asset values, newly discovered assets, purchases of real estate/personal/intangible assets. Losses must be entered as negative numbers. Real estate sales should also appear in Schedule F-1.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schC.push({description:'',date:'',gain:'',loss:''});autoSave();navigate('/schc')">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schC" data-route="/schc">+ Add Entry</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Total Gains / Additions</div><div class="td">${fmtAnnual(t.schC_gains)}</div></div>
     <div class="tr"><div class="td">Total Losses / Reductions</div><div class="td">${fmtAnnual(t.schC_losses)}</div></div>
@@ -585,11 +662,11 @@ function pageSchD1Annual(){
   d.schD1.forEach((r,i)=>{
     const wardAmt=n(r.fullAmount)*pct(r.wardPct);
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} — ${r.description||'(no description)'} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD1',${i},'/schd1')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD1.splice(${i},1);autoSave();navigate('/schd1')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} — ${r.description||'(no description)'} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD1" data-index="${i}" data-route="/schd1">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD1" data-index="${i}" data-route="/schd1">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schD1[${i}].accountNo=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD1_restricted_${i}" ${r.restricted==='Yes'?'checked':''} onchange="D.schD1[${i}].restricted=(this.checked?'Yes':'No');autoSave()"></div>
+        <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD1_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD1.${i}.restricted" data-annual-value="yes-no"></div>
         <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
@@ -601,7 +678,7 @@ function pageSchD1Annual(){
   <h1>Schedule D-1 — Cash Assets</h1>
   <div class="schedule-instructions">Include all liquid assets: cash on hand, savings, checking, CDs, money market, attorney trust, patient trust, burial savings. List each account separately. Enter Ward's % as decimal (e.g., 1 for 100%, 0.5 for 50%) or as a percentage (e.g., 100, 50).</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schD1.push({description:'',accountNo:'',restricted:'No',type:'',fullAmount:'',wardPct:'',restrictedAmt:''});autoSave();navigate('/schd1')">+ Add Account</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD1" data-route="/schd1">+ Add Account</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Cash Assets in Restricted Depository</div><div class="td">${fmtAnnual(t.schD1_restricted)}</div></div>
     <div class="tr"><div class="td"><strong>Total Cash Assets (Ward's Amount)</strong></div><div class="td"><strong>${fmtAnnual(t.schD1_total)}</strong></div></div>
@@ -619,11 +696,11 @@ function pageSchD2Annual(){
     const wardVal=n(r.fullValue)*pct(r.wardPct);
     const carryWard=n(r.carryingValue)*pct(r.wardPct);
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD2',${i},'/schd2')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD2.splice(${i},1);autoSave();navigate('/schd2')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD2" data-index="${i}" data-route="/schd2">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD2" data-index="${i}" data-route="/schd2">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><input class="form-check-input" type="checkbox" id="schD2_residence_${i}" ${r.residence==='Yes'?'checked':''} onchange="D.schD2[${i}].residence=(this.checked?'Yes':'No');autoSave()"></div>
-        <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><input class="form-check-input" type="checkbox" id="schD2_income_${i}" ${r.income==='Yes'?'checked':''} onchange="D.schD2[${i}].income=(this.checked?'Yes':'No');autoSave()"></div>
+        <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><input class="form-check-input" type="checkbox" id="schD2_residence_${i}" ${r.residence==='Yes'?'checked':''} data-annual-path="schD2.${i}.residence" data-annual-value="yes-no"></div>
+        <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><input class="form-check-input" type="checkbox" id="schD2_income_${i}" ${r.income==='Yes'?'checked':''} data-annual-path="schD2.${i}.income" data-annual-value="yes-no"></div>
         <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
         <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
         <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -635,7 +712,7 @@ function pageSchD2Annual(){
   <h1>Schedule D-2 — Real Estate and Real Property Assets</h1>
   <div class="schedule-instructions">Include full description, address, all other owners and their relationship to the ward. Values must be as of Ward's Fiscal Year-End.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schD2.push({description:'',residence:'No',income:'No',fullValue:'',wardPct:'',carryingValue:'',wardValue:''});autoSave();navigate('/schd2')">+ Add Property</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD2" data-route="/schd2">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td">${fmtAnnual(t.schD2_carrying)}</div></div>
     <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong>${fmtAnnual(t.schD2_ward)}</strong></div></div>
@@ -652,7 +729,7 @@ function pageSchD3Annual(){
   d.schD3.forEach((r,i)=>{
     const wardAmt=n(r.fullAmount)*pct(r.wardPct);
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD3',${i},'/schd3')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD3.splice(${i},1);autoSave();navigate('/schd3')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD3" data-index="${i}" data-route="/schd3">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD3" data-index="${i}" data-route="/schd3">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6">${inpD('Description / Location / Owners',r.description,`D.schD3[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD3[${i}].fullAmount=this.value`,true,'number')}</div>
@@ -666,7 +743,7 @@ function pageSchD3Annual(){
   <h1>Schedule D-3 — Personal Property Assets</h1>
   <div class="schedule-instructions">Include vehicles, clothing, furniture, electronics, jewelry, burial/cemetery plot. All values must be Fair Market Value as of end of Reporting Period. If no personal property, attach explanation.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schD3.push({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''});autoSave();navigate('/schd3')">+ Add Property</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD3" data-route="/schd3">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td">${fmtAnnual(t.schD3_carrying)}</div></div>
     <div class="tr"><div class="td"><strong>Ward's Amount Total</strong></div><div class="td"><strong>${fmtAnnual(t.schD3_ward)}</strong></div></div>
@@ -683,10 +760,10 @@ function pageSchD4Annual(){
   d.schD4.forEach((r,i)=>{
     const wardVal=n(r.fullAmount)*pct(r.wardPct);
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD4',${i},'/schd4')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD4.splice(${i},1);autoSave();navigate('/schd4')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD4" data-index="${i}" data-route="/schd4">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD4" data-index="${i}" data-route="/schd4">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD4_restricted_${i}" ${r.restricted==='Yes'?'checked':''} onchange="D.schD4[${i}].restricted=(this.checked?'Yes':'No');autoSave()"></div>
+        <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD4_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD4.${i}.restricted" data-annual-value="yes-no"></div>
         <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -698,7 +775,7 @@ function pageSchD4Annual(){
   <h1>Schedule D-4 — Intangible Assets</h1>
   <div class="schedule-instructions">Intangibles are assets not physical and not liquid without a Court Order: brokerage accounts, stocks, annuities, prepaid funeral contracts, insurance policies that add value, promissory notes owed to the ward. Attach copies of all statements.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schD4.push({description:'',restricted:'No',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''});autoSave();navigate('/schd4')">+ Add Asset</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD4" data-route="/schd4">+ Add Asset</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td">${fmtAnnual(t.schD4_restricted)}</div></div>
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td">${fmtAnnual(t.schD4_carrying)}</div></div>
@@ -716,11 +793,11 @@ function pageSchD5Annual(){
   d.schD5.forEach((r,i)=>{
     const wardBal=n(r.fullDebt)*pct(r.wardPct);
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schD5',${i},'/schd5')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schD5.splice(${i},1);autoSave();navigate('/schd5')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD5" data-index="${i}" data-route="/schd5">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD5" data-index="${i}" data-route="/schd5">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Description / Lender / Related Asset',r.description,`D.schD5[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Loan / Account #',r.loanNo,`D.schD5[${i}].loanNo=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD5_loanType_${i}">Type (M/N/L/O) <span class="req">*</span></label><select class="form-select" id="schD5_loanType_${i}" onchange="D.schD5[${i}].loanType=this.value;autoSave()"><option value="">—</option>${LIAB_TYPES.map(lt=>`<option value="${lt}" ${r.loanType===lt?'selected':''}>${lt}</option>`).join('')}</select></div>
+        <div class="col-md-2"><label class="form-label" for="schD5_loanType_${i}">Type (M/N/L/O) <span class="req">*</span></label><select class="form-select" id="schD5_loanType_${i}" data-annual-path="schD5.${i}.loanType"><option value="">—</option>${LIAB_TYPES.map(lt=>`<option value="${lt}" ${r.loanType===lt?'selected':''}>${lt}</option>`).join('')}</select></div>
         <div class="col-md-2">${inpDWithTooltip('Full Debt Amount','full_debt',r.fullDebt,`D.schD5[${i}].fullDebt=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpDWithTooltip("Ward's %",'ward_pct',r.wardPct,`D.schD5[${i}].wardPct=this.value`,true,'number')}</div>
         <div class="col-md-2"><label class="form-label">Ward's Balance Due</label><input class="form-control" readonly value="${fmtAnnual(wardBal)}"></div>
@@ -731,7 +808,7 @@ function pageSchD5Annual(){
   <h1>Schedule D-5 — Mortgages / Loans / Notes / Other Liabilities</h1>
   <div class="schedule-instructions">Include mortgages, second mortgages, judgment liens, tax liens, credit cards, vehicle loans, unpaid medical/facility bills, promissory notes. Type: M=Mortgage, N=Note, L=Loan, O=Other.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schD5.push({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''});autoSave();navigate('/schd5')">+ Add Liability</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD5" data-route="/schd5">+ Add Liability</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td"><strong>Schedule D-5 Total — Ward's Balance Due</strong></div><div class="td"><strong>${fmtAnnual(t.schD5_total)}</strong></div></div></div></div>
   ${renderScheduleDocsSection('schD5')}
   ${pageNavAnnual('/schd4','/sche')}
@@ -746,13 +823,13 @@ function pageSchEAnnual(){
   let rows='';
   d.schE.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schE',${i},'/sche')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schE.splice(${i},1);autoSave();navigate('/sche')">×</button></div>
+      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schE" data-index="${i}" data-route="/sche">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schE" data-index="${i}" data-route="/sche">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Bank Name / Account #',r.bankName,`D.schE[${i}].bankName=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Transfer In Date',r.transferInDate,`D.schE[${i}].transferInDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Transfer In Amount',r.transferInAmt,`D.schE[${i}].transferInAmt=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpD('Transfer Out Date',r.transferOutDate,`D.schE[${i}].transferOutDate=this.value`,true,'date')}</div>
-        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" oninput="this.value=sanitizeDecimal(this.value);D.schE[${i}].transferOutAmt=this.value;autoSave()"></div></div>
+        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
       </div></div>
     </div>`;
   });
@@ -760,7 +837,7 @@ function pageSchEAnnual(){
   <h1>Schedule E — Bank Transfers During Period</h1>
   <div class="schedule-instructions">Each transfer should be listed twice — once going out and again going into another account. Transfers out should be entered as negative numbers.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schE.push({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''});autoSave();navigate('/sche')">+ Add Transfer</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schE" data-route="/sche">+ Add Transfer</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Total Transfers In</div><div class="td">${fmtAnnual(totalIn)}</div></div>
     <div class="tr"><div class="td">Total Transfers Out</div><div class="td">${fmtAnnual(totalOut)}</div></div>
@@ -777,7 +854,7 @@ function pageSchF1Annual(){
   let rows='';
   d.schF1.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Sale ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schF1',${i},'/schf1')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schF1.splice(${i},1);autoSave();navigate('/schf1')">×</button></div>
+      <div class="entry-card-header">Sale ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schF1" data-index="${i}" data-route="/schf1">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schF1" data-index="${i}" data-route="/schf1">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description of Sale / Address / Parties',r.description,`D.schF1[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Bank',r.bank,`D.schF1[${i}].bank=this.value`,true)}</div>
@@ -791,7 +868,7 @@ function pageSchF1Annual(){
   <h1>Schedule F-1 — Sales of Real Property During Period</h1>
   <div class="schedule-instructions">Attach a copy of the closing statement. Gains or losses from the sale should also be noted in Schedule C. Provide the court order date approving the sale.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schF1.push({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''});autoSave();navigate('/schf1')">+ Add Sale</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schF1" data-route="/schf1">+ Add Sale</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-1 Total — Sales of Real Property</div><div class="td">${fmtAnnual(total)}</div></div></div></div>
   ${renderScheduleDocsSection('schF1')}
   ${pageNavAnnual('/sche','/schf2')}
@@ -805,7 +882,7 @@ function pageSchF2Annual(){
   let rows='';
   d.schF2.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Sale ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" onclick="duplicateAnnualRow('schF2',${i},'/schf2')">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" onclick="D.schF2.splice(${i},1);autoSave();navigate('/schf2')">×</button></div>
+      <div class="entry-card-header">Sale ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schF2" data-index="${i}" data-route="/schf2">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schF2" data-index="${i}" data-route="/schf2">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description of Sale / Purchaser / Agent',r.description,`D.schF2[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Bank',r.bank,`D.schF2[${i}].bank=this.value`,true)}</div>
@@ -819,7 +896,7 @@ function pageSchF2Annual(){
   <h1>Schedule F-2 — Sales of Personal Property During Period</h1>
   <div class="schedule-instructions">Gains or losses from the sale of personal property should also be noted in Schedule C. Attach proof of proceeds deposited.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-2" onclick="D.schF2.push({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''});autoSave();navigate('/schf2')">+ Add Sale</button>
+  <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schF2" data-route="/schf2">+ Add Sale</button>
   <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-2 Total — Sales of Personal Property</div><div class="td">${fmtAnnual(total)}</div></div></div></div>
   ${renderScheduleDocsSection('schF2')}
   ${pageNavAnnual('/schf1','/p67')}
@@ -835,23 +912,23 @@ function pagePart67Annual(){
   <div class="summary-box">
     <h2 class="subsection-heading">Part VI — Changes in Net Assets</h2>
     <div class="summary-line"><span>Starting Balance (Net Assets per Prior Report)</span><span>${fmtAnnual(d.startingBalance)}</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/scha');return false">Schedule A — Income/Receipts</a></span><span>${fmtAnnual(t.schA)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/scha">Schedule A — Income/Receipts</a></span><span>${fmtAnnual(t.schA)}</span></div>
     <div style="padding:.1rem 0;font-size:.7rem;color:var(--ink-3);font-style:italic;">Disbursements:</div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schb1');return false">Schedule B-1 — Attorney Fees</a></span><span>(${fmtAnnual(t.schB1)})</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schb2');return false">Schedule B-2 — Guardian Fees</a></span><span>(${fmtAnnual(t.schB2)})</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schb3');return false">Schedule B-3 — Court-Ordered Disb.</a></span><span>(${fmtAnnual(t.schB3)})</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schb4');return false">Schedule B-4 — All Other Disb.</a></span><span>(${fmtAnnual(t.schB4)})</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb1">Schedule B-1 — Attorney Fees</a></span><span>(${fmtAnnual(t.schB1)})</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb2">Schedule B-2 — Guardian Fees</a></span><span>(${fmtAnnual(t.schB2)})</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb3">Schedule B-3 — Court-Ordered Disb.</a></span><span>(${fmtAnnual(t.schB3)})</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb4">Schedule B-4 — All Other Disb.</a></span><span>(${fmtAnnual(t.schB4)})</span></div>
     <div class="summary-line total"><span>Total Disbursements</span><span>(${fmtAnnual(t.totalDisb)})</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schc');return false">Schedule C — Capital Adj. Net</a></span><span>${fmtAnnual(t.schC_net)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schc">Schedule C — Capital Adj. Net</a></span><span>${fmtAnnual(t.schC_net)}</span></div>
     <div class="summary-line grand"><span>Line 20 — Net Assets at End of Period</span><span>${fmtAnnual(t.netAssets)}</span></div>
   </div>
   <div class="summary-box">
     <h2 class="subsection-heading">Part VII — Assets &amp; Liabilities at End of Period</h2>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schd1');return false">Schedule D-1 — Cash Assets</a></span><span>${fmtAnnual(t.schD1_total)}</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schd2');return false">Schedule D-2 — Real Estate (Ward's Value)</a></span><span>${fmtAnnual(t.schD2_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schd3');return false">Schedule D-3 — Personal Property (Ward's Amount)</a></span><span>${fmtAnnual(t.schD3_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schd4');return false">Schedule D-4 — Intangibles (Ward's Value)</a></span><span>${fmtAnnual(t.schD4_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" onclick="navigate('/schd5');return false">Schedule D-5 — Liabilities (Ward's Balance)</a></span><span>(${fmtAnnual(t.schD5_total)})</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd1">Schedule D-1 — Cash Assets</a></span><span>${fmtAnnual(t.schD1_total)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Ward's Value)</a></span><span>${fmtAnnual(t.schD2_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd3">Schedule D-3 — Personal Property (Ward's Amount)</a></span><span>${fmtAnnual(t.schD3_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Ward's Value)</a></span><span>${fmtAnnual(t.schD4_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd5">Schedule D-5 — Liabilities (Ward's Balance)</a></span><span>(${fmtAnnual(t.schD5_total)})</span></div>
     <div class="summary-line grand"><span>Line 30 — Net Assets at End of Period</span><span>${fmtAnnual(t.netAssetsFromD)}</span></div>
   </div>
   ${reconcileBlockAnnual(t)}
@@ -878,7 +955,7 @@ function reconcileBlockAnnual(t){
     <h2 class="subsection-heading">Explanation of Difference<span class="req">*</span></h2>
     <textarea class="form-control" rows="4" id="reconcile-explanation"
       placeholder="Explain why Net Assets from Changes and Net Assets from Balances differ (for example: a correcting entry from a prior period, or an asset discovered after the period closed)."
-      oninput="D.reconcileExplanation=this.value;autoSave();updateNavDots();"
+      data-annual-path="reconcileExplanation"
       >${esc(st.explanation)}</textarea>
     <div style="font-size:.78rem;color:var(--ink-3);margin-top:.35rem;">This explanation is included on the exported document.</div>
   </div>`;
@@ -892,7 +969,7 @@ function pagePart8Annual(){
   <h1>Part VIII — Trust Information</h1>
   <div class="schedule-instructions">If a trust was created after the Guardianship Inception Date, you MUST file a separate trust accounting for that trust.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-4">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts[0]&&d.trusts[0].hasTrust||'No',"D.trusts[0].hasTrust=this.value;autoSave();navigate('/p8')")}</div>
+    <div class="col-md-4">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts[0]&&d.trusts[0].hasTrust||'No','trusts.0.hasTrust','/p8')}</div>
   </div>`;
   ['Trust 1','Trust 2','Trust 3'].forEach((label,i)=>{
     const t=d.trusts[i];
@@ -900,7 +977,7 @@ function pagePart8Annual(){
       <div class="entry-card-header">${label}</div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-4">${yesNoCheckboxD(`Was ${label} created after the GID?`,t.createdAfterGID,`D.trusts[${i}].createdAfterGID=this.value;autoSave()`)}</div>
+          <div class="col-md-4">${yesNoCheckboxD(`Was ${label} created after the GID?`,t.createdAfterGID,`trusts.${i}.createdAfterGID`)}</div>
           <div class="col-md-4">${inpD('Name of the Trust',t.name,`D.trusts[${i}].name=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Name of the Trustee',t.trustee,`D.trusts[${i}].trustee=this.value`,true)}</div>
           <div class="col-md-3">${inpD('Trustee Account Number',t.accountNo,`D.trusts[${i}].accountNo=this.value`,true)}</div>
@@ -992,7 +1069,7 @@ function pagePart11Annual(){
   let rows='';
   d.remuneration.forEach((r,i)=>{
     rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Entry ${i+1} <button class="btn btn-sm btn-outline-danger ms-auto" onclick="D.remuneration.splice(${i},1);autoSave();navigate('/p11')">×</button></div>
+      <div class="entry-card-header">Entry ${i+1} <button class="btn btn-sm btn-outline-danger ms-auto" data-annual-action="remove-row" data-collection="remuneration" data-index="${i}" data-route="/p11">×</button></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Guardian Name',r.guardian,`D.remuneration[${i}].guardian=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Type',r.type,`D.remuneration[${i}].type=this.value`,true)}</div>
@@ -1005,7 +1082,7 @@ function pagePart11Annual(){
   <h1>Part XI — Guardian(s) Declaration of Remuneration</h1>
   <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward. "Remuneration" means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-3" onclick="D.remuneration.push({guardian:'',type:'',amount:'',description:''});autoSave();navigate('/p11')">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-3" data-annual-action="add-row" data-collection="remuneration" data-route="/p11">+ Add Entry</button>
   ${pageNavAnnual('/p10','/print')}
   </div>`;
 }

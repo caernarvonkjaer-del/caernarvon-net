@@ -42,14 +42,14 @@ export async function startNewCase(page: Page): Promise<void> {
 /** Choose "No Password / No Encryption" on the data-protection screen. */
 export async function chooseNoPassword(page: Page): Promise<void> {
   await page.locator('#security-choice-overlay.show').waitFor({ state: 'visible' });
-  await page.click('#security-choice-overlay button[onclick*="selectSecurityMode(\'none\')"]');
+  await page.click('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]');
   await page.locator('#security-choice-overlay').waitFor({ state: 'hidden' });
 }
 
 /** Choose "Encrypted & Password Protected" and set the master password. */
 export async function chooseEncrypted(page: Page, pw: string): Promise<void> {
   await page.locator('#security-choice-overlay.show').waitFor({ state: 'visible' });
-  await page.click('#security-choice-overlay button[onclick*="selectSecurityMode(\'encrypted\')"]');
+  await page.click('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="encrypted"]');
   await page.locator('#unlock-overlay.show').waitFor({ state: 'visible' });
   await page.fill('#unlock-password', pw);
   await page.fill('#unlock-password-confirm', pw);
@@ -75,7 +75,7 @@ export async function createWard(page: Page, name: string, type = 'guardian'): P
   await page.evaluate((t) => (window as any).showAddWardModalForType(t), type);
   await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
   await page.fill('#new-ward-name', name);
-  await page.click('#addWardModal button[onclick="doAddWard()"]');
+  await page.click('#addWardModal [data-modal-action="add-ward"]');
   await page.locator('#addWardModal').waitFor({ state: 'hidden' });
 }
 
@@ -145,7 +145,7 @@ export async function createSimplifiedWard(page: Page, name: string): Promise<vo
   await page.fill('#elig-ward-name', name);
   await page.selectOption('#elig-depository', 'Yes');
   await page.selectOption('#elig-only-transactions', 'Yes');
-  await page.click('#simplifiedEligibilityModal button[onclick="doConfirmSimplifiedEligibility()"]');
+  await page.click('#simplifiedEligibilityModal [data-modal-action="confirm-simplified-eligibility"]');
   await page.locator('#simplifiedEligibilityModal').waitFor({ state: 'hidden' });
 }
 

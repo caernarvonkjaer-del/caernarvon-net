@@ -1337,12 +1337,11 @@ function circuitCourtCaption(county,probateDivision){
 // a custom setter string, or nothing at all for data-bind fields, which
 // wire their own listener in bindForms() instead) — this function only
 // ever concerns itself with the dropdown, never how the value gets saved.
-function countyAutocompleteHTML(id,val,writeExpr){
-  const filterCall=`filterCountyDropdown(this)`;
-  const oninput=writeExpr?`${writeExpr};${filterCall}`:filterCall;
+function countyAutocompleteHTML(id,val,path){
+  const binding=path?` data-form-path="${esc(path)}"`:'';
   return `<div class="ward-combobox-wrap county-combobox-wrap">
     <input type="text" class="form-control" id="${id}" autocomplete="off" value="${esc(val||'')}"
-      oninput="${oninput}" onfocus="${filterCall}" onblur="setTimeout(()=>hideCountyDropdown('${id}'),150)">
+      data-form-control="county"${binding}>
     <div class="county-combobox-dropdown" id="${id}-dropdown"></div>
   </div>`;
 }
@@ -1355,7 +1354,7 @@ function filterCountyDropdown(inp){
   const q=inp.value.trim().toLowerCase();
   const matches=(q?FL_COUNTIES.filter(c=>c.toLowerCase().startsWith(q)):FL_COUNTIES).slice(0,4);
   if(!matches.length){dd.classList.remove('show');dd.innerHTML='';return;}
-  dd.innerHTML=matches.map(c=>`<button type="button" class="county-combobox-item" onmousedown="event.preventDefault();selectCountyOption('${inp.id}','${c.replace(/'/g,"\\'")}')">${esc(c)}</button>`).join('');
+  dd.innerHTML=matches.map(c=>`<button type="button" class="county-combobox-item" data-form-mousedown="select-county" data-input-id="${esc(inp.id)}" data-county="${esc(c)}">${esc(c)}</button>`).join('');
   dd.classList.add('show');
 }
 function hideCountyDropdown(id){
@@ -1511,7 +1510,7 @@ function validationPanel(errors,opts){
   const rows=[...groups.entries()].map(([section,fields])=>{
     const route=errorRoute(section);
     const go=(route&&valid.has(route))
-      ? `<button type="button" class="validation-go" onclick="navigate('${route}')">Go to section ${ic('external',13)}</button>`
+      ? `<button type="button" class="validation-go" data-form-action="navigate" data-route="${esc(route)}">Go to section ${ic('external',13)}</button>`
       : '';
     return `<div class="validation-group">
       <div class="validation-group-head">
@@ -1637,14 +1636,14 @@ function initPrintPager(){
     <span class="pv-label">Viewing</span>
     <select id="pv-select" class="form-select form-select-sm pv-select"
             aria-label="Choose which page of the filing to preview"
-            onchange="pvSelect(this.value)">
+            data-form-change="preview-page">
       ${opts}
       <option value="all">All pages (continuous)</option>
     </select>
     <span class="pv-count" id="pv-count"></span>
     <span class="pv-nav">
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-prev" onclick="pvStep(-1)">← Prev</button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" onclick="pvStep(1)">Next →</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-prev" data-form-action="preview-step" data-step="-1">← Prev</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
     </span>`;
   cont.parentNode.insertBefore(bar,cont);
   pvApply();
@@ -2454,17 +2453,17 @@ function pageActivityLog(){
     <div class="schedule-instructions">A record of security-relevant events on this device — unlocks, failed password attempts, and every backup saved or restored. Nothing here is transmitted anywhere; it's stored the same way your case data is, on this device only.</div>
     <div id="storage-usage-readout" class="storage-readout">Checking storage…</div>
     <div class="activity-log-toolbar">
-      <span class="dashboard-search-wrap activity-log-search-wrap">${ic('search',15)}<input type="text" id="activity-log-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search details…" oninput="renderActivityLogList()"></span>
-      <select id="activity-log-status" class="form-select form-select-sm activity-log-select" onchange="renderActivityLogList()">
+      <span class="dashboard-search-wrap activity-log-search-wrap">${ic('search',15)}<input type="text" id="activity-log-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search details…" data-form-input="activity-log"></span>
+      <select id="activity-log-status" class="form-select form-select-sm activity-log-select" data-form-change="activity-log">
         <option value="all">All results</option>
         <option value="success">Successful only</option>
         <option value="failed">Failed only</option>
       </select>
-      <select id="activity-log-type" class="form-select form-select-sm activity-log-select" onchange="renderActivityLogList()">
+      <select id="activity-log-type" class="form-select form-select-sm activity-log-select" data-form-change="activity-log">
         <option value="all">All event types</option>
         ${typeOptions}
       </select>
-      <button class="btn btn-sm btn-outline-primary" onclick="exportActivityLog()">${ic('download',14)} Save as text file</button>
+      <button class="btn btn-sm btn-outline-primary" data-form-action="export-activity-log">${ic('download',14)} Save as text file</button>
     </div>
     <div class="activity-log-count" id="activity-log-count"></div>
     <div id="activity-log-rows" class="activity-log-rows"><div class="dashboard-empty-inline">Loading…</div></div>
@@ -3938,7 +3937,7 @@ function loadWardInfoBanner(){
   if(!sourceType)return '';
   const hasSource=carryWardsFor(activeInventoryType,guardianData.activeWardId).length>0;
   if(!hasSource)return '';
-  return `<div class="inventory-convert-banner mb-3" onclick="showLoadWardInfoModal()" role="button" tabindex="0" aria-label="Load ward info from an existing ${esc(INVENTORY_TYPES[sourceType].name)} ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showLoadWardInfoModal();}">
+  return `<div class="inventory-convert-banner mb-3" data-form-action="load-ward-info" role="button" tabindex="0" aria-label="Load ward info from an existing ${esc(INVENTORY_TYPES[sourceType].name)} ward">
     <span class="inventory-convert-icon"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/></svg></span>
     <div class="inventory-convert-text">
       <div class="inventory-convert-title">Load Ward Info</div>
@@ -4128,7 +4127,7 @@ async function showSwitchWardPickerModal(){
   }else{
     listEl.innerHTML=others.map(w=>{
       const typeLabel=INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType;
-      return `<button type="button" class="recent-ward-item" onclick="closeModal('switchWardPickerModal');switchWard('${w.wardId}')">
+      return `<button type="button" class="recent-ward-item" data-modal-action="switch-ward" data-ward-id="${esc(w.wardId)}">
         <span class="recent-ward-icon">${typeIcon(w.inventoryType,16)}</span>
         <span class="recent-ward-info">
           <span class="recent-ward-name">${esc(w.wardName||'(unnamed)')}${w.archived?' <span class="badge bg-secondary ward-card-badge">Closed</span>':''}</span>
@@ -5799,8 +5798,8 @@ function renderPriorYearsList(ward){
       <div class="prior-year-row">
         <span>${esc(y.label)}</span>
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-primary" onclick="editPriorYear('${ward.wardId}','${esc(y.key)}')">Edit this year</button>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteWardYear('${ward.wardId}','${esc(y.key)}')" title="Permanently delete this year">${ic('trash',13)}</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-form-action="edit-prior-year" data-ward-id="${esc(ward.wardId)}" data-year-key="${esc(y.key)}">Edit this year</button>
+          <button type="button" class="btn btn-sm btn-outline-danger" data-form-action="confirm-delete-ward-year" data-ward-id="${esc(ward.wardId)}" data-year-key="${esc(y.key)}" title="Permanently delete this year">${ic('trash',13)}</button>
         </div>
       </div>`));
   document.getElementById('prior-years-list').innerHTML=rows.join('');
@@ -5885,47 +5884,47 @@ function pageInventorySelector(){
   <h1 style="font-size:1.8rem;color:var(--ink);margin-bottom:2rem;text-align:center;">Start New Form</h1>
   <p style="text-align:center;color:var(--ink-3);margin-bottom:2rem;font-size:.95rem;">Select the form type for a ward. You can manage multiple wards of different types.</p>
   <div class="inventory-selector">
-    <div class="inventory-card" onclick="showAddWardModalForType('guardian')" role="button" tabindex="0" aria-label="Create Initial Inventory ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('guardian');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="guardian" role="button" tabindex="0" aria-label="Create Initial Inventory ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/></svg> Initial Inventory</h2>
       <p>${INVENTORY_TYPES.guardian.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('simplified')" role="button" tabindex="0" aria-label="Create Simplified Accounting ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('simplified');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="simplified" role="button" tabindex="0" aria-label="Create Simplified Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/></svg> Simplified Accounting</h2>
       <p>${INVENTORY_TYPES.simplified.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('annual')" role="button" tabindex="0" aria-label="Create Annual Accounting ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('annual');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="annual" role="button" tabindex="0" aria-label="Create Annual Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/></svg> Annual Accounting</h2>
       <p>${INVENTORY_TYPES.annual.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('finalAccounting')" role="button" tabindex="0" aria-label="Create Final Accounting ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('finalAccounting');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="finalAccounting" role="button" tabindex="0" aria-label="Create Final Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/><path d="m15.8 4.4 1.7 1.7 3.1-3.2"/></svg> Final Accounting</h2>
       <p>${INVENTORY_TYPES.finalAccounting.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('trustAccounting')" role="button" tabindex="0" aria-label="Create Trust Accounting ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('trustAccounting');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="trustAccounting" role="button" tabindex="0" aria-label="Create Trust Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.6 9.4 12 4.2l7.4 5.2"/><path d="M6.6 10.8v7.4M11 10.8v7.4M15.4 10.8v7.4M19.8 10.8v7.4"/><path d="M4.2 20.2h15.6"/></svg> Trust Accounting</h2>
       <p>${INVENTORY_TYPES.trustAccounting.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('planInitial')" role="button" tabindex="0" aria-label="Create Initial Guardianship Plan ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('planInitial');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planInitial" role="button" tabindex="0" aria-label="Create Initial Guardianship Plan ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="M12 8v5.4M12 16.4v.1"/></svg> Initial Guardianship Plan</h2>
       <p>${INVENTORY_TYPES.planInitial.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('planSimplified')" role="button" tabindex="0" aria-label="Create Simplified Annual Plan ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('planSimplified');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planSimplified" role="button" tabindex="0" aria-label="Create Simplified Annual Plan ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="m9.4 12.1 1.9 1.9 3.4-3.6"/></svg> Simplified Annual Plan</h2>
       <p>${INVENTORY_TYPES.planSimplified.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('planAnnual')" role="button" tabindex="0" aria-label="Create Annual Guardianship Plan ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('planAnnual');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planAnnual" role="button" tabindex="0" aria-label="Create Annual Guardianship Plan ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="M9.2 10.6h5.6M9.2 13.6h5.6"/></svg> Annual Guardianship Plan</h2>
       <p>${INVENTORY_TYPES.planAnnual.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" onclick="showAddWardModalForType('planMinor')" role="button" tabindex="0" aria-label="Create Annual Plan — Minors ward" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showAddWardModalForType('planMinor');}">
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planMinor" role="button" tabindex="0" aria-label="Create Annual Plan — Minors ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><circle cx="12" cy="9.8" r="1.6"/><path d="M9.4 15.2c0-1.6 1.2-2.6 2.6-2.6s2.6 1 2.6 2.6"/></svg> Annual Plan — Minors</h2>
       <p>${INVENTORY_TYPES.planMinor.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
@@ -6112,6 +6111,9 @@ async function mountGuardianNav(container){
   await getGuardianFeatureBridge().mountNav(container);
 }
 async function ensureGuardianFeatureReady(){
+  if(typeof window.loadGuardianFeature!=='function'){
+    await new Promise(resolve=>document.addEventListener('features-loader-ready',resolve,{once:true}));
+  }
   await window.loadGuardianFeature();
 }
 
@@ -6134,8 +6136,6 @@ async function mountDashboardFeature(page){
 }
 
 function inpS(id,label,val,req=false,type='text'){
-  let oninput=type==='text'?`this.value=validateSecurityInput('${id}',this.value);D['${id}']=this.value;autoSave();updateNavDots()`:`D['${id}']=this.value;autoSave();updateNavDots()`;
-  let onblur='';
   const isEmail=label.toLowerCase().includes('email');
   const isPhone=!isEmail&&label.toLowerCase().includes('phone');
   const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
@@ -6145,40 +6145,23 @@ function inpS(id,label,val,req=false,type='text'){
   const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
   const isBarNumber=!isEmail&&label.toLowerCase().includes('bar number');
   const isAmountField=type==='number';
-  if(isAmountField){
-    oninput=`this.value=sanitizeNonNegativeDecimal(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }else if(isPhone){
-    oninput=`this.value=formatPhone(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }else if(isName){
-    const guardianSync=(id==='guardian'||id==='guardianName'||id==='guardianNames')?';syncGuardianNameDisplay()':'';
-    oninput=`this.value=formatName(this.value);D['${id}']=this.value;autoSave();updateNavDots()${id==='wardName'?';syncActiveWardNameDisplay()':''}${guardianSync}`;
-  }else if(isZip){
-    oninput=`applyZipLimit(this);this.value=formatCityStateZip(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }else if(isAddress){
-    oninput=`this.value=formatAddress(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }else if(isSSN){
-    oninput=`this.value=formatSSN(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }else if(isCaseNumber){
-    oninput=`this.value=formatCaseNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-    onblur=`this.value=finalizeCaseNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }else if(isBarNumber){
-    oninput=`this.value=formatBarNumber(this.value);D['${id}']=this.value;autoSave();updateNavDots()`;
-  }
+  const format=isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'city-state-zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'case-number':isBarNumber?'bar-number':type==='text'?'security':'';
+  const syncWard=id==='wardName'?' data-sync-ward-name="true"':'';
+  const syncGuardian=(id==='guardian'||id==='guardianName'||id==='guardianNames')?' data-sync-guardian-name="true"':'';
   const formatted=isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
   const inputType=isAmountField?'text':isSSN?'password':type;
   const inputMode=isAmountField?' inputmode="decimal"':'';
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" oninput="${oninput}"${onblur?` onblur="${onblur}"`:''}>`;
-  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" onclick="toggleSsnReveal(this)">${ic('lock',14)}</button></div>`:inputHtml;
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" data-form-path="${esc(id)}"${format?` data-form-format="${format}"`:''}${syncWard}${syncGuardian}>`;
+  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
 }
 // Filtered-autocomplete text input for county fields, using the same
 // D['id']=this.value write convention as the other Simplified/Plan field helpers.
 function countyInputS(id,label,val,req=false){
-  const writeExpr=`D['${id}']=this.value;autoSave();updateNavDots()`;
-  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${countyAutocompleteHTML(id,val,writeExpr)}</div>`;
+  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${countyAutocompleteHTML(id,val,id)}</div>`;
 }
 // ── Plan form controls ───────────────────────────────────
 // The Guardianship Plans are narrative documents — long free-text answers,
@@ -6196,13 +6179,13 @@ function txtP(id,label,val,rows=4,req=false,hint=''){
   return `<div class="mb-3">
     <label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
     ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
-    <textarea class="form-control" id="${id}" rows="${rows}" oninput="D['${id}']=this.value;autoSave();updateNavDots()">${esc(val||'')}</textarea>
+    <textarea class="form-control" id="${id}" rows="${rows}" data-form-path="${esc(id)}">${esc(val||'')}</textarea>
   </div>`;
 }
 
 function chkP(id,label,checked){
   return `<div class="form-check plan-check">
-    <input class="form-check-input" type="checkbox" id="${id}" ${checked?'checked':''} onchange="D['${id}']=this.checked;autoSave();updateNavDots()">
+    <input class="form-check-input" type="checkbox" id="${id}" ${checked?'checked':''} data-form-path="${esc(id)}" data-form-value="boolean">
     <label class="form-check-label" for="${id}">${label}</label>
   </div>`;
 }
@@ -6216,19 +6199,20 @@ function chkP(id,label,checked){
 // whichever of 'Yes'/'No' the checkbox resolves to; the two wrappers below
 // cover this app's two setter conventions (a fixed D['id']=, or a custom
 // setter string) the same way countyInputS()/countyInputD() do for county.
-function yesNoCheckboxHTML(id,label,val,writeExpr,req){
-  const onchange=writeExpr.replace(/%V%/g,`(this.checked?'Yes':'No')`);
+function yesNoCheckboxHTML(id,label,val,path,req,route){
   return `<div class="form-check plan-check">
-    <input class="form-check-input" type="checkbox" id="${id}" ${val==='Yes'?'checked':''} onchange="${onchange}">
+    <input class="form-check-input" type="checkbox" id="${id}" ${val==='Yes'?'checked':''} data-form-path="${esc(path)}" data-form-value="yes-no"${route?` data-form-route="${esc(route)}"`:''}>
     <label class="form-check-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
   </div>`;
 }
 function yesNoCheckboxS(id,label,val,req=false){
-  return yesNoCheckboxHTML(id,label,val,`D['${id}']=%V%;autoSave();updateNavDots()`,req);
+  return yesNoCheckboxHTML(id,label,val,id,req);
 }
 function yesNoCheckboxD(label,val,setter,req=false){
   const id='chk_'+Math.random().toString(36).slice(2,9);
-  return yesNoCheckboxHTML(id,label,val,`${setter.replace(/this\.value/g,'%V%')};autoSave();updateNavDots()`,req);
+  const path=(setter.match(/D(?:\[['"]([^'"]+)['"]\]|\.([\w.[\]]+))\s*=/)||[]).slice(1).find(Boolean)||'';
+  const route=(setter.match(/navigate\(['"]([^'"]+)['"]\)/)||[])[1];
+  return yesNoCheckboxHTML(id,label,val,path,req,route);
 }
 
 // Inline radio group. Also used later for the Annual/Initial plans' 3-way
@@ -6238,7 +6222,7 @@ function radioP(id,label,val,options=['Yes','No'],req=false,hint=''){
   const name=`radio_${id}`;
   const btns=options.map((o,i)=>`
     <div class="form-check form-check-inline">
-      <input class="form-check-input" type="radio" name="${name}" id="${id}_${i}" value="${esc(o)}" ${val===o?'checked':''} onchange="D['${id}']=this.value;autoSave();updateNavDots()">
+      <input class="form-check-input" type="radio" name="${name}" id="${id}_${i}" value="${esc(o)}" ${val===o?'checked':''} data-form-path="${esc(id)}">
       <label class="form-check-label" for="${id}_${i}">${esc(o)}</label>
     </div>`).join('');
   return `<div class="mb-3">
@@ -6250,8 +6234,8 @@ function radioP(id,label,val,options=['Yes','No'],req=false,hint=''){
 
 function pageNavS(prev,next){
   return `<div class="page-nav d-flex justify-content-between">
-    ${prev?`<button class="btn btn-outline-primary btn-sm" onclick="navigate('${prev}')">← Back</button>`:'<span></span>'}
-    ${next?`<button class="btn btn-primary btn-sm" onclick="navigate('${next}')">Next →</button>`:`<button class="btn btn-primary btn-sm" onclick="navigate('/print')">Preview & Export →</button>`}
+    ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${esc(prev)}">← Back</button>`:'<span></span>'}
+    ${next?`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${esc(next)}">Next →</button>`:`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="/print">Preview & Export →</button>`}
   </div>`;
 }
 
@@ -6640,7 +6624,7 @@ function excelCapacityPanel(over){
       <div class="validation-group-head">
         <span class="validation-group-name">${esc(o.label)}</span>
         <span class="validation-count">${o.count} of ${o.cap}</span>
-        <button type="button" class="validation-go" onclick="navigate('${o.route}')">Go to section ${ic('external',13)}</button>
+        <button type="button" class="validation-go" data-form-action="navigate" data-route="${esc(o.route)}">Go to section ${ic('external',13)}</button>
       </div>
       <div class="validation-fields"><span class="validation-field">${o.count-o.cap} entr${o.count-o.cap===1?'y':'ies'} would be left out of the Excel file</span></div>
     </div>`).join('');
@@ -7426,7 +7410,7 @@ function renderProgressSummary(checks){
       <div class="ward-progress-fill${done?' ward-progress-done':''}" style="width:${pct}%"></div>
     </div>
     <div class="ward-progress-count">${complete} of ${total} sections complete</div>
-    ${nextRoute?`<button type="button" class="ward-progress-jump" onclick="navigate('${nextRoute}')">${ic('external',13)} Jump to ${esc(jumpLabel)}</button>`:''}`;
+    ${nextRoute?`<button type="button" class="ward-progress-jump" data-form-action="navigate" data-route="${esc(nextRoute)}">${ic('external',13)} Jump to ${esc(jumpLabel)}</button>`:''}`;
 }
 
 function getCurrentPageKey(){
@@ -7638,17 +7622,17 @@ function renderScheduleDocsSection(scheduleKey){
       <span class="sched-doc-name">${ic('file',14)} ${esc(f.name)}</span>
       <span class="sched-doc-meta">${fmtFileSize(f.size)}</span>
       <a href="${f.dataUrl}" download="${esc(f.name)}" class="btn btn-sm btn-outline-secondary">Download</a>
-      <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeScheduleDoc('${scheduleKey}',${i})">×</button>
+      <button type="button" class="btn btn-sm btn-outline-danger" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
     </div>`).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${activeInventoryType==='guardian'?'':' for this period'}.</div>`;
   const inputId=`sched-doc-input-${scheduleKey}`;
   return `<div class="schedule-docs-section no-print">
     <h4>Supporting Documents${periodNote}</h4>
     <p class="schedule-docs-hint">Attach receipts, statements, or other records supporting this schedule. Stored on this device only, encrypted with the rest of this ward's data.</p>
-    <input type="file" id="${inputId}" multiple style="display:none" onchange="handleScheduleDocUpload('${scheduleKey}',this.files);this.value=''">
-    <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="document.getElementById('${inputId}').click()">+ Upload File(s)</button>
+    <input type="file" id="${inputId}" multiple style="display:none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
+    <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload File(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
     <h4 class="mt">Comments</h4>
-    <textarea class="form-control" rows="3" placeholder="Notes about this schedule…" oninput="updateScheduleComment('${scheduleKey}',this.value)">${esc(slot.comment)}</textarea>
+    <textarea class="form-control" rows="3" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>
   </div>`;
 }
 

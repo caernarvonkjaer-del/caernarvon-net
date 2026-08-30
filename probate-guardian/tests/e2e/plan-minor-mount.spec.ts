@@ -65,6 +65,7 @@ test.describe('plan-minor feature module', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Plan Minor Cycle Ward', 'planMinor');
     await createWard(page, 'Other Cycle Ward', 'guardian');
+    await page.waitForFunction(() => typeof (window as any).doSavePdfGuardian === 'function');
 
     // @ts-expect-error - guardianData is a page-global from legacy-app.js, not declared in this file
     const wards = await page.evaluate(() => guardianData.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));

@@ -8,8 +8,8 @@ const {
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, encryptJSON, loadAppState, saveAppState,
   getWardHeadlineTotal, getWardProgress, typeIcon, INVENTORY_TYPE_META, formatDashboardCurrency,
-  switchWard, showStartNewYearModal, toggleWardArchived, confirmDeleteWard,
-  showConvertWardModal, showAddWardModal, fmtDateCard, formatRelativeTime,
+  switchWard, showStartNewYearModal, confirmDeleteWard,
+  showConvertWardModal, showAddWardModal, showPriorYearsModal, fmtDateCard, formatRelativeTime,
   INVENTORY_TYPES, formEngine,
 } = window;
 
@@ -22,34 +22,30 @@ let _archivedSectionOpen = false;
 let _dashboardGroupMode = 'type'; // 'type' | 'case' | 'flat'
 let _dashboardExpandedSections = new Set();
 let _dashboardWorklistTab = null; // null = auto-pick; else 'deadlines' | 'recent'
+let _dashboardContainer = null;
 
-// TOGGLE FUNCTIONS - bridged to window for inline onclick handlers in pageDashboard()
-// These replace the raw variable-assignment pattern (_dashboardSort=this.value;)
-// that won't work when these are module-private.
-
-window.setDashboardSearch = function(value) {
+function setDashboardSearch(value) {
   _dashboardSearch = value;
   renderDashboardGrid();
-};
+}
 
-window.setDashboardSort = function(value) {
+function setDashboardSort(value) {
   _dashboardSort = value;
   renderDashboardGrid();
-};
+}
 
 function toggleDashboardSection(key) {
   if (_dashboardExpandedSections.has(key)) _dashboardExpandedSections.delete(key);
   else _dashboardExpandedSections.add(key);
   renderDashboardGrid();
 }
-window.toggleDashboardSection = toggleDashboardSection;
 
-window.setDashboardWorklistTab = function(tab) {
+function setDashboardWorklistTab(tab) {
   _dashboardWorklistTab = tab;
   renderDashboardWorklist();
-};
+}
 
-window.toggleDashboardGrouping = function() {
+function toggleDashboardGrouping() {
   const DASHBOARD_GROUP_MODES = ['type', 'case', 'flat'];
   const i = DASHBOARD_GROUP_MODES.indexOf(_dashboardGroupMode);
   _dashboardGroupMode = DASHBOARD_GROUP_MODES[(i + 1) % DASHBOARD_GROUP_MODES.length];
@@ -60,14 +56,12 @@ window.toggleDashboardGrouping = function() {
     btn.setAttribute('aria-pressed', String(_dashboardGroupMode !== 'flat'));
   }
   renderDashboardGrid();
-};
+}
 
-window.toggleArchivedSection = function() {
+function toggleArchivedSection() {
   _archivedSectionOpen = !_archivedSectionOpen;
   renderDashboardGrid();
-};
-
-// END BRIDGE FUNCTIONS
+}
 
 // One deadline rule per inventory type, derived from a date field the
 // guardian has already entered on that ward — never a separate "due date"
@@ -153,17 +147,17 @@ function wardCardHTML(ward) {
     <div class="ward-card-body">
       ${headlineHTML}
       <div class="ward-card-modified">Last modified: ${esc(lastMod)}</div>
-      ${(ward.years && ward.years.length) ? `<button type="button" class="btn btn-link ward-card-prior-years-link" onclick="showPriorYearsModal('${ward.wardId}')">${ward.years.length} prior year${ward.years.length === 1 ? '' : 's'} ▸</button>` : ''}
+      ${(ward.years && ward.years.length) ? `<button type="button" class="btn btn-link ward-card-prior-years-link" data-dashboard-action="prior-years" data-ward-id="${esc(ward.wardId)}">${ward.years.length} prior year${ward.years.length === 1 ? '' : 's'} ▸</button>` : ''}
     </div>
     <div class="ward-card-quick-actions">
-      <button class="btn btn-sm btn-outline-secondary" title="Save an encrypted backup of just this ward" onclick="window.exportSingleWardZip('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Backup</button>
-      <button class="btn btn-sm btn-outline-secondary" title="Open Print Preview to export a PDF" onclick="window.quickExportPdf('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> PDF</button>
-      <button class="btn btn-sm btn-outline-secondary" title="Archive this year and open a new one" onclick="showStartNewYearModal('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg> New Year</button>
-      <button class="btn btn-sm btn-outline-secondary" title="${ward.archived ? 'Move back to active caseload' : 'Mark this case as closed'}" onclick="window.toggleWardArchived('${ward.wardId}')" aria-pressed="${!!ward.archived}">${ward.archived ? ic('undo', 14) + ' Restore' : ic('archive', 14) + ' Archive'}</button>
-      <button class="btn btn-sm btn-outline-danger" title="Permanently delete this form" onclick="confirmDeleteWard('${ward.wardId}')"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
+      <button class="btn btn-sm btn-outline-secondary" title="Save an encrypted backup of just this ward" data-dashboard-action="backup" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Backup</button>
+      <button class="btn btn-sm btn-outline-secondary" title="Open Print Preview to export a PDF" data-dashboard-action="pdf" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> PDF</button>
+      <button class="btn btn-sm btn-outline-secondary" title="Archive this year and open a new one" data-dashboard-action="new-year" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg> New Year</button>
+      <button class="btn btn-sm btn-outline-secondary" title="${ward.archived ? 'Move back to active caseload' : 'Mark this case as closed'}" data-dashboard-action="archive" data-ward-id="${esc(ward.wardId)}" aria-pressed="${!!ward.archived}">${ward.archived ? ic('undo', 14) + ' Restore' : ic('archive', 14) + ' Archive'}</button>
+      <button class="btn btn-sm btn-outline-danger" title="Permanently delete this form" data-dashboard-action="delete" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
     </div>
     <div class="ward-card-footer">
-      <button class="btn btn-sm btn-primary w-100" onclick="switchWard('${ward.wardId}')">${isActive ? 'Continue Editing →' : 'Open Ward →'}</button>
+      <button class="btn btn-sm btn-primary w-100" data-dashboard-action="open-ward" data-ward-id="${esc(ward.wardId)}">${isActive ? 'Continue Editing →' : 'Open Ward →'}</button>
     </div>
   </div>`;
 }
@@ -221,8 +215,8 @@ function showContinuePromptIfNeeded() {
         <div class="continue-prompt-ward-name">${esc(last.wardName || '(unnamed)')}</div>
         <div class="continue-prompt-meta">${esc(typeLabel)} · ${formatRelativeTime(last.timestamp)}</div>
       </div>
-      <button type="button" class="continue-prompt-btn" onclick="switchWard('${last.wardId}')">Open</button>
-      <button type="button" class="continue-prompt-dismiss" onclick="document.getElementById('continue-prompt-container').innerHTML=''" aria-label="Dismiss">&times;</button>
+      <button type="button" class="continue-prompt-btn" data-dashboard-action="open-ward" data-ward-id="${esc(last.wardId)}">Open</button>
+      <button type="button" class="continue-prompt-dismiss" data-dashboard-action="dismiss-continue" aria-label="Dismiss">&times;</button>
     </div>
   </div>`;
 }
@@ -261,7 +255,7 @@ function renderDashboardWorklist() {
     else if (diffDays === 0) { cls = 'deadline-soon'; text = 'Due today'; }
     else if (diffDays <= 14) { cls = 'deadline-soon'; text = `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`; }
     else { cls = 'deadline-ok'; text = `Due ${r.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`; }
-    return `<button type="button" class="dashboard-deadline-row" onclick="switchWard('${r.ward.wardId}')" title="${esc(r.basis)}">
+    return `<button type="button" class="dashboard-deadline-row" data-dashboard-action="open-ward" data-ward-id="${esc(r.ward.wardId)}" title="${esc(r.basis)}">
       <span class="dashboard-deadline-icon">${typeIcon(r.ward.inventoryType, 16)}</span>
       <span class="dashboard-deadline-name">${esc(r.ward.wardName || '(unnamed)')}<span class="dashboard-deadline-type">${esc(typeLabel)}</span></span>
       <span class="ward-card-deadline ${cls}">${text}</span>
@@ -270,7 +264,7 @@ function renderDashboardWorklist() {
   const recentRowHTML = (r) => {
     const isActive = r.wardId === guardianData.activeWardId;
     const typeLabel = INVENTORY_TYPES[r.inventoryType]?.name || r.inventoryType;
-    return `<button type="button" class="recent-ward-item${isActive ? ' recent-active' : ''}" onclick="switchWard('${r.wardId}')">
+    return `<button type="button" class="recent-ward-item${isActive ? ' recent-active' : ''}" data-dashboard-action="open-ward" data-ward-id="${esc(r.wardId)}">
       <span class="recent-ward-icon">${typeIcon(r.inventoryType, 16)}</span>
       <span class="recent-ward-info">
         <span class="recent-ward-name">${esc(r.wardName || '(unnamed)')}${isActive ? ' <span class="badge bg-primary ward-card-badge">Active</span>' : ''}</span>
@@ -293,7 +287,7 @@ function renderDashboardWorklist() {
       : `<div class="dashboard-empty-inline">Nothing opened yet.</div>`;
   }
 
-  const tabBtn = (key, label, count) => `<button type="button" class="dashboard-worklist-tab${tab === key ? ' active' : ''}" onclick="setDashboardWorklistTab('${key}')">${esc(label)}${count ? ` <span class="dashboard-worklist-tab-count">${count}</span>` : ''}</button>`;
+  const tabBtn = (key, label, count) => `<button type="button" class="dashboard-worklist-tab${tab === key ? ' active' : ''}" data-dashboard-action="worklist-tab" data-tab="${key}">${esc(label)}${count ? ` <span class="dashboard-worklist-tab-count">${count}</span>` : ''}</button>`;
 
   container.innerHTML = `<div class="dashboard-deadlines-panel">
     <div class="dashboard-worklist-tabs">
@@ -323,7 +317,7 @@ function renderGroupedWardSections(wards) {
     const key = `type:${g.type || 'other'}`;
     const isOpen = _dashboardExpandedSections.has(key);
     return `<div class="dashboard-type-section${isOpen ? '' : ' is-collapsed'}">
-      <button type="button" class="dashboard-type-header" style="border-left-color:${meta.accent}" onclick="toggleDashboardSection('${key}')" aria-expanded="${isOpen}">
+      <button type="button" class="dashboard-type-header" style="border-left-color:${meta.accent}" data-dashboard-action="toggle-section" data-section-key="${esc(key)}" aria-expanded="${isOpen}">
         <span class="dashboard-type-header-chevron">${isOpen ? '▾' : '▸'}</span>
         <span class="dashboard-type-header-icon" style="color:${meta.accentText}">${typeIcon(g.type, 17)}</span>
         <span class="dashboard-type-header-name">${esc(typeName)}</span>
@@ -363,12 +357,8 @@ function renderCaseWardSections(wards) {
     const sub = g.caseNumber ? esc(g.caseNumber) : 'No case number yet';
     const sectionKey = `case:${g.mapKey}`;
     const isOpen = _dashboardExpandedSections.has(sectionKey);
-    // g.mapKey is user-typed case number text (or a safe internal wardId
-    // fallback) — escape quotes/backslashes so it can't break out of the
-    // inline onclick string.
-    const jsKey = sectionKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return `<div class="dashboard-type-section${isOpen ? '' : ' is-collapsed'}">
-      <button type="button" class="dashboard-type-header" style="border-left-color:var(--accent)" onclick="toggleDashboardSection('${jsKey}')" aria-expanded="${isOpen}">
+      <button type="button" class="dashboard-type-header" style="border-left-color:var(--accent)" data-dashboard-action="toggle-section" data-section-key="${esc(sectionKey)}" aria-expanded="${isOpen}">
         <span class="dashboard-type-header-chevron">${isOpen ? '▾' : '▸'}</span>
         <span class="dashboard-type-header-icon" style="color:var(--accent-text)">${ic('folder', 17)}</span>
         <span class="dashboard-type-header-name">${esc(title)}</span>
@@ -401,7 +391,7 @@ function renderDashboardGrid() {
     container.innerHTML = `<div class="dashboard-empty">
       <div style="color:var(--ink-4);margin-bottom:.4rem;"><svg class="ic" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h9.6V19H3.4Z"/></svg></div>
       <p class="text-muted">No wards yet.</p>
-      <button class="btn btn-primary btn-sm" onclick="showAddWardModal()">+ Add Your First Ward</button>
+      <button class="btn btn-primary btn-sm" data-dashboard-action="add-ward">+ Add Your First Ward</button>
     </div>`;
     return;
   }
@@ -418,7 +408,7 @@ function renderDashboardGrid() {
 
   if (totalArchivedCount > 0) {
     html += `<div class="dashboard-section-divider">
-      <button class="btn btn-sm btn-outline-secondary" onclick="toggleArchivedSection()" aria-expanded="${_archivedSectionOpen}" aria-controls="archived-wards-grid">${_archivedSectionOpen ? '▾' : '▸'} Archived / Closed Wards (${totalArchivedCount})</button>
+      <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="toggle-archived" aria-expanded="${_archivedSectionOpen}" aria-controls="archived-wards-grid">${_archivedSectionOpen ? '▾' : '▸'} Archived / Closed Wards (${totalArchivedCount})</button>
     </div>`;
     if (_archivedSectionOpen) {
       html += `<div class="dashboard-grid dashboard-grid-archived" id="archived-wards-grid">${archived.map(wardCardHTML).join('') || '<div class="dashboard-empty-inline">No matching archived wards.</div>'}</div>`;
@@ -427,12 +417,12 @@ function renderDashboardGrid() {
   container.innerHTML = html;
 }
 
-window.quickExportPdf = async function(wardId) {
+async function quickExportPdf(wardId) {
   await switchWard(wardId);
   navigate('/print');
-};
+}
 
-window.exportSingleWardZip = async function(wardId) {
+async function exportSingleWardZip(wardId) {
   const guardianData = getGuardianData();
   const ward = guardianData.wards.find(w => w.wardId === wardId);
   if (!ward) return;
@@ -462,9 +452,9 @@ window.exportSingleWardZip = async function(wardId) {
     auditLog('DATA_EXPORT', String(e && e.message || e), false);
     alert('Export failed: ' + (e && e.message || e));
   }
-};
+}
 
-window.toggleWardArchived = async function(wardId) {
+async function toggleDashboardWardArchived(wardId) {
   const guardianData = getGuardianData();
   const ward = guardianData.wards.find(w => w.wardId === wardId);
   if (!ward) return;
@@ -475,25 +465,91 @@ window.toggleWardArchived = async function(wardId) {
   renderDashboardSummary();
   renderDashboardWorklist();
   renderDashboardGrid();
-};
+}
+
+function dashboardActionElement(target) {
+  return target instanceof Element ? target.closest('[data-dashboard-action]') : null;
+}
+
+function handleDashboardClick(event) {
+  const actionElement = dashboardActionElement(event.target);
+  if (!actionElement || !_dashboardContainer?.contains(actionElement)) return;
+  const wardId = actionElement.dataset.wardId;
+  switch (actionElement.dataset.dashboardAction) {
+    case 'add-ward': showAddWardModal(); break;
+    case 'archive': toggleDashboardWardArchived(wardId); break;
+    case 'backup': exportSingleWardZip(wardId); break;
+    case 'delete': confirmDeleteWard(wardId); break;
+    case 'dismiss-continue': document.getElementById('continue-prompt-container')?.replaceChildren(); break;
+    case 'group': toggleDashboardGrouping(); break;
+    case 'new-year': showStartNewYearModal(wardId); break;
+    case 'open-ward': switchWard(wardId); break;
+    case 'pdf': quickExportPdf(wardId); break;
+    case 'prior-years': showPriorYearsModal(wardId); break;
+    case 'select-existing': showConvertWardModal(); break;
+    case 'toggle-archived': toggleArchivedSection(); break;
+    case 'toggle-section': toggleDashboardSection(actionElement.dataset.sectionKey); break;
+    case 'worklist-tab': setDashboardWorklistTab(actionElement.dataset.tab); break;
+  }
+}
+
+function handleDashboardInput(event) {
+  if (event.target instanceof HTMLInputElement && event.target.id === 'dashboard-search') {
+    setDashboardSearch(event.target.value);
+  }
+}
+
+function handleDashboardChange(event) {
+  if (event.target instanceof HTMLSelectElement && event.target.id === 'dashboard-sort') {
+    setDashboardSort(event.target.value);
+  }
+}
+
+function handleDashboardKeydown(event) {
+  const actionElement = dashboardActionElement(event.target);
+  if (actionElement?.dataset.dashboardAction !== 'select-existing') return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    showConvertWardModal();
+  }
+}
+
+function bindDashboardEvents(container) {
+  if (_dashboardContainer) unbindDashboardEvents(_dashboardContainer);
+  _dashboardContainer = container;
+  container.addEventListener('click', handleDashboardClick);
+  container.addEventListener('input', handleDashboardInput);
+  container.addEventListener('change', handleDashboardChange);
+  container.addEventListener('keydown', handleDashboardKeydown);
+  container.dataset.dashboardBound = 'true';
+}
+
+function unbindDashboardEvents(container) {
+  container.removeEventListener('click', handleDashboardClick);
+  container.removeEventListener('input', handleDashboardInput);
+  container.removeEventListener('change', handleDashboardChange);
+  container.removeEventListener('keydown', handleDashboardKeydown);
+  delete container.dataset.dashboardBound;
+  if (_dashboardContainer === container) _dashboardContainer = null;
+}
 
 function pageDashboard() {
-  return `<div class="schedule-page">
+  return `<div class="schedule-page" data-dashboard-root>
     <div id="continue-prompt-container"></div>
     <h1>All Wards — Dashboard</h1>
     <div class="dashboard-toolbar">
-      <span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search wards by name…" aria-label="Search wards by name" value="${esc(_dashboardSearch)}" oninput="setDashboardSearch(this.value)"></span>
-      <select id="dashboard-sort" class="form-select form-select-sm dashboard-sort-select" aria-label="Sort wards by" onchange="setDashboardSort(this.value)">
+      <span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search wards by name…" aria-label="Search wards by name" value="${esc(_dashboardSearch)}"></span>
+      <select id="dashboard-sort" class="form-select form-select-sm dashboard-sort-select" aria-label="Sort wards by">
         <option value="lastModified"${_dashboardSort === 'lastModified' ? ' selected' : ''}>Sort: Last Modified</option>
         <option value="name"${_dashboardSort === 'name' ? ' selected' : ''}>Sort: Name (A–Z)</option>
         <option value="total"${_dashboardSort === 'total' ? ' selected' : ''}>Sort: Total (High–Low)</option>
       </select>
-      <button id="dashboard-group-toggle" class="btn btn-sm ${_dashboardGroupMode === 'flat' ? 'btn-outline-secondary' : 'btn-secondary'}" onclick="toggleDashboardGrouping()" aria-pressed="${_dashboardGroupMode !== 'flat'}" title="Cycle between grouping wards by type, by case number, and a flat grid">${dashboardGroupLabel(_dashboardGroupMode)}</button>
+      <button id="dashboard-group-toggle" class="btn btn-sm ${_dashboardGroupMode === 'flat' ? 'btn-outline-secondary' : 'btn-secondary'}" data-dashboard-action="group" aria-pressed="${_dashboardGroupMode !== 'flat'}" title="Cycle between grouping wards by type, by case number, and a flat grid">${dashboardGroupLabel(_dashboardGroupMode)}</button>
     </div>
     <div id="dashboard-summary-strip-container"></div>
     <div class="dashboard-top-row" id="dashboard-top-row">
       <div id="dashboard-worklist-container"></div>
-      <div class="inventory-convert-banner" onclick="showConvertWardModal()" role="button" tabindex="0" aria-label="Select an existing ward to create a new form for" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showConvertWardModal();}">
+      <div class="inventory-convert-banner" data-dashboard-action="select-existing" role="button" tabindex="0" aria-label="Select an existing ward to create a new form for">
         <span class="inventory-convert-icon"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/></svg></span>
         <div class="inventory-convert-text">
           <div class="inventory-convert-title">Select an Existing Ward</div>
@@ -511,6 +567,7 @@ function pageDashboard() {
 // legacy-app.js's mountDashboardFeature().
 export async function mount(container, page) {
   container.innerHTML = pageDashboard();
+  bindDashboardEvents(container.querySelector('[data-dashboard-root]'));
   showContinuePromptIfNeeded();
   renderDashboardSummary();
   renderDashboardWorklist();
@@ -518,6 +575,7 @@ export async function mount(container, page) {
 }
 
 export function dispose(container) {
+  if (_dashboardContainer) unbindDashboardEvents(_dashboardContainer);
   container.innerHTML = '';
   // Reset session-only state on page change
   _dashboardSearch = '';

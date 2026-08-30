@@ -75,3 +75,4 @@ window.loadPlanMinorFeature = loadPlanMinorFeature;
 window.loadAnnualFeature = loadAnnualFeature;
 window.loadGuardianFeature = loadGuardianFeature;
 window.loadDashboardFeature = loadDashboardFeature;
+document.dispatchEvent(new Event('features-loader-ready'));

@@ -17,8 +17,8 @@
     <h2 style="margin-bottom:.5rem;color:var(--ink);">Save Your Work</h2>
     <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">This browser can't automatically save your work in the background — only Chrome and Edge support that. You have changes that haven't been saved to a backup file (.sav) yet. Save now to avoid losing them.</p>
     <div class="d-flex gap-2">
-      <button class="btn btn-primary flex-fill" onclick="closeModal('fallbackSaveModal');saveBackupNow()">Save Now</button>
-      <button class="btn btn-outline-secondary flex-fill" onclick="closeModal('fallbackSaveModal')">Remind Me Later</button>
+      <button class="btn btn-primary flex-fill" data-modal-action="save-backup" data-modal-id="fallbackSaveModal">Save Now</button>
+      <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="fallbackSaveModal">Remind Me Later</button>
     </div>
   </div>
 </div>
@@ -30,7 +30,7 @@
     <div class="mb-3">
       <label class="form-label" for="convert-source-ward">Ward</label>
       <div class="ward-combobox-wrap" id="convert-source-ward-wrap">
-        <input type="text" class="form-control ward-picker-select" id="convert-source-ward" placeholder="Type or select a ward…" autocomplete="off" oninput="onConvertSourceInput()" onfocus="onConvertSourceFocus()" onkeydown="onConvertSourceKeydown(event)">
+        <input type="text" class="form-control ward-picker-select" id="convert-source-ward" placeholder="Type or select a ward…" autocomplete="off" data-modal-input="convert-source">
         <div id="convert-source-ward-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
     </div>
@@ -40,8 +40,8 @@
     </div>
     <div id="convert-note" style="font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;"></div>
     <div class="d-flex gap-2">
-      <button class="btn btn-secondary flex-fill" onclick="closeModal('convertWardModal')">Cancel</button>
-      <button class="btn btn-primary flex-fill" onclick="doConvertWard()">Create Form</button>
+      <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="convertWardModal">Cancel</button>
+      <button class="btn btn-primary flex-fill" data-modal-action="convert-ward">Create Form</button>
     </div>
   </div>
 </div>
@@ -59,8 +59,8 @@
       <select class="form-select" id="load-ward-info-source"></select>
     </div>
     <div class="d-flex gap-2">
-      <button class="btn btn-secondary flex-fill" onclick="closeModal('loadWardInfoModal')">Cancel</button>
-      <button class="btn btn-primary flex-fill" onclick="doLoadWardInfo()">Load Info</button>
+      <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="loadWardInfoModal">Cancel</button>
+      <button class="btn btn-primary flex-fill" data-modal-action="load-ward-info">Load Info</button>
     </div>
   </div>
 </div>
@@ -73,7 +73,7 @@
     <h2 style="margin-bottom:.5rem;color:var(--ink);">Switch Ward</h2>
     <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;"><strong id="switch-ward-picker-current-name">This ward</strong> is already active. Choose another one below:</p>
     <div id="switch-ward-picker-list" class="recently-opened-list" style="margin-bottom:1rem;max-height:340px;overflow-y:auto;"></div>
-    <button class="btn btn-secondary w-100" onclick="closeModal('switchWardPickerModal')">Cancel</button>
+    <button class="btn btn-secondary w-100" data-modal-action="close" data-modal-id="switchWardPickerModal">Cancel</button>
   </div>
 </div>
 
@@ -84,8 +84,8 @@
     <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">This saves the current year exactly as it stands (still editable anytime from "prior years") and opens a new blank year for this ward.</p>
     <div id="new-year-note" style="font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;"></div>
     <div class="d-flex gap-2">
-      <button class="btn btn-secondary flex-fill" onclick="closeModal('startNewYearModal')">Cancel</button>
-      <button class="btn btn-primary flex-fill" onclick="confirmStartNewYear()">Start New Year</button>
+      <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="startNewYearModal">Cancel</button>
+      <button class="btn btn-primary flex-fill" data-modal-action="start-new-year">Start New Year</button>
     </div>
   </div>
 </div>
@@ -96,7 +96,7 @@
     <h2 style="margin-bottom:.5rem;color:var(--ink);">Prior Years — <span id="prior-years-ward-name"></span></h2>
     <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Every year is fully editable. Opening one makes it the active year for this ward; the year you're leaving is saved exactly as you left it.</p>
     <div id="prior-years-list" class="mb-3"></div>
-    <button class="btn btn-secondary w-100" onclick="closeModal('priorYearsModal')">Close</button>
+    <button class="btn btn-secondary w-100" data-modal-action="close" data-modal-id="priorYearsModal">Close</button>
   </div>
 </div>
 
@@ -106,8 +106,8 @@
     <h2 style="margin-bottom:1rem;color:var(--danger-text);">Delete This Year?</h2>
     <p id="delete-year-msg" style="margin-bottom:1rem;color:var(--ink-3);"></p>
     <div class="d-flex gap-2">
-      <button class="btn btn-danger flex-fill" onclick="doDeleteWardYear()">Delete Year</button>
-      <button class="btn btn-outline-secondary flex-fill" onclick="closeModal('deleteYearModal')">Cancel</button>
+      <button class="btn btn-danger flex-fill" data-modal-action="delete-ward-year">Delete Year</button>
+      <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="deleteYearModal">Cancel</button>
     </div>
   </div>
 </div>
@@ -119,14 +119,14 @@
     <div class="mb-3">
       <label class="form-label">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
-        <input type="text" class="form-control" id="new-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" oninput="this.value=formatName(this.value)">
+        <input type="text" class="form-control" id="new-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" data-modal-input="format-name">
         <div id="new-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
       <datalist id="ward-name-suggestions"></datalist>
     </div>
     <div class="mb-3">
       <label class="form-label">Inventory Type</label>
-      <select class="form-select" id="new-ward-type" onchange="updateCarrySourcePicker()">
+      <select class="form-select" id="new-ward-type" data-modal-change="ward-type">
         <option value="guardian">Initial Inventory</option>
         <option value="simplified">Simplified Annual Accounting</option>
         <option value="annual">Annual Accounting (Full)</option>
@@ -140,15 +140,15 @@
     </div>
     <div class="mb-3" id="carry-source-wrap" style="display:none;">
       <label class="form-label">Load Ward Info From</label>
-      <select class="form-select" id="carry-source-ward" onchange="onCarrySourceChange()">
+      <select class="form-select" id="carry-source-ward" data-modal-change="carry-source">
         <option value="">— Start Blank —</option>
       </select>
       <div style="font-size:.8rem;color:var(--ink-3);margin-top:.35rem;">Carries over the ward's name, case number, county, and guardian contact details from an existing case, so you don't have to retype them. Signature dates are never carried over.</div>
       <div id="carry-source-autonote" style="font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;"></div>
     </div>
     <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" onclick="doAddWard()" style="flex:1;">Create Form</button>
-      <button class="btn btn-outline-secondary" onclick="closeModal('addWardModal')" style="flex:1;">Cancel</button>
+      <button class="btn btn-primary" data-modal-action="add-ward" style="flex:1;">Create Form</button>
+      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="addWardModal" style="flex:1;">Cancel</button>
     </div>
   </div>
 </div>
@@ -160,7 +160,7 @@
     <div class="mb-3">
       <label class="form-label">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
-        <input type="text" class="form-control" id="elig-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" oninput="this.value=formatName(this.value)">
+        <input type="text" class="form-control" id="elig-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" data-modal-input="format-name">
         <div id="elig-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
       <datalist id="elig-ward-name-suggestions"></datalist>
@@ -191,8 +191,8 @@
       <div id="elig-carry-source-autonote" style="font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;"></div>
     </div>
     <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" onclick="doConfirmSimplifiedEligibility()" style="flex:1;">Continue</button>
-      <button class="btn btn-outline-secondary" onclick="closeModal('simplifiedEligibilityModal')" style="flex:1;">Cancel</button>
+      <button class="btn btn-primary" data-modal-action="confirm-simplified-eligibility" style="flex:1;">Continue</button>
+      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="simplifiedEligibilityModal" style="flex:1;">Cancel</button>
     </div>
   </div>
 </div>
@@ -203,11 +203,11 @@
     <h2 style="margin-bottom:1rem;color:var(--ink);">Rename Ward</h2>
     <div class="mb-3">
       <label class="form-label">Ward Name</label>
-      <input type="text" class="form-control" id="rename-ward-input" placeholder="" oninput="this.value=formatName(this.value)">
+      <input type="text" class="form-control" id="rename-ward-input" placeholder="" data-modal-input="format-name">
     </div>
     <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" onclick="doRenameWard()" style="flex:1;">Rename</button>
-      <button class="btn btn-outline-secondary" onclick="closeModal('renameWardModal')" style="flex:1;">Cancel</button>
+      <button class="btn btn-primary" data-modal-action="rename-ward" style="flex:1;">Rename</button>
+      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="renameWardModal" style="flex:1;">Cancel</button>
     </div>
   </div>
 </div>
@@ -218,8 +218,8 @@
     <h2 style="margin-bottom:1rem;color:var(--danger-text);">Delete Form?</h2>
     <p id="delete-ward-msg" style="margin-bottom:1rem;color:var(--ink-3);">Are you sure you want to delete this form? This action cannot be undone.</p>
     <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-danger" onclick="doDeleteWard()" style="flex:1;">Delete Form</button>
-      <button class="btn btn-outline-secondary" onclick="closeModal('deleteWardModal')" style="flex:1;">Cancel</button>
+      <button class="btn btn-danger" data-modal-action="delete-ward" style="flex:1;">Delete Form</button>
+      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="deleteWardModal" style="flex:1;">Cancel</button>
     </div>
   </div>
 </div>
@@ -231,12 +231,12 @@
     <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">Enter your information. You can update this anytime.</p>
     <div class="mb-3">
       <label class="form-label">Your Name</label>
-      <input type="text" class="form-control" id="setup-guardian-name" placeholder="Your full name" oninput="this.value=formatName(this.value)">
+      <input type="text" class="form-control" id="setup-guardian-name" placeholder="Your full name" data-modal-input="format-name">
     </div>
     <div class="mb-3">
       <label class="form-label">Email (optional)</label>
       <input type="email" class="form-control" id="setup-guardian-email" placeholder="your@email.com">
     </div>
-    <button class="btn btn-primary w-100" onclick="doGuardianSetup()">Continue</button>
+    <button class="btn btn-primary w-100" data-modal-action="guardian-setup">Continue</button>
   </div>
 </div>

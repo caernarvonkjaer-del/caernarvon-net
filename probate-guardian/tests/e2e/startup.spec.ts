@@ -29,7 +29,7 @@ test.describe('startup', () => {
     await gotoApp(page);
     await startNewCase(page);
     await page.locator('#security-choice-overlay.show').waitFor({ state: 'visible' });
-    await page.click('#security-choice-overlay button[onclick*="selectSecurityMode(\'encrypted\')"]');
+    await page.click('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="encrypted"]');
 
     await expect(page.locator('#unlock-overlay')).toHaveClass(/show/);
     await expect(page.locator('#unlock-password-confirm')).toBeVisible(); // confirm row only shown when creating

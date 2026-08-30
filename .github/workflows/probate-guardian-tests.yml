@@ -36,8 +36,21 @@ jobs:
       - name: Build (web + portable)
         run: npm run build
 
-      - name: Run tests
-        run: npm test
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run source Playwright suite
+        run: PG_TARGET=source npx playwright test
+
+      - name: Run release-target security matrix
+        shell: bash
+        run: |
+          for target in dev web portable; do
+            PG_TARGET="$target" npx playwright test tests/e2e/security.spec.ts tests/e2e/routes.spec.ts
+          done
+
+      - name: Run hosted offline suite
+        run: PG_TARGET=web npx playwright test tests/e2e/offline.spec.ts
 
       - name: Upload Playwright report
         if: failure()

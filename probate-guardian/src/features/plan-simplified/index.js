@@ -28,6 +28,22 @@ const {
 // the app's own help copy -- see the Milestone 3 plan's "Confirmed facts").
 let _printModule = null;
 let _printModulePromise = null;
+const eventControllers = new WeakMap();
+
+function bindEvents(container) {
+  eventControllers.get(container)?.abort();
+  const controller = new AbortController();
+  eventControllers.set(container, controller);
+  container.addEventListener('click', (event) => {
+    const actionElement = event.target instanceof Element ? event.target.closest('[data-plan-simplified-action]') : null;
+    if (!actionElement) return;
+    switch (actionElement.dataset.planSimplifiedAction) {
+      case 'open-court-portal': window.openFloridaCourtPortal(); break;
+      case 'print': window.pvShowAll(); window.print(); break;
+      case 'save-pdf': _printModule.doSavePdf(); break;
+    }
+  }, { signal: controller.signal });
+}
 function ensurePrintModule() {
   if (_printModule) return Promise.resolve();
   if (!_printModulePromise) {
@@ -60,15 +76,13 @@ export async function mount(container, page) {
     }
   }
   container.innerHTML = html;
+  bindEvents(container);
   container.scrollTop = 0;
 }
 
 export function dispose(container) {
-  // pagePlanSCover()..pagePlanSSignatures() all return HTML strings with
-  // inline onclick=/oninput= attributes, not addEventListener-bound
-  // listeners -- clearing the container is genuinely sufficient cleanup.
-  // See INDEX-SPLIT-PLAN.md's module contract, the renderTrustedHtml()
-  // accommodation for migrated string-returning renderers.
+  eventControllers.get(container)?.abort();
+  eventControllers.delete(container);
   container.replaceChildren();
 }
 
@@ -80,13 +94,13 @@ function buildNavPlanSimplified(container){
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">Simplified Annual Plan</div>
-      <button class="nav-link-item" data-page="/" data-nav="ps-cover" onclick="navigate('/')">Cover</button>
-      <button class="nav-link-item" data-page="/p2" data-nav="ps-p2" onclick="navigate('/p2')">The Plan — Questions 1–9</button>
-      <button class="nav-link-item" data-page="/p3" data-nav="ps-p3" onclick="navigate('/p3')">Signatures</button>
+      <button class="nav-link-item" data-page="/" data-nav="ps-cover" data-form-action="navigate" data-route="/">Cover</button>
+      <button class="nav-link-item" data-page="/p2" data-nav="ps-p2" data-form-action="navigate" data-route="/p2">The Plan — Questions 1–9</button>
+      <button class="nav-link-item" data-page="/p3" data-nav="ps-p3" data-form-action="navigate" data-route="/p3">Signatures</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
-      <button class="nav-link-item" data-page="/print" onclick="navigate('/print')"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
+      <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
 }
@@ -163,15 +177,14 @@ function pagePlanSSignatures(){
   const g=d.planGuardians||[];
   const block=(i,label)=>{
     const p=g[i]||{};
-    const set=f=>`D.planGuardians[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="plan-sig-block">
       <h3>${label}</h3>
       <div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" oninput="this.value=formatName(this.value);${set('name')}"></div>
-        <div class="col-md-6"><label class="form-label">Date Signed${i===0?'<span class="req">*</span>':''}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" oninput="${set('signatureDate')}"></div>
-        <div class="col-md-6"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" oninput="${set('email')}"></div>
-        <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" oninput="this.value=formatPhone(this.value);${set('phone')}"></div>
-        <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingAddress||''))}" oninput="this.value=formatAddress(this.value);${set('mailingAddress')}"></div>
+        <div class="col-md-6"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
+        <div class="col-md-6"><label class="form-label">Date Signed${i===0?'<span class="req">*</span>':''}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
+        <div class="col-md-6"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email"></div>
+        <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
+        <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingAddress||''))}" data-form-path="planGuardians.${i}.mailingAddress" data-form-format="address"></div>
       </div>
     </div>`;
   };
