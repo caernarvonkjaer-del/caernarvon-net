@@ -23,6 +23,19 @@ HOSTED / PWA RELEASE (recommended when a web server is available):
 4. A true first visit cannot work offline before that exact build's offline
   pack finishes. The service worker is not used by the portable release.
 
+CLOUDFLARE PAGES PRODUCTION DEPLOYMENT:
+The caernarvon-home Pages project is connected to this repository. Configure:
+- Production branch: master
+- Root directory: leave blank (repository root)
+- Build command: npm --prefix probate-guardian ci && npm --prefix probate-guardian run build:web && node scripts/build-cloudflare-pages.mjs
+- Build output directory: probate-guardian/dist/pages
+- Environment variable: NODE_VERSION=24
+
+The assembly step keeps the main site at / and copies the complete hosted PWA
+to /probate-guardian/. A push to master then builds and deploys automatically.
+Do not configure Pages to publish the repository root: that serves the source
+service-worker template instead of the generated, revisioned worker.
+
 LOCAL PREVIEW OF THE HOSTED RELEASE:
 1. Install Node.js, open a terminal in the probate-guardian folder, and run:
     npm install
