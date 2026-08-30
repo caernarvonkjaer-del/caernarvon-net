@@ -938,7 +938,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     <div class="nav-section ward-picker-section">
       <label for="ward-selector" class="ward-picker-label">Active Ward</label>
       <div class="ward-combobox-wrap" id="ward-selector-wrap">
-        <input type="text" id="ward-selector" class="form-control form-control-sm ward-picker-select" placeholder="Type or select a ward…" autocomplete="off">
+        <input type="text" id="ward-selector" name="activeWard" class="form-control form-control-sm ward-picker-select" placeholder="Type or select a ward…" autocomplete="off" role="combobox" aria-autocomplete="none" aria-controls="ward-selector-dropdown" aria-expanded="false">
         <div id="ward-selector-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
       <!-- Hidden (along with the rest of .ward-collapsible) while a form is
@@ -1112,7 +1112,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
     <p id="unlock-subtitle" style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;"></p>
     <div class="mb-3">
       <label class="form-label">Master Password</label>
-      <input type="password" class="form-control" id="unlock-password" autocomplete="current-password">
+      <input type="password" class="form-control" id="unlock-password" autocomplete="new-password">
     </div>
     <div class="mb-3" id="unlock-confirm-row" style="display:none;">
       <label class="form-label">Confirm Master Password</label>
