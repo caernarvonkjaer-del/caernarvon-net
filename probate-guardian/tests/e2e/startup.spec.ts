@@ -34,4 +34,65 @@ test.describe('startup', () => {
     await expect(page.locator('#unlock-overlay')).toHaveClass(/show/);
     await expect(page.locator('#unlock-password-confirm')).toBeVisible(); // confirm row only shown when creating
   });
+
+  test('a deleted remembered case file falls back without poisoning later launches', async ({ page }) => {
+    await gotoApp(page);
+    await page.evaluate(async () => {
+      const root = await navigator.storage.getDirectory();
+      const handle = await root.getFileHandle('deleted-remembered-case.sav', { create: true });
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('pg-launch-pref', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('flags');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const transaction = db.transaction('flags', 'readwrite');
+        transaction.objectStore('flags').put(handle, 'zipFileHandle');
+        transaction.objectStore('flags').put(true, 'hasOpenedBefore');
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      });
+      db.close();
+      await root.removeEntry('deleted-remembered-case.sav');
+    });
+
+    await page.reload({ waitUntil: 'networkidle' });
+
+    await expect(page.locator('#startup-choice-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#startup-file-status')).toContainText('could not be found');
+    const launchPreferences = await page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('pg-launch-pref', 1);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      return new Promise((resolve) => {
+        const transaction = db.transaction('flags', 'readonly');
+        const store = transaction.objectStore('flags');
+        const handleRequest = store.get('zipFileHandle');
+        const openedRequest = store.get('hasOpenedBefore');
+        transaction.oncomplete = () => {
+          db.close();
+          resolve({ rememberedHandle: handleRequest.result, hasOpenedBefore: openedRequest.result });
+        };
+      });
+    });
+    expect(launchPreferences).toEqual({ rememberedHandle: undefined, hasOpenedBefore: true });
+  });
+
+  test('an unresponsive remembered file handle times out', async ({ page }) => {
+    await gotoApp(page);
+    const result = await page.evaluate(async () => {
+      const startedAt = performance.now();
+      try {
+        await (window as any).readRememberedFile({ getFile: () => new Promise(() => {}) }, 25);
+        return { name: 'resolved', elapsed: performance.now() - startedAt };
+      } catch (error) {
+        return { name: error instanceof DOMException ? error.name : 'Error', elapsed: performance.now() - startedAt };
+      }
+    });
+    expect(result.name).toBe('TimeoutError');
+    expect(result.elapsed).toBeLessThan(1000);
+  });
 });

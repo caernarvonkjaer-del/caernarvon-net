@@ -3154,6 +3154,8 @@ async function checkSessionRestoreCacheAtLaunch(){
 // user click, and a missing or stale handle falls back to the file picker.
 const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags';
 const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle';
+const REMEMBERED_FILE_TIMEOUT_MS=10000;
+let _rememberedFileUnavailable=false;
 function _launchPrefDb(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(LAUNCH_PREF_DB,1);
@@ -3179,6 +3181,15 @@ async function _launchPrefPut(key,value){
     tx.onerror=resolve; // non-critical either way — next launch just falls back
   });
 }
+async function _launchPrefDelete(key){
+  const db=await _launchPrefDb();
+  return new Promise((resolve)=>{
+    const tx=db.transaction(LAUNCH_PREF_STORE,'readwrite');
+    tx.objectStore(LAUNCH_PREF_STORE).delete(key);
+    tx.oncomplete=resolve;
+    tx.onerror=resolve;
+  });
+}
 async function hasOpenedCaseBefore(){
   try{return (await _launchPrefGet(LAUNCH_PREF_KEY_OPENED))===true;}
   catch(e){return false;} // IndexedDB unavailable (private browsing, etc.) — fall back to the full choice screen
@@ -3193,22 +3204,49 @@ async function loadPersistedZipHandle(){
   try{return (await _launchPrefGet(LAUNCH_PREF_KEY_HANDLE))||null;}
   catch(e){return null;}
 }
+async function forgetPersistedZipHandle(handle){
+  if(!handle||_zipFileHandle===handle)_zipFileHandle=null;
+  try{await _launchPrefDelete(LAUNCH_PREF_KEY_HANDLE);}catch(e){/* non-critical */}
+  refreshAutoSaveArmedStatus();
+}
+async function runRememberedHandleOperation(operation,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
+  let timeout;
+  try{
+    return await Promise.race([
+      Promise.resolve().then(operation),
+      new Promise((resolve,reject)=>{
+        timeout=setTimeout(()=>reject(new DOMException('The remembered case file did not respond.','TimeoutError')),timeoutMs);
+      }),
+    ]);
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+function readRememberedFile(handle,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
+  return runRememberedHandleOperation(()=>handle.getFile(),timeoutMs);
+}
+async function handleRememberedFileFailure(handle,error){
+  _rememberedFileUnavailable=true;
+  await forgetPersistedZipHandle(handle);
+  console.warn('Remembered case file is unavailable; it must be selected again',error);
+}
 
 // Case 1 above: a remembered handle whose read permission the browser
 // still honors with no prompt at all. Runs before the startup screen even
 // shows, so this is the only path that can be truly zero-click; everywhere
 // else still needs the gesture openCaseFileAtLaunch() provides.
 async function trySilentReopen(){
+  let handle=null;
   try{
-    const handle=await loadPersistedZipHandle();
+    handle=await loadPersistedZipHandle();
     if(!handle||!handle.queryPermission)return false;
-    if((await handle.queryPermission({mode:'read'}))!=='granted')return false;
-    const file=await handle.getFile();
+    if((await runRememberedHandleOperation(()=>handle.queryPermission({mode:'read'})))!=='granted')return false;
+    const file=await readRememberedFile(handle);
     const ok=await loadCaseFileAtLaunch(file);
     if(ok)await rememberZipHandle(handle);
     return ok;
   }catch(e){
-    console.warn('Silent reopen of remembered file failed, falling back to the startup screen',e);
+    await handleRememberedFileFailure(handle,e);
     return false;
   }
 }
@@ -3221,6 +3259,8 @@ async function promptOpenOrStartAtLaunch(){
   const fastPath=await hasOpenedCaseBefore();
   document.getElementById('startup-newcase-btn').style.display=fastPath?'none':'';
   document.getElementById('startup-newcase-link').style.display=fastPath?'':'none';
+  const fileStatus=document.getElementById('startup-file-status');
+  fileStatus.style.display=_rememberedFileUnavailable?'block':'none';
   return new Promise((resolve)=>{
     _startupChoiceResolve=resolve;
     document.getElementById('startup-choice-overlay').classList.add('show');
@@ -3254,8 +3294,8 @@ async function openCaseFileAtLaunch(){
   const remembered=await loadPersistedZipHandle();
   if(remembered&&remembered.requestPermission){
     try{
-      if((await remembered.requestPermission({mode:'read'}))==='granted'){
-        const file=await remembered.getFile();
+      if((await runRememberedHandleOperation(()=>remembered.requestPermission({mode:'read'})))==='granted'){
+        const file=await readRememberedFile(remembered);
         const ok=await loadCaseFileAtLaunch(file);
         if(ok){
           await rememberZipHandle(remembered);
@@ -3264,7 +3304,8 @@ async function openCaseFileAtLaunch(){
         }
       }
     }catch(e){
-      console.warn('Could not reuse remembered file handle, falling back to the file picker',e);
+      await handleRememberedFileFailure(remembered,e);
+      document.getElementById('startup-file-status').style.display='block';
     }
   }
   if(window.showOpenFilePicker){
