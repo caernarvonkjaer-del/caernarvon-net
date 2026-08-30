@@ -1,0 +1,137 @@
+{
+  "target": "source",
+  "measuredAt": "2026-08-30T13:05:06.209Z",
+  "gitSha": "2ff1ddf",
+  "staticInlineScriptBytes": 0,
+  "staticExternalScripts": [],
+  "initialEvaluatedScriptBytes": 5761751,
+  "initialApplicationScriptBytes": 498472,
+  "JSHeapUsedSize": 9865344,
+  "Nodes": 633,
+  "ScriptDuration": 0.095848,
+  "navigation": {
+    "transferSize": 24788,
+    "encodedBodySize": 24488,
+    "duration": 274.90000000596046
+  },
+  "resourceCount": 20,
+  "scriptResources": [
+    {
+      "name": "http://localhost:4322/probate-guardian/src/prepaint.js",
+      "transferSize": 562,
+      "encodedBodySize": 262,
+      "decodedBodySize": 262
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/lib/html2pdf.bundle.min.js",
+      "transferSize": 264443,
+      "encodedBodySize": 264143,
+      "decodedBodySize": 945590
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/lib/exceljs.min.js",
+      "transferSize": 256835,
+      "encodedBodySize": 256535,
+      "decodedBodySize": 941468
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/lib/jszip.min.js",
+      "transferSize": 28338,
+      "encodedBodySize": 28038,
+      "decodedBodySize": 96935
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/templates/annual-template.js",
+      "transferSize": 798272,
+      "encodedBodySize": 797972,
+      "decodedBodySize": 1649788
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/templates/simplified-template.js",
+      "transferSize": 207223,
+      "encodedBodySize": 206923,
+      "decodedBodySize": 307908
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/templates/guardian-template.js",
+      "transferSize": 591303,
+      "encodedBodySize": 591003,
+      "decodedBodySize": 1241306
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/fragment-loader.js",
+      "transferSize": 2181,
+      "encodedBodySize": 1881,
+      "decodedBodySize": 3952
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/core/feature-bridge.js",
+      "transferSize": 1615,
+      "encodedBodySize": 1315,
+      "decodedBodySize": 3187
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/core/state.js",
+      "transferSize": 6162,
+      "encodedBodySize": 5862,
+      "decodedBodySize": 21562
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/features-loader.js",
+      "transferSize": 1600,
+      "encodedBodySize": 1300,
+      "decodedBodySize": 3752
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/legacy-app.js",
+      "transferSize": 125727,
+      "encodedBodySize": 125427,
+      "decodedBodySize": 448514
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/shell-events.js",
+      "transferSize": 1156,
+      "encodedBodySize": 856,
+      "decodedBodySize": 2982
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/modal-events.js",
+      "transferSize": 959,
+      "encodedBodySize": 659,
+      "decodedBodySize": 2418
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/form-events.js",
+      "transferSize": 1875,
+      "encodedBodySize": 1575,
+      "decodedBodySize": 6106
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/startup-events.js",
+      "transferSize": 1047,
+      "encodedBodySize": 747,
+      "decodedBodySize": 747
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/src/pwa-ui.js",
+      "transferSize": 1894,
+      "encodedBodySize": 1594,
+      "decodedBodySize": 4990
+    },
+    {
+      "name": "http://localhost:4322/probate-guardian/lib/bootstrap.bundle.min.js",
+      "transferSize": 24065,
+      "encodedBodySize": 23765,
+      "decodedBodySize": 80284
+    }
+  ],
+  "initialScriptResourceEncodedBytes": 2309857,
+  "initialScriptResourceDecodedBytes": 5761751,
+  "heapAfterRouteCycles": [
+    9242360,
+    9251596,
+    9349580,
+    9369328,
+    9518844
+  ]
+}

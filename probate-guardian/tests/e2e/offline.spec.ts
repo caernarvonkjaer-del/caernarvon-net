@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gotoApp } from './support/target';
+import { chooseNoPassword, gotoApp, startNewCase } from './support/target';
 
 const webTarget = process.env.PG_TARGET === 'web';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -92,6 +92,28 @@ test.describe('hosted offline cache', () => {
     expect(marker).toEqual({ ready: true, cacheVersion: result.cacheVersion });
   });
 
+  test('ready offline pack opens a feature never previously used by the page', async ({ page, context }) => {
+    await gotoApp(page);
+    await waitForActiveWorker(page);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+    await startNewCase(page);
+    await chooseNoPassword(page);
+
+    const result = await sendWorkerMessage(page, 'DOWNLOAD_OFFLINE_PACK');
+    expect(result.ready).toBe(true);
+    expect(await page.evaluate(() => performance.getEntriesByType('resource')
+      .some(entry => entry.name.includes('plan-minor')))).toBe(false);
+
+    await context.setOffline(true);
+    try {
+      await page.evaluate(() => (window as any).addWard('Offline Unopened Feature Ward', 'planMinor'));
+      await expect(page.locator('#main-content').getByRole('heading', { name: 'Annual Plan — Minors — Cover' })).toBeVisible();
+    } finally {
+      await context.setOffline(false);
+    }
+  });
+
   test('partial offline-pack failure remains not-ready and can retry', async ({ page }) => {
     await gotoApp(page);
     await waitForActiveWorker(page);
@@ -124,13 +146,24 @@ test.describe('hosted offline cache', () => {
     expect(retried.cachedCount).toBe(retried.offlineCount);
   });
 
-  test('never caches sav, case-data, or blob URLs', async ({ page }) => {
+  test('never caches user data, cross-origin, or non-manifest URLs', async ({ page }) => {
+    await page.route('**/non-manifest-probe.json', route => route.fulfill({
+      contentType: 'application/json',
+      body: '{"probe":true}',
+    }));
+    await page.route('https://offline-exclusion.test/**', route => route.fulfill({
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: '{"probe":true}',
+    }));
     await gotoApp(page);
     await waitForActiveWorker(page);
 
     await page.evaluate(async () => {
       await fetch('probe.sav').catch(() => undefined);
       await fetch('case-data/probe.json').catch(() => undefined);
+      await fetch('non-manifest-probe.json');
+      await fetch('https://offline-exclusion.test/probe.json', { mode: 'no-cors' }).catch(() => undefined);
       const blobUrl = URL.createObjectURL(new Blob(['private case data']));
       try { await fetch(blobUrl).catch(() => undefined); } finally { URL.revokeObjectURL(blobUrl); }
     });
@@ -143,5 +176,7 @@ test.describe('hosted offline cache', () => {
     expect(cachedUrls.some(url => url.endsWith('.sav'))).toBe(false);
     expect(cachedUrls.some(url => url.includes('/case-data/'))).toBe(false);
     expect(cachedUrls.some(url => url.startsWith('blob:'))).toBe(false);
+    expect(cachedUrls.some(url => url.includes('non-manifest-probe.json'))).toBe(false);
+    expect(cachedUrls.some(url => url.startsWith('https://offline-exclusion.test/'))).toBe(false);
   });
 });

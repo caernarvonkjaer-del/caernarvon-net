@@ -1,0 +1,89 @@
+{
+  "target": "web",
+  "measuredAt": "2026-08-30T13:05:09.035Z",
+  "gitSha": "2ff1ddf",
+  "staticInlineScriptBytes": 0,
+  "staticExternalScripts": [],
+  "initialEvaluatedScriptBytes": 5739140,
+  "initialApplicationScriptBytes": 475861,
+  "JSHeapUsedSize": 9894880,
+  "Nodes": 632,
+  "ScriptDuration": 0.102134,
+  "navigation": {
+    "transferSize": 24805,
+    "encodedBodySize": 24505,
+    "duration": 256.90000000596046
+  },
+  "resourceCount": 12,
+  "scriptResources": [
+    {
+      "name": "http://localhost:4323/probate-guardian/src/prepaint.js",
+      "transferSize": 562,
+      "encodedBodySize": 262,
+      "decodedBodySize": 262
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/lib/html2pdf.bundle.min.js",
+      "transferSize": 264443,
+      "encodedBodySize": 264143,
+      "decodedBodySize": 945590
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/lib/exceljs.min.js",
+      "transferSize": 256835,
+      "encodedBodySize": 256535,
+      "decodedBodySize": 941468
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/lib/jszip.min.js",
+      "transferSize": 28338,
+      "encodedBodySize": 28038,
+      "decodedBodySize": 96935
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/templates/annual-template.js",
+      "transferSize": 798272,
+      "encodedBodySize": 797972,
+      "decodedBodySize": 1649788
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/templates/simplified-template.js",
+      "transferSize": 207223,
+      "encodedBodySize": 206923,
+      "decodedBodySize": 307908
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/templates/guardian-template.js",
+      "transferSize": 591303,
+      "encodedBodySize": 591003,
+      "decodedBodySize": 1241306
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/assets/index-CJBv7dV6.js",
+      "transferSize": 8031,
+      "encodedBodySize": 7731,
+      "decodedBodySize": 27085
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/src/legacy-app.js",
+      "transferSize": 125727,
+      "encodedBodySize": 125427,
+      "decodedBodySize": 448514
+    },
+    {
+      "name": "http://localhost:4323/probate-guardian/lib/bootstrap.bundle.min.js",
+      "transferSize": 24065,
+      "encodedBodySize": 23765,
+      "decodedBodySize": 80284
+    }
+  ],
+  "initialScriptResourceEncodedBytes": 2301799,
+  "initialScriptResourceDecodedBytes": 5739140,
+  "heapAfterRouteCycles": [
+    9242684,
+    9251944,
+    9349456,
+    9368780,
+    9512728
+  ]
+}

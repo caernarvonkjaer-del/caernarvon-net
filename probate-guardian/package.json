@@ -12,7 +12,8 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
-    "measure:baseline": "node scripts/measure-baseline.mjs"
+    "measure:baseline": "node scripts/measure-baseline.mjs",
+    "measure:lifecycle": "node scripts/measure-lifecycle.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

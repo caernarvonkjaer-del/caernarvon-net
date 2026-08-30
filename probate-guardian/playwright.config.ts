@@ -7,6 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
 //   web      - built dist/web, served (the chunked/PWA target)
 //   portable - built dist/portable/index.html opened via a literal file:// URL
 const target = process.env.PG_TARGET || 'source';
+const browser = process.env.PG_BROWSER || 'chromium';
 
 const TARGETS = {
   source:   { command: 'npx vite preview --outDir . --port 4321 --strictPort', url: 'http://localhost:4321/index.html', baseURL: 'http://localhost:4321/index.html' },
@@ -19,6 +20,15 @@ const webServer = TARGETS[target]
   ? { command: TARGETS[target].command, url: TARGETS[target].url, reuseExistingServer: !process.env.CI }
   : undefined;
 
+const BROWSERS = {
+  chromium: { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+  edge: { name: 'edge', use: { ...devices['Desktop Chrome'], channel: 'msedge' } },
+  firefox: { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+  webkit: { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+};
+
+if (!(browser in BROWSERS)) throw new Error(`Unknown PG_BROWSER: ${browser}`);
+
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: false, // fullyParallel only affects tests within one file; workers below is what actually serializes across files
@@ -29,8 +39,7 @@ export default defineConfig({
   use: {
     baseURL: TARGETS[target]?.baseURL,
     trace: 'retain-on-failure',
-    ...devices['Desktop Chrome'],
   },
   webServer,
-  projects: [{ name: 'chromium' }],
+  projects: [BROWSERS[browser as keyof typeof BROWSERS]],
 });

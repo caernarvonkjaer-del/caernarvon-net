@@ -1063,21 +1063,90 @@ for both names returns no matches. No `.sav` format or case-data behavior change
 
 ### Milestone 13: Measure and finish (step 8), then acceptance-criteria sign-off
 
-- Re-run the step-1 baseline measurements (transfer size, parse/evaluate
-  time, heap, DOM-node count) and compare against the numeric targets
-  recorded before extraction began.
-- Run the warmed-baseline leak-test procedure (mount/dispose 20 cycles per
-  feature) for every extracted feature, not just the ones checked
-  incidentally during their own milestone.
-- Offline PWA test (first-use-never-opened-feature precondition) against the
-  Milestone 10 service worker, plus the fail-then-retry `DOWNLOAD_OFFLINE_PACK`
-  test.
-- Cross-browser pass (Chrome, Edge, Firefox, Safari) — writable-file-handle
-  behavior differs, and this has only been spot-checked in Chromium so far
-  via the Playwright suite's `chromium` project.
-- Update `HOW-TO-RUN.txt` to document the hosted/PWA and portable release
-  paths now that `dist/web`/`dist/portable` both exist — still pending since
-  the "Required decision" section's dual-distribution choice was recorded.
-- Walk the acceptance-criteria list above item by item and mark each resolved
-  or explicitly deferred with a reason, rather than assuming completion.
+**Complete with explicit deferrals.** Measurements were taken on 2026-08-30
+from the working tree based on `2ff1ddf`. Reproducible records are in
+`tests/baseline/milestone-13-{source,web,portable}.json` and
+`tests/baseline/milestone-13-lifecycle.json`; the original `30dc907` record
+remains `tests/baseline/latest.json`.
+
+The plan said numeric thresholds would be agreed after the baseline was
+measured, but neither the plan, the baseline artifact, nor the baseline-era
+commits contain those values. Milestone 13 therefore reports actual deltas and
+marks threshold-dependent clauses deferred; it does not retroactively invent
+targets.
+
+| Metric | `30dc907` baseline | Final hosted web | Delta |
+| --- | ---: | ---: | ---: |
+| Application JavaScript, decoded bytes | 1,010,181 | 475,861 | -52.9% |
+| All initially evaluated JavaScript, decoded bytes | 6,273,456 | 5,739,140 | -8.5% |
+| HTML navigation encoded body | 1,125,820 | 24,505 | -97.8% |
+| Initial JS heap | 21,255,244 | 9,894,880 | -53.4% |
+| Initial DOM nodes | 2,472 | 632 | -74.4% |
+| Initial requests | 9 | 12 | +3 |
+| Chromium `ScriptDuration` | 0.008997 s | 0.102134 s | 11.4x |
+
+The application-code, heap, DOM, and HTML-body improvements are concrete.
+Total evaluated JavaScript improves only 8.5% because `html2pdf`, ExcelJS,
+JSZip, and all three workbook templates still execute at startup. The request
+count and `ScriptDuration` regress. The acceptance clause requiring PDF/Excel
+libraries to be absent from the initial path is therefore unresolved, not
+reported as a pass. Source startup measured 498,472 application bytes,
+5,761,751 total decoded script bytes, 9,865,344 heap bytes, 633 nodes, and 20
+requests. Portable startup measured 961,111 application bytes, 6,224,390 total
+script bytes, 10,028,508 heap bytes, 620 nodes, and an 842,389-byte HTML body;
+portable intentionally trades hosted lazy-loading for `file://` operation.
+
+Source `index.html` is 101,221 bytes / 1,080 lines and hosted
+`dist/web/index.html` is 100,125 bytes / 1,073 lines. Portable is 842,389 bytes
+/ 4,575 lines and is exempt from the shell limit. No source/hosted shell limit
+was ever agreed, so these are records rather than a threshold pass. The final
+service-worker manifest is `fabdd463489af01a`: 5 critical entries / 886,068
+bytes and 33 offline entries / 5,931,477 bytes.
+
+The warmed lifecycle run imported and mounted each module once, disposed it,
+forced Chromium GC, then performed 20 mount/dispose cycles. Post-GC heap growth
+was: Simplified 17,676 bytes; Plan Simplified 16,236; Plan Annual 15,648; Plan
+Initial 12,904; Plan Minor 11,252; Annual 9,824; Guardian 18,692; Dashboard
+34,024. All 160 cycles completed without console errors and the shared host was
+empty after every disposal. Retained-node deltas ranged from -248 to +417;
+because no heap/node bound was agreed and CDP's retained-node count is noisy,
+the raw values are preserved instead of assigning a retrospective pass limit.
+
+Validation completed:
+
+- Both production builds passed. Full Chromium matrices: source 65 passed / 5
+  hosted-only skipped; dev 64 passed / 6 target-specific skipped; web 69
+  passed / 1 source-only skipped; portable `file://` 64 passed / 6
+  target-specific skipped. Vitest has no unit specs and exits successfully.
+- Focused startup, every filing route/dashboard, `.sav`, lock, CSP, fragment,
+  and MIME coverage passed 25/25 in Microsoft Edge, Firefox, and WebKit as well
+  as the full Chromium runs. WebKit on Windows is Safari-engine compatibility
+  evidence; actual Safari was not available.
+- Hosted offline passed 5/5: atomic shell, ready marker, a never-imported Plan
+  Minor feature after the current build's pack is ready, partial failure and
+  retry, and `.sav`/case-data/blob/cross-origin/non-manifest exclusions.
+
+Acceptance sign-off:
+
+- **Resolved:** source/hosted shell has no feature implementation; hosted
+  application JavaScript, heap, DOM, and HTML transfer show concrete
+  improvement; feature disposal is invoked; hosted offline first-use/retry and
+  exclusions pass; current-format plain/encrypted `.sav` round trips, wrong
+  password, corruption, recovery, lock, and unencrypted legacy migration pass;
+  dual release policy is documented; strict script CSP, no executable inline
+  handlers, fragment allowlist, JavaScript MIME, and visible chunk-load retry
+  pass.
+- **Deferred/unresolved:** no pre-agreed shell, startup, request, or warmed-heap
+  thresholds exist; PDF/Excel/template scripts still execute initially;
+  overlapping programmatic navigation still lacks sequence/staging isolation;
+  portable still requires its complete folder because classic libraries and
+  templates are external to `index.html`; no checked-in prior-release `.sav`
+  fixture proves historical compatibility; remembered writable handles and
+  encrypted legacy migration are not automated; real Safari was not run; old
+  service-worker caches have no bounded retirement policy; `src/main.js`
+  remains deferred per Milestone 12.
+
+No archive-format bump was made: new `.sav` files remain format version 1.
+The two repository-adjacent workbook files are user artifacts, were not opened
+or modified, and are excluded from this milestone and its commit.
 

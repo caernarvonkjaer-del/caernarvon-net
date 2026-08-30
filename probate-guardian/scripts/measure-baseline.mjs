@@ -54,17 +54,35 @@ async function withServer(target, fn) {
   }
 }
 
-function staticInlineScriptBytes() {
+async function staticScriptBytes(target) {
   // Computed directly from source rather than at runtime -- still
   // comparable once code moves into hashed chunk files (sum of chunks
   // actually loaded on the initial path), and doesn't require any
   // instrumentation added to index.html itself.
-  return fs.readFile(path.join(root, 'index.html'), 'utf8').then((src) => {
-    const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
-    let m, total = 0;
-    while ((m = re.exec(src))) total += Buffer.byteLength(m[1], 'utf8');
-    return total;
-  });
+  const htmlPath = target === 'source'
+    ? path.join(root, 'index.html')
+    : path.join(root, 'dist', target, 'index.html');
+  const html = await fs.readFile(htmlPath, 'utf8');
+  const inlinePattern = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
+  let match;
+  let inline = 0;
+  while ((match = inlinePattern.exec(html))) inline += Buffer.byteLength(match[1], 'utf8');
+
+  const external = [];
+  if (target === 'portable') {
+    for (const script of html.matchAll(/<script[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)) {
+      const src = script[1];
+      if (/^(?:https?:|data:|\/\/)/i.test(src)) continue;
+      const filePath = path.resolve(path.dirname(htmlPath), src.split(/[?#]/, 1)[0]);
+      external.push({ src, bytes: (await fs.stat(filePath)).size });
+    }
+  }
+  return { inline, external };
+}
+
+function isApplicationScript(name) {
+  const pathname = new URL(name, 'https://measure.invalid').pathname;
+  return !pathname.includes('/lib/') && !pathname.includes('/templates/');
 }
 
 const ROUTE_CYCLE = ['/dashboard', '/a1', '/a2', '/b1', '/b2', '/b3', '/b4', '/c1', '/c2', '/c3', '/c4', '/c5', '/d1', '/d2', '/d3', '/d4', '/d5', '/print', '/summary', '/'];
@@ -94,6 +112,14 @@ async function measure(url) {
     return e ? { transferSize: e.transferSize, encodedBodySize: e.encodedBodySize, duration: e.duration } : null;
   });
   const resourceCount = await page.evaluate(() => performance.getEntriesByType('resource').length + 1);
+  const scriptResources = await page.evaluate(() => performance.getEntriesByType('resource')
+    .filter((entry) => entry.initiatorType === 'script')
+    .map((entry) => ({
+      name: entry.name,
+      transferSize: entry.transferSize,
+      encodedBodySize: entry.encodedBodySize,
+      decodedBodySize: entry.decodedBodySize,
+    })));
 
   // Route-switch cycle: create one real ward, then cycle through every
   // schedule page 5x, forcing GC before each heap read. Informational only
@@ -104,11 +130,11 @@ async function measure(url) {
   });
   await page.waitForTimeout(200);
   await page.evaluate(() => {
-    document.querySelector('#security-choice-overlay button[onclick*="selectSecurityMode(\'none\')"]')?.click();
+    document.querySelector('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]')?.click();
   });
   await page.waitForTimeout(200);
   await page.evaluate(() => { (window).addWard?.('Baseline Measurement Ward', 'guardian'); });
-  await page.waitForTimeout(200);
+  await page.waitForFunction(() => window.D?.wardName === 'Baseline Measurement Ward');
 
   const heapSamples = [];
   for (let cycle = 0; cycle < 5; cycle++) {
@@ -128,12 +154,22 @@ async function measure(url) {
     ScriptDuration: cdpMetrics.ScriptDuration,
     navigation: nav,
     resourceCount,
+    scriptResources,
+    initialScriptResourceEncodedBytes: scriptResources.reduce((total, resource) => total + resource.encodedBodySize, 0),
+    initialScriptResourceDecodedBytes: scriptResources.reduce((total, resource) => total + resource.decodedBodySize, 0),
     heapAfterRouteCycles: heapSamples,
   };
 }
 
-const staticBytes = await staticInlineScriptBytes();
+const staticScripts = await staticScriptBytes(target);
 const result = await withServer(target, measure);
+const portableExternalBytes = staticScripts.external.reduce((total, script) => total + script.bytes, 0);
+const portableApplicationExternalBytes = staticScripts.external
+  .filter(script => isApplicationScript(script.src))
+  .reduce((total, script) => total + script.bytes, 0);
+const runtimeApplicationBytes = result.scriptResources
+  .filter(resource => isApplicationScript(resource.name))
+  .reduce((total, resource) => total + resource.decodedBodySize, 0);
 
 const record = {
   target,
@@ -141,7 +177,10 @@ const record = {
   gitSha: (await import('node:child_process').then((cp) => new Promise((resolve) => {
     cp.exec('git rev-parse --short HEAD', { cwd: root }, (err, stdout) => resolve(err ? null : stdout.trim()));
   }))),
-  staticInlineScriptBytes: staticBytes,
+  staticInlineScriptBytes: staticScripts.inline,
+  staticExternalScripts: staticScripts.external,
+  initialEvaluatedScriptBytes: staticScripts.inline + (target === 'portable' ? portableExternalBytes : result.initialScriptResourceDecodedBytes),
+  initialApplicationScriptBytes: staticScripts.inline + (target === 'portable' ? portableApplicationExternalBytes : runtimeApplicationBytes),
   ...result,
 };
 
@@ -149,7 +188,6 @@ console.log(JSON.stringify(record, null, 2));
 
 const outDir = path.join(root, 'tests/baseline');
 await fs.mkdir(outDir, { recursive: true });
-const dateStamp = record.measuredAt.slice(0, 10);
-await fs.writeFile(path.join(outDir, `${dateStamp}-${record.gitSha || 'nogit'}-${target}.json`), JSON.stringify(record, null, 2));
-await fs.writeFile(path.join(outDir, 'latest.json'), JSON.stringify(record, null, 2));
-console.log(`\nSaved to tests/baseline/${dateStamp}-${record.gitSha || 'nogit'}-${target}.json and tests/baseline/latest.json`);
+const outputName = `milestone-13-${target}.json`;
+await fs.writeFile(path.join(outDir, outputName), JSON.stringify(record, null, 2));
+console.log(`\nSaved to tests/baseline/${outputName}`);

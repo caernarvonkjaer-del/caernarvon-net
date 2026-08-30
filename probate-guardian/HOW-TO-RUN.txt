@@ -4,27 +4,64 @@ Probate Guardian — Web App (v1.5.30)
 QUICK START
 ===========
 
-EASIEST WAY TO RUN IT (no install, works from a thumb drive):
-1. Unzip ProbateGuardian-web-v1.5.30.zip into any folder (or straight onto
-   a USB drive).
-2. Double-click index.html. Use Chrome or Edge (Firefox's support for
-   this is inconsistent — test it once before relying on it there).
-That's it — no terminal, no Node.js, nothing else to install.
+PORTABLE / THUMB-DRIVE RELEASE (no server):
+1. Keep the complete dist/portable folder together. Its index.html still uses
+  the libraries and templates beside it; index.html alone is not the release.
+2. Double-click dist/portable/index.html. It opens with a file:// URL.
+3. Use Chrome or Edge. Firefox and Safari/WebKit use the manual download/upload
+  .sav fallback and should be tested on the target computer before relying on
+  a portable case workflow.
 
-ALTERNATIVE (if you prefer running it through a local server):
-1. Unzip into any folder.
-2. Open a terminal.
-3. Navigate to the unzipped folder:  cd path/to/unzipped/folder
-4. Run:  npx http-server . -p 8420 -c-1
-5. Open http://localhost:8420 in Chrome or Edge.
+HOSTED / PWA RELEASE (recommended when a web server is available):
+1. Deploy the complete dist/web folder at the /probate-guardian/ path on an
+  HTTPS origin. localhost is also valid for local testing.
+2. Do not double-click dist/web/index.html. Modules, the service worker, and
+  PWA offline support require HTTP(S).
+3. Open the hosted app once while online. Choose Download when the offline
+  access notice appears and wait for "Offline access ready" before relying on
+  an unopened form while disconnected.
+4. A true first visit cannot work offline before that exact build's offline
+  pack finishes. The service worker is not used by the portable release.
+
+LOCAL PREVIEW OF THE HOSTED RELEASE:
+1. Install Node.js, open a terminal in the probate-guardian folder, and run:
+    npm install
+    npm run build:web
+    npm run preview:web -- --port 8420
+2. Open http://localhost:8420/probate-guardian/.
+
+SOURCE / DEVELOPMENT MODE:
+- npm run dev
+- Open http://localhost:5173/probate-guardian/.
+- Development mode is not the distributable offline/PWA release.
+
+BUILD AND VALIDATION COMMANDS (maintainers):
+- Build both releases: npm run build
+- Run the default source/Chromium suite: npm test
+- Select a target in PowerShell, then run Playwright:
+  $env:PG_TARGET='source'     # source, dev, web, or portable
+  npx playwright test
+- Select another installed browser when needed:
+  $env:PG_BROWSER='firefox'   # chromium, edge, firefox, or webkit
+  npx playwright test
+- Measure final startup and lifecycle behavior:
+  node scripts/measure-baseline.mjs --target=source
+  node scripts/measure-baseline.mjs --target=web
+  node scripts/measure-baseline.mjs --target=portable
+  npm run measure:lifecycle
+- Hosted offline tests run only with PG_TARGET='web'. WebKit on Windows is
+  Safari-engine compatibility coverage, not a substitute for real Safari.
 
 IMPORTANT SECURITY NOTES
 ========================
-- Do NOT open via a network IP address (e.g. 192.168.x.x) or remote URL.
-  Only open the file directly from disk or via localhost.
-  The app requires "secure context" to encrypt your data.
-- If using file:// directly, Chrome and Edge work fine. Firefox may have
-  limitations with IndexedDB, so test it first before relying on it.
+- Use only a trusted local portable copy, localhost, or an HTTPS deployment.
+  Do not deploy sensitive case workflows over plain remote HTTP.
+- The hosted build uses a strict script policy (script-src 'self'). The
+  portable build authorizes its generated inline module with an exact hash.
+  Legacy dynamic styles still require style-src 'unsafe-inline'.
+- Firefox and Safari/WebKit cannot silently overwrite a remembered .sav file;
+  they use download/upload fallback. Chrome/Edge remembered-handle behavior
+  requires a manual browser permission check and is not covered by automation.
 - Your master password cannot be reset. If you forget it, your data cannot
   be recovered. Keep your password safe or use "No Password" mode.
 
@@ -33,21 +70,21 @@ DETAILED SETUP FOR DIFFERENT OPERATING SYSTEMS
 ===============================================
 
 WINDOWS:
-1. Download the .zip file.
+1. Download the portable .zip file.
 2. Right-click → Extract All → Choose destination.
-3. Open the folder and double-click index.html.
+3. Keep the extracted folder intact and double-click its index.html.
 4. If you get a Windows Defender warning, click "More info" → "Run anyway".
    (The file is safe; this is just Windows being cautious about downloaded files.)
 
 MAC:
-1. Download the .zip file.
+1. Download the portable .zip file.
 2. Double-click to auto-extract (or use Archive Utility).
 3. Open the folder and double-click index.html.
 4. If you get a "can't open" dialog, right-click → Open With → Chrome or Safari.
    (Macs block unsigned downloads by default.)
 
 LINUX:
-1. Unzip the file: unzip ProbateGuardian-web-v1.5.30.zip
+1. Unzip the portable release.
 2. Open index.html with Chrome: google-chrome path/to/index.html
 3. Or run a local server: cd path/to/folder && python3 -m http.server 8000
    Then open http://localhost:8000 in your browser.
@@ -311,7 +348,9 @@ A: Your data only lives in memory and in whatever .sav file you've saved —
    yourself.
 
 Q: Do I need an internet connection?
-A: No. This app works 100% offline. No data ever leaves your computer.
+A: The portable release works without a connection. The hosted PWA works
+  offline after you open that build online, download its offline pack, and
+  see "Offline access ready". No case data is included in that cache.
 
 Q: Is my data really encrypted?
 A: Yes, if you choose "Encrypted & Password Protected". All data is encrypted

@@ -1,0 +1,65 @@
+{
+  "target": "portable",
+  "measuredAt": "2026-08-30T13:05:13.835Z",
+  "gitSha": "2ff1ddf",
+  "staticInlineScriptBytes": 512335,
+  "staticExternalScripts": [
+    {
+      "src": "./src/prepaint.js",
+      "bytes": 262
+    },
+    {
+      "src": "lib/html2pdf.bundle.min.js",
+      "bytes": 945590
+    },
+    {
+      "src": "lib/exceljs.min.js",
+      "bytes": 941468
+    },
+    {
+      "src": "lib/jszip.min.js",
+      "bytes": 96935
+    },
+    {
+      "src": "templates/annual-template.js",
+      "bytes": 1649788
+    },
+    {
+      "src": "templates/simplified-template.js",
+      "bytes": 307908
+    },
+    {
+      "src": "templates/guardian-template.js",
+      "bytes": 1241306
+    },
+    {
+      "src": "./src/legacy-app.js",
+      "bytes": 448514
+    },
+    {
+      "src": "lib/bootstrap.bundle.min.js",
+      "bytes": 80284
+    }
+  ],
+  "initialEvaluatedScriptBytes": 6224390,
+  "initialApplicationScriptBytes": 961111,
+  "JSHeapUsedSize": 10028508,
+  "Nodes": 620,
+  "ScriptDuration": 0.094309,
+  "navigation": {
+    "transferSize": 842689,
+    "encodedBodySize": 842389,
+    "duration": 1227.3999999910593
+  },
+  "resourceCount": 1,
+  "scriptResources": [],
+  "initialScriptResourceEncodedBytes": 0,
+  "initialScriptResourceDecodedBytes": 0,
+  "heapAfterRouteCycles": [
+    9315840,
+    9330488,
+    9428852,
+    9447428,
+    9591172
+  ]
+}

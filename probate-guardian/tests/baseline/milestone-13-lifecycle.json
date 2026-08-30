@@ -1,0 +1,120 @@
+{
+  "target": "source",
+  "browser": "chromium",
+  "measuredAt": "2026-08-30T12:45:40.263Z",
+  "cyclesPerFeature": 20,
+  "results": [
+    {
+      "feature": "simplified-accounting",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10036088,
+        "nodes": 725
+      },
+      "afterCycles": {
+        "heapBytes": 10053764,
+        "nodes": 1142
+      },
+      "heapGrowthBytes": 17676,
+      "nodeGrowth": 417
+    },
+    {
+      "feature": "plan-simplified",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10073164,
+        "nodes": 949
+      },
+      "afterCycles": {
+        "heapBytes": 10089400,
+        "nodes": 1206
+      },
+      "heapGrowthBytes": 16236,
+      "nodeGrowth": 257
+    },
+    {
+      "feature": "plan-annual",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10109540,
+        "nodes": 1040
+      },
+      "afterCycles": {
+        "heapBytes": 10125188,
+        "nodes": 893
+      },
+      "heapGrowthBytes": 15648,
+      "nodeGrowth": -147
+    },
+    {
+      "feature": "plan-initial",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10147852,
+        "nodes": 1005
+      },
+      "afterCycles": {
+        "heapBytes": 10160756,
+        "nodes": 1150
+      },
+      "heapGrowthBytes": 12904,
+      "nodeGrowth": 145
+    },
+    {
+      "feature": "plan-minor",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10164616,
+        "nodes": 965
+      },
+      "afterCycles": {
+        "heapBytes": 10175868,
+        "nodes": 717
+      },
+      "heapGrowthBytes": 11252,
+      "nodeGrowth": -248
+    },
+    {
+      "feature": "annual-accounting",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10197760,
+        "nodes": 903
+      },
+      "afterCycles": {
+        "heapBytes": 10207584,
+        "nodes": 841
+      },
+      "heapGrowthBytes": 9824,
+      "nodeGrowth": -62
+    },
+    {
+      "feature": "guardian-inventory",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10259196,
+        "nodes": 1159
+      },
+      "afterCycles": {
+        "heapBytes": 10277888,
+        "nodes": 1049
+      },
+      "heapGrowthBytes": 18692,
+      "nodeGrowth": -110
+    },
+    {
+      "feature": "dashboard",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 10325928,
+        "nodes": 1209
+      },
+      "afterCycles": {
+        "heapBytes": 10359952,
+        "nodes": 1210
+      },
+      "heapGrowthBytes": 34024,
+      "nodeGrowth": 1
+    }
+  ]
+}
