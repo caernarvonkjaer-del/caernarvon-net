@@ -39,6 +39,92 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
     await expect(page.locator('#ward-selector')).toHaveValue('Roundtrip Ward Plain');
   });
 
+  test('dashboard browser preferences are excluded from ward data and exported archives', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Preference Isolation Ward');
+    const wardBefore = await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards));
+
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+    await page.locator('#dashboard-role').selectOption('assistant');
+    await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
+
+    const archive = await page.evaluate(async () => {
+      const { blob } = await (window as any).buildExportZipBlob();
+      const zip = await (window as any).JSZip.loadAsync(blob);
+      const entries: Array<{ name: string; text: string }> = [];
+      for (const [name, entry] of Object.entries(zip.files) as Array<[string, any]>) {
+        if (!entry.dir) entries.push({ name, text: await entry.async('string') });
+      }
+      return entries;
+    });
+
+    expect(await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards))).toBe(wardBefore);
+    expect(archive.map((entry) => entry.name)).not.toContain('pg-dashboard-preferences-v1');
+    const archiveText = archive.map((entry) => entry.text).join('\n');
+    expect(archiveText).not.toContain('pg-dashboard-preferences-v1');
+    expect(archiveText).not.toContain('supervisingProfessionalFilter');
+    expect(archiveText).not.toContain('onboardingDismissed');
+  });
+
+  test('new year clears workflow status, carries assignment, and prior year restores both', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Workflow Year Ward');
+    const original = await page.evaluate(() => {
+      const ward = (window as any).getGuardianData().wards[0];
+      ward.dashboardWorkflow = { status: 'pending-court-review', assigneeName: '  Alex   Attorney  ' };
+      return { wardId: ward.wardId, yearKey: ward.activeYearKey || 'Year 1' };
+    });
+
+    await page.evaluate((wardId) => (window as any).startNewWardYear(wardId), original.wardId);
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      assigneeName: 'Alex Attorney',
+    });
+    expect(await page.evaluate(() => (window as any).getGuardianData().wards[0].years[0].data.dashboardWorkflow)).toEqual({
+      status: 'pending-court-review',
+      assigneeName: '  Alex   Attorney  ',
+    });
+
+    await page.evaluate(({ wardId, yearKey }) => (window as any).switchWardYear(wardId, yearKey), original);
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      status: 'pending-court-review',
+      assigneeName: '  Alex   Attorney  ',
+    });
+  });
+
+  test('explicit dashboard status and assignment round-trip through .sav', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Workflow Roundtrip Ward');
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+    await page.locator('#dashboard-role').selectOption('professional');
+    const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Roundtrip Ward' });
+    await row.locator('[data-dashboard-change="workflow-status"]').selectOption('pending-court-review');
+    await row.locator('[data-dashboard-change="assignee"]').fill('Alex Attorney');
+    await row.locator('[data-dashboard-change="assignee"]').press('Tab');
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      status: 'pending-court-review',
+      assigneeName: 'Alex Attorney',
+    });
+
+    const savPath = await exportAndCapture(page);
+    await gotoApp(page);
+    await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+    await page.setInputFiles('#startup-open-input', savPath);
+
+    await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+    expect(await page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      status: 'pending-court-review',
+      assigneeName: 'Alex Attorney',
+    });
+  });
+
   test('encrypted export then open: wrong password rejected, correct password round-trips data', async ({ page }) => {
     const password = 'sav-roundtrip-password-42';
     await gotoApp(page);

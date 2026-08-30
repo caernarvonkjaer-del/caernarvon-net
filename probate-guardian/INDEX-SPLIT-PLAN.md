@@ -1146,7 +1146,73 @@ Acceptance sign-off:
   service-worker caches have no bounded retirement policy; `src/main.js`
   remains deferred per Milestone 12.
 
-No archive-format bump was made: new `.sav` files remain format version 1.
+No archive-format bump was made: new `.sav` files remain format version 2.
 The two repository-adjacent workbook files are user artifacts, were not opened
 or modified, and are excluded from this milestone and its commit.
+
+### Milestone 14: Role-aware dashboard triage
+
+**Complete with approved deferrals.** Implementation was validated on
+2026-08-30 from the working tree based on `72b7441`. The approved scope and
+guardrails are recorded in `MILESTONE-14-PROPOSAL.md`.
+
+Implementation summary:
+
+- Added a pure dashboard projection layer for filing identity, totals,
+  progress, statutory deadlines, workflow fallback, filing contacts,
+  assignments, priority, and non-overlapping triage metrics.
+- Added family, professional, and assistant dashboard views. Family view keeps
+  every filing accessible; triage views add status, deadline, contact, and
+  assignment filters plus priority sorting.
+- Added one validated browser-local preference record under
+  `pg-dashboard-preferences-v1`, with session-memory fallback when localStorage
+  is unavailable. Preferences do not mutate wards or enter `.sav` archives.
+- Added optional `dashboardWorkflow.status` and `assigneeName` metadata only
+  after explicit user changes. Values are normalized, `auto` removes explicit
+  status, and empty workflow containers are deleted.
+- Updated new-year handling so the prior snapshot retains status and
+  assignment, the new year clears status and carries assignment, and switching
+  back restores the prior metadata.
+- Preserved lazy dashboard `mount()`/`dispose()`, existing declarative action
+  behavior, production data from `guardianData.wards`, strict CSP, and escaped
+  ward-derived rendering. No production mock data was added.
+
+Phase gates passed:
+
+- **14A:** 16 projection tests cover all filing deadline rules, deep-frozen
+  input, contacts, workflow fallback, priority, metrics, and normalization.
+- **14B:** 5 preference tests cover validation and storage failure. Browser
+  role/filter operations leave ward JSON unchanged, survive remounts, and are
+  absent from every exported ZIP entry.
+- **14C:** dashboard controls use `saveWardToState()`, dirty-state marking, and
+  indicator refresh. Explicit metadata round-trips through a real `.sav`;
+  new-year reset/carry and prior-year restoration pass.
+
+Validation completed:
+
+- Vitest: 2 files, 21 tests passed. Both production builds passed.
+- Full Chromium matrices: source 70 passed / 5 hosted-only skipped; dev 69
+  passed / 6 target-specific skipped; web 74 passed / 1 source-only skipped;
+  portable `file://` 69 passed / 6 target-specific skipped.
+- Focused routes, dashboard, `.sav`, security, startup, and unlock coverage
+  passed 30/30 in Microsoft Edge, Firefox, and WebKit. WebKit on Windows is
+  Safari-engine compatibility evidence; actual Safari was not available.
+- Hosted offline coverage passed within the web matrix. Source lazy-load
+  failure and reload behavior passed within the source matrix.
+- Source security coverage confirms no executable inline handlers or scripts
+  were introduced; the portable build retains its generated CSP-hashed bundle.
+- Post-review regression coverage confirms pending and approved filings retain
+  informational dates without entering actionable card badges, family deadline
+  counts/worklists, or triage deadline filters; source, rebuilt web, and rebuilt
+  portable checks passed.
+
+Archive compatibility was preserved. The pre-Milestone-14 commit `72b7441`
+declares `SAV_FORMAT_VERSION=2`; the Milestone 14 working tree still declares
+version 2, and its diff does not touch the declaration or archive manifest.
+
+Approved deferrals remain: durable professional identities, court-system
+integration, automatic ward migration or hydration, persisted computed
+progress/deadlines, cross-device preference synchronization, targeted per-card
+render optimization, and production sample data. The two repository-adjacent
+workbook files remain untouched and excluded.
 

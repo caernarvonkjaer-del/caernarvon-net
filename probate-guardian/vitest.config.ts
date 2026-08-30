@@ -8,7 +8,7 @@ import { defineConfig } from 'vitest/config';
 // to run the e2e specs and failing on the import mismatch.
 export default defineConfig({
   test: {
-    include: ['tests/unit/**/*.spec.ts'],
+    include: ['tests/unit/**/*.spec.{js,ts}'],
     passWithNoTests: true, // expected to be empty through Milestone 1 -- see comment above
   },
 });

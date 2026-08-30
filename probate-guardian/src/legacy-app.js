@@ -5531,6 +5531,11 @@ function applyYearData(ward,data){
 //  - Simplified's Interest/Deposits/Service Charges/Federal Tax: reset —
 //    each is a specific period's transactions, not a standing balance.
 function resetYearlyFieldsForNewYear(data,type){
+  const carriedAssignee=typeof data.dashboardWorkflow?.assigneeName==='string'
+    ? data.dashboardWorkflow.assigneeName.trim().replace(/\s+/g,' ').slice(0,120)
+    : '';
+  if(carriedAssignee)data.dashboardWorkflow={assigneeName:carriedAssignee};
+  else delete data.dashboardWorkflow;
   const clearDate=obj=>{if(obj&&('signatureDate' in obj))obj.signatureDate='';};
   if(Array.isArray(data.guardians)){
     data.guardians.forEach(g=>{clearDate(g);if(g&&('signatureDateLabel' in g))g.signatureDateLabel='';});

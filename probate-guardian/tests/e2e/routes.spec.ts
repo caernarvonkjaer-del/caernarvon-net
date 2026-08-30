@@ -86,6 +86,89 @@ test.describe('routes', () => {
     await expect(page.locator('#dashboard-group-toggle')).toContainText('Grouped by Case');
   });
 
+  test('role-aware dashboard triage uses local preferences without mutating wards', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('<img src=x onerror=alert(1)> Alpha Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+    await page.evaluate(() => (window as any).addWard('Beta Ward', 'annual'));
+    await page.evaluate(() => (window as any).addWard('Gamma Ward', 'planSimplified'));
+    const beforePreferences = await page.evaluate(() => {
+      const wards = (window as any).getGuardianData().wards;
+      wards[0].gid = '2026-01-01';
+      wards[0].dashboardWorkflow = { status: 'disapproved-needs-correction', assigneeName: 'Alex Attorney' };
+      wards[1].periodTo = '2026-06-01';
+      wards[1].dashboardWorkflow = { status: 'pending-court-review' };
+      return JSON.stringify(wards);
+    });
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+
+    const main = page.locator('#main-content');
+    await main.locator('[data-dashboard-bound="true"]').waitFor();
+    await expect(main.locator('.dashboard-family-row')).toHaveCount(3);
+    await expect(main.locator('img[src="x"]')).toHaveCount(0);
+    await expect(main).toContainText('<img src=x onerror=alert(1)> Alpha Ward');
+    await expect(main.locator('.dashboard-worklist-tab').filter({ hasText: 'Deadlines' })).toContainText('1');
+    await expect(main.locator('.dashboard-deadlines-list')).not.toContainText('Beta Ward');
+
+    await page.locator('#dashboard-role').selectOption('professional');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
+    await expect(main.locator('.dashboard-stat').filter({ hasText: 'Action Items / Exceptions' })).toContainText('1');
+    await expect(main.locator('.dashboard-stat').filter({ hasText: 'Pending Court Review' })).toContainText('1');
+    await page.locator('#dashboard-deadline-filter').selectOption('due-soon');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(0);
+    await page.locator('#dashboard-deadline-filter').selectOption('all');
+
+    await page.locator('#dashboard-role').selectOption('assistant');
+    await expect(page.locator('#dashboard-assignment-filter')).toContainText('Alex Attorney');
+    await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(2);
+    await expect(page.evaluate(() => localStorage.getItem('pg-dashboard-preferences-v1'))).resolves.toContain('assistant');
+
+    const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards));
+    expect(afterPreferences).toBe(beforePreferences);
+
+    await page.evaluate(() => (window as any).navigate('/inventory-select'));
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).navigate('/inventory-select'));
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await main.locator('[data-dashboard-bound="true"]').waitFor();
+    await page.locator('#dashboard-assignment-filter').selectOption('all');
+    await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getGuardianData().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(2);
+    expect(await page.evaluate(() => (window as any).getGuardianData().wards[2].archived)).toBe(true);
+  });
+
+  test('explicit dashboard workflow changes persist normalized metadata', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Workflow Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+    await page.locator('#dashboard-role').selectOption('professional');
+
+    const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Ward' });
+    await row.locator('[data-dashboard-change="workflow-status"]').selectOption('approved');
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({ status: 'approved' });
+    await expect(page.locator('#last-saved-indicator')).toContainText('Unsaved changes');
+
+    const assignee = row.locator('[data-dashboard-change="assignee"]');
+    await assignee.fill('  <img src=x onerror=alert(1)> Alex   Attorney  ');
+    await assignee.press('Tab');
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      status: 'approved',
+      assigneeName: '<img src=x onerror=alert(1)> Alex Attorney',
+    });
+    await expect(page.locator('.dashboard-triage-row img[src="x"]')).toHaveCount(0);
+
+    await row.locator('[data-dashboard-change="workflow-status"]').selectOption('auto');
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      assigneeName: '<img src=x onerror=alert(1)> Alex Attorney',
+    });
+    await row.locator('[data-dashboard-change="assignee"]').fill('   ');
+    await row.locator('[data-dashboard-change="assignee"]').press('Tab');
+    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toBeUndefined();
+  });
+
   test('shell controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Shell Ward', 'guardian'));
