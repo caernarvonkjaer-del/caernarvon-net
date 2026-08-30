@@ -54,6 +54,11 @@ export function loadAnnualFeature() {
   return import('./features/annual-accounting/index.js');
 }
 
+// Guardian Inventory (Milestone 8, Phase A) -- same reasoning.
+export function loadGuardianFeature() {
+  return import('./features/guardian-inventory/index.js');
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
@@ -63,3 +68,4 @@ window.loadPlanAnnualFeature = loadPlanAnnualFeature;
 window.loadPlanInitialFeature = loadPlanInitialFeature;
 window.loadPlanMinorFeature = loadPlanMinorFeature;
 window.loadAnnualFeature = loadAnnualFeature;
+window.loadGuardianFeature = loadGuardianFeature;
