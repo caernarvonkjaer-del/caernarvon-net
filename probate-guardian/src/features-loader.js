@@ -59,6 +59,11 @@ export function loadGuardianFeature() {
   return import('./features/guardian-inventory/index.js');
 }
 
+// Dashboard (Milestone 9) -- same reasoning.
+export function loadDashboardFeature() {
+  return import('./features/dashboard/index.js');
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
@@ -69,3 +74,4 @@ window.loadPlanInitialFeature = loadPlanInitialFeature;
 window.loadPlanMinorFeature = loadPlanMinorFeature;
 window.loadAnnualFeature = loadAnnualFeature;
 window.loadGuardianFeature = loadGuardianFeature;
+window.loadDashboardFeature = loadDashboardFeature;
