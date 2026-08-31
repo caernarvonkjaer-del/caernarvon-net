@@ -4040,44 +4040,123 @@ function getRecentlyOpenedWards(){
     .filter(Boolean);
 }
 
-async function addWard(wardName,inventoryType){
-  await flushPendingSave();
-  const wardId=createWardId();
-  const isFirstWardEver=guardianData.wards.length===0;
+// ═══════════════════════════════════════════════════════
+// WARD ACTIVATION / UNLOAD (Single Chokepoint)
+// ═══════════════════════════════════════════════════════
+async function activateWard(ward, opts = {}) {
+  if (!ward || !ward.wardId) return false;
 
-  // Milestone 16: Ward-Level Tab Lock
-  const previousWardId = guardianData.activeWardId;
-  if (window.releaseWardLock) await window.releaseWardLock();
-  if (window.acquireWardLock) {
-    const acquired = await window.acquireWardLock(wardId);
-    if (!acquired) {
-      // This shouldn't happen for a newly created ID, but handle it safely
-      showWardLockedModal();
-      navigate('/dashboard');
-      return;
+  // 1. If ward is already active and lock held, refresh UI and return true
+  if (guardianData.activeWardId === ward.wardId && window.D === ward) {
+    if (window.acquireWardLock) {
+      const alreadyHeld = await window.acquireWardLock(ward.wardId);
+      if (alreadyHeld) {
+        updateSidebar();
+        return true;
+      }
+    } else {
+      updateSidebar();
+      return true;
     }
   }
+
+  // 2. Flush while outgoing ward's lock is still held
+  await flushPendingSave();
+
+  const previousWardId = guardianData.activeWardId;
+
+  // 3. Release previous lock
+  if (window.releaseWardLock) {
+    await window.releaseWardLock();
+  }
+
+  // 4. Try acquiring target ward lock
+  let acquired = true;
+  if (window.acquireWardLock) {
+    acquired = await window.acquireWardLock(ward.wardId);
+  }
+
+  // 5. On failure, attempt to re-acquire outgoing ward's lock
+  if (!acquired) {
+    if (previousWardId) {
+      let restored = false;
+      if (window.acquireWardLock) {
+        restored = await window.acquireWardLock(previousWardId);
+      }
+      if (restored) {
+        showWardLockedModal();
+        return false;
+      }
+    }
+    showWardLockedModal();
+    await unloadWard();
+    return false;
+  }
+
+  // 6. On success, set loaded state
+  guardianData.activeWardId = ward.wardId;
+  activeInventoryType = ward.inventoryType;
+  window.D = ward;
+  _visitedPages.clear();
+  addToRecentlyOpened(ward);
+
+  if (formEngine(activeInventoryType) === 'guardian') {
+    await ensureGuardianFeatureReady();
+  }
+
+  try {
+    await saveAppState('activeWardId', ward.wardId);
+  } catch (e) {
+    console.warn('saveAppState activeWardId failed', e);
+  }
+
+  updateSidebar();
+  notifyProbateGuardianTabStateChanged();
+  return true;
+}
+
+async function unloadWard() {
+  await flushPendingSave();
+  if (window.releaseWardLock) {
+    await window.releaseWardLock();
+  }
+  guardianData.activeWardId = null;
+  window.D = {};
+  activeInventoryType = null;
+  try {
+    await saveAppState('activeWardId', null);
+  } catch (e) {
+    console.warn('saveAppState activeWardId null failed', e);
+  }
+  updateSidebar();
+  notifyProbateGuardianTabStateChanged();
+  navigate('/dashboard');
+}
+
+window.activateWard = activateWard;
+window.unloadWard = unloadWard;
+
+async function addWard(wardName,inventoryType){
+  const wardId=createWardId();
+  const isFirstWardEver=guardianData.wards.length===0;
 
   const newWard={
     wardId,
     inventoryType,
     createdDate:new Date().toISOString().split('T')[0],
     ...initializeEmptyData(inventoryType),
-    wardName
+    wardName:wardName||''
   };
   guardianData.wards.push(newWard);
-  guardianData.activeWardId=wardId;
-  activeInventoryType=inventoryType;
-  window.D=newWard;
-  if(formEngine(inventoryType)==='guardian')await ensureGuardianFeatureReady();
-  _visitedPages.clear();
-  addToRecentlyOpened(newWard);
   await saveWardToState(newWard);
-  await saveAppState('activeWardId',wardId);
+
+  await activateWard(newWard);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
-  notifyProbateGuardianTabStateChanged();
-  updateSidebar();
+
+  if(isFirstWardEver){
+    _appState.firstLaunchSeen=false;
+  }
   navigate('/');
   // Nudge a brand-new user to make their first backup right away, rather
   // than waiting for the auto-export timer's next tick (up to N minutes).
@@ -4205,61 +4284,21 @@ async function showSwitchWardPickerModal(){
 
 async function switchWard(wardId){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
-  if(!ward)return;
+  if(!ward)return false;
 
-  // Milestone 16: Ward-Level Tab Lock
-  const previousWardId = guardianData.activeWardId;
-  if (window.releaseWardLock) await window.releaseWardLock();
-
-  if (window.acquireWardLock) {
-    const acquired = await window.acquireWardLock(wardId);
-    if (!acquired) {
-      if (previousWardId) {
-        const restored = await window.acquireWardLock(previousWardId);
-        if (restored) {
-          showWardLockedModal();
-          return; // Left on previous ward
-        }
-      }
-      showWardLockedModal();
-      navigate('/dashboard');
-      return;
-    }
-  }
-
-  // Flush before switching
-  await flushPendingSave();
-
-  // Reset visited pages tracking for this ward
-  _visitedPages.clear();
-
-  addToRecentlyOpened(ward);
-
-  // Update state
-  guardianData.activeWardId=wardId;
-  activeInventoryType=ward.inventoryType;
-  window.D=ward;
-  if(formEngine(activeInventoryType)==='guardian')await ensureGuardianFeatureReady();
-
-  try{
-    await saveAppState('activeWardId',wardId);
-  }catch(e){
-    console.error('switchWard save failed',e);
-    showSaveError();
-  }
+  const ok=await activateWard(ward);
+  if(!ok)return false;
 
   // Update UI in correct order
-  updateSidebar();
   currentPage='/';
   window.location.hash='';
-  notifyProbateGuardianTabStateChanged();
   const el=document.getElementById('main-content');
   switch(formEngine(activeInventoryType)){
     case 'guardian':
       mountGuardianFeature('/');
       updateHelpContext();
       closeMobileSidebar();
-      return;
+      return true;
     case 'simplified': mountSimplifiedFeature('/');break;
     case 'annual': mountAnnualFeature('/');break;
     case 'planSimplified': mountPlanSimplifiedFeature('/');break;
@@ -4271,30 +4310,24 @@ async function switchWard(wardId){
   updateNavDots();
   updateHelpContext();
   closeMobileSidebar();
+  return true;
 }
 
 async function deleteWard(wardId){
   const idx=guardianData.wards.findIndex(w=>w.wardId===wardId);
   if(idx===-1)return;
+
+  if(guardianData.activeWardId===wardId){
+    await unloadWard();
+  }
+
   guardianData.wards.splice(idx,1);
   await deleteWardFromState(wardId);
   deleteAutosaveFile(wardId);
 
-  if(guardianData.activeWardId===wardId){
-    guardianData.activeWardId=guardianData.wards.length>0?guardianData.wards[0].wardId:null;
-  }
-  if(guardianData.activeWardId){
-    window.D=getActiveWard();
-    activeInventoryType=getActiveWard().inventoryType;
-    await saveAppState('activeWardId',guardianData.activeWardId);
-  }else{
-    window.D={};
-    activeInventoryType=null;
-    await saveAppState('activeWardId',null);
-  }
   updateSidebar();
   notifyProbateGuardianTabStateChanged();
-  navigate('/');
+  navigate('/dashboard');
 }
 
 async function renameWard(wardId,newName){
@@ -4907,9 +4940,6 @@ async function navigate(page){
   // onclick calls navigate() back to the SAME page to render the row it
   // just pushed — see pruneBlankScheduleEntries().
   if(page!==currentPage)pruneBlankScheduleEntries();
-  if (page === '/dashboard' && window.releaseWardLock) {
-    await window.releaseWardLock();
-  }
   currentPage=page;
   window.location.hash=page;
   renderPage(page);
@@ -5540,21 +5570,7 @@ async function convertExistingWard(sourceWardId,targetType){
   const srcType=sourceWard.inventoryType;
   if(srcType===targetType){alert('Please choose a different inventory type to convert to.');return;}
 
-  await flushPendingSave();
   const wardId=createWardId();
-
-  // Milestone 16: Ward-Level Tab Lock
-  const previousWardId = guardianData.activeWardId;
-  if (window.releaseWardLock) await window.releaseWardLock();
-  if (window.acquireWardLock) {
-    const acquired = await window.acquireWardLock(wardId);
-    if (!acquired) {
-      showWardLockedModal();
-      navigate('/dashboard');
-      return;
-    }
-  }
-
   const newWard={
     wardId,
     inventoryType:targetType,
@@ -5586,15 +5602,11 @@ async function convertExistingWard(sourceWardId,targetType){
   // derive asset schedules from, so those stay blank for manual entry.
 
   guardianData.wards.push(newWard);
-  guardianData.activeWardId=wardId;
-  activeInventoryType=targetType;
-  window.D=newWard;
   await saveWardToState(newWard);
-  await saveAppState('activeWardId',wardId);
+
+  await activateWard(newWard);
   _dirtySinceExport=true;
   updateLastSavedIndicator();
-  notifyProbateGuardianTabStateChanged();
-  updateSidebar();
   navigate('/');
   alert(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
 }
@@ -7912,9 +7924,6 @@ function updateNavActive(page){
 const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log']; // valid regardless of activeInventoryType
 async function handleHash(){
   const h=window.location.hash.replace('#','');
-  if (h === '/dashboard' && window.releaseWardLock) {
-    await window.releaseWardLock();
-  }
   if(SPECIAL_PAGES.includes(h)){
     currentPage=h;
     renderPage(h);
@@ -8039,25 +8048,15 @@ async function initApp(){
   await autoLoadTemplates();
 
   const activeWard=getActiveWard();
-  if(activeWard && !_openedFileAtLaunch && window.location.hash !== '/dashboard'){
-    // Milestone 16: Ward-Level Tab Lock
-    if (window.acquireWardLock) {
-      const acquired = await window.acquireWardLock(activeWard.wardId);
-      if (!acquired) {
-        showWardLockedModal();
-        guardianData.activeWardId = null; // Prevent showing the locked ward
-        navigate('/dashboard');
-        return; // Halt further init since we redirected
-      }
+  if(activeWard){
+    const ok = await activateWard(activeWard);
+    if (!ok) {
+      window.location.hash = '/dashboard';
     }
-
-    window.D=activeWard;
-    activeInventoryType=activeWard.inventoryType;
-    if(formEngine(activeInventoryType)==='guardian')await ensureGuardianFeatureReady();
   }
 
   updateSidebar();
-  if(_openedFileAtLaunch)window.location.hash='/dashboard'; // opened an existing case — land on All Wards, not wherever it was last saved mid-edit
+  if(_openedFileAtLaunch || !guardianData.activeWardId)window.location.hash='/dashboard'; // opened an existing case or blocked — land on All Wards, not wherever it was last saved mid-edit
   handleHash();
   await loadAutoExportPrefs();
   setupAutoExportTimer();
@@ -8189,13 +8188,26 @@ document.addEventListener('focusout',e=>{
 });
 
 // Milestone 16: Modal helpers
+let _wardLockedPreviousFocus = null;
+
 window.showWardLockedModal = function() {
   const el = document.getElementById('ward-locked-overlay');
-  if (el) el.style.display = 'flex';
+  if (el) {
+    _wardLockedPreviousFocus = document.activeElement;
+    el.classList.add('show');
+    const btn = document.getElementById('close-ward-locked');
+    if (btn) btn.focus();
+  }
 };
 window.closeWardLockedModal = function() {
   const el = document.getElementById('ward-locked-overlay');
-  if (el) el.style.display = 'none';
+  if (el) {
+    el.classList.remove('show');
+    if (_wardLockedPreviousFocus && typeof _wardLockedPreviousFocus.focus === 'function') {
+      try { _wardLockedPreviousFocus.focus(); } catch (e) {}
+      _wardLockedPreviousFocus = null;
+    }
+  }
 };
 
 // Start

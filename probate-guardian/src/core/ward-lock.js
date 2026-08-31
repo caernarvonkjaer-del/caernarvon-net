@@ -1,71 +1,131 @@
-let currentLockResolve = null;
-let currentWardId = null;
-let releasePromise = null;
+// Ward-Level Tab Lock Module (Milestone 16)
+// Provides exclusive, cooperative locking per ward across browser tabs using the Web Locks API.
 
-export async function acquireWardLock(wardId) {
-  if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
-    return true;
-  }
-  if (!navigator.locks) {
-    return true;
-  }
+let currentHeldRelease = null;
+let currentHeldWardId = null;
+let currentOuterRequestPromise = null;
+let transitionQueue = Promise.resolve();
 
-  return new Promise((resolve) => {
-    navigator.locks.request(
-      `pg-ward-${wardId}`,
-      { mode: 'exclusive', ifAvailable: true },
-      (lock) => {
-        if (!lock) {
-          resolve(false);
-          return;
-        }
+export function getCurrentLockedWardId() {
+  return currentHeldWardId;
+}
 
-        return new Promise((releaseLock) => {
-          currentLockResolve = releaseLock;
-          currentWardId = wardId;
-          resolve(true);
-        });
-      }
-    ).catch(err => {
-      console.warn('ward-lock request failed:', err);
-      resolve(false);
-    });
-  });
+export function __test_reset() {
+  currentHeldRelease = null;
+  currentHeldWardId = null;
+  currentOuterRequestPromise = null;
+  transitionQueue = Promise.resolve();
 }
 
 export async function releaseWardLock() {
-  if (currentLockResolve) {
-    currentLockResolve();
-    currentLockResolve = null;
-    
-    const wardIdToWait = currentWardId;
-    currentWardId = null;
+  return (transitionQueue = transitionQueue.then(async () => {
+    if (!currentHeldRelease) {
+      currentHeldWardId = null;
+      currentOuterRequestPromise = null;
+      return;
+    }
 
-    releasePromise = new Promise(async (resolve) => {
-      if (wardIdToWait && navigator.locks && navigator.locks.query) {
-        for (let i = 0; i < 20; i++) {
-          const state = await navigator.locks.query();
-          const lockName = `pg-ward-${wardIdToWait}`;
-          const ourLock = state.held?.find(l => l.name === lockName);
-          if (!ourLock) {
-            resolve();
+    const releaseFn = currentHeldRelease;
+    const outerPromise = currentOuterRequestPromise;
+
+    currentHeldRelease = null;
+    currentHeldWardId = null;
+    currentOuterRequestPromise = null;
+
+    releaseFn();
+    try {
+      await outerPromise;
+    } catch (e) {
+      // Ignore errors on release
+    }
+  }));
+}
+
+export async function acquireWardLock(wardId) {
+  return (transitionQueue = transitionQueue.then(async () => {
+    // 1. file:// protocol bypass
+    if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+      return true;
+    }
+
+    // 2. navigator.locks unavailable bypass
+    if (typeof navigator === 'undefined' || !navigator.locks || typeof navigator.locks.request !== 'function') {
+      return true;
+    }
+
+    // 3. Fast-path: already held in this tab
+    if (currentHeldWardId === wardId && currentHeldRelease) {
+      return true;
+    }
+
+    // 4. If holding another ward, release it first
+    if (currentHeldRelease) {
+      const releaseFn = currentHeldRelease;
+      const outerPromise = currentOuterRequestPromise;
+      currentHeldRelease = null;
+      currentHeldWardId = null;
+      currentOuterRequestPromise = null;
+      releaseFn();
+      try {
+        await outerPromise;
+      } catch (e) {}
+    }
+
+    let decisionResolve;
+    const decisionPromise = new Promise((resolve) => {
+      decisionResolve = resolve;
+    });
+
+    try {
+      const outerPromise = navigator.locks.request(
+        `pg-ward-${wardId}`,
+        { mode: 'exclusive', ifAvailable: true },
+        (lock) => {
+          if (!lock) {
+            // Contention: lock held by another tab
+            decisionResolve(false);
             return;
           }
-          await new Promise(r => setTimeout(r, 10));
+
+          return new Promise((resolveHold) => {
+            currentHeldRelease = resolveHold;
+            currentHeldWardId = wardId;
+            decisionResolve(true);
+          });
         }
-      } else {
-        await new Promise(r => setTimeout(r, 50));
+      );
+
+      currentOuterRequestPromise = outerPromise;
+
+      // Catch async errors on outer promise (e.g. SecurityError, locks disabled)
+      outerPromise.catch((err) => {
+        console.warn('navigator.locks.request rejected:', err);
+        currentHeldRelease = null;
+        currentHeldWardId = null;
+        currentOuterRequestPromise = null;
+        decisionResolve(true); // Fail-open
+      });
+
+      const granted = await decisionPromise;
+      if (!granted) {
+        currentHeldRelease = null;
+        currentHeldWardId = null;
+        currentOuterRequestPromise = null;
       }
-      resolve();
-    });
-  }
-  if (releasePromise) {
-    await releasePromise;
-  }
+      return granted;
+    } catch (err) {
+      // Fail-open for unexpected synchronous faults
+      console.warn('navigator.locks.request threw synchronous error:', err);
+      currentHeldRelease = null;
+      currentHeldWardId = null;
+      currentOuterRequestPromise = null;
+      return true;
+    }
+  }));
 }
 
 if (typeof window !== 'undefined') {
   window.acquireWardLock = acquireWardLock;
   window.releaseWardLock = releaseWardLock;
+  window.getCurrentLockedWardId = getCurrentLockedWardId;
 }
-export function __test_reset() { currentLockResolve = null; }

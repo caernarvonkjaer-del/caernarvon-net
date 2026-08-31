@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi as jest } from 'vitest';
 global.window = global;
-import { acquireWardLock, releaseWardLock, __test_reset } from '../../src/core/ward-lock.js';
+import { acquireWardLock, releaseWardLock, getCurrentLockedWardId, __test_reset } from '../../src/core/ward-lock.js';
 
 describe('ward-lock', () => {
   let originalLocks;
@@ -40,23 +40,27 @@ describe('ward-lock', () => {
     global.location = originalLocation;
   });
 
+  it('bypasses locks when navigator.locks is absent', async () => {
+    delete global.navigator.locks;
+    const result = await acquireWardLock('ward-123');
+    expect(result).toBe(true);
+  });
+
   it('requests a lock and returns true when granted', async () => {
     global.navigator.locks.request.mockImplementation((name, options, callback) => {
-      // Return a promise that resolves when the callback is done
       return new Promise((resolve) => {
-        setTimeout(() => {
-          const cbResult = callback({ name });
-          if (cbResult instanceof Promise) {
-            cbResult.then(resolve);
-          } else {
-            resolve();
-          }
-        }, 0);
+        const holdPromise = callback({ name });
+        if (holdPromise instanceof Promise) {
+          holdPromise.then(resolve);
+        } else {
+          resolve();
+        }
       });
     });
 
     const result = await acquireWardLock('ward-123');
     expect(result).toBe(true);
+    expect(getCurrentLockedWardId()).toBe('ward-123');
     expect(global.navigator.locks.request).toHaveBeenCalledWith(
       'pg-ward-ward-123',
       { mode: 'exclusive', ifAvailable: true },
@@ -64,36 +68,92 @@ describe('ward-lock', () => {
     );
   });
 
-  it('returns false when lock is not available', async () => {
+  it('fast-paths to true when already holding the lock for the same ward', async () => {
+    global.navigator.locks.request.mockImplementation((name, options, callback) => {
+      return new Promise((resolve) => {
+        const holdPromise = callback({ name });
+        if (holdPromise instanceof Promise) {
+          holdPromise.then(resolve);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    const first = await acquireWardLock('ward-123');
+    expect(first).toBe(true);
+    expect(global.navigator.locks.request).toHaveBeenCalledTimes(1);
+
+    const second = await acquireWardLock('ward-123');
+    expect(second).toBe(true);
+    expect(global.navigator.locks.request).toHaveBeenCalledTimes(1); // No second request
+  });
+
+  it('returns false when lock is not available (contention)', async () => {
     global.navigator.locks.request.mockImplementation(async (name, options, callback) => {
-      // Simulate lock unavailable (returns null if ifAvailable is true and lock cannot be granted)
       callback(null);
       return Promise.resolve();
     });
 
     const result = await acquireWardLock('ward-123');
     expect(result).toBe(false);
+    expect(getCurrentLockedWardId()).toBe(null);
   });
 
-  it('releases an existing lock when releaseWardLock is called', async () => {
-    let releaseLockCb;
-    global.navigator.locks.request.mockImplementation(async (name, options, callback) => {
+  it('fails open (returns true + console.warn) on API exceptions / rejections', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    global.navigator.locks.request.mockRejectedValue(new Error('SecurityError: Locks disabled'));
+
+    const result = await acquireWardLock('ward-123');
+    expect(result).toBe(true);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('releases an existing lock deterministically', async () => {
+    let callbackFinished = false;
+    global.navigator.locks.request.mockImplementation((name, options, callback) => {
       return new Promise((resolve) => {
-        // Capture the release function from the mock
-        const lock = {};
-        callback(lock).then(resolve);
+        const holdPromise = callback({ name });
+        holdPromise.then(() => {
+          callbackFinished = true;
+          resolve();
+        });
       });
     });
 
-    const p = acquireWardLock('ward-1');
-    // We expect it to resolve to true
-    
-    // Simulate wait for the microtask queue to process
-    await new Promise(r => setTimeout(r, 10));
+    await acquireWardLock('ward-1');
+    expect(getCurrentLockedWardId()).toBe('ward-1');
+    expect(callbackFinished).toBe(false);
 
-    // Release the lock
-    releaseWardLock();
-    // In our implementation, releasing the lock resolves the Promise created inside the callback,
-    // which in turn resolves the Promise returned by navigator.locks.request.
+    await releaseWardLock();
+    expect(callbackFinished).toBe(true);
+    expect(getCurrentLockedWardId()).toBe(null);
+  });
+
+  it('is idempotent when releaseWardLock is called multiple times or when no lock is held', async () => {
+    await expect(releaseWardLock()).resolves.toBeUndefined();
+    await expect(releaseWardLock()).resolves.toBeUndefined();
+  });
+
+  it('serializes rapid consecutive acquire/release transitions', async () => {
+    global.navigator.locks.request.mockImplementation((name, options, callback) => {
+      return new Promise((resolve) => {
+        const holdPromise = callback({ name });
+        if (holdPromise instanceof Promise) {
+          holdPromise.then(resolve);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    const p1 = acquireWardLock('ward-A');
+    const p2 = acquireWardLock('ward-B');
+    const [res1, res2] = await Promise.all([p1, p2]);
+
+    expect(res1).toBe(true);
+    expect(res2).toBe(true);
+    expect(getCurrentLockedWardId()).toBe('ward-B');
   });
 });

@@ -235,12 +235,18 @@ Two rules keep `activate()` from becoming its own source of bugs:
 
 ```js
 // src/features/guardian-inventory/index.js
-export async function mount({ container, route, selectState, services, signal }) {
+export async function mount({
+  container,
+  route,
+  selectState,
+  services,
+  signal,
+}) {
   if (signal.aborted) return async () => {}; // don't do expensive rendering for a nav that's already stale
-  const ward = selectState(state => state.wardsById[route.wardId]); // smallest slice, not the whole case
+  const ward = selectState((state) => state.wardsById[route.wardId]); // smallest slice, not the whole case
   const view = renderRoute(route, ward); // Node/DocumentFragment, or HTML string via renderTrustedHtml
   if (signal.aborted) return async () => {}; // re-check: renderRoute() may have taken a while
-  if (typeof view === 'string') {
+  if (typeof view === "string") {
     renderTrustedHtml(container, view);
   } else {
     container.replaceChildren(view);
@@ -270,7 +276,7 @@ awaited and clears a container that now belongs to someone else.
 Fix: give every navigation attempt its own host element, mount into a fully
 **detached** staging host — not merely hidden but never appended to the live
 document until commit — and only attach/swap it into the visible shell after
-`mount()` actually succeeds *and* the attempt is still current. A stale
+`mount()` actually succeeds _and_ the attempt is still current. A stale
 attempt's cleanup then only ever touches its own (never-shown, or
 already-detached) host — never the container the newer feature is using.
 
@@ -288,10 +294,10 @@ below.
 
 ```js
 function createHost() {
-  const host = document.createElement('div');
-  host.className = 'feature-host';
+  const host = document.createElement("div");
+  host.className = "feature-host";
   return host; // intentionally NOT appended anywhere yet — stays fully
-               // detached from the document until the router commits it
+  // detached from the document until the router commits it
 }
 ```
 
@@ -352,17 +358,17 @@ underneath it.
 
 ```js
 const loaders = {
-  dashboard: () => import('./features/dashboard/index.js'),
-  guardian: () => import('./features/guardian-inventory/index.js'),
-  simplified: () => import('./features/simplified-accounting/index.js'),
-  annual: () => import('./features/annual-accounting/index.js'),
-  plans: () => import('./features/plans/index.js')
+  dashboard: () => import("./features/dashboard/index.js"),
+  guardian: () => import("./features/guardian-inventory/index.js"),
+  simplified: () => import("./features/simplified-accounting/index.js"),
+  annual: () => import("./features/annual-accounting/index.js"),
+  plans: () => import("./features/plans/index.js"),
 };
 
-let activeHost = null;          // the host element currently attached inside #main-content
+let activeHost = null; // the host element currently attached inside #main-content
 let disposeCurrent = async () => {};
-let activeController = null;    // belongs to the committed feature; stays alive until a replacement commits
-let pendingController = null;   // belongs to whichever candidate is currently staging; aborted when superseded
+let activeController = null; // belongs to the committed feature; stays alive until a replacement commits
+let pendingController = null; // belongs to whichever candidate is currently staging; aborted when superseded
 let navSeq = 0;
 
 export async function showFeature(name, context) {
@@ -374,7 +380,7 @@ export async function showFeature(name, context) {
   if (!loader) {
     renderErrorView(context.overlay, new Error(`Unknown route: ${name}`), {
       retry: null, // not retryable — always fails the same way
-      goToDashboard: () => showFeature('dashboard', context),
+      goToDashboard: () => showFeature("dashboard", context),
     });
     return;
   }
@@ -388,7 +394,7 @@ export async function showFeature(name, context) {
     if (mySeq !== navSeq) return; // superseded
     renderErrorView(context.overlay, err, {
       retry: () => showFeature(name, context),
-      goToDashboard: () => showFeature('dashboard', context),
+      goToDashboard: () => showFeature("dashboard", context),
     });
     return;
   }
@@ -399,13 +405,19 @@ export async function showFeature(name, context) {
 
   let mounted;
   try {
-    const result = await feature.mount({ ...context, container: stagingHost, signal: controller.signal });
-    const dispose = typeof result === 'function' ? result : result?.dispose;
-    if (typeof dispose !== 'function') {
-      throw new Error(`${name}: mount() must return a cleanup function, or { dispose, activate }`);
+    const result = await feature.mount({
+      ...context,
+      container: stagingHost,
+      signal: controller.signal,
+    });
+    const dispose = typeof result === "function" ? result : result?.dispose;
+    if (typeof dispose !== "function") {
+      throw new Error(
+        `${name}: mount() must return a cleanup function, or { dispose, activate }`,
+      );
     }
-    const activate = typeof result === 'object' ? result.activate : undefined;
-    if (activate !== undefined && typeof activate !== 'function') {
+    const activate = typeof result === "object" ? result.activate : undefined;
+    if (activate !== undefined && typeof activate !== "function") {
       // Validated here, before commit — an invalid activate() must never be
       // discovered only after the DOM has already been swapped.
       throw new Error(`${name}: activate must be a function if provided`);
@@ -420,7 +432,7 @@ export async function showFeature(name, context) {
     // usable — the error view must reflect that, not imply lost state.
     renderErrorView(context.overlay, err, {
       retry: () => showFeature(name, context),
-      goToDashboard: () => showFeature('dashboard', context),
+      goToDashboard: () => showFeature("dashboard", context),
     });
     return;
   }
@@ -434,7 +446,7 @@ export async function showFeature(name, context) {
     try {
       await mounted.dispose();
     } catch (err) {
-      reportNonFatalError('dispose failed on stale mount', err);
+      reportNonFatalError("dispose failed on stale mount", err);
     }
     return;
   }
@@ -472,7 +484,7 @@ export async function showFeature(name, context) {
   try {
     await mounted.activate();
   } catch (err) {
-    reportNonFatalError('activate failed after commit', err);
+    reportNonFatalError("activate failed after commit", err);
   }
 
   if (mySeq === navSeq) {
@@ -489,7 +501,7 @@ export async function showFeature(name, context) {
     try {
       await oldDispose();
     } catch (err) {
-      reportNonFatalError('dispose failed during navigation', err);
+      reportNonFatalError("dispose failed during navigation", err);
     }
   }
 }
@@ -543,11 +555,12 @@ Because only two names are allowlisted, a full LRU is overkill; a two-entry
 map (or no cache at all, relying on HTTP/service-worker caching) is simpler.
 
 ```js
-const ALLOWED_FRAGMENTS = new Set(['common-modals', 'help']);
+const ALLOWED_FRAGMENTS = new Set(["common-modals", "help"]);
 const templateCache = new Map(); // one entry per allowlisted fragment; no eviction needed at this size
 
 export async function loadFragment(name) {
-  if (!ALLOWED_FRAGMENTS.has(name)) throw new Error(`Unknown fragment: ${name}`);
+  if (!ALLOWED_FRAGMENTS.has(name))
+    throw new Error(`Unknown fragment: ${name}`);
 
   if (templateCache.has(name)) {
     return templateCache.get(name).content.cloneNode(true);
@@ -555,8 +568,9 @@ export async function loadFragment(name) {
 
   const url = new URL(`../fragments/${name}.html`, import.meta.url);
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`Could not load ${name}: ${response.status}`);
-  const template = document.createElement('template');
+  if (!response.ok)
+    throw new Error(`Could not load ${name}: ${response.status}`);
+  const template = document.createElement("template");
   template.innerHTML = await response.text(); // parsed once, here
   templateCache.set(name, template);
   return template.content.cloneNode(true);
@@ -637,8 +651,8 @@ second feature proves what is genuinely shared.
   - Generate an explicit compatibility object at the top of the legacy entry
     that assigns every existing `onclick` target function to `window`
     (`window.saveBackupNow = saveBackupNow;` etc.), then load it as a module.
-  Either is acceptable, but the plan must say which, since "build-managed
-  legacy entry" alone does not guarantee the UI keeps working.
+    Either is acceptable, but the plan must say which, since "build-managed
+    legacy entry" alone does not guarantee the UI keeps working.
 - Establish thin adapter modules around existing globals (state, crypto,
   persistence, audit log) so future extracted code can import them instead of
   reaching into `window`. The adapters wrap the legacy code in place; they do
@@ -743,8 +757,8 @@ failed to fetch.
 
   ```js
   let offlinePackPromise = null; // dedupe: one in-flight download per build version, not one per message
-  self.addEventListener('message', event => {
-    if (event.data?.type === 'DOWNLOAD_OFFLINE_PACK') {
+  self.addEventListener("message", (event) => {
+    if (event.data?.type === "DOWNLOAD_OFFLINE_PACK") {
       // downloadOfflinePack() checks the versioned ready marker first, so a
       // repeated successful request after completion is cheap (no re-fetch).
       const attempt = (offlinePackPromise ??= downloadOfflinePack());
@@ -753,7 +767,7 @@ failed to fetch.
           // Clear on settle — success or failure — so a later message can
           // retry a failed attempt instead of forever reusing its rejection.
           if (offlinePackPromise === attempt) offlinePackPromise = null;
-        })
+        }),
       );
     }
   });
@@ -767,6 +781,7 @@ failed to fetch.
   The page posts this message once it decides offline availability matters
   (e.g. after the startup screen, or from a user-facing "Make available
   offline" action).
+
 - The "offline ready" marker must include the build/cache version it was
   computed for (e.g. `{ ready: true, cacheVersion: 'v7' }`) and be reset
   whenever the version changes — a marker from a previous version must not be
@@ -873,7 +888,7 @@ release.
   step-1 baseline, this must show a concrete improvement, not merely avoid
   regressing — e.g. initial evaluated JavaScript reduced by an agreed minimum
   percentage (to be set once the current baseline is measured; a `"must not
-  regress"` bar alone would accept a refactor with zero startup benefit),
+regress"` bar alone would accept a refactor with zero startup benefit),
   along with initial request count and DOM-node count tracked against
   baseline. Background service-worker precache transfer is tracked as a
   separate, larger budget (see step 7) and is not part of this figure.
@@ -882,7 +897,7 @@ release.
   service worker per step 7).
 - Leaving a feature calls its cleanup function and removes its DOM/listeners;
   heap growth after N repeated route changes (e.g. 20 cycles) stays within an
-  agreed bound relative to the *warmed* per-feature baseline (see step 8's
+  agreed bound relative to the _warmed_ per-feature baseline (see step 8's
   leak-test procedure), not the cold startup baseline.
 - Rapid or overlapping navigation never loses the most recently requested
   feature's DOM: a stale/superseded mount only ever disposes its own
@@ -1075,15 +1090,15 @@ commits contain those values. Milestone 13 therefore reports actual deltas and
 marks threshold-dependent clauses deferred; it does not retroactively invent
 targets.
 
-| Metric | `30dc907` baseline | Final hosted web | Delta |
-| --- | ---: | ---: | ---: |
-| Application JavaScript, decoded bytes | 1,010,181 | 475,861 | -52.9% |
-| All initially evaluated JavaScript, decoded bytes | 6,273,456 | 5,739,140 | -8.5% |
-| HTML navigation encoded body | 1,125,820 | 24,505 | -97.8% |
-| Initial JS heap | 21,255,244 | 9,894,880 | -53.4% |
-| Initial DOM nodes | 2,472 | 632 | -74.4% |
-| Initial requests | 9 | 12 | +3 |
-| Chromium `ScriptDuration` | 0.008997 s | 0.102134 s | 11.4x |
+| Metric                                            | `30dc907` baseline | Final hosted web |  Delta |
+| ------------------------------------------------- | -----------------: | ---------------: | -----: |
+| Application JavaScript, decoded bytes             |          1,010,181 |          475,861 | -52.9% |
+| All initially evaluated JavaScript, decoded bytes |          6,273,456 |        5,739,140 |  -8.5% |
+| HTML navigation encoded body                      |          1,125,820 |           24,505 | -97.8% |
+| Initial JS heap                                   |         21,255,244 |        9,894,880 | -53.4% |
+| Initial DOM nodes                                 |              2,472 |              632 | -74.4% |
+| Initial requests                                  |                  9 |               12 |     +3 |
+| Chromium `ScriptDuration`                         |         0.008997 s |       0.102134 s |  11.4x |
 
 The application-code, heap, DOM, and HTML-body improvements are concrete.
 Total evaluated JavaScript improves only 8.5% because `html2pdf`, ExcelJS,
@@ -1272,23 +1287,30 @@ files remain untouched and excluded.
 
 ### Milestone 16: Ward-Level Tab Lock
 
-**Complete.** Implementation was validated on 2026-08-30. Scope and requirements
+**Complete.** Implementation and architectural hardening finalized on 2026-08-31. Scope and requirements
 are recorded in `MILESTONE-16-PROPOSAL.md`.
 
 Implementation summary:
 
 - Implemented `acquireWardLock(wardId)` and `releaseWardLock()` in `src/core/ward-lock.js`
-  using the browser Web Locks API (`navigator.locks.request(..., { mode: 'exclusive', ifAvailable: true })`).
-- Integrated atomic lock acquisition and release state machine in `switchWard`,
-  `addWard`, `convertExistingWard`, and `initApp` in `src/legacy-app.js`.
-- Implemented `#ward-locked-overlay` modal in `index.html` with delegated event handling
-  in `src/modal-events.js` and `src/legacy-app.js`.
-- Portable (`file://`) and non-supported lock environments gracefully no-op without
-  errors or console warnings.
+  using deterministic outer-promise resolution, serialized in-tab transitions, fail-open handling for
+  API exceptions, and fast-path resolution for currently held locks.
+- Established a single activation chokepoint in `src/legacy-app.js`: `activateWard(ward)` and `unloadWard()`
+  govern all ward lifecycle transitions across `switchWard`, `addWard`, `deleteWard`, `convertExistingWard`,
+  session-restore unlock, and `initApp`.
+- Adopted the "hold lock for in-memory lifetime" model: navigating to `#/dashboard` is a view switch that
+  maintains the lock while in-memory state is resident. Lock is released on explicit ward switch,
+  "Close ward" action, `deleteWard`, or tab closure.
+- Added explicit "Close ward" affordance in sidebar and dashboard.
+- Updated `deleteWard` to release lock, unload ward, and land cleanly on `#/dashboard` without auto-promoting `wards[0]`.
+- Implemented `#ward-locked-overlay` modal in `index.html` with full WAI-ARIA accessibility (`role="dialog"`,
+  `aria-modal="true"`, `aria-labelledby`), focus capture/restoration, and `Escape` key dismissal in `src/modal-events.js`.
+- Portable (`file://`) and non-supported environments gracefully no-op to `true` without errors.
 
 Validation completed:
 
-- Unit tests (`tests/unit/ward-lock.spec.js`): 4/4 passed. All 28 unit tests passing.
-- E2E tests (`tests/e2e/ward-lock.spec.ts`): same-tab lifecycle and two-tab concurrency hard-blocking passed.
-- Full E2E suite: 81 passed, 5 skipped (target-specific).
+- Unit tests (`tests/unit/ward-lock.spec.js`): comprehensive coverage of deterministic release, serialization,
+  fail-open, fast-path, and portable no-op.
+- E2E tests (`tests/e2e/ward-lock.spec.ts`): multi-context tests for independent wards, dashboard lock retention,
+  explicit Close ward release, deleteWard release, rollback on conflict, and modal accessibility.
 - `SAV_FORMAT_VERSION` remains 2. No changes to persisted `.sav` schema or files. No CSP violations.

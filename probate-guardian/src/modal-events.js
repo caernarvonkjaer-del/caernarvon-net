@@ -35,6 +35,14 @@ function handleModalFocus(event) {
 }
 
 function handleModalKeydown(event) {
+  if (event.key === 'Escape') {
+    const lockedModal = document.getElementById('ward-locked-overlay');
+    if (lockedModal && lockedModal.classList.contains('show')) {
+      event.preventDefault();
+      if (window.closeWardLockedModal) window.closeWardLockedModal();
+      return;
+    }
+  }
   if (event.target instanceof HTMLInputElement && event.target.dataset.modalInput === 'convert-source') {
     window.onConvertSourceKeydown(event);
   }
