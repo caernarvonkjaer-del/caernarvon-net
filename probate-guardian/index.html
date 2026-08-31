@@ -1129,6 +1129,16 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
   </div>
 </div>
 
+<div id="ward-locked-overlay" class="modal-overlay" style="z-index:10002;">
+  <div class="modal-box" style="max-width:420px;">
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">This ward is already open in another tab</h2>
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">Close the other tab or navigate away from this ward there, then try again here.</p>
+    <div style="display:flex;justify-content:flex-end;">
+      <button type="button" class="btn btn-primary" id="close-ward-locked" data-modal-action="close-ward-locked">OK</button>
+    </div>
+  </div>
+</div>
+
 <style>
 .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,16,28,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;}
 .modal-overlay.show{display:flex;}
@@ -1166,6 +1176,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <script type="module" src="./src/fragment-loader.js"></script>
 <script type="module" src="./src/core/state.js"></script>
 <script type="module" src="./src/core/feature-bridge.js"></script>
+<script type="module" src="./src/core/ward-lock.js"></script>
 <script type="module" src="./src/features-loader.js"></script>
 <script src="./src/legacy-app.js"></script>
 <script type="module" src="./src/shell-events.js"></script>

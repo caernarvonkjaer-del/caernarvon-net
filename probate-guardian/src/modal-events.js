@@ -5,6 +5,7 @@ function handleModalClick(event) {
   switch (actionElement.dataset.modalAction) {
     case 'add-ward': window.doAddWard(); break;
     case 'close': window.closeModal(actionElement.dataset.modalId); break;
+    case 'close-ward-locked': window.closeWardLockedModal(); break;
     case 'confirm-simplified-eligibility': window.doConfirmSimplifiedEligibility(); break;
     case 'convert-ward': window.doConvertWard(); break;
     case 'delete-ward': window.doDeleteWard(); break;

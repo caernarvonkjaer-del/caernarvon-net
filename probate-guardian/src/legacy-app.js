@@ -4044,6 +4044,20 @@ async function addWard(wardName,inventoryType){
   await flushPendingSave();
   const wardId=createWardId();
   const isFirstWardEver=guardianData.wards.length===0;
+
+  // Milestone 16: Ward-Level Tab Lock
+  const previousWardId = guardianData.activeWardId;
+  if (window.releaseWardLock) await window.releaseWardLock();
+  if (window.acquireWardLock) {
+    const acquired = await window.acquireWardLock(wardId);
+    if (!acquired) {
+      // This shouldn't happen for a newly created ID, but handle it safely
+      showWardLockedModal();
+      navigate('/dashboard');
+      return;
+    }
+  }
+
   const newWard={
     wardId,
     inventoryType,
@@ -4192,6 +4206,26 @@ async function showSwitchWardPickerModal(){
 async function switchWard(wardId){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
+
+  // Milestone 16: Ward-Level Tab Lock
+  const previousWardId = guardianData.activeWardId;
+  if (window.releaseWardLock) await window.releaseWardLock();
+
+  if (window.acquireWardLock) {
+    const acquired = await window.acquireWardLock(wardId);
+    if (!acquired) {
+      if (previousWardId) {
+        const restored = await window.acquireWardLock(previousWardId);
+        if (restored) {
+          showWardLockedModal();
+          return; // Left on previous ward
+        }
+      }
+      showWardLockedModal();
+      navigate('/dashboard');
+      return;
+    }
+  }
 
   // Flush before switching
   await flushPendingSave();
@@ -4868,11 +4902,14 @@ async function runLegacyBrowserStorageMigrationIfNeeded(){
 // ═══════════════════════════════════════════════════════
 // ROUTER
 // ═══════════════════════════════════════════════════════
-function navigate(page){
+async function navigate(page){
   // Only when actually leaving the page, not when a +Add button's own
   // onclick calls navigate() back to the SAME page to render the row it
   // just pushed — see pruneBlankScheduleEntries().
   if(page!==currentPage)pruneBlankScheduleEntries();
+  if (page === '/dashboard' && window.releaseWardLock) {
+    await window.releaseWardLock();
+  }
   currentPage=page;
   window.location.hash=page;
   renderPage(page);
@@ -5505,6 +5542,19 @@ async function convertExistingWard(sourceWardId,targetType){
 
   await flushPendingSave();
   const wardId=createWardId();
+
+  // Milestone 16: Ward-Level Tab Lock
+  const previousWardId = guardianData.activeWardId;
+  if (window.releaseWardLock) await window.releaseWardLock();
+  if (window.acquireWardLock) {
+    const acquired = await window.acquireWardLock(wardId);
+    if (!acquired) {
+      showWardLockedModal();
+      navigate('/dashboard');
+      return;
+    }
+  }
+
   const newWard={
     wardId,
     inventoryType:targetType,
@@ -7860,8 +7910,11 @@ function updateNavActive(page){
 }
 
 const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log']; // valid regardless of activeInventoryType
-function handleHash(){
+async function handleHash(){
   const h=window.location.hash.replace('#','');
+  if (h === '/dashboard' && window.releaseWardLock) {
+    await window.releaseWardLock();
+  }
   if(SPECIAL_PAGES.includes(h)){
     currentPage=h;
     renderPage(h);
@@ -7986,7 +8039,18 @@ async function initApp(){
   await autoLoadTemplates();
 
   const activeWard=getActiveWard();
-  if(activeWard){
+  if(activeWard && !_openedFileAtLaunch && window.location.hash !== '/dashboard'){
+    // Milestone 16: Ward-Level Tab Lock
+    if (window.acquireWardLock) {
+      const acquired = await window.acquireWardLock(activeWard.wardId);
+      if (!acquired) {
+        showWardLockedModal();
+        guardianData.activeWardId = null; // Prevent showing the locked ward
+        navigate('/dashboard');
+        return; // Halt further init since we redirected
+      }
+    }
+
     window.D=activeWard;
     activeInventoryType=activeWard.inventoryType;
     if(formEngine(activeInventoryType)==='guardian')await ensureGuardianFeatureReady();
@@ -8123,6 +8187,16 @@ document.addEventListener('focusout',e=>{
     el.dispatchEvent(new Event('change',{bubbles:true}));
   }
 });
+
+// Milestone 16: Modal helpers
+window.showWardLockedModal = function() {
+  const el = document.getElementById('ward-locked-overlay');
+  if (el) el.style.display = 'flex';
+};
+window.closeWardLockedModal = function() {
+  const el = document.getElementById('ward-locked-overlay');
+  if (el) el.style.display = 'none';
+};
 
 // Start
 setTimeout(()=>{

@@ -1270,3 +1270,25 @@ Validation completed:
 No Milestone 15 behavior is deferred. The two repository-adjacent workbook
 files remain untouched and excluded.
 
+### Milestone 16: Ward-Level Tab Lock
+
+**Complete.** Implementation was validated on 2026-08-30. Scope and requirements
+are recorded in `MILESTONE-16-PROPOSAL.md`.
+
+Implementation summary:
+
+- Implemented `acquireWardLock(wardId)` and `releaseWardLock()` in `src/core/ward-lock.js`
+  using the browser Web Locks API (`navigator.locks.request(..., { mode: 'exclusive', ifAvailable: true })`).
+- Integrated atomic lock acquisition and release state machine in `switchWard`,
+  `addWard`, `convertExistingWard`, and `initApp` in `src/legacy-app.js`.
+- Implemented `#ward-locked-overlay` modal in `index.html` with delegated event handling
+  in `src/modal-events.js` and `src/legacy-app.js`.
+- Portable (`file://`) and non-supported lock environments gracefully no-op without
+  errors or console warnings.
+
+Validation completed:
+
+- Unit tests (`tests/unit/ward-lock.spec.js`): 4/4 passed. All 28 unit tests passing.
+- E2E tests (`tests/e2e/ward-lock.spec.ts`): same-tab lifecycle and two-tab concurrency hard-blocking passed.
+- Full E2E suite: 81 passed, 5 skipped (target-specific).
+- `SAV_FORMAT_VERSION` remains 2. No changes to persisted `.sav` schema or files. No CSP violations.
