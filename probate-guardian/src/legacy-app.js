@@ -2294,6 +2294,11 @@ async function loadTemplate(type){
 // the ward-edit debounce as the old IDB store's own audit log always was.
 async function appendAuditLogEntry(entry){
   entry.id=_auditLogNextId++;
+  // Tag with the active ward so per-ward files (version 3) can include only
+  // their own entries. Entries created before this tagging, or app-level
+  // events with no active ward, will have wardId undefined/null and are
+  // excluded from per-ward exports (but preserved in version-2 "Export All").
+  if(guardianData.activeWardId)entry.wardId=guardianData.activeWardId;
   _auditLogEntries.push(entry);
   return true;
 }
@@ -2694,6 +2699,11 @@ async function refreshAutoSaveArmedStatus(){
 // next time the shape of this manifest changes in a way a reader needs to
 // know about going in, before it's touched a single byte of the ward data.
 const SAV_FORMAT_VERSION=2;
+// Version 3 is per-ward: each ward saves as its own independent .sav file
+// with ward.enc, auditLog.enc (filtered to that ward), and a manifest that
+// carries wardId/wardName instead of a wards[] index array. Files written
+// at version 2 are multi-ward archives; version 3 files are single-ward.
+const WARD_FILE_VERSION=3;
 
 async function buildExportZipBlob(){
   // Cancel (not flush) any pending debounce: guardianData/_appState/etc. are
@@ -2760,6 +2770,53 @@ async function buildExportZipBlob(){
   },null,2));
   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
   return {blob,count:wardIndex.length};
+}
+
+// ── Per-ward save (version 3) ──────────────────────────────────────────
+// Builds a single-ward ZIP archive — the canonical save format from
+// Milestone 17 onward. Each ward lives in its own file:
+//
+//   {wardName}-{wardId}.sav (ZIP)
+//   ├── manifest.json   ← version 3, wardId, wardName, security fields
+//   ├── ward.enc        ← encrypted ward data object
+//   └── auditLog.enc    ← audit entries for this ward only
+//
+// Unlike buildExportZipBlob() (version 2, multi-ward), this does NOT
+// include appState, templates, or a wards[] index — those live in launch
+// preferences or are shared resources handled at the app level.
+async function buildWardZipBlob(wardId){
+  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  if(!ward)throw new Error(`buildWardZipBlob: ward "${wardId}" not found`);
+
+  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
+
+  const salt=(await loadAppState('cryptoSalt'))||null;
+  const verifier=(await loadAppState('cryptoVerifier'))||null;
+
+  const zip=new JSZip();
+  zip.file('ward.enc',await encryptJSON(ward));
+
+  // Only include audit entries tagged with this ward's id. Entries from
+  // before wardId-tagging was added (or app-level events with no active
+  // ward) are excluded — they're preserved in the version-2 "Export All"
+  // archive and in the session-restore cache.
+  const wardAuditEntries=_auditLogEntries.filter(e=>e&&e.wardId===wardId);
+  zip.file('auditLog.enc',await encryptJSON(wardAuditEntries));
+
+  zip.file('manifest.json',JSON.stringify({
+    format:'probate-guardian-export',
+    version:WARD_FILE_VERSION,
+    exportedAt:new Date().toISOString(),
+    securityMode:_securityMode,
+    salt,
+    verifier,
+    wardId:ward.wardId,
+    wardName:ward.wardName||'',
+    guardian:await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail})
+  },null,2));
+
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+  return blob;
 }
 
 // "3 minutes ago" / "2 hours ago" / "5 days ago" style relative timestamp.
@@ -3414,8 +3471,12 @@ async function loadCaseFileAtLaunch(file){
 // checks for the PLAIN: prefix before ever touching it. Tolerates a
 // version-1 file (no appState/templates/auditLog sections, no verifier)
 // by treating each absent piece as simply not set, per SAV_FORMAT_VERSION's
-// own comment.
+// own comment. Version-3 per-ward files are delegated to loadWardFromSavZip.
 async function loadStateFromSavZip(zip,manifest,key){
+  // Version 3: per-ward file — single ward.enc, no wards[] index.
+  if(manifest.version>=3){
+    return loadWardFromSavZip(zip,manifest,key);
+  }
   guardianData.wards=[];
   for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
     const f=zip.file(entry.file);
@@ -3471,6 +3532,57 @@ async function loadStateFromSavZip(zip,manifest,key){
         _auditLogNextId=entries.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
       }
     }catch(e){console.warn('Could not read audit log from .sav file',e);}
+  }
+}
+
+// ── Per-ward reader (version 3) ────────────────────────────────────────
+// Counterpart to buildWardZipBlob(). Reads a single ward from a version-3
+// per-ward .sav file. The ward is merged into the in-memory guardianData:
+// if a ward with the same id already exists it's replaced; otherwise it's
+// appended. The audit log is merged (appended with deduplication by id).
+async function loadWardFromSavZip(zip,manifest,key){
+  // 1. Decrypt ward
+  const wardFile=zip.file('ward.enc');
+  if(!wardFile)throw new Error('Per-ward .sav file missing ward.enc');
+  const ward=sanitizeObjectData(await decryptJSONWithKey(await wardFile.async('string'),key));
+  if(!ward||!ward.wardId)throw new Error('Per-ward .sav file: ward data invalid or missing wardId');
+
+  // 2. Merge ward into guardianData.wards (replace if exists, append if new)
+  const existingIdx=guardianData.wards.findIndex(w=>w.wardId===ward.wardId);
+  if(existingIdx>=0){
+    guardianData.wards[existingIdx]=ward;
+  }else{
+    guardianData.wards.push(ward);
+  }
+
+  // 3. Guardian identity
+  if(manifest.guardian){
+    try{
+      const g=await decryptJSONWithKey(manifest.guardian,key);
+      guardianData.guardianName=g.guardianName||'';
+      guardianData.guardianEmail=g.guardianEmail||'';
+    }catch(e){console.warn('Could not read guardian info from per-ward .sav file',e);}
+  }
+
+  // 4. Set this ward as active
+  guardianData.activeWardId=manifest.wardId||ward.wardId;
+
+  // 5. Merge audit log entries (append, deduplicate by id)
+  const auditFile=zip.file('auditLog.enc');
+  if(auditFile){
+    try{
+      const entries=await decryptJSONWithKey(await auditFile.async('string'),key);
+      if(Array.isArray(entries)){
+        const existingIds=new Set(_auditLogEntries.map(e=>e&&e.id));
+        for(const e of entries){
+          if(e&&e.id&&!existingIds.has(e.id)){
+            _auditLogEntries.push(e);
+            existingIds.add(e.id);
+          }
+        }
+        _auditLogNextId=_auditLogEntries.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
+      }
+    }catch(e){console.warn('Could not read audit log from per-ward .sav file',e);}
   }
 }
 

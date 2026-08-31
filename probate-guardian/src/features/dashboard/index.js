@@ -9,7 +9,7 @@ import { loadDashboardPreferences, saveDashboardPreferences } from './preference
 const {
   esc, ic, navigate, getGuardianData, isContinuePromptShown, markContinuePromptShown,
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
-  saveBlobAs, auditLog, encryptJSON, loadAppState, saveAppState,
+  saveBlobAs, auditLog, saveAppState,
   getWardHeadlineTotal, getWardProgress, typeIcon, INVENTORY_TYPE_META, formatDashboardCurrency,
   switchWard, showStartNewYearModal, confirmDeleteWard,
   showConvertWardModal, showAddWardModal, showPriorYearsModal, fmtDateCard, formatRelativeTime,
@@ -701,21 +701,8 @@ async function exportSingleWardZip(wardId) {
   const ward = guardianData.wards.find(w => w.wardId === wardId);
   if (!ward) return;
   try {
-    if (typeof JSZip === 'undefined') { alert('ZIP library failed to load — cannot export.'); return; }
     if (ward.wardId === guardianData.activeWardId) await flushPendingSave();
-    const salt = await loadAppState('cryptoSalt');
-    const zip = new JSZip();
-    const file = `wards/${ward.wardId}.enc`;
-    zip.file(file, await encryptJSON(ward));
-    zip.file('manifest.json', JSON.stringify({
-      format: 'probate-guardian-export',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      salt,
-      guardian: await encryptJSON({ guardianName: guardianData.guardianName, guardianEmail: guardianData.guardianEmail }),
-      wards: [{ wardId: ward.wardId, file }]
-    }, null, 2));
-    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const blob = await window.buildWardZipBlob(wardId);
     const stem = (ward.wardName || 'ward').trim().replace(/\s+/g, '_') || 'ward';
     await saveBlobAs(blob, `${stem}_backup.sav`);
     auditLog('DATA_EXPORT', `Exported single ward "${ward.wardName}" to archive`, true);

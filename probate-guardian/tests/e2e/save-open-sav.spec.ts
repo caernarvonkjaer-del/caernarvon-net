@@ -187,3 +187,134 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('per-ward save file (version 3)', () => {
+  test('buildWardZipBlob produces a valid version-3 ZIP with ward.enc, auditLog.enc, manifest.json', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'V3 Format Ward');
+
+    const result = await page.evaluate(async () => {
+      const w = (window as any);
+      const wardId = w.guardianData.activeWardId;
+      // Generate some audit entries for this ward
+      await w.auditLog('TEST_EVENT', 'test entry 1');
+      await w.auditLog('TEST_EVENT', 'test entry 2');
+
+      const blob = await w.buildWardZipBlob(wardId);
+      const zip = await w.JSZip.loadAsync(blob);
+      const fileNames = Object.keys(zip.files).sort();
+      const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
+      const hasWardEnc = !!zip.file('ward.enc');
+      const hasAuditLog = !!zip.file('auditLog.enc');
+      // Version-2 entries should NOT exist
+      const hasWardsDir = fileNames.some((n: string) => n.startsWith('wards/'));
+      return { fileNames, manifest, hasWardEnc, hasAuditLog, hasWardsDir, wardId };
+    });
+
+    expect(result.fileNames).toEqual(['auditLog.enc', 'manifest.json', 'ward.enc']);
+    expect(result.manifest.format).toBe('probate-guardian-export');
+    expect(result.manifest.version).toBe(3);
+    expect(result.manifest.wardId).toBe(result.wardId);
+    expect(result.manifest.wardName).toBe('V3 Format Ward');
+    expect(result.manifest.securityMode).toBe('none');
+    expect(result.manifest.salt).toBeNull();
+    expect(result.manifest.verifier).toBeNull();
+    expect(result.manifest.guardian).toBeTruthy();
+    expect(result.hasWardEnc).toBe(true);
+    expect(result.hasAuditLog).toBe(true);
+    expect(result.hasWardsDir).toBe(false);
+    // v2 fields should NOT be present
+    expect(result.manifest.appState).toBeUndefined();
+    expect(result.manifest.wards).toBeUndefined();
+    expect(result.manifest.templates).toBeUndefined();
+  });
+
+  test('version-3 per-ward file round-trips: export then open restores the ward', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'V3 Roundtrip Ward');
+
+    // Build v3 blob and download it via the fallback path
+    const downloadPromise = page.waitForEvent('download');
+    page.once('dialog', (d) => d.accept());
+    await page.evaluate(async () => {
+      const w = (window as any);
+      const wardId = w.guardianData.activeWardId;
+      const blob = await w.buildWardZipBlob(wardId);
+      w.saveBlobAs(blob, 'v3-roundtrip.sav');
+    });
+    const download = await downloadPromise;
+    const savPath = path.join(os.tmpdir(), `pg-v3-rt-${Date.now()}.sav`);
+    await download.saveAs(savPath);
+
+    // Re-open from scratch
+    await gotoApp(page);
+    await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+    await page.setInputFiles('#startup-open-input', savPath);
+
+    await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+    await expect(page.locator('#ward-selector')).toHaveValue('V3 Roundtrip Ward');
+  });
+
+  test('audit log in version-3 file contains only entries for that ward', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Audit Ward A');
+
+    const result = await page.evaluate(async () => {
+      const w = (window as any);
+      const wardAId = w.guardianData.activeWardId;
+
+      // Create audit entries for ward A
+      await w.auditLog('WARD_A_EVENT', 'ward A entry');
+
+      // Create a second ward
+      await w.addWard('guardian');
+      const wardB = w.guardianData.wards.find((wd: any) => wd.wardId !== wardAId);
+      if (wardB) {
+        wardB.wardName = 'Audit Ward B';
+        await w.switchWard(wardB.wardId);
+        await w.auditLog('WARD_B_EVENT', 'ward B entry');
+      }
+
+      // Build v3 for ward A — should NOT include ward B's entries
+      const blobA = await w.buildWardZipBlob(wardAId);
+      const zipA = await w.JSZip.loadAsync(blobA);
+      const auditStr = await zipA.file('auditLog.enc').async('string');
+      // In 'none' mode, encryptJSON uses PLAIN: prefix
+      const entries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
+      return {
+        wardAId,
+        entryCount: entries.length,
+        allMatchWardA: entries.every((e: any) => e.wardId === wardAId),
+        hasWardBEntry: entries.some((e: any) => e.eventType === 'WARD_B_EVENT'),
+      };
+    });
+
+    expect(result.entryCount).toBeGreaterThanOrEqual(1);
+    expect(result.allMatchWardA).toBe(true);
+    expect(result.hasWardBEntry).toBe(false);
+  });
+
+  test('version-2 multi-ward files still open correctly (backward compatibility)', async ({ page }) => {
+    // This is the existing unencrypted round-trip test — just verify it
+    // still works now that loadStateFromSavZip has a v3 branch.
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'V2 Compat Ward');
+
+    const savPath = await exportAndCapture(page);
+
+    await gotoApp(page);
+    await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+    await page.setInputFiles('#startup-open-input', savPath);
+
+    await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+    await expect(page.locator('#ward-selector')).toHaveValue('V2 Compat Ward');
+  });
+});
