@@ -156,4 +156,32 @@ describe('ward-lock', () => {
     expect(res2).toBe(true);
     expect(getCurrentLockedWardId()).toBe('ward-B');
   });
+
+  it('retains previous lock intact when acquiring a second lock encounters contention (atomic handover)', async () => {
+    global.navigator.locks.request.mockImplementation((name, options, callback) => {
+      if (name === 'pg-ward-ward-A') {
+        return new Promise((resolve) => {
+          const holdPromise = callback({ name });
+          if (holdPromise instanceof Promise) holdPromise.then(resolve);
+          else resolve();
+        });
+      }
+      if (name === 'pg-ward-ward-B') {
+        // Simulate contention on ward-B
+        callback(null);
+        return Promise.resolve();
+      }
+    });
+
+    const first = await acquireWardLock('ward-A');
+    expect(first).toBe(true);
+    expect(getCurrentLockedWardId()).toBe('ward-A');
+
+    // Attempt to acquire ward-B -> fails due to contention
+    const second = await acquireWardLock('ward-B');
+    expect(second).toBe(false);
+
+    // Lock for ward-A MUST remain held continuously
+    expect(getCurrentLockedWardId()).toBe('ward-A');
+  });
 });
