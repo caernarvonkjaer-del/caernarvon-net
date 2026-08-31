@@ -150,7 +150,7 @@ test.describe('Ward-level Tab Locks', () => {
     }
   });
 
-  test('rollback path: when switching to a locked ward, active ward is restored and stays locked', async ({ browser }) => {
+  test('atomic handover: when switching to a locked ward, active ward lock is never released and stays locked', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const tab1 = await context.newPage();

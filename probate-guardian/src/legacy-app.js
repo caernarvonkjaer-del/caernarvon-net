@@ -4066,33 +4066,15 @@ async function activateWard(ward, opts = {}) {
   // 2. Flush while outgoing ward's lock is still held
   await flushPendingSave();
 
-  const previousWardId = guardianData.activeWardId;
-
-  // 3. Release previous lock
-  if (window.releaseWardLock) {
-    await window.releaseWardLock();
-  }
-
-  // 4. Try acquiring target ward lock
+  // 3. Acquire target ward lock (atomically acquires new lock before releasing previous)
   let acquired = true;
   if (window.acquireWardLock) {
     acquired = await window.acquireWardLock(ward.wardId);
   }
 
-  // 5. On failure, attempt to re-acquire outgoing ward's lock
+  // 4. On contention: previous lock is still held untouched in module
   if (!acquired) {
-    if (previousWardId) {
-      let restored = false;
-      if (window.acquireWardLock) {
-        restored = await window.acquireWardLock(previousWardId);
-      }
-      if (restored) {
-        showWardLockedModal();
-        return false;
-      }
-    }
     showWardLockedModal();
-    await unloadWard();
     return false;
   }
 
