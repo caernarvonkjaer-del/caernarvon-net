@@ -6,6 +6,7 @@ function handleShellClick(event) {
     case 'activity-log': window.toggleHelpPanel(); window.navigate('/activity-log'); break;
     case 'clear-data': window.clearAllData(); break;
     case 'close-mobile-sidebar': window.closeMobileSidebar(); break;
+    case 'close-ward': if (window.unloadWard) window.unloadWard(); break;
     case 'dashboard': window.navigate('/dashboard'); break;
     case 'delete-ward': window.confirmDeleteWard(); break;
     case 'dismiss-save-error': document.getElementById('save-error-banner').style.display = 'none'; break;

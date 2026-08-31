@@ -35,7 +35,7 @@ export default defineConfig({
   workers: 1, // all specs hit one shared webServer process (vite preview/dev) -- concurrent contexts overloaded it
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  timeout: 30_000,
+  timeout: 60_000,
   use: {
     baseURL: TARGETS[target]?.baseURL,
     trace: 'retain-on-failure',

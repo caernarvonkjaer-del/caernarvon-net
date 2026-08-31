@@ -216,6 +216,57 @@ test.describe('Ward-level Tab Locks', () => {
       // Press Escape to dismiss
       await page.keyboard.press('Escape');
       await expect(modal).toBeHidden();
+
+      // Trigger modal again and verify Tab key focus containment
+      await page.evaluate(() => (window as any).showWardLockedModal());
+      await expect(modal).toBeVisible();
+      await page.keyboard.press('Tab');
+      expect(await page.evaluate(() => document.activeElement?.id)).toBe('close-ward-locked');
+      await page.keyboard.press('Shift+Tab');
+      expect(await page.evaluate(() => document.activeElement?.id)).toBe('close-ward-locked');
+      await page.locator('#close-ward-locked').click();
+      await expect(modal).toBeHidden();
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('UI affordance: sidebar close-ward-btn and dashboard close-ward release the lock', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Ward A');
+      await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
+      const wardAId = await page.evaluate(() => (window as any).guardianData.activeWardId);
+
+      // Expand sidebar ward controls if collapsed
+      const toggleBtn = page.locator('#ward-controls-toggle-btn');
+      if (await toggleBtn.isVisible()) {
+        await toggleBtn.click();
+      }
+      const sidebarCloseBtn = page.locator('#close-ward-btn');
+      await expect(sidebarCloseBtn).toBeVisible();
+
+      // Go to dashboard -> active ward is still loaded and held
+      await page.evaluate(() => window.location.hash = '#/dashboard');
+      await expect(page).toHaveURL(/#\/dashboard$/);
+
+      // Verify dashboard header close button is visible
+      const dashboardCloseBtn = page.locator('button.dashboard-close-ward');
+      await expect(dashboardCloseBtn).toBeVisible();
+
+      // Click dashboard close button
+      await dashboardCloseBtn.click();
+      await page.waitForFunction(() => (window as any).guardianData.activeWardId === null);
+      await expect(page.locator('button.dashboard-close-ward')).toBeHidden();
+      await expect(sidebarCloseBtn).toBeHidden();
+
+      // Lock should be released
+      const heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
+      expect(heldLocks).not.toContain(`pg-ward-${wardAId}`);
     } finally {
       await context.close();
     }

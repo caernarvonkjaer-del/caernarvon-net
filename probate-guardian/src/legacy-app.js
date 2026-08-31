@@ -2166,6 +2166,7 @@ document.addEventListener('keydown',(e)=>{
 async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
   await flushPendingSave();
+  if (window.releaseWardLock) await window.releaseWardLock();
   const handle=_zipFileHandle; // read again after re-unlocking, once _cryptoKey exists again
   _cryptoKey=null;
   guardianData={guardianName:'',guardianEmail:'',wards:[],activeWardId:null};
@@ -2210,8 +2211,10 @@ async function lockApp(){
   await loadGuardianData();
   const activeWard=getActiveWard();
   if(activeWard){
-    window.D=activeWard;
-    activeInventoryType=activeWard.inventoryType;
+    const ok = await activateWard(activeWard);
+    if (!ok) {
+      window.location.hash = '/dashboard';
+    }
   }
   updateSidebar();
   handleHash();
@@ -4603,7 +4606,6 @@ async function doAddWard(){
       if(src&&ward){
         Object.assign(ward,carryOverFields(src,type));
         if(ward.wardName!==name)ward.wardName=name;
-        window.D=ward;
         await saveWardToState(ward);
         renderPage('/');
         updateSidebar();
@@ -5233,13 +5235,16 @@ function updateSidebar(){
 
   // Show ward info if active
   refreshWardInfoCard();
+  const closeBtn=document.getElementById('close-ward-btn');
   const renameBtn=document.getElementById('rename-ward-btn');
   const deleteBtn=document.getElementById('delete-ward-btn');
 
   if(activeWardId){
+    if(closeBtn)closeBtn.style.display='block';
     renameBtn.style.display='block';
     deleteBtn.style.display='block';
   }else{
+    if(closeBtn)closeBtn.style.display='none';
     renameBtn.style.display='none';
     deleteBtn.style.display='none';
   }

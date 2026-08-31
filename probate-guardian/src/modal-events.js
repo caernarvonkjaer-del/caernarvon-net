@@ -35,11 +35,28 @@ function handleModalFocus(event) {
 }
 
 function handleModalKeydown(event) {
-  if (event.key === 'Escape') {
-    const lockedModal = document.getElementById('ward-locked-overlay');
-    if (lockedModal && lockedModal.classList.contains('show')) {
+  const lockedModal = document.getElementById('ward-locked-overlay');
+  if (lockedModal && lockedModal.classList.contains('show')) {
+    if (event.key === 'Escape') {
       event.preventDefault();
       if (window.closeWardLockedModal) window.closeWardLockedModal();
+      return;
+    }
+    if (event.key === 'Tab') {
+      const focusables = Array.from(lockedModal.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      if (focusables.length > 0) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !lockedModal.contains(document.activeElement))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !lockedModal.contains(document.activeElement))) {
+          event.preventDefault();
+          first.focus();
+        }
+      } else {
+        event.preventDefault();
+      }
       return;
     }
   }

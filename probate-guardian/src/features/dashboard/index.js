@@ -143,6 +143,9 @@ function dashboardHeaderHTML() {
   const supervisorFilter = _dashboardPreferences.role === 'assistant'
     ? assignmentFilterHTML(activeRows, 'Working on behalf of', 'dashboard-supervisor-control')
     : '';
+  const activeWardId = getGuardianData().activeWardId;
+  const activeWard = getGuardianData().wards.find(w => w.wardId === activeWardId);
+  const closeLoadedWardBtn = activeWard ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-close-ward" data-dashboard-action="close-ward" title="Close active ward and release lock">${ic('x', 14)} Close Active Ward</button>` : '';
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
       <div class="dashboard-page-kicker">Compliance overview</div>
@@ -150,6 +153,7 @@ function dashboardHeaderHTML() {
       <p>Review exceptions, deadlines, and court status across active filings.</p>
     </div>
     <div class="dashboard-header-actions">
+      ${closeLoadedWardBtn}
       ${roleControlHTML()}
       ${supervisorFilter}
       <button type="button" class="btn btn-sm btn-primary dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>
@@ -771,6 +775,11 @@ function handleDashboardClick(event) {
     case 'add-ward': showAddWardModal(); break;
     case 'archive': toggleDashboardWardArchived(wardId); break;
     case 'backup': exportSingleWardZip(wardId); break;
+    case 'close-ward':
+      if (window.unloadWard) {
+        window.unloadWard().then(() => renderDashboardPage());
+      }
+      break;
     case 'delete': confirmDeleteWard(wardId); break;
     case 'dismiss-continue': document.getElementById('continue-prompt-container')?.replaceChildren(); break;
     case 'dismiss-onboarding':
