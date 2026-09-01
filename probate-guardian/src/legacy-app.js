@@ -3017,9 +3017,11 @@ async function exportGuardianDataZip(){
     rollback=await beginRecordingExport(`Exported ${count} form(s) to archive`);
     const {blob}=await buildExportZipBlob();
     const handle=await saveBlobAs(blob,'guardianshipwarddata.sav');
-    if(handle)await rememberArchiveZipHandle(handle);
+    if(handle){
+      await rememberArchiveZipHandle(handle);
+      clearSessionRestoreCache(); // only discard cache when file landing is verified via handle
+    }
     _dirtySinceExport=false;
-    clearSessionRestoreCache(); // this state is now safely in a .sav file
     hideAutoExportReminder();
     updateLastSavedIndicator();
     notifyProbateGuardianTabStateChanged();
@@ -3168,9 +3170,11 @@ async function saveBackupNow(){
       return true;
     };
     const handle=await saveBlobAs(blob,`${stem}_backup.sav`,preWriteValidator);
-    if(handle)await rememberWardZipHandle(activeWard.wardId,handle);
+    if(handle){
+      await rememberWardZipHandle(activeWard.wardId,handle);
+      clearSessionRestoreCache();
+    }
     _dirtySinceExport=false;
-    clearSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
     notifyProbateGuardianTabStateChanged();
