@@ -230,6 +230,9 @@ test.describe('per-ward save file (version 3)', () => {
     expect(result.manifest.appState).toBeUndefined();
     expect(result.manifest.wards).toBeUndefined();
     expect(result.manifest.templates).toBeUndefined();
+    // Audit log scope declared in the manifest itself, not just comments
+    expect(result.manifest.auditLogScope).toBe('ward-only');
+    expect(result.manifest.auditLogNote).toBeTruthy();
   });
 
   test('version-3 per-ward file round-trips: export then open restores the ward', async ({ page }) => {
