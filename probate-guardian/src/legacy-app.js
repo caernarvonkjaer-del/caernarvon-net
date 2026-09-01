@@ -1718,8 +1718,7 @@ function setupAmountFieldValidation() {
 // SECURITY: VALIDATION AND AUDIT LOGGING
 // ═══════════════════════════════════════════════════════
 
-// Audit logging wrapper — sends audit events to Rust backend
-async function auditLog(eventType, details, success = true) {
+async function auditLog(eventType, details, success = true, wardId = null) {
   const invoke = tauriInvoke();
   if (invoke) {
     try {
@@ -1733,11 +1732,14 @@ async function auditLog(eventType, details, success = true) {
   // of silently dropping the event, so DATA_EXPORT/DATA_IMPORT/UNLOCK_* etc.
   // are still recorded when running as a plain web app.
   try {
-    await appendAuditLogEntry({timestamp: new Date().toISOString(), eventType, details, success});
+    const entry = {timestamp: new Date().toISOString(), eventType, details, success};
+    if (wardId) entry.wardId = wardId;
+    await appendAuditLogEntry(entry);
   } catch (e) {
     console.warn('Audit log fallback failed:', e);
   }
 }
+window.auditLog = auditLog;
 
 // Strict input validation rules — rejects invalid inputs before save
 // Validate date range: ensure from <= to
@@ -3133,12 +3135,17 @@ async function validateWardBackupOverwrite(pickedHandle){
 window.validateWardBackupOverwrite = validateWardBackupOverwrite;
 
 async function finishWardExport(handle, ward){
+  const wardName = (ward && ward.wardName) ? ward.wardName : 'ward';
+  const wardId = ward && ward.wardId;
   if(handle){
-    if(ward && ward.wardId){
-      await rememberWardZipHandle(ward.wardId, handle);
+    if(wardId){
+      await rememberWardZipHandle(wardId, handle);
     }
     await clearSessionRestoreCache();
     await markCaseOpenedBefore();
+    await auditLog('DATA_EXPORT', `Exported single ward "${wardName}" to ward file`, true, wardId);
+  } else {
+    await auditLog('DATA_EXPORT', `Exported single ward "${wardName}" via download`, true, wardId);
   }
   _dirtySinceExport = false;
   hideAutoExportReminder();

@@ -1114,11 +1114,18 @@ test.describe('per-ward save file (version 3)', () => {
         }
         w.validateWardBackupOverwrite = origValidator;
 
+        // 4. Check audit log entries
+        const auditLogEntries = await w.loadAuditLogEntries();
+        const fallbackAudit = auditLogEntries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details === 'Exported single ward "Cache Guard Ward" via download');
+        const handleAudit = auditLogEntries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details === 'Exported single ward "Cache Guard Ward" to ward file');
+
         return {
           cacheAfterFallback: !!cacheAfterFallback,
           dirtyAfterExport,
           cacheAfterHandle: !!cacheAfterHandle,
-          validatorThrew
+          validatorThrew,
+          hasFallbackAudit: !!fallbackAudit,
+          hasHandleAudit: !!handleAudit
         };
       });
 
@@ -1126,6 +1133,8 @@ test.describe('per-ward save file (version 3)', () => {
       expect(testResult.dirtyAfterExport).toBe(false);
       expect(testResult.cacheAfterHandle).toBe(false);
       expect(testResult.validatorThrew).toBe(true);
+      expect(testResult.hasFallbackAudit).toBe(true);
+      expect(testResult.hasHandleAudit).toBe(true);
     } finally {
       await context.close();
     }
