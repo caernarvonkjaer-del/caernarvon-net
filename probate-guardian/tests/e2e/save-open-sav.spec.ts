@@ -1068,7 +1068,7 @@ test.describe('per-ward save file (version 3)', () => {
     }
   });
 
-  test('dashboard single-ward backup preserves recovery cache on fallback and clears dirty flag on handle save', async ({ browser }) => {
+  test('dashboard single-ward backup records export before serialization, updates lastExportAt, and preserves recovery cache on fallback', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -1086,7 +1086,16 @@ test.describe('per-ward save file (version 3)', () => {
         await w.saveSessionRestoreCache();
         w.markDirtySinceExport();
 
-        // 1. Fallback mode (no FSA handle): finishWardExport should NOT clear recovery cache
+        // 1. Fallback mode (no FSA handle): record export, build blob, finish export
+        const rollback = await w.beginRecordingExport('Exported single ward "Cache Guard Ward" to ward file', wardId);
+        const blob = await w.buildWardZipBlob(wardId);
+        
+        // Inspect ZIP to verify it contains its own DATA_EXPORT record
+        const zip = await w.JSZip.loadAsync(blob);
+        const auditStr = await zip.file('auditLog.enc').async('string');
+        const entries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
+        const containsOwnExportRecord = entries.some((e: any) => e.eventType === 'DATA_EXPORT' && e.details.includes('Cache Guard Ward') && e.wardId === wardId);
+
         await w.finishWardExport(null, ward);
         const cacheAfterFallback = await w._sessionCacheGet();
         const dirtyAfterExport = w.pgHasUnsavedChanges();
@@ -1114,27 +1123,26 @@ test.describe('per-ward save file (version 3)', () => {
         }
         w.validateWardBackupOverwrite = origValidator;
 
-        // 4. Check audit log entries
+        // 4. Verify audit log entries
         const auditLogEntries = await w.loadAuditLogEntries();
-        const fallbackAudit = auditLogEntries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details === 'Exported single ward "Cache Guard Ward" via download');
-        const handleAudit = auditLogEntries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details === 'Exported single ward "Cache Guard Ward" to ward file');
+        const exportAudit = auditLogEntries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details.includes('Cache Guard Ward') && e.wardId === wardId);
 
         return {
+          containsOwnExportRecord,
           cacheAfterFallback: !!cacheAfterFallback,
           dirtyAfterExport,
           cacheAfterHandle: !!cacheAfterHandle,
           validatorThrew,
-          hasFallbackAudit: !!fallbackAudit,
-          hasHandleAudit: !!handleAudit
+          hasExportAudit: !!exportAudit
         };
       });
 
+      expect(testResult.containsOwnExportRecord).toBe(true);
       expect(testResult.cacheAfterFallback).toBe(true);
       expect(testResult.dirtyAfterExport).toBe(false);
       expect(testResult.cacheAfterHandle).toBe(false);
       expect(testResult.validatorThrew).toBe(true);
-      expect(testResult.hasFallbackAudit).toBe(true);
-      expect(testResult.hasHandleAudit).toBe(true);
+      expect(testResult.hasExportAudit).toBe(true);
     } finally {
       await context.close();
     }

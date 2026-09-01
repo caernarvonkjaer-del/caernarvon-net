@@ -1722,15 +1722,13 @@ async function auditLog(eventType, details, success = true, wardId = null) {
   const invoke = tauriInvoke();
   if (invoke) {
     try {
-      await invoke('audit_log', {event_type: eventType, details, success});
-      return;
+      await invoke('audit_log', {event_type: eventType, details, success, ward_id: wardId});
     } catch (e) {
       console.warn('Tauri audit_log failed, falling back to local log:', e);
     }
   }
-  // Not running under Tauri (or the Tauri call failed) — log locally instead
-  // of silently dropping the event, so DATA_EXPORT/DATA_IMPORT/UNLOCK_* etc.
-  // are still recorded when running as a plain web app.
+  // Record locally in all environments so in-memory _auditLogEntries (used for
+  // .sav packaging and in-app activity viewer) is always up-to-date.
   try {
     const entry = {timestamp: new Date().toISOString(), eventType, details, success};
     if (wardId) entry.wardId = wardId;
@@ -2998,18 +2996,19 @@ function updateLastSavedIndicator(){
 // written a moment earlier never got it, and there was no session left to
 // write it in a later save. Returns a rollback closure, used if the write
 // that follows fails, so a failed save is never recorded as having succeeded.
-async function beginRecordingExport(message){
+async function beginRecordingExport(message, wardId = null){
   const previousLastExportAt=_lastExportAt;
   const auditLenBefore=_auditLogEntries.length;
   _lastExportAt=Date.now();
   _appState.lastExportAt=_lastExportAt;
-  await auditLog('DATA_EXPORT',message,true);
+  await auditLog('DATA_EXPORT',message,true,wardId);
   return function rollback(){
     _lastExportAt=previousLastExportAt;
     _appState.lastExportAt=previousLastExportAt;
     _auditLogEntries.length=auditLenBefore; // no-op if auditLog() went to Tauri instead of the local array
   };
 }
+window.beginRecordingExport = beginRecordingExport;
 
 async function exportGuardianDataZip(){
   let rollback=null;
@@ -3135,17 +3134,13 @@ async function validateWardBackupOverwrite(pickedHandle){
 window.validateWardBackupOverwrite = validateWardBackupOverwrite;
 
 async function finishWardExport(handle, ward){
-  const wardName = (ward && ward.wardName) ? ward.wardName : 'ward';
-  const wardId = ward && ward.wardId;
   if(handle){
+    const wardId = ward && ward.wardId;
     if(wardId){
       await rememberWardZipHandle(wardId, handle);
     }
     await clearSessionRestoreCache();
     await markCaseOpenedBefore();
-    await auditLog('DATA_EXPORT', `Exported single ward "${wardName}" to ward file`, true, wardId);
-  } else {
-    await auditLog('DATA_EXPORT', `Exported single ward "${wardName}" via download`, true, wardId);
   }
   _dirtySinceExport = false;
   hideAutoExportReminder();
@@ -3190,15 +3185,20 @@ async function saveBackupNow(){
     console.warn('Reusing remembered archive backup file failed',e);
   }
   // If no handle or permission denied, save single ward via picker
+  let rollback=null;
   try{
+    const wardName=activeWard.wardName||'ward';
+    rollback=await beginRecordingExport(`Exported single ward "${wardName}" to ward file`, activeWard.wardId);
     const blob=await buildWardZipBlob(activeWard.wardId);
     const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
     const handle=await saveBlobAs(blob,`${stem}_backup.sav`,validateWardBackupOverwrite);
     await finishWardExport(handle, activeWard);
     alert(`Backup saved for ${activeWard.wardName||'this ward'}.`);
   }catch(e){
+    if(rollback)rollback();
     if(e&&e.name==='AbortError')return;
     console.error('Save backup failed',e);
+    auditLog('DATA_EXPORT',String(e&&e.message||e),false,activeWard.wardId);
     alert('Save backup failed: '+(e&&e.message||e));
   }
 }

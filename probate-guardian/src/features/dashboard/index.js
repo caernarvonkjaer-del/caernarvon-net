@@ -703,8 +703,13 @@ async function exportSingleWardZip(wardId) {
   const guardianData = getGuardianData();
   const ward = guardianData.wards.find(w => w.wardId === wardId);
   if (!ward) return;
+  let rollback = null;
   try {
     if (ward.wardId === guardianData.activeWardId) await flushPendingSave();
+    const wardName = ward.wardName || 'ward';
+    if (typeof window.beginRecordingExport === 'function') {
+      rollback = await window.beginRecordingExport(`Exported single ward "${wardName}" to ward file`, wardId);
+    }
     const blob = await window.buildWardZipBlob(wardId);
     const stem = (ward.wardName || 'ward').trim().replace(/\s+/g, '_') || 'ward';
     const validator = window.validateWardBackupOverwrite;
@@ -720,9 +725,11 @@ async function exportSingleWardZip(wardId) {
     }
     alert(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {
+    if (rollback) rollback();
     if (e && e.name === 'AbortError') return;
     console.error('single ward export failed', e);
-    auditLog('DATA_EXPORT', String(e && e.message || e), false);
+    const logFn = window.auditLog || auditLog;
+    if (typeof logFn === 'function') logFn('DATA_EXPORT', String(e && e.message || e), false, wardId);
     alert('Export failed: ' + (e && e.message || e));
   }
 }
