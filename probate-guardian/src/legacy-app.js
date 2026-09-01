@@ -4546,8 +4546,6 @@ window.rememberZipHandle = async function(wardId, handle) {
 window.loadZipHandle = loadWardZipHandle;
 window.hasOpenedCaseBefore = hasOpenedCaseBefore;
 window.markCaseOpenedBefore = markCaseOpenedBefore;
-window.hasSeenMigrationModal = hasSeenMigrationModal;
-window.markMigrationModalSeen = markMigrationModalSeen;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();
@@ -4924,7 +4922,11 @@ function initializeEmptyData(type){
 // MODAL FUNCTIONS
 // ═══════════════════════════════════════════════════════
 function closeModal(modalId){
-  document.getElementById(modalId).classList.remove('show');
+  const el=document.getElementById(modalId);
+  if(el)el.classList.remove('show');
+  if(modalId==='migrationModal'){
+    void markMigrationModalSeen();
+  }
 }
 
 // Every modal showModal() is ever called with lives in the lazy
@@ -4949,7 +4951,6 @@ async function showModal(modalId){
 }
 
 async function showMigrationModal(){
-  await markMigrationModalSeen();
   await showModal('migrationModal');
 }
 window.showMigrationModal = showMigrationModal;
