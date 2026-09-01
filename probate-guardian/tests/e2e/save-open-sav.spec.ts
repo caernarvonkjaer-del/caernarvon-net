@@ -620,7 +620,7 @@ test.describe('per-ward save file (version 3)', () => {
           name: 'shared-file.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
-          isSameEntry: async (other: any) => other === sharedHandle,
+          isSameEntry: async (other: any) => other && other.name === 'shared-file.sav',
           createWritable: async () => ({ write: async () => {}, close: async () => {} })
         };
 

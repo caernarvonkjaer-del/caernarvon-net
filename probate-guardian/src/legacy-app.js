@@ -2168,7 +2168,8 @@ async function lockApp(){
   await flushPendingSave();
   if (window.releaseWardLock) await window.releaseWardLock();
   const activeWardIdBefore=guardianData.activeWardId;
-  const lockedHandle=activeWardIdBefore?await loadZipHandle(activeWardIdBefore):null;
+  const lockedWardHandle=activeWardIdBefore?await loadWardZipHandle(activeWardIdBefore):null;
+  const lockedArchiveHandle=await loadArchiveZipHandle();
   _cryptoKey=null;
   guardianData={guardianName:'',guardianEmail:'',wards:[],activeWardId:null};
   window.guardianData=guardianData;
@@ -2177,16 +2178,21 @@ async function lockApp(){
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
   await ensureUnlocked(true);
-  if(lockedHandle){
+  const handleToReload=lockedWardHandle||lockedArchiveHandle;
+  if(handleToReload){
     // Rebuild memory from the open .sav file now that the key is available.
     try{
-      const file=await lockedHandle.getFile();
-      const zip=await JSZip.loadAsync(file);
+      const handleFile=await handleToReload.getFile();
+      const zip=await JSZip.loadAsync(handleFile);
       const manifestEntry=zip.file('manifest.json');
       if(manifestEntry){
         const manifest=JSON.parse(await manifestEntry.async('string'));
-        await loadStateFromSavZip(zip,manifest,_cryptoKey);
-        await rememberZipHandle(manifest.wardId||guardianData.activeWardId,lockedHandle);
+        const res=await loadStateFromSavZip(zip,manifest,_cryptoKey);
+        if(res&&res.kind==='ward'&&res.wardId){
+          await rememberWardZipHandle(res.wardId,handleToReload);
+        }else{
+          await rememberArchiveZipHandle(handleToReload);
+        }
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
   }else{
@@ -2343,16 +2349,22 @@ async function renderStorageReadout(){
   const host=document.getElementById('storage-usage-readout');
   if(!host)return;
   const activeWardId=guardianData.activeWardId;
-  const handle=activeWardId?await loadZipHandle(activeWardId):null;
+  let handle=activeWardId?await loadWardZipHandle(activeWardId):null;
+  let isArchive=false;
   if(!handle){
-    host.textContent='No ward file is open for auto-save this session. Use "Open a Ward File (.sav)" to resume auto-save, or "Save Backup" to start one.';
+    handle=await loadArchiveZipHandle();
+    if(handle)isArchive=true;
+  }
+  if(!handle){
+    host.textContent='No case file is open for auto-save this session. Use "Open Data File (.sav)" to resume auto-save, or "Save Backup" to start one.';
     return;
   }
-  const fileName=handle.name||'your .sav file';
+  const fileName=handle.name||(isArchive?'your case file':'your ward file');
   const savedNote=_lastExportAt
     ? `last saved ${formatRelativeTime(_lastExportAt)}`
     : 'not saved yet this session';
-  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> — ${_autoSaveArmed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
+  const typeDesc=isArchive?'case archive (all wards)':'ward file';
+  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> (${typeDesc}) — ${_autoSaveArmed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
 }
 
 function activityLogFiltered(){
@@ -2678,9 +2690,10 @@ async function rememberWardZipHandle(wardId,handle){
   // If this handle points to the same file on disk as the archive handle,
   // disassociate the archive handle so a ward save cannot simultaneously
   // pretend to be a whole-case archive.
-  if(_archiveZipHandle&&typeof handle.isSameEntry==='function'){
+  const archiveHandle=await loadArchiveZipHandle();
+  if(archiveHandle&&typeof handle.isSameEntry==='function'){
     try{
-      if(await handle.isSameEntry(_archiveZipHandle)){
+      if(await handle.isSameEntry(archiveHandle)){
         console.warn('Per-ward handle matches active archive handle; clearing archive handle');
         await forgetArchiveZipHandle();
       }
@@ -3136,7 +3149,18 @@ async function saveBackupNow(){
     const blob=await buildWardZipBlob(activeWard.wardId);
     const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
     const handle=await saveBlobAs(blob,`${stem}_backup.sav`);
-    if(handle)await rememberWardZipHandle(activeWard.wardId,handle);
+    if(handle){
+      const archiveHandle=await loadArchiveZipHandle();
+      if(archiveHandle&&typeof handle.isSameEntry==='function'){
+        try{
+          if(await handle.isSameEntry(archiveHandle)&&guardianData.wards.length>1){
+            const proceed=confirm('Warning: You selected your case file archive containing multiple wards. Overwriting it with this single ward will replace the other wards on disk. Are you sure you want to overwrite?');
+            if(!proceed)return;
+          }
+        }catch(e){/* non-critical */}
+      }
+      await rememberWardZipHandle(activeWard.wardId,handle);
+    }
     _dirtySinceExport=false;
     clearSessionRestoreCache();
     hideAutoExportReminder();
@@ -4464,16 +4488,12 @@ window.forgetWardZipHandle = forgetWardZipHandle;
 window.rememberArchiveZipHandle = rememberArchiveZipHandle;
 window.loadArchiveZipHandle = loadArchiveZipHandle;
 window.forgetArchiveZipHandle = forgetArchiveZipHandle;
-window.rememberZipHandle = async function(wardIdOrHandle, maybeHandle) {
-  if (maybeHandle) {
-    await rememberWardZipHandle(wardIdOrHandle, maybeHandle);
-  } else if (typeof wardIdOrHandle === 'object' && wardIdOrHandle) {
-    if (guardianData.activeWardId) {
-      await rememberWardZipHandle(guardianData.activeWardId, wardIdOrHandle);
-    } else {
-      await rememberArchiveZipHandle(wardIdOrHandle);
-    }
+window.rememberZipHandle = async function(wardId, handle) {
+  if (wardId && handle) {
+    await rememberWardZipHandle(wardId, handle);
+    return;
   }
+  throw new Error('rememberZipHandle requires (wardId, handle). Use rememberArchiveZipHandle(handle) for case archives.');
 };
 window.loadZipHandle = loadWardZipHandle;
 
