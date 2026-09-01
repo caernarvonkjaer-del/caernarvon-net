@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
+import fs from 'node:fs/promises';
 import { gotoApp, startNewCase, chooseNoPassword, chooseEncrypted, createWard } from './support/target';
 
 // window.showSaveFilePicker/showOpenFilePicker are deleted for every test
@@ -438,7 +439,7 @@ test.describe('per-ward save file (version 3)', () => {
     }
   });
 
-  test('version-2 multi-ward files still open correctly and display migration modal (backward compatibility)', async ({ browser }) => {
+  test('pre-17A legacy archive (no kind field) opens and displays migration modal', async ({ browser }) => {
     const context = await browser.newContext();
     let savPath = '';
     try {
@@ -446,7 +447,66 @@ test.describe('per-ward save file (version 3)', () => {
       await gotoApp(page);
       await startNewCase(page);
       await chooseNoPassword(page);
-      await createWard(page, 'V2 Compat Ward');
+      await createWard(page, 'V2 Legacy Ward');
+
+      // Build a genuine pre-17A archive (version: 2, no kind field)
+      const zipBuffer = await page.evaluate(async () => {
+        const ward = (window as any).guardianData.wards[0];
+        const zip = new (window as any).JSZip();
+        zip.file(`wards/${ward.wardId}.enc`, 'PLAIN:' + JSON.stringify(ward));
+        zip.file('auditLog.enc', 'PLAIN:' + JSON.stringify([]));
+        zip.file('manifest.json', JSON.stringify({
+          format: 'probate-guardian-export',
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          securityMode: 'none',
+          salt: null,
+          verifier: null,
+          wards: [
+            { wardId: ward.wardId, file: `wards/${ward.wardId}.enc` }
+          ]
+        }));
+        const base64 = await zip.generateAsync({ type: 'base64' });
+        return base64;
+      });
+
+      savPath = path.join(os.tmpdir(), `pg-legacy-test-${Date.now()}.sav`);
+      await fs.writeFile(savPath, Buffer.from(zipBuffer, 'base64'));
+    } finally {
+      await context.close();
+    }
+
+    const reopenContext = await browser.newContext();
+    try {
+      const reopenPage = await reopenContext.newPage();
+      await gotoApp(reopenPage);
+      await reopenPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+      await reopenPage.setInputFiles('#startup-open-input', savPath);
+
+      await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('V2 Legacy Ward');
+
+      // Verify migration modal appears for pre-17A legacy archive
+      await expect(reopenPage.locator('#migrationModal')).toHaveClass(/show/);
+      await expect(reopenPage.locator('#migrationModal')).toContainText('Per-Ward Save Files Are Now Available');
+
+      // Click "Got it" to dismiss
+      await reopenPage.click('#migration-modal-ok-btn');
+      await expect(reopenPage.locator('#migrationModal')).not.toHaveClass(/show/);
+    } finally {
+      await reopenContext.close();
+    }
+  });
+
+  test('current archive (version 2 with kind: archive) opens without displaying migration modal', async ({ browser }) => {
+    const context = await browser.newContext();
+    let savPath = '';
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Current Archive Ward');
 
       savPath = await exportAndCapture(page);
     } finally {
@@ -461,15 +521,10 @@ test.describe('per-ward save file (version 3)', () => {
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      await expect(reopenPage.locator('#ward-selector')).toHaveValue('V2 Compat Ward');
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('Current Archive Ward');
 
-      // Verify migration modal appears for version-2 file
-      await expect(reopenPage.locator('#migrationModal')).toHaveClass(/show/);
-      await expect(reopenPage.locator('#migrationModal')).toContainText('Your save file has been updated to the new format.');
-
-      // Click "Got it" to dismiss
-      await reopenPage.click('#migration-modal-ok-btn');
-      await expect(reopenPage.locator('#migrationModal')).not.toHaveClass(/show/);
+      // Verify migration modal does NOT appear for current archives
+      await expect(reopenPage.locator('#migrationModal.show')).toHaveCount(0);
     } finally {
       await reopenContext.close();
     }
@@ -780,7 +835,7 @@ test.describe('per-ward save file (version 3)', () => {
     }
   });
 
-  test('in-session import of version-3 per-ward .sav file merges the single ward', async ({ browser }) => {
+  test('in-session import of version-3 per-ward .sav file merges the single ward without migration modal', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -814,12 +869,15 @@ test.describe('per-ward save file (version 3)', () => {
       expect(importResult.wardNames).toContain('Existing Base Ward');
       expect(importResult.wardNames).toContain('Imported V3 Ward');
       expect(importResult.alertMsg).toContain('Import complete');
+
+      // Migration modal should NOT appear for version-3 files
+      await expect(page.locator('#migrationModal.show')).toHaveCount(0);
     } finally {
       await context.close();
     }
   });
 
-  test('in-session import of version-2 multi-ward .sav file merges all wards and shows migration modal', async ({ browser }) => {
+  test('in-session import of pre-17A legacy multi-ward .sav file merges all wards and shows migration modal', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -828,15 +886,30 @@ test.describe('per-ward save file (version 3)', () => {
       await chooseNoPassword(page);
       await createWard(page, 'Existing Base Ward');
 
-      // Create a multi-ward archive
+      // Create a genuine pre-17A legacy multi-ward archive (no kind in manifest)
       const importResult = await page.evaluate(async () => {
-        await (window as any).addWard('V2 Extra Ward A', 'guardian');
-        await (window as any).addWard('V2 Extra Ward B', 'simplified');
-        const { blob } = await (window as any).buildExportZipBlob();
-        const file = new File([blob], 'guardianshipwarddata.sav', { type: 'application/octet-stream' });
+        const wardA = { wardId: 'ward-v2-a', wardName: 'V2 Extra Ward A', inventoryType: 'guardian', data: {} };
+        const wardB = { wardId: 'ward-v2-b', wardName: 'V2 Extra Ward B', inventoryType: 'simplified', data: {} };
 
-        // Keep only the first ward
-        (window as any).guardianData.wards = (window as any).guardianData.wards.filter((w: any) => w.wardName === 'Existing Base Ward');
+        const zip = new (window as any).JSZip();
+        zip.file('wards/ward-v2-a.enc', 'PLAIN:' + JSON.stringify(wardA));
+        zip.file('wards/ward-v2-b.enc', 'PLAIN:' + JSON.stringify(wardB));
+        zip.file('auditLog.enc', 'PLAIN:' + JSON.stringify([]));
+        zip.file('manifest.json', JSON.stringify({
+          format: 'probate-guardian-export',
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          securityMode: 'none',
+          salt: null,
+          verifier: null,
+          wards: [
+            { wardId: 'ward-v2-a', file: 'wards/ward-v2-a.enc' },
+            { wardId: 'ward-v2-b', file: 'wards/ward-v2-b.enc' }
+          ]
+        }));
+
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const file = new File([blob], 'legacy_archive.sav', { type: 'application/octet-stream' });
 
         (window as any).confirm = () => true;
         let alertMsg = '';
@@ -852,13 +925,51 @@ test.describe('per-ward save file (version 3)', () => {
       expect(importResult.wardNames).toContain('V2 Extra Ward A');
       expect(importResult.wardNames).toContain('V2 Extra Ward B');
 
-      // Migration modal should be visible
+      // Migration modal should be visible for pre-17A legacy archive
       await expect(page.locator('#migrationModal')).toHaveClass(/show/);
-      await expect(page.locator('#migrationModal')).toContainText('Your save file has been updated to the new format.');
+      await expect(page.locator('#migrationModal')).toContainText('Per-Ward Save Files Are Now Available');
 
       // Dismiss migration modal
       await page.click('#migration-modal-ok-btn');
       await expect(page.locator('#migrationModal')).not.toHaveClass(/show/);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('in-session import of current archive (version 2 with kind: archive) does NOT show migration modal', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Existing Base Ward');
+
+      // Create a current archive (has kind: 'archive')
+      const importResult = await page.evaluate(async () => {
+        await (window as any).addWard('Current Extra Ward', 'guardian');
+        const { blob } = await (window as any).buildExportZipBlob();
+        const file = new File([blob], 'current_archive.sav', { type: 'application/octet-stream' });
+
+        // Keep only base ward
+        (window as any).guardianData.wards = (window as any).guardianData.wards.filter((w: any) => w.wardName === 'Existing Base Ward');
+
+        (window as any).confirm = () => true;
+        let alertMsg = '';
+        (window as any).alert = (msg: string) => { alertMsg = msg; };
+
+        await (window as any).importGuardianDataZip(file);
+
+        const wardNames = (window as any).guardianData.wards.map((w: any) => w.wardName);
+        return { wardNames, alertMsg };
+      });
+
+      expect(importResult.wardNames).toContain('Existing Base Ward');
+      expect(importResult.wardNames).toContain('Current Extra Ward');
+
+      // Migration modal should NOT appear for current archives
+      await expect(page.locator('#migrationModal.show')).toHaveCount(0);
     } finally {
       await context.close();
     }

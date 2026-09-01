@@ -3315,6 +3315,9 @@ async function importGuardianDataZip(file){
         if(ward&&ward.wardId)imported.push(ward);
       }
     }
+    if(kind==='ward'&&!imported.length){
+      throw new Error('Per-ward file contained no readable ward data.');
+    }
     if(!imported.length&&!guardianInfo)throw new Error('File contained no readable data.');
 
     const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
@@ -3349,7 +3352,7 @@ async function importGuardianDataZip(file){
       ? `Imported ward "${imported[0].wardName||'ward'}" from file`
       : `Imported ${imported.length} form(s) from archive`;
     auditLog('DATA_IMPORT',auditMsg,true);
-    if(manifest.version<3){
+    if(!manifest.kind){
       await showMigrationModal();
     }
     alert(kind==='ward'?`Import complete: "${imported[0].wardName||'ward'}" loaded.`:`Import complete: ${imported.length} form(s) loaded.`);
@@ -3728,7 +3731,7 @@ async function loadCaseFileAtLaunch(file){
     if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
     _launchStateResolved=true;
     _openedFileAtLaunch=true;
-    if(manifest.version<3)_needsMigrationModal=true;
+    if(!manifest.kind)_needsMigrationModal=true;
     markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
     const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
@@ -4532,8 +4535,6 @@ window.rememberZipHandle = async function(wardId, handle) {
 window.loadZipHandle = loadWardZipHandle;
 window.hasOpenedCaseBefore = hasOpenedCaseBefore;
 window.markCaseOpenedBefore = markCaseOpenedBefore;
-window.encryptJSON = encryptJSON;
-window.decryptJSON = decryptJSON;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();
@@ -4930,7 +4931,8 @@ async function ensureFragment(name){
 async function showModal(modalId){
   await ensureFragment('common-modals');
   const el=document.getElementById(modalId);
-  if(el)el.classList.add('show');
+  if(!el)throw new Error(`Modal element "${modalId}" not found`);
+  el.classList.add('show');
 }
 
 async function showMigrationModal(){
