@@ -2675,6 +2675,17 @@ let _archiveZipHandle=null;
 
 async function rememberWardZipHandle(wardId,handle){
   if(!wardId||!handle)return;
+  // If this handle points to the same file on disk as the archive handle,
+  // disassociate the archive handle so a ward save cannot simultaneously
+  // pretend to be a whole-case archive.
+  if(_archiveZipHandle&&typeof handle.isSameEntry==='function'){
+    try{
+      if(await handle.isSameEntry(_archiveZipHandle)){
+        console.warn('Per-ward handle matches active archive handle; clearing archive handle');
+        await forgetArchiveZipHandle();
+      }
+    }catch(e){/* non-critical */}
+  }
   _wardZipHandles.set(wardId,handle);
   await savePersistedWardZipHandle(wardId,handle);
   await refreshAutoSaveArmedStatus();
@@ -2702,6 +2713,18 @@ async function forgetWardZipHandle(wardId){
 
 async function rememberArchiveZipHandle(handle){
   if(!handle)return;
+  // If this archive handle points to the same file on disk as any existing
+  // per-ward handle, disassociate that per-ward handle.
+  if(typeof handle.isSameEntry==='function'){
+    for(const [wId,wHandle] of _wardZipHandles.entries()){
+      try{
+        if(await handle.isSameEntry(wHandle)){
+          console.warn(`Archive handle matches per-ward handle for ${wId}; clearing per-ward handle`);
+          await forgetWardZipHandle(wId);
+        }
+      }catch(e){/* non-critical */}
+    }
+  }
   _archiveZipHandle=handle;
   await savePersistedArchiveZipHandle(handle);
   await refreshAutoSaveArmedStatus();

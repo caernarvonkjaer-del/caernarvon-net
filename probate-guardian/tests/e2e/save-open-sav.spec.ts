@@ -569,4 +569,77 @@ test.describe('per-ward save file (version 3)', () => {
       await context.close();
     }
   });
+
+  test('lockApp retains and restores archive handle on unlock in archive mode', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Archive Lock Ward');
+
+      await page.evaluate(async () => {
+        const { blob } = await (window as any).buildExportZipBlob();
+        const mockArchiveHandle = {
+          name: 'case-archive.sav',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          getFile: async () => new File([blob], 'case-archive.sav', { type: 'application/octet-stream' }),
+          createWritable: async () => ({
+            write: async () => {},
+            close: async () => {}
+          })
+        };
+        await (window as any).rememberArchiveZipHandle(mockArchiveHandle);
+        await (window as any).lockApp();
+      });
+
+      const isArchiveArmedAfterUnlock = await page.evaluate(async () => {
+        const h = await (window as any).loadArchiveZipHandle();
+        return h && h.name === 'case-archive.sav';
+      });
+      expect(isArchiveArmedAfterUnlock).toBe(true);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('isSameEntry deconflicts ward handle and archive handle', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Conflict Ward');
+
+      const result = await page.evaluate(async () => {
+        const wardId = (window as any).guardianData.activeWardId;
+        const sharedHandle = {
+          name: 'shared-file.sav',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          isSameEntry: async (other: any) => other === sharedHandle,
+          createWritable: async () => ({ write: async () => {}, close: async () => {} })
+        };
+
+        await (window as any).rememberArchiveZipHandle(sharedHandle);
+        const hasArchiveBefore = !!(await (window as any).loadArchiveZipHandle());
+
+        // Now arm ward with the same handle
+        await (window as any).rememberWardZipHandle(wardId, sharedHandle);
+        const hasWardAfter = !!(await (window as any).loadWardZipHandle(wardId));
+        const hasArchiveAfter = !!(await (window as any).loadArchiveZipHandle());
+
+        return { hasArchiveBefore, hasWardAfter, hasArchiveAfter };
+      });
+
+      expect(result.hasArchiveBefore).toBe(true);
+      expect(result.hasWardAfter).toBe(true);
+      expect(result.hasArchiveAfter).toBe(false);
+    } finally {
+      await context.close();
+    }
+  });
 });
