@@ -3047,7 +3047,7 @@ async function writeWardToHandle(wardId,handle,viaTimer){
   const message=viaTimer
     ? `Auto-saved "${wardName}" in the background`
     : `Saved "${wardName}" to existing backup file`;
-  const rollback=await beginRecordingExport(message);
+  const rollback=await beginRecordingExport(message, wardId);
   try{
     const blob=await buildWardZipBlob(wardId);
     const writable=await handle.createWritable();
