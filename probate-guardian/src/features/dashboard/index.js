@@ -707,17 +707,17 @@ async function exportSingleWardZip(wardId) {
     if (ward.wardId === guardianData.activeWardId) await flushPendingSave();
     const blob = await window.buildWardZipBlob(wardId);
     const stem = (ward.wardName || 'ward').trim().replace(/\s+/g, '_') || 'ward';
-    const validator = window.validateWardBackupOverwrite || null;
+    const validator = window.validateWardBackupOverwrite;
+    if (typeof validator !== 'function') {
+      throw new Error('validateWardBackupOverwrite is required but not available');
+    }
     const handle = await saveBlobAs(blob, `${stem}_backup.sav`, validator);
-    if (handle && window.rememberWardZipHandle) {
-      await window.rememberWardZipHandle(wardId, handle);
+    if (window.finishWardExport) {
+      await window.finishWardExport(handle, ward);
+    } else {
+      if (handle && window.rememberWardZipHandle) await window.rememberWardZipHandle(wardId, handle);
+      if (ward.wardId === guardianData.activeWardId) updateLastSavedIndicator();
     }
-    if (ward.wardId === guardianData.activeWardId) {
-      if (window.clearSessionRestoreCache) window.clearSessionRestoreCache();
-      if (window.markCaseOpenedBefore) window.markCaseOpenedBefore();
-      updateLastSavedIndicator();
-    }
-    auditLog('DATA_EXPORT', `Exported single ward "${ward.wardName}" to archive`, true);
     alert(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {
     if (e && e.name === 'AbortError') return;

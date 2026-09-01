@@ -3132,6 +3132,21 @@ async function validateWardBackupOverwrite(pickedHandle){
 }
 window.validateWardBackupOverwrite = validateWardBackupOverwrite;
 
+async function finishWardExport(handle, ward){
+  if(handle){
+    if(ward && ward.wardId){
+      await rememberWardZipHandle(ward.wardId, handle);
+    }
+    await clearSessionRestoreCache();
+    await markCaseOpenedBefore();
+  }
+  _dirtySinceExport = false;
+  hideAutoExportReminder();
+  updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
+}
+window.finishWardExport = finishWardExport;
+
 // The banner's Save Backup Now button. Runs inside a click, so a user
 // gesture is available: re-authorizes the active ward's handle (or the archive
 // handle) with one small prompt, or falls back to Save As single-ward export.
@@ -3172,15 +3187,7 @@ async function saveBackupNow(){
     const blob=await buildWardZipBlob(activeWard.wardId);
     const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
     const handle=await saveBlobAs(blob,`${stem}_backup.sav`,validateWardBackupOverwrite);
-    if(handle){
-      await rememberWardZipHandle(activeWard.wardId,handle);
-      clearSessionRestoreCache();
-    }
-    _dirtySinceExport=false;
-    hideAutoExportReminder();
-    updateLastSavedIndicator();
-    notifyProbateGuardianTabStateChanged();
-    markCaseOpenedBefore();
+    await finishWardExport(handle, activeWard);
     alert(`Backup saved for ${activeWard.wardName||'this ward'}.`);
   }catch(e){
     if(e&&e.name==='AbortError')return;

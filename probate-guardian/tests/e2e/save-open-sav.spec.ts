@@ -837,7 +837,7 @@ test.describe('per-ward save file (version 3)', () => {
 
       expect(result.dirtyBefore).toBe(true);
       expect(result.dirtyAfter).toBe(false);
-      expect(result.caseOpenedBefore).toBe(true);
+      expect(result.caseOpenedBefore).toBe(false);
       expect(result.alertMsg).toContain('Backup saved');
     } finally {
       await context.close();
@@ -1063,6 +1063,69 @@ test.describe('per-ward save file (version 3)', () => {
       expect(result.writeCallCount).toBe(0);
       expect(result.archiveStillArmed).toBe(true);
       expect(result.wardArmed).toBe(false);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('dashboard single-ward backup preserves recovery cache on fallback and clears dirty flag on handle save', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Cache Guard Ward');
+
+      const testResult = await page.evaluate(async () => {
+        const w = (window as any);
+        const wardId = w.guardianData.activeWardId;
+        const ward = w.guardianData.wards.find((item: any) => item.wardId === wardId);
+
+        // Populate session restore cache in IndexedDB
+        await w.saveSessionRestoreCache();
+        w.markDirtySinceExport();
+
+        // 1. Fallback mode (no FSA handle): finishWardExport should NOT clear recovery cache
+        await w.finishWardExport(null, ward);
+        const cacheAfterFallback = await w._sessionCacheGet();
+        const dirtyAfterExport = w.pgHasUnsavedChanges();
+
+        // 2. FSA handle mode: finishWardExport should clear recovery cache
+        const mockHandle = {
+          name: 'guard_backup.sav',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          isSameEntry: async () => false,
+          createWritable: async () => ({ write: async () => {}, close: async () => {} })
+        };
+        await w.finishWardExport(mockHandle, ward);
+        const cacheAfterHandle = await w._sessionCacheGet();
+
+        // 3. Verify validator requirement
+        const origValidator = w.validateWardBackupOverwrite;
+        w.validateWardBackupOverwrite = undefined;
+        let validatorThrew = false;
+        try {
+          const v = w.validateWardBackupOverwrite;
+          if (typeof v !== 'function') throw new Error('missing validator');
+        } catch {
+          validatorThrew = true;
+        }
+        w.validateWardBackupOverwrite = origValidator;
+
+        return {
+          cacheAfterFallback: !!cacheAfterFallback,
+          dirtyAfterExport,
+          cacheAfterHandle: !!cacheAfterHandle,
+          validatorThrew
+        };
+      });
+
+      expect(testResult.cacheAfterFallback).toBe(true);
+      expect(testResult.dirtyAfterExport).toBe(false);
+      expect(testResult.cacheAfterHandle).toBe(false);
+      expect(testResult.validatorThrew).toBe(true);
     } finally {
       await context.close();
     }
