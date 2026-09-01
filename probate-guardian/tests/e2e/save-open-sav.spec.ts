@@ -438,7 +438,7 @@ test.describe('per-ward save file (version 3)', () => {
     }
   });
 
-  test('version-2 multi-ward files still open correctly (backward compatibility)', async ({ browser }) => {
+  test('version-2 multi-ward files still open correctly and display migration modal (backward compatibility)', async ({ browser }) => {
     const context = await browser.newContext();
     let savPath = '';
     try {
@@ -462,6 +462,14 @@ test.describe('per-ward save file (version 3)', () => {
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('V2 Compat Ward');
+
+      // Verify migration modal appears for version-2 file
+      await expect(reopenPage.locator('#migrationModal')).toHaveClass(/show/);
+      await expect(reopenPage.locator('#migrationModal')).toContainText('Your save file has been updated to the new format.');
+
+      // Click "Got it" to dismiss
+      await reopenPage.click('#migration-modal-ok-btn');
+      await expect(reopenPage.locator('#migrationModal')).not.toHaveClass(/show/);
     } finally {
       await reopenContext.close();
     }
@@ -767,6 +775,90 @@ test.describe('per-ward save file (version 3)', () => {
       expect(result.dirtyAfter).toBe(false);
       expect(result.caseOpenedBefore).toBe(true);
       expect(result.alertMsg).toContain('Backup saved');
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('in-session import of version-3 per-ward .sav file merges the single ward', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Existing Base Ward');
+
+      const importResult = await page.evaluate(async () => {
+        // Add a temporary second ward to build its valid version-3 .sav file
+        await (window as any).addWard('Imported V3 Ward', 'guardian');
+        const v3Ward = (window as any).guardianData.wards.find((w: any) => w.wardName === 'Imported V3 Ward');
+        const blob = await (window as any).buildWardZipBlob(v3Ward.wardId);
+        const file = new File([blob], 'Imported_V3_Ward_backup.sav', { type: 'application/octet-stream' });
+
+        // Remove the second ward from in-memory array to simulate importing from an external file
+        (window as any).guardianData.wards = (window as any).guardianData.wards.filter((w: any) => w.wardName !== 'Imported V3 Ward');
+
+        // Mock confirm and alert
+        (window as any).confirm = () => true;
+        let alertMsg = '';
+        (window as any).alert = (msg: string) => { alertMsg = msg; };
+
+        // Import the single-ward version-3 file
+        await (window as any).importGuardianDataZip(file);
+
+        const wardNames = (window as any).guardianData.wards.map((w: any) => w.wardName);
+        return { wardNames, alertMsg };
+      });
+
+      expect(importResult.wardNames).toContain('Existing Base Ward');
+      expect(importResult.wardNames).toContain('Imported V3 Ward');
+      expect(importResult.alertMsg).toContain('Import complete');
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('in-session import of version-2 multi-ward .sav file merges all wards and shows migration modal', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Existing Base Ward');
+
+      // Create a multi-ward archive
+      const importResult = await page.evaluate(async () => {
+        await (window as any).addWard('V2 Extra Ward A', 'guardian');
+        await (window as any).addWard('V2 Extra Ward B', 'simplified');
+        const { blob } = await (window as any).buildExportZipBlob();
+        const file = new File([blob], 'guardianshipwarddata.sav', { type: 'application/octet-stream' });
+
+        // Keep only the first ward
+        (window as any).guardianData.wards = (window as any).guardianData.wards.filter((w: any) => w.wardName === 'Existing Base Ward');
+
+        (window as any).confirm = () => true;
+        let alertMsg = '';
+        (window as any).alert = (msg: string) => { alertMsg = msg; };
+
+        await (window as any).importGuardianDataZip(file);
+
+        const wardNames = (window as any).guardianData.wards.map((w: any) => w.wardName);
+        return { wardNames, alertMsg };
+      });
+
+      expect(importResult.wardNames).toContain('Existing Base Ward');
+      expect(importResult.wardNames).toContain('V2 Extra Ward A');
+      expect(importResult.wardNames).toContain('V2 Extra Ward B');
+
+      // Migration modal should be visible
+      await expect(page.locator('#migrationModal')).toHaveClass(/show/);
+      await expect(page.locator('#migrationModal')).toContainText('Your save file has been updated to the new format.');
+
+      // Dismiss migration modal
+      await page.click('#migration-modal-ok-btn');
+      await expect(page.locator('#migrationModal')).not.toHaveClass(/show/);
     } finally {
       await context.close();
     }

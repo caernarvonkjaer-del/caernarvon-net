@@ -240,3 +240,13 @@
     <button class="btn btn-primary w-100" data-modal-action="guardian-setup">Continue</button>
   </div>
 </div>
+
+<!-- Version-2 Migration Modal (shown once when a legacy multi-ward archive is opened) -->
+<div id="migrationModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:480px;">
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Your save file has been updated to the new format.</h2>
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">Each ward is now saved as its own separate file. We'll save each ward individually when you next open it or use Save Backup.</p>
+    <button class="btn btn-primary w-100" data-modal-action="close" data-modal-id="migrationModal" id="migration-modal-ok-btn">Got it</button>
+  </div>
+</div>
+

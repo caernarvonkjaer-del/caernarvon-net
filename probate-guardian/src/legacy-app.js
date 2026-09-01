@@ -3266,50 +3266,63 @@ async function importGuardianDataZip(file){
     if(_securityMode==='encrypted'&&!_cryptoKey){alert('Please unlock the app before importing a data file.');return;}
     const zip=await JSZip.loadAsync(file);
     const manifestEntry=zip.file('manifest.json');
-    if(!manifestEntry)throw new Error('Not a Probate Guardian archive (no manifest.json inside).');
+    if(!manifestEntry)throw new Error('Not a Probate Guardian data file (no manifest.json inside).');
     const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-export')throw new Error('Not a Probate Guardian archive.');
+    if(manifest.format!=='probate-guardian-export')throw new Error('Not a Probate Guardian data file.');
+
+    const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
 
     // Same install (same salt) → current key works. Different install →
-    // ask for the password the archive was exported under and re-derive.
-    // A 'none'-mode archive has no salt and no password to ask for at all —
-    // checking securityMode first (rather than comparing salts alone) keeps
-    // that case from prompting for a password that doesn't exist, matching
-    // how loadCaseFileAtLaunch() decides the same thing.
+    // ask for the password the file was exported under and re-derive.
     const currentSalt=await loadAppState('cryptoSalt');
     let key=_cryptoKey;
     if(manifest.securityMode!=='none'&&manifest.salt!==currentSalt){
-      const pw=prompt('This archive came from a different installation.\nEnter the master password that was in use when it was exported:');
+      const pw=prompt('This file came from a different installation.\nEnter the master password that was in use when it was exported:');
       if(!pw)return;
       key=await deriveKeyFromPassword(pw,manifest.salt);
     }
 
     let guardianInfo=null;
-    try{
-      guardianInfo=manifest.guardian?await decryptJSONWithKey(manifest.guardian,key):null;
-    }catch(e){
-      throw new Error('Wrong password for this archive, or the file has been modified/corrupted.');
+    if(manifest.guardian){
+      try{
+        guardianInfo=await decryptJSONWithKey(manifest.guardian,key);
+      }catch(e){
+        throw new Error('Wrong password for this file, or the file has been modified/corrupted.');
+      }
     }
 
     const imported=[];
-    for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
-      const f=zip.file(entry.file);
-      if(!f){console.warn('Archive entry missing:',entry.file);continue;}
-      // GCM decryption doubles as the integrity check: any outside edit to
-      // this entry makes decrypt throw rather than load corrupted data.
+    if(kind==='ward'){
+      const wardFile=zip.file('ward.enc');
+      if(!wardFile)throw new Error('Per-ward .sav file missing ward.enc');
       let ward;
       try{
-        ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
+        ward=sanitizeObjectData(await decryptJSONWithKey(await wardFile.async('string'),key));
       }catch(err){
-        throw new Error(`The archive's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
+        throw new Error(`The file's data has been modified or corrupted since it was saved — nothing was imported.`);
       }
       if(ward&&ward.wardId)imported.push(ward);
+    }else{
+      for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
+        const f=zip.file(entry.file);
+        if(!f){console.warn('Archive entry missing:',entry.file);continue;}
+        let ward;
+        try{
+          ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
+        }catch(err){
+          throw new Error(`The archive's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
+        }
+        if(ward&&ward.wardId)imported.push(ward);
+      }
     }
-    if(!imported.length&&!guardianInfo)throw new Error('Archive contained no readable data.');
+    if(!imported.length&&!guardianInfo)throw new Error('File contained no readable data.');
 
     const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
     const adding=imported.length-replacing;
-    if(!confirm(`Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`))return;
+    const promptText=kind==='ward'
+      ? `Import ward "${imported[0].wardName||'this ward'}" from "${file.name}"?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
+      : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
+    if(!confirm(promptText))return;
 
     // Flush BEFORE swapping array entries so in-progress edits save under the
     // old objects and can't overwrite freshly imported data afterwards.
@@ -3317,7 +3330,7 @@ async function importGuardianDataZip(file){
     for(const ward of imported){
       const idx=guardianData.wards.findIndex(x=>x.wardId===ward.wardId);
       if(idx>=0)guardianData.wards[idx]=ward;else guardianData.wards.push(ward);
-      await saveWardToState(ward); // schedules a write of the merged state to the .sav file
+      await saveWardToState(ward); // schedules a write of the merged state
     }
     if(guardianInfo&&guardianInfo.guardianName)guardianData.guardianName=guardianInfo.guardianName;
     if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
@@ -3332,8 +3345,14 @@ async function importGuardianDataZip(file){
     }else{
       updateSidebar();
     }
-    auditLog('DATA_IMPORT',`Imported ${imported.length} form(s) from archive`,true);
-    alert(`Import complete: ${imported.length} form(s) loaded.`);
+    const auditMsg=kind==='ward'
+      ? `Imported ward "${imported[0].wardName||'ward'}" from file`
+      : `Imported ${imported.length} form(s) from archive`;
+    auditLog('DATA_IMPORT',auditMsg,true);
+    if(manifest.version<3){
+      await showMigrationModal();
+    }
+    alert(kind==='ward'?`Import complete: "${imported[0].wardName||'ward'}" loaded.`:`Import complete: ${imported.length} form(s) loaded.`);
   }catch(e){
     console.error('import failed',e);
     auditLog('DATA_IMPORT',String(e&&e.message||e),false);
@@ -3583,6 +3602,7 @@ async function trySilentReopen(){
 
 let _launchStateResolved=false;
 let _openedFileAtLaunch=false; // set by loadCaseFileAtLaunch() on success; initApp() lands on the dashboard instead of the default page when this is true
+let _needsMigrationModal=false;
 let _startupChoiceResolve=null;
 async function promptOpenOrStartAtLaunch(){
   if(await trySilentReopen())return;
@@ -3708,9 +3728,11 @@ async function loadCaseFileAtLaunch(file){
     if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
     _launchStateResolved=true;
     _openedFileAtLaunch=true;
+    if(manifest.version<3)_needsMigrationModal=true;
     markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
-    return true;
+    const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
+    return { ok: true, kind, wardId: manifest.wardId || (guardianData.wards[0] && guardianData.wards[0].wardId) || null };
   }catch(e){
     console.error('Failed to open case file',e);
     alert('Could not open that file: '+(e&&e.message||e));
@@ -4510,6 +4532,8 @@ window.rememberZipHandle = async function(wardId, handle) {
 window.loadZipHandle = loadWardZipHandle;
 window.hasOpenedCaseBefore = hasOpenedCaseBefore;
 window.markCaseOpenedBefore = markCaseOpenedBefore;
+window.encryptJSON = encryptJSON;
+window.decryptJSON = decryptJSON;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();
@@ -4905,8 +4929,14 @@ async function ensureFragment(name){
 
 async function showModal(modalId){
   await ensureFragment('common-modals');
-  document.getElementById(modalId).classList.add('show');
+  const el=document.getElementById(modalId);
+  if(el)el.classList.add('show');
 }
+
+async function showMigrationModal(){
+  await showModal('migrationModal');
+}
+window.showMigrationModal = showMigrationModal;
 
 // Fills a ward-name <datalist> with the distinct names already on file, so
 // typing offers them as autocomplete. A ward routinely has several forms
@@ -8444,6 +8474,10 @@ async function initApp(){
   setupDragAndDropImport();
   notifyProbateGuardianTabStateChanged();
   window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
+  if(_needsMigrationModal){
+    _needsMigrationModal=false;
+    await showMigrationModal();
+  }
 }
 
 // Accessibility: Link labels to inputs that have IDs but no for attribute
