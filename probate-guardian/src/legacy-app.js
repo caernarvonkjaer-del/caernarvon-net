@@ -2651,13 +2651,17 @@ async function decryptJSONWithKey(packed,key){
 // Returns the FileSystemFileHandle used (so it can be remembered for silent
 // re-writes later), or null when falling back to a plain Downloads-folder
 // download (no handle exists in that path).
-async function saveBlobAs(blob,suggestedName){
+async function saveBlobAs(blob,suggestedName,preWriteValidator){
   if(window.showSaveFilePicker){
     try{
       const handle=await showSaveFilePicker({
         suggestedName,
         types:[{description:'Probate Guardian data file',accept:{'application/octet-stream':['.sav']}}]
       });
+      if(typeof preWriteValidator==='function'){
+        const proceed=await preWriteValidator(handle);
+        if(!proceed)return null;
+      }
       const writable=await handle.createWritable();
       await writable.write(blob);
       await writable.close();
@@ -3148,19 +3152,23 @@ async function saveBackupNow(){
   try{
     const blob=await buildWardZipBlob(activeWard.wardId);
     const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
-    const handle=await saveBlobAs(blob,`${stem}_backup.sav`);
-    if(handle){
+    const preWriteValidator=async (pickedHandle)=>{
       const archiveHandle=await loadArchiveZipHandle();
-      if(archiveHandle&&typeof handle.isSameEntry==='function'){
+      if(archiveHandle&&typeof pickedHandle.isSameEntry==='function'){
         try{
-          if(await handle.isSameEntry(archiveHandle)&&guardianData.wards.length>1){
-            const proceed=confirm('Warning: You selected your case file archive containing multiple wards. Overwriting it with this single ward will replace the other wards on disk. Are you sure you want to overwrite?');
-            if(!proceed)return;
+          if(await pickedHandle.isSameEntry(archiveHandle)&&guardianData.wards.length>1){
+            return confirm('Warning: You selected your case file archive containing multiple wards. Overwriting it with this single ward will replace the other wards on disk. Are you sure you want to overwrite?');
           }
         }catch(e){/* non-critical */}
       }
-      await rememberWardZipHandle(activeWard.wardId,handle);
+      return true;
+    };
+    const handle=await saveBlobAs(blob,`${stem}_backup.sav`,preWriteValidator);
+    if(!handle){
+      // Cancelled by user in file picker or confirmation dialog
+      return;
     }
+    await rememberWardZipHandle(activeWard.wardId,handle);
     _dirtySinceExport=false;
     clearSessionRestoreCache();
     hideAutoExportReminder();

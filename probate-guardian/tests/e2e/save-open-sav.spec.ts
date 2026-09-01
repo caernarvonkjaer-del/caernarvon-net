@@ -642,4 +642,84 @@ test.describe('per-ward save file (version 3)', () => {
       await context.close();
     }
   });
+
+  test('saveBlobAs preWriteValidator halts createWritable and write when user cancels overwrite', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Ward First');
+      await createWard(page, 'Ward Second');
+
+      const testResult = await page.evaluate(async () => {
+        let writeCallCount = 0;
+        let writtenBytes = 0;
+        const { blob: multiWardBlob } = await (window as any).buildExportZipBlob();
+
+        const archiveHandle = {
+          name: 'case-archive.sav',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          isSameEntry: async (other: any) => other && other.name === 'case-archive.sav',
+          getFile: async () => new File([multiWardBlob], 'case-archive.sav', { type: 'application/octet-stream' }),
+          createWritable: async () => ({
+            write: async (chunk: any) => {
+              writeCallCount++;
+              writtenBytes = chunk.size || chunk.byteLength || 0;
+            },
+            close: async () => {}
+          })
+        };
+
+        // Arm archive handle
+        await (window as any).rememberArchiveZipHandle(archiveHandle);
+
+        // Mock showSaveFilePicker to return the same archiveHandle (as if user picked it in the file dialog)
+        (window as any).showSaveFilePicker = async () => archiveHandle;
+
+        // Mock confirm to simulate user clicking "Cancel" (aborting overwrite)
+        let confirmCalled = false;
+        (window as any).confirm = () => {
+          confirmCalled = true;
+          return false; // user rejects overwriting multi-ward archive
+        };
+
+        const activeWard = (window as any).guardianData.wards[0];
+        const singleWardBlob = await (window as any).buildWardZipBlob(activeWard.wardId);
+        const preWriteValidator = async (pickedHandle: any) => {
+          const loadedArchive = await (window as any).loadArchiveZipHandle();
+          if (loadedArchive && typeof pickedHandle.isSameEntry === 'function') {
+            if (await pickedHandle.isSameEntry(loadedArchive) && (window as any).guardianData.wards.length > 1) {
+              return (window as any).confirm('Warning');
+            }
+          }
+          return true;
+        };
+
+        const resultHandle = await (window as any).saveBlobAs(singleWardBlob, 'test.sav', preWriteValidator);
+        const archiveStillArmed = !!(await (window as any).loadArchiveZipHandle());
+        const wardArmed = !!(await (window as any).loadWardZipHandle(activeWard.wardId));
+
+        return {
+          confirmCalled,
+          resultHandle: !!resultHandle,
+          writeCallCount,
+          writtenBytes,
+          archiveStillArmed,
+          wardArmed
+        };
+      });
+
+      expect(testResult.confirmCalled).toBe(true);
+      expect(testResult.resultHandle).toBe(false);
+      expect(testResult.writeCallCount).toBe(0);
+      expect(testResult.writtenBytes).toBe(0);
+      expect(testResult.archiveStillArmed).toBe(true);
+      expect(testResult.wardArmed).toBe(false);
+    } finally {
+      await context.close();
+    }
+  });
 });
