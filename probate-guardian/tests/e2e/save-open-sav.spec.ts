@@ -989,16 +989,82 @@ test.describe('per-ward save file (version 3)', () => {
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Bulk Ward Alpha');
-    await page.evaluate(() => (window as any).addWard('Bulk Ward Beta', 'simplified'));
+    await page.evaluate(() => {
+      (window as any).alert = () => {};
+      (window as any).addWard('Bulk Ward Beta', 'simplified');
+    });
 
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
     await expect(page.locator('.dashboard-export-all')).toBeVisible();
 
-    page.once('dialog', (d) => d.accept());
     const downloadPromise = page.waitForEvent('download');
     await page.click('.dashboard-export-all');
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe('guardianshipwarddata.sav');
+  });
+
+  test('dashboard single-ward backup uses preWriteValidator and protects archive from accidental overwrite', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Dash Ward A');
+      await createWard(page, 'Dash Ward B');
+
+      await page.evaluate(async () => {
+        (window as any).__writeCallCount = 0;
+        const { blob: multiWardBlob } = await (window as any).buildExportZipBlob();
+
+        const archiveHandle = {
+          name: 'case-archive.sav',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          isSameEntry: async (other: any) => other && other.name === 'case-archive.sav',
+          getFile: async () => new File([multiWardBlob], 'case-archive.sav', { type: 'application/octet-stream' }),
+          createWritable: async () => ({
+            write: async () => { (window as any).__writeCallCount++; },
+            close: async () => {}
+          })
+        };
+
+        await (window as any).rememberArchiveZipHandle(archiveHandle);
+        (window as any).showSaveFilePicker = async () => archiveHandle;
+
+        (window as any).__confirmCalled = false;
+        (window as any).confirm = () => {
+          (window as any).__confirmCalled = true;
+          return false; // reject overwrite
+        };
+        (window as any).alert = () => {};
+      });
+
+      await page.evaluate(() => (window as any).navigate('/dashboard'));
+      await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+      await page.locator('#dashboard-role').selectOption('professional');
+
+      const wardAId = await page.evaluate(() => (window as any).guardianData.wards.find((w: any) => w.wardName === 'Dash Ward A')?.wardId);
+      const backupBtn = page.locator(`[data-dashboard-action="backup"][data-ward-id="${wardAId}"]`).first();
+      await expect(backupBtn).toBeVisible();
+      await backupBtn.click();
+
+      await expect.poll(() => page.evaluate(() => (window as any).__confirmCalled)).toBe(true);
+
+      const result = await page.evaluate(async (id) => {
+        return {
+          writeCallCount: (window as any).__writeCallCount,
+          archiveStillArmed: !!(await (window as any).loadArchiveZipHandle()),
+          wardArmed: !!(await (window as any).loadWardZipHandle(id))
+        };
+      }, wardAId);
+
+      expect(result.writeCallCount).toBe(0);
+      expect(result.archiveStillArmed).toBe(true);
+      expect(result.wardArmed).toBe(false);
+    } finally {
+      await context.close();
+    }
   });
 });

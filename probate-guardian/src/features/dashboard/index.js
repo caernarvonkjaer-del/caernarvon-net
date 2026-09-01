@@ -707,7 +707,16 @@ async function exportSingleWardZip(wardId) {
     if (ward.wardId === guardianData.activeWardId) await flushPendingSave();
     const blob = await window.buildWardZipBlob(wardId);
     const stem = (ward.wardName || 'ward').trim().replace(/\s+/g, '_') || 'ward';
-    await saveBlobAs(blob, `${stem}_backup.sav`);
+    const validator = window.validateWardBackupOverwrite || null;
+    const handle = await saveBlobAs(blob, `${stem}_backup.sav`, validator);
+    if (handle && window.rememberWardZipHandle) {
+      await window.rememberWardZipHandle(wardId, handle);
+    }
+    if (ward.wardId === guardianData.activeWardId) {
+      if (window.clearSessionRestoreCache) window.clearSessionRestoreCache();
+      if (window.markCaseOpenedBefore) window.markCaseOpenedBefore();
+      updateLastSavedIndicator();
+    }
     auditLog('DATA_EXPORT', `Exported single ward "${ward.wardName}" to archive`, true);
     alert(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {

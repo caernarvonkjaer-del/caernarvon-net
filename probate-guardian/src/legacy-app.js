@@ -3119,6 +3119,19 @@ async function silentAutoExport(){
   }
 }
 
+async function validateWardBackupOverwrite(pickedHandle){
+  const archiveHandle=await loadArchiveZipHandle();
+  if(archiveHandle&&typeof pickedHandle.isSameEntry==='function'){
+    try{
+      if(await pickedHandle.isSameEntry(archiveHandle)&&guardianData.wards.length>1){
+        return confirm('Warning: You selected your case file archive containing multiple wards. Overwriting it with this single ward will replace the other wards on disk. Are you sure you want to overwrite?');
+      }
+    }catch(e){/* non-critical */}
+  }
+  return true;
+}
+window.validateWardBackupOverwrite = validateWardBackupOverwrite;
+
 // The banner's Save Backup Now button. Runs inside a click, so a user
 // gesture is available: re-authorizes the active ward's handle (or the archive
 // handle) with one small prompt, or falls back to Save As single-ward export.
@@ -3158,18 +3171,7 @@ async function saveBackupNow(){
   try{
     const blob=await buildWardZipBlob(activeWard.wardId);
     const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
-    const preWriteValidator=async (pickedHandle)=>{
-      const archiveHandle=await loadArchiveZipHandle();
-      if(archiveHandle&&typeof pickedHandle.isSameEntry==='function'){
-        try{
-          if(await pickedHandle.isSameEntry(archiveHandle)&&guardianData.wards.length>1){
-            return confirm('Warning: You selected your case file archive containing multiple wards. Overwriting it with this single ward will replace the other wards on disk. Are you sure you want to overwrite?');
-          }
-        }catch(e){/* non-critical */}
-      }
-      return true;
-    };
-    const handle=await saveBlobAs(blob,`${stem}_backup.sav`,preWriteValidator);
+    const handle=await saveBlobAs(blob,`${stem}_backup.sav`,validateWardBackupOverwrite);
     if(handle){
       await rememberWardZipHandle(activeWard.wardId,handle);
       clearSessionRestoreCache();
