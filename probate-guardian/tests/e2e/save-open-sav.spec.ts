@@ -215,6 +215,7 @@ test.describe('per-ward save file (version 3)', () => {
 
     expect(result.fileNames).toEqual(['auditLog.enc', 'manifest.json', 'ward.enc']);
     expect(result.manifest.format).toBe('probate-guardian-export');
+    expect(result.manifest.kind).toBe('ward');
     expect(result.manifest.version).toBe(3);
     expect(result.manifest.wardId).toBe(result.wardId);
     expect(result.manifest.wardName).toBe('V3 Format Ward');

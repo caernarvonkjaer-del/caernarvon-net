@@ -2758,6 +2758,7 @@ async function buildExportZipBlob(){
   zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
   zip.file('manifest.json',JSON.stringify({
     format:'probate-guardian-export',
+    kind:'archive',
     version:SAV_FORMAT_VERSION,
     exportedAt:new Date().toISOString(),
     securityMode:_securityMode,
@@ -2788,7 +2789,11 @@ async function buildWardZipBlob(wardId){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
   if(!ward)throw new Error(`buildWardZipBlob: ward "${wardId}" not found`);
 
-  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
+  // Unlike buildExportZipBlob(), do NOT cancel _saveTimer here. That
+  // function is on the saveData() → writeArchiveToHandle() recursion path
+  // and must cancel to avoid looping; this function is not. Cancelling
+  // here would silently drop a pending debounced save for the active ward
+  // if a non-active ward is exported within the debounce window.
 
   const salt=(await loadAppState('cryptoSalt'))||null;
   const verifier=(await loadAppState('cryptoVerifier'))||null;
@@ -2799,12 +2804,17 @@ async function buildWardZipBlob(wardId){
   // Only include audit entries tagged with this ward's id. Entries from
   // before wardId-tagging was added (or app-level events with no active
   // ward) are excluded — they're preserved in the version-2 "Export All"
-  // archive and in the session-restore cache.
+  // archive and in the session-restore cache. Note: this means a per-ward
+  // .sav is not a complete provenance record — unlock events and other
+  // app-level entries with no active ward are absent. If this file is
+  // ever used as a legal record, the "Export All" archive is the
+  // authoritative source.
   const wardAuditEntries=_auditLogEntries.filter(e=>e&&e.wardId===wardId);
   zip.file('auditLog.enc',await encryptJSON(wardAuditEntries));
 
   zip.file('manifest.json',JSON.stringify({
     format:'probate-guardian-export',
+    kind:'ward',
     version:WARD_FILE_VERSION,
     exportedAt:new Date().toISOString(),
     securityMode:_securityMode,
@@ -3473,8 +3483,11 @@ async function loadCaseFileAtLaunch(file){
 // by treating each absent piece as simply not set, per SAV_FORMAT_VERSION's
 // own comment. Version-3 per-ward files are delegated to loadWardFromSavZip.
 async function loadStateFromSavZip(zip,manifest,key){
-  // Version 3: per-ward file — single ward.enc, no wards[] index.
-  if(manifest.version>=3){
+  // Per-ward file (kind: 'ward') — single ward.enc, no wards[] index.
+  // Branching on kind rather than version keeps the version number
+  // monotonic within each kind: a future multi-ward format bump can go
+  // to version 3 without being misrouted here.
+  if(manifest.kind==='ward'){
     return loadWardFromSavZip(zip,manifest,key);
   }
   guardianData.wards=[];
@@ -3540,6 +3553,12 @@ async function loadStateFromSavZip(zip,manifest,key){
 // per-ward .sav file. The ward is merged into the in-memory guardianData:
 // if a ward with the same id already exists it's replaced; otherwise it's
 // appended. The audit log is merged (appended with deduplication by id).
+//
+// Note: today both callers (loadCaseFileAtLaunch and lockApp) run with
+// guardianData.wards empty, so the replace-by-id branch and audit dedup
+// never fire. The merge semantics are groundwork for a future "import
+// ward into current session" feature; they are structurally correct but
+// have no in-app UI path exercising them yet.
 async function loadWardFromSavZip(zip,manifest,key){
   // 1. Decrypt ward
   const wardFile=zip.file('ward.enc');
@@ -3564,7 +3583,13 @@ async function loadWardFromSavZip(zip,manifest,key){
     }catch(e){console.warn('Could not read guardian info from per-ward .sav file',e);}
   }
 
-  // 4. Set this ward as active
+  // 4. Mark this ward as active. This sets activeWardId directly rather
+  // than through activateWard(), so no ward lock is acquired here.
+  // That's correct: both callers — loadCaseFileAtLaunch (→ initApp) and
+  // lockApp — run activateWard(getActiveWard()) after this function
+  // returns, which acquires the lock and sets window.D. Do not add code
+  // between this function's return and that activateWard() call that
+  // assumes the lock is held or window.D is populated.
   guardianData.activeWardId=manifest.wardId||ward.wardId;
 
   // 5. Merge audit log entries (append, deduplicate by id)
