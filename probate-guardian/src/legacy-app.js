@@ -2660,14 +2660,18 @@ async function saveBlobAs(blob,suggestedName,preWriteValidator){
       });
       if(typeof preWriteValidator==='function'){
         const proceed=await preWriteValidator(handle);
-        if(!proceed)return null;
+        if(!proceed){
+          const abortErr=new Error('The user aborted a request.');
+          abortErr.name='AbortError';
+          throw abortErr;
+        }
       }
       const writable=await handle.createWritable();
       await writable.write(blob);
       await writable.close();
       return handle;
     }catch(e){
-      if(e&&e.name==='AbortError')throw e; // user cancelled the Save As dialog
+      if(e&&e.name==='AbortError')throw e; // user cancelled Save As or refused preWriteValidator
       // Some embedded/webview browser contexts (e.g. VS Code's Simple Browser)
       // let showSaveFilePicker resolve but then refuse createWritable's actual
       // write permission. Fall back to a plain Downloads-folder download
@@ -3164,11 +3168,7 @@ async function saveBackupNow(){
       return true;
     };
     const handle=await saveBlobAs(blob,`${stem}_backup.sav`,preWriteValidator);
-    if(!handle){
-      // Cancelled by user in file picker or confirmation dialog
-      return;
-    }
-    await rememberWardZipHandle(activeWard.wardId,handle);
+    if(handle)await rememberWardZipHandle(activeWard.wardId,handle);
     _dirtySinceExport=false;
     clearSessionRestoreCache();
     hideAutoExportReminder();
@@ -4504,6 +4504,8 @@ window.rememberZipHandle = async function(wardId, handle) {
   throw new Error('rememberZipHandle requires (wardId, handle). Use rememberArchiveZipHandle(handle) for case archives.');
 };
 window.loadZipHandle = loadWardZipHandle;
+window.hasOpenedCaseBefore = hasOpenedCaseBefore;
+window.markCaseOpenedBefore = markCaseOpenedBefore;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();

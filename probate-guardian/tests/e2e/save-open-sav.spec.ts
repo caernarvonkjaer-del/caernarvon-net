@@ -643,7 +643,7 @@ test.describe('per-ward save file (version 3)', () => {
     }
   });
 
-  test('saveBlobAs preWriteValidator halts createWritable and write when user cancels overwrite', async ({ browser }) => {
+  test('saveBlobAs preWriteValidator halts createWritable, throws AbortError, and leaves archive untouched when user cancels overwrite', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -698,13 +698,19 @@ test.describe('per-ward save file (version 3)', () => {
           return true;
         };
 
-        const resultHandle = await (window as any).saveBlobAs(singleWardBlob, 'test.sav', preWriteValidator);
+        let caughtErrorName = null;
+        try {
+          await (window as any).saveBlobAs(singleWardBlob, 'test.sav', preWriteValidator);
+        } catch (e: any) {
+          caughtErrorName = e && e.name;
+        }
+
         const archiveStillArmed = !!(await (window as any).loadArchiveZipHandle());
         const wardArmed = !!(await (window as any).loadWardZipHandle(activeWard.wardId));
 
         return {
           confirmCalled,
-          resultHandle: !!resultHandle,
+          caughtErrorName,
           writeCallCount,
           writtenBytes,
           archiveStillArmed,
@@ -713,11 +719,54 @@ test.describe('per-ward save file (version 3)', () => {
       });
 
       expect(testResult.confirmCalled).toBe(true);
-      expect(testResult.resultHandle).toBe(false);
+      expect(testResult.caughtErrorName).toBe('AbortError');
       expect(testResult.writeCallCount).toBe(0);
       expect(testResult.writtenBytes).toBe(0);
       expect(testResult.archiveStillArmed).toBe(true);
       expect(testResult.wardArmed).toBe(false);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('saveBackupNow in fallback browser (no showSaveFilePicker) downloads and marks case saved', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Fallback Ward');
+
+      const result = await page.evaluate(async () => {
+        // Disable showSaveFilePicker to simulate Firefox / Safari
+        (window as any).showSaveFilePicker = undefined;
+
+        let alertMsg = '';
+        (window as any).alert = (msg: string) => { alertMsg = msg; };
+
+        // Mark dirty
+        (window as any).markDirtySinceExport();
+        const dirtyBefore = (window as any).pgHasUnsavedChanges();
+
+        // Call saveBackupNow
+        await (window as any).saveBackupNow();
+
+        const dirtyAfter = (window as any).pgHasUnsavedChanges();
+        const caseOpenedBefore = await (window as any).hasOpenedCaseBefore();
+
+        return {
+          dirtyBefore,
+          dirtyAfter,
+          caseOpenedBefore,
+          alertMsg
+        };
+      });
+
+      expect(result.dirtyBefore).toBe(true);
+      expect(result.dirtyAfter).toBe(false);
+      expect(result.caseOpenedBefore).toBe(true);
+      expect(result.alertMsg).toContain('Backup saved');
     } finally {
       await context.close();
     }
