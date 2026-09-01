@@ -3352,8 +3352,12 @@ async function importGuardianDataZip(file){
       ? `Imported ward "${imported[0].wardName||'ward'}" from file`
       : `Imported ${imported.length} form(s) from archive`;
     auditLog('DATA_IMPORT',auditMsg,true);
-    if(!manifest.kind){
-      await showMigrationModal();
+    if(!manifest.kind&&!manifest.wardId&&!(await hasSeenMigrationModal())){
+      try{
+        await showMigrationModal();
+      }catch(e){
+        console.warn('Could not show migration modal on import:',e);
+      }
     }
     alert(kind==='ward'?`Import complete: "${imported[0].wardName||'ward'}" loaded.`:`Import complete: ${imported.length} form(s) loaded.`);
   }catch(e){
@@ -3488,7 +3492,7 @@ async function checkSessionRestoreCacheAtLaunch(){
 // A valid remembered grant permits silent reopen; an expired grant needs a
 // user click, and a missing or stale handle falls back to the file picker.
 const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags';
-const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle';
+const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle', LAUNCH_PREF_KEY_MIGRATION_SEEN='migrationModalSeen';
 const REMEMBERED_FILE_TIMEOUT_MS=10000;
 let _rememberedFileUnavailable=false;
 function _launchPrefDb(){
@@ -3531,6 +3535,13 @@ async function hasOpenedCaseBefore(){
 }
 async function markCaseOpenedBefore(){
   try{await _launchPrefPut(LAUNCH_PREF_KEY_OPENED,true);}catch(e){/* non-critical */}
+}
+async function hasSeenMigrationModal(){
+  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_MIGRATION_SEEN))===true;}
+  catch(e){return false;}
+}
+async function markMigrationModalSeen(){
+  try{await _launchPrefPut(LAUNCH_PREF_KEY_MIGRATION_SEEN,true);}catch(e){/* non-critical */}
 }
 async function savePersistedWardZipHandle(wardId,handle){
   if(!wardId||!handle)return;
@@ -3731,7 +3742,7 @@ async function loadCaseFileAtLaunch(file){
     if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
     _launchStateResolved=true;
     _openedFileAtLaunch=true;
-    if(!manifest.kind)_needsMigrationModal=true;
+    if(!manifest.kind&&!manifest.wardId&&!(await hasSeenMigrationModal()))_needsMigrationModal=true;
     markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
     const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
@@ -4535,6 +4546,8 @@ window.rememberZipHandle = async function(wardId, handle) {
 window.loadZipHandle = loadWardZipHandle;
 window.hasOpenedCaseBefore = hasOpenedCaseBefore;
 window.markCaseOpenedBefore = markCaseOpenedBefore;
+window.hasSeenMigrationModal = hasSeenMigrationModal;
+window.markMigrationModalSeen = markMigrationModalSeen;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();
@@ -4936,6 +4949,7 @@ async function showModal(modalId){
 }
 
 async function showMigrationModal(){
+  await markMigrationModalSeen();
   await showModal('migrationModal');
 }
 window.showMigrationModal = showMigrationModal;
@@ -8478,7 +8492,11 @@ async function initApp(){
   window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
   if(_needsMigrationModal){
     _needsMigrationModal=false;
-    await showMigrationModal();
+    try{
+      await showMigrationModal();
+    }catch(e){
+      console.warn('Could not show migration modal at launch:',e);
+    }
   }
 }
 

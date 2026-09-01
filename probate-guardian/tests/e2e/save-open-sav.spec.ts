@@ -493,6 +493,15 @@ test.describe('per-ward save file (version 3)', () => {
       // Click "Got it" to dismiss
       await reopenPage.click('#migration-modal-ok-btn');
       await expect(reopenPage.locator('#migrationModal')).not.toHaveClass(/show/);
+
+      // Reopening in the same context (where migrationModalSeen was persisted) must NOT show the modal again
+      const secondPage = await reopenContext.newPage();
+      await gotoApp(secondPage);
+      await secondPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+      await secondPage.setInputFiles('#startup-open-input', savPath);
+      await expect(secondPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+      await expect(secondPage.locator('#ward-selector')).toHaveValue('V2 Legacy Ward');
+      await expect(secondPage.locator('#migrationModal.show')).toHaveCount(0);
     } finally {
       await reopenContext.close();
     }
