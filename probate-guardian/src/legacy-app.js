@@ -2520,21 +2520,41 @@ async function saveData(){
   // beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport)await saveSessionRestoreCache();
   if(!activeWard)return;
-  const handle=await loadZipHandle(activeWard.wardId);
-  if(!handle)return; // nothing open to write to yet — see the function comment above
-  try{
-    const perm=await handle.queryPermission({mode:'readwrite'});
-    if(perm!=='granted'){
-      await refreshAutoSaveArmedStatus(); // needs a user gesture to re-grant; surfaced, not fatal
-      return;
+  const wardHandle=await loadWardZipHandle(activeWard.wardId);
+  if(wardHandle){
+    try{
+      const perm=await wardHandle.queryPermission({mode:'readwrite'});
+      if(perm!=='granted'){
+        await refreshAutoSaveArmedStatus();
+        return;
+      }
+      await writeWardToHandle(activeWard.wardId,wardHandle,true);
+      _consecutiveSaveFailures=0;
+      hideSaveError();
+    }catch(e){
+      console.error('save failed',e);
+      _consecutiveSaveFailures++;
+      if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
     }
-    await writeWardToHandle(activeWard.wardId,handle,true);
-    _consecutiveSaveFailures=0;
-    hideSaveError();
-  }catch(e){
-    console.error('save failed',e);
-    _consecutiveSaveFailures++;
-    if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
+    return;
+  }
+  const archiveHandle=await loadArchiveZipHandle();
+  if(archiveHandle){
+    try{
+      const perm=await archiveHandle.queryPermission({mode:'readwrite'});
+      if(perm!=='granted'){
+        await refreshAutoSaveArmedStatus();
+        return;
+      }
+      await writeArchiveToHandle(archiveHandle,true);
+      _consecutiveSaveFailures=0;
+      hideSaveError();
+    }catch(e){
+      console.error('save failed',e);
+      _consecutiveSaveFailures++;
+      if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
+    }
+    return;
   }
 }
 
@@ -2647,46 +2667,65 @@ async function saveBlobAs(blob,suggestedName){
   return null;
 }
 
-// The active handles live in memory keyed by wardId, and are also saved
-// in pg-launch-pref when supported. A later launch may reuse them if the
-// browser still grants access; write permission can still require a fresh
-// user gesture.
+// The active handles live in memory (keyed by wardId for per-ward files, or in
+// _archiveZipHandle for whole-case multi-ward archives) and are persisted to
+// IndexedDB (pg-launch-pref).
 let _wardZipHandles=new Map();
-async function rememberZipHandle(wardIdOrHandle,maybeHandle){
-  let wardId,handle;
-  if(typeof wardIdOrHandle==='object'&&wardIdOrHandle&&!maybeHandle){
-    handle=wardIdOrHandle;
-    wardId=guardianData.activeWardId;
-  }else{
-    wardId=wardIdOrHandle;
-    handle=maybeHandle;
-  }
-  if(wardId&&handle){
-    _wardZipHandles.set(wardId,handle);
-    await savePersistedZipHandle(wardId,handle);
-  }else if(handle){
-    await savePersistedZipHandle(null,handle);
-  }
+let _archiveZipHandle=null;
+
+async function rememberWardZipHandle(wardId,handle){
+  if(!wardId||!handle)return;
+  _wardZipHandles.set(wardId,handle);
+  await savePersistedWardZipHandle(wardId,handle);
   await refreshAutoSaveArmedStatus();
 }
-async function loadZipHandle(wardId=guardianData.activeWardId){
-  if(wardId&&_wardZipHandles.has(wardId)){
+
+async function loadWardZipHandle(wardId=guardianData.activeWardId){
+  if(!wardId)return null;
+  if(_wardZipHandles.has(wardId)){
     return _wardZipHandles.get(wardId);
   }
-  if(wardId){
-    const handle=await loadPersistedZipHandle(wardId);
-    if(handle){
-      _wardZipHandles.set(wardId,handle);
-      return handle;
-    }
-    return null;
+  const handle=await loadPersistedWardZipHandle(wardId);
+  if(handle){
+    _wardZipHandles.set(wardId,handle);
+    return handle;
   }
-  return await loadPersistedZipHandle(null);
+  return null;
+}
+
+async function forgetWardZipHandle(wardId){
+  if(!wardId)return;
+  _wardZipHandles.delete(wardId);
+  await forgetPersistedWardZipHandle(wardId);
+  await refreshAutoSaveArmedStatus();
+}
+
+async function rememberArchiveZipHandle(handle){
+  if(!handle)return;
+  _archiveZipHandle=handle;
+  await savePersistedArchiveZipHandle(handle);
+  await refreshAutoSaveArmedStatus();
+}
+
+async function loadArchiveZipHandle(){
+  if(_archiveZipHandle)return _archiveZipHandle;
+  const handle=await loadPersistedArchiveZipHandle();
+  if(handle){
+    _archiveZipHandle=handle;
+    return handle;
+  }
+  return null;
+}
+
+async function forgetArchiveZipHandle(){
+  _archiveZipHandle=null;
+  await forgetPersistedArchiveZipHandle();
+  await refreshAutoSaveArmedStatus();
 }
 
 // True when a background write can happen with no user interaction: a file
-// handle is known for the active ward AND the browser still grants write
-// permission on it.
+// handle is known (either for the active ward or for the case archive) AND
+// the browser still grants write permission on it.
 let _autoSaveArmed=false;
 async function refreshAutoSaveArmedStatus(){
   let armed=false;
@@ -2694,10 +2733,13 @@ async function refreshAutoSaveArmedStatus(){
   let handle=null;
   try{
     if(activeWardId){
-      handle=await loadZipHandle(activeWardId);
-      if(handle&&handle.queryPermission){
-        armed=(await handle.queryPermission({mode:'readwrite'}))==='granted';
-      }
+      handle=await loadWardZipHandle(activeWardId);
+    }
+    if(!handle){
+      handle=await loadArchiveZipHandle();
+    }
+    if(handle&&handle.queryPermission){
+      armed=(await handle.queryPermission({mode:'readwrite'}))==='granted';
     }
   }catch(e){/* treat as not armed */}
   _autoSaveArmed=armed;
@@ -2931,7 +2973,7 @@ async function exportGuardianDataZip(){
     rollback=await beginRecordingExport(`Exported ${count} form(s) to archive`);
     const {blob}=await buildExportZipBlob();
     const handle=await saveBlobAs(blob,'guardianshipwarddata.sav');
-    if(handle)await rememberZipHandle(handle);
+    if(handle)await rememberArchiveZipHandle(handle);
     _dirtySinceExport=false;
     clearSessionRestoreCache(); // this state is now safely in a .sav file
     hideAutoExportReminder();
@@ -3001,20 +3043,29 @@ async function writeArchiveToHandle(handle,viaTimer){
 }
 
 // Tries to silently re-write the remembered file handle for the active ward
-// — no dialog, no user gesture needed, as long as the browser still grants
-// write permission on that handle. Returns false whenever silent writing
-// isn't possible, so caller falls back to on-screen reminder banner.
+// (or the case archive if no per-ward file is armed) — no dialog, no user
+// gesture needed, as long as the browser still grants write permission.
 async function silentAutoExport(){
   try{
     if(typeof JSZip==='undefined')return false;
     const activeWard=getActiveWard();
-    if(!activeWard)return false;
-    const handle=await loadZipHandle(activeWard.wardId);
-    if(!handle)return false;
-    const perm=await handle.queryPermission({mode:'readwrite'});
-    if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;} // needs a user gesture to (re)grant
-    await writeWardToHandle(activeWard.wardId,handle,true);
-    return true;
+    if(activeWard){
+      const wardHandle=await loadWardZipHandle(activeWard.wardId);
+      if(wardHandle){
+        const perm=await wardHandle.queryPermission({mode:'readwrite'});
+        if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;}
+        await writeWardToHandle(activeWard.wardId,wardHandle,true);
+        return true;
+      }
+    }
+    const archiveHandle=await loadArchiveZipHandle();
+    if(archiveHandle){
+      const perm=await archiveHandle.queryPermission({mode:'readwrite'});
+      if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;}
+      await writeArchiveToHandle(archiveHandle,true);
+      return true;
+    }
+    return false;
   }catch(e){
     console.warn('Silent auto-export failed, will show reminder instead',e);
     await refreshAutoSaveArmedStatus();
@@ -3023,8 +3074,8 @@ async function silentAutoExport(){
 }
 
 // The banner's Save Backup Now button. Runs inside a click, so a user
-// gesture is available: re-authorizes the active ward's handle with one small
-// prompt, or falls back to Save As single-ward export if no handle exists.
+// gesture is available: re-authorizes the active ward's handle (or the archive
+// handle) with one small prompt, or falls back to Save As single-ward export.
 async function saveBackupNow(){
   const activeWard=getActiveWard();
   if(!activeWard){
@@ -3032,24 +3083,37 @@ async function saveBackupNow(){
     return;
   }
   try{
-    const handle=await loadZipHandle(activeWard.wardId);
-    if(handle&&handle.requestPermission){
-      const perm=await handle.requestPermission({mode:'readwrite'});
+    const wardHandle=await loadWardZipHandle(activeWard.wardId);
+    if(wardHandle&&wardHandle.requestPermission){
+      const perm=await wardHandle.requestPermission({mode:'readwrite'});
       if(perm==='granted'){
-        await writeWardToHandle(activeWard.wardId,handle,false);
+        await writeWardToHandle(activeWard.wardId,wardHandle,false);
         alert(`Backup saved: ${activeWard.wardName||'Ward'} written to your backup file.`);
         return;
       }
     }
   }catch(e){
-    console.warn('Reusing remembered backup file failed, falling back to Save As',e);
+    console.warn('Reusing remembered ward backup file failed',e);
+  }
+  try{
+    const archiveHandle=await loadArchiveZipHandle();
+    if(archiveHandle&&archiveHandle.requestPermission){
+      const perm=await archiveHandle.requestPermission({mode:'readwrite'});
+      if(perm==='granted'){
+        const count=await writeArchiveToHandle(archiveHandle,false);
+        alert(`Backup saved: ${count} form(s) written to your backup file.`);
+        return;
+      }
+    }
+  }catch(e){
+    console.warn('Reusing remembered archive backup file failed',e);
   }
   // If no handle or permission denied, save single ward via picker
   try{
     const blob=await buildWardZipBlob(activeWard.wardId);
     const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
     const handle=await saveBlobAs(blob,`${stem}_backup.sav`);
-    if(handle)await rememberZipHandle(activeWard.wardId,handle);
+    if(handle)await rememberWardZipHandle(activeWard.wardId,handle);
     _dirtySinceExport=false;
     clearSessionRestoreCache();
     hideAutoExportReminder();
@@ -3387,53 +3451,27 @@ async function hasOpenedCaseBefore(){
 async function markCaseOpenedBefore(){
   try{await _launchPrefPut(LAUNCH_PREF_KEY_OPENED,true);}catch(e){/* non-critical */}
 }
-async function savePersistedZipHandle(wardIdOrHandle,maybeHandle){
-  let wardId,handle;
-  if(typeof wardIdOrHandle==='object'&&wardIdOrHandle&&!maybeHandle){
-    handle=wardIdOrHandle;
-    wardId=guardianData.activeWardId;
-  }else{
-    wardId=wardIdOrHandle;
-    handle=maybeHandle;
-  }
-  try{
-    if(wardId&&handle){
-      await _launchPrefPut('wardHandle_'+wardId,handle);
-    }
-    if(handle){
-      await _launchPrefPut(LAUNCH_PREF_KEY_HANDLE,handle);
-    }
-  }catch(e){/* non-critical */}
+async function savePersistedWardZipHandle(wardId,handle){
+  if(!wardId||!handle)return;
+  try{await _launchPrefPut('wardHandle_'+wardId,handle);}catch(e){/* non-critical */}
 }
-async function loadPersistedZipHandle(wardId=guardianData.activeWardId){
-  try{
-    if(wardId){
-      const wardHandle=await _launchPrefGet('wardHandle_'+wardId);
-      if(wardHandle)return wardHandle;
-      return null;
-    }
-    return (await _launchPrefGet(LAUNCH_PREF_KEY_HANDLE))||null;
-  }catch(e){
-    return null;
-  }
+async function loadPersistedWardZipHandle(wardId){
+  if(!wardId)return null;
+  try{return (await _launchPrefGet('wardHandle_'+wardId))||null;}catch(e){return null;}
 }
-async function forgetPersistedZipHandle(wardIdOrHandle,maybeHandle){
-  let wardId,handle;
-  if(typeof wardIdOrHandle==='object'&&wardIdOrHandle&&!maybeHandle){
-    handle=wardIdOrHandle;
-    wardId=guardianData.activeWardId;
-  }else{
-    wardId=wardIdOrHandle;
-    handle=maybeHandle;
-  }
-  if(wardId){
-    _wardZipHandles.delete(wardId);
-    try{await _launchPrefDelete('wardHandle_'+wardId);}catch(e){/* non-critical */}
-  }else{
-    _wardZipHandles.clear();
-  }
+async function forgetPersistedWardZipHandle(wardId){
+  if(!wardId)return;
+  try{await _launchPrefDelete('wardHandle_'+wardId);}catch(e){/* non-critical */}
+}
+async function savePersistedArchiveZipHandle(handle){
+  if(!handle)return;
+  try{await _launchPrefPut(LAUNCH_PREF_KEY_HANDLE,handle);}catch(e){/* non-critical */}
+}
+async function loadPersistedArchiveZipHandle(){
+  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_HANDLE))||null;}catch(e){return null;}
+}
+async function forgetPersistedArchiveZipHandle(){
   try{await _launchPrefDelete(LAUNCH_PREF_KEY_HANDLE);}catch(e){/* non-critical */}
-  await refreshAutoSaveArmedStatus();
 }
 async function runRememberedHandleOperation(operation,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
   let timeout;
@@ -3453,7 +3491,7 @@ function readRememberedFile(handle,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
 }
 async function handleRememberedFileFailure(handle,error){
   _rememberedFileUnavailable=true;
-  await forgetPersistedZipHandle(null,handle);
+  await forgetPersistedArchiveZipHandle();
   console.warn('Remembered case file is unavailable; it must be selected again',error);
 }
 
@@ -3464,13 +3502,20 @@ async function handleRememberedFileFailure(handle,error){
 async function trySilentReopen(){
   let handle=null;
   try{
-    handle=await loadPersistedZipHandle(null);
+    handle=await loadPersistedArchiveZipHandle();
     if(!handle||!handle.queryPermission)return false;
     if((await runRememberedHandleOperation(()=>handle.queryPermission({mode:'read'})))!=='granted')return false;
     const file=await readRememberedFile(handle);
-    const ok=await loadCaseFileAtLaunch(file);
-    if(ok)await rememberZipHandle(guardianData.activeWardId,handle);
-    return ok;
+    const res=await loadCaseFileAtLaunch(file);
+    if(res&&res.ok){
+      if(res.kind==='ward'&&res.wardId){
+        await rememberWardZipHandle(res.wardId,handle);
+      }else{
+        await rememberArchiveZipHandle(handle);
+      }
+      return true;
+    }
+    return false;
   }catch(e){
     await handleRememberedFileFailure(handle,e);
     return false;
@@ -3517,14 +3562,18 @@ function startNewCaseAtLaunch(){
 // handle — a small native "Allow?" prompt, not the full picker — before
 // falling back to showOpenFilePicker() itself.
 async function openCaseFileAtLaunch(){
-  const remembered=await loadPersistedZipHandle(null);
+  const remembered=await loadPersistedArchiveZipHandle();
   if(remembered&&remembered.requestPermission){
     try{
       if((await runRememberedHandleOperation(()=>remembered.requestPermission({mode:'read'})))==='granted'){
         const file=await readRememberedFile(remembered);
-        const ok=await loadCaseFileAtLaunch(file);
-        if(ok){
-          await rememberZipHandle(guardianData.activeWardId,remembered);
+        const res=await loadCaseFileAtLaunch(file);
+        if(res&&res.ok){
+          if(res.kind==='ward'&&res.wardId){
+            await rememberWardZipHandle(res.wardId,remembered);
+          }else{
+            await rememberArchiveZipHandle(remembered);
+          }
           _resolveStartupChoice();
           return;
         }
@@ -3540,9 +3589,13 @@ async function openCaseFileAtLaunch(){
         types:[{description:'Probate Guardian data file',accept:{'application/octet-stream':['.sav']}}]
       });
       const file=await handle.getFile();
-      const ok=await loadCaseFileAtLaunch(file);
-      if(ok){
-        await rememberZipHandle(guardianData.activeWardId,handle);
+      const res=await loadCaseFileAtLaunch(file);
+      if(res&&res.ok){
+        if(res.kind==='ward'&&res.wardId){
+          await rememberWardZipHandle(res.wardId,handle);
+        }else{
+          await rememberArchiveZipHandle(handle);
+        }
         _resolveStartupChoice();
       }
     }catch(e){
@@ -4382,6 +4435,24 @@ async function unloadWard() {
 
 window.activateWard = activateWard;
 window.unloadWard = unloadWard;
+window.rememberWardZipHandle = rememberWardZipHandle;
+window.loadWardZipHandle = loadWardZipHandle;
+window.forgetWardZipHandle = forgetWardZipHandle;
+window.rememberArchiveZipHandle = rememberArchiveZipHandle;
+window.loadArchiveZipHandle = loadArchiveZipHandle;
+window.forgetArchiveZipHandle = forgetArchiveZipHandle;
+window.rememberZipHandle = async function(wardIdOrHandle, maybeHandle) {
+  if (maybeHandle) {
+    await rememberWardZipHandle(wardIdOrHandle, maybeHandle);
+  } else if (typeof wardIdOrHandle === 'object' && wardIdOrHandle) {
+    if (guardianData.activeWardId) {
+      await rememberWardZipHandle(guardianData.activeWardId, wardIdOrHandle);
+    } else {
+      await rememberArchiveZipHandle(wardIdOrHandle);
+    }
+  }
+};
+window.loadZipHandle = loadWardZipHandle;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();
@@ -4571,11 +4642,13 @@ async function deleteWard(wardId){
   guardianData.wards.splice(idx,1);
   await deleteWardFromState(wardId);
   deleteAutosaveFile(wardId);
+  await forgetWardZipHandle(wardId);
 
   updateSidebar();
   notifyProbateGuardianTabStateChanged();
   navigate('/dashboard');
 }
+window.deleteWard = deleteWard;
 
 async function renameWard(wardId,newName){
   const ward=guardianData.wards.find(w=>w.wardId===wardId);
