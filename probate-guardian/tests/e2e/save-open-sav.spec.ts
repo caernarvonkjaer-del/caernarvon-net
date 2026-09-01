@@ -304,6 +304,51 @@ test.describe('per-ward save file (version 3)', () => {
     expect(result.hasWardBEntry).toBe(false);
   });
 
+  test('per-ward handle routing: rememberZipHandle arms active ward handle and arming status updates on switch', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Handle Ward 1');
+
+    const status1 = await page.locator('#auto-save-armed-indicator').textContent();
+    expect(status1).toContain('Auto-save:');
+
+    // Create a mock handle for Ward 1
+    const ward1Id = await page.evaluate(() => (window as any).guardianData.activeWardId);
+    await page.evaluate(async (id) => {
+      const mockHandle = {
+        name: 'handle-ward-1.sav',
+        queryPermission: async () => 'granted',
+        requestPermission: async () => 'granted',
+        createWritable: async () => ({
+          write: async () => {},
+          close: async () => {}
+        })
+      };
+      await (window as any).rememberZipHandle(id, mockHandle);
+    }, ward1Id);
+
+    await expect(page.locator('#auto-save-armed-indicator')).toHaveText(/Auto-save: ready ✓ \(handle-ward-1\.sav\)/);
+
+    // Add second ward and switch to it
+    await page.evaluate(async () => {
+      await (window as any).addWard('Handle Ward 2', 'guardian');
+    });
+
+    // On ward 2, ward 1's handle is not armed
+    const status2 = await page.locator('#auto-save-armed-indicator').textContent();
+    expect(status2).not.toContain('handle-ward-1.sav');
+
+    // Switch back to Ward 1
+    const ward1 = await page.evaluate((id) => (window as any).guardianData.wards.find((w: any) => w.wardId === id), ward1Id);
+    await page.evaluate(async (w) => {
+      await (window as any).activateWard(w);
+    }, ward1);
+
+    // Ward 1's handle is restored and armed
+    await expect(page.locator('#auto-save-armed-indicator')).toHaveText(/Auto-save: ready ✓ \(handle-ward-1\.sav\)/);
+  });
+
   test('version-2 multi-ward files still open correctly (backward compatibility)', async ({ page }) => {
     // This is the existing unencrypted round-trip test — just verify it
     // still works now that loadStateFromSavZip has a v3 branch.
