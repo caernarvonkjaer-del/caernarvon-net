@@ -139,13 +139,15 @@ function dashboardToolbarHTML() {
 }
 
 function dashboardHeaderHTML() {
-  const activeRows = projectWards(getGuardianData().wards).filter(row => !row.isArchived);
+  const wards = getGuardianData().wards;
+  const activeRows = projectWards(wards).filter(row => !row.isArchived);
   const supervisorFilter = _dashboardPreferences.role === 'assistant'
     ? assignmentFilterHTML(activeRows, 'Working on behalf of', 'dashboard-supervisor-control')
     : '';
   const activeWardId = getGuardianData().activeWardId;
-  const activeWard = getGuardianData().wards.find(w => w.wardId === activeWardId);
+  const activeWard = wards.find(w => w.wardId === activeWardId);
   const closeLoadedWardBtn = activeWard ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-close-ward" data-dashboard-action="close-ward" title="Close active ward and release lock">${ic('x', 14)} Close Active Ward</button>` : '';
+  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all wards into a single combined .sav archive">${ic('archive', 14)} Export All Wards</button>` : '';
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
       <div class="dashboard-page-kicker">Compliance overview</div>
@@ -154,6 +156,7 @@ function dashboardHeaderHTML() {
     </div>
     <div class="dashboard-header-actions">
       ${closeLoadedWardBtn}
+      ${exportAllBtn}
       ${roleControlHTML()}
       ${supervisorFilter}
       <button type="button" class="btn btn-sm btn-primary dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>
@@ -762,6 +765,9 @@ function handleDashboardClick(event) {
     case 'add-ward': showAddWardModal(); break;
     case 'archive': toggleDashboardWardArchived(wardId); break;
     case 'backup': exportSingleWardZip(wardId); break;
+    case 'export-all':
+      if (window.exportGuardianDataZip) window.exportGuardianDataZip();
+      break;
     case 'close-ward':
       if (window.unloadWard) {
         window.unloadWard().then(() => renderDashboardPage());

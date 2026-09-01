@@ -3635,9 +3635,12 @@ function _resolveStartupChoice(){
   const resolve=_startupChoiceResolve;_startupChoiceResolve=null;
   if(resolve)resolve();
 }
-function startNewCaseAtLaunch(){
+function startNewWardAtLaunch(){
   _resolveStartupChoice();
 }
+const startNewCaseAtLaunch = startNewWardAtLaunch;
+window.startNewWardAtLaunch = startNewWardAtLaunch;
+window.startNewCaseAtLaunch = startNewCaseAtLaunch;
 
 // Chrome/Edge: showOpenFilePicker() returns a handle that supports
 // createWritable(), so opening a file arms silent auto-save immediately.
@@ -3654,7 +3657,7 @@ function startNewCaseAtLaunch(){
 // gesture, so it can re-request permission on that SAME remembered
 // handle — a small native "Allow?" prompt, not the full picker — before
 // falling back to showOpenFilePicker() itself.
-async function openCaseFileAtLaunch(){
+async function openWardFileAtLaunch(){
   const remembered=await loadPersistedArchiveZipHandle();
   if(remembered&&remembered.requestPermission){
     try{
@@ -3693,13 +3696,17 @@ async function openCaseFileAtLaunch(){
       }
     }catch(e){
       if(e&&e.name==='AbortError')return; // user cancelled the picker — leave the choice screen up
-      console.error('Open case file failed',e);
+      console.error('Open ward file failed',e);
       alert('Could not open that file: '+(e&&e.message||e));
     }
     return;
   }
   document.getElementById('startup-open-input').click();
 }
+const openCaseFileAtLaunch = openWardFileAtLaunch;
+window.openWardFileAtLaunch = openWardFileAtLaunch;
+window.openCaseFileAtLaunch = openCaseFileAtLaunch;
+
 async function handleStartupOpenInputChange(input){
   const file=input.files[0];
   input.value='';
@@ -3710,6 +3717,7 @@ async function handleStartupOpenInputChange(input){
   const ok=await loadCaseFileAtLaunch(file);
   if(ok)_resolveStartupChoice();
 }
+window.handleStartupOpenInputChange = handleStartupOpenInputChange;
 
 // Shared by both pickers above: validate, parse, ask for a password if the
 // file is encrypted, then hand off to loadStateFromSavZip(). Returns true

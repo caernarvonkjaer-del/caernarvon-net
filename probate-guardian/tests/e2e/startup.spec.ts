@@ -9,6 +9,9 @@ test.describe('startup', () => {
     await gotoApp(page);
 
     await expect(page.locator('#startup-choice-overlay')).toHaveClass(/show/);
+    await expect(page.locator('#startup-choice-overlay')).toContainText('Open a Ward File (.sav)');
+    await expect(page.locator('#startup-choice-overlay')).toContainText('Start a New Ward');
+    await expect(page.locator('#startup-choice-overlay')).toContainText('every ward lives in its own .sav file');
     await expect(page.locator('#startup-newcase-btn')).toBeVisible();
     expect(errors).toEqual([]);
   });

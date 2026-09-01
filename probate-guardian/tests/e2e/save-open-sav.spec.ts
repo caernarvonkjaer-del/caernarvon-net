@@ -983,4 +983,22 @@ test.describe('per-ward save file (version 3)', () => {
       await context.close();
     }
   });
+
+  test('dashboard Export All Wards button exports multi-ward archive', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Bulk Ward Alpha');
+    await page.evaluate(() => (window as any).addWard('Bulk Ward Beta', 'simplified'));
+
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+    await expect(page.locator('.dashboard-export-all')).toBeVisible();
+
+    page.once('dialog', (d) => d.accept());
+    const downloadPromise = page.waitForEvent('download');
+    await page.click('.dashboard-export-all');
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('guardianshipwarddata.sav');
+  });
 });

@@ -32,12 +32,13 @@ export async function gotoApp(page: Page): Promise<void> {
   }
 }
 
-/** Fresh install / brand-new browser: dismiss the startup screen with "Start a New Case". */
+/** Fresh install / brand-new browser: dismiss the startup screen with "Start a New Ward". */
 export async function startNewCase(page: Page): Promise<void> {
   await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
   await page.click('#startup-newcase-btn, #startup-newcase-link');
   await page.locator('#startup-choice-overlay').waitFor({ state: 'hidden' });
 }
+export const startNewWard = startNewCase;
 
 /** Choose "No Password / No Encryption" on the data-protection screen. */
 export async function chooseNoPassword(page: Page): Promise<void> {
@@ -63,6 +64,7 @@ export async function freshStartNoPassword(page: Page): Promise<void> {
   await startNewCase(page);
   await chooseNoPassword(page);
 }
+export const freshStartWardNoPassword = freshStartNoPassword;
 
 /**
  * Creates a ward via the Add Ward modal (index.html: showAddWardModal() /

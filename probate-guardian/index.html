@@ -1043,35 +1043,35 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <div id="startup-choice-overlay" class="modal-overlay" style="z-index:10002;">
   <div class="modal-box" style="max-width:520px;">
     <h2 style="margin-bottom:.5rem;color:var(--ink);">Probate Guardian</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app keeps nothing in this browser between visits — every case lives entirely in a .sav file you choose and control. Open one to continue where you left off, or start a brand-new case.</p>
-    <p id="startup-file-status" class="alert alert-warning" role="alert">The previously opened case file could not be found. If you restored it, select it again below so this browser can reconnect to it.</p>
-    <button type="button" class="security-choice-option" data-startup-action="open-case">
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app keeps nothing in this browser between visits — every ward lives in its own .sav file you choose and control. Open one to continue where you left off, or start a brand-new ward.</p>
+    <p id="startup-file-status" class="alert alert-warning" role="alert">The previously opened ward file could not be found. If you restored it, select it again below so this browser can reconnect to it.</p>
+    <button type="button" class="security-choice-option" data-startup-action="open-ward">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/></svg></span>
-        <span class="security-choice-title">Open a Case File (.sav)</span>
+        <span class="security-choice-title">Open a Ward File (.sav)</span>
       </div>
       <ul class="security-choice-list">
-        <li>Resume an existing case exactly where it was last saved.</li>
+        <li>Resume an existing ward exactly where it was last saved.</li>
         <li>In Chrome or Edge, auto-save re-arms automatically once opened.</li>
         <li>In Firefox or Safari, this browser can only read the file — save/export it again manually before closing this tab.</li>
       </ul>
     </button>
-    <button type="button" id="startup-newcase-btn" class="security-choice-option" data-startup-action="start-new-case">
+    <button type="button" id="startup-newcase-btn" class="security-choice-option" data-startup-action="start-new-ward">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg></span>
-        <span class="security-choice-title">Start a New Case</span>
+        <span class="security-choice-title">Start a New Ward</span>
       </div>
       <ul class="security-choice-list">
         <li>Begin with no forms and no file open yet.</li>
         <li>You'll be asked how to protect the data, then where to save it.</li>
       </ul>
     </button>
-    <!-- Shown instead of the full Start a New Case card once this browser
+    <!-- Shown instead of the full Start a New Ward card once this browser
          has opened or saved a real .sav file before (see
          hasOpenedCaseBefore()) — Open is the fast path by then, so Start
          New only needs a small way out, not equal billing. -->
-    <button id="startup-newcase-link" type="button" class="btn btn-link" style="display:none;padding-left:0;" data-startup-action="start-new-case">Start a new case instead</button>
-    <input type="file" id="startup-open-input" accept=".sav,.zip" style="display:none" data-startup-change="open-case">
+    <button id="startup-newcase-link" type="button" class="btn btn-link" style="display:none;padding-left:0;" data-startup-action="start-new-ward">Start a new ward instead</button>
+    <input type="file" id="startup-open-input" accept=".sav,.zip" style="display:none" data-startup-change="open-ward">
   </div>
 </div>
 
@@ -1080,7 +1080,7 @@ label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bott
 <div id="security-choice-overlay" class="modal-overlay" style="z-index:10001;">
   <div class="modal-box" style="max-width:560px;">
     <h2 style="margin-bottom:.5rem;color:var(--ink);">Choose How to Protect This Data</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This case holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this case going forward and cannot be changed later without starting over.</strong></p>
+    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This file holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this ward going forward and cannot be changed later without starting over.</strong></p>
     <button type="button" class="security-choice-option" data-startup-action="select-security" data-security-mode="none">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/></svg></span>
