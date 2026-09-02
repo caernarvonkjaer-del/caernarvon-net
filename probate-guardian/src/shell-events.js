@@ -9,9 +9,13 @@ function handleShellClick(event) {
     case 'close-ward': if (window.unloadWard) window.unloadWard(); break;
     case 'dashboard': window.navigate('/dashboard'); break;
     case 'delete-ward': window.confirmDeleteWard(); break;
-    case 'dismiss-save-error': document.getElementById('save-error-banner').style.display = 'none'; break;
-    case 'export-data': window.exportGuardianDataZip(); break;
-    case 'export-help': window.exportHelpGuideAsPDF(); break;
+    case 'export-data':
+      if (typeof window.getActiveWard === 'function' && window.getActiveWard()) {
+        window.saveBackupNow();
+      } else if (typeof window.exportGuardianDataZip === 'function') {
+        window.exportGuardianDataZip();
+      }
+      break;
     case 'hide-auto-export-reminder': window.hideAutoExportReminder(); break;
     case 'import-data': window.triggerImportZip(); break;
     case 'lock': window.lockApp(); break;

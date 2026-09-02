@@ -3120,6 +3120,17 @@ async function silentAutoExport(){
   }
 }
 
+function getWardFileStem(ward){
+  const namePart=(ward&&ward.wardName||'Ward').trim().replace(/[\s_]+/g,'-').replace(/[^a-zA-Z0-9-]/g,'')||'Ward';
+  const casePart=(ward&&ward.caseNumber||'').trim().replace(/[\s_]+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+  return casePart ? `${namePart}-${casePart}-guardianshipwarddata` : `${namePart}-guardianshipwarddata`;
+}
+function getWardFileName(ward){
+  return `${getWardFileStem(ward)}.sav`;
+}
+window.getWardFileStem = getWardFileStem;
+window.getWardFileName = getWardFileName;
+
 async function validateWardBackupOverwrite(pickedHandle){
   const archiveHandle=await loadArchiveZipHandle();
   if(archiveHandle&&typeof pickedHandle.isSameEntry==='function'){
@@ -3190,8 +3201,8 @@ async function saveBackupNow(){
     const wardName=activeWard.wardName||'ward';
     rollback=await beginRecordingExport(`Exported single ward "${wardName}" to ward file`, activeWard.wardId);
     const blob=await buildWardZipBlob(activeWard.wardId);
-    const stem=(activeWard.wardName||'ward').trim().replace(/\s+/g,'_')||'ward';
-    const handle=await saveBlobAs(blob,`${stem}_backup.sav`,validateWardBackupOverwrite);
+    const fileName=getWardFileName(activeWard);
+    const handle=await saveBlobAs(blob,fileName,validateWardBackupOverwrite);
     await finishWardExport(handle, activeWard);
     alert(`Backup saved for ${activeWard.wardName||'this ward'}.`);
   }catch(e){

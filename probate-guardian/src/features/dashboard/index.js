@@ -595,17 +595,29 @@ function getTriageRows(rows) {
   return filtered.slice().sort((a, b) => new Date(b.lastModified || 0) - new Date(a.lastModified || 0));
 }
 
+function formatContactRole(role) {
+  if (!role) return '';
+  if (role === 'preparer') return 'Preparer';
+  if (role === 'attorney') return 'Attorney';
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
 function renderTriageQueue(projectedWards) {
   const rows = getTriageRows(projectedWards);
   const body = rows.map(row => {
     const priority = dashboardPriority(row);
     const contacts = row.filingContacts.length
-      ? row.filingContacts.map(item => `<span>${esc(item.name)} <small>${esc(item.role)}</small></span>`).join('')
+      ? row.filingContacts.map(item => `<span class="dashboard-contact-item"><span class="dashboard-contact-role">${esc(formatContactRole(item.role))}:</span> <span class="dashboard-contact-name">${esc(item.name)}</span></span>`).join('')
       : '<span class="dashboard-triage-muted">No filing contact</span>';
     return `<article class="dashboard-triage-row dashboard-priority-${priority}" data-dashboard-priority="${priority}" data-dashboard-ward-id="${esc(row.wardId)}">
-      <div class="dashboard-triage-identity dashboard-triage-cell" data-label="Filing">
+      <div class="dashboard-triage-cell dashboard-triage-ward" data-label="Ward">
         <strong>${esc(row.wardName || '(unnamed)')}</strong>
-        <span>${esc(row.displayType)}${row.caseNumber ? ` · ${esc(row.caseNumber)}` : ''}</span>
+      </div>
+      <div class="dashboard-triage-cell dashboard-triage-filing" data-label="Filing">
+        <span>${esc(row.displayType)}</span>
+      </div>
+      <div class="dashboard-triage-cell dashboard-triage-case" data-label="Case Number">
+        <span>${esc(row.caseNumber || '—')}</span>
       </div>
       <div class="dashboard-triage-cell" data-label="Status">${workflowStatusControl(row)}</div>
       <div class="dashboard-triage-deadline dashboard-triage-cell" data-label="Deadline">${deadlineDisplay(row)}</div>
@@ -615,7 +627,7 @@ function renderTriageQueue(projectedWards) {
     </article>`;
   }).join('');
   return `<div class="dashboard-triage-queue">
-    <div class="dashboard-triage-header"><span>Filing</span><span>Status</span><span>Deadline</span><span>Contacts</span><span>Assignment</span><span>Actions</span></div>
+    <div class="dashboard-triage-header"><span>Ward</span><span>Filing</span><span>Case #</span><span>Status</span><span>Deadline</span><span>Contacts</span><span>Assignment</span><span>Actions</span></div>
     ${body || '<div class="dashboard-empty-inline">No filings match these filters.</div>'}
   </div>`;
 }
@@ -711,12 +723,12 @@ async function exportSingleWardZip(wardId) {
       rollback = await window.beginRecordingExport(`Exported single ward "${wardName}" to ward file`, wardId);
     }
     const blob = await window.buildWardZipBlob(wardId);
-    const stem = (ward.wardName || 'ward').trim().replace(/\s+/g, '_') || 'ward';
+    const fileName = typeof window.getWardFileName === 'function' ? window.getWardFileName(ward) : `${((ward.wardName || 'Ward').trim().replace(/[\s_]+/g, '-') || 'Ward')}-guardianshipwarddata.sav`;
     const validator = window.validateWardBackupOverwrite;
     if (typeof validator !== 'function') {
       throw new Error('validateWardBackupOverwrite is required but not available');
     }
-    const handle = await saveBlobAs(blob, `${stem}_backup.sav`, validator);
+    const handle = await saveBlobAs(blob, fileName, validator);
     if (window.finishWardExport) {
       await window.finishWardExport(handle, ward);
     } else {
