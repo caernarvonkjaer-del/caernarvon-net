@@ -219,31 +219,41 @@ Hover over any "?" icon for instant field explanations.
 SAVING AND BACKING UP YOUR DATA
 ================================
 
+Per-Ward File Model:
+- Each ward lives in its own independent .sav file (e.g., Jane Doe-12345.sav)
+  with its own encryption, manifest, and audit log.
+- Multiple wards can be opened in the same session and managed from the
+  dashboard without combining their data into a single file.
+
 How Auto-Save Works:
-- In Chrome and Edge, once you've saved a .sav file once, later changes are
-  written back to that same file automatically as you work — no further
-  action needed
-- Firefox and Safari cannot write to your .sav file silently in the
-  background. On those browsers a reminder to save manually pops up every
-  15 minutes whenever there are unsaved changes
-- Sidebar shows: "Last backup: X minutes ago" or "Unsaved changes"
-- You can change Auto-Save frequency: 5 min / 10 min / 30 min / Off (Chrome/Edge only)
-- If a tab is closed or crashes before you ever save a .sav file, reopening
+- In Chrome and Edge, each open ward maintains its own file handle. Once you've
+  saved or opened a ward's .sav file, later changes to that ward are written
+  back to its own file automatically as you work — no further action needed.
+- Switching between wards automatically re-arms auto-save for the active ward.
+- Firefox and Safari cannot write to file handles silently in the background.
+  On those browsers a reminder to save manually pops up every 15 minutes
+  whenever there are unsaved changes.
+- Sidebar shows: "Last backup: X minutes ago" or "Unsaved changes".
+- You can change Auto-Save frequency: 5 min / 10 min / 30 min / Off (Chrome/Edge only).
+- If a tab is closed or crashes before you ever save a ward's .sav file, reopening
   the app in the SAME browser may offer to restore that unsaved work from a
   temporary local cache. This is a short-term safety net, not a backup — it
   disappears once you save (or decline the offer), and it never leaves your
-  device
+  device.
 
 Creating Backups (CRITICAL):
-1. Click "Save Data File (.sav)" in the sidebar
-2. Choose a location OUTSIDE this folder (external drive, cloud sync, email)
-3. The .sav file contains all your wards, encrypted if you set a password
-4. Store multiple copies in different locations
+1. Click "Save Data File (.sav)" in the sidebar to save the currently active ward.
+2. Or on the Dashboard, use "Backup" on any ward card, or "Export All Wards"
+   to download a complete ZIP bundle of individual .sav files for all open wards.
+3. Choose a location OUTSIDE this folder (external drive, cloud sync, email).
+4. Store multiple copies in different locations.
 
 Restoring from Backup:
-1. Click "Open Data File (.sav)"
-2. Choose your .sav backup file
-3. All wards and data are restored immediately
+1. Click "Open a Ward File (.sav)" on the startup screen or "Open Data File (.sav)".
+2. Choose your ward's .sav backup file to load it into the session.
+3. If you open a legacy version-2 multi-ward file, the app automatically extracts
+   all wards into your session and displays a one-time migration notice so each
+   ward can be saved to its own file.
 
 Emergency Recovery:
 - The temporary local cache described above only survives a crash or an

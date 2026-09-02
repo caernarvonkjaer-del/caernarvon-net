@@ -1314,3 +1314,35 @@ Validation completed:
 - E2E tests (`tests/e2e/ward-lock.spec.ts`): multi-context tests for independent wards, dashboard lock retention,
   explicit Close ward release, deleteWard release, rollback on conflict, and modal accessibility.
 - `SAV_FORMAT_VERSION` remains 2. No changes to persisted `.sav` schema or files. No CSP violations.
+
+### Milestone 17: Per-Ward Save Files
+
+**Complete.** Implementation was validated on 2026-09-02. Scope and requirements
+are recorded in `MILESTONE-17-PROPOSAL.md`.
+
+Implementation summary:
+
+- Implemented version-3 per-ward `.sav` file format (`SAV_FORMAT_VERSION = 3`) where each
+  ward is saved to its own independent ZIP archive containing `manifest.json`, `ward.enc`,
+  and scoped `auditLog.enc`.
+- Replaced monolithic file handle storage with a per-ward file handle map
+  (`Map<wardId, FileSystemFileHandle>`) in launch preferences, isolating auto-saves to the
+  active ward.
+- Added file handle deconfliction with `isSameEntry()` and pre-write validation to prevent
+  overwriting legacy multi-ward files or cross-binding handles between different wards.
+- Implemented backwards-compatible import and migration flow for version-2 archives with
+  a one-time informational dialog (`#migration-overlay`), extracting multi-ward archives
+  into independent in-session wards.
+- Added dashboard "Export All Wards" action to bundle all loaded wards into individual `.sav`
+  files inside a single ZIP download, and recorded export provenance in the audit log.
+- Updated startup dialog copy and labels from "Case" to "Ward" ("Open a Ward File (.sav)",
+  "Start a New Ward", `open-ward`, `start-new-ward`).
+
+Validation completed:
+
+- E2E tests (`tests/e2e/save-open-sav.spec.ts`): verified v3 per-ward save/open flows,
+  encrypted/unencrypted round-trips, multi-handle deconfliction, v2 multi-ward migration,
+  fallback downloads, and export provenance auditing.
+- Startup tests (`tests/e2e/startup.spec.ts`): verified updated selectors and flows.
+- Unit and E2E suites passing cleanly across all targets.
+- CSP preserved; no executable inline handlers or scripts.

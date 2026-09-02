@@ -989,9 +989,9 @@ test.describe('per-ward save file (version 3)', () => {
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Bulk Ward Alpha');
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
       (window as any).alert = () => {};
-      (window as any).addWard('Bulk Ward Beta', 'simplified');
+      await (window as any).addWard('Bulk Ward Beta', 'simplified');
     });
 
     await page.evaluate(() => (window as any).navigate('/dashboard'));
