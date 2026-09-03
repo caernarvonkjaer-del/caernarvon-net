@@ -230,6 +230,10 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(rawPdfString).toContain('/ViewerPreferences');
     expect(rawPdfString).toContain('/DisplayDocTitle true');
     expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
+    expect(rawPdfString).toContain('Verified Initial Inventory');
+    expect(rawPdfString).toContain('Harold Thomas Bennett');
+    expect(rawPdfString).toMatch(/Verified Initial Inventory[^\n\r]*Harold Thomas Bennett/);
+    expect(rawPdfString).toContain('/Keywords (Florida, Probate, Guardianship, Verified Initial Inventory)');
 
     // 4. XMP Metadata Stream: /Metadata in /Catalog with Dublin Core dc:title, dc:creator
     expect(metadataId).not.toBeNull();
@@ -499,6 +503,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
         certAttyPhone: '(727) 555-0100',
         certAttyStreet: '100 N Belcher Rd, Suite 300',
         certAttyCityStateZip: 'Clearwater, FL 33765',
+        certIndicator: 'Hand-delivered via process server',
         certRecipients: [
           {
             name: 'Clerk of the Circuit Court — Probate Division',
@@ -583,7 +588,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(dctCount).toBe(0);
 
     // 5. Structure Elements: Headings and Signatures as Structured Parts
-    expect(h1Count).toBeGreaterThanOrEqual(5);
+    expect(h1Count).toBeGreaterThanOrEqual(6);
     expect(sigPartCount).toBeGreaterThanOrEqual(2); // Guardian and Attorney signatures
 
     // 6. Table Semantics: All tables have /Summary inside /A << /O /Table >> dictionary with 0 stray keys
@@ -591,10 +596,20 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(tableAttrSummaryMatches.length).toBe(tableCount);
     expect(straySummaryCount).toBe(0);
 
-    // 7. Verify all sections present in model
+    // 7. Running Footer & Form Metadata Integrity
+    expect(rawPdfString).toContain('Simplified Annual Accounting');
+    expect(rawPdfString).toContain('Harold Thomas Bennett');
+    expect(rawPdfString).toMatch(/Simplified Annual Accounting[^\n\r]*Harold Thomas Bennett/);
+    expect(rawPdfString).toContain('/Keywords (Florida, Probate, Guardianship, Simplified Annual Accounting)');
+
+    // 8. Dropped Field Guard: certIndicator must render in Certificate of Service
+    expect(rawPdfString).toContain('Hand-delivered via process server');
+
+    // 9. Verify all sections present in model (with separate Part III and Part IV)
     expect(sectionTitles).toContain('Part I — REQUIRED INFORMATION');
     expect(sectionTitles).toContain('Part II — ACCOUNTING SUMMARY AND REMAINING ASSETS ON HAND');
-    expect(sectionTitles).toContain('Part III & IV — GUARDIAN(S) DECLARATION & INFORMATION');
+    expect(sectionTitles).toContain('Part III — GUARDIAN(S) DECLARATION');
+    expect(sectionTitles).toContain('Part IV — GUARDIAN(S) INFORMATION');
     expect(sectionTitles).toContain('Part V — SIGNATURE OF GUARDIAN ATTORNEY');
     expect(sectionTitles).toContain('Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE');
     expect(sectionTitles).toContain('Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION');

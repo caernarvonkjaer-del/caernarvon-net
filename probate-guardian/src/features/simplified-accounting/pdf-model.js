@@ -45,7 +45,8 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     author: 'Probate Guardian',
     creator: 'Probate Guardian',
     formName: 'SIMPLIFIED ANNUAL ACCOUNTING',
-    formSubtitle: 'Simplified Annual Accounting of Guardian of Property',
+    formSubtitle: 'Simplified Annual Accounting',
+    keywords: 'Florida, Probate, Guardianship, Simplified Annual Accounting',
     wardName,
     caseNumber,
     county,
@@ -55,6 +56,21 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const sections = [];
 
   // 1. Part I: Required Information
+  const caseInfoItems = [
+    { label: 'Name of Ward', value: wardName },
+    { label: 'Case Number', value: caseNumber },
+    { label: 'Social Security Number', value: d.ssn || '' },
+    { label: 'Accounting Period', value: `From: ${fmtDate(d.periodFrom)}  To: ${fmtDate(d.periodTo)}` },
+    { label: 'Guardian', value: d.guardian || '' },
+    { label: 'Attorney for Guardian', value: d.attorney || '' },
+    { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
+    { label: 'County', value: county },
+    { label: 'Amended Form?', value: d.amendedForm ? 'Yes' : 'No' },
+  ];
+  if (d.gid) {
+    caseInfoItems.push({ label: 'Guardianship Inception Date (GID)', value: fmtDate(d.gid) });
+  }
+
   sections.push({
     id: 'part1',
     title: 'Part I — REQUIRED INFORMATION',
@@ -67,17 +83,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         type: 'key-value-grid',
         tag: 'Table',
         title: 'Case & Filer Information',
-        items: [
-          { label: 'Name of Ward', value: wardName },
-          { label: 'Case Number', value: caseNumber },
-          { label: 'Social Security Number', value: d.ssn || '' },
-          { label: 'Accounting Period', value: `From: ${fmtDate(d.periodFrom)}  To: ${fmtDate(d.periodTo)}` },
-          { label: 'Guardian', value: d.guardian || '' },
-          { label: 'Attorney for Guardian', value: d.attorney || '' },
-          { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
-          { label: 'County', value: county },
-          { label: 'Amended Form?', value: d.amendedForm ? 'Yes' : 'No' },
-        ],
+        items: caseInfoItems,
       },
       {
         type: 'notice',
@@ -118,7 +124,24 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     ],
   });
 
-  // 3. Part III & IV: Guardian Declarations and Information
+  // 3. Part III: Guardian(s) Declaration
+  sections.push({
+    id: 'part3',
+    title: 'Part III — GUARDIAN(S) DECLARATION',
+    bookmarkTitle: 'Part III - Guardian Declaration',
+    parentBookmark: null,
+    level: 1,
+    pageBreakBefore: true,
+    blocks: [
+      {
+        type: 'notice',
+        tag: 'P',
+        text: `Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements by me from ${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}.`,
+      },
+    ],
+  });
+
+  // 4. Part IV: Guardian(s) Information
   const guardianList = (d.guardians || []).filter(g => g && g.name);
   const guardianBlocks = guardianList.map((g, i) => {
     const gRole = ['Guardian #1', 'Co-Guardian #2', 'Co-Guardian #3'][i] || `Guardian #${i + 1}`;
@@ -141,23 +164,23 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   });
 
   sections.push({
-    id: 'part3_4',
-    title: 'Part III & IV — GUARDIAN(S) DECLARATION & INFORMATION',
-    bookmarkTitle: 'Part III & IV - Guardian Declarations',
+    id: 'part4',
+    title: 'Part IV — GUARDIAN(S) INFORMATION',
+    bookmarkTitle: 'Part IV - Guardian Information',
     parentBookmark: null,
     level: 1,
-    pageBreakBefore: true,
+    pageBreakBefore: false,
     blocks: [
       {
         type: 'notice',
         tag: 'P',
-        text: `Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements by me from ${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}.`,
+        text: 'All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.',
       },
       ...guardianBlocks,
     ],
   });
 
-  // 4. Part V: Signature of Guardian Attorney
+  // 5. Part V: Signature of Guardian Attorney
   sections.push({
     id: 'part5',
     title: 'Part V — SIGNATURE OF GUARDIAN ATTORNEY',
@@ -188,8 +211,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     ],
   });
 
-  // 5. Part VI: Certificate of Service
+  // 6. Part VI: Certificate of Service
   const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3));
+  const serviceDateText = fmtDate(d.certServiceDate) || 'the date indicated below';
+  const indicatorNote = d.certIndicator ? ` | Indicate if: ${d.certIndicator}` : '';
+
   sections.push({
     id: 'part6',
     title: 'Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE',
@@ -201,7 +227,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished on ${fmtDate(d.certServiceDate) || 'the date indicated below'} to the following persons:`,
+        text: `Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished on ${serviceDateText}${indicatorNote} to the following persons:`,
       },
       ...(certRecipients.length > 0 ? [
         {
@@ -223,6 +249,13 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           text: 'None listed.',
         }
       ]),
+      ...(d.certIndicator ? [
+        {
+          type: 'notice',
+          tag: 'P',
+          text: `Service delivery method / indicator: ${d.certIndicator}`,
+        }
+      ] : []),
       {
         type: 'signature-block',
         tag: 'Figure',
@@ -240,7 +273,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     ],
   });
 
-  // 6. Part VII: Remuneration (if present)
+  // 7. Part VII: Remuneration (if present)
   const remList = (d.remuneration || []).filter(r => r && (r.guardian || r.type || r.description));
   if (remList.length > 0) {
     sections.push({
