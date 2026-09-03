@@ -203,9 +203,19 @@ PDF Document Structure
   - **Empty Service Recipients Handling**: Suppressed `<Table>` shell when no service recipients are entered, emitting a neutral `<P>` notice (`None listed.`) without injecting unverified legal/procedural representations into court filings.
   - **Note on Multi-Page Header Repetition**: Table header drawing (`drawTableHeader()`) and `/Scope /Column` scoping pre-existed in `pdf-engine.js`. Slice 19B added automated multi-page stress tests in `tests/e2e/pdf-wcag-compliance.spec.ts` confirming that multi-page table splits preserve structural regularity.
 
-### Slice 19C: Shared Accessible PDF Generator for All Court Forms
+### Slice 19C: Shared Accessible PDF Generator for All Court Forms (`src/core/pdf/`, `simplified-accounting/`)
 
-- Generalize the accessible PDF generation engine so other probate forms (Annual Accounting, Simplified Accounting, and Plans) can transition from legacy `html2pdf` raster captures to this fully accessible tagged vector pipeline.
+- **Complete.** Generalized the accessible PDF generator into a shared core infrastructure module:
+  - **Shared Core Modules (`src/core/pdf/`)**:
+    - `pdf-accessibility.js`: Core structure tree, marked content emitters (`BDC`/`EMC`), artifact demarcation, and XMP metadata packet builder.
+    - `pdf-engine.js`: Universal `generateCourtFormPdf(model, options)` handling document metadata, dynamic court headers/footers, outlines/bookmarks, tagged structural blocks (`notice`, `key-value-grid`, `table`, `signature-block`), and strict PDF 1.7 vector rendering.
+    - Preserved backwards compatibility in `guardian-inventory` by re-exporting from core.
+  - **Simplified Annual Accounting Migration**:
+    - Implemented `src/features/simplified-accounting/pdf-model.js` (`buildSimplifiedAccountingModel`) mapping Parts I through VII into structured document sections.
+    - Replaced legacy `html2pdf()` JPEG/canvas screenshot capture in `simplified-accounting/print.js` with native accessible `generateCourtFormPdf(model)`.
+    - Added electronic signature style selector (typed `/s/` vs script) to the print preview UI.
+  - **Automated Verification**:
+    - Added E2E test in `tests/e2e/pdf-wcag-compliance.spec.ts` verifying Simplified Accounting PDF outputs %PDF-1.7, `/StructTreeRoot`, `/ParentTree`, `/Tabs /S`, uniform table regularity, standard `/A` table summaries, and 0 raster image operators.
 
 ### Slice 19D: Automated Verification Suite & Acrobat Pro Validation Protocol
 

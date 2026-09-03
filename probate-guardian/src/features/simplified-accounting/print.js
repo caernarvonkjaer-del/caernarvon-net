@@ -7,6 +7,8 @@
 // top-level evaluation, so the circularity (index.js dynamically imports
 // this file; this file statically imports index.js) resolves cleanly.
 import { fmtS, validateSimplified } from './index.js';
+import { buildSimplifiedAccountingModel } from './pdf-model.js';
+import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 
 const {
   esc, fmtDate, circuitCourtCaption, calcTotals, tdSig,
@@ -161,6 +163,7 @@ function buildPrintHTMLSimplified(){
 export function pagePrintSimplified(capOver){
   const errors=validateSimplified();
   highlightErrors(errors);
+  const sigStyle = window.D.signatureStyle || 'typed';
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
     <div class="print-preview-banner no-print">
@@ -169,6 +172,20 @@ export function pagePrintSimplified(capOver){
         <button class="btn btn-outline-primary btn-sm" data-simplified-action="save-pdf" ${errors.length?'disabled':''}>Save as PDF</button>
         <button class="btn btn-primary btn-sm" data-simplified-action="save-excel" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="More remuneration entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
         <button class="btn btn-outline-secondary btn-sm" data-simplified-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
+      </div>
+    </div>
+    <div class="summary-box mb-3 no-print" style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.75rem 1rem;">
+      <div style="font-weight:600;font-size:.85rem;color:var(--ink);margin-bottom:.25rem;">Electronic Signature Format (Fla. R. Gen. Prac. &amp; Jud. Admin. 2.515)</div>
+      <div style="font-size:.78rem;color:var(--ink-3);margin-bottom:.5rem;">Electronic signature format for generated PDFs. Confirm current filing requirements before filing.</div>
+      <div class="d-flex gap-4">
+        <label class="form-check" style="cursor:pointer;margin-bottom:0;">
+          <input class="form-check-input" type="radio" name="signatureStyleSimplified" value="typed" ${sigStyle==='typed'?'checked':''} data-simplified-change="set-sig-style">
+          <span class="form-check-label" style="font-size:.85rem;"><strong>Typed /s/ signature</strong> (Default — Standard Document Font)</span>
+        </label>
+        <label class="form-check" style="cursor:pointer;margin-bottom:0;">
+          <input class="form-check-input" type="radio" name="signatureStyleSimplified" value="script" ${sigStyle==='script'?'checked':''} data-simplified-change="set-sig-style">
+          <span class="form-check-label" style="font-size:.85rem;"><strong>Script-style /s/ signature</strong> (Optional — Cursive Presentation)</span>
+        </label>
       </div>
     </div>
     <div class="accordion mb-3 no-print">
@@ -199,22 +216,18 @@ export function pagePrintSimplified(capOver){
 export async function doSavePdf(){
   const errors=validateSimplified();
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
-  pvShowAll(); // never export a filtered preview
-  document.body.classList.add('pdf-export-mode');
-  const container=document.getElementById('print-doc-container');
-  const ward=(window.D.wardName||'SimplifiedAccounting').replace(/[^a-z0-9]/gi,'_');
+  const ward=(window.D.wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
+  const filename=`${ward}_SimplifiedAccounting.pdf`;
+
   try{
-    await html2pdf().set({
-      margin:0,filename:`${ward}_SimplifiedAccounting.pdf`,
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,logging:false},
-      jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
-      pagebreak:{mode:'avoid-all',before:'.schedule-page:not(:first-of-type)'}
-    }).from(container).save();
+    const model = buildSimplifiedAccountingModel(window.D, {
+      signatureStyle: window.D.signatureStyle || 'typed',
+      printDate: new Date().toISOString().slice(0, 10),
+    });
+    const doc = await generateCourtFormPdf(model);
+    doc.save(filename);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);
-  }finally{
-    document.body.classList.remove('pdf-export-mode');
   }
 }

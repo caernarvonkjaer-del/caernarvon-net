@@ -1358,7 +1358,7 @@ Validation completed:
 
 ### Milestone 19: WCAG 2.1 & PDF/UA-1 Compliant Output PDF Generation (Zero Adobe Acrobat Errors)
 
-**In Progress (Slices 19A & 19B complete).** Scope, technical architecture, and requirements are recorded in `MILESTONE-19-PROPOSAL.md`.
+**In Progress (Slices 19A, 19B & 19C complete).** Scope, technical architecture, and requirements are recorded in `MILESTONE-19-PROPOSAL.md`.
 
 - Tagged PDF structure tree root (`/StructTreeRoot`), `/RoleMap`, and `/ParentTree` numbering dictionaries.
 - Document catalog `/MarkInfo << /Marked true >>`, single `/Lang (en-US)`, `/Metadata` reference, and `/ViewerPreferences << /DisplayDocTitle true >>`.

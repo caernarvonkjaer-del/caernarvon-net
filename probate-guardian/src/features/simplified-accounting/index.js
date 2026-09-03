@@ -60,6 +60,11 @@ function bindEvents(container) {
   container.addEventListener('change', (event) => {
     const input = event.target;
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'import-excel') _excelModule.importExcel(input);
+    if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'set-sig-style') {
+      window.D.signatureStyle = input.value;
+      autoSave();
+      navigate('/print');
+    }
   }, options);
   container.addEventListener('input', (event) => {
     if (event.target instanceof HTMLElement && event.target.dataset.simplifiedRefresh === 'part2') queueMicrotask(refreshPart2);

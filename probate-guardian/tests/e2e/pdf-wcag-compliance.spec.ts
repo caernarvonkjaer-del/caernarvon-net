@@ -450,6 +450,155 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     // Verify neutral notice when service recipients list is empty (no empty-table shell or procedural claims)
     expect(rawPdfString).toContain('None listed.');
   });
+
+  test('Slice 19C: Shared accessible PDF generator produces tagged, non-raster PDF 1.7 for Simplified Accounting', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const inspection = await page.evaluate(async () => {
+      const { buildSimplifiedAccountingModel } = await import('/probate-guardian/src/features/simplified-accounting/pdf-model.js');
+      const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
+
+      const sampleData = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        ssn: '***-**-1234',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        guardian: 'Eleanor Vance Bennett',
+        attorney: 'Marcus Sterling, Esq.',
+        typeOfGuardianship: 'Plenary',
+        eligDepository: 'Raymond James Bank',
+        eligOnlyTransactions: 'Interest & Service Charges',
+        startingBalance: 250000,
+        interestIncome: 4250.50,
+        depositsSettlement: 15000,
+        serviceCharges: 120,
+        federalIncomeTax: 1850,
+        guardians: [
+          {
+            name: 'Eleanor Vance Bennett',
+            ssn: '***-**-6789',
+            phone: '(727) 555-0199',
+            email: 'eleanor.bennett@example.com',
+            mailingStreet: '1204 Harbor View Drive',
+            mailingCityStateZip: 'Dunedin, FL 34698',
+            residenceStreet: '1204 Harbor View Drive',
+            residenceCityStateZip: 'Dunedin, FL 34698',
+            signatureDate: '2026-03-01',
+          },
+        ],
+        attorney_barNumber: '1029384',
+        attorney_phone: '(727) 555-0100',
+        attorney_street: '100 N Belcher Rd, Suite 300',
+        attorney_cityStateZip: 'Clearwater, FL 33765',
+        attorney_signatureDate: '2026-03-01',
+        certServiceDate: '2026-03-01',
+        certAttySignDate: '2026-03-01',
+        certAttyBarNumber: '1029384',
+        certAttyPhone: '(727) 555-0100',
+        certAttyStreet: '100 N Belcher Rd, Suite 300',
+        certAttyCityStateZip: 'Clearwater, FL 33765',
+        certRecipients: [
+          {
+            name: 'Clerk of the Circuit Court — Probate Division',
+            line2: '315 Court Street',
+            line3: 'Clearwater, FL 33756',
+          },
+        ],
+        remuneration: [
+          {
+            guardian: 'Eleanor Vance Bennett',
+            type: 'Guardian Fee',
+            description: 'Statutory guardian fee approved per court order dated 06/15/2025',
+          },
+        ],
+      };
+
+      const model = buildSimplifiedAccountingModel(sampleData, {
+        signatureStyle: 'typed',
+        printDate: '2026-03-01',
+      });
+
+      const doc = await generateCourtFormPdf(model);
+      const rawPdfString = doc.output();
+      const numPages = doc.internal.getNumberOfPages();
+
+      // Check structure tree elements
+      const tableMatches = [...rawPdfString.matchAll(/\/Type \/StructElem[\s\S]*?\/S \/Table[\s\S]*?>>/g)].map(m => m[0]);
+      const tableAttrSummaryMatches = [...rawPdfString.matchAll(/\/A\s*<<[\s\S]*?\/O\s*\/Table[\s\S]*?\/Summary\s*\(([^)]+)\)[\s\S]*?>>/g)].map(m => m[1]);
+      const straySummaryMatches = tableMatches.filter(tbl => !tbl.includes('/A <<') && tbl.includes('/Summary'));
+
+      // Check for raster images (must be 0 - pure vector/text document)
+      const imageMatches = [...rawPdfString.matchAll(/\/Subtype \/Image/g)].map(m => m[0]);
+      const dctMatches = [...rawPdfString.matchAll(/\/DCTDecode/g)].map(m => m[0]);
+
+      // Check for headings and signature parts
+      const h1Matches = [...rawPdfString.matchAll(/\/S \/H1/g)].map(m => m[0]);
+      const sigPartMatches = [...rawPdfString.matchAll(/\/T \(Signature: [^)]+\)/g)].map(m => m[0]);
+
+      return {
+        rawPdfString,
+        numPages,
+        tableCount: tableMatches.length,
+        tableAttrSummaryMatches,
+        straySummaryCount: straySummaryMatches.length,
+        imageCount: imageMatches.length,
+        dctCount: dctMatches.length,
+        h1Count: h1Matches.length,
+        sigPartCount: sigPartMatches.length,
+        sectionTitles: model.sections.map(s => s.title),
+      };
+    });
+
+    const {
+      rawPdfString,
+      numPages,
+      tableCount,
+      tableAttrSummaryMatches,
+      straySummaryCount,
+      imageCount,
+      dctCount,
+      h1Count,
+      sigPartCount,
+      sectionTitles,
+    } = inspection;
+
+    // 1. PDF Standard Header: Must be %PDF-1.7
+    expect(rawPdfString.startsWith('%PDF-1.7')).toBe(true);
+
+    // 2. Tagged PDF Catalog & Structure Root
+    expect(rawPdfString).toContain('/MarkInfo << /Marked true >>');
+    expect(rawPdfString).toContain('/Type /StructTreeRoot');
+    expect(rawPdfString).toContain('/Tabs /S');
+    expect(rawPdfString).toContain('/ViewerPreferences');
+    expect(rawPdfString).toContain('/DisplayDocTitle true');
+    expect(rawPdfString).toContain('/Lang (en-US)');
+
+    // 3. Multi-page form: Parts I through VII render across pages
+    expect(numPages).toBeGreaterThanOrEqual(3);
+
+    // 4. Pure vector and text: Absolutely NO raster screenshots or DCTDecode images
+    expect(imageCount).toBe(0);
+    expect(dctCount).toBe(0);
+
+    // 5. Structure Elements: Headings and Signatures as Structured Parts
+    expect(h1Count).toBeGreaterThanOrEqual(5);
+    expect(sigPartCount).toBeGreaterThanOrEqual(2); // Guardian and Attorney signatures
+
+    // 6. Table Semantics: All tables have /Summary inside /A << /O /Table >> dictionary with 0 stray keys
+    expect(tableCount).toBeGreaterThanOrEqual(3); // Case Info grid, Accounting Summary, Remuneration
+    expect(tableAttrSummaryMatches.length).toBe(tableCount);
+    expect(straySummaryCount).toBe(0);
+
+    // 7. Verify all sections present in model
+    expect(sectionTitles).toContain('Part I — REQUIRED INFORMATION');
+    expect(sectionTitles).toContain('Part II — ACCOUNTING SUMMARY AND REMAINING ASSETS ON HAND');
+    expect(sectionTitles).toContain('Part III & IV — GUARDIAN(S) DECLARATION & INFORMATION');
+    expect(sectionTitles).toContain('Part V — SIGNATURE OF GUARDIAN ATTORNEY');
+    expect(sectionTitles).toContain('Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE');
+    expect(sectionTitles).toContain('Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION');
+  });
 });
 
 
