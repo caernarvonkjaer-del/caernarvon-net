@@ -12,6 +12,8 @@
 // src/features/simplified-accounting/index.js's comment on the same
 // pattern).
 import { validateAnnual, fmtAnnual, fmtD, DISB_CATS } from './index.js';
+import { buildAnnualAccountingModel } from './pdf-model.js';
+import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 
 const {
   annualReconcileState, calcTotalsAnnual, circuitCourtCaption, esc,
