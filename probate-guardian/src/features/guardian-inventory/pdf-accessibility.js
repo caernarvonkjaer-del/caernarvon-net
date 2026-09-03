@@ -1,7 +1,7 @@
 // PDF Accessibility & Tagged PDF (PDF/UA-1 & WCAG 2.1 AA) Infrastructure.
 // Manages the logical Structure Tree (/StructTreeRoot, /ParentTree, /StructElem),
 // Marked Content operators (BDC/EMC), artifact demarcation, page tab order (/Tabs /S),
-// and catalog accessibility metadata (/MarkInfo, /ViewerPreferences, /Lang).
+// and catalog accessibility metadata (/MarkInfo, /ViewerPreferences, /Metadata, /Lang).
 
 export class PdfStructureNode {
   constructor({ tag, title = null, alt = null, attributes = null, parent = null }) {
@@ -25,7 +25,8 @@ export class PdfStructureNode {
 }
 
 export class PdfStructureTree {
-  constructor() {
+  constructor(metadata = {}) {
+    this.metadata = metadata;
     this.rootNode = new PdfStructureNode({ tag: 'Document' });
     this.currentNode = this.rootNode;
     this.mcidCounterByPage = {}; // pageNumber (1-based) -> next MCID integer
@@ -33,6 +34,7 @@ export class PdfStructureTree {
     this.pageObjIds = {}; // pageNumber (1-based) -> page indirect object ID
     this.rootObjId = null;
     this.parentTreeObjId = null;
+    this.metadataObjId = null;
   }
 
   setPageObjId(pageNumber, pageObjId) {
@@ -75,18 +77,22 @@ export class PdfStructureTree {
     };
     collectNodes(this.rootNode);
 
-    // 1. Allocate object IDs for all structure elements
+    // 1. Allocate object IDs for all structure elements using newObjectDeferred()
+    // (newObjectDeferred reserves the ID without prematurely writing empty object headers)
     for (const node of allNodes) {
-      node.objId = doc.internal.newObject();
+      node.objId = doc.internal.newObjectDeferred();
     }
 
-    // 2. Allocate object ID for ParentTree and StructTreeRoot
-    this.parentTreeObjId = doc.internal.newObject();
-    this.rootObjId = doc.internal.newObject();
+    // 2. Allocate object IDs for ParentTree, StructTreeRoot, and XMP Metadata
+    this.parentTreeObjId = doc.internal.newObjectDeferred();
+    this.rootObjId = doc.internal.newObjectDeferred();
+    this.metadataObjId = doc.internal.newObjectDeferred();
 
     // 3. Write each /StructElem
+    // Note: passing true to newObjectDeferredBegin(id, true) writes `${id} 0 obj`
+    // and correctly records the byte offset in jsPDF's xref table!
     for (const node of allNodes) {
-      doc.internal.newObjectDeferredBegin(node.objId);
+      doc.internal.newObjectDeferredBegin(node.objId, true);
       doc.internal.write('<<');
       doc.internal.write('/Type /StructElem');
       doc.internal.write(`/S /${node.tag}`);
@@ -133,7 +139,7 @@ export class PdfStructureTree {
     }
 
     // 4. Write /ParentTree (Number tree mapping page index to array of /StructElem refs)
-    doc.internal.newObjectDeferredBegin(this.parentTreeObjId);
+    doc.internal.newObjectDeferredBegin(this.parentTreeObjId, true);
     doc.internal.write('<<');
     doc.internal.write('/Nums [');
     const pageKeys = Object.keys(this.pageElements).map(Number).sort((a, b) => a - b);
@@ -148,7 +154,7 @@ export class PdfStructureTree {
     doc.internal.write('endobj');
 
     // 5. Write /StructTreeRoot
-    doc.internal.newObjectDeferredBegin(this.rootObjId);
+    doc.internal.newObjectDeferredBegin(this.rootObjId, true);
     doc.internal.write('<<');
     doc.internal.write('/Type /StructTreeRoot');
     doc.internal.write('/RoleMap <<');
@@ -158,6 +164,19 @@ export class PdfStructureTree {
     doc.internal.write(`/K [ ${this.rootNode.objId} 0 R ]`);
     doc.internal.write(`/ParentTree ${this.parentTreeObjId} 0 R`);
     doc.internal.write('>>');
+    doc.internal.write('endobj');
+
+    // 6. Write XMP Metadata Stream with dc:title, dc:creator, dc:description, and pdfuaid:part 1
+    const xmpData = buildXmpPacket(this.metadata);
+    doc.internal.newObjectDeferredBegin(this.metadataObjId, true);
+    doc.internal.write('<<');
+    doc.internal.write('/Type /Metadata');
+    doc.internal.write('/Subtype /XML');
+    doc.internal.write(`/Length ${xmpData.length}`);
+    doc.internal.write('>>');
+    doc.internal.write('stream');
+    doc.internal.write(xmpData);
+    doc.internal.write('endstream');
     doc.internal.write('endobj');
   }
 }
@@ -169,6 +188,55 @@ function escapePdfString(str) {
     .replace(/\)/g, '\\)')
     .replace(/\r/g, '\\r')
     .replace(/\n/g, '\\n');
+}
+
+function escapeXml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+export function buildXmpPacket(metadata = {}) {
+  const title = escapeXml(metadata.title || 'Verified Initial Inventory');
+  const author = escapeXml(metadata.author || 'Probate Guardian');
+  const subject = escapeXml(metadata.subject || 'Verified Initial Inventory');
+  const dateIso = new Date().toISOString();
+
+  return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description rdf:about=""
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
+        xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+        xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
+      <dc:format>application/pdf</dc:format>
+      <dc:title>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">${title}</rdf:li>
+        </rdf:Alt>
+      </dc:title>
+      <dc:creator>
+        <rdf:Seq>
+          <rdf:li>${author}</rdf:li>
+        </rdf:Seq>
+      </dc:creator>
+      <dc:description>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">${subject}</rdf:li>
+        </rdf:Alt>
+      </dc:description>
+      <pdf:Producer>Probate Guardian</pdf:Producer>
+      <pdfuaid:part>1</pdfuaid:part>
+      <xmp:CreateDate>${dateIso}</xmp:CreateDate>
+      <xmp:ModifyDate>${dateIso}</xmp:ModifyDate>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end="w"?>`;
 }
 
 // Low-level marked content stream emitters
@@ -236,13 +304,15 @@ export function attachAccessibilityHooks(doc, structureTree) {
     structureTree.serialize(doc);
   });
 
-  // 4. Hook into putCatalog to inject /MarkInfo, /StructTreeRoot, and /Lang
+  // 4. Hook into putCatalog to inject /MarkInfo, /StructTreeRoot, and /Metadata
+  // (Notice: do NOT manually write /Lang here; doc.setLanguage('en-US') writes it, avoiding duplicates!)
   doc.internal.events.subscribe('putCatalog', () => {
     doc.internal.write('/MarkInfo << /Marked true >>');
     if (structureTree.rootObjId) {
       doc.internal.write(`/StructTreeRoot ${structureTree.rootObjId} 0 R`);
     }
-    doc.internal.write('/Lang (en-US)');
+    if (structureTree.metadataObjId) {
+      doc.internal.write(`/Metadata ${structureTree.metadataObjId} 0 R`);
+    }
   });
 }
-

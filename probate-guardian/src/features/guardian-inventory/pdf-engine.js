@@ -37,15 +37,20 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
     throw new Error('jsPDF library not available in environment.');
   }
 
-  // Initialize PDF/UA-1 and WCAG 2.1 structure tree & accessibility hooks
-  const structureTree = new PdfStructureTree();
-  attachAccessibilityHooks(doc, structureTree);
+  // Set PDF version to 1.7 (required for PDF/UA-1 / ISO 14289-1 conformance)
+  if (doc.__private__ && typeof doc.__private__.setPdfVersion === 'function') {
+    doc.__private__.setPdfVersion('1.7');
+  }
 
   const { metadata, sections } = model;
   const wardName = metadata.wardName || 'Ward';
   const caseNumber = metadata.caseNumber || '';
   const county = (metadata.county || 'Pinellas').toUpperCase();
   const signatureStyle = metadata.signatureStyle || 'typed';
+
+  // Initialize PDF/UA-1 and WCAG 2.1 structure tree & accessibility hooks
+  const structureTree = new PdfStructureTree(metadata);
+  attachAccessibilityHooks(doc, structureTree);
 
   // 1. Set Document Properties & Metadata
   const props = {

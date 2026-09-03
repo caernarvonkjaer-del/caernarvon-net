@@ -1358,11 +1358,14 @@ Validation completed:
 
 ### Milestone 19: WCAG 2.1 & PDF/UA-1 Compliant Output PDF Generation (Zero Adobe Acrobat Errors)
 
-**Proposed.** Scope, technical architecture, and requirements are recorded in `MILESTONE-19-PROPOSAL.md`.
+**In Progress (Slice 19A complete).** Scope, technical architecture, and requirements are recorded in `MILESTONE-19-PROPOSAL.md`.
 
 - Tagged PDF structure tree root (`/StructTreeRoot`), `/RoleMap`, and `/ParentTree` numbering dictionaries.
-- Document catalog `/MarkInfo << /Marked true >>`, `/Lang (en-US)`, and `/ViewerPreferences << /DisplayDocTitle true >>`.
+- Document catalog `/MarkInfo << /Marked true >>`, single `/Lang (en-US)`, `/Metadata` reference, and `/ViewerPreferences << /DisplayDocTitle true >>`.
+- PDF version 1.7 header (`%PDF-1.7`) and standards-compliant XMP Metadata Stream (`dc:title`, `dc:creator`, `dc:description`, `pdfuaid:part 1`).
+- Clean deferred object serialization (`newObjectDeferred()`, `newObjectDeferredBegin(id, true)`) eliminating all file damage, malformed objects, and xref offset displacements.
 - Page dictionary `/Tabs /S` tab order and `/StructParents` keys.
 - Marked Content operators (`BDC ... EMC`) for semantic structural blocks (`/H1`, `/H2`, `/Table`, `/TR`, `/TH`, `/TD`, `/P`, `/Figure`).
 - Artifact tagging (`/Artifact << /Type /Pagination >>` and `/Artifact << /Type /Layout >>`) for running headers, footers, divider lines, and alternating row backgrounds.
 - Strict table hierarchy, headers, and regularity matching all 32 Adobe Acrobat Pro Accessibility Checker rules with zero errors.
+

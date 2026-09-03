@@ -128,29 +128,89 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
       const catalogMatch = rawPdfString.match(/\d+ 0 obj\s*<<[\s\S]*?\/Type \/Catalog[\s\S]*?>>\s*endobj/);
       const catalogObj = catalogMatch ? catalogMatch[0] : '';
 
-      // Extract StructTreeRoot object
-      const structTreeRootMatch = rawPdfString.match(/\d+ 0 obj\s*<<[\s\S]*?\/Type \/StructTreeRoot[\s\S]*?>>\s*endobj/);
-      const structTreeRootObj = structTreeRootMatch ? structTreeRootMatch[0] : '';
+      // Extract StructTreeRoot object referenced by catalog
+      const structTreeRootRefMatch = catalogObj.match(/\/StructTreeRoot\s+(\d+)\s+0\s+R/);
+      const structTreeRootId = structTreeRootRefMatch ? structTreeRootRefMatch[1] : null;
+      const structTreeRootRegex = new RegExp(`${structTreeRootId}\\s+0\\s+obj\\s*<<[\\s\\S]*?>>\\s*endobj`);
+      const structTreeRootObjMatch = rawPdfString.match(structTreeRootRegex);
+      const structTreeRootObj = structTreeRootObjMatch ? structTreeRootObjMatch[0] : '';
 
-      // Extract ParentTree object
-      const parentTreeMatch = rawPdfString.match(/\d+ 0 obj\s*<<[\s\S]*?\/Nums\s*\[[\s\S]*?\]\s*>>\s*endobj/);
-      const parentTreeObj = parentTreeMatch ? parentTreeMatch[0] : '';
+      // Extract Metadata object referenced by catalog
+      const metadataRefMatch = catalogObj.match(/\/Metadata\s+(\d+)\s+0\s+R/);
+      const metadataId = metadataRefMatch ? metadataRefMatch[1] : null;
+      const metadataRegex = new RegExp(`${metadataId}\\s+0\\s+obj\\s*<<[\\s\\S]*?>>[\\s\\S]*?endobj`);
+      const metadataObjMatch = rawPdfString.match(metadataRegex);
+      const metadataObj = metadataObjMatch ? metadataObjMatch[0] : '';
+
+      // Extract ParentTree object referenced by StructTreeRoot
+      const parentTreeRefMatch = structTreeRootObj.match(/\/ParentTree\s+(\d+)\s+0\s+R/);
+      const parentTreeId = parentTreeRefMatch ? parentTreeRefMatch[1] : null;
+      const parentTreeRegex = new RegExp(`${parentTreeId}\\s+0\\s+obj\\s*<<[\\s\\S]*?>>\\s*endobj`);
+      const parentTreeObjMatch = rawPdfString.match(parentTreeRegex);
+      const parentTreeObj = parentTreeObjMatch ? parentTreeObjMatch[0] : '';
+
+      // Check xref table integrity: every xref offset must point to exact object header
+      const xrefIndex = rawPdfString.lastIndexOf('xref');
+      const trailerIndex = rawPdfString.lastIndexOf('trailer');
+      const xrefSection = rawPdfString.slice(xrefIndex, trailerIndex);
+      const xrefLines = xrefSection.split('\n');
+      const xrefErrors = [];
+      let currentObjId = 0;
+      for (let i = 2; i < xrefLines.length; i++) {
+        const line = xrefLines[i].trim();
+        if (!line) continue;
+        currentObjId++;
+        const parts = line.split(' ');
+        if (parts.length >= 3 && parts[2] === 'n') {
+          const offset = parseInt(parts[0], 10);
+          const atOffset = rawPdfString.slice(offset, offset + 30);
+          const expected = `${currentObjId} 0 obj`;
+          if (!atOffset.startsWith(expected)) {
+            xrefErrors.push({ objId: currentObjId, expected, actual: atOffset });
+          }
+        }
+      }
 
       return {
         rawPdfString,
         numPages,
         pageObjs,
         catalogObj,
+        structTreeRootId,
         structTreeRootObj,
+        metadataId,
+        metadataObj,
         parentTreeObj,
+        xrefErrors,
       };
     });
 
-    const { rawPdfString, numPages, pageObjs, catalogObj, structTreeRootObj, parentTreeObj } = pdfInspection;
+    const {
+      rawPdfString,
+      numPages,
+      pageObjs,
+      catalogObj,
+      structTreeRootId,
+      structTreeRootObj,
+      metadataId,
+      metadataObj,
+      parentTreeObj,
+      xrefErrors,
+    } = pdfInspection;
 
     // Verify Page Count
     expect(numPages).toBeGreaterThanOrEqual(5);
     expect(pageObjs.length).toBe(numPages);
+
+    // ==========================================
+    // PDF Specification & Header (PDF 1.7 for PDF/UA-1)
+    // ==========================================
+    expect(rawPdfString.startsWith('%PDF-1.7')).toBe(true);
+
+    // ==========================================
+    // Strict Object Syntax & XRef Table Integrity
+    // ==========================================
+    expect(xrefErrors).toEqual([]);
 
     // ==========================================
     // Category 1: Document Checks
@@ -158,9 +218,12 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
 
     // 1. Tagged PDF: Catalog must contain /MarkInfo << /Marked true >> and /StructTreeRoot
     expect(catalogObj).toContain('/MarkInfo << /Marked true >>');
-    expect(catalogObj).toContain('/StructTreeRoot');
+    expect(structTreeRootId).not.toBeNull();
+    expect(catalogObj).toContain(`/StructTreeRoot ${structTreeRootId} 0 R`);
 
-    // 2. Primary Language: Catalog must contain /Lang (en-US)
+    // 2. Primary Language: Catalog must contain exactly ONE /Lang (en-US) (no duplicate)
+    const langMatches = catalogObj.match(/\/Lang\s*\(/g) || [];
+    expect(langMatches.length).toBe(1);
     expect(catalogObj).toContain('/Lang (en-US)');
 
     // 3. Document Title: Must contain /ViewerPreferences << /DisplayDocTitle true >>
@@ -168,12 +231,25 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(rawPdfString).toContain('/DisplayDocTitle true');
     expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
 
-    // 4. StructTreeRoot Object Validity
+    // 4. XMP Metadata Stream: /Metadata in /Catalog with pdfuaid:part 1, dc:title, dc:creator
+    expect(metadataId).not.toBeNull();
+    expect(catalogObj).toContain(`/Metadata ${metadataId} 0 R`);
+    expect(metadataObj).toContain('/Type /Metadata');
+    expect(metadataObj).toContain('/Subtype /XML');
+    expect(metadataObj).toContain('<pdfuaid:part>1</pdfuaid:part>');
+    expect(metadataObj).toContain('<dc:title>');
+    expect(metadataObj).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
+    expect(metadataObj).toContain('<dc:creator>');
+    expect(metadataObj).toContain('Probate Guardian');
+
+    // 5. StructTreeRoot Object Validity: MUST resolve to /Type /StructTreeRoot (NOT /StructElem)
     expect(structTreeRootObj).toContain('/Type /StructTreeRoot');
+    expect(structTreeRootObj).not.toContain('/Type /StructElem');
+    expect(structTreeRootObj).toContain('/RoleMap <<');
     expect(structTreeRootObj).toContain('/ParentTree');
     expect(structTreeRootObj).toContain('/K [');
 
-    // 5. ParentTree Object Validity: Must contain number keys for each page (0 .. numPages - 1)
+    // 6. ParentTree Object Validity: Must contain number keys for each page (0 .. numPages - 1)
     expect(parentTreeObj).toContain('/Nums [');
     for (let pIdx = 0; pIdx < numPages; pIdx++) {
       expect(parentTreeObj).toContain(`${pIdx} [`);
@@ -183,18 +259,18 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     // Category 2: Page Content Checks
     // ==========================================
 
-    // 6. Tab Order: EVERY single /Page dictionary must contain /Tabs /S
+    // 7. Tab Order: EVERY single /Page dictionary must contain /Tabs /S
     for (let i = 0; i < pageObjs.length; i++) {
       const pObj = pageObjs[i];
       expect(pObj).toContain('/Tabs /S');
       expect(pObj).toContain(`/StructParents ${i}`);
     }
 
-    // 7. Marked Content Operators: BDC and EMC must wrap page text streams
+    // 8. Marked Content Operators: BDC and EMC must wrap page text streams
     expect(rawPdfString).toContain('BDC');
     expect(rawPdfString).toContain('EMC');
 
-    // 8. Artifact Demarcation: Running headers and footers must be marked as Artifacts
+    // 9. Artifact Demarcation: Running headers and footers must be marked as Artifacts
     expect(rawPdfString).toContain('/Artifact << /Type /Pagination /Subtype /Header >> BDC');
     expect(rawPdfString).toContain('/Artifact << /Type /Pagination /Subtype /Footer >> BDC');
     expect(rawPdfString).toContain('/Artifact << /Type /Layout >> BDC');
@@ -203,20 +279,20 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     // Category 5: Tables Checks
     // ==========================================
 
-    // 9. Table Structure Elements: /Table, /TR, /TH, /TD must exist in structure tree
+    // 10. Table Structure Elements: /Table, /TR, /TH, /TD must exist in structure tree
     expect(rawPdfString).toContain('/S /Table');
     expect(rawPdfString).toContain('/S /TR');
     expect(rawPdfString).toContain('/S /TH');
     expect(rawPdfString).toContain('/S /TD');
 
-    // 10. Table Header Column Scope
+    // 11. Table Header Column Scope
     expect(rawPdfString).toContain('/Scope /Column');
 
     // ==========================================
     // Category 7: Headings Checks
     // ==========================================
 
-    // 11. Hierarchical Heading Structure Elements
+    // 12. Hierarchical Heading Structure Elements
     expect(rawPdfString).toContain('/S /H1');
     expect(rawPdfString).toContain('/S /H2');
     expect(rawPdfString).toContain('/S /H3');
@@ -230,3 +306,4 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(rawPdfString).not.toContain('/Filter /DCTDecode');
   });
 });
+

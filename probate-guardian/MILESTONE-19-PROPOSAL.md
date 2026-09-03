@@ -179,35 +179,32 @@ PDF Document Structure
 
 ## Implementation Slices
 
-### Slice 19A: PDF Engine Tagged Structure Core (`pdf-engine.js`)
-- Add low-level support in `src/features/guardian-inventory/pdf-engine.js` for:
-  - `/MarkInfo << /Marked true >>` in the document catalog.
-  - `/ViewerPreferences << /DisplayDocTitle true >>` in the document catalog.
-  - `/Tabs /S` in every `/Page` object dictionary.
-  - Internal structure tree allocator and indirect object registry for `/StructTreeRoot`, `/ParentTree`, and `/StructElem`.
+### Slice 19A: PDF Engine Tagged Structure Core, Metadata & Serialization Integrity (`pdf-accessibility.js` & `pdf-engine.js`)
+- **PDF 1.7 Header**: Configure jsPDF version to `1.7` (`doc.__private__.setPdfVersion('1.7')`), establishing the base standard for PDF/UA-1 conformance.
+- **XMP Metadata Stream**: Create standards-compliant XML packet in indirect object (`/Type /Metadata`, `/Subtype /XML`) containing Dublin Core schemas (`dc:title`, `dc:creator`, `dc:description`) and PDF/UA identifier (`<pdfuaid:part>1</pdfuaid:part>`). Link `/Metadata` in `/Catalog`.
+- **Catalog Accessibility Keys**: Invalidate duplicate keys; inject `/MarkInfo << /Marked true >>`, `/StructTreeRoot`, and exactly one `/Lang (en-US)` in `/Catalog`.
+- **Viewer Preferences**: Set `/ViewerPreferences << /DisplayDocTitle true >>` to display document title in window title bar.
+- **Page Dictionary Injections**: Inject `/Tabs /S` (binding keyboard tab order to document structure tree) and `/StructParents <pageIndex>` into every `/Page` object dictionary via jsPDF `putPage` lifecycle event.
+- **Deferred Object Serialization Integrity**: Eliminate syntax damage and xref displacement by allocating IDs via `doc.internal.newObjectDeferred()` and serializing via `doc.internal.newObjectDeferredBegin(id, true)`.
+- **Baseline Tagged Content & Artifact Demarcation**: Implement marked content (`BDC`/`EMC`) and artifact (`/Artifact`) emitters across Verified Initial Inventory blocks.
 
-### Slice 19B: Marked Content (`BDC`/`EMC`) Stream Tagging & Artifact Demarcation
-- Implement `emitMarkedContent()` and `emitArtifact()` helpers in the PDF stream.
-- Wrap running court headers and running footers with `/Artifact << /Type /Pagination >>`.
-- Wrap horizontal separator lines and table borders with `/Artifact << /Type /Layout >>`.
-- Wrap all body text, headings, and table cells with their corresponding `/MCID`.
-
-### Slice 19C: Table Accessibility & Semantic Structure Hierarchy
-- Transform `pdf-model.js` blocks into explicit semantic trees:
+### Slice 19B: Accessible Table & Heading Semantics Hardening (`pdf-model.js` & `pdf-engine.js`)
+- Transform all inventory schedules into strict semantic trees:
   - `<Table>` -> `<TR>` -> `<TH>` / `<TD>` structural hierarchy.
-  - Assign `/Scope /Column` to all table headers.
-  - Ensure regularity across all schedule tables (A-1 through C-5).
-  - Enforce hierarchical heading nesting: Part title (`H1`), Schedule title (`H2`), Sub-block title (`H3`).
-  - Key-value grids rendered as accessible 2-column tables or labeled paragraphs.
+  - Explicit column scope `/Scope /Column` on all table headers and `/Scope /Row` on key-value grid headers.
+  - Verify row regularity across all schedule tables (A-1 through C-5) and ensure multi-page table splits repeat header rows cleanly.
+  - Enforce hierarchical heading nesting: Part title (`H1`), Schedule title (`H2`), Sub-block title (`H3`) without skipped levels.
 
-### Slice 19D: Unified Accessible PDF Generator for All Court Forms
+### Slice 19C: Shared Accessible PDF Generator for All Court Forms
 - Generalize the accessible PDF generation engine so other probate forms (Annual Accounting, Simplified Accounting, and Plans) can transition from legacy `html2pdf` raster captures to this fully accessible tagged vector pipeline.
 
-### Slice 19E: Automated Verification Suite & Acrobat Pro Validation Protocol
+### Slice 19D: Automated Verification Suite & Acrobat Pro Validation Protocol
 - E2E Playwright tests (`tests/e2e/pdf-wcag-compliance.spec.ts`):
-  - Inspect raw PDF streams to verify presence of `/MarkInfo << /Marked true >>`, `/StructTreeRoot`, `/ParentTree`, `/Tabs /S`, `/ViewerPreferences << /DisplayDocTitle true >>`, `/Artifact`, `/TH`, `/TD`, `/H1`, and `/H2`.
+  - Inspect raw PDF streams: verify PDF 1.7 header, `/MarkInfo << /Marked true >>`, `/StructTreeRoot`, `/ParentTree`, `/Tabs /S`, `/ViewerPreferences << /DisplayDocTitle true >>`, `/Metadata` with `pdfuaid:part 1`, `/Artifact`, `/TH`, `/TD`, `/H1`, and `/H2`.
+  - Verify complete xref table integrity (all byte offsets match exact object headers with zero malformed objects).
   - Assert zero untagged text operators.
 - Document manual verification protocol for testing with Adobe Acrobat Pro Accessibility Checker.
+
 
 ---
 
