@@ -49,6 +49,11 @@
   --navy:#1a2d4a;--accent:#1e5799;--accent-050:#f2f7fc;--accent-text:var(--accent);
   --ok:#1f7a3d;--warn:#9a5a00;--danger:#a3122f;
   --ok-text:var(--ok);--warn-text:var(--warn);--danger-text:var(--danger);
+  /* Bootstrap token mapping */
+  --bs-body-color:var(--ink-2);--bs-body-bg:var(--surface-2);
+  --bs-heading-color:var(--ink);--bs-secondary-color:var(--ink-3);
+  --bs-tertiary-color:var(--ink-4);--bs-border-color:var(--line);
+  --bs-link-color:var(--accent-text);--bs-link-hover-color:var(--brand-text);
   /* Radii */
   --r-xs:4px;--r-sm:6px;--r:8px;--r-lg:12px;
   /* Elevation — layered, low-opacity, cool-tinted */
@@ -76,6 +81,11 @@
   --surface:#1a2230;--surface-2:#10151d;--surface-3:#232d3d;
   --accent-050:#111d2b;--accent-text:#7cb0e0;   /* 6.04:1 worst-case */
   --ok-text:#5fbf7f;--warn-text:#e0a94a;--danger-text:#f27f95; /* all >=5.4:1 */
+  /* Bootstrap token mapping for dark mode */
+  --bs-body-color:var(--ink-2);--bs-body-bg:var(--surface-2);
+  --bs-heading-color:var(--ink);--bs-secondary-color:var(--ink-3);
+  --bs-tertiary-color:var(--ink-4);--bs-border-color:var(--line);
+  --bs-link-color:var(--accent-text);--bs-link-hover-color:var(--brand-text);
   color-scheme:dark;
 }
 /* ── Icons ────────────────────────────────────────────── */
@@ -191,7 +201,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .ward-picker-section{padding:1rem .8rem 1.1rem;background:var(--surface);border-bottom:1px solid var(--line);}
 .ward-picker-label{display:block;font-size:.75rem;font-weight:700;color:var(--ink-4);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.11em;}
 .ward-picker-select{font-size:.86rem;margin-bottom:.6rem;border-color:var(--field);border-radius:var(--r);padding:.5rem 1.8rem .5rem .65rem;color:var(--ink);font-weight:600;box-shadow:var(--sh-1);background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23820024' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right .65rem center;background-size:14px 14px;}
-[data-theme="dark"] .ward-picker-select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238b98aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");}
+[data-theme="dark"] .ward-picker-select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");}
 .ward-combobox-wrap{position:relative;}
 .ward-combobox-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:60;margin-top:.2rem;max-height:calc(3 * 2.26rem);overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2);}
 .county-combobox-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:60;margin-top:.2rem;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-2);}
@@ -571,21 +581,114 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .cover-info-row>.col-md-6{display:flex;}
 .cover-info-row>.col-md-6>.summary-box{flex:1;margin-bottom:0;}
 .summary-box h2,.subsection-heading{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);margin-bottom:.6rem;}
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
+.form-label, label.form-label, label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bottom:.25rem;letter-spacing:.005em;}
+.form-check-label{font-size:.88rem;color:var(--ink-2);}
+.form-text{color:var(--ink-3);font-size:.8rem;}
+.req{color:var(--danger-text);font-weight:700;margin-left:.15rem;}
+.table{color:var(--ink-2);border-color:var(--line);}
+.table th{color:var(--ink);}
+.modal-content{background-color:var(--surface);color:var(--ink-2);border:1px solid var(--line);}
+.modal-header,.modal-footer{border-color:var(--line);}
+.modal-title{color:var(--ink);}
+.card{background-color:var(--surface);color:var(--ink-2);border-color:var(--line);}
+.dropdown-menu{background-color:var(--surface);color:var(--ink-2);border:1px solid var(--line);}
+.dropdown-item{color:var(--ink-2);}
+.dropdown-item:hover,.dropdown-item:focus{background-color:var(--surface-2);color:var(--ink);}
+[data-theme="dark"] .btn-close{filter:invert(1) grayscale(100%) brightness(200%);}
 .summary-line{display:flex;justify-content:space-between;gap:1rem;font-size:.83rem;padding:.32rem 0;border-bottom:1px solid var(--line-2);color:var(--ink-2);}
 .summary-line:last-child{border-bottom:none;}
 .summary-line.total{font-weight:700;border-bottom:none;border-top:1px solid var(--line);color:var(--ink);padding-top:.45rem;margin-top:.2rem;}
 .summary-line a{color:var(--accent-text);text-decoration:none;font-size:.83rem;font-weight:500;}
 .summary-line a:hover{text-decoration:underline;}
 /* ── Forms ────────────────────────────────────────────── */
-label.form-label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bottom:.25rem;letter-spacing:.005em;}
 .form-control,.form-select,.custom-select{font-size:.88rem;border-color:var(--field);border-radius:var(--r-sm);color:var(--ink);background-color:var(--surface);transition:border-color .15s,box-shadow .15s;}
-/* Bootstrap bakes its <select> dropdown-arrow and checked-checkbox colours
-   into fixed SVG data-URIs and a literal blue fill — neither reacts to our
-   tokens, so both need an explicit theme-scoped override or they'd render
-   as a barely-visible dark arrow / stock Bootstrap blue in dark mode. */
-[data-theme="dark"] .form-select{--bs-form-select-bg-img:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238b98aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");}
+/* Dark mode form controls: light gray background with flat black text across all forms */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .custom-select,
+[data-theme="dark"] .ward-picker-select,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="tel"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: #dde3eb;
+  color: #000000;
+  border-color: #94a3b8;
+  font-weight: 500;
+}
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .custom-select:focus,
+[data-theme="dark"] .ward-picker-select:focus,
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="number"]:focus,
+[data-theme="dark"] input[type="date"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] input[type="email"]:focus,
+[data-theme="dark"] input[type="tel"]:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  background-color: #eef3f8;
+  color: #000000;
+  border-color: #820024;
+  box-shadow: 0 0 0 3px rgba(232,135,156,.35);
+}
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #556275;
+  opacity: 1;
+}
+[data-theme="dark"] .input-group-text {
+  background-color: #c8d2df;
+  color: #000000;
+  border-color: #94a3b8;
+  font-weight: 600;
+}
+[data-theme="dark"] .form-control[readonly],
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] input[readonly],
+[data-theme="dark"] input[data-calcbind],
+[data-theme="dark"] input:disabled,
+[data-theme="dark"] textarea[readonly],
+[data-theme="dark"] textarea:disabled {
+  background-color: #cbd4e1 !important;
+  color: #111111 !important;
+  border-color: #94a3b8;
+  font-weight: 600;
+}
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .ward-picker-select {
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.8;
+  cursor: pointer;
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+[data-theme="dark"] .ssn-reveal-btn {
+  color: #222222;
+}
+[data-theme="dark"] .ssn-reveal-btn:hover {
+  color: #000000;
+}
+[data-theme="dark"] .form-check-input {
+  background-color: #dde3eb;
+  border-color: #94a3b8;
+}
+[data-theme="dark"] .form-check-input:checked {
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
 .form-check-input:checked{background-color:var(--brand);border-color:var(--brand);}
-[data-theme="dark"] .form-check-input{--bs-form-check-bg:var(--surface);}
 .form-control:focus,.form-select:focus,.custom-select:focus{border-color:var(--brand-text);box-shadow:0 0 0 3px rgba(130,0,36,.14);}
 .form-control::placeholder{color:var(--ink-4);opacity:1;}
 .custom-select{display:block;width:100%;padding:.42rem .75rem;font-size:.88rem;border:1px solid var(--field);border-radius:var(--r-sm);background-color:var(--surface);}

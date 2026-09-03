@@ -4,12 +4,13 @@ function handleShellClick(event) {
 
   switch (actionElement.dataset.shellAction) {
     case 'activity-log': window.toggleHelpPanel(); window.navigate('/activity-log'); break;
-    case 'clear-data': window.clearAllData(); break;
+    case 'clear-data': window.collapseSaveControls?.(); window.clearAllData(); break;
     case 'close-mobile-sidebar': window.closeMobileSidebar(); break;
-    case 'close-ward': if (window.unloadWard) window.unloadWard(); break;
+    case 'close-ward': window.collapseWardControls?.(); if (window.unloadWard) window.unloadWard(); break;
     case 'dashboard': window.navigate('/dashboard'); break;
-    case 'delete-ward': window.confirmDeleteWard(); break;
+    case 'delete-ward': window.collapseWardControls?.(); window.confirmDeleteWard(); break;
     case 'export-data':
+      window.collapseSaveControls?.();
       if (typeof window.getActiveWard === 'function' && window.getActiveWard()) {
         window.saveBackupNow();
       } else if (typeof window.exportGuardianDataZip === 'function') {
@@ -17,12 +18,12 @@ function handleShellClick(event) {
       }
       break;
     case 'hide-auto-export-reminder': window.hideAutoExportReminder(); break;
-    case 'import-data': window.triggerImportZip(); break;
-    case 'lock': window.lockApp(); break;
-    case 'new-form': window.navigate('/inventory-select'); break;
+    case 'import-data': window.collapseSaveControls?.(); window.triggerImportZip(); break;
+    case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;
+    case 'new-form': window.collapseWardControls?.(); window.navigate('/inventory-select'); break;
     case 'next-walkthrough': window.nextWalkthroughStep(); break;
-    case 'rename-ward': window.showRenameWardModal(); break;
-    case 'save-backup': window.saveBackupNow(); break;
+    case 'rename-ward': window.collapseWardControls?.(); window.showRenameWardModal(); break;
+    case 'save-backup': window.collapseSaveControls?.(); window.saveBackupNow(); break;
     case 'skip-walkthrough': window.skipWalkthrough(); break;
     case 'start-walkthrough': window.startWalkthrough(); break;
     case 'switch-ward': window.handleSwitchWardClick(); break;
@@ -54,6 +55,7 @@ function handleShellKeydown(event) {
 
 function handleShellChange(event) {
   if (event.target instanceof HTMLSelectElement && event.target.id === 'auto-export-interval-select') {
+    window.collapseSaveControls?.();
     window.saveAutoExportIntervalPref(Number.parseInt(event.target.value, 10));
   } else if (event.target instanceof HTMLInputElement && event.target.id === 'zip-import-input' && event.target.files?.[0]) {
     window.importGuardianDataZip(event.target.files[0]);

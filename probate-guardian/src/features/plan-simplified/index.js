@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -63,8 +64,9 @@ export async function mount(container, page) {
     html = _printModule.pagePrintPlanSimplified();
   } else {
     switch (page) {
-      case '/':   html = pagePlanSCover(); break;
-      case '/p2': html = pagePlanSQuestions(); break;
+      case '/':         html = pagePlanSCover(); break;
+      case '/summary':   html = renderSummaryPage(getSummaryConfigPlanSimplified()); break;
+      case '/p2':        html = pagePlanSQuestions(); break;
       case '/p3': html = pagePlanSSignatures(); break;
       default:    html = pagePlanSCover();
     }
@@ -89,6 +91,7 @@ function buildNavPlanSimplified(container){
     <div class="nav-section">
       <div class="nav-section-label">Simplified Annual Plan</div>
       <button class="nav-link-item" data-page="/" data-nav="ps-cover" data-form-action="navigate" data-route="/">Cover</button>
+      <button class="nav-link-item" data-page="/summary" data-nav="ps-summary" data-form-action="navigate" data-route="/summary">Summary</button>
       <button class="nav-link-item" data-page="/p2" data-nav="ps-p2" data-form-action="navigate" data-route="/p2">The Plan — Questions 1–9</button>
       <button class="nav-link-item" data-page="/p3" data-nav="ps-p3" data-form-action="navigate" data-route="/p3">Signatures</button>
     </div>
@@ -97,6 +100,45 @@ function buildNavPlanSimplified(container){
       <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
+}
+
+function getSummaryConfigPlanSimplified(){
+  const d=window.D;
+  const fd=v=>v?String(v).substring(0,10):'—';
+  const q9total=[
+    d.q1Residences,d.q2BestPlacement,d.q3MedicalTreatment,
+    d.q4Diagnosis,d.q5SocialServices,d.q6Interaction,
+    d.q7RestoreRights,d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None,
+    d.q9Remuneration,
+  ].filter(Boolean).length;
+  const g=(d.planGuardians||[])[0]||{};
+  return {
+    formTitle:'Simplified Annual Plan — Summary',
+    infoRows:[
+      {label:'Ward Name',value:esc(d.wardName)},
+      {label:'Case Number',value:esc(d.caseNumber)},
+      {label:'County',value:esc(d.county)},
+      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+    ],
+    leftCards:[{
+      heading:'Plan Progress',
+      lines:[
+        {label:'Q1 — Residences',route:'/p2',status:d.q1Residences?'complete':'not-started'},
+        {label:'Q2 — Why This Placement',route:'/p2',status:d.q2BestPlacement?'complete':'not-started'},
+        {label:'Q3 — Medical Treatment',route:'/p2',status:d.q3MedicalTreatment?'complete':'not-started'},
+        {label:'Q4 — Diagnosis &amp; Conditions',route:'/p2',status:d.q4Diagnosis?'complete':'not-started'},
+        {label:'Q5 — Personal &amp; Social Services',route:'/p2',status:d.q5SocialServices?'complete':'not-started'},
+        {label:'Q6 — Interaction with Others',route:'/p2',status:d.q6Interaction?'complete':'not-started'},
+        {label:'Q7 — Rights Restoration',route:'/p2',status:d.q7RestoreRights?'complete':'not-started'},
+        {label:'Q8 — Advance Directives',route:'/p2',status:(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None)?'complete':'not-started'},
+        {label:'Q9 — Remuneration',route:'/p2',status:d.q9Remuneration?'complete':'not-started'},
+        {label:'Signatures',route:'/p3',status:g.name&&g.signatureDate?'complete':'not-started'},
+      ],
+    }],
+    rightCards:[],
+    banner:{title:'SIMPLIFIED ANNUAL PLAN PROGRESS',value:q9total+' of 9 questions answered'},
+    nextRoute:'/p2',
+  };
 }
 
 function pagePlanSCover(){
@@ -113,7 +155,7 @@ function pagePlanSCover(){
       <div class="col-md-4">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
     </div>
     ${renderScheduleDocsSection('planCover')}
-    ${pageNavS(null,'/p2')}
+    ${pageNavS(null,'/summary')}
   </div>`;
 }
 
@@ -162,7 +204,7 @@ function pagePlanSQuestions(){
       +(d.q9Remuneration==='Yes'?`<div class="plan-conditional">${txtP('q9RemunerationExplain','Please explain',d.q9RemunerationExplain,3,true)}</div>`:''))}
 
     ${renderScheduleDocsSection('planQuestions')}
-    ${pageNavS('/','/p3')}
+    ${pageNavS('/summary','/p3')}
   </div>`;
 }
 

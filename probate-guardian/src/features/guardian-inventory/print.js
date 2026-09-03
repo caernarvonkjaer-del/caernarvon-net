@@ -60,7 +60,7 @@ function buildPrintHTML(){
     ${td('Guardian',esc(d.guardianName))}
     ${td('Attorney for Guardian',esc(d.attorneyForGuardian))}
     ${td('Type of Guardianship',esc(d.typeOfGuardianship))}
-    ${td('Safe Deposit Box?',d.hasSafeDepositBox?'Yes — Inventory Filed: '+(d.safeDepositBoxFiled?'Yes':'No'):'No')}
+    ${td('Safe Deposit Box?',d.hasSafeDepositBox===true?'Yes — Inventory Filed: '+(d.safeDepositBoxFiled===true?'Yes':d.safeDepositBoxFiled===false?'No':'Not Stated'):d.hasSafeDepositBox===false?'No':'Not Answered')}
     ${td('Amended Form?',d.isAmended?'Yes':'No')}
   </div>
   ${(d.witnesses||[]).length?`<div class="doc-schedule-title">Inventory Witnesses</div>
@@ -262,8 +262,8 @@ function buildPrintHTML(){
   </div>
   <div class="doc-schedule-title">SAFE DEPOSIT BOX</div>
   <div class="doc-table-div mb-3" style="font-size:.76rem;">
-    ${td('Does the ward have a safe deposit box?',d.hasSafeDepositBox?'Yes':'No')}
-    ${d.hasSafeDepositBox?td('SDB Inventory Filed?',d.safeDepositBoxFiled?'Yes':'No'):''}
+    ${td('Does the ward have a safe deposit box?',d.hasSafeDepositBox===true?'Yes':d.hasSafeDepositBox===false?'No':'Not Answered')}
+    ${d.hasSafeDepositBox===true?td('SDB Inventory Filed?',d.safeDepositBoxFiled===true?'Yes':d.safeDepositBoxFiled===false?'No':'Not Stated'):''}
   </div>
   <div class="doc-schedule-title">SURETY BOND REQUIREMENT — Bond Calculation</div>
   <div class="doc-table-div mb-3">

@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -121,6 +122,19 @@ function bindEvents(container) {
     if (control.dataset.inventoryChange === 'import-excel') _excelModule.importExcel(control);
     if (control.dataset.inventoryChange === 'schedule-no-items') setScheduleNoItems(control.dataset.schedule, control.checked);
     if (control.dataset.inventoryChange === 'toggle-vehicle') toggleB2Vehicle(Number.parseInt(control.dataset.index, 10), control.checked);
+    if (control.dataset.inventoryChange === 'set-sdb') {
+      const val = control.value === 'true';
+      D.hasSafeDepositBox = val;
+      if (!val) D.safeDepositBoxFiled = null;
+      autoSave();
+      updateNavDots();
+      mountGuardianFeature('/d3');
+    }
+    if (control.dataset.inventoryChange === 'set-sdb-filed') {
+      D.safeDepositBoxFiled = control.value === 'true';
+      autoSave();
+      updateNavDots();
+    }
   }, options);
 
   container.addEventListener('input', (event) => {
@@ -496,73 +510,80 @@ function pageHome(){
 // ═══════════════════════════════════════════════════════
 // PAGE: SUMMARY
 // ═══════════════════════════════════════════════════════
-function pageSummary(){
+function getSummaryConfigGuardian(){
   const hasAttest=D.guardians.some(g=>g.name);
   const hasPreparer=!!(D.preparer.name||D.attorney.name);
   const hasBond=!!(D.bondAmount||D.bondWaivedDate);
   const hasService=D.serviceRecipients.some(r=>r.name);
-  function status(v){return v?`<span style="color:var(--ok-text);font-weight:600;">✓ Entered</span>`:`<span style="color:var(--danger-text);font-weight:600;">Incomplete</span>`;}
-  return `<div class="schedule-page">
-  <h1>Verified Initial Inventory — Summary</h1>
-  <!-- Summary I -->
-  <div class="row g-3">
-    <div class="col-md-6">
-      <div class="summary-box">
-        <h2 class="subsection-heading">Summary I — Schedule A: Real Estate</h2>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/a1">Schedule A-1 — Real Estate Assets</a><span id="totalA1">${fmt(calc.totalA1())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/a2">Schedule A-2 — Real Estate Liabilities</a><span id="totalA2">${fmt(calc.totalA2())}</span></div>
-        <div class="summary-line total"><span>Real Estate, Net of Liabilities</span><span id="netA">${fmt(calc.netA())}</span></div>
-      </div>
-      <div class="summary-box">
-        <h2 class="subsection-heading">Summary I — Schedule B: Cash / Personal Property</h2>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b1">Schedule B-1 — Cash &amp; Cash Equivalents</a><span id="totalB1">${fmt(calc.totalB1())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b2">Schedule B-2 — Personal Property Assets</a><span id="totalB2">${fmt(calc.totalB2())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b3">Schedule B-3 — Intangible Assets</a><span id="totalB3">${fmt(calc.totalB3())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/b4">Schedule B-4 — Personal Property Liabilities</a><span id="totalB4">${fmt(calc.totalB4())}</span></div>
-        <div class="summary-line total"><span>Cash / Pers. Property, Net of Liabilities</span><span id="netB">${fmt(calc.netB())}</span></div>
-      </div>
-      <div class="summary-box">
-        <h2 class="subsection-heading">Summary II — Schedule C: Other Financial Information</h2>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c1">Schedule C-1 — Income (Annualized)</a><span id="totalC1">${fmt(calc.totalC1())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c2">Schedule C-2 — Lawsuits Against Ward</a><span id="totalC2">${fmt(calc.totalC2())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c3">Schedule C-3 — Lawsuits by Ward</a><span id="totalC3">${fmt(calc.totalC3())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c4">Schedule C-4 — Trusts</a><span id="totalC4">${fmt(calc.totalC4())}</span></div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/c5">Schedule C-5 — Joint Owners</a><span id="totalC5">${fmt(calc.totalC5())}</span></div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="summary-box">
-        <h2 class="subsection-heading">Part V — Audit Fee &amp; Bond Calculation</h2>
-        <div class="summary-line"><span>Audit Fee (inventory &gt; $25,000)</span><span id="auditFee">${fmt(calc.auditFee())}</span></div>
-        <div class="summary-line"><span>Restricted Cash (B-1)</span><span id="restrictedCash">${fmt(calc.restrictedCash())}</span></div>
-        <div class="summary-line"><span>Restricted Intangibles (B-3)</span><span id="restrictedIntang">${fmt(calc.restrictedIntang())}</span></div>
-        <div class="summary-line"><span>Unrestricted Cash (B-1)</span><span id="unrestrictedCash">${fmt(calc.unrestrictedCash())}</span></div>
-        <div class="summary-line"><span>Personal Property (B-2)</span><span></span></div>
-        <div class="summary-line"><span>Unrestricted Intangibles (B-3)</span><span id="unrestrictedIntang">${fmt(calc.unrestrictedIntang())}</span></div>
-        <div class="summary-line total"><span>Bond Requirement (liquid, unrestricted)</span><span id="bondRequired">${fmt(calc.bondRequired())}</span></div>
-        <div style="margin-top:.5rem;font-size:.78rem;"><a href="#" data-inventory-action="navigate" data-route="/d4">→ Complete Bond &amp; Surety Info (D-4)</a></div>
-      </div>
-      <div class="summary-box">
-        <h2 class="subsection-heading">Attestations &amp; Filings Completion</h2>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d1">D-1 — Guardian Attestation</a>${status(hasAttest)}</div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d2">D-2 — Preparer &amp; Attorney</a>${status(hasPreparer)}</div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d3">D-3 — Audit Fee &amp; Safe Deposit</a>${status(D.hasSafeDepositBox!==undefined?true:false)}</div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d4">D-4 — Bond &amp; Surety Info</a>${status(hasBond)}</div>
-        <div class="summary-line"><a href="#" data-inventory-action="navigate" data-route="/d5">D-5 — Certificate of Service</a>${status(hasService)}</div>
-      </div>
-      <div class="summary-box summary-inventory-total" style="background:#820024;color:#fff;">
-        <div class="summary-line total" style="color:#fff;border-color:rgba(255,255,255,.2);">
-          <span>VERIFIED INITIAL INVENTORY TOTAL</span>
-          <span id="totalInventory" style="font-size:1.05rem;">${fmt(calc.total())}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="mb-3 mt-3">
-    ${pageNav('/summary')}
-  </div>
-</div>`;
+  const s=v=>v?'complete':'not-started';
+  return {
+    formTitle:'Verified Initial Inventory — Summary',
+    infoRows:[
+      {label:'Ward Name',value:esc(D.wardName)},
+      {label:'Case Number',value:esc(D.caseNumber)},
+      {label:'GID',value:esc(D.gid)},
+      {label:'County',value:esc(D.county)},
+    ],
+    leftCards:[
+      {
+        heading:'Summary I — Schedule A: Real Estate',
+        lines:[
+          {label:'Schedule A-1 — Real Estate Assets',route:'/a1',value:fmt(calc.totalA1()),id:'totalA1'},
+          {label:'Schedule A-2 — Real Estate Liabilities',route:'/a2',value:fmt(calc.totalA2()),id:'totalA2'},
+          {label:'Real Estate, Net of Liabilities',value:fmt(calc.netA()),id:'netA',isTotal:true},
+        ],
+      },
+      {
+        heading:'Summary I — Schedule B: Cash / Personal Property',
+        lines:[
+          {label:'Schedule B-1 — Cash &amp; Cash Equivalents',route:'/b1',value:fmt(calc.totalB1()),id:'totalB1'},
+          {label:'Schedule B-2 — Personal Property Assets',route:'/b2',value:fmt(calc.totalB2()),id:'totalB2'},
+          {label:'Schedule B-3 — Intangible Assets',route:'/b3',value:fmt(calc.totalB3()),id:'totalB3'},
+          {label:'Schedule B-4 — Personal Property Liabilities',route:'/b4',value:fmt(calc.totalB4()),id:'totalB4'},
+          {label:'Cash / Pers. Property, Net of Liabilities',value:fmt(calc.netB()),id:'netB',isTotal:true},
+        ],
+      },
+      {
+        heading:'Summary II — Schedule C: Other Financial Information',
+        lines:[
+          {label:'Schedule C-1 — Income (Annualized)',route:'/c1',value:fmt(calc.totalC1()),id:'totalC1'},
+          {label:'Schedule C-2 — Lawsuits Against Ward',route:'/c2',value:fmt(calc.totalC2()),id:'totalC2'},
+          {label:'Schedule C-3 — Lawsuits by Ward',route:'/c3',value:fmt(calc.totalC3()),id:'totalC3'},
+          {label:'Schedule C-4 — Trusts',route:'/c4',value:fmt(calc.totalC4()),id:'totalC4'},
+          {label:'Schedule C-5 — Joint Owners',route:'/c5',value:fmt(calc.totalC5()),id:'totalC5'},
+        ],
+      },
+    ],
+    rightCards:[
+      {
+        heading:'Part V — Audit Fee &amp; Bond Calculation',
+        lines:[
+          {label:'Audit Fee (inventory &gt; $25,000)',value:fmt(calc.auditFee()),id:'auditFee'},
+          {label:'Restricted Cash (B-1)',value:fmt(calc.restrictedCash()),id:'restrictedCash'},
+          {label:'Restricted Intangibles (B-3)',value:fmt(calc.restrictedIntang()),id:'restrictedIntang'},
+          {label:'Unrestricted Cash (B-1)',value:fmt(calc.unrestrictedCash()),id:'unrestrictedCash'},
+          {label:'Personal Property (B-2)',value:''},
+          {label:'Unrestricted Intangibles (B-3)',value:fmt(calc.unrestrictedIntang()),id:'unrestrictedIntang'},
+          {label:'Bond Requirement (liquid, unrestricted)',value:fmt(calc.bondRequired()),id:'bondRequired',isTotal:true},
+        ],
+        footerAction:{label:'Complete Bond &amp; Surety Info (D-4)',route:'/d4'},
+      },
+      {
+        heading:'Attestations &amp; Filings Completion',
+        lines:[
+          {label:'D-1 — Guardian Attestation',route:'/d1',status:s(hasAttest)},
+          {label:'D-2 — Preparer &amp; Attorney',route:'/d2',status:s(hasPreparer)},
+          {label:'D-3 — Audit Fee &amp; Safe Deposit',route:'/d3',status:s(D.hasSafeDepositBox===false || (D.hasSafeDepositBox===true && (D.safeDepositBoxFiled===true || D.safeDepositBoxFiled===false)))},
+          {label:'D-4 — Bond &amp; Surety Info',route:'/d4',status:s(hasBond)},
+          {label:'D-5 — Certificate of Service',route:'/d5',status:s(hasService)},
+        ],
+      },
+    ],
+    banner:{title:'VERIFIED INITIAL INVENTORY TOTAL',value:fmt(calc.total()),id:'totalInventory'},
+    nextRoute:'/a1',
+  };
 }
+function pageSummary(){ return renderSummaryPage(getSummaryConfigGuardian()); }
 
 // ═══════════════════════════════════════════════════════
 // SCHEDULE PAGES
@@ -853,10 +874,29 @@ function pageD3(){
   </div>
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Safe Deposit Box</h2>
-    <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4))</p>
-    ${formRow(col(4,optLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')))}
-    <div id="sdb-filed-row" style="${D.hasSafeDepositBox?'':'display:none;'}">
-      ${formRow(col(4,optLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
+    <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></p>
+    <div class="d-flex gap-4 mb-3">
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${D.hasSafeDepositBox===true?'checked':''} data-inventory-change="set-sdb">
+        <label class="form-check-label" for="sdb-yes">Yes</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${D.hasSafeDepositBox===false?'checked':''} data-inventory-change="set-sdb">
+        <label class="form-check-label" for="sdb-no">No</label>
+      </div>
+    </div>
+    <div id="sdb-filed-row" style="${D.hasSafeDepositBox===true?'':'display:none;'}">
+      <label class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></label>
+      <div class="d-flex gap-4 mb-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${D.safeDepositBoxFiled===true?'checked':''} data-inventory-change="set-sdb-filed">
+          <label class="form-check-label" for="sdb-filed-yes">Yes</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${D.safeDepositBoxFiled===false?'checked':''} data-inventory-change="set-sdb-filed">
+          <label class="form-check-label" for="sdb-filed-no">No</label>
+        </div>
+      </div>
     </div>
   </div>
   ${pageNav('/d3')}</div>`;
@@ -961,6 +1001,11 @@ export function validateGuardian(){
   d.guardians.forEach((g,i)=>{const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);if(!g.signatureDate)errors.push(`${p} — Signature Date is required.`);req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
   req(d.preparer.name,'D-2 Preparer — Name');if(!d.preparer.signatureDate)errors.push('D-2 Preparer — Date is required.');req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
   req(d.attorney.name,'D-2 Attorney — Name');if(!d.attorney.signatureDate)errors.push('D-2 Attorney — Signature Date is required.');if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
+  if (d.hasSafeDepositBox === null || d.hasSafeDepositBox === undefined) {
+    errors.push('D-3 — Safe Deposit Box question must be answered (Yes or No).');
+  } else if (d.hasSafeDepositBox === true && (d.safeDepositBoxFiled === null || d.safeDepositBoxFiled === undefined)) {
+    errors.push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).');
+  }
   req(d.bondAmount,'D-4 — Bond Amount');if(!d.bondPeriodFrom)errors.push('D-4 — Bond Period From is required.');if(!d.bondPeriodTo)errors.push('D-4 — Bond Period To is required.');req(d.bondingCompany,'D-4 — Bonding Company');
   d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`;req(r.name,`${p} — Name`);req(r.address,`${p} — Address`);req(r.cityStateZip,`${p} — City/State/Zip`);});
   if(!d.serviceDate)errors.push('D-5 — Service Date is required.');

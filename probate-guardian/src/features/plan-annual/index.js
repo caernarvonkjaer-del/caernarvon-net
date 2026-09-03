@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -56,6 +57,7 @@ export async function mount(container, page) {
   } else {
     switch (page) {
       case '/':    html = pagePlanACover(); break;
+      case '/summary': html = renderSummaryPage(getSummaryConfigPlanAnnual()); break;
       case '/p2':  html = pagePlanAResidences(); break;
       case '/p3':  html = pagePlanACarePlan(); break;
       case '/p4':  html = pagePlanABenefits(); break;
@@ -87,6 +89,7 @@ function buildNavPlanAnnual(container){
     <div class="nav-section">
       <div class="nav-section-label">Annual Guardianship Plan</div>
       ${item('/','pa-cover','Cover')}
+      ${item('/summary','pa-summary','Summary')}
       ${item('/p2','pa-p2','1&nbsp;&nbsp;Residences')}
       ${item('/p3','pa-p3','2–3&nbsp;&nbsp;Residence &amp; Care')}
       ${item('/p4','pa-p4','3G&nbsp;&nbsp;Insurance &amp; Benefits')}
@@ -103,6 +106,51 @@ function buildNavPlanAnnual(container){
       <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
+}
+
+function getSummaryConfigPlanAnnual(){
+  const d=window.D;
+  const fd=v=>v?String(v).substring(0,10):'—';
+  const hasResidences=(d.q1Residences||[]).length>0;
+  const hasProviders=(d.q4Providers||[]).length>0;
+  const hasSignatures=!!(d.guardianSigDate||d.attorneySigDate);
+  const s=v=>v?'complete':'not-started';
+  return {
+    formTitle:'Annual Guardianship Plan — Summary',
+    infoRows:[
+      {label:'Ward Name',value:esc(d.wardName)},
+      {label:'Case Number',value:esc(d.caseNumber)},
+      {label:'County',value:esc(d.county)},
+      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Guardian',value:esc(d.guardian)},
+      {label:'Attorney',value:esc(d.attorney)},
+    ],
+    leftCards:[
+      {
+        heading:'Section Completion',
+        lines:[
+          {label:'1. Places Ward Has Lived',route:'/p2',status:s(hasResidences)},
+          {label:'2–3. Residence Change & Care Plan',route:'/p3',status:s(d.q2NoMove||d.q2WithinCounty||d.q2OutsideCounty||d.q3AddressChanged)},
+          {label:'3G. Insurance & Benefits',route:'/p4',status:s(d.q3Medicaid||d.q3Medicare||d.q3SSI||d.q3SS||d.q3VA||d.q3Insurance)},
+          {label:'4. Medical Treatment & Providers',route:'/p5',status:s(hasProviders)},
+          {label:'5–7. Skills & Rights Restoration',route:'/p6',status:s(d.q5Social||d.q6Restoration)},
+        ],
+      },
+      {
+        heading:'Assessments & Signatures',
+        lines:[
+          {label:'8. Daily Living Activities (ADLs)',route:'/p7',status:s(d.adlMealPrep||d.adlFinances||d.adlHygiene||d.adlMedications)},
+          {label:'9. Disabilities & Devices',route:'/p8',status:s(d.q9PhysicalExam||d.q9Devices)},
+          {label:'10. Advance Directives',route:'/p9',status:s(d.q10LivingWill||d.q10DNR||d.q10Surrogate||d.q10None)},
+          {label:'11. Remuneration',route:'/p10',status:s(d.q11Remuneration)},
+          {label:'Signatures',route:'/p11',status:s(hasSignatures)},
+        ],
+      },
+    ],
+    rightCards:[],
+    banner:{title:'ANNUAL GUARDIANSHIP PLAN',value:(d.wardName?esc(d.wardName):'Ward')+' — Case # '+(d.caseNumber?esc(d.caseNumber):'Pending')},
+    nextRoute:'/p2',
+  };
 }
 
 function pagePlanACover(){
@@ -135,7 +183,7 @@ function pagePlanACover(){
       <div class="col-md-8">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
     </div>
     ${renderScheduleDocsSection('planACover')}
-    ${pageNavS(null,'/p2')}
+    ${pageNavS(null,'/summary')}
   </div>`;
 }
 
@@ -165,7 +213,7 @@ function pagePlanAResidences(){
     ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No residences listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q1Residences" data-row-type="residence" data-route="/p2">+ Add Residence</button>
     ${renderScheduleDocsSection('planAResidences')}
-    ${pageNavS('/','/p3')}
+    ${pageNavS('/summary','/p3')}
   </div>`;
 }
 

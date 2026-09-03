@@ -291,7 +291,7 @@ test.describe('routes', () => {
     await expect(county).toHaveValue('Orange');
     await expect.poll(() => page.evaluate(() => (window as any).D.county)).toBe('Orange');
 
-    await page.locator('#main-content [data-form-action="navigate"][data-route="/p2"]').click();
+    await page.locator('#sidebar [data-form-action="navigate"][data-route="/p2"]').click();
     await expect(page).toHaveURL(/#\/p2$/);
     await page.locator('#q1Residences').fill('A supported residence');
     await expect.poll(() => page.evaluate(() => (window as any).D.q1Residences)).toBe('A supported residence');
@@ -301,4 +301,46 @@ test.describe('routes', () => {
     await expect.poll(() => page.evaluate(() => (window as any).D.q7RestoreRights)).toBe('Yes');
     await expect(page.locator('[data-form-path][oninput], [data-form-path][onchange], [data-form-path][onfocus], [data-form-path][onblur], [data-form-control][oninput], [data-form-control][onfocus], [data-form-control][onblur]')).toHaveCount(0);
   });
+
+  test('all 9 form types render a standardized summary page at /summary with case info', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+
+    for (const type of INVENTORY_TYPES) {
+      await freshStartNoPassword(page);
+      await page.evaluate((t) => (window as any).addWard(`Summary Test Ward ${t}`, t), type);
+      await page.evaluate(() => (window as any).navigate('/summary'));
+
+      const main = page.locator('#main-content');
+      await expect(main).not.toBeEmpty();
+      await expect(main.locator('.summary-box').first()).toBeVisible();
+      await expect(main.getByRole('heading', { level: 1 })).toContainText('Summary');
+    }
+
+    expect(errors).toEqual([]);
+  });
+
+  test('form fields in dark mode use light gray background with black font', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Dark Theme Form Ward', 'simplified'));
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+
+    const wardNameInput = page.locator('#wardName');
+    await expect(wardNameInput).toBeVisible();
+
+    const styles = await wardNameInput.evaluate((el) => {
+      const computed = window.getComputedStyle(el);
+      return {
+        bg: computed.backgroundColor,
+        color: computed.color,
+      };
+    });
+
+    // #dde3eb is rgb(221, 227, 235), black font is rgb(0, 0, 0)
+    expect(styles.bg).toBe('rgb(221, 227, 235)');
+    expect(styles.color).toBe('rgb(0, 0, 0)');
+  });
 });
+
+

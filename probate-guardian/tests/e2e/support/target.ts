@@ -100,6 +100,8 @@ export async function fillMinimalValidGuardianWard(page: Page): Promise<void> {
       guardianName: 'Sample Guardian',
       attorneyForGuardian: 'Sample Attorney',
       typeOfGuardianship: 'Plenary',
+      hasSafeDepositBox: false,
+      safeDepositBoxFiled: false,
       bondAmount: '1000',
       bondPeriodFrom: '2026-01-01',
       bondPeriodTo: '2027-01-01',

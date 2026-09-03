@@ -11,7 +11,7 @@ import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalVali
 // round-trip, and the plan's own "verify repeated entry/exit does not grow
 // heap or duplicate event handlers" requirement.
 
-const SIMPLIFIED_PAGES = ['/', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/print'];
+const SIMPLIFIED_PAGES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/print'];
 
 test.describe('simplified-accounting feature module', () => {
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {

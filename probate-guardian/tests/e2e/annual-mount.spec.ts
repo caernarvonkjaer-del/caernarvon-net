@@ -12,7 +12,7 @@ import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './
 // this file tests the 'annual' type only -- no bespoke per-alias spec.
 
 const ANNUAL_PAGES = [
-  '/', '/p2', '/p3', '/p4', '/p5',
+  '/', '/summary', '/p2', '/p3', '/p4', '/p5',
   '/scha', '/schb1', '/schb2', '/schb3', '/schb4', '/schc',
   '/schd1', '/schd2', '/schd3', '/schd4', '/schd5',
   '/sche', '/schf1', '/schf2',

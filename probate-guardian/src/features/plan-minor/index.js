@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -56,6 +57,7 @@ export async function mount(container, page) {
   } else {
     switch (page) {
       case '/':   html = pagePlanMCover(); break;
+      case '/summary': html = renderSummaryPage(getSummaryConfigPlanMinor()); break;
       case '/p2': html = pagePlanMResidences(); break;
       case '/p3': html = pagePlanMProviders(); break;
       case '/p4': html = pagePlanMMedical(); break;
@@ -83,6 +85,7 @@ function buildNavPlanMinor(container){
     <div class="nav-section">
       <div class="nav-section-label">Annual Plan — Minors</div>
       ${item('/','pm-cover','Cover')}
+      ${item('/summary','pm-summary','Summary')}
       ${item('/p2','pm-p2','2&nbsp;&nbsp;Prior Residences')}
       ${item('/p3','pm-p3','3&nbsp;&nbsp;Treatment Providers')}
       ${item('/p4','pm-p4','4&nbsp;&nbsp;Medical Services')}
@@ -95,6 +98,43 @@ function buildNavPlanMinor(container){
       <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
+}
+
+function getSummaryConfigPlanMinor(){
+  const d=window.D;
+  const fd=v=>v?String(v).substring(0,10):'—';
+  const hasResidences=(d.q2Residences||[]).length>0;
+  const hasProviders=(d.q3Providers||[]).length>0;
+  const hasSignatures=!!(d.guardianSigDate||d.coGuardianSigDate);
+  const s=v=>v?'complete':'not-started';
+  return {
+    formTitle:'Annual Plan — Minors — Summary',
+    infoRows:[
+      {label:"Minor's Name",value:esc(d.wardName)},
+      {label:'UCN',value:esc(d.ucn)},
+      {label:'REF #',value:esc(d.ref)},
+      {label:'County',value:esc(d.county)},
+      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Guardian',value:esc(d.guardianName)},
+    ],
+    leftCards:[
+      {
+        heading:'Section Completion',
+        lines:[
+          {label:'1. Present Residence',route:'/',status:s(d.q1ResidenceName||d.q1Street)},
+          {label:'2. Prior Residences (Past 12 Mos)',route:'/p2',status:s(hasResidences)},
+          {label:'3. Treatment Providers',route:'/p3',status:s(hasProviders)},
+          {label:'4. Medical & Dental Services',route:'/p4',status:s(d.q4ExamDate||d.q4DentalExamDate)},
+          {label:'5. Education & Social Development',route:'/p5',status:s(d.q5SchoolName||d.q5Social)},
+          {label:'Guardian Signatures',route:'/p6',status:s(hasSignatures)},
+          {label:'Preparer & Attorney',route:'/p7',status:s(d.preparerName||d.attorneyName)},
+        ],
+      },
+    ],
+    rightCards:[],
+    banner:{title:'ANNUAL PLAN — MINORS',value:(d.wardName?esc(d.wardName):"Minor")+' — '+(d.ucn?('UCN '+esc(d.ucn)):'Pending')},
+    nextRoute:'/p2',
+  };
 }
 
 function pagePlanMCover(){
@@ -129,7 +169,7 @@ function pagePlanMCover(){
       <div class="col-md-6">${inpS('q1Phone','Phone Number',d.q1Phone)}</div>
     </div>
     ${renderScheduleDocsSection('planMCover')}
-    ${pageNavS(null,'/p2')}
+    ${pageNavS(null,'/summary')}
   </div>`;
 }
 
@@ -158,7 +198,7 @@ function pagePlanMResidences(){
     ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No prior residences listed.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q2Residences" data-row-type="minorResidence" data-route="/p2">+ Add Residence</button>
     ${renderScheduleDocsSection('planMResidences')}
-    ${pageNavS('/','/p3')}
+    ${pageNavS('/summary','/p3')}
   </div>`;
 }
 

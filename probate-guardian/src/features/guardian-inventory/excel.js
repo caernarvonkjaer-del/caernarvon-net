@@ -80,8 +80,9 @@ export async function doSaveExcel(){
       setCell(si,'D23',inv.guardianName||'');
       setCell(si,'D24',inv.attorneyForGuardian||'');
       setCell(si,'D25',inv.typeOfGuardianship||'');
-      setCell(si,'D26',yesNo(inv.hasSafeDepositBox));
-      setCell(si,'H26',yesNo(inv.safeDepositBoxFiled));
+      const yesNoTristate = v => v === true ? 'Yes' : v === false ? 'No' : '';
+      setCell(si,'D26',yesNoTristate(inv.hasSafeDepositBox));
+      setCell(si,'H26',yesNoTristate(inv.safeDepositBoxFiled));
       setCell(si,'I8',yesNo(inv.isAmended));
     }
 
@@ -447,13 +448,14 @@ function parseInitialInventoryWorkbook(wb){
   const num=(s,a)=>Number(rawv(s,a))||0;
   const dt=(s,a)=>{const v=rawv(s,a);if(!v)return null;if(v instanceof Date)return v.toISOString().substring(0,10);if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}return typeof v==='string'?v.substring(0,10):null;};
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
+  const tristateBool=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return true;if(t==='no')return false;return null;};
   const pct=(s,a)=>Math.round(num(s,a)*100*1e6)/1e6;
   const readRows=(pages,reader)=>{const out=[];for(const{sheet:name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
   const si=ws('SUMMARY I ');
   const inv={
     wardName:txt(si,'C7'),caseNumber:txt(si,'H7'),gid:dt(si,'F7'),county:txt(si,'G3'),
     guardianName:txt(si,'D23'),attorneyForGuardian:txt(si,'D24'),typeOfGuardianship:txt(si,'D25'),
-    hasSafeDepositBox:bool(si,'D26'),safeDepositBoxFiled:bool(si,'H26'),isAmended:bool(si,'I8'),
+    hasSafeDepositBox:tristateBool(si,'D26'),safeDepositBoxFiled:tristateBool(si,'H26'),isAmended:bool(si,'I8'),
     scheduleA1:readRows([{sheet:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),isPersonalResidence:bool(s,`E${r}`),isIncomeProperty:bool(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
     scheduleA2:readRows([{sheet:'A-2-REAL ESTATE MTG pg 1 ',rows:[30,35,40,45,50]},{sheet:'A-2-REAL ESTATE MTG pg 2',rows:[7,12,17,22,27,32,37,42,47]},{sheet:'A-2-REAL ESTATE MTG pg 3',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`F${r}`);if(!name&&!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),lenderCityStateZip:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),notes:'',liabilityType:txt(s,`E${r}`)||'Mortgage',fullDebtBalance:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleB1:readRows([{sheet:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{sheet:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),isRestricted:bool(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),

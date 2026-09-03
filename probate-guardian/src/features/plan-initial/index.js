@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -57,6 +58,7 @@ export async function mount(container, page) {
   } else {
     switch (page) {
       case '/':    html = pagePlanICover(); break;
+      case '/summary': html = renderSummaryPage(getSummaryConfigPlanInitial()); break;
       case '/p2':  html = pagePlanISettingMedical(); break;
       case '/p3':  html = pagePlanIMentalPersonal(); break;
       case '/p4':  html = pagePlanISocialBenefits(); break;
@@ -87,6 +89,7 @@ function buildNavPlanInitial(container){
     <div class="nav-section">
       <div class="nav-section-label">Initial Guardianship Plan</div>
       ${item('/','pi-cover','Cover')}
+      ${item('/summary','pi-summary','Summary')}
       ${item('/p2','pi-p2','2–3&nbsp;&nbsp;Setting &amp; Medical Care')}
       ${item('/p3','pi-p3','4–5&nbsp;&nbsp;Mental Health &amp; Personal Care')}
       ${item('/p4','pi-p4','6–7&nbsp;&nbsp;Socialization &amp; Benefits')}
@@ -102,6 +105,50 @@ function buildNavPlanInitial(container){
       <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
+}
+
+function getSummaryConfigPlanInitial(){
+  const d=window.D;
+  const fd=v=>v?String(v).substring(0,10):'—';
+  const hasProviders=(d.q9ExaminingProviders||[]).length>0;
+  const hasSignatures=!!(d.guardianSigDate||d.attorneySigDate);
+  const s=v=>v?'complete':'not-started';
+  return {
+    formTitle:'Initial Guardianship Plan — Summary',
+    infoRows:[
+      {label:'Ward Name',value:esc(d.wardName)},
+      {label:'Case Number',value:esc(d.caseNumber)},
+      {label:'County',value:esc(d.county)},
+      {label:'Inception Date',value:fd(d.inceptionDate)},
+      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Guardian',value:esc(d.guardianNames)},
+      {label:'Attorney',value:esc(d.attorneyName)},
+    ],
+    leftCards:[
+      {
+        heading:'Section Completion',
+        lines:[
+          {label:'2–3. Setting & Medical Care',route:'/p2',status:s(d.q2Setting||d.q3MedPrimary||d.q3MedDentist)},
+          {label:'4–5. Mental Health & Personal Care',route:'/p3',status:s(d.q4Mental||d.q5Personal)},
+          {label:'6–7. Socialization & Benefits',route:'/p4',status:s(d.q6Social||d.q7Medicaid||d.q7Medicare||d.q7SSI||d.q7SS)},
+          {label:'9. Examining Providers',route:'/p5',status:s(hasProviders)},
+        ],
+      },
+      {
+        heading:'Assessments & Signatures',
+        lines:[
+          {label:'10A. Daily Living Activities (ADLs)',route:'/p6',status:s(d.adlMealPrep||d.adlFinances||d.adlHygiene||d.adlMedications)},
+          {label:'10B–D. Disabilities & Devices',route:'/p7',status:s(d.q10PhysicalExam||d.q10Devices)},
+          {label:'11. Advance Directives',route:'/p8',status:s(d.q11LivingWill||d.q11DNR||d.q11Surrogate||d.q11None)},
+          {label:'Signatures',route:'/p9',status:s(hasSignatures)},
+          {label:'Attorney Certification',route:'/p10',status:s(d.attorneyCertDate)},
+        ],
+      },
+    ],
+    rightCards:[],
+    banner:{title:'INITIAL GUARDIANSHIP PLAN',value:(d.wardName?esc(d.wardName):'Ward')+' — Case # '+(d.caseNumber?esc(d.caseNumber):'Pending')},
+    nextRoute:'/p2',
+  };
 }
 
 function pagePlanICover(){
@@ -136,7 +183,7 @@ function pagePlanICover(){
     </div>
     ${txtP('q1PreexistingDirectives','List any preexisting orders not to resuscitate or preexisting advance directives, the date signed, whether suspended by the court, and the steps taken to identify and locate them. Attach a copy of any directives to the plan.',d.q1PreexistingDirectives,5)}
     ${renderScheduleDocsSection('planICover')}
-    ${pageNavS(null,'/p2')}
+    ${pageNavS(null,'/summary')}
   </div>`;
 }
 
@@ -162,7 +209,7 @@ function pagePlanISettingMedical(){
         'q3MedExplain',d.q3MedExplain,d.q3MedOther)
       +(d.q3MedSpecialist?`<div class="plan-conditional mt-2">${inpS('q3MedSpecialistArea','Specialist — area of specialty',d.q3MedSpecialistArea)}</div>`:''))}
     ${renderScheduleDocsSection('planISettingMedical')}
-    ${pageNavS('/','/p3')}
+    ${pageNavS('/summary','/p3')}
   </div>`;
 }
 

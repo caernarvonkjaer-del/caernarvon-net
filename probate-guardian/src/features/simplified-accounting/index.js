@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -82,6 +83,7 @@ export async function mount(container, page) {
   let html;
   switch (page) {
     case '/':      html = pageCover(); break;
+    case '/summary': html = renderSummaryPage(getSummaryConfigSimplified()); break;
     case '/p2':    html = pagePart2(); break;
     case '/p3':    html = pagePart3(); break;
     case '/p4':    html = pagePart4(); break;
@@ -129,6 +131,7 @@ function buildNavSimplified(container){
     <div class="nav-section">
       <div class="nav-section-label">Simplified Annual Accounting</div>
       <button class="nav-link-item" data-page="/" data-nav="s-cover" data-form-action="navigate" data-route="/">Cover &amp; Part I</button>
+      <button class="nav-link-item" data-page="/summary" data-nav="s-summary" data-form-action="navigate" data-route="/summary">Summary</button>
       <button class="nav-link-item" data-page="/p2" data-nav="s-p2" data-form-action="navigate" data-route="/p2">Part II — Accounting</button>
       <button class="nav-link-item" data-page="/p3" data-nav="s-p3" data-form-action="navigate" data-route="/p3">Part III — Declaration</button>
       <button class="nav-link-item" data-page="/p4" data-nav="s-p4" data-form-action="navigate" data-route="/p4">Part IV — Guardians</button>
@@ -141,6 +144,41 @@ function buildNavSimplified(container){
       <button class="nav-link-item" data-page="/print" data-form-action="navigate" data-route="/print"><span class="nav-link-label">${ic('file',15)}&nbsp; Print Preview</span></button>
     </div>
   `;
+}
+
+function getSummaryConfigSimplified(){
+  const d=window.D;
+  const t=calcTotals();
+  const f=v=>fmtS(v)||'—';
+  const fd=v=>v?String(v).substring(0,10):'—';
+  return {
+    formTitle:'Simplified Annual Accounting — Summary',
+    infoRows:[
+      {label:'Ward Name',value:esc(d.wardName)},
+      {label:'Case Number',value:esc(d.caseNumber)},
+      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Guardian',value:esc(d.guardian)},
+      {label:'Attorney',value:esc(d.attorney)},
+      {label:'County',value:esc(d.county)},
+      {label:'Type of Guardianship',value:esc(d.typeOfGuardianship)},
+    ],
+    leftCards:[{
+      heading:'Accounting Summary',
+      lines:[
+        {label:'Line 1 — Starting Balance',value:f(d.startingBalance)},
+        {label:'Line 2 — Interest Income',value:f(d.interestIncome)},
+        {label:'Line 3 — Deposits from Settlement',value:f(d.depositsSettlement)},
+        {label:'Line 4 — Total Income',value:f(t.totalIncome)},
+        {label:'Line 5 — Service Charges',value:f(d.serviceCharges)},
+        {label:'Line 6 — Federal Income Tax',value:f(d.federalIncomeTax)},
+        {label:'Line 7 — Total Disbursements',value:f(t.totalDisbursements)},
+        {label:'Line 8 — Remaining Assets On Hand',value:f(t.remaining),isTotal:true},
+      ],
+    }],
+    rightCards:[],
+    banner:{title:'SIMPLIFIED ACCOUNTING — YEAR-ENDING ASSETS',value:f(t.remaining)},
+    nextRoute:'/p2',
+  };
 }
 
 // ── Cover / Part I ──────────────────────────────────────
@@ -205,7 +243,7 @@ function pageCover(){
       <div class="summary-line total"><span>Remaining Assets On Hand (Line 8)</span><span>${fmtS(t.remaining)}</span></div>
     </div>
     </div>
-    ${pageNavS(null,'/p2')}
+    ${pageNavS(null,'/summary')}
   </div>`;
 }
 
@@ -270,7 +308,7 @@ function pagePart2(){
       <div class="tbl"><div class="tr"><div class="td"><strong>Line 8 — Remaining Assets On Hand</strong></div><div class="td" id="line8">${fmtS(t.remaining)}</div></div></div>
     </div>
     ${renderScheduleDocsSection('p2')}
-    ${pageNavS('/p2','/p3')}
+    ${pageNavS('/summary','/p3')}
   </div>`;
 }
 

@@ -6,7 +6,7 @@ import { freshStartNoPassword, createWard, fillMinimalValidPlanAnnualWard } from
 // No Excel round-trip spec: this filing type has no Excel support at all
 // (see the Milestone 4 plan's "Confirmed facts").
 
-const PLAN_ANNUAL_PAGES = ['/', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/p8', '/p9', '/p10', '/p11', '/print'];
+const PLAN_ANNUAL_PAGES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/p8', '/p9', '/p10', '/p11', '/print'];
 
 test.describe('plan-annual feature module', () => {
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {

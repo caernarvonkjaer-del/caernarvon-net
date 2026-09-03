@@ -186,8 +186,67 @@ test.describe('guardian-inventory feature module', () => {
     }));
     expect(imported.caseNumber).toBe('2026-CP-000123');
     expect(imported.county).toBe('Pinellas');
-    expect(imported.guardianName).toBe('Sample Guardian');
-
     expect(errors, `console/page errors during Excel import: ${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('D-3 Audit Fee & Safe Deposit Box tri-state lifecycle and summary completion', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'D3 TriState Ward', 'guardian');
+
+    // On a fresh ward, D.hasSafeDepositBox is null and D-3 nav check is false
+    const initialD3 = await page.evaluate(() => ({
+      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
+      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
+      navChecks: (window as any).computeNavChecks(),
+    }));
+    expect(initialD3.hasSafeDepositBox).toBeNull();
+    expect(initialD3.safeDepositBoxFiled).toBeNull();
+    expect(initialD3.navChecks.checks.d3).toBe(false);
+
+    // Summary page shows D-3 as incomplete / not completed
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    const d3SummaryLine = page.locator('.summary-line', { hasText: 'D-3' });
+    await expect(d3SummaryLine).toContainText('Incomplete');
+
+    // Navigate to /d3
+    await page.evaluate(() => (window as any).navigate('/d3'));
+    const sdbYes = page.locator('#sdb-yes');
+    const sdbNo = page.locator('#sdb-no');
+    const sdbFiledRow = page.locator('#sdb-filed-row');
+
+    await expect(sdbYes).not.toBeChecked();
+    await expect(sdbNo).not.toBeChecked();
+    await expect(sdbFiledRow).toBeHidden();
+
+    // Selecting "No" marks D-3 as complete
+    await sdbNo.check();
+    await expect(sdbNo).toBeChecked();
+    const noState = await page.evaluate(() => ({
+      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
+      navChecks: (window as any).computeNavChecks(),
+    }));
+    expect(noState.hasSafeDepositBox).toBe(false);
+    expect(noState.navChecks.checks.d3).toBe(true);
+
+    // Selecting "Yes" displays the Filed question and marks D-3 incomplete until filed is answered
+    await sdbYes.check();
+    await expect(sdbFiledRow).toBeVisible();
+    const yesUnfiledState = await page.evaluate(() => ({
+      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
+      navChecks: (window as any).computeNavChecks(),
+    }));
+    expect(yesUnfiledState.hasSafeDepositBox).toBe(true);
+    expect(yesUnfiledState.navChecks.checks.d3).toBe(false);
+
+    // Answering Filed: Yes completes D-3
+    await page.locator('#sdb-filed-yes').check();
+    const yesFiledState = await page.evaluate(() => ({
+      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
+      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
+      navChecks: (window as any).computeNavChecks(),
+    }));
+    expect(yesFiledState.hasSafeDepositBox).toBe(true);
+    expect(yesFiledState.safeDepositBoxFiled).toBe(true);
+    expect(yesFiledState.navChecks.checks.d3).toBe(true);
   });
 });

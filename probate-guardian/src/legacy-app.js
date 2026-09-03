@@ -1338,7 +1338,7 @@ function circuitCourtCaption(county,probateDivision){
 // wire their own listener in bindForms() instead) — this function only
 // ever concerns itself with the dropdown, never how the value gets saved.
 function countyAutocompleteHTML(id,val,path){
-  const binding=path?` data-form-path="${esc(path)}"`:'';
+  const binding=path?` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`:'';
   return `<div class="ward-combobox-wrap county-combobox-wrap">
     <input type="text" class="form-control" id="${id}" autocomplete="off" value="${esc(val||'')}"
       data-form-control="county"${binding}>
@@ -4697,6 +4697,7 @@ function handleSwitchWardClick(){
     }
   }
   if(!wardId)return;
+  collapseWardControls();
   if(wardId===guardianData.activeWardId){
     showSwitchWardPickerModal();
     return;
@@ -5643,11 +5644,17 @@ function applyWardControlsCollapsedState(){
   btn.textContent=_wardControlsCollapsed?'Show ward controls ▾':'Hide ward controls ▴';
   btn.setAttribute('aria-expanded',String(!_wardControlsCollapsed));
 }
+function collapseWardControls(){
+  _wardControlsCollapsed=true;
+  _wardControlsUserToggled=true;
+  applyWardControlsCollapsedState();
+}
 function toggleWardControls(){
   _wardControlsCollapsed=!_wardControlsCollapsed;
   _wardControlsUserToggled=true;
   applyWardControlsCollapsedState();
 }
+window.collapseWardControls=collapseWardControls;
 
 // Same pattern as the ward controls above, for the backup/auto-save block
 // at the bottom of the sidebar: collapses automatically once a form is
@@ -5665,11 +5672,17 @@ function applySaveControlsCollapsedState(){
   btn.textContent=_saveControlsCollapsed?'Show save controls ▾':'Hide save controls ▴';
   btn.setAttribute('aria-expanded',String(!_saveControlsCollapsed));
 }
+function collapseSaveControls(){
+  _saveControlsCollapsed=true;
+  _saveControlsUserToggled=true;
+  applySaveControlsCollapsedState();
+}
 function toggleSaveControls(){
   _saveControlsCollapsed=!_saveControlsCollapsed;
   _saveControlsUserToggled=true;
   applySaveControlsCollapsedState();
 }
+window.collapseSaveControls=collapseSaveControls;
 
 function updateSidebar(){
   const sidebar=document.getElementById('sidebar');
@@ -6567,8 +6580,8 @@ async function showAddWardModalForType(type){
 function emptyDataGuardian(){
   return {
     wardName:'',caseNumber:'',gid:null,county:'Pinellas',guardianName:'',
-    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:false,
-    safeDepositBoxFiled:false,isAmended:false,
+    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:null,
+    safeDepositBoxFiled:null,isAmended:false,
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
     scheduleB4:[],scheduleC1:[],scheduleC2:[],scheduleC3:[],scheduleC4:[],scheduleC5:[],
     // Per-schedule "I verify there are no items of this type" checkbox --
@@ -8280,8 +8293,9 @@ document.querySelectorAll('.nav-link-item[data-page]').forEach(btn=>{
 // Hash-based routing
 // Page routes for current wizard (dynamically set based on activeInventoryType)
 const PAGES_SIMPLIFIED=[
-  {id:'/',     label:'Cover & Part I'},
-  {id:'/p2',   label:'Part II'},
+  {id:'/',        label:'Cover & Part I'},
+  {id:'/summary', label:'Summary'},
+  {id:'/p2',      label:'Part II'},
   {id:'/p3',   label:'Part III'},
   {id:'/p4',   label:'Part IV'},
   {id:'/p5',   label:'Part V'},
@@ -8290,8 +8304,9 @@ const PAGES_SIMPLIFIED=[
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_ANNUAL=[
-  {id:'/',     label:'Part I'},
-  {id:'/p2',   label:'Part II'},
+  {id:'/',        label:'Part I'},
+  {id:'/summary', label:'Summary'},
+  {id:'/p2',      label:'Part II'},
   {id:'/p3',   label:'Part III'},
   {id:'/p4',   label:'Part IV'},
   {id:'/p5',   label:'Part V'},
@@ -8317,14 +8332,16 @@ const PAGES_ANNUAL=[
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_SIMPLIFIED=[
-  {id:'/',     label:'Cover'},
-  {id:'/p2',   label:'The Plan'},
+  {id:'/',        label:'Cover'},
+  {id:'/summary', label:'Summary'},
+  {id:'/p2',      label:'The Plan'},
   {id:'/p3',   label:'Signatures'},
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_ANNUAL=[
-  {id:'/',     label:'Cover'},
-  {id:'/p2',   label:'1. Residences'},
+  {id:'/',        label:'Cover'},
+  {id:'/summary', label:'Summary'},
+  {id:'/p2',      label:'1. Residences'},
   {id:'/p3',   label:'2–3. Residence & Care'},
   {id:'/p4',   label:'3G. Insurance & Benefits'},
   {id:'/p5',   label:'4. Medical Treatment'},
@@ -8337,8 +8354,9 @@ const PAGES_PLAN_ANNUAL=[
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_INITIAL=[
-  {id:'/',     label:'Cover'},
-  {id:'/p2',   label:'2–3. Setting & Medical Care'},
+  {id:'/',        label:'Cover'},
+  {id:'/summary', label:'Summary'},
+  {id:'/p2',      label:'2–3. Setting & Medical Care'},
   {id:'/p3',   label:'4–5. Mental Health & Personal Care'},
   {id:'/p4',   label:'6–7. Socialization & Benefits'},
   {id:'/p5',   label:'9. Examining Providers'},
@@ -8350,8 +8368,9 @@ const PAGES_PLAN_INITIAL=[
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_MINOR=[
-  {id:'/',     label:'Cover'},
-  {id:'/p2',   label:'2. Prior Residences'},
+  {id:'/',        label:'Cover'},
+  {id:'/summary', label:'Summary'},
+  {id:'/p2',      label:'2. Prior Residences'},
   {id:'/p3',   label:'3. Treatment Providers'},
   {id:'/p4',   label:'4. Medical Services'},
   {id:'/p5',   label:'5. Education & Social Development'},

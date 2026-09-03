@@ -271,4 +271,52 @@ test.describe('Ward-level Tab Locks', () => {
       await context.close();
     }
   });
+
+  test('auto-collapse: selecting actions in Show Ward Controls and Show Save Controls collapses the menus', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Collapse Test Ward');
+
+    const wardToggleBtn = page.locator('#ward-controls-toggle-btn');
+    const saveToggleBtn = page.locator('#save-controls-toggle-btn');
+
+    // 1. Expand ward controls if collapsed
+    if (await wardToggleBtn.textContent().then(t => t?.includes('Show'))) {
+      await wardToggleBtn.click();
+    }
+    await expect(wardToggleBtn).toHaveText('Hide ward controls ▴');
+
+    // Clicking New Form collapses ward controls
+    await page.locator('[data-shell-action="new-form"]').click();
+    await expect(wardToggleBtn).toHaveText('Show ward controls ▾');
+
+    // Re-expand ward controls
+    await wardToggleBtn.click();
+    await expect(wardToggleBtn).toHaveText('Hide ward controls ▴');
+
+    // Switching ward collapses ward controls
+    await page.locator('[data-shell-action="switch-ward"]').click();
+    await expect(wardToggleBtn).toHaveText('Show ward controls ▾');
+    await page.locator('#switchWardPickerModal [data-modal-action="close"]').click();
+    await expect(page.locator('#switchWardPickerModal')).not.toHaveClass(/show/);
+
+    // 2. Save controls
+    if (await saveToggleBtn.textContent().then(t => t?.includes('Show'))) {
+      await saveToggleBtn.click();
+    }
+    await expect(saveToggleBtn).toHaveText('Hide save controls ▴');
+
+    // Changing auto-save interval collapses save controls
+    await page.selectOption('#auto-export-interval-select', '30');
+    await expect(saveToggleBtn).toHaveText('Show save controls ▾');
+
+    // Re-expand save controls
+    await saveToggleBtn.click();
+    await expect(saveToggleBtn).toHaveText('Hide save controls ▴');
+
+    // Clicking save data file collapses save controls
+    await page.locator('[data-shell-action="export-data"]').click();
+    await expect(saveToggleBtn).toHaveText('Show save controls ▾');
+  });
 });

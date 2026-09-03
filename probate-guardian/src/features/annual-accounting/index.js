@@ -1,3 +1,4 @@
+import { renderSummaryPage } from '../../core/summary-renderer.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -61,6 +62,7 @@ export async function mount(container, page) {
   let html;
   switch (page) {
     case '/':      html = pagePart1Annual(); break;
+    case '/summary': html = renderSummaryPage(getSummaryConfigAnnual()); break;
     case '/p2':    html = pagePart2Annual(); break;
     case '/p3':    html = pagePart3Annual(); break;
     case '/p4':    html = pagePart4Annual(); break;
@@ -232,6 +234,7 @@ function buildNavAnnual(container){
     <div class="nav-section">
       <div class="nav-section-label">${esc(formDisplayName(window.D.inventoryType))}</div>
       <button class="nav-link-item" data-page="/" data-nav="a-p1" data-form-action="navigate" data-route="/">Part I — Case Info</button>
+      <button class="nav-link-item" data-page="/summary" data-nav="a-summary" data-form-action="navigate" data-route="/summary">Summary</button>
       <button class="nav-link-item" data-page="/p2" data-nav="a-p2" data-form-action="navigate" data-route="/p2">Part II — Accounting</button>
       <button class="nav-link-item" data-page="/p3" data-nav="a-p3" data-form-action="navigate" data-route="/p3">Part III — Guardians</button>
       <button class="nav-link-item" data-page="/p4" data-nav="a-p4" data-form-action="navigate" data-route="/p4">Part IV — Preparer</button>
@@ -323,6 +326,51 @@ function pageNavAnnual(prev,next){
     ${next?`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${next}">Next →</button>`:`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="/print">Preview & Export →</button>`}
   </div>`;
 }
+function getSummaryConfigAnnual(){
+  const d=window.D;
+  const t=calcTotalsAnnual();
+  const f=v=>fmtAnnual(v)||'—';
+  const fd=v=>v?String(v).substring(0,10):'—';
+  return {
+    formTitle:`${d.inventoryType==='finalAccounting'?'Final':d.inventoryType==='trustAccounting'?'Trust':'Annual'} Accounting — Summary`,
+    infoRows:[
+      {label:'Ward Name',value:esc(d.wardName)},
+      {label:'Case Number',value:esc(d.caseNumber)},
+      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Filing Type',value:esc(d.filingType||'Annual')+(d.amendedForm==='Yes'?' (Amended)':'')},
+      {label:'Guardian',value:esc(d.guardian)},
+      {label:'Attorney',value:esc(d.attorney)},
+      {label:'County',value:esc(d.county)},
+    ],
+    leftCards:[{
+      heading:'Financial Quick Summary',
+      lines:[
+        {label:'Starting Balance',value:f(d.startingBalance)},
+        {label:'Sch A — Income',value:f(t.schA)},
+        {label:'Total Disbursements (B-1 thru B-4)',value:f(t.totalDisb)},
+        {label:'Sch C — Capital Adj. Net',value:f(t.schC_net)},
+        {label:'Net Assets at End of Period',value:f(t.netAssets),isTotal:true},
+        {label:'Net Assets from Sch D (should match)',value:f(t.netAssetsFromD)},
+      ],
+    }],
+    rightCards:[{
+      heading:'Schedules',
+      lines:[
+        {label:'Sch A — Income',route:'/scha'},
+        {label:'Sch B1 — Disbursements',route:'/schb1'},
+        {label:'Sch B2 — Disbursements',route:'/schb2'},
+        {label:'Sch B3 — Disbursements',route:'/schb3'},
+        {label:'Sch B4 — Disbursements',route:'/schb4'},
+        {label:'Sch C — Gains/Losses',route:'/schc'},
+        {label:'Sch D1–D5 — Assets & Liabilities',route:'/schd1'},
+        {label:'Sch E — Transfers',route:'/sche'},
+        {label:'Sch F1–F2 — Sales',route:'/schf1'},
+      ],
+    }],
+    banner:{title:'NET ASSETS ON HAND',value:f(t.netAssetsFromD)},
+    nextRoute:'/p2',
+  };
+}
 // Exported (not just module-local) because print.js's buildPrintHTMLAnnual()
 // also needs it, for the same Schedule B-4 category-total table --
 // statically imported back from here, same pattern as fmtAnnual/fmtD above.
@@ -378,7 +426,7 @@ function pagePart1Annual(){
     <div class="summary-line total"><span>Net Assets at End of Period</span><span>${fmtAnnual(t.netAssets)}</span></div>
     <div class="summary-line" style="margin-top:.35rem;"><span>Net Assets from Sch D (should match above)</span><span>${fmtAnnual(t.netAssetsFromD)}</span></div>
   </div>
-  ${pageNavAnnual(null,'/p2')}
+  ${pageNavAnnual(null,'/summary')}
   </div>`;
 }
 
@@ -400,7 +448,7 @@ function pagePart2Annual(){
   <div class="row g-2">
     <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",false,'number')}</div>
   </div>
-  ${pageNavAnnual('/p2','/p3')}
+  ${pageNavAnnual('/summary','/p3')}
   </div>`;
 }
 

@@ -6,7 +6,7 @@ import { freshStartNoPassword, createWard, fillMinimalValidPlanMinorWard } from 
 // No Excel round-trip spec: this filing type has no Excel support at all
 // (see the Milestone 6 plan's "Confirmed facts").
 
-const PLAN_MINOR_PAGES = ['/', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/print'];
+const PLAN_MINOR_PAGES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/print'];
 
 test.describe('plan-minor feature module', () => {
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {
