@@ -63,6 +63,25 @@ export function loadGuardianFeature() {
 export function loadDashboardFeature() {
   return import('./features/dashboard/index.js');
 }
+// Accessible PDF loaders (Milestone 19) -- bridges PDF model and engine
+// modules into Vite's bundle discovery graph so both web (dev/preview) and
+// portable (file:// single-file) distributions can execute and test PDF generation.
+export async function loadGuardianPdf() {
+  const [model, engine, access] = await Promise.all([
+    import('./features/guardian-inventory/pdf-model.js'),
+    import('./features/guardian-inventory/pdf-engine.js'),
+    import('./core/pdf/pdf-accessibility.js'),
+  ]);
+  return { ...model, ...engine, ...access };
+}
+
+export async function loadSimplifiedPdf() {
+  const [model, engine] = await Promise.all([
+    import('./features/simplified-accounting/pdf-model.js'),
+    import('./core/pdf/pdf-engine.js'),
+  ]);
+  return { ...model, ...engine };
+}
 
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
@@ -75,4 +94,7 @@ window.loadPlanMinorFeature = loadPlanMinorFeature;
 window.loadAnnualFeature = loadAnnualFeature;
 window.loadGuardianFeature = loadGuardianFeature;
 window.loadDashboardFeature = loadDashboardFeature;
+window.loadGuardianPdf = loadGuardianPdf;
+window.loadSimplifiedPdf = loadSimplifiedPdf;
 document.dispatchEvent(new Event('features-loader-ready'));
+

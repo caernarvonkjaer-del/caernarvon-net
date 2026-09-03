@@ -109,8 +109,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
 
     // 3. Generate native vector PDF in browser memory and inspect raw stream
     const pdfInspection = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel } = await import('/probate-guardian/src/features/guardian-inventory/pdf-model.js');
-      const { generateVerifiedInventoryPdf } = await import('/probate-guardian/src/features/guardian-inventory/pdf-engine.js');
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
 
       const model = buildVerifiedInventoryModel((window as any).D, {
         signatureStyle: 'script',
@@ -322,7 +321,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
   test('Slice 19A: XMP metadata packet conditionally includes pdfuaid:part 1 when requested', async ({ page }) => {
     await freshStartNoPassword(page);
     const result = await page.evaluate(async () => {
-      const { buildXmpPacket } = await import('/probate-guardian/src/features/guardian-inventory/pdf-accessibility.js');
+      const { buildXmpPacket } = await (window as any).loadGuardianPdf();
       const standard = buildXmpPacket({ title: 'Test Form' });
       const withPdfUa = buildXmpPacket({ title: 'Test Form', claimPdfUa: true });
       return {
@@ -338,8 +337,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     await freshStartNoPassword(page);
 
     const inspection = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel } = await import('/probate-guardian/src/features/guardian-inventory/pdf-model.js');
-      const { generateVerifiedInventoryPdf } = await import('/probate-guardian/src/features/guardian-inventory/pdf-engine.js');
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
 
       // Create model with:
       // 1. Asymmetric key-value grid (odd items)
@@ -459,8 +457,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     await freshStartNoPassword(page);
 
     const inspection = await page.evaluate(async () => {
-      const { buildSimplifiedAccountingModel } = await import('/probate-guardian/src/features/simplified-accounting/pdf-model.js');
-      const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
 
       const sampleData = {
         wardName: 'Harold Thomas Bennett',
@@ -619,10 +616,8 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     await freshStartNoPassword(page);
 
     const auditResults = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel } = await import('/probate-guardian/src/features/guardian-inventory/pdf-model.js');
-      const { generateVerifiedInventoryPdf } = await import('/probate-guardian/src/features/guardian-inventory/pdf-engine.js');
-      const { buildSimplifiedAccountingModel } = await import('/probate-guardian/src/features/simplified-accounting/pdf-model.js');
-      const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
 
       const mockInventoryData = {
         wardName: 'Harold Thomas Bennett',

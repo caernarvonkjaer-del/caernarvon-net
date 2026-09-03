@@ -131,8 +131,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
     // 5. Generate native vector PDF in browser memory and inspect raw stream
     const pdfInspection = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel } = await import('/probate-guardian/src/features/guardian-inventory/pdf-model.js');
-      const { generateVerifiedInventoryPdf } = await import('/probate-guardian/src/features/guardian-inventory/pdf-engine.js');
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
 
       const model = buildVerifiedInventoryModel((window as any).D, {
         signatureStyle: 'script',
