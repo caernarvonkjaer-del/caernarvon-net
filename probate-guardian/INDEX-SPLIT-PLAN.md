@@ -1368,4 +1368,3 @@ Validation completed:
 - Marked Content operators (`BDC ... EMC`) for semantic structural blocks (`/H1`, `/H2`, `/Table`, `/TR`, `/TH`, `/TD`, `/P`, `/Figure`).
 - Artifact tagging (`/Artifact << /Type /Pagination >>` and `/Artifact << /Type /Layout >>`) for running headers, footers, divider lines, and alternating row backgrounds.
 - Strict table hierarchy, headers, and regularity matching all 32 Adobe Acrobat Pro Accessibility Checker rules with zero errors.
-

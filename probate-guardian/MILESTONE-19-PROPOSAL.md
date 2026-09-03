@@ -54,40 +54,40 @@ The milestone is successful when running **Adobe Acrobat Pro > Prepare for Acces
 
 ## Adobe Acrobat 32-Rule Compliance Matrix
 
-| Category | Check Name | Status | Technical Implementation Mechanism |
-|---|---|---|---|
-| **Document** | Accessibility permission flag | **Passed** | Ensure no PDF encryption permissions prohibit assistive tech access (`/P` permissions permit text access). |
-| **Document** | Image-only PDF | **Passed** | Pure native vector text streams (`BT ... ET`). No raster images. |
-| **Document** | Tagged PDF | **Passed** | Inject `/MarkInfo << /Marked true >>` and `/StructTreeRoot [ref]` into the document catalog. |
-| **Document** | Logical Reading Order | **Manual Check** | Structure tree hierarchy matches visual top-to-bottom, left-to-right reading order. |
-| **Document** | Primary Language | **Passed** | Catalog includes `/Lang (en-US)`. |
-| **Document** | Title | **Passed** | Set `/Title` in `/Info`, Dublin Core `dc:title` in XMP metadata, AND `/ViewerPreferences << /DisplayDocTitle true >>` in `/Catalog`. |
-| **Document** | Bookmarks | **Passed** | Hierarchical document outline bookmarks linking all Parts, Schedules, and Attestations. |
-| **Document** | Color Contrast | **Manual Check** | High-contrast palette: `#1a2d4a` (Navy, 11.8:1), `#820024` (Maroon, 8.2:1), `#141923` (Body text, 16.5:1) — all well exceeding WCAG 2.1 AA 4.5:1. |
-| **Page Content** | Tagged Content | **Passed** | Every page text operator wrapped in Marked Content (`BDC ... EMC`) with an `/MCID` referencing a `/StructElem`, or wrapped as `/Artifact`. |
-| **Page Content** | Tagged Annotations | **Passed** | All link annotations tagged in `/StructTreeRoot`. |
-| **Page Content** | Tab Order | **Passed** | Set `/Tabs /S` in every `/Page` object dictionary so keyboard tab order follows the structure tree. |
-| **Page Content** | Character Encoding | **Passed** | Standard fonts with `/ToUnicode` CMaps mapping character codes to Unicode code points. |
-| **Page Content** | Tagged Multimedia | **Passed** | N/A (no multimedia). |
-| **Page Content** | Screen Flicker | **Passed** | Static document. |
-| **Page Content** | Scripts | **Passed** | No PDF action scripts. |
-| **Page Content** | Timed Responses | **Passed** | No timed interactions. |
-| **Page Content** | Navigation Links | **Passed** | Valid outline destinations. |
-| **Forms** | Tagged Form Fields | **Passed** | Finalized court documents are static text; if any widget is emitted, it is tagged in `/StructTreeRoot`. |
-| **Forms** | Field Descriptions | **Passed** | Tooltip `/TU` values present for all interactive fields. |
-| **Alternate Text** | Figures Alternate Text | **Passed** | Any `/Figure` structure element includes `/Alt (description)`. Purely decorative vector rules are marked `/Artifact`. |
-| **Alternate Text** | Nested Alternate Text | **Passed** | No nested alt text. |
-| **Alternate Text** | Associated with Content | **Passed** | Alt text attached directly to relevant structure element. |
-| **Alternate Text** | Hides Annotation | **Passed** | Alt text does not conceal active links or annotations. |
-| **Alternate Text** | Other Elements Alternate Text | **Passed** | Non-standard tags mapped via `/RoleMap`. |
-| **Tables** | Rows | **Passed** | `<TR>` structure elements are direct children of `<Table>`. |
-| **Tables** | TH and TD | **Passed** | `<TH>` and `<TD>` structure elements are direct children of `<TR>`. |
-| **Tables** | Headers | **Passed** | Table header row explicitly tagged with `<TH>` and `/Scope /Column`. |
-| **Tables** | Regularity | **Passed** | Equal column counts in every row or explicit `/ColSpan` attributes. |
-| **Tables** | Summary | **Passed** | Optional `/Summary` attribute provided for financial schedules. |
-| **Lists** | List Items | **Passed** | `<LI>` elements are direct children of `<L>`. |
-| **Lists** | Lbl and LBody | **Passed** | `<LI>` contains `<Lbl>` (bullet/number) and `<LBody>` (text body). |
-| **Headings** | Appropriate Nesting | **Passed** | Strict heading hierarchy: `<H1>` for Part titles, `<H2>` for Schedule titles, `<H3>` for subheadings. No skipped heading levels. |
+| Category           | Check Name                    | Status           | Technical Implementation Mechanism                                                                                                                |
+| ------------------ | ----------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Document**       | Accessibility permission flag | **Passed**       | Ensure no PDF encryption permissions prohibit assistive tech access (`/P` permissions permit text access).                                        |
+| **Document**       | Image-only PDF                | **Passed**       | Pure native vector text streams (`BT ... ET`). No raster images.                                                                                  |
+| **Document**       | Tagged PDF                    | **Passed**       | Inject `/MarkInfo << /Marked true >>` and `/StructTreeRoot [ref]` into the document catalog.                                                      |
+| **Document**       | Logical Reading Order         | **Manual Check** | Structure tree hierarchy matches visual top-to-bottom, left-to-right reading order.                                                               |
+| **Document**       | Primary Language              | **Passed**       | Catalog includes `/Lang (en-US)`.                                                                                                                 |
+| **Document**       | Title                         | **Passed**       | Set `/Title` in `/Info`, Dublin Core `dc:title` in XMP metadata, AND `/ViewerPreferences << /DisplayDocTitle true >>` in `/Catalog`.              |
+| **Document**       | Bookmarks                     | **Passed**       | Hierarchical document outline bookmarks linking all Parts, Schedules, and Attestations.                                                           |
+| **Document**       | Color Contrast                | **Manual Check** | High-contrast palette: `#1a2d4a` (Navy, 11.8:1), `#820024` (Maroon, 8.2:1), `#141923` (Body text, 16.5:1) — all well exceeding WCAG 2.1 AA 4.5:1. |
+| **Page Content**   | Tagged Content                | **Passed**       | Every page text operator wrapped in Marked Content (`BDC ... EMC`) with an `/MCID` referencing a `/StructElem`, or wrapped as `/Artifact`.        |
+| **Page Content**   | Tagged Annotations            | **Passed**       | All link annotations tagged in `/StructTreeRoot`.                                                                                                 |
+| **Page Content**   | Tab Order                     | **Passed**       | Set `/Tabs /S` in every `/Page` object dictionary so keyboard tab order follows the structure tree.                                               |
+| **Page Content**   | Character Encoding            | **Passed**       | Standard fonts with `/ToUnicode` CMaps mapping character codes to Unicode code points.                                                            |
+| **Page Content**   | Tagged Multimedia             | **Passed**       | N/A (no multimedia).                                                                                                                              |
+| **Page Content**   | Screen Flicker                | **Passed**       | Static document.                                                                                                                                  |
+| **Page Content**   | Scripts                       | **Passed**       | No PDF action scripts.                                                                                                                            |
+| **Page Content**   | Timed Responses               | **Passed**       | No timed interactions.                                                                                                                            |
+| **Page Content**   | Navigation Links              | **Passed**       | Valid outline destinations.                                                                                                                       |
+| **Forms**          | Tagged Form Fields            | **Passed**       | Finalized court documents are static text; if any widget is emitted, it is tagged in `/StructTreeRoot`.                                           |
+| **Forms**          | Field Descriptions            | **Passed**       | Tooltip `/TU` values present for all interactive fields.                                                                                          |
+| **Alternate Text** | Figures Alternate Text        | **Passed**       | Any `/Figure` structure element includes `/Alt (description)`. Purely decorative vector rules are marked `/Artifact`.                             |
+| **Alternate Text** | Nested Alternate Text         | **Passed**       | No nested alt text.                                                                                                                               |
+| **Alternate Text** | Associated with Content       | **Passed**       | Alt text attached directly to relevant structure element.                                                                                         |
+| **Alternate Text** | Hides Annotation              | **Passed**       | Alt text does not conceal active links or annotations.                                                                                            |
+| **Alternate Text** | Other Elements Alternate Text | **Passed**       | Non-standard tags mapped via `/RoleMap`.                                                                                                          |
+| **Tables**         | Rows                          | **Passed**       | `<TR>` structure elements are direct children of `<Table>`.                                                                                       |
+| **Tables**         | TH and TD                     | **Passed**       | `<TH>` and `<TD>` structure elements are direct children of `<TR>`.                                                                               |
+| **Tables**         | Headers                       | **Passed**       | Table header row explicitly tagged with `<TH>` and `/Scope /Column`.                                                                              |
+| **Tables**         | Regularity                    | **Passed**       | Equal column counts in every row or explicit `/ColSpan` attributes.                                                                               |
+| **Tables**         | Summary                       | **Passed**       | Optional `/Summary` attribute provided for financial schedules.                                                                                   |
+| **Lists**          | List Items                    | **Passed**       | `<LI>` elements are direct children of `<L>`.                                                                                                     |
+| **Lists**          | Lbl and LBody                 | **Passed**       | `<LI>` contains `<Lbl>` (bullet/number) and `<LBody>` (text body).                                                                                |
+| **Headings**       | Appropriate Nesting           | **Passed**       | Strict heading hierarchy: `<H1>` for Part titles, `<H2>` for Schedule titles, `<H3>` for subheadings. No skipped heading levels.                  |
 
 ---
 
@@ -131,6 +131,7 @@ PDF Document Structure
 ```
 
 ### 1. Tagged PDF Catalog & Page Initialization
+
 - In `src/features/guardian-inventory/pdf-engine.js`:
   - Hook into catalog generation to write:
     - `/MarkInfo << /Marked true >>`
@@ -139,6 +140,7 @@ PDF Document Structure
   - Hook into each page dictionary to write `/Tabs /S` and `/StructParents <pageIndex>`.
 
 ### 2. Marked Content Stream Emitter (`BDC ... EMC`)
+
 - Provide a low-level marked content wrapper for all rendering primitives:
   - `doc.beginMarkedContent(tag, mcid)` -> emits `/${tag} << /MCID ${mcid} >> BDC`
   - `doc.endMarkedContent()` -> emits `EMC`
@@ -147,6 +149,7 @@ PDF Document Structure
 - Running headers, page footers, divider lines, and alternating row backgrounds are wrapped in `/Artifact` so screen readers ignore them and Acrobat does not flag them as untagged content.
 
 ### 3. Structure Tree Root (`/StructTreeRoot`) & ParentTree Builder
+
 - Maintain a structured hierarchy of nodes while rendering:
   - Each text block, table header, table cell, or paragraph allocates a unique `mcid` for its page.
   - A `/StructElem` dictionary object is created for each semantic element:
@@ -158,6 +161,7 @@ PDF Document Structure
   - Construct `/ParentTree` number tree mapping each page index to an array of indirect object references for its `/StructElem` children.
 
 ### 4. Semantic Table & Heading Hierarchy
+
 - Tables must be strictly emitted as:
   - `<Table>` container
   - `<TR>` row elements
@@ -171,6 +175,7 @@ PDF Document Structure
   - No skipping (e.g. never `<H1>` directly to `<H3>`).
 
 ### 5. Signatures and Alternate Text
+
 - Electronic `/s/` signatures:
   - Rendered as structured text (`<P>`) containing the full `/s/ Signer Name` string, accessible directly to screen readers.
   - Script style or decorative flourishes wrapped as `/Artifact` or tagged as `<Figure>` with explicit `/Alt (/s/ Signer Name, Electronic Signature pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)`.
@@ -180,6 +185,7 @@ PDF Document Structure
 ## Implementation Slices
 
 ### Slice 19A: PDF Engine Tagged Structure Core, Metadata & Serialization Integrity (`pdf-accessibility.js` & `pdf-engine.js`)
+
 - **PDF 1.7 Header**: Configure jsPDF version to `1.7` (`doc.__private__.setPdfVersion('1.7')`), establishing the base standard for PDF/UA-1 conformance.
 - **XMP Metadata Stream**: Create standards-compliant XML packet in indirect object (`/Type /Metadata`, `/Subtype /XML`) containing Dublin Core schemas (`dc:title`, `dc:creator`, `dc:description`) and PDF/UA identifier (`<pdfuaid:part>1</pdfuaid:part>`). Link `/Metadata` in `/Catalog`.
 - **Catalog Accessibility Keys**: Invalidate duplicate keys; inject `/MarkInfo << /Marked true >>`, `/StructTreeRoot`, and exactly one `/Lang (en-US)` in `/Catalog`.
@@ -189,6 +195,7 @@ PDF Document Structure
 - **Baseline Tagged Content & Artifact Demarcation**: Implement marked content (`BDC`/`EMC`) and artifact (`/Artifact`) emitters across Verified Initial Inventory blocks.
 
 ### Slice 19B: Accessible Table & Heading Semantics Hardening (`pdf-model.js` & `pdf-engine.js`)
+
 - Transform all inventory schedules into strict semantic trees:
   - `<Table>` -> `<TR>` -> `<TH>` / `<TD>` structural hierarchy.
   - Explicit column scope `/Scope /Column` on all table headers and `/Scope /Row` on key-value grid headers.
@@ -196,15 +203,16 @@ PDF Document Structure
   - Enforce hierarchical heading nesting: Part title (`H1`), Schedule title (`H2`), Sub-block title (`H3`) without skipped levels.
 
 ### Slice 19C: Shared Accessible PDF Generator for All Court Forms
+
 - Generalize the accessible PDF generation engine so other probate forms (Annual Accounting, Simplified Accounting, and Plans) can transition from legacy `html2pdf` raster captures to this fully accessible tagged vector pipeline.
 
 ### Slice 19D: Automated Verification Suite & Acrobat Pro Validation Protocol
+
 - E2E Playwright tests (`tests/e2e/pdf-wcag-compliance.spec.ts`):
   - Inspect raw PDF streams: verify PDF 1.7 header, `/MarkInfo << /Marked true >>`, `/StructTreeRoot`, `/ParentTree`, `/Tabs /S`, `/ViewerPreferences << /DisplayDocTitle true >>`, `/Metadata` with `pdfuaid:part 1`, `/Artifact`, `/TH`, `/TD`, `/H1`, and `/H2`.
   - Verify complete xref table integrity (all byte offsets match exact object headers with zero malformed objects).
   - Assert zero untagged text operators.
 - Document manual verification protocol for testing with Adobe Acrobat Pro Accessibility Checker.
-
 
 ---
 
@@ -233,4 +241,3 @@ PDF Document Structure
 - [ ] **Test Automation**:
   - [ ] Automated Playwright test suite passes cleanly, validating all PDF structural tags and streams.
   - [ ] Offline and portable single-file build verified with zero external dependencies.
-
