@@ -614,6 +614,161 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(sectionTitles).toContain('Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE');
     expect(sectionTitles).toContain('Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION');
   });
+
+  test('Slice 19D: Complete xref table byte offset integrity and zero untagged text operators across all filing outputs', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const auditResults = await page.evaluate(async () => {
+      const { buildVerifiedInventoryModel } = await import('/probate-guardian/src/features/guardian-inventory/pdf-model.js');
+      const { generateVerifiedInventoryPdf } = await import('/probate-guardian/src/features/guardian-inventory/pdf-engine.js');
+      const { buildSimplifiedAccountingModel } = await import('/probate-guardian/src/features/simplified-accounting/pdf-model.js');
+      const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
+
+      const mockInventoryData = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        gid: '2026-01-15',
+        typeOfGuardianship: 'Plenary',
+        guardianName: 'Rachel M. Alvarez',
+        attorneyForGuardian: 'Robert Vance, Esq.',
+        witnesses: [{ name: 'David Miller', address: '120 Central Ave', occupation: 'Paralegal' }],
+        guardians: [{ name: 'Rachel M. Alvarez', signatureDate: '2026-02-28', phone: '727-555-0144' }],
+        preparer: { name: 'Marcus Thorne', signatureDate: '2026-02-28', phone: '727-555-0188' },
+        attorney: { name: 'Robert Vance, Esq.', barNumber: '0184920', signatureDate: '2026-03-01' },
+        serviceAttorney: { name: 'Elena Rostova', barNumber: '0293841', signatureDate: '2026-03-01' },
+        serviceRecipients: [{ name: 'Sarah Bennett', address: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL', method: 'E-Portal' }],
+        scheduleA1: [{ propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL', valuationMethod: 'Appraisal', fullAssetValue: 250000, wardPercent: 100 }],
+        scheduleA2: [{ lenderName: 'Wells Fargo', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA', relatedProperty: '1420 5th Ave N', fullDebtBalance: 45000 }],
+        scheduleB1: [{ institutionName: 'Raymond James', accountType: 'Checking', accountNumber: '***4821', streetAddress: '880 Carillon', cityStateZip: 'St. Pete', fullAssetAmount: 38250 }],
+        scheduleB2: [{ description: '2021 Toyota Camry', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Pete', valuationMethod: 'KBB', fullAssetValue: 18500, wardPercent: 100 }],
+        scheduleC1: [{ payerName: 'SSA', typeOfIncome: 'Retirement', paymentBasis: 'Monthly', annualIncomeAmount: 22200 }],
+      };
+
+      const mockSimplifiedData = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        guardian: 'Eleanor Vance Bennett',
+        attorney: 'Marcus Sterling, Esq.',
+        guardians: [{ name: 'Eleanor Vance Bennett', signatureDate: '2026-03-01', phone: '727-555-0199' }],
+        attorney_barNumber: '1029384',
+        attorney_signatureDate: '2026-03-01',
+        certServiceDate: '2026-03-01',
+        certAttySignDate: '2026-03-01',
+        certIndicator: 'Electronic / Florida Courts E-Filing Portal',
+        certRecipients: [{ name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756' }],
+        startingBalance: 150000,
+        interestIncome: 3500,
+        depositsSettlement: 0,
+        serviceCharges: 95,
+        federalIncomeTax: 1200,
+        remuneration: [{ guardian: 'Eleanor Vance Bennett', type: 'Guardian Fee', description: 'Statutory fee per court order' }],
+      };
+
+      const invModel = buildVerifiedInventoryModel(mockInventoryData, { signatureStyle: 'typed', printDate: '2026-09-03' });
+      const simpModel = buildSimplifiedAccountingModel(mockSimplifiedData, { signatureStyle: 'script', printDate: '2026-09-03' });
+
+      const invDoc = await generateVerifiedInventoryPdf(invModel);
+      const simpDoc = await generateCourtFormPdf(simpModel);
+
+      function auditPdf(rawPdf) {
+        // 1. Audit Xref Table & Byte Offsets
+        const startxrefMatch = rawPdf.match(/startxref\s+(\d+)\s+%%EOF/);
+        const declaredStartxref = parseInt(startxrefMatch ? startxrefMatch[1] : '-1', 10);
+        const startxrefPointsToXref = rawPdf.slice(declaredStartxref, declaredStartxref + 4) === 'xref';
+
+        const trailerIndex = rawPdf.indexOf('trailer', declaredStartxref);
+        const xrefSection = rawPdf.slice(declaredStartxref, trailerIndex);
+        const xrefLines = xrefSection.split(/\r?\n/).filter(l => /^\d{10}\s+\d{5}\s+[nf]/.test(l.trim()));
+        let totalObjectsInXref = 0;
+        let validOffsets = 0;
+
+        for (let i = 1; i < xrefLines.length; i++) {
+          const [offsetStr, gen, status] = xrefLines[i].trim().split(/\s+/);
+          totalObjectsInXref++;
+          if (status === 'n') {
+            const offset = parseInt(offsetStr, 10);
+            const snippet = rawPdf.slice(offset, offset + 30);
+            if (new RegExp(`^${i}\\s+0\\s+obj`).test(snippet)) {
+              validOffsets++;
+            }
+          }
+        }
+
+        // 2. Audit Stream Content for Untagged Text Operators
+        // Any text-showing operator (Tj, TJ, ', ") MUST be within a BDC ... EMC block
+        const streamMatches = [...rawPdf.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)];
+        let totalTextOperators = 0;
+        let untaggedTextOperators = 0;
+        const untaggedDetails: string[] = [];
+
+        for (const sm of streamMatches) {
+          const content = sm[1];
+          // Only inspect PDF page content streams (skip XML metadata or non-content streams)
+          if (content.includes('<?xpacket')) continue;
+
+          const tokens = content.split(/\s+/);
+          let mcDepth = 0;
+          let inText = false;
+          for (let t = 0; t < tokens.length; t++) {
+            const tok = tokens[t];
+            if (tok === 'BDC' || tok === 'BMC') {
+              mcDepth++;
+            } else if (tok === 'EMC') {
+              mcDepth = Math.max(0, mcDepth - 1);
+            } else if (tok === 'BT') {
+              inText = true;
+            } else if (tok === 'ET') {
+              inText = false;
+            } else if (inText && (tok === 'Tj' || tok === 'TJ' || tok === "'" || tok === '"')) {
+              totalTextOperators++;
+              if (mcDepth === 0) {
+                untaggedTextOperators++;
+                untaggedDetails.push(tokens.slice(Math.max(0, t - 10), t + 1).join(' '));
+              }
+            }
+          }
+        }
+
+        return {
+          startxrefPointsToXref,
+          totalObjectsInXref,
+          validOffsets,
+          totalTextOperators,
+          untaggedTextOperators,
+          untaggedDetails,
+        };
+      }
+
+      return {
+        inventory: auditPdf(invDoc.output()),
+        simplified: auditPdf(simpDoc.output()),
+      };
+    });
+
+    const { inventory, simplified } = auditResults;
+
+    // 1. Inventory Form Audit:
+    // Zero xref displacement: declared startxref points directly to xref keyword at its exact byte offset
+    expect(inventory.startxrefPointsToXref).toBe(true);
+    // 100% of objects in xref table resolve to exact `<ID> 0 obj` at their declared byte offsets
+    expect(inventory.totalObjectsInXref).toBeGreaterThan(50);
+    expect(inventory.validOffsets).toBe(inventory.totalObjectsInXref);
+    // 100% of text showing operators are enclosed in marked content / artifact blocks (zero untagged text)
+    expect(inventory.totalTextOperators).toBeGreaterThan(50);
+    expect(inventory.untaggedDetails).toEqual([]);
+    expect(inventory.untaggedTextOperators).toBe(0);
+
+    // 2. Simplified Accounting Audit:
+    expect(simplified.startxrefPointsToXref).toBe(true);
+    expect(simplified.totalObjectsInXref).toBeGreaterThan(50);
+    expect(simplified.validOffsets).toBe(simplified.totalObjectsInXref);
+    expect(simplified.totalTextOperators).toBeGreaterThan(50);
+    expect(simplified.untaggedTextOperators).toBe(0);
+  });
 });
 
 
