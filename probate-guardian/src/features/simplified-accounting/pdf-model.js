@@ -227,7 +227,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished on ${serviceDateText}${indicatorNote} to the following persons:`,
+        text: 'Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to:',
       },
       ...(certRecipients.length > 0 ? [
         {
@@ -249,13 +249,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           text: 'None listed.',
         }
       ]),
-      ...(d.certIndicator ? [
-        {
-          type: 'notice',
-          tag: 'P',
-          text: `Service delivery method / indicator: ${d.certIndicator}`,
-        }
-      ] : []),
+      {
+        type: 'notice',
+        tag: 'P',
+        text: `on this date: ${fmtDate(d.certServiceDate) || 'the date indicated below'}${d.certIndicator ? `  |  Indicate if: ${d.certIndicator}` : ''}`,
+      },
       {
         type: 'signature-block',
         tag: 'Figure',
