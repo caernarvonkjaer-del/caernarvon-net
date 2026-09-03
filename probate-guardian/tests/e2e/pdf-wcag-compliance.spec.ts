@@ -764,6 +764,231 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(simplified.totalTextOperators).toBeGreaterThan(50);
     expect(simplified.untaggedTextOperators).toBe(0);
   });
+
+  test('Slice 19E: Shared accessible PDF generator produces tagged PDF 1.7 for Annual Guardianship Accounting', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const inspection = await page.evaluate(async () => {
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+
+      const sampleAnnualData = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        guardian: 'Rachel M. Alvarez',
+        attorney: 'Robert Vance, Esq.',
+        typeOfGuardianship: 'Plenary',
+        filingType: 'Annual Accounting',
+        amendedForm: false,
+        startingBalance: 125000,
+        guardians: [
+          { name: 'Rachel M. Alvarez', signatureDate: '2026-03-01', phone: '727-555-0144', ssn: '***-**-1234', mailingStreet: '1420 5th Ave N', mailingCityStateZip: 'St. Petersburg, FL 33705' }
+        ],
+        preparer: { name: 'Marcus Thorne', signatureDate: '2026-03-01', phone: '727-555-0188', ssn: '***-**-5678', street: '500 Central Ave', cityStateZip: 'St. Petersburg, FL 33701' },
+        attorney_barNumber: '0184920',
+        attorney_signatureDate: '2026-03-01',
+        attorney_street: '100 2nd Ave S',
+        attorney_cityStateZip: 'St. Petersburg, FL 33701',
+        schA: [
+          { payer: 'Social Security', description: 'Monthly Benefit', bank: 'Chase', accountNo: '***1234', amount: 24000 },
+          { payer: 'Florida Pension', description: 'Retirement Annuity', bank: 'Chase', accountNo: '***1234', amount: 18000 }
+        ],
+        schB1: [
+          { bankAcct: 'Chase ***1234', checkNo: '101', periodFrom: '2025-01-01', periodTo: '2025-06-30', datePaid: '2025-07-15', payee: 'Robert Vance, Esq.', courtOrderDate: '2025-07-01', amount: 3500 }
+        ],
+        schB2: [
+          { bankAcct: 'Chase ***1234', checkNo: '102', periodFrom: '2025-01-01', periodTo: '2025-12-31', datePaid: '2026-01-10', payee: 'Rachel M. Alvarez', courtOrderDate: '2026-01-05', amount: 2400 }
+        ],
+        schB3: [
+          { bankAcct: 'Chase ***1234', checkNo: '103', datePaid: '2025-04-10', payee: 'Care Assessment Team', courtOrderDate: '2025-04-01', amount: 1200 }
+        ],
+        schB4: [
+          { checkNo: '104', datePaid: '2025-02-15', category: 'Medical / Pharmacy', payee: 'Walgreens', amount: 450 },
+          { checkNo: '105', datePaid: '2025-03-20', category: 'Utilities', payee: 'Duke Energy', amount: 280 }
+        ],
+        schC: [
+          { description: 'Sale of old vehicle', date: '2025-05-12', gain: 1500, loss: 0 }
+        ],
+        schD1: [
+          { description: 'Checking Account', accountNo: '***1234', restricted: 'No', type: 'Checking', fullAmount: 42000, wardPct: 100 }
+        ],
+        schD2: [
+          { description: '1420 5th Ave N, St. Petersburg', residence: 'Yes', income: 'No', fullValue: 285000, wardPct: 100, carryingValue: 285000 }
+        ],
+        schD3: [
+          { description: 'Household furnishings', fullAmount: 15000, wardPct: 100, carryingValue: 15000 }
+        ],
+        schD4: [
+          { description: 'Vanguard Index Fund', restricted: 'No', fullAmount: 65000, wardPct: 100, carryingValue: 65000 }
+        ],
+        schD5: [
+          { description: 'Mortgage - Wells Fargo', loanNo: '***9876', loanType: 'First Mortgage', fullDebt: 45000, wardPct: 100 }
+        ],
+        schE: [
+          { bankName: 'Chase to Vanguard', transferInDate: '2025-08-01', transferInAmt: 10000, transferOutDate: '2025-08-01', transferOutAmt: 10000 }
+        ],
+        schF1: [
+          { description: 'Vacant Lot', bank: 'Title Co', accountNo: '***5555', courtOrderDate: '2025-09-15', salePrice: 35000 }
+        ],
+        schF2: [],
+        trusts: [
+          { hasTrust: 'Yes', name: 'Bennett Family Revocable Trust', trustee: 'Rachel M. Alvarez', accountNo: '***7777', createdAfterGID: 'No', wardPct: 100, wardAmount: 50000 }
+        ],
+        guardianRelationship: 'Daughter',
+        restrictedDepositoryReceiptDate: '2025-02-01',
+      };
+
+      const model = buildAnnualAccountingModel(sampleAnnualData, {
+        signatureStyle: 'typed',
+        printDate: '2026-09-03',
+      });
+
+      const doc = await generateCourtFormPdf(model);
+      const rawPdf = doc.output();
+
+      // Pre-map all objects by ID
+      const objMap = new Map();
+      const objHeaderRegex = /(?:^|\r|\n)(\d+)\s+0\s+obj([\s\S]*?)endobj/g;
+      let objMatch;
+      while ((objMatch = objHeaderRegex.exec(rawPdf)) !== null) {
+        objMap.set(objMatch[1], objMatch[2]);
+      }
+
+      // Table regularity analysis
+      const structMatches = [...rawPdf.matchAll(/<<[\s\S]*?\/Type\s*\/StructElem[\s\S]*?>>/g)];
+      const tableRows: { [k: string]: number[] } = {};
+
+      for (const sm of structMatches) {
+        const text = sm[0];
+        if (/\/S\s*\/TR\b/.test(text)) {
+          const parentMatch = text.match(/\/P\s+(\d+\s+\d+\s+R)/);
+          const parentId = parentMatch ? parentMatch[1] : 'unknown';
+          if (!tableRows[parentId]) tableRows[parentId] = [];
+
+          let cellCount = 0;
+          const kMatch = text.match(/\/K\s*\[([\s\S]*?)\]/);
+          if (kMatch) {
+            const children = kMatch[1].trim().split(/\s*R\s*/).filter(Boolean);
+            for (const childRef of children) {
+              const objNum = childRef.split(/\s+/)[0];
+              const cellContent = objMap.get(objNum) || '';
+              const colSpanMatch = cellContent.match(/\/ColSpan\s+(\d+)/);
+              cellCount += colSpanMatch ? parseInt(colSpanMatch[1], 10) : 1;
+            }
+          }
+          tableRows[parentId].push(cellCount);
+        }
+      }
+
+      let irregularTables = 0;
+      for (const [tableId, rowCounts] of Object.entries(tableRows)) {
+        const expected = rowCounts[0];
+        if (!rowCounts.every(c => c === expected)) irregularTables++;
+      }
+
+      // Xref audit for Annual Accounting
+      const startxrefMatch = rawPdf.match(/startxref\s+(\d+)\s+%%EOF/);
+      const declaredStartxref = parseInt(startxrefMatch ? startxrefMatch[1] : '-1', 10);
+      const startxrefPointsToXref = rawPdf.slice(declaredStartxref, declaredStartxref + 4) === 'xref';
+
+      const trailerIndex = rawPdf.indexOf('trailer', declaredStartxref);
+      const xrefSection = rawPdf.slice(declaredStartxref, trailerIndex);
+      const xrefLines = xrefSection.split(/\r?\n/).filter(l => /^\d{10}\s+\d{5}\s+[nf]/.test(l.trim()));
+      let totalObjectsInXref = 0;
+      let validOffsets = 0;
+
+      for (let i = 1; i < xrefLines.length; i++) {
+        const [offsetStr, gen, status] = xrefLines[i].trim().split(/\s+/);
+        totalObjectsInXref++;
+        if (status === 'n') {
+          const offset = parseInt(offsetStr, 10);
+          const snippet = rawPdf.slice(offset, offset + 30);
+          if (new RegExp(`^${i}\\s+0\\s+obj`).test(snippet)) {
+            validOffsets++;
+          }
+        }
+      }
+
+      // Content stream audit for untagged text
+      const streamMatches = [...rawPdf.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)];
+      let totalTextOperators = 0;
+      let untaggedTextOperators = 0;
+
+      for (const sm of streamMatches) {
+        const content = sm[1];
+        if (content.includes('<?xpacket')) continue;
+        const tokens = content.split(/\s+/);
+        let mcDepth = 0;
+        let inText = false;
+        for (let t = 0; t < tokens.length; t++) {
+          const tok = tokens[t];
+          if (tok === 'BDC' || tok === 'BMC') {
+            mcDepth++;
+          } else if (tok === 'EMC') {
+            mcDepth = Math.max(0, mcDepth - 1);
+          } else if (tok === 'BT') {
+            inText = true;
+          } else if (tok === 'ET') {
+            inText = false;
+          } else if (inText && (tok === 'Tj' || tok === 'TJ' || tok === "'" || tok === '"')) {
+            totalTextOperators++;
+            if (mcDepth === 0) untaggedTextOperators++;
+          }
+        }
+      }
+
+      return {
+        rawPdfLength: rawPdf.length,
+        rawPdfString: rawPdf,
+        irregularTables,
+        totalTables: Object.keys(tableRows).length,
+        sectionTitles: model.sections.map((s: any) => s.title),
+        startxrefPointsToXref,
+        totalObjectsInXref,
+        validOffsets,
+        totalTextOperators,
+        untaggedTextOperators,
+      };
+    });
+
+    // Assertions
+    expect(inspection.rawPdfString.startsWith('%PDF-1.7')).toBe(true);
+    expect(inspection.rawPdfString).toContain('/StructTreeRoot');
+    expect(inspection.rawPdfString).toContain('/ParentTree');
+    expect(inspection.rawPdfString).toContain('/Tabs /S');
+    expect(inspection.rawPdfString).toContain('/ViewerPreferences');
+    expect(inspection.rawPdfString).toContain('/DisplayDocTitle true');
+    expect(inspection.rawPdfString).toContain('/Keywords (Florida, Probate, Guardianship, Annual Accounting)');
+    expect(inspection.rawPdfString).not.toContain('/Subtype /Image');
+
+    // Table regularity: all tables have uniform row widths
+    expect(inspection.totalTables).toBeGreaterThanOrEqual(10);
+    expect(inspection.irregularTables).toBe(0);
+
+    // Xref integrity
+    expect(inspection.startxrefPointsToXref).toBe(true);
+    expect(inspection.validOffsets).toBe(inspection.totalObjectsInXref);
+    expect(inspection.totalObjectsInXref).toBeGreaterThan(100);
+
+    // Stream audit: 100% tagged text operators
+    expect(inspection.totalTextOperators).toBeGreaterThan(100);
+    expect(inspection.untaggedTextOperators).toBe(0);
+
+    // Section outline coverage
+    expect(inspection.sectionTitles).toContain('Part I — REQUIRED INFORMATION');
+    expect(inspection.sectionTitles).toContain('Part II — GUARDIAN CERTIFICATION & AUDIT FEE');
+    expect(inspection.sectionTitles).toContain('Part VI — CHANGES IN NET ASSETS');
+    expect(inspection.sectionTitles).toContain('Part VII — ASSETS & LIABILITIES AT END OF PERIOD');
+    expect(inspection.sectionTitles).toContain('SCHEDULE A: Income Received During Period');
+    expect(inspection.sectionTitles).toContain('SCHEDULE B-1: Attorney Fees and Costs');
+    expect(inspection.sectionTitles).toContain('SCHEDULE B-4: All Other Disbursements');
+    expect(inspection.sectionTitles).toContain('SCHEDULE C: Capital Adjustments During Period');
+    expect(inspection.sectionTitles).toContain('SCHEDULE D-1: Cash Assets');
+    expect(inspection.sectionTitles).toContain('Part VIII — TRUST INFORMATION');
+    expect(inspection.sectionTitles).toContain('Part IX — OTHER INFORMATION & BOND CALCULATION');
+  });
 });
 
 

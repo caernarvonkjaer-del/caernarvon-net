@@ -443,26 +443,19 @@ export function pagePrintAnnual(capOver){
 export async function doSavePdf(){
   const errors=validateAnnual();
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
-  pvShowAll(); // never export a filtered preview
-  document.body.classList.add('pdf-export-mode');
-  const container=document.getElementById('print-doc-container');
-  const ward=(window.D.wardName||'Accounting').replace(/[^a-z0-9]/gi,'_');
+  const ward=(window.D.wardName||'AnnualAccounting').trim().replace(/[^a-z0-9]/gi,'_');
   const formSlug=formDisplayName(window.D.inventoryType).replace(/[^a-z0-9]/gi,'');
-  const ungroup=groupScheduleBlocksForPdf(container);
+  const filename=`${ward}_${formSlug}.pdf`;
+
   try{
-    await html2pdf().set({
-      margin:0, filename:`${ward}_${formSlug}.pdf`,
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,logging:false},
-      jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
-      // Not 'avoid-all': that makes every element a break candidate, table
-      // internals included, which is what wrecked the Schedule B-4 header.
-      // The elements that may carry a break are the ones the .pdf-export-mode
-      // stylesheet marks page-break-inside:avoid, all of them block-level.
-      pagebreak:{mode:['css','legacy'],before:'.schedule-page:not(:first-of-type)'}
-    }).from(container).save();
+    const model = buildAnnualAccountingModel(window.D, {
+      signatureStyle: window.D.signatureStyle || 'typed',
+      printDate: new Date().toISOString().slice(0, 10),
+    });
+    const doc = await generateCourtFormPdf(model);
+    doc.save(filename);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);
-  }finally{ungroup();document.body.classList.remove('pdf-export-mode');}
+  }
 }

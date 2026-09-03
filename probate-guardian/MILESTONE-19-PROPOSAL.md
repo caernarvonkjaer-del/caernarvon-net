@@ -231,6 +231,21 @@ PDF Document Structure
   - **Adobe Acrobat Pro Validation Protocol**:
     - Full step-by-step verification instructions documented below.
 
+### Slice 19E: Annual Accounting Accessible PDF Migration (`src/features/annual-accounting/`)
+
+- **Complete.** Migrated the primary financial accounting filing form (Parts I–IX, Schedules A through F-2, Trust disclosures, and Bond calculations) to the accessible PDF engine:
+  - **Model Mapper (`src/features/annual-accounting/pdf-model.js`)**:
+    - Structured all parts and 10 schedules into semantic document sections (`key-value-grid`, `notice`, `table`, `signature-block`).
+    - Enforced uniform column counts across all schedule tables with mathematical `/ColSpan` totals rows.
+    - Integrated safe in-memory calculation of totals without mutating or relying on global state.
+  - **Print & Export Integration (`src/features/annual-accounting/print.js`)**:
+    - Replaced legacy `html2pdf()` JPEG/canvas screenshot capture with native vector `generateCourtFormPdf(model)`.
+    - Added electronic signature style selector (`typed` vs `script`) to the print preview toolbar.
+  - **Target-Aware Loader (`src/features-loader.js`)**:
+    - Added `loadAnnualPdf()` bridging `pdf-model.js` into Vite's single-file inlined bundle graph.
+  - **Automated Verification**:
+    - Added comprehensive E2E test in `tests/e2e/pdf-wcag-compliance.spec.ts` asserting %PDF-1.7, tagged catalog, `/StructTreeRoot`, `/ParentTree`, `/Tabs /S`, uniform table regularity, xref offset exact integrity, and zero untagged text operators across both `web` and `portable` distribution targets.
+
 ---
 
 ## Adobe Acrobat Pro Manual Validation Protocol
@@ -287,8 +302,8 @@ To independently verify conformance using Adobe Acrobat Pro:
 - [x] **Signatures as Structured Text**: Signatures tagged as structural `<Part>` with heading roles and text paragraphs (no false `/Figure` tags).
 - [x] **Xref Table Byte Offset Exact Integrity**: `startxref` resolves directly to `xref` keyword; 100% of declared object offsets point to exact `<ID> 0 obj` byte locations.
 - [x] **Zero Untagged Text Operators**: Page content stream audit verifies 0 untagged text operators across all generated pages.
-- [x] **Multi-Form Verification**: Both Verified Initial Inventory and Simplified Annual Accounting verified across all automated checks.
-- [x] **Offline & Portable Build Integrity**: Builds and passes in single-file offline portable build with zero external network requests (`src/features-loader.js` bridges `loadGuardianPdf` and `loadSimplifiedPdf` into the inlined bundle graph, empirically verified via `PG_TARGET=portable`).
+- [x] **Multi-Form Verification**: Verified Initial Inventory, Simplified Annual Accounting, and Annual Guardianship Accounting verified across all automated checks.
+- [x] **Offline & Portable Build Integrity**: Builds and passes in single-file offline portable build with zero external network requests (`src/features-loader.js` bridges `loadGuardianPdf`, `loadSimplifiedPdf`, and `loadAnnualPdf` into the inlined bundle graph, empirically verified via `PG_TARGET=portable`).
 
 ### B. Manual Adobe Acrobat Pro Validation (Pending Physical Operator Execution)
 

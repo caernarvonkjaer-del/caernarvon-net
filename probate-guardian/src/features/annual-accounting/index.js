@@ -157,6 +157,11 @@ function bindEvents(container) {
     const control = event.target;
     if (control instanceof HTMLSelectElement || (control instanceof HTMLInputElement && ['checkbox', 'radio'].includes(control.type))) persistAnnualControl(control);
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'import-excel') _excelModule.importExcel(control);
+    if (control instanceof HTMLInputElement && control.dataset.annualChange === 'set-sig-style') {
+      window.D.signatureStyle = control.value;
+      autoSave();
+      navigate('/print');
+    }
   }, options);
   container.addEventListener('focusout', (event) => {
     const control = event.target;

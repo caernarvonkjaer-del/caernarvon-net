@@ -83,6 +83,14 @@ export async function loadSimplifiedPdf() {
   return { ...model, ...engine };
 }
 
+export async function loadAnnualPdf() {
+  const [model, engine] = await Promise.all([
+    import('./features/annual-accounting/pdf-model.js'),
+    import('./core/pdf/pdf-engine.js'),
+  ]);
+  return { ...model, ...engine };
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
@@ -96,5 +104,6 @@ window.loadGuardianFeature = loadGuardianFeature;
 window.loadDashboardFeature = loadDashboardFeature;
 window.loadGuardianPdf = loadGuardianPdf;
 window.loadSimplifiedPdf = loadSimplifiedPdf;
+window.loadAnnualPdf = loadAnnualPdf;
 document.dispatchEvent(new Event('features-loader-ready'));
 
