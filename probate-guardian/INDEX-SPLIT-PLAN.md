@@ -1349,9 +1349,20 @@ Validation completed:
 
 ### Milestone 18: Full Multi-Ward Backup .SAV & Save Controls Restore
 
-**In progress.** Scope and requirements are recorded in `MILESTONE-18-PROPOSAL.md`.
+**Completed.** Scope and requirements are recorded in `MILESTONE-18-PROPOSAL.md`.
 
 - Multi-ward backup generation (`backupAllWardsNow()` / `buildBackupZipBlob()`) containing all wards, audit log provenance, metadata, and templates in version 3 format.
 - Save Controls sidebar additions (`Backup All Wards (.sav)` and `Open Backup (.sav)`).
 - In-session restore flow (`openBackupSavFile()` / `triggerOpenBackupSav()`) with format sniffing, confirmation prompt, decryption, and atomic hydration.
 - Verification across Playwright E2E and unit test suites.
+
+### Milestone 19: WCAG 2.1 & PDF/UA-1 Compliant Output PDF Generation (Zero Adobe Acrobat Errors)
+
+**Proposed.** Scope, technical architecture, and requirements are recorded in `MILESTONE-19-PROPOSAL.md`.
+
+- Tagged PDF structure tree root (`/StructTreeRoot`), `/RoleMap`, and `/ParentTree` numbering dictionaries.
+- Document catalog `/MarkInfo << /Marked true >>`, `/Lang (en-US)`, and `/ViewerPreferences << /DisplayDocTitle true >>`.
+- Page dictionary `/Tabs /S` tab order and `/StructParents` keys.
+- Marked Content operators (`BDC ... EMC`) for semantic structural blocks (`/H1`, `/H2`, `/Table`, `/TR`, `/TH`, `/TD`, `/P`, `/Figure`).
+- Artifact tagging (`/Artifact << /Type /Pagination >>` and `/Artifact << /Type /Layout >>`) for running headers, footers, divider lines, and alternating row backgrounds.
+- Strict table hierarchy, headers, and regularity matching all 32 Adobe Acrobat Pro Accessibility Checker rules with zero errors.
