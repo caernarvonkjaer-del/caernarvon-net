@@ -3468,13 +3468,15 @@ async function importSavArchiveOrWard(file, options = {}){
 
     const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
     const adding=imported.length-replacing;
-    const promptText=isBackupFlow
-      ? (guardianData.wards.length===0
-          ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
-          : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`)
-      : (kind==='ward'
-          ? `Import ward "${imported[0].wardName||'this ward'}" from "${file.name}"?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
-          : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`);
+    const promptText = (isBackupFlow && kind === 'ward')
+      ? `"${file.name}" is a single-ward save file, not an all-wards backup.\n\nWould you like to import ward "${imported[0].wardName||'this ward'}" instead?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
+      : (isBackupFlow
+          ? (guardianData.wards.length===0
+              ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
+              : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`)
+          : (kind==='ward'
+              ? `Import ward "${imported[0].wardName||'this ward'}" from "${file.name}"?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
+              : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`));
     if(!confirm(promptText))return false;
 
     // Flush BEFORE swapping array entries so in-progress edits save under the
@@ -3496,14 +3498,23 @@ async function importSavArchiveOrWard(file, options = {}){
     if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
     await saveData();
 
-    // window.D references an object in guardianData.wards; rebind via switchWard
-    // so open forms stay synchronized to the newly imported object.
-    if(guardianData.activeWardId&&guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
-      await switchWard(guardianData.activeWardId);
-    }else if(guardianData.wards.length){
-      await switchWard(guardianData.wards[0].wardId);
-    }else{
+    // Rebind window.D to the updated ward in memory. For multi-ward backup restores
+    // navigating to /dashboard, avoid switchWard's form render to prevent a visual flash.
+    if(isBackupFlow && kind !== 'ward'){
+      const activeWard = (guardianData.activeWardId && guardianData.wards.find(w=>w.wardId===guardianData.activeWardId))
+        || guardianData.wards[0]
+        || null;
+      guardianData.activeWardId = activeWard ? activeWard.wardId : null;
+      window.D = activeWard;
       updateSidebar();
+    }else{
+      if(guardianData.activeWardId&&guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
+        await switchWard(guardianData.activeWardId);
+      }else if(guardianData.wards.length){
+        await switchWard(guardianData.wards[0].wardId);
+      }else{
+        updateSidebar();
+      }
     }
 
     if(handle){
@@ -3531,7 +3542,7 @@ async function importSavArchiveOrWard(file, options = {}){
       }
     }
 
-    if(isBackupFlow){
+    if(isBackupFlow && kind !== 'ward'){
       window.dispatchEvent(new CustomEvent('pg:backup-restored', {
         detail: { fileName: file.name, count: imported.length }
       }));

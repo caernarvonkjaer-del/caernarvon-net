@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
@@ -33,25 +33,31 @@ async function captureDownload(page: import('@playwright/test').Page, trigger: (
 
 test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
 
-  test('Save Controls has Backup All Wards (.sav) and Open Backup (.sav) buttons with correct attributes', async ({ page }) => {
-    await gotoApp(page);
-    await startNewCase(page);
-    await chooseNoPassword(page);
-    await createWard(page, 'Test Ward 1');
+  test('Save Controls has Backup All Wards (.sav) and Open Backup (.sav) buttons with correct attributes', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Test Ward 1');
 
-    await ensureSaveControlsOpen(page);
+      await ensureSaveControlsOpen(page);
 
-    const backupAllBtn = page.locator('button[data-shell-action="backup-all-wards"]');
-    await expect(backupAllBtn).toBeVisible();
-    await expect(backupAllBtn).toHaveText(/Backup All Wards \(\.sav\)/);
+      const backupAllBtn = page.locator('button[data-shell-action="backup-all-wards"]');
+      await expect(backupAllBtn).toBeVisible();
+      await expect(backupAllBtn).toHaveText(/Backup All Wards \(\.sav\)/);
 
-    const openBackupBtn = page.locator('button[data-shell-action="open-backup-sav"]');
-    await expect(openBackupBtn).toBeVisible();
-    await expect(openBackupBtn).toHaveText(/Open Backup \(\.sav\)/);
+      const openBackupBtn = page.locator('button[data-shell-action="open-backup-sav"]');
+      await expect(openBackupBtn).toBeVisible();
+      await expect(openBackupBtn).toHaveText(/Open Backup \(\.sav\)/);
 
-    const backupInput = page.locator('#backup-import-input');
-    await expect(backupInput).toHaveAttribute('type', 'file');
-    await expect(backupInput).toHaveAttribute('accept', '.sav,.zip');
+      const backupInput = page.locator('#backup-import-input');
+      await expect(backupInput).toHaveAttribute('type', 'file');
+      await expect(backupInput).toHaveAttribute('accept', '.sav,.zip');
+    } finally {
+      await context.close();
+    }
   });
 
   test('Backup All Wards (.sav) exports a valid multi-ward archive containing all wards and self-contained audit log', async ({ browser }) => {
