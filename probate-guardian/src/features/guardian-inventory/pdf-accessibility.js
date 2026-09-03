@@ -111,21 +111,24 @@ export class PdfStructureTree {
         doc.internal.write(`/Pg ${this.pageObjIds[node.pageNumber]} 0 R`);
       }
 
-      // Title & Alt Text & Summary
+      // Title & Alt Text
       if (node.title) {
         doc.internal.write(`/T (${escapePdfString(node.title)})`);
       }
       if (node.alt) {
         doc.internal.write(`/Alt (${escapePdfString(node.alt)})`);
       }
+
+      // Attributes (e.g. Table Header Column Scope, ColSpan, Table Summary under /O /Table)
+      const attrs = { ...(node.attributes || {}) };
       if (node.summary) {
-        doc.internal.write(`/Summary (${escapePdfString(node.summary)})`);
+        if (!attrs.O) attrs.O = 'Table';
+        attrs.Summary = `(${escapePdfString(node.summary)})`;
       }
 
-      // Attributes (e.g. Table Header Column Scope, ColSpan)
-      if (node.attributes) {
+      if (Object.keys(attrs).length > 0) {
         doc.internal.write('/A <<');
-        for (const [k, v] of Object.entries(node.attributes)) {
+        for (const [k, v] of Object.entries(attrs)) {
           if (typeof v === 'number' || typeof v === 'boolean') {
             doc.internal.write(`/${k} ${v}`);
           } else if (typeof v === 'string' && (v.startsWith('(') || v.startsWith('['))) {
@@ -210,6 +213,13 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
+// Note on PDF/UA-1: ISO 14289-1 clause 7.21.4.1 requires all fonts to be embedded
+// (/FontFile). Because standard-14 Type1 fonts (Helvetica, Times) are used without
+// embedded font descriptors, declaring <pdfuaid:part>1</pdfuaid:part> would cause veraPDF/PAC
+// to flag font non-conformance. Acrobat Pro's 32-rule Accessibility Full Check tests
+// WCAG 2.1 AA (Tagged PDF, Language, Title, Tab Order, Headings, Tables, Artifacts),
+// which does not require font embedding. We only emit <pdfuaid:part>1</pdfuaid:part> if
+// fonts are embedded (metadata.embedFonts === true or metadata.claimPdfUa === true).
 export function buildXmpPacket(metadata = {}) {
   const title = escapeXml(metadata.title || 'Verified Initial Inventory');
   const author = escapeXml(metadata.author || 'Probate Guardian');

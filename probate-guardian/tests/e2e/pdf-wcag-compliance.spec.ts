@@ -384,11 +384,14 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
       // Find all Table elements
       const tableMatches = [...rawPdfString.matchAll(/\/Type \/StructElem[\s\S]*?\/S \/Table[\s\S]*?>>/g)].map(m => m[0]);
 
+      // Verify Table Summaries are strictly located inside /A << /O /Table /Summary (...) >> per ISO 32000-1 Table 323
+      const tableAttrSummaryMatches = [...rawPdfString.matchAll(/\/A\s*<<[\s\S]*?\/O\s*\/Table[\s\S]*?\/Summary\s*\(([^)]+)\)[\s\S]*?>>/g)].map(m => m[1]);
+
+      // Check for stray /Summary direct entries on StructElem (which violate ISO 32000-1)
+      const straySummaryMatches = tableMatches.filter(tbl => !tbl.includes('/A <<') && tbl.includes('/Summary'));
+
       // Check ColSpan attributes in raw PDF
       const colSpanMatches = [...rawPdfString.matchAll(/\/ColSpan\s+(\d+)/g)].map(m => parseInt(m[1], 10));
-
-      // Check Table Summaries in raw PDF
-      const summaryMatches = [...rawPdfString.matchAll(/\/Summary\s+\(([^)]+)\)/g)].map(m => m[1]);
 
       // Check Table Header Column and Row scopes
       const columnScopeMatches = [...rawPdfString.matchAll(/\/Scope \/Column/g)].map(m => m[0]);
@@ -399,22 +402,34 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
         numPages,
         sectionTitles: model.sections.map(s => s.title),
         tableCount: tableMatches.length,
+        tableAttrSummaryMatches,
+        straySummaryCount: straySummaryMatches.length,
         colSpanMatches,
-        summaryMatches,
         columnScopeCount: columnScopeMatches.length,
         rowScopeCount: rowScopeMatches.length,
       };
     });
 
-    const { numPages, sectionTitles, tableCount, colSpanMatches, summaryMatches, columnScopeCount, rowScopeCount, rawPdfString } = inspection;
+    const {
+      numPages,
+      sectionTitles,
+      tableCount,
+      tableAttrSummaryMatches,
+      straySummaryCount,
+      colSpanMatches,
+      columnScopeCount,
+      rowScopeCount,
+      rawPdfString,
+    } = inspection;
 
     // Multi-page verification: 25 items in Schedule A-1 expands total pages significantly
     expect(numPages).toBeGreaterThanOrEqual(6);
 
-    // Table Counts & Summaries: Every table must have a /Summary attribute
+    // Table Counts & Summaries: Every table must carry /Summary inside its /A << /O /Table >> dictionary
     expect(tableCount).toBeGreaterThan(0);
-    expect(summaryMatches.length).toBeGreaterThanOrEqual(tableCount);
-    for (const sumText of summaryMatches) {
+    expect(tableAttrSummaryMatches.length).toBe(tableCount);
+    expect(straySummaryCount).toBe(0);
+    for (const sumText of tableAttrSummaryMatches) {
       expect(sumText.length).toBeGreaterThan(3);
     }
 
@@ -431,6 +446,9 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
 
     // Verify Section Titles include Part VI
     expect(sectionTitles).toContain('Part VI — CERTIFICATE OF SERVICE');
+
+    // Verify neutral notice when service recipients list is empty (no empty-table shell or procedural claims)
+    expect(rawPdfString).toContain('None listed.');
   });
 });
 

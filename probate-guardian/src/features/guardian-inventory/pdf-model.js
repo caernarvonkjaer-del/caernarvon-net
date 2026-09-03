@@ -465,16 +465,22 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'P',
         text: `I certify that a copy of this Verified Initial Inventory was served on ${fmtDate(d.serviceDate) || 'the date indicated below'} to the following persons:`,
       },
-      {
-        type: 'table',
-        tag: 'Table',
-        title: 'Service Recipients',
-        headers: ['Recipient Name', 'Address', 'Method of Service'],
-        rows: (d.serviceRecipients && d.serviceRecipients.length)
-          ? d.serviceRecipients.map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.method || 'Electronic / Portal'])
-          : [['None to report / Certificate of Service pending separate filing', '—', '—']],
-        colWidths: [35, 45, 20],
-      },
+      ...(d.serviceRecipients && d.serviceRecipients.length ? [
+        {
+          type: 'table',
+          tag: 'Table',
+          title: 'Service Recipients',
+          headers: ['Recipient Name', 'Address', 'Method of Service'],
+          rows: d.serviceRecipients.map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.method || 'Electronic / Portal']),
+          colWidths: [35, 45, 20],
+        }
+      ] : [
+        {
+          type: 'notice',
+          tag: 'P',
+          text: 'None listed.',
+        }
+      ]),
       {
         type: 'signature-block',
         tag: 'Figure',
