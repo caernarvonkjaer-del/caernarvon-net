@@ -2778,8 +2778,7 @@ async function refreshAutoSaveArmedStatus(){
   try{
     if(activeWardId){
       handle=await loadWardZipHandle(activeWardId);
-    }
-    if(!handle){
+    }else{
       handle=await loadArchiveZipHandle();
     }
     if(handle&&handle.queryPermission){
@@ -2798,7 +2797,9 @@ async function refreshAutoSaveArmedStatus(){
       el.style.color='var(--warn-text)';
     }else if(window.showSaveFilePicker){
       if(activeWardId){
-        el.textContent='Auto-save: needs one manual save first';
+        const activeWard=getActiveWard();
+        const suggestedName=activeWard?getWardFileName(activeWard):'';
+        el.textContent=suggestedName?`Auto-save: needs manual save (${suggestedName})`:'Auto-save: needs one manual save first';
       }else{
         el.textContent='Auto-save: no ward open';
       }
@@ -3182,20 +3183,7 @@ async function saveBackupNow(){
   }catch(e){
     console.warn('Reusing remembered ward backup file failed',e);
   }
-  try{
-    const archiveHandle=await loadArchiveZipHandle();
-    if(archiveHandle&&archiveHandle.requestPermission){
-      const perm=await archiveHandle.requestPermission({mode:'readwrite'});
-      if(perm==='granted'){
-        const count=await writeArchiveToHandle(archiveHandle,false);
-        alert(`Backup saved: ${count} form(s) written to your backup file.`);
-        return;
-      }
-    }
-  }catch(e){
-    console.warn('Reusing remembered archive backup file failed',e);
-  }
-  // If no handle or permission denied, save single ward via picker
+  // If no ward handle or permission denied, save single ward via picker using its per-ward filename
   let rollback=null;
   try{
     const wardName=activeWard.wardName||'ward';
@@ -3647,9 +3635,9 @@ let _needsMigrationModal=false;
 let _startupChoiceResolve=null;
 async function promptOpenOrStartAtLaunch(){
   if(await trySilentReopen())return;
-  const fastPath=await hasOpenedCaseBefore();
-  document.getElementById('startup-newcase-btn').style.display=fastPath?'none':'';
-  document.getElementById('startup-newcase-link').style.display=fastPath?'':'none';
+  document.getElementById('startup-newcase-btn').style.display='';
+  const linkEl=document.getElementById('startup-newcase-link');
+  if(linkEl)linkEl.style.display='none';
   const fileStatus=document.getElementById('startup-file-status');
   fileStatus.style.display=_rememberedFileUnavailable?'block':'none';
   return new Promise((resolve)=>{
@@ -3662,8 +3650,9 @@ function _resolveStartupChoice(){
   const resolve=_startupChoiceResolve;_startupChoiceResolve=null;
   if(resolve)resolve();
 }
-function startNewWardAtLaunch(){
+async function startNewWardAtLaunch(){
   _resolveStartupChoice();
+  try{ await forgetPersistedArchiveZipHandle(); }catch(e){}
 }
 const startNewCaseAtLaunch = startNewWardAtLaunch;
 window.startNewWardAtLaunch = startNewWardAtLaunch;
@@ -3703,7 +3692,12 @@ async function openWardFileAtLaunch(){
       }
     }catch(e){
       await handleRememberedFileFailure(remembered,e);
-      document.getElementById('startup-file-status').style.display='block';
+      const statusEl=document.getElementById('startup-file-status');
+      if(statusEl){
+        statusEl.textContent='Your previously opened file could not be found or was moved. Click "Open a Ward File (.sav)" below to select your file.';
+        statusEl.style.display='block';
+      }
+      return; // Return so user can click with a fresh gesture
     }
   }
   if(window.showOpenFilePicker){
@@ -3723,6 +3717,14 @@ async function openWardFileAtLaunch(){
       }
     }catch(e){
       if(e&&e.name==='AbortError')return; // user cancelled the picker — leave the choice screen up
+      if(e&&(String(e.message).includes('user gesture')||String(e).includes('user gesture'))){
+        const statusEl=document.getElementById('startup-file-status');
+        if(statusEl){
+          statusEl.textContent='Click "Open a Ward File (.sav)" to select a file.';
+          statusEl.style.display='block';
+        }
+        return;
+      }
       console.error('Open ward file failed',e);
       alert('Could not open that file: '+(e&&e.message||e));
     }
