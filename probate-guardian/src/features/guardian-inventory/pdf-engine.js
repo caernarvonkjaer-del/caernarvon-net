@@ -243,6 +243,7 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
         const tableNode = structureTree.addStructureElement({
           tag: 'Table',
           title: block.title || 'Case Information',
+          summary: block.title ? `${block.title} Summary Table` : 'Case Information Summary Table',
           parent: partNode,
         });
 
@@ -257,7 +258,7 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
             parent: tableNode,
           });
 
-          // Layout backgrounds as Artifact
+          // Column 1 Layout background as Artifact
           writeArtifactStart(doc, 'Layout');
           doc.setFillColor(248, 250, 252);
           doc.rect(margin, curY, 110, rowHeight, 'F');
@@ -280,9 +281,10 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
           doc.text(item1.label, margin + 4, curY + 12);
           writeMarkedContentEnd(doc);
 
-          // Column 1 Value (TD)
+          // Column 1 Value (TD) - Spans 3 columns if item2 is absent to maintain 4-column regularity
           const td1Node = structureTree.addStructureElement({
             tag: 'TD',
+            attributes: item2 ? null : { O: 'Table', ColSpan: 3 },
             pageNumber: pageNum,
             isLeaf: true,
             parent: trNode,
@@ -326,6 +328,13 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
             doc.setTextColor(20, 25, 35);
             doc.text(String(item2.value || ''), col2X + 115, curY + 12);
             writeMarkedContentEnd(doc);
+          } else {
+            // Fill remainder of row with empty layout border for visual symmetry
+            const col2X = margin + (contentWidth / 2);
+            writeArtifactStart(doc, 'Layout');
+            doc.setDrawColor(225, 230, 240);
+            doc.rect(col2X, curY, contentWidth / 2, rowHeight, 'S');
+            writeArtifactEnd(doc);
           }
 
           curY += rowHeight;
@@ -359,6 +368,7 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
         const tableNode = structureTree.addStructureElement({
           tag: 'Table',
           title: tblTitle || sec.title,
+          summary: `${tblTitle || sec.title} Schedule Table`,
           parent: partNode,
         });
 
@@ -502,6 +512,7 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
 
           const totalLabelTd = structureTree.addStructureElement({
             tag: 'TD',
+            attributes: { O: 'Table', ColSpan: Math.max(1, headers.length - 1) },
             pageNumber: pageNum,
             isLeaf: true,
             parent: totalTr,
@@ -515,6 +526,7 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
 
           const totalValTd = structureTree.addStructureElement({
             tag: 'TD',
+            attributes: { O: 'Table', ColSpan: 1 },
             pageNumber: pageNum,
             isLeaf: true,
             parent: totalTr,

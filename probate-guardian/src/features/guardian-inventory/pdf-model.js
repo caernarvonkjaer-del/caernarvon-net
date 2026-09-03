@@ -470,7 +470,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'Table',
         title: 'Service Recipients',
         headers: ['Recipient Name', 'Address', 'Method of Service'],
-        rows: (d.serviceRecipients || []).map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.method || 'Electronic / Portal']),
+        rows: (d.serviceRecipients && d.serviceRecipients.length)
+          ? d.serviceRecipients.map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.method || 'Electronic / Portal'])
+          : [['None to report / Certificate of Service pending separate filing', '—', '—']],
         colWidths: [35, 45, 20],
       },
       {

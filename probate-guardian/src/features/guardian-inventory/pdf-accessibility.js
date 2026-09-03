@@ -4,11 +4,12 @@
 // and catalog accessibility metadata (/MarkInfo, /ViewerPreferences, /Metadata, /Lang).
 
 export class PdfStructureNode {
-  constructor({ tag, title = null, alt = null, attributes = null, parent = null }) {
+  constructor({ tag, title = null, alt = null, summary = null, attributes = null, parent = null }) {
     this.tag = tag; // Standard structure type: Document, Part, H1, H2, H3, Table, TR, TH, TD, P, Figure, etc.
     this.title = title;
     this.alt = alt;
-    this.attributes = attributes; // e.g. { O: 'Table', Scope: 'Column' }
+    this.summary = summary; // For Table summary or element description
+    this.attributes = attributes; // e.g. { O: 'Table', Scope: 'Column', ColSpan: 3 }
     this.parent = parent;
     this.children = [];
     this.pageNumber = null; // 1-based page number
@@ -50,10 +51,11 @@ export class PdfStructureTree {
     return mcid;
   }
 
-  addStructureElement({ tag, title = null, alt = null, attributes = null, pageNumber = null, isLeaf = false, parent = null }) {
+  addStructureElement({ tag, title = null, alt = null, summary = null, attributes = null, pageNumber = null, isLeaf = false, parent = null }) {
     const parentNode = parent || this.currentNode || this.rootNode;
-    const node = new PdfStructureNode({ tag, title, alt, attributes, parent: parentNode });
+    const node = new PdfStructureNode({ tag, title, alt, summary, attributes, parent: parentNode });
     parentNode.addChild(node);
+
 
     if (pageNumber) {
       node.pageNumber = pageNumber;
@@ -109,19 +111,28 @@ export class PdfStructureTree {
         doc.internal.write(`/Pg ${this.pageObjIds[node.pageNumber]} 0 R`);
       }
 
-      // Title & Alt Text
+      // Title & Alt Text & Summary
       if (node.title) {
         doc.internal.write(`/T (${escapePdfString(node.title)})`);
       }
       if (node.alt) {
         doc.internal.write(`/Alt (${escapePdfString(node.alt)})`);
       }
+      if (node.summary) {
+        doc.internal.write(`/Summary (${escapePdfString(node.summary)})`);
+      }
 
-      // Attributes (e.g. Table Header Column Scope)
+      // Attributes (e.g. Table Header Column Scope, ColSpan)
       if (node.attributes) {
         doc.internal.write('/A <<');
         for (const [k, v] of Object.entries(node.attributes)) {
-          doc.internal.write(`/${k} /${v}`);
+          if (typeof v === 'number' || typeof v === 'boolean') {
+            doc.internal.write(`/${k} ${v}`);
+          } else if (typeof v === 'string' && (v.startsWith('(') || v.startsWith('['))) {
+            doc.internal.write(`/${k} ${v}`);
+          } else {
+            doc.internal.write(`/${k} /${v}`);
+          }
         }
         doc.internal.write('>>');
       }
@@ -205,13 +216,6 @@ export function buildXmpPacket(metadata = {}) {
   const subject = escapeXml(metadata.subject || 'Verified Initial Inventory');
   const dateIso = new Date().toISOString();
 
-  // Note on PDF/UA-1: ISO 14289-1 clause 7.21.4.1 requires all fonts to be embedded
-  // (/FontFile). Because standard-14 Type1 fonts (Helvetica, Times) are used without
-  // embedded font descriptors, declaring <pdfuaid:part>1</pdfuaid:part> would cause veraPDF/PAC
-  // to flag font non-conformance. Acrobat Pro's 32-rule Accessibility Full Check tests
-  // WCAG 2.1 AA (Tagged PDF, Language, Title, Tab Order, Headings, Tables, Artifacts),
-  // which does not require font embedding. We only emit <pdfuaid:part>1</pdfuaid:part> if
-  // fonts are embedded (metadata.embedFonts === true or metadata.claimPdfUa === true).
   const pdfUaNs = (metadata.claimPdfUa || metadata.embedFonts)
     ? '\n        xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/"'
     : '';
