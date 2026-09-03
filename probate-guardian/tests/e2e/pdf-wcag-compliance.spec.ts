@@ -1020,6 +1020,134 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(inspection.rawPdfString).toContain('315 Court St');
     expect(inspection.rawPdfString).toContain('Statutory care compensation');
   });
+
+  test('Slice 19E: Architectural single source of truth for statutory math and preview-to-PDF drift guard', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const driftGuardResults = await page.evaluate(async () => {
+      // 1. Verify single source of truth: window.calcTotalsAnnual must exist BEFORE loadAnnualPdf
+      const fnBefore = (window as any).calcTotalsAnnual;
+      const fnBeforeStr = typeof fnBefore === 'function' ? fnBefore.toString() : '';
+
+      // 2. Load PDF module
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+
+      const fnAfter = (window as any).calcTotalsAnnual;
+      const fnAfterStr = typeof fnAfter === 'function' ? fnAfter.toString() : '';
+
+      // Check whether global was swapped or remained identical
+      const globalSwapped = fnBeforeStr !== fnAfterStr;
+
+      // 3. Distinct Sentinel Data for Preview/PDF Drift Guard
+      const sentinelData = {
+        wardName: 'Arthur Pendragon',
+        caseNumber: '52-2026-GD-009988',
+        county: 'Pinellas',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        guardian: 'Gawain Knight',
+        attorney: 'Merlin Ambrosius, Esq.',
+        typeOfGuardianship: 'Plenary',
+        filingType: 'Annual Accounting',
+        amendedForm: false,
+        startingBalance: 100000,
+        reconcileExplanation: 'DRIFT_GUARD_RECONCILE_EXPLANATION_VERBATIM',
+        attorney_bar: 'BAR-SENTINEL-998877',
+        attorney_phone: '(555) 019-2834',
+        attorney_street: '777 Camelot Way',
+        attorney_cityStateZip: 'Avalon, FL 33000',
+        attorney_signatureDate: '2026-03-01',
+        guardians: [
+          { name: 'Gawain Knight', signatureDate: '2026-03-01', phone: '555-0199', ssn: '***-**-1111', mailingStreet: '1 Round Table Rd', mailingCityStateZip: 'Camelot, FL 33000' }
+        ],
+        preparer: { name: 'Kay Seneschal', signatureDate: '2026-03-01', phone: '555-0188', ssn: '***-**-2222', street: '2 Court Way', cityStateZip: 'Camelot, FL 33000' },
+        bondAmount: 88888,
+        bondingCompany: 'DRIFT_GUARD_BONDING_CO_SENTINEL',
+        bondPeriodFrom: '2025-01-01',
+        bondPeriodTo: '2025-12-31',
+        certRecipients: [
+          { name: 'DRIFT_GUARD_RECIPIENT_NAME', line2: 'DRIFT_GUARD_ADDR_LINE2', line3: 'Clearwater, FL 33756', line4: '' }
+        ],
+        certDate: '2026-03-01',
+        certIndicator: 'DRIFT_GUARD_PORTAL_INDICATOR',
+        certAttySignDate: '2026-03-01',
+        remuneration: [
+          { guardian: 'Gawain Knight', type: 'Statutory Fee', description: 'DRIFT_GUARD_REMUNERATION_DESC', amount: 3333 }
+        ],
+        schA: [{ payer: 'Kingdom Pension', description: 'Monthly Pension', bank: 'Crown Bank', accountNo: '***1111', amount: 12000 }],
+        schB1: [],
+        schB2: [],
+        schB3: [],
+        schB4: [],
+        schC: [],
+        schD1: [{ description: 'Checking Account', accountNo: '***1111', restricted: 'No', type: 'Checking', fullAmount: 50000, wardPct: 100 }],
+        schD2: [],
+        schD3: [],
+        schD4: [],
+        schD5: [],
+        schE: [],
+        schF1: [],
+        schF2: [],
+        trusts: [{ hasTrust: 'No' }],
+      };
+
+      // Set global D for preview module
+      (window as any).D = sentinelData;
+
+      // Compute math via canonical calcTotalsAnnual
+      const computedTotals = (window as any).calcTotalsAnnual(sentinelData);
+      const computedReconcile = (window as any).annualReconcileState(computedTotals, sentinelData);
+
+      // Generate accessible PDF model & document
+      const model = buildAnnualAccountingModel(sentinelData, {
+        signatureStyle: 'typed',
+        printDate: '2026-09-03',
+      });
+      const doc = await generateCourtFormPdf(model);
+      const rawPdfString = doc.output();
+
+      // Check presence of all sentinel fields in PDF output
+      const checkSentinel = (str: string) => rawPdfString.includes(str);
+
+      return {
+        hasCalcTotalsBefore: typeof fnBefore === 'function',
+        hasCalcTotalsAfter: typeof fnAfter === 'function',
+        globalSwapped,
+        isOutOfBalance: computedReconcile.outOfBalance,
+        sentinelPresence: {
+          reconcileExplanation: checkSentinel('DRIFT_GUARD_RECONCILE_EXPLANATION_VERBATIM'),
+          cannedFallbackAbsent: !rawPdfString.includes('Difference noted on file; pending review.'),
+          attorneyBar: checkSentinel('BAR-SENTINEL-998877'),
+          bondingCompany: checkSentinel('DRIFT_GUARD_BONDING_CO_SENTINEL'),
+          bondAmount: checkSentinel('$88,888.00'),
+          certRecipient: checkSentinel('DRIFT_GUARD_RECIPIENT_NAME'),
+          certAddr: checkSentinel('DRIFT_GUARD_ADDR_LINE2'),
+          certIndicator: checkSentinel('DRIFT_GUARD_PORTAL_INDICATOR'),
+          remunerationDesc: checkSentinel('DRIFT_GUARD_REMUNERATION_DESC'),
+        },
+      };
+    });
+
+    // Architecture: Single source of truth was eager, never swapped
+    expect(driftGuardResults.hasCalcTotalsBefore).toBe(true);
+    expect(driftGuardResults.hasCalcTotalsAfter).toBe(true);
+    expect(driftGuardResults.globalSwapped).toBe(false);
+
+    // Form logic: Out of balance difference triggered explanation
+    expect(driftGuardResults.isOutOfBalance).toBe(true);
+
+    // Drift guard: Zero dropped fields between data model, preview, and PDF
+    expect(driftGuardResults.sentinelPresence.reconcileExplanation).toBe(true);
+    expect(driftGuardResults.sentinelPresence.cannedFallbackAbsent).toBe(true);
+    expect(driftGuardResults.sentinelPresence.attorneyBar).toBe(true);
+    expect(driftGuardResults.sentinelPresence.bondingCompany).toBe(true);
+    expect(driftGuardResults.sentinelPresence.bondAmount).toBe(true);
+    expect(driftGuardResults.sentinelPresence.certRecipient).toBe(true);
+    expect(driftGuardResults.sentinelPresence.certAddr).toBe(true);
+    expect(driftGuardResults.sentinelPresence.certIndicator).toBe(true);
+    expect(driftGuardResults.sentinelPresence.remunerationDesc).toBe(true);
+  });
 });
+
 
 

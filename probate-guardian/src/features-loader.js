@@ -21,6 +21,10 @@
 // features/simplified-accounting/ graph into the one inlined script at
 // build time, so dist/portable never actually performs a runtime import()
 // of a separate file at all.
+// Canonical statutory math loaded eagerly so window.calcTotalsAnnual and window.annualReconcileState
+// exist as a single source of truth across all features, dashboard, preview, and PDF generation.
+import './features/annual-accounting/totals.js';
+
 export function loadSimplifiedFeature() {
   return import('./features/simplified-accounting/index.js');
 }
