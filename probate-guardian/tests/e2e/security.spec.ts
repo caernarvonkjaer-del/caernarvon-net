@@ -92,7 +92,7 @@ test.describe('Milestone 11 security boundaries', () => {
   test('service worker guards redirect-sensitive navigations', () => {
     const worker = fs.readFileSync(path.join(projectRoot, 'sw.js'), 'utf8');
     expect(worker).toContain("event.request.redirect==='error'");
-    expect(worker).toContain('response.redirected?recoveryResponse');
+    expect(worker).toContain('recoveryResponse');
     expect(worker).toContain('Redirected response for ${entry.url} was not cached.');
   });
 

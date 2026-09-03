@@ -22,9 +22,20 @@ async function responseRevision(response){
   return [...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('').slice(0,16);
 }
 
+function isSameScopeRedirect(response){
+  if(!response||!response.redirected)return false;
+  try{
+    const target=new URL(response.url);
+    const scope=new URL(self.registration.scope);
+    return target.origin===self.location.origin&&target.pathname.startsWith(scope.pathname.replace(/\/+$/,''));
+  }catch{
+    return false;
+  }
+}
+
 async function fetchVerified(entry,request=requestFor(entry)){
   const response=await fetch(request);
-  if(response.redirected)throw new Error(`Redirected response for ${entry.url} was not cached.`);
+  if(response.redirected&&!isSameScopeRedirect(response))throw new Error(`Redirected response for ${entry.url} was not cached.`);
   if(!response.ok)throw new Error(`HTTP ${response.status}`);
   const actualRevision=await responseRevision(response);
   if(actualRevision!==entry.revision)throw new Error(`Revision mismatch for ${entry.url}`);
@@ -140,7 +151,7 @@ self.addEventListener('fetch',event=>{
     if(event.request.redirect==='error'){
       event.respondWith(
         fetch(event.request)
-          .then(response=>response.redirected?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
+          .then(response=>response.redirected&&!isSameScopeRedirect(response)?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
           .catch(()=>recoveryResponse('The navigation failed before the app shell could be loaded.'))
       );
       return;
@@ -148,8 +159,8 @@ self.addEventListener('fetch',event=>{
     event.respondWith(
       caches.open(SHELL_CACHE)
         .then(cache=>cache.match(new URL('./index.html',self.registration.scope)))
-        .then(cached=>cached&&!cached.redirected?cached:fetch(event.request))
-        .then(response=>response.redirected?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
+        .then(cached=>cached&&(!cached.redirected||isSameScopeRedirect(cached))?cached:fetch(event.request))
+        .then(response=>response.redirected&&!isSameScopeRedirect(response)?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
         .catch(()=>recoveryResponse('The app shell was not available from the cache or the network.'))
     );
     return;
@@ -162,9 +173,9 @@ self.addEventListener('fetch',event=>{
   event.respondWith(
     caches.open(cacheName).then(async cache=>{
       const cached=await cache.match(normalized.href);
-      if(cached&&!cached.redirected)return cached;
+      if(cached&&(!cached.redirected||isSameScopeRedirect(cached)))return cached;
       const response=await fetch(event.request);
-      if(response.ok&&!response.redirected){
+      if(response.ok&&(!response.redirected||isSameScopeRedirect(response))){
         const actualRevision=await responseRevision(response);
         if(actualRevision===entry.revision)await cache.put(normalized.href,response.clone());
       }
