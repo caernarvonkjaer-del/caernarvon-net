@@ -1346,3 +1346,12 @@ Validation completed:
 - Startup tests (`tests/e2e/startup.spec.ts`): verified updated selectors and flows.
 - Unit and E2E suites passing cleanly across all targets.
 - CSP preserved; no executable inline handlers or scripts.
+
+### Milestone 18: Full Multi-Ward Backup .SAV & Save Controls Restore
+
+**In progress.** Scope and requirements are recorded in `MILESTONE-18-PROPOSAL.md`.
+
+- Multi-ward backup generation (`backupAllWardsNow()` / `buildBackupZipBlob()`) containing all wards, audit log provenance, metadata, and templates in version 3 format.
+- Save Controls sidebar additions (`Backup All Wards (.sav)` and `Open Backup (.sav)`).
+- In-session restore flow (`openBackupSavFile()` / `triggerOpenBackupSav()`) with format sniffing, confirmation prompt, decryption, and atomic hydration.
+- Verification across Playwright E2E and unit test suites.

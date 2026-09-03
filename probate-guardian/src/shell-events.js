@@ -4,6 +4,7 @@ function handleShellClick(event) {
 
   switch (actionElement.dataset.shellAction) {
     case 'activity-log': window.toggleHelpPanel(); window.navigate('/activity-log'); break;
+    case 'backup-all-wards': window.collapseSaveControls?.(); window.backupAllWardsNow?.(); break;
     case 'clear-data': window.collapseSaveControls?.(); window.clearAllData(); break;
     case 'close-mobile-sidebar': window.closeMobileSidebar(); break;
     case 'close-ward': window.collapseWardControls?.(); if (window.unloadWard) window.unloadWard(); break;
@@ -22,6 +23,7 @@ function handleShellClick(event) {
     case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;
     case 'new-form': window.collapseWardControls?.(); window.navigate('/inventory-select'); break;
     case 'next-walkthrough': window.nextWalkthroughStep(); break;
+    case 'open-backup-sav': window.collapseSaveControls?.(); window.triggerOpenBackupSav?.(); break;
     case 'rename-ward': window.collapseWardControls?.(); window.showRenameWardModal(); break;
     case 'save-backup': window.collapseSaveControls?.(); window.saveBackupNow(); break;
     case 'skip-walkthrough': window.skipWalkthrough(); break;
@@ -59,6 +61,8 @@ function handleShellChange(event) {
     window.saveAutoExportIntervalPref(Number.parseInt(event.target.value, 10));
   } else if (event.target instanceof HTMLInputElement && event.target.id === 'zip-import-input' && event.target.files?.[0]) {
     window.importGuardianDataZip(event.target.files[0]);
+  } else if (event.target instanceof HTMLInputElement && event.target.id === 'backup-import-input' && event.target.files?.[0]) {
+    window.handleBackupImportChange?.(event.target);
   }
 }
 
