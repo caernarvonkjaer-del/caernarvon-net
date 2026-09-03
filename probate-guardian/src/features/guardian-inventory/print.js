@@ -10,11 +10,13 @@
 // src/features/simplified-accounting/index.js's comment on the same
 // pattern).
 import { validateGuardian, pageNav } from './index.js';
+import { buildVerifiedInventoryModel } from './pdf-model.js';
+import { generateVerifiedInventoryPdf } from './pdf-engine.js';
 
 const {
   esc, fmt, fmtDate, circuitCourtCaption, calc, td, tdR,
   highlightErrors, validationPanel, excelCapacityPanel,
-  groupScheduleBlocksForPdf, html2pdf, pvShowAll, renderPage,
+  renderPage,
 } = window;
 
 function docHeader(ward,caseNo,schedule,page){
@@ -41,11 +43,19 @@ function printEmptyRow(key,colspan,noun){
   return `<tr class="doc-empty-row"><td colspan="${colspan}">${text}</td></tr>`;
 }
 
+function formatSig(name){
+  const n=(name||'').trim();
+  if(!n)return '';
+  return n.startsWith('/s/')||n.startsWith('s/')||n.startsWith('/s')?n:`/s/ ${n}`;
+}
+
 function buildPrintHTML(){
   const d=window.D;
   const ward=esc(d.wardName);
   const caseNo=esc(d.caseNumber);
   const county=esc(d.county);
+  const sigStyle=d.signatureStyle||'typed';
+  const sigClass=sigStyle==='script'?'script-signature':'typed-signature';
   const c=calc;
   let html='';
 
@@ -218,42 +228,30 @@ function buildPrintHTML(){
   <div class="doc-schedule-title">Part III — GUARDIAN(S) ATTESTATION(S)</div>
   <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.</div>
   ${d.guardians.map((g,i)=>`
-  <div class="doc-signature-block mb-4">
-    <div class="row">
-      <div class="col-6"><div class="doc-field-label">${i===0?"Guardian #1's Signature":`Co-Guardian #${i+1}'s Signature`}</div><div class="doc-signature-line"></div></div>
-      <div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(g.signatureDate)}</div></div>
-      <div class="col-3"><div class="doc-field-label">${i===0?"Guardian #1's Name":`Co-Guardian #${i+1}'s Name`}</div><div class="doc-signature-line">${esc(g.name)}</div></div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-4"><div class="doc-field-label">SSN / EIN</div><div class="doc-signature-line">${esc(g.ssnEin)}</div></div>
-      <div class="col-4"><div class="doc-field-label">Phone Number</div><div class="doc-signature-line">${esc(g.phone)}</div></div>
-      <div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(g.streetAddress)}</div></div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(g.cityStateZip)}</div></div>
-    </div>
+  <div class="doc-signature-block mb-3">
+    <div class="doc-field-label">Guardian #${i+1} Oath</div>
+    <div class="row"><div class="col-6"><div class="doc-field-label">Signature &nbsp;/s/</div><div class="doc-signature-line ${sigClass}">${formatSig(g.name)}</div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(g.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Guardian's Name</div><div class="doc-signature-line">${esc(g.name)}</div></div></div>
+    <div class="row mt-2"><div class="col-4"><div class="doc-field-label">SSN / EIN</div><div class="doc-signature-line">${esc(g.ssnEin)}</div></div><div class="col-4"><div class="doc-field-label">Phone</div><div class="doc-signature-line">${esc(g.phone)}</div></div><div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(g.streetAddress)}</div></div></div>
+    <div class="row mt-2"><div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(g.cityStateZip)}</div></div></div>
   </div>`).join('')}
-  <div class="doc-schedule-title">Part IV — PREPARER &amp; GUARDIAN ATTORNEY ATTESTATIONS</div>
-  <p style="font-size:.76rem;font-style:italic;margin-bottom:.75rem;">I have compiled the accompanying Verified Initial Inventory of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of ${ward}. This compilation is limited to presenting information in the form of a Verified Initial Inventory and is the representation of the Guardian. I have not audited or reviewed the accompanying Verified Initial Inventory and, accordingly, do not express an opinion or any other form of assurance on it.</p>
-  <p style="font-size:.76rem;color:var(--danger-text);font-weight:700;margin-bottom:.75rem;">If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.</p>
-  <div class="doc-signature-block mb-4">
-    <div class="row"><div class="col-6"><div class="doc-field-label">Preparer's Signature</div><div class="doc-signature-line"></div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(pr.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Preparer's Name</div><div class="doc-signature-line">${esc(pr.name)}</div></div></div>
+  <div class="doc-signature-block mb-3">
+    <div class="doc-field-label">Preparer's Oath (if different from guardian)</div>
+    <div class="row"><div class="col-6"><div class="doc-field-label">Preparer's Signature &nbsp;/s/</div><div class="doc-signature-line ${sigClass}">${formatSig(pr.name)}</div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(pr.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Preparer's Name</div><div class="doc-signature-line">${esc(pr.name)}</div></div></div>
     <div class="row mt-2"><div class="col-4"><div class="doc-field-label">SSN / EIN</div><div class="doc-signature-line">${esc(pr.ssnEin)}</div></div><div class="col-4"><div class="doc-field-label">Phone</div><div class="doc-signature-line">${esc(pr.phone)}</div></div><div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(pr.streetAddress)}</div></div></div>
     <div class="row mt-2"><div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(pr.cityStateZip)}</div></div></div>
   </div>
   <div class="doc-schedule-title">GUARDIAN ATTORNEY SIGNATURE</div>
   <p style="font-size:.76rem;font-style:italic;margin-bottom:.6rem;">The undersigned Attorney hereby notifies the Court of the filing of the Verified Initial Inventory as of ${fmtDate(at.filingDate)}, ${county} County, Florida. This Verified Initial Inventory is the representation of the Guardian. The undersigned Attorney represents that he/she has examined the contents of the Inventory and that it conforms to the requirements of the Florida Guardianship Law.</p>
   <div class="doc-signature-block">
-    <div class="row"><div class="col-6"><div class="doc-field-label">Attorney Signature &nbsp;/s/</div><div class="doc-signature-line"></div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(at.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Attorney's Name</div><div class="doc-signature-line">${esc(at.name)}</div></div></div>
+    <div class="row"><div class="col-6"><div class="doc-field-label">Attorney Signature &nbsp;/s/</div><div class="doc-signature-line ${sigClass}">${formatSig(at.name)}</div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(at.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Attorney's Name</div><div class="doc-signature-line">${esc(at.name)}</div></div></div>
     <div class="row mt-2"><div class="col-4"><div class="doc-field-label">Bar Number</div><div class="doc-signature-line">${esc(at.barNumber)}</div></div><div class="col-4"><div class="doc-field-label">Phone</div><div class="doc-signature-line">${esc(at.phone)}</div></div><div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(at.streetAddress)}</div></div></div>
     <div class="row mt-2"><div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(at.cityStateZip)}</div></div></div>
   </div>
   </div>`;
 
-  // D-3, D-4 & Part VI – Audit Fee, Safe Deposit Box, Bond Calculation & Certificate of
-  // Service (combined onto one page — each was previously forced onto its own near-empty page)
+  // D-3, D-4 & Part VI – Audit Fee, Safe Deposit Box, Bond Calculation
   const sa=d.serviceAttorney;
-  html+=`<div class="schedule-page doc-page">${docHeader(ward,caseNo,'Audit Fee, Bond &amp; Service','4')}
+  html+=`<div class="schedule-page doc-page">${docHeader(ward,caseNo,'Audit Fee, Bond &amp; Service','6')}
   <div class="doc-schedule-title">AUDIT FEE SCHEDULE</div>
   <div class="doc-table-div mb-3">
     ${tdR('Initial Verified Inventory Property Value in Excess of $25,000','$85.00')}
@@ -283,19 +281,16 @@ function buildPrintHTML(){
   </div>
   </div>`;
 
-  // Part VI on its own page. It used to sit on the end of the Audit Fee page,
-  // where a filled-in bond section pushed the attorney signature past the foot
-  // of the sheet: the filing then ended on a continuation page, which gets
-  // neither the court header nor the half-inch margin, and read as cut off.
-  html+=`<div class="schedule-page doc-page">${docHeader(ward,caseNo,'Certificate of Service','5')}
+  // Part VI: Certificate of Service
+  html+=`<div class="schedule-page doc-page">${docHeader(ward,caseNo,'Certificate of Service','7')}
   <div class="doc-schedule-title">Part VI — GUARDIAN ATTORNEY — CERTIFICATE OF SERVICE</div>
   <p style="font-size:.78rem;margin-bottom:1rem;">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this inventory has been furnished to:</p>
   <div class="row mb-3">
-    ${d.serviceRecipients.map((r,i)=>`<div class="col-6 mb-2"><div class="doc-field-label">Name and Address of Recipient ${i+1}</div><div class="doc-signature-line">${esc(r.name)}</div><div class="doc-signature-line">${esc(r.address)}</div><div class="doc-signature-line">${esc(r.cityStateZip)}</div></div>`).join('')}
+    ${d.serviceRecipients.map((r,i)=>`<div class="col-6 mb-2"><div class="doc-field-label">Name and Address of Recipient ${i+1}</div><div class="doc-signature-line ${sigClass}">${formatSig(r.name)}</div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(r.dateServed||d.serviceDate)}</div></div><div class="doc-signature-line">${esc(r.address)}</div><div class="doc-signature-line">${esc(r.cityStateZip)}</div></div>`).join('')}
   </div>
   <p style="font-size:.78rem;">on this date: ${fmtDate(d.serviceDate)}</p>
   <div class="doc-signature-block">
-    <div class="row"><div class="col-6"><div class="doc-field-label">Attorney Signature &nbsp;/s/</div><div class="doc-signature-line"></div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(sa.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Attorney's Name</div><div class="doc-signature-line">${esc(sa.name)}</div></div></div>
+    <div class="row"><div class="col-6"><div class="doc-field-label">Attorney Signature &nbsp;/s/</div><div class="doc-signature-line ${sigClass}">${formatSig(sa.name)}</div></div><div class="col-3"><div class="doc-field-label">Date</div><div class="doc-signature-line">${fmtDate(sa.signatureDate)}</div></div><div class="col-3"><div class="doc-field-label">Attorney's Name</div><div class="doc-signature-line">${esc(sa.name)}</div></div></div>
     <div class="row mt-2"><div class="col-4"><div class="doc-field-label">Bar Number</div><div class="doc-signature-line">${esc(sa.barNumber)}</div></div><div class="col-4"><div class="doc-field-label">Phone</div><div class="doc-signature-line">${esc(sa.phone)}</div></div><div class="col-4"><div class="doc-field-label">Street Address</div><div class="doc-signature-line">${esc(sa.streetAddress)}</div></div></div>
     <div class="row mt-2"><div class="col-6"><div class="doc-field-label">City / State / Zip</div><div class="doc-signature-line">${esc(sa.cityStateZip)}</div></div></div>
     <p class="mt-3" style="font-size:.76rem;text-align:center;font-weight:700;">(End of Verified Initial Inventory)</p>
@@ -310,9 +305,9 @@ export function pagePrint(capOver){
   highlightErrors(errors);
   const errPanel=errors.length?validationPanel(errors):'';
   const canExport=errors.length===0;
-  // Excel-only limit — the PDF path renders every entry, so overflow must
-  // not disable PDF along with it.
   const canExportExcel=canExport&&capOver.length===0;
+  const sigStyle=window.D.signatureStyle||'typed';
+
   return `<div>
   <h1 class="visually-hidden">Print Preview</h1>
   <div class="print-preview-banner no-print">
@@ -325,6 +320,22 @@ export function pagePrint(capOver){
       <button class="btn btn-outline-secondary btn-sm" data-form-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
     </div>
   </div>
+
+  <div class="summary-box mb-3 no-print" style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.75rem 1rem;">
+    <div style="font-weight:600;font-size:.85rem;color:var(--ink);margin-bottom:.25rem;">Electronic Signature Format (Fla. R. Gen. Prac. &amp; Jud. Admin. 2.515)</div>
+    <div style="font-size:.78rem;color:var(--ink-3);margin-bottom:.5rem;">Electronic signature format for generated PDFs. Confirm current filing requirements before filing.</div>
+    <div class="d-flex gap-4">
+      <label class="form-check" style="cursor:pointer;margin-bottom:0;">
+        <input class="form-check-input" type="radio" name="signatureStyle" value="typed" ${sigStyle==='typed'?'checked':''} data-inventory-change="set-sig-style">
+        <span class="form-check-label" style="font-size:.85rem;"><strong>Typed /s/ signature</strong> (Default — Standard Document Font)</span>
+      </label>
+      <label class="form-check" style="cursor:pointer;margin-bottom:0;">
+        <input class="form-check-input" type="radio" name="signatureStyle" value="script" ${sigStyle==='script'?'checked':''} data-inventory-change="set-sig-style">
+        <span class="form-check-label" style="font-size:.85rem;"><strong>Script-style /s/ signature</strong> (Optional — Cursive Presentation)</span>
+      </label>
+    </div>
+  </div>
+
   ${errPanel}
   ${capOver.length?excelCapacityPanel(capOver):''}
   <div id="print-doc-container">${buildPrintHTML()}</div>
@@ -339,22 +350,18 @@ export async function doSavePdf(){
   if(stat)stat.textContent='Generating PDF…';
   const stem=(window.D.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
   const filename=`${stem}_InitialInventory.pdf`;
-  const pdfDiv=document.getElementById('print-doc-container');
-  if(!pdfDiv){alert('PDF export failed: content not found');return;}
-  // Not 'avoid-all' — see the note in doSavePdfAnnual().
-  const opt={margin:0,filename,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,useCORS:true,logging:false},jsPDF:{unit:'in',format:'letter',orientation:'portrait'},pagebreak:{mode:['css','legacy'],before:'.schedule-page:not(:first-of-type)'}};
-  let ungroup=()=>{};
+
   try{
-    pvShowAll(); // never export a filtered preview
-    document.body.classList.add('pdf-export-mode');
-    ungroup=groupScheduleBlocksForPdf(pdfDiv);
-    await html2pdf().set(opt).from(pdfDiv).save();
+    const model = buildVerifiedInventoryModel(window.D, {
+      signatureStyle: window.D.signatureStyle || 'typed',
+      printDate: new Date().toISOString().slice(0, 10),
+    });
+    const doc = await generateVerifiedInventoryPdf(model);
+    doc.save(filename);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);
   }finally{
-    ungroup();
-    document.body.classList.remove('pdf-export-mode');
     if(stat)stat.textContent='';
   }
 }
