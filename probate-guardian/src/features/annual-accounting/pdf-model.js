@@ -1,6 +1,8 @@
 // Structured intermediate representation for Annual Guardianship Accounting PDF generation.
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
+import { calcTotalsAnnual, annualReconcileState } from './totals.js';
+
 export const DISB_CATS = [
   'Accounting',
   'Bank Service Charges',
@@ -30,16 +32,6 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const printDate = options.printDate || new Date().toISOString().slice(0, 10);
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';
 
-  const n = (v) => {
-    const num = parseFloat(v);
-    return isNaN(num) ? 0 : num;
-  };
-
-  const pct = (v) => {
-    const p = parseFloat(v);
-    return isNaN(p) ? 0 : p > 1 ? p / 100 : p;
-  };
-
   const fmtS = (v) => {
     const num = parseFloat(v) || 0;
     return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -58,36 +50,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
     return str.startsWith('/s/') || str.startsWith('s/') || str.startsWith('/s') ? str : `/s/ ${str}`;
   };
 
-  // Safe calculation of Annual Accounting totals
-  const schA = (d.schA || []).reduce((s, r) => s + n(r.amount), 0);
-  const schB1 = (d.schB1 || []).reduce((s, r) => s + n(r.amount), 0);
-  const schB2 = (d.schB2 || []).reduce((s, r) => s + n(r.amount), 0);
-  const schB3 = (d.schB3 || []).reduce((s, r) => s + n(r.amount), 0);
-  const schB4 = (d.schB4 || []).reduce((s, r) => s + n(r.amount), 0);
-  const totalDisb = schB1 + schB2 + schB3 + schB4;
-  const schC_gains = (d.schC || []).reduce((s, r) => s + n(r.gain), 0);
-  const schC_losses = (d.schC || []).reduce((s, r) => s + n(r.loss), 0);
-  const schC_net = schC_gains + schC_losses;
-  const netAssets = n(d.startingBalance) + schA - totalDisb + schC_net;
-
-  const schD1_restricted = (d.schD1 || []).reduce((s, r) => s + (r.restricted === 'Yes' ? n(r.fullAmount) * pct(r.wardPct) : 0), 0);
-  const schD1_total = (d.schD1 || []).reduce((s, r) => s + n(r.fullAmount) * pct(r.wardPct), 0);
-  const schD2_carrying = (d.schD2 || []).reduce((s, r) => s + n(r.carryingValue) * pct(r.wardPct), 0);
-  const schD2_ward = (d.schD2 || []).reduce((s, r) => s + n(r.fullValue) * pct(r.wardPct), 0);
-  const schD3_carrying = (d.schD3 || []).reduce((s, r) => s + n(r.carryingValue) * pct(r.wardPct), 0);
-  const schD3_ward = (d.schD3 || []).reduce((s, r) => s + n(r.fullAmount) * pct(r.wardPct), 0);
-  const schD4_restricted = (d.schD4 || []).reduce((s, r) => s + (r.restricted === 'Yes' ? n(r.carryingValue) * pct(r.wardPct) : 0), 0);
-  const schD4_carrying = (d.schD4 || []).reduce((s, r) => s + n(r.carryingValue) * pct(r.wardPct), 0);
-  const schD4_ward = (d.schD4 || []).reduce((s, r) => s + n(r.fullAmount) * pct(r.wardPct), 0);
-  const schD5_total = (d.schD5 || []).reduce((s, r) => s + n(r.fullDebt) * pct(r.wardPct), 0);
-  const netAssetsFromD = schD1_total + schD2_ward + schD3_ward + schD4_ward - schD5_total;
-
-  let auditFee = 20;
-  if (netAssetsFromD > 500000) auditFee = 250;
-  else if (netAssetsFromD > 100000) auditFee = 170;
-  else if (netAssetsFromD > 25000) auditFee = 85;
-
-  const bondReq = (schD1_total - schD1_restricted) + schD3_ward + (schD4_ward - schD4_restricted);
+  // Authoritative financial calculations from single source of truth
+  const t = calcTotalsAnnual(d);
+  const rec = annualReconcileState(t, d);
 
   const metadata = {
     title: `${wardName} - ${caseNumber} - Annual Accounting - Printed ${printDate}`,
@@ -164,8 +129,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
           ['In excess of $500,000', '$250.00'],
         ],
         totals: {
-          label: `Applicable Audit Fee (Total Assets: ${fmtS(netAssetsFromD)})`,
-          value: `$${auditFee.toFixed(2)}`,
+          label: `Applicable Audit Fee (Total Assets: ${fmtS(t.netAssetsFromD)})`,
+          value: `$${t.auditFee.toFixed(2)}`,
         },
         colWidths: [75, 25],
         colAlign: ['left', 'right'],
@@ -189,17 +154,17 @@ export function buildAnnualAccountingModel(D, options = {}) {
         headers: ['Line Item', 'Amount'],
         rows: [
           ['Starting Balance [Net Assets per Prior Report]', fmtS(d.startingBalance)],
-          ['Schedule A — Income/Receipts', fmtS(schA)],
-          ['Schedule B-1 — Attorney Fees and Costs', `(${fmtS(schB1)})`],
-          ['Schedule B-2 — Guardian Fees and Costs', `(${fmtS(schB2)})`],
-          ['Schedule B-3 — Other Court-Ordered Disbursements', `(${fmtS(schB3)})`],
-          ['Schedule B-4 — All Other Disbursements', `(${fmtS(schB4)})`],
-          ['Total Disbursements (B-1 through B-4)', `(${fmtS(totalDisb)})`],
-          ['Schedule C — Capital Adjustments Net', fmtS(schC_net)],
+          ['Schedule A — Income/Receipts', fmtS(t.schA)],
+          ['Schedule B-1 — Attorney Fees and Costs', `(${fmtS(t.schB1)})`],
+          ['Schedule B-2 — Guardian Fees and Costs', `(${fmtS(t.schB2)})`],
+          ['Schedule B-3 — Other Court-Ordered Disbursements', `(${fmtS(t.schB3)})`],
+          ['Schedule B-4 — All Other Disbursements', `(${fmtS(t.schB4)})`],
+          ['Total Disbursements (B-1 through B-4)', `(${fmtS(t.totalDisb)})`],
+          ['Schedule C — Capital Adjustments Net', fmtS(t.schC_net)],
         ],
         totals: {
           label: 'Line 20 — Net Assets at End of Accounting Period',
-          value: fmtS(netAssets),
+          value: fmtS(t.netAssets),
         },
         colWidths: [75, 25],
         colAlign: ['left', 'right'],
@@ -215,27 +180,30 @@ export function buildAnnualAccountingModel(D, options = {}) {
       title: 'Assets & Liabilities Breakdown',
       headers: ['Schedule', 'Carrying Value', 'Ward Value / Amount'],
       rows: [
-        ['Schedule D-1 — Cash Assets', '—', fmtS(schD1_total)],
-        ['Schedule D-2 — Real Estate', fmtS(schD2_carrying), fmtS(schD2_ward)],
-        ['Schedule D-3 — Personal Property', fmtS(schD3_carrying), fmtS(schD3_ward)],
-        ['Schedule D-4 — Intangible Assets', fmtS(schD4_carrying), fmtS(schD4_ward)],
-        ['Schedule D-5 — Mortgages / Liabilities', '—', `(${fmtS(schD5_total)})`],
+        ['Schedule D-1 — Cash Assets', '—', fmtS(t.schD1_total)],
+        ['Schedule D-2 — Real Estate', fmtS(t.schD2_carrying), fmtS(t.schD2_ward)],
+        ['Schedule D-3 — Personal Property', fmtS(t.schD3_carrying), fmtS(t.schD3_ward)],
+        ['Schedule D-4 — Intangible Assets', fmtS(t.schD4_carrying), fmtS(t.schD4_ward)],
+        ['Schedule D-5 — Mortgages / Liabilities', '—', `(${fmtS(t.schD5_total)})`],
       ],
       totals: {
         label: 'Line 30 — Net Assets at End of Accounting Period',
-        value: fmtS(netAssetsFromD),
+        value: fmtS(t.netAssetsFromD),
       },
       colWidths: [50, 25, 25],
       colAlign: ['left', 'right', 'right'],
     },
   ];
 
-  const diff = Math.abs(netAssets - netAssetsFromD);
-  if (diff > 0.01) {
+  if (rec.outOfBalance) {
+    let noticeText = `Explanation of Difference Between Line 20 and Line 30:\nDifference: ${fmtS(rec.diff)}`;
+    if (rec.explanation) {
+      noticeText += `\n${rec.explanation}`;
+    }
     part7Blocks.push({
       type: 'notice',
       tag: 'P',
-      text: `EXPLANATION OF DIFFERENCE BETWEEN LINE 20 AND LINE 30:\nDifference: ${fmtS(diff)}\n${d.reconciliationExplanation || 'Difference noted on file; pending review.'}`,
+      text: noticeText,
     });
   }
 
@@ -374,7 +342,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule A: Income Received During Period',
         headers: ['#', 'Income Source / Payer', 'Description', 'Bank', 'Account #', "Ward's Income Amount"],
         rows: schARows.length ? schARows : [['—', 'No income entries', '—', '—', '—', '$0.00']],
-        totals: { label: 'Schedule A Total — Income/Receipts', value: fmtS(schA) },
+        totals: { label: 'Schedule A Total — Income/Receipts', value: fmtS(t.schA) },
         colWidths: [5, 25, 25, 18, 12, 15],
         colAlign: ['center', 'left', 'left', 'left', 'left', 'right'],
       },
@@ -407,7 +375,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule B-1: Attorney Fees and Costs During Period',
         headers: ['#', 'Bank Acct', 'Check #', 'Period From', 'Period To', 'Date Paid', 'Payee', 'Court Order', 'Amount'],
         rows: schB1Rows.length ? schB1Rows : [['—', '—', '—', '—', '—', '—', 'No entries', '—', '$0.00']],
-        totals: { label: 'Schedule B-1 Total', value: fmtS(schB1) },
+        totals: { label: 'Schedule B-1 Total', value: fmtS(t.schB1) },
         colWidths: [5, 12, 10, 11, 11, 11, 20, 10, 10],
         colAlign: ['center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'right'],
       },
@@ -440,7 +408,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule B-2: Guardian Fees and Costs During Period',
         headers: ['#', 'Bank Acct', 'Check #', 'Period From', 'Period To', 'Date Paid', 'Payee', 'Court Order', 'Amount'],
         rows: schB2Rows.length ? schB2Rows : [['—', '—', '—', '—', '—', '—', 'No entries', '—', '$0.00']],
-        totals: { label: 'Schedule B-2 Total', value: fmtS(schB2) },
+        totals: { label: 'Schedule B-2 Total', value: fmtS(t.schB2) },
         colWidths: [5, 12, 10, 11, 11, 11, 20, 10, 10],
         colAlign: ['center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'right'],
       },
@@ -471,7 +439,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule B-3: Other Court-Ordered Disbursements During Period',
         headers: ['#', 'Bank Acct', 'Check #', 'Date Paid', 'Payee', 'Court Order Date', 'Amount'],
         rows: schB3Rows.length ? schB3Rows : [['—', '—', '—', '—', 'No entries', '—', '$0.00']],
-        totals: { label: 'Schedule B-3 Total', value: fmtS(schB3) },
+        totals: { label: 'Schedule B-3 Total', value: fmtS(t.schB3) },
         colWidths: [6, 16, 12, 14, 26, 14, 12],
         colAlign: ['center', 'left', 'left', 'left', 'left', 'left', 'right'],
       },
@@ -483,7 +451,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   DISB_CATS.forEach((c) => { catTotals[c] = 0; });
   (d.schB4 || []).forEach((r) => {
     if (r.category && catTotals[r.category] !== undefined) {
-      catTotals[r.category] += n(r.amount);
+      const num = parseFloat(r.amount);
+      catTotals[r.category] += isNaN(num) ? 0 : num;
     }
   });
 
@@ -500,7 +469,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       title: 'Schedule B-4: All Other Disbursements — Summary by Category',
       headers: ['#', 'Category', 'Amount'],
       rows: catRows,
-      totals: { label: 'All Other Disbursements Total', value: fmtS(schB4) },
+      totals: { label: 'All Other Disbursements Total', value: fmtS(t.schB4) },
       colWidths: [10, 65, 25],
       colAlign: ['center', 'left', 'right'],
     },
@@ -521,7 +490,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       title: 'Schedule B-4: All Other Disbursements — Check Register',
       headers: ['#', 'Check #', 'Date Paid', 'Category', 'Payee', 'Amount'],
       rows: regRows,
-      totals: { label: 'Schedule B-4 Detail Total', value: fmtS(schB4) },
+      totals: { label: 'Schedule B-4 Detail Total', value: fmtS(t.schB4) },
       colWidths: [6, 14, 14, 26, 26, 14],
       colAlign: ['center', 'left', 'left', 'left', 'left', 'right'],
     });
@@ -559,7 +528,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule C: Capital Adjustments During Period',
         headers: ['#', 'Description', 'Date', 'Gain / Addition', 'Loss / Reduction'],
         rows: schCRows.length ? schCRows : [['—', 'No entries', '—', '—', '—']],
-        totals: { label: 'Capital Adjustments Net (Gains + Losses)', value: fmtS(schC_net) },
+        totals: { label: 'Capital Adjustments Net (Gains + Losses)', value: fmtS(t.schC_net) },
         colWidths: [6, 46, 16, 16, 16],
         colAlign: ['center', 'left', 'left', 'right', 'right'],
       },
@@ -568,7 +537,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-1: Cash Assets ─────────────────────────────────────────────
   const schD1Rows = (d.schD1 || []).map((r, i) => {
-    const wa = n(r.fullAmount) * pct(r.wardPct);
+    const p = parseFloat(r.wardPct);
+    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    const full = parseFloat(r.fullAmount) || 0;
+    const wa = full * wardFraction;
     return [
       String(i + 1),
       r.description || '',
@@ -594,7 +566,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule D-1: Cash Assets on Hand',
         headers: ['#', 'Description', 'Account #', 'Restricted?', 'Type', 'Full Amount', "Ward's %", "Ward's Amount"],
         rows: schD1Rows.length ? schD1Rows : [['—', 'No entries', '—', '—', '—', '$0.00', '—', '$0.00']],
-        totals: { label: "Cash Assets Total (Ward's Amount)", value: fmtS(schD1_total) },
+        totals: { label: "Cash Assets Total (Ward's Amount)", value: fmtS(t.schD1_total) },
         colWidths: [5, 25, 14, 10, 12, 12, 10, 12],
         colAlign: ['center', 'left', 'left', 'center', 'left', 'right', 'right', 'right'],
       },
@@ -603,8 +575,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-2: Real Estate ─────────────────────────────────────────────
   const schD2Rows = (d.schD2 || []).map((r, i) => {
-    const wv = n(r.fullValue) * pct(r.wardPct);
-    const cv = n(r.carryingValue) * pct(r.wardPct);
+    const p = parseFloat(r.wardPct);
+    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    const full = parseFloat(r.fullValue) || 0;
+    const carry = parseFloat(r.carryingValue) || 0;
+    const wv = full * wardFraction;
+    const cv = carry * wardFraction;
     return [
       String(i + 1),
       r.description || '',
@@ -630,7 +606,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule D-2: Real Estate and Real Property Assets',
         headers: ['#', 'Description / Address', 'Residence?', 'Income?', 'Full Value', "Ward's %", 'Carrying Value', "Ward's Value"],
         rows: schD2Rows.length ? schD2Rows : [['—', 'No entries', '—', '—', '$0.00', '—', '$0.00', '$0.00']],
-        totals: { label: 'Schedule D-2 Totals (Carrying / Ward Value)', value: `${fmtS(schD2_carrying)} / ${fmtS(schD2_ward)}` },
+        totals: { label: 'Schedule D-2 Totals (Carrying / Ward Value)', value: `${fmtS(t.schD2_carrying)} / ${fmtS(t.schD2_ward)}` },
         colWidths: [5, 25, 10, 10, 13, 10, 13, 14],
         colAlign: ['center', 'left', 'center', 'center', 'right', 'right', 'right', 'right'],
       },
@@ -639,8 +615,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-3: Personal Property ───────────────────────────────────────
   const schD3Rows = (d.schD3 || []).map((r, i) => {
-    const wa = n(r.fullAmount) * pct(r.wardPct);
-    const cv = n(r.carryingValue) * pct(r.wardPct);
+    const p = parseFloat(r.wardPct);
+    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    const full = parseFloat(r.fullAmount) || 0;
+    const carry = parseFloat(r.carryingValue) || 0;
+    const wa = full * wardFraction;
+    const cv = carry * wardFraction;
     return [
       String(i + 1),
       r.description || '',
@@ -664,7 +644,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule D-3: Personal Property Assets',
         headers: ['#', 'Description / Location', 'Full Amount', "Ward's %", 'Carrying Value', "Ward's Amount"],
         rows: schD3Rows.length ? schD3Rows : [['—', 'No entries', '$0.00', '—', '$0.00', '$0.00']],
-        totals: { label: 'Schedule D-3 Totals (Carrying / Ward Amount)', value: `${fmtS(schD3_carrying)} / ${fmtS(schD3_ward)}` },
+        totals: { label: 'Schedule D-3 Totals (Carrying / Ward Amount)', value: `${fmtS(t.schD3_carrying)} / ${fmtS(t.schD3_ward)}` },
         colWidths: [6, 40, 14, 12, 14, 14],
         colAlign: ['center', 'left', 'right', 'right', 'right', 'right'],
       },
@@ -673,8 +653,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-4: Intangible Assets ───────────────────────────────────────
   const schD4Rows = (d.schD4 || []).map((r, i) => {
-    const wv = n(r.fullAmount) * pct(r.wardPct);
-    const cv = n(r.carryingValue) * pct(r.wardPct);
+    const p = parseFloat(r.wardPct);
+    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    const full = parseFloat(r.fullAmount) || 0;
+    const carry = parseFloat(r.carryingValue) || 0;
+    const wv = full * wardFraction;
+    const cv = carry * wardFraction;
     const ra = r.restricted === 'Yes' ? cv : 0;
     return [
       String(i + 1),
@@ -701,7 +685,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule D-4: Intangible Assets',
         headers: ['#', 'Description', 'Restricted?', 'Full Amount', "Ward's %", 'Carrying Value', "Ward's Value", 'Restricted Amt'],
         rows: schD4Rows.length ? schD4Rows : [['—', 'No entries', '—', '$0.00', '—', '$0.00', '$0.00', '—']],
-        totals: { label: 'Schedule D-4 Totals (Carrying / Ward Value)', value: `${fmtS(schD4_carrying)} / ${fmtS(schD4_ward)}` },
+        totals: { label: 'Schedule D-4 Totals (Carrying / Ward Value)', value: `${fmtS(t.schD4_carrying)} / ${fmtS(t.schD4_ward)}` },
         colWidths: [5, 23, 10, 13, 9, 13, 13, 14],
         colAlign: ['center', 'left', 'center', 'right', 'right', 'right', 'right', 'right'],
       },
@@ -710,7 +694,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-5: Mortgages / Liabilities ─────────────────────────────────
   const schD5Rows = (d.schD5 || []).map((r, i) => {
-    const wb = n(r.fullDebt) * pct(r.wardPct);
+    const p = parseFloat(r.wardPct);
+    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    const fullDebt = parseFloat(r.fullDebt) || 0;
+    const wb = fullDebt * wardFraction;
     return [
       String(i + 1),
       r.description || '',
@@ -735,7 +722,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Schedule D-5: Mortgages / Loans / Notes / Other Liabilities',
         headers: ['#', 'Description / Lender', 'Loan/Acct #', 'Type', 'Full Debt', "Ward's %", "Ward's Balance"],
         rows: schD5Rows.length ? schD5Rows : [['—', 'No entries', '—', '—', '$0.00', '—', '$0.00']],
-        totals: { label: "Schedule D-5 Total — Ward's Balance Due", value: fmtS(schD5_total) },
+        totals: { label: "Schedule D-5 Total — Ward's Balance Due", value: fmtS(t.schD5_total) },
         colWidths: [6, 26, 16, 14, 13, 11, 14],
         colAlign: ['center', 'left', 'left', 'left', 'right', 'right', 'right'],
       },
@@ -783,7 +770,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtD(r.courtOrderDate),
       fmtS(r.salePrice),
     ]);
-    const totalF1 = d.schF1.reduce((s, r) => s + n(r.salePrice), 0);
+    const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const totalF1 = d.schF1.reduce((s, r) => s + num(r.salePrice), 0);
     sections.push({
       id: 'schF1',
       title: 'SCHEDULE F-1: Sales of Real Property During Period',
@@ -816,7 +804,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtD(r.courtOrderDate),
       fmtS(r.salePrice),
     ]);
-    const totalF2 = d.schF2.reduce((s, r) => s + n(r.salePrice), 0);
+    const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const totalF2 = d.schF2.reduce((s, r) => s + num(r.salePrice), 0);
     sections.push({
       id: 'schF2',
       title: 'SCHEDULE F-2: Sales of Personal Property During Period',
@@ -907,21 +896,129 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Statutory Bond Calculation Breakdown',
         headers: ['Bond Component', 'Amount'],
         rows: [
-          ['Schedule D-1 — Cash Assets in RESTRICTED Depository', fmtS(schD1_restricted)],
-          ['Schedule D-4 — Intangible Assets RESTRICTED', fmtS(schD4_restricted)],
-          ['Schedule D-1 — Cash Assets NOT in Restricted Depository', fmtS(schD1_total - schD1_restricted)],
-          ['Schedule D-3 — Personal Property Assets', fmtS(schD3_ward)],
-          ['Schedule D-4 — Intangible Assets (Unrestricted)', fmtS(schD4_ward - schD4_restricted)],
+          ['Schedule D-1 — Cash Assets in RESTRICTED Depository', fmtS(t.schD1_restricted)],
+          ['Schedule D-4 — Intangible Assets RESTRICTED', fmtS(t.schD4_restricted)],
+          ['Schedule D-1 — Cash Assets NOT in Restricted Depository', fmtS(t.schD1_total - t.schD1_restricted)],
+          ['Schedule D-3 — Personal Property Assets', fmtS(t.schD3_ward)],
+          ['Schedule D-4 — Intangible Assets (Unrestricted)', fmtS(t.schD4_ward - t.schD4_restricted)],
         ],
         totals: {
           label: 'Total Required Bond Amount (§ 744.351)',
-          value: fmtS(bondReq),
+          value: fmtS(t.bondReq),
         },
         colWidths: [75, 25],
         colAlign: ['left', 'right'],
       },
+      {
+        type: 'key-value-grid',
+        tag: 'Table',
+        title: 'Bond Policy Details',
+        items: [
+          { label: 'Bond Amount', value: fmtS(d.bondAmount) },
+          { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom)}   To: ${fmtD(d.bondPeriodTo)}` },
+          { label: 'Name of Bonding Company', value: d.bondingCompany || '' },
+        ],
+      },
     ],
   });
+
+  // ── Part X: Certificate of Service ────────────────────────────────────────
+  const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3 || r.line4));
+  const certBlocks = [
+    {
+      type: 'notice',
+      tag: 'P',
+      text: 'Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to:',
+    },
+  ];
+
+  if (certRecipients.length > 0) {
+    certBlocks.push({
+      type: 'table',
+      tag: 'Table',
+      title: 'Certificate of Service Recipients',
+      headers: ['#', 'Recipient Name', 'Address Details'],
+      rows: certRecipients.map((r, i) => [
+        String(i + 1),
+        r.name || '',
+        [r.line2, r.line3, r.line4].filter(Boolean).join(', '),
+      ]),
+      colWidths: [6, 44, 50],
+      colAlign: ['center', 'left', 'left'],
+    });
+  } else {
+    certBlocks.push({
+      type: 'notice',
+      tag: 'P',
+      text: 'No service recipients listed.',
+    });
+  }
+
+  certBlocks.push({
+    type: 'notice',
+    tag: 'P',
+    text: `on this date: ${fmtD(d.certDate) || 'the date indicated below'}${d.certIndicator ? ` | ${d.certIndicator}` : ''}`,
+  });
+
+  certBlocks.push({
+    type: 'signature-block',
+    tag: 'Figure',
+    role: 'Attorney for Guardian (Service)',
+    signerName: d.attorney || '',
+    signature: formatSig(d.attorney),
+    signatureStyle,
+    signatureDate: fmtD(d.certAttySignDate),
+    details: {
+      'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
+      'Phone': d.attorney_phone || '',
+      'Address': `${d.attorney_street || ''}, ${d.attorney_cityStateZip || ''}`.replace(/^, /, ''),
+    },
+  });
+
+  sections.push({
+    id: 'part10',
+    title: 'Part X — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE',
+    bookmarkTitle: 'Part X - Certificate of Service',
+    parentBookmark: null,
+    level: 1,
+    pageBreakBefore: true,
+    blocks: certBlocks,
+  });
+
+  // ── Part XI: Remuneration ──────────────────────────────────────────────────
+  const remList = (d.remuneration || []).filter(r => r && (r.amount || r.guardian || r.type || r.description));
+  if (remList.length > 0) {
+    sections.push({
+      id: 'part11',
+      title: 'Part XI — GUARDIAN(S) DECLARATION OF REMUNERATION',
+      bookmarkTitle: 'Part XI - Remuneration',
+      parentBookmark: null,
+      level: 1,
+      pageBreakBefore: true,
+      blocks: [
+        {
+          type: 'notice',
+          tag: 'P',
+          text: 'Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.',
+        },
+        {
+          type: 'table',
+          tag: 'Table',
+          title: 'Declaration of Remuneration',
+          headers: ['#', 'Guardian Name', 'Type', 'Description', 'Amount'],
+          rows: remList.map((r, i) => [
+            String(i + 1),
+            r.guardian || '',
+            r.type || '',
+            r.description || '',
+            fmtS(r.amount),
+          ]),
+          colWidths: [6, 26, 20, 32, 16],
+          colAlign: ['center', 'left', 'left', 'left', 'right'],
+        },
+      ],
+    });
+  }
 
   return { metadata, sections };
 }

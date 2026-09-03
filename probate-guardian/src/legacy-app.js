@@ -7309,30 +7309,30 @@ function sanitizeNegativeAmounts(){
 function n(v){return parseFloat(v)||0;}
 function pct(v){const p=parseFloat(v);return isNaN(p)?0:p>1?p/100:p;}
 
-function calcTotalsAnnual(){
-  const d=window.D;
-  const schA  = d.schA.reduce((s,r)=>s+n(r.amount),0);
-  const schB1 = d.schB1.reduce((s,r)=>s+n(r.amount),0);
-  const schB2 = d.schB2.reduce((s,r)=>s+n(r.amount),0);
-  const schB3 = d.schB3.reduce((s,r)=>s+n(r.amount),0);
-  const schB4 = d.schB4.reduce((s,r)=>s+n(r.amount),0);
+function calcTotalsAnnual(customD){
+  const d=customD||window.D;
+  const schA  = (d.schA||[]).reduce((s,r)=>s+n(r.amount),0);
+  const schB1 = (d.schB1||[]).reduce((s,r)=>s+n(r.amount),0);
+  const schB2 = (d.schB2||[]).reduce((s,r)=>s+n(r.amount),0);
+  const schB3 = (d.schB3||[]).reduce((s,r)=>s+n(r.amount),0);
+  const schB4 = (d.schB4||[]).reduce((s,r)=>s+n(r.amount),0);
   const totalDisb = schB1+schB2+schB3+schB4;
-  const schC_gains = d.schC.reduce((s,r)=>s+n(r.gain),0);
-  const schC_losses = d.schC.reduce((s,r)=>s+n(r.loss),0);
+  const schC_gains = (d.schC||[]).reduce((s,r)=>s+n(r.gain),0);
+  const schC_losses = (d.schC||[]).reduce((s,r)=>s+n(r.loss),0);
   const schC_net = schC_gains+schC_losses; // losses entered as negative
   const netAssets = n(d.startingBalance)+schA-totalDisb+schC_net;
 
   // Schedule D totals
-  const schD1_restricted = d.schD1.reduce((s,r)=>s+(r.restricted==='Yes'?n(r.fullAmount)*pct(r.wardPct):0),0);
-  const schD1_total = d.schD1.reduce((s,r)=>s+n(r.fullAmount)*pct(r.wardPct),0);
-  const schD2_carrying = d.schD2.reduce((s,r)=>s+n(r.carryingValue)*pct(r.wardPct),0);
-  const schD2_ward = d.schD2.reduce((s,r)=>s+n(r.fullValue)*pct(r.wardPct),0);
-  const schD3_carrying = d.schD3.reduce((s,r)=>s+n(r.carryingValue)*pct(r.wardPct),0);
-  const schD3_ward = d.schD3.reduce((s,r)=>s+n(r.fullAmount)*pct(r.wardPct),0);
-  const schD4_restricted = d.schD4.reduce((s,r)=>s+(r.restricted==='Yes'?n(r.carryingValue)*pct(r.wardPct):0),0);
-  const schD4_carrying = d.schD4.reduce((s,r)=>s+n(r.carryingValue)*pct(r.wardPct),0);
-  const schD4_ward = d.schD4.reduce((s,r)=>s+n(r.fullAmount)*pct(r.wardPct),0);
-  const schD5_total = d.schD5.reduce((s,r)=>s+n(r.fullDebt)*pct(r.wardPct),0);
+  const schD1_restricted = (d.schD1||[]).reduce((s,r)=>s+(r.restricted==='Yes'?n(r.fullAmount)*pct(r.wardPct):0),0);
+  const schD1_total = (d.schD1||[]).reduce((s,r)=>s+n(r.fullAmount)*pct(r.wardPct),0);
+  const schD2_carrying = (d.schD2||[]).reduce((s,r)=>s+n(r.carryingValue)*pct(r.wardPct),0);
+  const schD2_ward = (d.schD2||[]).reduce((s,r)=>s+n(r.fullValue)*pct(r.wardPct),0);
+  const schD3_carrying = (d.schD3||[]).reduce((s,r)=>s+n(r.carryingValue)*pct(r.wardPct),0);
+  const schD3_ward = (d.schD3||[]).reduce((s,r)=>s+n(r.fullAmount)*pct(r.wardPct),0);
+  const schD4_restricted = (d.schD4||[]).reduce((s,r)=>s+(r.restricted==='Yes'?n(r.carryingValue)*pct(r.wardPct):0),0);
+  const schD4_carrying = (d.schD4||[]).reduce((s,r)=>s+n(r.carryingValue)*pct(r.wardPct),0);
+  const schD4_ward = (d.schD4||[]).reduce((s,r)=>s+n(r.fullAmount)*pct(r.wardPct),0);
+  const schD5_total = (d.schD5||[]).reduce((s,r)=>s+n(r.fullDebt)*pct(r.wardPct),0);
   const netAssetsFromD = schD1_total+schD2_ward+schD3_ward+schD4_ward-schD5_total;
 
   // Bond calc
@@ -7363,12 +7363,13 @@ function calcTotalsAnnual(){
 // facts") -- computeNavChecks() below needs both directly, and
 // src/features/annual-accounting/index.js/print.js/excel.js reach this one
 // via a plain destructure from window, same as calcTotalsAnnual.
-function annualReconcileState(t){
-  const totals=t||calcTotalsAnnual();
+function annualReconcileState(t, customD){
+  const totals=t||calcTotalsAnnual(customD);
   const diff=totals.netAssets-totals.netAssetsFromD;
   const hasFigures=[totals.netAssets,totals.netAssetsFromD].some(v=>Math.abs(v)>0.005);
   const outOfBalance=hasFigures&&Math.abs(diff)>0.01;
-  const explanation=String((window.D&&window.D.reconcileExplanation)||'').trim();
+  const d=customD||window.D;
+  const explanation=String((d&&d.reconcileExplanation)||'').trim();
   return {diff,outOfBalance,explanation,explained:outOfBalance&&explanation.length>0};
 }
 

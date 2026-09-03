@@ -838,6 +838,21 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
         ],
         guardianRelationship: 'Daughter',
         restrictedDepositoryReceiptDate: '2025-02-01',
+        reconcileExplanation: 'Discrepancy due to late bank adjustment on vehicle proceeds.',
+        attorney_bar: '0184920',
+        bondAmount: 75000,
+        bondingCompany: 'Travelers Casualty and Surety',
+        bondPeriodFrom: '2025-01-01',
+        bondPeriodTo: '2025-12-31',
+        certRecipients: [
+          { name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756', line4: 'Room 100' }
+        ],
+        certDate: '2026-03-01',
+        certIndicator: 'E-Portal / Florida Courts E-Filing',
+        certAttySignDate: '2026-03-01',
+        remuneration: [
+          { guardian: 'Rachel M. Alvarez', type: 'Guardian Fee', description: 'Statutory care compensation', amount: 2400 }
+        ],
       };
 
       const model = buildAnnualAccountingModel(sampleAnnualData, {
@@ -988,6 +1003,22 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(inspection.sectionTitles).toContain('SCHEDULE D-1: Cash Assets');
     expect(inspection.sectionTitles).toContain('Part VIII — TRUST INFORMATION');
     expect(inspection.sectionTitles).toContain('Part IX — OTHER INFORMATION & BOND CALCULATION');
+    expect(inspection.sectionTitles).toContain('Part X — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE');
+    expect(inspection.sectionTitles).toContain('Part XI — GUARDIAN(S) DECLARATION OF REMUNERATION');
+
+    // 1. Reconciliation Explanation Fidelity: Guardian's exact explanation printed, zero fabricated text
+    expect(inspection.rawPdfString).toContain('Discrepancy due to late bank adjustment on vehicle proceeds.');
+    expect(inspection.rawPdfString).not.toContain('Difference noted on file; pending review.');
+
+    // 2. Attorney Bar & Bond Policy Details Fidelity
+    expect(inspection.rawPdfString).toContain('0184920');
+    expect(inspection.rawPdfString).toContain('Travelers Casualty and Surety');
+    expect(inspection.rawPdfString).toContain('$75,000.00');
+
+    // 3. Certificate of Service & Remuneration Content Fidelity
+    expect(inspection.rawPdfString).toContain('E-Portal / Florida Courts E-Filing');
+    expect(inspection.rawPdfString).toContain('315 Court St');
+    expect(inspection.rawPdfString).toContain('Statutory care compensation');
   });
 });
 
