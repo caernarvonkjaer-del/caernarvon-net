@@ -231,12 +231,11 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(rawPdfString).toContain('/DisplayDocTitle true');
     expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
 
-    // 4. XMP Metadata Stream: /Metadata in /Catalog with pdfuaid:part 1, dc:title, dc:creator
+    // 4. XMP Metadata Stream: /Metadata in /Catalog with Dublin Core dc:title, dc:creator
     expect(metadataId).not.toBeNull();
     expect(catalogObj).toContain(`/Metadata ${metadataId} 0 R`);
     expect(metadataObj).toContain('/Type /Metadata');
     expect(metadataObj).toContain('/Subtype /XML');
-    expect(metadataObj).toContain('<pdfuaid:part>1</pdfuaid:part>');
     expect(metadataObj).toContain('<dc:title>');
     expect(metadataObj).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
     expect(metadataObj).toContain('<dc:creator>');
@@ -292,10 +291,20 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     // Category 7: Headings Checks
     // ==========================================
 
-    // 12. Hierarchical Heading Structure Elements
+    // 12. Hierarchical Heading Structure Elements & Appropriate Nesting (Zero skipped heading levels)
     expect(rawPdfString).toContain('/S /H1');
     expect(rawPdfString).toContain('/S /H2');
-    expect(rawPdfString).toContain('/S /H3');
+
+    // Assert Acrobat "Appropriate nesting" rule: no heading jumps e.g. H1 -> H3
+    const headingMatches = [...rawPdfString.matchAll(/\/S \/(H[1-6])/g)].map(m => parseInt(m[1].slice(1), 10));
+    expect(headingMatches.length).toBeGreaterThan(0);
+    let prevLevel = 0;
+    for (const lvl of headingMatches) {
+      if (prevLevel > 0) {
+        expect(lvl).toBeLessThanOrEqual(prevLevel + 1);
+      }
+      prevLevel = lvl;
+    }
 
     // ==========================================
     // Strict Non-Raster Vector Text Integrity
@@ -304,6 +313,21 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(rawPdfString).toContain('ET');
     expect(rawPdfString).not.toContain('/Subtype /Image');
     expect(rawPdfString).not.toContain('/Filter /DCTDecode');
+  });
+
+  test('Slice 19A: XMP metadata packet conditionally includes pdfuaid:part 1 when requested', async ({ page }) => {
+    await freshStartNoPassword(page);
+    const result = await page.evaluate(async () => {
+      const { buildXmpPacket } = await import('/probate-guardian/src/features/guardian-inventory/pdf-accessibility.js');
+      const standard = buildXmpPacket({ title: 'Test Form' });
+      const withPdfUa = buildXmpPacket({ title: 'Test Form', claimPdfUa: true });
+      return {
+        standardHasPdfUa: standard.includes('pdfuaid:part'),
+        withPdfUaHasPdfUa: withPdfUa.includes('<pdfuaid:part>1</pdfuaid:part>'),
+      };
+    });
+    expect(result.standardHasPdfUa).toBe(false);
+    expect(result.withPdfUaHasPdfUa).toBe(true);
   });
 });
 

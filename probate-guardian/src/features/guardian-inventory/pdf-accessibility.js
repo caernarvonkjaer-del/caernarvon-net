@@ -205,14 +205,27 @@ export function buildXmpPacket(metadata = {}) {
   const subject = escapeXml(metadata.subject || 'Verified Initial Inventory');
   const dateIso = new Date().toISOString();
 
+  // Note on PDF/UA-1: ISO 14289-1 clause 7.21.4.1 requires all fonts to be embedded
+  // (/FontFile). Because standard-14 Type1 fonts (Helvetica, Times) are used without
+  // embedded font descriptors, declaring <pdfuaid:part>1</pdfuaid:part> would cause veraPDF/PAC
+  // to flag font non-conformance. Acrobat Pro's 32-rule Accessibility Full Check tests
+  // WCAG 2.1 AA (Tagged PDF, Language, Title, Tab Order, Headings, Tables, Artifacts),
+  // which does not require font embedding. We only emit <pdfuaid:part>1</pdfuaid:part> if
+  // fonts are embedded (metadata.embedFonts === true or metadata.claimPdfUa === true).
+  const pdfUaNs = (metadata.claimPdfUa || metadata.embedFonts)
+    ? '\n        xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/"'
+    : '';
+  const pdfUaTag = (metadata.claimPdfUa || metadata.embedFonts)
+    ? '\n      <pdfuaid:part>1</pdfuaid:part>'
+    : '';
+
   return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
         xmlns:dc="http://purl.org/dc/elements/1.1/"
         xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
-        xmlns:xmp="http://ns.adobe.com/xap/1.0/"
-        xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
+        xmlns:xmp="http://ns.adobe.com/xap/1.0/"${pdfUaNs}>
       <dc:format>application/pdf</dc:format>
       <dc:title>
         <rdf:Alt>
@@ -229,8 +242,7 @@ export function buildXmpPacket(metadata = {}) {
           <rdf:li xml:lang="x-default">${subject}</rdf:li>
         </rdf:Alt>
       </dc:description>
-      <pdf:Producer>Probate Guardian</pdf:Producer>
-      <pdfuaid:part>1</pdfuaid:part>
+      <pdf:Producer>Probate Guardian</pdf:Producer>${pdfUaTag}
       <xmp:CreateDate>${dateIso}</xmp:CreateDate>
       <xmp:ModifyDate>${dateIso}</xmp:ModifyDate>
     </rdf:Description>

@@ -176,6 +176,7 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
     // Section Title Heading (<H1> or <H2>)
     checkPageSpace(30, sec.title);
     const hTag = sec.level === 2 ? 'H2' : 'H1';
+    const subHTag = hTag === 'H1' ? 'H2' : 'H3';
     const hNode = structureTree.addStructureElement({
       tag: hTag,
       title: sec.title,
@@ -223,14 +224,14 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
         const items = block.items || [];
         if (block.title) {
           checkPageSpace(20, sec.title);
-          const h3Node = structureTree.addStructureElement({
-            tag: 'H3',
+          const subHNode = structureTree.addStructureElement({
+            tag: subHTag,
             title: block.title,
             pageNumber: pageNum,
             isLeaf: true,
             parent: partNode,
           });
-          writeMarkedContentStart(doc, 'H3', h3Node.mcid);
+          writeMarkedContentStart(doc, subHTag, subHNode.mcid);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(26, 45, 74);
@@ -336,14 +337,14 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
         const { headers, rows, totals, colWidths, colAlign, title: tblTitle } = block;
         if (tblTitle && tblTitle !== sec.title) {
           checkPageSpace(20, sec.title);
-          const h3TblNode = structureTree.addStructureElement({
-            tag: 'H3',
+          const tblHNode = structureTree.addStructureElement({
+            tag: subHTag,
             title: tblTitle,
             pageNumber: pageNum,
             isLeaf: true,
             parent: partNode,
           });
-          writeMarkedContentStart(doc, 'H3', h3TblNode.mcid);
+          writeMarkedContentStart(doc, subHTag, tblHNode.mcid);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(26, 45, 74);
@@ -547,12 +548,12 @@ export async function generateVerifiedInventoryPdf(model, options = {}) {
 
         // Role & Date Header
         const roleNode = structureTree.addStructureElement({
-          tag: 'H3',
+          tag: subHTag,
           pageNumber: pageNum,
           isLeaf: true,
           parent: sigPartNode,
         });
-        writeMarkedContentStart(doc, 'H3', roleNode.mcid);
+        writeMarkedContentStart(doc, subHTag, roleNode.mcid);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(26, 45, 74);
