@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "jszip": "^3.10.1",
     "vite": "^8.2.2",
     "vite-plugin-singlefile": "^2.3.3",
     "vite-plugin-static-copy": "^4.1.1",

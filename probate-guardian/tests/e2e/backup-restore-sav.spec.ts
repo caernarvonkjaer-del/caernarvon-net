@@ -1,7 +1,8 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
+import JSZip from 'jszip';
 import {
   gotoApp,
   startNewCase,
@@ -78,15 +79,16 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       expect(filename).toBe('probate_guardian_all_wards_backup.sav');
 
       // Inspect exported ZIP file
-      const JSZip = (await import('jszip')).default;
       const buffer = await fs.readFile(backupPath);
       const zip = await JSZip.loadAsync(buffer);
 
-      // Verify manifest.json
+      // Verify manifest.json has kind: 'backup' and version: 3
       const manifestFile = zip.file('manifest.json');
       expect(manifestFile).toBeTruthy();
       const manifest = JSON.parse(await manifestFile!.async('string'));
       expect(manifest.format).toBe('probate-guardian-export');
+      expect(manifest.kind).toBe('backup');
+      expect(manifest.version).toBe(3);
       expect(manifest.wards.length).toBe(2);
 
       // Verify auditLog.enc contains self-contained export record
@@ -256,6 +258,65 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       // Verify ward was loaded
       const wardNames = await page.evaluate(() => (window as any).guardianData.wards.map((w: any) => w.wardName));
       expect(wardNames).toContain('Single Ward Solo');
+    } finally {
+      await context2.close();
+    }
+  });
+
+  test('Open Backup replacing actively open ward rebinds window.D to the updated ward', async ({ browser }) => {
+    const context1 = await browser.newContext();
+    let backupPath = '';
+    try {
+      const page = await context1.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Rebind Target Ward');
+
+      // Set a recognizable case number
+      await page.evaluate(() => {
+        (window as any).D.caseNumber = 'CASE-SAVED-IN-BACKUP';
+      });
+
+      await ensureSaveControlsOpen(page);
+      const backupAllBtn = page.locator('button[data-shell-action="backup-all-wards"]');
+      const res = await captureDownload(page, async () => {
+        await backupAllBtn.click();
+      });
+      backupPath = res.path;
+    } finally {
+      await context1.close();
+    }
+
+    const context2 = await browser.newContext();
+    try {
+      const page = await context2.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+
+      page.on('dialog', async (d) => { await d.accept(); });
+
+      // First restore the backup to load the ward
+      await page.setInputFiles('#backup-import-input', backupPath);
+      await page.waitForTimeout(1000);
+
+      const caseNum1 = await page.evaluate(() => (window as any).D?.caseNumber);
+      expect(caseNum1).toBe('CASE-SAVED-IN-BACKUP');
+
+      // Now simulate active in-memory modifications on window.D
+      await page.evaluate(() => {
+        (window as any).D.caseNumber = 'CASE-BEFORE-RESTORE';
+      });
+      const modifiedCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
+      expect(modifiedCaseNum).toBe('CASE-BEFORE-RESTORE');
+
+      // Re-restore backup; switchWard must rebind window.D to the newly hydrated ward object
+      await page.setInputFiles('#backup-import-input', backupPath);
+      await page.waitForTimeout(1000);
+
+      const reboundCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
+      expect(reboundCaseNum).toBe('CASE-SAVED-IN-BACKUP');
     } finally {
       await context2.close();
     }

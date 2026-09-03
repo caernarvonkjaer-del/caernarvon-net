@@ -3033,6 +3033,57 @@ async function beginRecordingExport(message, wardId = null){
 }
 window.beginRecordingExport = beginRecordingExport;
 
+// ── Multi-ward backup (version 3) ──────────────────────────────────────
+// Builds a full backup ZIP archive containing all wards, app state,
+// template caches, and unified audit log. Marked with kind: 'backup'
+// and version: BACKUP_FILE_VERSION (3).
+const BACKUP_FILE_VERSION=3;
+
+async function buildBackupZipBlob(){
+  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
+  const salt=(await loadAppState('cryptoSalt'))||null;
+  const verifier=(await loadAppState('cryptoVerifier'))||null;
+  const zip=new JSZip();
+  const wardIndex=[];
+  for(const ward of guardianData.wards){
+    const file=`wards/${ward.wardId}.enc`;
+    zip.file(file,await encryptJSON(ward));
+    wardIndex.push({wardId:ward.wardId,wardName:ward.wardName||'',file});
+  }
+  const appStateBlob={
+    activeWardId:guardianData.activeWardId,
+    theme:await loadAppState('theme'),
+    walkthroughCompleted:await loadAppState('walkthroughCompleted'),
+    firstLaunchSeen:await loadAppState('firstLaunchSeen'),
+    continuePromptShown:await loadAppState('continuePromptShown'),
+    recentWards:await loadAppState('recentWards'),
+    autoExportIntervalMinutes:_autoExportIntervalMinutes,
+    lastExportAt:_lastExportAt,
+    unlockFailState:await loadAppState('unlockFailState')
+  };
+  const templateTypes=Object.keys(_templateCache).filter(t=>_templateCache[t]);
+  for(const type of templateTypes){
+    zip.file(`templates/${type}.b64`,_templateCache[type]);
+  }
+  zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
+  zip.file('manifest.json',JSON.stringify({
+    format:'probate-guardian-export',
+    kind:'backup',
+    version:BACKUP_FILE_VERSION,
+    exportedAt:new Date().toISOString(),
+    securityMode:_securityMode,
+    salt,
+    verifier,
+    guardian:await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail}),
+    appState:await encryptJSON(appStateBlob),
+    templates:templateTypes,
+    wards:wardIndex
+  },null,2));
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+  return {blob,count:wardIndex.length};
+}
+window.buildBackupZipBlob = buildBackupZipBlob;
+
 async function exportGuardianDataZip(){
   let rollback=null;
   try{
@@ -3074,7 +3125,7 @@ async function backupAllWardsNow(){
   const defaultFilename='probate_guardian_all_wards_backup.sav';
   try{
     rollback=await beginRecordingExport(`Exported full backup of ${count} ward(s) to backup file`);
-    const {blob}=await buildExportZipBlob();
+    const {blob}=await buildBackupZipBlob();
     const handle=await saveBlobAs(blob,defaultFilename);
     if(handle){
       await rememberArchiveZipHandle(handle);
@@ -3347,12 +3398,13 @@ function triggerImportZip(){
   if(inp){inp.value='';inp.click();}
 }
 
-async function importGuardianDataZip(file){
+async function importSavArchiveOrWard(file, options = {}){
+  const { handle = null, isBackupFlow = false } = options;
   try{
-    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot import.');return;}
+    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot import.');return false;}
     const check=await validateImportFile(file,'sav');
-    if(!check.ok){alert(check.message);return;}
-    if(_securityMode==='encrypted'&&!_cryptoKey){alert('Please unlock the app before importing a data file.');return;}
+    if(!check.ok){alert(check.message);return false;}
+    if(_securityMode==='encrypted'&&!_cryptoKey){alert('Please unlock the app before importing a data file.');return false;}
     const zip=await JSZip.loadAsync(file);
     const manifestEntry=zip.file('manifest.json');
     if(!manifestEntry)throw new Error('Not a Probate Guardian data file (no manifest.json inside).');
@@ -3361,13 +3413,18 @@ async function importGuardianDataZip(file){
 
     const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
 
+    if(isBackupFlow&&kind==='ward'){
+      const proceed=confirm(`"${file.name}" is a single-ward save file, not an all-wards backup.\n\nWould you like to import this single ward instead?`);
+      if(!proceed)return false;
+    }
+
     // Same install (same salt) → current key works. Different install →
     // ask for the password the file was exported under and re-derive.
     const currentSalt=await loadAppState('cryptoSalt');
     let key=_cryptoKey;
     if(manifest.securityMode!=='none'&&manifest.salt!==currentSalt){
       const pw=prompt('This file came from a different installation.\nEnter the master password that was in use when it was exported:');
-      if(!pw)return;
+      if(!pw)return false;
       key=await deriveKeyFromPassword(pw,manifest.salt);
     }
 
@@ -3411,25 +3468,36 @@ async function importGuardianDataZip(file){
 
     const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
     const adding=imported.length-replacing;
-    const promptText=kind==='ward'
-      ? `Import ward "${imported[0].wardName||'this ward'}" from "${file.name}"?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
-      : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
-    if(!confirm(promptText))return;
+    const promptText=isBackupFlow
+      ? (guardianData.wards.length===0
+          ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
+          : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`)
+      : (kind==='ward'
+          ? `Import ward "${imported[0].wardName||'this ward'}" from "${file.name}"?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
+          : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`);
+    if(!confirm(promptText))return false;
 
     // Flush BEFORE swapping array entries so in-progress edits save under the
     // old objects and can't overwrite freshly imported data afterwards.
     await flushPendingSave();
+
+    // Stage updates into a new array atomically before assigning
+    const nextWards=[...guardianData.wards];
     for(const ward of imported){
-      const idx=guardianData.wards.findIndex(x=>x.wardId===ward.wardId);
-      if(idx>=0)guardianData.wards[idx]=ward;else guardianData.wards.push(ward);
-      await saveWardToState(ward); // schedules a write of the merged state
+      const idx=nextWards.findIndex(x=>x.wardId===ward.wardId);
+      if(idx>=0)nextWards[idx]=ward;else nextWards.push(ward);
+    }
+    guardianData.wards=nextWards;
+
+    for(const ward of imported){
+      await saveWardToState(ward);
     }
     if(guardianInfo&&guardianInfo.guardianName)guardianData.guardianName=guardianInfo.guardianName;
     if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
     await saveData();
 
-    // window.D references an object in guardianData.wards; if the active ward
-    // was just replaced, rebind it (switchWard re-renders too).
+    // window.D references an object in guardianData.wards; rebind via switchWard
+    // so open forms stay synchronized to the newly imported object.
     if(guardianData.activeWardId&&guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
       await switchWard(guardianData.activeWardId);
     }else if(guardianData.wards.length){
@@ -3437,10 +3505,24 @@ async function importGuardianDataZip(file){
     }else{
       updateSidebar();
     }
+
+    if(handle){
+      await rememberArchiveZipHandle(handle);
+    }
+
     const auditMsg=kind==='ward'
       ? `Imported ward "${imported[0].wardName||'ward'}" from file`
-      : `Imported ${imported.length} form(s) from archive`;
-    auditLog('DATA_IMPORT',auditMsg,true);
+      : (isBackupFlow||kind==='backup'
+          ? `Restored backup containing ${imported.length} ward(s) from "${file.name}"`
+          : `Imported ${imported.length} form(s) from archive`);
+    await auditLog('DATA_IMPORT',auditMsg,true);
+
+    _dirtySinceExport=false;
+    clearSessionRestoreCache();
+    hideAutoExportReminder();
+    updateLastSavedIndicator();
+    notifyProbateGuardianTabStateChanged();
+
     if(!manifest.kind&&!manifest.wardId&&!(await hasSeenMigrationModal())){
       try{
         await showMigrationModal();
@@ -3448,13 +3530,29 @@ async function importGuardianDataZip(file){
         console.warn('Could not show migration modal on import:',e);
       }
     }
-    alert(kind==='ward'?`Import complete: "${imported[0].wardName||'ward'}" loaded.`:`Import complete: ${imported.length} form(s) loaded.`);
+
+    if(isBackupFlow){
+      window.dispatchEvent(new CustomEvent('pg:backup-restored', {
+        detail: { fileName: file.name, count: imported.length }
+      }));
+      if(typeof navigate==='function')await navigate('/dashboard');
+      alert(`Backup restored: ${imported.length} ward(s) loaded.`);
+    }else{
+      alert(kind==='ward'?`Import complete: "${imported[0].wardName||'ward'}" loaded.`:`Import complete: ${imported.length} form(s) loaded.`);
+    }
+    return true;
   }catch(e){
-    console.error('import failed',e);
+    console.error('Import failed',e);
     auditLog('DATA_IMPORT',String(e&&e.message||e),false);
-    alert('Import failed: '+(e&&e.message||e));
+    alert((isBackupFlow?'Could not open backup file: ':'Import failed: ')+(e&&e.message||e));
+    return false;
   }
 }
+
+async function importGuardianDataZip(file){
+  return importSavArchiveOrWard(file, { isBackupFlow: false });
+}
+window.importGuardianDataZip = importGuardianDataZip;
 
 async function triggerOpenBackupSav(){
   if(window.showOpenFilePicker){
@@ -3484,104 +3582,7 @@ async function handleBackupImportChange(input){
 window.handleBackupImportChange = handleBackupImportChange;
 
 async function restoreBackupSavFile(file, handle){
-  try{
-    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot open backup.');return false;}
-    const check=await validateImportFile(file,'sav');
-    if(!check.ok){alert(check.message);return false;}
-    if(_securityMode==='encrypted'&&!_cryptoKey){alert('Please unlock the app before opening a backup file.');return false;}
-    const zip=await JSZip.loadAsync(file);
-    const manifestEntry=zip.file('manifest.json');
-    if(!manifestEntry)throw new Error('Not a Probate Guardian backup file (no manifest.json inside).');
-    const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-export')throw new Error('Not a Probate Guardian backup file.');
-
-    const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
-
-    if(kind==='ward'){
-      const proceed=confirm(`"${file.name}" is a single-ward save file, not an all-wards backup.\n\nWould you like to import this single ward instead?`);
-      if(!proceed)return false;
-      await importGuardianDataZip(file);
-      return true;
-    }
-
-    const currentSalt=await loadAppState('cryptoSalt');
-    let key=_cryptoKey;
-    if(manifest.securityMode!=='none'&&manifest.salt!==currentSalt){
-      const pw=prompt('This backup came from a different installation.\nEnter the master password that was in use when it was exported:');
-      if(!pw)return false;
-      key=await deriveKeyFromPassword(pw,manifest.salt);
-    }
-
-    let guardianInfo=null;
-    if(manifest.guardian){
-      try{
-        guardianInfo=await decryptJSONWithKey(manifest.guardian,key);
-      }catch(e){
-        throw new Error('Wrong password for this backup file, or the file has been modified/corrupted.');
-      }
-    }
-
-    const imported=[];
-    for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
-      const f=zip.file(entry.file);
-      if(!f){console.warn('Archive entry missing:',entry.file);continue;}
-      let ward;
-      try{
-        ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
-      }catch(err){
-        throw new Error(`The backup file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was restored.`);
-      }
-      if(ward&&ward.wardId)imported.push(ward);
-    }
-
-    if(!imported.length&&!guardianInfo)throw new Error('Backup file contained no readable ward data.');
-
-    const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
-    const adding=imported.length-replacing;
-    const promptText=guardianData.wards.length===0
-      ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
-      : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`;
-    if(!confirm(promptText))return false;
-
-    await flushPendingSave();
-    for(const ward of imported){
-      const idx=guardianData.wards.findIndex(x=>x.wardId===ward.wardId);
-      if(idx>=0)guardianData.wards[idx]=ward;else guardianData.wards.push(ward);
-      await saveWardToState(ward);
-    }
-    if(guardianInfo&&guardianInfo.guardianName)guardianData.guardianName=guardianInfo.guardianName;
-    if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
-    await saveData();
-
-    if(!guardianData.activeWardId||!guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
-      guardianData.activeWardId=(imported[0]&&imported[0].wardId)||null;
-    }
-
-    if(handle){
-      await rememberArchiveZipHandle(handle);
-    }
-
-    await auditLog('DATA_IMPORT',`Restored backup containing ${imported.length} ward(s) from "${file.name}"`,true);
-
-    _dirtySinceExport=false;
-    clearSessionRestoreCache();
-    hideAutoExportReminder();
-    updateLastSavedIndicator();
-    updateSidebar();
-    notifyProbateGuardianTabStateChanged();
-    window.dispatchEvent(new CustomEvent('pg:backup-restored', {
-      detail: { fileName: file.name, count: imported.length }
-    }));
-    if(typeof navigate==='function')await navigate('/dashboard');
-
-    alert(`Backup restored: ${imported.length} ward(s) loaded.`);
-    return true;
-  }catch(e){
-    console.error('Failed to open backup file',e);
-    auditLog('DATA_IMPORT',String(e&&e.message||e),false);
-    alert('Could not open backup file: '+(e&&e.message||e));
-    return false;
-  }
+  return importSavArchiveOrWard(file, { handle, isBackupFlow: true });
 }
 window.restoreBackupSavFile = restoreBackupSavFile;
 
