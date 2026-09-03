@@ -258,8 +258,11 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       await page.setInputFiles('#backup-import-input', singleWardPath);
       await page.waitForTimeout(1000);
 
-      // Verify confirmation asked about single-ward
-      expect(dialogMessages.some(m => m.includes('single-ward save file'))).toBe(true);
+      // Verify exactly one confirmation dialog was shown, followed by the completion alert
+      expect(dialogMessages.length).toBe(2);
+      expect(dialogMessages[0]).toContain('single-ward save file');
+      expect(dialogMessages[0]).toContain('Single Ward Solo');
+      expect(dialogMessages[1]).toContain('Import complete');
 
       // Verify ward was loaded
       const wardNames = await page.evaluate(() => (window as any).guardianData.wards.map((w: any) => w.wardName));
@@ -328,4 +331,58 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
     }
   });
 
+  test('Open Backup restores wards through switchWard/activateWard and respects cross-tab lock contention', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const tab1 = await context.newPage();
+      await gotoApp(tab1);
+      await startNewCase(tab1);
+      await chooseNoPassword(tab1);
+      await createWard(tab1, 'Lock Contention Ward');
+
+      const targetWardId = await tab1.evaluate(() => (window as any).guardianData.activeWardId);
+      expect(targetWardId).toBeTruthy();
+
+      await ensureSaveControlsOpen(tab1);
+
+      // Export backup containing this ward
+      const res = await captureDownload(tab1, async () => {
+        await tab1.click('button[data-shell-action="backup-all-wards"]');
+      });
+      const backupPath = res.path;
+
+      // Verify Tab 1 holds the lock
+      const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
+      expect(tab1Locks).toContain(`pg-ward-${targetWardId}`);
+
+      // Now open Tab 2 in the same browser context (shares Web Locks API manager)
+      const tab2 = await context.newPage();
+      await gotoApp(tab2);
+      await startNewCase(tab2);
+      await chooseNoPassword(tab2);
+      // Tab 2 starts fresh with no existing wards
+
+      tab2.on('dialog', async (d) => { await d.accept(); });
+
+      // Restore the backup in Tab 2
+      await tab2.setInputFiles('#backup-import-input', backupPath);
+      await tab2.waitForTimeout(1000);
+
+      // switchWard -> activateWard hit contention and triggered ward locked modal on Tab 2
+      const lockedModal = tab2.locator('#ward-locked-overlay');
+      await expect(lockedModal).toBeVisible();
+
+      // Tab 2 must not hold the lock on targetWardId
+      const tab2HeldId = await tab2.evaluate(() => (window as any).getCurrentLockedWardId());
+      expect(tab2HeldId).toBe(null);
+
+      // Tab 1 must still hold the lock on targetWardId
+      const tab1HeldId = await tab1.evaluate(() => (window as any).getCurrentLockedWardId());
+      expect(tab1HeldId).toBe(targetWardId);
+    } finally {
+      await context.close();
+    }
+  });
+
 });
+

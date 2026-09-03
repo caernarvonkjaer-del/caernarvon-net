@@ -3413,11 +3413,6 @@ async function importSavArchiveOrWard(file, options = {}){
 
     const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
 
-    if(isBackupFlow&&kind==='ward'){
-      const proceed=confirm(`"${file.name}" is a single-ward save file, not an all-wards backup.\n\nWould you like to import this single ward instead?`);
-      if(!proceed)return false;
-    }
-
     // Same install (same salt) → current key works. Different install →
     // ask for the password the file was exported under and re-derive.
     const currentSalt=await loadAppState('cryptoSalt');
@@ -3498,23 +3493,15 @@ async function importSavArchiveOrWard(file, options = {}){
     if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
     await saveData();
 
-    // Rebind window.D to the updated ward in memory. For multi-ward backup restores
-    // navigating to /dashboard, avoid switchWard's form render to prevent a visual flash.
-    if(isBackupFlow && kind !== 'ward'){
-      const activeWard = (guardianData.activeWardId && guardianData.wards.find(w=>w.wardId===guardianData.activeWardId))
-        || guardianData.wards[0]
-        || null;
-      guardianData.activeWardId = activeWard ? activeWard.wardId : null;
-      window.D = activeWard;
-      updateSidebar();
+    // window.D references an object in guardianData.wards; rebind via switchWard
+    // so open forms stay synchronized to the newly imported object and the
+    // cross-tab exclusive lock (activateWard / Web Locks API) is acquired properly.
+    if(guardianData.activeWardId&&guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
+      await switchWard(guardianData.activeWardId);
+    }else if(guardianData.wards.length){
+      await switchWard(guardianData.wards[0].wardId);
     }else{
-      if(guardianData.activeWardId&&guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
-        await switchWard(guardianData.activeWardId);
-      }else if(guardianData.wards.length){
-        await switchWard(guardianData.wards[0].wardId);
-      }else{
-        updateSidebar();
-      }
+      updateSidebar();
     }
 
     if(handle){
