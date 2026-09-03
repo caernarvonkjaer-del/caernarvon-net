@@ -117,7 +117,7 @@
   <div class="modal-box">
     <h2 style="margin-bottom:1rem;color:var(--ink);">Add New Form</h2>
     <div class="mb-3">
-      <label class="form-label">Ward Name (full legal name)</label>
+      <label class="form-label" for="new-ward-name">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
         <input type="text" class="form-control" id="new-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" data-modal-input="format-name">
         <div id="new-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
@@ -125,7 +125,7 @@
       <datalist id="ward-name-suggestions"></datalist>
     </div>
     <div class="mb-3">
-      <label class="form-label">Inventory Type</label>
+      <label class="form-label" for="new-ward-type">Inventory Type</label>
       <select class="form-select" id="new-ward-type" data-modal-change="ward-type">
         <option value="guardian">Initial Inventory</option>
         <option value="simplified">Simplified Annual Accounting</option>
@@ -139,7 +139,7 @@
       </select>
     </div>
     <div class="mb-3" id="carry-source-wrap" style="display:none;">
-      <label class="form-label">Load Ward Info From</label>
+      <label class="form-label" for="carry-source-ward">Load Ward Info From</label>
       <select class="form-select" id="carry-source-ward" data-modal-change="carry-source">
         <option value="">— Start Blank —</option>
       </select>
@@ -158,7 +158,7 @@
   <div class="modal-box" style="max-width:480px;">
     <h2 style="margin-bottom:1rem;color:var(--ink);">Simplified Annual Accounting — Eligibility</h2>
     <div class="mb-3">
-      <label class="form-label">Ward Name (full legal name)</label>
+      <label class="form-label" for="elig-ward-name">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
         <input type="text" class="form-control" id="elig-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" data-modal-input="format-name">
         <div id="elig-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
@@ -167,7 +167,7 @@
     </div>
     <div class="schedule-instructions mb-3">Under <strong>Fla. Stat. § 744.3679</strong>, the simplified form may only be used when <strong>all</strong> property of the estate is held in a designated depository under § 69.031, and the <strong>only</strong> transactions in that account are interest accrual, deposits from a settlement, or financial institution service charges. If either answer below is "No," a standard Annual Accounting will be created instead.</div>
     <div class="mb-3">
-      <label class="form-label">All estate property is held in a designated depository under § 69.031<span class="req">*</span></label>
+      <label class="form-label" for="elig-depository">All estate property is held in a designated depository under § 69.031<span class="req">*</span></label>
       <select class="form-select" id="elig-depository">
         <option value="">— select —</option>
         <option value="Yes">Yes</option>
@@ -175,7 +175,7 @@
       </select>
     </div>
     <div class="mb-3">
-      <label class="form-label">The only account transactions are interest accrual, settlement deposits, and/or service charges<span class="req">*</span></label>
+      <label class="form-label" for="elig-only-transactions">The only account transactions are interest accrual, settlement deposits, and/or service charges<span class="req">*</span></label>
       <select class="form-select" id="elig-only-transactions">
         <option value="">— select —</option>
         <option value="Yes">Yes</option>
@@ -183,7 +183,7 @@
       </select>
     </div>
     <div class="mb-3" id="elig-carry-source-wrap" style="display:none;">
-      <label class="form-label">Load Ward Info From</label>
+      <label class="form-label" for="elig-carry-source-ward">Load Ward Info From</label>
       <select class="form-select" id="elig-carry-source-ward">
         <option value="">— Start Blank —</option>
       </select>
@@ -202,7 +202,7 @@
   <div class="modal-box">
     <h2 style="margin-bottom:1rem;color:var(--ink);">Rename Ward</h2>
     <div class="mb-3">
-      <label class="form-label">Ward Name</label>
+      <label class="form-label" for="rename-ward-input">Ward Name</label>
       <input type="text" class="form-control" id="rename-ward-input" placeholder="" data-modal-input="format-name">
     </div>
     <div style="display:flex;gap:.5rem;">
@@ -230,11 +230,11 @@
     <h2 style="margin-bottom:1rem;color:var(--ink);">Guardian Information</h2>
     <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">Enter your information. You can update this anytime.</p>
     <div class="mb-3">
-      <label class="form-label">Your Name</label>
+      <label class="form-label" for="setup-guardian-name">Your Name</label>
       <input type="text" class="form-control" id="setup-guardian-name" placeholder="Your full name" data-modal-input="format-name">
     </div>
     <div class="mb-3">
-      <label class="form-label">Email (optional)</label>
+      <label class="form-label" for="setup-guardian-email">Email (optional)</label>
       <input type="email" class="form-control" id="setup-guardian-email" placeholder="your@email.com">
     </div>
     <button class="btn btn-primary w-100" data-modal-action="guardian-setup">Continue</button>

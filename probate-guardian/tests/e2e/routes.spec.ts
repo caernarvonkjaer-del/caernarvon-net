@@ -277,7 +277,6 @@ test.describe('routes', () => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Shared Form Ward', 'planSimplified'));
     await page.locator('[data-shell-action="hide-auto-export-reminder"]').click();
-    await page.getByRole('button', { name: 'Skip Tour' }).click();
 
     const caseNumber = page.locator('#caseNumber');
     await caseNumber.fill('2026cp123');

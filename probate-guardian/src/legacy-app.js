@@ -1243,9 +1243,21 @@ function formatSSN(s){
 // the guardian is still in the middle of typing the sequence. That
 // happens once in finalizeCaseNumber() below, on blur.
 function formatCaseNumber(s){
-  const digits=String(s||'').replace(/\D/g,'').slice(0,8);
-  if(digits.length<=2)return digits;
-  return `${digits.slice(0,2)}-${digits.slice(2)}`;
+  if(!s)return '';
+  const raw=String(s).trim();
+  const suffixMatch=raw.match(/[-_\s]?([A-Za-z]{1,4})$/);
+  const suffix=suffixMatch?suffixMatch[1]:'';
+  const withoutSuffix=suffixMatch?raw.slice(0,suffixMatch.index):raw;
+  let digits=withoutSuffix.replace(/\D/g,'');
+  if(digits.length>=8&&digits.startsWith('20')){
+    digits=digits.slice(2);
+  }
+  digits=digits.slice(0,8);
+  if(digits.length<=2){
+    return suffix ? `${digits}-${suffix}` : digits;
+  }
+  const formattedDigits=`${digits.slice(0,2)}-${digits.slice(2)}`;
+  return suffix ? `${formattedDigits}-${suffix}` : formattedDigits;
 }
 
 // Blur-time finalization: left-pads the sequence to 6 digits and appends
@@ -1256,11 +1268,21 @@ function formatCaseNumber(s){
 // worse than just leaving it incomplete for the required-field check to
 // catch.
 function finalizeCaseNumber(s){
-  const digits=String(s||'').replace(/\D/g,'').slice(0,8);
+  if(!s)return '';
+  const raw=String(s).trim();
+  if(!raw)return '';
+  const suffixMatch=raw.match(/[-_\s]?([A-Za-z]{2,4})$/);
+  const suffix=suffixMatch?suffixMatch[1].toUpperCase():'GD';
+  const withoutSuffix=suffixMatch?raw.slice(0,suffixMatch.index):raw;
+  let digits=withoutSuffix.replace(/\D/g,'');
+  if(!digits)return raw;
+  if(digits.length>=8&&digits.startsWith('20')){
+    digits=digits.slice(2);
+  }
   if(digits.length<=2)return digits;
   const year=digits.slice(0,2);
-  const seq=digits.slice(2).padStart(6,'0');
-  return `${year}-${seq}-GD`;
+  const seq=digits.slice(2,8).padStart(6,'0');
+  return `${year}-${seq}-${suffix}`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3028,6 +3050,9 @@ async function exportGuardianDataZip(){
     updateLastSavedIndicator();
     notifyProbateGuardianTabStateChanged();
     markCaseOpenedBefore(); // a real .sav now exists — next launch offers the fast-path Open screen
+    window.dispatchEvent(new CustomEvent('pg:backup-saved', {
+      detail: { fileName: handle ? handle.name : 'guardianshipwarddata.sav', wardId: null, kind: 'archive' }
+    }));
     alert(`Export complete: ${count} form(s) saved to guardianshipwarddata.sav`);
   }catch(e){
     if(rollback)rollback();
@@ -3063,6 +3088,9 @@ async function writeWardToHandle(wardId,handle,viaTimer){
   await refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
+  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
+    detail: { fileName: handle.name, wardId, kind: 'ward', viaTimer: !!viaTimer }
+  }));
   return 1;
 }
 
@@ -3087,6 +3115,9 @@ async function writeArchiveToHandle(handle,viaTimer){
   await refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
+  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
+    detail: { fileName: handle.name, wardId: null, kind: 'archive', viaTimer: !!viaTimer }
+  }));
   return count;
 }
 
@@ -3158,6 +3189,13 @@ async function finishWardExport(handle, ward){
   hideAutoExportReminder();
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
+  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
+    detail: {
+      fileName: handle ? handle.name : (ward ? getWardFileName(ward) : 'guardianshipwarddata.sav'),
+      wardId: ward && ward.wardId,
+      kind: 'ward'
+    }
+  }));
 }
 window.finishWardExport = finishWardExport;
 
@@ -8422,12 +8460,6 @@ async function handleHash(){
   currentPage=page;
   renderPage(page);
   updateNavActive(currentPage);
-  if(!_appState.walkthroughCompleted&&!_appState.firstLaunchSeen){
-    _appState.firstLaunchSeen=true;
-    saveAppState('firstLaunchSeen',true);
-    _walkthroughAutoTriggered=true;
-    setTimeout(startWalkthrough,1000);
-  }
 }
 
 window.addEventListener('hashchange',handleHash);

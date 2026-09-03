@@ -426,7 +426,6 @@ function witnessCardsHTML(){
 // PAGE: HOME / COVER
 // ═══════════════════════════════════════════════════════
 function pageHome(){
-  const sdbFiledRow=D.hasSafeDepositBox?'':'display:none;';
   return `<div class="schedule-page">
   <h1>Verified Initial Inventory — Case Information</h1>
   ${browserRecommendationNotice()}
@@ -488,10 +487,7 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
         ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',[['Plenary','Plenary'],['Limited','Limited'],['Voluntary','Voluntary'],['Minor - Person','Minor - Person'],['Minor - Property','Minor - Property'],['Minor - Person - Property','Minor - Person - Property']],D.typeOfGuardianship)))}
-        ${formRow(col(6,optLabel('Safe Deposit Box?')+checkboxInput('hasSafeDepositBox','Safe Deposit Box?')),col(6,optLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
-        <div id="sdb-filed-row" style="${sdbFiledRow}">
-          ${formRow(col(6,optLabel('SDB Inventory Filed?')+checkboxInput('safeDepositBoxFiled','SDB Inventory Filed?')))}
-        </div>
+        ${formRow(col(12,optLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
       </div>
     </div>
   </div>
@@ -660,28 +656,47 @@ function syncB2VehicleDescription(i){
 // description is only touched once the guardian has actually entered
 // replacement data -- unchecking the box before then leaves the original
 // description untouched.
+function renderB2Fields(e, i){
+  if(e.isVehicle){
+    return `
+    ${formRow(
+      col(3,reqLabel('Year')+`<input class="form-control" id="b2-vehicle-year-${i}" inputmode="numeric" maxlength="4" value="${esc(e.vehicleYear)}" data-inventory-input="vehicle" data-inventory-format="year" data-index="${i}" data-field="vehicleYear">`),
+      col(3,reqLabel('Make')+`<input class="form-control" id="b2-vehicle-make-${i}" value="${esc(e.vehicleMake)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleMake">`),
+      col(3,reqLabel('Model')+`<input class="form-control" id="b2-vehicle-model-${i}" value="${esc(e.vehicleModel)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleModel">`),
+      col(3,reqLabel('VIN')+`<input class="form-control" id="b2-vehicle-vin-${i}" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" data-inventory-input="vehicle" data-inventory-format="vin" data-index="${i}" data-field="vehicleVin">`)
+    )}
+    ${formRow(col(4,reqLabel('Odometer Mileage')+`<input class="form-control" id="b2-vehicle-mileage-${i}" inputmode="numeric" value="${esc(e.odometerMileage)}" data-inventory-input="vehicle" data-inventory-format="mileage" data-index="${i}" data-field="odometerMileage">`))}
+    <div class="vehicle-value-links">Look up a value at <a href="https://www.kbb.com/" target="_blank" rel="noopener noreferrer">Kelley Blue Book</a> or <a href="https://www.carfax.com/" target="_blank" rel="noopener noreferrer">Carfax</a> — both are non-affiliated commercial sites, offered only as a convenience; either generally provides an acceptable value. Print or save the page showing the final value you used and upload it below under Supporting Documents.</div>
+    `;
+  }
+  return `
+  ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" id="b2-description-${i}" value="${esc(e.description)}" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
+  `;
+}
+
 function toggleB2Vehicle(i,checked){
-  D.scheduleB2[i].isVehicle=checked;
+  const e=D.scheduleB2[i];
+  if(!e)return;
+  e.isVehicle=checked;
+  if(checked){
+    syncB2VehicleDescription(i);
+  }
   autoSave();
-  renderPage(getCurrentPage());
+  const container=document.getElementById(`b2-fields-${i}`);
+  if(container){
+    container.innerHTML=renderB2Fields(e, i);
+    bindForms();
+  }else{
+    renderPage(getCurrentPage());
+  }
 }
 function pageScheduleB2(){
   const entries=D.scheduleB2.map((e,i)=>{
-    const vehicleFields=e.isVehicle?`
-    ${formRow(
-      col(3,reqLabel('Year')+`<input class="form-control" inputmode="numeric" maxlength="4" value="${esc(e.vehicleYear)}" data-inventory-input="vehicle" data-inventory-format="year" data-index="${i}" data-field="vehicleYear">`),
-      col(3,reqLabel('Make')+`<input class="form-control" value="${esc(e.vehicleMake)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleMake">`),
-      col(3,reqLabel('Model')+`<input class="form-control" value="${esc(e.vehicleModel)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleModel">`),
-      col(3,reqLabel('VIN')+`<input class="form-control" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" data-inventory-input="vehicle" data-inventory-format="vin" data-index="${i}" data-field="vehicleVin">`)
-    )}
-    ${formRow(col(4,reqLabel('Odometer Mileage')+`<input class="form-control" inputmode="numeric" value="${esc(e.odometerMileage)}" data-inventory-input="vehicle" data-inventory-format="mileage" data-index="${i}" data-field="odometerMileage">`))}
-    <div class="vehicle-value-links">Look up a value at <a href="https://www.kbb.com/" target="_blank" rel="noopener noreferrer">Kelley Blue Book</a> or <a href="https://www.carfax.com/" target="_blank" rel="noopener noreferrer">Carfax</a> — both are non-affiliated commercial sites, offered only as a convenience; either generally provides an acceptable value. Print or save the page showing the final value you used and upload it below under Supporting Documents.</div>
-    `:`
-    ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
-    `;
     return entryCard(`Item ${i+1}`,i,'b2',`
     ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" data-inventory-change="toggle-vehicle" data-index="${i}"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
-    ${vehicleFields}
+    <div id="b2-fields-${i}">
+      ${renderB2Fields(e, i)}
+    </div>
     ${formRow(col(6,reqLabel('Location – Street Address')+textInput(`scheduleB2.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB2.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(6,reqLabel('Valuation Method &amp; Condition')+textInput(`scheduleB2.${i}.valuationMethod`,'e.g., Kelly Blue Book — fair condition')))}
     ${formRow(col(3,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),col(3,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`)),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB2.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
