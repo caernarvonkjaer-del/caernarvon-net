@@ -10,11 +10,13 @@
 // src/features/simplified-accounting/index.js's comment on the same
 // pattern).
 import { validatePlanAnnual } from './index.js';
+import { buildPlanAnnualModel } from './pdf-model.js';
+import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 
 const {
   circuitCourtCaption, esc, fmtDate,
   highlightErrors, validationPanel, planReadinessPanel,
-  html2pdf, pvShowAll, renderPage,
+  renderPage,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_BENEFITS,
 } = window;
 
@@ -431,22 +433,13 @@ export function pagePrintPlanAnnual(){
 export async function doSavePdf(){
   const errors=validatePlanAnnual();
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
-  pvShowAll();
-  document.body.classList.add('pdf-export-mode');
-  const container=document.getElementById('print-doc-container');
   const ward=(window.D.wardName||'AnnualGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
   try{
-    await html2pdf().set({
-      margin:0,filename:`${ward}_AnnualGuardianshipPlan.pdf`,
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,logging:false},
-      jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
-      pagebreak:{mode:'avoid-all',before:'.doc-page:not(:first-of-type)'}
-    }).from(container).save();
+    const model = buildPlanAnnualModel(window.D);
+    const doc = await generateCourtFormPdf(model);
+    doc.save(`${ward}_AnnualGuardianshipPlan.pdf`);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);
-  }finally{
-    document.body.classList.remove('pdf-export-mode');
   }
 }

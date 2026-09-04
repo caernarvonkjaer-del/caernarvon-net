@@ -95,6 +95,42 @@ export async function loadAnnualPdf() {
   return { ...model, ...engine };
 }
 
+// Plan-* accessible PDF loaders (Milestone 19-2) -- same reasoning as the
+// three loaders above; these four forms previously had no vector PDF path
+// (html2pdf raster only), so there was no pdf-model.js/pdf-engine.js pair
+// to bridge until now.
+export async function loadPlanInitialPdf() {
+  const [model, engine] = await Promise.all([
+    import('./features/plan-initial/pdf-model.js'),
+    import('./core/pdf/pdf-engine.js'),
+  ]);
+  return { ...model, ...engine };
+}
+
+export async function loadPlanAnnualPdf() {
+  const [model, engine] = await Promise.all([
+    import('./features/plan-annual/pdf-model.js'),
+    import('./core/pdf/pdf-engine.js'),
+  ]);
+  return { ...model, ...engine };
+}
+
+export async function loadPlanMinorPdf() {
+  const [model, engine] = await Promise.all([
+    import('./features/plan-minor/pdf-model.js'),
+    import('./core/pdf/pdf-engine.js'),
+  ]);
+  return { ...model, ...engine };
+}
+
+export async function loadPlanSimplifiedPdf() {
+  const [model, engine] = await Promise.all([
+    import('./features/plan-simplified/pdf-model.js'),
+    import('./core/pdf/pdf-engine.js'),
+  ]);
+  return { ...model, ...engine };
+}
+
 // Temporary: see src/fragment-loader.js's window.loadFragment comment for
 // why legacy-app.js needs this bridged onto window rather than importing
 // it directly. Remove once a real src/main.js bootstrap exists.
@@ -109,5 +145,9 @@ window.loadDashboardFeature = loadDashboardFeature;
 window.loadGuardianPdf = loadGuardianPdf;
 window.loadSimplifiedPdf = loadSimplifiedPdf;
 window.loadAnnualPdf = loadAnnualPdf;
+window.loadPlanInitialPdf = loadPlanInitialPdf;
+window.loadPlanAnnualPdf = loadPlanAnnualPdf;
+window.loadPlanMinorPdf = loadPlanMinorPdf;
+window.loadPlanSimplifiedPdf = loadPlanSimplifiedPdf;
 document.dispatchEvent(new Event('features-loader-ready'));
 
