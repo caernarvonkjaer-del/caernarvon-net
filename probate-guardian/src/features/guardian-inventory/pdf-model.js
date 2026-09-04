@@ -142,8 +142,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ],
   });
 
-  // Helper for schedule table sections
-  const addScheduleSection = (id, title, bookmarkTitle, headers, rows, totalLabel, totalVal, emptyNoun, colWidths, colAlign) => {
+  // Helper for schedule table sections. extraTotalValues (optional array
+  // of raw numbers) adds further numeric total columns beyond totalVal --
+  // e.g. Schedule B-1's "Restricted Amt" total alongside its main total,
+  // which the single-{label,value} totals shape had no way to express.
+  const addScheduleSection = (id, title, bookmarkTitle, headers, rows, totalLabel, totalVal, emptyNoun, colWidths, colAlign, extraTotalValues) => {
     const empty = rows.length === 0;
     sections.push({
       id,
@@ -167,7 +170,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           title,
           headers,
           rows,
-          totals: totalLabel ? { label: totalLabel, value: fmt(totalVal) } : null,
+          totals: totalLabel
+            ? (extraTotalValues && extraTotalValues.length
+              ? { label: totalLabel, values: [{ value: fmt(totalVal) }, ...extraTotalValues.map(v => ({ value: fmt(v) }))] }
+              : { label: totalLabel, value: fmt(totalVal) })
+            : null,
           colWidths,
           colAlign,
         }
@@ -181,7 +188,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule A-1: Real Property Assets',
     'Schedule A-1: Real Property',
     ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value"],
-    (d.scheduleA1 || []).map(r => [r.propertyDescription || '', `${r.streetAddress || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent))]),
+    // r.notes was previously silently dropped -- never read by this row
+    // builder, so it never appeared in the filed PDF even though the HTML
+    // preview shows it as an italic sub-line under the description.
+    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), `${r.streetAddress || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent))]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
@@ -203,18 +213,24 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ['left', 'left', 'left', 'right']
   );
 
-  // Schedule B-1
+  // Schedule B-1. isRestricted/restricted-amount were previously dropped
+  // entirely (no column, no second total) -- the HTML preview shows a
+  // per-row "Restricted Amt" column and a second numeric total alongside
+  // "Schedule B-1 Total", which the vector PDF's totals shape had no way
+  // to express before the engine's multi-value totals support.
+  const restrictedCash = (d.scheduleB1 || []).filter(r => r.isRestricted).reduce((s, r) => s + (parseFloat(r.fullAssetAmount) || 0), 0);
   addScheduleSection(
     'b1',
     'Schedule B-1: Cash & Financial Accounts',
     'Schedule B-1: Cash & Financial Accounts',
-    ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount'],
-    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, `${r.streetAddress || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), fmt(r.fullAssetAmount)]),
+    ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount', 'Restricted?', 'Restricted Amt'],
+    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, `${r.streetAddress || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), fmt(r.fullAssetAmount), r.isRestricted ? 'Yes' : 'No', r.isRestricted ? fmt(r.fullAssetAmount) : '—']),
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
-    [30, 25, 25, 20],
-    ['left', 'left', 'left', 'right']
+    [22, 20, 20, 16, 11, 11],
+    ['left', 'left', 'left', 'right', 'center', 'right'],
+    [restrictedCash]
   );
 
   // Schedule B-2
@@ -264,13 +280,15 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'c1',
     'Schedule C-1: Periodic Income',
     'Schedule C-1: Periodic Income',
-    ['Payer Name', 'Type of Income', 'Basis for Payment', 'Annual Income Amount'],
-    (d.scheduleC1 || []).map(r => [r.payerName || '', r.typeOfIncome || '', r.paymentBasis || '', fmt(r.annualIncomeAmount)]),
+    // r.frequencyOfPayment was previously silently dropped -- present in
+    // the HTML preview's "Frequency" column but never read here.
+    ['Payer Name', 'Type of Income', 'Frequency', 'Basis for Payment', 'Annual Income Amount'],
+    (d.scheduleC1 || []).map(r => [r.payerName || '', r.typeOfIncome || '', r.frequencyOfPayment || '', r.paymentBasis || '', fmt(r.annualIncomeAmount)]),
     'Schedule C-1 Total (Annual Income)',
     totalC1,
     'periodic income sources',
-    [30, 25, 25, 20],
-    ['left', 'left', 'left', 'right']
+    [22, 18, 16, 22, 22],
+    ['left', 'left', 'left', 'left', 'right']
   );
 
   // Schedule C-2: Claims and Lawsuits Against the Ward (Corrected Sequence)
@@ -279,7 +297,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule C-2: Claims and Lawsuits Against the Ward',
     'Schedule C-2: Lawsuits & Claims Against Ward',
     ['Claimant Name', 'Lawsuit / Claim Description', 'Court / Case #', 'Date Filed', 'Amount of Claim'],
-    (d.scheduleC2 || []).map(r => [r.claimantName || '', r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim)]),
+    // r.claimantAddress was previously silently dropped -- present in the
+    // HTML preview as a sub-line under the claimant name but never read
+    // here; rendered as a mixed-style cell sub-line now.
+    (d.scheduleC2 || []).map(r => [r.claimantAddress ? { main: r.claimantName || '', sub: [{ text: r.claimantAddress }] } : (r.claimantName || ''), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim)]),
     'Schedule C-2 Total',
     totalC2,
     'claims or lawsuits against the ward',
@@ -473,8 +494,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           type: 'table',
           tag: 'Table',
           title: 'Service Recipients',
-          headers: ['Recipient Name', 'Address', 'Method of Service'],
-          rows: d.serviceRecipients.map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.method || 'Electronic / Portal']),
+          // "Method of Service" was previously invented here (defaulted
+          // to 'Electronic / Portal') with no such field in the source
+          // data or the HTML preview; per-recipient dateServed (present
+          // in the HTML preview) was dropped in its place. Replaced with
+          // the field that actually exists.
+          headers: ['Recipient Name', 'Address', 'Date Served'],
+          rows: d.serviceRecipients.map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), fmtDate(r.dateServed || d.serviceDate)]),
           colWidths: [35, 45, 20],
         }
       ] : [

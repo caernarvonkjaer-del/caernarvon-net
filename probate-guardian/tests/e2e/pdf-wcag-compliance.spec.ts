@@ -1147,6 +1147,99 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(driftGuardResults.sentinelPresence.certIndicator).toBe(true);
     expect(driftGuardResults.sentinelPresence.remunerationDesc).toBe(true);
   });
+
+  test('Milestone 19-1: checklist and wet-ink signature-block synthetic fixture — tagged structure, glyph rendering, page-break handling', async ({ page }) => {
+    // checklist and the wet-ink signature-block variant have no consumer
+    // until Milestone 19-2's plan-* features land, so this exercises the
+    // block types directly with a hand-built model rather than deferring
+    // their first real validation to whenever 19-2 happens -- a bug here
+    // would otherwise be indistinguishable from a bug in 19-2's new
+    // pdf-model.js wiring.
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(async () => {
+      const { generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+
+      // Enough rows to force the checklist across a page boundary on its own.
+      const checklistItems = Array.from({ length: 70 }, (_, i) => ({
+        checked: i % 3 === 0,
+        label: `Synthetic checklist item number ${i + 1} verifies wrapping and page-break handling`,
+      }));
+
+      const model = {
+        metadata: {
+          title: 'Synthetic Fixture - Milestone 19-1',
+          subject: 'Synthetic Fixture',
+          author: 'Probate Guardian',
+          creator: 'Probate Guardian',
+          formName: 'SYNTHETIC FIXTURE',
+          formSubtitle: 'Milestone 19-1 Block Vocabulary Fixture',
+          keywords: 'Synthetic, Fixture',
+          wardName: 'Synthetic Ward',
+          caseNumber: '26-000000-GD',
+          county: 'Pinellas',
+          signatureStyle: 'typed',
+        },
+        sections: [
+          {
+            id: 'checklist-fixture',
+            title: 'Synthetic Checklist Section',
+            bookmarkTitle: 'Synthetic Checklist Section',
+            parentBookmark: null,
+            level: 1,
+            pageBreakBefore: false,
+            blocks: [
+              { type: 'checklist', title: 'Synthetic Checklist', items: checklistItems },
+            ],
+          },
+          {
+            id: 'wet-signature-fixture',
+            title: 'Synthetic Wet-Ink Signature Section',
+            bookmarkTitle: 'Synthetic Wet-Ink Signature Section',
+            parentBookmark: null,
+            level: 1,
+            pageBreakBefore: true,
+            blocks: [
+              {
+                type: 'signature-block',
+                role: 'Synthetic Signer',
+                signerName: 'Pat Example',
+                wetSignature: true,
+                fields: [
+                  [{ label: 'Phone', value: '555-0100' }, { label: 'Street', value: '1 Test Way' }],
+                  [{ label: 'City/State/Zip', value: 'Testville, FL 00000' }],
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const doc = await generateVerifiedInventoryPdf(model);
+      const rawPdfString = doc.output();
+
+      return {
+        numPages: doc.internal.getNumberOfPages(),
+        hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
+        hasMarkInfo: /\/MarkInfo\s*<<\s*\/Marked\s*true/.test(rawPdfString),
+        containsChecklistLabelFragment: rawPdfString.includes('Synthetic checklist item number 1 verifies'),
+        containsCheckedYesPrefix: rawPdfString.includes('Yes ') && rawPdfString.includes('No '),
+        containsElectronicSignatureNotice: rawPdfString.includes('pursuant to Fla. R. Gen. Prac'),
+        containsWetSignatureLabel: rawPdfString.includes('(Signature)') || /\(Signature\)\s*Tj/.test(rawPdfString) || rawPdfString.includes('Signature'),
+        containsFieldGridValue: rawPdfString.includes('Testville') && rawPdfString.includes('555-0100'),
+      };
+    });
+
+    expect(result.hasStructTreeRoot).toBe(true);
+    expect(result.hasMarkInfo).toBe(true);
+    expect(result.numPages).toBeGreaterThan(1);
+    expect(result.containsChecklistLabelFragment).toBe(true);
+    expect(result.containsCheckedYesPrefix).toBe(true);
+    // Wet-ink signatures carry no electronic-signature legal notice.
+    expect(result.containsElectronicSignatureNotice).toBe(false);
+    expect(result.containsWetSignatureLabel).toBe(true);
+    expect(result.containsFieldGridValue).toBe(true);
+  });
 });
 
 

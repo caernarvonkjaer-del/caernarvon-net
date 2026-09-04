@@ -249,11 +249,43 @@ export async function generateCourtFormPdf(model, options = {}) {
           parent: partNode,
         });
 
-        const rowHeight = 18;
+        // Labels and values used to be drawn at fixed x-offsets (label at
+        // margin+4, value at margin+115) with no text measurement, so a
+        // label wider than the ~111pt gap between them (e.g.
+        // "Guardianship Inception Date (GID)" in bold 8pt) would overflow
+        // into the value's start position and visually collide with it.
+        // Both sides are now measured and wrapped, and the row height
+        // grows to fit whichever side needs more lines.
+        const KV_LABEL_MAX_W = 98; // usable width inside the 110pt label column
+        const KV_VALUE_MAX_W = 148; // usable width inside each ~155pt value column
+        const KV_LINE_H = 10;
+        const KV_MIN_ROW_H = 18;
+
+        const measureKvItem = (item, valueMaxW) => {
+          if (!item) return { labelLines: [], valueLines: [], lines: 1 };
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          const labelLines = doc.splitTextToSize(String(item.label || ''), KV_LABEL_MAX_W);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          const valueLines = doc.splitTextToSize(String(item.value || ''), valueMaxW);
+          return { labelLines, valueLines, lines: Math.max(labelLines.length, valueLines.length, 1) };
+        };
+
         for (let i = 0; i < items.length; i += 2) {
-          checkPageSpace(rowHeight + 4, sec.title);
           const item1 = items[i];
           const item2 = items[i + 1];
+          // When item2 is absent, item1's value cell gets ColSpan:3 and
+          // actually has the full remaining row width to work with, not
+          // just the ~155pt paired-column width -- measuring it against
+          // the narrow width would force-wrap values that have plenty of
+          // room, splitting them across lines for no reason.
+          const item1ValueMaxW = item2 ? KV_VALUE_MAX_W : (contentWidth - 125);
+          const m1 = measureKvItem(item1, item1ValueMaxW);
+          const m2 = measureKvItem(item2, KV_VALUE_MAX_W);
+          const rowHeight = Math.max(KV_MIN_ROW_H, (Math.max(m1.lines, m2.lines) * KV_LINE_H) + 8);
+
+          checkPageSpace(rowHeight + 4, sec.title);
 
           const trNode = structureTree.addStructureElement({
             tag: 'TR',
@@ -280,7 +312,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(60, 70, 85);
-          doc.text(item1.label, margin + 4, curY + 12);
+          doc.text(m1.labelLines, margin + 4, curY + 12);
           writeMarkedContentEnd(doc);
 
           // Column 1 Value (TD) - Spans 3 columns if item2 is absent to maintain 4-column regularity
@@ -293,8 +325,9 @@ export async function generateCourtFormPdf(model, options = {}) {
           });
           writeMarkedContentStart(doc, 'TD', td1Node.mcid);
           doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
           doc.setTextColor(20, 25, 35);
-          doc.text(String(item1.value || ''), margin + 115, curY + 12);
+          doc.text(m1.valueLines, margin + 115, curY + 12);
           writeMarkedContentEnd(doc);
 
           // Column 2 if present
@@ -315,8 +348,9 @@ export async function generateCourtFormPdf(model, options = {}) {
             });
             writeMarkedContentStart(doc, 'TH', th2Node.mcid);
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
             doc.setTextColor(60, 70, 85);
-            doc.text(item2.label, col2X + 4, curY + 12);
+            doc.text(m2.labelLines, col2X + 4, curY + 12);
             writeMarkedContentEnd(doc);
 
             const td2Node = structureTree.addStructureElement({
@@ -327,8 +361,9 @@ export async function generateCourtFormPdf(model, options = {}) {
             });
             writeMarkedContentStart(doc, 'TD', td2Node.mcid);
             doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
             doc.setTextColor(20, 25, 35);
-            doc.text(String(item2.value || ''), col2X + 115, curY + 12);
+            doc.text(m2.valueLines, col2X + 115, curY + 12);
             writeMarkedContentEnd(doc);
           } else {
             // Fill remainder of row with empty layout border for visual symmetry
@@ -342,6 +377,77 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += rowHeight;
         }
         curY += 10;
+      }
+
+      else if (block.type === 'checklist') {
+        // Plan-* forms (Milestone 19-2) render ☒/☐ checklist rows in HTML;
+        // those Unicode ballot-box codepoints (U+2610/U+2612) aren't in
+        // WinAnsiEncoding, so drawing them with the standard-14 Helvetica
+        // font would silently fail to render. Instead: a small vector
+        // checkbox glyph (decorative /Artifact, drawn either empty or
+        // with an X) carries the visual look, and an unambiguous
+        // "Yes —"/"No —" text prefix in the tagged content carries the
+        // actual checked-state information for screen readers.
+        const items = block.items || [];
+        if (block.title) {
+          checkPageSpace(20, sec.title);
+          const chHNode = structureTree.addStructureElement({
+            tag: subHTag,
+            title: block.title,
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: partNode,
+          });
+          writeMarkedContentStart(doc, subHTag, chHNode.mcid);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          doc.setTextColor(26, 45, 74);
+          doc.text(block.title, margin, curY + 10);
+          writeMarkedContentEnd(doc);
+          curY += 16;
+        }
+
+        const CHECK_LINE_H = 11;
+        const CHECK_BOX_SIZE = 7;
+        const CHECK_LABEL_MAX_W = contentWidth - 20;
+
+        for (const item of items) {
+          const label = String((item && item.label) || '');
+          const checked = !!(item && item.checked);
+          const prefix = checked ? 'Yes — ' : 'No — ';
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          const lines = doc.splitTextToSize(prefix + label, CHECK_LABEL_MAX_W);
+          const rowHeight = Math.max(CHECK_LINE_H, lines.length * CHECK_LINE_H);
+
+          checkPageSpace(rowHeight, sec.title);
+
+          writeArtifactStart(doc, 'Layout');
+          doc.setDrawColor(70, 80, 95);
+          doc.setLineWidth(0.6);
+          doc.rect(margin + 2, curY + 1, CHECK_BOX_SIZE, CHECK_BOX_SIZE, 'S');
+          if (checked) {
+            doc.line(margin + 2, curY + 1, margin + 2 + CHECK_BOX_SIZE, curY + 1 + CHECK_BOX_SIZE);
+            doc.line(margin + 2, curY + 1 + CHECK_BOX_SIZE, margin + 2 + CHECK_BOX_SIZE, curY + 1);
+          }
+          writeArtifactEnd(doc);
+
+          const rowNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: partNode,
+          });
+          writeMarkedContentStart(doc, 'P', rowNode.mcid);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(30, 35, 45);
+          doc.text(lines, margin + 16, curY + 8);
+          writeMarkedContentEnd(doc);
+
+          curY += rowHeight + 3;
+        }
+        curY += 6;
       }
 
       else if (block.type === 'table') {
@@ -419,6 +525,63 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += headerHeight;
         };
 
+        // A cell's value is normally a plain string/number, rendered as one
+        // wrapped run. It may instead be a mixed-style cell object
+        // ({ main, sub: [{text, italic}] }) so a bold main line (e.g. a
+        // property description) can carry small sub-lines beneath it (e.g.
+        // an address, or italic notes) the way the HTML preview's
+        // <br><small> markup does -- previously this content had no
+        // representation in the vector engine at all and was silently
+        // dropped by callers rather than mis-rendered.
+        const MIXED_SUB_FONT_SIZE = 6.5;
+        const MIXED_SUB_LINE_H = 7.5;
+        const isMixedCell = (v) => v && typeof v === 'object' && !Array.isArray(v) && ('main' in v || 'sub' in v);
+
+        const measureCell = (cellData, colW) => {
+          const usableW = Math.max(20, colW - 10);
+          if (isMixedCell(cellData)) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            const mainLines = doc.splitTextToSize(String(cellData.main || ''), usableW);
+            const subGroups = (cellData.sub || []).filter(Boolean).map((s) => {
+              const text = typeof s === 'string' ? s : (s.text || '');
+              const italic = typeof s === 'object' && !!s.italic;
+              doc.setFont('helvetica', italic ? 'italic' : 'normal');
+              doc.setFontSize(MIXED_SUB_FONT_SIZE);
+              return { lines: doc.splitTextToSize(String(text), usableW), italic };
+            });
+            const subLineTotal = subGroups.reduce((sum, g) => sum + g.lines.length, 0);
+            const heightPt = (mainLines.length * 10) + (subLineTotal * MIXED_SUB_LINE_H) + (subGroups.length ? 2 : 0);
+            return { isMixed: true, mainLines, subGroups, heightPt };
+          }
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          const lines = doc.splitTextToSize(String(cellData || ''), usableW);
+          return { isMixed: false, lines, heightPt: lines.length * 10 };
+        };
+
+        const drawCell = (measured, textX, yTop, align) => {
+          if (!measured.isMixed) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(measured.lines, textX, yTop + 11, { align });
+            return;
+          }
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(30, 35, 45);
+          doc.text(measured.mainLines, textX, yTop + 11, { align });
+          let y = yTop + 11 + (measured.mainLines.length * 10) - 4;
+          for (const group of measured.subGroups) {
+            doc.setFont('helvetica', group.italic ? 'italic' : 'normal');
+            doc.setFontSize(MIXED_SUB_FONT_SIZE);
+            doc.setTextColor(100, 110, 125);
+            doc.text(group.lines, textX, y + 6, { align });
+            y += group.lines.length * MIXED_SUB_LINE_H;
+          }
+          doc.setTextColor(30, 35, 45);
+        };
+
         checkPageSpace(headerHeight + 25, sec.title);
         drawTableHeader();
 
@@ -426,20 +589,18 @@ export async function generateCourtFormPdf(model, options = {}) {
         for (let rIdx = 0; rIdx < rows.length; rIdx++) {
           const rowData = rows[rIdx];
 
-          // Calculate max wrapped lines in row
-          let maxLines = 1;
-          const cellTextLines = [];
+          // Calculate max cell height in row (mixed-style cells may need
+          // more vertical space than a plain wrapped string of the same
+          // line count).
+          let maxCellHeightPt = 10;
+          const cellMeasures = [];
           for (let cIdx = 0; cIdx < rowData.length; cIdx++) {
-            const cellText = String(rowData[cIdx] || '');
-            const colW = calculatedColWidths[cIdx] - 10;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            const lines = doc.splitTextToSize(cellText, Math.max(20, colW));
-            cellTextLines.push(lines);
-            if (lines.length > maxLines) maxLines = lines.length;
+            const measured = measureCell(rowData[cIdx], calculatedColWidths[cIdx]);
+            cellMeasures.push(measured);
+            if (measured.heightPt > maxCellHeightPt) maxCellHeightPt = measured.heightPt;
           }
 
-          const cellHeight = Math.max(16, (maxLines * 10) + 6);
+          const cellHeight = Math.max(16, maxCellHeightPt + 6);
 
           if (checkPageSpace(cellHeight, sec.title)) {
             drawTableHeader();
@@ -466,7 +627,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
           let cellX = margin;
           for (let cIdx = 0; cIdx < rowData.length; cIdx++) {
-            const lines = cellTextLines[cIdx];
+            const measured = cellMeasures[cIdx];
             const colW = calculatedColWidths[cIdx];
             const align = (colAlign && colAlign[cIdx]) || 'left';
             const textX = align === 'right' ? cellX + colW - 5 : align === 'center' ? cellX + (colW / 2) : cellX + 5;
@@ -478,10 +639,7 @@ export async function generateCourtFormPdf(model, options = {}) {
               parent: dataTr,
             });
             writeMarkedContentStart(doc, 'TD', tdNode.mcid);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.setTextColor(30, 35, 45);
-            doc.text(lines, textX, curY + 11, { align });
+            drawCell(measured, textX, curY, align);
             writeMarkedContentEnd(doc);
 
             if (cIdx > 0) {
@@ -512,9 +670,22 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: tableNode,
           });
 
+          // totals.value (single number) remains supported for backward
+          // compatibility; totals.values (array) supports schedules that
+          // need two or more numeric totals in one row (e.g. Schedule
+          // B-1's "Total" and "Restricted Amt" columns), which the
+          // previous single-{label,value} shape had no way to express and
+          // callers silently omitted the second figure to work around.
+          const totalValues = Array.isArray(totals.values) && totals.values.length
+            ? totals.values
+            : [{ value: totals.value }];
+          const labelColSpan = Math.max(1, headers.length - totalValues.length);
+          let labelSpanWidth = 0;
+          for (let k = 0; k < labelColSpan && k < calculatedColWidths.length; k++) labelSpanWidth += calculatedColWidths[k];
+
           const totalLabelTd = structureTree.addStructureElement({
             tag: 'TD',
-            attributes: { O: 'Table', ColSpan: Math.max(1, headers.length - 1) },
+            attributes: { O: 'Table', ColSpan: labelColSpan },
             pageNumber: pageNum,
             isLeaf: true,
             parent: totalTr,
@@ -526,16 +697,28 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.text(totals.label, margin + 6, curY + 12);
           writeMarkedContentEnd(doc);
 
-          const totalValTd = structureTree.addStructureElement({
-            tag: 'TD',
-            attributes: { O: 'Table', ColSpan: 1 },
-            pageNumber: pageNum,
-            isLeaf: true,
-            parent: totalTr,
-          });
-          writeMarkedContentStart(doc, 'TD', totalValTd.mcid);
-          doc.text(String(totals.value), pageWidth - margin - 6, curY + 12, { align: 'right' });
-          writeMarkedContentEnd(doc);
+          let valX = margin + labelSpanWidth;
+          for (let vIdx = 0; vIdx < totalValues.length; vIdx++) {
+            const colIdx = labelColSpan + vIdx;
+            const colW = calculatedColWidths[colIdx] !== undefined
+              ? calculatedColWidths[colIdx]
+              : (contentWidth - labelSpanWidth) / totalValues.length;
+
+            const totalValTd = structureTree.addStructureElement({
+              tag: 'TD',
+              attributes: { O: 'Table', ColSpan: 1 },
+              pageNumber: pageNum,
+              isLeaf: true,
+              parent: totalTr,
+            });
+            writeMarkedContentStart(doc, 'TD', totalValTd.mcid);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(26, 45, 74);
+            doc.text(String(totalValues[vIdx].value ?? ''), valX + colW - 6, curY + 12, { align: 'right' });
+            writeMarkedContentEnd(doc);
+            valX += colW;
+          }
 
           curY += totalHeight;
         }
@@ -544,7 +727,20 @@ export async function generateCourtFormPdf(model, options = {}) {
       }
 
       else if (block.type === 'signature-block') {
-        const sigHeight = 70;
+        // wetSignature: a blank pen-signature line with no electronic /s/
+        // text and no electronic-signature legal notice (Milestone 19-2's
+        // plan-* forms are wet-signed, unlike guardian-inventory's
+        // electronic /s/ attestations -- the previous renderer had no
+        // mode for this and always drew electronic-signature text/notice).
+        // fields: an array of rows of [{label, value}, ...], laid out as
+        // full-width deliberate column groups (replacing the old flat
+        // `details` vertical stack, which lost the source HTML's grouping
+        // and ordering by rendering Object.keys() in a single column).
+        const isWetSignature = block.wetSignature === true;
+        const fieldRows = Array.isArray(block.fields) ? block.fields : null;
+        const FIELD_ROW_H = 22;
+        const baseSigHeight = isWetSignature ? 46 : 70;
+        const sigHeight = fieldRows ? baseSigHeight + (fieldRows.length * FIELD_ROW_H) : baseSigHeight;
         checkPageSpace(sigHeight + 10, sec.title);
 
         writeArtifactStart(doc, 'Layout');
@@ -595,44 +791,96 @@ export async function generateCourtFormPdf(model, options = {}) {
         doc.line(margin + 8, curY + 42, margin + 260, curY + 42);
         writeArtifactEnd(doc);
 
-        // Electronic /s/ Signature Rendering
-        const sigTextNode = structureTree.addStructureElement({
-          tag: 'P',
-          pageNumber: pageNum,
-          isLeaf: true,
-          parent: sigPartNode,
-        });
-        writeMarkedContentStart(doc, 'P', sigTextNode.mcid);
-        if (signatureStyle === 'script') {
-          // Script-style rendering using Times-Italic with stylistic padding
-          doc.setFont('times', 'italic');
-          doc.setFontSize(13);
-          doc.setTextColor(15, 35, 75);
-          doc.text(block.signature || `/s/ ${block.signerName}`, margin + 12, curY + 38);
+        if (isWetSignature) {
+          // Wet-ink signature: the line above is left blank for a pen
+          // signature rather than an electronic /s/ rendering, and there
+          // is no electronic-signature legal notice, since none applies
+          // to a physically-signed page.
+          const sigLabelNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: sigPartNode,
+          });
+          writeMarkedContentStart(doc, 'P', sigLabelNode.mcid);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(100, 110, 125);
+          doc.text('Signature', margin + 8, curY + 52);
+          writeMarkedContentEnd(doc);
         } else {
-          // Standard typed /s/ rendering
-          doc.setFont('times', 'bold');
-          doc.setFontSize(10.5);
-          doc.setTextColor(20, 25, 35);
-          doc.text(block.signature || `/s/ ${block.signerName}`, margin + 10, curY + 38);
+          // Electronic /s/ Signature Rendering
+          const sigTextNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: sigPartNode,
+          });
+          writeMarkedContentStart(doc, 'P', sigTextNode.mcid);
+          if (signatureStyle === 'script') {
+            // Script-style rendering using Times-Italic with stylistic padding
+            doc.setFont('times', 'italic');
+            doc.setFontSize(13);
+            doc.setTextColor(15, 35, 75);
+            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 12, curY + 38);
+          } else {
+            // Standard typed /s/ rendering
+            doc.setFont('times', 'bold');
+            doc.setFontSize(10.5);
+            doc.setTextColor(20, 25, 35);
+            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 10, curY + 38);
+          }
+          writeMarkedContentEnd(doc);
+
+          const sigLegalNoticeNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: sigPartNode,
+          });
+          writeMarkedContentStart(doc, 'P', sigLegalNoticeNode.mcid);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(100, 110, 125);
+          doc.text('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 8, curY + 52);
+          writeMarkedContentEnd(doc);
         }
-        writeMarkedContentEnd(doc);
 
-        const sigLegalNoticeNode = structureTree.addStructureElement({
-          tag: 'P',
-          pageNumber: pageNum,
-          isLeaf: true,
-          parent: sigPartNode,
-        });
-        writeMarkedContentStart(doc, 'P', sigLegalNoticeNode.mcid);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(100, 110, 125);
-        doc.text('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 8, curY + 52);
-        writeMarkedContentEnd(doc);
-
-        // Details (Right Column)
-        if (block.details) {
+        if (fieldRows) {
+          // Field grid (preferred): full-width rows of {label, value}
+          // pairs in deliberate column groups matching the source HTML's
+          // grid ordering (e.g. SSN/EIN | Phone | Street Address on one
+          // row, City/State/Zip on the next).
+          let rowY = curY + baseSigHeight - 14;
+          for (const row of fieldRows) {
+            const cols = row.length || 1;
+            const colW = contentWidth / cols;
+            for (let fIdx = 0; fIdx < row.length; fIdx++) {
+              const field = row[fIdx];
+              if (!field || !field.value) continue;
+              const fx = margin + (fIdx * colW) + 8;
+              const fieldNode = structureTree.addStructureElement({
+                tag: 'P',
+                pageNumber: pageNum,
+                isLeaf: true,
+                parent: sigPartNode,
+              });
+              writeMarkedContentStart(doc, 'P', fieldNode.mcid);
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(7);
+              doc.setTextColor(70, 80, 95);
+              doc.text(String(field.label || ''), fx, rowY);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(7.5);
+              doc.setTextColor(30, 35, 45);
+              doc.text(String(field.value), fx, rowY + 10);
+              writeMarkedContentEnd(doc);
+            }
+            rowY += FIELD_ROW_H;
+          }
+        } else if (block.details) {
+          // Legacy flat details stack (right column) -- kept for backward
+          // compatibility with any caller not yet migrated to `fields`.
           const detailKeys = Object.keys(block.details);
           let detailY = curY + 28;
           for (const k of detailKeys) {
