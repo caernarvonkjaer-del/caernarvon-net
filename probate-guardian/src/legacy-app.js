@@ -1570,7 +1570,10 @@ let _pvSelection='1'; // '1'-based page number, or 'all'
 function pvPages(){
   const cont=document.getElementById('print-doc-container');
   if(!cont)return [];
-  return [...cont.children].filter(el=>el.classList&&el.classList.contains('doc-page'));
+  // .pdf-page: Milestone 19-3's canvas+text-layer preview page. .doc-page:
+  // the pre-19-3 HTML reconstruction, kept here until Milestone 19-4 deletes
+  // buildPrintHTML() and its markup outright.
+  return [...cont.children].filter(el=>el.classList&&(el.classList.contains('doc-page')||el.classList.contains('pdf-page')));
 }
 function pvLabelFor(page,i){
   // docHeader() puts "<Schedule> — Page <n>" in the middle cell of .doc-meta.

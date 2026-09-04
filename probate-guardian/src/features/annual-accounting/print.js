@@ -14,6 +14,16 @@
 import { validateAnnual, fmtAnnual, fmtD, DISB_CATS } from './index.js';
 import { buildAnnualAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+
+// Milestone 19-3: preview and Save-as-PDF must build the model with the
+// identical options, so they can never diverge again.
+function buildModelForPreview(D){
+  return buildAnnualAccountingModel(D, {
+    signatureStyle: D.signatureStyle || 'typed',
+    printDate: new Date().toISOString().slice(0, 10),
+  });
+}
 
 const {
   annualReconcileState, calcTotalsAnnual, circuitCourtCaption, esc,
@@ -439,9 +449,15 @@ export function pagePrintAnnual(capOver){
     </div>
     ${errors.length?validationPanel(errors):''}
     ${capOver.length?excelCapacityPanel(capOver):''}
-    <div id="print-doc-container">${buildPrintHTMLAnnual()}</div>
+    <div id="print-doc-container"></div>
   </div>`;
 }
+
+export async function mountPreview(){
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D);
+  await mountPdfPreview(buildModelForPreview, window.D);
+}
+
 export async function doSavePdf(){
   const errors=validateAnnual();
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}

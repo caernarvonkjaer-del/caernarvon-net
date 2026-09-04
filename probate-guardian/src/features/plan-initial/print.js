@@ -12,6 +12,7 @@
 import { validatePlanInitial } from './index.js';
 import { buildPlanInitialModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
 const {
   circuitCourtCaption, esc, fmtDate,
@@ -354,8 +355,13 @@ export function pagePrintPlanInitial(){
     </div>
     ${errors.length?validationPanel(errors):''}
     ${planReadinessPanel()}
-    <div id="print-doc-container">${buildPrintHTMLPlanInitial()}</div>
+    <div id="print-doc-container"></div>
   </div>`;
+}
+
+export async function mountPreview(){
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanInitialModel, window.D);
+  await mountPdfPreview(buildPlanInitialModel, window.D);
 }
 
 export async function doSavePdf(){

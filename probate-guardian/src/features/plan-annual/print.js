@@ -12,6 +12,7 @@
 import { validatePlanAnnual } from './index.js';
 import { buildPlanAnnualModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
 const {
   circuitCourtCaption, esc, fmtDate,
@@ -426,8 +427,13 @@ export function pagePrintPlanAnnual(){
     </div>
     ${errors.length?validationPanel(errors):''}
     ${planReadinessPanel()}
-    <div id="print-doc-container">${buildPrintHTMLPlanAnnual()}</div>
+    <div id="print-doc-container"></div>
   </div>`;
+}
+
+export async function mountPreview(){
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanAnnualModel, window.D);
+  await mountPdfPreview(buildPlanAnnualModel, window.D);
 }
 
 export async function doSavePdf(){

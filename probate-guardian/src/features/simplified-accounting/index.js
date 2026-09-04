@@ -105,6 +105,7 @@ export async function mount(container, page) {
   container.innerHTML = html;
   bindEvents(container);
   container.scrollTop = 0;
+  if (page === '/print') await _printModule.mountPreview();
 }
 
 export function dispose(container) {

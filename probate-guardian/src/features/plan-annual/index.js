@@ -51,9 +51,11 @@ function ensurePrintModule() {
 
 export async function mount(container, page) {
   let html;
+  let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
     html = _printModule.pagePrintPlanAnnual();
+    isPrint = true;
   } else {
     switch (page) {
       case '/':    html = pagePlanACover(); break;
@@ -73,6 +75,7 @@ export async function mount(container, page) {
   }
   container.innerHTML = html;
   container.scrollTop = 0;
+  if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {

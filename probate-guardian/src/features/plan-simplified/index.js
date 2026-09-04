@@ -40,7 +40,7 @@ function bindEvents(container) {
     if (!actionElement) return;
     switch (actionElement.dataset.planSimplifiedAction) {
       case 'open-court-portal': window.openFloridaCourtPortal(); break;
-      case 'print': window.pvShowAll(); window.print(); break;
+      case 'print': window.printCurrentFilingPdf(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, { signal: controller.signal });
@@ -59,9 +59,11 @@ function ensurePrintModule() {
 
 export async function mount(container, page) {
   let html;
+  let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
     html = _printModule.pagePrintPlanSimplified();
+    isPrint = true;
   } else {
     switch (page) {
       case '/':         html = pagePlanSCover(); break;
@@ -74,6 +76,7 @@ export async function mount(container, page) {
   container.innerHTML = html;
   bindEvents(container);
   container.scrollTop = 0;
+  if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {

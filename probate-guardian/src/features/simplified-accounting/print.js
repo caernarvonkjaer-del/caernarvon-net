@@ -9,6 +9,16 @@
 import { fmtS, validateSimplified } from './index.js';
 import { buildSimplifiedAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+
+// Milestone 19-3: preview and Save-as-PDF must build the model with the
+// identical options, so they can never diverge again.
+function buildModelForPreview(D){
+  return buildSimplifiedAccountingModel(D, {
+    signatureStyle: D.signatureStyle || 'typed',
+    printDate: new Date().toISOString().slice(0, 10),
+  });
+}
 
 const {
   esc, fmtDate, circuitCourtCaption, calcTotals, tdSig,
@@ -209,8 +219,13 @@ export function pagePrintSimplified(capOver){
     </div>
     ${errors.length?validationPanel(errors):''}
     ${capOver.length?excelCapacityPanel(capOver):''}
-    <div id="print-doc-container">${buildPrintHTMLSimplified()}</div>
+    <div id="print-doc-container"></div>
   </div>`;
+}
+
+export async function mountPreview(){
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D);
+  await mountPdfPreview(buildModelForPreview, window.D);
 }
 
 export async function doSavePdf(){

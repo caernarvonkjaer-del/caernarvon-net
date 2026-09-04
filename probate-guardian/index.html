@@ -770,9 +770,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .pv-count{font-size:.78rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .pv-nav{display:flex;gap:.35rem;margin-left:auto;}
 .pv-nav .btn{padding:.28rem .6rem;font-size:.78rem;}
-/* Single-page mode. Only the chosen page is on screen. */
-#print-doc-container.pv-single>.doc-page{display:none;}
-#print-doc-container.pv-single>.doc-page.pv-show{display:block;}
+/* Single-page mode. Only the chosen page is on screen. .pdf-page is the
+   Milestone 19-3 canvas+text-layer preview page; .doc-page is the pre-19-3
+   HTML reconstruction, still selected here until Milestone 19-4 removes it. */
+#print-doc-container.pv-single>.doc-page,#print-doc-container.pv-single>.pdf-page{display:none;}
+#print-doc-container.pv-single>.doc-page.pv-show,#print-doc-container.pv-single>.pdf-page.pv-show{display:block;}
 /* SAFETY NET — a preview filter must never reach paper. Browser print and the
    html2canvas PDF path each force every page back on with !important, so an
    incomplete filing cannot be produced even if the pager JS misbehaves or a
@@ -788,6 +790,34 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
    Body text here inherits, so without this it would pick up --ink-2. */
 #print-doc-container,#pdf-content,.doc-page{font-family:'Segoe UI',system-ui,sans-serif;color:#000;}
 .doc-page{background:#fff;border:1px solid #d0dae8;border-radius:4px;padding:1in;margin:0 auto 1.5rem;max-width:8.5in;}
+/* Milestone 19-3: canvas+text-layer preview page (renders the actual
+   generated PDF via pdf.js) -- deliberately its own class, not styled
+   through .doc-page's padding/max-width above, since the canvas already
+   renders the full page including its own margins at an exact pixel size;
+   layering .doc-page's box model on top would double-pad and clip it. */
+/* No CSS-only scaling (max-width/height:auto) on the canvas: the
+   .textLayer overlay is positioned in absolute pixels computed from the
+   same viewport pdf.js rendered the canvas at, via its own --total-scale-
+   factor custom property -- shrinking just the canvas with CSS without
+   also calling TextLayer.update() would desync the two. A narrow viewport
+   scrolls #print-doc-container horizontally instead (see its own rule)
+   rather than risk that. */
+.pdf-page{position:relative;background:#fff;border:1px solid #d0dae8;border-radius:4px;margin:0 auto 1.5rem;box-shadow:var(--sh-2);}
+.pdf-page canvas{display:block;}
+#print-doc-container{overflow-x:auto;}
+/* pdf.js's own contract for its low-level TextLayer API (adapted from
+   pdfjs-dist's web/pdf_viewer.css .textLayer rules, trimmed to what a
+   canvas+TextLayer-only integration needs -- no highlighting/annotation-
+   editor states, since this app never enables those). Width/height and the
+   --total-scale-factor custom property driving span positioning are set
+   programmatically by TextLayer's constructor (setLayerDimensions()), not
+   here. This is what makes the rendered text real, selectable, screen-
+   reader-exposed DOM -- transparent and positioned exactly over the
+   canvas's painted glyphs -- rather than a second visible copy of the page. */
+.pdf-page .textLayer{position:absolute;inset:0;overflow:clip;line-height:1;text-align:initial;opacity:1;forced-color-adjust:none;transform-origin:0 0;z-index:1;}
+.pdf-page .textLayer span,.pdf-page .textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%;user-select:text;-webkit-user-select:text;}
+.pdf-page .textLayer .markedContent{display:contents;}
+.pdf-page .textLayer ::selection{background:rgba(0,100,255,.35);}
 .doc-header{text-align:center;margin-bottom:.75rem;}
 .doc-header .court-title{font-size:.82rem;font-weight:700;text-transform:uppercase;}
 .doc-header .doc-title{font-size:.88rem;font-weight:700;margin-top:.2rem;margin-bottom:1rem;}

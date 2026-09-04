@@ -12,6 +12,17 @@
 import { validateGuardian, pageNav } from './index.js';
 import { buildVerifiedInventoryModel } from './pdf-model.js';
 import { generateVerifiedInventoryPdf } from './pdf-engine.js';
+import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+
+// Milestone 19-3: preview and Save-as-PDF must build the model with the
+// identical options, so they can never diverge again (this is also what
+// fixes the pre-19-3 signature-style-radio/preview mismatch).
+function buildModelForPreview(D){
+  return buildVerifiedInventoryModel(D, {
+    signatureStyle: D.signatureStyle || 'typed',
+    printDate: new Date().toISOString().slice(0, 10),
+  });
+}
 
 const {
   esc, fmt, fmtDate, circuitCourtCaption, calc, td, tdR,
@@ -338,9 +349,17 @@ export function pagePrint(capOver){
 
   ${errPanel}
   ${capOver.length?excelCapacityPanel(capOver):''}
-  <div id="print-doc-container">${buildPrintHTML()}</div>
+  <div id="print-doc-container"></div>
   ${pageNav('/print')}
   </div>`;
+}
+
+// Called by index.js's mount() after the print page's HTML is in the DOM --
+// renders the actual generated PDF (canvas + selectable text layer) into
+// #print-doc-container, replacing the old buildPrintHTML() reconstruction.
+export async function mountPreview(){
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D);
+  await mountPdfPreview(buildModelForPreview, window.D);
 }
 
 export async function doSavePdf(){

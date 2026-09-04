@@ -123,11 +123,19 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     // 4. Toggle to script signature style
     await scriptRadio.check();
     await expect(scriptRadio).toBeChecked();
+    await expect.poll(() => page.evaluate(() => (window as any).D.signatureStyle)).toBe('script');
 
-    // Verify DOM preview applies script signature styling
-    const sigLine = page.locator('.doc-signature-line.script-signature').first();
-    await expect(sigLine).toBeAttached();
-    await expect(sigLine).toHaveText('/s/ Rachel M. Alvarez');
+    // Milestone 19-3: Preview now renders the actual generated PDF (a
+    // pdf.js canvas + text layer), not a separate buildPrintHTML() HTML
+    // reconstruction -- there's no more `.doc-signature-line.script-
+    // signature` DOM node to assert on, by design (that's the fix for the
+    // signature-style-radio/preview divergence MILESTONE-19-3-PROPOSAL.md
+    // describes: Preview can no longer show a different style than
+    // Save-as-PDF, since they're now the same renderer). Confirming the
+    // preview actually regenerates after the toggle is what's left to
+    // check here; the PDF-level assertions below already independently
+    // verify the script style reaches the generated PDF's content stream.
+    await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
 
     // 5. Generate native vector PDF in browser memory and inspect raw stream
     const pdfInspection = await page.evaluate(async () => {

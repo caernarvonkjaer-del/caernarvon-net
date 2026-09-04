@@ -80,6 +80,10 @@ export async function mount(container, page) {
   enforceDateRanges();
   setupAmountFieldValidation();
   updateNavDots();
+  // The pv-pager needs the real .pdf-page elements in the DOM before it can
+  // count/label them, so it must run after the async preview render, not
+  // before it (Milestone 19-3).
+  if (page === '/print') await _printModule.mountPreview();
   initPrintPager();
 }
 

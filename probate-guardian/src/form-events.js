@@ -42,7 +42,7 @@ document.addEventListener('click', (event) => {
     case 'load-ward-info': window.showLoadWardInfoModal(); break;
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
-    case 'print': window.pvShowAll(); window.print(); break;
+    case 'print': window.printCurrentFilingPdf(); break;
       case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
       case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
       case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
