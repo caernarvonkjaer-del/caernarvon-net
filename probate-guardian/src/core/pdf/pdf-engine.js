@@ -229,22 +229,6 @@ export async function generateCourtFormPdf(model, options = {}) {
 
     pageNumbersBySection[sec.id] = pageNum;
 
-    // Register Outline / Bookmarks
-    if (doc.outline && typeof doc.outline.add === 'function') {
-      try {
-        let parentNode = null;
-        if (sec.parentBookmark) {
-          if (!parentOutlineMap[sec.parentBookmark]) {
-            parentOutlineMap[sec.parentBookmark] = doc.outline.add(null, sec.parentBookmark, { pageNumber: pageNum });
-          }
-          parentNode = parentOutlineMap[sec.parentBookmark];
-        }
-        doc.outline.add(parentNode, sec.bookmarkTitle, { pageNumber: pageNum });
-      } catch (e) {
-        console.warn('Could not add outline entry for', sec.bookmarkTitle, e);
-      }
-    }
-
     // Structure Node for this Section (Part)
     const partNode = structureTree.addStructureElement({
       tag: 'Part',
@@ -253,7 +237,28 @@ export async function generateCourtFormPdf(model, options = {}) {
     });
 
     // Section Title Heading (<H1> or <H2>)
+    // checkPageSpace MUST run before registering the outline entry: if it
+    // triggers a page break, pageNum increments and the heading lands on
+    // the new page. Registering the bookmark before this check would stamp
+    // it to the old page, making it jump one page short.
     checkPageSpace(30, sec.title);
+
+    // Register Outline / Bookmarks after the heading's page is settled
+    if (doc.outline && typeof doc.outline.add === 'function') {
+      try {
+        let parentNode = null;
+        if (sec.parentBookmark) {
+          if (!parentOutlineMap[sec.parentBookmark]) {
+            parentOutlineMap[sec.parentBookmark] = doc.outline.add(null, sec.parentBookmark, { pageNumber: pageNum, y: curY });
+          }
+          parentNode = parentOutlineMap[sec.parentBookmark];
+        }
+        doc.outline.add(parentNode, sec.bookmarkTitle, { pageNumber: pageNum, y: curY });
+      } catch (e) {
+        console.warn('Could not add outline entry for', sec.bookmarkTitle, e);
+      }
+    }
+
     const hTag = sec.level === 2 ? 'H2' : 'H1';
     const subHTag = hTag === 'H1' ? 'H2' : 'H3';
     const hNode = structureTree.addStructureElement({

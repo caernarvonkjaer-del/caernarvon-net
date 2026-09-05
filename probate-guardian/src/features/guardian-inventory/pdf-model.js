@@ -227,7 +227,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
-    [20, 18, 20, 16, 10, 16],
+    [20, 17, 20, 18, 9, 16],
     ['left', 'left', 'left', 'right', 'center', 'right'],
     [restrictedCash]
   );
