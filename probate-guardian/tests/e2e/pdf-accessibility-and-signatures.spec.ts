@@ -318,5 +318,6 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(attachmentPage).toBeTruthy();
     expect(attachmentPage?.imageCount).toBeGreaterThan(0);
     expect(attachmentPage && pages[attachmentPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
+    expect(attachmentPage?.text).not.toContain('Schedule B-2: Personal Property Assets');
   });
 });

@@ -175,6 +175,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   let curY = margin;
   let pageNum = 1;
+  let forcePageBreakBeforeNextSection = false;
   const pageNumbersBySection = {};
   const parentOutlineMap = {};
 
@@ -491,9 +492,10 @@ export async function generateCourtFormPdf(model, options = {}) {
   for (let sIdx = 0; sIdx < sections.length; sIdx++) {
     const sec = sections[sIdx];
 
-    if (sec.pageBreakBefore && sIdx > 0 && curY > 80) {
+    if (sIdx > 0 && (forcePageBreakBeforeNextSection || (sec.pageBreakBefore && curY > 80))) {
       startNewPage(sec.title);
     }
+    forcePageBreakBeforeNextSection = false;
 
     pageNumbersBySection[sec.id] = pageNum;
 
@@ -1333,6 +1335,9 @@ export async function generateCourtFormPdf(model, options = {}) {
 
       else if (block.type === 'supporting-documents') {
         await renderSupportingDocuments(block, sec.title, partNode);
+        if (Array.isArray(block.files) && block.files.length && sIdx < sections.length - 1) {
+          forcePageBreakBeforeNextSection = true;
+        }
       }
     }
   }
