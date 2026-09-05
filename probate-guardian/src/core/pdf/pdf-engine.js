@@ -358,7 +358,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setTextColor(17, 24, 39);
     doc.text(fileName, margin, curY + 10);
     writeMarkedContentEnd(doc);
-    curY += filenameHeight + spacingAfterDocument + Math.max(0, followingHeight);
+    curY += filenameHeight + spacingAfterDocument;
   };
 
   const renderInlineDocumentImage = async (dataUrl, sourceWidth, sourceHeight, sectionTitle, imageType = null) => {

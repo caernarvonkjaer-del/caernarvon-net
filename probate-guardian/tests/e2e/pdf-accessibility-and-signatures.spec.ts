@@ -316,5 +316,6 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(attachmentTitlePages.length).toBeGreaterThan(0);
     const samePageAttachment = attachmentTitlePages.find(pageInfo => pageInfo.imageCount > 0);
     expect(samePageAttachment).toBeTruthy();
+    expect(samePageAttachment?.imageCount).toBeGreaterThan(0);
   });
 });
