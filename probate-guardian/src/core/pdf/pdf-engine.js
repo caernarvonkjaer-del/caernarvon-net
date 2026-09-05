@@ -329,9 +329,8 @@ export async function generateCourtFormPdf(model, options = {}) {
     img.src = dataUrl;
   });
 
-  const fitInlineDocumentSize = (sourceWidth, sourceHeight) => {
+  const fitInlineDocumentSize = (sourceWidth, sourceHeight, maxHeight = pageBottom - curY) => {
     const maxWidth = contentWidth;
-    const maxHeight = pageBottom - margin;
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
     return {
       width: sourceWidth * scale,
@@ -339,11 +338,10 @@ export async function generateCourtFormPdf(model, options = {}) {
     };
   };
 
-  const renderSupportingFileName = (fileName, sectionTitle, parentNode, followingHeight = 0) => {
+  const renderSupportingFileName = (fileName, sectionTitle, parentNode) => {
     const filenameHeight = 16;
     const spacingAfterDocument = 12;
-    const requiredSpace = filenameHeight + Math.max(0, followingHeight) + spacingAfterDocument;
-    if (curY + requiredSpace > pageBottom) {
+    if (curY + filenameHeight + spacingAfterDocument > pageBottom) {
       startNewPage(sectionTitle);
     }
     const fileNode = structureTree.addStructureElement({
@@ -374,6 +372,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   const renderUploadedPdfPages = async (pdf, sectionTitle) => {
     for (let p = 1; p <= pdf.numPages; p++) {
+      if (p > 1) startNewPage(sectionTitle);
       const srcPage = await pdf.getPage(p);
       const viewport = srcPage.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
@@ -437,23 +436,20 @@ export async function generateCourtFormPdf(model, options = {}) {
       const isImageFile = mime.startsWith('image/') || dataUrl.startsWith('data:image/') || isPngBytes(bytes) || isJpegBytes(bytes);
 
       try {
+        startNewPage(sectionTitle);
         if (isPdfFile) {
           const pdf = await loadUploadedPdf(file);
-          const firstPage = await pdf.getPage(1);
-          const firstViewport = firstPage.getViewport({ scale: 1.5 });
-          const firstFit = fitInlineDocumentSize(firstViewport.width, firstViewport.height);
-          renderSupportingFileName(fileName, sectionTitle, parentNode, firstFit.height + 12);
+          renderSupportingFileName(fileName, sectionTitle, parentNode);
           await renderUploadedPdfPages(pdf, sectionTitle);
         } else if (isImageFile) {
           const imageDataUrl = dataUrl.startsWith('data:image/')
             ? dataUrl
             : `data:${isPngBytes(bytes) ? 'image/png' : 'image/jpeg'};base64,${String(dataUrl).split(',')[1] || ''}`;
           const size = await loadImageSize(imageDataUrl);
-          const fit = fitInlineDocumentSize(size.width, size.height);
-          renderSupportingFileName(fileName, sectionTitle, parentNode, fit.height + 12);
+          renderSupportingFileName(fileName, sectionTitle, parentNode);
           await renderInlineDocumentImage(imageDataUrl, size.width, size.height, sectionTitle, isPngBytes(bytes) ? 'PNG' : 'JPEG');
         } else {
-          renderSupportingFileName(fileName, sectionTitle, parentNode, 16);
+          renderSupportingFileName(fileName, sectionTitle, parentNode);
           const unsupportedNode = structureTree.addStructureElement({
             tag: 'P',
             pageNumber: pageNum,
@@ -469,7 +465,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += 16;
         }
       } catch (e) {
-        renderSupportingFileName(fileName, sectionTitle, parentNode, 16);
+        renderSupportingFileName(fileName, sectionTitle, parentNode);
         const errorNode = structureTree.addStructureElement({
           tag: 'P',
           pageNumber: pageNum,

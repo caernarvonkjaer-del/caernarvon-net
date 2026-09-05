@@ -314,8 +314,9 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const attachmentFileName = 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf';
     const attachmentTitlePages = pages.filter(pageInfo => pageInfo.text.includes(attachmentFileName));
     expect(attachmentTitlePages.length).toBeGreaterThan(0);
-    const samePageAttachment = attachmentTitlePages.find(pageInfo => pageInfo.imageCount > 0);
-    expect(samePageAttachment).toBeTruthy();
-    expect(samePageAttachment?.imageCount).toBeGreaterThan(0);
+    const attachmentPage = attachmentTitlePages.find(pageInfo => pageInfo.imageCount > 0);
+    expect(attachmentPage).toBeTruthy();
+    expect(attachmentPage?.imageCount).toBeGreaterThan(0);
+    expect(attachmentPage && pages[attachmentPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
   });
 });
