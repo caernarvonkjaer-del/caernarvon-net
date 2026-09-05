@@ -320,4 +320,41 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(attachmentPage && pages[attachmentPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
     expect(attachmentPage?.text).not.toContain('Schedule B-2: Personal Property Assets');
   });
+
+  test('renders supporting documents for non-inventory forms through the shared PDF engine', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const pdfInspection = await page.evaluate(async () => {
+      const { buildPlanAnnualModel, createJsPdfInstance, generateCourtFormPdf } = await (window as any).loadPlanAnnualPdf();
+      const attachmentDoc = await createJsPdfInstance();
+      attachmentDoc.setFontSize(16);
+      attachmentDoc.text('Uploaded annual plan support page', 72, 120);
+      const sourceData = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pasco',
+        activeYearKey: 'initial',
+        scheduleDocs: {
+          planAResidences: {
+            initial: {
+              files: [{
+                name: 'annual_plan_residence_support.pdf',
+                type: 'application/octet-stream',
+                dataUrl: attachmentDoc.output('datauristring').replace('data:application/pdf;', 'data:application/octet-stream;'),
+              }],
+            },
+          },
+        },
+      };
+      const model = buildPlanAnnualModel(sourceData);
+      const doc = await generateCourtFormPdf(model, { sourceData });
+      return { rawPdfString: doc.output() };
+    });
+
+    const pages = await inspectPdfPages(pdfInspection.rawPdfString);
+    const attachmentPage = pages.find(pageInfo => pageInfo.text.includes('annual_plan_residence_support.pdf'));
+    expect(attachmentPage).toBeTruthy();
+    expect(attachmentPage?.imageCount).toBeGreaterThan(0);
+    expect(pages[attachmentPage!.pageNumber - 2]?.text).toContain('Question 1');
+  });
 });

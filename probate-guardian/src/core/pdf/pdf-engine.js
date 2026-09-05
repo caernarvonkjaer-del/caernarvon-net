@@ -137,10 +137,76 @@ export async function generateCourtFormPdf(model, options = {}) {
   doc.setFont('PGSans', 'normal');
 
   const { metadata, sections } = model;
+  const sourceData = options.sourceData || (typeof window !== 'undefined' ? window.D : null);
   const wardName = metadata.wardName || 'Ward';
   const caseNumber = metadata.caseNumber || '';
   const county = (metadata.county || 'Pinellas').toUpperCase();
   const signatureStyle = metadata.signatureStyle || 'typed';
+
+  const scheduleSectionAliases = {
+    'ANNUAL GUARDIANSHIP PLAN': {
+      planACover: 'cover', planAResidences: 'q1', planACarePlan: 'q2-q3', planABenefits: 'q3g',
+      planAProviders: 'q4', planARights: 'q5-q7', planAADLs: 'q8', planADisabilities: 'q9',
+      planADirectives: 'q10', planARemuneration: 'q11', planASignatures: 'certification',
+    },
+    'INITIAL GUARDIANSHIP PLAN': {
+      planICover: 'cover', planISettingMedical: 'q2-q5', planIMentalPersonal: 'q6-q7',
+      planISocialBenefits: 'q9', planIProviders: 'q10a', planIADLs: 'q10b-d',
+      planIDisabilities: 'q11-10ef', planIDirectives: 'directive-detail', planISignatures: 'certification',
+    },
+    'ANNUAL GUARDIANSHIP PLAN — MINOR': {
+      planMCover: 'cover', planMResidences: 'q2-q3', planMProviders: 'q4', planMMedical: 'q5',
+      planMEducation: 'certification', planMSignatures: 'preparer-attorney',
+    },
+    'SIMPLIFIED ANNUAL PLAN': { planCover: 'plan-1', planQuestions: 'plan-2', planSignatures: 'signatures' },
+  };
+
+  const attachSourceDocuments = () => {
+    const scheduleDocs = sourceData?.scheduleDocs;
+    if (!scheduleDocs || typeof scheduleDocs !== 'object') return;
+    const aliases = scheduleSectionAliases[metadata.formName] || {};
+    const usedSections = new Set();
+    const entries = Object.entries(scheduleDocs);
+    const activePeriod = sourceData.activeYearKey || 'initial';
+    const getSlot = (value) => {
+      if (!value || typeof value !== 'object') return { comment: '', files: [] };
+      if (Array.isArray(value.files) || value.comment) return value;
+      return value[activePeriod] || value.initial || { comment: '', files: [] };
+    };
+    const addBlock = (section, slot) => {
+      if (!section || usedSections.has(section) || (!slot.files?.length && !String(slot.comment || '').trim())) return;
+      if ((section.blocks || []).some(block => block.type === 'supporting-documents')) {
+        usedSections.add(section);
+        return;
+      }
+      section.blocks = section.blocks || [];
+      section.blocks.push({
+        type: 'supporting-documents',
+        tag: 'Part',
+        title: 'Supporting Documents',
+        comment: slot.comment || '',
+        files: (slot.files || []).filter(file => file && file.dataUrl).map(file => ({
+          name: file.name || 'Supporting document',
+          type: file.type || '',
+          size: file.size || 0,
+          dataUrl: file.dataUrl,
+        })),
+      });
+      usedSections.add(section);
+    };
+    entries.forEach(([key, value], index) => {
+      const slot = getSlot(value);
+      const exact = sections.find(section => section.id === key);
+      if (exact) {
+        addBlock(exact, slot);
+        return;
+      }
+      const aliasId = aliases[key];
+      addBlock(sections.find(section => section.id === aliasId), slot);
+    });
+  };
+
+  attachSourceDocuments();
 
   // Initialize PDF/UA-1 and WCAG 2.1 structure tree & accessibility hooks
   const structureTree = new PdfStructureTree({ embedFonts: true, ...metadata });
