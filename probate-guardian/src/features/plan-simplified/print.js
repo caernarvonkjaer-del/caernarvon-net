@@ -15,94 +15,9 @@ import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
 const {
-  circuitCourtCaption, esc, tdSig, fmtDate,
   highlightErrors, validationPanel, planReadinessPanel,
   renderPage,
 } = window;
-
-function docHeaderPlanSimplified(ward,caseNo,section,page){
-  return `<div class="doc-header">
-    <div class="court-title">${circuitCourtCaption(window.D.county,true)}</div>
-    <div class="doc-title">SIMPLIFIED ANNUAL PLAN</div>
-    <div class="doc-meta">
-      <span>IN RE: The Guardianship of <strong>${ward}</strong></span>
-      <span>${section}${page?' — Page '+page:''}</span>
-      <span>Case No.: <strong>${caseNo}</strong></span>
-    </div>
-  </div>`;
-}
-
-function buildPrintHTMLPlanSimplified(){
-  const d=window.D;
-  const ward=esc(d.wardName);
-  const caseNo=esc(d.caseNumber);
-  const ans=v=>esc(v||'').replace(/\n/g,'<br>')||'<span style="color:#888">—</span>';
-  const yn=v=>v?esc(v):'<span style="color:#888">—</span>';
-  const q=(n,text,body)=>`<div class="doc-section-block" style="margin-bottom:.85rem;">
-    <div style="font-size:.78rem;font-weight:700;margin-bottom:.3rem;">${n}. ${text}</div>
-    <div style="font-size:.76rem;line-height:1.55;padding-left:.9rem;">${body}</div>
-  </div>`;
-  let html='';
-
-  html+=`<div class="doc-page">${docHeaderPlanSimplified(ward,caseNo,'Plan','1')}
-  <div class="attestation-text" style="font-size:.75rem;">The undersigned, as the Guardian Advocate(s) or Guardian(s) of the above-named ward, report(s) to the court as follows:</div>
-  <div class="doc-table-div mb-2" style="font-size:.76rem;">
-    ${tdSig('For the Period',`From: ${fmtDate(d.periodFrom)}&nbsp;&nbsp;&nbsp;To: ${fmtDate(d.periodTo)}`)}
-  </div>
-  ${q(1,'The name and address of all places the ward has resided during the preceding year.',ans(d.q1Residences))}
-  ${q(2,'Why is this the best placement for the ward?',ans(d.q2BestPlacement))}
-  ${q(3,'List all professional medical/mental health treatment the ward has received during the past year.',ans(d.q3MedicalTreatment))}
-  ${q(4,"What is/are the ward's current diagnosis and condition(s) which cause(s) him/her to continue to need a guardian advocate/guardian?",ans(d.q4Diagnosis))}
-  </div>`;
-
-  const directives=[
-    d.q8DNR?'Do Not Resuscitate ("DNR")':null,
-    d.q8LivingWill?'Living Will / Anatomical Gift':null,
-    d.q8Surrogate?'Healthcare Surrogate Designation':null,
-    d.q8POA?'Power of Attorney':null,
-    d.q8Other?`Other Advance Directive: ${esc(d.q8OtherText||'')}`:null,
-    d.q8None?'NONE':null,
-  ].filter(Boolean);
-
-  html+=`<div class="doc-page">${docHeaderPlanSimplified(ward,caseNo,'Plan','2')}
-  ${q(5,'What personal and social services were provided for the ward in the past year?',ans(d.q5SocialServices))}
-  ${q(6,'In the past year, how has the ward interacted with others, including the guardian advocate(s)/guardian(s) and family members?',ans(d.q6Interaction))}
-  ${q(7,'Should any of the rights previously delegated to the guardian advocate(s)/guardian(s) be restored to the ward at this time?',
-    `<strong>${yn(d.q7RestoreRights)}</strong>${d.q7RestoreRights==='Yes'?`<div style="margin-top:.25rem;">${ans(d.q7RestoreExplain)}</div>`:''}`)}
-  ${q(8,'Since the guardianship was established or the last annual guardianship report, the following was executed by or on behalf of the Ward:',
-    directives.length?`<ul style="margin:0;padding-left:1.1rem;">${directives.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<span style="color:#888">—</span>')}
-  ${q(9,'As the Guardian Advocate(s)/Guardian(s) have you received any payments, goods, or services for work or care provided on behalf of the ward?',
-    `<strong>${yn(d.q9Remuneration)}</strong>${d.q9Remuneration==='Yes'?`<div style="margin-top:.25rem;">${ans(d.q9RemunerationExplain)}</div>`:''}`)}
-  </div>`;
-
-  const sig=(g,label)=>{
-    if(!g||!(g.name||g.signatureDate||g.email||g.phone||g.mailingAddress))return '';
-    return `<div class="doc-signature-block" style="margin-bottom:1.1rem;">
-      <div class="attestation-text" style="font-size:.73rem;">Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.</div>
-      <div class="row">
-        <div class="col-6"><div class="doc-field-label">${label} Signature</div><div class="doc-signature-line"></div></div>
-        <div class="col-6"><div class="doc-field-label">Dated</div><div class="doc-signature-line">${fmtDate(g.signatureDate)}</div></div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-6"><div class="doc-field-label">Printed Name</div><div class="doc-signature-line">${esc(g.name)}</div></div>
-        <div class="col-6"><div class="doc-field-label">Email Address</div><div class="doc-signature-line">${esc(g.email)}</div></div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-6"><div class="doc-field-label">Phone Number</div><div class="doc-signature-line">${esc(g.phone)}</div></div>
-        <div class="col-6"><div class="doc-field-label">Mailing Address</div><div class="doc-signature-line">${esc(g.mailingAddress)}</div></div>
-      </div>
-    </div>`;
-  };
-  const g=d.planGuardians||[];
-  html+=`<div class="doc-page">${docHeaderPlanSimplified(ward,caseNo,'Signatures','3')}
-  <div class="doc-schedule-title">CERTIFICATION AND SIGNATURE OF GUARDIAN(S) / GUARDIAN ADVOCATE(S)</div>
-  ${sig(g[0],'Guardian / Guardian Advocate')||'<p style="font-size:.76rem;color:#888;">No signature entered.</p>'}
-  ${sig(g[1],'Guardian / Guardian Advocate')}
-  <p style="font-size:.72rem;margin-top:1rem;line-height:1.5;"><strong>Filing:</strong> For Pinellas County cases, file the original with the Clerk of the Circuit Court, 315 Court Street, Room 106, Clearwater, FL 33756. For Pasco County cases, provide the original to the Clerk &amp; Comptroller, P.O. Box 338, New Port Richey, FL 34656-0338. E-filing instructions are at myflcourtaccess.com.</p>
-  </div>`;
-
-  return html;
-}
 
 // planReadinessChecks() -- the shared dispatcher across all four Plan types
 // -- stays in legacy-app.js (Problem 3: planAnnual/planInitial/planMinor

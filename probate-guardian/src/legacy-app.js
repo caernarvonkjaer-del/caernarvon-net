@@ -1570,10 +1570,7 @@ let _pvSelection='1'; // '1'-based page number, or 'all'
 function pvPages(){
   const cont=document.getElementById('print-doc-container');
   if(!cont)return [];
-  // .pdf-page: Milestone 19-3's canvas+text-layer preview page. .doc-page:
-  // the pre-19-3 HTML reconstruction, kept here until Milestone 19-4 deletes
-  // buildPrintHTML() and its markup outright.
-  return [...cont.children].filter(el=>el.classList&&(el.classList.contains('doc-page')||el.classList.contains('pdf-page')));
+  return [...cont.children].filter(el=>el.classList&&el.classList.contains('pdf-page'));
 }
 function pvLabelFor(page,i){
   // docHeader() puts "<Schedule> — Page <n>" in the middle cell of .doc-meta.
@@ -6902,8 +6899,8 @@ async function mountAnnualNav(container){
 // Guardian Inventory's page/nav/validation/row UI moved to
 // src/features/guardian-inventory/index.js (Milestone 8, Phases A and B --
 // print/PDF/Excel import-export now live in that feature's print.js/
-// excel.js too). Shared capacity/PDF helpers (checkExcelCapacity(),
-// excelCapacityPanel(), groupScheduleBlocksForPdf(), ensureTemplate()),
+// excel.js too). Shared capacity/Excel helpers (checkExcelCapacity(),
+// excelCapacityPanel(), ensureTemplate()),
 // openFloridaCourtPortal(), and dashboard calc/mk stay legacy -- shared
 // with Annual/Simplified or needed synchronously before this feature loads.
 let _guardianFeatureBridge=null;
@@ -7388,45 +7385,7 @@ function excelCapacityPanel(over){
 // pagePrintAnnual()/doSavePdfAnnual() moved to
 // src/features/annual-accounting/print.js (Milestone 7, Phase B).
 
-// html2pdf picks page breaks by walking every element and inserting a spacer
-// <div> before any one that straddles a page edge. That walk is destructive
-// inside a table: a <table> whose top lands a few pixels above the edge is
-// pushed down by its own spacer, lands a sub-pixel amount past the next edge,
-// and the walk carries on into it — inserting a div into the <table>, into the
-// <thead>, and once before every <th>. Those stray divs become anonymous table
-// cells, so the header row grows a phantom column in front of each real one and
-// stops lining up with the body underneath. That is what scrambled the Schedule
-// B-4 header in filed accountings.
-//
-// Wrapping each schedule title together with its table in one block that
-// carries page-break-inside:avoid makes the whole schedule the thing that
-// moves, so the break lands between schedules and the walk never reaches into
-// a table. It also stops a title stranding alone at the foot of a page.
-// Returns a function that puts the DOM back the way it was.
-function groupScheduleBlocksForPdf(container){
-  const wrappers=[];
-  container.querySelectorAll('.doc-page').forEach(page=>{
-    let block=null;
-    [...page.children].forEach(child=>{
-      if(child.classList.contains('doc-schedule-title')){
-        block=document.createElement('div');
-        block.className='doc-block';
-        page.insertBefore(block,child);
-        wrappers.push(block);
-      }
-      // Everything after a title belongs to that schedule until the next one.
-      if(block)block.appendChild(child);
-    });
-  });
-  return function ungroup(){
-    wrappers.forEach(block=>{
-      const parent=block.parentNode;
-      if(!parent)return;
-      while(block.firstChild)parent.insertBefore(block.firstChild,block);
-      parent.removeChild(block);
-    });
-  };
-}
+
 
 // doSaveExcelAnnual()/importExcelAnnual() moved to
 // src/features/annual-accounting/excel.js (Milestone 7, Phase B).

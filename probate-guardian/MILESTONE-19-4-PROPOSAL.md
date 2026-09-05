@@ -30,12 +30,12 @@ Each item below needs to be checked for other consumers before deletion — some
 
 ## Acceptance Criteria
 
-- [ ] `buildPrintHTML()` removed from all seven features' `print.js`.
-- [ ] `@media print` block and `.pdf-export-mode` CSS removed from `index.html`.
-- [ ] `#pdf-content` legacy div removed (or explicitly kept with a documented reason if still referenced).
-- [ ] `src/assets/signature-font.js` removed (confirmed fully dead code — no hedge/keep case applies).
-- [ ] Dead `.doc-*` CSS classes removed, each individually confirmed to have zero remaining references first.
-- [ ] Full app smoke test (all seven features' Preview/Save-PDF/Print) after cleanup — no visual or functional regression.
+- [x] `buildPrintHTML()` removed from all seven features' `print.js`.
+- [x] `@media print` block and `.pdf-export-mode` CSS removed from `index.html`.
+- [x] `#pdf-content` legacy div removed (or explicitly kept with a documented reason if still referenced).
+- [x] `src/assets/signature-font.js` removed (confirmed fully dead code — no hedge/keep case applies).
+- [x] Dead `.doc-*` CSS classes removed, each individually confirmed to have zero remaining references first.
+- [x] Full app smoke test (all seven features' Preview/Save-PDF/Print) after cleanup — no visual or functional regression.
 
 ## Verification
 

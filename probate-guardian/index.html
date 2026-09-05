@@ -30,7 +30,7 @@
    fails badly as plain text on a dark surface (as low as 1.5:1) — those get
    a lighter tint instead. NONE of this reaches the court-document or PDF
    output paths: verified zero of these custom properties are referenced by
-   any .doc-*, #print-doc-container, #pdf-content, or exportHelpGuideAsPDF()
+   #print-doc-container or exportHelpGuideAsPDF()
    rule — those are independently hardcoded and immune to theme changes. */
 :root{
   /* Brand — deep court maroon. Used as an accent, never as a flood fill. */
@@ -270,12 +270,6 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .plan-benefits-table th,.plan-rights-table th,.plan-adl-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-4);font-weight:700;}
 .plan-benefits-table td,.plan-rights-table td,.plan-adl-table td{vertical-align:middle;color:var(--ink-2);}
 .plan-rights-table td:first-child,.plan-adl-table td:first-child{line-height:1.4;}
-/* Printed-document checkbox lists and free-text answers. Kept inside the
-   .doc-* family so they inherit the court-document type stack and the
-   pdf-export-mode overrides rather than picking up app-chrome styling. */
-.doc-checklist{margin:.2rem 0 .4rem;}
-.doc-check-row{font-size:.76rem;line-height:1.55;color:#000;}
-.doc-answer{font-size:.78rem;line-height:1.5;color:#000;border-bottom:1px solid #999;min-height:1.4rem;padding:.15rem 0;margin-bottom:.3rem;white-space:pre-wrap;}
 /* Readiness panel reuses .validation-panel's shell but is advisory, not an
    error state, so its accent is neutral rather than the danger red. */
 .readiness-panel{border-left-color:var(--accent);}
@@ -770,26 +764,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .pv-count{font-size:.78rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .pv-nav{display:flex;gap:.35rem;margin-left:auto;}
 .pv-nav .btn{padding:.28rem .6rem;font-size:.78rem;}
-/* Single-page mode. Only the chosen page is on screen. .pdf-page is the
-   Milestone 19-3 canvas+text-layer preview page; .doc-page is the pre-19-3
-   HTML reconstruction, still selected here until Milestone 19-4 removes it. */
-#print-doc-container.pv-single>.doc-page,#print-doc-container.pv-single>.pdf-page{display:none;}
-#print-doc-container.pv-single>.doc-page.pv-show,#print-doc-container.pv-single>.pdf-page.pv-show{display:block;}
-/* SAFETY NET — a preview filter must never reach paper. Browser print and the
-   html2canvas PDF path each force every page back on with !important, so an
-   incomplete filing cannot be produced even if the pager JS misbehaves or a
-   future edit forgets to clear the filter before exporting. */
-@media print{
-  #print-doc-container>.doc-page{display:block!important;}
-  .pv-bar{display:none!important;}
-}
-.pdf-export-mode #print-doc-container>.doc-page{display:block!important;}
-.pdf-export-mode .pv-bar{display:none!important;}
+/* Single-page mode. Only the chosen page is on screen. */
+#print-doc-container.pv-single>.pdf-page{display:none;}
+#print-doc-container.pv-single>.pdf-page.pv-show{display:block;}
 /* Court filings keep the original font and body colour verbatim — the
    app-shell typography must never change what a judge receives on paper.
    Body text here inherits, so without this it would pick up --ink-2. */
-#print-doc-container,#pdf-content,.doc-page{font-family:'Segoe UI',system-ui,sans-serif;color:#000;}
-.doc-page{background:#fff;border:1px solid #d0dae8;border-radius:4px;padding:1in;margin:0 auto 1.5rem;max-width:8.5in;}
+#print-doc-container{font-family:'Segoe UI',system-ui,sans-serif;color:#000;}
 /* Milestone 19-3: canvas+text-layer preview page (renders the actual
    generated PDF via pdf.js) -- deliberately its own class, not styled
    through .doc-page's padding/max-width above, since the canvas already
@@ -818,27 +799,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .pdf-page .textLayer span,.pdf-page .textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%;user-select:text;-webkit-user-select:text;}
 .pdf-page .textLayer .markedContent{display:contents;}
 .pdf-page .textLayer ::selection{background:rgba(0,100,255,.35);}
-.doc-header{text-align:center;margin-bottom:.75rem;}
-.doc-header .court-title{font-size:.82rem;font-weight:700;text-transform:uppercase;}
-.doc-header .doc-title{font-size:.88rem;font-weight:700;margin-top:.2rem;margin-bottom:1rem;}
-.doc-meta{display:flex;justify-content:space-between;font-size:.78rem;border-bottom:1px solid #000;border-top:1px solid #000;padding:.25rem 0;margin-bottom:1rem;}
-.doc-schedule-title{font-size:.82rem;font-weight:700;margin-bottom:.5rem;border-bottom:1px solid #000;padding-bottom:1px;width:fit-content;}
 .doc-table{width:100%;border-collapse:collapse;font-size:.73rem;}
 .doc-table th{background:#820024;color:#fff;padding:.28rem .38rem;text-align:left;font-size:.7rem;font-weight:600;}
 .doc-table th.right,.doc-table td.right{text-align:right;}
 .doc-table td{padding:.28rem .38rem;border-bottom:1px solid #ddd;vertical-align:top;}
 .doc-table tr:nth-child(even) td{background:#f9f9f9;}
 .doc-table .total-row td{font-weight:700;border-top:2px solid #1a2d4a;background:#eef3fa!important;}
-.doc-table-div{display:block;width:100%;font-size:.73rem;}
-.doc-table-div .tr{display:block;overflow:hidden;line-height:1.4;}
-.doc-table-div .tr:nth-child(even){background:#f9f9f9;}
-.doc-table-div .td{float:left;width:50%;padding:.28rem .38rem;border-bottom:1px solid #ddd;word-break:break-word;}
-.doc-table-div .td.right{text-align:right;}
-.doc-table-div .tr.total-row .td{font-weight:700;border-top:2px solid #1a2d4a;background:#eef3fa!important;}
 .attestation-text{font-size:.76rem;font-style:italic;margin-bottom:.75rem;}
-.doc-signature-block{margin-bottom:.75rem;}
-.doc-signature-line{border-bottom:1px solid #000;min-height:1.2rem;font-size:.75rem;padding:.1rem 0;}
-.doc-field-label{font-size:.7rem;color:#555;margin-top:.15rem;}
 /* Validation summary. The old panel was one flat pink wall of bullets that
    repeated its own section prefix on every line ("Cover — ", "D-1 Guardian
    #1 — " × 41). Grouping by section removes the repetition, gives a count
@@ -931,57 +898,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .inventory-convert-banner .btn{flex-shrink:0;width:auto;}
 .validation-error-field{border:1px solid var(--danger)!important;background-color:#fdf6f7;box-shadow:0 0 0 3px rgba(163,18,47,.12)!important;}
 [data-theme="dark"] .validation-error-field{background-color:var(--brand-050)!important;}
-@media print{
-  .sidebar,.app-shell>.sidebar,.no-print,.print-preview-banner,.page-nav,.mobile-topbar,.sidebar-backdrop{display:none!important;}
-  html,body,.app-shell{display:block!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;}
-  .main-content{display:block!important;width:100%!important;margin:0!important;padding:0!important;overflow:visible!important;}
-  #pdf-content{display:block!important;width:100%!important;}
-  @page{size:letter;margin:.5in;}
-  .doc-page{width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;border:none!important;page-break-after:always;}
-  .doc-table th{background-color:#820024!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  /* Same fixes as .pdf-export-mode below, so the browser's native Print /
-     "Save as PDF" (window.print / Ctrl+P) doesn't split a guardian's
-     signature block or a schedule row across a page boundary. */
-  tr,.doc-table-div .tr,.doc-signature-block,.doc-section-block{page-break-inside:avoid!important;break-inside:avoid!important;}
-  .doc-block{page-break-inside:avoid!important;break-inside:avoid!important;}
-  .doc-table-div{display:block!important;width:100%!important;}
-  .doc-table-div .tr{display:block!important;overflow:hidden!important;line-height:1.4!important;}
-  .doc-table-div .td{float:left!important;width:50%!important;padding:.28rem .38rem!important;border-bottom:1px solid #ddd!important;word-break:break-word!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-  .doc-table-div .tr:nth-child(even) .td{background:#f9f9f9!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-  .doc-table-div .tr.total-row .td{background:#eef3fa!important;border-top:2px solid #1a2d4a!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-  .row{display:block!important;overflow:hidden!important;margin:0!important;}
-  .row>[class*="col-"]{float:left!important;box-sizing:border-box!important;}
-  .col-3{width:25%!important;}
-  .col-4{width:33.3334%!important;}
-  .col-6{width:50%!important;}
-  .col-12{width:100%!important;float:none!important;}
-}
-.pdf-export-mode .sidebar,.pdf-export-mode .no-print,.pdf-export-mode .print-preview-banner,.pdf-export-mode .page-nav,.pdf-export-mode .mobile-topbar,.pdf-export-mode .sidebar-backdrop{display:none!important;}
-.pdf-export-mode html,.pdf-export-mode body,.pdf-export-mode .app-shell{display:block!important;width:100%!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;}
-.pdf-export-mode .main-content{display:block!important;width:100%!important;margin:0!important;padding:0!important;overflow:visible!important;}
-.pdf-export-mode .doc-page{width:7.5in!important;max-width:100%!important;margin:0 auto!important;padding:.5in!important;background:#fff!important;border:none!important;}
-.pdf-export-mode .schedule-page:not(.doc-page){margin-top:0!important;padding-top:.75in!important;}
-.pdf-export-mode tr,.pdf-export-mode .doc-table-div .tr,.pdf-export-mode .doc-signature-block,.pdf-export-mode .doc-section-block{page-break-inside:avoid!important;break-inside:avoid!important;}
-/* A schedule's title and its table move as one unit, so html2pdf breaks
-   BETWEEN schedules and never inside a table. See groupScheduleBlocksForPdf(). */
-.pdf-export-mode .doc-block{page-break-inside:avoid!important;break-inside:avoid!important;}
-.pdf-export-mode .doc-table th{background-color:#820024!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-.pdf-export-mode .doc-table-div{display:block!important;width:100%!important;}
-.pdf-export-mode .doc-table-div .tr{display:block!important;overflow:hidden!important;line-height:1.4!important;}
-.pdf-export-mode .doc-table-div .td{float:left!important;width:50%!important;padding:.28rem .38rem!important;border-bottom:1px solid #ddd!important;word-break:break-word!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-.pdf-export-mode .doc-table-div .tr:nth-child(even) .td{background:#f9f9f9!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-.pdf-export-mode .doc-table-div .tr.total-row .td{background:#eef3fa!important;border-top:2px solid #1a2d4a!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-/* Bootstrap's .row/.col-* grid is flexbox, which html2canvas renders unreliably
-   (columns silently stack full-width, inflating block height past a page and
-   breaking page-break-inside:avoid). Force the same float-based layout already
-   used for .doc-table-div so signature/declaration blocks render at their
-   true printed size. */
-.pdf-export-mode .row{display:block!important;overflow:hidden!important;margin:0!important;}
-.pdf-export-mode .row>[class*="col-"]{float:left!important;box-sizing:border-box!important;}
-.pdf-export-mode .col-3{width:25%!important;}
-.pdf-export-mode .col-4{width:33.3334%!important;}
-.pdf-export-mode .col-6{width:50%!important;}
-.pdf-export-mode .col-12{width:100%!important;float:none!important;}
 .help-panel{position:fixed;right:0;top:0;bottom:0;width:410px;max-width:100vw;background:var(--surface);border-left:1px solid var(--line);box-shadow:-2px 0 8px rgba(17,26,43,.04),-24px 0 60px -20px rgba(17,26,43,.3);z-index:5000;display:flex;flex-direction:column;animation:slideInRight .35s var(--ease);font-family:inherit;}
 @keyframes slideInRight{from{transform:translateX(100%);}to{transform:translateX(0);}}
 .help-panel-header{padding:1.15rem 1.3rem;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
@@ -1177,8 +1093,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
     <button type="button" class="walkthrough-next" data-shell-action="next-walkthrough">Next →</button>
   </div>
 </div>
-
-<div id="pdf-content" style="display:none;"></div>
 
 <!-- Open/start screen shown after the recovery and remembered-handle checks. -->
 <div id="startup-choice-overlay" class="modal-overlay" style="z-index:10002;">
