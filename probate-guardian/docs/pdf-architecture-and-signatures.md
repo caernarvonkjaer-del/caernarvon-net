@@ -68,27 +68,36 @@ To prevent "scanned document / OCR" warnings and satisfy accessibility requireme
 
 ---
 
-## 4. Electronic `/s/` Signatures
+## 4. Electronic `/s/` Signatures & Typography Consolidation
+
+### Typography Engine & Full Font Embedding (Milestone 19-5)
+
+All PDF generation across Probate Guardian is standardized on **Liberation Sans** (SIL Open Font License 1.1), embedded directly as subsetted TrueType font programs (`PG_SANS_REGULAR_B64`, `PG_SANS_BOLD_B64`, `PG_SANS_ITALIC_B64`) in `src/assets/embedded-fonts.js`:
+- **Regular**: Body copy, form fields, table data, narrative answers
+- **Bold**: Form titles, section headings, table headers, total rollups, signatures
+- **Italic**: Legal notices, statutory citations, italicized/script signature renderings
 
 ### Supported Presentation Modes
 
 1. **Typed `/s/` Signature (Default)**:
-   - Renders `/s/ Full Legal Name` in standard document serif/sans typography.
-2. **Script-style `/s/` Signature (Optional)**:
-   - Renders `/s/ Full Legal Name` in an elegant cursive style using locally bundled offline fonts.
-   - Text remains 100% vector-based, searchable, and extractable.
+   - Renders `/s/ Full Legal Name` in Liberation Sans Bold.
+2. **Script/Italic-style `/s/` Signature (Optional)**:
+   - Renders `/s/ Full Legal Name` in Liberation Sans Bold-Italic.
+   - Text remains 100% vector-based, searchable, and extractable via `/ToUnicode` CMaps.
 
 ---
 
-## 5. Phase 2 Roadmap: Tagged PDF / PDF/UA-1 Structure
+## 5. Tagged PDF / PDF/UA-1 (ISO 14289-1) Conformance
 
-While Phase 1 delivers 100% non-raster text, metadata, bookmarks, high contrast, and accessible reading order, full **PDF/UA-1 (ISO 14289-1)** compliance requires deep structural tagging.
+Probate Guardian generates fully compliant **PDF/UA-1 (ISO 14289-1)** documents conforming to WCAG 2.1 AA and Section 508 accessibility standards:
 
-### Phase 2 Implementation Requirements:
+### Structural Tagging & Engine Features:
 
 1. **Structure Tree Root (`/StructTreeRoot`)**: A logical tree mapping every visual block to standard tags (`/Document`, `/Part`, `/H1`, `/H2`, `/Table`, `/TR`, `/TH`, `/TD`, `/P`, `/Figure`).
-2. **Marked Content Operators (`BDC ... EMC`)**: Wrapping every text operator on every page with a unique structure tag identifier (`/MCID`).
+2. **Marked Content Operators (`BDC ... EMC`)**: Wrapping 100% of text operators across all pages with unique structure tag identifiers (`/MCID`).
 3. **Role Mapping Dictionary (`/RoleMap`)**: Mapping custom role identifiers to standard PDF structure types.
-4. **Header/Footer Artifacts**: Tagging repeated running headers, court captions, and page number footers with `/Artifact` so screen readers do not read them repetitively mid-sentence.
+4. **Header/Footer Artifacts**: Tagging repeated running headers, court captions, and page number footers with `/Artifact` so screen readers skip repetitive chrome.
+5. **Full Font Embedding (`/FontFile2`, `/FontDescriptor`, `/CIDFontType2`, `/ToUnicode`)**: All glyphs embedded with TrueType programs and Unicode mapping tables, satisfying PDF/UA-1 Clause 7.2 (Zero standard-14 metric dependencies, zero external network requests).
+6. **XMP Metadata & Identification**: Emits `<pdfuaid:part>1</pdfuaid:part>` and Dublin Core (`dc:title`, `dc:creator`, `dc:description`, `pdf:Keywords`) metadata packets.
 
-> Full milestone specification, Adobe Acrobat 32-rule verification matrix, and implementation slices are detailed in [`MILESTONE-19-PROPOSAL.md`](../MILESTONE-19-PROPOSAL.md).
+> Full milestone specification and implementation slices are detailed in [`MILESTONE-19-PROPOSAL.md`](../MILESTONE-19-PROPOSAL.md) and [`MILESTONE-19-5-PROPOSAL.md`](../MILESTONE-19-5-PROPOSAL.md).

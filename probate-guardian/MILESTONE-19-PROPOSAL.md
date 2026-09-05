@@ -312,6 +312,6 @@ To independently verify conformance using Adobe Acrobat Pro:
 - [ ] Confirmation of manual check pass for Logical Reading Order and Color Contrast.
 - [ ] Commitment of the saved Adobe Acrobat Accessibility Report (`.html`) into the repository.
 
-### C. Full PDF/UA-1 Conformance (Deferred)
+### C. Full PDF/UA-1 Conformance (Completed in Milestone 19-5)
 
-- [ ] TrueType font embedding (e.g. FreeSans / OpenSans) for all document fonts, font descriptors, and default enablement of `pdfuaid:part 1`. (Deferred to future font-embedding milestone).
+- [x] TrueType font embedding (Liberation Sans: Regular, Bold, Italic) for all document fonts, font descriptors, and default enablement of `pdfuaid:part 1`. (Completed in [`MILESTONE-19-5-PROPOSAL.md`](MILESTONE-19-5-PROPOSAL.md)).

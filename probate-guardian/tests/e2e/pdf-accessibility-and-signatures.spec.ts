@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
+import { extractPdfText } from './support/pdf-extract';
 
 test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
   test('generates native vector/text PDF with metadata, hierarchical bookmarks, and selectable /s/ signatures', async ({ page }) => {
@@ -208,10 +209,11 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(c2Pos).toBeGreaterThan(0);
     expect(c3Pos).toBeGreaterThan(c2Pos);
 
-    // Selectable /s/ Signature Text Extraction Verification
-    expect(rawPdfString).toContain('/s/ Rachel M. Alvarez');
-    expect(rawPdfString).toContain('/s/ Marcus Thorne');
-    expect(rawPdfString).toContain('/s/ Robert Vance, Esq.');
-    expect(rawPdfString).toContain('/s/ Elena Rostova');
+    // Selectable /s/ Signature Text Extraction Verification (Unicode decoded via /ToUnicode CMap)
+    const extractedText = await extractPdfText(rawPdfString);
+    expect(extractedText).toContain('/s/ Rachel M. Alvarez');
+    expect(extractedText).toContain('/s/ Marcus Thorne');
+    expect(extractedText).toContain('/s/ Robert Vance, Esq.');
+    expect(extractedText).toContain('/s/ Elena Rostova');
   });
 });

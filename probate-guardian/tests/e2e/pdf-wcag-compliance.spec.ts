@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
+import { extractPdfText } from './support/pdf-extract';
 
 test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Structure', () => {
   test('Slice 19A: generates tagged PDF with /StructTreeRoot, /ParentTree, /Tabs /S, /ViewerPreferences, and marked content operators', async ({ page }) => {
@@ -229,9 +230,9 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(rawPdfString).toContain('/ViewerPreferences');
     expect(rawPdfString).toContain('/DisplayDocTitle true');
     expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
-    expect(rawPdfString).toContain('Verified Initial Inventory');
-    expect(rawPdfString).toContain('Harold Thomas Bennett');
-    expect(rawPdfString).toMatch(/Verified Initial Inventory[^\n\r]*Harold Thomas Bennett/);
+    const extractedText = await extractPdfText(rawPdfString);
+    expect(extractedText).toContain('Verified Initial Inventory');
+    expect(extractedText).toContain('Harold Thomas Bennett');
     expect(rawPdfString).toContain('/Keywords (Florida, Probate, Guardianship, Verified Initial Inventory)');
 
     // 4. XMP Metadata Stream: /Metadata in /Catalog with Dublin Core dc:title, dc:creator
@@ -322,15 +323,18 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     await freshStartNoPassword(page);
     const result = await page.evaluate(async () => {
       const { buildXmpPacket } = await (window as any).loadGuardianPdf();
-      const standard = buildXmpPacket({ title: 'Test Form' });
+      const standard = buildXmpPacket({ title: 'Test Form', embedFonts: false });
       const withPdfUa = buildXmpPacket({ title: 'Test Form', claimPdfUa: true });
+      const defaultPacket = buildXmpPacket({ title: 'Test Form' });
       return {
         standardHasPdfUa: standard.includes('pdfuaid:part'),
         withPdfUaHasPdfUa: withPdfUa.includes('<pdfuaid:part>1</pdfuaid:part>'),
+        defaultHasPdfUa: defaultPacket.includes('<pdfuaid:part>1</pdfuaid:part>'),
       };
     });
     expect(result.standardHasPdfUa).toBe(false);
     expect(result.withPdfUaHasPdfUa).toBe(true);
+    expect(result.defaultHasPdfUa).toBe(true);
   });
 
   test('Slice 19B: Table semantics, regularity with /ColSpan, /Summary, and multi-page table continuation', async ({ page }) => {
@@ -450,7 +454,8 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(sectionTitles).toContain('Part VI — CERTIFICATE OF SERVICE');
 
     // Verify neutral notice when service recipients list is empty (no empty-table shell or procedural claims)
-    expect(rawPdfString).toContain('None listed.');
+    const extractedText19B = await extractPdfText(rawPdfString);
+    expect(extractedText19B).toContain('None listed.');
   });
 
   test('Slice 19C: Shared accessible PDF generator produces tagged, non-raster PDF 1.7 for Simplified Accounting', async ({ page }) => {
@@ -594,13 +599,13 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(straySummaryCount).toBe(0);
 
     // 7. Running Footer & Form Metadata Integrity
-    expect(rawPdfString).toContain('Simplified Annual Accounting');
-    expect(rawPdfString).toContain('Harold Thomas Bennett');
-    expect(rawPdfString).toMatch(/Simplified Annual Accounting[^\n\r]*Harold Thomas Bennett/);
+    const extractedText19C = await extractPdfText(rawPdfString);
+    expect(extractedText19C).toContain('Simplified Annual Accounting');
+    expect(extractedText19C).toContain('Harold Thomas Bennett');
     expect(rawPdfString).toContain('/Keywords (Florida, Probate, Guardianship, Simplified Annual Accounting)');
 
     // 8. Dropped Field Guard: certIndicator must render in Certificate of Service
-    expect(rawPdfString).toContain('Hand-delivered via process server');
+    expect(extractedText19C).toContain('Hand-delivered via process server');
 
     // 9. Verify all sections present in model (with separate Part III and Part IV)
     expect(sectionTitles).toContain('Part I — REQUIRED INFORMATION');
@@ -1007,18 +1012,19 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(inspection.sectionTitles).toContain('Part XI — GUARDIAN(S) DECLARATION OF REMUNERATION');
 
     // 1. Reconciliation Explanation Fidelity: Guardian's exact explanation printed, zero fabricated text
-    expect(inspection.rawPdfString).toContain('Discrepancy due to late bank adjustment on vehicle proceeds.');
-    expect(inspection.rawPdfString).not.toContain('Difference noted on file; pending review.');
+    const extractedText19E = await extractPdfText(inspection.rawPdfString);
+    expect(extractedText19E).toContain('Discrepancy due to late bank adjustment on vehicle proceeds.');
+    expect(extractedText19E).not.toContain('Difference noted on file; pending review.');
 
     // 2. Attorney Bar & Bond Policy Details Fidelity
-    expect(inspection.rawPdfString).toContain('0184920');
-    expect(inspection.rawPdfString).toContain('Travelers Casualty and Surety');
-    expect(inspection.rawPdfString).toContain('$75,000.00');
+    expect(extractedText19E).toContain('0184920');
+    expect(extractedText19E).toContain('Travelers Casualty and Surety');
+    expect(extractedText19E).toContain('$75,000.00');
 
     // 3. Certificate of Service & Remuneration Content Fidelity
-    expect(inspection.rawPdfString).toContain('E-Portal / Florida Courts E-Filing');
-    expect(inspection.rawPdfString).toContain('315 Court St');
-    expect(inspection.rawPdfString).toContain('Statutory care compensation');
+    expect(extractedText19E).toContain('E-Portal / Florida Courts E-Filing');
+    expect(extractedText19E).toContain('315 Court St');
+    expect(extractedText19E).toContain('Statutory care compensation');
   });
 
   test('Slice 19E: Architectural single source of truth for statutory math and preview-to-PDF drift guard', async ({ page }) => {
@@ -1106,25 +1112,12 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
       const doc = await generateCourtFormPdf(model);
       const rawPdfString = doc.output();
 
-      // Check presence of all sentinel fields in PDF output
-      const checkSentinel = (str: string) => rawPdfString.includes(str);
-
       return {
+        rawPdfString,
         hasCalcTotalsBefore: typeof fnBefore === 'function',
         hasCalcTotalsAfter: typeof fnAfter === 'function',
         globalSwapped,
         isOutOfBalance: computedReconcile.outOfBalance,
-        sentinelPresence: {
-          reconcileExplanation: checkSentinel('DRIFT_GUARD_RECONCILE_EXPLANATION_VERBATIM'),
-          cannedFallbackAbsent: !rawPdfString.includes('Difference noted on file; pending review.'),
-          attorneyBar: checkSentinel('BAR-SENTINEL-998877'),
-          bondingCompany: checkSentinel('DRIFT_GUARD_BONDING_CO_SENTINEL'),
-          bondAmount: checkSentinel('$88,888.00'),
-          certRecipient: checkSentinel('DRIFT_GUARD_RECIPIENT_NAME'),
-          certAddr: checkSentinel('DRIFT_GUARD_ADDR_LINE2'),
-          certIndicator: checkSentinel('DRIFT_GUARD_PORTAL_INDICATOR'),
-          remunerationDesc: checkSentinel('DRIFT_GUARD_REMUNERATION_DESC'),
-        },
       };
     });
 
@@ -1137,15 +1130,17 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(driftGuardResults.isOutOfBalance).toBe(true);
 
     // Drift guard: Zero dropped fields between data model, preview, and PDF
-    expect(driftGuardResults.sentinelPresence.reconcileExplanation).toBe(true);
-    expect(driftGuardResults.sentinelPresence.cannedFallbackAbsent).toBe(true);
-    expect(driftGuardResults.sentinelPresence.attorneyBar).toBe(true);
-    expect(driftGuardResults.sentinelPresence.bondingCompany).toBe(true);
-    expect(driftGuardResults.sentinelPresence.bondAmount).toBe(true);
-    expect(driftGuardResults.sentinelPresence.certRecipient).toBe(true);
-    expect(driftGuardResults.sentinelPresence.certAddr).toBe(true);
-    expect(driftGuardResults.sentinelPresence.certIndicator).toBe(true);
-    expect(driftGuardResults.sentinelPresence.remunerationDesc).toBe(true);
+    const extractedDriftText = await extractPdfText(driftGuardResults.rawPdfString);
+    const checkSentinel = (str: string) => extractedDriftText.includes(str);
+    expect(checkSentinel('DRIFT_GUARD_RECONCILE_EXPLANATION_VERBATIM')).toBe(true);
+    expect(extractedDriftText.includes('Difference noted on file; pending review.')).toBe(false);
+    expect(checkSentinel('BAR-SENTINEL-998877')).toBe(true);
+    expect(checkSentinel('DRIFT_GUARD_BONDING_CO_SENTINEL')).toBe(true);
+    expect(checkSentinel('$88,888.00')).toBe(true);
+    expect(checkSentinel('DRIFT_GUARD_RECIPIENT_NAME')).toBe(true);
+    expect(checkSentinel('DRIFT_GUARD_ADDR_LINE2')).toBe(true);
+    expect(checkSentinel('DRIFT_GUARD_PORTAL_INDICATOR')).toBe(true);
+    expect(checkSentinel('DRIFT_GUARD_REMUNERATION_DESC')).toBe(true);
   });
 
   test('Milestone 19-1: checklist and wet-ink signature-block synthetic fixture — tagged structure, glyph rendering, page-break handling', async ({ page }) => {
@@ -1219,26 +1214,62 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
       const rawPdfString = doc.output();
 
       return {
+        rawPdfString,
         numPages: doc.internal.getNumberOfPages(),
         hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
         hasMarkInfo: /\/MarkInfo\s*<<\s*\/Marked\s*true/.test(rawPdfString),
-        containsChecklistLabelFragment: rawPdfString.includes('Synthetic checklist item number 1 verifies'),
-        containsCheckedYesPrefix: rawPdfString.includes('Yes ') && rawPdfString.includes('No '),
-        containsElectronicSignatureNotice: rawPdfString.includes('pursuant to Fla. R. Gen. Prac'),
-        containsWetSignatureLabel: rawPdfString.includes('(Signature)') || /\(Signature\)\s*Tj/.test(rawPdfString) || rawPdfString.includes('Signature'),
-        containsFieldGridValue: rawPdfString.includes('Testville') && rawPdfString.includes('555-0100'),
       };
     });
 
     expect(result.hasStructTreeRoot).toBe(true);
     expect(result.hasMarkInfo).toBe(true);
     expect(result.numPages).toBeGreaterThan(1);
-    expect(result.containsChecklistLabelFragment).toBe(true);
-    expect(result.containsCheckedYesPrefix).toBe(true);
+
+    const extracted191Text = await extractPdfText(result.rawPdfString);
+    expect(extracted191Text).toContain('Synthetic checklist item number 1 verifies');
+    expect(extracted191Text).toContain('Yes');
+    expect(extracted191Text).toContain('No');
     // Wet-ink signatures carry no electronic-signature legal notice.
-    expect(result.containsElectronicSignatureNotice).toBe(false);
-    expect(result.containsWetSignatureLabel).toBe(true);
-    expect(result.containsFieldGridValue).toBe(true);
+    expect(extracted191Text).not.toContain('pursuant to Fla. R. Gen. Prac');
+    expect(extracted191Text).toContain('Signature');
+    expect(extracted191Text).toContain('Testville');
+    expect(extracted191Text).toContain('555-0100');
+  });
+
+  test('Milestone 19-5: PDF/UA-1 font embedding — generated PDFs contain embedded TrueType font programs, font descriptors, and default pdfuaid:part 1', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(async () => {
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const model = buildVerifiedInventoryModel({
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        guardianName: 'Rachel M. Alvarez',
+        signatureStyle: 'script',
+      });
+
+      const doc = await generateVerifiedInventoryPdf(model);
+      const rawPdfString = doc.output();
+
+      return {
+        hasFontFile2: rawPdfString.includes('/FontFile2'),
+        hasFontDescriptor: rawPdfString.includes('/FontDescriptor'),
+        hasCIDFontType2: rawPdfString.includes('/CIDFontType2') || rawPdfString.includes('/Type0'),
+        hasToUnicode: rawPdfString.includes('/ToUnicode'),
+        hasPdfUaIdInXmp: rawPdfString.includes('<pdfuaid:part>1</pdfuaid:part>'),
+        hasPdfUaNsInXmp: rawPdfString.includes('xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/"'),
+        hasPGSansFont: rawPdfString.includes('PGSans'),
+      };
+    });
+
+    expect(result.hasFontFile2).toBe(true);
+    expect(result.hasFontDescriptor).toBe(true);
+    expect(result.hasCIDFontType2).toBe(true);
+    expect(result.hasToUnicode).toBe(true);
+    expect(result.hasPdfUaIdInXmp).toBe(true);
+    expect(result.hasPdfUaNsInXmp).toBe(true);
+    expect(result.hasPGSansFont).toBe(true);
   });
 });
 

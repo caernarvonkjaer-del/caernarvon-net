@@ -13,12 +13,14 @@
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
     "measure:baseline": "node scripts/measure-baseline.mjs",
-    "measure:lifecycle": "node scripts/measure-lifecycle.mjs"
+    "measure:lifecycle": "node scripts/measure-lifecycle.mjs",
+    "generate:fonts": "node scripts/generate-embedded-font.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^6.3.289",
+    "subset-font": "^2.7.0",
     "vite": "^8.2.2",
     "vite-plugin-singlefile": "^2.3.3",
     "vite-plugin-static-copy": "^4.1.1",

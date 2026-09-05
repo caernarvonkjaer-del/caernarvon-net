@@ -11,6 +11,11 @@ import {
   writeArtifactStart,
   writeArtifactEnd,
 } from './pdf-accessibility.js';
+import {
+  PG_SANS_REGULAR_B64,
+  PG_SANS_BOLD_B64,
+  PG_SANS_ITALIC_B64,
+} from '../../assets/embedded-fonts.js';
 
 export async function createJsPdfInstance() {
   if (typeof window === 'undefined') return null;
@@ -42,6 +47,17 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.__private__.setPdfVersion('1.7');
   }
 
+  // Register embedded TrueType font programs (Liberation Sans) for PDF/UA-1 conformance
+  if (typeof doc.addFileToVFS === 'function' && typeof doc.addFont === 'function') {
+    doc.addFileToVFS('PGSans-Regular.ttf', PG_SANS_REGULAR_B64);
+    doc.addFont('PGSans-Regular.ttf', 'PGSans', 'normal');
+    doc.addFileToVFS('PGSans-Bold.ttf', PG_SANS_BOLD_B64);
+    doc.addFont('PGSans-Bold.ttf', 'PGSans', 'bold');
+    doc.addFileToVFS('PGSans-Italic.ttf', PG_SANS_ITALIC_B64);
+    doc.addFont('PGSans-Italic.ttf', 'PGSans', 'italic');
+  }
+  doc.setFont('PGSans', 'normal');
+
   const { metadata, sections } = model;
   const wardName = metadata.wardName || 'Ward';
   const caseNumber = metadata.caseNumber || '';
@@ -49,7 +65,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   const signatureStyle = metadata.signatureStyle || 'typed';
 
   // Initialize PDF/UA-1 and WCAG 2.1 structure tree & accessibility hooks
-  const structureTree = new PdfStructureTree(metadata);
+  const structureTree = new PdfStructureTree({ embedFonts: true, ...metadata });
   attachAccessibilityHooks(doc, structureTree);
 
   // 1. Set Document Properties & Metadata
@@ -86,7 +102,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   const drawHeader = (sectionTitle) => {
     writeArtifactStart(doc, 'Pagination', 'Header');
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('PGSans', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(26, 45, 74); // Court Navy (#1a2d4a)
     doc.text(`IN THE CIRCUIT COURT FOR ${county} COUNTY, FLORIDA`, pageWidth / 2, 28, { align: 'center' });
@@ -95,7 +111,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     const formTitle = (metadata.formName || 'VERIFIED INITIAL INVENTORY').toUpperCase();
     doc.text(`PROBATE DIVISION — ${formTitle}`, pageWidth / 2, 40, { align: 'center' });
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('PGSans', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(80, 90, 105);
     doc.text(`Ward: ${wardName}`, margin, 52);
@@ -110,7 +126,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   const drawFooter = (currentP, totalP) => {
     writeArtifactStart(doc, 'Pagination', 'Footer');
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('PGSans', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(110, 120, 135);
     doc.setDrawColor(220, 225, 235);
@@ -187,7 +203,7 @@ export async function generateCourtFormPdf(model, options = {}) {
       parent: partNode,
     });
     writeMarkedContentStart(doc, hTag, hNode.mcid);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('PGSans', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(130, 0, 36); // Court Maroon (#820024)
     doc.text(sec.title, margin, curY + 12);
@@ -197,7 +213,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     // Render Blocks in this Section
     for (const block of (sec.blocks || sec.renderBlocks || [])) {
       if (block.type === 'notice') {
-        doc.setFont('helvetica', 'italic');
+        doc.setFont('PGSans', 'italic');
         doc.setFontSize(9);
         doc.setTextColor(70, 80, 95);
         const lines = doc.splitTextToSize(block.text, contentWidth);
@@ -234,7 +250,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: partNode,
           });
           writeMarkedContentStart(doc, subHTag, subHNode.mcid);
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(26, 45, 74);
           doc.text(block.title, margin, curY + 10);
@@ -263,10 +279,10 @@ export async function generateCourtFormPdf(model, options = {}) {
 
         const measureKvItem = (item, valueMaxW) => {
           if (!item) return { labelLines: [], valueLines: [], lines: 1 };
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(8);
           const labelLines = doc.splitTextToSize(String(item.label || ''), KV_LABEL_MAX_W);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           const valueLines = doc.splitTextToSize(String(item.value || ''), valueMaxW);
           return { labelLines, valueLines, lines: Math.max(labelLines.length, valueLines.length, 1) };
@@ -309,7 +325,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: trNode,
           });
           writeMarkedContentStart(doc, 'TH', th1Node.mcid);
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(60, 70, 85);
           doc.text(m1.labelLines, margin + 4, curY + 12);
@@ -324,7 +340,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: trNode,
           });
           writeMarkedContentStart(doc, 'TD', td1Node.mcid);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(20, 25, 35);
           doc.text(m1.valueLines, margin + 115, curY + 12);
@@ -347,7 +363,7 @@ export async function generateCourtFormPdf(model, options = {}) {
               parent: trNode,
             });
             writeMarkedContentStart(doc, 'TH', th2Node.mcid);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('PGSans', 'bold');
             doc.setFontSize(8);
             doc.setTextColor(60, 70, 85);
             doc.text(m2.labelLines, col2X + 4, curY + 12);
@@ -360,7 +376,7 @@ export async function generateCourtFormPdf(model, options = {}) {
               parent: trNode,
             });
             writeMarkedContentStart(doc, 'TD', td2Node.mcid);
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(20, 25, 35);
             doc.text(m2.valueLines, col2X + 115, curY + 12);
@@ -399,7 +415,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: partNode,
           });
           writeMarkedContentStart(doc, subHTag, chHNode.mcid);
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(26, 45, 74);
           doc.text(block.title, margin, curY + 10);
@@ -415,7 +431,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           const label = String((item && item.label) || '');
           const checked = !!(item && item.checked);
           const prefix = checked ? 'Yes — ' : 'No — ';
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(9);
           const lines = doc.splitTextToSize(prefix + label, CHECK_LABEL_MAX_W);
           const rowHeight = Math.max(CHECK_LINE_H, lines.length * CHECK_LINE_H);
@@ -439,7 +455,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: partNode,
           });
           writeMarkedContentStart(doc, 'P', rowNode.mcid);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(9);
           doc.setTextColor(30, 35, 45);
           doc.text(lines, margin + 16, curY + 8);
@@ -462,7 +478,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: partNode,
           });
           writeMarkedContentStart(doc, subHTag, tblHNode.mcid);
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(9.5);
           doc.setTextColor(26, 45, 74);
           doc.text(tblTitle, margin, curY + 10);
@@ -489,7 +505,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.rect(margin, curY, contentWidth, headerHeight, 'S');
           writeArtifactEnd(doc);
 
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(26, 45, 74);
 
@@ -540,13 +556,13 @@ export async function generateCourtFormPdf(model, options = {}) {
         const measureCell = (cellData, colW) => {
           const usableW = Math.max(20, colW - 10);
           if (isMixedCell(cellData)) {
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
             const mainLines = doc.splitTextToSize(String(cellData.main || ''), usableW);
             const subGroups = (cellData.sub || []).filter(Boolean).map((s) => {
               const text = typeof s === 'string' ? s : (s.text || '');
               const italic = typeof s === 'object' && !!s.italic;
-              doc.setFont('helvetica', italic ? 'italic' : 'normal');
+              doc.setFont('PGSans', italic ? 'italic' : 'normal');
               doc.setFontSize(MIXED_SUB_FONT_SIZE);
               return { lines: doc.splitTextToSize(String(text), usableW), italic };
             });
@@ -554,7 +570,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             const heightPt = (mainLines.length * 10) + (subLineTotal * MIXED_SUB_LINE_H) + (subGroups.length ? 2 : 0);
             return { isMixed: true, mainLines, subGroups, heightPt };
           }
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           const lines = doc.splitTextToSize(String(cellData || ''), usableW);
           return { isMixed: false, lines, heightPt: lines.length * 10 };
@@ -562,18 +578,18 @@ export async function generateCourtFormPdf(model, options = {}) {
 
         const drawCell = (measured, textX, yTop, align) => {
           if (!measured.isMixed) {
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
             doc.text(measured.lines, textX, yTop + 11, { align });
             return;
           }
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(30, 35, 45);
           doc.text(measured.mainLines, textX, yTop + 11, { align });
           let y = yTop + 11 + (measured.mainLines.length * 10) - 4;
           for (const group of measured.subGroups) {
-            doc.setFont('helvetica', group.italic ? 'italic' : 'normal');
+            doc.setFont('PGSans', group.italic ? 'italic' : 'normal');
             doc.setFontSize(MIXED_SUB_FONT_SIZE);
             doc.setTextColor(100, 110, 125);
             doc.text(group.lines, textX, y + 6, { align });
@@ -691,7 +707,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: totalTr,
           });
           writeMarkedContentStart(doc, 'TD', totalLabelTd.mcid);
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('PGSans', 'bold');
           doc.setFontSize(8.5);
           doc.setTextColor(26, 45, 74);
           doc.text(totals.label, margin + 6, curY + 12);
@@ -712,7 +728,7 @@ export async function generateCourtFormPdf(model, options = {}) {
               parent: totalTr,
             });
             writeMarkedContentStart(doc, 'TD', totalValTd.mcid);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('PGSans', 'bold');
             doc.setFontSize(8.5);
             doc.setTextColor(26, 45, 74);
             doc.text(String(totalValues[vIdx].value ?? ''), valX + colW - 6, curY + 12, { align: 'right' });
@@ -764,7 +780,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           parent: sigPartNode,
         });
         writeMarkedContentStart(doc, subHTag, roleNode.mcid);
-        doc.setFont('helvetica', 'bold');
+        doc.setFont('PGSans', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(26, 45, 74);
         doc.text(block.role || 'Signer', margin + 8, curY + 14);
@@ -778,7 +794,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: sigPartNode,
           });
           writeMarkedContentStart(doc, 'P', dateNode.mcid);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(80, 90, 100);
           doc.text(`Date: ${block.signatureDate}`, pageWidth - margin - 8, curY + 14, { align: 'right' });
@@ -803,7 +819,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: sigPartNode,
           });
           writeMarkedContentStart(doc, 'P', sigLabelNode.mcid);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
           doc.text('Signature', margin + 8, curY + 52);
@@ -818,14 +834,14 @@ export async function generateCourtFormPdf(model, options = {}) {
           });
           writeMarkedContentStart(doc, 'P', sigTextNode.mcid);
           if (signatureStyle === 'script') {
-            // Script-style rendering using Times-Italic with stylistic padding
-            doc.setFont('times', 'italic');
+            // Script-style rendering using PGSans-Italic with stylistic padding
+            doc.setFont('PGSans', 'italic');
             doc.setFontSize(13);
             doc.setTextColor(15, 35, 75);
             doc.text(block.signature || `/s/ ${block.signerName}`, margin + 12, curY + 38);
           } else {
             // Standard typed /s/ rendering
-            doc.setFont('times', 'bold');
+            doc.setFont('PGSans', 'bold');
             doc.setFontSize(10.5);
             doc.setTextColor(20, 25, 35);
             doc.text(block.signature || `/s/ ${block.signerName}`, margin + 10, curY + 38);
@@ -839,7 +855,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: sigPartNode,
           });
           writeMarkedContentStart(doc, 'P', sigLegalNoticeNode.mcid);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
           doc.text('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 8, curY + 52);
@@ -866,11 +882,11 @@ export async function generateCourtFormPdf(model, options = {}) {
                 parent: sigPartNode,
               });
               writeMarkedContentStart(doc, 'P', fieldNode.mcid);
-              doc.setFont('helvetica', 'bold');
+              doc.setFont('PGSans', 'bold');
               doc.setFontSize(7);
               doc.setTextColor(70, 80, 95);
               doc.text(String(field.label || ''), fx, rowY);
-              doc.setFont('helvetica', 'normal');
+              doc.setFont('PGSans', 'normal');
               doc.setFontSize(7.5);
               doc.setTextColor(30, 35, 45);
               doc.text(String(field.value), fx, rowY + 10);
@@ -893,11 +909,11 @@ export async function generateCourtFormPdf(model, options = {}) {
                 parent: sigPartNode,
               });
               writeMarkedContentStart(doc, 'P', detailNode.mcid);
-              doc.setFont('helvetica', 'bold');
+              doc.setFont('PGSans', 'bold');
               doc.setFontSize(7.5);
               doc.setTextColor(70, 80, 95);
               doc.text(`${k}: `, margin + 280, detailY);
-              doc.setFont('helvetica', 'normal');
+              doc.setFont('PGSans', 'normal');
               doc.text(String(val), margin + 340, detailY);
               writeMarkedContentEnd(doc);
               detailY += 11;

@@ -88,12 +88,12 @@ Today's 5 style combos span two unrelated font families: `helvetica` normal/bold
 ---
 
 ## Acceptance Criteria
-
-- [ ] Liberation Sans Regular/Bold/Italic subsetted, licensed, and embedded as base64 assets.
-- [ ] All `doc.setFont('helvetica'|'times', ...)` call sites in `pdf-engine.js` migrated to the embedded `'PGSans'` family.
-- [ ] `pdfuaid:part 1` emitted by default from the real `generateCourtFormPdf` path (not just a direct `buildXmpPacket()` unit call).
-- [ ] E2E suite extended with `/FontFile2` / `/FontDescriptor` / `/CIDFontType2` assertions; full `pdf-wcag-compliance.spec.ts` suite passes.
-- [ ] `web` and `portable` builds both verified offline with zero network requests.
-- [ ] Bundle size baseline re-measured and recorded.
+ 
+- [x] Liberation Sans Regular/Bold/Italic subsetted, licensed, and embedded as base64 assets.
+- [x] All `doc.setFont('helvetica'|'times', ...)` call sites in `pdf-engine.js` migrated to the embedded `'PGSans'` family.
+- [x] `pdfuaid:part 1` emitted by default from the real `generateCourtFormPdf` path (not just a direct `buildXmpPacket()` unit call).
+- [x] E2E suite extended with `/FontFile2` / `/FontDescriptor` / `/CIDFontType2` assertions; full `pdf-wcag-compliance.spec.ts` suite passes.
+- [x] `web` and `portable` builds both verified offline with zero network requests.
+- [x] Bundle size baseline re-measured and recorded.
 - [ ] veraPDF PDF/UA-1 profile run and report committed (operator execution).
 - [ ] Adobe Acrobat Pro Full Check re-confirmed with fonts embedded (operator execution).

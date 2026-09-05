@@ -27,7 +27,7 @@ export class PdfStructureNode {
 
 export class PdfStructureTree {
   constructor(metadata = {}) {
-    this.metadata = metadata;
+    this.metadata = { embedFonts: true, ...metadata };
     this.rootNode = new PdfStructureNode({ tag: 'Document' });
     this.currentNode = this.rootNode;
     this.mcidCounterByPage = {}; // pageNumber (1-based) -> next MCID integer
@@ -214,22 +214,20 @@ function escapeXml(str) {
 }
 
 // Note on PDF/UA-1: ISO 14289-1 clause 7.21.4.1 requires all fonts to be embedded
-// (/FontFile). Because standard-14 Type1 fonts (Helvetica, Times) are used without
-// embedded font descriptors, declaring <pdfuaid:part>1</pdfuaid:part> would cause veraPDF/PAC
-// to flag font non-conformance. Acrobat Pro's 32-rule Accessibility Full Check tests
-// WCAG 2.1 AA (Tagged PDF, Language, Title, Tab Order, Headings, Tables, Artifacts),
-// which does not require font embedding. We only emit <pdfuaid:part>1</pdfuaid:part> if
-// fonts are embedded (metadata.embedFonts === true or metadata.claimPdfUa === true).
+// (/FontFile2). With Liberation Sans TrueType fonts embedded in the vector engine,
+// <pdfuaid:part>1</pdfuaid:part> and the pdfuaid namespace are emitted by default
+// (unless metadata.embedFonts === false).
 export function buildXmpPacket(metadata = {}) {
   const title = escapeXml(metadata.title || 'Verified Initial Inventory');
   const author = escapeXml(metadata.author || 'Probate Guardian');
   const subject = escapeXml(metadata.subject || 'Verified Initial Inventory');
   const dateIso = new Date().toISOString();
 
-  const pdfUaNs = (metadata.claimPdfUa || metadata.embedFonts)
+  const isPdfUa = metadata.claimPdfUa || (metadata.embedFonts !== false && (metadata.embedFonts === true || metadata.claimPdfUa === undefined));
+  const pdfUaNs = isPdfUa
     ? '\n        xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/"'
     : '';
-  const pdfUaTag = (metadata.claimPdfUa || metadata.embedFonts)
+  const pdfUaTag = isPdfUa
     ? '\n      <pdfuaid:part>1</pdfuaid:part>'
     : '';
 
