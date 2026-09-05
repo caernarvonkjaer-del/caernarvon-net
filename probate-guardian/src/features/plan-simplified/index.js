@@ -216,8 +216,15 @@ function pagePlanSSignatures(){
   const g=d.planGuardians||[];
   const block=(i,label)=>{
     const p=g[i]||{};
+    const slashSChecked = p.useSlashS !== false ? 'checked' : '';
     return `<div class="plan-sig-block">
-      <h3>${label}</h3>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="m-0">${label}</h3>
+        <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
+          <input class="form-check-input" type="checkbox" role="switch" ${slashSChecked} data-form-path="planGuardians.${i}.useSlashS" style="cursor:pointer;">
+          <span>Use /s/ format</span>
+        </label>
+      </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
         <div class="col-md-6"><label class="form-label">Date Signed${i===0?'<span class="req">*</span>':''}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>

@@ -362,6 +362,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     tag: 'Part',
     role: `Guardian #${i + 1}`,
     signerName: g.name || '',
+    useSlashS: g.useSlashS !== false,
     signature: formatSignature(g.name),
     signatureStyle,
     signatureDate: fmtDate(g.signatureDate),
@@ -378,6 +379,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     tag: 'Part',
     role: 'Preparer',
     signerName: preparer.name || '',
+    useSlashS: preparer.useSlashS !== false,
     signature: formatSignature(preparer.name),
     signatureStyle,
     signatureDate: fmtDate(preparer.signatureDate),
@@ -408,6 +410,15 @@ export function buildVerifiedInventoryModel(D, options = {}) {
 
   // 15. Part III-B: Attorney Attestation
   const attorney = d.attorney || {};
+  const attorneyDetails = {
+    'Florida Bar #': attorney.barNumber || '',
+    'Filing Date': fmtDate(attorney.filingDate),
+    'Phone': attorney.phone || '',
+    'Primary Email': attorney.email || '',
+    ...(attorney.secondaryEmail ? { 'Secondary Email': attorney.secondaryEmail } : {}),
+    'Address': `${attorney.streetAddress || ''}, ${attorney.cityStateZip || ''}`.replace(/^, /, ''),
+  };
+
   sections.push({
     id: 'd2_attorney',
     title: 'Part III-B — ATTORNEY ATTESTATION',
@@ -426,15 +437,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'Part',
         role: 'Attorney for Guardian',
         signerName: attorney.name || '',
+        useSlashS: attorney.useSlashS !== false,
         signature: formatSignature(attorney.name),
         signatureStyle,
         signatureDate: fmtDate(attorney.signatureDate),
-        details: {
-          'Florida Bar #': attorney.barNumber || '',
-          'Filing Date': fmtDate(attorney.filingDate),
-          'Phone': attorney.phone || '',
-          'Address': `${attorney.streetAddress || ''}, ${attorney.cityStateZip || ''}`.replace(/^, /, ''),
-        },
+        details: attorneyDetails,
       },
     ],
   });
@@ -493,11 +500,6 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           type: 'table',
           tag: 'Table',
           title: 'Service Recipients',
-          // "Method of Service" was previously invented here (defaulted
-          // to 'Electronic / Portal') with no such field in the source
-          // data or the HTML preview; per-recipient dateServed (present
-          // in the HTML preview) was dropped in its place. Replaced with
-          // the field that actually exists.
           headers: ['Recipient Name', 'Address', 'Date Served'],
           rows: d.serviceRecipients.map(r => [r.name || '', `${r.address || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), fmtDate(r.dateServed || d.serviceDate)]),
           colWidths: [35, 45, 20],
@@ -514,12 +516,14 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'Part',
         role: 'Attorney for Guardian (Service)',
         signerName: serviceAttorney.name || '',
+        useSlashS: serviceAttorney.useSlashS !== false && attorney.useSlashS !== false,
         signature: formatSignature(serviceAttorney.name),
         signatureStyle,
         signatureDate: fmtDate(serviceAttorney.signatureDate),
         details: {
           'Florida Bar #': serviceAttorney.barNumber || '',
           'Phone': serviceAttorney.phone || '',
+          'Primary Email': serviceAttorney.email || attorney.email || '',
           'Address': `${serviceAttorney.streetAddress || ''}, ${serviceAttorney.cityStateZip || ''}`.replace(/^, /, ''),
         },
       },

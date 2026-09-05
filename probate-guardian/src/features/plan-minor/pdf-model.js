@@ -173,13 +173,13 @@ export function buildPlanMinorModel(D) {
     ],
   });
 
-  // A wet-ink signature block: signerName has no other place to render in
-  // wet-ink mode, so it's included as the first field.
-  const wetSigBlock = (role, p, fields) => ({
+  // A signature block respecting useSlashS slider state
+  const makeSigBlock = (role, p, fields, useSlashS) => ({
     type: 'signature-block',
     role,
     signerName: p.name || '',
-    wetSignature: true,
+    useSlashS: useSlashS !== false,
+    wetSignature: useSlashS === false,
     signatureDate: fmtDate(p.signatureDate),
     fields,
   });
@@ -215,8 +215,8 @@ export function buildPlanMinorModel(D) {
         type: 'notice',
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
-      wetSigBlock('Guardian', g[0] || {}, guardianFields(g[0] || {})),
-      wetSigBlock('Co-Guardian', g[1] || {}, guardianFields(g[1] || {})),
+      makeSigBlock('Guardian', g[0] || {}, guardianFields(g[0] || {}), (g[0] || {}).useSlashS),
+      makeSigBlock('Co-Guardian', g[1] || {}, guardianFields(g[1] || {}), (g[1] || {}).useSlashS),
     ],
   });
 
@@ -234,21 +234,21 @@ export function buildPlanMinorModel(D) {
         title: 'Certification and Signature of Preparer',
         text: 'The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification of the information contained herein. I have not audited or reviewed the guardianship plan or documents supporting its preparation, and accordingly do not express an opinion or any other form of assurance as to the accuracy of the information contained in the plan.',
       },
-      wetSigBlock('Preparer', { name: d.preparer_name, signatureDate: d.preparer_signatureDate }, [
+      makeSigBlock('Preparer', { name: d.preparer_name, signatureDate: d.preparer_signatureDate }, [
         [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Taxpayer ID #', value: d.preparer_tin || '' }, { label: 'Telephone #', value: d.preparer_phone || '' }],
         [{ label: 'Email Address', value: d.preparer_email || '' }],
         [{ label: 'Mailing Address', value: d.preparer_mailingStreet || '' }, { label: 'City / State / Zip', value: d.preparer_cityStateZip || '' }],
-      ]),
+      ], d.preparer_useSlashS),
       {
         type: 'notice',
         title: "Certification and Signature of Guardian's Attorney",
         text: "The undersigned hereby notifies the Court of the filing of this Annual Guardianship Plan. This plan is the representation of the guardian. I have not audited the accompanying plan. The undersigned attorney represents that he/she has examined the contents of this plan and that it conforms to the requirements of the Florida Guardianship Law.",
       },
-      wetSigBlock("Guardian's Attorney", { name: d.attorney_name, signatureDate: d.attorney_signatureDate }, [
-        [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Bar Number', value: d.attorney_bar || '' }, { label: 'Phone Number', value: d.attorney_phone || '' }],
-        [{ label: 'Email Address', value: d.attorney_email || '' }],
+      makeSigBlock("Guardian's Attorney", { name: d.attorney_name, signatureDate: d.attorney_signatureDate }, [
+        [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
+        [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondary_email || '' }],
         [{ label: 'Mailing Address', value: d.attorney_street || '' }, { label: 'City / State / Zip', value: d.attorney_cityStateZip || '' }],
-      ]),
+      ], d.attorney_useSlashS),
     ],
   });
 

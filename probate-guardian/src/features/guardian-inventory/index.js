@@ -837,8 +837,10 @@ function pageD1(){
     const isFirst=i===0;
     const title=isFirst?'Guardian #1':`Co-Guardian #${i+1}`;
     const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
+    const useSlashS = g.useSlashS !== false;
+    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="g_slashs_${i}" ${useSlashS?'checked':''} data-bind="guardians.${i}.useSlashS"><label class="form-check-label" for="g_slashs_${i}">Use /s/ format</label></div>`;
     return `<div class="entry-card mb-3">
-      <div class="entry-card-header"><span>${title}</span>${removeBtn}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${slashSlider}${removeBtn}</div></div>
       <div class="entry-card-body">
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
@@ -857,6 +859,11 @@ function pageD1(){
 }
 
 function pageD2(){
+  const prepSlashS = D.preparer?.useSlashS !== false;
+  const prepSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="prep_slashs" ${prepSlashS?'checked':''} data-bind="preparer.useSlashS"><label class="form-check-label" for="prep_slashs">Use /s/ format</label></div>`;
+  const attySlashS = D.attorney?.useSlashS !== false;
+  const attySlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="atty_slashs" ${attySlashS?'checked':''} data-bind="attorney.useSlashS"><label class="form-check-label" for="atty_slashs">Use /s/ format</label></div>`;
+
   return `<div class="schedule-page">
   <h1>Part IV: Preparer &amp; Guardian Attorney Attestations</h1>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Preparer Signature</h2>
@@ -864,6 +871,10 @@ function pageD2(){
     If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.
   </p>
   <div class="entry-card mb-4">
+    <div class="entry-card-header d-flex justify-content-between align-items-center">
+      <span>Preparer Attestation</span>
+      ${prepSlider}
+    </div>
     <div class="entry-card-body">
       ${formRow(col(5,reqLabel("Preparer's Name")+textInput('preparer.name','','name')),col(3,reqLabel('Date')+dateInput('preparer.signatureDate')),col(4,reqLabel('SSN / EIN')+textInput('preparer.ssnEin','','ssn')))}
       ${formRow(col(4,reqLabel('Phone Number')+textInput('preparer.phone','','phone')),col(8,reqLabel('Street Address')+textInput('preparer.streetAddress','','address')))}
@@ -873,9 +884,14 @@ function pageD2(){
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
   <div class="entry-card">
+    <div class="entry-card-header d-flex justify-content-between align-items-center">
+      <span>Attorney Attestation</span>
+      ${attySlider}
+    </div>
     <div class="entry-card-body">
       ${formRow(col(5,reqLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('attorney.signatureDate')),col(4,reqLabel('Filing Date (as of)')+dateInput('attorney.filingDate')))}
       ${formRow(col(4,reqLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,reqLabel('Phone Number')+textInput('attorney.phone','','phone')))}
+      ${formRow(col(6,reqLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,reqLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,reqLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
     </div>
   </div>

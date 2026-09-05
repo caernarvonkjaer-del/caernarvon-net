@@ -295,9 +295,15 @@ function pagePlanMSignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    const set=f=>`D.planGuardians[${i}].${f}=this.value;autoSave();updateNavDots()`;
+    const slashSChecked = gd.useSlashS !== false ? 'checked' : '';
     return `<div class="plan-sig-block">
-      <h3>${title}</h3>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="m-0">${title}</h3>
+        <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
+          <input class="form-check-input" type="checkbox" role="switch" ${slashSChecked} data-form-path="planGuardians.${i}.useSlashS" style="cursor:pointer;">
+          <span>Use /s/ format</span>
+        </label>
+      </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
         <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
@@ -330,9 +336,17 @@ function pagePlanMSignatures(){
 
 function pagePlanMPreparerAttorney(){
   const d=window.D;
+  const prepSlashSChecked = d.preparer_useSlashS !== false ? 'checked' : '';
+  const attySlashSChecked = d.attorney_useSlashS !== false ? 'checked' : '';
   return `<div class="schedule-page">
     <h1>Certification of Preparer &amp; Attorney</h1>
-    <h2 class="subsection-heading">Certification and Signature of Preparer</h2>
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-1">
+      <h2 class="subsection-heading m-0">Certification and Signature of Preparer</h2>
+      <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
+        <input class="form-check-input" type="checkbox" role="switch" ${prepSlashSChecked} data-form-path="preparer_useSlashS" style="cursor:pointer;">
+        <span>Use /s/ format</span>
+      </label>
+    </div>
     <div class="schedule-instructions">The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification. The preparer has not audited or reviewed the guardianship plan or supporting documents.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('preparer_name','Preparer Name',d.preparer_name,true)}</div>
@@ -343,7 +357,13 @@ function pagePlanMPreparerAttorney(){
       <div class="col-md-8">${inpS('preparer_cityStateZip','Preparer City / State / Zip',d.preparer_cityStateZip)}</div>
       <div class="col-md-4">${inpS('preparer_email','Preparer Email Address',d.preparer_email)}</div>
     </div>
-    <h2 class="subsection-heading mt-4">Certification and Signature of Guardian's Attorney</h2>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-1">
+      <h2 class="subsection-heading m-0">Certification and Signature of Guardian's Attorney</h2>
+      <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
+        <input class="form-check-input" type="checkbox" role="switch" ${attySlashSChecked} data-form-path="attorney_useSlashS" style="cursor:pointer;">
+        <span>Use /s/ format</span>
+      </label>
+    </div>
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of this plan. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('attorney_name','Attorney Name',d.attorney_name,true)}</div>
@@ -352,7 +372,8 @@ function pagePlanMPreparerAttorney(){
       <div class="col-md-6">${inpS('attorney_cityStateZip','Attorney City / State / Zip',d.attorney_cityStateZip)}</div>
       <div class="col-md-3">${inpS('attorney_phone','Attorney Telephone #',d.attorney_phone)}</div>
       <div class="col-md-3">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,true,'date')}</div>
-      <div class="col-12">${inpS('attorney_email',"Guardian's Attorney Email Address",d.attorney_email)}</div>
+      <div class="col-md-6">${inpS('attorney_email',"Primary Email (required for e-filing)",d.attorney_email)}</div>
+      <div class="col-md-6">${inpS('attorney_secondary_email',"Secondary Email (optional)",d.attorney_secondary_email)}</div>
     </div>
     ${renderScheduleDocsSection('planMPreparerAttorney')}
     ${pageNavS('/p6','/print')}

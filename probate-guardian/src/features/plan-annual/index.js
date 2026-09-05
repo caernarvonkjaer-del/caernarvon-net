@@ -510,10 +510,14 @@ function pagePlanASignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const block=(i,label)=>{
     const p=g[i]||{};
-    const set=f=>`D.planGuardians[${i}].${f}=this.value;autoSave();updateNavDots()`;
     const reqMark=i===0?'<span class="req">*</span>':'';
+    const useSlashS = p.useSlashS !== false;
+    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pa_g_slashs_${i}" ${useSlashS?'checked':''} data-form-path="planGuardians.${i}.useSlashS"><label class="form-check-label" for="pa_g_slashs_${i}">Use /s/ format</label></div>`;
     return `<div class="plan-sig-block">
-      <h3>${label}</h3>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="mb-0">${label}</h3>
+        ${slashSlider}
+      </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
         <div class="col-md-3"><label class="form-label">Date Signed${reqMark}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
@@ -528,6 +532,8 @@ function pagePlanASignatures(){
       </div>
     </div>`;
   };
+  const attySlashS = d.attorney_useSlashS !== false;
+  const attySlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pa_atty_slashs" ${attySlashS?'checked':''} data-form-path="attorney_useSlashS"><label class="form-check-label" for="pa_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
     <h1>Signatures</h1>
     <h2 class="subsection-heading">Certification of Guardian(s)</h2>
@@ -546,15 +552,20 @@ function pagePlanASignatures(){
     ${block(0,'Guardian')}
     ${block(1,'Co-Guardian (if any)')}
     ${block(2,'Co-Guardian (if any)')}
-    <h2 class="subsection-heading mt-4">Certification of Guardian's Attorney</h2>
+    <div class="d-flex justify-content-between align-items-center mt-4">
+      <h2 class="subsection-heading mb-0">Certification of Guardian's Attorney</h2>
+      ${attySlider}
+    </div>
     <div class="schedule-instructions">The attorney notifies the court of this filing and represents that the plan conforms to Florida Guardianship Law. Leave blank if no attorney is involved.</div>
     <div class="row g-2">
       <div class="col-md-6">${inpS('attorney','Attorney Name',d.attorney)}</div>
       <div class="col-md-3">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
       <div class="col-md-3">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
       <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
+      <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+      <div class="col-md-4">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
       <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street)}</div>
-      <div class="col-md-12">${inpS('attorney_cityStateZip','City / State / ZIP',d.attorney_cityStateZip)}</div>
+      <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / ZIP',d.attorney_cityStateZip)}</div>
     </div>
     ${renderScheduleDocsSection('planASignatures')}
     ${pageNavS('/p10',null)}

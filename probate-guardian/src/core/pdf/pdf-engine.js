@@ -16,6 +16,10 @@ import {
   PG_SANS_BOLD_B64,
   PG_SANS_ITALIC_B64,
 } from '../../assets/embedded-fonts.js';
+import {
+  getFloridaCircuitCourtCaption,
+  getCaseCaptionTitle,
+} from './circuit-lookup.js';
 
 export async function createJsPdfInstance() {
   if (typeof window === 'undefined') return null;
@@ -88,30 +92,60 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setLanguage('en-US');
   }
 
-  // Page geometry (Letter = 612 x 792 pt)
+  // Page geometry (Rule 2.520: Letter = 612 x 792 pt with 1.0-inch / 72 pt margins)
   const pageWidth = 612;
   const pageHeight = 792;
-  const margin = 36;
-  const contentWidth = pageWidth - (margin * 2); // 540 pt
-  const pageBottom = pageHeight - 45; // Leave room for footer
+  const margin = 72; // 1.0 inch
+  const contentWidth = pageWidth - (margin * 2); // 468 pt
+  const pageBottom = pageHeight - 54; // Leave room for footer
 
   let curY = margin;
   let pageNum = 1;
   const pageNumbersBySection = {};
   const parentOutlineMap = {};
 
-  const drawHeader = (sectionTitle) => {
+  const drawFirstPagePleadingHeader = () => {
     writeArtifactStart(doc, 'Pagination', 'Header');
+    const caption = getFloridaCircuitCourtCaption(county);
+
     doc.setFont('PGSans', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(26, 45, 74); // Court Navy (#1a2d4a)
-    doc.text(`IN THE CIRCUIT COURT FOR ${county} COUNTY, FLORIDA`, pageWidth / 2, 26, { align: 'center' });
+    doc.setFontSize(10.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text(caption.line1, pageWidth / 2, 50, { align: 'center' });
+    doc.text(caption.line2, pageWidth / 2, 64, { align: 'center' });
 
     doc.setFontSize(10);
-    const formTitle = (metadata.formName || 'VERIFIED INITIAL INVENTORY').toUpperCase();
+    doc.text(caption.division, pageWidth / 2, 78, { align: 'center' });
+    doc.text(`REF #: ${caseNumber || 'Pending'}`, pageWidth / 2, 92, { align: 'center' });
+
+    const caseCaption = getCaseCaptionTitle(wardName, metadata.wardType);
+    doc.setFontSize(11);
+    doc.text(caseCaption, margin, 122);
+
+    const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();
+    doc.setFontSize(12.5);
+    doc.text(formTitle, pageWidth / 2, 152, { align: 'center' });
+
+    const titleW = doc.getTextWidth(formTitle);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.75);
+    doc.line((pageWidth - titleW) / 2, 155, (pageWidth + titleW) / 2, 155);
+    writeArtifactEnd(doc);
+  };
+
+  const drawContinuationHeader = (sectionTitle) => {
+    writeArtifactStart(doc, 'Pagination', 'Header');
+    const caption = getFloridaCircuitCourtCaption(county);
+    doc.setFont('PGSans', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(26, 45, 74); // Court Navy (#1a2d4a)
+    doc.text(`${caption.line1} ${caption.line2}`, pageWidth / 2, 26, { align: 'center' });
+
+    doc.setFontSize(9);
+    const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();
     doc.text(`PROBATE DIVISION — ${formTitle}`, pageWidth / 2, 38, { align: 'center' });
 
-    // Framed 3-column bounded metadata bar
+    // Framed 3-column bounded metadata bar (contentWidth = 468 pt)
     const barTop = 46;
     const barHeight = 18;
     doc.setFillColor(248, 249, 251);
@@ -120,31 +154,39 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setLineWidth(0.75);
     doc.rect(margin, barTop, contentWidth, barHeight, 'S');
 
-    // Column dividers
-    doc.line(margin + 180, barTop, margin + 180, barTop + barHeight);
-    doc.line(margin + 360, barTop, margin + 360, barTop + barHeight);
+    // Column dividers (3 equal columns: 156 pt each)
+    doc.line(margin + 156, barTop, margin + 156, barTop + barHeight);
+    doc.line(margin + 312, barTop, margin + 312, barTop + barHeight);
 
     doc.setFont('PGSans', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(50, 60, 75);
     doc.text(`Ward: ${wardName}`, margin + 6, barTop + 12);
-    doc.text(sectionTitle || '', margin + 270, barTop + 12, { align: 'center' });
+    doc.text(sectionTitle || '', margin + 234, barTop + 12, { align: 'center' });
     doc.text(`Case #: ${caseNumber || 'Pending'}`, pageWidth - margin - 6, barTop + 12, { align: 'right' });
     writeArtifactEnd(doc);
+  };
+
+  const drawHeader = (sectionTitle) => {
+    if (pageNum === 1) {
+      drawFirstPagePleadingHeader();
+    } else {
+      drawContinuationHeader(sectionTitle);
+    }
   };
 
   const drawFooter = (currentP, totalP) => {
     writeArtifactStart(doc, 'Pagination', 'Footer');
     doc.setFont('PGSans', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(8);
     doc.setTextColor(110, 120, 135);
     doc.setDrawColor(220, 225, 235);
     doc.setLineWidth(0.5);
-    doc.line(margin, pageHeight - 32, pageWidth - margin, pageHeight - 32);
+    doc.line(margin, pageHeight - 44, pageWidth - margin, pageHeight - 44);
 
     const footerSubtitle = metadata.formSubtitle || metadata.formName || 'Florida Guardianship Report';
-    doc.text(`${footerSubtitle} — ${wardName}`, margin, pageHeight - 20);
-    doc.text(`Page ${currentP} of ${totalP}`, pageWidth - margin, pageHeight - 20, { align: 'right' });
+    doc.text(`${footerSubtitle} — ${wardName}`, margin, pageHeight - 30);
+    doc.text(`Page ${currentP} of ${totalP}`, pageWidth - margin, pageHeight - 30, { align: 'right' });
     writeArtifactEnd(doc);
   };
 
@@ -165,7 +207,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   // Draw initial first page header
   drawHeader(sections[0]?.title || 'Part I — Required Information');
-  curY = 74;
+  curY = 175;
 
   // 2. Render each section in order with semantic structure tagging
   for (let sIdx = 0; sIdx < sections.length; sIdx++) {
@@ -214,11 +256,11 @@ export async function generateCourtFormPdf(model, options = {}) {
     writeMarkedContentStart(doc, hTag, hNode.mcid);
     doc.setFont('PGSans', 'bold');
     if (hTag === 'H1') {
-      doc.setFontSize(11);
+      doc.setFontSize(12);
       doc.setTextColor(0, 0, 0); // Bold Black for H1
       doc.text(sec.title, margin, curY + 12);
     } else {
-      doc.setFontSize(9.5);
+      doc.setFontSize(11);
       doc.setTextColor(26, 45, 74); // Court Navy for H2
       doc.text(sec.title, margin, curY + 10);
     }
@@ -238,11 +280,13 @@ export async function generateCourtFormPdf(model, options = {}) {
     // Render Blocks in this Section
     for (const block of (sec.blocks || sec.renderBlocks || [])) {
       if (block.type === 'notice') {
-        doc.setFont('PGSans', 'italic');
-        doc.setFontSize(9);
-        doc.setTextColor(70, 80, 95);
+        doc.setFont('PGSans', block.fontStyle || 'italic');
+        const fs = block.fontSize || 9.5;
+        doc.setFontSize(fs);
+        doc.setTextColor(60, 70, 85);
+        const lineHeight = fs * 1.35;
         const lines = doc.splitTextToSize(block.text, contentWidth - 16);
-        const boxHeight = (lines.length * 12) + 12;
+        const boxHeight = (lines.length * lineHeight) + 12;
         checkPageSpace(boxHeight, sec.title);
 
         writeArtifactStart(doc, 'Layout');
@@ -259,7 +303,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           parent: partNode,
         });
         writeMarkedContentStart(doc, 'P', pNode.mcid);
-        doc.text(lines, margin + 8, curY + 13);
+        doc.text(lines, margin + 8, curY + 12);
         writeMarkedContentEnd(doc);
         curY += boxHeight + 8;
       }
@@ -827,7 +871,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         // full-width deliberate column groups (replacing the old flat
         // `details` vertical stack, which lost the source HTML's grouping
         // and ordering by rendering Object.keys() in a single column).
-        const isWetSignature = block.wetSignature === true;
+        const isWetSignature = block.wetSignature === true || block.useSlashS === false;
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
         const FIELD_ROW_H = 18;
         const baseSigHeight = isWetSignature ? 46 : 64;
@@ -903,7 +947,8 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: sigPartNode,
           });
           writeMarkedContentStart(doc, 'P', sigTextNode.mcid);
-          if (signatureStyle === 'script') {
+          const effectiveStyle = block.signatureStyle || signatureStyle;
+          if (effectiveStyle === 'script') {
             // Script-style rendering using PGSans-Italic with stylistic padding
             doc.setFont('PGSans', 'italic');
             doc.setFontSize(12);

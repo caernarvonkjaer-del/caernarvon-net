@@ -466,8 +466,10 @@ function pagePart3Annual(){
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
   <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>`;
   d.guardians.forEach((g,i)=>{
+    const useSlashS = g.useSlashS !== false;
+    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="ann_g_slashs_${i}" ${useSlashS?'checked':''} data-annual-path="guardians.${i}.useSlashS"><label class="form-check-label" for="ann_g_slashs_${i}">Use /s/ format</label></div>`;
     html+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">${labels[i]}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span>${slashSlider}</div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`)}</div>
@@ -490,8 +492,13 @@ function pagePart3Annual(){
 // ── Part IV ──────────────────────────────────────────────
 function pagePart4Annual(){
   const d=window.D; const p=d.preparer;
+  const prepSlashS = p.useSlashS !== false;
+  const prepSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="ann_prep_slashs" ${prepSlashS?'checked':''} data-annual-path="preparer.useSlashS"><label class="form-check-label" for="ann_prep_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
-  <h1>Part IV — Preparer Attestation</h1>
+  <div class="d-flex justify-content-between align-items-center">
+    <h1>Part IV — Preparer Attestation</h1>
+    ${prepSlider}
+  </div>
   <div class="attestation-text">I have compiled the accompanying Annual Accounting of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of <strong>${esc(d.wardName)||'[ward]'}</strong> for the period <strong>${fmtD(d.periodFrom)}</strong> through <strong>${fmtD(d.periodTo)}</strong>. This compilation is limited to presenting information in the form of an Annual Accounting and is the representation of the guardian. I have not audited or reviewed the accompanying guardianship accounting and, accordingly, do not express an opinion or any other form of assurance on it.</div>
   <div style="color:var(--brand-text);font-size:.8rem;font-weight:700;margin-bottom:.75rem;">*** If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE. ***</div>
   <div class="row g-2">
@@ -509,14 +516,21 @@ function pagePart4Annual(){
 // ── Part V ───────────────────────────────────────────────
 function pagePart5Annual(){
   const d=window.D;
+  const attySlashS = d.attorney_useSlashS !== false;
+  const attySlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="ann_atty_slashs" ${attySlashS?'checked':''} data-annual-path="attorney_useSlashS"><label class="form-check-label" for="ann_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
-  <h1>Part V — Guardian Attorney Signature</h1>
+  <div class="d-flex justify-content-between align-items-center">
+    <h1>Part V — Guardian Attorney Signature</h1>
+    ${attySlider}
+  </div>
   <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the annual guardianship accounting of the Guardian <strong>${esc(d.wardName)||'[ward]'}</strong> for the period <strong>${fmtD(d.periodFrom)}</strong> through <strong>${fmtD(d.periodTo)}</strong>. This annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in <strong>${d.attorney_county||d.county||'[county]'}</strong> County, Florida.</div>
   <div class="row g-2">
     <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
     <div class="col-md-3">${inpDWithTooltip("Signature Date ",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",true,'date')}</div>
     <div class="col-md-4">${inpD("Bar Number ",d.attorney_bar,"D.attorney_bar=this.value")}</div>
     <div class="col-md-4">${inpD("Phone Number ",d.attorney_phone,"D.attorney_phone=this.value")}</div>
+    <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",true,'email')}</div>
+    <div class="col-md-4">${inpD("Secondary Email (optional)",d.attorney_secondaryEmail,"D.attorney_secondaryEmail=this.value",false,'email')}</div>
     <div class="col-md-8">${inpD("Street Address ",d.attorney_street,"D.attorney_street=this.value")}</div>
     <div class="col-md-10">${inpD("City / State / Zip Code ",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value")}</div>
     <div class="col-md-2">${countyInputD("County",d.attorney_county,"D.attorney_county=this.value")}</div>

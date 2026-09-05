@@ -430,9 +430,13 @@ function pagePlanISignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    const set=f=>`D.planGuardians[${i}].${f}=this.value;autoSave();updateNavDots()`;
+    const useSlashS = gd.useSlashS !== false;
+    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pi_g_slashs_${i}" ${useSlashS?'checked':''} data-form-path="planGuardians.${i}.useSlashS"><label class="form-check-label" for="pi_g_slashs_${i}">Use /s/ format</label></div>`;
     return `<div class="plan-sig-block">
-      <h3>${title}</h3>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="mb-0">${title}</h3>
+        ${slashSlider}
+      </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
         <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
@@ -468,12 +472,19 @@ function pagePlanISignatures(){
 
 function pagePlanIAttorney(){
   const d=window.D;
+  const attySlashS = d.attorney_useSlashS !== false;
+  const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pi_atty_slashs" ${attySlashS?'checked':''} data-form-path="attorney_useSlashS"><label class="form-check-label" for="pi_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
-    <h1>Certification and Signature of Guardian's Attorney</h1>
+    <div class="d-flex justify-content-between align-items-center">
+      <h1>Certification and Signature of Guardian's Attorney</h1>
+      ${slashSlider}
+    </div>
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
       <div class="col-md-6">${inpS('attorney_bar','Attorney Bar Number',d.attorney_bar)}</div>
+      <div class="col-md-6">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+      <div class="col-md-6">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
       <div class="col-12">${inpS('attorney_street','Attorney Address',d.attorney_street)}</div>
       <div class="col-md-8">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
       <div class="col-md-4">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>

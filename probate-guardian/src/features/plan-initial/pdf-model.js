@@ -4,8 +4,9 @@
 // tagged/vector PDF engine's block vocabulary, replacing the raster
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
-export function buildPlanInitialModel(D) {
+export function buildPlanInitialModel(D, options) {
   const d = D || {};
+  const signatureStyle = (options && options.signatureStyle) || d.signatureStyle || 'typed';
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
   const county = d.county || 'Pinellas';
@@ -407,20 +408,22 @@ export function buildPlanInitialModel(D) {
     })) : [{ type: 'notice', text: 'No advance directives on file.' }],
   });
 
-  // A wet-ink signature block: signerName has no other place to render in
-  // wet-ink mode (unlike electronic /s/ mode, which draws it on the
-  // signature line itself), so it's included as the first field.
-  const wetSigBlock = (role, p) => ({
-    type: 'signature-block',
-    role,
-    signerName: p.name || '',
-    wetSignature: true,
-    signatureDate: fmtDate(p.signatureDate),
-    fields: [
-      [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: p.ssn || '' }, { label: 'Phone Number', value: p.phone || '' }],
-      [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Street Address', value: p.street || '' }, { label: 'City / State / ZIP', value: p.cityStateZip || '' }],
-    ],
-  });
+  const makeSigBlock = (role, p) => {
+    const useSlashS = p.useSlashS !== false;
+    return {
+      type: 'signature-block',
+      role,
+      signerName: p.name || '',
+      useSlashS,
+      wetSignature: !useSlashS,
+      signatureDate: fmtDate(p.signatureDate),
+      signatureStyle,
+      fields: [
+        [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: p.ssn || '' }, { label: 'Phone Number', value: p.phone || '' }],
+        [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Street Address', value: p.street || '' }, { label: 'City / State / ZIP', value: p.cityStateZip || '' }],
+      ],
+    };
+  };
 
   // Page 9: Certification + guardian signatures
   const g = d.planGuardians || [];
@@ -448,8 +451,8 @@ export function buildPlanInitialModel(D) {
         type: 'notice',
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
-      wetSigBlock('Guardian', g[0] || {}),
-      wetSigBlock('Co-Guardian', g[1] || {}),
+      makeSigBlock('Guardian', g[0] || {}),
+      makeSigBlock('Co-Guardian', g[1] || {}),
     ],
   });
 
@@ -465,7 +468,7 @@ export function buildPlanInitialModel(D) {
       pageBreakBefore: true,
       blocks: [
         { type: 'notice', title: 'Additional Guardian Signatures', text: 'All guardians of person must sign and provide the most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.' },
-        ...extras.map((p, i) => wetSigBlock(`Co-Guardian ${i + 3}`, p)),
+        ...extras.map((p, i) => makeSigBlock(`Co-Guardian ${i + 3}`, p)),
       ],
     });
   }
@@ -487,10 +490,13 @@ export function buildPlanInitialModel(D) {
         type: 'signature-block',
         role: "Guardian's Attorney",
         signerName: d.attorney_name || '',
-        wetSignature: true,
+        useSlashS: d.attorney_useSlashS !== false,
+        wetSignature: d.attorney_useSlashS === false,
         signatureDate: fmtDate(d.attorney_signatureDate),
+        signatureStyle,
         fields: [
           [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Bar Number', value: d.attorney_bar || '' }, { label: 'Phone Number', value: d.attorney_phone || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }, ...(d.attorney_secondaryEmail ? [{ label: 'Secondary Email', value: d.attorney_secondaryEmail }] : [])],
           [{ label: 'Street Address', value: d.attorney_street || '' }, { label: 'City / State / ZIP', value: d.attorney_cityStateZip || '' }],
         ],
       },

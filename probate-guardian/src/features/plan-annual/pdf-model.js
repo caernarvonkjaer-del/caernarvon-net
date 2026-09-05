@@ -471,13 +471,13 @@ export function buildPlanAnnualModel(D) {
     ],
   });
 
-  // A wet-ink signature block: signerName has no other place to render in
-  // wet-ink mode, so it's included as the first field.
-  const wetSigBlock = (role, p) => ({
+  // A signature block respecting useSlashS slider state
+  const makeSigBlock = (role, p) => ({
     type: 'signature-block',
     role,
     signerName: p.name || '',
-    wetSignature: true,
+    useSlashS: p.useSlashS !== false,
+    wetSignature: p.useSlashS === false,
     signatureDate: fmtDate(p.signatureDate),
     fields: [
       [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: p.ssn || '' }, { label: 'Phone Number', value: p.phone || '' }],
@@ -515,7 +515,7 @@ export function buildPlanAnnualModel(D) {
         type: 'notice',
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
-      wetSigBlock('Guardian', g[0] || {}),
+      makeSigBlock('Guardian', g[0] || {}),
     ],
   });
 
@@ -531,7 +531,7 @@ export function buildPlanAnnualModel(D) {
       pageBreakBefore: true,
       blocks: [
         { type: 'notice', title: 'Additional Guardian Signatures', text: '' },
-        ...extras.map((p, i) => wetSigBlock(`Co-Guardian ${i + 2}`, p)),
+        ...extras.map((p, i) => makeSigBlock(`Co-Guardian ${i + 2}`, p)),
       ],
     });
   }
@@ -553,10 +553,12 @@ export function buildPlanAnnualModel(D) {
         type: 'signature-block',
         role: "Guardian's Attorney",
         signerName: d.attorney || '',
-        wetSignature: true,
+        useSlashS: d.attorney_useSlashS !== false,
+        wetSignature: d.attorney_useSlashS === false,
         signatureDate: fmtDate(d.attorney_signatureDate),
         fields: [
-          [{ label: 'Attorney Name', value: d.attorney || '' }, { label: 'Bar Number', value: d.attorney_bar || '' }, { label: 'Phone Number', value: d.attorney_phone || '' }],
+          [{ label: 'Attorney Name', value: d.attorney || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondary_email || '' }],
           [{ label: 'Street Address', value: d.attorney_street || '' }, { label: 'City / State / ZIP', value: d.attorney_cityStateZip || '' }],
         ],
       },

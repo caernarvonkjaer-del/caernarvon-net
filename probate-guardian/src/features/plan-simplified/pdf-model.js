@@ -102,11 +102,12 @@ export function buildPlanSimplifiedModel(D) {
 
   // Page 3: Signatures
   const hasSigData = (g) => !!(g && (g.name || g.signatureDate || g.email || g.phone || g.mailingAddress));
-  const wetSigBlock = (label, g) => ({
+  const makeSigBlock = (label, g) => ({
     type: 'signature-block',
     role: `${label} Signature`,
     signerName: g.name || '',
-    wetSignature: true,
+    useSlashS: g.useSlashS !== false,
+    wetSignature: g.useSlashS === false,
     signatureDate: fmtDate(g.signatureDate),
     fields: [
       [{ label: 'Printed Name', value: g.name || '' }, { label: 'Email Address', value: g.email || '' }],
@@ -127,8 +128,8 @@ export function buildPlanSimplifiedModel(D) {
         title: 'CERTIFICATION AND SIGNATURE OF GUARDIAN(S) / GUARDIAN ADVOCATE(S)',
         text: 'Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.',
       },
-      ...(hasSigData(g[0]) ? [wetSigBlock('Guardian / Guardian Advocate', g[0])] : [{ type: 'notice', text: 'No signature entered.' }]),
-      ...(hasSigData(g[1]) ? [wetSigBlock('Guardian / Guardian Advocate', g[1])] : []),
+      ...(hasSigData(g[0]) ? [makeSigBlock('Guardian / Guardian Advocate', g[0])] : [{ type: 'notice', text: 'No signature entered.' }]),
+      ...(hasSigData(g[1]) ? [makeSigBlock('Guardian / Guardian Advocate', g[1])] : []),
       {
         type: 'notice',
         text: 'Filing: For Pinellas County cases, file the original with the Clerk of the Circuit Court, 315 Court Street, Room 106, Clearwater, FL 33756. For Pasco County cases, provide the original to the Clerk & Comptroller, P.O. Box 338, New Port Richey, FL 34656-0338. E-filing instructions are at myflcourtaccess.com.',

@@ -351,8 +351,10 @@ function pagePart4(){
   <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>`;
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   d.guardians.forEach((g,i)=>{
+    const useSlashS = g.useSlashS !== false;
+    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="simp_g_slashs_${i}" ${useSlashS?'checked':''} data-form-path="guardians.${i}.useSlashS"><label class="form-check-label" for="simp_g_slashs_${i}">Use /s/ format</label></div>`;
     html+=`<div class="entry-card mb-3">
-      <div class="entry-card-header">${labels[i]}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span>${slashSlider}</div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-form-format="name"></div>
@@ -375,16 +377,23 @@ function pagePart4(){
 // ── Part V – Attorney Signature ─────────────────────────
 function pagePart5(){
   const d=window.D;
+  const attySlashS = d.attorney_useSlashS !== false;
+  const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="simp_atty_slashs" ${attySlashS?'checked':''} data-form-path="attorney_useSlashS"><label class="form-check-label" for="simp_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
-    <h1>Part V — Guardian Attorney Signature</h1>
+    <div class="d-flex justify-content-between align-items-center">
+      <h1>Part V — Guardian Attorney Signature</h1>
+      ${slashSlider}
+    </div>
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
       <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
       <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,true)}</div>
       <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,true)}</div>
+      <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+      <div class="col-md-4">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
       <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street,true)}</div>
-      <div class="col-md-12">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,true)}</div>
+      <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,true)}</div>
     </div>
     ${renderScheduleDocsSection('p5')}
     ${pageNavS('/p4','/p6')}

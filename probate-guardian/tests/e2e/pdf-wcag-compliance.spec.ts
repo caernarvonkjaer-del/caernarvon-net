@@ -1444,6 +1444,134 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
       prev = lvl;
     }
   });
+
+  test('Milestone 21: Court Pleading Header (Page 1), Dynamic Circuit Lookup, 1-Inch Margins, /s/ Format Sliders & Rule 2.515 Attorney Emails', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(async () => {
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const { buildPlanAnnualModel } = await (window as any).loadPlanAnnualPdf();
+
+      // Test 1: Verified Initial Inventory with Electronic /s/ signature (default) in Miami-Dade County (11th Circuit)
+      const d1 = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Miami-Dade',
+        gid: '2026-01-15',
+        typeOfGuardianship: 'Plenary',
+        guardianName: 'Rachel M. Alvarez',
+        attorneyForGuardian: 'Robert Vance, Esq.',
+        guardians: [{ name: 'Rachel M. Alvarez', signatureDate: '2026-02-28', useSlashS: true, phone: '305-555-0144' }],
+        preparer: { name: 'Marcus Thorne', signatureDate: '2026-02-28', useSlashS: true, phone: '305-555-0188' },
+        attorney: {
+          name: 'Robert Vance, Esq.',
+          barNumber: '0184920',
+          signatureDate: '2026-03-01',
+          useSlashS: true,
+          email: 'robert@vancelaw.com',
+          secondaryEmail: 'service@vancelaw.com',
+          phone: '305-555-0199',
+        },
+      };
+
+      const m1 = buildVerifiedInventoryModel(d1, { printDate: '2026-09-05' });
+      const doc1 = await generateVerifiedInventoryPdf(m1);
+      const rawPdf1 = doc1.output();
+
+      // Test 2: Verified Initial Inventory with Wet-ink signature (useSlashS: false) in Pinellas County (6th Circuit)
+      const d2 = {
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        gid: '2026-01-15',
+        typeOfGuardianship: 'Plenary',
+        guardians: [{ name: 'Rachel M. Alvarez', signatureDate: '2026-02-28', useSlashS: false, phone: '727-555-0144' }],
+        preparer: { name: 'Marcus Thorne', signatureDate: '2026-02-28', useSlashS: false, phone: '727-555-0188' },
+        attorney: {
+          name: 'Robert Vance, Esq.',
+          barNumber: '0184920',
+          signatureDate: '2026-03-01',
+          useSlashS: false,
+          email: 'robert@vancelaw.com',
+          phone: '727-555-0199',
+        },
+      };
+
+      const m2 = buildVerifiedInventoryModel(d2, { printDate: '2026-09-05' });
+      const doc2 = await generateVerifiedInventoryPdf(m2);
+      const rawPdf2 = doc2.output();
+
+      // Test 3: Annual Plan with Minor variant
+      const d3 = {
+        wardName: 'Tommy Pickles',
+        caseNumber: '26-001122-GD',
+        county: 'Hillsborough',
+        guardian: 'Didi Pickles',
+        attorney: 'Dil Pickles, Esq.',
+        attorney_bar: '9988776',
+        attorney_email: 'dil@law.com',
+        attorney_secondary_email: 'filings@law.com',
+        attorney_useSlashS: true,
+        planGuardians: [{ name: 'Didi Pickles', signatureDate: '2026-09-01', useSlashS: true }],
+      };
+      const m3 = buildPlanAnnualModel(d3);
+      m3.metadata.wardType = 'minor';
+      const doc3 = await generateCourtFormPdf(m3);
+      const rawPdf3 = doc3.output();
+
+      return {
+        rawPdf1,
+        rawPdf2,
+        rawPdf3,
+        numPages1: doc1.internal.getNumberOfPages(),
+        numPages2: doc2.internal.getNumberOfPages(),
+        numPages3: doc3.internal.getNumberOfPages(),
+      };
+    });
+
+    const { rawPdf1, rawPdf2, rawPdf3, numPages1, numPages2, numPages3 } = result;
+
+    // Test 1 Assertions (Miami-Dade / 11th Circuit, /s/ electronic signature, Rule 2.515 attorney emails)
+    const text1 = await extractPdfText(rawPdf1);
+    expect(text1).toContain('IN THE CIRCUIT COURT OF THE ELEVENTH JUDICIAL CIRCUIT');
+    expect(text1).toContain('IN AND FOR MIAMI-DADE COUNTY, FLORIDA');
+    expect(text1).toContain('PROBATE DIVISION');
+    expect(text1).toContain('REF #: 26-002487-GD');
+    expect(text1).toContain('IN RE: THE GUARDIANSHIP OF');
+    expect(text1).toContain('HAROLD THOMAS BENNETT');
+    expect(text1).toContain('VERIFIED INITIAL INVENTORY');
+    // Electronic signature with /s/ format and citation
+    expect(text1).toContain('/s/ Rachel M. Alvarez');
+    expect(text1).toContain('pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515');
+    // Attorney primary and secondary email
+    expect(text1).toContain('Primary Email');
+    expect(text1).toContain('robert@vancelaw.com');
+    expect(text1).toContain('Secondary Email');
+    expect(text1).toContain('service@vancelaw.com');
+    // Layout underline artifact tagged
+    expect(rawPdf1).toContain('/Artifact << /Type /Layout >> BDC');
+
+    // Test 2 Assertions (Pinellas / 6th Circuit, wet signature / slider OFF)
+    const text2 = await extractPdfText(rawPdf2);
+    expect(text2).toContain('IN THE CIRCUIT COURT OF THE SIXTH JUDICIAL CIRCUIT');
+    expect(text2).toContain('IN AND FOR PINELLAS COUNTY, FLORIDA');
+    // Wet signature does NOT contain electronic /s/ legal citation
+    expect(text2).not.toContain('pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515 / F.S. 744.367');
+    expect(text2).toContain('Signature');
+
+    // Test 3 Assertions (Hillsborough / 13th Circuit, Minor caption)
+    const text3 = await extractPdfText(rawPdf3);
+    expect(text3).toContain('IN THE CIRCUIT COURT OF THE THIRTEENTH JUDICIAL CIRCUIT');
+    expect(text3).toContain('IN AND FOR HILLSBOROUGH COUNTY, FLORIDA');
+    expect(text3).toContain('ANNUAL GUARDIANSHIP PLAN');
+    expect(text3).toContain('dil@law.com');
+    expect(text3).toContain('filings@law.com');
+
+    // Continuation headers on page 2+ across documents
+    expect(numPages1).toBeGreaterThan(1);
+    expect(rawPdf1).toContain('/Artifact << /Type /Pagination /Subtype /Header >> BDC');
+  });
 });
 
 

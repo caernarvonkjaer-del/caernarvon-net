@@ -4807,7 +4807,7 @@ async function addWard(wardName,inventoryType){
   if(isFirstWardEver){
     _appState.firstLaunchSeen=false;
   }
-  navigate('/');
+  await navigate('/');
   // Nudge a brand-new user to make their first backup right away, rather
   // than waiting for the auto-export timer's next tick (up to N minutes).
   if(isFirstWardEver&&!_lastExportAt)showAutoExportReminder(true);
@@ -5605,7 +5605,7 @@ async function navigate(page){
   if(page!==currentPage)pruneBlankScheduleEntries();
   currentPage=page;
   window.location.hash=page;
-  renderPage(page);
+  await renderPage(page);
   closeMobileSidebar(); // no-op on desktop widths — the drawer only opens on mobile/tablet
 }
 
@@ -5682,7 +5682,7 @@ function formatDashboardCurrency(v){
   return v<0?`($${str})`:`$${str}`;
 }
 
-function renderPage(page){
+async function renderPage(page){
   const el=document.getElementById('main-content');
   window.disposeActiveFeature?.(el);
 
@@ -5697,7 +5697,7 @@ function renderPage(page){
       linkLabelsToInputs();
       return;
     }
-    mountDashboardFeature(page);
+    await mountDashboardFeature(page);
     return;
   }
 
@@ -5739,14 +5739,14 @@ function renderPage(page){
 
   switch(formEngine(activeInventoryType)){
     case 'guardian':
-      mountGuardianFeature(page);
+      await mountGuardianFeature(page);
       return;
-    case 'simplified': mountSimplifiedFeature(page);break;
-    case 'annual': mountAnnualFeature(page);break;
-    case 'planSimplified': mountPlanSimplifiedFeature(page);break;
-    case 'planAnnual': mountPlanAnnualFeature(page);break;
-    case 'planInitial': mountPlanInitialFeature(page);break;
-    case 'planMinor': mountPlanMinorFeature(page);break;
+    case 'simplified': await mountSimplifiedFeature(page);break;
+    case 'annual': await mountAnnualFeature(page);break;
+    case 'planSimplified': await mountPlanSimplifiedFeature(page);break;
+    case 'planAnnual': await mountPlanAnnualFeature(page);break;
+    case 'planInitial': await mountPlanInitialFeature(page);break;
+    case 'planMinor': await mountPlanMinorFeature(page);break;
   }
   linkLabelsToInputs();
   enforceDateRanges();
