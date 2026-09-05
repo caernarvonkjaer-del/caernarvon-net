@@ -115,6 +115,39 @@ export function buildPlanSimplifiedModel(D) {
     ],
   });
   const g = d.planGuardians || [];
+
+  // Preparer block
+  const prep = d.preparer_name ? {
+    type: 'signature-block',
+    role: 'Preparer Signature',
+    signerName: d.preparer_name || '',
+    useSlashS: d.preparer_useSlashS !== false,
+    wetSignature: d.preparer_useSlashS === false,
+    signatureDate: fmtDate(d.preparer_signatureDate),
+    fields: [
+      [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Telephone', value: d.preparer_phone || '' }],
+      [{ label: 'Email Address', value: d.preparer_email || '' }],
+      [{ label: 'Mailing Address', value: [d.preparer_mailingStreet, d.preparer_cityStateZip].filter(Boolean).join(', ') }],
+    ],
+  } : null;
+
+  // Attorney block
+  const atty = d.attorney_name ? {
+    type: 'signature-block',
+    role: 'Attorney Signature',
+    signerName: d.attorney_name || '',
+    useSlashS: d.attorney_useSlashS !== false,
+    wetSignature: d.attorney_useSlashS === false,
+    signatureDate: fmtDate(d.attorney_signatureDate),
+    fields: [
+      [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar No.', value: d.attorney_bar || '' }],
+      [{ label: 'Telephone', value: d.attorney_phone || '' }],
+      [{ label: 'Address', value: [d.attorney_street, d.attorney_cityStateZip].filter(Boolean).join(', ') }],
+      [{ label: 'Primary Email', value: d.attorney_email || '' },
+        ...(d.attorney_secondary_email ? [{ label: 'Secondary Email', value: d.attorney_secondary_email }] : [])],
+    ],
+  } : null;
+
   sections.push({
     id: 'signatures',
     title: 'Signatures',
@@ -130,6 +163,16 @@ export function buildPlanSimplifiedModel(D) {
       },
       ...(hasSigData(g[0]) ? [makeSigBlock('Guardian / Guardian Advocate', g[0])] : [{ type: 'notice', text: 'No signature entered.' }]),
       ...(hasSigData(g[1]) ? [makeSigBlock('Guardian / Guardian Advocate', g[1])] : []),
+      ...(prep ? [{
+        type: 'notice',
+        title: 'CERTIFICATION AND SIGNATURE OF PREPARER',
+        text: 'The preparation of this form is based upon information provided by the guardian(s). The preparer has not audited or reviewed the plan or supporting documents.',
+      }, prep] : []),
+      ...(atty ? [{
+        type: 'notice',
+        title: 'CERTIFICATION AND SIGNATURE OF GUARDIAN\'S ATTORNEY',
+        text: 'The undersigned notifies the Court of the filing of this plan and represents that it conforms to the requirements of Florida Guardianship Law.',
+      }, atty] : []),
       {
         type: 'notice',
         text: 'Filing: For Pinellas County cases, file the original with the Clerk of the Circuit Court, 315 Court Street, Room 106, Clearwater, FL 33756. For Pasco County cases, provide the original to the Clerk & Comptroller, P.O. Box 338, New Port Richey, FL 34656-0338. E-filing instructions are at myflcourtaccess.com.',
