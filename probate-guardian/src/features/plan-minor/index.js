@@ -115,7 +115,7 @@ function getSummaryConfigPlanMinor(){
     infoRows:[
       {label:"Minor's Name",value:esc(d.wardName)},
       {label:'UCN',value:esc(d.ucn)},
-      {label:'REF #',value:esc(d.ref)},
+      {label:'Case #',value:esc(d.ref)},
       {label:'County',value:esc(d.county)},
       {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
       {label:'Guardian',value:esc(d.guardianName)},
@@ -149,7 +149,7 @@ function pagePlanMCover(){
       <div class="col-md-8">${inpS('wardName',"Minor's Name",d.wardName,true)}</div>
       <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
       <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
-      <div class="col-md-6">${inpS('ref','REF #',d.ref)}</div>
+      <div class="col-md-6">${inpS('ref','Case #',d.ref)}</div>
       <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,true,'date')}</div>
       <div class="col-md-6">${inpS('periodTo','To',d.periodTo,true,'date')}</div>
       <div class="col-md-6">${inpS('guardianName','Guardian Name(s)',d.guardianName,true)}</div>

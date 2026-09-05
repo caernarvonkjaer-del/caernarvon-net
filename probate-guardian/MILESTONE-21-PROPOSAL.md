@@ -7,7 +7,7 @@ Align the shared vector/text PDF generation engine (`src/core/pdf/pdf-engine.js`
    - Dynamic Florida Judicial Circuit lookup from selected County (e.g. *Pinellas* $\to$ *Sixth Judicial Circuit*, *Hillsborough* $\to$ *Thirteenth*, *Orange* $\to$ *Ninth*, *Miami-Dade* $\to$ *Eleventh*, etc.)
    - Centered court banner: `IN THE CIRCUIT COURT OF THE [NTH] JUDICIAL CIRCUIT\nIN AND FOR [COUNTY] COUNTY, FLORIDA`
    - Centered `PROBATE DIVISION`
-   - Case reference line: `REF #: [CASE NUMBER]` (with section if entered)
+   - Case reference line: `CASE #: [CASE NUMBER]` (with section if entered)
    - Dynamic case caption / style:
      - Adult Guardianship: `IN RE: THE GUARDIANSHIP OF [WARD NAME]`
      - Minor Guardianship: `IN RE: THE GUARDIANSHIP OF [WARD NAME], A MINOR`
@@ -50,7 +50,7 @@ Align the shared vector/text PDF generation engine (`src/core/pdf/pdf-engine.js`
             IN THE CIRCUIT COURT OF THE SIXTH JUDICIAL CIRCUIT
                   IN AND FOR PINELLAS COUNTY, FLORIDA
                             PROBATE DIVISION
-                   REF #: 26-000111-GD - Section 004
+                    CASE #: 26-000111-GD - Section 004
 
 IN RE: THE GUARDIANSHIP OF GREGORY GRAHAM
 
@@ -78,9 +78,9 @@ IN RE: THE GUARDIANSHIP OF GREGORY GRAHAM
      - Advocate: `IN RE: THE GUARDIAN ADVOCACY OF ${wardName.toUpperCase()}`
      - Default: `IN RE: THE GUARDIANSHIP OF ${wardName.toUpperCase()}`
 2. **First-Page vs. Continuation Header Dispatcher in `pdf-engine.js`**:
-   - On Page 1 (`pageNum === 1`):
-     - Render `drawFirstPagePleadingHeader()` containing the full judicial circuit court banner, `PROBATE DIVISION`, `REF #: [caseNumber]`, `IN RE: ...` caption, and the centered underlined document title.
-     - Set initial content baseline `curY = 175pt`.
+    - On Page 1 (`pageNum === 1`):
+      - Render `drawFirstPagePleadingHeader()` containing the full judicial circuit court banner, `PROBATE DIVISION`, `CASE #: [caseNumber]`, `IN RE: ...` caption, and the centered underlined document title.
+      - Set initial content baseline `curY = 175pt`.
    - On Pages 2+ (`pageNum > 1`):
      - Render `drawContinuationHeader()` containing the compact court line and framed 3-column metadata bar.
      - Set content baseline `curY = 74pt`.
@@ -151,7 +151,7 @@ Tune proportional column widths across all schedule tables to guarantee clean li
 
 1. **Update `tests/e2e/pdf-wcag-compliance.spec.ts`**:
    - Assert Page 1 contains formal pleading header with resolved Judicial Circuit (`IN THE CIRCUIT COURT OF THE SIXTH JUDICIAL CIRCUIT`).
-   - Assert Page 1 contains `REF #:`, `IN RE: THE GUARDIANSHIP OF`, and underlined document title.
+   - Assert Page 1 contains `CASE #:`, `IN RE: THE GUARDIANSHIP OF`, and underlined document title.
    - Assert 1-inch margins (all content within `x = 72` to `x = 540`).
    - Assert "Use /s/ format" toggle slider correctly switches signature output between typographical `/s/ [NAME]` and blank wet-ink line.
    - Assert Rule 2.515 attorney signature block contains Primary Email and Florida Bar number.

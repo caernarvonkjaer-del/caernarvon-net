@@ -116,7 +116,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
     doc.setFontSize(10);
     doc.text(caption.division, pageWidth / 2, 78, { align: 'center' });
-    doc.text(`REF #: ${caseNumber || 'Pending'}`, pageWidth / 2, 92, { align: 'center' });
+    doc.text(`CASE #: ${caseNumber || 'Pending'}`, pageWidth / 2, 92, { align: 'center' });
 
     const caseCaption = getCaseCaptionTitle(wardName, metadata.wardType);
     doc.setFontSize(11);

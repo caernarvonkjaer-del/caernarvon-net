@@ -1537,7 +1537,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(text1).toContain('IN THE CIRCUIT COURT OF THE ELEVENTH JUDICIAL CIRCUIT');
     expect(text1).toContain('IN AND FOR MIAMI-DADE COUNTY, FLORIDA');
     expect(text1).toContain('PROBATE DIVISION');
-    expect(text1).toContain('REF #: 26-002487-GD');
+    expect(text1).toContain('CASE #: 26-002487-GD');
     expect(text1).toContain('IN RE: THE GUARDIANSHIP OF');
     expect(text1).toContain('HAROLD THOMAS BENNETT');
     expect(text1).toContain('VERIFIED INITIAL INVENTORY');

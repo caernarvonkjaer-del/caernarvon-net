@@ -47,7 +47,7 @@ export function buildPlanMinorModel(D) {
         type: 'key-value-grid',
         items: [
           { label: 'UCN', value: d.ucn || '' },
-          { label: 'REF #', value: d.ref || '' },
+          { label: 'Case #', value: d.ref || '' },
           { label: 'For the period', value: `${fmtDate(d.periodFrom)} to ${fmtDate(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
         ],
