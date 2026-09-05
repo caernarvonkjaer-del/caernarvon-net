@@ -1,6 +1,26 @@
 import { test, expect } from '@playwright/test';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { freshStartNoPassword } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
+
+async function inspectPdfPages(pdfData: string) {
+  const data = new Uint8Array(Buffer.from(pdfData, 'latin1'));
+  const pdf = await pdfjsLib.getDocument({ data, verbosity: 0 }).promise;
+  const pages = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const text = content.items.map((item: any) => item.str).join(' ');
+    const ops = await page.getOperatorList();
+    const imageCount = ops.fnArray.filter((fn: number) => (
+      fn === pdfjsLib.OPS.paintImageXObject ||
+      fn === pdfjsLib.OPS.paintInlineImageXObject ||
+      fn === pdfjsLib.OPS.paintJpegXObject
+    )).length;
+    pages.push({ pageNumber: p, text, imageCount });
+  }
+  return pages;
+}
 
 test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
   test('generates native vector/text PDF with metadata, hierarchical bookmarks, and selectable /s/ signatures', async ({ page }) => {
@@ -241,7 +261,9 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
       const attachmentDoc = await createJsPdfInstance();
       attachmentDoc.setFontSize(16);
       attachmentDoc.text('Uploaded bank statement support page', 72, 120);
-      const attachmentDataUrl = attachmentDoc.output('datauristring');
+      const attachmentDataUrl = attachmentDoc
+        .output('datauristring')
+        .replace('data:application/pdf;', 'data:application/octet-stream;');
 
       const model = buildVerifiedInventoryModel({
         wardName: 'Harold Thomas Bennett',
@@ -265,7 +287,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
               comment: 'Statement verifies the restricted depository balance.',
               files: [{
                 name: 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf',
-                type: 'application/pdf',
+                type: 'application/octet-stream',
                 size: 3600,
                 dataUrl: attachmentDataUrl,
               }],
@@ -287,5 +309,12 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).toContain('Statement verifies the restricted depository balance.');
     expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
     expect(pdfInspection.numPages).toBeGreaterThan(4);
+
+    const pages = await inspectPdfPages(pdfInspection.rawPdfString);
+    const attachmentFileName = 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf';
+    const attachmentTitlePages = pages.filter(pageInfo => pageInfo.text.includes(attachmentFileName));
+    expect(attachmentTitlePages.length).toBeGreaterThan(0);
+    const samePageAttachment = attachmentTitlePages.find(pageInfo => pageInfo.imageCount > 0);
+    expect(samePageAttachment).toBeTruthy();
   });
 });
