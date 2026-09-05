@@ -1227,9 +1227,9 @@ export async function generateCourtFormPdf(model, options = {}) {
         // and ordering by rendering Object.keys() in a single column).
         const isWetSignature = block.wetSignature === true || block.useSlashS === false;
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
-        const FIELD_ROW_H = 18;
-        const baseSigHeight = isWetSignature ? 46 : 64;
-        const sigHeight = fieldRows ? baseSigHeight + (fieldRows.length * FIELD_ROW_H) : baseSigHeight;
+        const FIELD_ROW_H = 22;
+        const baseSigHeight = isWetSignature ? 58 : 64;
+        const sigHeight = fieldRows ? baseSigHeight + 4 + (fieldRows.length * FIELD_ROW_H) : baseSigHeight;
         checkPageSpace(sigHeight + 10, sec.title);
 
         const sigPartNode = structureTree.addStructureElement({
@@ -1336,7 +1336,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           // pairs in deliberate column groups matching the source HTML's
           // grid ordering (e.g. SSN/EIN | Phone | Street Address on one
           // row, City/State/Zip on the next).
-          let rowY = curY + baseSigHeight - 8;
+          let rowY = curY + baseSigHeight + 2;
           for (const row of fieldRows) {
             const cols = row.length || 1;
             const colW = contentWidth / cols;
