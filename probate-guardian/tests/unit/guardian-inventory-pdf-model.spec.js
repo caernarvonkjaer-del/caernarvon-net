@@ -38,4 +38,39 @@ describe('guardian inventory PDF model', () => {
       pageBreakBefore: false,
     });
   });
+
+  test('adds uploaded supporting documents to the matching schedule section', () => {
+    const model = buildVerifiedInventoryModel({
+      wardName: 'Harold Thomas Bennett',
+      caseNumber: '26-002487-GD',
+      county: 'Pasco',
+      activeYearKey: 'initial',
+      scheduleB1: [{ institutionName: 'Fifth Third Bank', fullAssetAmount: '68500', isRestricted: true }],
+      scheduleDocs: {
+        b1: {
+          initial: {
+            comment: 'Bank statement confirms account balance.',
+            files: [{
+              name: 'mock_bank_statement.pdf',
+              type: 'application/pdf',
+              size: 3600,
+              dataUrl: 'data:application/pdf;base64,JVBERi0xLjQK',
+            }],
+          },
+        },
+      },
+    });
+
+    const b1 = model.sections.find(section => section.id === 'b1');
+    expect(b1.blocks.at(-1)).toMatchObject({
+      type: 'supporting-documents',
+      title: 'Supporting Documents',
+      comment: 'Bank statement confirms account balance.',
+      files: [{
+        name: 'mock_bank_statement.pdf',
+        type: 'application/pdf',
+        size: 3600,
+      }],
+    });
+  });
 });

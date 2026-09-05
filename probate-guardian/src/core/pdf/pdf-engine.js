@@ -20,14 +20,51 @@ import {
   getFloridaCircuitCourtCaption,
   getCaseCaptionTitle,
 } from './circuit-lookup.js';
+import { ensurePdfjs } from './pdfjs-loader.js';
 
 export async function createJsPdfInstance() {
   const patchOutlineDestinations = (pdf) => {
     if (!pdf?.outline || pdf.outline.__pgPreciseDestinations) return;
 
     pdf.outline.__pgPreciseDestinations = true;
+    pdf.outline.__pgDestinationMap = new Map();
+    pdf.outline.__pgDestinationSeq = 0;
+
+    const originalAdd = pdf.outline.add.bind(pdf.outline);
+    pdf.outline.add = function addWithNamedDestination(parent, title, options = {}) {
+      if (options && options.pageNumber && !options.__pgDestName) {
+        options.__pgDestName = `pg_dest_${++this.__pgDestinationSeq}`;
+        this.__pgDestinationMap.set(options.__pgDestName, options);
+      }
+      return originalAdd(parent, title, options);
+    };
+
+    if (pdf.internal?.events && !pdf.outline.__pgNamedDestinationHooks) {
+      pdf.outline.__pgNamedDestinationHooks = true;
+      pdf.internal.events.subscribe('putResources', () => {
+        const destinations = pdf.outline.__pgDestinationMap;
+        if (!destinations || destinations.size === 0) return;
+        pdf.outline.__pgDestinationsObjId = pdf.internal.newObject();
+        pdf.internal.write('<< /Names [');
+        const toPdfY = pdf.internal.getVerticalCoordinateString;
+        for (const [name, dest] of destinations.entries()) {
+          const pageInfo = pdf.internal.getPageInfo(dest.pageNumber);
+          const left = dest.left ?? 0;
+          const top = dest.top ?? dest.y ?? 0;
+          const zoom = dest.zoom ?? 0;
+          pdf.internal.write(`${pdf.outline.makeString(name)} [${pageInfo.objId} 0 R /XYZ ${left} ${toPdfY(top)} ${zoom}]`);
+        }
+        pdf.internal.write('] >>');
+        pdf.internal.write('endobj');
+      });
+      pdf.internal.events.subscribe('putCatalog', () => {
+        if (pdf.outline.__pgDestinationsObjId) {
+          pdf.internal.write(`/Names << /Dests ${pdf.outline.__pgDestinationsObjId} 0 R >>`);
+        }
+      });
+    }
+
     pdf.outline.renderItems = function renderItemsWithPreciseDestinations(parent) {
-      const toPdfY = this.ctx.pdf.internal.getVerticalCoordinateString;
       for (let idx = 0; idx < parent.children.length; idx++) {
         const item = parent.children[idx];
         this.objStart(item);
@@ -43,11 +80,7 @@ export async function createJsPdfInstance() {
         const childCount = this.count = this.count_r({ count: 0 }, item);
         if (childCount > 0) this.line('/Count ' + childCount);
         if (item.options && item.options.pageNumber) {
-          const pageInfo = this.ctx.pdf.internal.getPageInfo(item.options.pageNumber);
-          const left = item.options.left ?? 0;
-          const top = item.options.top ?? item.options.y ?? 0;
-          const zoom = item.options.zoom ?? 0;
-          this.line('/Dest [' + pageInfo.objId + ' 0 R /XYZ ' + left + ' ' + toPdfY(top) + ' ' + zoom + ']');
+          this.line('/A << /S /GoTo /D ' + this.makeString(item.options.__pgDestName) + ' >>');
         }
         this.objEnd();
       }
@@ -177,17 +210,18 @@ export async function generateCourtFormPdf(model, options = {}) {
   const drawContinuationHeader = (sectionTitle) => {
     writeArtifactStart(doc, 'Pagination', 'Header');
     const caption = getFloridaCircuitCourtCaption(county);
+    const headerTop = margin;
     doc.setFont('PGSans', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(26, 45, 74); // Court Navy (#1a2d4a)
-    doc.text(`${caption.line1} ${caption.line2}`, pageWidth / 2, 26, { align: 'center' });
+    doc.text(`${caption.line1} ${caption.line2}`, pageWidth / 2, headerTop + 10, { align: 'center' });
 
     doc.setFontSize(9);
     const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();
-    doc.text(`PROBATE DIVISION — ${formTitle}`, pageWidth / 2, 38, { align: 'center' });
+    doc.text(`PROBATE DIVISION — ${formTitle}`, pageWidth / 2, headerTop + 22, { align: 'center' });
 
     // Framed 3-column bounded metadata bar (contentWidth = 468 pt)
-    const barTop = 46;
+    const barTop = headerTop + 30;
     const barHeight = 18;
     doc.setFillColor(248, 249, 251);
     doc.rect(margin, barTop, contentWidth, barHeight, 'FD');
@@ -244,8 +278,8 @@ export async function generateCourtFormPdf(model, options = {}) {
   const startNewPage = (sectionTitle) => {
     doc.addPage();
     pageNum++;
-    curY = 74;
     drawHeader(sectionTitle);
+    curY = 132;
   };
 
   const checkPageSpace = (neededHeight, sectionTitle) => {
@@ -254,6 +288,150 @@ export async function generateCourtFormPdf(model, options = {}) {
       return true;
     }
     return false;
+  };
+
+  const dataUrlToBytes = (dataUrl) => {
+    const base64 = String(dataUrl || '').split(',')[1] || '';
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  };
+
+  const loadImageSize = (dataUrl) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+    img.onerror = () => reject(new Error('Image could not be loaded.'));
+    img.src = dataUrl;
+  });
+
+  const renderInlineDocumentImage = async (dataUrl, sourceWidth, sourceHeight, sectionTitle) => {
+    const maxWidth = contentWidth;
+    const maxHeight = pageBottom - margin;
+    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
+    if (curY + drawHeight > pageBottom) {
+      startNewPage(sectionTitle);
+    }
+    writeArtifactStart(doc, 'Layout');
+    doc.setDrawColor(208, 213, 221);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, curY, drawWidth, drawHeight, 'S');
+    writeArtifactEnd(doc);
+    doc.addImage(dataUrl, dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG', margin, curY, drawWidth, drawHeight);
+    curY += drawHeight + 12;
+  };
+
+  const renderUploadedPdfPages = async (file, sectionTitle) => {
+    const pdfjsLib = await ensurePdfjs();
+    const pdf = await pdfjsLib.getDocument({ data: dataUrlToBytes(file.dataUrl) }).promise;
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const srcPage = await pdf.getPage(p);
+      const viewport = srcPage.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await srcPage.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
+      await renderInlineDocumentImage(canvas.toDataURL('image/jpeg', 0.92), viewport.width, viewport.height, sectionTitle);
+    }
+  };
+
+  const renderSupportingDocuments = async (block, sectionTitle, parentNode) => {
+    const files = Array.isArray(block.files) ? block.files : [];
+    const comment = String(block.comment || '').trim();
+    if (!files.length && !comment) return;
+
+    checkPageSpace(36, sectionTitle);
+    const headingNode = structureTree.addStructureElement({
+      tag: 'H3',
+      title: block.title || 'Supporting Documents',
+      pageNumber: pageNum,
+      isLeaf: true,
+      parent: parentNode,
+    });
+    writeMarkedContentStart(doc, 'H3', headingNode.mcid);
+    doc.setFont('PGSans', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(26, 45, 74);
+    doc.text(block.title || 'Supporting Documents', margin, curY + 10);
+    writeMarkedContentEnd(doc);
+    curY += 16;
+
+    if (comment) {
+      doc.setFont('PGSans', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(55, 65, 81);
+      const lines = doc.splitTextToSize(`Comment: ${comment}`, contentWidth);
+      checkPageSpace((lines.length * 11) + 8, sectionTitle);
+      const commentNode = structureTree.addStructureElement({
+        tag: 'P',
+        pageNumber: pageNum,
+        isLeaf: true,
+        parent: parentNode,
+      });
+      writeMarkedContentStart(doc, 'P', commentNode.mcid);
+      doc.text(lines, margin, curY + 9);
+      writeMarkedContentEnd(doc);
+      curY += (lines.length * 11) + 8;
+    }
+
+    for (const file of files) {
+      const fileName = String(file?.name || 'Supporting document');
+      const mime = String(file?.type || '').toLowerCase();
+      const dataUrl = String(file?.dataUrl || '');
+      checkPageSpace(24, sectionTitle);
+      const fileNode = structureTree.addStructureElement({
+        tag: 'P',
+        pageNumber: pageNum,
+        isLeaf: true,
+        parent: parentNode,
+      });
+      writeMarkedContentStart(doc, 'P', fileNode.mcid);
+      doc.setFont('PGSans', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(17, 24, 39);
+      doc.text(fileName, margin, curY + 10);
+      writeMarkedContentEnd(doc);
+      curY += 16;
+
+      try {
+        if (mime.includes('pdf') || dataUrl.startsWith('data:application/pdf')) {
+          await renderUploadedPdfPages(file, sectionTitle);
+        } else if (mime.startsWith('image/') || dataUrl.startsWith('data:image/')) {
+          const size = await loadImageSize(dataUrl);
+          await renderInlineDocumentImage(dataUrl, size.width, size.height, sectionTitle);
+        } else {
+          const unsupportedNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: parentNode,
+          });
+          writeMarkedContentStart(doc, 'P', unsupportedNode.mcid);
+          doc.setFont('PGSans', 'italic');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 110, 125);
+          doc.text('This file type cannot be displayed inline in the generated PDF.', margin, curY + 9);
+          writeMarkedContentEnd(doc);
+          curY += 16;
+        }
+      } catch (e) {
+        const errorNode = structureTree.addStructureElement({
+          tag: 'P',
+          pageNumber: pageNum,
+          isLeaf: true,
+          parent: parentNode,
+        });
+        writeMarkedContentStart(doc, 'P', errorNode.mcid);
+        doc.setFont('PGSans', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(128, 0, 32);
+        doc.text(`Could not render inline: ${e.message || 'unsupported document'}`, margin, curY + 9);
+        writeMarkedContentEnd(doc);
+        curY += 16;
+      }
+    }
   };
 
   // Draw initial first page header
@@ -1102,6 +1280,10 @@ export async function generateCourtFormPdf(model, options = {}) {
         }
 
         curY += sigHeight + 8;
+      }
+
+      else if (block.type === 'supporting-documents') {
+        await renderSupportingDocuments(block, sec.title, partNode);
       }
     }
   }

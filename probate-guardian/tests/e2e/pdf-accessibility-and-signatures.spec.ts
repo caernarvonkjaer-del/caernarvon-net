@@ -211,8 +211,11 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
     // Bookmark clicks must target the section Y coordinate, not just the
     // related page top. jsPDF's stock outline writer has regressed here
-    // before by emitting every destination as /XYZ 0 792 0.
-    const outlineDestinations = [...rawPdfString.matchAll(/\/Dest \[[^\]]+\/XYZ\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\]/g)]
+    // before by emitting every destination as page top only.
+    expect(rawPdfString).toContain('/Names << /Dests');
+    const outlineActions = [...rawPdfString.matchAll(/\/A << \/S \/GoTo \/D \(pg_dest_\d+\) >>/g)];
+    expect(outlineActions.length).toBeGreaterThan(5);
+    const outlineDestinations = [...rawPdfString.matchAll(/\(pg_dest_\d+\) \[[^\]]+\/XYZ\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\]/g)]
       .map(match => ({
         left: Number(match[1]),
         top: Number(match[2]),
@@ -228,5 +231,61 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).toContain('/s/ Marcus Thorne');
     expect(extractedText).toContain('/s/ Robert Vance, Esq.');
     expect(extractedText).toContain('/s/ Elena Rostova');
+  });
+
+  test('prints uploaded supporting PDFs inline at the end of their schedule section', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const pdfInspection = await page.evaluate(async () => {
+      const { buildVerifiedInventoryModel, createJsPdfInstance, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const attachmentDoc = await createJsPdfInstance();
+      attachmentDoc.setFontSize(16);
+      attachmentDoc.text('Uploaded bank statement support page', 72, 120);
+      const attachmentDataUrl = attachmentDoc.output('datauristring');
+
+      const model = buildVerifiedInventoryModel({
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pasco',
+        activeYearKey: 'initial',
+        scheduleB1: [
+          {
+            institutionName: 'Fifth Third Bank Restricted Depository',
+            accountType: 'Restricted Money Market',
+            accountNumber: '8841',
+            streetAddress: '7135 Little Road',
+            cityStateZip: 'New Port Richey, FL 34654',
+            fullAssetAmount: 68500,
+            isRestricted: true,
+          },
+        ],
+        scheduleDocs: {
+          b1: {
+            initial: {
+              comment: 'Statement verifies the restricted depository balance.',
+              files: [{
+                name: 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf',
+                type: 'application/pdf',
+                size: 3600,
+                dataUrl: attachmentDataUrl,
+              }],
+            },
+          },
+        },
+      }, { signatureStyle: 'typed', printDate: '2026-09-05' });
+      const doc = await generateVerifiedInventoryPdf(model);
+      return {
+        rawPdfString: doc.output(),
+        numPages: doc.internal.getNumberOfPages(),
+      };
+    });
+
+    const extractedText = await extractPdfText(pdfInspection.rawPdfString);
+    expect(extractedText).toContain('Schedule B-1: Cash & Financial Accounts');
+    expect(extractedText).toContain('Supporting Documents');
+    expect(extractedText).toContain('mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf');
+    expect(extractedText).toContain('Statement verifies the restricted depository balance.');
+    expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
+    expect(pdfInspection.numPages).toBeGreaterThan(4);
   });
 });

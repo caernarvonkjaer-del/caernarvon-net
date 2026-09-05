@@ -65,6 +65,34 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   };
 
   const isConfirmedEmpty = (key) => !!(d.scheduleNoItems && d.scheduleNoItems[key]);
+  const activeDocPeriod = d.activeYearKey || 'initial';
+  const scheduleDocSlot = (key) => {
+    const scheduleDocs = d.scheduleDocs && d.scheduleDocs[key];
+    if (!scheduleDocs) return { comment: '', files: [] };
+    if (Array.isArray(scheduleDocs.files) || scheduleDocs.comment) {
+      return { comment: scheduleDocs.comment || '', files: scheduleDocs.files || [] };
+    }
+    const slot = scheduleDocs[activeDocPeriod] || scheduleDocs.initial || { comment: '', files: [] };
+    return { comment: slot.comment || '', files: slot.files || [] };
+  };
+  const supportingDocumentBlocks = (key) => {
+    const slot = scheduleDocSlot(key);
+    const files = (slot.files || []).filter(file => file && file.dataUrl);
+    const comment = String(slot.comment || '').trim();
+    if (!files.length && !comment) return [];
+    return [{
+      type: 'supporting-documents',
+      tag: 'Part',
+      title: 'Supporting Documents',
+      comment,
+      files: files.map(file => ({
+        name: file.name || 'Supporting document',
+        type: file.type || '',
+        size: file.size || 0,
+        dataUrl: file.dataUrl,
+      })),
+    }];
+  };
 
   const sections = [];
 
@@ -148,6 +176,31 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // which the single-{label,value} totals shape had no way to express.
   const addScheduleSection = (id, title, bookmarkTitle, headers, rows, totalLabel, totalVal, emptyNoun, colWidths, colAlign, extraTotalValues, pageBreak = false) => {
     const empty = rows.length === 0;
+    const contentBlocks = empty ? [
+      {
+        type: 'notice',
+        tag: 'P',
+        text: isConfirmedEmpty(id)
+          ? `The filer verifies there are no ${emptyNoun} to report for this schedule.`
+          : 'No entries to report.',
+      }
+    ] : [
+      {
+        type: 'table',
+        tag: 'Table',
+        title,
+        headers,
+        rows,
+        totals: totalLabel
+          ? (extraTotalValues && extraTotalValues.length
+            ? { label: totalLabel, values: [{ value: fmt(totalVal) }, ...extraTotalValues.map(v => ({ value: fmt(v) }))] }
+            : { label: totalLabel, value: fmt(totalVal) })
+          : null,
+        colWidths,
+        colAlign,
+      }
+    ];
+
     sections.push({
       id,
       title,
@@ -155,30 +208,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       parentBookmark: 'Part III - Assets of the Ward',
       level: 2,
       pageBreakBefore: pageBreak,
-      blocks: empty ? [
-        {
-          type: 'notice',
-          tag: 'P',
-          text: isConfirmedEmpty(id)
-            ? `The filer verifies there are no ${emptyNoun} to report for this schedule.`
-            : 'No entries to report.',
-        }
-      ] : [
-        {
-          type: 'table',
-          tag: 'Table',
-          title,
-          headers,
-          rows,
-          totals: totalLabel
-            ? (extraTotalValues && extraTotalValues.length
-              ? { label: totalLabel, values: [{ value: fmt(totalVal) }, ...extraTotalValues.map(v => ({ value: fmt(v) }))] }
-              : { label: totalLabel, value: fmt(totalVal) })
-            : null,
-          colWidths,
-          colAlign,
-        }
-      ],
+      blocks: [...contentBlocks, ...supportingDocumentBlocks(id)],
     });
   };
 
@@ -376,11 +406,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signature: formatSignature(g.name),
     signatureStyle,
     signatureDate: fmtDate(g.signatureDate),
-    details: {
-      'Phone': g.phone || '',
-      'Address': `${g.streetAddress || ''}, ${g.cityStateZip || ''}`.replace(/^, /, ''),
-      'SSN/EIN': g.ssnEin || '',
-    },
+    fields: [
+      [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: g.ssnEin || '' }],
+      [{ label: 'Address', value: `${g.streetAddress || ''}, ${g.cityStateZip || ''}`.replace(/^, /, '') }],
+    ],
   }));
 
   const preparer = d.preparer || {};
@@ -393,11 +422,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signature: formatSignature(preparer.name),
     signatureStyle,
     signatureDate: fmtDate(preparer.signatureDate),
-    details: {
-      'Phone': preparer.phone || '',
-      'Address': `${preparer.streetAddress || ''}, ${preparer.cityStateZip || ''}`.replace(/^, /, ''),
-      'SSN/EIN': preparer.ssnEin || '',
-    },
+    fields: [
+      [{ label: 'Phone', value: preparer.phone || '' }, { label: 'SSN/EIN', value: preparer.ssnEin || '' }],
+      [{ label: 'Address', value: `${preparer.streetAddress || ''}, ${preparer.cityStateZip || ''}`.replace(/^, /, '') }],
+    ],
   };
 
   sections.push({
@@ -451,7 +479,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         signature: formatSignature(attorney.name),
         signatureStyle,
         signatureDate: fmtDate(attorney.signatureDate),
-        details: attorneyDetails,
+        fields: [
+          [{ label: 'Florida Bar #', value: attorneyDetails['Florida Bar #'] }, { label: 'Filing Date', value: attorneyDetails['Filing Date'] }, { label: 'Phone', value: attorneyDetails.Phone }],
+          [{ label: 'Primary Email', value: attorneyDetails['Primary Email'] }, { label: 'Secondary Email', value: attorneyDetails['Secondary Email'] || '' }],
+          [{ label: 'Address', value: attorneyDetails.Address }],
+        ],
       },
     ],
   });
@@ -530,12 +562,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         signature: formatSignature(serviceAttorney.name),
         signatureStyle,
         signatureDate: fmtDate(serviceAttorney.signatureDate),
-        details: {
-          'Florida Bar #': serviceAttorney.barNumber || '',
-          'Phone': serviceAttorney.phone || '',
-          'Primary Email': serviceAttorney.email || attorney.email || '',
-          'Address': `${serviceAttorney.streetAddress || ''}, ${serviceAttorney.cityStateZip || ''}`.replace(/^, /, ''),
-        },
+        fields: [
+          [{ label: 'Florida Bar #', value: serviceAttorney.barNumber || '' }, { label: 'Phone', value: serviceAttorney.phone || '' }],
+          [{ label: 'Primary Email', value: serviceAttorney.email || attorney.email || '' }],
+          [{ label: 'Address', value: `${serviceAttorney.streetAddress || ''}, ${serviceAttorney.cityStateZip || ''}`.replace(/^, /, '') }],
+        ],
       },
     ],
   });
