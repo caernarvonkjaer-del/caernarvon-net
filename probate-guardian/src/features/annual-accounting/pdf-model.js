@@ -223,7 +223,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     const gRole = ['Guardian #1', 'Co-Guardian #2', 'Co-Guardian #3'][i] || `Guardian #${i + 1}`;
     return {
       type: 'signature-block',
-      tag: 'Figure',
+      tag: 'Part',
       role: gRole,
       signerName: g.name || '',
       signature: formatSig(g.name),
@@ -273,7 +273,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       },
       {
         type: 'signature-block',
-        tag: 'Figure',
+        tag: 'Part',
         role: 'Preparer',
         signerName: p.name || '',
         signature: formatSig(p.name),
@@ -304,7 +304,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       },
       {
         type: 'signature-block',
-        tag: 'Figure',
+        tag: 'Part',
         role: 'Attorney for Guardian',
         signerName: d.attorney || '',
         signature: formatSig(d.attorney),
@@ -962,7 +962,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   certBlocks.push({
     type: 'signature-block',
-    tag: 'Figure',
+    tag: 'Part',
     role: 'Attorney for Guardian (Service)',
     signerName: d.attorney || '',
     signature: formatSig(d.attorney),

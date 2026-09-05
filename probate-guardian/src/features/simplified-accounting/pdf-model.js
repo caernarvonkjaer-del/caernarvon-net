@@ -147,7 +147,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     const gRole = ['Guardian #1', 'Co-Guardian #2', 'Co-Guardian #3'][i] || `Guardian #${i + 1}`;
     return {
       type: 'signature-block',
-      tag: 'Figure',
+      tag: 'Part',
       role: gRole,
       signerName: g.name || '',
       signature: formatSig(g.name),
@@ -187,7 +187,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     bookmarkTitle: 'Part V - Attorney Signature',
     parentBookmark: null,
     level: 1,
-    pageBreakBefore: true,
+    pageBreakBefore: false,
     blocks: [
       {
         type: 'notice',
@@ -196,7 +196,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       },
       {
         type: 'signature-block',
-        tag: 'Figure',
+        tag: 'Part',
         role: 'Attorney for Guardian',
         signerName: d.attorney || '',
         signature: formatSig(d.attorney),
@@ -256,7 +256,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       },
       {
         type: 'signature-block',
-        tag: 'Figure',
+        tag: 'Part',
         role: 'Attorney for Guardian (Service)',
         signerName: d.attorney || '',
         signature: formatSig(d.attorney),
@@ -280,7 +280,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       bookmarkTitle: 'Part VII - Remuneration',
       parentBookmark: null,
       level: 1,
-      pageBreakBefore: true,
+      pageBreakBefore: false,
       blocks: [
         {
           type: 'notice',

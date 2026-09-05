@@ -126,7 +126,16 @@ export class PdfStructureTree {
         attrs.Summary = `(${escapePdfString(node.summary)})`;
       }
 
-      if (Object.keys(attrs).length > 0) {
+      // PDF/UA-1 (Matterhorn 15-003): ColSpan <= 1 is redundant/invalid and must not be written
+      if (attrs.ColSpan !== undefined && attrs.ColSpan <= 1) {
+        delete attrs.ColSpan;
+      }
+      if (attrs.RowSpan !== undefined && attrs.RowSpan <= 1) {
+        delete attrs.RowSpan;
+      }
+
+      const attrKeys = Object.keys(attrs);
+      if (attrKeys.length > 0) {
         doc.internal.write('/A <<');
         for (const [k, v] of Object.entries(attrs)) {
           if (typeof v === 'number' || typeof v === 'boolean') {
@@ -153,28 +162,27 @@ export class PdfStructureTree {
     }
 
     // 4. Write /ParentTree (Number tree mapping page index to array of /StructElem refs)
+    // ISO 14289-1: Every page 0 .. totalPages-1 with /StructParents MUST have an entry in /Nums
+    const totalPages = typeof doc.internal.getNumberOfPages === 'function' ? doc.internal.getNumberOfPages() : 1;
     doc.internal.newObjectDeferredBegin(this.parentTreeObjId, true);
     doc.internal.write('<<');
     doc.internal.write('/Nums [');
-    const pageKeys = Object.keys(this.pageElements).map(Number).sort((a, b) => a - b);
-    for (const pNum of pageKeys) {
+    for (let pNum = 1; pNum <= totalPages; pNum++) {
       const pageIndex = pNum - 1; // 0-based index matching /StructParents
       const elems = this.pageElements[pNum] || [];
-      const elemRefs = elems.map(e => e && e.objId ? `${e.objId} 0 R` : 'null').join(' ');
+      const elemRefs = elems.length > 0
+        ? elems.map(e => e && e.objId ? `${e.objId} 0 R` : 'null').join(' ')
+        : '';
       doc.internal.write(`  ${pageIndex} [ ${elemRefs} ]`);
     }
     doc.internal.write(']');
     doc.internal.write('>>');
     doc.internal.write('endobj');
 
-    // 5. Write /StructTreeRoot
+    // 5. Write /StructTreeRoot (All tags are standard ISO 32000-1 / PDF/UA-1 structure types)
     doc.internal.newObjectDeferredBegin(this.rootObjId, true);
     doc.internal.write('<<');
     doc.internal.write('/Type /StructTreeRoot');
-    doc.internal.write('/RoleMap <<');
-    doc.internal.write('  /InventorySchedule /Table');
-    doc.internal.write('  /CaseInfo /Table');
-    doc.internal.write('>>');
     doc.internal.write(`/K [ ${this.rootNode.objId} 0 R ]`);
     doc.internal.write(`/ParentTree ${this.parentTreeObjId} 0 R`);
     doc.internal.write('>>');
@@ -231,7 +239,7 @@ export function buildXmpPacket(metadata = {}) {
     ? '\n      <pdfuaid:part>1</pdfuaid:part>'
     : '';
 
-  return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
+  return `<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
@@ -297,7 +305,8 @@ export function attachAccessibilityHooks(doc, structureTree) {
   if (!doc || !doc.internal || !doc.internal.events) return;
 
   // 1. Configure viewer preferences to display document title in window bar
-  if (typeof doc.viewerPreferences === 'function') {
+  const hasNativeViewerPreferences = typeof doc.viewerPreferences === 'function';
+  if (hasNativeViewerPreferences) {
     doc.viewerPreferences({ DisplayDocTitle: true });
   }
 
@@ -328,9 +337,13 @@ export function attachAccessibilityHooks(doc, structureTree) {
     structureTree.serialize(doc);
   });
 
-  // 4. Hook into putCatalog to inject /MarkInfo, /StructTreeRoot, and /Metadata
+  // 4. Hook into putCatalog to inject /ViewerPreferences, /MarkInfo, /StructTreeRoot, and /Metadata
   // (Notice: do NOT manually write /Lang here; doc.setLanguage('en-US') writes it, avoiding duplicates!)
   doc.internal.events.subscribe('putCatalog', () => {
+    // Inject /ViewerPreferences only if jsPDF didn't already write it via doc.viewerPreferences()
+    if (!hasNativeViewerPreferences) {
+      doc.internal.write('/ViewerPreferences << /DisplayDocTitle true >>');
+    }
     doc.internal.write('/MarkInfo << /Marked true >>');
     if (structureTree.rootObjId) {
       doc.internal.write(`/StructTreeRoot ${structureTree.rootObjId} 0 R`);

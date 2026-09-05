@@ -146,7 +146,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // of raw numbers) adds further numeric total columns beyond totalVal --
   // e.g. Schedule B-1's "Restricted Amt" total alongside its main total,
   // which the single-{label,value} totals shape had no way to express.
-  const addScheduleSection = (id, title, bookmarkTitle, headers, rows, totalLabel, totalVal, emptyNoun, colWidths, colAlign, extraTotalValues) => {
+  const addScheduleSection = (id, title, bookmarkTitle, headers, rows, totalLabel, totalVal, emptyNoun, colWidths, colAlign, extraTotalValues, pageBreak = false) => {
     const empty = rows.length === 0;
     sections.push({
       id,
@@ -154,7 +154,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       bookmarkTitle,
       parentBookmark: 'Part III - Assets of the Ward',
       level: 2,
-      pageBreakBefore: true,
+      pageBreakBefore: pageBreak,
       blocks: empty ? [
         {
           type: 'notice',
@@ -188,15 +188,14 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule A-1: Real Property Assets',
     'Schedule A-1: Real Property',
     ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value"],
-    // r.notes was previously silently dropped -- never read by this row
-    // builder, so it never appeared in the filed PDF even though the HTML
-    // preview shows it as an italic sub-line under the description.
     (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), `${r.streetAddress || ''}, ${r.cityStateZip || ''}`.replace(/^, /, ''), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent))]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
     [25, 25, 20, 10, 10, 10],
-    ['left', 'left', 'left', 'right', 'right', 'right']
+    ['left', 'left', 'left', 'right', 'right', 'right'],
+    null,
+    true // Page break at start of Part III Assets
   );
 
   // Schedule A-2
@@ -360,7 +359,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // 14. Part III & IV: Attestations & Oaths (Guardian & Preparer)
   const guardianBlocks = (d.guardians || []).map((g, i) => ({
     type: 'signature-block',
-    tag: 'Figure',
+    tag: 'Part',
     role: `Guardian #${i + 1}`,
     signerName: g.name || '',
     signature: formatSignature(g.name),
@@ -376,7 +375,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const preparer = d.preparer || {};
   const preparerBlock = {
     type: 'signature-block',
-    tag: 'Figure',
+    tag: 'Part',
     role: 'Preparer',
     signerName: preparer.name || '',
     signature: formatSignature(preparer.name),
@@ -394,7 +393,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     title: 'Part III & IV — ATTESTATIONS & OATHS OF GUARDIAN & PREPARER',
     bookmarkTitle: 'Guardian & Preparer Attestation (D-1 & D-2)',
     parentBookmark: 'Part IV - Attestations & Oaths',
-    level: 2,
+    level: 1,
     pageBreakBefore: true,
     blocks: [
       {
@@ -414,8 +413,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     title: 'Part III-B — ATTORNEY ATTESTATION',
     bookmarkTitle: 'Attorney Attestation (D-2)',
     parentBookmark: 'Part IV - Attestations & Oaths',
-    level: 2,
-    pageBreakBefore: true,
+    level: 1,
+    pageBreakBefore: false,
     blocks: [
       {
         type: 'notice',
@@ -424,7 +423,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       },
       {
         type: 'signature-block',
-        tag: 'Figure',
+        tag: 'Part',
         role: 'Attorney for Guardian',
         signerName: attorney.name || '',
         signature: formatSignature(attorney.name),
@@ -447,7 +446,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     bookmarkTitle: 'Part V - Audit Fee, Bond & Safe Deposit (D-3 & D-4)',
     parentBookmark: null,
     level: 1,
-    pageBreakBefore: true,
+    pageBreakBefore: false,
     blocks: [
       {
         type: 'key-value-grid',
@@ -482,7 +481,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     bookmarkTitle: 'Part VI - Certificate of Service (D-5)',
     parentBookmark: null,
     level: 1,
-    pageBreakBefore: true,
+    pageBreakBefore: false,
     blocks: [
       {
         type: 'notice',
@@ -512,7 +511,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       ]),
       {
         type: 'signature-block',
-        tag: 'Figure',
+        tag: 'Part',
         role: 'Attorney for Guardian (Service)',
         signerName: serviceAttorney.name || '',
         signature: formatSignature(serviceAttorney.name),

@@ -105,22 +105,31 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(26, 45, 74); // Court Navy (#1a2d4a)
-    doc.text(`IN THE CIRCUIT COURT FOR ${county} COUNTY, FLORIDA`, pageWidth / 2, 28, { align: 'center' });
+    doc.text(`IN THE CIRCUIT COURT FOR ${county} COUNTY, FLORIDA`, pageWidth / 2, 26, { align: 'center' });
 
     doc.setFontSize(10);
     const formTitle = (metadata.formName || 'VERIFIED INITIAL INVENTORY').toUpperCase();
-    doc.text(`PROBATE DIVISION — ${formTitle}`, pageWidth / 2, 40, { align: 'center' });
+    doc.text(`PROBATE DIVISION — ${formTitle}`, pageWidth / 2, 38, { align: 'center' });
+
+    // Framed 3-column bounded metadata bar
+    const barTop = 46;
+    const barHeight = 18;
+    doc.setFillColor(248, 249, 251);
+    doc.rect(margin, barTop, contentWidth, barHeight, 'FD');
+    doc.setDrawColor(180, 190, 205);
+    doc.setLineWidth(0.75);
+    doc.rect(margin, barTop, contentWidth, barHeight, 'S');
+
+    // Column dividers
+    doc.line(margin + 180, barTop, margin + 180, barTop + barHeight);
+    doc.line(margin + 360, barTop, margin + 360, barTop + barHeight);
 
     doc.setFont('PGSans', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(80, 90, 105);
-    doc.text(`Ward: ${wardName}`, margin, 52);
-    doc.text(sectionTitle || '', pageWidth / 2, 52, { align: 'center' });
-    doc.text(`Case #: ${caseNumber || 'Pending'}`, pageWidth - margin, 52, { align: 'right' });
-
-    doc.setDrawColor(200, 208, 220);
-    doc.setLineWidth(0.75);
-    doc.line(margin, 56, pageWidth - margin, 56);
+    doc.setTextColor(50, 60, 75);
+    doc.text(`Ward: ${wardName}`, margin + 6, barTop + 12);
+    doc.text(sectionTitle || '', margin + 270, barTop + 12, { align: 'center' });
+    doc.text(`Case #: ${caseNumber || 'Pending'}`, pageWidth - margin - 6, barTop + 12, { align: 'right' });
     writeArtifactEnd(doc);
   };
 
@@ -142,7 +151,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   const startNewPage = (sectionTitle) => {
     doc.addPage();
     pageNum++;
-    curY = 68;
+    curY = 74;
     drawHeader(sectionTitle);
   };
 
@@ -156,13 +165,13 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   // Draw initial first page header
   drawHeader(sections[0]?.title || 'Part I — Required Information');
-  curY = 68;
+  curY = 74;
 
   // 2. Render each section in order with semantic structure tagging
   for (let sIdx = 0; sIdx < sections.length; sIdx++) {
     const sec = sections[sIdx];
 
-    if (sec.pageBreakBefore && sIdx > 0 && curY > 75) {
+    if (sec.pageBreakBefore && sIdx > 0 && curY > 80) {
       startNewPage(sec.title);
     }
 
@@ -204,11 +213,27 @@ export async function generateCourtFormPdf(model, options = {}) {
     });
     writeMarkedContentStart(doc, hTag, hNode.mcid);
     doc.setFont('PGSans', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(130, 0, 36); // Court Maroon (#820024)
-    doc.text(sec.title, margin, curY + 12);
+    if (hTag === 'H1') {
+      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0); // Bold Black for H1
+      doc.text(sec.title, margin, curY + 12);
+    } else {
+      doc.setFontSize(9.5);
+      doc.setTextColor(26, 45, 74); // Court Navy for H2
+      doc.text(sec.title, margin, curY + 10);
+    }
     writeMarkedContentEnd(doc);
-    curY += 22;
+
+    if (hTag === 'H1') {
+      writeArtifactStart(doc, 'Layout');
+      doc.setDrawColor(180, 190, 205);
+      doc.setLineWidth(0.75);
+      doc.line(margin, curY + 16, pageWidth - margin, curY + 16);
+      writeArtifactEnd(doc);
+      curY += 24;
+    } else {
+      curY += 18;
+    }
 
     // Render Blocks in this Section
     for (const block of (sec.blocks || sec.renderBlocks || [])) {
@@ -216,13 +241,14 @@ export async function generateCourtFormPdf(model, options = {}) {
         doc.setFont('PGSans', 'italic');
         doc.setFontSize(9);
         doc.setTextColor(70, 80, 95);
-        const lines = doc.splitTextToSize(block.text, contentWidth);
+        const lines = doc.splitTextToSize(block.text, contentWidth - 16);
         const boxHeight = (lines.length * 12) + 12;
         checkPageSpace(boxHeight, sec.title);
 
         writeArtifactStart(doc, 'Layout');
-        doc.setFillColor(247, 249, 252);
-        doc.setDrawColor(220, 226, 235);
+        doc.setFillColor(248, 249, 251);
+        doc.setDrawColor(208, 213, 221);
+        doc.setLineWidth(0.5);
         doc.rect(margin, curY, contentWidth, boxHeight, 'FD');
         writeArtifactEnd(doc);
 
@@ -235,7 +261,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         writeMarkedContentStart(doc, 'P', pNode.mcid);
         doc.text(lines, margin + 8, curY + 13);
         writeMarkedContentEnd(doc);
-        curY += boxHeight + 10;
+        curY += boxHeight + 8;
       }
 
       else if (block.type === 'key-value-grid') {
@@ -310,9 +336,10 @@ export async function generateCourtFormPdf(model, options = {}) {
 
           // Column 1 Layout background as Artifact
           writeArtifactStart(doc, 'Layout');
-          doc.setFillColor(248, 250, 252);
+          doc.setFillColor(241, 243, 246);
           doc.rect(margin, curY, 110, rowHeight, 'F');
-          doc.setDrawColor(225, 230, 240);
+          doc.setDrawColor(208, 213, 221);
+          doc.setLineWidth(0.5);
           doc.rect(margin, curY, contentWidth / 2, rowHeight, 'S');
           writeArtifactEnd(doc);
 
@@ -327,7 +354,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           writeMarkedContentStart(doc, 'TH', th1Node.mcid);
           doc.setFont('PGSans', 'bold');
           doc.setFontSize(8);
-          doc.setTextColor(60, 70, 85);
+          doc.setTextColor(55, 65, 81);
           doc.text(m1.labelLines, margin + 4, curY + 12);
           writeMarkedContentEnd(doc);
 
@@ -342,7 +369,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           writeMarkedContentStart(doc, 'TD', td1Node.mcid);
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
-          doc.setTextColor(20, 25, 35);
+          doc.setTextColor(17, 24, 39);
           doc.text(m1.valueLines, margin + 115, curY + 12);
           writeMarkedContentEnd(doc);
 
@@ -350,8 +377,10 @@ export async function generateCourtFormPdf(model, options = {}) {
           if (item2) {
             const col2X = margin + (contentWidth / 2);
             writeArtifactStart(doc, 'Layout');
-            doc.setFillColor(248, 250, 252);
+            doc.setFillColor(241, 243, 246);
             doc.rect(col2X, curY, 110, rowHeight, 'F');
+            doc.setDrawColor(208, 213, 221);
+            doc.setLineWidth(0.5);
             doc.rect(col2X, curY, contentWidth / 2, rowHeight, 'S');
             writeArtifactEnd(doc);
 
@@ -365,7 +394,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             writeMarkedContentStart(doc, 'TH', th2Node.mcid);
             doc.setFont('PGSans', 'bold');
             doc.setFontSize(8);
-            doc.setTextColor(60, 70, 85);
+            doc.setTextColor(55, 65, 81);
             doc.text(m2.labelLines, col2X + 4, curY + 12);
             writeMarkedContentEnd(doc);
 
@@ -378,21 +407,22 @@ export async function generateCourtFormPdf(model, options = {}) {
             writeMarkedContentStart(doc, 'TD', td2Node.mcid);
             doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
-            doc.setTextColor(20, 25, 35);
+            doc.setTextColor(17, 24, 39);
             doc.text(m2.valueLines, col2X + 115, curY + 12);
             writeMarkedContentEnd(doc);
           } else {
             // Fill remainder of row with empty layout border for visual symmetry
             const col2X = margin + (contentWidth / 2);
             writeArtifactStart(doc, 'Layout');
-            doc.setDrawColor(225, 230, 240);
+            doc.setDrawColor(208, 213, 221);
+            doc.setLineWidth(0.5);
             doc.rect(col2X, curY, contentWidth / 2, rowHeight, 'S');
             writeArtifactEnd(doc);
           }
 
           curY += rowHeight;
         }
-        curY += 10;
+        curY += 8;
       }
 
       else if (block.type === 'checklist') {
@@ -496,18 +526,53 @@ export async function generateCourtFormPdf(model, options = {}) {
           parent: partNode,
         });
 
-        const drawTableHeader = () => {
+        const drawTableHeader = (isContinuation = false) => {
+          if (isContinuation) {
+            // ISO 14289-1 (PDF/UA-1 Clause 7.5): Repeated table headers across multi-page
+            // continuations are visual pagination artifacts and MUST NOT be added as duplicate
+            // TR / TH elements in the logical structure tree.
+            writeArtifactStart(doc, 'Pagination', 'Header');
+            doc.setFillColor(128, 0, 32); // Deep Burgundy (#800020)
+            doc.rect(margin, curY, contentWidth, headerHeight, 'F');
+            doc.setDrawColor(100, 0, 25);
+            doc.setLineWidth(0.75);
+            doc.rect(margin, curY, contentWidth, headerHeight, 'S');
+
+            doc.setFont('PGSans', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(255, 255, 255);
+
+            let curColX = margin;
+            for (let hIdx = 0; hIdx < headers.length; hIdx++) {
+              const colW = calculatedColWidths[hIdx];
+              const align = (colAlign && colAlign[hIdx]) || 'left';
+              const textX = align === 'right' ? curColX + colW - 5 : align === 'center' ? curColX + (colW / 2) : curColX + 5;
+              doc.text(headers[hIdx], textX, curY + 12, { align });
+
+              if (hIdx > 0) {
+                doc.setDrawColor(160, 40, 65);
+                doc.setLineWidth(0.5);
+                doc.line(curColX, curY, curColX, curY + headerHeight);
+              }
+              curColX += colW;
+            }
+            writeArtifactEnd(doc);
+            curY += headerHeight;
+            return;
+          }
+
+          // Initial Table Header (Single logical TR/TH row in structure tree)
           writeArtifactStart(doc, 'Layout');
-          doc.setFillColor(238, 242, 248);
+          doc.setFillColor(128, 0, 32); // Deep Burgundy (#800020)
           doc.rect(margin, curY, contentWidth, headerHeight, 'F');
-          doc.setDrawColor(180, 190, 205);
+          doc.setDrawColor(100, 0, 25);
           doc.setLineWidth(0.75);
           doc.rect(margin, curY, contentWidth, headerHeight, 'S');
           writeArtifactEnd(doc);
 
           doc.setFont('PGSans', 'bold');
           doc.setFontSize(8);
-          doc.setTextColor(26, 45, 74);
+          doc.setTextColor(255, 255, 255); // Crisp White (#FFFFFF)
 
           const headerTr = structureTree.addStructureElement({
             tag: 'TR',
@@ -533,6 +598,8 @@ export async function generateCourtFormPdf(model, options = {}) {
 
             if (hIdx > 0) {
               writeArtifactStart(doc, 'Layout');
+              doc.setDrawColor(160, 40, 65);
+              doc.setLineWidth(0.5);
               doc.line(curColX, curY, curColX, curY + headerHeight);
               writeArtifactEnd(doc);
             }
@@ -580,12 +647,13 @@ export async function generateCourtFormPdf(model, options = {}) {
           if (!measured.isMixed) {
             doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
+            doc.setTextColor(17, 24, 39);
             doc.text(measured.lines, textX, yTop + 11, { align });
             return;
           }
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
-          doc.setTextColor(30, 35, 45);
+          doc.setTextColor(17, 24, 39);
           doc.text(measured.mainLines, textX, yTop + 11, { align });
           let y = yTop + 11 + (measured.mainLines.length * 10) - 4;
           for (const group of measured.subGroups) {
@@ -595,11 +663,11 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.text(group.lines, textX, y + 6, { align });
             y += group.lines.length * MIXED_SUB_LINE_H;
           }
-          doc.setTextColor(30, 35, 45);
+          doc.setTextColor(17, 24, 39);
         };
 
         checkPageSpace(headerHeight + 25, sec.title);
-        drawTableHeader();
+        drawTableHeader(false);
 
         // Draw Table Rows
         for (let rIdx = 0; rIdx < rows.length; rIdx++) {
@@ -619,19 +687,19 @@ export async function generateCourtFormPdf(model, options = {}) {
           const cellHeight = Math.max(16, maxCellHeightPt + 6);
 
           if (checkPageSpace(cellHeight, sec.title)) {
-            drawTableHeader();
+            drawTableHeader(true);
           }
 
           // Alternating row background
           if (rIdx % 2 === 1) {
             writeArtifactStart(doc, 'Layout');
-            doc.setFillColor(252, 253, 255);
+            doc.setFillColor(248, 249, 250);
             doc.rect(margin, curY, contentWidth, cellHeight, 'F');
             writeArtifactEnd(doc);
           }
 
           writeArtifactStart(doc, 'Layout');
-          doc.setDrawColor(220, 226, 235);
+          doc.setDrawColor(208, 213, 221);
           doc.setLineWidth(0.5);
           doc.rect(margin, curY, contentWidth, cellHeight, 'S');
           writeArtifactEnd(doc);
@@ -660,6 +728,8 @@ export async function generateCourtFormPdf(model, options = {}) {
 
             if (cIdx > 0) {
               writeArtifactStart(doc, 'Layout');
+              doc.setDrawColor(220, 226, 235);
+              doc.setLineWidth(0.5);
               doc.line(cellX, curY, cellX, curY + cellHeight);
               writeArtifactEnd(doc);
             }
@@ -673,12 +743,17 @@ export async function generateCourtFormPdf(model, options = {}) {
         if (totals) {
           const totalHeight = 18;
           if (checkPageSpace(totalHeight, sec.title)) {
-            drawTableHeader();
+            drawTableHeader(true);
           }
 
           writeArtifactStart(doc, 'Layout');
-          doc.setFillColor(242, 245, 250);
+          doc.setFillColor(234, 239, 245);
           doc.rect(margin, curY, contentWidth, totalHeight, 'FD');
+          doc.setDrawColor(176, 186, 200);
+          doc.setLineWidth(0.75);
+          doc.line(margin, curY, pageWidth - margin, curY);
+          doc.setLineWidth(1.0);
+          doc.line(margin, curY + totalHeight, pageWidth - margin, curY + totalHeight);
           writeArtifactEnd(doc);
 
           const totalTr = structureTree.addStructureElement({
@@ -701,7 +776,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
           const totalLabelTd = structureTree.addStructureElement({
             tag: 'TD',
-            attributes: { O: 'Table', ColSpan: labelColSpan },
+            attributes: labelColSpan > 1 ? { O: 'Table', ColSpan: labelColSpan } : null,
             pageNumber: pageNum,
             isLeaf: true,
             parent: totalTr,
@@ -709,7 +784,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           writeMarkedContentStart(doc, 'TD', totalLabelTd.mcid);
           doc.setFont('PGSans', 'bold');
           doc.setFontSize(8.5);
-          doc.setTextColor(26, 45, 74);
+          doc.setTextColor(17, 24, 39);
           doc.text(totals.label, margin + 6, curY + 12);
           writeMarkedContentEnd(doc);
 
@@ -722,7 +797,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
             const totalValTd = structureTree.addStructureElement({
               tag: 'TD',
-              attributes: { O: 'Table', ColSpan: 1 },
+              attributes: null,
               pageNumber: pageNum,
               isLeaf: true,
               parent: totalTr,
@@ -730,7 +805,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             writeMarkedContentStart(doc, 'TD', totalValTd.mcid);
             doc.setFont('PGSans', 'bold');
             doc.setFontSize(8.5);
-            doc.setTextColor(26, 45, 74);
+            doc.setTextColor(17, 24, 39);
             doc.text(String(totalValues[vIdx].value ?? ''), valX + colW - 6, curY + 12, { align: 'right' });
             writeMarkedContentEnd(doc);
             valX += colW;
@@ -739,7 +814,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += totalHeight;
         }
 
-        curY += 10;
+        curY += 8;
       }
 
       else if (block.type === 'signature-block') {
@@ -754,17 +829,10 @@ export async function generateCourtFormPdf(model, options = {}) {
         // and ordering by rendering Object.keys() in a single column).
         const isWetSignature = block.wetSignature === true;
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
-        const FIELD_ROW_H = 22;
-        const baseSigHeight = isWetSignature ? 46 : 70;
+        const FIELD_ROW_H = 18;
+        const baseSigHeight = isWetSignature ? 46 : 64;
         const sigHeight = fieldRows ? baseSigHeight + (fieldRows.length * FIELD_ROW_H) : baseSigHeight;
         checkPageSpace(sigHeight + 10, sec.title);
-
-        writeArtifactStart(doc, 'Layout');
-        doc.setFillColor(250, 251, 253);
-        doc.setDrawColor(215, 222, 232);
-        doc.setLineWidth(0.5);
-        doc.rect(margin, curY, contentWidth, sigHeight, 'FD');
-        writeArtifactEnd(doc);
 
         const sigPartNode = structureTree.addStructureElement({
           tag: 'Part',
@@ -775,6 +843,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         // Role & Date Header
         const roleNode = structureTree.addStructureElement({
           tag: subHTag,
+          title: block.role || 'Signer',
           pageNumber: pageNum,
           isLeaf: true,
           parent: sigPartNode,
@@ -783,7 +852,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         doc.setFont('PGSans', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(26, 45, 74);
-        doc.text(block.role || 'Signer', margin + 8, curY + 14);
+        doc.text(block.role || 'Signer', margin + 2, curY + 12);
         writeMarkedContentEnd(doc);
 
         if (block.signatureDate) {
@@ -796,15 +865,16 @@ export async function generateCourtFormPdf(model, options = {}) {
           writeMarkedContentStart(doc, 'P', dateNode.mcid);
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
-          doc.setTextColor(80, 90, 100);
-          doc.text(`Date: ${block.signatureDate}`, pageWidth - margin - 8, curY + 14, { align: 'right' });
+          doc.setTextColor(55, 65, 81);
+          doc.text(`Date: ${block.signatureDate}`, pageWidth - margin - 2, curY + 12, { align: 'right' });
           writeMarkedContentEnd(doc);
         }
 
         // Signature Line (Layout Artifact)
         writeArtifactStart(doc, 'Layout');
-        doc.setDrawColor(180, 190, 205);
-        doc.line(margin + 8, curY + 42, margin + 260, curY + 42);
+        doc.setDrawColor(140, 150, 165);
+        doc.setLineWidth(0.75);
+        doc.line(margin + 2, curY + 36, margin + 250, curY + 36);
         writeArtifactEnd(doc);
 
         if (isWetSignature) {
@@ -822,7 +892,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
-          doc.text('Signature', margin + 8, curY + 52);
+          doc.text('Signature', margin + 2, curY + 46);
           writeMarkedContentEnd(doc);
         } else {
           // Electronic /s/ Signature Rendering
@@ -836,15 +906,15 @@ export async function generateCourtFormPdf(model, options = {}) {
           if (signatureStyle === 'script') {
             // Script-style rendering using PGSans-Italic with stylistic padding
             doc.setFont('PGSans', 'italic');
-            doc.setFontSize(13);
+            doc.setFontSize(12);
             doc.setTextColor(15, 35, 75);
-            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 12, curY + 38);
+            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 6, curY + 32);
           } else {
             // Standard typed /s/ rendering
             doc.setFont('PGSans', 'bold');
-            doc.setFontSize(10.5);
+            doc.setFontSize(10);
             doc.setTextColor(20, 25, 35);
-            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 10, curY + 38);
+            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 4, curY + 32);
           }
           writeMarkedContentEnd(doc);
 
@@ -858,7 +928,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
-          doc.text('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 8, curY + 52);
+          doc.text('Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515)', margin + 2, curY + 46);
           writeMarkedContentEnd(doc);
         }
 
@@ -867,14 +937,14 @@ export async function generateCourtFormPdf(model, options = {}) {
           // pairs in deliberate column groups matching the source HTML's
           // grid ordering (e.g. SSN/EIN | Phone | Street Address on one
           // row, City/State/Zip on the next).
-          let rowY = curY + baseSigHeight - 14;
+          let rowY = curY + baseSigHeight - 8;
           for (const row of fieldRows) {
             const cols = row.length || 1;
             const colW = contentWidth / cols;
             for (let fIdx = 0; fIdx < row.length; fIdx++) {
               const field = row[fIdx];
               if (!field || !field.value) continue;
-              const fx = margin + (fIdx * colW) + 8;
+              const fx = margin + (fIdx * colW) + 2;
               const fieldNode = structureTree.addStructureElement({
                 tag: 'P',
                 pageNumber: pageNum,
@@ -889,7 +959,7 @@ export async function generateCourtFormPdf(model, options = {}) {
               doc.setFont('PGSans', 'normal');
               doc.setFontSize(7.5);
               doc.setTextColor(30, 35, 45);
-              doc.text(String(field.value), fx, rowY + 10);
+              doc.text(String(field.value), fx, rowY + 9);
               writeMarkedContentEnd(doc);
             }
             rowY += FIELD_ROW_H;
