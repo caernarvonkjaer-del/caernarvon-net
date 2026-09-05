@@ -182,6 +182,16 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     });
   };
 
+  sections.push({
+    id: 'assets',
+    title: 'Part III — ASSETS OF THE WARD',
+    bookmarkTitle: 'Part III - Assets of the Ward',
+    parentBookmark: null,
+    level: 1,
+    pageBreakBefore: true,
+    blocks: [],
+  });
+
   // Schedule A-1
   addScheduleSection(
     'a1',
@@ -195,7 +205,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     [22, 22, 16, 14, 12, 14],
     ['left', 'left', 'left', 'right', 'right', 'right'],
     null,
-    true // Page break at start of Part III Assets
+    false
   );
 
   // Schedule A-2

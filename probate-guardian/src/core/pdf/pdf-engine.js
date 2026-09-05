@@ -22,18 +22,59 @@ import {
 } from './circuit-lookup.js';
 
 export async function createJsPdfInstance() {
+  const patchOutlineDestinations = (pdf) => {
+    if (!pdf?.outline || pdf.outline.__pgPreciseDestinations) return;
+
+    pdf.outline.__pgPreciseDestinations = true;
+    pdf.outline.renderItems = function renderItemsWithPreciseDestinations(parent) {
+      const toPdfY = this.ctx.pdf.internal.getVerticalCoordinateString;
+      for (let idx = 0; idx < parent.children.length; idx++) {
+        const item = parent.children[idx];
+        this.objStart(item);
+        this.line('/Title ' + this.makeString(item.title));
+        this.line('/Parent ' + this.makeRef(parent));
+        if (idx > 0) this.line('/Prev ' + this.makeRef(parent.children[idx - 1]));
+        if (idx < parent.children.length - 1) this.line('/Next ' + this.makeRef(parent.children[idx + 1]));
+        if (item.children.length > 0) {
+          this.line('/First ' + this.makeRef(item.children[0]));
+          this.line('/Last ' + this.makeRef(item.children[item.children.length - 1]));
+        }
+
+        const childCount = this.count = this.count_r({ count: 0 }, item);
+        if (childCount > 0) this.line('/Count ' + childCount);
+        if (item.options && item.options.pageNumber) {
+          const pageInfo = this.ctx.pdf.internal.getPageInfo(item.options.pageNumber);
+          const left = item.options.left ?? 0;
+          const top = item.options.top ?? item.options.y ?? 0;
+          const zoom = item.options.zoom ?? 0;
+          this.line('/Dest [' + pageInfo.objId + ' 0 R /XYZ ' + left + ' ' + toPdfY(top) + ' ' + zoom + ']');
+        }
+        this.objEnd();
+      }
+
+      for (let idx = 0; idx < parent.children.length; idx++) {
+        this.renderItems(parent.children[idx]);
+      }
+    };
+  };
+
   if (typeof window === 'undefined') return null;
   if (window.jspdf && window.jspdf.jsPDF) {
-    return new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+    const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+    patchOutlineDestinations(pdf);
+    return pdf;
   }
   if (window.jsPDF) {
-    return new window.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+    const pdf = new window.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+    patchOutlineDestinations(pdf);
+    return pdf;
   }
   if (typeof window.html2pdf === 'function') {
     const dummy = document.createElement('div');
     const worker = window.html2pdf().from(dummy).set({ jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' } });
     const pdf = await worker.toPdf().get('pdf');
     if (pdf && typeof pdf.setFont === 'function') {
+      patchOutlineDestinations(pdf);
       return pdf;
     }
   }
@@ -253,7 +294,10 @@ export async function generateCourtFormPdf(model, options = {}) {
           }
           parentNode = parentOutlineMap[sec.parentBookmark];
         }
-        doc.outline.add(parentNode, sec.bookmarkTitle, { pageNumber: pageNum, y: curY });
+        const outlineNode = doc.outline.add(parentNode, sec.bookmarkTitle, { pageNumber: pageNum, y: curY });
+        if (!parentNode && sec.bookmarkTitle && !parentOutlineMap[sec.bookmarkTitle]) {
+          parentOutlineMap[sec.bookmarkTitle] = outlineNode;
+        }
       } catch (e) {
         console.warn('Could not add outline entry for', sec.bookmarkTitle, e);
       }

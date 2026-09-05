@@ -563,7 +563,7 @@ function pagePlanASignatures(){
       <div class="col-md-3">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
       <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
       <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
-      <div class="col-md-4">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
+      <div class="col-md-4">${inpS('attorney_secondary_email','Secondary Email (optional)',d.attorney_secondary_email || d.attorney_secondaryEmail,false,'email')}</div>
       <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street)}</div>
       <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / ZIP',d.attorney_cityStateZip)}</div>
     </div>

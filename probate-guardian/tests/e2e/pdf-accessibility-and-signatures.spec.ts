@@ -209,6 +209,19 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(c2Pos).toBeGreaterThan(0);
     expect(c3Pos).toBeGreaterThan(c2Pos);
 
+    // Bookmark clicks must target the section Y coordinate, not just the
+    // related page top. jsPDF's stock outline writer has regressed here
+    // before by emitting every destination as /XYZ 0 792 0.
+    const outlineDestinations = [...rawPdfString.matchAll(/\/Dest \[[^\]]+\/XYZ\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\]/g)]
+      .map(match => ({
+        left: Number(match[1]),
+        top: Number(match[2]),
+        zoom: Number(match[3]),
+      }));
+    expect(outlineDestinations.length).toBeGreaterThan(5);
+    expect(new Set(outlineDestinations.map(dest => Math.round(dest.top))).size).toBeGreaterThan(2);
+    expect(outlineDestinations.some(dest => dest.top < 760)).toBe(true);
+
     // Selectable /s/ Signature Text Extraction Verification (Unicode decoded via /ToUnicode CMap)
     const extractedText = await extractPdfText(rawPdfString);
     expect(extractedText).toContain('/s/ Rachel M. Alvarez');

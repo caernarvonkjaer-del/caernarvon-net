@@ -1549,6 +1549,10 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(text1).toContain('robert@vancelaw.com');
     expect(text1).toContain('Secondary Email');
     expect(text1).toContain('service@vancelaw.com');
+    const partThreeIndex = text1.indexOf('Part III — ASSETS OF THE WARD');
+    const scheduleA1Index = text1.indexOf('Schedule A-1: Real Property Assets');
+    expect(partThreeIndex).toBeGreaterThan(-1);
+    expect(scheduleA1Index).toBeGreaterThan(partThreeIndex);
     // Layout underline artifact tagged
     expect(rawPdf1).toContain('/Artifact << /Type /Layout >> BDC');
 

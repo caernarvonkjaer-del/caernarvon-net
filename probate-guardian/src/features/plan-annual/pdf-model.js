@@ -9,6 +9,7 @@ export function buildPlanAnnualModel(D) {
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
   const county = d.county || 'Pinellas';
+  const attorneySecondaryEmail = d.attorney_secondary_email || d.attorney_secondaryEmail || '';
 
   const fmtDate = (iso) => {
     if (!iso) return '';
@@ -558,7 +559,7 @@ export function buildPlanAnnualModel(D) {
         signatureDate: fmtDate(d.attorney_signatureDate),
         fields: [
           [{ label: 'Attorney Name', value: d.attorney || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
-          [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondary_email || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: attorneySecondaryEmail }],
           [{ label: 'Street Address', value: d.attorney_street || '' }, { label: 'City / State / ZIP', value: d.attorney_cityStateZip || '' }],
         ],
       },
