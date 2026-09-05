@@ -192,7 +192,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
-    [25, 25, 20, 10, 10, 10],
+    [22, 22, 16, 14, 12, 14],
     ['left', 'left', 'left', 'right', 'right', 'right'],
     null,
     true // Page break at start of Part III Assets
@@ -208,7 +208,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule A-2 Total (Full Debt Balance)',
     totalA2,
     'debts on real property',
-    [25, 25, 30, 20],
+    [22, 28, 33, 17],
     ['left', 'left', 'left', 'right']
   );
 
@@ -227,7 +227,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
-    [22, 20, 20, 16, 11, 11],
+    [20, 18, 20, 16, 10, 16],
     ['left', 'left', 'left', 'right', 'center', 'right'],
     [restrictedCash]
   );
@@ -242,7 +242,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
-    [25, 25, 20, 10, 10, 10],
+    [22, 22, 16, 14, 12, 14],
     ['left', 'left', 'left', 'right', 'right', 'right']
   );
 
@@ -256,7 +256,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
     'intangible personal property assets',
-    [35, 25, 13, 13, 14],
+    [33, 25, 16, 12, 14],
     ['left', 'left', 'right', 'right', 'right']
   );
 
@@ -270,7 +270,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-4 Total',
     totalB4,
     'debts on personal property',
-    [25, 25, 30, 20],
+    [22, 28, 33, 17],
     ['left', 'left', 'left', 'right']
   );
 

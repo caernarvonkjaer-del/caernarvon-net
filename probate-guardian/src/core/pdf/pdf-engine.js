@@ -161,9 +161,19 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(50, 60, 75);
-    doc.text(`Ward: ${wardName}`, margin + 6, barTop + 12);
-    doc.text(sectionTitle || '', margin + 234, barTop + 12, { align: 'center' });
-    doc.text(`Case #: ${caseNumber || 'Pending'}`, pageWidth - margin - 6, barTop + 12, { align: 'right' });
+    // Clamp each cell to its 156pt column so overlong text can't bleed into
+    // adjacent columns. splitTextToSize returns an array; we always take [0].
+    const COL_W = 156;
+    const COL_PAD = 10; // left+right pad inside column
+    const wardLabel = `Ward: ${wardName}`;
+    const wardLine = doc.splitTextToSize(wardLabel, COL_W - COL_PAD)[0] || wardLabel;
+    doc.text(wardLine, margin + 6, barTop + 12);
+    const midLabel = sectionTitle || '';
+    const midLine = doc.splitTextToSize(midLabel, COL_W - COL_PAD)[0] || midLabel;
+    doc.text(midLine, margin + 234, barTop + 12, { align: 'center' });
+    const caseLabel = `Case #: ${caseNumber || 'Pending'}`;
+    const caseLine = doc.splitTextToSize(caseLabel, COL_W - COL_PAD)[0] || caseLabel;
+    doc.text(caseLine, pageWidth - margin - 6, barTop + 12, { align: 'right' });
     writeArtifactEnd(doc);
   };
 
@@ -1004,7 +1014,13 @@ export async function generateCourtFormPdf(model, options = {}) {
               doc.setFont('PGSans', 'normal');
               doc.setFontSize(7.5);
               doc.setTextColor(30, 35, 45);
-              doc.text(String(field.value), fx, rowY + 9);
+              // Wrap value text within the column so long addresses (e.g.
+              // "418 Orange Blossom Lane, New Port Richey, FL 34652") don't
+              // overflow into the right margin. Each field column is
+              // contentWidth/cols wide; subtract 4pt for left padding.
+              const fieldMaxW = colW - 4;
+              const fieldLines = doc.splitTextToSize(String(field.value), fieldMaxW);
+              doc.text(fieldLines, fx, rowY + 9);
               writeMarkedContentEnd(doc);
             }
             rowY += FIELD_ROW_H;
