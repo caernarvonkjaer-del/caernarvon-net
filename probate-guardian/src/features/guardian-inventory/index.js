@@ -822,9 +822,12 @@ function pageScheduleC5(){
 // ATTESTATION & FILING PAGES (D1–D5)
 // ═══════════════════════════════════════════════════════
 function pageD1(){
-  const cards=D.guardians.map((g,i)=>{
-    const isFirst=i===0;
-    const title=isFirst?'Guardian #1':`Co-Guardian #${i+1}`;
+  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g})=>[
+    g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip
+  ].some(value=>String(value||'').trim()));
+  const cards=partyRecords.map(({g,i},visibleIndex)=>{
+    const isFirst=visibleIndex===0;
+    const title=isFirst?'Guardian #1':`Co-Guardian #${visibleIndex+1}`;
     const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
     const useSlashS = g.useSlashS !== false;
     const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="g_slashs_${i}" ${useSlashS?'checked':''} data-bind="guardians.${i}.useSlashS"><label class="form-check-label" for="g_slashs_${i}">Use /s/ format</label></div>`;

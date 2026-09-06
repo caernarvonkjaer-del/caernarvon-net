@@ -6,7 +6,22 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   await page.evaluate(() => (window as any).addWard('Layout Ward', 'guardian'));
   await page.evaluate(() => {
     const data = (window as any).D;
-    data.guardians.push({ name: '', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true });
+    data.guardians = [
+      { name: 'First Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
+    ];
+  });
+  await page.evaluate(() => (window as any).navigate('/d1'));
+  const oneCardGrid = page.locator('.attestation-card-grid').first();
+  await expect(oneCardGrid.locator(':scope > .entry-card')).toHaveCount(1);
+  const oneCardWidth = await oneCardGrid.locator(':scope > .entry-card').evaluate((card) => (card as HTMLElement).getBoundingClientRect().width);
+  expect(oneCardWidth).toBeLessThan(600);
+
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.guardians = [
+      { name: 'First Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
+      { name: 'Second Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
+    ];
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
   const grid = page.locator('.attestation-card-grid').first();
