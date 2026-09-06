@@ -2484,12 +2484,14 @@ function pageActivityLog(){
     <div class="schedule-instructions">A record of security-relevant events on this device — unlocks, failed password attempts, and every backup saved or restored. Nothing here is transmitted anywhere; it's stored the same way your case data is, on this device only.</div>
     <div id="storage-usage-readout" class="storage-readout">Checking storage…</div>
     <div class="activity-log-toolbar">
-      <span class="dashboard-search-wrap activity-log-search-wrap">${ic('search',15)}<input type="text" id="activity-log-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search details…" data-form-input="activity-log"></span>
+      <span class="dashboard-search-wrap activity-log-search-wrap">${ic('search',15)}<label class="visually-hidden" for="activity-log-search">Search activity log details</label><input type="text" id="activity-log-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search details…" data-form-input="activity-log"></span>
+      <label class="visually-hidden" for="activity-log-status">Filter activity log by result</label>
       <select id="activity-log-status" class="form-select form-select-sm activity-log-select" data-form-change="activity-log">
         <option value="all">All results</option>
         <option value="success">Successful only</option>
         <option value="failed">Failed only</option>
       </select>
+      <label class="visually-hidden" for="activity-log-type">Filter activity log by event type</label>
       <select id="activity-log-type" class="form-select form-select-sm activity-log-select" data-form-change="activity-log">
         <option value="all">All event types</option>
         ${typeOptions}

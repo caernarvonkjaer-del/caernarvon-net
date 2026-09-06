@@ -43,3 +43,13 @@ test('all visible form controls have accessible names across form types', async 
     }
   }
 });
+
+test('Activity Log toolbar controls have explicit labels', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).addWard('Activity Log Labels', 'guardian'));
+  await page.evaluate(() => (window as any).navigate('/activity-log'));
+
+  await expect(page.locator('label[for="activity-log-search"]')).toHaveText('Search activity log details');
+  await expect(page.locator('label[for="activity-log-status"]')).toHaveText('Filter activity log by result');
+  await expect(page.locator('label[for="activity-log-type"]')).toHaveText('Filter activity log by event type');
+});
