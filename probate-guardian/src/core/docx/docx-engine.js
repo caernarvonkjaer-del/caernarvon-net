@@ -1,7 +1,7 @@
 // Native OpenXML (.docx) generator for Probate Guardian court filings.
 // Consumes the canonical court form model (metadata + sections + blocks)
-// and produces a real, fully editable .docx document with 1-inch margins,
-// court captions, tables, checklists, notices, signatures, headers, and footers.
+// and produces a real, fully editable .docx document matching the PDF's
+// exact court styling, typography, colors, table layouts, headers, and footers.
 
 import {
   getFloridaCircuitCourtCaption,
@@ -53,6 +53,7 @@ function buildContentTypesXml() {
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
   <Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
   <Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>
+  <Override PartName="/word/header2.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>
   <Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>
   <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
@@ -75,6 +76,7 @@ function buildDocumentRelsXml() {
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>
   <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header2.xml"/>
 </Relationships>`;
 }
 
@@ -127,15 +129,15 @@ function buildStylesXml() {
     <w:rPrDefault>
       <w:rPr>
         <w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>
-        <w:sz w:val="20"/>
-        <w:szCs w:val="20"/>
-        <w:color w:val="111A2B"/>
+        <w:sz w:val="18"/>
+        <w:szCs w:val="18"/>
+        <w:color w:val="111827"/>
         <w:lang w:val="en-US"/>
       </w:rPr>
     </w:rPrDefault>
     <w:pPrDefault>
       <w:pPr>
-        <w:spacing w:line="240" w:lineRule="auto" w:after="120"/>
+        <w:spacing w:line="230" w:lineRule="auto" w:before="0" w:after="0"/>
       </w:pPr>
     </w:pPrDefault>
   </w:docDefaults>
@@ -146,19 +148,20 @@ function buildStylesXml() {
     <w:qFormat/>
   </w:style>
 
-  <!-- Heading 1 -->
+  <!-- Heading 1 (Section / Part Title) -->
   <w:style w:type="paragraph" w:styleId="Heading1">
     <w:name w:val="heading 1"/>
     <w:basedOn w:val="Normal"/>
     <w:next w:val="Normal"/>
     <w:qFormat/>
     <w:pPr>
-      <w:spacing w:before="240" w:after="120"/>
+      <w:spacing w:before="220" w:after="60" w:line="240" w:lineRule="auto"/>
       <w:pBdr>
-        <w:bottom w:val="single" w:sz="6" w:space="4" w:color="B4BECB"/>
+        <w:bottom w:val="single" w:sz="6" w:space="3" w:color="B4BECB"/>
       </w:pBdr>
     </w:pPr>
     <w:rPr>
+      <w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
       <w:b/>
       <w:sz w:val="24"/>
       <w:szCs w:val="24"/>
@@ -166,16 +169,17 @@ function buildStylesXml() {
     </w:rPr>
   </w:style>
 
-  <!-- Heading 2 -->
+  <!-- Heading 2 (Schedule / Subsection Title) -->
   <w:style w:type="paragraph" w:styleId="Heading2">
     <w:name w:val="heading 2"/>
     <w:basedOn w:val="Normal"/>
     <w:next w:val="Normal"/>
     <w:qFormat/>
     <w:pPr>
-      <w:spacing w:before="180" w:after="80"/>
+      <w:spacing w:before="160" w:after="50" w:line="240" w:lineRule="auto"/>
     </w:pPr>
     <w:rPr>
+      <w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
       <w:b/>
       <w:sz w:val="22"/>
       <w:szCs w:val="22"/>
@@ -183,19 +187,20 @@ function buildStylesXml() {
     </w:rPr>
   </w:style>
 
-  <!-- Heading 3 -->
+  <!-- Heading 3 (Block / Table Title) -->
   <w:style w:type="paragraph" w:styleId="Heading3">
     <w:name w:val="heading 3"/>
     <w:basedOn w:val="Normal"/>
     <w:next w:val="Normal"/>
     <w:qFormat/>
     <w:pPr>
-      <w:spacing w:before="140" w:after="60"/>
+      <w:spacing w:before="120" w:after="40" w:line="240" w:lineRule="auto"/>
     </w:pPr>
     <w:rPr>
+      <w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
       <w:b/>
-      <w:sz w:val="20"/>
-      <w:szCs w:val="20"/>
+      <w:sz w:val="19"/>
+      <w:szCs w:val="19"/>
       <w:color w:val="1A2D4A"/>
     </w:rPr>
   </w:style>
@@ -205,12 +210,13 @@ function buildStylesXml() {
     <w:name w:val="header"/>
     <w:basedOn w:val="Normal"/>
     <w:pPr>
-      <w:spacing w:after="0" w:line="220" w:lineRule="auto"/>
+      <w:spacing w:before="0" w:after="0" w:line="220" w:lineRule="auto"/>
     </w:pPr>
     <w:rPr>
+      <w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
       <w:sz w:val="16"/>
       <w:szCs w:val="16"/>
-      <w:color w:val="505D6E"/>
+      <w:color w:val="323C4B"/>
     </w:rPr>
   </w:style>
 
@@ -219,9 +225,10 @@ function buildStylesXml() {
     <w:name w:val="footer"/>
     <w:basedOn w:val="Normal"/>
     <w:pPr>
-      <w:spacing w:after="0" w:line="220" w:lineRule="auto"/>
+      <w:spacing w:before="0" w:after="0" w:line="220" w:lineRule="auto"/>
     </w:pPr>
     <w:rPr>
+      <w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
       <w:sz w:val="16"/>
       <w:szCs w:val="16"/>
       <w:color w:val="6E7887"/>
@@ -230,6 +237,7 @@ function buildStylesXml() {
 </w:styles>`;
 }
 
+// Continuation header (Pages 2+) matching PDF continuation bar
 function buildHeaderXml(metadata) {
   const county = (metadata.county || 'Pinellas').toUpperCase();
   const caption = getFloridaCircuitCourtCaption(county);
@@ -243,6 +251,7 @@ function buildHeaderXml(metadata) {
     <w:pPr>
       <w:pStyle w:val="Header"/>
       <w:jc w:val="center"/>
+      <w:spacing w:before="0" w:after="20"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="1A2D4A"/></w:rPr>
@@ -253,6 +262,7 @@ function buildHeaderXml(metadata) {
     <w:pPr>
       <w:pStyle w:val="Header"/>
       <w:jc w:val="center"/>
+      <w:spacing w:before="0" w:after="40"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="1A2D4A"/></w:rPr>
@@ -264,19 +274,19 @@ function buildHeaderXml(metadata) {
       <w:tblW w:w="${CONTENT_WIDTH_TWIPS}" w:type="dxa"/>
       <w:jc w:val="center"/>
       <w:tblBorders>
-        <w:top w:val="single" w:sz="4" w:space="0" w:color="B4BECB"/>
-        <w:left w:val="single" w:sz="4" w:space="0" w:color="B4BECB"/>
-        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="B4BECB"/>
-        <w:right w:val="single" w:sz="4" w:space="0" w:color="B4BECB"/>
+        <w:top w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+        <w:left w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+        <w:bottom w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+        <w:right w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
         <w:insideH w:val="none"/>
-        <w:insideV w:val="single" w:sz="4" w:space="0" w:color="B4BECB"/>
+        <w:insideV w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
       </w:tblBorders>
       <w:shd w:val="clear" w:color="auto" w:fill="F8F9FB"/>
       <w:tblCellMar>
-        <w:top w:w="60" w:type="dxa"/>
-        <w:left w:w="120" w:type="dxa"/>
-        <w:bottom w:w="60" w:type="dxa"/>
-        <w:right w:w="120" w:type="dxa"/>
+        <w:top w:w="40" w:type="dxa"/>
+        <w:left w:w="100" w:type="dxa"/>
+        <w:bottom w:w="40" w:type="dxa"/>
+        <w:right w:w="100" w:type="dxa"/>
       </w:tblCellMar>
     </w:tblPr>
     <w:tblGrid>
@@ -285,30 +295,39 @@ function buildHeaderXml(metadata) {
       <w:gridCol w:w="3120"/>
     </w:tblGrid>
     <w:tr>
+      <w:trPr><w:cantSplit/></w:trPr>
       <w:tc>
         <w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>
         <w:p>
-          <w:pPr><w:pStyle w:val="Header"/><w:spacing w:after="0"/></w:pPr>
+          <w:pPr><w:pStyle w:val="Header"/><w:spacing w:before="0" w:after="0"/></w:pPr>
           <w:r><w:t>Ward: ${wardName}</w:t></w:r>
         </w:p>
       </w:tc>
       <w:tc>
         <w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>
         <w:p>
-          <w:pPr><w:pStyle w:val="Header"/><w:jc w:val="center"/><w:spacing w:after="0"/></w:pPr>
+          <w:pPr><w:pStyle w:val="Header"/><w:jc w:val="center"/><w:spacing w:before="0" w:after="0"/></w:pPr>
           <w:r><w:t>Florida Guardianship Report</w:t></w:r>
         </w:p>
       </w:tc>
       <w:tc>
         <w:tcPr><w:tcW w:w="3120" w:type="dxa"/></w:tcPr>
         <w:p>
-          <w:pPr><w:pStyle w:val="Header"/><w:jc w:val="right"/><w:spacing w:after="0"/></w:pPr>
+          <w:pPr><w:pStyle w:val="Header"/><w:jc w:val="right"/><w:spacing w:before="0" w:after="0"/></w:pPr>
           <w:r><w:t>Case #: ${caseNumber}</w:t></w:r>
         </w:p>
       </w:tc>
     </w:tr>
   </w:tbl>
-  <w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>
+  <w:p><w:pPr><w:spacing w:before="0" w:after="80"/></w:pPr></w:p>
+</w:hdr>`;
+}
+
+// First page header (empty for clean cover)
+function buildHeader2Xml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr></w:p>
 </w:hdr>`;
 }
 
@@ -354,11 +373,11 @@ function renderPleadingHeader(metadata) {
   const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();
 
   return `
-  <!-- Pleading Header (Cover Page) -->
+  <!-- Florida Court Pleading Header (Page 1) -->
   <w:p>
     <w:pPr>
       <w:jc w:val="center"/>
-      <w:spacing w:before="0" w:after="40" w:line="240" w:lineRule="auto"/>
+      <w:spacing w:before="0" w:after="20" w:line="230" w:lineRule="auto"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="21"/><w:szCs w:val="21"/><w:color w:val="000000"/></w:rPr>
@@ -368,7 +387,7 @@ function renderPleadingHeader(metadata) {
   <w:p>
     <w:pPr>
       <w:jc w:val="center"/>
-      <w:spacing w:before="0" w:after="40" w:line="240" w:lineRule="auto"/>
+      <w:spacing w:before="0" w:after="20" w:line="230" w:lineRule="auto"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="21"/><w:szCs w:val="21"/><w:color w:val="000000"/></w:rPr>
@@ -378,7 +397,7 @@ function renderPleadingHeader(metadata) {
   <w:p>
     <w:pPr>
       <w:jc w:val="center"/>
-      <w:spacing w:before="0" w:after="40" w:line="240" w:lineRule="auto"/>
+      <w:spacing w:before="0" w:after="20" w:line="230" w:lineRule="auto"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="20"/><w:szCs w:val="20"/><w:color w:val="000000"/></w:rPr>
@@ -388,7 +407,7 @@ function renderPleadingHeader(metadata) {
   <w:p>
     <w:pPr>
       <w:jc w:val="center"/>
-      <w:spacing w:before="0" w:after="140" w:line="240" w:lineRule="auto"/>
+      <w:spacing w:before="0" w:after="100" w:line="230" w:lineRule="auto"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="20"/><w:szCs w:val="20"/><w:color w:val="000000"/></w:rPr>
@@ -398,7 +417,7 @@ function renderPleadingHeader(metadata) {
 
   <w:p>
     <w:pPr>
-      <w:spacing w:before="100" w:after="160"/>
+      <w:spacing w:before="80" w:after="120" w:line="240" w:lineRule="auto"/>
     </w:pPr>
     <w:r>
       <w:rPr><w:b/><w:sz w:val="22"/><w:szCs w:val="22"/><w:color w:val="000000"/></w:rPr>
@@ -409,10 +428,13 @@ function renderPleadingHeader(metadata) {
   <w:p>
     <w:pPr>
       <w:jc w:val="center"/>
-      <w:spacing w:before="80" w:after="240"/>
+      <w:spacing w:before="60" w:after="180" w:line="240" w:lineRule="auto"/>
+      <w:pBdr>
+        <w:bottom w:val="single" w:sz="8" w:space="3" w:color="000000"/>
+      </w:pBdr>
     </w:pPr>
     <w:r>
-      <w:rPr><w:b/><w:u w:val="single"/><w:sz w:val="25"/><w:szCs w:val="25"/><w:color w:val="000000"/></w:rPr>
+      <w:rPr><w:b/><w:sz w:val="25"/><w:szCs w:val="25"/><w:color w:val="000000"/></w:rPr>
       <w:t>${xmlEscape(formTitle)}</w:t>
     </w:r>
   </w:p>`;
@@ -420,24 +442,24 @@ function renderPleadingHeader(metadata) {
 
 function renderNoticeBlock(block) {
   const text = block.text || '';
-  const lines = text.split('\n');
+  const lines = text.split('\n').filter(Boolean);
   return `
   <w:tbl>
     <w:tblPr>
       <w:tblW w:w="${CONTENT_WIDTH_TWIPS}" w:type="dxa"/>
       <w:jc w:val="center"/>
       <w:tblBorders>
-        <w:top w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-        <w:left w:val="single" w:sz="18" w:space="0" w:color="1E5799"/>
-        <w:bottom w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-        <w:right w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
+        <w:top w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
+        <w:left w:val="single" w:sz="18" w:space="0" w:color="1A2D4A"/>
+        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
+        <w:right w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
       </w:tblBorders>
       <w:shd w:val="clear" w:color="auto" w:fill="F8F9FB"/>
       <w:tblCellMar>
-        <w:top w:w="120" w:type="dxa"/>
-        <w:left w:w="160" w:type="dxa"/>
-        <w:bottom w:w="120" w:type="dxa"/>
-        <w:right w:w="160" w:type="dxa"/>
+        <w:top w:w="80" w:type="dxa"/>
+        <w:left w:w="120" w:type="dxa"/>
+        <w:bottom w:w="80" w:type="dxa"/>
+        <w:right w:w="120" w:type="dxa"/>
       </w:tblCellMar>
     </w:tblPr>
     <w:tblGrid>
@@ -449,17 +471,16 @@ function renderNoticeBlock(block) {
         ${lines.map(line => `
         <w:p>
           <w:pPr>
-            <w:spacing w:before="40" w:after="40" w:line="240" w:lineRule="auto"/>
+            <w:spacing w:before="20" w:after="20" w:line="230" w:lineRule="auto"/>
           </w:pPr>
           <w:r>
-            <w:rPr><w:i/><w:sz w:val="19"/><w:color w:val="3C4655"/></w:rPr>
+            <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="3C4655"/></w:rPr>
             <w:t>${xmlEscape(line)}</w:t>
           </w:r>
         </w:p>`).join('')}
       </w:tc>
     </w:tr>
-  </w:tbl>
-  <w:p><w:pPr><w:spacing w:after="100"/></w:pPr></w:p>`;
+  </w:tbl>`;
 }
 
 function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
@@ -467,7 +488,7 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
   if (block.title) {
     xml += `
     <w:p>
-      <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="140" w:after="80"/></w:pPr>
+      <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="120" w:after="40"/></w:pPr>
       <w:r><w:t>${xmlEscape(block.title)}</w:t></w:r>
     </w:p>`;
   }
@@ -476,8 +497,8 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
   if (!items.length) return xml;
 
   const halfWidth = Math.floor(CONTENT_WIDTH_TWIPS / 2); // 4680 twips
-  const labelColW = 2000;
-  const valueColW = halfWidth - labelColW; // 2680 twips
+  const labelColW = 2200; // 23.5%
+  const valueColW = halfWidth - labelColW; // 2480 twips (26.5%)
 
   xml += `
   <w:tbl>
@@ -489,14 +510,14 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
         <w:left w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
         <w:bottom w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
         <w:right w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
-        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
+        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
         <w:insideV w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>
       </w:tblBorders>
       <w:tblCellMar>
-        <w:top w:w="80" w:type="dxa"/>
-        <w:left w:w="120" w:type="dxa"/>
-        <w:bottom w:w="80" w:type="dxa"/>
-        <w:right w:w="120" w:type="dxa"/>
+        <w:top w:w="50" w:type="dxa"/>
+        <w:left w:w="80" w:type="dxa"/>
+        <w:bottom w:w="50" w:type="dxa"/>
+        <w:right w:w="80" w:type="dxa"/>
       </w:tblCellMar>
     </w:tblPr>
     <w:tblGrid>
@@ -512,6 +533,7 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
 
     xml += `
     <w:tr>
+      <w:trPr><w:cantSplit/></w:trPr>
       <!-- Item 1 Label -->
       <w:tc>
         <w:tcPr>
@@ -519,9 +541,9 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
           <w:shd w:val="clear" w:color="auto" w:fill="F1F3F6"/>
         </w:tcPr>
         <w:p>
-          <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
+          <w:pPr><w:spacing w:before="0" w:after="0" w:line="220" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="374151"/></w:rPr>
+            <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="374151"/></w:rPr>
             <w:t>${xmlEscape(item1?.label || '')}</w:t>
           </w:r>
         </w:p>
@@ -533,9 +555,9 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
           ${item2 ? '' : '<w:gridSpan w:val="3"/>'}
         </w:tcPr>
         <w:p>
-          <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
+          <w:pPr><w:spacing w:before="0" w:after="0" w:line="220" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:sz w:val="18"/><w:color w:val="111A2B"/></w:rPr>
+            <w:rPr><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr>
             <w:t>${xmlEscape(item1?.value || '')}</w:t>
           </w:r>
         </w:p>
@@ -550,9 +572,9 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
           <w:shd w:val="clear" w:color="auto" w:fill="F1F3F6"/>
         </w:tcPr>
         <w:p>
-          <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
+          <w:pPr><w:spacing w:before="0" w:after="0" w:line="220" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="374151"/></w:rPr>
+            <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="374151"/></w:rPr>
             <w:t>${xmlEscape(item2?.label || '')}</w:t>
           </w:r>
         </w:p>
@@ -563,9 +585,9 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
           <w:tcW w:w="${valueColW}" w:type="dxa"/>
         </w:tcPr>
         <w:p>
-          <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
+          <w:pPr><w:spacing w:before="0" w:after="0" w:line="220" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:sz w:val="18"/><w:color w:val="111A2B"/></w:rPr>
+            <w:rPr><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr>
             <w:t>${xmlEscape(item2?.value || '')}</w:t>
           </w:r>
         </w:p>
@@ -577,8 +599,7 @@ function renderKeyValueGridBlock(block, subHTag = 'Heading3') {
   }
 
   xml += `
-  </w:tbl>
-  <w:p><w:pPr><w:spacing w:after="100"/></w:pPr></w:p>`;
+  </w:tbl>`;
   return xml;
 }
 
@@ -587,7 +608,7 @@ function renderChecklistBlock(block, subHTag = 'Heading3') {
   if (block.title) {
     xml += `
     <w:p>
-      <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="140" w:after="80"/></w:pPr>
+      <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="120" w:after="40"/></w:pPr>
       <w:r><w:t>${xmlEscape(block.title)}</w:t></w:r>
     </w:p>`;
   }
@@ -602,65 +623,25 @@ function renderChecklistBlock(block, subHTag = 'Heading3') {
     xml += `
     <w:p>
       <w:pPr>
-        <w:spacing w:before="30" w:after="30" w:line="240" w:lineRule="auto"/>
-        <w:ind w:left="240"/>
+        <w:spacing w:before="20" w:after="20" w:line="230" w:lineRule="auto"/>
+        <w:ind w:left="180"/>
       </w:pPr>
       <w:r>
-        <w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="${checked ? '1F7A3D' : '505D6E'}"/></w:rPr>
+        <w:rPr><w:b/><w:sz w:val="20"/><w:color w:val="${checked ? '1F7A3D' : '64748B'}"/></w:rPr>
         <w:t>${boxSymbol} </w:t>
       </w:r>
       <w:r>
-        <w:rPr><w:b/><w:sz w:val="18"/><w:color w:val="${checked ? '1F7A3D' : '505D6E'}"/></w:rPr>
+        <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="${checked ? '1F7A3D' : '64748B'}"/></w:rPr>
         <w:t>${statePrefix}</w:t>
       </w:r>
       <w:r>
-        <w:rPr><w:sz w:val="18"/><w:color w:val="1E232D"/></w:rPr>
+        <w:rPr><w:sz w:val="17"/><w:color w:val="1E232D"/></w:rPr>
         <w:t>${xmlEscape(label)}</w:t>
       </w:r>
     </w:p>`;
   }
 
-  xml += `<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`;
   return xml;
-}
-
-function renderCellContent(cellData) {
-  if (cellData && typeof cellData === 'object' && !Array.isArray(cellData) && ('main' in cellData || 'sub' in cellData)) {
-    let runs = '';
-    if (cellData.main) {
-      runs += `
-      <w:p>
-        <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
-        <w:r>
-          <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr>
-          <w:t>${xmlEscape(cellData.main)}</w:t>
-        </w:r>
-      </w:p>`;
-    }
-    for (const sub of (cellData.sub || [])) {
-      if (!sub) continue;
-      const text = typeof sub === 'string' ? sub : (sub.text || '');
-      const isItalic = typeof sub === 'object' && !!sub.italic;
-      runs += `
-      <w:p>
-        <w:pPr><w:spacing w:before="0" w:after="20"/></w:pPr>
-        <w:r>
-          <w:rPr>${isItalic ? '<w:i/>' : ''}<w:sz w:val="15"/><w:color w:val="646E7D"/></w:rPr>
-          <w:t>${xmlEscape(text)}</w:t>
-        </w:r>
-      </w:p>`;
-    }
-    return runs || '<w:p><w:pPr><w:spacing w:before="20" w:after="20"/></w:p></w:p>';
-  }
-
-  return `
-  <w:p>
-    <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
-    <w:r>
-      <w:rPr><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr>
-      <w:t>${xmlEscape(cellData)}</w:t>
-    </w:r>
-  </w:p>`;
 }
 
 function renderTableBlock(block, subHTag = 'Heading3') {
@@ -670,7 +651,7 @@ function renderTableBlock(block, subHTag = 'Heading3') {
   if (tblTitle) {
     xml += `
     <w:p>
-      <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="160" w:after="80"/></w:pPr>
+      <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="140" w:after="50"/></w:pPr>
       <w:r><w:t>${xmlEscape(tblTitle)}</w:t></w:r>
     </w:p>`;
   }
@@ -685,24 +666,24 @@ function renderTableBlock(block, subHTag = 'Heading3') {
       <w:jc w:val="center"/>
       <w:tblBorders>
         <w:top w:val="single" w:sz="6" w:space="0" w:color="640019"/>
-        <w:left w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-        <w:bottom w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-        <w:right w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
-        <w:insideV w:val="single" w:sz="4" w:space="0" w:color="DCE2EB"/>
+        <w:left w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+        <w:bottom w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+        <w:right w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
+        <w:insideV w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
       </w:tblBorders>
       <w:tblCellMar>
-        <w:top w:w="80" w:type="dxa"/>
-        <w:left w:w="100" w:type="dxa"/>
-        <w:bottom w:w="80" w:type="dxa"/>
-        <w:right w:w="100" w:type="dxa"/>
+        <w:top w:w="50" w:type="dxa"/>
+        <w:left w:w="80" w:type="dxa"/>
+        <w:bottom w:w="50" w:type="dxa"/>
+        <w:right w:w="80" w:type="dxa"/>
       </w:tblCellMar>
     </w:tblPr>
     <w:tblGrid>
       ${widths.map(w => `<w:gridCol w:w="${w}"/>`).join('')}
     </w:tblGrid>
 
-    <!-- Header Row -->
+    <!-- Deep Burgundy Table Header Row -->
     <w:tr>
       <w:trPr>
         <w:tblHeader/>
@@ -720,7 +701,7 @@ function renderTableBlock(block, subHTag = 'Heading3') {
           <w:p>
             <w:pPr>
               <w:jc w:val="${jcVal}"/>
-              <w:spacing w:before="40" w:after="40"/>
+              <w:spacing w:before="30" w:after="30" w:line="220" w:lineRule="auto"/>
             </w:pPr>
             <w:r>
               <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="FFFFFF"/></w:rPr>
@@ -744,15 +725,15 @@ function renderTableBlock(block, subHTag = 'Heading3') {
         <w:tc>
           <w:tcPr>
             <w:tcW w:w="${widths[cIdx]}" w:type="dxa"/>
-            ${isAlt ? '<w:shd w:val="clear" w:color="auto" w:fill="F8F9FA"/>' : ''}
+            ${isAlt ? '<w:shd w:val="clear" w:color="auto" w:fill="F9FAFC"/>' : ''}
           </w:tcPr>
           <w:p>
             <w:pPr>
               <w:jc w:val="${jcVal}"/>
-              <w:spacing w:before="20" w:after="20"/>
+              <w:spacing w:before="20" w:after="20" w:line="220" w:lineRule="auto"/>
             </w:pPr>
             <w:r>
-              <w:rPr><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr>
+              <w:rPr><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr>
               <w:t>${xmlEscape(typeof cell === 'object' && cell !== null && 'main' in cell ? cell.main : cell)}</w:t>
             </w:r>
           </w:p>
@@ -760,10 +741,10 @@ function renderTableBlock(block, subHTag = 'Heading3') {
           <w:p>
             <w:pPr>
               <w:jc w:val="${jcVal}"/>
-              <w:spacing w:before="0" w:after="10"/>
+              <w:spacing w:before="0" w:after="10" w:line="180" w:lineRule="auto"/>
             </w:pPr>
             <w:r>
-              <w:rPr>${s.italic ? '<w:i/>' : ''}<w:sz w:val="14"/><w:color w:val="646E7D"/></w:rPr>
+              <w:rPr>${s.italic ? '<w:i/>' : ''}<w:sz w:val="13"/><w:color w:val="64748B"/></w:rPr>
               <w:t>${xmlEscape(typeof s === 'string' ? s : s.text)}</w:t>
             </w:r>
           </w:p>`).join('') : ''}
@@ -788,12 +769,12 @@ function renderTableBlock(block, subHTag = 'Heading3') {
         <w:tcPr>
           <w:tcW w:w="${labelSpanWidth}" w:type="dxa"/>
           ${labelColSpan > 1 ? `<w:gridSpan w:val="${labelColSpan}"/>` : ''}
-          <w:shd w:val="clear" w:color="auto" w:fill="EAEFF5"/>
+          <w:shd w:val="clear" w:color="auto" w:fill="F1F3F6"/>
         </w:tcPr>
         <w:p>
-          <w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr>
+          <w:pPr><w:spacing w:before="30" w:after="30" w:line="220" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr>
+            <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr>
             <w:t>${xmlEscape(totals.label || 'Total')}</w:t>
           </w:r>
         </w:p>
@@ -805,15 +786,15 @@ function renderTableBlock(block, subHTag = 'Heading3') {
         <w:tc>
           <w:tcPr>
             <w:tcW w:w="${colW}" w:type="dxa"/>
-            <w:shd w:val="clear" w:color="auto" w:fill="EAEFF5"/>
+            <w:shd w:val="clear" w:color="auto" w:fill="F1F3F6"/>
           </w:tcPr>
           <w:p>
             <w:pPr>
               <w:jc w:val="right"/>
-              <w:spacing w:before="40" w:after="40"/>
+              <w:spacing w:before="30" w:after="30" w:line="220" w:lineRule="auto"/>
             </w:pPr>
             <w:r>
-              <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr>
+              <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr>
               <w:t>${xmlEscape(tv.value ?? '')}</w:t>
             </w:r>
           </w:p>
@@ -823,8 +804,7 @@ function renderTableBlock(block, subHTag = 'Heading3') {
   }
 
   xml += `
-  </w:tbl>
-  <w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>`;
+  </w:tbl>`;
   return xml;
 }
 
@@ -838,11 +818,11 @@ function renderSignatureBlock(block, subHTag = 'Heading3') {
 
   let xml = `
   <w:p>
-    <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="180" w:after="40"/></w:pPr>
+    <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="140" w:after="30"/></w:pPr>
     <w:r><w:t>${xmlEscape(role)}</w:t></w:r>
   </w:p>`;
 
-  // Signature line and Date
+  // Signature line and Date table
   xml += `
   <w:tbl>
     <w:tblPr>
@@ -856,40 +836,47 @@ function renderSignatureBlock(block, subHTag = 'Heading3') {
         <w:insideH w:val="none"/>
         <w:insideV w:val="none"/>
       </w:tblBorders>
+      <w:tblCellMar>
+        <w:top w:w="30" w:type="dxa"/>
+        <w:left w:w="60" w:type="dxa"/>
+        <w:bottom w:w="30" w:type="dxa"/>
+        <w:right w:w="60" w:type="dxa"/>
+      </w:tblCellMar>
     </w:tblPr>
     <w:tblGrid>
-      <w:gridCol w:w="5800"/>
-      <w:gridCol w:w="3560"/>
+      <w:gridCol w:w="6000"/>
+      <w:gridCol w:w="3360"/>
     </w:tblGrid>
     <w:tr>
+      <w:trPr><w:cantSplit/></w:trPr>
       <w:tc>
-        <w:tcPr><w:tcW w:w="5800" w:type="dxa"/></w:tcPr>
+        <w:tcPr><w:tcW w:w="6000" w:type="dxa"/></w:tcPr>
         <w:p>
-          <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
+          <w:pPr><w:spacing w:before="10" w:after="10" w:line="220" w:lineRule="auto"/></w:pPr>
           ${isWetSignature ? `
           <w:r>
-            <w:rPr><w:sz w:val="20"/><w:color w:val="646E7D"/></w:rPr>
+            <w:rPr><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
             <w:t>_________________________________________</w:t>
           </w:r>` : `
           <w:r>
-            <w:rPr><w:b/><w:sz w:val="22"/><w:color w:val="141923"/></w:rPr>
+            <w:rPr><w:b/><w:sz w:val="21"/><w:color w:val="111827"/></w:rPr>
             <w:t>${xmlEscape(signatureText)}</w:t>
           </w:r>`}
         </w:p>
         <w:p>
-          <w:pPr><w:spacing w:before="0" w:after="40"/></w:pPr>
+          <w:pPr><w:spacing w:before="0" w:after="30" w:line="180" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:sz w:val="15"/><w:color w:val="646E7D"/></w:rPr>
+            <w:rPr><w:sz w:val="15"/><w:color w:val="64748B"/></w:rPr>
             <w:t>${isWetSignature ? `Signature of ${xmlEscape(signerName)}` : 'Signature (Electronic /s/ pursuant to Fla. R. Gen. Prac. &amp; Jud. Admin. 2.515)'}</w:t>
           </w:r>
         </w:p>
       </w:tc>
       <w:tc>
-        <w:tcPr><w:tcW w:w="3560" w:type="dxa"/></w:tcPr>
+        <w:tcPr><w:tcW w:w="3360" w:type="dxa"/></w:tcPr>
         <w:p>
-          <w:pPr><w:jc w:val="right"/><w:spacing w:before="20" w:after="20"/></w:pPr>
+          <w:pPr><w:jc w:val="right"/><w:spacing w:before="10" w:after="10" w:line="220" w:lineRule="auto"/></w:pPr>
           <w:r>
-            <w:rPr><w:sz w:val="18"/><w:color w:val="374151"/></w:rPr>
+            <w:rPr><w:sz w:val="17"/><w:color w:val="374151"/></w:rPr>
             <w:t>Date: ${xmlEscape(sigDate)}</w:t>
           </w:r>
         </w:p>
@@ -905,18 +892,18 @@ function renderSignatureBlock(block, subHTag = 'Heading3') {
         <w:tblW w:w="${CONTENT_WIDTH_TWIPS}" w:type="dxa"/>
         <w:jc w:val="center"/>
         <w:tblBorders>
-          <w:top w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
+          <w:top w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
           <w:left w:val="none"/>
-          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
+          <w:bottom w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
           <w:right w:val="none"/>
-          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
           <w:insideV w:val="none"/>
         </w:tblBorders>
         <w:tblCellMar>
-          <w:top w:w="40" w:type="dxa"/>
-          <w:left w:w="80" w:type="dxa"/>
-          <w:bottom w:w="40" w:type="dxa"/>
-          <w:right w:w="80" w:type="dxa"/>
+          <w:top w:w="30" w:type="dxa"/>
+          <w:left w:w="60" w:type="dxa"/>
+          <w:bottom w:w="30" w:type="dxa"/>
+          <w:right w:w="60" w:type="dxa"/>
         </w:tblCellMar>
       </w:tblPr>`;
 
@@ -925,11 +912,12 @@ function renderSignatureBlock(block, subHTag = 'Heading3') {
       const colW = Math.floor(CONTENT_WIDTH_TWIPS / numCols);
       xml += `
       <w:tr>
+        <w:trPr><w:cantSplit/></w:trPr>
         ${row.map(field => `
         <w:tc>
           <w:tcPr><w:tcW w:w="${colW}" w:type="dxa"/></w:tcPr>
           <w:p>
-            <w:pPr><w:spacing w:before="20" w:after="0"/></w:pPr>
+            <w:pPr><w:spacing w:before="10" w:after="10" w:line="200" w:lineRule="auto"/></w:pPr>
             <w:r>
               <w:rPr><w:b/><w:sz w:val="15"/><w:color w:val="46505F"/></w:rPr>
               <w:t>${xmlEscape(field?.label || '')}: </w:t>
@@ -952,9 +940,9 @@ function renderSignatureBlock(block, subHTag = 'Heading3') {
       if (v) {
         xml += `
         <w:p>
-          <w:pPr><w:spacing w:before="10" w:after="10"/><w:ind w:left="240"/></w:pPr>
+          <w:pPr><w:spacing w:before="10" w:after="10" w:line="200" w:lineRule="auto"/><w:ind w:left="180"/></w:pPr>
           <w:r>
-            <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="46505F"/></w:rPr>
+            <w:rPr><w:b/><w:sz w:val="15"/><w:color w:val="46505F"/></w:rPr>
             <w:t>${xmlEscape(k)}: </w:t>
           </w:r>
           <w:r>
@@ -966,7 +954,6 @@ function renderSignatureBlock(block, subHTag = 'Heading3') {
     }
   }
 
-  xml += `<w:p><w:pPr><w:spacing w:after="100"/></w:pPr></w:p>`;
   return xml;
 }
 
@@ -978,20 +965,20 @@ function renderSupportingDocumentsBlock(block, subHTag = 'Heading3') {
 
   xml += `
   <w:p>
-    <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="160" w:after="80"/></w:pPr>
+    <w:pPr><w:pStyle w:val="${subHTag}"/><w:spacing w:before="140" w:after="40"/></w:pPr>
     <w:r><w:t>${xmlEscape(title)}</w:t></w:r>
   </w:p>`;
 
   if (comment) {
     xml += `
     <w:p>
-      <w:pPr><w:spacing w:before="40" w:after="80"/><w:ind w:left="240"/></w:pPr>
+      <w:pPr><w:spacing w:before="20" w:after="40" w:line="220" w:lineRule="auto"/><w:ind w:left="180"/></w:pPr>
       <w:r>
-        <w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="374151"/></w:rPr>
+        <w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="374151"/></w:rPr>
         <w:t>Comment: </w:t>
       </w:r>
       <w:r>
-        <w:rPr><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr>
+        <w:rPr><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr>
         <w:t>${xmlEscape(comment)}</w:t>
       </w:r>
     </w:p>`;
@@ -1004,19 +991,19 @@ function renderSupportingDocumentsBlock(block, subHTag = 'Heading3') {
         <w:tblW w:w="${CONTENT_WIDTH_TWIPS}" w:type="dxa"/>
         <w:jc w:val="center"/>
         <w:tblBorders>
-          <w:top w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-          <w:left w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-          <w:bottom w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-          <w:right w:val="single" w:sz="6" w:space="0" w:color="D0D5DD"/>
-          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
-          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="E3E8EF"/>
+          <w:top w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+          <w:left w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+          <w:bottom w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+          <w:right w:val="single" w:sz="6" w:space="0" w:color="B4BECB"/>
+          <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
+          <w:insideV w:val="single" w:sz="4" w:space="0" w:color="E5E7EB"/>
         </w:tblBorders>
         <w:shd w:val="clear" w:color="auto" w:fill="F8F9FB"/>
         <w:tblCellMar>
-          <w:top w:w="80" w:type="dxa"/>
-          <w:left w:w="120" w:type="dxa"/>
-          <w:bottom w:w="80" w:type="dxa"/>
-          <w:right w:w="120" w:type="dxa"/>
+          <w:top w:w="50" w:type="dxa"/>
+          <w:left w:w="80" w:type="dxa"/>
+          <w:bottom w:w="50" w:type="dxa"/>
+          <w:right w:w="80" w:type="dxa"/>
         </w:tblCellMar>
       </w:tblPr>
       <w:tblGrid>
@@ -1027,11 +1014,11 @@ function renderSupportingDocumentsBlock(block, subHTag = 'Heading3') {
         <w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>
         <w:tc>
           <w:tcPr><w:tcW w:w="5800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="EAEFF5"/></w:tcPr>
-          <w:p><w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="16"/></w:rPr><w:t>Attached PDF Document</w:t></w:r></w:p>
+          <w:p><w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="1A2D4A"/></w:rPr><w:t>Attached PDF Document</w:t></w:r></w:p>
         </w:tc>
         <w:tc>
           <w:tcPr><w:tcW w:w="3560" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="EAEFF5"/></w:tcPr>
-          <w:p><w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="16"/></w:rPr><w:t>Filing Status</w:t></w:r></w:p>
+          <w:p><w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="1A2D4A"/></w:rPr><w:t>Filing Status</w:t></w:r></w:p>
         </w:tc>
       </w:tr>`;
 
@@ -1040,19 +1027,20 @@ function renderSupportingDocumentsBlock(block, subHTag = 'Heading3') {
       const pages = file?.pageCount ? `${file.pageCount} page(s)` : 'PDF Document';
       xml += `
       <w:tr>
+        <w:trPr><w:cantSplit/></w:trPr>
         <w:tc>
           <w:tcPr><w:tcW w:w="5800" w:type="dxa"/></w:tcPr>
           <w:p>
             <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
-            <w:r><w:rPr><w:b/><w:sz w:val="17"/><w:color w:val="111A2B"/></w:rPr><w:t>📄 ${xmlEscape(fileName)}</w:t></w:r>
-            <w:r><w:rPr><w:sz w:val="15"/><w:color w:val="646E7D"/></w:rPr><w:t> (${xmlEscape(pages)})</w:t></w:r>
+            <w:r><w:rPr><w:b/><w:sz w:val="16"/><w:color w:val="111827"/></w:rPr><w:t>📄 ${xmlEscape(fileName)}</w:t></w:r>
+            <w:r><w:rPr><w:sz w:val="14"/><w:color w:val="64748B"/></w:rPr><w:t> (${xmlEscape(pages)})</w:t></w:r>
           </w:p>
         </w:tc>
         <w:tc>
           <w:tcPr><w:tcW w:w="3560" w:type="dxa"/></w:tcPr>
           <w:p>
             <w:pPr><w:spacing w:before="20" w:after="20"/></w:pPr>
-            <w:r><w:rPr><w:i/><w:sz w:val="16"/><w:color w:val="1E5799"/></w:rPr><w:t>Attached PDF — Include with filing</w:t></w:r>
+            <w:r><w:rPr><w:i/><w:sz w:val="15"/><w:color w:val="1E5799"/></w:rPr><w:t>Attached PDF — Include with filing</w:t></w:r>
           </w:p>
         </w:tc>
       </w:tr>`;
@@ -1061,9 +1049,9 @@ function renderSupportingDocumentsBlock(block, subHTag = 'Heading3') {
     xml += `
     </w:tbl>
     <w:p>
-      <w:pPr><w:spacing w:before="60" w:after="100"/><w:ind w:left="120"/></w:pPr>
+      <w:pPr><w:spacing w:before="30" w:after="40"/><w:ind w:left="80"/></w:pPr>
       <w:r>
-        <w:rPr><w:i/><w:sz w:val="15"/><w:color w:val="646E7D"/></w:rPr>
+        <w:rPr><w:i/><w:sz w:val="14"/><w:color w:val="64748B"/></w:rPr>
         <w:t>Note: Supplemental PDF documents listed above must be filed separately with the court alongside this document.</w:t>
       </w:r>
     </w:p>`;
@@ -1124,10 +1112,13 @@ function buildDocumentXml(model) {
   xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <w:body>
     ${bodyXml}
-    <!-- Section Properties (1.0 inch margins, Letter size, Header and Footer references) -->
+    <!-- Section Properties: Different First Page, 1.0 inch margins, Letter size, Header/Footer references -->
     <w:sectPr>
+      <w:headerReference w:type="first" r:id="rId5"/>
       <w:headerReference w:type="default" r:id="rId3"/>
+      <w:footerReference w:type="first" r:id="rId4"/>
       <w:footerReference w:type="default" r:id="rId4"/>
+      <w:titlePg/>
       <w:pgSz w:w="${PAGE_WIDTH_TWIPS}" w:h="${PAGE_HEIGHT_TWIPS}" w:orient="portrait"/>
       <w:pgMar w:top="${MARGIN_TWIPS}" w:right="${MARGIN_TWIPS}" w:bottom="${MARGIN_TWIPS}" w:left="${MARGIN_TWIPS}"
         w:header="720" w:footer="720" w:gutter="0"/>
@@ -1151,6 +1142,7 @@ export async function generateCourtFormDocx(model, options = {}) {
   wordFolder.file('styles.xml', buildStylesXml());
   wordFolder.file('settings.xml', buildSettingsXml());
   wordFolder.file('header1.xml', buildHeaderXml(metadata));
+  wordFolder.file('header2.xml', buildHeader2Xml());
   wordFolder.file('footer1.xml', buildFooterXml(metadata));
   wordFolder.file('document.xml', buildDocumentXml(model));
 
