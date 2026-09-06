@@ -13,7 +13,7 @@ import { extractPdfText } from './support/pdf-extract';
 // it doesn't await renderPage(), making UI-driven PDF-export specs flaky.
 
 test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine', () => {
-  test('Plan Initial: generates a tagged, non-raster PDF with checklist and wet-ink signature content', async ({ page }) => {
+  test('Plan Initial: legacy signature preferences render the standard electronic signature', async ({ page }) => {
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
@@ -65,7 +65,6 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
         hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
         hasMarkInfo: /\/MarkInfo\s*<<\s*\/Marked\s*true/.test(rawPdfString),
         hasNoRasterImage: !/\/Subtype\s*\/Image/.test(rawPdfString) && !/\/Filter\s*\/DCTDecode/.test(rawPdfString),
-        containsElectronicSignatureNotice: rawPdfString.includes('pursuant to Fla. R. Gen. Prac'),
         rawPdfString,
       };
     });
@@ -79,15 +78,15 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
     expect(extractedText).toContain('Private Residence');
     expect(extractedText).toContain('Yes');
     expect(extractedText).toContain('Ann Rivera');
-    // Plan Initial signatures are wet-ink (pen-signed) -- no electronic
-    // /s/ legal notice should appear anywhere in the document.
-    expect(result.containsElectronicSignatureNotice).toBe(false);
+    // Legacy useSlashS values are inert: normal filings use the standard
+    // electronic /s/ presentation.
+    expect(extractedText).toContain('Signature (Electronic /s/');
     expect(extractedText).toContain('Jordan Alvarez');
-    expect(extractedText).toContain('Signature of Jordan Alvarez');
+    expect(extractedText).toContain('/s/ Jordan Alvarez');
     expect(extractedText).toContain('0123456');
   });
 
-  test('Plan Annual: generates a tagged, non-raster PDF with rights/ADL tables and wet-ink signature content', async ({ page }) => {
+  test('Plan Annual: generates a tagged, non-raster PDF with electronic signature content', async ({ page }) => {
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
@@ -144,7 +143,6 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
         numPages: doc.internal.getNumberOfPages(),
         hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
         hasNoRasterImage: !/\/Subtype\s*\/Image/.test(rawPdfString) && !/\/Filter\s*\/DCTDecode/.test(rawPdfString),
-        containsElectronicSignatureNotice: rawPdfString.includes('pursuant to Fla. R. Gen. Prac'),
         rawPdfString,
       };
     });
@@ -155,12 +153,12 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
     expect(result.hasNoRasterImage).toBe(true);
     expect(result.numPages).toBeGreaterThan(1);
     expect(extractedText).toContain('Lee Park');
-    expect(result.containsElectronicSignatureNotice).toBe(false);
+    expect(extractedText).toContain('Signature (Electronic /s/');
     expect(extractedText).toContain('Morgan Ellis');
     expect(extractedText).toContain('0234567');
   });
 
-  test('Plan Minor: generates a tagged, non-raster PDF with checklist and wet-ink signature content', async ({ page }) => {
+  test('Plan Minor: generates a tagged, non-raster PDF with electronic signature content', async ({ page }) => {
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
@@ -208,7 +206,6 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
         numPages: doc.internal.getNumberOfPages(),
         hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
         hasNoRasterImage: !/\/Subtype\s*\/Image/.test(rawPdfString) && !/\/Filter\s*\/DCTDecode/.test(rawPdfString),
-        containsElectronicSignatureNotice: rawPdfString.includes('pursuant to Fla. R. Gen. Prac'),
         rawPdfString,
       };
     });
@@ -219,12 +216,12 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
     expect(result.hasNoRasterImage).toBe(true);
     expect(result.numPages).toBeGreaterThan(1);
     expect(extractedText).toContain('Ortiz');
-    expect(result.containsElectronicSignatureNotice).toBe(false);
+    expect(extractedText).toContain('Signature (Electronic /s/');
     expect(extractedText).toContain('Taylor Reed');
     expect(extractedText).toContain('Robin Cruz');
   });
 
-  test('Plan Simplified: generates a tagged, non-raster PDF with narrative Q&A and wet-ink signature content', async ({ page }) => {
+  test('Plan Simplified: generates a tagged, non-raster PDF with electronic signature content', async ({ page }) => {
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
@@ -257,7 +254,6 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
         numPages: doc.internal.getNumberOfPages(),
         hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
         hasNoRasterImage: !/\/Subtype\s*\/Image/.test(rawPdfString) && !/\/Filter\s*\/DCTDecode/.test(rawPdfString),
-        containsElectronicSignatureNotice: rawPdfString.includes('pursuant to Fla. R. Gen. Prac'),
         rawPdfString,
       };
     });
@@ -268,7 +264,7 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
     expect(result.hasNoRasterImage).toBe(true);
     expect(result.numPages).toBeGreaterThan(0);
     expect(extractedText).toContain('Do Not Resuscitate');
-    expect(result.containsElectronicSignatureNotice).toBe(false);
+    expect(extractedText).toContain('Signature (Electronic /s/');
     expect(extractedText).toContain('Casey Nguyen');
   });
 });

@@ -75,15 +75,12 @@ To prevent "scanned document / OCR" warnings and satisfy accessibility requireme
 All PDF generation across Probate Guardian is standardized on **Liberation Sans** (SIL Open Font License 1.1), embedded directly as subsetted TrueType font programs (`PG_SANS_REGULAR_B64`, `PG_SANS_BOLD_B64`, `PG_SANS_ITALIC_B64`) in `src/assets/embedded-fonts.js`:
 - **Regular**: Body copy, form fields, table data, narrative answers
 - **Bold**: Form titles, section headings, table headers, total rollups, signatures
-- **Italic**: Legal notices, statutory citations, italicized/script signature renderings
+   - **Italic**: Legal notices and statutory citations
 
-### Supported Presentation Modes
+### Signature Presentation
 
-1. **Typed `/s/` Signature (Default)**:
-   - Renders `/s/ Full Legal Name` in Liberation Sans Bold.
-2. **Script/Italic-style `/s/` Signature (Optional)**:
-   - Renders `/s/ Full Legal Name` in Liberation Sans Bold-Italic.
-   - Text remains 100% vector-based, searchable, and extractable via `/ToUnicode` CMaps.
+Normal filing signatures render `/s/ Full Legal Name` in Liberation Sans Bold.
+Legacy `useSlashS` values in saved ward files are ignored by the user interface and PDF models. A blank physical signature line is available only when a model intentionally supplies `wetSignatureExplicit: true`; no saved preference or user-facing style switch can activate it.
 
 ---
 

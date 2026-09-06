@@ -194,7 +194,7 @@ function pagePlanAResidences(){
   const d=window.D;
   const rows=(d.q1Residences||[]).map((r,i)=>{
     const set=f=>`D.q1Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
       <div class="entry-card-header">Residence ${i+1}
         <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q1Residences" data-index="${i}" data-route="/p2">${ic('copy',13)}</button>
         <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q1Residences" data-index="${i}" data-route="/p2">×</button>
@@ -208,12 +208,12 @@ function pagePlanAResidences(){
         <div class="col-md-4"><label class="form-label">Resided from</label><input type="date" class="form-control" value="${esc(r.from||'')}" data-form-path="q1Residences.${i}.from"></div>
         <div class="col-md-4"><label class="form-label">Resided to</label><input type="date" class="form-control" value="${esc(r.to||'')}" data-form-path="q1Residences.${i}.to"></div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>1. Places the Ward Has Lived</h1>
     <div class="schedule-instructions">List every place the ward resided during the prior 12 months, earliest first. The court checks this against the address on file — if the ward moved, question 2 on the next page asks how that move was handled.</div>
-    ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No residences listed yet.</span></div>`}
+    ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No residences listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q1Residences" data-row-type="residence" data-route="/p2">+ Add Residence</button>
     ${renderScheduleDocsSection('planAResidences')}
     ${pageNavS('/summary','/p3')}
@@ -310,7 +310,7 @@ function pagePlanAProviders(){
   const d=window.D;
   const rows=(d.q4Providers||[]).map((r,i)=>{
     const set=f=>`D.q4Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
       <div class="entry-card-header">Provider ${i+1}
         <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q4Providers" data-index="${i}" data-route="/p5">${ic('copy',13)}</button>
         <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q4Providers" data-index="${i}" data-route="/p5">×</button>
@@ -323,12 +323,12 @@ function pagePlanAProviders(){
         <div class="col-md-4"><label class="form-label">City, State and ZIP</label><input type="text" class="form-control" value="${esc(r.cityStateZip||'')}" data-form-path="q4Providers.${i}.cityStateZip"></div>
         <div class="col-md-2"><label class="form-label">Phone</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q4Providers.${i}.phone" data-form-format="phone"></div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>4. Professional Medical Treatment</h1>
     <div class="schedule-instructions">Every professional who treated the ward during the prior 12 months — physicians, dentists, therapists, mental health providers. Include how many visits there were; the court uses this to see whether the ward is actually receiving the care the plan promises.</div>
-    ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
+    ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q4Providers" data-row-type="provider" data-route="/p5">+ Add Provider</button>
     ${renderScheduleDocsSection('planAProviders')}
     ${pageNavS('/p4','/p6')}
@@ -426,7 +426,7 @@ function pagePlanADirectives(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const blocks=(d.q10Directives||[]).map((r,i)=>{
     const set=f=>`D.q10Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">Directive ${i+1}
         <button class="btn btn-sm btn-outline-danger ms-auto" data-form-action="remove-plan-row" data-collection="q10Directives" data-index="${i}" data-route="/p9">×</button>
       </div>
@@ -448,7 +448,7 @@ function pagePlanADirectives(){
         <div class="col-md-4"><label class="form-label">Date of order</label><input type="date" class="form-control" value="${esc(r.orderDate||'')}" data-form-path="q10Directives.${i}.orderDate"></div>
         <div class="col-md-4"><label class="form-label">Entered in (county / state)</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q10Directives.${i}.orderCounty"></div>`:''}
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>10. Advance Directives</h1>
@@ -473,7 +473,7 @@ function pagePlanADirectives(){
         </div>
         ${d.q10ExecOther?`<div class="mt-2">${inpS('q10ExecOtherText','Describe the other directive',d.q10ExecOtherText,true)}</div>`:''}
         <h3 style="font-size:.85rem;font-weight:650;margin:1rem 0 .5rem;">Details for each directive</h3>
-        ${blocks}
+        ${blocks?`<div class="row g-3 schedule-entry-grid">${blocks}</div>`:''}
         <button class="btn btn-outline-primary btn-sm" data-form-action="add-plan-row" data-collection="q10Directives" data-row-type="directive" data-route="/p9">+ Add Directive</button>
       </div>`:''}`,
       'If there are no directives, check the first box and record the steps you took to verify that. If the ward did execute directives, check the second box and describe each one.')}
@@ -511,12 +511,9 @@ function pagePlanASignatures(){
   const block=(i,label)=>{
     const p=g[i]||{};
     const reqMark=i===0?'<span class="req">*</span>':'';
-    const useSlashS = p.useSlashS !== false;
-    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pa_g_slashs_${i}" ${useSlashS?'checked':''} data-form-path="planGuardians.${i}.useSlashS"><label class="form-check-label" for="pa_g_slashs_${i}">Use /s/ format</label></div>`;
     return `<div class="plan-sig-block">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="mb-0">${label}</h3>
-        ${slashSlider}
       </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -532,8 +529,6 @@ function pagePlanASignatures(){
       </div>
     </div>`;
   };
-  const attySlashS = d.attorney_useSlashS !== false;
-  const attySlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pa_atty_slashs" ${attySlashS?'checked':''} data-form-path="attorney_useSlashS"><label class="form-check-label" for="pa_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
     <h1>Signatures</h1>
     <h2 class="subsection-heading">Certification of Guardian(s)</h2>
@@ -552,10 +547,7 @@ function pagePlanASignatures(){
     ${block(0,'Guardian')}
     ${block(1,'Co-Guardian (if any)')}
     ${block(2,'Co-Guardian (if any)')}
-    <div class="d-flex justify-content-between align-items-center mt-4">
-      <h2 class="subsection-heading mb-0">Certification of Guardian's Attorney</h2>
-      ${attySlider}
-    </div>
+    <h2 class="subsection-heading mt-4">Certification of Guardian's Attorney</h2>
     <div class="schedule-instructions">The attorney notifies the court of this filing and represents that the plan conforms to Florida Guardianship Law. Leave blank if no attorney is involved.</div>
     <div class="row g-2">
       <div class="col-md-6">${inpS('attorney','Attorney Name',d.attorney)}</div>

@@ -180,7 +180,7 @@ function pagePlanMResidences(){
   const d=window.D;
   const rows=(d.q2Residences||[]).map((r,i)=>{
     const set=f=>`D.q2Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
       <div class="entry-card-header">Residence ${i+1}
         <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q2Residences" data-index="${i}" data-route="/p2">${ic('copy',13)}</button>
         <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q2Residences" data-index="${i}" data-route="/p2">×</button>
@@ -193,12 +193,12 @@ function pagePlanMResidences(){
         <div class="col-md-4"><label class="form-label">Zip</label><input type="text" class="form-control" value="${esc(r.zip||'')}" data-form-path="q2Residences.${i}.zip"></div>
         <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q2Residences.${i}.phone" data-form-format="phone"></div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>2. Residences During the Preceding 12 Months</h1>
     <div class="schedule-instructions">List every place the minor resided during the prior 12 months, if different from the current residence on the cover page. Leave blank if the minor has not moved.</div>
-    ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No prior residences listed.</span></div>`}
+    ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No prior residences listed.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q2Residences" data-row-type="minorResidence" data-route="/p2">+ Add Residence</button>
     ${renderScheduleDocsSection('planMResidences')}
     ${pageNavS('/summary','/p3')}
@@ -209,7 +209,7 @@ function pagePlanMProviders(){
   const d=window.D;
   const rows=(d.q3Providers||[]).map((r,i)=>{
     const set=f=>`D.q3Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
       <div class="entry-card-header">Provider ${i+1}
         <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q3Providers" data-index="${i}" data-route="/p3">${ic('copy',13)}</button>
         <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q3Providers" data-index="${i}" data-route="/p3">×</button>
@@ -226,12 +226,12 @@ function pagePlanMProviders(){
         <div class="col-md-3"><label class="form-label">Zip</label><input type="text" class="form-control" value="${esc(r.zip||'')}" data-form-path="q3Providers.${i}.zip"></div>
         <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q3Providers.${i}.phone" data-form-format="phone"></div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>3. Medical &amp; Mental Health Treatment Providers</h1>
     <div class="schedule-instructions">Every provider who treated the minor during the preceding 12 months.</div>
-    ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
+    ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q3Providers" data-row-type="minorProvider" data-route="/p3">+ Add Provider</button>
     ${renderScheduleDocsSection('planMProviders')}
     ${pageNavS('/p2','/p4')}
@@ -295,14 +295,9 @@ function pagePlanMSignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    const slashSChecked = gd.useSlashS !== false ? 'checked' : '';
     return `<div class="plan-sig-block">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="m-0">${title}</h3>
-        <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
-          <input class="form-check-input" type="checkbox" role="switch" ${slashSChecked} data-form-path="planGuardians.${i}.useSlashS" style="cursor:pointer;">
-          <span>Use /s/ format</span>
-        </label>
       </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -336,17 +331,9 @@ function pagePlanMSignatures(){
 
 function pagePlanMPreparerAttorney(){
   const d=window.D;
-  const prepSlashSChecked = d.preparer_useSlashS !== false ? 'checked' : '';
-  const attySlashSChecked = d.attorney_useSlashS !== false ? 'checked' : '';
   return `<div class="schedule-page">
     <h1>Certification of Preparer &amp; Attorney</h1>
-    <div class="d-flex justify-content-between align-items-center mt-3 mb-1">
-      <h2 class="subsection-heading m-0">Certification and Signature of Preparer</h2>
-      <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
-        <input class="form-check-input" type="checkbox" role="switch" ${prepSlashSChecked} data-form-path="preparer_useSlashS" style="cursor:pointer;">
-        <span>Use /s/ format</span>
-      </label>
-    </div>
+    <h2 class="subsection-heading mt-3">Certification and Signature of Preparer</h2>
     <div class="schedule-instructions">The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification. The preparer has not audited or reviewed the guardianship plan or supporting documents.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('preparer_name','Preparer Name',d.preparer_name,true)}</div>
@@ -357,13 +344,7 @@ function pagePlanMPreparerAttorney(){
       <div class="col-md-8">${inpS('preparer_cityStateZip','Preparer City / State / Zip',d.preparer_cityStateZip)}</div>
       <div class="col-md-4">${inpS('preparer_email','Preparer Email Address',d.preparer_email)}</div>
     </div>
-    <div class="d-flex justify-content-between align-items-center mt-4 mb-1">
-      <h2 class="subsection-heading m-0">Certification and Signature of Guardian's Attorney</h2>
-      <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
-        <input class="form-check-input" type="checkbox" role="switch" ${attySlashSChecked} data-form-path="attorney_useSlashS" style="cursor:pointer;">
-        <span>Use /s/ format</span>
-      </label>
-    </div>
+    <h2 class="subsection-heading mt-4">Certification and Signature of Guardian's Attorney</h2>
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of this plan. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('attorney_name','Attorney Name',d.attorney_name,true)}</div>

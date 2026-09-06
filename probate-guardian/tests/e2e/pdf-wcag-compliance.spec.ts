@@ -1199,7 +1199,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
                 type: 'signature-block',
                 role: 'Synthetic Signer',
                 signerName: 'Pat Example',
-                wetSignature: true,
+                wetSignatureExplicit: true,
                 fields: [
                   [{ label: 'Phone', value: '555-0100' }, { label: 'Street', value: '1 Test Way' }],
                   [{ label: 'City/State/Zip', value: 'Testville, FL 00000' }],

@@ -106,8 +106,6 @@ export function buildPlanSimplifiedModel(D) {
     type: 'signature-block',
     role: `${label} Signature`,
     signerName: g.name || '',
-    useSlashS: g.useSlashS !== false,
-    wetSignature: g.useSlashS === false,
     signatureDate: fmtDate(g.signatureDate),
     fields: [
       [{ label: 'Printed Name', value: g.name || '' }, { label: 'Email Address', value: g.email || '' }],
@@ -121,8 +119,6 @@ export function buildPlanSimplifiedModel(D) {
     type: 'signature-block',
     role: 'Preparer Signature',
     signerName: d.preparer_name || '',
-    useSlashS: d.preparer_useSlashS !== false,
-    wetSignature: d.preparer_useSlashS === false,
     signatureDate: fmtDate(d.preparer_signatureDate),
     fields: [
       [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Telephone', value: d.preparer_phone || '' }],
@@ -136,8 +132,6 @@ export function buildPlanSimplifiedModel(D) {
     type: 'signature-block',
     role: 'Attorney Signature',
     signerName: d.attorney_name || '',
-    useSlashS: d.attorney_useSlashS !== false,
-    wetSignature: d.attorney_useSlashS === false,
     signatureDate: fmtDate(d.attorney_signatureDate),
     fields: [
       [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar No.', value: d.attorney_bar || '' }],

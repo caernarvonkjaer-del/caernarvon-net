@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword } from './support/target';
+import { createSimplifiedWard, createWard, freshStartNoPassword } from './support/target';
 
 test('schedule entry cards use responsive two-column flow', async ({ page }) => {
   await freshStartNoPassword(page);
@@ -43,4 +43,98 @@ test('schedule entry cards use responsive two-column flow', async ({ page }) => 
   const mobileCards = page.locator('.schedule-entry-grid > .col-12 > .entry-card');
   const mobileColumns = await mobileCards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(mobileColumns).toBe(1);
+});
+
+test('Annual Accounting schedule entries use responsive Bootstrap grid columns', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).addWard('Annual Schedule Layout Ward', 'annual'));
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.schA = [
+      { payer: 'Social Security', description: 'Monthly benefit', bank: 'Bank One', accountNo: '1', amount: 1000 },
+      { payer: 'Pension', description: 'Monthly benefit', bank: 'Bank Two', accountNo: '2', amount: 500 },
+    ];
+    data.schB1 = [
+      { bankAcct: '1', checkNo: '100', periodFrom: '2026-01-01', periodTo: '2026-01-31', datePaid: '2026-02-01', payee: 'Attorney One', courtOrderDate: '2026-01-15', amount: 100 },
+      { bankAcct: '2', checkNo: '101', periodFrom: '2026-02-01', periodTo: '2026-02-28', datePaid: '2026-03-01', payee: 'Attorney Two', courtOrderDate: '2026-02-15', amount: 200 },
+    ];
+  });
+
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.evaluate(() => (window as any).navigate('/scha'));
+  const incomeColumns = page.locator('.schedule-entry-grid > .col-12 > .entry-card');
+  await expect(incomeColumns).toHaveCount(2);
+  const incomeXPositions = await incomeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(incomeXPositions).toBe(1);
+
+  await page.evaluate(() => (window as any).navigate('/schb1'));
+  const feeColumns = page.locator('.schedule-entry-grid > .col-12.col-xxl-6 > .entry-card');
+  await expect(feeColumns).toHaveCount(2);
+  const feeXPositions = await feeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(feeXPositions).toBe(2);
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  const mobileXPositions = await feeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(mobileXPositions).toBe(1);
+});
+
+test('plan record cards use their responsive Bootstrap grid classifications', async ({ page }) => {
+  const assertCardColumns = async (route: string, columnClass: string, expectedDesktopColumns: number) => {
+    await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+    const cards = page.locator(`.schedule-entry-grid > ${columnClass} > .entry-card`);
+    await expect(cards).toHaveCount(2);
+    const xPositions = await cards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+    expect(xPositions, `${route} desktop columns`).toBe(expectedDesktopColumns);
+    return cards;
+  };
+
+  await freshStartNoPassword(page);
+  await createWard(page, 'Annual Plan Layout Ward', 'planAnnual');
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.q1Residences = [{}, {}];
+    data.q4Providers = [{}, {}];
+    data.q10Executed = true;
+    data.q10Directives = [{}, {}];
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await assertCardColumns('/p2', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p5', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p9', '.col-12', 1);
+
+  await createWard(page, 'Initial Plan Layout Ward', 'planInitial');
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.q9Providers = [{}, {}];
+    data.q11Directives = [{}, {}];
+  });
+  await assertCardColumns('/p5', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p8', '.col-12', 1);
+
+  await createWard(page, 'Minor Plan Layout Ward', 'planMinor');
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.q2Residences = [{}, {}];
+    data.q3Providers = [{}, {}];
+  });
+  await assertCardColumns('/p2', '.col-12.col-xl-6', 2);
+  const minorProviderCards = await assertCardColumns('/p3', '.col-12.col-xl-6', 2);
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  const mobileXPositions = await minorProviderCards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(mobileXPositions).toBe(1);
+
+  await createSimplifiedWard(page, 'Simplified Accounting Layout Ward');
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.guardians = [{}, {}];
+    data.remuneration = [{}, {}];
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await assertCardColumns('/p4', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p7', '.col-12.col-xl-6', 2);
+
+  await createWard(page, 'Simplified Plan Layout Ward', 'planSimplified');
+  await page.evaluate(() => (window as any).navigate('/p2'));
+  await expect(page.locator('.entry-card')).toHaveCount(0);
 });

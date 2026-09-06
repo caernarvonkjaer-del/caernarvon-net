@@ -272,7 +272,7 @@ function pagePlanIProviders(){
   const d=window.D;
   const rows=(d.q9Providers||[]).map((r,i)=>{
     const set=f=>`D.q9Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
       <div class="entry-card-header">Provider ${i+1}
         <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q9Providers" data-index="${i}" data-route="/p5">${ic('copy',13)}</button>
         <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q9Providers" data-index="${i}" data-route="/p5">×</button>
@@ -285,12 +285,12 @@ function pagePlanIProviders(){
         <div class="col-md-6"><label class="form-label">City, State and Zip Code</label><input type="text" class="form-control" value="${esc(r.cityStateZip||'')}" data-form-path="q9Providers.${i}.cityStateZip"></div>
         <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q9Providers.${i}.phone" data-form-format="phone"></div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>9. Examinations to Determine Treatment Needs</h1>
     <div class="schedule-instructions">List every physical and/or mental examination the guardian will secure or has secured to determine the Ward's medical and mental health treatment needs.</div>
-    ${rows||`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
+    ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q9Providers" data-row-type="initialProvider" data-route="/p5">+ Add Provider</button>
     ${renderScheduleDocsSection('planIProviders')}
     ${pageNavS('/p4','/p6')}
@@ -367,7 +367,7 @@ function pagePlanIDirectives(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const dirs=(d.q11Directives||[]).map((r,i)=>{
     const set=f=>`D.q11Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">Advance Directive ${i+1}</div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q11Directives.${i}.title"></div>
@@ -383,7 +383,7 @@ function pagePlanIDirectives(){
         <div class="col-md-6"><label class="form-label">Date of Order</label><input type="date" class="form-control" value="${esc(r.orderDate||'')}" data-form-path="q11Directives.${i}.orderDate"></div>
         <div class="col-md-6"><label class="form-label">County/State entered</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q11Directives.${i}.orderCounty"></div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }).join('');
   return `<div class="schedule-page">
     <h1>11. Advance Directives</h1>
@@ -404,7 +404,7 @@ function pagePlanIDirectives(){
         +cb('q11ExecPOA','Durable Power of Attorney, F.S. Chapter 709')
         +cb('q11ExecOther','Other'),
         'q11ExecOtherText',d.q11ExecOtherText,d.q11ExecOther,'Describe the "Other" directive.')
-      +dirs)}
+      +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:''))}
     ${planQ('E','The assistive devices needed by the Ward (devices needed but not currently owned) are:',
       planCheckGroup('',
         cb('needsDentures','Dentures')
@@ -430,12 +430,9 @@ function pagePlanISignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    const useSlashS = gd.useSlashS !== false;
-    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pi_g_slashs_${i}" ${useSlashS?'checked':''} data-form-path="planGuardians.${i}.useSlashS"><label class="form-check-label" for="pi_g_slashs_${i}">Use /s/ format</label></div>`;
     return `<div class="plan-sig-block">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="mb-0">${title}</h3>
-        ${slashSlider}
       </div>
       <div class="row g-2">
         <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -472,13 +469,8 @@ function pagePlanISignatures(){
 
 function pagePlanIAttorney(){
   const d=window.D;
-  const attySlashS = d.attorney_useSlashS !== false;
-  const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="pi_atty_slashs" ${attySlashS?'checked':''} data-form-path="attorney_useSlashS"><label class="form-check-label" for="pi_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
-    <div class="d-flex justify-content-between align-items-center">
-      <h1>Certification and Signature of Guardian's Attorney</h1>
-      ${slashSlider}
-    </div>
+    <h1>Certification and Signature of Guardian's Attorney</h1>
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>

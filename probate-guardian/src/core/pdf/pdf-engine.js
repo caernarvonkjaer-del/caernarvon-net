@@ -1225,7 +1225,7 @@ export async function generateCourtFormPdf(model, options = {}) {
       }
 
       else if (block.type === 'signature-block') {
-        // wetSignature: a blank pen-signature line with no electronic /s/
+        // wetSignatureExplicit: a blank pen-signature line with no electronic /s/
         // text and no electronic-signature legal notice (Milestone 19-2's
         // plan-* forms are wet-signed, unlike guardian-inventory's
         // electronic /s/ attestations -- the previous renderer had no
@@ -1234,7 +1234,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         // full-width deliberate column groups (replacing the old flat
         // `details` vertical stack, which lost the source HTML's grouping
         // and ordering by rendering Object.keys() in a single column).
-        const isWetSignature = block.wetSignature === true || block.useSlashS === false;
+        const isWetSignature = block.wetSignatureExplicit === true;
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
         const FIELD_ROW_H = 28;
         const baseSigHeight = isWetSignature ? 58 : 64;

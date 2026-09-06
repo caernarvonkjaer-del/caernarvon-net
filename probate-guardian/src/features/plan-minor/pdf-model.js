@@ -173,13 +173,10 @@ export function buildPlanMinorModel(D) {
     ],
   });
 
-  // A signature block respecting useSlashS slider state
-  const makeSigBlock = (role, p, fields, useSlashS) => ({
+  const makeSigBlock = (role, p, fields) => ({
     type: 'signature-block',
     role,
     signerName: p.name || '',
-    useSlashS: useSlashS !== false,
-    wetSignature: useSlashS === false,
     signatureDate: fmtDate(p.signatureDate),
     fields,
   });
@@ -215,8 +212,8 @@ export function buildPlanMinorModel(D) {
         type: 'notice',
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
-      makeSigBlock('Guardian', g[0] || {}, guardianFields(g[0] || {}), (g[0] || {}).useSlashS),
-      makeSigBlock('Co-Guardian', g[1] || {}, guardianFields(g[1] || {}), (g[1] || {}).useSlashS),
+      makeSigBlock('Guardian', g[0] || {}, guardianFields(g[0] || {})),
+      makeSigBlock('Co-Guardian', g[1] || {}, guardianFields(g[1] || {})),
     ],
   });
 
@@ -238,7 +235,7 @@ export function buildPlanMinorModel(D) {
         [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Taxpayer ID #', value: d.preparer_tin || '' }, { label: 'Telephone #', value: d.preparer_phone || '' }],
         [{ label: 'Email Address', value: d.preparer_email || '' }],
         [{ label: 'Mailing Address', value: d.preparer_mailingStreet || '' }, { label: 'City / State / Zip', value: d.preparer_cityStateZip || '' }],
-      ], d.preparer_useSlashS),
+      ]),
       {
         type: 'notice',
         title: "Certification and Signature of Guardian's Attorney",
@@ -248,7 +245,7 @@ export function buildPlanMinorModel(D) {
         [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
         [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondary_email || '' }],
         [{ label: 'Mailing Address', value: d.attorney_street || '' }, { label: 'City / State / Zip', value: d.attorney_cityStateZip || '' }],
-      ], d.attorney_useSlashS),
+      ]),
     ],
   });
 

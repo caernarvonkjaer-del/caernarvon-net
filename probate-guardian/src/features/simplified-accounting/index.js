@@ -343,13 +343,12 @@ function pagePart3(){
 function pagePart4(){
   const d=window.D;
   let html=`<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
-  <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>`;
+  <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>
+  <div class="row g-3 schedule-entry-grid">`;
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   d.guardians.forEach((g,i)=>{
-    const useSlashS = g.useSlashS !== false;
-    const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="simp_g_slashs_${i}" ${useSlashS?'checked':''} data-form-path="guardians.${i}.useSlashS"><label class="form-check-label" for="simp_g_slashs_${i}">Use /s/ format</label></div>`;
-    html+=`<div class="entry-card mb-3">
-      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span>${slashSlider}</div>
+    html+=`<div class="col-12 col-xl-6"><div class="entry-card mb-0 h-100">
+      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-form-format="name"></div>
@@ -363,22 +362,17 @@ function pagePart4(){
           <div class="col-md-6"><label class="form-label">Residence / Corporate City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.residenceCityStateZip||''))}" data-form-path="guardians.${i}.residenceCityStateZip" data-form-format="city-state-zip"></div>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
   });
-  html+=`${renderScheduleDocsSection('p4')}${pageNavS('/p3','/p5')}</div>`;
+  html+=`</div>${renderScheduleDocsSection('p4')}${pageNavS('/p3','/p5')}</div>`;
   return html;
 }
 
 // ── Part V – Attorney Signature ─────────────────────────
 function pagePart5(){
   const d=window.D;
-  const attySlashS = d.attorney_useSlashS !== false;
-  const slashSlider = `<div class="form-check form-switch ms-auto d-inline-block"><input class="form-check-input" type="checkbox" role="switch" id="simp_atty_slashs" ${attySlashS?'checked':''} data-form-path="attorney_useSlashS"><label class="form-check-label" for="simp_atty_slashs">Use /s/ format</label></div>`;
   return `<div class="schedule-page">
-    <div class="d-flex justify-content-between align-items-center">
-      <h1>Part V — Guardian Attorney Signature</h1>
-      ${slashSlider}
-    </div>
+    <h1>Part V — Guardian Attorney Signature</h1>
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3">
       <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
@@ -400,7 +394,7 @@ function pagePart6(){
   function recipCard(i){
     const r=d.certRecipients[i];
     const req=(i===0||i===2)?'<span class="req">*</span>':'';
-    return `<div class="entry-card mb-2">
+    return `<div class="entry-card mb-0 h-100">
       <div class="entry-card-header">Recipient ${i+1}</div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -419,10 +413,10 @@ function pagePart6(){
       <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
     </div>
     <div class="row g-3">
-      <div class="col-md-6">${recipCard(0)}</div>
-      <div class="col-md-6">${recipCard(1)}</div>
-      <div class="col-md-6">${recipCard(2)}</div>
-      <div class="col-md-6">${recipCard(3)}</div>
+      <div class="col-12 col-xl-6">${recipCard(0)}</div>
+      <div class="col-12 col-xl-6">${recipCard(1)}</div>
+      <div class="col-12 col-xl-6">${recipCard(2)}</div>
+      <div class="col-12 col-xl-6">${recipCard(3)}</div>
     </div>
     <h2 class="mt-3" style="font-size:.8rem;font-weight:700;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
@@ -442,9 +436,9 @@ function pagePart6(){
 // ── Part VII – Remuneration ─────────────────────────────
 function pagePart7(){
   const d=window.D;
-  let rows='';
+  let rows='<div class="row g-3 schedule-entry-grid">';
   d.remuneration.forEach((r,i)=>{
-    rows+=`<div class="entry-card mb-2">
+    rows+=`<div class="col-12 col-xl-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header">Remuneration Entry ${i+1} <button class="btn btn-sm btn-outline-danger" data-simplified-action="remove-remuneration" data-index="${i}">Remove</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -453,8 +447,9 @@ function pagePart7(){
           <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(formatName(r.description||''))}" data-form-path="remuneration.${i}.description" data-form-format="name"></div>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
   });
+  rows+='</div>';
   return `<div class="schedule-page">
     <h1>Part VII — Guardian(s) Declaration of Remuneration</h1>
     <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.</div>

@@ -409,13 +409,10 @@ export function buildPlanInitialModel(D, options) {
   });
 
   const makeSigBlock = (role, p) => {
-    const useSlashS = p.useSlashS !== false;
     return {
       type: 'signature-block',
       role,
       signerName: p.name || '',
-      useSlashS,
-      wetSignature: !useSlashS,
       signatureDate: fmtDate(p.signatureDate),
       signatureStyle,
       fields: [
@@ -490,8 +487,6 @@ export function buildPlanInitialModel(D, options) {
         type: 'signature-block',
         role: "Guardian's Attorney",
         signerName: d.attorney_name || '',
-        useSlashS: d.attorney_useSlashS !== false,
-        wetSignature: d.attorney_useSlashS === false,
         signatureDate: fmtDate(d.attorney_signatureDate),
         signatureStyle,
         fields: [

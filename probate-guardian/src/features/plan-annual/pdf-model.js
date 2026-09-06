@@ -472,13 +472,10 @@ export function buildPlanAnnualModel(D) {
     ],
   });
 
-  // A signature block respecting useSlashS slider state
   const makeSigBlock = (role, p) => ({
     type: 'signature-block',
     role,
     signerName: p.name || '',
-    useSlashS: p.useSlashS !== false,
-    wetSignature: p.useSlashS === false,
     signatureDate: fmtDate(p.signatureDate),
     fields: [
       [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: p.ssn || '' }, { label: 'Phone Number', value: p.phone || '' }],
@@ -554,8 +551,6 @@ export function buildPlanAnnualModel(D) {
         type: 'signature-block',
         role: "Guardian's Attorney",
         signerName: d.attorney || '',
-        useSlashS: d.attorney_useSlashS !== false,
-        wetSignature: d.attorney_useSlashS === false,
         signatureDate: fmtDate(d.attorney_signatureDate),
         fields: [
           [{ label: 'Attorney Name', value: d.attorney || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
