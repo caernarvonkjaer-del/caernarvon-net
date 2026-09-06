@@ -56,9 +56,7 @@ describe('guardian inventory PDF model', () => {
             size: 3600,
             dataUrl: 'data:application/pdf;base64,JVBERi0xLjQK',
             contentDigest: 'sha256-test',
-            attestedDigest: 'sha256-test',
             technicalStatus: 'ready',
-            attestationStatus: 'accepted',
             pageCount: 1,
           }],
           },
@@ -76,7 +74,6 @@ describe('guardian inventory PDF model', () => {
         type: 'application/pdf',
         size: 3600,
         technicalStatus: 'ready',
-        attestationStatus: 'accepted',
         pageCount: 1,
       }],
     });

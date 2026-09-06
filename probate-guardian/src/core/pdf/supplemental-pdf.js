@@ -73,14 +73,11 @@ export function isFilingEligibleSupplement(file, limits = SUPPLEMENTAL_PDF_LIMIT
   if (!['ready', 'warning'].includes(file.technicalStatus)) {
     return statusFailure(`${file.name || 'Supporting document'} needs PDF checks before filing.`, 'not-ready');
   }
+  if (!file.contentDigest) {
+    return statusFailure(`${file.name || 'Supporting document'} needs PDF checks before filing.`, 'not-ready');
+  }
   if (!Number.isInteger(file.pageCount) || file.pageCount < 1 || file.pageCount > limits.maxFilePages) {
     return statusFailure(`${file.name || 'Supporting document'} has an invalid or over-limit page count.`, 'page-limit');
-  }
-  if (file.attestationStatus !== 'accepted') {
-    return statusFailure(`${file.name || 'Supporting document'} needs accessibility attestation before filing.`, 'attestation-required');
-  }
-  if (!file.contentDigest || file.attestedDigest !== file.contentDigest) {
-    return statusFailure(`${file.name || 'Supporting document'} changed after attestation and must be reviewed again.`, 'digest-mismatch');
   }
   if (file.encrypted || file.corrupt || file.removed || file.stale || file.technicalStatus === 'blocked') {
     return statusFailure(`${file.name || 'Supporting document'} is blocked from filing.`, 'blocked');
@@ -126,6 +123,16 @@ export function collectActiveSupplementalFiles(sourceData) {
     if (Array.isArray(slot?.files)) files.push(...slot.files.filter(file => file?.dataUrl));
   }
   return files;
+}
+
+export function hasActiveSupplementalFiles(sourceData) {
+  return collectActiveSupplementalFiles(sourceData).length > 0;
+}
+
+export function getSupplementalAccessibilityWarning(sourceData) {
+  return hasActiveSupplementalFiles(sourceData)
+    ? 'Supplemental PDFs are inserted as uploaded and may not be ADA/accessibility compliant. Review them before filing.'
+    : '';
 }
 
 export function getSupplementalFilingIssues(sourceData, limits = SUPPLEMENTAL_PDF_LIMITS) {
@@ -200,7 +207,7 @@ export async function validateSupplementalPdfRecord(file, limits = SUPPLEMENTAL_
       };
     }
     if (textItems === 0) {
-      warnings.push('No extractable text was found. Confirm this supplemental PDF is accessible before filing.');
+      warnings.push('No extractable text was found. This supplemental PDF may not be ADA/accessibility compliant.');
     }
 
     return {

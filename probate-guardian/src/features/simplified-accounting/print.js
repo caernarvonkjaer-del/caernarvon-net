@@ -11,7 +11,7 @@ import { buildSimplifiedAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
-import { getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
+import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 
 function buildModelForPreview(D){
   return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -25,6 +25,7 @@ const {
 export function pagePrintSimplified(capOver){
   window.queueAllScheduleDocValidations?.();
   const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -56,6 +57,7 @@ export function pagePrintSimplified(capOver){
       </div>
     </div>
     ${errors.length?validationPanel(errors):''}
+    ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
     ${capOver.length?excelCapacityPanel(capOver):''}
     <div id="print-doc-container"></div>
   </div>`;

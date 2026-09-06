@@ -15,21 +15,19 @@ function eligibleFile(overrides = {}) {
     size: 9,
     dataUrl: PDF_DATA_URL,
     contentDigest: 'sha256-test',
-    attestedDigest: 'sha256-test',
     pageCount: 1,
     technicalStatus: 'ready',
     technicalWarnings: [],
-    attestationStatus: 'accepted',
     ...overrides,
   };
 }
 
 describe('supplemental PDF filing eligibility', () => {
-  test('accepts a ready attested PDF record whose digest matches', () => {
+  test('accepts a ready PDF record after technical checks pass', () => {
     expect(isFilingEligibleSupplement(eligibleFile()).eligible).toBe(true);
   });
 
-  test('rejects legacy dataUrl-only records until reviewed and attested', () => {
+  test('rejects legacy dataUrl-only records until technical checks pass', () => {
     const result = isFilingEligibleSupplement({
       name: 'legacy.pdf',
       type: 'application/pdf',
@@ -43,12 +41,15 @@ describe('supplemental PDF filing eligibility', () => {
     });
   });
 
-  test('rejects digest mismatches after attestation', () => {
-    const result = isFilingEligibleSupplement(eligibleFile({ attestedDigest: 'sha256-old' }));
+  test('accepts warning-state PDFs with a visible review warning', () => {
+    const result = isFilingEligibleSupplement(eligibleFile({
+      technicalStatus: 'warning',
+      technicalWarnings: ['No extractable text was found.'],
+    }));
 
     expect(result).toMatchObject({
-      eligible: false,
-      code: 'digest-mismatch',
+      eligible: true,
+      code: 'eligible',
     });
   });
 

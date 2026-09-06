@@ -14,7 +14,7 @@ import { buildVerifiedInventoryModel } from './pdf-model.js';
 import { generateVerifiedInventoryPdf } from './pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
-import { getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
+import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -30,8 +30,10 @@ const {
 export function pagePrint(capOver){
   window.queueAllScheduleDocValidations?.();
   const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
+  const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   const errPanel=errors.length?validationPanel(errors):'';
+  const warnPanel=supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:'';
   const canExport=errors.length===0;
   const canExportExcel=canExport&&capOver.length===0;
   return `<div>
@@ -48,6 +50,7 @@ export function pagePrint(capOver){
   </div>
 
   ${errPanel}
+  ${warnPanel}
   ${capOver.length?excelCapacityPanel(capOver):''}
   <div id="print-doc-container"></div>
   ${pageNav('/print')}

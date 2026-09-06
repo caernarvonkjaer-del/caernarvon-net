@@ -29,7 +29,7 @@ To prevent "scanned document / OCR" warnings and satisfy accessibility requireme
 
 ### Supporting Documents
 
-Supplemental documents are PDF-only and user-attested. Probate Guardian performs local technical checks, requires the filer to confirm that each supplemental PDF is accessible and suitable for filing, then inserts accepted PDF pages into the finalized filing packet.
+Supplemental documents are PDF-only and user-supplied. Probate Guardian performs local technical checks, displays a yellow warning that supplemental PDFs may not be ADA/accessibility compliant, then inserts technically valid PDF pages into the finalized filing packet without requiring a separate user action.
 
 The application preserves supplemental PDF page appearance, page geometry, and native page content streams where supported by `pdf-lib.copyPages()`. It does not OCR, remediate, certify, or structurally merge uploaded documents. In particular, copying uploaded pages into the packet must not be described as preserving the source document's `/StructTreeRoot`, parent tree, source PDF/UA metadata, or conformance claim.
 
@@ -95,7 +95,7 @@ Legacy `useSlashS` values in saved ward files are ignored by the user interface 
 
 ## 5. Tagged PDF / PDF/UA-1 (ISO 14289-1) Conformance
 
-Probate Guardian generates fully compliant **PDF/UA-1 (ISO 14289-1)** app-authored court-form pages conforming to WCAG 2.1 AA and Section 508 accessibility standards. Uploaded supplemental PDF pages are user-supplied, user-attested, and copied inline for filing; their accessibility conformance remains the filer's responsibility.
+Probate Guardian generates fully compliant **PDF/UA-1 (ISO 14289-1)** app-authored court-form pages conforming to WCAG 2.1 AA and Section 508 accessibility standards. Uploaded supplemental PDF pages are user-supplied and copied inline for filing; their accessibility conformance remains the filer's responsibility.
 
 ### Structural Tagging & Engine Features:
 

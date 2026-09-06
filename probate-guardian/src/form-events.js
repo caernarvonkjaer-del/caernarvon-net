@@ -40,7 +40,6 @@ document.addEventListener('click', (event) => {
       case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
-    case 'accept-supplemental-pdfs': window.acceptReadySupplementalPdfs(); break;
     case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': window.exportActivityLog(); break;
@@ -77,13 +76,6 @@ document.addEventListener('change', (event) => {
   if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-upload' && control.files) {
     window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
-  }
-  if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-attestation') {
-    window.setScheduleDocAttestation(
-      control.dataset.scheduleKey,
-      Number.parseInt(control.dataset.documentIndex, 10),
-      control.checked
-    );
   }
   if (control instanceof HTMLSelectElement && control.dataset.formPath) persistFormControl(control);
 });
