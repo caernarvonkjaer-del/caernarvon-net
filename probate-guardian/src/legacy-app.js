@@ -577,7 +577,8 @@ function showWalkthroughStep(){
     return;
   }
   const step=WALKTHROUGH_STEPS[currentWalkthroughStep];
-  const el=document.querySelector(step.element);
+  const sidebarTarget=step.element.startsWith('[data-page')||step.element.startsWith('[data-nav');
+  const el=document.querySelector(sidebarTarget?`#sidebar ${step.element}`:step.element);
   if(!el){currentWalkthroughStep++;showWalkthroughStep();return;}
 
   // Scroll element into view, centered

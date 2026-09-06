@@ -45,6 +45,27 @@ test('schedule entry cards use responsive two-column flow', async ({ page }) => 
   expect(mobileColumns).toBe(1);
 });
 
+test('Guardian D-3 and D-4 summary panels use responsive two-column rows', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).addWard('Guardian Summary Layout Ward', 'guardian'));
+  await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  for (const route of ['/d3', '/d4']) {
+    await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+    const panels = page.locator('.schedule-page > .row.g-3 > .col-12.col-lg-6 > .summary-box');
+    await expect(panels).toHaveCount(2);
+    const desktopColumns = await panels.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+    expect(desktopColumns, `${route} desktop columns`).toBe(2);
+  }
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  await page.evaluate(() => (window as any).navigate('/d4'));
+  const mobilePanels = page.locator('.schedule-page > .row.g-3 > .col-12.col-lg-6 > .summary-box');
+  const mobileColumns = await mobilePanels.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(mobileColumns).toBe(1);
+});
+
 test('Annual Accounting schedule entries use responsive Bootstrap grid columns', async ({ page }) => {
   await freshStartNoPassword(page);
   await page.evaluate(() => (window as any).addWard('Annual Schedule Layout Ward', 'annual'));

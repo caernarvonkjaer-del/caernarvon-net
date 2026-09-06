@@ -892,40 +892,46 @@ function pageD2(){
 function pageD3(){
   return `<div class="schedule-page">
   <h1>Part V: Audit Fee &amp; Safe Deposit Box</h1>
-  <div class="summary-box mb-3">
-    <h2 class="subsection-heading">Audit Fee Schedule (Initial Inventories Only)</h2>
-    <p style="font-size:.83rem;margin-bottom:.5rem;">
-      Inventories with total property value exceeding $25,000: <strong>$85.00</strong><br>
-      Inventories with total property value at or below $25,000: <strong>$0.00</strong>
-    </p>
-    <div class="summary-line total">
-      <span>Calculated Audit Fee (based on total inventory of <strong id="auditFeeBase">${fmt(calc.total())}</strong>)</span>
-      <span id="auditFee">${fmt(calc.auditFee())}</span>
-    </div>
-  </div>
-  <div class="summary-box mb-3">
-    <h2 class="subsection-heading">Safe Deposit Box</h2>
-    <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></p>
-    <div class="d-flex gap-4 mb-3">
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${D.hasSafeDepositBox===true?'checked':''} data-inventory-change="set-sdb">
-        <label class="form-check-label" for="sdb-yes">Yes</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${D.hasSafeDepositBox===false?'checked':''} data-inventory-change="set-sdb">
-        <label class="form-check-label" for="sdb-no">No</label>
-      </div>
-    </div>
-    <div id="sdb-filed-row" style="${D.hasSafeDepositBox===true?'':'display:none;'}">
-      <label class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></label>
-      <div class="d-flex gap-4 mb-2">
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${D.safeDepositBoxFiled===true?'checked':''} data-inventory-change="set-sdb-filed">
-          <label class="form-check-label" for="sdb-filed-yes">Yes</label>
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="summary-box h-100 mb-0">
+        <h2 class="subsection-heading">Audit Fee Schedule (Initial Inventories Only)</h2>
+        <p style="font-size:.83rem;margin-bottom:.5rem;">
+          Inventories with total property value exceeding $25,000: <strong>$85.00</strong><br>
+          Inventories with total property value at or below $25,000: <strong>$0.00</strong>
+        </p>
+        <div class="summary-line total">
+          <span>Calculated Audit Fee (based on total inventory of <strong id="auditFeeBase">${fmt(calc.total())}</strong>)</span>
+          <span id="auditFee">${fmt(calc.auditFee())}</span>
         </div>
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${D.safeDepositBoxFiled===false?'checked':''} data-inventory-change="set-sdb-filed">
-          <label class="form-check-label" for="sdb-filed-no">No</label>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="summary-box h-100 mb-0">
+        <h2 class="subsection-heading">Safe Deposit Box</h2>
+        <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></p>
+        <div class="d-flex gap-4 mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${D.hasSafeDepositBox===true?'checked':''} data-inventory-change="set-sdb">
+            <label class="form-check-label" for="sdb-yes">Yes</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${D.hasSafeDepositBox===false?'checked':''} data-inventory-change="set-sdb">
+            <label class="form-check-label" for="sdb-no">No</label>
+          </div>
+        </div>
+        <div id="sdb-filed-row" style="${D.hasSafeDepositBox===true?'':'display:none;'}">
+          <label class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></label>
+          <div class="d-flex gap-4 mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${D.safeDepositBoxFiled===true?'checked':''} data-inventory-change="set-sdb-filed">
+              <label class="form-check-label" for="sdb-filed-yes">Yes</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${D.safeDepositBoxFiled===false?'checked':''} data-inventory-change="set-sdb-filed">
+              <label class="form-check-label" for="sdb-filed-no">No</label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -936,19 +942,21 @@ function pageD3(){
 function pageD4(){
   return `<div class="schedule-page">
   <h1>Part V: Surety Bond &amp; Bond Calculation</h1>
-  <div class="summary-box mb-3">
-    <h2 class="subsection-heading">Bond Calculation</h2>
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="summary-box h-100 mb-0">
+        <h2 class="subsection-heading">Bond Calculation</h2>
     <p style="font-size:.8rem;margin-bottom:.6rem;">Bond amount = all liquid assets less those in a restricted depository. Only real property is excluded.</p>
     <div class="summary-line"><span>B-1 — Cash in Restricted Depository</span><span id="restrictedCash">${fmt(calc.restrictedCash())}</span></div>
     <div class="summary-line"><span>B-3 — Intangible Assets (Restricted)</span><span id="restrictedIntang">${fmt(calc.restrictedIntang())}</span></div>
     <div class="summary-line"><span>B-1 — Cash NOT in Restricted Depository</span><span id="unrestrictedCash">${fmt(calc.unrestrictedCash())}</span></div>
     <div class="summary-line"><span>B-2 — Personal Property Assets</span><span id="totalB2">${fmt(calc.totalB2())}</span></div>
     <div class="summary-line"><span>B-3 — Intangible Assets (Unrestricted)</span><span id="unrestrictedIntang">${fmt(calc.unrestrictedIntang())}</span></div>
-    <div class="summary-line total"><span>Total for Bond Requirement (calculated)</span><span id="bondRequired">${fmt(calc.bondRequired())}</span></div>
-  </div>
-  <div class="row">
-    <div class="col-12 col-lg-8 col-xl-7">
-      <div class="summary-box">
+        <div class="summary-line total"><span>Total for Bond Requirement (calculated)</span><span id="bondRequired">${fmt(calc.bondRequired())}</span></div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Surety Bond Details</h2>
         ${formRow(col(4,reqLabel('Bond Amount')+textInput('bondAmount','e.g., $50,000')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
         ${formRow(col(6,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')),col(6,optLabel('If bond waived – date of order')+textInput('bondWaivedDate')))}
