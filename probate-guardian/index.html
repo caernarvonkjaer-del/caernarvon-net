@@ -107,6 +107,8 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    plain maroon is only 1.5:1 against the dark-mode surface; brand-text is
    10.6:1 on white and 6.1:1+ against every dark surface. */
 :focus-visible{outline:2px solid var(--brand-text);outline-offset:2px;}
+.skip-link{position:fixed;top:.5rem;left:.5rem;z-index:11000;padding:.6rem .9rem;background:var(--surface);color:var(--ink);border:2px solid var(--brand-text);border-radius:var(--r-sm);transform:translateY(-160%);transition:transform .15s ease;}
+.skip-link:focus{transform:translateY(0);}
 .app-shell{display:flex;height:100vh;overflow:hidden;}
 /* Custom scrollbars — the default Windows bars read as "unfinished". */
 .sidebar,.main-content,.help-panel-content{scrollbar-width:thin;scrollbar-color:#c8d0dd transparent;}
@@ -966,8 +968,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
   </div>
 </div>
 <div id="lazy-fragment-host"></div>
+<a class="skip-link" href="#main-content">Skip to filing content</a>
 <div class="app-shell">
-  <nav class="sidebar" id="sidebar">
+  <nav class="sidebar" id="sidebar" aria-label="Application navigation">
     <div class="sidebar-header">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true">
@@ -1052,7 +1055,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
     <span class="mobile-topbar-title">Probate Guardian</span>
   </div>
 
-  <main class="main-content" id="main-content">
+  <main class="main-content" id="main-content" aria-label="Filing content" tabindex="-1">
     <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Loading…</div>
   </main>
 

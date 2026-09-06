@@ -214,6 +214,10 @@ test.describe('routes', () => {
 
   test('shell controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.skip-link')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#main-content')).toBeFocused();
     await page.evaluate(() => (window as any).addWard('Alpha Shell Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).addWard('Beta Shell Ward', 'annual'));
