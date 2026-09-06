@@ -397,7 +397,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   };
 
   // 14. Part III & IV: Attestations & Oaths (Guardian & Preparer)
-  const guardianBlocks = (d.guardians || []).map((g, i) => ({
+  const guardianBlocks = (d.guardians || []).filter(g => [
+    g.name, g.signatureDate, g.ssnEin, g.phone, g.streetAddress, g.cityStateZip,
+  ].some(value => String(value || '').trim())).map((g, i) => ({
     type: 'signature-block',
     tag: 'Part',
     role: `Guardian #${i + 1}`,
