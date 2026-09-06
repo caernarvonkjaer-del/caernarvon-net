@@ -321,7 +321,7 @@ function pagePlanMSignatures(){
       +cb('certProvidesCare',"The plan provides for the Ward's medical care and mental health treatment.")
       +cb('certPhysicianAttached',"The physician's statement of an examination of the Ward no more than 90 days before the beginning of the plan period is attached."),
       null,null,false)}
-    <p style="font-size:.85rem;color:var(--ink-3);margin:.5rem 0 1rem;">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
+    <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     ${g(0,'Guardian')}
     ${g(1,'Co-Guardian')}
     ${renderScheduleDocsSection('planMSignatures')}

@@ -286,20 +286,17 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .readiness-mark.pending{color:var(--warn-text);}
 .readiness-mark.manual{color:var(--ink-4);}
 [data-theme="dark"] .schedule-instructions{border-color:#22384d;}
-.entry-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:1rem;box-shadow:var(--sh-1);overflow:hidden;}
-.attestation-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start;}
-.attestation-card-grid>.entry-card{margin-bottom:0;min-width:0;}
-@media (max-width: 900px){.attestation-card-grid{grid-template-columns:1fr;}}
-.service-recipient-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start;}
-.service-recipient-grid>.entry-card{margin-bottom:0;min-width:0;}
+.entry-card,.summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-1);}
+.entry-card{margin-bottom:1rem;overflow:hidden;}
+.import-zone-body{border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);}
 .attorney-certification-card{width:calc(50% - .5rem);}
-.witness-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start;}
-.witness-card-grid>.entry-card{margin-bottom:0;min-width:0;}
+/* Bootstrap supplies the row/column layout; this preserves the app's established
+  900px tablet breakpoint instead of collapsing cards at Bootstrap's 768px md breakpoint. */
+@media (min-width:768px) and (max-width:900px){.card-grid-2col>.col-md-6{width:100%;}}
 .liability-fields{max-width:none;}
 .liability-fields .row{margin-bottom:.15rem;}
 .liability-fields .row:last-child{align-items:flex-end;}
-@media (max-width: 900px){.service-recipient-grid{grid-template-columns:1fr;}.attorney-certification-card{width:100%;}}
-@media (max-width: 900px){.witness-card-grid{grid-template-columns:1fr;}}
+@media (max-width: 900px){.attorney-certification-card{width:100%;}}
 .entry-card-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.6rem;padding:.55rem .85rem;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.85rem;font-weight:650;color:var(--ink);letter-spacing:-.005em;}
 /* Duplicate + Remove sit together at the right of an entry header. Grouped
    in one flex child so space-between keeps the title left and the pair
@@ -568,7 +565,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .sched-doc-meta{color:var(--ink-3);font-size:.78rem;flex-shrink:0;}
 .sched-doc-empty{color:var(--ink-3);font-style:italic;font-size:.85rem;margin-bottom:.5rem;}
 .dashboard-empty-inline{grid-column:1/-1;text-align:center;padding:1.5rem 1rem;color:var(--ink-4);font-style:italic;font-size:.88rem;}
-.summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;box-shadow:var(--sh-1);}
+.summary-box{padding:1rem 1.1rem;margin-bottom:1rem;}
 /* Summary page's burgundy total card, last in its column -- shorter
    top/bottom padding than the default .summary-box so its bottom edge
    lines up with Summary II's bottom in the other column at desktop

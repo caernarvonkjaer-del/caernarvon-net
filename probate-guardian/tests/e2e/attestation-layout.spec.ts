@@ -15,9 +15,9 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
     ];
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
-  const oneCardGrid = page.locator('.attestation-card-grid').first();
-  await expect(oneCardGrid.locator(':scope > .entry-card')).toHaveCount(1);
-  const oneCardWidth = await oneCardGrid.locator(':scope > .entry-card').evaluate((card) => (card as HTMLElement).getBoundingClientRect().width);
+  const oneCardGrid = page.locator('.card-grid-2col').first();
+  await expect(oneCardGrid.locator(':scope > .col-md-6 > .entry-card')).toHaveCount(1);
+  const oneCardWidth = await oneCardGrid.locator(':scope > .col-md-6 > .entry-card').evaluate((card) => (card as HTMLElement).getBoundingClientRect().width);
   expect(oneCardWidth).toBeLessThan(600);
 
   await page.evaluate(() => {
@@ -28,12 +28,12 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
     ];
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
-  const grid = page.locator('.attestation-card-grid').first();
+  const grid = page.locator('.card-grid-2col').first();
   await expect(grid).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
   const desktop = await grid.evaluate((element) => {
-    const cards = [...element.querySelectorAll(':scope > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
+    const cards = [...element.querySelectorAll(':scope > .col-md-6 > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
     return { columns: new Set(cards.map(card => card.x)).size, width: cards[0]?.width || 0 };
   });
   expect(desktop.columns).toBe(2);
@@ -41,22 +41,22 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
 
   await page.setViewportSize({ width: 700, height: 900 });
   const mobile = await grid.evaluate((element) => {
-    const cards = [...element.querySelectorAll(':scope > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
+    const cards = [...element.querySelectorAll(':scope > .col-md-6 > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
     return new Set(cards.map(card => card.x)).size;
   });
   expect(mobile).toBe(1);
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.evaluate(() => (window as any).navigate('/d2'));
-  const d2Grid = page.locator('.attestation-card-grid').first();
-  await expect(d2Grid.locator(':scope > div')).toHaveCount(2);
-  const d2Columns = await d2Grid.locator(':scope > div').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  const d2Grid = page.locator('.card-grid-2col').first();
+  await expect(d2Grid.locator(':scope > .col-md-6')).toHaveCount(2);
+  const d2Columns = await d2Grid.locator(':scope > .col-md-6').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(d2Columns).toBe(2);
 
   await page.evaluate(() => (window as any).navigate('/d5'));
-  const recipientGrid = page.locator('.service-recipient-grid');
+  const recipientGrid = page.locator('.card-grid-2col');
   await expect(recipientGrid).toBeVisible();
-  const recipientColumns = await recipientGrid.locator(':scope > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  const recipientColumns = await recipientGrid.locator(':scope > .col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(recipientColumns).toBe(2);
   await expect(recipientGrid.locator('input[data-bind="serviceRecipients.0.address"]')).toBeVisible();
   const certification = page.locator('.attorney-certification-card');
@@ -64,9 +64,9 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   expect(certificationWidth).toBeLessThan(700);
 
   await page.evaluate(() => (window as any).navigate('/'));
-  const witnessGrid = page.locator('.witness-card-grid');
+  const witnessGrid = page.locator('.card-grid-2col');
   await expect(witnessGrid).toBeVisible();
-  const witnessColumns = await witnessGrid.locator(':scope > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  const witnessColumns = await witnessGrid.locator(':scope > .col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(witnessColumns).toBe(2);
   const witnessName = witnessGrid.locator('input[data-bind="witnesses.0.name"]');
   const witnessAddress = witnessGrid.locator('input[data-bind="witnesses.0.address"]');
@@ -84,7 +84,7 @@ test('Guardian Inventory removes empty co-guardian placeholders from active stat
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
   expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(1);
-  await expect(page.locator('.attestation-card-grid > .entry-card')).toHaveCount(1);
+  await expect(page.locator('.card-grid-2col > .col-md-6 > .entry-card')).toHaveCount(1);
 });
 
 test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) => {
@@ -93,5 +93,5 @@ test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) =>
   await page.evaluate(() => { (window as any).D.guardians[0].name = 'Primary Guardian'; });
   await page.evaluate(() => (window as any).navigate('/d1'));
   await page.locator('[data-inventory-action="add-guardian"]').click();
-  await expect(page.locator('.attestation-card-grid > .entry-card')).toHaveCount(2);
+  await expect(page.locator('.card-grid-2col > .col-md-6 > .entry-card')).toHaveCount(2);
 });

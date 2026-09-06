@@ -8380,7 +8380,7 @@ function renderScheduleDocsSection(scheduleKey){
   return `<div class="schedule-docs-section no-print">
     <h2>Supporting Documents${periodNote}</h2>
     <p class="schedule-docs-hint">Attach receipts, statements, or other records supporting this schedule. Stored on this device only, encrypted with the rest of this ward's data.</p>
-    <input type="file" id="${inputId}" multiple aria-label="Upload supporting documents for ${esc(scheduleKey)}" style="display:none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
+    <input type="file" id="${inputId}" multiple aria-label="Upload supporting documents for ${esc(scheduleKey)}" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload File(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
     <h2 class="mt">Comments</h2>

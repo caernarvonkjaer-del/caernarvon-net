@@ -427,7 +427,7 @@ function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());
 function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);autoSave();renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
-  return list.map((w,i)=>`<div class="entry-card">
+  return list.map((w,i)=>`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
     <div class="entry-card-header">
       <span>Inventory Witness ${i+1}</span>
       <span class="entry-card-actions">
@@ -438,7 +438,7 @@ function witnessCardsHTML(){
       ${formRow(col(12,reqLabel('Name')+textInput(`witnesses.${i}.name`,'','name')))}
       ${formRow(col(7,reqLabel('Address')+textInput(`witnesses.${i}.address`,'','address')),col(5,reqLabel('Occupation')+textInput(`witnesses.${i}.occupation`)))}
     </div>
-  </div>`).join('');
+  </div></div>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -477,13 +477,13 @@ function pageHome(){
           </button>
         </h2>
         <div id="importZone" class="accordion-collapse collapse">
-          <div class="accordion-body" style="border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);text-align:center;padding:1.5rem;">
+          <div class="accordion-body import-zone-body p-4 text-center">
             <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" style="display:none" data-inventory-change="import-excel">
+              <input type="file" accept=".xlsx" class="d-none" data-inventory-change="import-excel">
             </label>
-            <p style="color:var(--ink-3);font-size:.8rem;margin:.5rem 0 0;">Select the court-issued Initial Inventory Excel template</p>
-            <div id="import-progress" style="margin-top:.5rem;font-size:.8rem;"></div>
+            <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the court-issued Initial Inventory Excel template</p>
+            <div id="import-progress" class="mt-2" style="font-size:.8rem;"></div>
           </div>
         </div>
       </div>
@@ -513,7 +513,7 @@ function pageHome(){
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Inventory Witnesses</h2>
     <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
-    <div class="witness-card-grid">${witnessCardsHTML()}</div>
+    <div class="row g-3 card-grid-2col">${witnessCardsHTML()}</div>
     <button class="btn btn-outline-primary btn-sm no-print" data-inventory-action="add-witness">+ Add Witness</button>
   </div>
   <div class="mb-3">
@@ -686,7 +686,7 @@ function renderB2Fields(e, i){
       col(3,reqLabel('Year')+`<input class="form-control" id="b2-vehicle-year-${i}" inputmode="numeric" maxlength="4" value="${esc(e.vehicleYear)}" data-inventory-input="vehicle" data-inventory-format="year" data-index="${i}" data-field="vehicleYear">`),
       col(3,reqLabel('Make')+`<input class="form-control" id="b2-vehicle-make-${i}" value="${esc(e.vehicleMake)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleMake">`),
       col(3,reqLabel('Model')+`<input class="form-control" id="b2-vehicle-model-${i}" value="${esc(e.vehicleModel)}" data-inventory-input="vehicle" data-index="${i}" data-field="vehicleModel">`),
-      col(3,reqLabel('VIN')+`<input class="form-control" id="b2-vehicle-vin-${i}" maxlength="17" style="text-transform:uppercase;" value="${esc(e.vehicleVin)}" data-inventory-input="vehicle" data-inventory-format="vin" data-index="${i}" data-field="vehicleVin">`)
+      col(3,reqLabel('VIN')+`<input class="form-control text-uppercase" id="b2-vehicle-vin-${i}" maxlength="17" value="${esc(e.vehicleVin)}" data-inventory-input="vehicle" data-inventory-format="vin" data-index="${i}" data-field="vehicleVin">`)
     )}
     ${formRow(col(4,reqLabel('Odometer Mileage')+`<input class="form-control" id="b2-vehicle-mileage-${i}" inputmode="numeric" value="${esc(e.odometerMileage)}" data-inventory-input="vehicle" data-inventory-format="mileage" data-index="${i}" data-field="odometerMileage">`))}
     <div class="vehicle-value-links">Look up a value at <a href="https://www.kbb.com/" target="_blank" rel="noopener noreferrer">Kelley Blue Book</a> or <a href="https://www.carfax.com/" target="_blank" rel="noopener noreferrer">Carfax</a> — both are non-affiliated commercial sites, offered only as a convenience; either generally provides an acceptable value. Print or save the page showing the final value you used and upload it below under Supporting Documents.</div>
@@ -854,14 +854,14 @@ function pageD1(){
     const isFirst=visibleIndex===0;
     const title=isFirst?'Guardian #1':`Co-Guardian #${visibleIndex+1}`;
     const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
-    return `<div class="entry-card mb-3">
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${removeBtn}</div></div>
       <div class="entry-card-body">
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
         ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')))}
       </div>
-    </div>`;
+    </div></div>`;
   }).join('');
   const addCoBtn=D.guardians.length<3?`<button class="btn btn-outline-secondary btn-sm mb-3 no-print" data-inventory-action="add-guardian">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
@@ -869,18 +869,18 @@ function pageD1(){
   <div class="schedule-instructions">
     UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.
   </div>
-  <div class="attestation-card-grid">${cards}</div>${addCoBtn}
+  <div class="row g-3 card-grid-2col">${cards}</div>${addCoBtn}
   ${pageNav('/d1')}</div>`;
 }
 
 function pageD2(){
   return `<div class="schedule-page">
   <h1>Part IV: Preparer &amp; Guardian Attorney Attestations</h1>
-  <div class="attestation-card-grid">
-  <div>
+  <div class="row g-3 card-grid-2col">
+  <div class="col-12 col-md-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Preparer Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.</p>
-  <div class="entry-card">
+  <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
       <span>Preparer Attestation</span>
     </div>
@@ -891,10 +891,10 @@ function pageD2(){
     </div>
   </div>
   </div>
-  <div>
+  <div class="col-12 col-md-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
-  <div class="entry-card">
+  <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
       <span>Attorney Attestation</span>
     </div>
@@ -941,7 +941,7 @@ function pageD3(){
             <label class="form-check-label" for="sdb-no">No</label>
           </div>
         </div>
-        <div id="sdb-filed-row" style="${D.hasSafeDepositBox===true?'':'display:none;'}">
+        <div id="sdb-filed-row" class="${D.hasSafeDepositBox===true?'':'d-none'}">
           <label class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></label>
           <div class="d-flex gap-4 mb-2">
             <div class="form-check">
@@ -990,20 +990,20 @@ function pageD4(){
 function pageD5(){
   const cards=D.serviceRecipients.map((r,i)=>{
     const removeBtn=D.serviceRecipients.length>1?`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-recipient" data-index="${i}">✕ Remove</button>`:'';
-    return `<div class="entry-card">
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header"><span>Recipient ${i+1}</span>${removeBtn}</div>
       <div class="entry-card-body">
         ${formRow(col(12,reqLabel('Name')+textInput(`serviceRecipients.${i}.name`,'','name')))}
         ${formRow(col(12,reqLabel('Street Address')+textInput(`serviceRecipients.${i}.address`,'','address')))}
         ${formRow(col(12,reqLabel('City / State / Zip')+textInput(`serviceRecipients.${i}.cityStateZip`,'','zip')))}
       </div>
-    </div>`;
+    </div></div>`;
   }).join('');
   const addBtn2=D.serviceRecipients.length<4?`<button class="btn btn-outline-secondary btn-sm mb-4 no-print" data-inventory-action="add-recipient">+ Add Recipient</button>`:'';
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  <div class="service-recipient-grid">${cards}</div>${addBtn2}
+  <div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">
     <div class="entry-card-body">
