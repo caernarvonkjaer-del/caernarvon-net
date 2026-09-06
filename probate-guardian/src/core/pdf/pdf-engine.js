@@ -474,11 +474,13 @@ export async function generateCourtFormPdf(model, options = {}) {
       isLeaf: true,
       parent: documentNode,
     });
+    const isVisualAttachment = !!imageLayout;
+    const writeText = (text, x, y) => doc.text(text, x, y, isVisualAttachment ? { renderingMode: 'invisible' } : undefined);
     writeMarkedContentStart(doc, 'H3', headingNode.mcid);
     doc.setFont('PGSans', 'bold');
-    doc.setFontSize(imageLayout ? 7 : 9.5);
+    doc.setFontSize(isVisualAttachment ? 7 : 9.5);
     doc.setTextColor(26, 45, 74);
-    doc.text(title, imageLayout ? imageLayout.x + 2 : margin, imageLayout ? imageLayout.y + 8 : curY + 10);
+    writeText(title, imageLayout ? imageLayout.x + 2 : margin, imageLayout ? imageLayout.y + 8 : curY + 10);
     writeMarkedContentEnd(doc);
     let textY = imageLayout ? imageLayout.y + 12 : curY + 18;
 
@@ -486,9 +488,9 @@ export async function generateCourtFormPdf(model, options = {}) {
       const noticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: documentNode });
       writeMarkedContentStart(doc, 'P', noticeNode.mcid);
       doc.setFont('PGSans', 'italic');
-      doc.setFontSize(imageLayout ? 7 : 9);
+      doc.setFontSize(isVisualAttachment ? 7 : 9);
       doc.setTextColor(100, 110, 125);
-      doc.text('No machine-readable text was found in this source document. Provide a human-reviewed accessible text equivalent before filing.', imageLayout ? imageLayout.x + 2 : margin, textY + 9);
+      writeText('No machine-readable text was found in this source document. Provide a human-reviewed accessible text equivalent before filing.', imageLayout ? imageLayout.x + 2 : margin, textY + 9);
       writeMarkedContentEnd(doc);
       if (!imageLayout) curY = textY + 18;
       return;
@@ -496,14 +498,14 @@ export async function generateCourtFormPdf(model, options = {}) {
 
     for (const line of lines) {
       doc.setFont('PGSans', 'normal');
-      doc.setFontSize(imageLayout ? 7 : 9);
+      doc.setFontSize(isVisualAttachment ? 7 : 9);
       doc.setTextColor(17, 24, 39);
       const availableWidth = imageLayout ? imageLayout.width - 4 : contentWidth;
       const wrapped = doc.splitTextToSize(line, availableWidth);
       if (!imageLayout) checkPageSpace((wrapped.length * 11) + 4, sectionTitle);
       const lineNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: documentNode });
       writeMarkedContentStart(doc, 'P', lineNode.mcid);
-      doc.text(wrapped, imageLayout ? imageLayout.x + 2 : margin, textY + 9);
+      writeText(wrapped, imageLayout ? imageLayout.x + 2 : margin, textY + 9);
       writeMarkedContentEnd(doc);
       textY += (wrapped.length * (imageLayout ? 8 : 11)) + 4;
     }

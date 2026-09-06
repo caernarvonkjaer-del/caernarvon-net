@@ -384,5 +384,6 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const transcriptPage = pages.find(pageInfo => pageInfo.text.includes('Supporting Document Text: scanned-bank-statement.png') && pageInfo.imageCount === 0);
     expect(visualPage?.imageCount).toBeGreaterThan(0);
     expect(transcriptPage).toBeFalsy();
+    expect(pdfInspection.rawPdfString).toContain('3 Tr');
   });
 });
