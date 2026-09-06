@@ -67,8 +67,11 @@ export function isFilingEligibleSupplement(file, limits = SUPPLEMENTAL_PDF_LIMIT
   if (bytes.length > limits.maxFileBytes || Number(file.size || bytes.length) > limits.maxFileBytes) {
     return statusFailure(`${file.name || 'Supporting document'} exceeds the ${formatSupplementalPdfLimit(limits.maxFileBytes)} per-file limit.`, 'too-large');
   }
+  if (file.technicalStatus === 'checking') {
+    return statusFailure(`${file.name || 'Supporting document'} is still being checked.`, 'checking');
+  }
   if (!['ready', 'warning'].includes(file.technicalStatus)) {
-    return statusFailure(`${file.name || 'Supporting document'} has not passed PDF checks.`, 'not-ready');
+    return statusFailure(`${file.name || 'Supporting document'} needs PDF checks before filing.`, 'not-ready');
   }
   if (!Number.isInteger(file.pageCount) || file.pageCount < 1 || file.pageCount > limits.maxFilePages) {
     return statusFailure(`${file.name || 'Supporting document'} has an invalid or over-limit page count.`, 'page-limit');

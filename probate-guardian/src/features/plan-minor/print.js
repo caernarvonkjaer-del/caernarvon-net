@@ -48,6 +48,7 @@ export function planReadinessChecksMinor(){
 }
 
 export function pagePrintPlanMinor(){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validatePlanMinor(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>

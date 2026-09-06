@@ -53,6 +53,7 @@ export function planReadinessChecksSimplified(){
 }
 
 export function pagePrintPlanSimplified(){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validatePlanSimplified(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>

@@ -28,6 +28,7 @@ const {
 } = window;
 
 export function pagePrintAnnual(capOver){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>

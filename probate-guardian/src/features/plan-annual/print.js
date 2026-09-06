@@ -65,6 +65,7 @@ export function planReadinessChecksAnnual(){
 }
 
 export function pagePrintPlanAnnual(){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>

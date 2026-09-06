@@ -28,6 +28,7 @@ const {
 } = window;
 
 export function pagePrint(capOver){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   const errPanel=errors.length?validationPanel(errors):'';

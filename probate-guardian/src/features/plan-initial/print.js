@@ -59,6 +59,7 @@ export function planReadinessChecksInitial(){
 }
 
 export function pagePrintPlanInitial(){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>

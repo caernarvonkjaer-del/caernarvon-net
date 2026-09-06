@@ -23,6 +23,7 @@ const {
 } = window;
 
 export function pagePrintSimplified(capOver){
+  window.queueAllScheduleDocValidations?.();
   const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>

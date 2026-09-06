@@ -8448,13 +8448,62 @@ function setScheduleDocAttestation(scheduleKey,idx,accepted){
   renderPage(currentPage);
 }
 
+async function prepareScheduleDocForValidation(file,tools){
+  if(!file||!file.dataUrl)return false;
+  const bytes=tools.dataUrlToBytes(file.dataUrl);
+  if(!tools.isPdfBytes(bytes)){
+    Object.assign(file,{
+      technicalStatus:'blocked',
+      technicalWarnings:['The selected file is not a readable PDF.'],
+      pageCount:0,
+      corrupt:true,
+      attestationStatus:'pending',
+      attestedDigest:'',
+      attestedAt:''
+    });
+    return false;
+  }
+  const digest=await tools.digestBytes(bytes);
+  let changed=false;
+  if(!file.id){file.id=tools.createSupplementalFileId();changed=true;}
+  if(file.type!=='application/pdf'){file.type='application/pdf';changed=true;}
+  if(file.size!==bytes.length){file.size=bytes.length;changed=true;}
+  if(!String(file.dataUrl).startsWith('data:application/pdf')){
+    file.dataUrl=String(file.dataUrl).replace(/^data:[^;]+;/,'data:application/pdf;');
+    changed=true;
+  }
+  if(file.contentDigest!==digest){
+    file.contentDigest=digest;
+    file.attestationStatus='pending';
+    file.attestedDigest='';
+    file.attestedAt='';
+    changed=true;
+  }
+  if(!file.validationAttempt)file.validationAttempt=0;
+  if(!['checking','ready','warning','blocked'].includes(file.technicalStatus)){
+    file.technicalStatus='checking';
+    changed=true;
+  }
+  if(file.technicalStatus==='checking'){
+    file.validationAttempt+=1;
+    file.technicalWarnings=[];
+    changed=true;
+  }
+  return changed;
+}
+
 function queueScheduleDocValidation(scheduleKey,slot){
   (slot.files||[]).forEach(file=>{
-    if(!file||file.technicalStatus!=='checking'||file.__validationQueued)return;
+    if(!file||file.__validationQueued)return;
+    const needsValidation=file.technicalStatus==='checking'||!file.technicalStatus||!file.contentDigest||!file.id||!file.pageCount;
+    if(!needsValidation)return;
     file.__validationQueued=true;
     setTimeout(async()=>{
       try{
         const tools=await getSupplementalPdfTools();
+        const prepared=await prepareScheduleDocForValidation(file,tools);
+        if(prepared){autoSave();renderPage(currentPage);}
+        if(file.technicalStatus==='blocked'){file.__validationQueued=false;return;}
         const attempt=file.validationAttempt||1;
         const digest=file.contentDigest;
         const validation=await tools.validateSupplementalPdfRecord(file);
@@ -8476,6 +8525,21 @@ function queueScheduleDocValidation(scheduleKey,slot){
     },0);
   });
 }
+
+function queueAllScheduleDocValidations(){
+  const docs=window.D&&window.D.scheduleDocs;
+  if(!docs||typeof docs!=='object')return;
+  const period=scheduleDocPeriodKey();
+  Object.entries(docs).forEach(([scheduleKey,value])=>{
+    if(!value||typeof value!=='object')return;
+    const slot=Array.isArray(value.files)||value.comment
+      ? value
+      : value[period]||value.initial;
+    if(slot&&Array.isArray(slot.files))queueScheduleDocValidation(scheduleKey,slot);
+  });
+}
+
+window.queueAllScheduleDocValidations=queueAllScheduleDocValidations;
 
 function updateScheduleComment(scheduleKey,value){
   getScheduleDocSlot(scheduleKey).comment=value;
