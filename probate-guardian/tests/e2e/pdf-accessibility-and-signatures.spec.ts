@@ -237,6 +237,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
     const pdfInspection = await page.evaluate(async () => {
       const { buildVerifiedInventoryModel, createJsPdfInstance, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
       const attachmentDoc = await createJsPdfInstance();
       attachmentDoc.setFontSize(16);
       attachmentDoc.text('Uploaded bank statement support page', 72, 120);
@@ -276,7 +277,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
       }, { signatureStyle: 'typed', printDate: '2026-09-05' });
       const doc = await generateVerifiedInventoryPdf(model);
       return {
-        rawPdfString: doc.output(),
+        rawPdfString: new TextDecoder('latin1').decode(await finalizeCourtFormPdf(doc)),
         numPages: doc.internal.getNumberOfPages(),
       };
     });
@@ -284,18 +285,14 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const extractedText = await extractPdfText(pdfInspection.rawPdfString);
     expect(extractedText).toContain('Schedule B-1: Cash & Financial Accounts');
     expect(extractedText).toContain('Supporting Documents');
-    expect(extractedText).toContain('mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf');
     expect(extractedText).toContain('Statement verifies the restricted depository balance.');
     expect(extractedText).toContain('Uploaded bank statement support page');
-    expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
+    expect(pdfInspection.rawPdfString).not.toContain('/Subtype /Image');
     expect(pdfInspection.numPages).toBeGreaterThan(4);
 
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
-    const attachmentFileName = 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf';
-    const attachmentTitlePages = pages.filter(pageInfo => pageInfo.text.includes(attachmentFileName));
-    expect(attachmentTitlePages.length).toBeGreaterThan(0);
-    const documentTextPage = attachmentTitlePages.find(pageInfo => pageInfo.text.includes('Supporting Document Text'));
-    expect(documentTextPage?.imageCount).toBeGreaterThan(0);
+    const documentTextPage = pages.find(pageInfo => pageInfo.text.includes('Uploaded bank statement support page'));
+    expect(documentTextPage?.imageCount).toBe(0);
     expect(documentTextPage?.text).toContain('Uploaded bank statement support page');
     expect(documentTextPage && pages[documentTextPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
     expect(documentTextPage?.text).not.toContain('Schedule B-2: Personal Property Assets');
@@ -306,6 +303,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
     const pdfInspection = await page.evaluate(async () => {
       const { buildPlanAnnualModel, createJsPdfInstance, generateCourtFormPdf } = await (window as any).loadPlanAnnualPdf();
+      const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
       const attachmentDoc = await createJsPdfInstance();
       attachmentDoc.setFontSize(16);
       attachmentDoc.text('Uploaded annual plan support page', 72, 120);
@@ -328,14 +326,13 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
       };
       const model = buildPlanAnnualModel(sourceData);
       const doc = await generateCourtFormPdf(model, { sourceData });
-      return { rawPdfString: doc.output() };
+      return { rawPdfString: new TextDecoder('latin1').decode(await finalizeCourtFormPdf(doc)) };
     });
 
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
-    const attachmentPages = pages.filter(pageInfo => pageInfo.text.includes('annual_plan_residence_support.pdf'));
-    const documentTextPage = attachmentPages.find(pageInfo => pageInfo.text.includes('Supporting Document Text'));
+    const documentTextPage = pages.find(pageInfo => pageInfo.text.includes('Uploaded annual plan support page'));
     expect(documentTextPage?.text).toContain('Uploaded annual plan support page');
-    expect(documentTextPage?.imageCount).toBeGreaterThan(0);
+    expect(documentTextPage?.imageCount).toBe(0);
     expect(pages[documentTextPage!.pageNumber - 2]?.text).toContain('Question 1');
   });
 
@@ -374,14 +371,13 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     });
 
     const extractedText = await extractPdfText(pdfInspection.rawPdfString);
-    expect(extractedText).toContain('Supporting Document Text: scanned-bank-statement.png');
     expect(extractedText).toMatch(/ACCOUNT BALANCE.*12,842\.19/);
     expect(extractedText).toMatch(/Statement Date.*August.*31.*2026/);
     expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
     expect(pdfInspection.rawPdfString).toContain('/T (Supporting Document Text: scanned-bank-statement.png)');
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
-    const visualPage = pages.find(pageInfo => pageInfo.text.includes('Supporting Document Text: scanned-bank-statement.png') && pageInfo.imageCount > 0);
-    const transcriptPage = pages.find(pageInfo => pageInfo.text.includes('Supporting Document Text: scanned-bank-statement.png') && pageInfo.imageCount === 0);
+    const visualPage = pages.find(pageInfo => pageInfo.text.includes('ACCOUNT BALANCE $12,842.19') && pageInfo.imageCount > 0);
+    const transcriptPage = pages.find(pageInfo => pageInfo.text.includes('ACCOUNT BALANCE $12,842.19') && pageInfo.imageCount === 0);
     expect(visualPage?.imageCount).toBeGreaterThan(0);
     expect(transcriptPage).toBeFalsy();
     expect(pdfInspection.rawPdfString).toContain('3 Tr');

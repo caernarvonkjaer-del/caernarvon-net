@@ -20,6 +20,7 @@
 // (pdfjs-dist stays a devDependency purely as the upstream source these
 // two files are copied from -- see lib/VENDORED-LIBRARIES.md.)
 import { generateCourtFormPdf } from './pdf-engine.js';
+import { finalizeCourtFormPdf } from './pdf-finalizer.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
 
 function escapeHtml(s) {
@@ -39,9 +40,9 @@ function escapeHtml(s) {
 // so the canvas visibly overflowed the padded box). legacy-app.js's
 // pv-pager (pvPages()/pvShowAll()/pvApply()) was generalized to recognize
 // `pdf-page` in its own right, so no compatibility class is needed here.
-async function renderPagesInto(container, doc) {
+async function renderPagesInto(container, pdfBytes) {
   const pdfjsLib = await ensurePdfjs();
-  const pdf = await pdfjsLib.getDocument({ data: doc.output('arraybuffer') }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
   container.innerHTML = '';
   const scale = 1.5;
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -82,7 +83,7 @@ export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-co
   try {
     const model = buildModel(D);
     const doc = await generateCourtFormPdf(model);
-    await renderPagesInto(container, doc);
+    await renderPagesInto(container, await finalizeCourtFormPdf(doc));
   } catch (e) {
     console.error('PDF preview render failed', e);
     container.innerHTML = `<p class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);">Preview failed to render: ${escapeHtml(e.message)}</p>`;
@@ -99,6 +100,7 @@ export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-co
 export async function printGeneratedPdf(buildModel, D) {
   const model = buildModel(D);
   const doc = await generateCourtFormPdf(model);
-  const blobUrl = doc.output('bloburl');
+  const pdfBytes = await finalizeCourtFormPdf(doc);
+  const blobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
   window.open(blobUrl, '_blank');
 }

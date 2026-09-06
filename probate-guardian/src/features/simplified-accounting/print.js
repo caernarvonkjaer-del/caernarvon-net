@@ -9,6 +9,7 @@
 import { validateSimplified } from './index.js';
 import { buildSimplifiedAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
 function buildModelForPreview(D){
@@ -74,7 +75,7 @@ export async function doSavePdf(){
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateCourtFormPdf(model);
-    doc.save(filename);
+    saveFinalizedPdf(await finalizeCourtFormPdf(doc), filename);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);

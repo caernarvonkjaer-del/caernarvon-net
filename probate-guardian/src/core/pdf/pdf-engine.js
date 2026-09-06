@@ -245,6 +245,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   const pageNumbersBySection = {};
   const parentOutlineMap = {};
   const attachmentPageNumbers = new Set();
+  const nativePdfAttachments = [];
 
   const drawFirstPagePleadingHeader = () => {
     writeArtifactStart(doc, 'Pagination', 'Header');
@@ -456,22 +457,6 @@ export async function generateCourtFormPdf(model, options = {}) {
     curY += filenameHeight + spacingAfterDocument;
   };
 
-  const extractPdfPageLines = async (srcPage) => {
-    const content = await srcPage.getTextContent();
-    const rows = new Map();
-    for (const item of content.items) {
-      if (!item?.str?.trim() || !Array.isArray(item.transform)) continue;
-      const baseline = Math.round(item.transform[5] * 2) / 2;
-      const row = rows.get(baseline) || [];
-      row.push({ text: item.str, x: item.transform[4] || 0 });
-      rows.set(baseline, row);
-    }
-    return [...rows.entries()]
-      .sort(([firstBaseline], [secondBaseline]) => secondBaseline - firstBaseline)
-      .map(([, row]) => row.sort((first, second) => first.x - second.x).map(item => item.text).join(' ').replace(/\s+/g, ' ').trim())
-      .filter(Boolean);
-  };
-
   const renderSupportingDocumentText = (fileName, sourcePageNumber, lines, sectionTitle, parentNode, imageLayout = null) => {
     const title = `Supporting Document Text: ${fileName}${sourcePageNumber > 1 ? ` (page ${sourcePageNumber})` : ''}`;
     const documentNode = structureTree.addStructureElement({
@@ -479,22 +464,25 @@ export async function generateCourtFormPdf(model, options = {}) {
       title,
       parent: parentNode,
     });
-    const headingNode = structureTree.addStructureElement({
-      tag: 'H3',
-      title,
-      pageNumber: pageNum,
-      isLeaf: true,
-      parent: documentNode,
-    });
     const isVisualAttachment = !!imageLayout;
     const writeText = (text, x, y) => doc.text(text, x, y, isVisualAttachment ? { renderingMode: 'invisible' } : undefined);
-    writeMarkedContentStart(doc, 'H3', headingNode.mcid);
-    doc.setFont('PGSans', 'bold');
-    doc.setFontSize(isVisualAttachment ? 7 : 9.5);
-    doc.setTextColor(26, 45, 74);
-    writeText(title, imageLayout ? imageLayout.x + 2 : margin, imageLayout ? imageLayout.y + 8 : curY + 10);
-    writeMarkedContentEnd(doc);
-    let textY = imageLayout ? imageLayout.y + 12 : curY + 18;
+    let textY = curY + 18;
+
+    if (!isVisualAttachment) {
+      const headingNode = structureTree.addStructureElement({
+        tag: 'H3',
+        title,
+        pageNumber: pageNum,
+        isLeaf: true,
+        parent: documentNode,
+      });
+      writeMarkedContentStart(doc, 'H3', headingNode.mcid);
+      doc.setFont('PGSans', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(26, 45, 74);
+      writeText(title, margin, curY + 10);
+      writeMarkedContentEnd(doc);
+    }
 
     if (!lines.length) {
       const noticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: documentNode });
@@ -524,23 +512,14 @@ export async function generateCourtFormPdf(model, options = {}) {
     if (!imageLayout) curY = textY;
   };
 
-  const renderUploadedPdfPages = async (pdf, fileName, sectionTitle, parentNode) => {
-    const pdfjsLib = await ensurePdfjs();
+  const renderUploadedPdfPages = async (pdf, file) => {
     for (let p = 1; p <= pdf.numPages; p++) {
       startNewAttachmentPage();
-      const srcPage = await pdf.getPage(p);
-      const viewport = srcPage.getViewport({ scale: 1.5 });
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      await srcPage.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
-      let lines = await extractPdfPageLines(srcPage);
-      if (!lines.length) {
-        lines = await recognizeSupportingDocument(canvas);
-      }
-      const layout = getSupportingDocumentImageLayout(viewport.width, viewport.height, true);
-      renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode, layout);
-      renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), layout, 'JPEG');
+      nativePdfAttachments.push({
+        pageNumber: pageNum,
+        sourcePageIndex: p - 1,
+        dataUrl: String(file.dataUrl || ''),
+      });
     }
   };
 
@@ -599,7 +578,7 @@ export async function generateCourtFormPdf(model, options = {}) {
       try {
         if (isPdfFile) {
           const pdf = await loadUploadedPdf(file);
-          await renderUploadedPdfPages(pdf, fileName, sectionTitle, parentNode);
+          await renderUploadedPdfPages(pdf, file);
         } else if (isImageFile) {
           startNewAttachmentPage();
           const lines = await recognizeSupportingDocument(dataUrl);
@@ -1504,6 +1483,8 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setPage(p);
     drawFooter(p, totalPages);
   }
+
+  doc.__pgNativePdfAttachments = nativePdfAttachments;
 
   return doc;
 }

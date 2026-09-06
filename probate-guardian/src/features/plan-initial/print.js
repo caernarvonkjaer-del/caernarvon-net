@@ -12,6 +12,7 @@
 import { validatePlanInitial } from './index.js';
 import { buildPlanInitialModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
 const {
@@ -87,7 +88,7 @@ export async function doSavePdf(){
   try{
     const model = buildPlanInitialModel(window.D);
     const doc = await generateCourtFormPdf(model);
-    doc.save(`${ward}_InitialGuardianshipPlan.pdf`);
+    saveFinalizedPdf(await finalizeCourtFormPdf(doc), `${ward}_InitialGuardianshipPlan.pdf`);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);

@@ -12,6 +12,7 @@
 import { validatePlanSimplified } from './index.js';
 import { buildPlanSimplifiedModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
+import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
 const {
@@ -81,7 +82,7 @@ export async function doSavePdf(){
   try{
     const model = buildPlanSimplifiedModel(window.D);
     const doc = await generateCourtFormPdf(model);
-    doc.save(`${ward}_SimplifiedAnnualPlan.pdf`);
+    saveFinalizedPdf(await finalizeCourtFormPdf(doc), `${ward}_SimplifiedAnnualPlan.pdf`);
   }catch(e){
     console.error('PDF export failed',e);
     alert('PDF export failed: '+e.message);

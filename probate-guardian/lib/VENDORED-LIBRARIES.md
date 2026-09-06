@@ -58,6 +58,20 @@ anything.
 - **Used for**: Recognizing image-only supporting documents and scanned PDF pages into tagged, selectable PDF transcript content.
 - **Last checked**: 2026-09-06.
 
+## pdf-lib
+
+- **Version**: 1.17.1
+- **Source**: [npmjs.com/package/pdf-lib](https://www.npmjs.com/package/pdf-lib) (`npm install pdf-lib@^1.17.1`)
+- **How it gets here**: `pdf-lib` is an npm dependency and its browser ESM
+  build is copied from `node_modules/pdf-lib/dist/pdf-lib.esm.js` to
+  `lib/pdf-lib.esm.js`. `src/core/pdf/pdf-finalizer.js` uses the relative
+  vendored module path so finalization works in the raw static site as well
+  as both Vite outputs.
+- **Used for**: Replacing reserved attachment pages with their original PDF
+  pages, preserving source content streams and selectable text without a
+  raster or synthetic text overlay.
+- **Last checked**: 2026-09-06.
+
 ## bootstrap
 
 - **Version**: 5.3.8 (`bootstrap.bundle.min.js`, `bootstrap.min.css`)
