@@ -40,6 +40,7 @@ document.addEventListener('click', (event) => {
       case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
+    case 'accept-supplemental-pdfs': window.acceptReadySupplementalPdfs(); break;
     case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': window.exportActivityLog(); break;

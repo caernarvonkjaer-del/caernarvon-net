@@ -1545,6 +1545,9 @@ function validationPanel(errors,opts){
     </div>`;
   }).join('');
   const n=errors.length;
+  const supplementalAction=window.hasReadySupplementalPdfsNeedingAttestation&&window.hasReadySupplementalPdfsNeedingAttestation()
+    ? `<div class="mt-3"><button type="button" class="btn btn-outline-primary btn-sm" data-form-action="accept-supplemental-pdfs">Accept supplemental PDFs for filing</button></div>`
+    : '';
   return `<div class="validation-panel no-print">
     <div class="validation-head">
       ${ic('alert',17)}
@@ -1554,6 +1557,7 @@ function validationPanel(errors,opts){
       </div>
     </div>
     <div class="validation-groups">${rows}</div>
+    ${supplementalAction}
   </div>`;
 }
 
@@ -8540,6 +8544,63 @@ function queueAllScheduleDocValidations(){
 }
 
 window.queueAllScheduleDocValidations=queueAllScheduleDocValidations;
+
+function activeScheduleDocFiles(){
+  const docs=window.D&&window.D.scheduleDocs;
+  if(!docs||typeof docs!=='object')return [];
+  const period=scheduleDocPeriodKey();
+  const files=[];
+  Object.values(docs).forEach(value=>{
+    if(!value||typeof value!=='object')return;
+    const slot=Array.isArray(value.files)||value.comment
+      ? value
+      : value[period]||value.initial;
+    if(slot&&Array.isArray(slot.files))files.push(...slot.files.filter(file=>file&&file.dataUrl));
+  });
+  return files;
+}
+
+function hasReadySupplementalPdfsNeedingAttestation(){
+  return activeScheduleDocFiles().some(file=>
+    ['ready','warning'].includes(file.technicalStatus)
+    && !(file.attestationStatus==='accepted'&&file.attestedDigest&&file.attestedDigest===file.contentDigest)
+  );
+}
+
+async function acceptReadySupplementalPdfs(){
+  const tools=await getSupplementalPdfTools();
+  let accepted=0;
+  let checking=0;
+  for(const file of activeScheduleDocFiles()){
+    if(!file.contentDigest||!file.id||file.technicalStatus==='checking'){
+      checking+=1;
+      continue;
+    }
+    const eligibilityWithoutAttestation=tools.isFilingEligibleSupplement({
+      ...file,
+      attestationStatus:'accepted',
+      attestedDigest:file.contentDigest
+    });
+    if(!eligibilityWithoutAttestation.eligible)continue;
+    file.attestationStatus='accepted';
+    file.attestedDigest=file.contentDigest;
+    file.attestedAt=new Date().toISOString();
+    file.attestationTextVersion=1;
+    accepted+=1;
+  }
+  autoSave();
+  renderPage(currentPage);
+  if(accepted){
+    alert(`${accepted} supplemental PDF${accepted===1?'':'s'} accepted for filing. Probate Guardian will insert them as uploaded; accessibility remains the filer's responsibility.`);
+  }else if(checking){
+    alert('Supplemental PDFs are still being checked. Try again in a moment.');
+  }else{
+    alert('No supplemental PDFs are ready for attestation.');
+  }
+}
+
+window.hasReadySupplementalPdfsNeedingAttestation=hasReadySupplementalPdfsNeedingAttestation;
+window.acceptReadySupplementalPdfs=acceptReadySupplementalPdfs;
 
 function updateScheduleComment(scheduleKey,value){
   getScheduleDocSlot(scheduleKey).comment=value;
