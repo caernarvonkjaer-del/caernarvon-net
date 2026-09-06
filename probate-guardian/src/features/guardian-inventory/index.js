@@ -29,6 +29,25 @@ let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
 const eventControllers = new WeakMap();
+let pendingGuardianIndex = null;
+let visiblePendingGuardianIndex = null;
+function guardianHasData(guardian) {
+  return [
+    guardian?.name, guardian?.signatureDate, guardian?.ssnEin, guardian?.phone,
+    guardian?.streetAddress, guardian?.cityStateZip,
+  ].some(value => String(value || '').trim());
+}
+function normalizeGuardians() {
+  const guardians = Array.isArray(D.guardians) ? D.guardians : [];
+  const normalized = guardians.filter((guardian, index) => index === 0 || index === pendingGuardianIndex || guardianHasData(guardian));
+  visiblePendingGuardianIndex = pendingGuardianIndex;
+  pendingGuardianIndex = null;
+  if (!normalized.length) normalized.push(mk.guardian());
+  if (normalized.length !== guardians.length || !Array.isArray(D.guardians)) {
+    D.guardians = normalized;
+    autoSave();
+  }
+}
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
@@ -42,6 +61,7 @@ function ensureLazyModules() {
 
 export async function mount(container, page) {
   await ensureLazyModules();
+  normalizeGuardians();
   sanitizeNegativeAmounts();
   let html;
   switch(page){
@@ -71,6 +91,7 @@ export async function mount(container, page) {
     default:      html='<p>Page not found</p>';
   }
   container.innerHTML = html;
+  visiblePendingGuardianIndex = null;
   bindEvents(container);
   bindForms();
   afterChange('');
@@ -391,7 +412,7 @@ function duplicateEntry(schedule,idx){
 // Same idea for the Annual Accounting schedules, which store their rows in
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
-function addGuardian(){D.guardians.push(mk.guardian());renderPage('/d1');}
+function addGuardian(){pendingGuardianIndex=D.guardians.length;D.guardians.push(mk.guardian());renderPage('/d1');}
 function removeGuardian(i){D.guardians.splice(i,1);autoSave();renderPage('/d1');}
 function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5');}
 function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPage('/d5');}
@@ -826,7 +847,7 @@ function pageScheduleC5(){
 // ATTESTATION & FILING PAGES (D1–D5)
 // ═══════════════════════════════════════════════════════
 function pageD1(){
-  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g})=>[
+  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===visiblePendingGuardianIndex||[
     g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip
   ].some(value=>String(value||'').trim()));
   const cards=partyRecords.map(({g,i},visibleIndex)=>{

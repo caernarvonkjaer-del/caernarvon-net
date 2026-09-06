@@ -72,3 +72,26 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   const witnessAddress = witnessGrid.locator('input[data-bind="witnesses.0.address"]');
   expect((await witnessAddress.boundingBox())!.y).toBeGreaterThan((await witnessName.boundingBox())!.y);
 });
+
+test('Guardian Inventory removes empty co-guardian placeholders from active state', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).addWard('Guardian cleanup', 'guardian'));
+  await page.evaluate(() => {
+    (window as any).D.guardians = [
+      { name: 'Primary Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '' },
+      { name: '', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '' },
+    ];
+  });
+  await page.evaluate(() => (window as any).navigate('/d1'));
+  expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(1);
+  await expect(page.locator('.attestation-card-grid > .entry-card')).toHaveCount(1);
+});
+
+test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).addWard('Guardian add', 'guardian'));
+  await page.evaluate(() => { (window as any).D.guardians[0].name = 'Primary Guardian'; });
+  await page.evaluate(() => (window as any).navigate('/d1'));
+  await page.locator('[data-inventory-action="add-guardian"]').click();
+  await expect(page.locator('.attestation-card-grid > .entry-card')).toHaveCount(2);
+});
