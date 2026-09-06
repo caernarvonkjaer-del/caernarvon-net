@@ -729,7 +729,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
    in light mode, where the tokens resolve to the same values as before.
    --brand-text / --ink-2 rather than --brand / #3b475b because plain maroon
    and dark slate are unreadable on a dark surface. */
-.btn-outline-primary{--bs-btn-color:var(--brand-text);--bs-btn-border-color:var(--brand-200);--bs-btn-bg:var(--surface);--bs-btn-hover-bg:var(--brand);--bs-btn-hover-color:#fff;--bs-btn-hover-border-color:var(--brand);}
+.btn.btn-outline-primary{color:var(--brand-text)!important;border-color:var(--brand-text)!important;background-color:transparent!important;}
+.btn.btn-outline-primary:hover,.btn.btn-outline-primary:focus-visible{color:#fff!important;background-color:var(--brand)!important;border-color:var(--brand)!important;}
 .btn-outline-success{--bs-btn-color:var(--brand-text);--bs-btn-border-color:var(--brand-200);--bs-btn-bg:var(--surface);--bs-btn-hover-bg:var(--brand);--bs-btn-hover-color:#fff;--bs-btn-hover-border-color:var(--brand);}
 .btn.btn-outline-danger{color:var(--danger-text)!important;border-color:var(--danger-text)!important;background-color:transparent!important;}
 .btn.btn-outline-danger:hover,.btn.btn-outline-danger:focus-visible{color:#fff!important;background-color:var(--danger)!important;border-color:var(--danger)!important;}
