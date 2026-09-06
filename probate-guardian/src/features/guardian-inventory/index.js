@@ -843,7 +843,7 @@ function pageD1(){
   <div class="schedule-instructions">
     UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.
   </div>
-  ${cards}${addCoBtn}
+  <div class="attestation-card-grid">${cards}</div>${addCoBtn}
   ${pageNav('/d1')}</div>`;
 }
 
@@ -855,11 +855,11 @@ function pageD2(){
 
   return `<div class="schedule-page">
   <h1>Part IV: Preparer &amp; Guardian Attorney Attestations</h1>
+  <div class="attestation-card-grid">
+  <div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Preparer Signature</h2>
-  <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">
-    If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.
-  </p>
-  <div class="entry-card mb-4">
+  <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.</p>
+  <div class="entry-card">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
       <span>Preparer Attestation</span>
       ${prepSlider}
@@ -870,6 +870,9 @@ function pageD2(){
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('preparer.cityStateZip','','zip')))}
     </div>
   </div>
+  </div>
+  </div>
+  <div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
   <div class="entry-card">
@@ -883,6 +886,8 @@ function pageD2(){
       ${formRow(col(6,reqLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,reqLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,reqLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
     </div>
+  </div>
+  </div>
   </div>
   ${pageNav('/d2')}</div>`;
 }
