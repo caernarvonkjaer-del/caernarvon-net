@@ -399,6 +399,28 @@ export async function generateCourtFormPdf(model, options = {}) {
     return [...parts, stateZip ? `${stateZip}, ${last}` : last];
   };
 
+  const loadImageSize = (dataUrl) => new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve({ width: image.naturalWidth || image.width, height: image.naturalHeight || image.height });
+    image.onerror = () => reject(new Error('Image could not be loaded.'));
+    image.src = dataUrl;
+  });
+
+  const renderSupportingDocumentImage = (dataUrl, sourceWidth, sourceHeight, imageType = null) => {
+    const maxWidth = contentWidth;
+    const maxHeight = pageBottom - curY;
+    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
+    const width = sourceWidth * scale;
+    const height = sourceHeight * scale;
+    writeArtifactStart(doc, 'Layout');
+    doc.setDrawColor(208, 213, 221);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, curY, width, height, 'S');
+    doc.addImage(dataUrl, imageType || (dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'), margin, curY, width, height);
+    writeArtifactEnd(doc);
+    curY += height + 12;
+  };
+
   const renderSupportingFileName = (fileName, sectionTitle, parentNode) => {
     const filenameHeight = 16;
     const spacingAfterDocument = 12;
@@ -488,15 +510,17 @@ export async function generateCourtFormPdf(model, options = {}) {
     for (let p = 1; p <= pdf.numPages; p++) {
       if (p > 1) startNewPage(sectionTitle);
       const srcPage = await pdf.getPage(p);
+      const viewport = srcPage.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await srcPage.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
       let lines = await extractPdfPageLines(srcPage);
       if (!lines.length) {
-        const viewport = srcPage.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-        await srcPage.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
         lines = await recognizeSupportingDocument(canvas);
       }
+      renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), viewport.width, viewport.height, 'JPEG');
+      startNewPage(sectionTitle);
       renderSupportingTranscriptPage(fileName, p, lines, sectionTitle, parentNode);
     }
   };
@@ -562,6 +586,12 @@ export async function generateCourtFormPdf(model, options = {}) {
         } else if (isImageFile) {
           renderSupportingFileName(fileName, sectionTitle, parentNode);
           const lines = await recognizeSupportingDocument(dataUrl);
+          const imageDataUrl = dataUrl.startsWith('data:image/')
+            ? dataUrl
+            : `data:${isPngBytes(bytes) ? 'image/png' : 'image/jpeg'};base64,${String(dataUrl).split(',')[1] || ''}`;
+          const size = await loadImageSize(imageDataUrl);
+          renderSupportingDocumentImage(imageDataUrl, size.width, size.height, isPngBytes(bytes) ? 'PNG' : 'JPEG');
+          startNewPage(sectionTitle);
           renderSupportingTranscriptPage(fileName, 1, lines, sectionTitle, parentNode);
         } else {
           renderSupportingFileName(fileName, sectionTitle, parentNode);

@@ -287,18 +287,20 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).toContain('mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf');
     expect(extractedText).toContain('Statement verifies the restricted depository balance.');
     expect(extractedText).toContain('Uploaded bank statement support page');
-    expect(pdfInspection.rawPdfString).not.toContain('/Subtype /Image');
+    expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
     expect(pdfInspection.numPages).toBeGreaterThan(4);
 
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
     const attachmentFileName = 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf';
     const attachmentTitlePages = pages.filter(pageInfo => pageInfo.text.includes(attachmentFileName));
     expect(attachmentTitlePages.length).toBeGreaterThan(0);
-    const attachmentPage = attachmentTitlePages.find(pageInfo => pageInfo.text.includes('Supporting Document Transcript'));
-    expect(attachmentPage).toBeTruthy();
-    expect(attachmentPage?.imageCount).toBe(0);
-    expect(attachmentPage && pages[attachmentPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
-    expect(attachmentPage?.text).not.toContain('Schedule B-2: Personal Property Assets');
+    const visualPage = attachmentTitlePages.find(pageInfo => pageInfo.imageCount > 0);
+    const transcriptPage = attachmentTitlePages.find(pageInfo => pageInfo.text.includes('Supporting Document Transcript'));
+    expect(visualPage?.imageCount).toBeGreaterThan(0);
+    expect(transcriptPage?.imageCount).toBe(0);
+    expect(transcriptPage?.text).toContain('Uploaded bank statement support page');
+    expect(visualPage && pages[visualPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
+    expect(transcriptPage?.text).not.toContain('Schedule B-2: Personal Property Assets');
   });
 
   test('renders accessible supporting-document transcripts for non-inventory forms through the shared PDF engine', async ({ page }) => {
@@ -332,12 +334,13 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     });
 
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
-    const attachmentPage = pages.find(pageInfo => pageInfo.text.includes('annual_plan_residence_support.pdf'));
-    expect(attachmentPage).toBeTruthy();
-    expect(attachmentPage?.text).toContain('Supporting Document Transcript');
-    expect(attachmentPage?.text).toContain('Uploaded annual plan support page');
-    expect(attachmentPage?.imageCount).toBe(0);
-    expect(pages[attachmentPage!.pageNumber - 2]?.text).toContain('Question 1');
+    const attachmentPages = pages.filter(pageInfo => pageInfo.text.includes('annual_plan_residence_support.pdf'));
+    const visualPage = attachmentPages.find(pageInfo => pageInfo.imageCount > 0);
+    const transcriptPage = attachmentPages.find(pageInfo => pageInfo.text.includes('Supporting Document Transcript'));
+    expect(visualPage?.imageCount).toBeGreaterThan(0);
+    expect(transcriptPage?.text).toContain('Uploaded annual plan support page');
+    expect(transcriptPage?.imageCount).toBe(0);
+    expect(pages[visualPage!.pageNumber - 2]?.text).toContain('Question 1');
   });
 
   test('OCRs image-only supporting documents into tagged selectable text', async ({ page }) => {
@@ -378,6 +381,11 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).toContain('Supporting Document Transcript: scanned-bank-statement.png');
     expect(extractedText).toMatch(/ACCOUNT BALANCE.*12,842\.19/);
     expect(extractedText).toMatch(/Statement Date.*August.*31.*2026/);
-    expect(pdfInspection.rawPdfString).not.toContain('/Subtype /Image');
+    expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
+    const pages = await inspectPdfPages(pdfInspection.rawPdfString);
+    const visualPage = pages.find(pageInfo => pageInfo.text.includes('scanned-bank-statement.png') && pageInfo.imageCount > 0);
+    const transcriptPage = pages.find(pageInfo => pageInfo.text.includes('Supporting Document Transcript: scanned-bank-statement.png'));
+    expect(visualPage?.imageCount).toBeGreaterThan(0);
+    expect(transcriptPage?.imageCount).toBe(0);
   });
 });
