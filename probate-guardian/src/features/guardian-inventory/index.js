@@ -238,7 +238,7 @@ function textInput(bind,placeholder='',type=''){
   // dash-insertion all keep working exactly as for a text input) with a
   // lock/unlock toggle button to reveal it on demand. See toggleSsnReveal().
   if(type==='ssn'){
-    return `<div class="ssn-mask-wrap"><input class="form-control" id="${inputId}" type="password" autocomplete="new-password" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`
+    return `<div class="ssn-mask-wrap"><input class="form-control ssn-masked" id="${inputId}" type="text" autocomplete="off" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`
       +`<button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`;
   }
   return `<input class="form-control" id="${inputId}" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`;

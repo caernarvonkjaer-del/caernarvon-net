@@ -7544,8 +7544,9 @@ function isScheduleIncomplete(route){
 // ═══════════════════════════════════════════════════════
 function toggleSsnReveal(btn){
   const input=btn.previousElementSibling;
-  const revealing=input.type==='password';
-  input.type=revealing?'text':'password';
+  const revealing=input.dataset.revealed!=='true';
+  input.dataset.revealed=String(revealing);
+  input.classList.toggle('ssn-revealed',revealing);
   btn.setAttribute('aria-label',revealing?'Hide SSN/EIN':'Show SSN/EIN');
   btn.innerHTML=ic(revealing?'unlock':'lock',14);
 }
