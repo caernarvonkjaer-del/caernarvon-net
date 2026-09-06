@@ -874,7 +874,6 @@ function pageD2(){
     </div>
   </div>
   </div>
-  </div>
   <div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
@@ -963,10 +962,12 @@ function pageD4(){
 function pageD5(){
   const cards=D.serviceRecipients.map((r,i)=>{
     const removeBtn=D.serviceRecipients.length>1?`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-recipient" data-index="${i}">✕ Remove</button>`:'';
-    return `<div class="entry-card mb-2">
+    return `<div class="entry-card">
       <div class="entry-card-header"><span>Recipient ${i+1}</span>${removeBtn}</div>
       <div class="entry-card-body">
-        ${formRow(col(5,reqLabel('Name')+textInput(`serviceRecipients.${i}.name`,'','name')),col(4,reqLabel('Street Address')+textInput(`serviceRecipients.${i}.address`,'','address')),col(3,reqLabel('City / State / Zip')+textInput(`serviceRecipients.${i}.cityStateZip`,'','zip')))}
+        ${formRow(col(12,reqLabel('Name')+textInput(`serviceRecipients.${i}.name`,'','name')))}
+        ${formRow(col(12,reqLabel('Street Address')+textInput(`serviceRecipients.${i}.address`,'','address')))}
+        ${formRow(col(12,reqLabel('City / State / Zip')+textInput(`serviceRecipients.${i}.cityStateZip`,'','zip')))}
       </div>
     </div>`;
   }).join('');
@@ -974,9 +975,9 @@ function pageD5(){
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  ${cards}${addBtn2}
+  <div class="service-recipient-grid">${cards}</div>${addBtn2}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
-  <div class="entry-card">
+  <div class="attorney-certification-card entry-card">
     <div class="entry-card-body">
       ${formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')))}
       ${formRow(col(5,reqLabel("Attorney's Name")+textInput('serviceAttorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')),col(4,reqLabel('Florida Bar Number')+textInput('serviceAttorney.barNumber','','barNumber')))}
@@ -1035,7 +1036,7 @@ export function validateGuardian(){
   d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`;req(e.defendantName,`${p} — Defendant Name`);req(e.actionDescription,`${p} — Action Description`);req(e.status,`${p} — Status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`);if(!e.actionDate)errors.push(`${p} — Action Date is required.`);if(e.estimatedSettlement<=0)errors.push(`${p} — Estimated Settlement must be > 0.`);});
   d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`;req(e.trustName,`${p} — Trust Name`);req(e.trusteeName,`${p} — Trustee Name`);req(e.trusteeAddress,`${p} — Trustee Address`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`);if(!e.dateCreated)errors.push(`${p} — Date Created is required.`);if(e.trustAmount<=0)errors.push(`${p} — Trust Amount must be > 0.`);});
   d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`;req(e.assetDescription,`${p} — Asset Description`);req(e.ownerName,`${p} — Owner Name`);req(e.ownerAddress,`${p} — Owner Address`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`);req(e.relationshipToWard,`${p} — Relationship to Ward`);if(e.totalAssetValue<=0)errors.push(`${p} — Total Asset Value must be > 0.`);});
-  d.guardians.forEach((g,i)=>{const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);if(!g.signatureDate)errors.push(`${p} — Signature Date is required.`);req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
+  d.guardians.filter(g=>[g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip].some(value=>String(value||'').trim())).forEach((g,i)=>{const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);if(!g.signatureDate)errors.push(`${p} — Signature Date is required.`);req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
   req(d.preparer.name,'D-2 Preparer — Name');if(!d.preparer.signatureDate)errors.push('D-2 Preparer — Date is required.');req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
   req(d.attorney.name,'D-2 Attorney — Name');if(!d.attorney.signatureDate)errors.push('D-2 Attorney — Signature Date is required.');if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
   if (d.hasSafeDepositBox === null || d.hasSafeDepositBox === undefined) {

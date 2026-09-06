@@ -41,4 +41,21 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
     return new Set(cards.map(card => card.x)).size;
   });
   expect(mobile).toBe(1);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.evaluate(() => (window as any).navigate('/d2'));
+  const d2Grid = page.locator('.attestation-card-grid').first();
+  await expect(d2Grid.locator(':scope > div')).toHaveCount(2);
+  const d2Columns = await d2Grid.locator(':scope > div').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(d2Columns).toBe(2);
+
+  await page.evaluate(() => (window as any).navigate('/d5'));
+  const recipientGrid = page.locator('.service-recipient-grid');
+  await expect(recipientGrid).toBeVisible();
+  const recipientColumns = await recipientGrid.locator(':scope > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(recipientColumns).toBe(2);
+  await expect(recipientGrid.locator('input[data-bind="serviceRecipients.0.address"]')).toBeVisible();
+  const certification = page.locator('.attorney-certification-card');
+  const certificationWidth = await certification.evaluate(element => (element as HTMLElement).getBoundingClientRect().width);
+  expect(certificationWidth).toBeLessThan(700);
 });
