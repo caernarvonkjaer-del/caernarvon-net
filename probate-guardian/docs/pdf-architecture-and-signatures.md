@@ -29,9 +29,9 @@ To prevent "scanned document / OCR" warnings and satisfy accessibility requireme
 
 ### Supporting Documents
 
-Uploaded PDF attachments retain a visual source-page replica for sighted review. Each visual page is marked as a layout artifact and is followed by a dedicated, tagged Supporting Document Transcript page containing the source PDF's machine-readable text in reading order. This keeps statement dates, balances, payment amounts, and transaction text selectable and available to assistive technology without losing visual fidelity.
+Text-only PDF attachments are inserted as tagged Supporting Document Text content. Image-bearing PDF pages retain a visual source-page replica marked as a layout artifact, with tagged Supporting Document Text placed on the same page beneath the image in the PDF content order. This keeps statement dates, balances, payment amounts, and transaction text selectable and available to assistive technology without losing visual fidelity or adding a separate transcript page.
 
-For image-only PDFs and image attachments, the visual source page is retained and the local Tesseract OCR worker recognizes English text into the following tagged transcript page. The worker, WebAssembly core, and language model are packaged under `lib/tesseract/`, so this fallback makes no runtime network request. OCR is a recognition aid, not proof of accuracy: filers must review names, dates, amounts, and table rows before filing. If OCR produces no text, the PDF emits a tagged notice requiring a human-supplied accessible transcript.
+For image-only PDFs and image attachments, the visual source page is retained and the local Tesseract OCR worker recognizes English text into the same page's tagged Supporting Document Text layer. The worker, WebAssembly core, and language model are packaged under `lib/tesseract/`, so this fallback makes no runtime network request. OCR is a recognition aid, not proof of accuracy: filers must review names, dates, amounts, and table rows before filing. If OCR produces no text, the PDF emits a tagged notice requiring a human-supplied accessible text equivalent.
 
 ---
 

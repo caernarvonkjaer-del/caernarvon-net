@@ -406,19 +406,21 @@ export async function generateCourtFormPdf(model, options = {}) {
     image.src = dataUrl;
   });
 
-  const renderSupportingDocumentImage = (dataUrl, sourceWidth, sourceHeight, imageType = null) => {
+  const getSupportingDocumentImageLayout = (sourceWidth, sourceHeight) => {
     const maxWidth = contentWidth;
     const maxHeight = pageBottom - curY;
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
-    const width = sourceWidth * scale;
-    const height = sourceHeight * scale;
+    return { x: margin, y: curY, width: sourceWidth * scale, height: sourceHeight * scale };
+  };
+
+  const renderSupportingDocumentImage = (dataUrl, layout, imageType = null) => {
     writeArtifactStart(doc, 'Layout');
     doc.setDrawColor(208, 213, 221);
     doc.setLineWidth(0.5);
-    doc.rect(margin, curY, width, height, 'S');
-    doc.addImage(dataUrl, imageType || (dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'), margin, curY, width, height);
+    doc.rect(layout.x, layout.y, layout.width, layout.height, 'S');
+    doc.addImage(dataUrl, imageType || (dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'), layout.x, layout.y, layout.width, layout.height);
     writeArtifactEnd(doc);
-    curY += height + 12;
+    curY = layout.y + layout.height + 12;
   };
 
   const renderSupportingFileName = (fileName, sectionTitle, parentNode) => {
@@ -458,9 +460,9 @@ export async function generateCourtFormPdf(model, options = {}) {
       .filter(Boolean);
   };
 
-  const renderSupportingTranscriptPage = (fileName, sourcePageNumber, lines, sectionTitle, parentNode) => {
-    const title = `Supporting Document Transcript: ${fileName}${sourcePageNumber > 1 ? ` (page ${sourcePageNumber})` : ''}`;
-    const transcriptNode = structureTree.addStructureElement({
+  const renderSupportingDocumentText = (fileName, sourcePageNumber, lines, sectionTitle, parentNode, imageLayout = null) => {
+    const title = `Supporting Document Text: ${fileName}${sourcePageNumber > 1 ? ` (page ${sourcePageNumber})` : ''}`;
+    const documentNode = structureTree.addStructureElement({
       tag: 'Part',
       title,
       parent: parentNode,
@@ -470,43 +472,46 @@ export async function generateCourtFormPdf(model, options = {}) {
       title,
       pageNumber: pageNum,
       isLeaf: true,
-      parent: transcriptNode,
+      parent: documentNode,
     });
     writeMarkedContentStart(doc, 'H3', headingNode.mcid);
     doc.setFont('PGSans', 'bold');
-    doc.setFontSize(9.5);
+    doc.setFontSize(imageLayout ? 7 : 9.5);
     doc.setTextColor(26, 45, 74);
-    doc.text(title, margin, curY + 10);
+    doc.text(title, imageLayout ? imageLayout.x + 2 : margin, imageLayout ? imageLayout.y + 8 : curY + 10);
     writeMarkedContentEnd(doc);
-    curY += 18;
+    let textY = imageLayout ? imageLayout.y + 12 : curY + 18;
 
     if (!lines.length) {
-      const noticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: transcriptNode });
+      const noticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: documentNode });
       writeMarkedContentStart(doc, 'P', noticeNode.mcid);
       doc.setFont('PGSans', 'italic');
-      doc.setFontSize(9);
+      doc.setFontSize(imageLayout ? 7 : 9);
       doc.setTextColor(100, 110, 125);
-      doc.text('No machine-readable text was found in this source PDF. Provide an accessible text transcript before filing.', margin, curY + 9);
+      doc.text('No machine-readable text was found in this source document. Provide a human-reviewed accessible text equivalent before filing.', imageLayout ? imageLayout.x + 2 : margin, textY + 9);
       writeMarkedContentEnd(doc);
-      curY += 18;
+      if (!imageLayout) curY = textY + 18;
       return;
     }
 
     for (const line of lines) {
       doc.setFont('PGSans', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(imageLayout ? 7 : 9);
       doc.setTextColor(17, 24, 39);
-      const wrapped = doc.splitTextToSize(line, contentWidth);
-      checkPageSpace((wrapped.length * 11) + 4, sectionTitle);
-      const lineNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: transcriptNode });
+      const availableWidth = imageLayout ? imageLayout.width - 4 : contentWidth;
+      const wrapped = doc.splitTextToSize(line, availableWidth);
+      if (!imageLayout) checkPageSpace((wrapped.length * 11) + 4, sectionTitle);
+      const lineNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: documentNode });
       writeMarkedContentStart(doc, 'P', lineNode.mcid);
-      doc.text(wrapped, margin, curY + 9);
+      doc.text(wrapped, imageLayout ? imageLayout.x + 2 : margin, textY + 9);
       writeMarkedContentEnd(doc);
-      curY += (wrapped.length * 11) + 4;
+      textY += (wrapped.length * (imageLayout ? 8 : 11)) + 4;
     }
+    if (!imageLayout) curY = textY;
   };
 
   const renderUploadedPdfPages = async (pdf, fileName, sectionTitle, parentNode) => {
+    const pdfjsLib = await ensurePdfjs();
     for (let p = 1; p <= pdf.numPages; p++) {
       if (p > 1) startNewPage(sectionTitle);
       const srcPage = await pdf.getPage(p);
@@ -519,9 +524,19 @@ export async function generateCourtFormPdf(model, options = {}) {
       if (!lines.length) {
         lines = await recognizeSupportingDocument(canvas);
       }
-      renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), viewport.width, viewport.height, 'JPEG');
-      startNewPage(sectionTitle);
-      renderSupportingTranscriptPage(fileName, p, lines, sectionTitle, parentNode);
+      const operators = await srcPage.getOperatorList();
+      const hasImages = operators.fnArray.some(fn => [
+        pdfjsLib.OPS.paintImageXObject,
+        pdfjsLib.OPS.paintInlineImageXObject,
+        pdfjsLib.OPS.paintJpegXObject,
+      ].includes(fn));
+      if (hasImages) {
+        const layout = getSupportingDocumentImageLayout(viewport.width, viewport.height);
+        renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode, layout);
+        renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), layout, 'JPEG');
+      } else {
+        renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode);
+      }
     }
   };
 
@@ -590,9 +605,9 @@ export async function generateCourtFormPdf(model, options = {}) {
             ? dataUrl
             : `data:${isPngBytes(bytes) ? 'image/png' : 'image/jpeg'};base64,${String(dataUrl).split(',')[1] || ''}`;
           const size = await loadImageSize(imageDataUrl);
-          renderSupportingDocumentImage(imageDataUrl, size.width, size.height, isPngBytes(bytes) ? 'PNG' : 'JPEG');
-          startNewPage(sectionTitle);
-          renderSupportingTranscriptPage(fileName, 1, lines, sectionTitle, parentNode);
+          const layout = getSupportingDocumentImageLayout(size.width, size.height);
+          renderSupportingDocumentText(fileName, 1, lines, sectionTitle, parentNode, layout);
+          renderSupportingDocumentImage(imageDataUrl, layout, isPngBytes(bytes) ? 'PNG' : 'JPEG');
         } else {
           renderSupportingFileName(fileName, sectionTitle, parentNode);
           const unsupportedNode = structureTree.addStructureElement({
