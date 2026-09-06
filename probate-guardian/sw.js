@@ -157,11 +157,11 @@ self.addEventListener('fetch',event=>{
       return;
     }
     event.respondWith(
-      caches.open(SHELL_CACHE)
-        .then(cache=>cache.match(new URL('./index.html',self.registration.scope)))
-        .then(cached=>cached&&(!cached.redirected||isSameScopeRedirect(cached))?cached:fetch(event.request))
+      fetch(event.request)
         .then(response=>response.redirected&&!isSameScopeRedirect(response)?recoveryResponse('The requested host redirected this navigation, so the service worker did not serve cached app files for it.'):response)
-        .catch(()=>recoveryResponse('The app shell was not available from the cache or the network.'))
+        .catch(()=>caches.open(SHELL_CACHE)
+          .then(cache=>cache.match(new URL('./index.html',self.registration.scope)))
+          .then(cached=>cached&&(!cached.redirected||isSameScopeRedirect(cached))?cached:recoveryResponse('The app shell was not available from the cache or the network.')))
     );
     return;
   }

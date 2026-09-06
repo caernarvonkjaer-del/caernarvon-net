@@ -62,6 +62,20 @@ function portableCspHashes() {
   };
 }
 
+function rewriteManifestIconPaths(portable) {
+  return {
+    name: 'rewrite-manifest-icon-paths',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      for (const asset of Object.values(bundle)) {
+        if (asset.type !== 'asset' || !/^assets\/manifest-.*\.json$/.test(asset.fileName)) continue;
+        const iconPrefix = portable ? '../icons/' : '/probate-guardian/icons/';
+        asset.source = String(asset.source).replaceAll('"src": "icons/', `"src": "${iconPrefix}`);
+      }
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const portable = mode === 'portable';
   return {
@@ -73,6 +87,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       viteStaticCopy({ targets: STATIC_COPY_TARGETS }),
+      rewriteManifestIconPaths(portable),
       ...(portable ? [viteSingleFile(), portableCspHashes()] : []),
     ],
   };
