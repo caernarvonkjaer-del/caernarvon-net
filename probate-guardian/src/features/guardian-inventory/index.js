@@ -597,10 +597,14 @@ function pageScheduleA1(){
 
 function pageScheduleA2(){
   const entries=D.scheduleA2.map((e,i)=>entryCard(`Liability ${i+1}`,i,'a2',`
-    ${formRow(col(6,reqLabel('Lending Institution / Private Lender')+textInput(`scheduleA2.${i}.lenderName`,'','name')),col(3,reqLabel('Type')+selectInput(`scheduleA2.${i}.liabilityType`,[['Mortgage','Mortgage'],['Note','Note'],['Loan','Loan'],['Other Debt','Other Debt']])),col(3,optLabel('Account Number')+textInput(`scheduleA2.${i}.accountNumber`,'','accountNumber')))}
-    ${formRow(col(6,reqLabel('Lender Street Address')+textInput(`scheduleA2.${i}.lenderAddress`,'','address')),col(6,reqLabel('Lender City / State / Zip')+textInput(`scheduleA2.${i}.lenderCityStateZip`,'','zip')))}
-    ${formRow(col(6,optLabel('Notes (related property, etc.)')+textInput(`scheduleA2.${i}.notes`)))}
-    ${formRow(col(4,reqLabel('Full Debt Balance as of GID ($)')+numInput(`scheduleA2.${i}.fullDebtBalance`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleA2.${i}.wardPercent`)),col(4,optLabel("Ward's Debt Balance (calculated)")+calcInput(`scheduleA2.${i}.wardDebt`)))}
+    <div class="liability-fields">
+      ${formRow(col(12,reqLabel('Lending Institution / Private Lender')+textInput(`scheduleA2.${i}.lenderName`,'','name')))}
+      ${formRow(col(12,reqLabel('Lender Street Address')+textInput(`scheduleA2.${i}.lenderAddress`,'','address')))}
+      ${formRow(col(12,reqLabel('Lender City / State / Zip')+textInput(`scheduleA2.${i}.lenderCityStateZip`,'','zip')))}
+      ${formRow(col(6,reqLabel('Type')+selectInput(`scheduleA2.${i}.liabilityType`,[['Mortgage','Mortgage'],['Note','Note'],['Loan','Loan'],['Other Debt','Other Debt']])),col(6,optLabel('Account Number')+textInput(`scheduleA2.${i}.accountNumber`,'','accountNumber')))}
+      ${formRow(col(12,optLabel('Notes (related property, etc.)')+textInput(`scheduleA2.${i}.notes`)))}
+      ${formRow(col(4,reqLabel('Full Debt Balance as of GID ($)')+numInput(`scheduleA2.${i}.fullDebtBalance`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleA2.${i}.wardPercent`)),col(4,optLabel("Ward's Debt Balance (calculated)")+calcInput(`scheduleA2.${i}.wardDebt`)))}
+    </div>
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)</h1>
