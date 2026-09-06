@@ -8692,6 +8692,22 @@ function linkLabelsToInputs(){
       }
     }
   });
+
+  // Give any remaining visible form control a usable accessible name. This
+  // covers dynamic fields whose visible label cannot be linked structurally.
+  document.querySelectorAll('input, select, textarea').forEach(control=>{
+    if(control.type==='hidden' || control.type==='file' || control.hasAttribute('aria-label') || control.hasAttribute('aria-labelledby'))return;
+    const hasAssociatedLabel=control.id&&[...document.querySelectorAll('label[for]')].some(label=>label.htmlFor===control.id);
+    if(hasAssociatedLabel || control.closest('label'))return;
+    const labelText=control.closest('.mb-2, .col-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-8, .col-md-12')?.querySelector('label')?.textContent
+      || control.getAttribute('placeholder')
+      || control.getAttribute('title')
+      || control.dataset.annualLabel
+      || control.dataset.formPath
+      || control.dataset.bind
+      || control.id;
+    if(labelText)control.setAttribute('aria-label',labelText.replace(/\s+/g,' ').trim());
+  });
 }
 
 // Keep paired "From"/"To" date fields consistent: never let From be after To
