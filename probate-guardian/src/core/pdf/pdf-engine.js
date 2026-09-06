@@ -538,19 +538,9 @@ export async function generateCourtFormPdf(model, options = {}) {
       if (!lines.length) {
         lines = await recognizeSupportingDocument(canvas);
       }
-      const operators = await srcPage.getOperatorList();
-      const hasImages = operators.fnArray.some(fn => [
-        pdfjsLib.OPS.paintImageXObject,
-        pdfjsLib.OPS.paintInlineImageXObject,
-        pdfjsLib.OPS.paintJpegXObject,
-      ].includes(fn));
-      if (hasImages || !lines.length) {
-        const layout = getSupportingDocumentImageLayout(viewport.width, viewport.height, true);
-        renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode, layout);
-        renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), layout, 'JPEG');
-      } else {
-        renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode);
-      }
+      const layout = getSupportingDocumentImageLayout(viewport.width, viewport.height, true);
+      renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode, layout);
+      renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), layout, 'JPEG');
     }
   };
 
