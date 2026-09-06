@@ -8371,17 +8371,17 @@ function renderScheduleDocsSection(scheduleKey){
       <span class="sched-doc-name">${ic('file',14)} ${esc(f.name)}</span>
       <span class="sched-doc-meta">${fmtFileSize(f.size)}</span>
       <a href="${f.dataUrl}" download="${esc(f.name)}" class="btn btn-sm btn-outline-secondary">Download</a>
-      <button type="button" class="btn btn-sm btn-outline-danger" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
+      <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove supporting document ${esc(f.name)}" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
     </div>`).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${activeInventoryType==='guardian'?'':' for this period'}.</div>`;
   const inputId=`sched-doc-input-${scheduleKey}`;
   return `<div class="schedule-docs-section no-print">
-    <h4>Supporting Documents${periodNote}</h4>
+    <h2>Supporting Documents${periodNote}</h2>
     <p class="schedule-docs-hint">Attach receipts, statements, or other records supporting this schedule. Stored on this device only, encrypted with the rest of this ward's data.</p>
-    <input type="file" id="${inputId}" multiple style="display:none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
+    <input type="file" id="${inputId}" multiple aria-label="Upload supporting documents for ${esc(scheduleKey)}" style="display:none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload File(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
-    <h4 class="mt">Comments</h4>
-    <textarea class="form-control" rows="3" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>
+    <h2 class="mt">Comments</h2>
+    <textarea class="form-control" rows="3" aria-label="Comments about ${esc(scheduleKey)}" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>
   </div>`;
 }
 

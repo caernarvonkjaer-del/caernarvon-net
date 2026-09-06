@@ -164,7 +164,7 @@ function pagePlanSCover(){
 
 function pagePlanSQuestions(){
   const d=window.D;
-  const q=(n,title,body)=>`<div class="plan-question"><div class="plan-question-num">Question ${n}</div><h3 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h3>${body}</div>`;
+  const q=(n,title,body)=>`<div class="plan-question"><div class="plan-question-num">Question ${n}</div><h2 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>${body}</div>`;
   return `<div class="schedule-page">
     <h1>The Plan — Questions 1–9</h1>
     <div class="schedule-instructions">Answer in plain, specific language. "Saw Dr. Alvarez for a check-up in March and a follow-up in September" tells the court far more than "routine care."</div>
@@ -219,7 +219,7 @@ function pagePlanSSignatures(){
     const slashSChecked = p.useSlashS !== false ? 'checked' : '';
     return `<div class="plan-sig-block">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h3 class="m-0">${label}</h3>
+        <h2 class="m-0">${label}</h2>
         <label class="form-check form-switch m-0 d-flex align-items-center gap-2" style="font-size:0.85rem;cursor:pointer;">
           <input class="form-check-input" type="checkbox" role="switch" ${slashSChecked} data-form-path="planGuardians.${i}.useSlashS" style="cursor:pointer;">
           <span>Use /s/ format</span>
