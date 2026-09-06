@@ -955,10 +955,14 @@ function pageD4(){
     <div class="summary-line"><span>B-3 — Intangible Assets (Unrestricted)</span><span id="unrestrictedIntang">${fmt(calc.unrestrictedIntang())}</span></div>
     <div class="summary-line total"><span>Total for Bond Requirement (calculated)</span><span id="bondRequired">${fmt(calc.bondRequired())}</span></div>
   </div>
-  <div class="summary-box">
-    <h2 class="subsection-heading">Surety Bond Details</h2>
-    ${formRow(col(4,reqLabel('Bond Amount')+textInput('bondAmount','e.g., $50,000')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
-    ${formRow(col(6,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')),col(6,optLabel('If bond waived – date of order')+textInput('bondWaivedDate')))}
+  <div class="row">
+    <div class="col-12 col-lg-8 col-xl-7">
+      <div class="summary-box">
+        <h2 class="subsection-heading">Surety Bond Details</h2>
+        ${formRow(col(4,reqLabel('Bond Amount')+textInput('bondAmount','e.g., $50,000')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
+        ${formRow(col(6,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')),col(6,optLabel('If bond waived – date of order')+textInput('bondWaivedDate')))}
+      </div>
+    </div>
   </div>
   ${pageNav('/d4')}</div>`;
 }
