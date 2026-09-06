@@ -146,7 +146,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     bookmarkTitle: 'Part II - Summary of Assets',
     parentBookmark: null,
     level: 1,
-    pageBreakBefore: true,
+    pageBreakBefore: false,
     blocks: [
       {
         type: 'table',
@@ -227,7 +227,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     bookmarkTitle: 'Part III - Assets of the Ward',
     parentBookmark: null,
     level: 1,
-    pageBreakBefore: true,
+    pageBreakBefore: false,
     blocks: [],
   });
 

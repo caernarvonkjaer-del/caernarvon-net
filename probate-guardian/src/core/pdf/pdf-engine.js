@@ -248,7 +248,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   const pageHeight = 792;
   const margin = 72; // 1.0 inch
   const contentWidth = pageWidth - (margin * 2); // 468 pt
-  const pageBottom = pageHeight - 54; // Leave room for footer
+  const pageBottom = pageHeight - margin - 24; // Reserve the one-inch bottom margin for the footer.
 
   let curY = margin;
   let pageNum = 1;
@@ -265,25 +265,25 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'bold');
     doc.setFontSize(10.5);
     doc.setTextColor(0, 0, 0);
-    doc.text(caption.line1, pageWidth / 2, 50, { align: 'center' });
-    doc.text(caption.line2, pageWidth / 2, 64, { align: 'center' });
+    doc.text(caption.line1, pageWidth / 2, 80, { align: 'center' });
+    doc.text(caption.line2, pageWidth / 2, 94, { align: 'center' });
 
     doc.setFontSize(10);
-    doc.text(caption.division, pageWidth / 2, 78, { align: 'center' });
-    doc.text(`CASE #: ${caseNumber || 'Pending'}`, pageWidth / 2, 92, { align: 'center' });
+    doc.text(caption.division, pageWidth / 2, 108, { align: 'center' });
+    doc.text(`CASE #: ${caseNumber || 'Pending'}`, pageWidth / 2, 122, { align: 'center' });
 
     const caseCaption = getCaseCaptionTitle(wardName, metadata.wardType);
     doc.setFontSize(11);
-    doc.text(caseCaption, margin, 122);
+    doc.text(caseCaption, margin, 142);
 
     const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();
     doc.setFontSize(12.5);
-    doc.text(formTitle, pageWidth / 2, 152, { align: 'center' });
+    doc.text(formTitle, pageWidth / 2, 162, { align: 'center' });
 
     const titleW = doc.getTextWidth(formTitle);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.75);
-    doc.line((pageWidth - titleW) / 2, 155, (pageWidth + titleW) / 2, 155);
+    doc.line((pageWidth - titleW) / 2, 165, (pageWidth + titleW) / 2, 165);
     writeArtifactEnd(doc);
   };
 
@@ -347,11 +347,11 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setTextColor(110, 120, 135);
     doc.setDrawColor(220, 225, 235);
     doc.setLineWidth(0.5);
-    doc.line(margin, pageHeight - 44, pageWidth - margin, pageHeight - 44);
+    doc.line(margin, pageHeight - margin - 16, pageWidth - margin, pageHeight - margin - 16);
 
     const footerSubtitle = metadata.formSubtitle || metadata.formName || 'Florida Guardianship Report';
-    doc.text(`${footerSubtitle} — ${wardName}`, margin, pageHeight - 30);
-    doc.text(`Page ${currentP} of ${totalP}`, pageWidth - margin, pageHeight - 30, { align: 'right' });
+    doc.text(`${footerSubtitle} — ${wardName}`, margin, pageHeight - margin - 4);
+    doc.text(`Page ${currentP} of ${totalP}`, pageWidth - margin, pageHeight - margin - 4, { align: 'right' });
     writeArtifactEnd(doc);
   };
 

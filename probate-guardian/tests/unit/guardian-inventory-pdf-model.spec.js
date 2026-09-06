@@ -27,7 +27,7 @@ describe('guardian inventory PDF model', () => {
       title: 'Part III — ASSETS OF THE WARD',
       bookmarkTitle: 'Part III - Assets of the Ward',
       level: 1,
-      pageBreakBefore: true,
+      pageBreakBefore: false,
       blocks: [],
     });
     expect(firstScheduleIndex).toBe(assetsIndex + 1);
