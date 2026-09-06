@@ -403,7 +403,7 @@ function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());
 function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);autoSave();renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
-  return list.map((w,i)=>`<div class="entry-card mb-2">
+  return list.map((w,i)=>`<div class="entry-card">
     <div class="entry-card-header">
       <span>Inventory Witness ${i+1}</span>
       <span class="entry-card-actions">
@@ -411,11 +411,8 @@ function witnessCardsHTML(){
       </span>
     </div>
     <div class="entry-card-body">
-      ${formRow(
-        col(5,reqLabel('Name')+textInput(`witnesses.${i}.name`,'','name')),
-        col(4,reqLabel('Address')+textInput(`witnesses.${i}.address`,'','address')),
-        col(3,reqLabel('Occupation')+textInput(`witnesses.${i}.occupation`))
-      )}
+      ${formRow(col(12,reqLabel('Name')+textInput(`witnesses.${i}.name`,'','name')))}
+      ${formRow(col(7,reqLabel('Address')+textInput(`witnesses.${i}.address`,'','address')),col(5,reqLabel('Occupation')+textInput(`witnesses.${i}.occupation`)))}
     </div>
   </div>`).join('');
 }
@@ -492,7 +489,7 @@ function pageHome(){
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Inventory Witnesses</h2>
     <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
-    ${witnessCardsHTML()}
+    <div class="witness-card-grid">${witnessCardsHTML()}</div>
     <button class="btn btn-outline-primary btn-sm no-print" data-inventory-action="add-witness">+ Add Witness</button>
   </div>
   <div class="mb-3">

@@ -9,6 +9,10 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
     data.guardians = [
       { name: 'First Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
     ];
+    data.witnesses = [
+      { name: 'Witness One', address: '1 Main Street', occupation: 'Notary' },
+      { name: 'Witness Two', address: '2 Main Street', occupation: 'Agent' },
+    ];
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
   const oneCardGrid = page.locator('.attestation-card-grid').first();
@@ -58,4 +62,13 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   const certification = page.locator('.attorney-certification-card');
   const certificationWidth = await certification.evaluate(element => (element as HTMLElement).getBoundingClientRect().width);
   expect(certificationWidth).toBeLessThan(700);
+
+  await page.evaluate(() => (window as any).navigate('/'));
+  const witnessGrid = page.locator('.witness-card-grid');
+  await expect(witnessGrid).toBeVisible();
+  const witnessColumns = await witnessGrid.locator(':scope > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  expect(witnessColumns).toBe(2);
+  const witnessName = witnessGrid.locator('input[data-bind="witnesses.0.name"]');
+  const witnessAddress = witnessGrid.locator('input[data-bind="witnesses.0.address"]');
+  expect((await witnessAddress.boundingBox())!.y).toBeGreaterThan((await witnessName.boundingBox())!.y);
 });
