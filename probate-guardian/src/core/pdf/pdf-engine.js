@@ -244,6 +244,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   let forcePageBreakBeforeNextSection = false;
   const pageNumbersBySection = {};
   const parentOutlineMap = {};
+  const attachmentPageNumbers = new Set();
 
   const drawFirstPagePleadingHeader = () => {
     writeArtifactStart(doc, 'Pagination', 'Header');
@@ -349,6 +350,13 @@ export async function generateCourtFormPdf(model, options = {}) {
     curY = 132;
   };
 
+  const startNewAttachmentPage = () => {
+    doc.addPage();
+    pageNum++;
+    attachmentPageNumbers.add(pageNum);
+    curY = 0;
+  };
+
   const checkPageSpace = (neededHeight, sectionTitle) => {
     if (curY + neededHeight > pageBottom) {
       startNewPage(sectionTitle);
@@ -406,18 +414,22 @@ export async function generateCourtFormPdf(model, options = {}) {
     image.src = dataUrl;
   });
 
-  const getSupportingDocumentImageLayout = (sourceWidth, sourceHeight) => {
-    const maxWidth = contentWidth;
-    const maxHeight = pageBottom - curY;
+  const getSupportingDocumentImageLayout = (sourceWidth, sourceHeight, fullPage = false) => {
+    const maxWidth = fullPage ? pageWidth : contentWidth;
+    const maxHeight = fullPage ? pageHeight : pageBottom - curY;
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
-    return { x: margin, y: curY, width: sourceWidth * scale, height: sourceHeight * scale };
+    const width = sourceWidth * scale;
+    const height = sourceHeight * scale;
+    return {
+      x: fullPage ? (pageWidth - width) / 2 : margin,
+      y: fullPage ? (pageHeight - height) / 2 : curY,
+      width,
+      height,
+    };
   };
 
   const renderSupportingDocumentImage = (dataUrl, layout, imageType = null) => {
     writeArtifactStart(doc, 'Layout');
-    doc.setDrawColor(208, 213, 221);
-    doc.setLineWidth(0.5);
-    doc.rect(layout.x, layout.y, layout.width, layout.height, 'S');
     doc.addImage(dataUrl, imageType || (dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'), layout.x, layout.y, layout.width, layout.height);
     writeArtifactEnd(doc);
     curY = layout.y + layout.height + 12;
@@ -515,7 +527,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   const renderUploadedPdfPages = async (pdf, fileName, sectionTitle, parentNode) => {
     const pdfjsLib = await ensurePdfjs();
     for (let p = 1; p <= pdf.numPages; p++) {
-      if (p > 1) startNewPage(sectionTitle);
+      startNewAttachmentPage();
       const srcPage = await pdf.getPage(p);
       const viewport = srcPage.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
@@ -532,8 +544,8 @@ export async function generateCourtFormPdf(model, options = {}) {
         pdfjsLib.OPS.paintInlineImageXObject,
         pdfjsLib.OPS.paintJpegXObject,
       ].includes(fn));
-      if (hasImages) {
-        const layout = getSupportingDocumentImageLayout(viewport.width, viewport.height);
+      if (hasImages || !lines.length) {
+        const layout = getSupportingDocumentImageLayout(viewport.width, viewport.height, true);
         renderSupportingDocumentText(fileName, p, lines, sectionTitle, parentNode, layout);
         renderSupportingDocumentImage(canvas.toDataURL('image/jpeg', 0.92), layout, 'JPEG');
       } else {
@@ -595,22 +607,21 @@ export async function generateCourtFormPdf(model, options = {}) {
       const isImageFile = mime.startsWith('image/') || dataUrl.startsWith('data:image/') || isPngBytes(bytes) || isJpegBytes(bytes);
 
       try {
-        startNewPage(sectionTitle);
         if (isPdfFile) {
           const pdf = await loadUploadedPdf(file);
-          renderSupportingFileName(fileName, sectionTitle, parentNode);
           await renderUploadedPdfPages(pdf, fileName, sectionTitle, parentNode);
         } else if (isImageFile) {
-          renderSupportingFileName(fileName, sectionTitle, parentNode);
+          startNewAttachmentPage();
           const lines = await recognizeSupportingDocument(dataUrl);
           const imageDataUrl = dataUrl.startsWith('data:image/')
             ? dataUrl
             : `data:${isPngBytes(bytes) ? 'image/png' : 'image/jpeg'};base64,${String(dataUrl).split(',')[1] || ''}`;
           const size = await loadImageSize(imageDataUrl);
-          const layout = getSupportingDocumentImageLayout(size.width, size.height);
+          const layout = getSupportingDocumentImageLayout(size.width, size.height, true);
           renderSupportingDocumentText(fileName, 1, lines, sectionTitle, parentNode, layout);
           renderSupportingDocumentImage(imageDataUrl, layout, isPngBytes(bytes) ? 'PNG' : 'JPEG');
         } else {
+          startNewPage(sectionTitle);
           renderSupportingFileName(fileName, sectionTitle, parentNode);
           const unsupportedNode = structureTree.addStructureElement({
             tag: 'P',
@@ -627,6 +638,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += 16;
         }
       } catch (e) {
+        if (!attachmentPageNumbers.has(pageNum)) startNewPage(sectionTitle);
         renderSupportingFileName(fileName, sectionTitle, parentNode);
         const errorNode = structureTree.addStructureElement({
           tag: 'P',
@@ -1498,6 +1510,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   // 3. Stamp Running Footers with accurate Total Page Count
   const totalPages = doc.internal.getNumberOfPages ? doc.internal.getNumberOfPages() : pageNum;
   for (let p = 1; p <= totalPages; p++) {
+    if (attachmentPageNumbers.has(p)) continue;
     doc.setPage(p);
     drawFooter(p, totalPages);
   }

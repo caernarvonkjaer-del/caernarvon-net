@@ -29,7 +29,7 @@ To prevent "scanned document / OCR" warnings and satisfy accessibility requireme
 
 ### Supporting Documents
 
-Text-only PDF attachments are inserted as tagged Supporting Document Text content. Image-bearing PDF pages retain a visual source-page replica marked as a layout artifact, with tagged Supporting Document Text placed invisibly beneath the image in the PDF content order. The text layer is not visually duplicated, but remains selectable and available to assistive technology without losing visual fidelity or adding a separate transcript page.
+Text-only PDF attachments are inserted as tagged Supporting Document Text content. Image-bearing PDF pages occupy a clean, full-page visual replica of the source, without the court form's continuation header, filename banner, or footer. Their tagged Supporting Document Text is placed invisibly on that same page in PDF content order. The text layer is not visually duplicated, but remains selectable and available to assistive technology without losing visual fidelity or adding a separate transcript page.
 
 For image-only PDFs and image attachments, the visual source page is retained and the local Tesseract OCR worker recognizes English text into the same page's tagged Supporting Document Text layer. The worker, WebAssembly core, and language model are packaged under `lib/tesseract/`, so this fallback makes no runtime network request. OCR is a recognition aid, not proof of accuracy: filers must review names, dates, amounts, and table rows before filing. If OCR produces no text, the PDF emits a tagged notice requiring a human-supplied accessible text equivalent.
 
