@@ -27,6 +27,15 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     // Verify modal is closed and we land on the form
     await expect(addWardModal).toBeHidden();
 
+    const labelAudit = await page.evaluate(() => ({
+      duplicateLabels: [...document.querySelectorAll('label[for]')]
+        .filter(label => label.querySelector('input, select, textarea')).length,
+      emptyVisibleLabels: [...document.querySelectorAll('label')]
+        .filter(label => label.getClientRects().length > 0 && !label.textContent?.trim()).length,
+    }));
+    expect(labelAudit.duplicateLabels).toBe(0);
+    expect(labelAudit.emptyVisibleLabels).toBe(0);
+
     // 2. Verify No Unprompted Auto-Tour
     // Wait 1.5s to ensure old setTimeout(startWalkthrough, 1000) does not appear
     await page.waitForTimeout(1500);

@@ -8668,6 +8668,7 @@ function linkLabelsToInputs(){
 
   // Then: link adjacent labels/inputs in the same parent
   document.querySelectorAll('label:not([for])').forEach(label=>{
+    if(label.querySelector('input, select, textarea'))return;
     // Try next sibling
     let next=label.nextElementSibling;
     if(next&&(next.tagName==='INPUT'||next.tagName==='SELECT'||next.tagName==='TEXTAREA')&&next.id){

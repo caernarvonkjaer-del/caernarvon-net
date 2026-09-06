@@ -285,13 +285,7 @@ function selectInput(bind,opts,currentVal){
 // for accessibility, not a second visible label repeating the same text.
 function checkboxInput(bind,label){
   const inputId='chk_'+Math.random().toString(36).slice(2,9);
-  // <label>, not <div>, wrapping the input as a descendant -- clicking
-  // anywhere in its padded area (see .form-check's min-height/touch
-  // padding) toggles the checkbox even though there's no visible text,
-  // not just the tiny native checkbox square itself. Standard technique
-  // for meeting the 44x44 touch-target minimum without visually
-  // enlarging the checkbox.
-  return `<label class="form-check"><input class="form-check-input" type="checkbox" id="${inputId}" data-bind="${bind}" aria-label="${esc(label)}"></label>`;
+  return `<div class="form-check"><input class="form-check-input" type="checkbox" id="${inputId}" data-bind="${bind}" aria-label="${esc(label)}"></div>`;
 }
 // County-field counterpart to selectInput() -- data-bind driven like every
 // other Guardian-form field (bindForms() below wires the actual read/write
