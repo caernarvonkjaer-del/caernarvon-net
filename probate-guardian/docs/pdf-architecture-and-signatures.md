@@ -18,13 +18,20 @@
 To prevent "scanned document / OCR" warnings and satisfy accessibility requirements:
 
 1. **Zero `html2canvas` Rasterization**: The legacy DOM rasterization approach (which captured bitmap images into canvas objects) has been replaced with pure vector and text generation via `src/features/guardian-inventory/pdf-engine.js`.
-2. **True PDF Text Operators**: All text elements, headings, numbers, table cells, and signatures are emitted as native PDF text streams (`BT ... /F1 ... Tj ... ET`).
+2. **True PDF Text Operators**: All text elements, headings, numbers, table cells, signatures, and supporting-document transcripts are emitted as native PDF text streams (`BT ... /F1 ... Tj ... ET`).
 3. **Structured Intermediate Model**: `src/features/guardian-inventory/pdf-model.js` converts ward data into a typed `FilingSection[]` tree with `PdfBlock[]` items, serving as the single source of truth for:
    - Reading order
    - Outline / bookmark navigation hierarchy
    - Document metadata
    - Table layouts, columns, and data rollups
    - Signature block details
+   - Supporting-document transcript reading order
+
+### Supporting Documents
+
+Uploaded PDF attachments are not rasterized into the generated filing. Each source page is represented as a dedicated, tagged Supporting Document Transcript page containing the source PDF's machine-readable text in reading order. This keeps statement dates, balances, payment amounts, and transaction text selectable and available to assistive technology.
+
+Image-only attachments are excluded from the filing PDF unless an accessible text equivalent is supplied. The generated PDF includes a tagged notice identifying that requirement. Client-side OCR is not bundled; filers must convert scanned evidence to an accessible PDF or provide an accessible transcript before filing.
 
 ---
 

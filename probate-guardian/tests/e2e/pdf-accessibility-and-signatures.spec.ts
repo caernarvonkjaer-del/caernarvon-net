@@ -232,7 +232,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).toContain('/s/ Elena Rostova');
   });
 
-  test('prints uploaded supporting PDFs inline at the end of their schedule section', async ({ page }) => {
+  test('renders uploaded supporting PDFs as tagged text transcripts at the end of their schedule section', async ({ page }) => {
     await freshStartNoPassword(page);
 
     const pdfInspection = await page.evaluate(async () => {
@@ -286,21 +286,22 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).toContain('Supporting Documents');
     expect(extractedText).toContain('mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf');
     expect(extractedText).toContain('Statement verifies the restricted depository balance.');
-    expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
+    expect(extractedText).toContain('Uploaded bank statement support page');
+    expect(pdfInspection.rawPdfString).not.toContain('/Subtype /Image');
     expect(pdfInspection.numPages).toBeGreaterThan(4);
 
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
     const attachmentFileName = 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf';
     const attachmentTitlePages = pages.filter(pageInfo => pageInfo.text.includes(attachmentFileName));
     expect(attachmentTitlePages.length).toBeGreaterThan(0);
-    const attachmentPage = attachmentTitlePages.find(pageInfo => pageInfo.imageCount > 0);
+    const attachmentPage = attachmentTitlePages.find(pageInfo => pageInfo.text.includes('Supporting Document Transcript'));
     expect(attachmentPage).toBeTruthy();
-    expect(attachmentPage?.imageCount).toBeGreaterThan(0);
+    expect(attachmentPage?.imageCount).toBe(0);
     expect(attachmentPage && pages[attachmentPage.pageNumber - 2]?.text).toContain('Schedule B-1 Total');
     expect(attachmentPage?.text).not.toContain('Schedule B-2: Personal Property Assets');
   });
 
-  test('renders supporting documents for non-inventory forms through the shared PDF engine', async ({ page }) => {
+  test('renders accessible supporting-document transcripts for non-inventory forms through the shared PDF engine', async ({ page }) => {
     await freshStartNoPassword(page);
 
     const pdfInspection = await page.evaluate(async () => {
@@ -333,7 +334,9 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
     const attachmentPage = pages.find(pageInfo => pageInfo.text.includes('annual_plan_residence_support.pdf'));
     expect(attachmentPage).toBeTruthy();
-    expect(attachmentPage?.imageCount).toBeGreaterThan(0);
+    expect(attachmentPage?.text).toContain('Supporting Document Transcript');
+    expect(attachmentPage?.text).toContain('Uploaded annual plan support page');
+    expect(attachmentPage?.imageCount).toBe(0);
     expect(pages[attachmentPage!.pageNumber - 2]?.text).toContain('Question 1');
   });
 });

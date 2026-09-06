@@ -388,13 +388,6 @@ export async function generateCourtFormPdf(model, options = {}) {
     && bytes[1] === 0xd8
     && bytes[2] === 0xff;
 
-  const loadImageSize = (dataUrl) => new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
-    img.onerror = () => reject(new Error('Image could not be loaded.'));
-    img.src = dataUrl;
-  });
-
   const formatMailingAddress = (value) => {
     const text = String(value || '').trim();
     if (!text) return [];
@@ -403,15 +396,6 @@ export async function generateCourtFormPdf(model, options = {}) {
     const last = parts.pop();
     const stateZip = parts.pop();
     return [...parts, stateZip ? `${stateZip}, ${last}` : last];
-  };
-
-  const fitInlineDocumentSize = (sourceWidth, sourceHeight, maxHeight = pageBottom - curY) => {
-    const maxWidth = contentWidth;
-    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
-    return {
-      width: sourceWidth * scale,
-      height: sourceHeight * scale,
-    };
   };
 
   const renderSupportingFileName = (fileName, sectionTitle, parentNode) => {
@@ -435,27 +419,76 @@ export async function generateCourtFormPdf(model, options = {}) {
     curY += filenameHeight + spacingAfterDocument;
   };
 
-  const renderInlineDocumentImage = async (dataUrl, sourceWidth, sourceHeight, sectionTitle, imageType = null) => {
-    const { width: drawWidth, height: drawHeight } = fitInlineDocumentSize(sourceWidth, sourceHeight);
-    writeArtifactStart(doc, 'Layout');
-    doc.setDrawColor(208, 213, 221);
-    doc.setLineWidth(0.5);
-    doc.rect(margin, curY, drawWidth, drawHeight, 'S');
-    writeArtifactEnd(doc);
-    doc.addImage(dataUrl, imageType || (dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'), margin, curY, drawWidth, drawHeight);
-    curY += drawHeight + 12;
+  const extractPdfPageLines = async (srcPage) => {
+    const content = await srcPage.getTextContent();
+    const rows = new Map();
+    for (const item of content.items) {
+      if (!item?.str?.trim() || !Array.isArray(item.transform)) continue;
+      const baseline = Math.round(item.transform[5] * 2) / 2;
+      const row = rows.get(baseline) || [];
+      row.push({ text: item.str, x: item.transform[4] || 0 });
+      rows.set(baseline, row);
+    }
+    return [...rows.entries()]
+      .sort(([firstBaseline], [secondBaseline]) => secondBaseline - firstBaseline)
+      .map(([, row]) => row.sort((first, second) => first.x - second.x).map(item => item.text).join(' ').replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
   };
 
-  const renderUploadedPdfPages = async (pdf, sectionTitle) => {
+  const renderSupportingTranscriptPage = (fileName, sourcePageNumber, lines, sectionTitle, parentNode) => {
+    const title = `Supporting Document Transcript: ${fileName}${sourcePageNumber > 1 ? ` (page ${sourcePageNumber})` : ''}`;
+    const transcriptNode = structureTree.addStructureElement({
+      tag: 'Part',
+      title,
+      parent: parentNode,
+    });
+    const headingNode = structureTree.addStructureElement({
+      tag: 'H3',
+      title,
+      pageNumber: pageNum,
+      isLeaf: true,
+      parent: transcriptNode,
+    });
+    writeMarkedContentStart(doc, 'H3', headingNode.mcid);
+    doc.setFont('PGSans', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(26, 45, 74);
+    doc.text(title, margin, curY + 10);
+    writeMarkedContentEnd(doc);
+    curY += 18;
+
+    if (!lines.length) {
+      const noticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: transcriptNode });
+      writeMarkedContentStart(doc, 'P', noticeNode.mcid);
+      doc.setFont('PGSans', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 110, 125);
+      doc.text('No machine-readable text was found in this source PDF. Provide an accessible text transcript before filing.', margin, curY + 9);
+      writeMarkedContentEnd(doc);
+      curY += 18;
+      return;
+    }
+
+    for (const line of lines) {
+      doc.setFont('PGSans', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(17, 24, 39);
+      const wrapped = doc.splitTextToSize(line, contentWidth);
+      checkPageSpace((wrapped.length * 11) + 4, sectionTitle);
+      const lineNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: transcriptNode });
+      writeMarkedContentStart(doc, 'P', lineNode.mcid);
+      doc.text(wrapped, margin, curY + 9);
+      writeMarkedContentEnd(doc);
+      curY += (wrapped.length * 11) + 4;
+    }
+  };
+
+  const renderUploadedPdfPages = async (pdf, fileName, sectionTitle, parentNode) => {
     for (let p = 1; p <= pdf.numPages; p++) {
       if (p > 1) startNewPage(sectionTitle);
       const srcPage = await pdf.getPage(p);
-      const viewport = srcPage.getViewport({ scale: 1.5 });
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      await srcPage.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
-      await renderInlineDocumentImage(canvas.toDataURL('image/jpeg', 0.92), viewport.width, viewport.height, sectionTitle);
+      const lines = await extractPdfPageLines(srcPage);
+      renderSupportingTranscriptPage(fileName, p, lines, sectionTitle, parentNode);
     }
   };
 
@@ -516,14 +549,17 @@ export async function generateCourtFormPdf(model, options = {}) {
         if (isPdfFile) {
           const pdf = await loadUploadedPdf(file);
           renderSupportingFileName(fileName, sectionTitle, parentNode);
-          await renderUploadedPdfPages(pdf, sectionTitle);
+          await renderUploadedPdfPages(pdf, fileName, sectionTitle, parentNode);
         } else if (isImageFile) {
-          const imageDataUrl = dataUrl.startsWith('data:image/')
-            ? dataUrl
-            : `data:${isPngBytes(bytes) ? 'image/png' : 'image/jpeg'};base64,${String(dataUrl).split(',')[1] || ''}`;
-          const size = await loadImageSize(imageDataUrl);
           renderSupportingFileName(fileName, sectionTitle, parentNode);
-          await renderInlineDocumentImage(imageDataUrl, size.width, size.height, sectionTitle, isPngBytes(bytes) ? 'PNG' : 'JPEG');
+          const imageNoticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: parentNode });
+          writeMarkedContentStart(doc, 'P', imageNoticeNode.mcid);
+          doc.setFont('PGSans', 'italic');
+          doc.setFontSize(8.5);
+          doc.setTextColor(100, 110, 125);
+          doc.text('This image attachment is not included because it has no accessible text equivalent. Provide an accessible PDF or text transcript before filing.', margin, curY + 9);
+          writeMarkedContentEnd(doc);
+          curY += 18;
         } else {
           renderSupportingFileName(fileName, sectionTitle, parentNode);
           const unsupportedNode = structureTree.addStructureElement({
