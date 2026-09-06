@@ -41,6 +41,7 @@ function bindEvents(container) {
     switch (actionElement.dataset.planSimplifiedAction) {
       case 'open-court-portal': window.openFloridaCourtPortal(); break;
       case 'print': window.printCurrentFilingPdf(); break;
+      case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, { signal: controller.signal });

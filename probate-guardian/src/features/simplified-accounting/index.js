@@ -54,6 +54,7 @@ function bindEvents(container) {
       case 'open-court-portal': window.openFloridaCourtPortal(); break;
       case 'remove-remuneration': window.D.remuneration.splice(index, 1); autoSave(); navigate('/p7'); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
+      case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, options);

@@ -137,6 +137,7 @@ function bindEvents(container) {
       case 'remove-recipient': removeRecipient(index); break;
       case 'remove-witness': removeWitness(index); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
+      case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, options);

@@ -37,7 +37,7 @@ document.addEventListener('click', (event) => {
   if (!actionElement) return;
   switch (actionElement.dataset.formAction) {
     case 'add-plan-row': window.addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
-      case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
     case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
@@ -47,10 +47,13 @@ document.addEventListener('click', (event) => {
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
     case 'print': window.printCurrentFilingPdf(); break;
-      case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-      case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
-      case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
-      case 'save-pdf-plan-minor': window.doSavePdfPlanMinor(); break;
+    case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
+    case 'save-word-plan-annual': window.doSaveWordPlanAnnual(); break;
+    case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
+    case 'save-word-plan-initial': window.doSaveWordPlanInitial(); break;
+    case 'save-pdf-plan-minor': window.doSavePdfPlanMinor(); break;
+    case 'save-word-plan-minor': window.doSaveWordPlanMinor(); break;
     case 'preview-step': window.pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
     case 'remove-schedule-doc': window.removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
     case 'toggle-ssn': window.toggleSsnReveal(actionElement); break;

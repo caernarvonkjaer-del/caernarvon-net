@@ -38,12 +38,13 @@ function ensurePrintModule() {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
       // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanInitial) or from legacy-app.js's shared
+      // (doSavePdfPlanInitial, doSaveWordPlanInitial) or from legacy-app.js's shared
       // planReadinessChecks() dispatcher (planReadinessChecksInitial, still
       // called for the one remaining not-yet-extracted Plan type too) --
       // both only ever resolve against the global scope, never a module's
       // own scope, so both must be real `window` properties.
       window.doSavePdfPlanInitial = () => _printModule.doSavePdf();
+      window.doSaveWordPlanInitial = () => _printModule.doSaveDocx();
       window.planReadinessChecksInitial = () => _printModule.planReadinessChecksInitial();
     });
   }
