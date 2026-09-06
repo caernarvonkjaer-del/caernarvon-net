@@ -31,7 +31,7 @@ To prevent "scanned document / OCR" warnings and satisfy accessibility requireme
 
 Uploaded PDF attachments are not rasterized into the generated filing. Each source page is represented as a dedicated, tagged Supporting Document Transcript page containing the source PDF's machine-readable text in reading order. This keeps statement dates, balances, payment amounts, and transaction text selectable and available to assistive technology.
 
-Image-only attachments are excluded from the filing PDF unless an accessible text equivalent is supplied. The generated PDF includes a tagged notice identifying that requirement. Client-side OCR is not bundled; filers must convert scanned evidence to an accessible PDF or provide an accessible transcript before filing.
+For image-only PDFs and image attachments, the local Tesseract OCR worker recognizes English text and emits the result as the same tagged transcript content. The worker, WebAssembly core, and language model are packaged under `lib/tesseract/`, so this fallback makes no runtime network request. OCR is a recognition aid, not proof of accuracy: filers must review names, dates, amounts, and table rows before filing. If OCR produces no text, the PDF emits a tagged notice requiring a human-supplied accessible transcript.
 
 ---
 

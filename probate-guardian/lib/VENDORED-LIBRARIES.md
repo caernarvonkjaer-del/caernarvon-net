@@ -50,6 +50,14 @@ anything.
   quarterly-or-CVE cadence more than any of the other four.
 - **Last checked**: 2026-09-04 (this milestone).
 
+## tesseract.js
+
+- **Version**: 7.0.0
+- **Source**: [npmjs.com/package/tesseract.js](https://www.npmjs.com/package/tesseract.js) and [npmjs.com/package/@tesseract.js-data/eng](https://www.npmjs.com/package/@tesseract.js-data/eng)
+- **How it gets here**: `tesseract.js` and the English language-data package are npm dependencies. Their browser worker, LSTM WebAssembly core, and English `best_int` model are copied from `node_modules` into `lib/tesseract/` so the raw source target, web distribution, and portable distribution can run OCR with no runtime network request.
+- **Used for**: Recognizing image-only supporting documents and scanned PDF pages into tagged, selectable PDF transcript content.
+- **Last checked**: 2026-09-06.
+
 ## bootstrap
 
 - **Version**: 5.3.8 (`bootstrap.bundle.min.js`, `bootstrap.min.css`)

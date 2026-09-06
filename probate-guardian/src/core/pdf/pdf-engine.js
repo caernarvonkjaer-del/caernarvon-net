@@ -21,6 +21,7 @@ import {
   getCaseCaptionTitle,
 } from './circuit-lookup.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
+import { recognizeSupportingDocument } from './ocr-loader.js';
 
 export async function createJsPdfInstance() {
   const patchOutlineDestinations = (pdf) => {
@@ -487,7 +488,15 @@ export async function generateCourtFormPdf(model, options = {}) {
     for (let p = 1; p <= pdf.numPages; p++) {
       if (p > 1) startNewPage(sectionTitle);
       const srcPage = await pdf.getPage(p);
-      const lines = await extractPdfPageLines(srcPage);
+      let lines = await extractPdfPageLines(srcPage);
+      if (!lines.length) {
+        const viewport = srcPage.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        await srcPage.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
+        lines = await recognizeSupportingDocument(canvas);
+      }
       renderSupportingTranscriptPage(fileName, p, lines, sectionTitle, parentNode);
     }
   };
@@ -552,14 +561,8 @@ export async function generateCourtFormPdf(model, options = {}) {
           await renderUploadedPdfPages(pdf, fileName, sectionTitle, parentNode);
         } else if (isImageFile) {
           renderSupportingFileName(fileName, sectionTitle, parentNode);
-          const imageNoticeNode = structureTree.addStructureElement({ tag: 'P', pageNumber: pageNum, isLeaf: true, parent: parentNode });
-          writeMarkedContentStart(doc, 'P', imageNoticeNode.mcid);
-          doc.setFont('PGSans', 'italic');
-          doc.setFontSize(8.5);
-          doc.setTextColor(100, 110, 125);
-          doc.text('This image attachment is not included because it has no accessible text equivalent. Provide an accessible PDF or text transcript before filing.', margin, curY + 9);
-          writeMarkedContentEnd(doc);
-          curY += 18;
+          const lines = await recognizeSupportingDocument(dataUrl);
+          renderSupportingTranscriptPage(fileName, 1, lines, sectionTitle, parentNode);
         } else {
           renderSupportingFileName(fileName, sectionTitle, parentNode);
           const unsupportedNode = structureTree.addStructureElement({

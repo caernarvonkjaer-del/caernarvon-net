@@ -339,4 +339,45 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(attachmentPage?.imageCount).toBe(0);
     expect(pages[attachmentPage!.pageNumber - 2]?.text).toContain('Question 1');
   });
+
+  test('OCRs image-only supporting documents into tagged selectable text', async ({ page }) => {
+    test.setTimeout(180000);
+    await freshStartNoPassword(page);
+
+    const pdfInspection = await page.evaluate(async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 300;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#111';
+      context.font = 'bold 54px Arial';
+      context.fillText('ACCOUNT BALANCE $12,842.19', 48, 120);
+      context.font = '42px Arial';
+      context.fillText('Statement Date August 31 2026', 48, 205);
+
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const model = buildVerifiedInventoryModel({
+        wardName: 'OCR Attachment Ward',
+        caseNumber: '26-002487-GD',
+        county: 'Pasco',
+        scheduleDocs: {
+          b1: {
+            initial: {
+              files: [{ name: 'scanned-bank-statement.png', type: 'image/png', dataUrl: canvas.toDataURL('image/png') }],
+            },
+          },
+        },
+      }, { signatureStyle: 'typed', printDate: '2026-09-06' });
+      const doc = await generateVerifiedInventoryPdf(model);
+      return { rawPdfString: doc.output() };
+    });
+
+    const extractedText = await extractPdfText(pdfInspection.rawPdfString);
+    expect(extractedText).toContain('Supporting Document Transcript: scanned-bank-statement.png');
+    expect(extractedText).toMatch(/ACCOUNT BALANCE.*12,842\.19/);
+    expect(extractedText).toMatch(/Statement Date.*August.*31.*2026/);
+    expect(pdfInspection.rawPdfString).not.toContain('/Subtype /Image');
+  });
 });
