@@ -47,7 +47,7 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
         q9DNR: false,
         q9LivingWill: false,
         planGuardians: [
-          { name: 'Jordan Alvarez', signatureDate: '2026-03-01', ssn: '***-**-1234', phone: '727-555-0102', relationship: 'Son', street: '10 Bay St', cityStateZip: 'Clearwater, FL 33755' },
+          { name: 'Jordan Alvarez', useSlashS: false, signatureDate: '2026-03-01', ssn: '***-**-1234', phone: '727-555-0102', relationship: 'Son', street: '10 Bay St', cityStateZip: 'Clearwater, FL 33755' },
         ],
         attorney_name: 'Casey Nolan, Esq.',
         attorney_signatureDate: '2026-03-01',
@@ -83,6 +83,7 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
     // /s/ legal notice should appear anywhere in the document.
     expect(result.containsElectronicSignatureNotice).toBe(false);
     expect(extractedText).toContain('Jordan Alvarez');
+    expect(extractedText).toContain('Signature of Jordan Alvarez');
     expect(extractedText).toContain('0123456');
   });
 

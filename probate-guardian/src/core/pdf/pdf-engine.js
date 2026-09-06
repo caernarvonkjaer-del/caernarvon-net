@@ -396,6 +396,16 @@ export async function generateCourtFormPdf(model, options = {}) {
     img.src = dataUrl;
   });
 
+  const formatMailingAddress = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return [];
+    const parts = text.split(/,\s*/).map(part => part.trim()).filter(Boolean);
+    if (parts.length < 2) return [text];
+    const last = parts.pop();
+    const stateZip = parts.pop();
+    return [...parts, stateZip ? `${stateZip}, ${last}` : last];
+  };
+
   const fitInlineDocumentSize = (sourceWidth, sourceHeight, maxHeight = pageBottom - curY) => {
     const maxWidth = contentWidth;
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
@@ -1227,7 +1237,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         // and ordering by rendering Object.keys() in a single column).
         const isWetSignature = block.wetSignature === true || block.useSlashS === false;
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
-        const FIELD_ROW_H = 22;
+        const FIELD_ROW_H = 28;
         const baseSigHeight = isWetSignature ? 58 : 64;
         const sigHeight = fieldRows ? baseSigHeight + 4 + (fieldRows.length * FIELD_ROW_H) : baseSigHeight;
         checkPageSpace(sigHeight + 10, sec.title);
@@ -1290,7 +1300,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
-          doc.text('Signature', margin + 2, curY + 46);
+          doc.text(`Signature of ${block.signerName || ''}`.trim(), margin + 2, curY + 46);
           writeMarkedContentEnd(doc);
         } else {
           // Electronic /s/ Signature Rendering
@@ -1307,13 +1317,13 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.setFont('PGSans', 'italic');
             doc.setFontSize(12);
             doc.setTextColor(15, 35, 75);
-            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 6, curY + 32);
+            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 6, curY + 30);
           } else {
             // Standard typed /s/ rendering
             doc.setFont('PGSans', 'bold');
             doc.setFontSize(10);
             doc.setTextColor(20, 25, 35);
-            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 4, curY + 32);
+            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 4, curY + 30);
           }
           writeMarkedContentEnd(doc);
 
@@ -1363,7 +1373,9 @@ export async function generateCourtFormPdf(model, options = {}) {
               // overflow into the right margin. Each field column is
               // contentWidth/cols wide; subtract 4pt for left padding.
               const fieldMaxW = colW - 4;
-              const fieldLines = doc.splitTextToSize(String(field.value), fieldMaxW);
+              const fieldLines = field.label.toLowerCase().includes('address')
+                ? formatMailingAddress(field.value).flatMap(line => doc.splitTextToSize(line, fieldMaxW))
+                : doc.splitTextToSize(String(field.value), fieldMaxW);
               doc.text(fieldLines, fx, rowY + 9);
               writeMarkedContentEnd(doc);
             }
