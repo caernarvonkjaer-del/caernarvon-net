@@ -71,7 +71,7 @@ async function renderPagesInto(container, doc) {
 }
 
 // buildModel(D) must be the exact same model builder doSavePdf() for that
-// feature uses (same options -- signatureStyle included), so preview and
+// feature uses, so preview and
 // Save-as-PDF can never diverge again by construction (this is also the
 // fix for the signature-style-radio/preview divergence
 // MILESTONE-19-3-PROPOSAL.md called out).

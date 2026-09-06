@@ -141,7 +141,6 @@ export async function generateCourtFormPdf(model, options = {}) {
   const wardName = metadata.wardName || 'Ward';
   const caseNumber = metadata.caseNumber || '';
   const county = (metadata.county || 'Pinellas').toUpperCase();
-  const signatureStyle = metadata.signatureStyle || 'typed';
 
   const scheduleSectionAliases = {
     'ANNUAL GUARDIANSHIP PLAN': {
@@ -1311,20 +1310,10 @@ export async function generateCourtFormPdf(model, options = {}) {
             parent: sigPartNode,
           });
           writeMarkedContentStart(doc, 'P', sigTextNode.mcid);
-          const effectiveStyle = block.signatureStyle || signatureStyle;
-          if (effectiveStyle === 'script') {
-            // Script-style rendering using PGSans-Italic with stylistic padding
-            doc.setFont('PGSans', 'italic');
-            doc.setFontSize(12);
-            doc.setTextColor(15, 35, 75);
-            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 6, curY + 30);
-          } else {
-            // Standard typed /s/ rendering
-            doc.setFont('PGSans', 'bold');
-            doc.setFontSize(10);
-            doc.setTextColor(20, 25, 35);
-            doc.text(block.signature || `/s/ ${block.signerName}`, margin + 4, curY + 30);
-          }
+          doc.setFont('PGSans', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(20, 25, 35);
+          doc.text(block.signature || `/s/ ${block.signerName}`, margin + 4, curY + 30);
           writeMarkedContentEnd(doc);
 
           const sigLegalNoticeNode = structureTree.addStructureElement({

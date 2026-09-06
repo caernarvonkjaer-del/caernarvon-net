@@ -134,11 +134,6 @@ function bindEvents(container) {
       updateNavDots();
       window.navigate('/d3');
     }
-    if (control.dataset.inventoryChange === 'set-sig-style') {
-      D.signatureStyle = control.value;
-      autoSave();
-      window.navigate('/print');
-    }
     if (control.dataset.inventoryChange === 'set-sdb-filed') {
       D.safeDepositBoxFiled = control.value === 'true';
       autoSave();

@@ -15,13 +15,8 @@ import { buildAnnualAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
-// Milestone 19-3: preview and Save-as-PDF must build the model with the
-// identical options, so they can never diverge again.
 function buildModelForPreview(D){
-  return buildAnnualAccountingModel(D, {
-    signatureStyle: D.signatureStyle || 'typed',
-    printDate: new Date().toISOString().slice(0, 10),
-  });
+  return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
 }
 
 const {
@@ -82,7 +77,6 @@ export async function doSavePdf(){
 
   try{
     const model = buildAnnualAccountingModel(window.D, {
-      signatureStyle: window.D.signatureStyle || 'typed',
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateCourtFormPdf(model);

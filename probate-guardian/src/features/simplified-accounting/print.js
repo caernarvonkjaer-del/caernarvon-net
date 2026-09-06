@@ -11,13 +11,8 @@ import { buildSimplifiedAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 
-// Milestone 19-3: preview and Save-as-PDF must build the model with the
-// identical options, so they can never diverge again.
 function buildModelForPreview(D){
-  return buildSimplifiedAccountingModel(D, {
-    signatureStyle: D.signatureStyle || 'typed',
-    printDate: new Date().toISOString().slice(0, 10),
-  });
+  return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
 }
 
 const {
@@ -28,7 +23,6 @@ const {
 export function pagePrintSimplified(capOver){
   const errors=validateSimplified();
   highlightErrors(errors);
-  const sigStyle = window.D.signatureStyle || 'typed';
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
     <div class="print-preview-banner no-print">
@@ -37,20 +31,6 @@ export function pagePrintSimplified(capOver){
         <button class="btn btn-outline-primary btn-sm" data-simplified-action="save-pdf" ${errors.length?'disabled':''}>Save as PDF</button>
         <button class="btn btn-primary btn-sm" data-simplified-action="save-excel" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="More remuneration entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
         <button class="btn btn-outline-secondary btn-sm" data-simplified-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button>
-      </div>
-    </div>
-    <div class="summary-box mb-3 no-print" style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.75rem 1rem;">
-      <div style="font-weight:600;font-size:.85rem;color:var(--ink);margin-bottom:.25rem;">Electronic Signature Format (Fla. R. Gen. Prac. &amp; Jud. Admin. 2.515)</div>
-      <div style="font-size:.78rem;color:var(--ink-3);margin-bottom:.5rem;">Electronic signature format for generated PDFs. Confirm current filing requirements before filing.</div>
-      <div class="d-flex gap-4">
-        <label class="form-check" style="cursor:pointer;margin-bottom:0;">
-          <input class="form-check-input" type="radio" name="signatureStyleSimplified" value="typed" ${sigStyle==='typed'?'checked':''} data-simplified-change="set-sig-style">
-          <span class="form-check-label" style="font-size:.85rem;"><strong>Typed /s/ signature</strong> (Default — Standard Document Font)</span>
-        </label>
-        <label class="form-check" style="cursor:pointer;margin-bottom:0;">
-          <input class="form-check-input" type="radio" name="signatureStyleSimplified" value="script" ${sigStyle==='script'?'checked':''} data-simplified-change="set-sig-style">
-          <span class="form-check-label" style="font-size:.85rem;"><strong>Script-style /s/ signature</strong> (Optional — Cursive Presentation)</span>
-        </label>
       </div>
     </div>
     <div class="accordion mb-3 no-print">
@@ -91,7 +71,6 @@ export async function doSavePdf(){
 
   try{
     const model = buildSimplifiedAccountingModel(window.D, {
-      signatureStyle: window.D.signatureStyle || 'typed',
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateCourtFormPdf(model);
