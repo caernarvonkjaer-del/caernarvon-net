@@ -287,8 +287,6 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .readiness-mark.manual{color:var(--ink-4);}
 [data-theme="dark"] .schedule-instructions{border-color:#22384d;}
 .entry-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:1rem;box-shadow:var(--sh-1);overflow:hidden;}
-@media (min-width: 901px){.schedule-page>.entry-card{width:calc(50% - .5rem);}}
-@media (max-width: 900px){.schedule-page>.entry-card{width:100%;}}
 .attestation-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start;}
 .attestation-card-grid>.entry-card{margin-bottom:0;min-width:0;}
 @media (max-width: 900px){.attestation-card-grid{grid-template-columns:1fr;}}
@@ -297,9 +295,9 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .attorney-certification-card{width:calc(50% - .5rem);}
 .witness-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;align-items:start;}
 .witness-card-grid>.entry-card{margin-bottom:0;min-width:0;}
-.liability-fields{max-width:32rem;}
+.liability-fields{max-width:none;}
 .liability-fields .row{margin-bottom:.15rem;}
-@media (min-width: 901px){.schedule-page .entry-card:has(.liability-fields){width:calc(50% - .5rem);}}
+.liability-fields .row:last-child{align-items:flex-end;}
 @media (max-width: 900px){.service-recipient-grid{grid-template-columns:1fr;}.attorney-certification-card{width:100%;}}
 @media (max-width: 900px){.witness-card-grid{grid-template-columns:1fr;}}
 .entry-card-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.6rem;padding:.55rem .85rem;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.85rem;font-weight:650;color:var(--ink);letter-spacing:-.005em;}

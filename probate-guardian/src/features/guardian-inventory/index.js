@@ -302,7 +302,7 @@ function countyInputBind(bind){
   </div>`;
 }
 function entryCard(title,idx,schedule,bodyHtml,footerHtml=''){
-  return `<div class="entry-card mb-2">
+  return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
     <div class="entry-card-header">
       <span>${title}</span>
       <span class="entry-card-actions">
@@ -312,7 +312,10 @@ function entryCard(title,idx,schedule,bodyHtml,footerHtml=''){
     </div>
     <div class="entry-card-body">${bodyHtml}</div>
     ${footerHtml?`<div class="entry-card-footer">${footerHtml}</div>`:''}
-  </div>`;
+  </div></div>`;
+}
+function scheduleCards(entries){
+  return entries?`<div class="row g-3 schedule-entry-grid">${entries}</div>`:'';
 }
 function addBtn(schedule,label){
   return `<button class="btn btn-primary btn-sm mb-3 no-print" data-inventory-action="add-entry" data-schedule="${schedule}">+ Add ${label}</button>`;
@@ -589,7 +592,7 @@ function pageScheduleA1(){
   return `<div class="schedule-page">
   <h1>Schedule A-1: Real Estate / Real Property</h1>
   <div class="schedule-instructions">List all real property owned by the ward as of the GID. Attach Property Appraiser records. Ward's Value = Full Asset Value × Ward's % / 100.</div>
-  ${addBtn('a1','Property')}${entries||scheduleEmptyHTML('a1','real estate properties')}
+  ${addBtn('a1','Property')}${scheduleCards(entries)||scheduleEmptyHTML('a1','real estate properties')}
   ${totalsBox([["Schedule A-1 Total (Ward's Value)",'totalA1']])}
   ${renderScheduleDocsSection('a1')}
   ${pageNav('/a1')}</div>`;
@@ -609,7 +612,7 @@ function pageScheduleA2(){
   return `<div class="schedule-page">
   <h1>Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)</h1>
   <div class="schedule-instructions">List in the same order as Schedule A-1. Attach mortgage statement or deed for each.</div>
-  ${addBtn('a2','Liability')}${entries||scheduleEmptyHTML('a2','real estate liabilities')}
+  ${addBtn('a2','Liability')}${scheduleCards(entries)||scheduleEmptyHTML('a2','real estate liabilities')}
   ${totalsBox([["Schedule A-2 Total (Ward's Debt)",'totalA2']])}
   ${renderScheduleDocsSection('a2')}
   ${pageNav('/a2')}</div>`;
@@ -624,7 +627,7 @@ function pageScheduleB1(){
   return `<div class="schedule-page">
   <h1>Schedule B-1: Cash Assets / Cash Equivalent Assets</h1>
   <div class="schedule-instructions">Mark Restricted if funds are in a court-supervised restricted depository. This affects the bond calculation.</div>
-  ${addBtn('b1','Account')}${entries||scheduleEmptyHTML('b1','cash accounts')}
+  ${addBtn('b1','Account')}${scheduleCards(entries)||scheduleEmptyHTML('b1','cash accounts')}
   ${totalsBox([["Schedule B-1 Total (Ward's Amount)",'totalB1'],['— of which Restricted','restrictedCash'],['— of which Unrestricted','unrestrictedCash']])}
   ${renderScheduleDocsSection('b1')}
   ${pageNav('/b1')}</div>`;
@@ -704,7 +707,7 @@ function pageScheduleB2(){
   return `<div class="schedule-page">
   <h1>Schedule B-2: Personal Property Assets</h1>
   <div class="schedule-instructions">List household goods, vehicles, jewelry, etc. Include items in safe deposit boxes (also list separately on SDB inventory).</div>
-  ${addBtn('b2','Item')}${entries||scheduleEmptyHTML('b2','personal property items')}
+  ${addBtn('b2','Item')}${scheduleCards(entries)||scheduleEmptyHTML('b2','personal property items')}
   ${totalsBox([["Schedule B-2 Total (Ward's Value)",'totalB2']])}
   ${renderScheduleDocsSection('b2')}
   ${pageNav('/b2')}</div>`;
@@ -720,7 +723,7 @@ function pageScheduleB3(){
   return `<div class="schedule-page">
   <h1>Schedule B-3: Intangible Assets</h1>
   <div class="schedule-instructions">List stocks, bonds, IRAs, insurance policies, etc. Mark Restricted if in a court-supervised account.</div>
-  ${addBtn('b3','Asset')}${entries||scheduleEmptyHTML('b3','intangible assets')}
+  ${addBtn('b3','Asset')}${scheduleCards(entries)||scheduleEmptyHTML('b3','intangible assets')}
   ${totalsBox([["Schedule B-3 Total (Ward's Value)",'totalB3'],['— of which Restricted','restrictedIntang'],['— of which Unrestricted','unrestrictedIntang']])}
   ${renderScheduleDocsSection('b3')}
   ${pageNav('/b3')}</div>`;
@@ -736,7 +739,7 @@ function pageScheduleB4(){
   return `<div class="schedule-page">
   <h1>Schedule B-4: Liabilities / Secured and Unsecured Debts / Notes / Loans</h1>
   <div class="schedule-instructions">List personal property liabilities only. Real estate liabilities go on Schedule A-2.</div>
-  ${addBtn('b4','Liability')}${entries||scheduleEmptyHTML('b4','personal property liabilities')}
+  ${addBtn('b4','Liability')}${scheduleCards(entries)||scheduleEmptyHTML('b4','personal property liabilities')}
   ${totalsBox([["Schedule B-4 Total (Ward's Liability)",'totalB4']])}
   ${renderScheduleDocsSection('b4')}
   ${pageNav('/b4')}</div>`;
@@ -752,7 +755,7 @@ function pageScheduleC1(){
   return `<div class="schedule-page">
   <h1>Schedule C-1: Income (Annualized)</h1>
   <div class="schedule-instructions">Annualize all amounts. Example: $600/month × 12 = $7,200/year.</div>
-  ${addBtn('c1','Income Source')}${entries||scheduleEmptyHTML('c1','income sources')}
+  ${addBtn('c1','Income Source')}${scheduleCards(entries)||scheduleEmptyHTML('c1','income sources')}
   ${totalsBox([["Schedule C-1 Total Annualized Income (Ward's Share)",'totalC1']])}
   ${renderScheduleDocsSection('c1')}
   ${pageNav('/c1')}</div>`;
@@ -767,7 +770,7 @@ function pageScheduleC2(){
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-2: Lawsuits Pending Against the Ward</h1>
-  ${addBtn('c2','Lawsuit')}${entries||scheduleEmptyHTML('c2','lawsuits pending against the ward')}
+  ${addBtn('c2','Lawsuit')}${scheduleCards(entries)||scheduleEmptyHTML('c2','lawsuits pending against the ward')}
   ${totalsBox([["Schedule C-2 Total (Ward's Share of Claims)",'totalC2']])}
   ${renderScheduleDocsSection('c2')}
   ${pageNav('/c2')}</div>`;
@@ -782,7 +785,7 @@ function pageScheduleC3(){
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-3: Lawsuits Pending by the Ward</h1>
-  ${addBtn('c3','Action')}${entries||scheduleEmptyHTML('c3','lawsuits pending by the ward')}
+  ${addBtn('c3','Action')}${scheduleCards(entries)||scheduleEmptyHTML('c3','lawsuits pending by the ward')}
   ${totalsBox([["Schedule C-3 Total (Ward's Estimated Share)",'totalC3']])}
   ${renderScheduleDocsSection('c3')}
   ${pageNav('/c3')}</div>`;
@@ -797,7 +800,7 @@ function pageScheduleC4(){
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-4: Value of Trusts for the Ward</h1>
-  ${addBtn('c4','Trust')}${entries||scheduleEmptyHTML('c4','trusts')}
+  ${addBtn('c4','Trust')}${scheduleCards(entries)||scheduleEmptyHTML('c4','trusts')}
   ${totalsBox([["Schedule C-4 Total (Ward's Share of Trusts)",'totalC4']])}
   ${renderScheduleDocsSection('c4')}
   ${pageNav('/c4')}</div>`;
@@ -813,7 +816,7 @@ function pageScheduleC5(){
   return `<div class="schedule-page">
   <h1>Schedule C-5: Joint Owners of Ward's Assets</h1>
   <div class="schedule-instructions">Cross-reference each asset to the schedule and item number where it appears.</div>
-  ${addBtn('c5','Joint Owner')}${entries||scheduleEmptyHTML('c5','joint ownership entries')}
+  ${addBtn('c5','Joint Owner')}${scheduleCards(entries)||scheduleEmptyHTML('c5','joint ownership entries')}
   ${totalsBox([["Schedule C-5 Total (Joint Owners' Combined Value)",'totalC5']])}
   ${renderScheduleDocsSection('c5')}
   ${pageNav('/c5')}</div>`;
