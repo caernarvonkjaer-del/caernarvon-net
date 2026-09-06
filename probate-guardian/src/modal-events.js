@@ -19,6 +19,23 @@ function handleModalClick(event) {
   }
 }
 
+function prepareModalAccessibility(modal) {
+  const box = modal?.querySelector('.modal-box');
+  if (!box) return;
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  const title = box.querySelector('h1, h2, h3, [role="heading"]');
+  if (title) {
+    if (!title.id) title.id = `modal-title-${Math.random().toString(36).slice(2, 9)}`;
+    box.setAttribute('aria-labelledby', title.id);
+  }
+}
+
+function getModalFocusables(modal) {
+  return [...modal.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
+    .filter(element => element.getClientRects().length > 0);
+}
+
 function handleModalInput(event) {
   if (!(event.target instanceof HTMLInputElement)) return;
   if (event.target.dataset.modalInput === 'format-name') {
@@ -35,22 +52,25 @@ function handleModalFocus(event) {
 }
 
 function handleModalKeydown(event) {
-  const lockedModal = document.getElementById('ward-locked-overlay');
-  if (lockedModal && lockedModal.classList.contains('show')) {
+  const openModals = [...document.querySelectorAll('.modal-overlay.show')];
+  const activeModal = openModals[openModals.length - 1];
+  if (activeModal) {
+    prepareModalAccessibility(activeModal);
     if (event.key === 'Escape') {
       event.preventDefault();
-      if (window.closeWardLockedModal) window.closeWardLockedModal();
+      if (activeModal.id === 'ward-locked-overlay' && window.closeWardLockedModal) window.closeWardLockedModal();
+      else window.closeModal?.(activeModal.id);
       return;
     }
     if (event.key === 'Tab') {
-      const focusables = Array.from(lockedModal.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      const focusables = getModalFocusables(activeModal);
       if (focusables.length > 0) {
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
-        if (event.shiftKey && (document.activeElement === first || !lockedModal.contains(document.activeElement))) {
+        if (event.shiftKey && (document.activeElement === first || !activeModal.contains(document.activeElement))) {
           event.preventDefault();
           last.focus();
-        } else if (!event.shiftKey && (document.activeElement === last || !lockedModal.contains(document.activeElement))) {
+        } else if (!event.shiftKey && (document.activeElement === last || !activeModal.contains(document.activeElement))) {
           event.preventDefault();
           first.focus();
         }
@@ -79,3 +99,8 @@ document.addEventListener('input', handleModalInput);
 document.addEventListener('focusin', handleModalFocus);
 document.addEventListener('keydown', handleModalKeydown);
 document.addEventListener('change', handleModalChange);
+
+const modalA11yObserver = new MutationObserver(() => {
+  document.querySelectorAll('.modal-overlay').forEach(prepareModalAccessibility);
+});
+modalA11yObserver.observe(document.body, { childList: true, subtree: true });

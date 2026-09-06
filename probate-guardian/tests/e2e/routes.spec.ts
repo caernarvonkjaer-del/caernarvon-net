@@ -236,6 +236,9 @@ test.describe('routes', () => {
     const selector = page.locator('#ward-selector');
     await selector.focus();
     await expect(page.locator('#ward-selector-dropdown')).toContainText('Alpha Shell Ward');
+    await expect(selector).toHaveAttribute('aria-expanded', 'true');
+    await selector.press('ArrowDown');
+    await expect(selector).toHaveAttribute('aria-activedescendant', /ward-selector-option-/);
     await selector.fill('Alpha Shell Ward');
     await selector.press('Enter');
     await expect(selector).toHaveValue('Alpha Shell Ward');

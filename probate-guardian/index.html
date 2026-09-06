@@ -953,7 +953,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
   <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4.2 21 19.8H3Z"/><path d="M12 10v4.2"/><circle cx="12" cy="17.4" r=".9" fill="currentColor" stroke="none"/></svg> Your work could not be saved. Check your connection/storage and try again.
   <button type="button" data-shell-action="dismiss-save-error" style="margin-left:1rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:5px;padding:.15rem .6rem;font-size:.75rem;font-weight:600;cursor:pointer;">Dismiss</button>
 </div>
-<div id="auto-export-reminder" class="app-toast">
+<div id="auto-export-reminder" class="app-toast" role="status" aria-live="polite" aria-atomic="true">
   <span class="app-toast-icon"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg></span>
   <div class="app-toast-body">
     <div id="auto-export-reminder-title" class="app-toast-title">Unsaved Changes</div>
@@ -993,7 +993,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
     <div class="nav-section ward-picker-section">
       <label for="ward-selector" class="ward-picker-label">Active Ward</label>
       <div class="ward-combobox-wrap" id="ward-selector-wrap">
-        <input type="text" id="ward-selector" name="activeWard" class="form-control form-control-sm ward-picker-select" placeholder="Type or select a ward…" autocomplete="off" role="combobox" aria-autocomplete="none" aria-controls="ward-selector-dropdown" aria-expanded="false">
+        <input type="text" id="ward-selector" name="activeWard" class="form-control form-control-sm ward-picker-select" placeholder="Type or select a ward…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="ward-selector-dropdown" aria-expanded="false">
         <div id="ward-selector-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
       </div>
       <!-- Hidden (along with the rest of .ward-collapsible) while a form is

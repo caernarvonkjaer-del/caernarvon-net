@@ -4858,14 +4858,25 @@ function wardSelectorItems(){
 function wardSelectorShowDropdown(query){
   const input=document.getElementById('ward-selector');
   const dropdown=document.getElementById('ward-selector-dropdown');
-  comboboxRenderDropdown(dropdown,comboboxFilterItems(wardSelectorItems(),query),item=>{
+  const items=comboboxFilterItems(wardSelectorItems(),query);
+  comboboxRenderDropdown(dropdown,items,item=>{
     input.value=item.label;
     input.dataset.wardId=item.wardId;
+    input.dataset.comboIndex='';
+    input.removeAttribute('aria-activedescendant');
+    input.setAttribute('aria-expanded','false');
     comboboxHide(dropdown);
   });
+  [...dropdown.querySelectorAll('[role="option"]')].forEach((option,index)=>{
+    option.id=`ward-selector-option-${index}`;
+  });
+  input.dataset.comboIndex='';
+  input.setAttribute('aria-expanded','true');
 }
 function onWardSelectorInput(){
-  document.getElementById('ward-selector').dataset.wardId='';
+  const input=document.getElementById('ward-selector');
+  input.dataset.wardId='';
+  input.removeAttribute('aria-activedescendant');
   wardSelectorShowDropdown(document.getElementById('ward-selector').value);
 }
 function onWardSelectorFocus(){
@@ -4875,13 +4886,52 @@ function onWardSelectorFocus(){
   wardSelectorShowDropdown('');
 }
 function onWardSelectorKeydown(e){
+  const input=document.getElementById('ward-selector');
   const dropdown=document.getElementById('ward-selector-dropdown');
-  if(e.key==='Escape'){comboboxHide(dropdown);}
-  else if(e.key==='Enter'){e.preventDefault();comboboxHide(dropdown);handleSwitchWardClick();}
+  const options=[...dropdown.querySelectorAll('[role="option"]')];
+  if(e.key==='Escape'){
+    comboboxHide(dropdown);
+    input.dataset.comboIndex='';
+    input.removeAttribute('aria-activedescendant');
+    input.setAttribute('aria-expanded','false');
+  }
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!options.length)return;
+    const current=Number.parseInt(input.dataset.comboIndex,10);
+    const next=Number.isInteger(current)
+      ? (e.key==='ArrowDown' ? Math.min(current+1,options.length-1) : Math.max(current-1,0))
+      : (e.key==='ArrowDown' ? 0 : options.length-1);
+    input.dataset.comboIndex=String(next);
+    input.setAttribute('aria-activedescendant',options[next].id);
+    options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
+  }
+  else if(e.key==='Home'||e.key==='End'){
+    e.preventDefault();
+    if(!options.length)return;
+    const next=e.key==='Home'?0:options.length-1;
+    input.dataset.comboIndex=String(next);
+    input.setAttribute('aria-activedescendant',options[next].id);
+    options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
+  }
+  else if(e.key==='Enter'){
+    e.preventDefault();
+    const current=Number.parseInt(input.dataset.comboIndex,10);
+    if(Number.isInteger(current)&&options[current]){
+      options[current].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
+    }else{
+      comboboxHide(dropdown);
+      input.setAttribute('aria-expanded','false');
+      handleSwitchWardClick();
+    }
+  }
 }
 document.addEventListener('click',e=>{
   const wrap=document.getElementById('ward-selector-wrap');
-  if(wrap&&!wrap.contains(e.target))comboboxHide(document.getElementById('ward-selector-dropdown'));
+  if(wrap&&!wrap.contains(e.target)){
+    comboboxHide(document.getElementById('ward-selector-dropdown'));
+    document.getElementById('ward-selector')?.setAttribute('aria-expanded','false');
+  }
 });
 
 function handleSwitchWardClick(){
