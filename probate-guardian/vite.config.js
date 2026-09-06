@@ -84,6 +84,11 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: portable ? 'dist/portable' : 'dist/web',
       emptyOutDir: true,
+      rollupOptions: portable ? undefined : {
+        output: {
+          entryFileNames: 'assets/[name]-[hash]-v2.js',
+        },
+      },
     },
     plugins: [
       viteStaticCopy({ targets: STATIC_COPY_TARGETS }),
