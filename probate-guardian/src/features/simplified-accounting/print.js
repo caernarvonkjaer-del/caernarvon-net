@@ -11,6 +11,7 @@ import { buildSimplifiedAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+import { getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 
 function buildModelForPreview(D){
   return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -22,7 +23,7 @@ const {
 } = window;
 
 export function pagePrintSimplified(capOver){
-  const errors=validateSimplified();
+  const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -65,7 +66,7 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=validateSimplified();
+  const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const ward=(window.D.wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
   const filename=`${ward}_SimplifiedAccounting.pdf`;

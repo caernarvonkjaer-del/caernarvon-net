@@ -8304,6 +8304,11 @@ function duplicateAnnualRow(arrName,idx,route){
 // single constant key instead.
 const SCHEDULE_DOC_MAX_FILE_BYTES=15*1024*1024; // 15MB/file — base64 inflates ~33% in storage and the .sav backup
 
+async function getSupplementalPdfTools(){
+  if(window.PGSupplementalPdf)return window.PGSupplementalPdf;
+  return import('./src/core/pdf/supplemental-pdf.js');
+}
+
 function scheduleDocPeriodKey(){
   // Guardian wards have no periodFrom/periodTo, so each year is
   // distinguished by activeYearKey instead (falls back to 'initial' for
@@ -8332,23 +8337,85 @@ function fmtFileSize(bytes){
   return (bytes/(1024*1024)).toFixed(1)+' MB';
 }
 
-function handleScheduleDocUpload(scheduleKey,fileList){
+async function handleScheduleDocUpload(scheduleKey,fileList){
   const slot=getScheduleDocSlot(scheduleKey);
   const files=Array.from(fileList||[]);
   const rejected=[];
+  const added=[];
+  const tools=await getSupplementalPdfTools();
   const readers=files.map(f=>new Promise(resolve=>{
-    if(f.size>SCHEDULE_DOC_MAX_FILE_BYTES){rejected.push(f.name);resolve(null);return;}
+    if(!tools.isPdfLikeFile(f)){rejected.push(`${f.name} (PDF files only)`);resolve(null);return;}
+    if(f.size>SCHEDULE_DOC_MAX_FILE_BYTES){rejected.push(`${f.name} (${tools.formatSupplementalPdfLimit()} limit)`);resolve(null);return;}
     const reader=new FileReader();
-    reader.onload=()=>resolve({name:f.name,type:f.type||'application/octet-stream',size:f.size,dataUrl:reader.result,uploadedAt:new Date().toISOString()});
+    reader.onload=async()=>{
+      try{
+        const dataUrl=String(reader.result||'');
+        const bytes=tools.dataUrlToBytes(dataUrl);
+        if(!tools.isPdfBytes(bytes)){rejected.push(`${f.name} (not a readable PDF)`);resolve(null);return;}
+        const digest=await tools.digestBytes(bytes);
+        resolve({
+          id:tools.createSupplementalFileId(),
+          name:f.name,
+          type:'application/pdf',
+          size:bytes.length||f.size,
+          dataUrl:dataUrl.startsWith('data:application/pdf')?dataUrl:dataUrl.replace(/^data:[^;]+;/,'data:application/pdf;'),
+          contentDigest:digest,
+          uploadedAt:new Date().toISOString(),
+          pageCount:0,
+          validationAttempt:1,
+          technicalStatus:'checking',
+          technicalWarnings:[],
+          attestationStatus:'pending',
+          attestedDigest:'',
+          attestedAt:'',
+          attestationTextVersion:1
+        });
+      }catch(e){
+        rejected.push(`${f.name} (${e.message||'could not read file'})`);
+        resolve(null);
+      }
+    };
     reader.onerror=()=>{rejected.push(f.name);resolve(null);};
     reader.readAsDataURL(f);
   }));
-  Promise.all(readers).then(results=>{
-    results.filter(Boolean).forEach(r=>slot.files.push(r));
-    if(rejected.length)alert(`Too large to attach (15MB limit each): ${rejected.join(', ')}`);
+  const results=await Promise.all(readers);
+  results.filter(Boolean).forEach(r=>{slot.files.push(r);added.push(r);});
+  if(rejected.length)alert(`Some supporting documents were not attached: ${rejected.join(', ')}`);
+  if(!added.length){renderPage(currentPage);return;}
+  autoSave();
+  renderPage(currentPage);
+
+  for(const record of added){
+    const currentSlot=getScheduleDocSlot(scheduleKey);
+    const current=currentSlot.files.find(f=>f&&f.id===record.id);
+    if(!current||current.contentDigest!==record.contentDigest||current.validationAttempt!==record.validationAttempt)continue;
+    try{
+      const validation=await tools.validateSupplementalPdfRecord(current);
+      const latest=currentSlot.files.find(f=>f&&f.id===record.id);
+      if(!latest||latest.contentDigest!==record.contentDigest||latest.validationAttempt!==record.validationAttempt)continue;
+      Object.assign(latest,validation);
+      if(latest.attestedDigest!==latest.contentDigest){
+        latest.attestationStatus='pending';
+        latest.attestedDigest='';
+        latest.attestedAt='';
+      }
+    }catch(e){
+      const latest=currentSlot.files.find(f=>f&&f.id===record.id);
+      if(latest&&latest.contentDigest===record.contentDigest&&latest.validationAttempt===record.validationAttempt){
+        Object.assign(latest,{
+          technicalStatus:'blocked',
+          technicalWarnings:[e.message||'The PDF could not be checked.'],
+          pageCount:0,
+          corrupt:true,
+          attestationStatus:'pending',
+          attestedDigest:'',
+          attestedAt:''
+        });
+      }
+    }
     autoSave();
     renderPage(currentPage);
-  });
+  }
 }
 
 function removeScheduleDoc(scheduleKey,idx){
@@ -8358,6 +8425,58 @@ function removeScheduleDoc(scheduleKey,idx){
   renderPage(currentPage);
 }
 
+function setScheduleDocAttestation(scheduleKey,idx,accepted){
+  const slot=getScheduleDocSlot(scheduleKey);
+  const file=slot.files[idx];
+  if(!file)return;
+  if(accepted){
+    if(!['ready','warning'].includes(file.technicalStatus)){
+      alert('This supplemental PDF must finish checks before it can be accepted for filing.');
+      renderPage(currentPage);
+      return;
+    }
+    file.attestationStatus='accepted';
+    file.attestedDigest=file.contentDigest||'';
+    file.attestedAt=new Date().toISOString();
+    file.attestationTextVersion=1;
+  }else{
+    file.attestationStatus='pending';
+    file.attestedDigest='';
+    file.attestedAt='';
+  }
+  autoSave();
+  renderPage(currentPage);
+}
+
+function queueScheduleDocValidation(scheduleKey,slot){
+  (slot.files||[]).forEach(file=>{
+    if(!file||file.technicalStatus!=='checking'||file.__validationQueued)return;
+    file.__validationQueued=true;
+    setTimeout(async()=>{
+      try{
+        const tools=await getSupplementalPdfTools();
+        const attempt=file.validationAttempt||1;
+        const digest=file.contentDigest;
+        const validation=await tools.validateSupplementalPdfRecord(file);
+        const currentSlot=getScheduleDocSlot(scheduleKey);
+        const latest=currentSlot.files.find(f=>f&&f.id===file.id);
+        if(!latest||latest.contentDigest!==digest||(latest.validationAttempt||1)!==attempt)return;
+        Object.assign(latest,validation);
+        latest.__validationQueued=false;
+        if(latest.attestedDigest!==latest.contentDigest){
+          latest.attestationStatus='pending';
+          latest.attestedDigest='';
+          latest.attestedAt='';
+        }
+        autoSave();
+        renderPage(currentPage);
+      }catch(e){
+        file.__validationQueued=false;
+      }
+    },0);
+  });
+}
+
 function updateScheduleComment(scheduleKey,value){
   getScheduleDocSlot(scheduleKey).comment=value;
   autoSave();
@@ -8365,23 +8484,40 @@ function updateScheduleComment(scheduleKey,value){
 
 function renderScheduleDocsSection(scheduleKey){
   const slot=getScheduleDocSlot(scheduleKey);
+  queueScheduleDocValidation(scheduleKey,slot);
   const period=scheduleDocPeriodKey();
   const [pf,pt]=period.split('__');
   const periodNote=activeInventoryType==='guardian'?''
     :(pf||pt?` — accounting period ${pf||'?'} to ${pt||'?'}`:' — set the accounting period on the Cover page to file these by year');
-  const filesHtml=slot.files.length?slot.files.map((f,i)=>`
+  const filesHtml=slot.files.length?slot.files.map((f,i)=>{
+    const status=f.technicalStatus||'pending';
+    const warnings=Array.isArray(f.technicalWarnings)?f.technicalWarnings:[];
+    const attested=f.attestationStatus==='accepted'&&f.attestedDigest&&f.attestedDigest===f.contentDigest;
+    const canAttest=['ready','warning'].includes(status);
+    const statusLabel=status==='checking'?'Checking'
+      :status==='ready'?(attested?'Ready':'Ready - attestation needed')
+      :status==='warning'?(attested?'Warning - accepted':'Warning - review recommended')
+      :status==='blocked'?'Blocked':'Pending review';
+    const statusColor=status==='blocked'?'var(--danger-text)':status==='warning'?'var(--warn-text)':attested?'var(--ok-text)':'var(--ink-3)';
+    return `
     <div class="sched-doc-row">
       <span class="sched-doc-name">${ic('file',14)} ${esc(f.name)}</span>
-      <span class="sched-doc-meta">${fmtFileSize(f.size)}</span>
+      <span class="sched-doc-meta">${fmtFileSize(f.size)}${f.pageCount?` - ${f.pageCount} page${f.pageCount===1?'':'s'}`:''}</span>
+      <span class="sched-doc-meta" style="color:${statusColor};">${esc(statusLabel)}</span>
+      ${warnings.length?`<span class="sched-doc-meta" style="color:var(--warn-text);">${esc(warnings.join(' '))}</span>`:''}
+      <label class="form-check form-check-inline sched-doc-attest">
+        <input class="form-check-input" type="checkbox" data-form-change="schedule-doc-attestation" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}" ${attested?'checked':''} ${canAttest?'':'disabled'}>
+        <span class="form-check-label">I confirm this supplemental PDF is accessible and suitable for filing.</span>
+      </label>
       <a href="${f.dataUrl}" download="${esc(f.name)}" class="btn btn-sm btn-outline-secondary">Download</a>
       <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove supporting document ${esc(f.name)}" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
-    </div>`).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${activeInventoryType==='guardian'?'':' for this period'}.</div>`;
+    </div>`;}).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${activeInventoryType==='guardian'?'':' for this period'}.</div>`;
   const inputId=`sched-doc-input-${scheduleKey}`;
   return `<div class="schedule-docs-section no-print">
     <h2>Supporting Documents${periodNote}</h2>
-    <p class="schedule-docs-hint">Attach receipts, statements, or other records supporting this schedule. Stored on this device only, encrypted with the rest of this ward's data.</p>
-    <input type="file" id="${inputId}" multiple aria-label="Upload supporting documents for ${esc(scheduleKey)}" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
-    <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload File(s)</button>
+    <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.</p>
+    <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for ${esc(scheduleKey)}" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
+    <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload PDF(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
     <h2 class="mt">Comments</h2>
     <textarea class="form-control" rows="3" aria-label="Comments about ${esc(scheduleKey)}" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>

@@ -18,20 +18,22 @@
 To prevent "scanned document / OCR" warnings and satisfy accessibility requirements:
 
 1. **Zero `html2canvas` Rasterization**: The legacy DOM rasterization approach (which captured bitmap images into canvas objects) has been replaced with pure vector and text generation via `src/features/guardian-inventory/pdf-engine.js`.
-2. **True PDF Text Operators**: All text elements, headings, numbers, table cells, signatures, and supporting-document transcripts are emitted as native PDF text streams (`BT ... /F1 ... Tj ... ET`).
+2. **True PDF Text Operators**: All app-generated text elements, headings, numbers, table cells, and signatures are emitted as native PDF text streams (`BT ... /F1 ... Tj ... ET`).
 3. **Structured Intermediate Model**: `src/features/guardian-inventory/pdf-model.js` converts ward data into a typed `FilingSection[]` tree with `PdfBlock[]` items, serving as the single source of truth for:
    - Reading order
    - Outline / bookmark navigation hierarchy
    - Document metadata
    - Table layouts, columns, and data rollups
    - Signature block details
-   - Supporting-document transcript reading order
+   - Supplemental-document insertion points
 
 ### Supporting Documents
 
-Text-only PDF attachments are inserted as tagged Supporting Document Text content. Image-bearing PDF pages occupy a clean, full-page visual replica of the source, without the court form's continuation header, filename banner, or footer. Their tagged Supporting Document Text is placed invisibly on that same page in PDF content order. The text layer is not visually duplicated, but remains selectable and available to assistive technology without losing visual fidelity or adding a separate transcript page.
+Supplemental documents are PDF-only and user-attested. Probate Guardian performs local technical checks, requires the filer to confirm that each supplemental PDF is accessible and suitable for filing, then inserts accepted PDF pages into the finalized filing packet.
 
-For image-only PDFs and image attachments, the visual source page is retained and the local Tesseract OCR worker recognizes English text into the same page's tagged Supporting Document Text layer. The worker, WebAssembly core, and language model are packaged under `lib/tesseract/`, so this fallback makes no runtime network request. OCR is a recognition aid, not proof of accuracy: filers must review names, dates, amounts, and table rows before filing. If OCR produces no text, the PDF emits a tagged notice requiring a human-supplied accessible text equivalent.
+The application preserves supplemental PDF page appearance, page geometry, and native page content streams where supported by `pdf-lib.copyPages()`. It does not OCR, remediate, certify, or structurally merge uploaded documents. In particular, copying uploaded pages into the packet must not be described as preserving the source document's `/StructTreeRoot`, parent tree, source PDF/UA metadata, or conformance claim.
+
+Final print and Save-as-PDF use one finalized bundled PDF. Supplemental files are not embedded as portfolio attachments and no print-time script decides where they appear; the app assembles the ordered packet before the browser print command sees it.
 
 ---
 
@@ -93,7 +95,7 @@ Legacy `useSlashS` values in saved ward files are ignored by the user interface 
 
 ## 5. Tagged PDF / PDF/UA-1 (ISO 14289-1) Conformance
 
-Probate Guardian generates fully compliant **PDF/UA-1 (ISO 14289-1)** documents conforming to WCAG 2.1 AA and Section 508 accessibility standards:
+Probate Guardian generates fully compliant **PDF/UA-1 (ISO 14289-1)** app-authored court-form pages conforming to WCAG 2.1 AA and Section 508 accessibility standards. Uploaded supplemental PDF pages are user-supplied, user-attested, and copied inline for filing; their accessibility conformance remains the filer's responsibility.
 
 ### Structural Tagging & Engine Features:
 

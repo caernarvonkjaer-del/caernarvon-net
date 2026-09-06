@@ -21,7 +21,9 @@ import {
   getCaseCaptionTitle,
 } from './circuit-lookup.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
-import { recognizeSupportingDocument } from './ocr-loader.js';
+import {
+  assertFilingEligibleSupplement,
+} from './supplemental-pdf.js';
 
 export async function createJsPdfInstance() {
   const patchOutlineDestinations = (pdf) => {
@@ -190,6 +192,17 @@ export async function generateCourtFormPdf(model, options = {}) {
           type: file.type || '',
           size: file.size || 0,
           dataUrl: file.dataUrl,
+          id: file.id || '',
+          contentDigest: file.contentDigest || '',
+          attestedDigest: file.attestedDigest || '',
+          technicalStatus: file.technicalStatus || 'pending',
+          technicalWarnings: file.technicalWarnings || [],
+          attestationStatus: file.attestationStatus || 'pending',
+          pageCount: file.pageCount || 0,
+          encrypted: !!file.encrypted,
+          corrupt: !!file.corrupt,
+          removed: !!file.removed,
+          stale: !!file.stale,
         })),
       });
       usedSections.add(section);
@@ -519,6 +532,7 @@ export async function generateCourtFormPdf(model, options = {}) {
         pageNumber: pageNum,
         sourcePageIndex: p - 1,
         dataUrl: String(file.dataUrl || ''),
+        file,
       });
     }
   };
@@ -568,61 +582,9 @@ export async function generateCourtFormPdf(model, options = {}) {
     }
 
     for (const file of files) {
-      const fileName = String(file?.name || 'Supporting document');
-      const mime = String(file?.type || '').toLowerCase();
-      const dataUrl = String(file?.dataUrl || '');
-      const bytes = dataUrlToBytes(dataUrl);
-      const isPdfFile = mime.includes('pdf') || dataUrl.startsWith('data:application/pdf') || isPdfBytes(bytes);
-      const isImageFile = mime.startsWith('image/') || dataUrl.startsWith('data:image/') || isPngBytes(bytes) || isJpegBytes(bytes);
-
-      try {
-        if (isPdfFile) {
-          const pdf = await loadUploadedPdf(file);
-          await renderUploadedPdfPages(pdf, file);
-        } else if (isImageFile) {
-          startNewAttachmentPage();
-          const lines = await recognizeSupportingDocument(dataUrl);
-          const imageDataUrl = dataUrl.startsWith('data:image/')
-            ? dataUrl
-            : `data:${isPngBytes(bytes) ? 'image/png' : 'image/jpeg'};base64,${String(dataUrl).split(',')[1] || ''}`;
-          const size = await loadImageSize(imageDataUrl);
-          const layout = getSupportingDocumentImageLayout(size.width, size.height, true);
-          renderSupportingDocumentText(fileName, 1, lines, sectionTitle, parentNode, layout);
-          renderSupportingDocumentImage(imageDataUrl, layout, isPngBytes(bytes) ? 'PNG' : 'JPEG');
-        } else {
-          startNewPage(sectionTitle);
-          renderSupportingFileName(fileName, sectionTitle, parentNode);
-          const unsupportedNode = structureTree.addStructureElement({
-            tag: 'P',
-            pageNumber: pageNum,
-            isLeaf: true,
-            parent: parentNode,
-          });
-          writeMarkedContentStart(doc, 'P', unsupportedNode.mcid);
-          doc.setFont('PGSans', 'italic');
-          doc.setFontSize(8);
-          doc.setTextColor(100, 110, 125);
-          doc.text('This file type cannot be displayed inline in the generated PDF.', margin, curY + 9);
-          writeMarkedContentEnd(doc);
-          curY += 16;
-        }
-      } catch (e) {
-        if (!attachmentPageNumbers.has(pageNum)) startNewPage(sectionTitle);
-        renderSupportingFileName(fileName, sectionTitle, parentNode);
-        const errorNode = structureTree.addStructureElement({
-          tag: 'P',
-          pageNumber: pageNum,
-          isLeaf: true,
-          parent: parentNode,
-        });
-        writeMarkedContentStart(doc, 'P', errorNode.mcid);
-        doc.setFont('PGSans', 'italic');
-        doc.setFontSize(8);
-        doc.setTextColor(128, 0, 32);
-        doc.text(`Could not render inline: ${e.message || 'unsupported document'}`, margin, curY + 9);
-        writeMarkedContentEnd(doc);
-        curY += 16;
-      }
+      assertFilingEligibleSupplement(file);
+      const pdf = await loadUploadedPdf(file);
+      await renderUploadedPdfPages(pdf, file);
     }
   };
 

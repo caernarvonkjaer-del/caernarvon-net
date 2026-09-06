@@ -98,9 +98,14 @@ export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-co
 // and it structurally can't repeat the .mobile-topbar-overlay bug class,
 // since the new tab never contains any app chrome to begin with.
 export async function printGeneratedPdf(buildModel, D) {
-  const model = buildModel(D);
-  const doc = await generateCourtFormPdf(model);
-  const pdfBytes = await finalizeCourtFormPdf(doc);
-  const blobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
-  window.open(blobUrl, '_blank');
+  try {
+    const model = buildModel(D);
+    const doc = await generateCourtFormPdf(model);
+    const pdfBytes = await finalizeCourtFormPdf(doc);
+    const blobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+    window.open(blobUrl, '_blank');
+  } catch (e) {
+    console.error('PDF print failed', e);
+    alert(`PDF print failed: ${e.message || e}`);
+  }
 }

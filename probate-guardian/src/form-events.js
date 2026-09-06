@@ -1,3 +1,7 @@
+import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
+
+window.PGSupplementalPdf = SupplementalPdf;
+
 const formatters = {
   address: window.formatAddress,
   'bar-number': window.formatBarNumber,
@@ -72,6 +76,13 @@ document.addEventListener('change', (event) => {
   if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-upload' && control.files) {
     window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
+  }
+  if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-attestation') {
+    window.setScheduleDocAttestation(
+      control.dataset.scheduleKey,
+      Number.parseInt(control.dataset.documentIndex, 10),
+      control.checked
+    );
   }
   if (control instanceof HTMLSelectElement && control.dataset.formPath) persistFormControl(control);
 });

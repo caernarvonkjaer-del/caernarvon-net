@@ -238,12 +238,12 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const pdfInspection = await page.evaluate(async () => {
       const { buildVerifiedInventoryModel, createJsPdfInstance, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
+      const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
       const attachmentDoc = await createJsPdfInstance();
       attachmentDoc.setFontSize(16);
       attachmentDoc.text('Uploaded bank statement support page', 72, 120);
-      const attachmentDataUrl = attachmentDoc
-        .output('datauristring')
-        .replace('data:application/pdf;', 'data:application/octet-stream;');
+      const attachmentDataUrl = attachmentDoc.output('datauristring');
+      const attachmentDigest = await digestDataUrl(attachmentDataUrl);
 
       const model = buildVerifiedInventoryModel({
         wardName: 'Harold Thomas Bennett',
@@ -267,9 +267,14 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
               comment: 'Statement verifies the restricted depository balance.',
               files: [{
                 name: 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf',
-                type: 'application/octet-stream',
+                type: 'application/pdf',
                 size: 3600,
                 dataUrl: attachmentDataUrl,
+                contentDigest: attachmentDigest,
+                attestedDigest: attachmentDigest,
+                technicalStatus: 'ready',
+                attestationStatus: 'accepted',
+                pageCount: 1,
               }],
             },
           },
@@ -304,9 +309,12 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const pdfInspection = await page.evaluate(async () => {
       const { buildPlanAnnualModel, createJsPdfInstance, generateCourtFormPdf } = await (window as any).loadPlanAnnualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
+      const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
       const attachmentDoc = await createJsPdfInstance();
       attachmentDoc.setFontSize(16);
       attachmentDoc.text('Uploaded annual plan support page', 72, 120);
+      const attachmentDataUrl = attachmentDoc.output('datauristring');
+      const attachmentDigest = await digestDataUrl(attachmentDataUrl);
       const sourceData = {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
@@ -317,8 +325,14 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
             initial: {
               files: [{
                 name: 'annual_plan_residence_support.pdf',
-                type: 'application/octet-stream',
-                dataUrl: attachmentDoc.output('datauristring').replace('data:application/pdf;', 'data:application/octet-stream;'),
+                type: 'application/pdf',
+                size: 3600,
+                dataUrl: attachmentDataUrl,
+                contentDigest: attachmentDigest,
+                attestedDigest: attachmentDigest,
+                technicalStatus: 'ready',
+                attestationStatus: 'accepted',
+                pageCount: 1,
               }],
             },
           },
@@ -336,11 +350,10 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(pages[documentTextPage!.pageNumber - 2]?.text).toContain('Question 1');
   });
 
-  test('OCRs image-only supporting documents into tagged selectable text', async ({ page }) => {
-    test.setTimeout(180000);
+  test('rejects image-only supporting documents from filing-packet generation', async ({ page }) => {
     await freshStartNoPassword(page);
 
-    const pdfInspection = await page.evaluate(async () => {
+    const errorMessage = await page.evaluate(async () => {
       const canvas = document.createElement('canvas');
       canvas.width = 1200;
       canvas.height = 300;
@@ -355,7 +368,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
       const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
       const model = buildVerifiedInventoryModel({
-        wardName: 'OCR Attachment Ward',
+        wardName: 'Image Attachment Ward',
         caseNumber: '26-002487-GD',
         county: 'Pasco',
         scheduleDocs: {
@@ -366,20 +379,14 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
           },
         },
       }, { signatureStyle: 'typed', printDate: '2026-09-06' });
-      const doc = await generateVerifiedInventoryPdf(model);
-      return { rawPdfString: doc.output() };
+      try {
+        await generateVerifiedInventoryPdf(model);
+        return '';
+      } catch (e) {
+        return String((e as Error).message || e);
+      }
     });
 
-    const extractedText = await extractPdfText(pdfInspection.rawPdfString);
-    expect(extractedText).toMatch(/ACCOUNT BALANCE.*12,842\.19/);
-    expect(extractedText).toMatch(/Statement Date.*August.*31.*2026/);
-    expect(pdfInspection.rawPdfString).toContain('/Subtype /Image');
-    expect(pdfInspection.rawPdfString).toContain('/T (Supporting Document Text: scanned-bank-statement.png)');
-    const pages = await inspectPdfPages(pdfInspection.rawPdfString);
-    const visualPage = pages.find(pageInfo => pageInfo.text.includes('ACCOUNT BALANCE $12,842.19') && pageInfo.imageCount > 0);
-    const transcriptPage = pages.find(pageInfo => pageInfo.text.includes('ACCOUNT BALANCE $12,842.19') && pageInfo.imageCount === 0);
-    expect(visualPage?.imageCount).toBeGreaterThan(0);
-    expect(transcriptPage).toBeFalsy();
-    expect(pdfInspection.rawPdfString).toContain('3 Tr');
+    expect(errorMessage).toContain('not a PDF');
   });
 });

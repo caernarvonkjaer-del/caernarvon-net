@@ -14,6 +14,7 @@ import { buildPlanInitialModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+import { getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -58,7 +59,7 @@ export function planReadinessChecksInitial(){
 }
 
 export function pagePrintPlanInitial(){
-  const errors=validatePlanInitial();
+  const errors=[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -82,7 +83,7 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=validatePlanInitial();
+  const errors=[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const ward=(window.D.wardName||'InitialGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
   try{

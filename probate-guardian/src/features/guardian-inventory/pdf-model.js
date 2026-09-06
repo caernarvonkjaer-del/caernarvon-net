@@ -90,6 +90,17 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         type: file.type || '',
         size: file.size || 0,
         dataUrl: file.dataUrl,
+        id: file.id || '',
+        contentDigest: file.contentDigest || '',
+        attestedDigest: file.attestedDigest || '',
+        technicalStatus: file.technicalStatus || 'pending',
+        technicalWarnings: file.technicalWarnings || [],
+        attestationStatus: file.attestationStatus || 'pending',
+        pageCount: file.pageCount || 0,
+        encrypted: !!file.encrypted,
+        corrupt: !!file.corrupt,
+        removed: !!file.removed,
+        stale: !!file.stale,
       })),
     }];
   };

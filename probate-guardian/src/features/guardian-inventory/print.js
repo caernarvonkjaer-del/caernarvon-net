@@ -14,6 +14,7 @@ import { buildVerifiedInventoryModel } from './pdf-model.js';
 import { generateVerifiedInventoryPdf } from './pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+import { getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -27,7 +28,7 @@ const {
 } = window;
 
 export function pagePrint(capOver){
-  const errors=validateGuardian();
+  const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
   highlightErrors(errors);
   const errPanel=errors.length?validationPanel(errors):'';
   const canExport=errors.length===0;
@@ -61,7 +62,7 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=validateGuardian();
+  const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const stat=document.getElementById('export-status');
   if(stat)stat.textContent='Generating PDF…';
