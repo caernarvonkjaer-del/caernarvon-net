@@ -576,9 +576,12 @@ Local Playwright note:
   npx.cmd playwright test --reporter=list
   ```
 
+## Decisions
+
+1. Two-digit years are rejected for legal-form dates. Users must enter four-digit years.
+2. Name/address auto-capitalization remains the default.
+3. Disabled Next guidance shows all missing-field items for the current section.
+
 ## Open Questions
 
-1. Should two-digit years use a fixed pivot, such as `00-49 => 2000-2049` and `50-99 => 1950-1999`, or should the app reject two-digit years entirely for legal forms?
-2. Should name/address auto-capitalization remain default, move to blur-only, or become opt-in per field?
-3. How much local missing-field detail is useful before the page feels noisy: first 3 items, first 5 items, or all blockers for short sections?
-4. Should field jump links be part of the first implementation, or a follow-up once validation messages have stable field IDs?
+1. Should field jump links be part of the first implementation, or a follow-up once validation messages have stable field IDs?
