@@ -3,6 +3,7 @@
 // metadata, reading order, and electronic signature formatting.
 
 import { yesNoText } from '../../core/form/form-contract.js';
+import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -67,7 +68,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   };
 
   const isConfirmedEmpty = (key) => !!(d.scheduleNoItems && d.scheduleNoItems[key]);
-  const activeDocPeriod = d.activeYearKey || 'initial';
+  const activeDocPeriod = resolveActiveDocPeriod(d);
   const scheduleDocSlot = (key) => {
     const scheduleDocs = d.scheduleDocs && d.scheduleDocs[key];
     if (!scheduleDocs) return { comment: '', files: [] };

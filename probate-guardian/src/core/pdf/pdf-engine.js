@@ -23,6 +23,7 @@ import {
 import { ensurePdfjs } from './pdfjs-loader.js';
 import {
   assertFilingEligibleSupplement,
+  resolveActiveDocPeriod,
 } from './supplemental-pdf.js';
 
 export async function createJsPdfInstance() {
@@ -169,7 +170,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     const aliases = scheduleSectionAliases[metadata.formName] || {};
     const usedSections = new Set();
     const entries = Object.entries(scheduleDocs);
-    const activePeriod = sourceData.activeYearKey || 'initial';
+    const activePeriod = resolveActiveDocPeriod(sourceData);
     const getSlot = (value) => {
       if (!value || typeof value !== 'object') return { comment: '', files: [] };
       if (Array.isArray(value.files) || value.comment) return value;

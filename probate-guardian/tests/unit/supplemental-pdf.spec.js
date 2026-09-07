@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import {
+  collectActiveSupplementalFiles,
   getSupplementalFilingIssues,
   isFilingEligibleSupplement,
+  resolveActiveDocPeriod,
   SUPPLEMENTAL_PDF_LIMITS,
 } from '../../src/core/pdf/supplemental-pdf.js';
 
@@ -21,6 +23,21 @@ function eligibleFile(overrides = {}) {
     ...overrides,
   };
 }
+
+describe('resolveActiveDocPeriod', () => {
+  test('resolves activeYearKey when present (multi-year inventory)', () => {
+    expect(resolveActiveDocPeriod({ activeYearKey: 'Year 2' })).toBe('Year 2');
+  });
+
+  test('resolves periodFrom__periodTo for accounting forms', () => {
+    expect(resolveActiveDocPeriod({ periodFrom: '2026-07-10', periodTo: '2027-07-09' })).toBe('2026-07-10__2027-07-09');
+  });
+
+  test('falls back to initial when neither is set or input is empty', () => {
+    expect(resolveActiveDocPeriod({})).toBe('initial');
+    expect(resolveActiveDocPeriod(null)).toBe('initial');
+  });
+});
 
 describe('supplemental PDF filing eligibility', () => {
   test('accepts a ready PDF record after technical checks pass', () => {
@@ -85,5 +102,26 @@ describe('supplemental PDF filing eligibility', () => {
     });
 
     expect(issues).toEqual(['huge.pdf has an invalid or over-limit page count.']);
+  });
+
+  test('collects supplemental files keyed by accounting period for Annual/Trust accountings', () => {
+    const sourceData = {
+      periodFrom: '2026-07-10',
+      periodTo: '2027-07-09',
+      scheduleDocs: {
+        schA: {
+          '2026-07-10__2027-07-09': {
+            files: [eligibleFile({ id: 'schA-current', name: 'current_period_statement.pdf' })],
+          },
+          '2025-07-10__2026-07-09': {
+            files: [eligibleFile({ id: 'schA-prior', name: 'prior_period_statement.pdf' })],
+          },
+        },
+      },
+    };
+
+    const files = collectActiveSupplementalFiles(sourceData);
+    expect(files).toHaveLength(1);
+    expect(files[0].name).toBe('current_period_statement.pdf');
   });
 });

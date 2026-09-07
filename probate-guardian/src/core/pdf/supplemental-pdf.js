@@ -109,11 +109,19 @@ export function summarizeSupplementTotals(files, limits = SUPPLEMENTAL_PDF_LIMIT
   };
 }
 
+export function resolveActiveDocPeriod(sourceData) {
+  if (!sourceData || typeof sourceData !== 'object') return 'initial';
+  if (sourceData.activeYearKey) return sourceData.activeYearKey;
+  if (sourceData.periodFrom || sourceData.periodTo) {
+    return `${sourceData.periodFrom || ''}__${sourceData.periodTo || ''}`;
+  }
+  return 'initial';
+}
+
 export function collectActiveSupplementalFiles(sourceData) {
   const scheduleDocs = sourceData?.scheduleDocs;
   if (!scheduleDocs || typeof scheduleDocs !== 'object') return [];
-  const activePeriod = sourceData.activeYearKey
-    || (sourceData.periodFrom || sourceData.periodTo ? `${sourceData.periodFrom || ''}__${sourceData.periodTo || ''}` : 'initial');
+  const activePeriod = resolveActiveDocPeriod(sourceData);
   const files = [];
   for (const value of Object.values(scheduleDocs)) {
     if (!value || typeof value !== 'object') continue;
