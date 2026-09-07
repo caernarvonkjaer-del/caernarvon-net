@@ -38,10 +38,45 @@ describe('date-parser', () => {
     expect(parseFlexibleDate('1st January 2026')).toBe('2026-01-01');
   });
 
+  it('parses unpunctuated 8-digit dates (MMDDYYYY and YYYYMMDD)', () => {
+    // Standard MMDDYYYY
+    expect(parseFlexibleDate('07102027')).toBe('2027-07-10');
+    expect(parseFlexibleDate('02142026')).toBe('2026-02-14');
+    expect(parseFlexibleDate('12312025')).toBe('2025-12-31');
+    expect(parseFlexibleDate('02292024')).toBe('2024-02-29'); // Leap year
+
+    // Standard YYYYMMDD
+    expect(parseFlexibleDate('20270710')).toBe('2027-07-10');
+    expect(parseFlexibleDate('20260214')).toBe('2026-02-14');
+  });
+
+  it('parses unpunctuated 7-digit dates (MDDYYYY)', () => {
+    expect(parseFlexibleDate('7102027')).toBe('2027-07-10');
+    expect(parseFlexibleDate('2142026')).toBe('2026-02-14');
+    expect(parseFlexibleDate('5012026')).toBe('2026-05-01');
+  });
+
+  it('parses dot and space separated date formats', () => {
+    expect(parseFlexibleDate('07.10.2027')).toBe('2027-07-10');
+    expect(parseFlexibleDate('7.10.2027')).toBe('2027-07-10');
+    expect(parseFlexibleDate('2027.07.10')).toBe('2027-07-10');
+    expect(parseFlexibleDate('07 10 2027')).toBe('2027-07-10');
+    expect(parseFlexibleDate('2027 07 10')).toBe('2027-07-10');
+  });
+
+  it('strictly rejects invalid unpunctuated 8-digit dates', () => {
+    expect(parseFlexibleDate('13012026')).toBeNull(); // Month 13
+    expect(parseFlexibleDate('00102026')).toBeNull(); // Month 0
+    expect(parseFlexibleDate('02302026')).toBeNull(); // Feb 30
+    expect(parseFlexibleDate('02292026')).toBeNull(); // Feb 29 non-leap year
+    expect(parseFlexibleDate('07322026')).toBeNull(); // Day 32
+  });
+
   it('strictly rejects 2-digit years to prevent legal ambiguity', () => {
     expect(parseFlexibleDate('02/14/26')).toBeNull();
     expect(parseFlexibleDate('2/14/26')).toBeNull();
     expect(parseFlexibleDate('Feb 14, 26')).toBeNull();
+    expect(parseFlexibleDate('071026')).toBeNull();
   });
 
   it('rejects impossible calendar dates', () => {

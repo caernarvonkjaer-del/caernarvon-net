@@ -103,6 +103,41 @@ describe('form-contract', () => {
       expect(window._transientDrafts.periodFrom).toBeUndefined();
     });
 
+    it('auto-masks unpunctuated 8-digit dates live during input and commits on blur', () => {
+      const input = createMockInput({
+        dataset: { fieldPath: 'periodTo', fieldKind: 'date' },
+        value: '07102027',
+      });
+
+      // 1. writeDraftValue (input event with 8 digits)
+      writeDraftValue(input);
+      // Automatically formatted to display format live
+      expect(input.value).toBe('07/10/2027');
+      expect(window._transientDrafts.periodTo).toBe('07/10/2027');
+      expect(window.D.periodTo).toBeUndefined();
+
+      // 2. finalizeFieldValue (blur event)
+      finalizeFieldValue(input);
+      expect(window.D.periodTo).toBe('2027-07-10');
+      expect(input.value).toBe('07/10/2027');
+      expect(input.hasAttribute('aria-invalid')).toBe(false);
+      expect(input.classList.contains('is-invalid')).toBe(false);
+      expect(window._transientDrafts.periodTo).toBeUndefined();
+    });
+
+    it('canonicalizes unpunctuated 8-digit dates on blur even if unmasked', () => {
+      const input = createMockInput({
+        dataset: { fieldPath: 'gid', fieldKind: 'date' },
+        value: '07102026',
+      });
+
+      finalizeFieldValue(input);
+      expect(window.D.gid).toBe('2026-07-10');
+      expect(input.value).toBe('07/10/2026');
+      expect(input.hasAttribute('aria-invalid')).toBe(false);
+      expect(input.classList.contains('is-invalid')).toBe(false);
+    });
+
     it('sets aria-invalid on blur when date text cannot be parsed', () => {
       const input = createMockInput({
         dataset: { fieldPath: 'periodFrom', fieldKind: 'date' },
@@ -112,6 +147,19 @@ describe('form-contract', () => {
       finalizeFieldValue(input);
       expect(window.D.periodFrom).toBe('');
       expect(input.value).toBe('02/30/2026'); // stays visible
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(input.classList.contains('is-invalid')).toBe(true);
+    });
+
+    it('sets aria-invalid on blur when 8-digit unpunctuated date is impossible calendar date', () => {
+      const input = createMockInput({
+        dataset: { fieldPath: 'periodFrom', fieldKind: 'date' },
+        value: '13012026', // invalid month 13
+      });
+
+      finalizeFieldValue(input);
+      expect(window.D.periodFrom).toBe('');
+      expect(input.value).toBe('13012026');
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(input.classList.contains('is-invalid')).toBe(true);
     });

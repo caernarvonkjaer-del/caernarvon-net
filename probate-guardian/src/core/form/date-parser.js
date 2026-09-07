@@ -40,38 +40,68 @@ export function parseFlexibleDate(rawStr) {
   let month = 0;
   let day = 0;
 
-  // 1. ISO format: YYYY-MM-DD
-  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  // 1. ISO format: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, YYYY MM DD
+  const isoMatch = s.match(/^(\d{4})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{1,2})$/);
   if (isoMatch) {
     year = Number.parseInt(isoMatch[1], 10);
     month = Number.parseInt(isoMatch[2], 10);
     day = Number.parseInt(isoMatch[3], 10);
   } else {
-    // 2. US slash or dash format: MM/DD/YYYY or M/D/YYYY
-    const usMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    // 2. US delimited format: MM/DD/YYYY, M/D/YYYY, MM-DD-YYYY, MM.DD.YYYY, MM DD YYYY
+    const usMatch = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{4})$/);
     if (usMatch) {
       month = Number.parseInt(usMatch[1], 10);
       day = Number.parseInt(usMatch[2], 10);
       year = Number.parseInt(usMatch[3], 10);
     } else {
-      // 3. Month name first: "Feb 14, 2026", "February 14 2026", "Feb. 14th, 2026"
-      const textMonthMatch = s.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/);
-      if (textMonthMatch) {
-        const mKey = textMonthMatch[1].toLowerCase();
-        month = MONTH_MAP[mKey] || 0;
-        day = Number.parseInt(textMonthMatch[2], 10);
-        year = Number.parseInt(textMonthMatch[3], 10);
-      } else {
-        // 4. Day first text month: "14 Feb 2026", "14th February, 2026"
-        const dayFirstMatch = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\.?,?\s+(\d{4})$/);
-        if (dayFirstMatch) {
-          day = Number.parseInt(dayFirstMatch[1], 10);
-          const mKey = dayFirstMatch[2].toLowerCase();
-          month = MONTH_MAP[mKey] || 0;
-          year = Number.parseInt(dayFirstMatch[3], 10);
+      // 3. Unpunctuated 8-digit numeric format: MMDDYYYY (e.g. 07102027) or YYYYMMDD (e.g. 20270710)
+      const digits8Match = s.match(/^(\d{8})$/);
+      if (digits8Match) {
+        const rawDigits = digits8Match[1];
+        const last4 = Number.parseInt(rawDigits.slice(4, 8), 10);
+        const first4 = Number.parseInt(rawDigits.slice(0, 4), 10);
+
+        if (last4 >= 1900 && last4 <= 2100) {
+          // MMDDYYYY
+          month = Number.parseInt(rawDigits.slice(0, 2), 10);
+          day = Number.parseInt(rawDigits.slice(2, 4), 10);
+          year = last4;
+        } else if (first4 >= 1900 && first4 <= 2100) {
+          // YYYYMMDD
+          year = first4;
+          month = Number.parseInt(rawDigits.slice(4, 6), 10);
+          day = Number.parseInt(rawDigits.slice(6, 8), 10);
         } else {
-          // Reject any unsupported or 2-digit year formats
           return null;
+        }
+      } else {
+        // 4. Unpunctuated 7-digit numeric format: MDDYYYY (e.g. 7102027)
+        const digits7Match = s.match(/^(\d{1})(\d{2})(\d{4})$/);
+        if (digits7Match) {
+          month = Number.parseInt(digits7Match[1], 10);
+          day = Number.parseInt(digits7Match[2], 10);
+          year = Number.parseInt(digits7Match[3], 10);
+        } else {
+          // 5. Month name first: "Feb 14, 2026", "February 14 2026", "Feb. 14th, 2026"
+          const textMonthMatch = s.match(/^([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/);
+          if (textMonthMatch) {
+            const mKey = textMonthMatch[1].toLowerCase();
+            month = MONTH_MAP[mKey] || 0;
+            day = Number.parseInt(textMonthMatch[2], 10);
+            year = Number.parseInt(textMonthMatch[3], 10);
+          } else {
+            // 6. Day first text month: "14 Feb 2026", "14th February, 2026"
+            const dayFirstMatch = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\.?,?\s+(\d{4})$/);
+            if (dayFirstMatch) {
+              day = Number.parseInt(dayFirstMatch[1], 10);
+              const mKey = dayFirstMatch[2].toLowerCase();
+              month = MONTH_MAP[mKey] || 0;
+              year = Number.parseInt(dayFirstMatch[3], 10);
+            } else {
+              // Reject any unsupported or 2-digit year formats
+              return null;
+            }
+          }
         }
       }
     }

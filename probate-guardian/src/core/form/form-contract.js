@@ -128,6 +128,15 @@ export function writeDraftValue(control, options = {}) {
     : control.value;
 
   if (kind === 'date') {
+    // If user typed or pasted 8 unpunctuated digits (or 7 digits), auto-format it live in the control
+    if (/^\d{8}$/.test(rawValue) || /^\d{7}$/.test(rawValue)) {
+      const parsed = parseFlexibleDate(rawValue);
+      if (parsed) {
+        control.value = formatDisplayDate(parsed);
+        window._transientDrafts[path] = control.value;
+        return;
+      }
+    }
     // Keep draft in DOM / transient store during active typing; do not leak unparsed text into window.D
     window._transientDrafts[path] = rawValue;
     return;

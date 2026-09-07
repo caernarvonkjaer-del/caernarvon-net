@@ -114,4 +114,40 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await expect(liveRegion).toHaveAttribute('aria-live', 'polite');
     await expect(liveRegion).toContainText('Preview ready.');
   });
+
+  test('8-digit unpunctuated date input auto-masks on typing and commits valid canonical date on blur across forms', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Harold Annual Date Ward', 'annual');
+
+    // On Annual Accounting cover page
+    const periodFromInput = page.locator('[data-field-path="periodFrom"]');
+    const periodToInput = page.locator('[data-field-path="periodTo"]');
+    await expect(periodFromInput).toBeVisible();
+    await expect(periodToInput).toBeVisible();
+
+    // Type 8 unpunctuated digits: 07102026 into Period From
+    await periodFromInput.focus();
+    await periodFromInput.fill('07102026');
+    // Instantly formatted to 07/10/2026 live
+    await expect(periodFromInput).toHaveValue('07/10/2026');
+    await periodFromInput.blur();
+    await expect(periodFromInput).toHaveValue('07/10/2026');
+    expect(await periodFromInput.getAttribute('aria-invalid')).toBeNull();
+
+    // Type 8 unpunctuated digits: 07102027 into Period To
+    await periodToInput.focus();
+    await periodToInput.fill('07102027');
+    await expect(periodToInput).toHaveValue('07/10/2027');
+    await periodToInput.blur();
+    await expect(periodToInput).toHaveValue('07/10/2027');
+    expect(await periodToInput.getAttribute('aria-invalid')).toBeNull();
+
+    // Verify stored canonical state in window.D
+    const storedState = await page.evaluate(() => ({
+      from: (window as any).D.periodFrom,
+      to: (window as any).D.periodTo,
+    }));
+    expect(storedState.from).toBe('2026-07-10');
+    expect(storedState.to).toBe('2027-07-10');
+  });
 });
