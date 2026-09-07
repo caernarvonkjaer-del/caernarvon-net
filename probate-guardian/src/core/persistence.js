@@ -15,7 +15,7 @@ export function flushPendingSave() {
   return window.flushPendingSave();
 }
 
-/** Schedules persistence for a ward already live in guardianData (legacy-app.js:2254). */
+/** Schedules persistence for a ward already live in caseFile (legacy-app.js:2254). */
 export function saveWardToState(ward) {
   return window.saveWardToState(ward);
 }

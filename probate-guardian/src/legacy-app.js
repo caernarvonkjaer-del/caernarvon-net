@@ -160,14 +160,17 @@ function formDisplayName(type){
   return (INVENTORY_TYPES[type] && INVENTORY_TYPES[type].name) || 'Accounting';
 }
 
-// Guardian-level data structure
-let guardianData = {
+// Case-level data structure. `parties` is unused so far -- reserved for the
+// shared party-record model (a later phase); every identity field still
+// lives inline on each ward for now, exactly as it always has.
+let caseFile = {
   guardianName: '',
   guardianEmail: '',
   wards: [],
+  parties: [],
   activeWardId: null
 };
-window.guardianData = guardianData;
+window.caseFile = caseFile;
 
 // ═══════════════════════════════════════════════════════
 // HELP SYSTEM
@@ -389,7 +392,7 @@ function showContextualHelp(){
 
 function updateHelpContext(){
   // Auto-detect the correct help context based on current state
-  if(!guardianData.activeWardId){
+  if(!caseFile.activeWardId){
     // At dashboard or no ward yet
     currentHelpContext='default';
   }else if(activeInventoryType==='guardian'){
@@ -909,13 +912,6 @@ let currentPage = '/';
 function getCurrentPage(){return currentPage;}
 let _visitedPages = new Set(); // Track which pages user has visited
 let _dirtySinceExport = false; // true once data changes after the last .sav export
-// Wards edited via saveWardToState() while NOT the active ward (dashboard
-// archive toggle, workflow status/assignee -- see toggleDashboardWardArchived()
-// and updateDashboardWorkflow() in src/features/dashboard/index.js) still need
-// their own file written; saveData()'s active-ward branch alone never touches
-// them. Cleared as each ward's own file (or a full archive covering it) is
-// successfully written.
-let _dirtyWardIds = new Set();
 let _autoExportTimer = null;
 let _lastSavedTickTimer = null;
 let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appState
@@ -926,7 +922,7 @@ window.PG_APP_VERSION = '1.5.30';
 // STORAGE STRATEGY — canonical .sav file plus temporary recovery
 // ═══════════════════════════════════════════════════════
 //
-// Live case data is held in guardianData and the containers below. A .sav
+// Live case data is held in caseFile and the containers below. A .sav
 // file is the authoritative durable record and receives full-state writes.
 //
 // Browser storage has two current, limited uses:
@@ -936,8 +932,6 @@ window.PG_APP_VERSION = '1.5.30';
 //   - pg-launch-pref holds a has-opened flag and, where supported, the last
 //     FileSystemFileHandle. It never stores the file's contents.
 //
-// runLegacyBrowserStorageMigrationIfNeeded() separately reads and removes
-// data left by older versions in ProbateGuardian/localStorage/sessionStorage.
 // The Tauri build also maintains an encrypted best-effort file backup.
 // ═══════════════════════════════════════════════════════
 
@@ -945,20 +939,6 @@ let _appState = {};        // key -> value; replaces the old `appState` IDB stor
 let _templateCache = {};   // type -> base64; replaces the old `templates` IDB store
 let _auditLogEntries = []; // {id, timestamp, eventType, details, success}; replaces `auditLog`
 let _auditLogNextId = 1;
-
-// Read-only identifiers for migrating storage created by older releases.
-const LEGACY_DB_NAME = 'ProbateGuardian';
-const LEGACY_DB_VERSION = 3;
-const LEGACY_STORES = { wards:'wards', appState:'appState', templates:'templates', auditLog:'auditLog' };
-const LEGACY_KEYS = {
-  guardian: 'guardianInventory_v2',
-  simplified: 'simplifiedAccounting_v1',
-  annual: 'annualAccounting_v1',
-  migrationComplete: 'probateGuardian_migrationDone',
-  guardianTemplate: '_guardianTemplateB64',
-  simplifiedTemplate: '_simplifiedTemplateB64',
-  annualTemplate: '_annualTemplateB64'
-};
 
 // ═══════════════════════════════════════════════════════
 // COMMON HELPERS
@@ -1201,7 +1181,7 @@ function sanitizeObjectData(obj){
 
 // In-place counterpart to sanitizeObjectData, for a caller holding a live
 // reference that must keep its identity — window.D during an Excel import
-// is literally the object sitting in guardianData.wards, and sanitizeObjectData
+// is literally the object sitting in caseFile.wards, and sanitizeObjectData
 // returning a NEW object would silently detach window.D from that array
 // entry, so the next saveData() would persist the OLD, un-sanitized ward.
 // importExcelFile builds a fresh object and can use sanitizeObjectData
@@ -1884,10 +1864,6 @@ async function decryptJSON(packed){
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
-// Legacy plaintext wards are handled by
-// runLegacyBrowserStorageMigrationIfNeeded() before this unlock flow. The
-// current recovery and launch-preference databases use separate names.
-
 // Decides whether the user needs to create a master password (fresh install,
 // or an existing pre-encryption install with plaintext wards) or unlock with
 // one that's already set up, then blocks until a valid key is in memory.
@@ -1934,7 +1910,7 @@ async function ensureUnlocked(skipAutoUnlock){
       updateLockButtonVisibility();
       return; // no password, no encryption key, nothing further to do
     }
-    await promptCreatePassword(guardianData.wards.length>0);
+    await promptCreatePassword(caseFile.wards.length>0);
     updateLockButtonVisibility();
     return;
   }
@@ -1964,7 +1940,7 @@ async function ensureUnlocked(skipAutoUnlock){
     await promptUnlock(salt,verifier);
     return;
   }
-  await promptCreatePassword(guardianData.wards.length>0);
+  await promptCreatePassword(caseFile.wards.length>0);
 }
 
 let _securityChoiceResolve=null;
@@ -2197,18 +2173,15 @@ async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
   await flushPendingSave();
   if (window.releaseWardLock) await window.releaseWardLock();
-  const activeWardIdBefore=guardianData.activeWardId;
-  const lockedWardHandle=activeWardIdBefore?await loadWardZipHandle(activeWardIdBefore):null;
-  const lockedArchiveHandle=await loadArchiveZipHandle();
+  const handleToReload=await loadCaseFileHandle();
   _cryptoKey=null;
-  guardianData={guardianName:'',guardianEmail:'',wards:[],activeWardId:null};
-  window.guardianData=guardianData;
+  caseFile={guardianName:'',guardianEmail:'',wards:[],parties:[],activeWardId:null};
+  window.caseFile=caseFile;
   window.D={};
   activeInventoryType=null;
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
   await ensureUnlocked(true);
-  const handleToReload=lockedWardHandle||lockedArchiveHandle;
   if(handleToReload){
     // Rebuild memory from the open .sav file now that the key is available.
     try{
@@ -2217,12 +2190,7 @@ async function lockApp(){
       const manifestEntry=zip.file('manifest.json');
       if(manifestEntry){
         const manifest=JSON.parse(await manifestEntry.async('string'));
-        const res=await loadStateFromSavZip(zip,manifest,_cryptoKey);
-        if(res&&res.kind==='ward'&&res.wardId){
-          await rememberWardZipHandle(res.wardId,handleToReload);
-        }else{
-          await rememberArchiveZipHandle(handleToReload);
-        }
+        await loadCaseFileFromZip(zip,manifest,_cryptoKey);
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
   }else{
@@ -2238,10 +2206,10 @@ async function lockApp(){
         }
         if(restoredWards.length){
           const g=await decryptJSONWithKey(cache.guardian,_cryptoKey);
-          guardianData.wards=restoredWards;
-          guardianData.guardianName=(g&&g.guardianName)||'';
-          guardianData.guardianEmail=(g&&g.guardianEmail)||'';
-          guardianData.activeWardId=cache.activeWardId||restoredWards[0].wardId;
+          caseFile.wards=restoredWards;
+          caseFile.guardianName=(g&&g.guardianName)||'';
+          caseFile.guardianEmail=(g&&g.guardianEmail)||'';
+          caseFile.activeWardId=cache.activeWardId||restoredWards[0].wardId;
         }
       }
     }catch(e){console.error('Could not reload case data from the recovery cache after unlocking',e);}
@@ -2284,18 +2252,15 @@ function resetAutoLockTimer(){
 async function saveWardToState(ward){
   if(!ward)return false;
   ward.lastModified=new Date().toISOString();
-  // The ward is already live in guardianData; schedule persistence. Tracked
-  // by id (not just left to getActiveWard()) so a dashboard edit made to a
-  // ward other than the active one still gets its own file written --
-  // see saveData()'s _dirtyWardIds loop.
-  _dirtyWardIds.add(ward.wardId);
+  // The ward is already live in caseFile; schedule persistence. Under the
+  // unified single-file model, one autoSave() covers every ward regardless
+  // of which one was actually edited -- there's no per-ward file to track.
   autoSave();
   return true;
 }
 
 async function deleteWardFromState(wardId){
   // deleteWard() already updates the live array; schedule persistence.
-  _dirtyWardIds.delete(wardId); // gone from guardianData.wards -- nothing left to write for it
   autoSave();
   return true;
 }
@@ -2326,22 +2291,23 @@ async function loadTemplate(type){
 // yet. That's only true of memory, though — by the time any of this reaches
 // a .sav file, a real save is happening, which (see saveData()'s own guard)
 // cannot happen at all in 'encrypted' mode without _cryptoKey already set.
-// buildExportZipBlob() encrypts the whole log at that point, same as
+// buildCaseFileBlob() encrypts the whole log at that point, same as
 // appState, rather than leaving ward names and other case details sitting
 // in plaintext inside a file this app actively encourages emailing and
 // copying around. Deliberately does NOT call autoSave() itself:
-// writeArchiveToHandle() logs its own DATA_EXPORT entry as part of every
+// writeCaseToHandle() logs its own DATA_EXPORT entry as part of every
 // save, and having that schedule another save would loop forever, one save
 // always triggering the next. An entry logged for any other reason rides
 // along in whatever save happens next instead — exactly as independent of
 // the ward-edit debounce as the old IDB store's own audit log always was.
 async function appendAuditLogEntry(entry){
   entry.id=_auditLogNextId++;
-  // Tag with the active ward so per-ward files (version 3) can include only
-  // their own entries. Entries created before this tagging, or app-level
-  // events with no active ward, will have wardId undefined/null and are
-  // excluded from per-ward exports (but preserved in version-2 "Export All").
-  if(guardianData.activeWardId)entry.wardId=guardianData.activeWardId;
+  // Tag with the active ward so a single-ward export (buildSingleWardExportBlob)
+  // can include only that ward's own entries. Entries created before this
+  // tagging, or app-level events with no active ward, will have wardId
+  // undefined/null and are excluded from single-ward exports (but preserved
+  // in the main case file and the activity log).
+  if(caseFile.activeWardId)entry.wardId=caseFile.activeWardId;
   _auditLogEntries.push(entry);
   return true;
 }
@@ -2383,23 +2349,16 @@ async function loadAndRenderActivityLog(){
 async function renderStorageReadout(){
   const host=document.getElementById('storage-usage-readout');
   if(!host)return;
-  const activeWardId=guardianData.activeWardId;
-  let handle=activeWardId?await loadWardZipHandle(activeWardId):null;
-  let isArchive=false;
+  const handle=await loadCaseFileHandle();
   if(!handle){
-    handle=await loadArchiveZipHandle();
-    if(handle)isArchive=true;
-  }
-  if(!handle){
-    host.textContent='No case file is open for auto-save this session. Use "Open Data File (.sav)" to resume auto-save, or "Save Backup" to start one.';
+    host.textContent='No case file is open for auto-save this session. Use "Open Case File (.sav)" to resume auto-save, or "Save Backup" to start one.';
     return;
   }
-  const fileName=handle.name||(isArchive?'your case file':'your ward file');
+  const fileName=handle.name||'your case file';
   const savedNote=_lastExportAt
     ? `last saved ${formatRelativeTime(_lastExportAt)}`
     : 'not saved yet this session';
-  const typeDesc=isArchive?'case archive (all wards)':'ward file';
-  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> (${typeDesc}) — ${_autoSaveArmed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
+  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> (case file) — ${_autoSaveArmed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
 }
 
 function activityLogFiltered(){
@@ -2550,8 +2509,14 @@ let _consecutiveSaveFailures=0;
 const SAVE_FAILURE_THRESHOLD=2;
 
 // Captures dirty state in the temporary recovery cache, then rewrites the
-// complete .sav archive when a writable handle is available. No open handle
-// is a normal pre-save state, not an error.
+// complete case file when a writable handle is available. No open handle
+// is a normal pre-save state, not an error. Under the unified single-file
+// model this is deliberately simple: there is exactly one handle and one
+// write, covering every ward -- the old version had to separately track
+// which non-active wards were dirtied off the active-ward path (dashboard
+// archive toggle, workflow edits) because each ward could have its OWN
+// file; that distinction no longer exists, so there is nothing left to
+// track beyond the single _dirtySinceExport flag.
 async function saveData(){
   // Nothing should be persisted while the app is locked — there's no
   // encryption key to write with. This isn't a failure (e.g. autoSave()
@@ -2568,85 +2533,39 @@ async function saveData(){
   // it having landed before acting further (lockApp() wiping memory,
   // beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport)await saveSessionRestoreCache();
-  // Wards other than the active one can be dirtied from the dashboard
-  // (archive toggle, workflow status/assignee) without ever being opened.
-  // Give each one its own write here, independent of the active-ward/archive
-  // branches below, which only ever look at getActiveWard(). Deliberately
-  // NOT routed through writeWardToHandle(): that clears _dirtySinceExport
-  // and the recovery cache globally, which would be a lie here if the
-  // active ward below is still dirty (or its own write fails) -- only the
-  // branch that actually accounts for the FULL remaining dirty state should
-  // ever declare the app clean.
-  for(const wardId of Array.from(_dirtyWardIds)){
-    if(activeWard&&wardId===activeWard.wardId)continue; // handled below
-    const otherWardHandle=await loadWardZipHandle(wardId);
-    if(!otherWardHandle)continue; // no per-ward file for this ward yet -- nothing to write to
-    try{
-      const perm=await otherWardHandle.queryPermission({mode:'readwrite'});
-      if(perm!=='granted')continue; // stays dirty; retried on the next autosave
-      await writeOtherDirtyWardToHandle(wardId,otherWardHandle);
-      _consecutiveSaveFailures=0;
-      hideSaveError();
-    }catch(e){
-      console.error('save failed for ward',wardId,e);
-      _consecutiveSaveFailures++;
-      if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
+  const handle=await loadCaseFileHandle();
+  if(!handle)return;
+  try{
+    const perm=await handle.queryPermission({mode:'readwrite'});
+    if(perm!=='granted'){
+      await refreshAutoSaveArmedStatus();
+      return;
     }
-  }
-  if(!activeWard)return;
-  const wardHandle=await loadWardZipHandle(activeWard.wardId);
-  if(wardHandle){
-    try{
-      const perm=await wardHandle.queryPermission({mode:'readwrite'});
-      if(perm!=='granted'){
-        await refreshAutoSaveArmedStatus();
-        return;
-      }
-      await writeWardToHandle(activeWard.wardId,wardHandle,true);
-      _consecutiveSaveFailures=0;
-      hideSaveError();
-    }catch(e){
-      console.error('save failed',e);
-      _consecutiveSaveFailures++;
-      if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
-    }
-    return;
-  }
-  const archiveHandle=await loadArchiveZipHandle();
-  if(archiveHandle){
-    try{
-      const perm=await archiveHandle.queryPermission({mode:'readwrite'});
-      if(perm!=='granted'){
-        await refreshAutoSaveArmedStatus();
-        return;
-      }
-      await writeArchiveToHandle(archiveHandle,true);
-      _consecutiveSaveFailures=0;
-      hideSaveError();
-    }catch(e){
-      console.error('save failed',e);
-      _consecutiveSaveFailures++;
-      if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
-    }
-    return;
+    await writeCaseToHandle(handle,true);
+    _consecutiveSaveFailures=0;
+    hideSaveError();
+  }catch(e){
+    console.error('save failed',e);
+    _consecutiveSaveFailures++;
+    if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
   }
 }
 
 // State is already populated by .sav load, session recovery, or new-case
 // defaults. Retained as an async compatibility check for initApp().
 async function loadGuardianData(){
-  return guardianData.wards.length>0||!!guardianData.guardianName;
+  return caseFile.wards.length>0||!!caseFile.guardianName;
 }
 
 function getActiveWard(){
-  if(!guardianData.activeWardId)return null;
-  return guardianData.wards.find(w=>w.wardId===guardianData.activeWardId);
+  if(!caseFile.activeWardId)return null;
+  return caseFile.wards.find(w=>w.wardId===caseFile.activeWardId);
 }
 
 function getProbateGuardianTabState(){
   const activeWard=getActiveWard();
   return {
-    hasActiveCase: guardianData.wards.length>0,
+    hasActiveCase: caseFile.wards.length>0,
     activeCase: activeWard?{
       wardId: activeWard.wardId||'',
       wardName: activeWard.wardName||'',
@@ -2663,15 +2582,15 @@ function notifyProbateGuardianTabStateChanged(){
 }
 window.pgHasUnsavedChanges=function(){return _dirtySinceExport;};
 
-// guardianData is a top-level `let`, reassigned wholesale in several places
-// (lock/reset/load-from-.sav) -- a one-time `window.guardianData=guardianData`
+// caseFile is a top-level `let`, reassigned wholesale in several places
+// (lock/reset/load-from-.sav) -- a one-time `window.caseFile=caseFile`
 // bridge would go stale after any of those. This accessor always returns the
 // current object; src/features/dashboard/index.js reads through it live via
 // a Proxy rather than caching a reference (see that file's own comment).
-function getGuardianData(){ return guardianData; }
-window.getGuardianData=getGuardianData;
+function getCaseFile(){ return caseFile; }
+window.getCaseFile=getCaseFile;
 
-// _appState has the same reassign-wholesale problem as guardianData above.
+// _appState has the same reassign-wholesale problem as caseFile above.
 // Dashboard only ever needs this one flag, so a pair of small accessors is
 // simpler than exposing the whole mutable object.
 function isContinuePromptShown(){ return !!_appState.continuePromptShown; }
@@ -2749,170 +2668,55 @@ async function saveBlobAs(blob,suggestedName,preWriteValidator){
   return null;
 }
 
-// The active handles live in memory (keyed by wardId for per-ward files, or in
-// _archiveZipHandle for whole-case multi-ward archives) and are persisted to
-// IndexedDB (pg-launch-pref).
-let _wardZipHandles=new Map();
-let _archiveZipHandle=null;
+// The one active handle for the whole case file lives in memory and is
+// persisted to IndexedDB (pg-launch-pref). There is exactly one handle now --
+// no more per-ward-vs-archive distinction, so there is nothing that can end
+// up "split" across two files the way a per-ward handle used to.
+let _caseFileHandle=null;
 
-async function rememberWardZipHandle(wardId,handle){
-  if(!wardId||!handle)return;
-  // If this handle points to the same file on disk as the archive handle,
-  // disassociate the archive handle so a ward save cannot simultaneously
-  // pretend to be a whole-case archive.
-  const archiveHandle=await loadArchiveZipHandle();
-  if(archiveHandle&&typeof handle.isSameEntry==='function'){
-    try{
-      if(await handle.isSameEntry(archiveHandle)){
-        console.warn('Per-ward handle matches active archive handle; clearing archive handle');
-        await forgetArchiveZipHandle();
-      }
-    }catch(e){/* non-critical */}
-  }
-  // Warn (don't block) if this ward already had a DIFFERENT file remembered.
-  // Silently overwriting here is exactly how a ward ends up split across two
-  // files with only the newer one still receiving auto-saves -- e.g. a
-  // rename changed the suggested Save-As filename and the user saved to a
-  // fresh file instead of the old one, or a second copy of this ward's .sav
-  // was opened from another location.
-  const existingHandle=_wardZipHandles.get(wardId)||await loadPersistedWardZipHandle(wardId);
-  if(existingHandle&&existingHandle!==handle){
-    let sameFile=false;
-    if(typeof handle.isSameEntry==='function'){
-      try{sameFile=await handle.isSameEntry(existingHandle);}catch(e){/* different/unavailable handle -- treat as not confirmed same */}
-    }
-    if(!sameFile)showDuplicateWardFileWarning(wardId,existingHandle,handle);
-  }
-  // Record the file's actual on-disk name on the ward itself so a later
-  // Save-As (handle lost, permission revoked, or no File System Access API
-  // support at all) can default back to THIS name instead of recomputing one
-  // from whatever the ward's name/case number happen to be at that moment --
-  // see suggestedWardFileName()'s comment for why that recompute drifts.
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
-  if(ward&&handle.name)ward.lastSavedFileName=handle.name;
-  _wardZipHandles.set(wardId,handle);
-  await savePersistedWardZipHandle(wardId,handle);
-  await refreshAutoSaveArmedStatus();
-}
-
-// The name to default a Save-As dialog (or the auto-save status readout) to
-// for this ward. Prefers the name it was ACTUALLY last saved under
-// (lastSavedFileName, stamped by rememberWardZipHandle whenever a handle is
-// associated) over recomputing one fresh from the ward's current name/case
-// number: wardName/caseNumber can change after the first save (filled in
-// later, corrected, etc.), and getWardFileName() has no memory of history --
-// it will confidently suggest a name that doesn't match the file already on
-// disk, which is exactly how a ward ends up split across two files the
-// moment auto-save needs re-arming and the user doesn't notice the mismatch.
-// Only falls back to the fresh computation for a ward that has never been
-// saved under any handle yet.
-function suggestedWardFileName(ward){
-  return (ward&&ward.lastSavedFileName)||getWardFileName(ward);
-}
-window.suggestedWardFileName=suggestedWardFileName;
-
-// Non-blocking heads-up for the case above: two different physical files are
-// now both claiming to be this ward's save file, but only `newHandle` will
-// receive auto-saves going forward. Uses the same .app-toast markup as the
-// PWA-update and other-tab-open notices (pwa-ui.js / tab-coordination.js).
-function showDuplicateWardFileWarning(wardId,oldHandle,newHandle){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
-  const wardName=(ward&&ward.wardName)||'This ward';
-  let notice=document.getElementById('dup-ward-file-notice');
-  if(!notice){
-    notice=document.createElement('div');
-    notice.id='dup-ward-file-notice';
-    notice.className='app-toast';
-    notice.style.top='6.25rem';
-    notice.style.bottom='auto';
-    notice.style.zIndex='10004';
-    notice.setAttribute('role','status');
-    notice.innerHTML='<div class="app-toast-body"><div class="app-toast-title"></div><div class="app-toast-desc"></div><div class="app-toast-actions"></div></div>';
-    document.body.appendChild(notice);
-  }
-  notice.querySelector('.app-toast-title').textContent=`Two save files for "${wardName}"`;
-  notice.querySelector('.app-toast-desc').textContent=
-    `"${oldHandle.name||'the previous file'}" was this ward's save file, but changes will now auto-save to "${newHandle.name||'the new file'}" instead. If the old file has changes you still need, open it and merge them before continuing.`;
-  const actions=notice.querySelector('.app-toast-actions');
-  actions.replaceChildren();
-  const dismiss=document.createElement('button');
-  dismiss.type='button';
-  dismiss.className='btn btn-outline-secondary btn-sm';
-  dismiss.textContent='Dismiss';
-  dismiss.addEventListener('click',()=>{notice.style.display='none';},{once:true});
-  actions.appendChild(dismiss);
-  notice.style.display='flex';
-}
-
-async function loadWardZipHandle(wardId=guardianData.activeWardId){
-  if(!wardId)return null;
-  if(_wardZipHandles.has(wardId)){
-    return _wardZipHandles.get(wardId);
-  }
-  const handle=await loadPersistedWardZipHandle(wardId);
-  if(handle){
-    _wardZipHandles.set(wardId,handle);
-    return handle;
-  }
-  return null;
-}
-
-async function forgetWardZipHandle(wardId){
-  if(!wardId)return;
-  _wardZipHandles.delete(wardId);
-  await forgetPersistedWardZipHandle(wardId);
-  await refreshAutoSaveArmedStatus();
-}
-
-async function rememberArchiveZipHandle(handle){
+async function rememberCaseFileHandle(handle){
   if(!handle)return;
-  // If this archive handle points to the same file on disk as any existing
-  // per-ward handle, disassociate that per-ward handle.
-  if(typeof handle.isSameEntry==='function'){
-    for(const [wId,wHandle] of _wardZipHandles.entries()){
-      try{
-        if(await handle.isSameEntry(wHandle)){
-          console.warn(`Archive handle matches per-ward handle for ${wId}; clearing per-ward handle`);
-          await forgetWardZipHandle(wId);
-        }
-      }catch(e){/* non-critical */}
-    }
-  }
-  _archiveZipHandle=handle;
-  await savePersistedArchiveZipHandle(handle);
+  // Record the file's actual on-disk name so a later Save-As (handle lost,
+  // permission revoked, or no File System Access API support at all) can
+  // default back to THIS name instead of a generic one.
+  if(handle.name)caseFile.lastSavedFileName=handle.name;
+  _caseFileHandle=handle;
+  await savePersistedCaseFileHandle(handle);
   await refreshAutoSaveArmedStatus();
 }
 
-async function loadArchiveZipHandle(){
-  if(_archiveZipHandle)return _archiveZipHandle;
-  const handle=await loadPersistedArchiveZipHandle();
+// The name to default a Save-As dialog (or the auto-save status readout) to.
+// Prefers the name this case was ACTUALLY last saved under over a generic
+// default, which only ever applies the very first time this case is saved.
+function suggestedCaseFileName(){
+  return (caseFile&&caseFile.lastSavedFileName)||'guardianshipwarddata.sav';
+}
+window.suggestedCaseFileName=suggestedCaseFileName;
+
+async function loadCaseFileHandle(){
+  if(_caseFileHandle)return _caseFileHandle;
+  const handle=await loadPersistedCaseFileHandle();
   if(handle){
-    _archiveZipHandle=handle;
+    _caseFileHandle=handle;
     return handle;
   }
   return null;
 }
 
-async function forgetArchiveZipHandle(){
-  _archiveZipHandle=null;
-  await forgetPersistedArchiveZipHandle();
+async function forgetCaseFileHandle(){
+  _caseFileHandle=null;
+  await forgetPersistedCaseFileHandle();
   await refreshAutoSaveArmedStatus();
 }
 
 // True when a background write can happen with no user interaction: a file
-// handle is known (either for the active ward or for the case archive) AND
-// the browser still grants write permission on it.
+// handle is known AND the browser still grants write permission on it.
 let _autoSaveArmed=false;
 async function refreshAutoSaveArmedStatus(){
   let armed=false;
-  const activeWardId=guardianData.activeWardId;
   let handle=null;
   try{
-    if(activeWardId){
-      handle=await loadWardZipHandle(activeWardId);
-    }else{
-      handle=await loadArchiveZipHandle();
-    }
+    handle=await loadCaseFileHandle();
     if(handle&&handle.queryPermission){
       armed=(await handle.queryPermission({mode:'readwrite'}))==='granted';
     }
@@ -2928,13 +2732,7 @@ async function refreshAutoSaveArmedStatus(){
       el.textContent=`Auto-save: click Save Backup once to re-enable (${fileName})`;
       el.style.color='var(--warn-text)';
     }else if(window.showSaveFilePicker){
-      if(activeWardId){
-        const activeWard=getActiveWard();
-        const suggestedName=activeWard?suggestedWardFileName(activeWard):'';
-        el.textContent=suggestedName?`Auto-save: needs manual save (${suggestedName})`:'Auto-save: needs one manual save first';
-      }else{
-        el.textContent='Auto-save: no ward open';
-      }
+      el.textContent=`Auto-save: needs manual save (${suggestedCaseFileName()})`;
       el.style.color='var(--ink-3)';
     }else{
       // Firefox/Safari: there is no writable handle this browser can grant at
@@ -2945,53 +2743,35 @@ async function refreshAutoSaveArmedStatus(){
   }
 }
 
-// FORMAT_VERSION 2: the .sav file grew from "wards + guardian name/email"
-// into the app's only persistence, so it now also carries everything that
-// used to be its own IndexedDB store (appState, cached templates, the
-// audit log) plus what it takes to unlock the file without any other state
-// already in memory (securityMode, salt, verifier — see
-// loadStateFromSavZip()). Reading stays backward-compatible with a version-1
-// file: those fields are simply absent, and every reader below treats an
-// absent field as "not set" rather than failing. version bumps again the
-// next time the shape of this manifest changes in a way a reader needs to
-// know about going in, before it's touched a single byte of the ward data.
-const SAV_FORMAT_VERSION=2;
-// Version 3 is per-ward: each ward saves as its own independent .sav file
-// with ward.enc, auditLog.enc (filtered to that ward), and a manifest that
-// carries wardId/wardName instead of a wards[] index array. Files written
-// at version 2 are multi-ward archives; version 3 files are single-ward.
-const WARD_FILE_VERSION=3;
+// Version 1 of the unified case-file format: one .sav file for the whole
+// case (all wards, guardian info, app state, templates, and audit log).
+// Replaces the old three-way archive/ward/backup split entirely -- there is
+// exactly one shape now, so readers don't need to infer or branch on a
+// "kind" field the way the old versions did.
+const CASE_FILE_FORMAT_VERSION=1;
 
-async function buildExportZipBlob(){
-  // Cancel (not flush) any pending debounce: guardianData/_appState/etc. are
-  // already the live, current, in-memory state by the time this runs — there
-  // is nothing separate to flush INTO memory the way there was when
-  // IndexedDB lagged behind it. flushPendingSave() would call saveData(),
-  // which calls writeArchiveToHandle(), which calls back into this very
-  // function — an infinite loop. Clearing the timer directly just avoids a
-  // redundant follow-up write of the same state a moment later.
+async function buildCaseFileBlob(){
+  // Cancel (not flush) any pending debounce: caseFile/_appState/etc. are
+  // already the live, current, in-memory state by the time this runs —
+  // there is nothing separate to flush INTO memory. flushPendingSave()
+  // would call saveData(), which calls writeCaseToHandle(), which calls
+  // back into this very function — an infinite loop. Clearing the timer
+  // directly just avoids a redundant follow-up write a moment later.
   if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
-  // The salt is embedded so the archive is portable to a fresh install: it's
+  // The salt is embedded so the file is portable to a fresh install: it's
   // needed (along with the password) to re-derive the key there. A salt is
   // not a secret — 'none'-mode installs never generate one, hence the null.
   const salt=(await loadAppState('cryptoSalt'))||null;
   const verifier=(await loadAppState('cryptoVerifier'))||null;
   const zip=new JSZip();
   const wardIndex=[];
-  for(const ward of guardianData.wards){
+  for(const ward of caseFile.wards){
     const file=`wards/${ward.wardId}.enc`;
     zip.file(file,await encryptJSON(ward));
-    wardIndex.push({wardId:ward.wardId,file});
+    wardIndex.push({wardId:ward.wardId,wardName:ward.wardName||'',file});
   }
-  // Everything appState used to hold except the three fields above (which
-  // need to be readable before any password is entered) and the guardian's
-  // own name/email (kept as their own top-level `guardian` field, matching
-  // the version-1 shape exactly, since existing readers already expect it
-  // there). zipFileHandle is deliberately excluded — a FileSystemFileHandle
-  // isn't JSON-serializable and re-opening this very file is what would
-  // reconstruct it anyway.
   const appStateBlob={
-    activeWardId:guardianData.activeWardId,
+    activeWardId:caseFile.activeWardId,
     theme:await loadAppState('theme'),
     walkthroughCompleted:await loadAppState('walkthroughCompleted'),
     firstLaunchSeen:await loadAppState('firstLaunchSeen'),
@@ -3008,20 +2788,18 @@ async function buildExportZipBlob(){
   // Encrypted here even though it's kept plain in memory (see
   // appendAuditLogEntry()'s comment) — this app actively encourages emailing
   // and copying the .sav file around, and entries can carry a ward's real
-  // name (exportSingleWardZip's own DATA_EXPORT message, for one). A key is
-  // always available by the time a real save reaches this point (or
-  // securityMode is 'none', in which case encryptJSON's PLAIN: prefix
-  // applies here exactly as it does to every other field).
+  // name. A key is always available by the time a real save reaches this
+  // point (or securityMode is 'none', in which case encryptJSON's PLAIN:
+  // prefix applies here exactly as it does to every other field).
   zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
   zip.file('manifest.json',JSON.stringify({
-    format:'probate-guardian-export',
-    kind:'archive',
-    version:SAV_FORMAT_VERSION,
+    format:'probate-guardian-case',
+    version:CASE_FILE_FORMAT_VERSION,
     exportedAt:new Date().toISOString(),
     securityMode:_securityMode,
     salt,
     verifier,
-    guardian:await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail}),
+    guardian:await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail}),
     appState:await encryptJSON(appStateBlob),
     templates:templateTypes,
     wards:wardIndex
@@ -3030,70 +2808,37 @@ async function buildExportZipBlob(){
   return {blob,count:wardIndex.length};
 }
 
-// ── Per-ward save (version 3) ──────────────────────────────────────────
-// Builds a single-ward ZIP archive — the canonical save format from
-// Milestone 17 onward. Each ward lives in its own file:
-//
-//   {wardName}-{wardId}.sav (ZIP)
-//   ├── manifest.json   ← version 3, wardId, wardName, security fields
-//   ├── ward.enc        ← encrypted ward data object
-//   └── auditLog.enc    ← audit entries for this ward only
-//
-// Unlike buildExportZipBlob() (version 2, multi-ward), this does NOT
-// include appState, templates, or a wards[] index — those live in launch
-// preferences or are shared resources handled at the app level.
-async function buildWardZipBlob(wardId){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
-  if(!ward)throw new Error(`buildWardZipBlob: ward "${wardId}" not found`);
-
-  // Unlike buildExportZipBlob(), do NOT cancel _saveTimer here. That
-  // function is on the saveData() → writeArchiveToHandle() recursion path
-  // and must cancel to avoid looping; this function is not. Cancelling
-  // here would silently drop a pending debounced save for the active ward
-  // if a non-active ward is exported within the debounce window.
-
-  // Reads directly from the live in-memory guardianData.wards — there is no
-  // separate persisted store. The only field saveData() touches that could be
-  // stale mid-debounce is lastModified; stamp it now so the export is fresh.
-  if(ward.wardId===guardianData.activeWardId){
-    ward.lastModified=new Date().toISOString();
-  }
-
+// Builds a small standalone case-file-shaped ZIP containing just one ward --
+// for sharing a copy with a co-guardian or attorney without exposing the
+// rest of the case. Shaped exactly like buildCaseFileBlob()'s output (same
+// manifest format/version), just filtered to one ward, so it imports the
+// same way any case file does -- there's no separate "single ward" format.
+async function buildSingleWardExportBlob(wardId){
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
+  if(!ward)throw new Error(`buildSingleWardExportBlob: ward "${wardId}" not found`);
   const salt=(await loadAppState('cryptoSalt'))||null;
   const verifier=(await loadAppState('cryptoVerifier'))||null;
-
   const zip=new JSZip();
-  zip.file('ward.enc',await encryptJSON(ward));
-
-  // Only include audit entries tagged with this ward's id. Entries from
-  // before wardId-tagging was added (or app-level events with no active
-  // ward) are excluded — they're preserved in the version-2 "Export All"
-  // archive and in the session-restore cache. Note: this means a per-ward
-  // .sav is not a complete provenance record — unlock events and other
-  // app-level entries with no active ward are absent. If this file is
-  // ever used as a legal record, the "Export All" archive is the
-  // authoritative source.
+  zip.file(`wards/${ward.wardId}.enc`,await encryptJSON(ward));
+  // Only include audit entries tagged with this ward's id -- a single-ward
+  // export is a copy for someone else, not a complete provenance record.
   const wardAuditEntries=_auditLogEntries.filter(e=>e&&e.wardId===wardId);
   zip.file('auditLog.enc',await encryptJSON(wardAuditEntries));
-
   zip.file('manifest.json',JSON.stringify({
-    format:'probate-guardian-export',
-    kind:'ward',
-    version:WARD_FILE_VERSION,
+    format:'probate-guardian-case',
+    version:CASE_FILE_FORMAT_VERSION,
     exportedAt:new Date().toISOString(),
     securityMode:_securityMode,
     salt,
     verifier,
-    wardId:ward.wardId,
-    wardName:ward.wardName||'',
-    guardian:await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail}),
-    auditLogScope:'ward-only',
-    auditLogNote:'This file contains only audit entries tagged to this ward. App-level events (unlock, restore, lock) are absent. For a complete provenance record, use Export All Wards.'
+    guardian:await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail}),
+    templates:[],
+    wards:[{wardId:ward.wardId,wardName:ward.wardName||'',file:`wards/${ward.wardId}.enc`}]
   },null,2));
-
   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
   return blob;
 }
+window.buildSingleWardExportBlob = buildSingleWardExportBlob;
 
 // "3 minutes ago" / "2 hours ago" / "5 days ago" style relative timestamp.
 function formatRelativeTime(ts){
@@ -3143,79 +2888,40 @@ async function beginRecordingExport(message, wardId = null){
 }
 window.beginRecordingExport = beginRecordingExport;
 
-// ── Multi-ward backup (version 3) ──────────────────────────────────────
-// Builds a full backup ZIP archive containing all wards, app state,
-// template caches, and unified audit log. Marked with kind: 'backup'
-// and version: BACKUP_FILE_VERSION (3).
-const BACKUP_FILE_VERSION=3;
-
-async function buildBackupZipBlob(){
-  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
-  const salt=(await loadAppState('cryptoSalt'))||null;
-  const verifier=(await loadAppState('cryptoVerifier'))||null;
-  const zip=new JSZip();
-  const wardIndex=[];
-  for(const ward of guardianData.wards){
-    const file=`wards/${ward.wardId}.enc`;
-    zip.file(file,await encryptJSON(ward));
-    wardIndex.push({wardId:ward.wardId,wardName:ward.wardName||'',file});
+// Manual "Save Backup Now" / "Export All" action: builds the whole case file
+// and writes it via Save-As, remembering the resulting handle so future
+// changes can auto-save to it silently. One case, one file, one handle --
+// there is no longer a separate "single ward" vs "whole archive" choice to
+// make here the way there used to be.
+async function exportCaseFileZip(){
+  if(!caseFile.wards||caseFile.wards.length===0){
+    alert('No wards to back up. Please add or open a ward first.');
+    return;
   }
-  const appStateBlob={
-    activeWardId:guardianData.activeWardId,
-    theme:await loadAppState('theme'),
-    walkthroughCompleted:await loadAppState('walkthroughCompleted'),
-    firstLaunchSeen:await loadAppState('firstLaunchSeen'),
-    continuePromptShown:await loadAppState('continuePromptShown'),
-    recentWards:await loadAppState('recentWards'),
-    autoExportIntervalMinutes:_autoExportIntervalMinutes,
-    lastExportAt:_lastExportAt,
-    unlockFailState:await loadAppState('unlockFailState')
-  };
-  const templateTypes=Object.keys(_templateCache).filter(t=>_templateCache[t]);
-  for(const type of templateTypes){
-    zip.file(`templates/${type}.b64`,_templateCache[type]);
-  }
-  zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
-  zip.file('manifest.json',JSON.stringify({
-    format:'probate-guardian-export',
-    kind:'backup',
-    version:BACKUP_FILE_VERSION,
-    exportedAt:new Date().toISOString(),
-    securityMode:_securityMode,
-    salt,
-    verifier,
-    guardian:await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail}),
-    appState:await encryptJSON(appStateBlob),
-    templates:templateTypes,
-    wards:wardIndex
-  },null,2));
-  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
-  return {blob,count:wardIndex.length};
-}
-window.buildBackupZipBlob = buildBackupZipBlob;
-
-async function exportGuardianDataZip(){
+  if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export.');return;}
+  const count=caseFile.wards.length;
   let rollback=null;
   try{
-    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export.');return;}
-    const count=guardianData.wards.length;
-    rollback=await beginRecordingExport(`Exported ${count} form(s) to archive`);
-    const {blob}=await buildExportZipBlob();
-    const handle=await saveBlobAs(blob,'guardianshipwarddata.sav');
+    rollback=await beginRecordingExport(`Exported ${count} form(s) to backup file`);
+    const {blob}=await buildCaseFileBlob();
+    const suggestedName=suggestedCaseFileName();
+    const handle=await saveBlobAs(blob,suggestedName);
     if(handle){
-      await rememberArchiveZipHandle(handle);
+      await rememberCaseFileHandle(handle);
       clearSessionRestoreCache(); // only discard cache when file landing is verified via handle
+      // A real handle exists to reconnect to next launch -- the fast-path
+      // Open screen only makes sense once that's true. A browser with no
+      // File System Access API (Firefox/Safari) falls back to a plain
+      // download with no handle at all, so there's nothing to fast-path to.
+      markCaseOpenedBefore();
     }
-    _dirtyWardIds.clear(); // every ward's current state just went into this archive
     _dirtySinceExport=false;
     hideAutoExportReminder();
     updateLastSavedIndicator();
     notifyProbateGuardianTabStateChanged();
-    markCaseOpenedBefore(); // a real .sav now exists — next launch offers the fast-path Open screen
-    window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-      detail: { fileName: handle ? handle.name : 'guardianshipwarddata.sav', wardId: null, kind: 'archive' }
-    }));
-    alert(`Export complete: ${count} form(s) saved to guardianshipwarddata.sav`);
+    const savedName=handle?handle.name:suggestedName;
+    window.dispatchEvent(new CustomEvent('pg:backup-saved', { detail: { fileName: savedName, count } }));
+    alert(`Backup complete: ${count} form(s) saved to ${savedName}`);
   }catch(e){
     if(rollback)rollback();
     if(e&&e.name==='AbortError')return; // user cancelled the Save As dialog
@@ -3224,110 +2930,22 @@ async function exportGuardianDataZip(){
     alert('Export failed: '+(e&&e.message||e));
   }
 }
+window.exportCaseFileZip = exportCaseFileZip;
+// exportGuardianDataZip/backupAllWardsNow used to be two different exports
+// (a "wards + guardian" archive vs a "full case" backup); under the unified
+// model they're the same operation. Kept as aliases so existing UI markup
+// and fragments calling either name keep working unchanged.
+window.exportGuardianDataZip = exportCaseFileZip;
+window.backupAllWardsNow = exportCaseFileZip;
 
-async function backupAllWardsNow(){
-  if(!guardianData.wards||guardianData.wards.length===0){
-    alert('No wards to back up. Please add or open a ward first.');
-    return;
-  }
-  if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export backup.');return;}
-  const count=guardianData.wards.length;
-  let rollback=null;
-  const defaultFilename='probate_guardian_all_wards_backup.sav';
-  try{
-    rollback=await beginRecordingExport(`Exported full backup of ${count} ward(s) to backup file`);
-    const {blob}=await buildBackupZipBlob();
-    const handle=await saveBlobAs(blob,defaultFilename);
-    if(handle){
-      await rememberArchiveZipHandle(handle);
-      clearSessionRestoreCache();
-    }
-    _dirtyWardIds.clear(); // every ward's current state just went into this backup
-    _dirtySinceExport=false;
-    hideAutoExportReminder();
-    updateLastSavedIndicator();
-    notifyProbateGuardianTabStateChanged();
-    markCaseOpenedBefore();
-    window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-      detail: { fileName: handle ? handle.name : defaultFilename, wardId: null, kind: 'backup' }
-    }));
-    alert(`Backup complete: ${count} ward(s) saved to ${handle ? handle.name : defaultFilename}`);
-  }catch(e){
-    if(rollback)rollback();
-    if(e&&e.name==='AbortError')return;
-    console.error('backup all wards failed',e);
-    auditLog('DATA_EXPORT',String(e&&e.message||e),false);
-    alert('Backup failed: '+(e&&e.message||e));
-  }
-}
-window.backupAllWardsNow = backupAllWardsNow;
-
-// Writes a single ward to its authorized handle. Used by auto-save,
-// periodic background timer, and the Save Backup button.
-async function writeWardToHandle(wardId,handle,viaTimer){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
-  if(!ward)throw new Error(`writeWardToHandle: ward "${wardId}" not found`);
-  const wardName=ward.wardName||'ward';
-  const message=viaTimer
-    ? `Auto-saved "${wardName}" in the background`
-    : `Saved "${wardName}" to existing backup file`;
-  const rollback=await beginRecordingExport(message, wardId);
-  try{
-    const blob=await buildWardZipBlob(wardId);
-    const writable=await handle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-  }catch(e){
-    rollback();
-    throw e;
-  }
-  _dirtyWardIds.delete(wardId);
-  _dirtySinceExport=false;
-  clearSessionRestoreCache(); // this state is now safely in a .sav file
-  hideAutoExportReminder();
-  await refreshAutoSaveArmedStatus();
-  updateLastSavedIndicator();
-  notifyProbateGuardianTabStateChanged();
-  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-    detail: { fileName: handle.name, wardId, kind: 'ward', viaTimer: !!viaTimer }
-  }));
-  return 1;
-}
-
-// Writes a DIRTY WARD OTHER THAN THE ACTIVE ONE to its own already-authorized
-// file (dashboard archive toggle / workflow edits -- see saveData()'s
-// _dirtyWardIds loop). Deliberately lighter than writeWardToHandle(): it must
-// NOT clear _dirtySinceExport or the recovery cache, since neither reflects
-// only this one ward -- the active ward (or whatever else is still dirty)
-// may not have made it to disk yet in this same saveData() pass, and only
-// that branch is positioned to know the full remaining dirty state.
-async function writeOtherDirtyWardToHandle(wardId,handle){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
-  if(!ward)throw new Error(`writeOtherDirtyWardToHandle: ward "${wardId}" not found`);
-  const rollback=await beginRecordingExport(`Auto-saved "${ward.wardName||'ward'}" in the background`,wardId);
-  try{
-    const blob=await buildWardZipBlob(wardId);
-    const writable=await handle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-  }catch(e){
-    rollback();
-    throw e;
-  }
-  _dirtyWardIds.delete(wardId);
-  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-    detail: { fileName: handle.name, wardId, kind: 'ward', viaTimer: true }
-  }));
-}
-
-// Writes the full archive to an already-authorized handle. Retained for
-// whole-case multi-ward backups ("Export All").
-async function writeArchiveToHandle(handle,viaTimer){
-  const count=guardianData.wards.length;
+// Writes the whole case to an already-authorized handle. Used by auto-save,
+// the periodic background timer, and the Save Backup button.
+async function writeCaseToHandle(handle,viaTimer){
+  const count=caseFile.wards.length;
   const message=viaTimer?`Auto-saved ${count} form(s) in the background`:`Saved ${count} form(s) to existing backup file`;
   const rollback=await beginRecordingExport(message);
   try{
-    const {blob}=await buildExportZipBlob();
+    const {blob}=await buildCaseFileBlob();
     const writable=await handle.createWritable();
     await writable.write(blob);
     await writable.close();
@@ -3335,7 +2953,6 @@ async function writeArchiveToHandle(handle,viaTimer){
     rollback();
     throw e;
   }
-  _dirtyWardIds.clear(); // every ward's current state just went into this archive
   _dirtySinceExport=false;
   clearSessionRestoreCache(); // this state is now safely in a .sav file
   hideAutoExportReminder();
@@ -3343,35 +2960,23 @@ async function writeArchiveToHandle(handle,viaTimer){
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
   window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-    detail: { fileName: handle.name, wardId: null, kind: 'archive', viaTimer: !!viaTimer }
+    detail: { fileName: handle.name, count, viaTimer: !!viaTimer }
   }));
   return count;
 }
 
-// Tries to silently re-write the remembered file handle for the active ward
-// (or the case archive if no per-ward file is armed) — no dialog, no user
-// gesture needed, as long as the browser still grants write permission.
+// Tries to silently re-write the remembered case-file handle — no dialog,
+// no user gesture needed, as long as the browser still grants write
+// permission.
 async function silentAutoExport(){
   try{
     if(typeof JSZip==='undefined')return false;
-    const activeWard=getActiveWard();
-    if(activeWard){
-      const wardHandle=await loadWardZipHandle(activeWard.wardId);
-      if(wardHandle){
-        const perm=await wardHandle.queryPermission({mode:'readwrite'});
-        if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;}
-        await writeWardToHandle(activeWard.wardId,wardHandle,true);
-        return true;
-      }
-    }
-    const archiveHandle=await loadArchiveZipHandle();
-    if(archiveHandle){
-      const perm=await archiveHandle.queryPermission({mode:'readwrite'});
-      if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;}
-      await writeArchiveToHandle(archiveHandle,true);
-      return true;
-    }
-    return false;
+    const handle=await loadCaseFileHandle();
+    if(!handle)return false;
+    const perm=await handle.queryPermission({mode:'readwrite'});
+    if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;}
+    await writeCaseToHandle(handle,true);
+    return true;
   }catch(e){
     console.warn('Silent auto-export failed, will show reminder instead',e);
     await refreshAutoSaveArmedStatus();
@@ -3379,6 +2984,10 @@ async function silentAutoExport(){
   }
 }
 
+// Filename helpers retained for the single-ward "share a copy" export below
+// (dashboard's exportSingleWardZip) -- the primary save file no longer has
+// a per-ward name to compute, but a one-off exported copy of just one ward
+// still benefits from a name derived from that ward rather than a generic one.
 function getWardFileStem(ward){
   const namePart=(ward&&ward.wardName||'Ward').trim().replace(/[\s_]+/g,'-').replace(/[^a-zA-Z0-9-]/g,'')||'Ward';
   const casePart=(ward&&ward.caseNumber||'').trim().replace(/[\s_]+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
@@ -3390,12 +2999,17 @@ function getWardFileName(ward){
 window.getWardFileStem = getWardFileStem;
 window.getWardFileName = getWardFileName;
 
+// Guards a single-ward "share a copy" export from accidentally overwriting
+// the real multi-ward case file -- a single-ward export is shaped exactly
+// like a (one-ward) case file now, so picking the same location as the
+// real case file and confirming the browser's native overwrite prompt would
+// otherwise silently drop every other ward.
 async function validateWardBackupOverwrite(pickedHandle){
-  const archiveHandle=await loadArchiveZipHandle();
-  if(archiveHandle&&typeof pickedHandle.isSameEntry==='function'){
+  const caseHandle=await loadCaseFileHandle();
+  if(caseHandle&&typeof pickedHandle.isSameEntry==='function'){
     try{
-      if(await pickedHandle.isSameEntry(archiveHandle)&&guardianData.wards.length>1){
-        return confirm('Warning: You selected your case file archive containing multiple wards. Overwriting it with this single ward will replace the other wards on disk. Are you sure you want to overwrite?');
+      if(await pickedHandle.isSameEntry(caseHandle)&&caseFile.wards.length>1){
+        return confirm('Warning: You selected your main case file, which holds multiple wards. Overwriting it with just this one ward will replace the other wards on disk. Are you sure you want to overwrite?');
       }
     }catch(e){/* non-critical */}
   }
@@ -3403,68 +3017,40 @@ async function validateWardBackupOverwrite(pickedHandle){
 }
 window.validateWardBackupOverwrite = validateWardBackupOverwrite;
 
-async function finishWardExport(handle, ward){
-  if(handle){
-    const wardId = ward && ward.wardId;
-    if(wardId){
-      await rememberWardZipHandle(wardId, handle);
-    }
-    await clearSessionRestoreCache();
-    await markCaseOpenedBefore();
-  }
-  _dirtySinceExport = false;
-  hideAutoExportReminder();
-  updateLastSavedIndicator();
-  notifyProbateGuardianTabStateChanged();
+// Finishes a single-ward "share a copy" export. Deliberately does NOT touch
+// the case file's own handle/dirty state -- exporting a copy of one ward
+// for someone else has nothing to do with where THIS app instance's own
+// autosave writes to, unlike the old per-ward-file model where the two were
+// the same thing.
+function finishSingleWardExport(handle, ward){
   window.dispatchEvent(new CustomEvent('pg:backup-saved', {
     detail: {
-      fileName: handle ? handle.name : (ward ? suggestedWardFileName(ward) : 'guardianshipwarddata.sav'),
+      fileName: handle ? handle.name : (ward ? getWardFileName(ward) : 'ward.sav'),
       wardId: ward && ward.wardId,
-      kind: 'ward'
+      kind: 'ward-export'
     }
   }));
 }
-window.finishWardExport = finishWardExport;
+window.finishSingleWardExport = finishSingleWardExport;
 
 // The banner's Save Backup Now button. Runs inside a click, so a user
-// gesture is available: re-authorizes the active ward's handle (or the archive
-// handle) with one small prompt, or falls back to Save As single-ward export.
+// gesture is available: re-authorizes the case file's handle with one small
+// prompt, or falls back to a full Save As.
 async function saveBackupNow(){
-  const activeWard=getActiveWard();
-  if(!activeWard){
-    await exportGuardianDataZip();
-    return;
-  }
   try{
-    const wardHandle=await loadWardZipHandle(activeWard.wardId);
-    if(wardHandle&&wardHandle.requestPermission){
-      const perm=await wardHandle.requestPermission({mode:'readwrite'});
+    const handle=await loadCaseFileHandle();
+    if(handle&&handle.requestPermission){
+      const perm=await handle.requestPermission({mode:'readwrite'});
       if(perm==='granted'){
-        await writeWardToHandle(activeWard.wardId,wardHandle,false);
-        alert(`Backup saved: ${activeWard.wardName||'Ward'} written to your backup file.`);
+        await writeCaseToHandle(handle,false);
+        alert('Backup saved.');
         return;
       }
     }
   }catch(e){
-    console.warn('Reusing remembered ward backup file failed',e);
+    console.warn('Reusing remembered case file failed',e);
   }
-  // If no ward handle or permission denied, save single ward via picker using its per-ward filename
-  let rollback=null;
-  try{
-    const wardName=activeWard.wardName||'ward';
-    rollback=await beginRecordingExport(`Exported single ward "${wardName}" to ward file`, activeWard.wardId);
-    const blob=await buildWardZipBlob(activeWard.wardId);
-    const fileName=suggestedWardFileName(activeWard);
-    const handle=await saveBlobAs(blob,fileName,validateWardBackupOverwrite);
-    await finishWardExport(handle, activeWard);
-    alert(`Backup saved for ${activeWard.wardName||'this ward'}.`);
-  }catch(e){
-    if(rollback)rollback();
-    if(e&&e.name==='AbortError')return;
-    console.error('Save backup failed',e);
-    auditLog('DATA_EXPORT',String(e&&e.message||e),false,activeWard.wardId);
-    alert('Save backup failed: '+(e&&e.message||e));
-  }
+  await exportCaseFileZip();
 }
 
 function showAutoExportReminder(firstTime){
@@ -3474,7 +3060,7 @@ function showAutoExportReminder(firstTime){
   if(titleEl&&textEl){
     if(firstTime){
       titleEl.textContent='Save Your First Backup';
-      textEl.textContent="It only takes a moment, and protects this ward's data if something happens to this browser.";
+      textEl.textContent="It only takes a moment, and protects your case's data if something happens to this browser.";
     }else{
       titleEl.textContent='Unsaved Changes';
       textEl.textContent='You have changes since your last backup file.';
@@ -3549,9 +3135,7 @@ async function importSavArchiveOrWard(file, options = {}){
     const manifestEntry=zip.file('manifest.json');
     if(!manifestEntry)throw new Error('Not a Probate Guardian data file (no manifest.json inside).');
     const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-export')throw new Error('Not a Probate Guardian data file.');
-
-    const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
+    if(manifest.format!=='probate-guardian-case')throw new Error('Not a Probate Guardian data file.');
 
     // Same install (same salt) → current key works. Different install →
     // ask for the password the file was exported under and re-derive.
@@ -3572,46 +3156,29 @@ async function importSavArchiveOrWard(file, options = {}){
       }
     }
 
+    // One shape now regardless of whether the file holds one ward (e.g. a
+    // single-ward export) or many -- wards[] just has one entry in that case.
     const imported=[];
-    if(kind==='ward'){
-      const wardFile=zip.file('ward.enc');
-      if(!wardFile)throw new Error('Per-ward .sav file missing ward.enc');
+    for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
+      const f=zip.file(entry.file);
+      if(!f){console.warn('Case file entry missing:',entry.file);continue;}
       let ward;
       try{
-        ward=sanitizeObjectData(await decryptJSONWithKey(await wardFile.async('string'),key));
+        ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
       }catch(err){
-        throw new Error(`The file's data has been modified or corrupted since it was saved — nothing was imported.`);
+        throw new Error(`The file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
       }
       if(ward&&ward.wardId)imported.push(ward);
-    }else{
-      for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
-        const f=zip.file(entry.file);
-        if(!f){console.warn('Archive entry missing:',entry.file);continue;}
-        let ward;
-        try{
-          ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
-        }catch(err){
-          throw new Error(`The archive's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
-        }
-        if(ward&&ward.wardId)imported.push(ward);
-      }
-    }
-    if(kind==='ward'&&!imported.length){
-      throw new Error('Per-ward file contained no readable ward data.');
     }
     if(!imported.length&&!guardianInfo)throw new Error('File contained no readable data.');
 
-    const replacing=imported.filter(w=>guardianData.wards.some(x=>x.wardId===w.wardId)).length;
+    const replacing=imported.filter(w=>caseFile.wards.some(x=>x.wardId===w.wardId)).length;
     const adding=imported.length-replacing;
-    const promptText = (isBackupFlow && kind === 'ward')
-      ? `"${file.name}" is a single-ward save file, not an all-wards backup.\n\nWould you like to import ward "${imported[0].wardName||'this ward'}" instead?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
-      : (isBackupFlow
-          ? (guardianData.wards.length===0
-              ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
-              : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`)
-          : (kind==='ward'
-              ? `Import ward "${imported[0].wardName||'this ward'}" from "${file.name}"?${replacing>0?'\n\n• Will replace existing ward data with the same ID':''}`
-              : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`));
+    const promptText = isBackupFlow
+      ? (caseFile.wards.length===0
+          ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
+          : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`)
+      : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
     if(!confirm(promptText))return false;
 
     // Flush BEFORE swapping array entries so in-progress edits save under the
@@ -3619,50 +3186,42 @@ async function importSavArchiveOrWard(file, options = {}){
     await flushPendingSave();
 
     // Stage updates into a new array atomically before assigning
-    const nextWards=[...guardianData.wards];
+    const nextWards=[...caseFile.wards];
     for(const ward of imported){
       const idx=nextWards.findIndex(x=>x.wardId===ward.wardId);
       if(idx>=0)nextWards[idx]=ward;else nextWards.push(ward);
     }
-    guardianData.wards=nextWards;
+    caseFile.wards=nextWards;
 
     for(const ward of imported){
       await saveWardToState(ward);
     }
-    if(guardianInfo&&guardianInfo.guardianName)guardianData.guardianName=guardianInfo.guardianName;
-    if(guardianInfo&&guardianInfo.guardianEmail)guardianData.guardianEmail=guardianInfo.guardianEmail;
+    if(guardianInfo&&guardianInfo.guardianName)caseFile.guardianName=guardianInfo.guardianName;
+    if(guardianInfo&&guardianInfo.guardianEmail)caseFile.guardianEmail=guardianInfo.guardianEmail;
     await saveData();
 
-    // window.D references an object in guardianData.wards; rebind via switchWard
+    // window.D references an object in caseFile.wards; rebind via switchWard
     // so open forms stay synchronized to the newly imported object and the
     // cross-tab exclusive lock (activateWard / Web Locks API) is acquired properly.
-    if(guardianData.activeWardId&&guardianData.wards.some(w=>w.wardId===guardianData.activeWardId)){
-      await switchWard(guardianData.activeWardId);
-    }else if(guardianData.wards.length){
-      await switchWard(guardianData.wards[0].wardId);
+    if(caseFile.activeWardId&&caseFile.wards.some(w=>w.wardId===caseFile.activeWardId)){
+      await switchWard(caseFile.activeWardId);
+    }else if(caseFile.wards.length){
+      await switchWard(caseFile.wards[0].wardId);
     }else{
       updateSidebar();
     }
 
-    // Match the launch-time reopen paths (trySilentReopen/openWardFileAtLaunch):
-    // a single-ward file must be remembered as THAT ward's own handle, not as
-    // the whole-case archive handle -- otherwise this ward silently ends up
-    // with two live files (its original per-ward handle, still in
-    // _wardZipHandles, plus this one mis-filed as the archive), and whichever
-    // gets silently reopened at the next launch wins, orphaning the other.
+    // handle is only ever set for the "Restore Backup"/"Open Data File"
+    // flow (showOpenFilePicker) -- plain Import (drag-and-drop or the file
+    // input) never has one. One case, one handle: opening/restoring a file
+    // this way makes it the case's ongoing save target going forward.
     if(handle){
-      if(kind==='ward'&&imported.length===1&&imported[0].wardId){
-        await rememberWardZipHandle(imported[0].wardId,handle);
-      }else{
-        await rememberArchiveZipHandle(handle);
-      }
+      await rememberCaseFileHandle(handle);
     }
 
-    const auditMsg=kind==='ward'
-      ? `Imported ward "${imported[0].wardName||'ward'}" from file`
-      : (isBackupFlow||kind==='backup'
-          ? `Restored backup containing ${imported.length} ward(s) from "${file.name}"`
-          : `Imported ${imported.length} form(s) from archive`);
+    const auditMsg=isBackupFlow
+      ? `Restored backup containing ${imported.length} ward(s) from "${file.name}"`
+      : `Imported ${imported.length} form(s) from "${file.name}"`;
     await auditLog('DATA_IMPORT',auditMsg,true);
 
     _dirtySinceExport=false;
@@ -3671,22 +3230,14 @@ async function importSavArchiveOrWard(file, options = {}){
     updateLastSavedIndicator();
     notifyProbateGuardianTabStateChanged();
 
-    if(!manifest.kind&&!manifest.wardId&&!(await hasSeenMigrationModal())){
-      try{
-        await showMigrationModal();
-      }catch(e){
-        console.warn('Could not show migration modal on import:',e);
-      }
-    }
-
-    if(isBackupFlow && kind !== 'ward'){
+    if(isBackupFlow){
       window.dispatchEvent(new CustomEvent('pg:backup-restored', {
         detail: { fileName: file.name, count: imported.length }
       }));
       if(typeof navigate==='function')await navigate('/dashboard');
       alert(`Backup restored: ${imported.length} ward(s) loaded.`);
     }else{
-      alert(kind==='ward'?`Import complete: "${imported[0].wardName||'ward'}" loaded.`:`Import complete: ${imported.length} form(s) loaded.`);
+      alert(`Import complete: ${imported.length} form(s) loaded.`);
     }
     return true;
   }catch(e){
@@ -3785,16 +3336,16 @@ async function _sessionCacheClear(){
 // for dirty state.
 async function saveSessionRestoreCache(){
   if(_securityMode==='encrypted'&&!_cryptoKey)return;
-  if(!guardianData.wards.length)return; // nothing worth recovering yet
+  if(!caseFile.wards.length)return; // nothing worth recovering yet
   try{
     const salt=await loadAppState('cryptoSalt');
     const verifier=await loadAppState('cryptoVerifier');
     const wards=[];
-    for(const ward of guardianData.wards)wards.push({wardId:ward.wardId,enc:await encryptJSON(ward)});
-    const guardian=await encryptJSON({guardianName:guardianData.guardianName,guardianEmail:guardianData.guardianEmail});
+    for(const ward of caseFile.wards)wards.push({wardId:ward.wardId,enc:await encryptJSON(ward)});
+    const guardian=await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail});
     await _sessionCachePut({
       savedAt:Date.now(),securityMode:_securityMode,salt:salt||null,verifier:verifier||null,
-      guardian,wards,activeWardId:guardianData.activeWardId||null
+      guardian,wards,activeWardId:caseFile.activeWardId||null
     });
   }catch(e){console.warn('session-restore cache write failed',e);}
 }
@@ -3825,10 +3376,10 @@ async function checkSessionRestoreCacheAtLaunch(){
     }
     if(!restoredWards.length)throw new Error('Archive contained no readable data.');
     const g=await decryptJSONWithKey(cache.guardian,key);
-    guardianData.wards=restoredWards;
-    guardianData.guardianName=(g&&g.guardianName)||'';
-    guardianData.guardianEmail=(g&&g.guardianEmail)||'';
-    guardianData.activeWardId=cache.activeWardId||restoredWards[0].wardId;
+    caseFile.wards=restoredWards;
+    caseFile.guardianName=(g&&g.guardianName)||'';
+    caseFile.guardianEmail=(g&&g.guardianEmail)||'';
+    caseFile.activeWardId=cache.activeWardId||restoredWards[0].wardId;
     _securityMode=cache.securityMode;
     _cryptoKey=key;
     _appState.securityMode=cache.securityMode;
@@ -3859,7 +3410,7 @@ async function checkSessionRestoreCacheAtLaunch(){
 // A valid remembered grant permits silent reopen; an expired grant needs a
 // user click, and a missing or stale handle falls back to the file picker.
 const LAUNCH_PREF_DB='pg-launch-pref', LAUNCH_PREF_STORE='flags';
-const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle', LAUNCH_PREF_KEY_MIGRATION_SEEN='migrationModalSeen';
+const LAUNCH_PREF_KEY_OPENED='hasOpenedBefore', LAUNCH_PREF_KEY_HANDLE='zipFileHandle';
 const REMEMBERED_FILE_TIMEOUT_MS=10000;
 let _rememberedFileUnavailable=false;
 function _launchPrefDb(){
@@ -3903,33 +3454,14 @@ async function hasOpenedCaseBefore(){
 async function markCaseOpenedBefore(){
   try{await _launchPrefPut(LAUNCH_PREF_KEY_OPENED,true);}catch(e){/* non-critical */}
 }
-async function hasSeenMigrationModal(){
-  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_MIGRATION_SEEN))===true;}
-  catch(e){return false;}
-}
-async function markMigrationModalSeen(){
-  try{await _launchPrefPut(LAUNCH_PREF_KEY_MIGRATION_SEEN,true);}catch(e){/* non-critical */}
-}
-async function savePersistedWardZipHandle(wardId,handle){
-  if(!wardId||!handle)return;
-  try{await _launchPrefPut('wardHandle_'+wardId,handle);}catch(e){/* non-critical */}
-}
-async function loadPersistedWardZipHandle(wardId){
-  if(!wardId)return null;
-  try{return (await _launchPrefGet('wardHandle_'+wardId))||null;}catch(e){return null;}
-}
-async function forgetPersistedWardZipHandle(wardId){
-  if(!wardId)return;
-  try{await _launchPrefDelete('wardHandle_'+wardId);}catch(e){/* non-critical */}
-}
-async function savePersistedArchiveZipHandle(handle){
+async function savePersistedCaseFileHandle(handle){
   if(!handle)return;
   try{await _launchPrefPut(LAUNCH_PREF_KEY_HANDLE,handle);}catch(e){/* non-critical */}
 }
-async function loadPersistedArchiveZipHandle(){
+async function loadPersistedCaseFileHandle(){
   try{return (await _launchPrefGet(LAUNCH_PREF_KEY_HANDLE))||null;}catch(e){return null;}
 }
-async function forgetPersistedArchiveZipHandle(){
+async function forgetPersistedCaseFileHandle(){
   try{await _launchPrefDelete(LAUNCH_PREF_KEY_HANDLE);}catch(e){/* non-critical */}
 }
 async function runRememberedHandleOperation(operation,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
@@ -3950,7 +3482,7 @@ function readRememberedFile(handle,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
 }
 async function handleRememberedFileFailure(handle,error){
   _rememberedFileUnavailable=true;
-  await forgetPersistedArchiveZipHandle();
+  await forgetPersistedCaseFileHandle();
   console.warn('Remembered case file is unavailable; it must be selected again',error);
 }
 
@@ -3961,17 +3493,13 @@ async function handleRememberedFileFailure(handle,error){
 async function trySilentReopen(){
   let handle=null;
   try{
-    handle=await loadPersistedArchiveZipHandle();
+    handle=await loadPersistedCaseFileHandle();
     if(!handle||!handle.queryPermission)return false;
     if((await runRememberedHandleOperation(()=>handle.queryPermission({mode:'read'})))!=='granted')return false;
     const file=await readRememberedFile(handle);
     const res=await loadCaseFileAtLaunch(file);
     if(res&&res.ok){
-      if(res.kind==='ward'&&res.wardId){
-        await rememberWardZipHandle(res.wardId,handle);
-      }else{
-        await rememberArchiveZipHandle(handle);
-      }
+      await rememberCaseFileHandle(handle);
       return true;
     }
     return false;
@@ -3983,7 +3511,6 @@ async function trySilentReopen(){
 
 let _launchStateResolved=false;
 let _openedFileAtLaunch=false; // set by loadCaseFileAtLaunch() on success; initApp() lands on the dashboard instead of the default page when this is true
-let _needsMigrationModal=false;
 let _startupChoiceResolve=null;
 async function promptOpenOrStartAtLaunch(){
   if(await trySilentReopen())return;
@@ -4004,7 +3531,7 @@ function _resolveStartupChoice(){
 }
 async function startNewWardAtLaunch(){
   _resolveStartupChoice();
-  try{ await forgetPersistedArchiveZipHandle(); }catch(e){}
+  try{ await forgetPersistedCaseFileHandle(); }catch(e){}
 }
 const startNewCaseAtLaunch = startNewWardAtLaunch;
 window.startNewWardAtLaunch = startNewWardAtLaunch;
@@ -4015,8 +3542,8 @@ window.startNewCaseAtLaunch = startNewCaseAtLaunch;
 // Firefox/Safari implement neither picker — fall back to a plain
 // <input type=file>, which can only ever hand back a read-only File.
 // Those browsers can open a case file but can never auto-save it (see
-// refreshAutoSaveArmedStatus() and the note on _wardZipHandles above); that
-// is stated on screen once the file is open, not hidden.
+// refreshAutoSaveArmedStatus()); that is stated on screen once the file is
+// open, not hidden.
 //
 // trySilentReopen() already tried the fully-silent path with no prompt at
 // all before this screen ever showed; reaching here means that either
@@ -4026,18 +3553,14 @@ window.startNewCaseAtLaunch = startNewCaseAtLaunch;
 // handle — a small native "Allow?" prompt, not the full picker — before
 // falling back to showOpenFilePicker() itself.
 async function openWardFileAtLaunch(){
-  const remembered=await loadPersistedArchiveZipHandle();
+  const remembered=await loadPersistedCaseFileHandle();
   if(remembered&&remembered.requestPermission){
     try{
       if((await runRememberedHandleOperation(()=>remembered.requestPermission({mode:'read'})))==='granted'){
         const file=await readRememberedFile(remembered);
         const res=await loadCaseFileAtLaunch(file);
         if(res&&res.ok){
-          if(res.kind==='ward'&&res.wardId){
-            await rememberWardZipHandle(res.wardId,remembered);
-          }else{
-            await rememberArchiveZipHandle(remembered);
-          }
+          await rememberCaseFileHandle(remembered);
           _resolveStartupChoice();
           return;
         }
@@ -4046,7 +3569,7 @@ async function openWardFileAtLaunch(){
       await handleRememberedFileFailure(remembered,e);
       const statusEl=document.getElementById('startup-file-status');
       if(statusEl){
-        statusEl.textContent='Your previously opened file could not be found or was moved. Click "Open a Ward File (.sav)" below to select your file.';
+        statusEl.textContent='Your previously opened file could not be found or was moved. Click "Open Case File (.sav)" below to select your file.';
         statusEl.style.display='block';
       }
       return; // Return so user can click with a fresh gesture
@@ -4060,11 +3583,7 @@ async function openWardFileAtLaunch(){
       const file=await handle.getFile();
       const res=await loadCaseFileAtLaunch(file);
       if(res&&res.ok){
-        if(res.kind==='ward'&&res.wardId){
-          await rememberWardZipHandle(res.wardId,handle);
-        }else{
-          await rememberArchiveZipHandle(handle);
-        }
+        await rememberCaseFileHandle(handle);
         _resolveStartupChoice();
       }
     }catch(e){
@@ -4072,12 +3591,12 @@ async function openWardFileAtLaunch(){
       if(e&&(String(e.message).includes('user gesture')||String(e).includes('user gesture'))){
         const statusEl=document.getElementById('startup-file-status');
         if(statusEl){
-          statusEl.textContent='Click "Open a Ward File (.sav)" to select a file.';
+          statusEl.textContent='Click "Open Case File (.sav)" to select a file.';
           statusEl.style.display='block';
         }
         return;
       }
-      console.error('Open ward file failed',e);
+      console.error('Open case file failed',e);
       alert('Could not open that file: '+(e&&e.message||e));
     }
     return;
@@ -4101,7 +3620,7 @@ async function handleStartupOpenInputChange(input){
 window.handleStartupOpenInputChange = handleStartupOpenInputChange;
 
 // Shared by both pickers above: validate, parse, ask for a password if the
-// file is encrypted, then hand off to loadStateFromSavZip(). Returns true
+// file is encrypted, then hand off to loadCaseFileFromZip(). Returns true
 // on success (state is now populated and _cryptoKey is set if needed) or
 // false (already reported to the user; the startup choice screen stays up
 // so they can try again or start a new case instead).
@@ -4114,7 +3633,7 @@ async function loadCaseFileAtLaunch(file){
     const manifestEntry=zip.file('manifest.json');
     if(!manifestEntry){alert('Not a Probate Guardian data file (no manifest.json inside).');return false;}
     const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-export'){alert('Not a Probate Guardian data file.');return false;}
+    if(manifest.format!=='probate-guardian-case'){alert('Not a Probate Guardian data file.');return false;}
     _securityMode=manifest.securityMode||(manifest.salt?'encrypted':'none');
     if(_securityMode==='encrypted'){
       await promptPasswordForFile(manifest,zip); // sets _cryptoKey; only resolves on a verified password
@@ -4127,15 +3646,13 @@ async function loadCaseFileAtLaunch(file){
     _appState.securityMode=_securityMode;
     _appState.cryptoSalt=manifest.salt||null;
     _appState.cryptoVerifier=manifest.verifier||null;
-    await loadStateFromSavZip(zip,manifest,_cryptoKey);
+    await loadCaseFileFromZip(zip,manifest,_cryptoKey);
     if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
     _launchStateResolved=true;
     _openedFileAtLaunch=true;
-    if(!manifest.kind&&!manifest.wardId&&!(await hasSeenMigrationModal()))_needsMigrationModal=true;
     markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
-    const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
-    return { ok: true, kind, wardId: manifest.wardId || (guardianData.wards[0] && guardianData.wards[0].wardId) || null };
+    return { ok: true, wardId: (caseFile.wards[0] && caseFile.wards[0].wardId) || null };
   }catch(e){
     console.error('Failed to open case file',e);
     alert('Could not open that file: '+(e&&e.message||e));
@@ -4143,40 +3660,32 @@ async function loadCaseFileAtLaunch(file){
   }
 }
 
-// The counterpart to buildExportZipBlob(): reads wards, guardian info,
+// The counterpart to buildCaseFileBlob(): reads wards, guardian info,
 // appState, cached templates, and the audit log out of an already-parsed
 // .sav zip into memory. `key` may be null in 'none' mode — decryptJSONWithKey
-// checks for the PLAIN: prefix before ever touching it. Tolerates a
-// version-1 file (no appState/templates/auditLog sections, no verifier)
-// by treating each absent piece as simply not set, per SAV_FORMAT_VERSION's
-// own comment. Version-3 per-ward files are delegated to loadWardFromSavZip.
-async function loadStateFromSavZip(zip,manifest,key){
-  // Infer kind for files written before the kind field existed:
-  // version-3 files with wardId but no kind were the first per-ward
-  // exports; treat them as 'ward'. Older files without kind are archives.
-  const kind=manifest.kind||(manifest.version>=3&&manifest.wardId?'ward':'archive');
-  if(kind!=='ward'&&kind!=='archive'&&kind!=='backup'){
-    throw new Error(`Unknown .sav file kind "${kind}" — this file may require a newer version of the app.`);
-  }
-  if(kind==='ward'){
-    return loadWardFromSavZip(zip,manifest,key);
-  }
-  guardianData.wards=[];
+// checks for the PLAIN: prefix before ever touching it. A file with no
+// appState section at all (buildSingleWardExportBlob's single-ward exports
+// never include one) defaults activeWardId to whichever ward the file
+// contains, rather than failing.
+async function loadCaseFileFromZip(zip,manifest,key){
+  caseFile.wards=[];
+  caseFile.parties=[]; // reserved for a later phase -- no reader/writer populates this yet
   for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
     const f=zip.file(entry.file);
-    if(!f){console.warn('Archive entry missing:',entry.file);continue;}
+    if(!f){console.warn('Case file entry missing:',entry.file);continue;}
     try{
       const ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
-      if(ward&&ward.wardId)guardianData.wards.push(ward);
+      if(ward&&ward.wardId)caseFile.wards.push(ward);
     }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);}
   }
-  guardianData.guardianName='';
-  guardianData.guardianEmail='';
+  caseFile.guardianName='';
+  caseFile.guardianEmail='';
+  caseFile.lastSavedFileName=null; // stamped fresh by rememberCaseFileHandle() once this file gets a handle
   if(manifest.guardian){
     try{
       const g=await decryptJSONWithKey(manifest.guardian,key);
-      guardianData.guardianName=g.guardianName||'';
-      guardianData.guardianEmail=g.guardianEmail||'';
+      caseFile.guardianName=g.guardianName||'';
+      caseFile.guardianEmail=g.guardianEmail||'';
     }catch(e){console.warn('Could not read guardian info from .sav file',e);}
   }
   _appState.activeWardId=null;
@@ -4185,7 +3694,7 @@ async function loadStateFromSavZip(zip,manifest,key){
   if(manifest.appState){
     try{
       const a=await decryptJSONWithKey(manifest.appState,key);
-      guardianData.activeWardId=a.activeWardId||null;
+      caseFile.activeWardId=a.activeWardId||null;
       _appState.theme=a.theme;
       _appState.walkthroughCompleted=a.walkthroughCompleted;
       _appState.firstLaunchSeen=a.firstLaunchSeen;
@@ -4196,9 +3705,7 @@ async function loadStateFromSavZip(zip,manifest,key){
       _lastExportAt=a.lastExportAt||null;
     }catch(e){console.warn('Could not read app preferences from .sav file',e);}
   }else{
-    // Version-1 file: activeWardId was never in the export at all (it lived
-    // only in IndexedDB) — default to the first ward rather than none.
-    guardianData.activeWardId=(guardianData.wards[0]&&guardianData.wards[0].wardId)||null;
+    caseFile.activeWardId=(caseFile.wards[0]&&caseFile.wards[0].wardId)||null;
   }
   _templateCache={};
   for(const type of (Array.isArray(manifest.templates)?manifest.templates:[])){
@@ -4216,56 +3723,6 @@ async function loadStateFromSavZip(zip,manifest,key){
         _auditLogNextId=entries.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
       }
     }catch(e){console.warn('Could not read audit log from .sav file',e);}
-  }
-}
-
-// ── Per-ward reader (version 3) ────────────────────────────────────────
-// Counterpart to buildWardZipBlob(). Reads a single ward from a version-3
-// per-ward .sav file into guardianData.
-//
-// Both callers today (loadCaseFileAtLaunch and lockApp) run with
-// guardianData.wards empty, so this appends unconditionally. If a future
-// "import ward into current session" feature needs merge semantics
-// (replace-by-id, audit dedup), add them at that point with tests.
-async function loadWardFromSavZip(zip,manifest,key){
-  // 1. Decrypt ward
-  const wardFile=zip.file('ward.enc');
-  if(!wardFile)throw new Error('Per-ward .sav file missing ward.enc');
-  const ward=sanitizeObjectData(await decryptJSONWithKey(await wardFile.async('string'),key));
-  if(!ward||!ward.wardId)throw new Error('Per-ward .sav file: ward data invalid or missing wardId');
-
-  // 2. Append ward
-  guardianData.wards.push(ward);
-
-  // 3. Guardian identity
-  if(manifest.guardian){
-    try{
-      const g=await decryptJSONWithKey(manifest.guardian,key);
-      guardianData.guardianName=g.guardianName||'';
-      guardianData.guardianEmail=g.guardianEmail||'';
-    }catch(e){console.warn('Could not read guardian info from per-ward .sav file',e);}
-  }
-
-  // 4. Mark this ward as active. No lock is acquired here — both callers
-  // (loadCaseFileAtLaunch → initApp, lockApp) call activateWard() after
-  // this function returns. Assert that no lock is currently held; if one
-  // is, a caller is using this function outside its expected context.
-  if(window.getCurrentLockedWardId&&window.getCurrentLockedWardId()){
-    console.error('loadWardFromSavZip: a ward lock is held ('+window.getCurrentLockedWardId()+') — callers must release before loading a new file.');
-    if(window.releaseWardLock)await window.releaseWardLock();
-  }
-  guardianData.activeWardId=manifest.wardId||ward.wardId;
-
-  // 5. Load audit log entries (callers start with empty _auditLogEntries)
-  const auditFile=zip.file('auditLog.enc');
-  if(auditFile){
-    try{
-      const entries=await decryptJSONWithKey(await auditFile.async('string'),key);
-      if(Array.isArray(entries)){
-        _auditLogEntries=entries;
-        _auditLogNextId=entries.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
-      }
-    }catch(e){console.warn('Could not read audit log from per-ward .sav file',e);}
   }
 }
 
@@ -4420,7 +3877,7 @@ async function deleteAutosaveFile(wardId){
 // backup files are on disk. Never overwrites wards already in memory, so it
 // can't clobber a case already in progress or one just loaded from a .sav file.
 async function restoreFromFileBackupIfEmpty(){
-  if(guardianData.wards.length>0)return;
+  if(caseFile.wards.length>0)return;
   const fs=tauriFs();
   const dir=await getAutosaveDirPath();
   if(!fs||!dir)return;
@@ -4437,15 +3894,15 @@ async function restoreFromFileBackupIfEmpty(){
         try{ward=await decryptJSON(raw);}
         catch{ward=JSON.parse(raw);} // legacy plaintext backup from before encryption existed
         if(ward&&ward.wardId&&ward.inventoryType){
-          guardianData.wards.push(ward);
+          caseFile.wards.push(ward);
           await saveWardToState(ward); // re-saves it encrypted going forward
         }
       }catch(e){console.warn('skipping unreadable backup file',entry.name,e);}
     }
-    if(guardianData.wards.length>0){
-      guardianData.activeWardId=guardianData.wards[0].wardId;
-      await saveAppState('activeWardId',guardianData.activeWardId);
-      console.info(`Restored ${guardianData.wards.length} ward(s) from on-disk backup.`);
+    if(caseFile.wards.length>0){
+      caseFile.activeWardId=caseFile.wards[0].wardId;
+      await saveAppState('activeWardId',caseFile.activeWardId);
+      console.info(`Restored ${caseFile.wards.length} ward(s) from on-disk backup.`);
     }
   }catch(e){console.warn('restore-from-backup failed',e);}
 }
@@ -4502,7 +3959,7 @@ function carrySourcesFor(type){return CARRY_SOURCE_TYPE[type]||[];}
 // carrySourcesFor() so the closest counterpart appears first.
 function carryWardsFor(type,excludeWardId){
   const srcs=carrySourcesFor(type);
-  return srcs.flatMap(st=>guardianData.wards.filter(w=>w.inventoryType===st&&w.wardId!==excludeWardId));
+  return srcs.flatMap(st=>caseFile.wards.filter(w=>w.inventoryType===st&&w.wardId!==excludeWardId));
 }
 
 // Human-readable list of every source type configured for `type` (e.g.
@@ -4754,7 +4211,7 @@ function updateCarrySourcePicker(){
 function onCarrySourceChange(){
   const sourceId=document.getElementById('carry-source-ward').value;
   if(!sourceId)return;
-  const src=guardianData.wards.find(w=>w.wardId===sourceId);
+  const src=caseFile.wards.find(w=>w.wardId===sourceId);
   if(!src)return;
   const nameEl=document.getElementById('new-ward-name');
   if(!nameEl.value.trim())nameEl.value=src.wardName||'';
@@ -4768,7 +4225,7 @@ function onCarrySourceChange(){
 async function showLoadWardInfoModal(){
   await ensureFragment('common-modals');
   const sourceDesc=describeCarrySourceTypes(activeInventoryType);
-  const matches=carryWardsFor(activeInventoryType,guardianData.activeWardId);
+  const matches=carryWardsFor(activeInventoryType,caseFile.activeWardId);
   if(!matches.length){
     alert(sourceDesc
       ? `No ${sourceDesc} ward found to load info from. Create one first, then come back here.`
@@ -4784,7 +4241,7 @@ async function showLoadWardInfoModal(){
 async function doLoadWardInfo(){
   const sourceId=document.getElementById('load-ward-info-source').value;
   if(!sourceId)return;
-  const src=guardianData.wards.find(w=>w.wardId===sourceId);
+  const src=caseFile.wards.find(w=>w.wardId===sourceId);
   if(!src)return;
   closeModal('loadWardInfoModal');
   Object.assign(window.D,carryOverFields(src,activeInventoryType));
@@ -4801,7 +4258,7 @@ async function doLoadWardInfo(){
 function loadWardInfoBanner(){
   const sourceDesc=describeCarrySourceTypes(activeInventoryType);
   if(!sourceDesc)return '';
-  const hasSource=carryWardsFor(activeInventoryType,guardianData.activeWardId).length>0;
+  const hasSource=carryWardsFor(activeInventoryType,caseFile.activeWardId).length>0;
   if(!hasSource)return '';
   return `<div class="inventory-convert-banner mb-3" data-form-action="load-ward-info" role="button" tabindex="0" aria-label="Load ward info from an existing ${esc(sourceDesc)} ward">
     <span class="inventory-convert-icon"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/></svg></span>
@@ -4851,7 +4308,7 @@ function addToRecentlyOpened(ward){
 function getRecentlyOpenedWards(){
   return loadRecentlyOpenedWards()
     .map(r=>{
-      const ward=guardianData.wards.find(w=>w.wardId===r.wardId);
+      const ward=caseFile.wards.find(w=>w.wardId===r.wardId);
       return ward?{wardId:ward.wardId,wardName:ward.wardName,inventoryType:ward.inventoryType,timestamp:r.timestamp,archived:!!ward.archived}:null;
     })
     .filter(Boolean);
@@ -4864,7 +4321,7 @@ async function activateWard(ward, opts = {}) {
   if (!ward || !ward.wardId) return false;
 
   // 1. If ward is already active and lock held, refresh UI and return true
-  if (guardianData.activeWardId === ward.wardId && window.D === ward) {
+  if (caseFile.activeWardId === ward.wardId && window.D === ward) {
     if (window.acquireWardLock) {
       const alreadyHeld = await window.acquireWardLock(ward.wardId);
       if (alreadyHeld) {
@@ -4895,7 +4352,7 @@ async function activateWard(ward, opts = {}) {
   }
 
   // 6. On success, set loaded state
-  guardianData.activeWardId = ward.wardId;
+  caseFile.activeWardId = ward.wardId;
   activeInventoryType = ward.inventoryType;
   window.D = ward;
   _visitedPages.clear();
@@ -4922,7 +4379,7 @@ async function unloadWard() {
   if (window.releaseWardLock) {
     await window.releaseWardLock();
   }
-  guardianData.activeWardId = null;
+  caseFile.activeWardId = null;
   window.D = {};
   activeInventoryType = null;
   try {
@@ -4938,26 +4395,15 @@ async function unloadWard() {
 
 window.activateWard = activateWard;
 window.unloadWard = unloadWard;
-window.rememberWardZipHandle = rememberWardZipHandle;
-window.loadWardZipHandle = loadWardZipHandle;
-window.forgetWardZipHandle = forgetWardZipHandle;
-window.rememberArchiveZipHandle = rememberArchiveZipHandle;
-window.loadArchiveZipHandle = loadArchiveZipHandle;
-window.forgetArchiveZipHandle = forgetArchiveZipHandle;
-window.rememberZipHandle = async function(wardId, handle) {
-  if (wardId && handle) {
-    await rememberWardZipHandle(wardId, handle);
-    return;
-  }
-  throw new Error('rememberZipHandle requires (wardId, handle). Use rememberArchiveZipHandle(handle) for case archives.');
-};
-window.loadZipHandle = loadWardZipHandle;
+window.rememberCaseFileHandle = rememberCaseFileHandle;
+window.loadCaseFileHandle = loadCaseFileHandle;
+window.forgetCaseFileHandle = forgetCaseFileHandle;
 window.hasOpenedCaseBefore = hasOpenedCaseBefore;
 window.markCaseOpenedBefore = markCaseOpenedBefore;
 
 async function addWard(wardName,inventoryType){
   const wardId=createWardId();
-  const isFirstWardEver=guardianData.wards.length===0;
+  const isFirstWardEver=caseFile.wards.length===0;
 
   const newWard={
     wardId,
@@ -4966,7 +4412,7 @@ async function addWard(wardName,inventoryType){
     ...initializeEmptyData(inventoryType),
     wardName:wardName||''
   };
-  guardianData.wards.push(newWard);
+  caseFile.wards.push(newWard);
   await saveWardToState(newWard);
 
   await activateWard(newWard);
@@ -5018,7 +4464,7 @@ function comboboxHide(dropdownEl){
 // click into the field to see every ward as a dropdown — same as the plain
 // picker before it, just also typeable.
 function wardSelectorItems(){
-  return guardianData.wards.map(w=>({
+  return caseFile.wards.map(w=>({
     wardId:w.wardId,
     label:w.wardName||'(unnamed)',
     sub:INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType
@@ -5111,7 +4557,7 @@ function handleSwitchWardClick(){
     // Typed a name without picking from the dropdown — resolve it directly
     // if exactly one ward matches; otherwise show the dropdown to disambiguate.
     const q=input.value.trim().toLowerCase();
-    const matches=guardianData.wards.filter(w=>(w.wardName||'').trim().toLowerCase()===q);
+    const matches=caseFile.wards.filter(w=>(w.wardName||'').trim().toLowerCase()===q);
     if(matches.length===1){
       wardId=matches[0].wardId;
     }else{
@@ -5121,7 +4567,7 @@ function handleSwitchWardClick(){
   }
   if(!wardId)return;
   collapseWardControls();
-  if(wardId===guardianData.activeWardId){
+  if(wardId===caseFile.activeWardId){
     showSwitchWardPickerModal();
     return;
   }
@@ -5130,11 +4576,11 @@ function handleSwitchWardClick(){
 
 async function showSwitchWardPickerModal(){
   await ensureFragment('common-modals');
-  const current=guardianData.wards.find(w=>w.wardId===guardianData.activeWardId);
+  const current=caseFile.wards.find(w=>w.wardId===caseFile.activeWardId);
   const nameEl=document.getElementById('switch-ward-picker-current-name');
   if(nameEl)nameEl.textContent=current&&current.wardName?`"${current.wardName}"`:'This ward';
   const listEl=document.getElementById('switch-ward-picker-list');
-  const others=guardianData.wards.filter(w=>w.wardId!==guardianData.activeWardId);
+  const others=caseFile.wards.filter(w=>w.wardId!==caseFile.activeWardId);
   if(!others.length){
     listEl.innerHTML='<div class="dashboard-empty-inline">You only have one ward — nothing to switch to yet.</div>';
   }else{
@@ -5153,7 +4599,7 @@ async function showSwitchWardPickerModal(){
 }
 
 async function switchWard(wardId){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward)return false;
 
   const ok=await activateWard(ward);
@@ -5184,17 +4630,16 @@ async function switchWard(wardId){
 }
 
 async function deleteWard(wardId){
-  const idx=guardianData.wards.findIndex(w=>w.wardId===wardId);
+  const idx=caseFile.wards.findIndex(w=>w.wardId===wardId);
   if(idx===-1)return;
 
-  if(guardianData.activeWardId===wardId){
+  if(caseFile.activeWardId===wardId){
     await unloadWard();
   }
 
-  guardianData.wards.splice(idx,1);
+  caseFile.wards.splice(idx,1);
   await deleteWardFromState(wardId);
   deleteAutosaveFile(wardId);
-  await forgetWardZipHandle(wardId);
 
   updateSidebar();
   notifyProbateGuardianTabStateChanged();
@@ -5203,7 +4648,7 @@ async function deleteWard(wardId){
 window.deleteWard = deleteWard;
 
 async function renameWard(wardId,newName){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   ward.wardName=newName;
   await saveWardToState(ward);
@@ -5383,9 +4828,6 @@ function initializeEmptyData(type){
 function closeModal(modalId){
   const el=document.getElementById(modalId);
   if(el)el.classList.remove('show');
-  if(modalId==='migrationModal'){
-    void markMigrationModalSeen();
-  }
 }
 
 // Every modal showModal() is ever called with lives in the lazy
@@ -5409,11 +4851,6 @@ async function showModal(modalId){
   el.classList.add('show');
 }
 
-async function showMigrationModal(){
-  await showModal('migrationModal');
-}
-window.showMigrationModal = showMigrationModal;
-
 // Fills a ward-name <datalist> with the distinct names already on file, so
 // typing offers them as autocomplete. A ward routinely has several forms
 // (Inventory, Annual, Plan...) under one name, hence the de-duplication —
@@ -5422,7 +4859,7 @@ window.showMigrationModal = showMigrationModal;
 function populateWardNameSuggestions(datalistId){
   const dl=document.getElementById(datalistId);
   if(!dl)return;
-  const names=[...new Set(guardianData.wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
+  const names=[...new Set(caseFile.wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
     .sort((a,b)=>a.localeCompare(b));
   dl.innerHTML=names.map(n=>`<option value="${esc(n)}"></option>`).join('');
 }
@@ -5432,7 +4869,7 @@ function populateWardNameSuggestions(datalistId){
 // them as a dropdown — picking one, rather than retyping, is what makes a new
 // form group with an existing ward on the dashboard.
 function wardNameComboItems(){
-  const names=[...new Set(guardianData.wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
+  const names=[...new Set(caseFile.wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
     .sort((a,b)=>a.localeCompare(b));
   return names.map(n=>({label:n}));
 }
@@ -5481,8 +4918,8 @@ async function doAddWard(){
   try{
     const wardId=await addWard(name,type);
     if(carrySourceId){
-      const src=guardianData.wards.find(w=>w.wardId===carrySourceId);
-      const ward=guardianData.wards.find(w=>w.wardId===wardId);
+      const src=caseFile.wards.find(w=>w.wardId===carrySourceId);
+      const ward=caseFile.wards.find(w=>w.wardId===wardId);
       if(src&&ward){
         Object.assign(ward,carryOverFields(src,type));
         if(ward.wardName!==name)ward.wardName=name;
@@ -5541,7 +4978,7 @@ async function doConfirmSimplifiedEligibility(){
       window.D.eligDepository='Yes';
       window.D.eligOnlyTransactions='Yes';
       if(carrySourceId){
-        const src=guardianData.wards.find(w=>w.wardId===carrySourceId);
+        const src=caseFile.wards.find(w=>w.wardId===carrySourceId);
         if(src){
           Object.assign(window.D,carryOverFields(src,'simplified'));
           if(window.D.wardName!==name)window.D.wardName=name;
@@ -5554,7 +4991,7 @@ async function doConfirmSimplifiedEligibility(){
       // before answering the eligibility questions, and that choice still
       // applies to the form they actually end up with.
       if(carrySourceId){
-        const src=guardianData.wards.find(w=>w.wardId===carrySourceId);
+        const src=caseFile.wards.find(w=>w.wardId===carrySourceId);
         if(src){
           Object.assign(window.D,carryOverFields(src,'annual'));
           if(window.D.wardName!==name)window.D.wardName=name;
@@ -5582,7 +5019,7 @@ async function doRenameWard(){
   const newName=document.getElementById('rename-ward-input').value.trim();
   if(!newName){alert('Please enter a ward name');return;}
   try{
-    await renameWard(guardianData.activeWardId,newName);
+    await renameWard(caseFile.activeWardId,newName);
     closeModal('renameWardModal');
   }catch(e){
     console.error('Failed to rename ward',e);
@@ -5597,7 +5034,7 @@ let _pendingDeleteWardId=null;
 // the dashboard card's own Delete button can target any ward regardless
 // of which one is currently active.
 async function confirmDeleteWard(wardId){
-  const ward=wardId?guardianData.wards.find(w=>w.wardId===wardId):getActiveWard();
+  const ward=wardId?caseFile.wards.find(w=>w.wardId===wardId):getActiveWard();
   if(!ward)return;
   await ensureFragment('common-modals');
   _pendingDeleteWardId=ward.wardId;
@@ -5607,7 +5044,7 @@ async function confirmDeleteWard(wardId){
 }
 
 async function doDeleteWard(){
-  const wardId=_pendingDeleteWardId||guardianData.activeWardId;
+  const wardId=_pendingDeleteWardId||caseFile.activeWardId;
   const wasOnDashboard=currentPage==='/dashboard';
   try{
     await deleteWard(wardId);
@@ -5622,196 +5059,11 @@ async function doDeleteWard(){
 async function doGuardianSetup(){
   const name=document.getElementById('setup-guardian-name').value.trim();
   if(!name){alert('Please enter your name');return;}
-  guardianData.guardianName=name;
-  guardianData.guardianEmail=document.getElementById('setup-guardian-email').value.trim();
+  caseFile.guardianName=name;
+  caseFile.guardianEmail=document.getElementById('setup-guardian-email').value.trim();
   await saveData();
   updateSidebar();
   closeModal('guardianSetupModal');
-}
-
-// ═══════════════════════════════════════════════════════
-// LEGACY BROWSER-STORAGE MIGRATION
-// Older releases stored case data in ProbateGuardian IndexedDB and several
-// local/session-storage keys. Before normal startup, offer to export that
-// data to .sav, then remove only those legacy stores. Current recovery and
-// launch-preference databases use different names and are not migrated.
-//
-// Browsers without indexedDB.databases() cannot safely probe for the legacy
-// database without creating it, so only legacy local/session keys are checked.
-async function legacyIndexedDBExists(){
-  try{
-    if(!indexedDB.databases)return null;
-    const dbs=await indexedDB.databases();
-    return dbs.some(d=>d.name===LEGACY_DB_NAME);
-  }catch(e){return null;}
-}
-function openLegacyIDB(){
-  return new Promise((resolve,reject)=>{
-    const req=indexedDB.open(LEGACY_DB_NAME,LEGACY_DB_VERSION);
-    req.onerror=()=>reject(req.error);
-    req.onsuccess=()=>resolve(req.result);
-    // Only reachable if legacyIndexedDBExists() said yes but the database
-    // turned out not to actually have this store — leaving this empty
-    // means nothing gets fabricated here; the getAll() calls below just
-    // see whatever object stores genuinely exist.
-    req.onupgradeneeded=()=>{};
-  });
-}
-function legacyIDBGetAll(db,storeName){
-  return new Promise((resolve)=>{
-    if(!db.objectStoreNames.contains(storeName)){resolve([]);return;}
-    const tx=db.transaction([storeName],'readonly');
-    const req=tx.objectStore(storeName).getAll();
-    req.onsuccess=()=>resolve(req.result||[]);
-    req.onerror=()=>resolve([]);
-  });
-}
-
-async function runLegacyBrowserStorageMigrationIfNeeded(){
-  const legacyLocalStorageKeys=[
-    LEGACY_KEYS.guardian,LEGACY_KEYS.simplified,LEGACY_KEYS.annual,
-    LEGACY_KEYS.migrationComplete,LEGACY_KEYS.guardianTemplate,
-    LEGACY_KEYS.simplifiedTemplate,LEGACY_KEYS.annualTemplate,
-    'pg-theme','walkthroughCompleted','firstLaunchSeen','pg-recent-wards'
-  ];
-  let hasLegacyLocalStorage=false;
-  try{hasLegacyLocalStorage=legacyLocalStorageKeys.some(k=>localStorage.getItem(k)!=null);}
-  catch(e){/* localStorage unavailable — nothing to migrate from it */}
-
-  let legacyDb=null;
-  let legacyWardRows=[],legacyAppStateRows=[],legacyTemplateRows=[],legacyAuditRows=[];
-  try{
-    if(await legacyIndexedDBExists()){
-      legacyDb=await openLegacyIDB();
-      legacyWardRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.wards);
-      legacyAppStateRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.appState);
-      legacyTemplateRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.templates);
-      legacyAuditRows=await legacyIDBGetAll(legacyDb,LEGACY_STORES.auditLog);
-    }
-  }catch(e){console.warn('Could not inspect legacy IndexedDB',e);}
-
-  const hasLegacyIDB=legacyWardRows.length>0||legacyAppStateRows.length>0||legacyTemplateRows.length>0||legacyAuditRows.length>0;
-  if(!hasLegacyIDB&&!hasLegacyLocalStorage){
-    if(legacyDb)legacyDb.close();
-    return; // the common case for any install that has been through this once, and every fresh one
-  }
-
-  const proceed=confirm(
-    'This browser has case data saved by an earlier version of Probate Guardian.\n\n'+
-    'This version only keeps a full copy of your data in a .sav file you control. It also keeps a temporary recovery snapshot in this browser until you save one, but that snapshot is not a substitute for a .sav backup.\n\n'+
-    'Click OK to save that existing data as a .sav file now (recommended), or Cancel to discard it and start fresh.'
-  );
-
-  if(proceed){
-    try{
-      const appStateMap={};
-      for(const row of legacyAppStateRows)appStateMap[row.key]=row.value;
-
-      // Borrows the OLD app's own crypto scheme rather than re-implementing
-      // it: a plaintext row decodes via encryptJSON's 'none'-mode PLAIN:
-      // prefix regardless of key, so only an actually-encrypted install
-      // needs a password prompt here at all.
-      const legacySecurityMode=appStateMap.securityMode||(appStateMap.cryptoSalt&&appStateMap.cryptoVerifier?'encrypted':'none');
-      let legacyKey=null;
-      if(legacySecurityMode==='encrypted'){
-        const pw=prompt('Enter the master password this data was encrypted with, to save it as a .sav file:');
-        if(!pw){if(legacyDb)legacyDb.close();return;} // backed out — leave the old data in place, ask again next launch
-        legacyKey=await deriveKeyFromPassword(pw,appStateMap.cryptoSalt);
-        if(appStateMap.cryptoVerifier){
-          try{
-            const decoded=await decryptJSONWithKey(appStateMap.cryptoVerifier,legacyKey);
-            if(decoded!==CRYPTO_VERIFIER_PLAINTEXT)throw new Error('wrong password');
-          }catch(e){
-            alert('Incorrect password — could not export the existing data. It has been left in place; you will be asked again next time the app opens.');
-            if(legacyDb)legacyDb.close();
-            return;
-          }
-        }
-      }
-
-      // Reuses buildExportZipBlob()'s exact zip-building logic rather than
-      // duplicating it, by temporarily pointing the globals it reads from
-      // at the legacy data. This session's real state is still at its
-      // empty startup default at this point (promptOpenOrStartAtLaunch()
-      // hasn't run yet) — restored in `finally` regardless.
-      const saved={guardianData,appState:_appState,templateCache:_templateCache,
-        auditLog:_auditLogEntries,auditNextId:_auditLogNextId,securityMode:_securityMode,key:_cryptoKey};
-      let exportedHandle=null,exportedCount=0;
-      try{
-        guardianData={guardianName:'',guardianEmail:'',wards:[],activeWardId:appStateMap.activeWardId||null};
-        window.guardianData=guardianData;
-        for(const row of legacyWardRows){
-          try{
-            const ward=row&&row.enc?await decryptJSONWithKey(row.enc,legacyKey):row;
-            if(ward&&ward.wardId)guardianData.wards.push(ward);
-          }catch(e){console.warn('Skipping unreadable legacy ward',row&&row.wardId,e);}
-        }
-        if(appStateMap.guardianName){
-          try{guardianData.guardianName=await decryptJSONWithKey(appStateMap.guardianName,legacyKey);}catch(e){}
-        }
-        if(appStateMap.guardianEmail){
-          try{guardianData.guardianEmail=await decryptJSONWithKey(appStateMap.guardianEmail,legacyKey);}catch(e){}
-        }
-        _appState={cryptoSalt:appStateMap.cryptoSalt||null,cryptoVerifier:appStateMap.cryptoVerifier||null};
-        try{_appState.theme=localStorage.getItem('pg-theme')||null;}catch(e){}
-        try{_appState.walkthroughCompleted=localStorage.getItem('walkthroughCompleted')||null;}catch(e){}
-        try{const raw=localStorage.getItem('pg-recent-wards');_appState.recentWards=raw?JSON.parse(raw):null;}catch(e){}
-        _templateCache={};
-        for(const row of legacyTemplateRows)if(row&&row.type)_templateCache[row.type]=row.b64;
-        _auditLogEntries=legacyAuditRows;
-        _auditLogNextId=legacyAuditRows.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
-        _securityMode=legacySecurityMode;
-        _cryptoKey=legacyKey;
-
-        const {blob,count}=await buildExportZipBlob();
-        exportedHandle=await saveBlobAs(blob,'guardianshipwarddata.sav');
-        exportedCount=count;
-      }finally{
-        guardianData=saved.guardianData;_appState=saved.appState;_templateCache=saved.templateCache;
-        window.guardianData=guardianData;
-        _auditLogEntries=saved.auditLog;_auditLogNextId=saved.auditNextId;_securityMode=saved.securityMode;_cryptoKey=saved.key;
-      }
-      if(!exportedHandle){
-        // No showSaveFilePicker on this browser — saveBlobAs() fell back to
-        // a plain download, which this page has no way to confirm actually
-        // reached disk (a blocked pop-up, a cancelled "Save As", a full
-        // disk all look identical to a successful click from here). Deleting
-        // the only other copy on an unconfirmed download is exactly the
-        // silent data loss this whole routine exists to prevent, so this
-        // asks outright instead of assuming.
-        const confirmedDownload=confirm(
-          `A download of "guardianshipwarddata.sav" (${exportedCount} form(s)) should have just started.\n\n`+
-          'Please check your Downloads folder and confirm the file is actually there before continuing.\n\n'+
-          'Click OK once you have verified it downloaded successfully, or Cancel to leave your old data in place and try again later.'
-        );
-        if(!confirmedDownload){
-          alert('Your existing data has been left in place. You will be asked again next time the app opens.');
-          if(legacyDb)legacyDb.close();
-          return;
-        }
-      }
-      alert(`Saved ${exportedCount} form(s) from your previous version to guardianshipwarddata.sav.`);
-    }catch(e){
-      console.error('Legacy data export failed',e);
-      alert('Could not export the existing data ('+(e&&e.message||e)+'). It has been left in place; you will be asked again next time the app opens.');
-      if(legacyDb)legacyDb.close();
-      return; // do not clear anything if the export failed
-    }
-  }
-
-  if(legacyDb){
-    legacyDb.close();
-    try{
-      await new Promise((resolve)=>{
-        const req=indexedDB.deleteDatabase(LEGACY_DB_NAME);
-        req.onsuccess=resolve;req.onerror=resolve;req.onblocked=resolve;
-      });
-    }catch(e){console.warn('Could not delete legacy IndexedDB database',e);}
-  }
-  try{
-    for(const k of legacyLocalStorageKeys)localStorage.removeItem(k);
-    sessionStorage.removeItem('pg-continue-prompt-shown');
-  }catch(e){/* localStorage/sessionStorage unavailable — nothing to clear */}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5914,7 +5166,7 @@ async function renderPage(page){
   if(page==='/dashboard'){
     updateHelpContext('default');
     // Redirect to inventory selector if no wards exist
-    if(guardianData.wards.length===0){
+    if(caseFile.wards.length===0){
       currentPage='/inventory-select';
       window.location.hash='/inventory-select';
       updateHelpContext('inventory-select');
@@ -5986,7 +5238,7 @@ async function renderPage(page){
 // so the headline total there updates live as the user types) — a single
 // function so both call sites can't drift into showing different content.
 // The "Name of Ward" field on Cover & Summary writes D.wardName directly --
-// the same object reference guardianData.wards holds, so the underlying
+// the same object reference caseFile.wards holds, so the underlying
 // data is always correct -- but the sidebar's Active Ward selector only
 // gets its displayed text from the last full updateSidebar() render, which
 // typing in that field never triggers. A full re-render on every keystroke
@@ -5997,7 +5249,7 @@ function syncActiveWardNameDisplay(){
   if(inp&&window.D)inp.value=window.D.wardName||'';
 }
 
-// The header's "Guardian: —" line used to show only guardianData.guardianName
+// The header's "Guardian: —" line used to show only caseFile.guardianName
 // -- the app-level "your name" entered once at setup, never anything about
 // the CURRENT form. Every form type's Cover page has its own field for the
 // guardian actually identified on THIS filing (named differently per type:
@@ -6009,10 +5261,10 @@ function syncActiveWardNameDisplay(){
 // (Simplified Plan) that never asks for a guardian name at all.
 function getPrimaryGuardianDisplayName(){
   const d=window.D;
-  if(!d)return guardianData.guardianName||'';
+  if(!d)return caseFile.guardianName||'';
   return d.guardian||d.guardianName||d.guardianNames
     ||(Array.isArray(d.guardians)&&d.guardians[0]&&d.guardians[0].name)
-    ||guardianData.guardianName||'';
+    ||caseFile.guardianName||'';
 }
 // Same "sync just this one element" reasoning as syncActiveWardNameDisplay()
 // above -- typing in a guardian-name field never triggers a full
@@ -6115,7 +5367,7 @@ window.collapseSaveControls=collapseSaveControls;
 
 function updateSidebar(){
   const sidebar=document.getElementById('sidebar');
-  if(guardianData.wards.length===0){
+  if(caseFile.wards.length===0){
     sidebar.style.display='none';
     return;
   }
@@ -6126,8 +5378,8 @@ function updateSidebar(){
 
   // Update ward selector
   const selector=document.getElementById('ward-selector');
-  const activeWardId=guardianData.activeWardId;
-  const activeWard=guardianData.wards.find(w=>w.wardId===activeWardId);
+  const activeWardId=caseFile.activeWardId;
+  const activeWard=caseFile.wards.find(w=>w.wardId===activeWardId);
   selector.value=activeWard?activeWard.wardName:'';
   selector.dataset.wardId=activeWardId||'';
 
@@ -6193,7 +5445,7 @@ function updateSidebar(){
 // "Ward" combobox on this modal — same typeable + click-to-browse pattern as
 // the sidebar's Active Ward picker, applied here to picking a source ward.
 function convertSourceItems(){
-  return guardianData.wards.map(w=>({
+  return caseFile.wards.map(w=>({
     wardId:w.wardId,
     label:w.wardName||'(unnamed)',
     sub:INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType
@@ -6229,12 +5481,12 @@ document.addEventListener('click',e=>{
 });
 
 async function showConvertWardModal(){
-  if(!guardianData.wards.length){
+  if(!caseFile.wards.length){
     alert('You don\'t have any existing forms yet to convert. Create a form first using one of the options above, then come back here to convert it later if needed.');
     return;
   }
   await ensureFragment('common-modals');
-  const first=guardianData.wards[0];
+  const first=caseFile.wards[0];
   const input=document.getElementById('convert-source-ward');
   input.value=first.wardName||'(unnamed)';
   input.dataset.wardId=first.wardId;
@@ -6266,7 +5518,7 @@ function convertTargetsFor(srcType){
 
 function updateConvertTargetOptions(){
   const wardId=document.getElementById('convert-source-ward').dataset.wardId||'';
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   const targetSel=document.getElementById('convert-target-type');
   const noteEl=document.getElementById('convert-note');
   if(!ward){targetSel.innerHTML='';noteEl.textContent='';return;}
@@ -6473,7 +5725,7 @@ function convertSimplifiedToAnnual(src,dest){
 }
 
 async function convertExistingWard(sourceWardId,targetType){
-  const sourceWard=guardianData.wards.find(w=>w.wardId===sourceWardId);
+  const sourceWard=caseFile.wards.find(w=>w.wardId===sourceWardId);
   if(!sourceWard)return;
   const srcType=sourceWard.inventoryType;
   if(srcType===targetType){alert('Please choose a different inventory type to convert to.');return;}
@@ -6509,7 +5761,7 @@ async function convertExistingWard(sourceWardId,targetType){
   // above) — an Initial Inventory has no accounting-period equivalent to
   // derive asset schedules from, so those stay blank for manual entry.
 
-  guardianData.wards.push(newWard);
+  caseFile.wards.push(newWard);
   await saveWardToState(newWard);
 
   await activateWard(newWard);
@@ -6758,7 +6010,7 @@ function checkInActiveYear(ward){
 }
 
 async function switchWardYear(wardId,targetKey){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await flushPendingSave();
   checkInActiveYear(ward);
@@ -6780,7 +6032,7 @@ async function switchWardYear(wardId,targetKey){
 // unchanged so the guardian edits down what's changed instead of
 // re-entering the whole asset list.
 async function startNewWardYear(wardId){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await flushPendingSave();
   const priorTotal=getWardHeadlineTotal(ward);
@@ -6802,7 +6054,7 @@ async function startNewWardYear(wardId){
 let _yearModalWardId=null;
 
 async function showStartNewYearModal(wardId){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await ensureFragment('common-modals');
   _yearModalWardId=wardId;
@@ -6838,7 +6090,7 @@ function renderPriorYearsList(ward){
 }
 
 async function showPriorYearsModal(wardId){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await ensureFragment('common-modals');
   _yearModalWardId=wardId;
@@ -6865,7 +6117,7 @@ function periodKeyForYearData(ward,yearEntry){
 }
 
 async function deleteWardYear(wardId,yearKey){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   if(!ward||!ward.years)return;
   const idx=ward.years.findIndex(y=>y.key===yearKey);
   if(idx===-1)return;
@@ -6885,7 +6137,7 @@ async function deleteWardYear(wardId,yearKey){
 let _pendingDeleteYear=null;
 
 async function confirmDeleteWardYear(wardId,yearKey){
-  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
   const entry=ward&&ward.years&&ward.years.find(y=>y.key===yearKey);
   if(!ward||!entry)return;
   await ensureFragment('common-modals');
@@ -6900,7 +6152,7 @@ async function doDeleteWardYear(){
   try{
     await deleteWardYear(wardId,yearKey);
     closeModal('deleteYearModal');
-    const ward=guardianData.wards.find(w=>w.wardId===wardId);
+    const ward=caseFile.wards.find(w=>w.wardId===wardId);
     if(ward)renderPriorYearsList(ward);
     if(currentPage==='/dashboard')renderDashboardGrid();
   }catch(e){
@@ -8301,7 +7553,7 @@ function applyNavSectionCollapse(checks){
     };
     if(!navKeys.length){plain();return;}
     const allComplete=navKeys.every(k=>checks[k]);
-    const sectionKey=`${guardianData.activeWardId||''}:${label.dataset.origHtml}`;
+    const sectionKey=`${caseFile.activeWardId||''}:${label.dataset.origHtml}`;
     if(!allComplete){
       _navSectionExpanded.delete(sectionKey);
       plain();
@@ -9004,9 +8256,7 @@ async function autoLoadTemplates(){
 }
 
 async function initApp(){
-  // Migrate deprecated stores before current recovery/launch databases are
-  // consulted. Resolve recovery or file selection before the unlock flow.
-  await runLegacyBrowserStorageMigrationIfNeeded();
+  // Resolve recovery or file selection before the unlock flow.
   try { await window.tauriInvoke('set_secure_permissions'); } catch (e) { console.warn('Could not set secure permissions:', e); }
   // Offer any unsaved recovery snapshot before the normal Open/Start choice.
   const restoredFromSessionCache=await checkSessionRestoreCacheAtLaunch();
@@ -9025,7 +8275,7 @@ async function initApp(){
   }
 
   updateSidebar();
-  if(_openedFileAtLaunch || !guardianData.activeWardId)window.location.hash='/dashboard'; // opened an existing case or blocked — land on All Wards, not wherever it was last saved mid-edit
+  if(_openedFileAtLaunch || !caseFile.activeWardId)window.location.hash='/dashboard'; // opened an existing case or blocked — land on All Wards, not wherever it was last saved mid-edit
   handleHash();
   await loadAutoExportPrefs();
   setupAutoExportTimer();
@@ -9034,14 +8284,6 @@ async function initApp(){
   setupDragAndDropImport();
   notifyProbateGuardianTabStateChanged();
   window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
-  if(_needsMigrationModal){
-    _needsMigrationModal=false;
-    try{
-      await showMigrationModal();
-    }catch(e){
-      console.warn('Could not show migration modal at launch:',e);
-    }
-  }
 }
 
 // Accessibility: Link labels to inputs that have IDs but no for attribute

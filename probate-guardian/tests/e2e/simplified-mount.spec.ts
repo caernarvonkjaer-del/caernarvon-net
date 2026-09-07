@@ -108,11 +108,11 @@ test.describe('simplified-accounting feature module', () => {
     await createSimplifiedWard(page, 'Simplified Cycle Ward');
     await createWard(page, 'Other Cycle Ward', 'guardian');
 
-    // guardianData is a bare top-level `let` in legacy-app.js (a classic
+    // caseFile is a bare top-level `let` in legacy-app.js (a classic
     // script), not a `window` property -- but it's still reachable by bare
     // identifier from page.evaluate(), which runs in the same global realm.
-    // @ts-expect-error - guardianData is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => guardianData.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
+    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const simplifiedId = wards.find((w: any) => w.type === 'simplified').id;
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
 

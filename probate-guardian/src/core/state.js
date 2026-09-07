@@ -19,7 +19,7 @@ export function getD() {
   return window.D;
 }
 
-/** The full ward record from guardianData.wards for the active ward, or null. */
+/** The full ward record from caseFile.wards for the active ward, or null. */
 export function getActiveWard() {
   return window.getActiveWard ? window.getActiveWard() : null;
 }

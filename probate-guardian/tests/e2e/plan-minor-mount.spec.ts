@@ -67,8 +67,8 @@ test.describe('plan-minor feature module', () => {
     await createWard(page, 'Other Cycle Ward', 'guardian');
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
 
-    // @ts-expect-error - guardianData is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => guardianData.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
+    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const planMinorId = wards.find((w: any) => w.type === 'planMinor').id;
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
 

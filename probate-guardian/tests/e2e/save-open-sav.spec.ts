@@ -61,7 +61,7 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Preference Isolation Ward');
-      const wardBefore = await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards));
+      const wardBefore = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
 
       await page.evaluate(() => (window as any).navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
@@ -69,7 +69,7 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
       await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
 
       const archive = await page.evaluate(async () => {
-        const { blob } = await (window as any).buildExportZipBlob();
+        const { blob } = await (window as any).buildCaseFileBlob();
         const zip = await (window as any).JSZip.loadAsync(blob);
         const entries: Array<{ name: string; text: string }> = [];
         for (const [name, entry] of Object.entries(zip.files) as Array<[string, any]>) {
@@ -78,7 +78,7 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
         return entries;
       });
 
-      expect(await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards))).toBe(wardBefore);
+      expect(await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards))).toBe(wardBefore);
       expect(archive.map((entry) => entry.name)).not.toContain('pg-dashboard-preferences-v1');
       const archiveText = archive.map((entry) => entry.text).join('\n');
       expect(archiveText).not.toContain('pg-dashboard-preferences-v1');
@@ -98,22 +98,22 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
       await chooseNoPassword(page);
       await createWard(page, 'Workflow Year Ward');
       const original = await page.evaluate(() => {
-        const ward = (window as any).getGuardianData().wards[0];
+        const ward = (window as any).getCaseFile().wards[0];
         ward.dashboardWorkflow = { status: 'pending-court-review', assigneeName: '  Alex   Attorney  ' };
         return { wardId: ward.wardId, yearKey: ward.activeYearKey || 'Year 1' };
       });
 
       await page.evaluate((wardId) => (window as any).startNewWardYear(wardId), original.wardId);
-      await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
         assigneeName: 'Alex Attorney',
       });
-      expect(await page.evaluate(() => (window as any).getGuardianData().wards[0].years[0].data.dashboardWorkflow)).toEqual({
+      expect(await page.evaluate(() => (window as any).getCaseFile().wards[0].years[0].data.dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: '  Alex   Attorney  ',
       });
 
       await page.evaluate(({ wardId, yearKey }) => (window as any).switchWardYear(wardId, yearKey), original);
-      await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: '  Alex   Attorney  ',
       });
@@ -138,7 +138,7 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
       await row.locator('[data-dashboard-change="workflow-status"]').selectOption('pending-court-review');
       await row.locator('[data-dashboard-change="assignee"]').fill('Alex Attorney');
       await row.locator('[data-dashboard-change="assignee"]').press('Tab');
-      await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: 'Alex Attorney',
       });
@@ -156,7 +156,7 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      expect(await reopenPage.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+      expect(await reopenPage.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: 'Alex Attorney',
       });
@@ -248,60 +248,59 @@ test.describe('save-open-sav (fallback download/upload path)', () => {
   });
 });
 
-test.describe('per-ward save file (version 3)', () => {
-  test('buildWardZipBlob produces a valid version-3 ZIP with ward.enc, auditLog.enc, manifest.json', async ({ browser }) => {
+// The following describe block covers the unified single-case-file model
+// that replaced the old per-ward-file / multi-ward-archive split. Several
+// tests that used to exist here for that old split (per-ward handle
+// arming, the version-1/2 migration modal, ward-vs-archive handle
+// disambiguation) have no equivalent anymore -- there is exactly one
+// handle and one file format now, so those scenarios are simply
+// impossible rather than needing a fix.
+test.describe('unified case file', () => {
+  test('buildSingleWardExportBlob produces a valid case-file-shaped ZIP with ward.enc, auditLog.enc, manifest.json', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
       await gotoApp(page);
       await startNewCase(page);
       await chooseNoPassword(page);
-      await createWard(page, 'V3 Format Ward');
+      await createWard(page, 'Single Export Ward');
 
       const result = await page.evaluate(async () => {
         const w = (window as any);
-        const wardId = w.guardianData.activeWardId;
-        // Generate some audit entries for this ward
+        const wardId = w.caseFile.activeWardId;
         await w.auditLog('TEST_EVENT', 'test entry 1');
         await w.auditLog('TEST_EVENT', 'test entry 2');
 
-        const blob = await w.buildWardZipBlob(wardId);
+        const blob = await w.buildSingleWardExportBlob(wardId);
         const zip = await w.JSZip.loadAsync(blob);
         const fileNames = Object.keys(zip.files).sort();
         const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
-        const hasWardEnc = !!zip.file('ward.enc');
+        const hasWardEnc = !!zip.file(`wards/${wardId}.enc`);
         const hasAuditLog = !!zip.file('auditLog.enc');
-        // Version-2 entries should NOT exist
-        const hasWardsDir = fileNames.some((n: string) => n.startsWith('wards/'));
-        return { fileNames, manifest, hasWardEnc, hasAuditLog, hasWardsDir, wardId };
+        return { fileNames, manifest, hasWardEnc, hasAuditLog, wardId };
       });
 
-      expect(result.fileNames).toEqual(['auditLog.enc', 'manifest.json', 'ward.enc']);
-      expect(result.manifest.format).toBe('probate-guardian-export');
-      expect(result.manifest.kind).toBe('ward');
-      expect(result.manifest.version).toBe(3);
-      expect(result.manifest.wardId).toBe(result.wardId);
-      expect(result.manifest.wardName).toBe('V3 Format Ward');
+      expect(result.fileNames).toEqual(['auditLog.enc', 'manifest.json', 'wards/', `wards/${result.wardId}.enc`]);
+      // Same unified format as the main case file -- no separate "single ward" shape.
+      expect(result.manifest.format).toBe('probate-guardian-case');
+      expect(result.manifest.version).toBe(1);
+      expect(result.manifest.wards).toEqual([{ wardId: result.wardId, wardName: 'Single Export Ward', file: `wards/${result.wardId}.enc` }]);
       expect(result.manifest.securityMode).toBe('none');
       expect(result.manifest.salt).toBeNull();
       expect(result.manifest.verifier).toBeNull();
       expect(result.manifest.guardian).toBeTruthy();
       expect(result.hasWardEnc).toBe(true);
       expect(result.hasAuditLog).toBe(true);
-      expect(result.hasWardsDir).toBe(false);
-      // v2 fields should NOT be present
+      // A single-ward export has no appState/templates section at all -- the
+      // reader (loadCaseFileFromZip) defaults activeWardId to this one ward.
       expect(result.manifest.appState).toBeUndefined();
-      expect(result.manifest.wards).toBeUndefined();
-      expect(result.manifest.templates).toBeUndefined();
-      // Audit log scope declared in the manifest itself, not just comments
-      expect(result.manifest.auditLogScope).toBe('ward-only');
-      expect(result.manifest.auditLogNote).toBeTruthy();
+      expect(result.manifest.templates).toEqual([]);
     } finally {
       await context.close();
     }
   });
 
-  test('version-3 per-ward file round-trips: export then open restores the ward', async ({ browser }) => {
+  test('single-ward export round-trips: export then open restores the ward', async ({ browser }) => {
     const context = await browser.newContext();
     let savPath = '';
     try {
@@ -309,25 +308,23 @@ test.describe('per-ward save file (version 3)', () => {
       await gotoApp(page);
       await startNewCase(page);
       await chooseNoPassword(page);
-      await createWard(page, 'V3 Roundtrip Ward');
+      await createWard(page, 'Single Export Roundtrip Ward');
 
-      // Build v3 blob and download it via the fallback path
       const downloadPromise = page.waitForEvent('download');
       page.once('dialog', (d) => d.accept());
       await page.evaluate(async () => {
         const w = (window as any);
-        const wardId = w.guardianData.activeWardId;
-        const blob = await w.buildWardZipBlob(wardId);
-        w.saveBlobAs(blob, 'v3-roundtrip.sav');
+        const wardId = w.caseFile.activeWardId;
+        const blob = await w.buildSingleWardExportBlob(wardId);
+        w.saveBlobAs(blob, 'single-ward-roundtrip.sav');
       });
       const download = await downloadPromise;
-      savPath = path.join(os.tmpdir(), `pg-v3-rt-${Date.now()}.sav`);
+      savPath = path.join(os.tmpdir(), `pg-single-rt-${Date.now()}.sav`);
       await download.saveAs(savPath);
     } finally {
       await context.close();
     }
 
-    // Re-open from scratch
     const reopenContext = await browser.newContext();
     try {
       const reopenPage = await reopenContext.newPage();
@@ -336,13 +333,13 @@ test.describe('per-ward save file (version 3)', () => {
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      await expect(reopenPage.locator('#ward-selector')).toHaveValue('V3 Roundtrip Ward');
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('Single Export Roundtrip Ward');
     } finally {
       await reopenContext.close();
     }
   });
 
-  test('audit log in version-3 file contains only entries for that ward', async ({ browser }) => {
+  test('audit log in a single-ward export contains only entries for that ward', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -353,24 +350,21 @@ test.describe('per-ward save file (version 3)', () => {
 
       const result = await page.evaluate(async () => {
         const w = (window as any);
-        const wardAId = w.guardianData.activeWardId;
+        const wardAId = w.caseFile.activeWardId;
 
-        // Create audit entries for ward A
         await w.auditLog('WARD_A_EVENT', 'ward A entry');
 
-        // Create a second ward
         await w.addWard('Audit Ward B', 'guardian');
-        const wardB = w.guardianData.wards.find((wd: any) => wd.wardId !== wardAId);
+        const wardB = w.caseFile.wards.find((wd: any) => wd.wardId !== wardAId);
         if (wardB) {
           await w.switchWard(wardB.wardId);
           await w.auditLog('WARD_B_EVENT', 'ward B entry');
         }
 
-        // Build v3 for ward A — should NOT include ward B's entries
-        const blobA = await w.buildWardZipBlob(wardAId);
+        // Single-ward export for ward A -- should NOT include ward B's entries
+        const blobA = await w.buildSingleWardExportBlob(wardAId);
         const zipA = await w.JSZip.loadAsync(blobA);
         const auditStr = await zipA.file('auditLog.enc').async('string');
-        // In 'none' mode, encryptJSON uses PLAIN: prefix
         const entries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
         return {
           wardAId,
@@ -388,334 +382,96 @@ test.describe('per-ward save file (version 3)', () => {
     }
   });
 
-  test('per-ward handle routing: rememberWardZipHandle arms active ward handle and arming status updates on switch', async ({ browser }) => {
+  test('case auto-save does NOT truncate other wards when editing one ward', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
       await gotoApp(page);
       await startNewCase(page);
       await chooseNoPassword(page);
-      await createWard(page, 'Handle Ward 1');
-
-      const status1 = await page.locator('#auto-save-armed-indicator').textContent();
-      expect(status1).toContain('Auto-save:');
-
-      // Create a mock handle for Ward 1
-      const ward1Id = await page.evaluate(() => (window as any).guardianData.activeWardId);
-      await page.evaluate(async (id) => {
-        const mockHandle = {
-          name: 'handle-ward-1.sav',
-          queryPermission: async () => 'granted',
-          requestPermission: async () => 'granted',
-          createWritable: async () => ({
-            write: async () => {},
-            close: async () => {}
-          })
-        };
-        await (window as any).rememberWardZipHandle(id, mockHandle);
-      }, ward1Id);
-
-      await expect(page.locator('#auto-save-armed-indicator')).toHaveText(/Auto-save: ready ✓ \(handle-ward-1\.sav\)/);
-
-      // Add second ward and switch to it
-      await page.evaluate(async () => {
-        await (window as any).addWard('Handle Ward 2', 'guardian');
-      });
-
-      // On ward 2, ward 1's handle is not armed
-      const status2 = await page.locator('#auto-save-armed-indicator').textContent();
-      expect(status2).not.toContain('handle-ward-1.sav');
-
-      // Switch back to Ward 1
-      const ward1 = await page.evaluate((id) => (window as any).guardianData.wards.find((w: any) => w.wardId === id), ward1Id);
-      await page.evaluate(async (w) => {
-        await (window as any).activateWard(w);
-      }, ward1);
-
-      // Ward 1's handle is restored and armed
-      await expect(page.locator('#auto-save-armed-indicator')).toHaveText(/Auto-save: ready ✓ \(handle-ward-1\.sav\)/);
-    } finally {
-      await context.close();
-    }
-  });
-
-  test('pre-17A legacy archive (no kind field) opens and displays migration modal', async ({ browser }) => {
-    const context = await browser.newContext();
-    let savPath = '';
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'V2 Legacy Ward');
-
-      // Build a genuine pre-17A archive (version: 2, no kind field)
-      const zipBuffer = await page.evaluate(async () => {
-        const ward = (window as any).guardianData.wards[0];
-        const zip = new (window as any).JSZip();
-        zip.file(`wards/${ward.wardId}.enc`, 'PLAIN:' + JSON.stringify(ward));
-        zip.file('auditLog.enc', 'PLAIN:' + JSON.stringify([]));
-        zip.file('manifest.json', JSON.stringify({
-          format: 'probate-guardian-export',
-          version: 2,
-          exportedAt: new Date().toISOString(),
-          securityMode: 'none',
-          salt: null,
-          verifier: null,
-          wards: [
-            { wardId: ward.wardId, file: `wards/${ward.wardId}.enc` }
-          ]
-        }));
-        const base64 = await zip.generateAsync({ type: 'base64' });
-        return base64;
-      });
-
-      savPath = path.join(os.tmpdir(), `pg-legacy-test-${Date.now()}.sav`);
-      await fs.writeFile(savPath, Buffer.from(zipBuffer, 'base64'));
-    } finally {
-      await context.close();
-    }
-
-    const reopenContext = await browser.newContext();
-    try {
-      const reopenPage = await reopenContext.newPage();
-      await gotoApp(reopenPage);
-      await reopenPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
-      await reopenPage.setInputFiles('#startup-open-input', savPath);
-
-      await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      await expect(reopenPage.locator('#ward-selector')).toHaveValue('V2 Legacy Ward');
-
-      // Verify migration modal appears for pre-17A legacy archive
-      await expect(reopenPage.locator('#migrationModal')).toHaveClass(/show/);
-      await expect(reopenPage.locator('#migrationModal')).toContainText('Per-Ward Save Files Are Now Available');
-
-      // Click "Got it" to dismiss
-      await reopenPage.click('#migration-modal-ok-btn');
-      await expect(reopenPage.locator('#migrationModal')).not.toHaveClass(/show/);
-
-      // Reopening in the same context (where migrationModalSeen was persisted) must NOT show the modal again
-      const secondPage = await reopenContext.newPage();
-      await gotoApp(secondPage);
-      await secondPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
-      await secondPage.setInputFiles('#startup-open-input', savPath);
-      await expect(secondPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      await expect(secondPage.locator('#ward-selector')).toHaveValue('V2 Legacy Ward');
-      await expect(secondPage.locator('#migrationModal.show')).toHaveCount(0);
-    } finally {
-      await reopenContext.close();
-    }
-  });
-
-  test('current archive (version 2 with kind: archive) opens without displaying migration modal', async ({ browser }) => {
-    const context = await browser.newContext();
-    let savPath = '';
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Current Archive Ward');
-
-      savPath = await exportAndCapture(page);
-    } finally {
-      await context.close();
-    }
-
-    const reopenContext = await browser.newContext();
-    try {
-      const reopenPage = await reopenContext.newPage();
-      await gotoApp(reopenPage);
-      await reopenPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
-      await reopenPage.setInputFiles('#startup-open-input', savPath);
-
-      await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      await expect(reopenPage.locator('#ward-selector')).toHaveValue('Current Archive Ward');
-
-      // Verify migration modal does NOT appear for current archives
-      await expect(reopenPage.locator('#migrationModal.show')).toHaveCount(0);
-    } finally {
-      await reopenContext.close();
-    }
-  });
-
-  test('archive auto-save does NOT truncate other wards when editing one ward in multi-ward archive mode', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Archive Ward 1');
+      await createWard(page, 'Case Ward 1');
 
       await page.evaluate(async () => {
-        await (window as any).addWard('Archive Ward 2', 'guardian');
+        await (window as any).addWard('Case Ward 2', 'guardian');
       });
 
       const { ward1Id, ward2Id } = await page.evaluate(async () => {
-        const wards = (window as any).guardianData.wards;
-        const mockArchiveHandle = {
-          name: 'archive-case.sav',
+        const wards = (window as any).caseFile.wards;
+        const mockCaseHandle = {
+          name: 'case-file.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
           createWritable: async () => ({
-            write: async (b: any) => { (window as any).__lastArchiveWriteBlob = b; },
+            write: async (b: any) => { (window as any).__lastCaseWriteBlob = b; },
             close: async () => {}
           })
         };
-        await (window as any).rememberArchiveZipHandle(mockArchiveHandle);
+        await (window as any).rememberCaseFileHandle(mockCaseHandle);
         // Trigger save while on Ward 2
         await (window as any).saveData();
         return { ward1Id: wards[0].wardId, ward2Id: wards[1].wardId };
       });
 
       const checkResult = await page.evaluate(async () => {
-        const b = (window as any).__lastArchiveWriteBlob;
+        const b = (window as any).__lastCaseWriteBlob;
         if (!b) return { ok: false, reason: 'No blob written' };
         const zip = await (window as any).JSZip.loadAsync(b);
         const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
         const wardsInManifest = manifest.wards || [];
-        const hasWardsDir = Object.keys(zip.files).some((n: string) => n.startsWith('wards/'));
         return {
           ok: true,
-          kind: manifest.kind || 'archive',
           wardCount: wardsInManifest.length,
           wardIds: wardsInManifest.map((w: any) => w.wardId),
-          hasWardsDir,
-          hasSingleWardEnc: !!zip.file('ward.enc')
+          hasWardsDir: Object.keys(zip.files).some((n: string) => n.startsWith('wards/')),
         };
       });
 
       expect(checkResult.ok).toBe(true);
-      expect(checkResult.kind).toBe('archive');
       expect(checkResult.wardCount).toBe(2);
       expect(checkResult.wardIds).toContain(ward1Id);
       expect(checkResult.wardIds).toContain(ward2Id);
       expect(checkResult.hasWardsDir).toBe(true);
-      expect(checkResult.hasSingleWardEnc).toBe(false);
     } finally {
       await context.close();
     }
   });
 
-  test('deleteWard cleans up persisted ward handle from launch preferences', async ({ browser }) => {
+  test('lockApp retains and restores the case file handle on unlock', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
       await gotoApp(page);
       await startNewCase(page);
       await chooseNoPassword(page);
-      await createWard(page, 'Transient Ward');
-
-      const wardId = await page.evaluate(() => (window as any).guardianData.activeWardId);
-
-      // Save a mock handle for this ward
-      await page.evaluate(async (id) => {
-        const mockHandle = {
-          name: 'transient-ward.sav',
-          queryPermission: async () => 'granted',
-          requestPermission: async () => 'granted',
-          createWritable: async () => ({
-            write: async () => {},
-            close: async () => {}
-          })
-        };
-        await (window as any).rememberWardZipHandle(id, mockHandle);
-      }, wardId);
-
-      const hasHandleBefore = await page.evaluate(async (id) => {
-        return !!(await (window as any).loadWardZipHandle(id));
-      }, wardId);
-      expect(hasHandleBefore).toBe(true);
-
-      // Delete the ward
-      await page.evaluate(async (id) => {
-        await (window as any).deleteWard(id);
-      }, wardId);
-
-      const hasHandleAfter = await page.evaluate(async (id) => {
-        return !!(await (window as any).loadWardZipHandle(id));
-      }, wardId);
-      expect(hasHandleAfter).toBe(false);
-    } finally {
-      await context.close();
-    }
-  });
-
-  test('lockApp retains and restores archive handle on unlock in archive mode', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Archive Lock Ward');
+      await createWard(page, 'Case Lock Ward');
 
       await page.evaluate(async () => {
-        const { blob } = await (window as any).buildExportZipBlob();
-        const mockArchiveHandle = {
-          name: 'case-archive.sav',
+        const { blob } = await (window as any).buildCaseFileBlob();
+        const mockCaseHandle = {
+          name: 'case-file.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
-          getFile: async () => new File([blob], 'case-archive.sav', { type: 'application/octet-stream' }),
+          getFile: async () => new File([blob], 'case-file.sav', { type: 'application/octet-stream' }),
           createWritable: async () => ({
             write: async () => {},
             close: async () => {}
           })
         };
-        await (window as any).rememberArchiveZipHandle(mockArchiveHandle);
+        await (window as any).rememberCaseFileHandle(mockCaseHandle);
         await (window as any).lockApp();
       });
 
-      const isArchiveArmedAfterUnlock = await page.evaluate(async () => {
-        const h = await (window as any).loadArchiveZipHandle();
-        return h && h.name === 'case-archive.sav';
+      const isCaseArmedAfterUnlock = await page.evaluate(async () => {
+        const h = await (window as any).loadCaseFileHandle();
+        return h && h.name === 'case-file.sav';
       });
-      expect(isArchiveArmedAfterUnlock).toBe(true);
+      expect(isCaseArmedAfterUnlock).toBe(true);
     } finally {
       await context.close();
     }
   });
 
-  test('isSameEntry deconflicts ward handle and archive handle', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Conflict Ward');
-
-      const result = await page.evaluate(async () => {
-        const wardId = (window as any).guardianData.activeWardId;
-        const sharedHandle = {
-          name: 'shared-file.sav',
-          queryPermission: async () => 'granted',
-          requestPermission: async () => 'granted',
-          isSameEntry: async (other: any) => other && other.name === 'shared-file.sav',
-          createWritable: async () => ({ write: async () => {}, close: async () => {} })
-        };
-
-        await (window as any).rememberArchiveZipHandle(sharedHandle);
-        const hasArchiveBefore = !!(await (window as any).loadArchiveZipHandle());
-
-        // Now arm ward with the same handle
-        await (window as any).rememberWardZipHandle(wardId, sharedHandle);
-        const hasWardAfter = !!(await (window as any).loadWardZipHandle(wardId));
-        const hasArchiveAfter = !!(await (window as any).loadArchiveZipHandle());
-
-        return { hasArchiveBefore, hasWardAfter, hasArchiveAfter };
-      });
-
-      expect(result.hasArchiveBefore).toBe(true);
-      expect(result.hasWardAfter).toBe(true);
-      expect(result.hasArchiveAfter).toBe(false);
-    } finally {
-      await context.close();
-    }
-  });
-
-  test('saveBlobAs preWriteValidator halts createWritable, throws AbortError, and leaves archive untouched when user cancels overwrite', async ({ browser }) => {
+  test('saveBlobAs preWriteValidator halts createWritable, throws AbortError, and leaves case file untouched when user cancels overwrite', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -728,14 +484,14 @@ test.describe('per-ward save file (version 3)', () => {
       const testResult = await page.evaluate(async () => {
         let writeCallCount = 0;
         let writtenBytes = 0;
-        const { blob: multiWardBlob } = await (window as any).buildExportZipBlob();
+        const { blob: multiWardBlob } = await (window as any).buildCaseFileBlob();
 
-        const archiveHandle = {
-          name: 'case-archive.sav',
+        const caseHandle = {
+          name: 'case-file.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
-          isSameEntry: async (other: any) => other && other.name === 'case-archive.sav',
-          getFile: async () => new File([multiWardBlob], 'case-archive.sav', { type: 'application/octet-stream' }),
+          isSameEntry: async (other: any) => other && other.name === 'case-file.sav',
+          getFile: async () => new File([multiWardBlob], 'case-file.sav', { type: 'application/octet-stream' }),
           createWritable: async () => ({
             write: async (chunk: any) => {
               writeCallCount++;
@@ -745,63 +501,42 @@ test.describe('per-ward save file (version 3)', () => {
           })
         };
 
-        // Arm archive handle
-        await (window as any).rememberArchiveZipHandle(archiveHandle);
+        await (window as any).rememberCaseFileHandle(caseHandle);
+        // Mock showSaveFilePicker to return the same caseHandle (as if user picked it in the file dialog)
+        (window as any).showSaveFilePicker = async () => caseHandle;
 
-        // Mock showSaveFilePicker to return the same archiveHandle (as if user picked it in the file dialog)
-        (window as any).showSaveFilePicker = async () => archiveHandle;
-
-        // Mock confirm to simulate user clicking "Cancel" (aborting overwrite)
         let confirmCalled = false;
         (window as any).confirm = () => {
           confirmCalled = true;
-          return false; // user rejects overwriting multi-ward archive
+          return false; // user rejects overwriting the multi-ward case file
         };
 
-        const activeWard = (window as any).guardianData.wards[0];
-        const singleWardBlob = await (window as any).buildWardZipBlob(activeWard.wardId);
-        const preWriteValidator = async (pickedHandle: any) => {
-          const loadedArchive = await (window as any).loadArchiveZipHandle();
-          if (loadedArchive && typeof pickedHandle.isSameEntry === 'function') {
-            if (await pickedHandle.isSameEntry(loadedArchive) && (window as any).guardianData.wards.length > 1) {
-              return (window as any).confirm('Warning');
-            }
-          }
-          return true;
-        };
+        const activeWard = (window as any).caseFile.wards[0];
+        const singleWardBlob = await (window as any).buildSingleWardExportBlob(activeWard.wardId);
 
         let caughtErrorName = null;
         try {
-          await (window as any).saveBlobAs(singleWardBlob, 'test.sav', preWriteValidator);
+          await (window as any).saveBlobAs(singleWardBlob, 'test.sav', (window as any).validateWardBackupOverwrite);
         } catch (e: any) {
           caughtErrorName = e && e.name;
         }
 
-        const archiveStillArmed = !!(await (window as any).loadArchiveZipHandle());
-        const wardArmed = !!(await (window as any).loadWardZipHandle(activeWard.wardId));
+        const caseStillArmed = !!(await (window as any).loadCaseFileHandle());
 
-        return {
-          confirmCalled,
-          caughtErrorName,
-          writeCallCount,
-          writtenBytes,
-          archiveStillArmed,
-          wardArmed
-        };
+        return { confirmCalled, caughtErrorName, writeCallCount, writtenBytes, caseStillArmed };
       });
 
       expect(testResult.confirmCalled).toBe(true);
       expect(testResult.caughtErrorName).toBe('AbortError');
       expect(testResult.writeCallCount).toBe(0);
       expect(testResult.writtenBytes).toBe(0);
-      expect(testResult.archiveStillArmed).toBe(true);
-      expect(testResult.wardArmed).toBe(false);
+      expect(testResult.caseStillArmed).toBe(true);
     } finally {
       await context.close();
     }
   });
 
-  test('saveBackupNow in fallback browser (no showSaveFilePicker) downloads and marks case saved', async ({ browser }) => {
+  test('saveBackupNow in fallback browser (no showSaveFilePicker) downloads and marks case saved but not case-opened', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -817,174 +552,29 @@ test.describe('per-ward save file (version 3)', () => {
         let alertMsg = '';
         (window as any).alert = (msg: string) => { alertMsg = msg; };
 
-        // Mark dirty
         (window as any).markDirtySinceExport();
         const dirtyBefore = (window as any).pgHasUnsavedChanges();
 
-        // Call saveBackupNow
         await (window as any).saveBackupNow();
 
         const dirtyAfter = (window as any).pgHasUnsavedChanges();
+        // A plain download yields no reconnectable handle -- the fast-path
+        // Open screen on next launch should NOT be offered from this alone.
         const caseOpenedBefore = await (window as any).hasOpenedCaseBefore();
 
-        return {
-          dirtyBefore,
-          dirtyAfter,
-          caseOpenedBefore,
-          alertMsg
-        };
+        return { dirtyBefore, dirtyAfter, caseOpenedBefore, alertMsg };
       });
 
       expect(result.dirtyBefore).toBe(true);
       expect(result.dirtyAfter).toBe(false);
       expect(result.caseOpenedBefore).toBe(false);
-      expect(result.alertMsg).toContain('Backup saved');
+      expect(result.alertMsg).toContain('Backup complete');
     } finally {
       await context.close();
     }
   });
 
-  test('in-session import of version-3 per-ward .sav file merges the single ward without migration modal', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Existing Base Ward');
-
-      const importResult = await page.evaluate(async () => {
-        // Add a temporary second ward to build its valid version-3 .sav file
-        await (window as any).addWard('Imported V3 Ward', 'guardian');
-        const v3Ward = (window as any).guardianData.wards.find((w: any) => w.wardName === 'Imported V3 Ward');
-        const blob = await (window as any).buildWardZipBlob(v3Ward.wardId);
-        const file = new File([blob], 'Imported_V3_Ward_backup.sav', { type: 'application/octet-stream' });
-
-        // Remove the second ward from in-memory array to simulate importing from an external file
-        (window as any).guardianData.wards = (window as any).guardianData.wards.filter((w: any) => w.wardName !== 'Imported V3 Ward');
-
-        // Mock confirm and alert
-        (window as any).confirm = () => true;
-        let alertMsg = '';
-        (window as any).alert = (msg: string) => { alertMsg = msg; };
-
-        // Import the single-ward version-3 file
-        await (window as any).importGuardianDataZip(file);
-
-        const wardNames = (window as any).guardianData.wards.map((w: any) => w.wardName);
-        return { wardNames, alertMsg };
-      });
-
-      expect(importResult.wardNames).toContain('Existing Base Ward');
-      expect(importResult.wardNames).toContain('Imported V3 Ward');
-      expect(importResult.alertMsg).toContain('Import complete');
-
-      // Migration modal should NOT appear for version-3 files
-      await expect(page.locator('#migrationModal.show')).toHaveCount(0);
-    } finally {
-      await context.close();
-    }
-  });
-
-  test('in-session import of pre-17A legacy multi-ward .sav file merges all wards and shows migration modal', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Existing Base Ward');
-
-      // Create a genuine pre-17A legacy multi-ward archive (no kind in manifest)
-      const importResult = await page.evaluate(async () => {
-        const wardA = { wardId: 'ward-v2-a', wardName: 'V2 Extra Ward A', inventoryType: 'guardian', data: {} };
-        const wardB = { wardId: 'ward-v2-b', wardName: 'V2 Extra Ward B', inventoryType: 'simplified', data: {} };
-
-        const zip = new (window as any).JSZip();
-        zip.file('wards/ward-v2-a.enc', 'PLAIN:' + JSON.stringify(wardA));
-        zip.file('wards/ward-v2-b.enc', 'PLAIN:' + JSON.stringify(wardB));
-        zip.file('auditLog.enc', 'PLAIN:' + JSON.stringify([]));
-        zip.file('manifest.json', JSON.stringify({
-          format: 'probate-guardian-export',
-          version: 2,
-          exportedAt: new Date().toISOString(),
-          securityMode: 'none',
-          salt: null,
-          verifier: null,
-          wards: [
-            { wardId: 'ward-v2-a', file: 'wards/ward-v2-a.enc' },
-            { wardId: 'ward-v2-b', file: 'wards/ward-v2-b.enc' }
-          ]
-        }));
-
-        const blob = await zip.generateAsync({ type: 'blob' });
-        const file = new File([blob], 'legacy_archive.sav', { type: 'application/octet-stream' });
-
-        (window as any).confirm = () => true;
-        let alertMsg = '';
-        (window as any).alert = (msg: string) => { alertMsg = msg; };
-
-        await (window as any).importGuardianDataZip(file);
-
-        const wardNames = (window as any).guardianData.wards.map((w: any) => w.wardName);
-        return { wardNames, alertMsg };
-      });
-
-      expect(importResult.wardNames).toContain('Existing Base Ward');
-      expect(importResult.wardNames).toContain('V2 Extra Ward A');
-      expect(importResult.wardNames).toContain('V2 Extra Ward B');
-
-      // Migration modal should be visible for pre-17A legacy archive
-      await expect(page.locator('#migrationModal')).toHaveClass(/show/);
-      await expect(page.locator('#migrationModal')).toContainText('Per-Ward Save Files Are Now Available');
-
-      // Dismiss migration modal
-      await page.click('#migration-modal-ok-btn');
-      await expect(page.locator('#migrationModal')).not.toHaveClass(/show/);
-    } finally {
-      await context.close();
-    }
-  });
-
-  test('in-session import of current archive (version 2 with kind: archive) does NOT show migration modal', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Existing Base Ward');
-
-      // Create a current archive (has kind: 'archive')
-      const importResult = await page.evaluate(async () => {
-        await (window as any).addWard('Current Extra Ward', 'guardian');
-        const { blob } = await (window as any).buildExportZipBlob();
-        const file = new File([blob], 'current_archive.sav', { type: 'application/octet-stream' });
-
-        // Keep only base ward
-        (window as any).guardianData.wards = (window as any).guardianData.wards.filter((w: any) => w.wardName === 'Existing Base Ward');
-
-        (window as any).confirm = () => true;
-        let alertMsg = '';
-        (window as any).alert = (msg: string) => { alertMsg = msg; };
-
-        await (window as any).importGuardianDataZip(file);
-
-        const wardNames = (window as any).guardianData.wards.map((w: any) => w.wardName);
-        return { wardNames, alertMsg };
-      });
-
-      expect(importResult.wardNames).toContain('Existing Base Ward');
-      expect(importResult.wardNames).toContain('Current Extra Ward');
-
-      // Migration modal should NOT appear for current archives
-      await expect(page.locator('#migrationModal.show')).toHaveCount(0);
-    } finally {
-      await context.close();
-    }
-  });
-
-  test('dashboard Export All Wards button exports multi-ward archive', async ({ page }) => {
+  test('dashboard Export All Wards button exports the unified case file', async ({ page }) => {
     await gotoApp(page);
     await startNewCase(page);
     await chooseNoPassword(page);
@@ -1004,7 +594,7 @@ test.describe('per-ward save file (version 3)', () => {
     expect(download.suggestedFilename()).toBe('guardianshipwarddata.sav');
   });
 
-  test('dashboard single-ward backup uses preWriteValidator and protects archive from accidental overwrite', async ({ browser }) => {
+  test('dashboard single-ward backup uses preWriteValidator and protects the case file from accidental overwrite', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -1016,22 +606,22 @@ test.describe('per-ward save file (version 3)', () => {
 
       await page.evaluate(async () => {
         (window as any).__writeCallCount = 0;
-        const { blob: multiWardBlob } = await (window as any).buildExportZipBlob();
+        const { blob: multiWardBlob } = await (window as any).buildCaseFileBlob();
 
-        const archiveHandle = {
-          name: 'case-archive.sav',
+        const caseHandle = {
+          name: 'case-file.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
-          isSameEntry: async (other: any) => other && other.name === 'case-archive.sav',
-          getFile: async () => new File([multiWardBlob], 'case-archive.sav', { type: 'application/octet-stream' }),
+          isSameEntry: async (other: any) => other && other.name === 'case-file.sav',
+          getFile: async () => new File([multiWardBlob], 'case-file.sav', { type: 'application/octet-stream' }),
           createWritable: async () => ({
             write: async () => { (window as any).__writeCallCount++; },
             close: async () => {}
           })
         };
 
-        await (window as any).rememberArchiveZipHandle(archiveHandle);
-        (window as any).showSaveFilePicker = async () => archiveHandle;
+        await (window as any).rememberCaseFileHandle(caseHandle);
+        (window as any).showSaveFilePicker = async () => caseHandle;
 
         (window as any).__confirmCalled = false;
         (window as any).confirm = () => {
@@ -1045,30 +635,32 @@ test.describe('per-ward save file (version 3)', () => {
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
       await page.locator('#dashboard-role').selectOption('professional');
 
-      const wardAId = await page.evaluate(() => (window as any).guardianData.wards.find((w: any) => w.wardName === 'Dash Ward A')?.wardId);
+      const wardAId = await page.evaluate(() => (window as any).caseFile.wards.find((w: any) => w.wardName === 'Dash Ward A')?.wardId);
       const backupBtn = page.locator(`[data-dashboard-action="backup"][data-ward-id="${wardAId}"]`).first();
       await expect(backupBtn).toBeVisible();
       await backupBtn.click();
 
       await expect.poll(() => page.evaluate(() => (window as any).__confirmCalled)).toBe(true);
 
-      const result = await page.evaluate(async (id) => {
+      const result = await page.evaluate(async () => {
         return {
           writeCallCount: (window as any).__writeCallCount,
-          archiveStillArmed: !!(await (window as any).loadArchiveZipHandle()),
-          wardArmed: !!(await (window as any).loadWardZipHandle(id))
+          caseStillArmed: !!(await (window as any).loadCaseFileHandle()),
         };
-      }, wardAId);
+      });
 
       expect(result.writeCallCount).toBe(0);
-      expect(result.archiveStillArmed).toBe(true);
-      expect(result.wardArmed).toBe(false);
+      expect(result.caseStillArmed).toBe(true);
     } finally {
       await context.close();
     }
   });
 
-  test('dashboard single-ward backup records export before serialization, updates lastExportAt, and preserves recovery cache on fallback', async ({ browser }) => {
+  test('dashboard single-ward backup is decoupled from the main case save state', async ({ browser }) => {
+    // Sharing a copy of one ward is a side action now, not a real save of
+    // the case -- it deliberately does not clear _dirtySinceExport or the
+    // recovery cache, since neither reflects only this one ward. See
+    // finishSingleWardExport()'s comment in legacy-app.js.
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -1079,70 +671,48 @@ test.describe('per-ward save file (version 3)', () => {
 
       const testResult = await page.evaluate(async () => {
         const w = (window as any);
-        const wardId = w.guardianData.activeWardId;
-        const ward = w.guardianData.wards.find((item: any) => item.wardId === wardId);
+        const wardId = w.caseFile.activeWardId;
+        const ward = w.caseFile.wards.find((item: any) => item.wardId === wardId);
 
-        // Populate session restore cache in IndexedDB
         await w.saveSessionRestoreCache();
         w.markDirtySinceExport();
+        const dirtyBefore = w.pgHasUnsavedChanges();
 
-        // 1. Fallback mode (no FSA handle): record export, build blob, finish export
-        const rollback = await w.beginRecordingExport('Exported single ward "Cache Guard Ward" to ward file', wardId);
-        const blob = await w.buildWardZipBlob(wardId);
-        
-        // Inspect ZIP to verify it contains its own DATA_EXPORT record
+        const blob = await w.buildSingleWardExportBlob(wardId);
         const zip = await w.JSZip.loadAsync(blob);
         const auditStr = await zip.file('auditLog.enc').async('string');
         const entries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
-        const containsOwnExportRecord = entries.some((e: any) => e.eventType === 'DATA_EXPORT' && e.details.includes('Cache Guard Ward') && e.wardId === wardId);
+        const containsThisWardsEntries = entries.every((e: any) => e.wardId === wardId);
 
-        await w.finishWardExport(null, ward);
-        const cacheAfterFallback = await w._sessionCacheGet();
-        const dirtyAfterExport = w.pgHasUnsavedChanges();
-
-        // 2. FSA handle mode: finishWardExport should clear recovery cache
         const mockHandle = {
-          name: 'guard_backup.sav',
+          name: 'shared_copy.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
           isSameEntry: async () => false,
           createWritable: async () => ({ write: async () => {}, close: async () => {} })
         };
-        await w.finishWardExport(mockHandle, ward);
-        const cacheAfterHandle = await w._sessionCacheGet();
+        w.finishSingleWardExport(mockHandle, ward);
 
-        // 3. Verify validator requirement
-        const origValidator = w.validateWardBackupOverwrite;
-        w.validateWardBackupOverwrite = undefined;
-        let validatorThrew = false;
-        try {
-          const v = w.validateWardBackupOverwrite;
-          if (typeof v !== 'function') throw new Error('missing validator');
-        } catch {
-          validatorThrew = true;
-        }
-        w.validateWardBackupOverwrite = origValidator;
-
-        // 4. Verify audit log entries
-        const auditLogEntries = await w.loadAuditLogEntries();
-        const exportAudit = auditLogEntries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details.includes('Cache Guard Ward') && e.wardId === wardId);
+        const cacheAfter = await w._sessionCacheGet();
+        const dirtyAfter = w.pgHasUnsavedChanges();
+        const caseHandleAfter = await w.loadCaseFileHandle();
 
         return {
-          containsOwnExportRecord,
-          cacheAfterFallback: !!cacheAfterFallback,
-          dirtyAfterExport,
-          cacheAfterHandle: !!cacheAfterHandle,
-          validatorThrew,
-          hasExportAudit: !!exportAudit
+          dirtyBefore,
+          containsThisWardsEntries,
+          cacheAfter: !!cacheAfter,
+          dirtyAfter,
+          caseHandleUnaffected: caseHandleAfter === null || caseHandleAfter?.name !== 'shared_copy.sav',
         };
       });
 
-      expect(testResult.containsOwnExportRecord).toBe(true);
-      expect(testResult.cacheAfterFallback).toBe(true);
-      expect(testResult.dirtyAfterExport).toBe(false);
-      expect(testResult.cacheAfterHandle).toBe(false);
-      expect(testResult.validatorThrew).toBe(true);
-      expect(testResult.hasExportAudit).toBe(true);
+      expect(testResult.dirtyBefore).toBe(true);
+      expect(testResult.containsThisWardsEntries).toBe(true);
+      // Still dirty and the recovery cache is still there -- a shared copy
+      // of one ward says nothing about whether the real case file was saved.
+      expect(testResult.cacheAfter).toBe(true);
+      expect(testResult.dirtyAfter).toBe(true);
+      expect(testResult.caseHandleUnaffected).toBe(true);
     } finally {
       await context.close();
     }

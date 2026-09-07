@@ -82,19 +82,18 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       const { path: backupPath, filename } = await captureDownload(page, async () => {
         await backupAllBtn.click();
       });
-      expect(filename).toBe('probate_guardian_all_wards_backup.sav');
+      expect(filename).toBe('guardianshipwarddata.sav');
 
       // Inspect exported ZIP file
       const buffer = await fs.readFile(backupPath);
       const zip = await JSZip.loadAsync(buffer);
 
-      // Verify manifest.json has kind: 'backup' and version: 3
+      // Verify manifest.json matches the unified case-file format
       const manifestFile = zip.file('manifest.json');
       expect(manifestFile).toBeTruthy();
       const manifest = JSON.parse(await manifestFile!.async('string'));
-      expect(manifest.format).toBe('probate-guardian-export');
-      expect(manifest.kind).toBe('backup');
-      expect(manifest.version).toBe(3);
+      expect(manifest.format).toBe('probate-guardian-case');
+      expect(manifest.version).toBe(1);
       expect(manifest.wards.length).toBe(2);
 
       // Verify auditLog.enc contains self-contained export record
@@ -102,7 +101,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       expect(auditFile).toBeTruthy();
       const auditContent = await auditFile!.async('string');
       const entries = JSON.parse(auditContent.replace(/^PLAIN:/, ''));
-      const exportEntry = entries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details.includes('Exported full backup of 2 ward(s)'));
+      const exportEntry = entries.find((e: any) => e.eventType === 'DATA_EXPORT' && e.details.includes('Exported 2 form(s) to backup file'));
       expect(exportEntry).toBeTruthy();
     } finally {
       await context.close();
@@ -153,8 +152,8 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
 
       // Verify wards are restored
       await page.waitForTimeout(1000);
-      const wardCount = await page.evaluate(() => (window as any).guardianData.wards.length);
-      const wardNames = await page.evaluate(() => (window as any).guardianData.wards.map((w: any) => w.wardName));
+      const wardCount = await page.evaluate(() => (window as any).caseFile.wards.length);
+      const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
 
       expect(wardNames).toContain('Restored Alpha');
       expect(wardNames).toContain('Restored Beta');
@@ -211,7 +210,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       await page.setInputFiles('#backup-import-input', backupPath);
       await page.waitForTimeout(1000);
 
-      const wardNames = await page.evaluate(() => (window as any).guardianData.wards.map((w: any) => w.wardName));
+      const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
       expect(wardNames).toContain('Secret Ward 1');
       expect(wardNames).toContain('Secret Ward 2');
     } finally {
@@ -219,7 +218,11 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
     }
   });
 
-  test('Open Backup guides the user if a single-ward file is mistakenly selected', async ({ browser }) => {
+  test('Open Backup merges a case file that happens to contain just one ward', async ({ browser }) => {
+    // Under the unified case-file model there is no separate "single-ward"
+    // file shape to special-case -- a case file with one ward (e.g. from
+    // Save Data File) and one with many (Backup All Wards) are the exact
+    // same manifest format, so Open Backup treats them identically.
     const context1 = await browser.newContext();
     let singleWardPath = '';
     try {
@@ -230,7 +233,6 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       await createWard(page, 'Single Ward Solo');
 
       await ensureSaveControlsOpen(page);
-      // Export single ward via Save Data File
       const saveWardBtn = page.locator('button[data-shell-action="export-data"]');
       const res = await captureDownload(page, async () => {
         await saveWardBtn.click();
@@ -254,18 +256,18 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
         await dialog.accept();
       });
 
-      // Pass single ward file to Open Backup
       await page.setInputFiles('#backup-import-input', singleWardPath);
       await page.waitForTimeout(1000);
 
-      // Verify exactly one confirmation dialog was shown, followed by the completion alert
+      // One confirmation dialog, then the completion alert -- same flow as
+      // restoring a many-ward backup, just with "1 ward(s)".
       expect(dialogMessages.length).toBe(2);
-      expect(dialogMessages[0]).toContain('single-ward save file');
-      expect(dialogMessages[0]).toContain('Single Ward Solo');
-      expect(dialogMessages[1]).toContain('Import complete');
+      expect(dialogMessages[0]).toContain('Restore backup containing 1 ward(s)');
+      expect(dialogMessages[1]).toContain('Backup restored');
 
-      // Verify ward was loaded
-      const wardNames = await page.evaluate(() => (window as any).guardianData.wards.map((w: any) => w.wardName));
+      // Both the pre-existing host ward and the merged one are present.
+      const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
+      expect(wardNames).toContain('Host Ward');
       expect(wardNames).toContain('Single Ward Solo');
     } finally {
       await context2.close();
@@ -340,7 +342,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Lock Contention Ward');
 
-      const targetWardId = await tab1.evaluate(() => (window as any).guardianData.activeWardId);
+      const targetWardId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
       expect(targetWardId).toBeTruthy();
 
       await ensureSaveControlsOpen(tab1);

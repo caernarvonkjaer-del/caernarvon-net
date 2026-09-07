@@ -6,7 +6,7 @@ import { gotoApp, startNewCase, chooseEncrypted, createWard } from './support/ta
 // session without relying on any persisted state surviving a reload.
 //
 // updateSidebar() (index.html:7038) hides #sidebar entirely while
-// guardianData.wards.length===0, so a ward must exist before the sidebar
+// caseFile.wards.length===0, so a ward must exist before the sidebar
 // is present at all. The Lock button itself lives inside the "Save &
 // Backup" panel, which starts collapsed by default (applySaveControlsCollapsedState()) —
 // that collapse is a separate, unrelated UI concern, so this test invokes

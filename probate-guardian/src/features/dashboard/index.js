@@ -7,7 +7,7 @@ import { compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkfl
 import { loadDashboardPreferences, saveDashboardPreferences } from './preferences.js';
 
 const {
-  esc, ic, navigate, getGuardianData, isContinuePromptShown, markContinuePromptShown,
+  esc, ic, navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, saveAppState,
   getWardHeadlineTotal, getWardProgress, typeIcon, INVENTORY_TYPE_META, formatDashboardCurrency,
@@ -95,7 +95,7 @@ function assignmentFilterHTML(rows, label, extraClass = '') {
 }
 
 function triageControlsHTML() {
-  const rows = projectWards(getGuardianData().wards).filter(row => !row.isArchived);
+  const rows = projectWards(getCaseFile().wards).filter(row => !row.isArchived);
   const contacts = uniqueFilterOptions(rows, row => row.filingContacts.map(item => ({ key: item.filterKey, label: item.name })));
   if (_dashboardContactFilter !== 'all' && !contacts.some(([key]) => key === _dashboardContactFilter)) _dashboardContactFilter = 'all';
   const assignmentFilter = _dashboardPreferences.role === 'professional'
@@ -139,12 +139,12 @@ function dashboardToolbarHTML() {
 }
 
 function dashboardHeaderHTML() {
-  const wards = getGuardianData().wards;
+  const wards = getCaseFile().wards;
   const activeRows = projectWards(wards).filter(row => !row.isArchived);
   const supervisorFilter = _dashboardPreferences.role === 'assistant'
     ? assignmentFilterHTML(activeRows, 'Working on behalf of', 'dashboard-supervisor-control')
     : '';
-  const activeWardId = getGuardianData().activeWardId;
+  const activeWardId = getCaseFile().activeWardId;
   const activeWard = wards.find(w => w.wardId === activeWardId);
   const closeLoadedWardBtn = activeWard ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-close-ward" data-dashboard-action="close-ward" title="Close active ward and release lock">${ic('x', 14)} Close Active Ward</button>` : '';
   const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all wards into a single combined .sav archive">${ic('archive', 14)} Export All Wards</button>` : '';
@@ -273,8 +273,8 @@ function wardCardHTML(projectedWard) {
   const meta = INVENTORY_TYPE_META[projectedWard.inventoryType] || { iconName: 'folder', accent: '#525d6e', accentText: 'var(--ink-3)', totalLabel: 'Total' };
   const typeLabel = projectedWard.displayType;
   const lastMod = projectedWard.lastModified ? formatRelativeTime(new Date(projectedWard.lastModified).getTime()) : 'never saved';
-  const guardianData = getGuardianData();
-  const isActive = projectedWard.wardId === guardianData.activeWardId;
+  const caseFile = getCaseFile();
+  const isActive = projectedWard.wardId === caseFile.activeWardId;
   const hasPeriod = projectedWard.inventoryType !== 'guardian' && (ward.periodFrom || ward.periodTo);
   const hasGid = projectedWard.inventoryType === 'guardian' && ward.gid;
   const periodHTML = hasPeriod ? `<div class="ward-card-period">FY ${esc(fmtDateCard(ward.periodFrom) || '?')} – ${esc(fmtDateCard(ward.periodTo) || '?')}</div>`
@@ -324,7 +324,7 @@ function wardCardHTML(projectedWard) {
 function renderDashboardSummary() {
   const container = document.getElementById('dashboard-summary-strip-container');
   if (!container) return;
-  const activeWards = projectWards(getGuardianData().wards).filter(w => !w.isArchived);
+  const activeWards = projectWards(getCaseFile().wards).filter(w => !w.isArchived);
   const metrics = getDashboardMetrics(activeWards);
   const combinedTotal = activeWards.reduce((s, w) => s + (w.total || 0), 0);
   container.innerHTML = `<div class="dashboard-summary-strip dashboard-triage-summary">
@@ -349,8 +349,8 @@ function showContinuePromptIfNeeded() {
   if (isContinuePromptShown()) return;
   const recent = getRecentlyOpenedWards().filter(r => !r.archived);
   const last = recent[0];
-  const guardianData = getGuardianData();
-  if (!last || last.wardId === guardianData.activeWardId) return;
+  const caseFile = getCaseFile();
+  if (!last || last.wardId === caseFile.activeWardId) return;
   markContinuePromptShown();
   const typeLabel = INVENTORY_TYPES[last.inventoryType]?.name || last.inventoryType;
   container.innerHTML = `<div class="continue-prompt-banner" id="continue-prompt-banner">
@@ -368,7 +368,7 @@ function showContinuePromptIfNeeded() {
 }
 
 function getDashboardDeadlineRows() {
-  return projectWards(getGuardianData().wards)
+  return projectWards(getCaseFile().wards)
     .filter(w => !w.isArchived && w.isDeadlineActionable && w.deadlineDate)
     .sort((a, b) => a.deadlineDate - b.deadlineDate);
 }
@@ -394,7 +394,7 @@ function renderDashboardWorklist() {
   if (topRow) topRow.classList.remove('single-col');
   const tab = _dashboardWorklistTab || (deadlineRows.length ? 'deadlines' : 'recent');
   const SHOWN = 8;
-  const guardianData = getGuardianData();
+  const caseFile = getCaseFile();
 
   const deadlineRowHTML = (r) => {
     const diffDays = r.daysUntilDeadline;
@@ -411,7 +411,7 @@ function renderDashboardWorklist() {
     </button>`;
   };
   const recentRowHTML = (r) => {
-    const isActive = r.wardId === guardianData.activeWardId;
+    const isActive = r.wardId === caseFile.activeWardId;
     const typeLabel = INVENTORY_TYPES[r.inventoryType]?.name || r.inventoryType;
     return `<button type="button" class="recent-ward-item${isActive ? ' recent-active' : ''}" data-dashboard-action="open-ward" data-ward-id="${esc(r.wardId)}">
       <span class="recent-ward-icon">${typeIcon(r.inventoryType, 16)}</span>
@@ -634,7 +634,7 @@ function renderTriageQueue(projectedWards) {
 
 function renderFamilyDashboard(projectedWards) {
   const filtered = getFilteredSortedWards(projectedWards).filter(row => !row.isArchived);
-  const activeWardId = getGuardianData().activeWardId;
+  const activeWardId = getCaseFile().activeWardId;
   const featured = filtered.find(row => row.wardId === activeWardId)
     || filtered.slice().sort(compareDashboardPriority)[0];
   const list = filtered.map(row => {
@@ -654,7 +654,7 @@ function renderFamilyDashboard(projectedWards) {
 function renderDashboardGrid() {
   const container = document.getElementById('dashboard-grid-container');
   if (!container) return;
-  const allWards = getGuardianData().wards;
+  const allWards = getCaseFile().wards;
   if (!allWards.length) {
     container.innerHTML = `<div class="dashboard-empty">
       <div style="color:var(--ink-4);margin-bottom:.4rem;"><svg class="ic" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h9.6V19H3.4Z"/></svg></div>
@@ -711,35 +711,31 @@ async function quickExportPdf(wardId) {
   navigate('/print');
 }
 
+// Shares a standalone copy of just this one ward -- deliberately decoupled
+// from the case's own save state (see finishSingleWardExport()'s comment in
+// legacy-app.js): it does NOT touch _lastExportAt/the "last backup" readout,
+// since this action says nothing about whether the real case file itself
+// has been saved.
 async function exportSingleWardZip(wardId) {
-  const guardianData = getGuardianData();
-  const ward = guardianData.wards.find(w => w.wardId === wardId);
+  const caseFile = getCaseFile();
+  const ward = caseFile.wards.find(w => w.wardId === wardId);
   if (!ward) return;
-  let rollback = null;
   try {
-    if (ward.wardId === guardianData.activeWardId) await flushPendingSave();
+    if (ward.wardId === caseFile.activeWardId) await flushPendingSave();
     const wardName = ward.wardName || 'ward';
-    if (typeof window.beginRecordingExport === 'function') {
-      rollback = await window.beginRecordingExport(`Exported single ward "${wardName}" to ward file`, wardId);
-    }
-    const blob = await window.buildWardZipBlob(wardId);
-    const fileName = typeof window.suggestedWardFileName === 'function' ? window.suggestedWardFileName(ward)
-      : typeof window.getWardFileName === 'function' ? window.getWardFileName(ward)
+    const blob = await window.buildSingleWardExportBlob(wardId);
+    const fileName = typeof window.getWardFileName === 'function' ? window.getWardFileName(ward)
       : `${((ward.wardName || 'Ward').trim().replace(/[\s_]+/g, '-') || 'Ward')}-guardianshipwarddata.sav`;
     const validator = window.validateWardBackupOverwrite;
     if (typeof validator !== 'function') {
       throw new Error('validateWardBackupOverwrite is required but not available');
     }
     const handle = await saveBlobAs(blob, fileName, validator);
-    if (window.finishWardExport) {
-      await window.finishWardExport(handle, ward);
-    } else {
-      if (handle && window.rememberWardZipHandle) await window.rememberWardZipHandle(wardId, handle);
-      if (ward.wardId === guardianData.activeWardId) updateLastSavedIndicator();
-    }
+    const logFn = window.auditLog || auditLog;
+    if (typeof logFn === 'function') logFn('DATA_EXPORT', `Exported single ward "${wardName}" to ward file`, true, wardId);
+    if (window.finishSingleWardExport) window.finishSingleWardExport(handle, ward);
     alert(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {
-    if (rollback) rollback();
     if (e && e.name === 'AbortError') return;
     console.error('single ward export failed', e);
     const logFn = window.auditLog || auditLog;
@@ -749,8 +745,8 @@ async function exportSingleWardZip(wardId) {
 }
 
 async function toggleDashboardWardArchived(wardId) {
-  const guardianData = getGuardianData();
-  const ward = guardianData.wards.find(w => w.wardId === wardId);
+  const caseFile = getCaseFile();
+  const ward = caseFile.wards.find(w => w.wardId === wardId);
   if (!ward) return;
   ward.archived = !ward.archived;
   await saveWardToState(ward);
@@ -762,7 +758,7 @@ async function toggleDashboardWardArchived(wardId) {
 }
 
 async function updateDashboardWorkflow(wardId, field, value) {
-  const ward = getGuardianData().wards.find(item => item.wardId === wardId);
+  const ward = getCaseFile().wards.find(item => item.wardId === wardId);
   if (!ward) return;
   const workflow = normalizeDashboardWorkflow(ward.dashboardWorkflow);
   if (field === 'workflow-status') {

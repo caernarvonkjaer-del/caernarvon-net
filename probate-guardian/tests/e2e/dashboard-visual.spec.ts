@@ -21,7 +21,7 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
   }
 
   await page.evaluate(() => {
-    const wards = (window as any).getGuardianData().wards;
+    const wards = (window as any).getCaseFile().wards;
     const dateString = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
     const dueSoonPeriodEnd = new Date();
     dueSoonPeriodEnd.setDate(dueSoonPeriodEnd.getDate() - 82);

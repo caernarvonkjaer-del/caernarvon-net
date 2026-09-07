@@ -84,8 +84,11 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
       await saveBtn.click();
       const saveDetail: any = await savePromise;
       expect(saveDetail).toBeDefined();
-      expect(saveDetail.kind).toBe('ward');
-      expect(saveDetail.fileName).toContain('Harold-Thomas-Bennett');
+      // Under the unified case-file model, the first save of a brand-new
+      // case defaults to a generic filename -- there is no more per-ward
+      // naming convention for the PRIMARY save file (only the separate
+      // single-ward "share a copy" export still names itself after the ward).
+      expect(saveDetail.fileName).toBe('guardianshipwarddata.sav');
     }
 
     // 5. Test Schedule B-2 Vehicle In-Place DOM Stability

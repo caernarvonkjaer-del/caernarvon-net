@@ -66,8 +66,8 @@ test.describe('plan-initial feature module', () => {
     await createWard(page, 'Plan Initial Cycle Ward', 'planInitial');
     await createWard(page, 'Other Cycle Ward', 'guardian');
 
-    // @ts-expect-error - guardianData is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => guardianData.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
+    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const planInitialId = wards.find((w: any) => w.type === 'planInitial').id;
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
 

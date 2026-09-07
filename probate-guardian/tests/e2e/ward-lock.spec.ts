@@ -21,7 +21,7 @@ test.describe('Ward-level Tab Locks', () => {
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
 
       // Check lock for Ward A is held
-      const wardAId = await page.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardAId = await page.evaluate(() => (window as any).caseFile.activeWardId);
       let heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(heldLocks).toContain(`pg-ward-${wardAId}`);
 
@@ -31,11 +31,11 @@ test.describe('Ward-level Tab Locks', () => {
       await createWard(page, 'Ward B');
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
 
-      const wardBId = await page.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardBId = await page.evaluate(() => (window as any).caseFile.activeWardId);
 
       // 2. Switch to Ward A from Ward B
       await page.evaluate((id) => (window as any).switchWard(id), wardAId);
-      await page.waitForFunction((id) => (window as any).guardianData.activeWardId === id, wardAId);
+      await page.waitForFunction((id) => (window as any).caseFile.activeWardId === id, wardAId);
 
       // Check Ward A lock is held and Ward B lock is released
       heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -44,7 +44,7 @@ test.describe('Ward-level Tab Locks', () => {
 
       // 3. Switch back to Ward B
       await page.evaluate((id) => (window as any).switchWard(id), wardBId);
-      await page.waitForFunction((id) => (window as any).guardianData.activeWardId === id, wardBId);
+      await page.waitForFunction((id) => (window as any).caseFile.activeWardId === id, wardBId);
 
       // Check Ward B lock is held and Ward A lock is released
       heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -64,7 +64,7 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Tab 2 opens
       const tab2 = await context.newPage();
@@ -73,15 +73,15 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(tab2);
       await createWard(tab2, 'Ward B');
       await tab2.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardBId = await tab2.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardBId = await tab2.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Both tabs hold their respective locks
       const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(tab1Locks).toContain(`pg-ward-${wardAId}`);
       expect(tab1Locks).toContain(`pg-ward-${wardBId}`);
 
-      expect(await tab1.evaluate(() => (window as any).guardianData.activeWardId)).toBe(wardAId);
-      expect(await tab2.evaluate(() => (window as any).guardianData.activeWardId)).toBe(wardBId);
+      expect(await tab1.evaluate(() => (window as any).caseFile.activeWardId)).toBe(wardAId);
+      expect(await tab2.evaluate(() => (window as any).caseFile.activeWardId)).toBe(wardBId);
     } finally {
       await context.close();
     }
@@ -96,7 +96,7 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Tab 1 navigates to dashboard (lock is retained)
       await tab1.evaluate(() => window.location.hash = '#/dashboard');
@@ -114,7 +114,7 @@ test.describe('Ward-level Tab Locks', () => {
 
       // Tab 1 closes the ward explicitly using Close action
       await tab1.evaluate(() => (window as any).unloadWard());
-      await tab1.waitForFunction(() => (window as any).guardianData.activeWardId === null);
+      await tab1.waitForFunction(() => (window as any).caseFile.activeWardId === null);
 
       // Tab 2 can now acquire Ward A successfully
       const tab2AcquiredAfter = await tab2.evaluate((id) => (window as any).acquireWardLock(id), wardAId);
@@ -136,11 +136,11 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Tab 1 deletes Ward A
       await tab1.evaluate((id) => (window as any).deleteWard(id), wardAId);
-      expect(await tab1.evaluate(() => (window as any).guardianData.activeWardId)).toBe(null);
+      expect(await tab1.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
 
       // Check lock is released
       const heldLocks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -159,7 +159,7 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Tab 2 opens and creates Ward B
       const tab2 = await context.newPage();
@@ -168,11 +168,11 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(tab2);
       await createWard(tab2, 'Ward B');
       await tab2.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardBId = await tab2.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardBId = await tab2.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Tab 1 adds Ward B to its known wards list and attempts to switch to it
       await tab1.evaluate((bId) => {
-        (window as any).guardianData.wards.push({
+        (window as any).caseFile.wards.push({
           wardId: bId,
           inventoryType: 'guardian',
           wardName: 'Ward B'
@@ -188,7 +188,7 @@ test.describe('Ward-level Tab Locks', () => {
       await expect(tab1.locator('#ward-locked-overlay')).toBeHidden();
 
       // Tab 1 stays on Ward A and still holds Ward A lock
-      expect(await tab1.evaluate(() => (window as any).guardianData.activeWardId)).toBe(wardAId);
+      expect(await tab1.evaluate(() => (window as any).caseFile.activeWardId)).toBe(wardAId);
       const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(tab1Locks).toContain(`pg-ward-${wardAId}`);
     } finally {
@@ -240,7 +240,7 @@ test.describe('Ward-level Tab Locks', () => {
       await chooseNoPassword(page);
       await createWard(page, 'Ward A');
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await page.evaluate(() => (window as any).guardianData.activeWardId);
+      const wardAId = await page.evaluate(() => (window as any).caseFile.activeWardId);
 
       // Expand sidebar ward controls if collapsed
       const toggleBtn = page.locator('#ward-controls-toggle-btn');
@@ -260,7 +260,7 @@ test.describe('Ward-level Tab Locks', () => {
 
       // Click dashboard close button
       await dashboardCloseBtn.click();
-      await page.waitForFunction(() => (window as any).guardianData.activeWardId === null);
+      await page.waitForFunction(() => (window as any).caseFile.activeWardId === null);
       await expect(page.locator('button.dashboard-close-ward')).toBeHidden();
       await expect(sidebarCloseBtn).toBeHidden();
 

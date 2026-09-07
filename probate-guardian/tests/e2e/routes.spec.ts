@@ -94,7 +94,7 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).addWard('Gamma Ward', 'planSimplified'));
     await page.evaluate(() => (window as any).addWard('Delta Ward', 'annual'));
     const beforePreferences = await page.evaluate(() => {
-      const wards = (window as any).getGuardianData().wards;
+      const wards = (window as any).getCaseFile().wards;
       const periodTo = new Date();
       periodTo.setDate(periodTo.getDate() - 90);
       const dueTodayPeriodEnd = [periodTo.getFullYear(), String(periodTo.getMonth() + 1).padStart(2, '0'), String(periodTo.getDate()).padStart(2, '0')].join('-');
@@ -167,7 +167,7 @@ test.describe('routes', () => {
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
     await expect(page.evaluate(() => localStorage.getItem('pg-dashboard-preferences-v1'))).resolves.toContain('assistant');
 
-    const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getGuardianData().wards));
+    const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
     expect(afterPreferences).toBe(beforePreferences);
 
     await page.evaluate(() => (window as any).navigate('/inventory-select'));
@@ -176,9 +176,9 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
     await page.locator('#dashboard-assignment-filter').selectOption('all');
-    await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getGuardianData().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
+    await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getCaseFile().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
-    expect(await page.evaluate(() => (window as any).getGuardianData().wards[2].archived)).toBe(true);
+    expect(await page.evaluate(() => (window as any).getCaseFile().wards[2].archived)).toBe(true);
   });
 
   test('explicit dashboard workflow changes persist normalized metadata', async ({ page }) => {
@@ -191,25 +191,25 @@ test.describe('routes', () => {
 
     const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Ward' });
     await row.locator('[data-dashboard-change="workflow-status"]').selectOption('approved');
-    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({ status: 'approved' });
+    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({ status: 'approved' });
     await expect(page.locator('#last-saved-indicator')).toContainText('Unsaved changes');
 
     const assignee = row.locator('[data-dashboard-change="assignee"]');
     await assignee.fill('  <img src=x onerror=alert(1)> Alex   Attorney  ');
     await assignee.press('Tab');
-    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
       status: 'approved',
       assigneeName: '<img src=x onerror=alert(1)> Alex Attorney',
     });
     await expect(page.locator('.dashboard-triage-row img[src="x"]')).toHaveCount(0);
 
     await row.locator('[data-dashboard-change="workflow-status"]').selectOption('auto');
-    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toEqual({
+    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
       assigneeName: '<img src=x onerror=alert(1)> Alex Attorney',
     });
     await row.locator('[data-dashboard-change="assignee"]').fill('   ');
     await row.locator('[data-dashboard-change="assignee"]').press('Tab');
-    await expect.poll(() => page.evaluate(() => (window as any).getGuardianData().wards[0].dashboardWorkflow)).toBeUndefined();
+    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toBeUndefined();
   });
 
   test('shell controls work without inline event handlers', async ({ page }) => {
@@ -277,7 +277,7 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).confirmDeleteWard());
     await page.locator('#deleteWardModal [data-modal-action="delete-ward"]').click();
     await expect(page.locator('#deleteWardModal')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => (window as any).guardianData.wards.length)).toBe(0);
+    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.length)).toBe(0);
   });
 
   test('shared plan controls persist through delegated form events', async ({ page }) => {

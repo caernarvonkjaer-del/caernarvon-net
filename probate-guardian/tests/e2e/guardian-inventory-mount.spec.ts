@@ -123,8 +123,8 @@ test.describe('guardian-inventory feature module', () => {
     await createWard(page, 'Guardian Cycle Ward', 'guardian');
     await createWard(page, 'Annual Cycle Ward', 'annual');
 
-    // @ts-expect-error - guardianData is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => guardianData.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
+    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
     const annualId = wards.find((w: any) => w.type === 'annual').id;
 
