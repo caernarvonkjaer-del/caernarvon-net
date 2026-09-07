@@ -581,7 +581,4 @@ Local Playwright note:
 1. Two-digit years are rejected for legal-form dates. Users must enter four-digit years.
 2. Name/address auto-capitalization remains the default.
 3. Disabled Next guidance shows all missing-field items for the current section.
-
-## Open Questions
-
-1. Should field jump links be part of the first implementation, or a follow-up once validation messages have stable field IDs?
+4. Field jump links belong in the first implementation, backed by stable field IDs from the shared metadata/structured-validation work.
