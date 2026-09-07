@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard } from './support/target';
 
 test('attestation cards use two columns on desktop and stack on narrow screens', async ({ page }) => {
   await freshStartNoPassword(page);
@@ -95,3 +95,126 @@ test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) =>
   await page.locator('[data-inventory-action="add-guardian"]').click();
   await expect(page.locator('.card-grid-2col > .col-md-6 > .entry-card')).toHaveCount(2);
 });
+
+test('Annual Accounting cards and cover layout use responsive 2-column grid', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Annual Layout Ward', 'annual');
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  // Cover
+  await page.evaluate(() => (window as any).navigate('/'));
+  const coverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
+  await expect(coverBoxes).toHaveCount(2);
+  const coverCols = await coverBoxes.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  expect(coverCols).toBe(2);
+
+  // Signatures (/p3)
+  await page.evaluate(() => (window as any).navigate('/p3'));
+  const p3Grid = page.locator('.card-grid-2col').first();
+  await expect(p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(3);
+  const p3Cols = await p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  expect(p3Cols).toBe(2);
+
+  // Preparer (/p4)
+  await page.evaluate(() => (window as any).navigate('/p4'));
+  const p4Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  await expect(p4Card).toBeVisible();
+  const p4Width = await p4Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
+  expect(p4Width).toBeLessThan(700);
+
+  // Attorney (/p5)
+  await page.evaluate(() => (window as any).navigate('/p5'));
+  const p5Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  await expect(p5Card).toBeVisible();
+  const p5Width = await p5Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
+  expect(p5Width).toBeLessThan(700);
+
+  // Service / Cert (/p10)
+  await page.evaluate(() => (window as any).navigate('/p10'));
+  const p10CertCard = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  await expect(p10CertCard).toBeVisible();
+  const p10CertWidth = await p10CertCard.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
+  expect(p10CertWidth).toBeLessThan(700);
+});
+
+test('Simplified Accounting cards and cover layout use responsive 2-column grid', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createSimplifiedWard(page, 'Simplified Layout Ward');
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  // Cover
+  await page.evaluate(() => (window as any).navigate('/'));
+  const coverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
+  await expect(coverBoxes).toHaveCount(2);
+  const coverCols = await coverBoxes.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  expect(coverCols).toBe(2);
+
+  // Signatures (/p4)
+  await page.evaluate(() => (window as any).navigate('/p4'));
+  const p4Grid = page.locator('.card-grid-2col').first();
+  await expect(p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(3);
+  const p4Cols = await p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  expect(p4Cols).toBe(2);
+
+  // Attorney (/p5)
+  await page.evaluate(() => (window as any).navigate('/p5'));
+  const p5Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  await expect(p5Card).toBeVisible();
+  const p5Width = await p5Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
+  expect(p5Width).toBeLessThan(700);
+
+  // Recipients & Cert (/p6)
+  await page.evaluate(() => (window as any).navigate('/p6'));
+  const p6Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  await expect(p6Card).toBeVisible();
+});
+
+test('Plan forms cards and cover layout use responsive 2-column grid', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  // Plan Annual
+  await createWard(page, 'Plan Annual Layout Ward', 'planAnnual');
+  await page.evaluate(() => (window as any).navigate('/'));
+  const paCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
+  await expect(paCoverBoxes).toHaveCount(2);
+  await page.evaluate(() => (window as any).navigate('/p11'));
+  const paSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  await expect(paSigCards.first()).toBeVisible();
+
+  // Plan Initial
+  await createWard(page, 'Plan Initial Layout Ward', 'planInitial');
+  await page.evaluate(() => (window as any).navigate('/'));
+  const piCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
+  await expect(piCoverBoxes).toHaveCount(2);
+  await page.evaluate(() => (window as any).navigate('/p9'));
+  const piSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  await expect(piSigCards.first()).toBeVisible();
+  await page.evaluate(() => (window as any).navigate('/p10'));
+  const piAttyCard = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  await expect(piAttyCard).toBeVisible();
+
+  // Plan Minor
+  await createWard(page, 'Plan Minor Layout Ward', 'planMinor');
+  await page.evaluate(() => (window as any).navigate('/'));
+  const pmCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
+  await expect(pmCoverBoxes).toHaveCount(2);
+  await page.evaluate(() => (window as any).navigate('/p6'));
+  const pmSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  await expect(pmSigCards.first()).toBeVisible();
+  await page.evaluate(() => (window as any).navigate('/p7'));
+  const pmPrepAttyCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  await expect(pmPrepAttyCards).toHaveCount(2);
+  const pmPrepAttyCols = await pmPrepAttyCards.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  expect(pmPrepAttyCols).toBe(2);
+
+  // Plan Simplified
+  await createWard(page, 'Plan Simplified Layout Ward', 'planSimplified');
+  await page.evaluate(() => (window as any).navigate('/'));
+  const psCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
+  await expect(psCoverBoxes).toHaveCount(2);
+  await page.evaluate(() => (window as any).navigate('/p3'));
+  const psSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  await expect(psSigCards.first()).toBeVisible();
+});
+

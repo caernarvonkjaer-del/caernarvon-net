@@ -161,29 +161,42 @@ function pagePlanICover(){
     <h1>Initial Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan. Per Administrative Order 2019-005, a separate Disaster Plan must also be filed — the app does not produce that document.</div>
     ${loadWardInfoBanner()}
-    <div class="row g-3">
-      <div class="col-md-8">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-      <div class="col-md-6">${inpS('successorGuardianship','Successor Guardianship? (if applicable)',d.successorGuardianship)}</div>
-      <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
-      <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,false,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Through',d.periodTo,false,'date')}</div>
-      <div class="col-md-6">${inpS('guardianNames','Guardian Name(s)',d.guardianNames,true)}</div>
-      <div class="col-md-6">${inpS('attorneyName','Attorney Name',d.attorneyName)}</div>
-    </div>
-    <h2 class="subsection-heading mt-4">Where the Ward Currently Lives</h2>
-    ${radioP('wardLiving','The ward is living:',d.wardLiving,[
-      'In a private residence leased or owned by them (house, condo or apartment)',
-      'In a private residence not leased or owned by them (such as family member)',
-      'In a facility (Skilled Nursing, Assisted Living, etc.)'],true)}
-    <div class="row g-3">
-      <div class="col-12">${inpS('residenceAddress','Address Where Ward Is Currently Residing',d.residenceAddress,true)}</div>
-      <div class="col-md-8">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
-      <div class="col-md-4">${inpS('residencePhone','Phone',d.residencePhone)}</div>
-      <div class="col-12">${inpS('mailingAddress','Mailing Address for Ward (if different from above)',d.mailingAddress)}</div>
-      <div class="col-md-8">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
+    <div class="row g-3 mb-3 cover-info-row">
+      <div class="col-md-6">
+        <div class="summary-box">
+          <h2 class="subsection-heading">Ward &amp; Case Information</h2>
+          <div class="row g-2">
+            <div class="col-12">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
+            <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
+            <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
+            <div class="col-12">${inpS('successorGuardianship','Successor Guardianship? (if applicable)',d.successorGuardianship)}</div>
+            <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
+            <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
+            <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,false,'date')}</div>
+            <div class="col-md-6">${inpS('periodTo','Through',d.periodTo,false,'date')}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="summary-box">
+          <h2 class="subsection-heading">Guardian, Attorney &amp; Residence</h2>
+          <div class="row g-2">
+            <div class="col-12">${inpS('guardianNames','Guardian Name(s)',d.guardianNames,true)}</div>
+            <div class="col-12">${inpS('attorneyName','Attorney Name',d.attorneyName)}</div>
+            <div class="col-12 mt-3">
+              ${radioP('wardLiving','The ward is living:',d.wardLiving,[
+                'In a private residence leased or owned by them (house, condo or apartment)',
+                'In a private residence not leased or owned by them (such as family member)',
+                'In a facility (Skilled Nursing, Assisted Living, etc.)'],true)}
+            </div>
+            <div class="col-12">${inpS('residenceAddress','Address Where Ward Is Currently Residing',d.residenceAddress,true)}</div>
+            <div class="col-md-7">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
+            <div class="col-md-5">${inpS('residencePhone','Phone',d.residencePhone)}</div>
+            <div class="col-12">${inpS('mailingAddress','Mailing Address for Ward (if different from above)',d.mailingAddress)}</div>
+            <div class="col-12">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
+          </div>
+        </div>
+      </div>
     </div>
     ${txtP('q1PreexistingDirectives','List any preexisting orders not to resuscitate or preexisting advance directives, the date signed, whether suspended by the court, and the steps taken to identify and locate them. Attach a copy of any directives to the plan.',d.q1PreexistingDirectives,5)}
     ${renderScheduleDocsSection('planICover')}
@@ -274,9 +287,12 @@ function pagePlanIProviders(){
   const rows=(d.q9Providers||[]).map((r,i)=>{
     const set=f=>`D.q9Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Provider ${i+1}
-        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q9Providers" data-index="${i}" data-route="/p5">${ic('copy',13)}</button>
-        <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q9Providers" data-index="${i}" data-route="/p5">×</button>
+      <div class="entry-card-header">
+        <span>Provider ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q9Providers" data-index="${i}" data-route="/p5">${ic('copy',13)}</button>
+          <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q9Providers" data-index="${i}" data-route="/p5">✕ Remove</button>
+        </span>
       </div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6"><label class="form-label">Provider's first name, last name, and middle initial<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.name||'')}" data-form-path="q9Providers.${i}.name"></div>
@@ -431,20 +447,20 @@ function pagePlanISignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    return `<div class="plan-sig-block">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h3 class="mb-0">${title}</h3>
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+      <div class="entry-card-header">${title}</div>
+      <div class="entry-card-body">
+        <div class="row g-2">
+          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
+          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
+          <div class="col-md-6"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.ssn||'')}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
+          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
+          <div class="col-12"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
+          <div class="col-12"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" data-form-path="planGuardians.${i}.street"></div>
+          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" data-form-path="planGuardians.${i}.cityStateZip"></div>
+        </div>
       </div>
-      <div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
-        <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
-        <div class="col-md-4"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.ssn||'')}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
-        <div class="col-md-4"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
-        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" data-form-path="planGuardians.${i}.street"></div>
-        <div class="col-md-6"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" data-form-path="planGuardians.${i}.cityStateZip"></div>
-      </div>
-    </div>`;
+    </div></div>`;
   };
   return `<div class="schedule-page">
     <h1>Certification and Signature of Guardian(s)</h1>
@@ -458,10 +474,12 @@ function pagePlanISignatures(){
       +cb('certProvidesCare',"The plan provides for the Ward's medical care and mental health treatment"),
       null,null,false)}
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
-    ${g(0,'Guardian')}
-    ${g(1,'Co-Guardian')}
-    ${g(2,'Co-Guardian')}
-    ${g(3,'Co-Guardian')}
+    <div class="row g-3 card-grid-2col mb-4">
+      ${g(0,'Guardian')}
+      ${g(1,'Co-Guardian')}
+      ${g(2,'Co-Guardian')}
+      ${g(3,'Co-Guardian')}
+    </div>
     <div class="schedule-instructions mt-2">All guardians of the person must sign and provide their most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.</div>
     ${renderScheduleDocsSection('planISignatures')}
     ${pageNavS('/p8','/p10')}
@@ -473,15 +491,24 @@ function pagePlanIAttorney(){
   return `<div class="schedule-page">
     <h1>Certification and Signature of Guardian's Attorney</h1>
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
-      <div class="col-md-6">${inpS('attorney_bar','Attorney Bar Number',d.attorney_bar)}</div>
-      <div class="col-md-6">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
-      <div class="col-md-6">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
-      <div class="col-12">${inpS('attorney_street','Attorney Address',d.attorney_street)}</div>
-      <div class="col-md-8">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
-      <div class="col-md-4">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>
-      <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+    <div class="row g-3 card-grid-2col mb-3">
+      <div class="col-12 col-md-6">
+        <div class="entry-card mb-0 h-100">
+          <div class="entry-card-header">Attorney Certification</div>
+          <div class="entry-card-body">
+            <div class="row g-2">
+              <div class="col-md-7">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
+              <div class="col-md-5">${inpS('attorney_bar','Attorney Bar Number',d.attorney_bar)}</div>
+              <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+              <div class="col-12">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
+              <div class="col-12">${inpS('attorney_street','Attorney Address',d.attorney_street)}</div>
+              <div class="col-12">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
+              <div class="col-md-6">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>
+              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     ${renderScheduleDocsSection('planIAttorney')}
     ${pageNavS('/p9','/print')}

@@ -163,28 +163,41 @@ function pagePlanACover(){
     <h1>Annual Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they live, the care they receive, their abilities and their rights. It is a separate filing from any accounting, which reports on their money and property. <strong>A physician's report must be filed separately at the same time</strong> — the app does not produce it.</div>
     ${loadWardInfoBanner()}
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-      <div class="col-md-4">${inpS('ssn','Social Security Number',d.ssn)}</div>
-      <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-4">${inpS('gid','Guardianship Inception Date',d.gid,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
-      <div class="col-md-6">${inpS('guardian','Guardian Name(s)',d.guardian,true)}</div>
-      <div class="col-md-6">${inpS('attorney','Attorney Name',d.attorney)}</div>
-    </div>
-    <h2 class="subsection-heading mt-4">Where the Ward Currently Lives</h2>
-    ${radioP('wardLiving','The ward is living:',d.wardLiving,[
-      'In a private residence leased or owned by them',
-      'In a private residence not leased or owned by them',
-      'In a facility (skilled nursing, assisted living, etc.)'],true)}
-    <div class="row g-3">
-      <div class="col-12">${inpS('residenceAddress','Address Where Ward Resides',d.residenceAddress,true)}</div>
-      <div class="col-md-8">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
-      <div class="col-md-4">${inpS('residencePhone','Phone',d.residencePhone)}</div>
-      <div class="col-12">${inpS('mailingAddress','Mailing Address (if different)',d.mailingAddress)}</div>
-      <div class="col-md-8">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
+    <div class="row g-3 mb-3 cover-info-row">
+      <div class="col-md-6">
+        <div class="summary-box">
+          <h2 class="subsection-heading">Ward &amp; Case Information</h2>
+          <div class="row g-2">
+            <div class="col-12">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
+            <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
+            <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
+            <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn)}</div>
+            <div class="col-md-6">${inpS('gid','Guardianship Inception Date',d.gid,true,'date')}</div>
+            <div class="col-md-6">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
+            <div class="col-md-6">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="summary-box">
+          <h2 class="subsection-heading">Guardian, Attorney &amp; Residence</h2>
+          <div class="row g-2">
+            <div class="col-12">${inpS('guardian','Guardian Name(s)',d.guardian,true)}</div>
+            <div class="col-12">${inpS('attorney','Attorney Name',d.attorney)}</div>
+            <div class="col-12 mt-3">
+              ${radioP('wardLiving','The ward is living:',d.wardLiving,[
+                'In a private residence leased or owned by them',
+                'In a private residence not leased or owned by them',
+                'In a facility (skilled nursing, assisted living, etc.)'],true)}
+            </div>
+            <div class="col-12">${inpS('residenceAddress','Address Where Ward Resides',d.residenceAddress,true)}</div>
+            <div class="col-md-7">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
+            <div class="col-md-5">${inpS('residencePhone','Phone',d.residencePhone)}</div>
+            <div class="col-12">${inpS('mailingAddress','Mailing Address (if different)',d.mailingAddress)}</div>
+            <div class="col-12">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
+          </div>
+        </div>
+      </div>
     </div>
     ${renderScheduleDocsSection('planACover')}
     ${pageNavS(null,'/summary')}
@@ -196,9 +209,12 @@ function pagePlanAResidences(){
   const rows=(d.q1Residences||[]).map((r,i)=>{
     const set=f=>`D.q1Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Residence ${i+1}
-        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q1Residences" data-index="${i}" data-route="/p2">${ic('copy',13)}</button>
-        <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q1Residences" data-index="${i}" data-route="/p2">×</button>
+      <div class="entry-card-header">
+        <span>Residence ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q1Residences" data-index="${i}" data-route="/p2">${ic('copy',13)}</button>
+          <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q1Residences" data-index="${i}" data-route="/p2">✕ Remove</button>
+        </span>
       </div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6"><label class="form-label">Facility name, or owner of the private residence<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.name||'')}" data-form-path="q1Residences.${i}.name"></div>
@@ -312,9 +328,12 @@ function pagePlanAProviders(){
   const rows=(d.q4Providers||[]).map((r,i)=>{
     const set=f=>`D.q4Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Provider ${i+1}
-        <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q4Providers" data-index="${i}" data-route="/p5">${ic('copy',13)}</button>
-        <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q4Providers" data-index="${i}" data-route="/p5">×</button>
+      <div class="entry-card-header">
+        <span>Provider ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this row below" data-form-action="duplicate-plan-row" data-collection="q4Providers" data-index="${i}" data-route="/p5">${ic('copy',13)}</button>
+          <button class="btn btn-sm btn-outline-danger" data-form-action="remove-plan-row" data-collection="q4Providers" data-index="${i}" data-route="/p5">✕ Remove</button>
+        </span>
       </div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6"><label class="form-label">Provider's first name, last name, middle initial<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.name||'')}" data-form-path="q4Providers.${i}.name"></div>
@@ -428,8 +447,11 @@ function pagePlanADirectives(){
   const blocks=(d.q10Directives||[]).map((r,i)=>{
     const set=f=>`D.q10Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12"><div class="entry-card mb-2">
-      <div class="entry-card-header">Directive ${i+1}
-        <button class="btn btn-sm btn-outline-danger ms-auto" data-form-action="remove-plan-row" data-collection="q10Directives" data-index="${i}" data-route="/p9">×</button>
+      <div class="entry-card-header">
+        <span>Directive ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-danger ms-auto" data-form-action="remove-plan-row" data-collection="q10Directives" data-index="${i}" data-route="/p9">✕ Remove</button>
+        </span>
       </div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q10Directives.${i}.title"></div>
@@ -512,23 +534,23 @@ function pagePlanASignatures(){
   const block=(i,label)=>{
     const p=g[i]||{};
     const reqMark=i===0?'<span class="req">*</span>':'';
-    return `<div class="plan-sig-block">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h3 class="mb-0">${label}</h3>
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+      <div class="entry-card-header">${label}</div>
+      <div class="entry-card-body">
+        <div class="row g-2">
+          <div class="col-md-7"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
+          <div class="col-md-5"><label class="form-label">Date Signed${reqMark}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
+          <div class="col-md-5"><label class="form-label">SSN / EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(p.ssn||''))}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
+          <div class="col-md-7"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
+          <div class="col-12"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email"></div>
+          <div class="col-12"><label class="form-label">Mailing Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingStreet||''))}" data-form-path="planGuardians.${i}.mailingStreet" data-form-format="address"></div>
+          <div class="col-12"><label class="form-label">Mailing City / State / ZIP</label><input type="text" class="form-control" value="${esc(p.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip"></div>
+          <div class="col-12"><label class="form-label">Residence or Office Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.officeStreet||''))}" data-form-path="planGuardians.${i}.officeStreet" data-form-format="address"></div>
+          <div class="col-12"><label class="form-label">Residence or Office City / State / ZIP</label><input type="text" class="form-control" value="${esc(p.officeCityStateZip||'')}" data-form-path="planGuardians.${i}.officeCityStateZip"></div>
+          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(p.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
+        </div>
       </div>
-      <div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
-        <div class="col-md-3"><label class="form-label">Date Signed${reqMark}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
-        <div class="col-md-3"><label class="form-label">SSN / EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(p.ssn||''))}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
-        <div class="col-md-8"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email"></div>
-        <div class="col-md-6"><label class="form-label">Mailing Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingStreet||''))}" data-form-path="planGuardians.${i}.mailingStreet" data-form-format="address"></div>
-        <div class="col-md-6"><label class="form-label">Mailing City / State / ZIP</label><input type="text" class="form-control" value="${esc(p.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip"></div>
-        <div class="col-md-6"><label class="form-label">Residence or Office Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.officeStreet||''))}" data-form-path="planGuardians.${i}.officeStreet" data-form-format="address"></div>
-        <div class="col-md-6"><label class="form-label">Residence or Office City / State / ZIP</label><input type="text" class="form-control" value="${esc(p.officeCityStateZip||'')}" data-form-path="planGuardians.${i}.officeCityStateZip"></div>
-        <div class="col-md-6"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(p.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
-      </div>
-    </div>`;
+    </div></div>`;
   };
   return `<div class="schedule-page">
     <h1>Signatures</h1>
@@ -544,21 +566,32 @@ function pagePlanASignatures(){
       ${cb('certRecognizeRights','In exercising their powers, the guardian recognizes any rights retained by the ward (F.S. 744.363(6))')}
     </div>
     ${txtP('certRightsChangedExplain','If rights have changed and no petition is being filed, explain why',d.certRightsChangedExplain,3)}
-    <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.</div>
-    ${block(0,'Guardian')}
-    ${block(1,'Co-Guardian (if any)')}
-    ${block(2,'Co-Guardian (if any)')}
+    <div class="attestation-text mb-3">Under penalties of perjury, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.</div>
+    <div class="row g-3 card-grid-2col mb-4">
+      ${block(0,'Guardian')}
+      ${block(1,'Co-Guardian (if any)')}
+      ${block(2,'Co-Guardian (if any)')}
+    </div>
     <h2 class="subsection-heading mt-4">Certification of Guardian's Attorney</h2>
     <div class="schedule-instructions">The attorney notifies the court of this filing and represents that the plan conforms to Florida Guardianship Law. Leave blank if no attorney is involved.</div>
-    <div class="row g-2">
-      <div class="col-md-6">${inpS('attorney','Attorney Name',d.attorney)}</div>
-      <div class="col-md-3">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
-      <div class="col-md-3">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
-      <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
-      <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
-      <div class="col-md-4">${inpS('attorney_secondary_email','Secondary Email (optional)',d.attorney_secondary_email || d.attorney_secondaryEmail,false,'email')}</div>
-      <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street)}</div>
-      <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / ZIP',d.attorney_cityStateZip)}</div>
+    <div class="row g-3 card-grid-2col mb-3">
+      <div class="col-12 col-md-6">
+        <div class="entry-card mb-0 h-100">
+          <div class="entry-card-header">Attorney Certification</div>
+          <div class="entry-card-body">
+            <div class="row g-2">
+              <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney)}</div>
+              <div class="col-md-5">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+              <div class="col-md-6">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
+              <div class="col-md-6">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
+              <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+              <div class="col-12">${inpS('attorney_secondary_email','Secondary Email (optional)',d.attorney_secondary_email || d.attorney_secondaryEmail,false,'email')}</div>
+              <div class="col-12">${inpS('attorney_street','Street Address',d.attorney_street)}</div>
+              <div class="col-12">${inpS('attorney_cityStateZip','City / State / ZIP',d.attorney_cityStateZip)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     ${renderScheduleDocsSection('planASignatures')}
     ${pageNavS('/p10',null)}

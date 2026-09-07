@@ -134,4 +134,84 @@ test.describe('annual-accounting feature module', () => {
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
   });
+
+  test('Part VIII trust checkbox updates model and reflects in print preview and sidebar total updates for trustAccounting', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Trust Test Ward', 'trustAccounting');
+
+    // Sidebar should start with Net Assets total label
+    const sidebarLabel = page.locator('#ward-info-display .ward-info-total-label');
+    await expect(sidebarLabel).toHaveText('Net Assets');
+    const sidebarTotal = page.locator('#ward-info-display .ward-info-total');
+    await expect(sidebarTotal).toHaveText('$0.00');
+
+    // Enter starting balance on Part II
+    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.locator('#main-content [data-annual-path="startingBalance"]').fill('100000');
+    await page.locator('#main-content [data-annual-path="startingBalance"]').dispatchEvent('input');
+    await page.locator('#main-content [data-annual-path="startingBalance"]').dispatchEvent('change');
+    await expect(sidebarTotal).toHaveText('$100,000.00');
+
+    // Add Income in Schedule A
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.locator('#main-content [data-annual-action="add-row"][data-collection="schA"]').click();
+    const payerInput = page.locator('#main-content [data-annual-path="schA.0.payer"]');
+    await payerInput.fill('Social Security Administration');
+    const descInput = page.locator('#main-content [data-annual-path="schA.0.description"]');
+    await descInput.fill('SSI Monthly Benefit');
+    await descInput.dispatchEvent('input');
+    await descInput.dispatchEvent('change');
+    // Ensure "SSI" did not turn into "Ssi"
+    expect(await descInput.inputValue()).toBe('SSI Monthly Benefit');
+
+    const amtInput = page.locator('#main-content [data-annual-path="schA.0.amount"]');
+    await amtInput.fill('25000');
+    await amtInput.dispatchEvent('input');
+    await amtInput.dispatchEvent('change');
+    await expect(sidebarTotal).toHaveText('$125,000.00');
+
+    // Navigate to Part VIII
+    await page.evaluate(() => (window as any).navigate('/p8'));
+    const trustCheckbox = page.locator('#main-content input[type="checkbox"][data-annual-path="trusts.0.hasTrust"], #main-content input[type="checkbox"][data-form-path="trusts.0.hasTrust"]');
+    await expect(trustCheckbox).toBeVisible();
+    await trustCheckbox.check();
+    await trustCheckbox.dispatchEvent('change');
+
+    const hasTrustVal = await page.evaluate(() => (window as any).D.trusts?.[0]?.hasTrust);
+    expect(hasTrustVal).toBe('Yes');
+
+    // Fill in trust 1 details
+    await page.locator('#main-content [data-annual-path="trusts.0.name"]').fill('Harold Bennett Living Trust');
+    await page.locator('#main-content [data-annual-path="trusts.0.trustee"]').fill('Jane Bennett');
+
+    // Check PDF model output for Part VIII
+    const pdfModel = await page.evaluate(async () => {
+      const mod = await import('/probate-guardian/src/features/annual-accounting/pdf-model.js');
+      return mod.buildAnnualAccountingModel((window as any).D);
+    });
+    const part8Section = pdfModel.sections.find((s: any) => s.id === 'part8');
+    expect(part8Section).toBeDefined();
+    const trustDiscBlock = part8Section.blocks.find((b: any) => b.title === 'Trust Disclosure');
+    expect(trustDiscBlock.items[0].value).toBe('Yes');
+  });
+
+  test('schedule empty verification checkbox updates scheduleNoItems state', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Empty Schedule Test Ward', 'annual');
+
+    // Remove row on Schedule A
+    await page.evaluate(() => {
+      (window as any).D.schA = [];
+      (window as any).navigate('/scha');
+    });
+
+    const emptyCheck = page.locator('#main-content input[type="checkbox"][data-annual-change="schedule-no-items"]');
+    await expect(emptyCheck).toBeVisible();
+    await emptyCheck.check();
+    await emptyCheck.dispatchEvent('change');
+
+    const state = await page.evaluate(() => (window as any).D.scheduleNoItems?.scha);
+    expect(state).toBe(true);
+  });
 });
+

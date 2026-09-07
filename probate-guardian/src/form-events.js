@@ -27,6 +27,7 @@ function persistFormControl(control, applyFormat = true) {
   window.setPath(window.D, control.dataset.formPath, value);
   window.autoSave();
   window.updateNavDots();
+  window.refreshWardInfoCard?.();
   if (control.dataset.syncWardName) window.syncActiveWardNameDisplay();
   if (control.dataset.syncGuardianName) window.syncGuardianNameDisplay();
   if (control.dataset.formRoute) window.navigate(control.dataset.formRoute);

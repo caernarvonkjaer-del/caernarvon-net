@@ -140,6 +140,8 @@ function persistAnnualControl(control, applyFormat = true) {
   window.setPath(window.D, path, value);
   autoSave();
   updateNavDots();
+  window.refreshWardInfoCard?.();
+  window.refreshWardInfoCard?.();
   if (control.dataset.syncWardName) syncActiveWardNameDisplay();
   if (control.dataset.syncGuardianName) syncGuardianNameDisplay();
   const scheduleATotal = document.getElementById('schA_total');
@@ -156,6 +158,13 @@ function bindEvents(container) {
   }, options);
   container.addEventListener('change', (event) => {
     const control = event.target;
+    if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {
+      if (!window.D.scheduleNoItems) window.D.scheduleNoItems = {};
+      window.D.scheduleNoItems[control.dataset.schedule] = control.checked;
+      autoSave();
+      updateNavDots();
+      return;
+    }
     if (control instanceof HTMLSelectElement || (control instanceof HTMLInputElement && ['checkbox', 'radio'].includes(control.type))) persistAnnualControl(control);
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'import-excel') _excelModule.importExcel(control);
   }, options);
@@ -283,7 +292,7 @@ function inpD(label,val,setter,req=false,type='text'){
   const path=setterPath(setter);
   const isEmail=label.toLowerCase().includes('email');
   const isPhone=!isEmail&&label.toLowerCase().includes('phone');
-  const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
+  const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
   const isZip=!isEmail&&label.toLowerCase().includes('zip');
   const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
   const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
@@ -405,19 +414,37 @@ function pagePart1Annual(){
       </div>
     </div>
   </div>`)}
-  <div class="row g-2">
-    <div class="col-md-5">${inpD('Name of Ward',d.wardName,"D.wardName=this.value")}</div>
-    <div class="col-md-4">${inpDWithTooltip('Case Number','case_number',d.caseNumber,"D.caseNumber=this.value")}</div>
-    <div class="col-md-3">${inpD('Guardianship Inception Date (GID)',d.gid,"D.gid=this.value",false,'date')}</div>
-    <div class="col-md-3">${inpD('Period From',d.periodFrom,"D.periodFrom=this.value",false,'date')}</div>
-    <div class="col-md-3">${inpD('Period To',d.periodTo,"D.periodTo=this.value",false,'date')}</div>
-    <div class="col-md-3">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'])}</div>
-    <div class="col-md-3">${yesNoCheckboxD('Amended Form?',d.amendedForm,'amendedForm')}</div>
-    <div class="col-md-5">${inpD('Guardian',d.guardian,"D.guardian=this.value")}</div>
-    <div class="col-md-5">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
-    <div class="col-md-2">${countyInputD('County',d.county,"D.county=this.value")}</div>
-    <div class="col-md-6">${inpD('Type of Guardianship',d.typeOfGuardianship,"D.typeOfGuardianship=this.value")}</div>
-    <div class="col-md-6">${inpD('Related Case Numbers (siblings/relatives with guardianships)',d.relatedCaseNumbers,"D.relatedCaseNumbers=this.value")}</div>
+  <div class="row g-3 mb-3 cover-info-row">
+    <div class="col-md-6">
+      <div class="summary-box">
+        <h2 class="subsection-heading">Required Information</h2>
+        ${inpD('Name of Ward',d.wardName,"D.wardName=this.value",true)}
+        <div class="row g-2">
+          <div class="col-md-6">${inpDWithTooltip('Case Number','case_number',d.caseNumber,"D.caseNumber=this.value",true)}</div>
+          <div class="col-md-6">${inpD('Guardianship Inception Date (GID)',d.gid,"D.gid=this.value",true,'date')}</div>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">${inpD('Period From',d.periodFrom,"D.periodFrom=this.value",true,'date')}</div>
+          <div class="col-md-6">${inpD('Period To',d.periodTo,"D.periodTo=this.value",true,'date')}</div>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'])}</div>
+          <div class="col-md-6">${yesNoCheckboxD('Amended Form?',d.amendedForm,'amendedForm')}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="summary-box">
+        <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
+        ${inpD('Guardian',d.guardian,"D.guardian=this.value",true)}
+        <div class="row g-2">
+          <div class="col-md-8">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
+          <div class="col-md-4">${countyInputD('County',d.county,"D.county=this.value")}</div>
+        </div>
+        ${inpD('Type of Guardianship',d.typeOfGuardianship,"D.typeOfGuardianship=this.value")}
+        ${inpD('Related Case Numbers (siblings/relatives with guardianships)',d.relatedCaseNumbers,"D.relatedCaseNumbers=this.value")}
+      </div>
+    </div>
   </div>
   <div class="summary-box mt-3">
     <h2 class="subsection-heading">Quick Summary (auto-calculated)</h2>
@@ -458,15 +485,13 @@ function pagePart2Annual(){
 function pagePart3Annual(){
   const d=window.D;
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
-  let html=`<div class="schedule-page">
-  <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
-  <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>`;
+  let cards='';
   d.guardians.forEach((g,i)=>{
-    html+=`<div class="entry-card mb-2">
+    cards+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`)}</div>
+          <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>
           <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',g.signatureDate,`D.guardians[${i}].signatureDate=this.value`,true,'date')}</div>
           <div class="col-md-4">${inpDWithTooltip('SSN / EIN','ssn_ein',g.ssn,`D.guardians[${i}].ssn=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Phone Number',g.phone,`D.guardians[${i}].phone=this.value`,true)}</div>
@@ -477,10 +502,14 @@ function pagePart3Annual(){
           <div class="col-md-6">${inpD('Residence / Office City / State / Zip',g.officeCityStateZip,`D.guardians[${i}].officeCityStateZip=this.value`,true)}</div>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
   });
-  html+=`${pageNavAnnual('/p2','/p4')}</div>`;
-  return html;
+  return `<div class="schedule-page">
+  <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
+  <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>
+  <div class="row g-3 card-grid-2col">${cards}</div>
+  ${pageNavAnnual('/p2','/p4')}
+  </div>`;
 }
 
 // ── Part IV ──────────────────────────────────────────────
@@ -490,13 +519,24 @@ function pagePart4Annual(){
   <h1>Part IV — Preparer Attestation</h1>
   <div class="attestation-text">I have compiled the accompanying Annual Accounting of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of <strong>${esc(d.wardName)||'[ward]'}</strong> for the period <strong>${fmtD(d.periodFrom)}</strong> through <strong>${fmtD(d.periodTo)}</strong>. This compilation is limited to presenting information in the form of an Annual Accounting and is the representation of the guardian. I have not audited or reviewed the accompanying guardianship accounting and, accordingly, do not express an opinion or any other form of assurance on it.</div>
   <div style="color:var(--brand-text);font-size:.8rem;font-weight:700;margin-bottom:.75rem;">*** If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE. ***</div>
-  <div class="row g-2">
-    <div class="col-md-5">${inpD("Preparer's Name ",p.name,"D.preparer.name=this.value")}</div>
-    <div class="col-md-3">${inpDWithTooltip("Signature Date ",'signature_date',p.signatureDate,"D.preparer.signatureDate=this.value",true,'date')}</div>
-    <div class="col-md-4">${inpDWithTooltip("Preparer's SSN / EIN ",'ssn_ein',p.ssn,"D.preparer.ssn=this.value")}</div>
-    <div class="col-md-4">${inpD("Preparer's Phone Number ",p.phone,"D.preparer.phone=this.value")}</div>
-    <div class="col-md-8">${inpD("Preparer's Street Address ",p.street,"D.preparer.street=this.value")}</div>
-    <div class="col-md-12">${inpD("Preparer's City / State / Zip Code ",p.cityStateZip,"D.preparer.cityStateZip=this.value")}</div>
+  <div class="row g-3 card-grid-2col">
+    <div class="col-12 col-md-6">
+      <div class="entry-card mb-0 h-100">
+        <div class="entry-card-header d-flex justify-content-between align-items-center">
+          <span>Preparer Attestation</span>
+        </div>
+        <div class="entry-card-body">
+          <div class="row g-2">
+            <div class="col-md-5">${inpD("Preparer's Name",p.name,"D.preparer.name=this.value",true)}</div>
+            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',p.signatureDate,"D.preparer.signatureDate=this.value",true,'date')}</div>
+            <div class="col-md-4">${inpDWithTooltip("Preparer's SSN / EIN",'ssn_ein',p.ssn,"D.preparer.ssn=this.value",true)}</div>
+            <div class="col-md-4">${inpD("Preparer's Phone Number",p.phone,"D.preparer.phone=this.value",true)}</div>
+            <div class="col-md-8">${inpD("Preparer's Street Address",p.street,"D.preparer.street=this.value",true)}</div>
+            <div class="col-12">${inpD("Preparer's City / State / Zip Code",p.cityStateZip,"D.preparer.cityStateZip=this.value",true)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   ${pageNavAnnual('/p3','/p5')}
   </div>`;
@@ -508,28 +548,58 @@ function pagePart5Annual(){
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
   <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the annual guardianship accounting of the Guardian <strong>${esc(d.wardName)||'[ward]'}</strong> for the period <strong>${fmtD(d.periodFrom)}</strong> through <strong>${fmtD(d.periodTo)}</strong>. This annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in <strong>${d.attorney_county||d.county||'[county]'}</strong> County, Florida.</div>
-  <div class="row g-2">
-    <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
-    <div class="col-md-3">${inpDWithTooltip("Signature Date ",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",true,'date')}</div>
-    <div class="col-md-4">${inpD("Bar Number ",d.attorney_bar,"D.attorney_bar=this.value")}</div>
-    <div class="col-md-4">${inpD("Phone Number ",d.attorney_phone,"D.attorney_phone=this.value")}</div>
-    <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",true,'email')}</div>
-    <div class="col-md-4">${inpD("Secondary Email (optional)",d.attorney_secondaryEmail,"D.attorney_secondaryEmail=this.value",false,'email')}</div>
-    <div class="col-md-8">${inpD("Street Address ",d.attorney_street,"D.attorney_street=this.value")}</div>
-    <div class="col-md-10">${inpD("City / State / Zip Code ",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value")}</div>
-    <div class="col-md-2">${countyInputD("County",d.attorney_county,"D.attorney_county=this.value")}</div>
-  </div>
+  <div class="row g-3 card-grid-2col">
+    <div class="col-12 col-md-6">
+      <div class="entry-card mb-0 h-100">
+        <div class="entry-card-header d-flex justify-content-between align-items-center">
+          <span>Guardian Attorney Attestation</span>
+        </div>
+        <div class="entry-card-body">
+          <div class="row g-2">
+            <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
+            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",true,'date')}</div>
+            <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",true)}</div>
+            <div class="col-md-4">${inpD("Phone Number",d.attorney_phone,"D.attorney_phone=this.value",true)}</div>
+            <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",true,'email')}</div>
+            <div class="col-md-4">${inpD("Secondary Email (optional)",d.attorney_secondaryEmail,"D.attorney_secondaryEmail=this.value",false,'email')}</div>
+            <div class="col-md-8">${inpD("Street Address",d.attorney_street,"D.attorney_street=this.value",true)}</div>
+            <div class="col-md-8">${inpD("City / State / Zip Code",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value",true)}</div>
+            <div class="col-md-4">${countyInputD("County",d.attorney_county,"D.attorney_county=this.value")}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   ${pageNavAnnual('/p4','/scha')}
+  </div>`;
+}
+
+function entryCardHeaderAnnual(title, collection, idx, route) {
+  return `<div class="entry-card-header">
+    <span>${title}</span>
+    <span class="entry-card-actions">
+      <button class="btn btn-sm btn-outline-secondary" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="${collection}" data-index="${idx}" data-route="${route}">${ic('copy',13)} Duplicate</button>
+      <button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="${collection}" data-index="${idx}" data-route="${route}">✕ Remove</button>
+    </span>
+  </div>`;
+}
+
+function scheduleEmptyHTMLAnnual(key, noun, collectionKey) {
+  const checked = !!(window.D && window.D.scheduleNoItems && window.D.scheduleNoItems[key]);
+  return `<div class="schedule-empty">
+    <label class="schedule-empty-check">
+      <input type="checkbox" ${checked ? 'checked' : ''} data-annual-change="schedule-no-items" data-schedule="${key}" data-collection="${collectionKey}">
+      <span>I verify there are no ${noun} to report for this schedule.</span>
+    </label>
   </div>`;
 }
 
 // ── Schedule A — Income ──────────────────────────────────
 function pageSchAAnnual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schA.forEach((r,i)=>{
-    rows+=`<div class="col-12"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schA" data-index="${i}" data-route="/scha">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schA" data-index="${i}" data-route="/scha">×</button></div>
+  let rows='';
+  if(d.schA && d.schA.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schA.map((r,i)=>`<div class="col-12"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schA',i,'/scha')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Income Source / Payer',r.payer,`D.schA[${i}].payer=this.value`,true)}</div>
         <div class="col-md-4">${inpD('Description',r.description,`D.schA[${i}].description=this.value`,true)}</div>
@@ -537,9 +607,10 @@ function pageSchAAnnual(){
         <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schA[${i}].accountNo=this.value`,true)}</div>
         <div class="col-md-3">${inpD("Ward's Income Amount ",r.amount,`D.schA[${i}].amount=this.value;document.getElementById('schA_total').textContent=fmtAnnual(calcTotalsAnnual().schA)`,false,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('scha','income receipts','schA');
+  }
   return `<div class="schedule-page">
   <h1>Schedule A — Income Received During Period</h1>
   <div class="schedule-instructions">Include all types of income such as SSI, Retirement, Disability benefits, interest or rental income. Do NOT include receipts from sale/disposal of principal assets (those go in Schedule C).</div>
@@ -554,10 +625,10 @@ function pageSchAAnnual(){
 // ── Schedule B-1 — Attorney Fees ─────────────────────────
 function pageSchB1Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schB1.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB1" data-index="${i}" data-route="/schb1">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB1" data-index="${i}" data-route="/schb1">×</button></div>
+  let rows='';
+  if(d.schB1 && d.schB1.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB1.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schB1',i,'/schb1')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB1[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB1[${i}].checkNo=this.value`,true)}</div>
@@ -568,9 +639,10 @@ function pageSchB1Annual(){
         <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB1[${i}].courtOrderDate=this.value`,true,'date')}</div>
         <div class="col-md-3">${inpD('Amount',r.amount,`D.schB1[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schb1','attorney fees and costs','schB1');
+  }
   return `<div class="schedule-page">
   <h1>Schedule B-1 — Attorney Fees and Costs</h1>
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
@@ -585,10 +657,10 @@ function pageSchB1Annual(){
 // ── Schedule B-2 — Guardian Fees ─────────────────────────
 function pageSchB2Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schB2.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB2" data-index="${i}" data-route="/schb2">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB2" data-index="${i}" data-route="/schb2">×</button></div>
+  let rows='';
+  if(d.schB2 && d.schB2.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB2.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schB2',i,'/schb2')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB2[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB2[${i}].checkNo=this.value`,true)}</div>
@@ -599,9 +671,10 @@ function pageSchB2Annual(){
         <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB2[${i}].courtOrderDate=this.value`,true,'date')}</div>
         <div class="col-md-3">${inpD('Amount',r.amount,`D.schB2[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schb2','guardian fees and costs','schB2');
+  }
   return `<div class="schedule-page">
   <h1>Schedule B-2 — Guardian Fees and Costs</h1>
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
@@ -616,10 +689,10 @@ function pageSchB2Annual(){
 // ── Schedule B-3 — Other Court-Ordered Disbursements ─────
 function pageSchB3Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schB3.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB3" data-index="${i}" data-route="/schb3">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB3" data-index="${i}" data-route="/schb3">×</button></div>
+  let rows='';
+  if(d.schB3 && d.schB3.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB3.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schB3',i,'/schb3')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB3[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB3[${i}].checkNo=this.value`,true)}</div>
@@ -628,9 +701,10 @@ function pageSchB3Annual(){
         <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB3[${i}].courtOrderDate=this.value`,true,'date')}</div>
         <div class="col-md-3">${inpD('Amount',r.amount,`D.schB3[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schb3','court-ordered disbursements','schB3');
+  }
   return `<div class="schedule-page">
   <h1>Schedule B-3 — Other Court-Ordered Disbursements</h1>
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
@@ -649,10 +723,10 @@ function pageSchB4Annual(){
   const cats={};
   DISB_CATS.forEach(c=>cats[c]=0);
   d.schB4.forEach(r=>{if(r.category&&cats[r.category]!==undefined)cats[r.category]+=n(r.amount);});
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schB4.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schB4" data-index="${i}" data-route="/schb4">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schB4" data-index="${i}" data-route="/schb4">×</button></div>
+  let rows='';
+  if(d.schB4 && d.schB4.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB4.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schB4',i,'/schb4')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB4[${i}].checkNo=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB4[${i}].datePaid=this.value`,true,'date')}</div>
@@ -660,9 +734,10 @@ function pageSchB4Annual(){
         <div class="col-md-3">${inpD('Payee',r.payee,`D.schB4[${i}].payee=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Amount',r.amount,`D.schB4[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schb4','other disbursements','schB4');
+  }
   let catSummary='<table class="doc-table mt-2"><thead><tr><th>#</th><th>Category</th><th class="right">Amount</th></tr></thead><tbody>';
   let cNum=1;
   DISB_CATS.forEach(c=>{catSummary+=`<tr><td>${cNum++}</td><td>${c}</td><td class="right">${cats[c]>0?fmtAnnual(cats[c]):'—'}</td></tr>`;});
@@ -682,19 +757,20 @@ function pageSchB4Annual(){
 // ── Schedule C — Capital Adjustments ─────────────────────
 function pageSchCAnnual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schC.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schC" data-index="${i}" data-route="/schc">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schC" data-index="${i}" data-route="/schc">×</button></div>
+  let rows='';
+  if(d.schC && d.schC.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schC.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schC',i,'/schc')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
         <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schc','capital transactions or adjustments','schC');
+  }
   return `<div class="schedule-page">
   <h1>Schedule C — Capital Adjustments During Period</h1>
   <div class="schedule-instructions">Include gains/losses in asset values, newly discovered assets, purchases of real estate/personal/intangible assets. Losses must be entered as negative numbers. Real estate sales should also appear in Schedule F-1.</div>
@@ -713,23 +789,26 @@ function pageSchCAnnual(){
 // ── Schedule D-1 — Cash Assets ───────────────────────────
 function pageSchD1Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schD1.forEach((r,i)=>{
-    const wardAmt=n(r.fullAmount)*pct(r.wardPct);
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} — ${r.description||'(no description)'} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD1" data-index="${i}" data-route="/schd1">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD1" data-index="${i}" data-route="/schd1">×</button></div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schD1[${i}].accountNo=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD1_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD1.${i}.restricted" data-annual-value="yes-no"></div>
-        <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
-        <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
-        <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}"></div>
-      </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+  let rows='';
+  if(d.schD1 && d.schD1.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schD1.map((r,i)=>{
+      const wardAmt=n(r.fullAmount)*pct(r.wardPct);
+      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+        ${entryCardHeaderAnnual(`Line ${i+1} — ${r.description||'(no description)'}`,'schD1',i,'/schd1')}
+        <div class="entry-card-body"><div class="row g-2">
+          <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
+          <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schD1[${i}].accountNo=this.value`,true)}</div>
+          <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD1_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD1.${i}.restricted" data-annual-value="yes-no"></div>
+          <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
+          <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}"></div>
+        </div></div>
+      </div></div>`;
+    }).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schd1','cash or bank account assets','schD1');
+  }
   return `<div class="schedule-page">
   <h1>Schedule D-1 — Cash Assets</h1>
   <div class="schedule-instructions">Include all liquid assets: cash on hand, savings, checking, CDs, money market, attorney trust, patient trust, burial savings. List each account separately. Enter Ward's % as decimal (e.g., 1 for 100%, 0.5 for 50%) or as a percentage (e.g., 100, 50).</div>
@@ -747,24 +826,26 @@ function pageSchD1Annual(){
 // ── Schedule D-2 — Real Estate ───────────────────────────
 function pageSchD2Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schD2.forEach((r,i)=>{
-    const wardVal=n(r.fullValue)*pct(r.wardPct);
-    const carryWard=n(r.carryingValue)*pct(r.wardPct);
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD2" data-index="${i}" data-route="/schd2">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD2" data-index="${i}" data-route="/schd2">×</button></div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><input class="form-check-input" type="checkbox" id="schD2_residence_${i}" ${r.residence==='Yes'?'checked':''} data-annual-path="schD2.${i}.residence" data-annual-value="yes-no"></div>
-        <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><input class="form-check-input" type="checkbox" id="schD2_income_${i}" ${r.income==='Yes'?'checked':''} data-annual-path="schD2.${i}.income" data-annual-value="yes-no"></div>
-        <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
-        <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
-        <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
-        <div class="col-md-3"><label class="form-label">Ward's Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
-      </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+  let rows='';
+  if(d.schD2 && d.schD2.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schD2.map((r,i)=>{
+      const wardVal=n(r.fullValue)*pct(r.wardPct);
+      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+        ${entryCardHeaderAnnual(`Line ${i+1}`,'schD2',i,'/schd2')}
+        <div class="entry-card-body"><div class="row g-2">
+          <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
+          <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><input class="form-check-input" type="checkbox" id="schD2_residence_${i}" ${r.residence==='Yes'?'checked':''} data-annual-path="schD2.${i}.residence" data-annual-value="yes-no"></div>
+          <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><input class="form-check-input" type="checkbox" id="schD2_income_${i}" ${r.income==='Yes'?'checked':''} data-annual-path="schD2.${i}.income" data-annual-value="yes-no"></div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
+          <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
+          <div class="col-md-3"><label class="form-label">Ward's Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
+        </div></div>
+      </div></div>`;
+    }).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schd2','real estate properties','schD2');
+  }
   return `<div class="schedule-page">
   <h1>Schedule D-2 — Real Estate and Real Property Assets</h1>
   <div class="schedule-instructions">Include full description, address, all other owners and their relationship to the ward. Values must be as of Ward's Fiscal Year-End.</div>
@@ -782,21 +863,24 @@ function pageSchD2Annual(){
 // ── Schedule D-3 — Personal Property ─────────────────────
 function pageSchD3Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schD3.forEach((r,i)=>{
-    const wardAmt=n(r.fullAmount)*pct(r.wardPct);
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD3" data-index="${i}" data-route="/schd3">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD3" data-index="${i}" data-route="/schd3">×</button></div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6">${inpD('Description / Location / Owners',r.description,`D.schD3[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD3[${i}].fullAmount=this.value`,true,'number')}</div>
-        <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,false,'number')}</div>
-        <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD3[${i}].carryingValue=this.value`,true,'number')}</div>
-        <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}"></div>
-      </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+  let rows='';
+  if(d.schD3 && d.schD3.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schD3.map((r,i)=>{
+      const wardAmt=n(r.fullAmount)*pct(r.wardPct);
+      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+        ${entryCardHeaderAnnual(`Line ${i+1}`,'schD3',i,'/schd3')}
+        <div class="entry-card-body"><div class="row g-2">
+          <div class="col-md-6">${inpD('Description / Location / Owners',r.description,`D.schD3[${i}].description=this.value`,true)}</div>
+          <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD3[${i}].fullAmount=this.value`,true,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD3[${i}].carryingValue=this.value`,true,'number')}</div>
+          <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}"></div>
+        </div></div>
+      </div></div>`;
+    }).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schd3','personal property assets','schD3');
+  }
   return `<div class="schedule-page">
   <h1>Schedule D-3 — Personal Property Assets</h1>
   <div class="schedule-instructions">Include vehicles, clothing, furniture, electronics, jewelry, burial/cemetery plot. All values must be Fair Market Value as of end of Reporting Period. If no personal property, attach explanation.</div>
@@ -814,22 +898,25 @@ function pageSchD3Annual(){
 // ── Schedule D-4 — Intangible Assets ─────────────────────
 function pageSchD4Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schD4.forEach((r,i)=>{
-    const wardVal=n(r.fullAmount)*pct(r.wardPct);
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD4" data-index="${i}" data-route="/schd4">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD4" data-index="${i}" data-route="/schd4">×</button></div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD4_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD4.${i}.restricted" data-annual-value="yes-no"></div>
-        <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
-        <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
-        <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
-        <div class="col-md-2"><label class="form-label">Ward's Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
-      </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+  let rows='';
+  if(d.schD4 && d.schD4.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schD4.map((r,i)=>{
+      const wardVal=n(r.fullAmount)*pct(r.wardPct);
+      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+        ${entryCardHeaderAnnual(`Line ${i+1}`,'schD4',i,'/schd4')}
+        <div class="entry-card-body"><div class="row g-2">
+          <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
+          <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD4_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD4.${i}.restricted" data-annual-value="yes-no"></div>
+          <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
+          <div class="col-md-2"><label class="form-label">Ward's Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
+        </div></div>
+      </div></div>`;
+    }).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schd4','intangible assets','schD4');
+  }
   return `<div class="schedule-page">
   <h1>Schedule D-4 — Intangible Assets</h1>
   <div class="schedule-instructions">Intangibles are assets not physical and not liquid without a Court Order: brokerage accounts, stocks, annuities, prepaid funeral contracts, insurance policies that add value, promissory notes owed to the ward. Attach copies of all statements.</div>
@@ -848,22 +935,25 @@ function pageSchD4Annual(){
 // ── Schedule D-5 — Liabilities ───────────────────────────
 function pageSchD5Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schD5.forEach((r,i)=>{
-    const wardBal=n(r.fullDebt)*pct(r.wardPct);
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schD5" data-index="${i}" data-route="/schd5">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schD5" data-index="${i}" data-route="/schd5">×</button></div>
-      <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-4">${inpD('Description / Lender / Related Asset',r.description,`D.schD5[${i}].description=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Loan / Account #',r.loanNo,`D.schD5[${i}].loanNo=this.value`,true)}</div>
-        <div class="col-md-2"><label class="form-label" for="schD5_loanType_${i}">Type (M/N/L/O) <span class="req">*</span></label><select class="form-select" id="schD5_loanType_${i}" data-annual-path="schD5.${i}.loanType"><option value="">—</option>${LIAB_TYPES.map(lt=>`<option value="${lt}" ${r.loanType===lt?'selected':''}>${lt}</option>`).join('')}</select></div>
-        <div class="col-md-2">${inpDWithTooltip('Full Debt Amount','full_debt',r.fullDebt,`D.schD5[${i}].fullDebt=this.value`,true,'number')}</div>
-        <div class="col-md-2">${inpDWithTooltip("Ward's %",'ward_pct',r.wardPct,`D.schD5[${i}].wardPct=this.value`,true,'number')}</div>
-        <div class="col-md-2"><label class="form-label">Ward's Balance Due</label><input class="form-control" readonly value="${fmtAnnual(wardBal)}"></div>
-      </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+  let rows='';
+  if(d.schD5 && d.schD5.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schD5.map((r,i)=>{
+      const wardBal=n(r.fullDebt)*pct(r.wardPct);
+      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+        ${entryCardHeaderAnnual(`Line ${i+1}`,'schD5',i,'/schd5')}
+        <div class="entry-card-body"><div class="row g-2">
+          <div class="col-md-4">${inpD('Description / Lender / Related Asset',r.description,`D.schD5[${i}].description=this.value`,true)}</div>
+          <div class="col-md-2">${inpD('Loan / Account #',r.loanNo,`D.schD5[${i}].loanNo=this.value`,true)}</div>
+          <div class="col-md-2"><label class="form-label" for="schD5_loanType_${i}">Type (M/N/L/O) <span class="req">*</span></label><select class="form-select" id="schD5_loanType_${i}" data-annual-path="schD5.${i}.loanType"><option value="">—</option>${LIAB_TYPES.map(lt=>`<option value="${lt}" ${r.loanType===lt?'selected':''}>${lt}</option>`).join('')}</select></div>
+          <div class="col-md-2">${inpDWithTooltip('Full Debt Amount','full_debt',r.fullDebt,`D.schD5[${i}].fullDebt=this.value`,true,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's %",'ward_pct',r.wardPct,`D.schD5[${i}].wardPct=this.value`,true,'number')}</div>
+          <div class="col-md-2"><label class="form-label">Ward's Balance Due</label><input class="form-control" readonly value="${fmtAnnual(wardBal)}"></div>
+        </div></div>
+      </div></div>`;
+    }).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schd5','liabilities or debts','schD5');
+  }
   return `<div class="schedule-page">
   <h1>Schedule D-5 — Mortgages / Loans / Notes / Other Liabilities</h1>
   <div class="schedule-instructions">Include mortgages, second mortgages, judgment liens, tax liens, credit cards, vehicle loans, unpaid medical/facility bills, promissory notes. Type: M=Mortgage, N=Note, L=Loan, O=Other.</div>
@@ -878,12 +968,12 @@ function pageSchD5Annual(){
 // ── Schedule E — Bank Transfers ──────────────────────────
 function pageSchEAnnual(){
   const d=window.D;
-  const totalIn=d.schE.reduce((s,r)=>s+n(r.transferInAmt),0);
-  const totalOut=d.schE.reduce((s,r)=>s+n(r.transferOutAmt),0);
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schE.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Line ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schE" data-index="${i}" data-route="/sche">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schE" data-index="${i}" data-route="/sche">×</button></div>
+  const totalIn=(d.schE||[]).reduce((s,r)=>s+n(r.transferInAmt),0);
+  const totalOut=(d.schE||[]).reduce((s,r)=>s+n(r.transferOutAmt),0);
+  let rows='';
+  if(d.schE && d.schE.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schE.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Line ${i+1}`,'schE',i,'/sche')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Bank Name / Account #',r.bankName,`D.schE[${i}].bankName=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Transfer In Date',r.transferInDate,`D.schE[${i}].transferInDate=this.value`,true,'date')}</div>
@@ -891,9 +981,10 @@ function pageSchEAnnual(){
         <div class="col-md-2">${inpD('Transfer Out Date',r.transferOutDate,`D.schE[${i}].transferOutDate=this.value`,true,'date')}</div>
         <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('sche','inter-account transfers','schE');
+  }
   return `<div class="schedule-page">
   <h1>Schedule E — Bank Transfers During Period</h1>
   <div class="schedule-instructions">Each transfer should be listed twice — once going out and again going into another account. Transfers out should be entered as negative numbers.</div>
@@ -911,11 +1002,11 @@ function pageSchEAnnual(){
 // ── Schedule F-1 — Sales of Real Property ────────────────
 function pageSchF1Annual(){
   const d=window.D;
-  const total=d.schF1.reduce((s,r)=>s+n(r.salePrice),0);
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schF1.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Sale ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schF1" data-index="${i}" data-route="/schf1">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schF1" data-index="${i}" data-route="/schf1">×</button></div>
+  const total=(d.schF1||[]).reduce((s,r)=>s+n(r.salePrice),0);
+  let rows='';
+  if(d.schF1 && d.schF1.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schF1.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Sale ${i+1}`,'schF1',i,'/schf1')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description of Sale / Address / Parties',r.description,`D.schF1[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Bank',r.bank,`D.schF1[${i}].bank=this.value`,true)}</div>
@@ -923,9 +1014,10 @@ function pageSchF1Annual(){
         <div class="col-md-2">${inpD('Court Order Date',r.courtOrderDate,`D.schF1[${i}].courtOrderDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Sale Price',r.salePrice,`D.schF1[${i}].salePrice=this.value`,true,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schf1','real property sales','schF1');
+  }
   return `<div class="schedule-page">
   <h1>Schedule F-1 — Sales of Real Property During Period</h1>
   <div class="schedule-instructions">Attach a copy of the closing statement. Gains or losses from the sale should also be noted in Schedule C. Provide the court order date approving the sale.</div>
@@ -940,11 +1032,11 @@ function pageSchF1Annual(){
 // ── Schedule F-2 — Sales of Personal Property ────────────
 function pageSchF2Annual(){
   const d=window.D;
-  const total=d.schF2.reduce((s,r)=>s+n(r.salePrice),0);
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.schF2.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
-      <div class="entry-card-header">Sale ${i+1} <button class="btn btn-sm btn-outline-secondary ms-auto" title="Add a copy of this line below" data-annual-action="duplicate-row" data-collection="schF2" data-index="${i}" data-route="/schf2">${ic('copy',13)}</button><button class="btn btn-sm btn-outline-danger" data-annual-action="remove-row" data-collection="schF2" data-index="${i}" data-route="/schf2">×</button></div>
+  const total=(d.schF2||[]).reduce((s,r)=>s+n(r.salePrice),0);
+  let rows='';
+  if(d.schF2 && d.schF2.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schF2.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      ${entryCardHeaderAnnual(`Sale ${i+1}`,'schF2',i,'/schf2')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description of Sale / Purchaser / Agent',r.description,`D.schF2[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Bank',r.bank,`D.schF2[${i}].bank=this.value`,true)}</div>
@@ -952,9 +1044,10 @@ function pageSchF2Annual(){
         <div class="col-md-2">${inpD('Court Order Date',r.courtOrderDate,`D.schF2[${i}].courtOrderDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Sale Price',r.salePrice,`D.schF2[${i}].salePrice=this.value`,true,'number')}</div>
       </div></div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('schf2','personal property sales','schF2');
+  }
   return `<div class="schedule-page">
   <h1>Schedule F-2 — Sales of Personal Property During Period</h1>
   <div class="schedule-instructions">Gains or losses from the sale of personal property should also be noted in Schedule C. Attach proof of proceeds deposited.</div>
@@ -1027,33 +1120,37 @@ function reconcileBlockAnnual(t){
 // ── Part VIII — Trusts ────────────────────────────────────
 function pagePart8Annual(){
   const d=window.D;
-  const hasTrusts=d.trusts[0]&&d.trusts[0].hasTrust==='Yes';
-  let html=`<div class="schedule-page">
+  const hasTrusts=d.trusts && d.trusts[0] && d.trusts[0].hasTrust==='Yes';
+  let cards='';
+  if(hasTrusts){
+    ['Trust 1','Trust 2','Trust 3'].forEach((label,i)=>{
+      const t=d.trusts[i] || {};
+      cards+=`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
+        <div class="entry-card-header"><span>${label}</span></div>
+        <div class="entry-card-body">
+          <div class="row g-2">
+            <div class="col-md-4">${yesNoCheckboxD(`Was ${label} created after the GID?`,t.createdAfterGID,`trusts.${i}.createdAfterGID`)}</div>
+            <div class="col-md-4">${inpD('Name of the Trust',t.name,`D.trusts[${i}].name=this.value`,true)}</div>
+            <div class="col-md-4">${inpD('Name of the Trustee',t.trustee,`D.trusts[${i}].trustee=this.value`,true)}</div>
+            <div class="col-md-4">${inpD('Trustee Account Number',t.accountNo,`D.trusts[${i}].accountNo=this.value`,true)}</div>
+            <div class="col-md-4">${inpD('Date Trust Created',t.dateCreated,`D.trusts[${i}].dateCreated=this.value`,true,'date')}</div>
+            <div class="col-md-4">${inpD('Type of Trust',t.trustType,`D.trusts[${i}].trustType=this.value`,true)}</div>
+            <div class="col-md-4">${inpDWithTooltip("Ward's %",'ward_pct',t.wardPct,`D.trusts[${i}].wardPct=this.value`,false,'number')}</div>
+            <div class="col-md-8">${inpD('Amount (Ward\'s Interest)',t.wardAmount,`D.trusts[${i}].wardAmount=this.value`,false,'number')}</div>
+          </div>
+        </div>
+      </div></div>`;
+    });
+  }
+  return `<div class="schedule-page">
   <h1>Part VIII — Trust Information</h1>
   <div class="schedule-instructions">If a trust was created after the Guardianship Inception Date, you MUST file a separate trust accounting for that trust.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-4">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts[0]&&d.trusts[0].hasTrust||'No','trusts.0.hasTrust','/p8')}</div>
+    <div class="col-md-6">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts&&d.trusts[0]&&d.trusts[0].hasTrust||'No','trusts.0.hasTrust','/p8')}</div>
+  </div>
+  ${hasTrusts ? `<div class="row g-3 schedule-entry-grid">${cards}</div>` : `<div class="schedule-empty"><p class="text-muted mb-0">No trusts indicated. Check the box above if the ward has one or more trusts.</p></div>`}
+  ${pageNavAnnual('/p67','/p9')}
   </div>`;
-  ['Trust 1','Trust 2','Trust 3'].forEach((label,i)=>{
-    const t=d.trusts[i];
-    html+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">${label}</div>
-      <div class="entry-card-body">
-        <div class="row g-2">
-          <div class="col-md-4">${yesNoCheckboxD(`Was ${label} created after the GID?`,t.createdAfterGID,`trusts.${i}.createdAfterGID`)}</div>
-          <div class="col-md-4">${inpD('Name of the Trust',t.name,`D.trusts[${i}].name=this.value`,true)}</div>
-          <div class="col-md-4">${inpD('Name of the Trustee',t.trustee,`D.trusts[${i}].trustee=this.value`,true)}</div>
-          <div class="col-md-3">${inpD('Trustee Account Number',t.accountNo,`D.trusts[${i}].accountNo=this.value`,true)}</div>
-          <div class="col-md-3">${inpD('Date Trust Created',t.dateCreated,`D.trusts[${i}].dateCreated=this.value`,true,'date')}</div>
-          <div class="col-md-3">${inpD('Type of Trust',t.trustType,`D.trusts[${i}].trustType=this.value`,true)}</div>
-          <div class="col-md-1">${inpDWithTooltip("Ward's %",'ward_pct',t.wardPct,`D.trusts[${i}].wardPct=this.value`,false,'number')}</div>
-          <div class="col-md-2">${inpD('Amount (Ward\'s Interest)',t.wardAmount,`D.trusts[${i}].wardAmount=this.value`,false,'number')}</div>
-        </div>
-      </div>
-    </div>`;
-  });
-  html+=`${pageNavAnnual('/p67','/p9')}</div>`;
-  return html;
 }
 
 // ── Part IX — Other Info / Bond ───────────────────────────
@@ -1061,24 +1158,33 @@ function pagePart9Annual(){
   const d=window.D; const t=calcTotalsAnnual();
   return `<div class="schedule-page">
   <h1>Part IX — Other Information &amp; Bond Calculation</h1>
-  <div class="row g-2 mb-3">
-    <div class="col-md-5">${selD("Guardian's Relationship to the Ward",d.guardianRelationship,"D.guardianRelationship=this.value",GUARDIAN_REL)}</div>
-    <div class="col-md-4">${inpD('Date of Most Recent Restricted Depository Receipt',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",false,'date')}</div>
-  </div>
-  <div class="summary-box">
-    <h2 class="subsection-heading">Bond Calculation (auto-calculated)</h2>
-    <div class="summary-line"><span>Sch D-1 — Cash Assets in Restricted Depository</span><span>${fmtAnnual(t.schD1_restricted)}</span></div>
-    <div class="summary-line"><span>Sch D-4 — Intangible Assets RESTRICTED</span><span>${fmtAnnual(t.schD4_restricted)}</span></div>
-    <div class="summary-line"><span>Sch D-1 — Cash Assets NOT in Restricted Depository</span><span>${fmtAnnual(t.schD1_total-t.schD1_restricted)}</span></div>
-    <div class="summary-line"><span>Sch D-3 — Personal Property Assets</span><span>${fmtAnnual(t.schD3_ward)}</span></div>
-    <div class="summary-line"><span>Sch D-4 — Intangible Assets (Unrestricted)</span><span>${fmtAnnual(t.schD4_ward-t.schD4_restricted)}</span></div>
-    <div class="summary-line total"><span>Total for BOND REQUIREMENT</span><span>${fmtAnnual(t.bondReq)}</span></div>
-  </div>
-  <div class="row g-2 mt-2">
-    <div class="col-md-3">${inpD('Bond Amount',d.bondAmount,"D.bondAmount=this.value",false,'number')}</div>
-    <div class="col-md-3">${inpD('Bond Period From',d.bondPeriodFrom,"D.bondPeriodFrom=this.value",false,'date')}</div>
-    <div class="col-md-3">${inpD('Bond Period To',d.bondPeriodTo,"D.bondPeriodTo=this.value",false,'date')}</div>
-    <div class="col-md-3">${inpD('Name of Bonding Company',d.bondingCompany,"D.bondingCompany=this.value")}</div>
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="summary-box h-100 mb-0">
+        <h2 class="subsection-heading">Bond Calculation (auto-calculated)</h2>
+        <div class="summary-line"><span>Sch D-1 — Cash Assets in Restricted Depository</span><span>${fmtAnnual(t.schD1_restricted)}</span></div>
+        <div class="summary-line"><span>Sch D-4 — Intangible Assets RESTRICTED</span><span>${fmtAnnual(t.schD4_restricted)}</span></div>
+        <div class="summary-line"><span>Sch D-1 — Cash Assets NOT in Restricted Depository</span><span>${fmtAnnual(t.schD1_total-t.schD1_restricted)}</span></div>
+        <div class="summary-line"><span>Sch D-3 — Personal Property Assets</span><span>${fmtAnnual(t.schD3_ward)}</span></div>
+        <div class="summary-line"><span>Sch D-4 — Intangible Assets (Unrestricted)</span><span>${fmtAnnual(t.schD4_ward-t.schD4_restricted)}</span></div>
+        <div class="summary-line total"><span>Total for BOND REQUIREMENT</span><span>${fmtAnnual(t.bondReq)}</span></div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="summary-box h-100 mb-0">
+        <h2 class="subsection-heading">Surety Bond &amp; Guardian Info</h2>
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">${selD("Guardian's Relationship to Ward",d.guardianRelationship,"D.guardianRelationship=this.value",GUARDIAN_REL)}</div>
+          <div class="col-md-6">${inpD('Restricted Depository Receipt Date',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",false,'date')}</div>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6">${inpD('Bond Amount',d.bondAmount,"D.bondAmount=this.value",false,'number')}</div>
+          <div class="col-md-6">${inpD('Name of Bonding Company',d.bondingCompany,"D.bondingCompany=this.value")}</div>
+          <div class="col-md-6">${inpD('Bond Period From',d.bondPeriodFrom,"D.bondPeriodFrom=this.value",false,'date')}</div>
+          <div class="col-md-6">${inpD('Bond Period To',d.bondPeriodTo,"D.bondPeriodTo=this.value",false,'date')}</div>
+        </div>
+      </div>
+    </div>
   </div>
   ${pageNavAnnual('/p8','/p10')}
   </div>`;
@@ -1089,15 +1195,15 @@ function pagePart10Annual(){
   const d=window.D;
   function recipCard(i){
     const r=d.certRecipients[i];
-    return `<div class="entry-card mb-2">
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header">Recipient ${i+1}</div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-12">${inpD('Name',r.name,`D.certRecipients[${i}].name=this.value`,true)}</div>
-        <div class="col-12">${inpD('Line 2',r.line2,`D.certRecipients[${i}].line2=this.value`,true)}</div>
-        <div class="col-12">${inpD('Line 3',r.line3,`D.certRecipients[${i}].line3=this.value`,true)}</div>
-        <div class="col-12">${inpD('Line 4',r.line4,`D.certRecipients[${i}].line4=this.value`,true)}</div>
+        <div class="col-12">${inpD('Name',r.name,`D.certRecipients[${i}].name=this.value`,i===0)}</div>
+        <div class="col-12">${inpD('Line 2',r.line2,`D.certRecipients[${i}].line2=this.value`,false)}</div>
+        <div class="col-12">${inpD('Line 3',r.line3,`D.certRecipients[${i}].line3=this.value`,false)}</div>
+        <div class="col-12">${inpD('Line 4',r.line4,`D.certRecipients[${i}].line4=this.value`,false)}</div>
       </div></div>
-    </div>`;
+    </div></div>`;
   }
   return `<div class="schedule-page">
   <h1>Part X — Guardian Attorney Certificate of Service</h1>
@@ -1107,20 +1213,30 @@ function pagePart10Annual(){
     <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
     <div class="col-12"><div style="color:var(--danger-text);font-size:.75rem;font-weight:600;margin-top:.25rem;">* Recipient 1 name is required</div></div>
   </div>
-  <div class="row g-2">
-    <div class="col-md-6">${recipCard(0)}</div>
-    <div class="col-md-6">${recipCard(1)}</div>
-    <div class="col-md-6">${recipCard(2)}</div>
-    <div class="col-md-6">${recipCard(3)}</div>
+  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
+  <div class="row g-3 card-grid-2col mb-4">
+    ${recipCard(0)}
+    ${recipCard(1)}
+    ${recipCard(2)}
+    ${recipCard(3)}
   </div>
-  <h2 class="mt-3" style="font-size:.8rem;font-weight:700;">Attorney Signature</h2>
-  <div class="row g-2">
-    <div class="col-md-5">${inpD('Attorney Name',d.attorney,"D.attorney=this.value")}</div>
-    <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',d.certAttySignDate,"D.certAttySignDate=this.value",false,'date')}</div>
-    <div class="col-md-4">${inpD('Bar Number',d.attorney_bar,"D.attorney_bar=this.value")}</div>
-    <div class="col-md-4">${inpD('Phone Number',d.attorney_phone,"D.attorney_phone=this.value")}</div>
-    <div class="col-md-8">${inpD('Street Address',d.attorney_street,"D.attorney_street=this.value")}</div>
-    <div class="col-12">${inpD('City / State / Zip Code',d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value")}</div>
+  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
+  <div class="row g-3 card-grid-2col">
+    <div class="col-12 col-md-6">
+      <div class="entry-card mb-0 h-100">
+        <div class="entry-card-header">Attorney Certification</div>
+        <div class="entry-card-body">
+          <div class="row g-2">
+            <div class="col-md-5">${inpD('Attorney Name',d.attorney,"D.attorney=this.value")}</div>
+            <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',d.certAttySignDate,"D.certAttySignDate=this.value",false,'date')}</div>
+            <div class="col-md-4">${inpD('Bar Number',d.attorney_bar,"D.attorney_bar=this.value")}</div>
+            <div class="col-md-4">${inpD('Phone Number',d.attorney_phone,"D.attorney_phone=this.value")}</div>
+            <div class="col-md-8">${inpD('Street Address',d.attorney_street,"D.attorney_street=this.value")}</div>
+            <div class="col-12">${inpD('City / State / Zip Code',d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value")}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   ${pageNavAnnual('/p9','/p11')}
   </div>`;
@@ -1130,22 +1246,29 @@ function pagePart10Annual(){
 function pagePart11Annual(){
   const d=window.D;
   let rows='';
-  d.remuneration.forEach((r,i)=>{
-    rows+=`<div class="entry-card mb-2">
-      <div class="entry-card-header">Entry ${i+1} <button class="btn btn-sm btn-outline-danger ms-auto" data-annual-action="remove-row" data-collection="remuneration" data-index="${i}" data-route="/p11">×</button></div>
+  if(d.remuneration && d.remuneration.length>0){
+    rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
+      <div class="entry-card-header">
+        <span>Entry ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-danger ms-auto" data-annual-action="remove-row" data-collection="remuneration" data-index="${i}" data-route="/p11">✕ Remove</button>
+        </span>
+      </div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-3">${inpD('Guardian Name',r.guardian,`D.remuneration[${i}].guardian=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Type',r.type,`D.remuneration[${i}].type=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Amount',r.amount,`D.remuneration[${i}].amount=this.value`,true,'number')}</div>
-        <div class="col-md-5">${inpD('Description',r.description,`D.remuneration[${i}].description=this.value`,true)}</div>
+        <div class="col-md-4">${inpD('Guardian Name',r.guardian,`D.remuneration[${i}].guardian=this.value`,true)}</div>
+        <div class="col-md-4">${inpD('Type',r.type,`D.remuneration[${i}].type=this.value`,true)}</div>
+        <div class="col-md-4">${inpD('Amount',r.amount,`D.remuneration[${i}].amount=this.value`,true,'number')}</div>
+        <div class="col-12">${inpD('Description',r.description,`D.remuneration[${i}].description=this.value`,true)}</div>
       </div></div>
-    </div>`;
-  });
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=scheduleEmptyHTMLAnnual('remuneration','remuneration entries','remuneration');
+  }
   return `<div class="schedule-page">
   <h1>Part XI — Guardian(s) Declaration of Remuneration</h1>
   <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward. "Remuneration" means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian.</div>
   ${rows}
-  <button class="btn btn-outline-primary btn-sm mb-3" data-annual-action="add-row" data-collection="remuneration" data-route="/p11">+ Add Entry</button>
+  <button class="btn btn-outline-primary btn-sm mb-3 mt-3" data-annual-action="add-row" data-collection="remuneration" data-route="/p11">+ Add Entry</button>
   ${pageNavAnnual('/p10','/print')}
   </div>`;
 }

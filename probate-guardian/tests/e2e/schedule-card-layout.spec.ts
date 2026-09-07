@@ -100,9 +100,9 @@ test('Annual Accounting schedule entries use responsive Bootstrap grid columns',
 });
 
 test('plan record cards use their responsive Bootstrap grid classifications', async ({ page }) => {
-  const assertCardColumns = async (route: string, columnClass: string, expectedDesktopColumns: number) => {
+  const assertCardColumns = async (route: string, columnClass: string, expectedDesktopColumns: number, containerSelector = '.schedule-entry-grid') => {
     await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
-    const cards = page.locator(`.schedule-entry-grid > ${columnClass} > .entry-card`);
+    const cards = page.locator(`${containerSelector} > ${columnClass} > .entry-card`);
     await expect(cards).toHaveCount(2);
     const xPositions = await cards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
     expect(xPositions, `${route} desktop columns`).toBe(expectedDesktopColumns);
@@ -152,7 +152,7 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
     data.remuneration = [{}, {}];
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await assertCardColumns('/p4', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p4', '.col-12.col-md-6', 2, '.card-grid-2col');
   await assertCardColumns('/p7', '.col-12.col-xl-6', 2);
 
   await createWard(page, 'Simplified Plan Layout Ward', 'planSimplified');

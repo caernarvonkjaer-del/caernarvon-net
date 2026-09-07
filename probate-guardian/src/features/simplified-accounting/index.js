@@ -219,18 +219,36 @@ function pageCover(){
       </div>
       ${(d.eligDepository==='No'||d.eligOnlyTransactions==='No')?'<div class="mt-2" style="color:var(--danger-text);font-weight:600;font-size:.85rem;">⚠ This guardianship does not appear to qualify for the simplified form. Please use the standard Annual Accounting.</div>':''}
     </div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-      <div class="col-md-6">${inpSWithTooltip('caseNumber','Case Number','case_number',d.caseNumber,true)}</div>
-      <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn,true)}</div>
-      <div class="col-md-6">${inpS('gid','Guardianship Inception Date (GID)',d.gid,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodFrom','Accounting Period From',d.periodFrom,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Accounting Period To',d.periodTo,true,'date')}</div>
-      <div class="col-md-6">${inpS('guardian','Guardian',d.guardian,true)}</div>
-      <div class="col-md-6">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
-      <div class="col-md-6">${inpS('typeOfGuardianship','Type of Guardianship',d.typeOfGuardianship,true)}</div>
-      <div class="col-md-3">${countyInputS('county','County',d.county,true)}</div>
-      <div class="col-md-3">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true)}</div>
+    <div class="row g-3 mb-3 cover-info-row">
+      <div class="col-md-6">
+        <div class="summary-box">
+          <h2 class="subsection-heading">Required Information</h2>
+          ${inpS('wardName','Name of Ward',d.wardName,true)}
+          <div class="row g-2">
+            <div class="col-md-6">${inpSWithTooltip('caseNumber','Case Number','case_number',d.caseNumber,true)}</div>
+            <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn,true)}</div>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">${inpS('gid','Guardianship Inception Date (GID)',d.gid,true,'date')}</div>
+            <div class="col-md-6">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true)}</div>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">${inpS('periodFrom','Accounting Period From',d.periodFrom,true,'date')}</div>
+            <div class="col-md-6">${inpS('periodTo','Accounting Period To',d.periodTo,true,'date')}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="summary-box">
+          <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
+          ${inpS('guardian','Guardian',d.guardian,true)}
+          <div class="row g-2">
+            <div class="col-md-8">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
+            <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
+          </div>
+          ${inpS('typeOfGuardianship','Type of Guardianship',d.typeOfGuardianship,true)}
+        </div>
+      </div>
     </div>
     <div style="position:relative;min-height:200px;">
       <div class="summary-box mt-3">
@@ -345,10 +363,10 @@ function pagePart4(){
   const d=window.D;
   let html=`<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
   <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>
-  <div class="row g-3 schedule-entry-grid">`;
+  <div class="row g-3 card-grid-2col">`;
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   d.guardians.forEach((g,i)=>{
-    html+=`<div class="col-12 col-xl-6"><div class="entry-card mb-0 h-100">
+    html+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -375,15 +393,24 @@ function pagePart5(){
   return `<div class="schedule-page">
     <h1>Part V — Guardian Attorney Signature</h1>
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
-    <div class="row g-3">
-      <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
-      <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
-      <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,true)}</div>
-      <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,true)}</div>
-      <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
-      <div class="col-md-4">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
-      <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street,true)}</div>
-      <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,true)}</div>
+    <div class="row g-3 card-grid-2col">
+      <div class="col-12 col-md-6">
+        <div class="entry-card mb-0 h-100">
+          <div class="entry-card-header">Guardian Attorney Attestation</div>
+          <div class="entry-card-body">
+            <div class="row g-2">
+              <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
+              <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
+              <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,true)}</div>
+              <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,true)}</div>
+              <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+              <div class="col-md-4">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
+              <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street,true)}</div>
+              <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,true)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     ${renderScheduleDocsSection('p5')}
     ${pageNavS('/p4','/p6')}
@@ -395,7 +422,7 @@ function pagePart6(){
   function recipCard(i){
     const r=d.certRecipients[i];
     const req=(i===0||i===2)?'<span class="req">*</span>':'';
-    return `<div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header">Recipient ${i+1}</div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -404,7 +431,7 @@ function pagePart6(){
           <div class="col-12"><label class="form-label">Line 3</label><input type="text" class="form-control" value="${esc(formatAddress(r.line3||''))}" data-form-path="certRecipients.${i}.line3" data-form-format="address"></div>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
   }
   return `<div class="schedule-page">
     <h1>Part VI (Part X) — Guardian Attorney Certificate of Service</h1>
@@ -413,21 +440,31 @@ function pagePart6(){
       <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>
       <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
     </div>
-    <div class="row g-3">
-      <div class="col-12 col-xl-6">${recipCard(0)}</div>
-      <div class="col-12 col-xl-6">${recipCard(1)}</div>
-      <div class="col-12 col-xl-6">${recipCard(2)}</div>
-      <div class="col-12 col-xl-6">${recipCard(3)}</div>
+    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
+    <div class="row g-3 card-grid-2col mb-4">
+      ${recipCard(0)}
+      ${recipCard(1)}
+      ${recipCard(2)}
+      ${recipCard(3)}
     </div>
-    <h2 class="mt-3" style="font-size:.8rem;font-weight:700;">Attorney Signature</h2>
+    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
-    <div class="row g-3">
-      <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
-      <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
-      <div class="col-md-3">${inpS('certAttyBarNumber','Bar Number',d.certAttyBarNumber)}</div>
-      <div class="col-md-4">${inpS('certAttyPhone','Phone Number',d.certAttyPhone)}</div>
-      <div class="col-md-8">${inpS('certAttyStreet','Street Address',d.certAttyStreet)}</div>
-      <div class="col-md-12">${inpS('certAttyCityStateZip','City / State / Zip Code',d.certAttyCityStateZip)}</div>
+    <div class="row g-3 card-grid-2col">
+      <div class="col-12 col-md-6">
+        <div class="entry-card mb-0 h-100">
+          <div class="entry-card-header">Attorney Certification</div>
+          <div class="entry-card-body">
+            <div class="row g-2">
+              <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
+              <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
+              <div class="col-md-3">${inpS('certAttyBarNumber','Bar Number',d.certAttyBarNumber)}</div>
+              <div class="col-md-4">${inpS('certAttyPhone','Phone Number',d.certAttyPhone)}</div>
+              <div class="col-md-8">${inpS('certAttyStreet','Street Address',d.certAttyStreet)}</div>
+              <div class="col-md-12">${inpS('certAttyCityStateZip','City / State / Zip Code',d.certAttyCityStateZip)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     ${renderScheduleDocsSection('p6')}
     ${pageNavS('/p5','/p7')}
@@ -437,25 +474,31 @@ function pagePart6(){
 // ── Part VII – Remuneration ─────────────────────────────
 function pagePart7(){
   const d=window.D;
-  let rows='<div class="row g-3 schedule-entry-grid">';
-  d.remuneration.forEach((r,i)=>{
-    rows+=`<div class="col-12 col-xl-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">Remuneration Entry ${i+1} <button class="btn btn-sm btn-outline-danger" data-simplified-action="remove-remuneration" data-index="${i}">Remove</button></div>
+  let rows='';
+  if (d.remuneration && d.remuneration.length > 0) {
+    rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-xl-6"><div class="entry-card mb-0 h-100">
+      <div class="entry-card-header">
+        <span>Remuneration Entry ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-danger ms-auto" data-simplified-action="remove-remuneration" data-index="${i}">✕ Remove</button>
+        </span>
+      </div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" data-form-path="remuneration.${i}.guardian" data-form-format="name"></div>
           <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" data-form-path="remuneration.${i}.type" data-form-format="name"></div>
-          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(formatName(r.description||''))}" data-form-path="remuneration.${i}.description" data-form-format="name"></div>
+          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(r.description||'')}" data-form-path="remuneration.${i}.description"></div>
         </div>
       </div>
-    </div></div>`;
-  });
-  rows+='</div>';
+    </div></div>`).join('')+'</div>';
+  } else {
+    rows=`<div class="schedule-empty"><p class="text-muted mb-0">No remuneration entries added yet.</p></div>`;
+  }
   return `<div class="schedule-page">
     <h1>Part VII — Guardian(s) Declaration of Remuneration</h1>
     <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.</div>
     ${rows}
-    <button class="btn btn-outline-primary btn-sm mb-3" data-simplified-action="add-remuneration">+ Add Entry</button>
+    <button class="btn btn-outline-primary btn-sm mb-3 mt-3" data-simplified-action="add-remuneration">+ Add Entry</button>
     ${renderScheduleDocsSection('p7')}
     ${pageNavS('/p6','/print')}
   </div>`;

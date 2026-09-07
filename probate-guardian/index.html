@@ -86,6 +86,12 @@
   --bs-heading-color:var(--ink);--bs-secondary-color:var(--ink-3);
   --bs-tertiary-color:var(--ink-4);--bs-border-color:var(--line);
   --bs-link-color:var(--accent-text);--bs-link-hover-color:var(--brand-text);
+  --bs-emphasis-color:var(--ink);--bs-emphasis-color-rgb:238,241,246;
+  --bs-table-color:var(--ink-2);--bs-table-bg:transparent;
+  --bs-table-border-color:var(--line);
+  --bs-table-striped-color:var(--ink);--bs-table-striped-bg:rgba(255,255,255,.03);
+  --bs-table-active-color:var(--ink);--bs-table-active-bg:var(--surface-3);
+  --bs-table-hover-color:var(--ink);--bs-table-hover-bg:var(--surface-3);
   color-scheme:dark;
 }
 /* ── Icons ────────────────────────────────────────────── */
@@ -210,6 +216,8 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .county-combobox-dropdown.show{display:block;}
 .county-combobox-item{display:block;width:100%;text-align:left;padding:.4rem .65rem;font-size:.85rem;font:inherit;border:none;background:none;color:inherit;cursor:pointer;}
 .county-combobox-item:hover,.county-combobox-item:focus{background:var(--surface-2);}
+[data-theme="dark"] .county-combobox-item{color:var(--ink);}
+[data-theme="dark"] .county-combobox-item:hover,[data-theme="dark"] .county-combobox-item:focus{background:var(--surface-3);color:var(--ink);}
 .ward-combobox-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem .7rem;cursor:pointer;font-size:.84rem;color:var(--ink);}
 .ward-combobox-item:hover{background:var(--brand-050);}
 [data-theme="dark"] .ward-combobox-item:hover{background:var(--brand-100);}
@@ -268,10 +276,15 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 /* Checkbox groups on the Annual Plan run long (up to eleven options), so
    they wrap into responsive columns instead of one tall stack. */
 .plan-check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.1rem .9rem;}
-.plan-benefits-table,.plan-rights-table,.plan-adl-table{font-size:.85rem;}
-.plan-benefits-table th,.plan-rights-table th,.plan-adl-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-4);font-weight:700;}
-.plan-benefits-table td,.plan-rights-table td,.plan-adl-table td{vertical-align:middle;color:var(--ink-2);}
-.plan-rights-table td:first-child,.plan-adl-table td:first-child{line-height:1.4;}
+.plan-benefits-table,.plan-rights-table,.plan-adl-table,.doc-table{font-size:.85rem;color:var(--ink-2);}
+.plan-benefits-table th,.plan-rights-table th,.plan-adl-table th,.doc-table th,
+.plan-benefits-table > thead > tr > th,.plan-rights-table > thead > tr > th,.plan-adl-table > thead > tr > th,.doc-table > thead > tr > th,
+.plan-benefits-table > :not(caption) > * > th,.plan-rights-table > :not(caption) > * > th,.plan-adl-table > :not(caption) > * > th,.doc-table > :not(caption) > * > th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-4);font-weight:700;background-color:transparent;}
+.plan-benefits-table td,.plan-rights-table td,.plan-adl-table td,.doc-table td,
+.plan-benefits-table > tbody > tr > td,.plan-rights-table > tbody > tr > td,.plan-adl-table > tbody > tr > td,.doc-table > tbody > tr > td,
+.plan-benefits-table > :not(caption) > * > td,.plan-rights-table > :not(caption) > * > td,.plan-adl-table > :not(caption) > * > td,.doc-table > :not(caption) > * > td{vertical-align:middle;color:var(--ink-2);background-color:transparent;}
+.plan-rights-table td:first-child,.plan-adl-table td:first-child,
+.plan-rights-table > :not(caption) > * > td:first-child,.plan-adl-table > :not(caption) > * > td:first-child{line-height:1.4;color:var(--ink)!important;font-weight:500;}
 /* Readiness panel reuses .validation-panel's shell but is advisory, not an
    error state, so its accent is neutral rather than the danger red. */
 .readiness-panel{border-left-color:var(--accent);}
@@ -428,6 +441,11 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .dashboard-search-wrap .ic{color:var(--ink-4);}
 .dashboard-search-input{flex:1;min-width:0;border:none;background:transparent;padding:.4rem 0;}
 .dashboard-search-input:focus{border:none;box-shadow:none;}
+[data-theme="dark"] .dashboard-search-wrap{background-color:#dde3eb;border-color:#94a3b8;}
+[data-theme="dark"] .dashboard-search-wrap .ic{color:#475569;}
+[data-theme="dark"] .dashboard-search-input{background-color:transparent!important;color:#000000!important;border:none!important;}
+[data-theme="dark"] .dashboard-search-input:focus{background-color:transparent!important;color:#000000!important;border:none!important;box-shadow:none!important;}
+[data-theme="dark"] .dashboard-search-input::placeholder{color:#556275!important;}
 .dashboard-sort-select{flex:1;min-width:170px;}
 .dashboard-control{display:flex;flex-direction:column;gap:.2rem;min-width:150px;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-control span{padding-left:.1rem;}
@@ -446,6 +464,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .dashboard-family-row:hover{background:var(--surface-2);}
 .dashboard-family-icon{display:inline-flex;color:var(--accent-text);}
 .dashboard-family-info{display:flex;flex-direction:column;min-width:0;}
+.dashboard-family-info strong{color:var(--ink);}
 .dashboard-family-info strong,.dashboard-family-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dashboard-family-info small{color:var(--ink-4);}
 .dashboard-family-next{display:flex;justify-content:flex-end;min-width:90px;}
@@ -561,7 +580,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .schedule-docs-section h4.mt{margin-top:1.2rem;}
 .schedule-docs-hint{color:var(--ink-3);font-size:.82rem;margin-bottom:.65rem;}
 .sched-doc-row{display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:.4rem;background:var(--surface);}
-.sched-doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem;}
+.sched-doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem;color:var(--ink);}
 .sched-doc-meta{color:var(--ink-3);font-size:.78rem;flex-shrink:0;}
 .sched-doc-empty{color:var(--ink-3);font-style:italic;font-size:.85rem;margin-bottom:.5rem;}
 .dashboard-empty-inline{grid-column:1/-1;text-align:center;padding:1.5rem 1rem;color:var(--ink-4);font-style:italic;font-size:.88rem;}
@@ -593,8 +612,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .form-check-label{font-size:.88rem;color:var(--ink-2);}
 .form-text{color:var(--ink-3);font-size:.8rem;}
 .req{color:var(--danger-text);font-weight:700;margin-left:.15rem;}
-.table{color:var(--ink-2);border-color:var(--line);}
-.table th{color:var(--ink);}
+.table,.table > :not(caption) > * > *{color:var(--ink-2);border-color:var(--line);background-color:transparent;}
+.table th,.table > thead > tr > th,.table > :not(caption) > * > th{color:var(--ink);background-color:transparent;}
+.table td,.table > tbody > tr > td,.table > :not(caption) > * > td{color:var(--ink-2);background-color:transparent;}
+.table-striped > tbody > tr:nth-of-type(odd) > *{background-color:rgba(255,255,255,.025);color:var(--ink-2);}
+.table-hover > tbody > tr:hover > *{background-color:var(--surface-3);color:var(--ink);}
 .modal-content{background-color:var(--surface);color:var(--ink-2);border:1px solid var(--line);}
 .modal-header,.modal-footer{border-color:var(--line);}
 .modal-title{color:var(--ink);}
@@ -672,6 +694,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 [data-theme="dark"] .form-select,
 [data-theme="dark"] .ward-picker-select {
   --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+[data-theme="dark"] option {
+  background-color: #dde3eb;
+  color: #000000;
 }
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
   filter: none;
@@ -820,6 +846,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .doc-table td{padding:.28rem .38rem;border-bottom:1px solid #ddd;vertical-align:top;}
 .doc-table tr:nth-child(even) td{background:#f9f9f9;}
 .doc-table .total-row td{font-weight:700;border-top:2px solid #1a2d4a;background:#eef3fa!important;}
+[data-theme="dark"] .doc-table th{background:var(--brand);color:#fff;}
+[data-theme="dark"] .doc-table td{border-bottom:1px solid var(--line);color:var(--ink-2);background-color:transparent;}
+[data-theme="dark"] .doc-table tr:nth-child(even) td{background-color:rgba(255,255,255,.03);color:var(--ink-2);}
+[data-theme="dark"] .doc-table .total-row td{border-top:2px solid var(--line);background-color:var(--surface-3)!important;color:var(--ink)!important;}
 .attestation-text{font-size:.76rem;font-style:italic;margin-bottom:.75rem;}
 /* Validation summary. The old panel was one flat pink wall of bullets that
    repeated its own section prefix on every line ("Cover — ", "D-1 Guardian
@@ -1214,7 +1244,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 <style>
 .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,16,28,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;}
 .modal-overlay.show{display:flex;}
-.modal-box{background:var(--surface);border-radius:var(--r-lg);padding:1.85rem;max-width:400px;width:100%;box-shadow:0 32px 72px -16px rgba(10,16,28,.45),0 0 0 1px rgba(17,26,43,.05);animation:modalIn .25s var(--ease);}
+.modal-box{background:var(--surface);border:1px solid var(--line);color:var(--ink-2);border-radius:var(--r-lg);padding:1.85rem;max-width:400px;width:100%;box-shadow:0 32px 72px -16px rgba(10,16,28,.45),0 0 0 1px rgba(17,26,43,.05);animation:modalIn .25s var(--ease);}
 @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.985);}to{opacity:1;transform:none;}}
 /* A corner card rather than a full-width fixed bar — the old "unsaved
    changes" reminder spanned the whole viewport and sat on top of whatever

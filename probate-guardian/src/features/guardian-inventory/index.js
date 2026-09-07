@@ -276,7 +276,7 @@ function dateInput(bind){
   return `<input type="date" class="form-control" data-bind="${bind}">`;
 }
 function calcInput(calcbind){
-  return `<input class="form-control" readonly data-calcbind="${calcbind}" style="background:var(--accent-050);font-weight:600;">`;
+  return `<input class="form-control" readonly data-calcbind="${calcbind}">`;
 }
 // currentVal is optional -- pass the field's live D value when the option
 // list is a fixed/curated set (as opposed to grown organically from user

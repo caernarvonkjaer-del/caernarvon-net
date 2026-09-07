@@ -830,19 +830,18 @@ export function buildAnnualAccountingModel(D, options = {}) {
     });
   }
 
-  // ── Part VIII: Trust Information ──────────────────────────────────────────
+  const trustList = (d.trusts || []).filter((t) => t && t.name);
+  const hasAnyTrust = (d.trusts && d.trusts.some((t) => t && t.hasTrust === 'Yes')) || trustList.length > 0;
   const trustBlocks = [
     {
       type: 'key-value-grid',
       tag: 'Table',
       title: 'Trust Disclosure',
       items: [
-        { label: 'Does the Ward have one or more Trusts?', value: (d.trusts && d.trusts[0] && d.trusts[0].hasTrust) || 'No' },
+        { label: 'Does the Ward have one or more Trusts?', value: hasAnyTrust ? 'Yes' : 'No' },
       ],
     },
   ];
-
-  const trustList = (d.trusts || []).filter((t) => t && t.name);
   if (trustList.length > 0) {
     const trustRows = trustList.map((t, i) => [
       String(i + 1),
