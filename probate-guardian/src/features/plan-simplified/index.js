@@ -14,10 +14,10 @@ import { renderSummaryPage } from '../../core/summary-renderer.js';
 // rather than moved or wrapped: txtP/chkP/yesNoCheckboxS are still shared
 // with the three not-yet-extracted Plan types, and the rest (inpS,
 // countyInputS, pageNavS, renderScheduleDocsSection, esc, formatName,
-// formatPhone, formatAddress, loadWardInfoBanner) are shared across all 9
-// ward types (see the Milestone 3 plan's "Problem 3").
+// formatPhone, formatAddress) are shared across all 9 ward types (see the
+// Milestone 3 plan's "Problem 3").
 const {
-  esc, ic, loadWardInfoBanner, inpS, countyInputS, pageNavS,
+  esc, ic, inpS, countyInputS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, yesNoCheckboxS,
   formatName, formatPhone, formatAddress,
 } = window;
@@ -150,7 +150,6 @@ function pagePlanSCover(){
   return `<div class="schedule-page">
     <h1>Simplified Annual Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they have lived, the care they received, and how they are doing. It is a separate filing from any accounting, which reports on their money and property.</div>
-    ${loadWardInfoBanner()}
     <div class="row g-3 mb-3 cover-info-row">
       <div class="col-md-6">
         <div class="summary-box">

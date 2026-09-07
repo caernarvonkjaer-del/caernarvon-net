@@ -24,7 +24,7 @@ import { renderSummaryPage } from '../../core/summary-renderer.js';
 // support (confirmed by grep -- see the Milestone 5 plan's "Confirmed
 // facts").
 const {
-  esc, ic, loadWardInfoBanner, inpS, countyInputS, radioP, pageNavS,
+  esc, ic, inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
   formatName, formatPhone, toggleSsnReveal,
   INITIAL_ADLS, INITIAL_ADL_RATINGS,
@@ -160,7 +160,6 @@ function pagePlanICover(){
   return `<div class="schedule-page">
     <h1>Initial Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan. Per Administrative Order 2019-005, a separate Disaster Plan must also be filed — the app does not produce that document.</div>
-    ${loadWardInfoBanner()}
     <div class="row g-3 mb-3 cover-info-row">
       <div class="col-md-6">
         <div class="summary-box">

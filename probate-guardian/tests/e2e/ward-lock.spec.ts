@@ -285,19 +285,19 @@ test.describe('Ward-level Tab Locks', () => {
     if (await wardToggleBtn.textContent().then(t => t?.includes('Show'))) {
       await wardToggleBtn.click();
     }
-    await expect(wardToggleBtn).toHaveText('Hide ward controls ▴');
+    await expect(wardToggleBtn).toHaveText('Hide filing controls ▴');
 
     // Clicking New Form collapses ward controls
     await page.locator('[data-shell-action="new-form"]').click();
-    await expect(wardToggleBtn).toHaveText('Show ward controls ▾');
+    await expect(wardToggleBtn).toHaveText('Show filing controls ▾');
 
     // Re-expand ward controls
     await wardToggleBtn.click();
-    await expect(wardToggleBtn).toHaveText('Hide ward controls ▴');
+    await expect(wardToggleBtn).toHaveText('Hide filing controls ▴');
 
     // Switching ward collapses ward controls
     await page.locator('[data-shell-action="switch-ward"]').click();
-    await expect(wardToggleBtn).toHaveText('Show ward controls ▾');
+    await expect(wardToggleBtn).toHaveText('Show filing controls ▾');
     await page.locator('#switchWardPickerModal [data-modal-action="close"]').click();
     await expect(page.locator('#switchWardPickerModal')).not.toHaveClass(/show/);
 

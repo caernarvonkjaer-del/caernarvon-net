@@ -46,7 +46,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
 
       const backupAllBtn = page.locator('button[data-shell-action="backup-all-wards"]');
       await expect(backupAllBtn).toBeVisible();
-      await expect(backupAllBtn).toHaveText(/Backup All Wards \(\.sav\)/);
+      await expect(backupAllBtn).toHaveText(/Backup All Filings \(\.sav\)/);
 
       const openBackupBtn = page.locator('button[data-shell-action="open-backup-sav"]');
       await expect(openBackupBtn).toBeVisible();

@@ -146,12 +146,12 @@ function dashboardHeaderHTML() {
     : '';
   const activeWardId = getCaseFile().activeWardId;
   const activeWard = wards.find(w => w.wardId === activeWardId);
-  const closeLoadedWardBtn = activeWard ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-close-ward" data-dashboard-action="close-ward" title="Close active ward and release lock">${ic('x', 14)} Close Active Ward</button>` : '';
-  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all wards into a single combined .sav archive">${ic('archive', 14)} Export All Wards</button>` : '';
+  const closeLoadedWardBtn = activeWard ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-close-ward" data-dashboard-action="close-ward" title="Close active filing and release lock">${ic('x', 14)} Close Active Filing</button>` : '';
+  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all filings into a single combined .sav archive">${ic('archive', 14)} Export All Filings</button>` : '';
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
       <div class="dashboard-page-kicker">Compliance overview</div>
-      <h1>All Wards — Dashboard</h1>
+      <h1>All Filings — Dashboard</h1>
       <p>Review exceptions, deadlines, and court status across active filings.</p>
     </div>
     <div class="dashboard-header-actions">
@@ -312,11 +312,12 @@ function wardCardHTML(projectedWard) {
       <button class="btn btn-sm btn-outline-secondary" title="Save an encrypted backup of just this ward" aria-label="Backup ${esc(ward.wardName || 'this ward')}" data-dashboard-action="backup" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Backup</button>
       <button class="btn btn-sm btn-outline-secondary" title="Open Print Preview to export a PDF" aria-label="Export PDF for ${esc(ward.wardName || 'this ward')}" data-dashboard-action="pdf" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> PDF</button>
       <button class="btn btn-sm btn-outline-secondary" title="Archive this year and open a new one" aria-label="Start a new year for ${esc(ward.wardName || 'this ward')}" data-dashboard-action="new-year" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg> New Year</button>
+      <button class="btn btn-sm btn-outline-secondary" title="Link this filing to another filing's Case, so they group together on the dashboard even if the case number changes later" aria-label="Link ${esc(ward.wardName || 'this filing')} to a Case" data-dashboard-action="link-case" data-ward-id="${esc(ward.wardId)}">${ic('folder', 14)} Link to Case</button>
       <button class="btn btn-sm btn-outline-secondary" title="${projectedWard.isArchived ? 'Move back to active caseload' : 'Mark this case as closed'}" aria-label="${projectedWard.isArchived ? 'Restore' : 'Archive'} ${esc(ward.wardName || 'this ward')}" data-dashboard-action="archive" data-ward-id="${esc(projectedWard.wardId)}" aria-pressed="${projectedWard.isArchived}">${projectedWard.isArchived ? ic('undo', 14) + ' Restore' : ic('archive', 14) + ' Archive'}</button>
       <button class="btn btn-sm btn-outline-danger" title="Permanently delete this form" aria-label="Delete ${esc(ward.wardName || 'this ward')}" data-dashboard-action="delete" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
     </div>
     <div class="ward-card-footer">
-      <button class="btn btn-sm btn-primary w-100" data-dashboard-action="open-ward" data-ward-id="${esc(ward.wardId)}">${isActive ? 'Continue Editing →' : 'Open Ward →'}</button>
+      <button class="btn btn-sm btn-primary w-100" data-dashboard-action="open-ward" data-ward-id="${esc(ward.wardId)}">${isActive ? 'Continue Editing →' : 'Open Filing →'}</button>
     </div>
   </div>`;
 }
@@ -493,18 +494,15 @@ function dashboardGroupLabel(mode) {
 // listed individually rather than lumped into a misleading shared group.
 function renderCaseWardSections(wards) {
   if (!wards.length) return '<div class="dashboard-empty-inline">No matching active wards.</div>';
-  const groups = new Map();
-  wards.forEach(w => {
-    const c = String(w.caseNumber || '').trim();
-    const key = c || `__nocase__${w.wardId}`;
-    if (!groups.has(key)) groups.set(key, { mapKey: key, caseNumber: c, wards: [] });
-    groups.get(key).wards.push(w);
-  });
-  return [...groups.values()].map(g => {
+  // Real Case-id-backed grouping for linked wards, falling back to the
+  // original exact-caseNumber-string match for anything not yet linked to a
+  // Case -- see src/core/case-resolver.js.
+  const groups = window.casesGroupingWards(wards);
+  return groups.map(g => {
     const names = [...new Set(g.wards.map(w => String(w.wardName || '').trim()).filter(Boolean))];
     const title = names.length ? names.join(' / ') : '(unnamed)';
     const sub = g.caseNumber ? esc(g.caseNumber) : 'No case number yet';
-    const sectionKey = `case:${g.mapKey}`;
+    const sectionKey = `case:${g.key}`;
     const isOpen = _dashboardExpandedSections.has(sectionKey);
     return `<div class="dashboard-type-section${isOpen ? '' : ' is-collapsed'}">
       <button type="button" class="dashboard-type-header" style="border-left-color:var(--accent)" data-dashboard-action="toggle-section" data-section-key="${esc(sectionKey)}" aria-expanded="${isOpen}">
@@ -613,7 +611,7 @@ function renderTriageQueue(projectedWards) {
       <div class="dashboard-triage-cell dashboard-triage-ward" data-label="Ward">
         <strong>${esc(row.wardName || '(unnamed)')}</strong>
       </div>
-      <div class="dashboard-triage-cell dashboard-triage-filing" data-label="Filing">
+      <div class="dashboard-triage-cell dashboard-triage-filing" data-label="Form Type">
         <span>${esc(row.displayType)}</span>
       </div>
       <div class="dashboard-triage-cell dashboard-triage-case" data-label="Case Number">
@@ -627,7 +625,7 @@ function renderTriageQueue(projectedWards) {
     </article>`;
   }).join('');
   return `<div class="dashboard-triage-queue">
-    <div class="dashboard-triage-header"><span>Ward</span><span>Filing</span><span>Case #</span><span>Status</span><span>Deadline</span><span>Contacts</span><span>Assignment</span><span>Actions</span></div>
+    <div class="dashboard-triage-header"><span>Ward</span><span>Form Type</span><span>Case #</span><span>Status</span><span>Deadline</span><span>Contacts</span><span>Assignment</span><span>Actions</span></div>
     ${body || '<div class="dashboard-empty-inline">No filings match these filters.</div>'}
   </div>`;
 }
@@ -806,6 +804,7 @@ function handleDashboardClick(event) {
       renderDashboardPage();
       break;
     case 'group': toggleDashboardGrouping(); break;
+    case 'link-case': window.showPickCaseModal(wardId); break;
     case 'new-year': showStartNewYearModal(wardId); break;
     case 'open-ward': switchWard(wardId); break;
     case 'pdf': quickExportPdf(wardId); break;

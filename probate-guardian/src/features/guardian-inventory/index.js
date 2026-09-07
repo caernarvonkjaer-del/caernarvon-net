@@ -8,7 +8,7 @@ const {
   esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange,
   sanitizeNegativeAmounts, linkLabelsToInputs, enforceDateRanges, setupAmountFieldValidation,
   updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
-  browserRecommendationNotice, toggleSsnReveal, loadWardInfoBanner, renderScheduleDocsSection,
+  browserRecommendationNotice, toggleSsnReveal, renderScheduleDocsSection,
   formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
   formatAccountNumber, formatCheckNumber, formatCityStateZip, finalizeCaseNumber, applyZipLimit,
   sanitizeNonNegativeDecimal, calc, mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
@@ -491,7 +491,6 @@ function pageHome(){
       </div>
     </div>
   </div>
-  ${loadWardInfoBanner()}
   <div class="row g-3 mb-3 cover-info-row">
     <div class="col-md-6">
       <div class="summary-box">

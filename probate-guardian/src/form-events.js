@@ -53,7 +53,6 @@ document.addEventListener('click', (event) => {
     case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': window.exportActivityLog(); break;
     case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'load-ward-info': window.showLoadWardInfoModal(); break;
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
     case 'print': window.printCurrentFilingPdf(); break;
@@ -119,7 +118,7 @@ document.addEventListener('mousedown', (event) => {
 document.addEventListener('keydown', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement || !['Enter', ' '].includes(event.key)) return;
-  if (actionElement.dataset.formAction === 'add-ward-type' || actionElement.dataset.formAction === 'load-ward-info') {
+  if (actionElement.dataset.formAction === 'add-ward-type') {
     event.preventDefault();
     actionElement.click();
   }

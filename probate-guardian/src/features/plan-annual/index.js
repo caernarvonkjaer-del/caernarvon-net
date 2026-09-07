@@ -18,7 +18,7 @@ import { renderSummaryPage } from '../../core/summary-renderer.js';
 // computeNavChecks()'s planAnnual branch reads them directly (see the
 // Milestone 4 plan's "Confirmed facts" and "Design decisions").
 const {
-  esc, ic, loadWardInfoBanner, inpS, countyInputS, radioP, pageNavS,
+  esc, ic, inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup,
   formatName, formatPhone, formatSSN, formatAddress, toggleSsnReveal,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
@@ -162,7 +162,6 @@ function pagePlanACover(){
   return `<div class="schedule-page">
     <h1>Annual Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they live, the care they receive, their abilities and their rights. It is a separate filing from any accounting, which reports on their money and property. <strong>A physician's report must be filed separately at the same time</strong> — the app does not produce it.</div>
-    ${loadWardInfoBanner()}
     <div class="row g-3 mb-3 cover-info-row">
       <div class="col-md-6">
         <div class="summary-box">

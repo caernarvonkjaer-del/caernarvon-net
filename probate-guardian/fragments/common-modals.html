@@ -46,24 +46,6 @@
   </div>
 </div>
 
-<!-- Load Ward Info Modal — carries identity/contact fields from a matching
-     Accounting ward into the CURRENT Plan ward, in place (no new ward
-     created). Complements the Add Ward picker and Convert Ward, for the
-     case where the Plan ward already exists. -->
-<div id="loadWardInfoModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Load Ward Info</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Carries the ward's name, case number, county, and guardian contact details from an existing case into <strong id="load-ward-info-target-name">this ward</strong>. This overwrites those fields on the current ward — everything else is left as-is.</p>
-    <div class="mb-3">
-      <label class="form-label" for="load-ward-info-source">Load From</label>
-      <select class="form-select" id="load-ward-info-source"></select>
-    </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="loadWardInfoModal">Cancel</button>
-      <button class="btn btn-primary flex-fill" data-modal-action="load-ward-info">Load Info</button>
-    </div>
-  </div>
-</div>
 
 <!-- Pick Party Modal — links a guardian/attorney/preparer/ward identity
      slot on the active filing to a shared party record, either an existing
@@ -86,13 +68,33 @@
   </div>
 </div>
 
+<!-- Pick Case Modal — links a filing to a shared Case record (real-world
+     matter, grouping several filings by court case number/county), either an
+     existing one or a brand-new one seeded from the filing's own case
+     number/county. Mirrors the Pick Party modal exactly. -->
+<div id="pickCaseModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:480px;">
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Link to Case</h2>
+    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Link <strong id="pick-case-ward-name">this filing</strong> to a Case, so it groups with that Case's other filings on the dashboard even if the case number is later edited on only one of them.</p>
+    <div class="mb-3">
+      <label class="form-label" for="pick-case-existing">Existing Case</label>
+      <select class="form-select" id="pick-case-existing"></select>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="pickCaseModal">Cancel</button>
+      <button class="btn btn-outline-primary flex-fill" data-modal-action="create-case-from-ward">+ New Case</button>
+      <button class="btn btn-primary flex-fill" data-modal-action="pick-case">Link</button>
+    </div>
+  </div>
+</div>
+
 <!-- Switch Ward Picker Modal — shown when "Switch Ward" is clicked while
      the dropdown is still on the already-active ward, since switchWard()
      on the same ward is a silent no-op otherwise. -->
 <div id="switchWardPickerModal" class="modal-overlay">
   <div class="modal-box" style="max-width:420px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Switch Ward</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;"><strong id="switch-ward-picker-current-name">This ward</strong> is already active. Choose another one below:</p>
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Switch Filing</h2>
+    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;"><strong id="switch-ward-picker-current-name">This filing</strong> is already active. Choose another one below:</p>
     <div id="switch-ward-picker-list" class="recently-opened-list" style="margin-bottom:1rem;max-height:340px;overflow-y:auto;"></div>
     <button class="btn btn-secondary w-100" data-modal-action="close" data-modal-id="switchWardPickerModal">Cancel</button>
   </div>

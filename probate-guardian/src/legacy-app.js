@@ -168,6 +168,7 @@ let caseFile = {
   guardianEmail: '',
   wards: [],
   parties: [],
+  cases: [],
   activeWardId: null
 };
 window.caseFile = caseFile;
@@ -2175,7 +2176,7 @@ async function lockApp(){
   if (window.releaseWardLock) await window.releaseWardLock();
   const handleToReload=await loadCaseFileHandle();
   _cryptoKey=null;
-  caseFile={guardianName:'',guardianEmail:'',wards:[],parties:[],activeWardId:null};
+  caseFile={guardianName:'',guardianEmail:'',wards:[],parties:[],cases:[],activeWardId:null};
   window.caseFile=caseFile;
   window.D={};
   activeInventoryType=null;
@@ -2792,6 +2793,8 @@ async function buildCaseFileBlob(){
   // point (or securityMode is 'none', in which case encryptJSON's PLAIN:
   // prefix applies here exactly as it does to every other field).
   zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
+  zip.file('parties.enc',await encryptJSON(caseFile.parties||[]));
+  zip.file('cases.enc',await encryptJSON(caseFile.cases||[]));
   zip.file('manifest.json',JSON.stringify({
     format:'probate-guardian-case',
     version:CASE_FILE_FORMAT_VERSION,
@@ -3170,6 +3173,27 @@ async function importSavArchiveOrWard(file, options = {}){
       }
       if(ward&&ward.wardId)imported.push(ward);
     }
+    // Parties/cases the imported wards' FKs point at -- absent from a
+    // single-ward export (which never includes them, see
+    // buildSingleWardExportBlob), present on a full backup (buildCaseFileBlob).
+    // Merged by id (fresh crypto.randomUUID()s, so an id collision across
+    // independently-created installs is not a real risk) so the imported
+    // wards' wardPartyId/attorneyPartyId/caseId etc. keep resolving.
+    let importedParties=[],importedCases=[];
+    const importedPartiesFile=zip.file('parties.enc');
+    if(importedPartiesFile){
+      try{
+        const p=await decryptJSONWithKey(await importedPartiesFile.async('string'),key);
+        if(Array.isArray(p))importedParties=p;
+      }catch(e){console.warn('Could not read parties from imported file',e);}
+    }
+    const importedCasesFile=zip.file('cases.enc');
+    if(importedCasesFile){
+      try{
+        const c=await decryptJSONWithKey(await importedCasesFile.async('string'),key);
+        if(Array.isArray(c))importedCases=c;
+      }catch(e){console.warn('Could not read cases from imported file',e);}
+    }
     if(!imported.length&&!guardianInfo)throw new Error('File contained no readable data.');
 
     const replacing=imported.filter(w=>caseFile.wards.some(x=>x.wardId===w.wardId)).length;
@@ -3192,6 +3216,15 @@ async function importSavArchiveOrWard(file, options = {}){
       if(idx>=0)nextWards[idx]=ward;else nextWards.push(ward);
     }
     caseFile.wards=nextWards;
+
+    if(!Array.isArray(caseFile.parties))caseFile.parties=[];
+    for(const party of importedParties){
+      if(party&&party.id&&!caseFile.parties.some(p=>p.id===party.id))caseFile.parties.push(party);
+    }
+    if(!Array.isArray(caseFile.cases))caseFile.cases=[];
+    for(const c of importedCases){
+      if(c&&c.id&&!caseFile.cases.some(x=>x.id===c.id))caseFile.cases.push(c);
+    }
 
     for(const ward of imported){
       await saveWardToState(ward);
@@ -3343,9 +3376,11 @@ async function saveSessionRestoreCache(){
     const wards=[];
     for(const ward of caseFile.wards)wards.push({wardId:ward.wardId,enc:await encryptJSON(ward)});
     const guardian=await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail});
+    const parties=await encryptJSON(caseFile.parties||[]);
+    const cases=await encryptJSON(caseFile.cases||[]);
     await _sessionCachePut({
       savedAt:Date.now(),securityMode:_securityMode,salt:salt||null,verifier:verifier||null,
-      guardian,wards,activeWardId:caseFile.activeWardId||null
+      guardian,wards,parties,cases,activeWardId:caseFile.activeWardId||null
     });
   }catch(e){console.warn('session-restore cache write failed',e);}
 }
@@ -3379,6 +3414,8 @@ async function checkSessionRestoreCacheAtLaunch(){
     caseFile.wards=restoredWards;
     caseFile.guardianName=(g&&g.guardianName)||'';
     caseFile.guardianEmail=(g&&g.guardianEmail)||'';
+    caseFile.parties=cache.parties?(await decryptJSONWithKey(cache.parties,key))||[]:[];
+    caseFile.cases=cache.cases?(await decryptJSONWithKey(cache.cases,key))||[]:[];
     caseFile.activeWardId=cache.activeWardId||restoredWards[0].wardId;
     _securityMode=cache.securityMode;
     _cryptoKey=key;
@@ -3669,7 +3706,22 @@ async function loadCaseFileAtLaunch(file){
 // contains, rather than failing.
 async function loadCaseFileFromZip(zip,manifest,key){
   caseFile.wards=[];
-  caseFile.parties=[]; // reserved for a later phase -- no reader/writer populates this yet
+  caseFile.parties=[];
+  caseFile.cases=[];
+  const partiesFile=zip.file('parties.enc');
+  if(partiesFile){
+    try{
+      const parties=await decryptJSONWithKey(await partiesFile.async('string'),key);
+      if(Array.isArray(parties))caseFile.parties=parties;
+    }catch(e){console.warn('Could not read parties from .sav file',e);}
+  }
+  const casesFile=zip.file('cases.enc');
+  if(casesFile){
+    try{
+      const cases=await decryptJSONWithKey(await casesFile.async('string'),key);
+      if(Array.isArray(cases))caseFile.cases=cases;
+    }catch(e){console.warn('Could not read cases from .sav file',e);}
+  }
   for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
     const f=zip.file(entry.file);
     if(!f){console.warn('Case file entry missing:',entry.file);continue;}
@@ -3962,18 +4014,6 @@ function carryWardsFor(type,excludeWardId){
   return srcs.flatMap(st=>caseFile.wards.filter(w=>w.inventoryType===st&&w.wardId!==excludeWardId));
 }
 
-// Human-readable list of every source type configured for `type` (e.g.
-// "Initial Inventory, Simplified Annual Accounting, or Annual Accounting"),
-// for banner/alert copy. carrySourcesFor(type)[0] alone is wrong whenever a
-// type has more than one valid source: the ward that's actually available
-// (and will populate the picker) may not be that first one at all.
-function describeCarrySourceTypes(type){
-  const names=carrySourcesFor(type).map(t=>INVENTORY_TYPES[t]?.name).filter(Boolean);
-  if(names.length<=1)return names[0]||'';
-  if(names.length===2)return `${names[0]} or ${names[1]}`;
-  return `${names.slice(0,-1).join(', ')}, or ${names[names.length-1]}`;
-}
-
 // Builds a partial data object to merge onto a freshly-created Plan ward,
 // carrying over only shared identity/contact fields — never signature dates,
 // financial data, or anything specific to the Accounting filing itself.
@@ -4217,41 +4257,6 @@ function onCarrySourceChange(){
   if(!nameEl.value.trim())nameEl.value=src.wardName||'';
 }
 
-// In-place counterpart to the Add Ward "Load Ward Info From" picker and
-// Convert Ward — for when the ward already exists (created blank, or before
-// this feature shipped) rather than being created fresh. Carries the same
-// identity/contact fields directly onto the ACTIVE ward instead of creating
-// a new one. Works for both directions (Accounting<->Plan).
-async function showLoadWardInfoModal(){
-  await ensureFragment('common-modals');
-  const sourceDesc=describeCarrySourceTypes(activeInventoryType);
-  const matches=carryWardsFor(activeInventoryType,caseFile.activeWardId);
-  if(!matches.length){
-    alert(sourceDesc
-      ? `No ${sourceDesc} ward found to load info from. Create one first, then come back here.`
-      : 'This ward type has no matching type to load info from.');
-    return;
-  }
-  document.getElementById('load-ward-info-target-name').textContent=window.D.wardName?`"${window.D.wardName}"`:'this ward';
-  const sel=document.getElementById('load-ward-info-source');
-  sel.innerHTML=matches.map(w=>`<option value="${w.wardId}">${esc(w.wardName)}${w.caseNumber?' — '+esc(w.caseNumber):''}</option>`).join('');
-  showModal('loadWardInfoModal');
-}
-
-async function doLoadWardInfo(){
-  const sourceId=document.getElementById('load-ward-info-source').value;
-  if(!sourceId)return;
-  const src=caseFile.wards.find(w=>w.wardId===sourceId);
-  if(!src)return;
-  closeModal('loadWardInfoModal');
-  Object.assign(window.D,carryOverFields(src,activeInventoryType));
-  autoSave();
-  await saveWardToState(window.D);
-  renderPage(currentPage);
-  updateSidebar();
-  updateNavDots();
-}
-
 // Tracks which identity slot ({role,index}) the Pick Party modal is
 // currently open for, set by showPickPartyModal() and read by doPickParty()/
 // doCreatePartyFromSlot() when the user confirms.
@@ -4308,34 +4313,65 @@ async function doCreatePartyFromSlot(){
   updateNavDots();
 }
 
-// Small banner shown at the top of a Cover page (Plan or Accounting), only
-// when a matching ward of the other type exists to load from — kept out of
-// the way otherwise.
-function loadWardInfoBanner(){
-  const sourceDesc=describeCarrySourceTypes(activeInventoryType);
-  if(!sourceDesc)return '';
-  const hasSource=carryWardsFor(activeInventoryType,caseFile.activeWardId).length>0;
-  if(!hasSource)return '';
-  return `<div class="inventory-convert-banner mb-3" data-form-action="load-ward-info" role="button" tabindex="0" aria-label="Load ward info from an existing ${esc(sourceDesc)} ward">
-    <span class="inventory-convert-icon"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/></svg></span>
-    <div class="inventory-convert-text">
-      <div class="inventory-convert-title">Load Ward Info</div>
-      <div class="inventory-convert-desc">Carry the ward's name, case number, county, and guardian contact details from an existing ${esc(sourceDesc)} ward instead of retyping them.</div>
-    </div>
-    <span class="btn btn-outline-primary btn-sm" aria-hidden="true">Load Info</span>
-  </div>`;
+// Tracks which ward the Pick Case modal is currently open for, set by
+// showPickCaseModal() and read by doPickCase()/doCreateCaseFromWard() when
+// the user confirms. Mirrors _pickPartySlot.
+let _pickCaseWardId=null;
+
+// Opens the Pick Case modal for one filing (persistence rewrite Milestone
+// 6). Lists every existing Case by number/county plus which ward(s) already
+// reference it, so the user can tell them apart.
+async function showPickCaseModal(wardId){
+  await ensureFragment('common-modals');
+  const ward=caseFile.wards.find(w=>w.wardId===wardId);
+  if(!ward)return;
+  _pickCaseWardId=wardId;
+  document.getElementById('pick-case-ward-name').textContent=ward.wardName?`"${esc(ward.wardName)}"`:'this filing';
+  const sel=document.getElementById('pick-case-existing');
+  const cases=caseFile.cases||[];
+  sel.innerHTML='<option value="">— Select —</option>'
+    +cases.map(c=>{
+      const refs=caseFile.wards.filter(w=>w.caseId===c.id).map(w=>w.wardName||'(unnamed)');
+      const label=[c.caseNumber||'(no case number)',c.county,refs.length?`— ${refs.join(', ')}`:''].filter(Boolean).join(' ');
+      return `<option value="${c.id}">${esc(label)}</option>`;
+    }).join('');
+  showModal('pickCaseModal');
 }
 
-// Puts a Cover page's "Import Excel" accordion and "Load Ward Info" banner
-// side by side, same two-column treatment as the dashboard's Upcoming
-// Deadlines / Convert Ward row — one fewer stacked block at the top of the
-// page. Falls back to a single column (accordion only, full width) when
-// there's no matching ward to load from, computed here at build time since
-// these page functions are rebuilt fresh on every render rather than
-// patched in place like the dashboard's live containers.
+// "Link" — attaches the chosen existing Case to this filing.
+async function doPickCase(){
+  const caseId=document.getElementById('pick-case-existing').value;
+  if(!caseId||!_pickCaseWardId)return;
+  const ward=caseFile.wards.find(w=>w.wardId===_pickCaseWardId);
+  if(!ward)return;
+  closeModal('pickCaseModal');
+  ward.caseId=caseId;
+  await saveWardToState(ward);
+  renderPage(currentPage);
+}
+
+// "+ New Case" — creates a brand-new Case seeded from this filing's own
+// case number/county, then attaches it.
+async function doCreateCaseFromWard(){
+  if(!_pickCaseWardId)return;
+  const ward=caseFile.wards.find(w=>w.wardId===_pickCaseWardId);
+  if(!ward)return;
+  closeModal('pickCaseModal');
+  const kase=window.getOrCreateCaseForWard(ward);
+  ward.caseId=kase.id;
+  await saveWardToState(ward);
+  renderPage(currentPage);
+}
+
+// Small banner shown at the top of a Cover page (Plan or Accounting), only
+// when a matching ward of the other type exists to load from — kept out of
+// Wraps a Cover page's "Import Excel" accordion. Used to also pair it with
+// the "Load Ward Info" banner in a two-column layout; that banner (and the
+// one-time carry-over UI generally) was retired in the persistence-rewrite's
+// Case-entity milestone -- every filing type now has its own Party/Case
+// picker instead, kept continuously in sync rather than copied once.
 function pageIntroRow(accordionHTML){
-  const banner=loadWardInfoBanner();
-  return `<div class="dashboard-top-row${banner?'':' single-col'}" style="margin-bottom:1.25rem;">${accordionHTML}${banner}</div>`;
+  return `<div class="dashboard-top-row single-col" style="margin-bottom:1.25rem;">${accordionHTML}</div>`;
 }
 
 // Most-recently-used ward list stored in the .sav file's appState section.
@@ -4890,6 +4926,8 @@ function initializeEmptyData(type){
   data.guardianPartyIds=[];
   data.attorneyPartyId=null;
   data.preparerPartyId=null;
+  // Case FK (Milestone 6) -- null until explicitly linked, same convention.
+  data.caseId=null;
   return data;
 }
 
@@ -4994,6 +5032,13 @@ async function doAddWard(){
       if(src&&ward){
         Object.assign(ward,carryOverFields(src,type));
         if(ward.wardName!==name)ward.wardName=name;
+        // Picking a carry-source is an explicit "this belongs with that one"
+        // gesture -- join the new filing to the source's Case (creating one
+        // for the source first if it doesn't have one yet), not just
+        // copying case-number text that could later drift apart. See
+        // src/core/case-resolver.js.
+        const kase=window.getOrCreateCaseForWard(src);
+        ward.caseId=kase.id;
         await saveWardToState(ward);
         renderPage('/');
         updateSidebar();
@@ -5053,6 +5098,7 @@ async function doConfirmSimplifiedEligibility(){
         if(src){
           Object.assign(window.D,carryOverFields(src,'simplified'));
           if(window.D.wardName!==name)window.D.wardName=name;
+          window.D.caseId=window.getOrCreateCaseForWard(src).id;
         }
       }
       await saveWardToState(window.D);
@@ -5066,6 +5112,7 @@ async function doConfirmSimplifiedEligibility(){
         if(src){
           Object.assign(window.D,carryOverFields(src,'annual'));
           if(window.D.wardName!==name)window.D.wardName=name;
+          window.D.caseId=window.getOrCreateCaseForWard(src).id;
           await saveWardToState(window.D);
         }
       }
@@ -5393,7 +5440,7 @@ function applyWardControlsCollapsedState(){
   });
   const btn=document.getElementById('ward-controls-toggle-btn');
   if(!btn)return;
-  btn.textContent=_wardControlsCollapsed?'Show ward controls ▾':'Hide ward controls ▴';
+  btn.textContent=_wardControlsCollapsed?'Show filing controls ▾':'Hide filing controls ▴';
   btn.setAttribute('aria-expanded',String(!_wardControlsCollapsed));
 }
 function collapseWardControls(){
@@ -5831,6 +5878,10 @@ async function convertExistingWard(sourceWardId,targetType){
   // annual->guardian and simplified->guardian: header fields only (mapped
   // above) — an Initial Inventory has no accounting-period equivalent to
   // derive asset schedules from, so those stay blank for manual entry.
+
+  // Same explicit "this belongs with that one" reasoning as Add Ward's
+  // carry-source picker -- see src/core/case-resolver.js.
+  newWard.caseId=window.getOrCreateCaseForWard(sourceWard).id;
 
   caseFile.wards.push(newWard);
   await saveWardToState(newWard);
