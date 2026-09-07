@@ -4458,6 +4458,13 @@ const ACCOUNTING_FORM_TYPES=['guardian','simplified','annual','finalAccounting',
 const PRIOR_ACCOUNTING_SOURCES=['guardian','simplified','annual','finalAccounting','trustAccounting'];
 const CARRY_SOURCE_TYPE={
   planInitial:['guardian'], planSimplified:['simplified'], planAnnual:['annual'],
+  // No dedicated Accounting counterpart exists for a Plan-for-Minors ward,
+  // but its Initial Inventory (same ward, same identity/contact fields) is
+  // exactly as valid a source as it is for planInitial above -- this was
+  // simply missing since planMinor was added later (Milestone 6). Convert
+  // Ward intentionally does NOT gain a new option from this: see the
+  // explicit planMinor exclusion in convertTargetsFor() below.
+  planMinor:['guardian'],
   guardian:['planInitial'],
   simplified:['planSimplified',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='simplified')],
   annual:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='annual')],
@@ -4473,6 +4480,18 @@ function carrySourcesFor(type){return CARRY_SOURCE_TYPE[type]||[];}
 function carryWardsFor(type,excludeWardId){
   const srcs=carrySourcesFor(type);
   return srcs.flatMap(st=>guardianData.wards.filter(w=>w.inventoryType===st&&w.wardId!==excludeWardId));
+}
+
+// Human-readable list of every source type configured for `type` (e.g.
+// "Initial Inventory, Simplified Annual Accounting, or Annual Accounting"),
+// for banner/alert copy. carrySourcesFor(type)[0] alone is wrong whenever a
+// type has more than one valid source: the ward that's actually available
+// (and will populate the picker) may not be that first one at all.
+function describeCarrySourceTypes(type){
+  const names=carrySourcesFor(type).map(t=>INVENTORY_TYPES[t]?.name).filter(Boolean);
+  if(names.length<=1)return names[0]||'';
+  if(names.length===2)return `${names[0]} or ${names[1]}`;
+  return `${names.slice(0,-1).join(', ')}, or ${names[names.length-1]}`;
 }
 
 // Builds a partial data object to merge onto a freshly-created Plan ward,
@@ -4725,11 +4744,11 @@ function onCarrySourceChange(){
 // a new one. Works for both directions (Accounting<->Plan).
 async function showLoadWardInfoModal(){
   await ensureFragment('common-modals');
-  const sourceType=carrySourcesFor(activeInventoryType)[0];
+  const sourceDesc=describeCarrySourceTypes(activeInventoryType);
   const matches=carryWardsFor(activeInventoryType,guardianData.activeWardId);
   if(!matches.length){
-    alert(sourceType
-      ? `No ${INVENTORY_TYPES[sourceType].name} ward found to load info from. Create one first, then come back here.`
+    alert(sourceDesc
+      ? `No ${sourceDesc} ward found to load info from. Create one first, then come back here.`
       : 'This ward type has no matching type to load info from.');
     return;
   }
@@ -4757,15 +4776,15 @@ async function doLoadWardInfo(){
 // when a matching ward of the other type exists to load from — kept out of
 // the way otherwise.
 function loadWardInfoBanner(){
-  const sourceType=carrySourcesFor(activeInventoryType)[0];
-  if(!sourceType)return '';
+  const sourceDesc=describeCarrySourceTypes(activeInventoryType);
+  if(!sourceDesc)return '';
   const hasSource=carryWardsFor(activeInventoryType,guardianData.activeWardId).length>0;
   if(!hasSource)return '';
-  return `<div class="inventory-convert-banner mb-3" data-form-action="load-ward-info" role="button" tabindex="0" aria-label="Load ward info from an existing ${esc(INVENTORY_TYPES[sourceType].name)} ward">
+  return `<div class="inventory-convert-banner mb-3" data-form-action="load-ward-info" role="button" tabindex="0" aria-label="Load ward info from an existing ${esc(sourceDesc)} ward">
     <span class="inventory-convert-icon"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/></svg></span>
     <div class="inventory-convert-text">
       <div class="inventory-convert-title">Load Ward Info</div>
-      <div class="inventory-convert-desc">Carry the ward's name, case number, county, and guardian contact details from an existing ${esc(INVENTORY_TYPES[sourceType].name)} ward instead of retyping them.</div>
+      <div class="inventory-convert-desc">Carry the ward's name, case number, county, and guardian contact details from an existing ${esc(sourceDesc)} ward instead of retyping them.</div>
     </div>
     <span class="btn btn-outline-primary btn-sm" aria-hidden="true">Load Info</span>
   </div>`;
@@ -6213,8 +6232,13 @@ function convertTargetsFor(srcType){
   // Any target that names this source as a valid carry source, minus the
   // source's own type. Derived from CARRY_SOURCE_TYPE so the two stay in
   // step — adding a new accounting type only has to be declared there.
+  // planMinor is excluded explicitly: CARRY_SOURCE_TYPE now lists it as a
+  // valid Load-Ward-Info/Add-Ward carry TARGET (guardian -> planMinor, same
+  // as guardian -> planInitial), but that's a different question from
+  // whether it can be converted to/from -- it still has no Accounting
+  // counterpart, per this function's comment above.
   return Object.keys(CARRY_SOURCE_TYPE)
-    .filter(target=>target!==srcType&&carrySourcesFor(target).includes(srcType));
+    .filter(target=>target!==srcType&&target!=='planMinor'&&carrySourcesFor(target).includes(srcType));
 }
 
 function updateConvertTargetOptions(){
