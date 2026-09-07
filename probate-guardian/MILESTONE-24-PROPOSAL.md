@@ -12,6 +12,8 @@ Improve data-entry trust and completion guidance across Probate Guardian forms:
 
 This milestone is about making the existing workflow less surprising. It should not change filing math, form eligibility rules, `.sav` compatibility, PDF layout, or the single-source validation model.
 
+It should also leave the form system more globally consistent than it found it. The five user-facing improvements below should be implemented through shared contracts and helpers wherever practical, not through separate one-off fixes in each feature module.
+
 ## Why This Is Needed
 
 The form workflow is broadly understandable: sidebar checks, progress counts, Print Preview, autosave status, and "no items to report" controls give users a clear sense of progress. The remaining friction is concentrated around user trust:
@@ -31,6 +33,7 @@ The form workflow is broadly understandable: sidebar checks, progress counts, Pr
 5. **No autosave regression**: input changes must still mark dirty and schedule autosave exactly once per logical user edit.
 6. **No forced workflow detours**: guidance may explain what is missing, but it must not add modal acknowledgements or extra confirmation steps.
 7. **Accessible status updates**: preview loading, success, and failure states must be exposed through an appropriate live region without stealing focus during normal generation.
+8. **Global contracts over local patches**: new or changed form-entry behavior must use shared metadata, formatter, validation, section-status, and async-status conventions unless a field documents why it is a special case.
 
 ## Current Implementation Notes
 
@@ -46,12 +49,16 @@ Relevant surfaces observed in the current modular build:
 
 In scope:
 
+- Shared field metadata conventions.
 - Field-format inventory and formatter allowlist.
+- A global formatter policy: preserve, normalize, or display-only.
+- A migration path from string-only validation messages to structured validation errors.
+- A shared section-status/guidance helper used by sidebar, Summary, Next, Print Preview, and export gates.
 - Safer identifier handling for all active form types.
 - Flexible date parsing and date-field hints.
 - Section-local missing-field details for disabled Next/navigation controls.
 - Tests and manual audit paths for paste, tabbing, fast entry, rerendering, and autosave retention.
-- Live-region status updates for preview generation.
+- A shared live-region status utility for async operations, with preview generation as the first required consumer.
 
 Out of scope:
 
@@ -60,6 +67,89 @@ Out of scope:
 - Changing PDF page layout or Excel template mapping except where tests need to prove dates/identifiers survive unchanged.
 - Introducing server-side validation.
 - Claiming uploaded supplemental PDFs are ADA/WCAG/PDF-UA compliant.
+
+## Global Deliverables
+
+Milestone 24 must produce these shared building blocks so later work can become simpler, not merely different.
+
+### 1. Shared Field Metadata Convention
+
+Define one preferred metadata shape for form controls and begin migrating changed fields to it. The exact attribute names may be adjusted during implementation, but the convention must capture:
+
+- model path;
+- field kind;
+- label;
+- section/route ownership;
+- required status when known;
+- formatter policy;
+- validation/focus target ID when known.
+
+Example:
+
+```html
+<input
+  data-field-path="caseNumber"
+  data-field-kind="identifier"
+  data-field-label="Case Number"
+  data-field-section="cover"
+  data-field-required="true"
+  data-field-format-policy="preserve">
+```
+
+The existing `data-form-path`, `data-annual-path`, `data-form-format`, and inline setter patterns do not need to disappear in one pass. This milestone should add adapters so changed fields can participate in the new convention while older fields continue to work.
+
+### 2. Formatter Policy: Preserve, Normalize, or Display-Only
+
+Every formatter used by changed fields must be assigned one of three policies:
+
+- **Preserve**: trim leading/trailing whitespace and remove unsafe control characters, but keep user-entered letters, punctuation, spaces, dashes, slashes, and casing. Use for identifiers and legal text.
+- **Normalize**: convert to a canonical stored value required by downstream systems. Use for dates (`YYYY-MM-DD`), money, percentages, phone numbers, SSN/EIN, and other known structured values.
+- **Display-only**: improve presentation without changing the semantic stored value, or apply only on blur with a reversible result. Use cautiously for names and addresses.
+
+Tests must verify the assigned policy, not just the helper output.
+
+### 3. Structured Validation Error Migration Path
+
+Introduce a structured validation result shape and an adapter for existing string validators.
+
+Target shape:
+
+```js
+{
+  section: 'Signatures',
+  fieldId: 'guardian.0.signatureDate',
+  label: 'Guardian #1 signature date',
+  route: '/d1',
+  severity: 'required',
+  message: 'Signatures - Guardian #1 signature date is required'
+}
+```
+
+Existing validators may continue returning strings during transition. New shared helpers should normalize both strings and structured errors into one internal representation so Print Preview, section guidance, and export gates can use the same data.
+
+### 4. Shared Section-Status and Guidance Helper
+
+Extend the recent `computeNavChecks()`/`navStatus()` direction into a shared helper that can feed:
+
+- sidebar completion badges;
+- Summary page badges;
+- disabled Next state and local missing-field text;
+- Print Preview missing-fields panel;
+- PDF/Word/Excel export gating.
+
+The helper should accept validation results plus route/section metadata and return a consistent status object. UI layers should render from that object instead of each surface re-interpreting raw strings.
+
+### 5. Shared Live-Region Status Utility
+
+Create a small shared utility for async status announcements. Preview generation is the first required consumer, but the helper should be appropriate for later use by autosave, import, export, PDF generation, file validation, and offline-pack caching.
+
+The utility should standardize:
+
+- `polite` versus `assertive` announcements;
+- visually hidden status markup;
+- duplicate-message suppression when appropriate;
+- non-focus-stealing success announcements;
+- failure announcements that remain visible when the visual UI also shows an error.
 
 ## Slice 24A: Inventory and Classify Field Normalization
 
@@ -81,6 +171,8 @@ Classification:
 Deliverables:
 
 - Add a short checked-in field-format inventory document, or a clearly named section in this milestone's implementation notes.
+- Define the first version of the shared field metadata convention and map existing formatters/fields into it.
+- Assign every inventoried formatter to `preserve`, `normalize`, or `display-only`.
 - Add regression tests proving that representative identifiers preserve punctuation and letters:
   - `SNT-2024-778`
   - `25-002487-GD`
@@ -107,6 +199,7 @@ Implementation requirements:
 - Keep explicit formatters only where the field's legal/business format is known.
 - If a formatter changes a value on blur, the change must be reversible by the user and must not re-run on every input event while typing.
 - Imported Excel data must follow the same preservation rules as typed data.
+- Changed fields should declare `data-field-kind="identifier"` and `data-field-format-policy="preserve"` or equivalent metadata.
 
 Testing:
 
@@ -144,6 +237,7 @@ UI:
 - Date controls should visibly show accepted formats near the field, for example: `Use MM/DD/YYYY or YYYY-MM-DD`.
 - If keeping native `type="date"` for picker support, add a companion flexible text path only if it can avoid double-focus confusion.
 - Prefer a single component/helper used by all feature modules over ad hoc per-form date hints.
+- Changed date fields should declare `data-field-kind="date"` and `data-field-format-policy="normalize"` or equivalent metadata.
 
 Testing:
 
@@ -157,11 +251,12 @@ Disabled Next buttons should explain the specific local blockers.
 
 Implementation approach:
 
-- Add a shared helper that accepts:
+- Add a shared section-status/guidance helper that accepts:
   - the current route/section key;
-  - validator output;
-  - optional route-to-section mapping;
-  - optional maximum number of displayed items.
+  - normalized validation results;
+  - field metadata;
+  - route-to-section mapping;
+  - maximum number of displayed items.
 - It returns a compact local list of missing fields for the current page/section.
 - The disabled Next button's title may remain short, but the page should show visible text near the navigation controls when blocked.
 
@@ -176,6 +271,8 @@ Complete these before continuing:
 Requirements:
 
 - Guidance must come from the same validation messages that block export, or from shared metadata consumed by both validation and guidance.
+- Existing string validator output must be adapted into the structured validation result shape before guidance logic consumes it.
+- The same status object should be usable by sidebar, Summary, Next, Print Preview, and export gates, even if this milestone migrates consumers in phases.
 - Long sections should show the first few blockers plus a count of remaining blockers.
 - Each item should become a jump link or focus target when the app can map it to a field reliably.
 - The guidance should use accessible markup: `aria-describedby` on the disabled button is not sufficient because disabled controls may not be announced consistently. Put the message in normal page content near the control.
@@ -216,6 +313,7 @@ Deliverables:
 - Add E2E tests that intentionally type quickly and paste values across multiple fields.
 - Add unit tests around any shared input commit helper.
 - Document any fields that still require per-field special handling.
+- Confirm changed fields flow through the shared field metadata and formatter-policy path.
 
 Acceptance bar:
 
@@ -225,11 +323,12 @@ Acceptance bar:
 
 ## Slice 24F: Preview Generation Live Region
 
-Update `src/core/pdf/pdf-preview.js` so PDF preview loading, completion, and failure have accessible status announcements.
+Create a shared live-region status utility, then update `src/core/pdf/pdf-preview.js` so PDF preview loading, completion, and failure use it for accessible status announcements.
 
 Implementation requirements:
 
 - Add or reuse a visually hidden status node inside the print preview surface.
+- Prefer a reusable helper over hard-coding preview-only live-region markup.
 - Loading state announces: `Generating preview.`
 - Success announces: `Preview ready.`
 - Failure announces: `Preview failed to render.`
@@ -244,17 +343,43 @@ Testing:
 - E2E test that a successful preview updates the live-region text to `Preview ready.`
 - Existing PDF preview rendering tests must continue to pass.
 
+## Slice 24G: Structured Validation and Status Integration
+
+This slice ties the previous slices into a coherent global system.
+
+Implementation requirements:
+
+- Add a validator-output adapter that accepts existing string arrays and future structured validation objects.
+- Add or update tests for section parsing from current messages such as `Cover - Case Number is required` and route-aware messages from feature validators.
+- Create a section-status object that can represent:
+  - `complete`;
+  - `in-progress`;
+  - `blocked`;
+  - local missing fields;
+  - global export blockers;
+  - the routes/field targets associated with blockers when known.
+- Migrate at least one full vertical path to consume the object from sidebar/Summary through Next guidance and Print Preview/export gating.
+- Leave compatibility wrappers for older consumers so the app does not require an all-at-once rewrite.
+
+Testing:
+
+- Unit tests for string-to-structured validation adaptation.
+- Unit tests for section-status derivation.
+- E2E parity test proving the same incomplete section appears consistently in sidebar, Summary, local Next guidance, Print Preview, and export-disabled state.
+
 ## Migration Sequence
 
 1. **Baseline and inventory**
    - Run current unit/build/E2E tests.
    - Produce the normalization inventory.
    - Identify all date fields and formatter attributes across feature modules.
+   - Define the shared field metadata convention and formatter-policy vocabulary.
 
 2. **Formatter safety first**
    - Add preservation helper and tests.
    - Move identifier-like fields off destructive formatters.
    - Update Excel import capitalization/normalization paths to respect the same rules.
+   - Migrate changed fields to the shared metadata convention.
 
 3. **Date parser and hints**
    - Add shared parser/formatter tests.
@@ -262,7 +387,8 @@ Testing:
    - Convert forms in small batches, starting with Guardian Inventory and one Plan form.
 
 4. **Local missing-field guidance**
-   - Add route/section mapping helpers.
+   - Add structured validation adapters and route/section mapping helpers.
+   - Add shared section-status/guidance helper.
    - Add guidance to Guardian `pageNav()` first.
    - Extend to Annual/Simplified/Plan navigation surfaces after the shape is proven.
 
@@ -271,24 +397,34 @@ Testing:
    - Fix only confirmed timing defects, keeping changes tightly scoped.
 
 6. **Preview live region**
-   - Update shared PDF preview status handling.
+   - Add the shared live-region status utility.
+   - Update shared PDF preview status handling to use it.
    - Verify across all feature preview specs.
 
-7. **Regression pass**
+7. **Cross-surface status integration**
+   - Migrate at least one vertical form path so sidebar, Summary, Next guidance, Print Preview, and export gates all use the shared section-status object.
+   - Add parity tests for that vertical path.
+
+8. **Regression pass**
    - Run unit tests, build, focused E2E tests for affected forms, and the shared PDF preview suite.
    - If possible, run one manual browser pass with keyboard-only navigation through a changed section.
 
 ## Acceptance Criteria
 
 - Representative legal/account/case identifiers retain punctuation, spaces, and letters across typing, paste, autosave, save/reload, preview, and export.
+- A shared field metadata convention exists and changed fields use it or document why not.
+- Every changed formatter has an explicit `preserve`, `normalize`, or `display-only` policy.
 - No identifier-like field uses a destructive formatter unless explicitly documented and tested.
 - Common U.S. date inputs parse successfully and store as `YYYY-MM-DD`.
 - Date fields visibly explain accepted formats.
 - Impossible or ambiguous dates are rejected without corrupting the model.
 - Disabled Next guidance identifies local missing fields near the navigation controls.
 - Missing-field guidance remains consistent with export-blocking validation.
+- Structured validation adapters exist, and at least one vertical path consumes normalized validation results instead of raw strings.
+- A shared section-status/guidance helper feeds at least one complete sidebar/Summary/Next/Print Preview/export path.
 - Rapid typing, paste, tabbing, and Playwright fills do not lose committed values.
 - Preview generation announces loading, success, and failure to assistive tech.
+- Preview generation uses a shared live-region status utility suitable for later autosave/import/export/offline-pack announcements.
 - Existing `.sav` files remain compatible.
 - Existing unit tests, build, and affected E2E suites pass.
 
