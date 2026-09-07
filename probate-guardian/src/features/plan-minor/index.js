@@ -310,7 +310,7 @@ function pagePlanMSignatures(){
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">${title}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${title}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -352,7 +352,7 @@ function pagePlanMPreparerAttorney(){
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-md-6">
         <div class="entry-card mb-0 h-100">
-          <div class="entry-card-header">Certification and Signature of Preparer</div>
+          <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Preparer</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="preparer" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="schedule-instructions mb-3">The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification. The preparer has not audited or reviewed the guardianship plan or supporting documents.</div>
             <div class="row g-2">
@@ -369,7 +369,7 @@ function pagePlanMPreparerAttorney(){
       </div>
       <div class="col-12 col-md-6">
         <div class="entry-card mb-0 h-100">
-          <div class="entry-card-header">Certification and Signature of Attorney</div>
+          <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Attorney</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="schedule-instructions mb-3">The undersigned notifies the Court of the filing of this plan. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law.</div>
             <div class="row g-2">

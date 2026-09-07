@@ -367,7 +367,7 @@ function pagePart4(){
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   d.guardians.forEach((g,i)=>{
     html+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span></div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-form-format="name"></div>
@@ -396,7 +396,7 @@ function pagePart5(){
     <div class="row g-3 card-grid-2col">
       <div class="col-12 col-md-6">
         <div class="entry-card mb-0 h-100">
-          <div class="entry-card-header">Guardian Attorney Attestation</div>
+          <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Guardian Attorney Attestation</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="row g-2">
               <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>

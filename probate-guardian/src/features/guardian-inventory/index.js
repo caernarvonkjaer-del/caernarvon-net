@@ -131,6 +131,7 @@ function bindEvents(container) {
       case 'add-recipient': addRecipient(); break;
       case 'add-witness': addWitness(); break;
       case 'duplicate-entry': duplicateEntry(control.dataset.schedule, index); break;
+      case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-entry': removeEntry(control.dataset.schedule, index); break;
       case 'remove-guardian': removeGuardian(index); break;
@@ -855,8 +856,9 @@ function pageD1(){
     const isFirst=visibleIndex===0;
     const title=isFirst?'Guardian #1':`Co-Guardian #${visibleIndex+1}`;
     const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
+    const linkBtn=`<button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>`;
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${removeBtn}</div></div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${linkBtn}${removeBtn}</div></div>
       <div class="entry-card-body">
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
@@ -884,6 +886,7 @@ function pageD2(){
   <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
       <span>Preparer Attestation</span>
+      <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="preparer" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
       ${formRow(col(5,reqLabel("Preparer's Name")+textInput('preparer.name','','name')),col(3,reqLabel('Date')+dateInput('preparer.signatureDate')),col(4,reqLabel('SSN / EIN')+textInput('preparer.ssnEin','','ssn')))}
@@ -898,6 +901,7 @@ function pageD2(){
   <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
       <span>Attorney Attestation</span>
+      <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="attorney" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
       ${formRow(col(5,reqLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('attorney.signatureDate')),col(4,reqLabel('Filing Date (as of)')+dateInput('attorney.filingDate')))}

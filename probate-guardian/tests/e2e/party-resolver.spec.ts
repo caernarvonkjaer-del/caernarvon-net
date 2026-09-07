@@ -63,6 +63,33 @@ test.describe('party-resolver (unwired hydration/dehydration core)', () => {
     expect(result.wrongTypeForThisPath).toBeNull();
   });
 
+  test('identitySlotForPath covers the remaining Milestone 5 types (simplified, planSimplified, planAnnual, planMinor)', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        simplifiedGuardian: w.identitySlotForPath({ inventoryType: 'simplified' }, 'guardians.0.ssn'),
+        simplifiedAttorney: w.identitySlotForPath({ inventoryType: 'simplified' }, 'attorney_barNumber'),
+        planSimplifiedGuardian: w.identitySlotForPath({ inventoryType: 'planSimplified' }, 'planGuardians.0.mailingAddress'),
+        planSimplifiedPreparer: w.identitySlotForPath({ inventoryType: 'planSimplified' }, 'preparer_mailingStreet'),
+        planAnnualGuardian: w.identitySlotForPath({ inventoryType: 'planAnnual' }, 'planGuardians.1.officeCityStateZip'),
+        planAnnualAttorney: w.identitySlotForPath({ inventoryType: 'planAnnual' }, 'attorney_secondary_email'),
+        planMinorGuardian: w.identitySlotForPath({ inventoryType: 'planMinor' }, 'planGuardians.0.tin'),
+        planMinorPreparer: w.identitySlotForPath({ inventoryType: 'planMinor' }, 'preparer_tin'),
+      };
+    });
+
+    expect(result.simplifiedGuardian).toEqual({ role: 'guardian', index: 0 });
+    expect(result.simplifiedAttorney).toEqual({ role: 'attorney', index: 0 });
+    expect(result.planSimplifiedGuardian).toEqual({ role: 'guardian', index: 0 });
+    expect(result.planSimplifiedPreparer).toEqual({ role: 'preparer', index: 0 });
+    expect(result.planAnnualGuardian).toEqual({ role: 'guardian', index: 1 });
+    expect(result.planAnnualAttorney).toEqual({ role: 'attorney', index: 0 });
+    expect(result.planMinorGuardian).toEqual({ role: 'guardian', index: 0 });
+    expect(result.planMinorPreparer).toEqual({ role: 'preparer', index: 0 });
+  });
+
   test('guardian (Initial Inventory): guardian row, nested attorney object, and nested preparer object all round-trip', async ({ page }) => {
     await freshStartNoPassword(page);
 

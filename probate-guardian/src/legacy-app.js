@@ -7716,6 +7716,12 @@ function afterChange(path){
   refreshWardInfoCard();
   if(path==='wardName')syncActiveWardNameDisplay();
   if(path==='guardianName'||path==='guardians.0.name')syncGuardianNameDisplay();
+  // Party write-through (persistence-rewrite Milestone 5) -- same hook as
+  // persistFormControl()/persistAnnualControl(), see src/form-events.js.
+  // guardian-inventory is the one type using bindForms()/data-bind instead
+  // of data-form-path, so afterChange() is its equivalent single choke point.
+  const identitySlot=window.identitySlotForPath?.(window.D,path);
+  if(identitySlot)window.syncIdentityField(window.D,identitySlot.role,identitySlot.index);
   // Update live summary displays
   const els={
     'totalA1':calc.totalA1(),'totalA2':calc.totalA2(),'netA':calc.netA(),

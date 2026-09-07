@@ -232,7 +232,7 @@ function pagePlanSSignatures(){
   const block=(i,label)=>{
     const p=g[i]||{};
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">${label}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -255,7 +255,7 @@ function pagePlanSSignatures(){
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-md-6">
         <div class="entry-card mb-0 h-100">
-          <div class="entry-card-header">Certification and Signature of Preparer</div>
+          <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Preparer</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="preparer" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="schedule-instructions mb-3">The preparation of this form is based upon information provided by the guardian(s). The preparer has not audited or reviewed the plan or supporting documents.</div>
             <div class="row g-2">
@@ -271,7 +271,7 @@ function pagePlanSSignatures(){
       </div>
       <div class="col-12 col-md-6">
         <div class="entry-card mb-0 h-100">
-          <div class="entry-card-header">Certification and Signature of Guardian's Attorney</div>
+          <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Guardian's Attorney</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="schedule-instructions mb-3">The undersigned notifies the Court of the filing of this plan and represents that it conforms to the requirements of Florida Guardianship Law. Leave blank if no attorney is involved.</div>
             <div class="row g-2">

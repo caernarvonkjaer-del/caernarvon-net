@@ -529,8 +529,9 @@ function pagePart4Annual(){
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-md-6">
       <div class="entry-card mb-0 h-100">
-        <div class="entry-card-header d-flex justify-content-between align-items-center">
+        <div class="entry-card-header d-flex justify-content-between align-items-center gap-2">
           <span>Preparer Attestation</span>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-annual-action="link-party" data-role="preparer" data-index="0">Link Person</button>
         </div>
         <div class="entry-card-body">
           <div class="row g-2">
@@ -558,8 +559,9 @@ function pagePart5Annual(){
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-md-6">
       <div class="entry-card mb-0 h-100">
-        <div class="entry-card-header d-flex justify-content-between align-items-center">
+        <div class="entry-card-header d-flex justify-content-between align-items-center gap-2">
           <span>Guardian Attorney Attestation</span>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-annual-action="link-party" data-role="attorney" data-index="0">Link Person</button>
         </div>
         <div class="entry-card-body">
           <div class="row g-2">

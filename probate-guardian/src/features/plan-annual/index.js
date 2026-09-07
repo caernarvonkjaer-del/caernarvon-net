@@ -535,7 +535,7 @@ function pagePlanASignatures(){
     const p=g[i]||{};
     const reqMark=i===0?'<span class="req">*</span>':'';
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">${label}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-7"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -577,7 +577,7 @@ function pagePlanASignatures(){
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-md-6">
         <div class="entry-card mb-0 h-100">
-          <div class="entry-card-header">Attorney Certification</div>
+          <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Attorney Certification</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="row g-2">
               <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney)}</div>
