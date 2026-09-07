@@ -62,12 +62,9 @@ test.describe('routes', () => {
     const main = page.locator('#main-content');
     await main.locator('[data-dashboard-bound="true"]').waitFor();
     await expect(main.locator('[onchange], [onclick], [oninput], [onkeydown]')).toHaveCount(0);
-
-    const groupToggle = page.locator('#dashboard-group-toggle');
-    await groupToggle.dispatchEvent('click');
-    await expect(groupToggle).toContainText('Grouped by Case');
-    await groupToggle.dispatchEvent('click');
-    await expect(groupToggle).toContainText('Flat Grid');
+    // The grouped-by-type/case/flat toggle was removed as dead code (no
+    // dashboard role ever reached its render branch) -- see Milestone 8.
+    await expect(main.locator('#dashboard-group-toggle')).toHaveCount(0);
 
     await page.locator('#dashboard-search').fill('Alpha');
     await expect(main.locator('.ward-card')).toHaveCount(1);
@@ -81,9 +78,7 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/inventory-select'));
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await expect(page.locator('#dashboard-group-toggle')).toContainText('Grouped by Type');
-    await page.locator('#dashboard-group-toggle').dispatchEvent('click');
-    await expect(page.locator('#dashboard-group-toggle')).toContainText('Grouped by Case');
+    await expect(main.locator('[onchange], [onclick], [oninput], [onkeydown]')).toHaveCount(0);
   });
 
   test('role-aware dashboard triage uses local preferences without mutating wards', async ({ page }) => {

@@ -22,8 +22,6 @@ const {
 let _dashboardSearch = '';
 let _dashboardSort = 'lastModified'; // 'lastModified' | 'name' | 'total'
 let _archivedSectionOpen = false;
-let _dashboardGroupMode = 'type'; // 'type' | 'case' | 'flat'
-let _dashboardExpandedSections = new Set();
 let _dashboardWorklistTab = null; // null = auto-pick; else 'deadlines' | 'recent'
 let _dashboardContainer = null;
 let _dashboardHost = null;
@@ -134,8 +132,7 @@ function dashboardToolbarHTML() {
       ${option('lastModified', 'Sort: Last Modified', _dashboardSort)}
       ${option('name', 'Sort: Name (A–Z)', _dashboardSort)}
       ${option('total', 'Sort: Total (High–Low)', _dashboardSort)}
-    </select>
-    <button id="dashboard-group-toggle" class="btn btn-sm ${_dashboardGroupMode === 'flat' ? 'btn-outline-secondary' : 'btn-secondary'}" data-dashboard-action="group" aria-pressed="${_dashboardGroupMode !== 'flat'}" title="Cycle between grouping wards by type, by case number, and a flat grid">${dashboardGroupLabel(_dashboardGroupMode)}</button>`;
+    </select>`;
 }
 
 function dashboardHeaderHTML() {
@@ -187,28 +184,9 @@ function setDashboardSort(value) {
   renderDashboardGrid();
 }
 
-function toggleDashboardSection(key) {
-  if (_dashboardExpandedSections.has(key)) _dashboardExpandedSections.delete(key);
-  else _dashboardExpandedSections.add(key);
-  renderDashboardGrid();
-}
-
 function setDashboardWorklistTab(tab) {
   _dashboardWorklistTab = tab;
   renderDashboardWorklist();
-}
-
-function toggleDashboardGrouping() {
-  const DASHBOARD_GROUP_MODES = ['type', 'case', 'flat'];
-  const i = DASHBOARD_GROUP_MODES.indexOf(_dashboardGroupMode);
-  _dashboardGroupMode = DASHBOARD_GROUP_MODES[(i + 1) % DASHBOARD_GROUP_MODES.length];
-  const btn = document.getElementById('dashboard-group-toggle');
-  if (btn) {
-    btn.innerHTML = dashboardGroupLabel(_dashboardGroupMode);
-    btn.className = `btn btn-sm ${_dashboardGroupMode === 'flat' ? 'btn-outline-secondary' : 'btn-secondary'}`;
-    btn.setAttribute('aria-pressed', String(_dashboardGroupMode !== 'flat'));
-  }
-  renderDashboardGrid();
 }
 
 function toggleArchivedSection() {
@@ -448,74 +426,6 @@ function renderDashboardWorklist() {
   </div>`;
 }
 
-function renderGroupedWardSections(wards) {
-  if (!wards.length) return '<div class="dashboard-empty-inline">No matching active wards.</div>';
-  const DASHBOARD_TYPE_ORDER = ['guardian', 'simplified', 'annual', 'planInitial', 'planSimplified', 'planAnnual', 'planMinor'];
-  const known = new Set(DASHBOARD_TYPE_ORDER);
-  const groups = DASHBOARD_TYPE_ORDER.map(t => ({ type: t, wards: wards.filter(w => w.inventoryType === t) }))
-    .concat([{ type: null, wards: wards.filter(w => !known.has(w.inventoryType)) }])
-    .filter(g => g.wards.length);
-  return groups.map(g => {
-    const meta = INVENTORY_TYPE_META[g.type] || { iconName: 'folder', accent: '#525d6e', accentText: 'var(--ink-3)' };
-    const typeName = g.type ? (INVENTORY_TYPES[g.type]?.name || g.type) : 'Other';
-    // Summing a group of Plans would print a bold "$0.00" beside the
-    // heading, which reads as a real balance rather than "not applicable" —
-    // so non-financial groups get no subtotal at all.
-    const subtotal = g.wards.reduce((s, w) => s + (w.total || 0), 0);
-    const subtotalHTML = meta.financial === false ? ''
-      : `<span class="dashboard-type-header-subtotal" style="color:${meta.accentText}">${formatDashboardCurrency(subtotal)}</span>`;
-    const key = `type:${g.type || 'other'}`;
-    const isOpen = _dashboardExpandedSections.has(key);
-    return `<div class="dashboard-type-section${isOpen ? '' : ' is-collapsed'}">
-      <button type="button" class="dashboard-type-header" style="border-left-color:${meta.accent}" data-dashboard-action="toggle-section" data-section-key="${esc(key)}" aria-expanded="${isOpen}">
-        <span class="dashboard-type-header-chevron">${isOpen ? '▾' : '▸'}</span>
-        <span class="dashboard-type-header-icon" style="color:${meta.accentText}">${typeIcon(g.type, 17)}</span>
-        <span class="dashboard-type-header-name">${esc(typeName)}</span>
-        <span class="dashboard-type-header-count">${g.wards.length} ward${g.wards.length === 1 ? '' : 's'}</span>
-        ${subtotalHTML}
-      </button>
-      ${isOpen ? `<div class="dashboard-grid">${g.wards.map(wardCardHTML).join('')}</div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-// Three modes rather than a boolean. "By Case" exists because one person can
-// require several filings at once — a guardian of both person and property
-// files an Accounting AND a Plan — and those live as separate ward records
-// sharing a case number. Grouping by case puts that person back together.
-function dashboardGroupLabel(mode) {
-  return mode === 'type' ? ic('list', 15) + ' Grouped by Type'
-    : mode === 'case' ? ic('folder', 15) + ' Grouped by Case'
-      : ic('grid', 15) + ' Flat Grid';
-}
-
-// Groups by case number so every filing for one person sits together.
-// Wards with no case number yet can't be matched to anything, so they are
-// listed individually rather than lumped into a misleading shared group.
-function renderCaseWardSections(wards) {
-  if (!wards.length) return '<div class="dashboard-empty-inline">No matching active wards.</div>';
-  // Real Case-id-backed grouping for linked wards, falling back to the
-  // original exact-caseNumber-string match for anything not yet linked to a
-  // Case -- see src/core/case-resolver.js.
-  const groups = window.casesGroupingWards(wards);
-  return groups.map(g => {
-    const names = [...new Set(g.wards.map(w => String(w.wardName || '').trim()).filter(Boolean))];
-    const title = names.length ? names.join(' / ') : '(unnamed)';
-    const sub = g.caseNumber ? esc(g.caseNumber) : 'No case number yet';
-    const sectionKey = `case:${g.key}`;
-    const isOpen = _dashboardExpandedSections.has(sectionKey);
-    return `<div class="dashboard-type-section${isOpen ? '' : ' is-collapsed'}">
-      <button type="button" class="dashboard-type-header" style="border-left-color:var(--accent)" data-dashboard-action="toggle-section" data-section-key="${esc(sectionKey)}" aria-expanded="${isOpen}">
-        <span class="dashboard-type-header-chevron">${isOpen ? '▾' : '▸'}</span>
-        <span class="dashboard-type-header-icon" style="color:var(--accent-text)">${ic('folder', 17)}</span>
-        <span class="dashboard-type-header-name">${esc(title)}</span>
-        <span class="dashboard-type-header-count">${sub}</span>
-        <span class="dashboard-type-header-count">${g.wards.length} filing${g.wards.length === 1 ? '' : 's'}</span>
-      </button>
-      ${isOpen ? `<div class="dashboard-grid">${g.wards.map(wardCardHTML).join('')}</div>` : ''}
-    </div>`;
-  }).join('');
-}
 
 function getFilteredSortedWards(wards) {
   const q = _dashboardSearch.trim().toLowerCase();
@@ -672,34 +582,14 @@ function renderDashboardGrid() {
     container.innerHTML = html;
     return;
   }
-  if (_dashboardPreferences.role === 'family') {
-    let html = renderFamilyDashboard(projectedWards);
-    const archived = projectedWards.filter(w => w.isArchived);
-    if (archived.length) {
-      html += `<div class="dashboard-section-divider"><button class="btn btn-sm btn-outline-secondary" data-dashboard-action="toggle-archived" aria-expanded="${_archivedSectionOpen}">${_archivedSectionOpen ? '▾' : '▸'} Archived / Closed Wards (${archived.length})</button></div>`;
-      if (_archivedSectionOpen) html += `<div class="dashboard-grid dashboard-grid-archived">${archived.map(wardCardHTML).join('')}</div>`;
-    }
-    container.innerHTML = html;
-    return;
-  }
-  const filtered = getFilteredSortedWards(projectedWards);
-  const active = filtered.filter(w => !w.isArchived);
-  const archived = filtered.filter(w => w.isArchived);
-  const totalArchivedCount = projectedWards.filter(w => w.isArchived).length;
-
-  let html = _dashboardGroupMode === 'type'
-    ? renderGroupedWardSections(active)
-    : _dashboardGroupMode === 'case'
-      ? renderCaseWardSections(active)
-      : `<div class="dashboard-grid">${active.map(wardCardHTML).join('') || '<div class="dashboard-empty-inline">No matching active wards.</div>'}</div>`;
-
-  if (totalArchivedCount > 0) {
-    html += `<div class="dashboard-section-divider">
-      <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="toggle-archived" aria-expanded="${_archivedSectionOpen}" aria-controls="archived-wards-grid">${_archivedSectionOpen ? '▾' : '▸'} Archived / Closed Wards (${totalArchivedCount})</button>
-    </div>`;
-    if (_archivedSectionOpen) {
-      html += `<div class="dashboard-grid dashboard-grid-archived" id="archived-wards-grid">${archived.map(wardCardHTML).join('') || '<div class="dashboard-empty-inline">No matching archived wards.</div>'}</div>`;
-    }
+  // Every dashboard role (family, professional, assistant -- see
+  // DASHBOARD_ROLES in preferences.js) is handled by one of the two
+  // branches above; there is no third mode to fall through to.
+  let html = renderFamilyDashboard(projectedWards);
+  const archived = projectedWards.filter(w => w.isArchived);
+  if (archived.length) {
+    html += `<div class="dashboard-section-divider"><button class="btn btn-sm btn-outline-secondary" data-dashboard-action="toggle-archived" aria-expanded="${_archivedSectionOpen}">${_archivedSectionOpen ? '▾' : '▸'} Archived / Closed Wards (${archived.length})</button></div>`;
+    if (_archivedSectionOpen) html += `<div class="dashboard-grid dashboard-grid-archived">${archived.map(wardCardHTML).join('')}</div>`;
   }
   container.innerHTML = html;
 }
@@ -803,7 +693,6 @@ function handleDashboardClick(event) {
       _dashboardPreferences = saveDashboardPreferences({ ..._dashboardPreferences, onboardingDismissed: true });
       renderDashboardPage();
       break;
-    case 'group': toggleDashboardGrouping(); break;
     case 'link-case': window.showPickCaseModal(wardId); break;
     case 'new-year': showStartNewYearModal(wardId); break;
     case 'open-ward': switchWard(wardId); break;
@@ -814,7 +703,6 @@ function handleDashboardClick(event) {
       setDashboardRole(actionElement.dataset.role);
       break;
     case 'toggle-archived': toggleArchivedSection(); break;
-    case 'toggle-section': toggleDashboardSection(actionElement.dataset.sectionKey); break;
     case 'worklist-tab': setDashboardWorklistTab(actionElement.dataset.tab); break;
   }
 }
@@ -929,8 +817,6 @@ export function dispose(container) {
   _dashboardSearch = '';
   _dashboardSort = 'lastModified';
   _archivedSectionOpen = false;
-  _dashboardGroupMode = 'type';
-  _dashboardExpandedSections.clear();
   _dashboardWorklistTab = null;
   _dashboardStatusFilter = 'all';
   _dashboardDeadlineFilter = 'all';
