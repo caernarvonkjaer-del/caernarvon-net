@@ -909,6 +909,13 @@ let currentPage = '/';
 function getCurrentPage(){return currentPage;}
 let _visitedPages = new Set(); // Track which pages user has visited
 let _dirtySinceExport = false; // true once data changes after the last .sav export
+// Wards edited via saveWardToState() while NOT the active ward (dashboard
+// archive toggle, workflow status/assignee -- see toggleDashboardWardArchived()
+// and updateDashboardWorkflow() in src/features/dashboard/index.js) still need
+// their own file written; saveData()'s active-ward branch alone never touches
+// them. Cleared as each ward's own file (or a full archive covering it) is
+// successfully written.
+let _dirtyWardIds = new Set();
 let _autoExportTimer = null;
 let _lastSavedTickTimer = null;
 let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appState
@@ -1418,7 +1425,7 @@ function formatCheckNumber(s){
 // Don't trim while typing — preserve spaces as user enters them
 function formatName(s){
   const sanitized=validateSecurityInput('name',s);
-  return sanitized.split(/(\s+)/).map(w=>w.match(/\s/) ? w : (w.charAt(0).toUpperCase()+w.slice(1).toLowerCase())).join('');
+  return sanitized.split(/(\s+)/).map(w=>w.match(/\s/) ? w : (w.charAt(0).toUpperCase()+w.slice(1))).join('');
 }
 
 // Same as formatName for addresses/streets
@@ -1433,7 +1440,7 @@ function formatCityStateZip(s){
     if(w.match(/\s/)||w==='')return w;
     if(/^\d+$/.test(w))return w;
     if(/^[A-Za-z]{2}$/.test(w))return w.toUpperCase();
-    return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+    return w.charAt(0).toUpperCase()+w.slice(1);
   }).join('');
 }
 
@@ -2277,13 +2284,18 @@ function resetAutoLockTimer(){
 async function saveWardToState(ward){
   if(!ward)return false;
   ward.lastModified=new Date().toISOString();
-  // The ward is already live in guardianData; schedule persistence.
+  // The ward is already live in guardianData; schedule persistence. Tracked
+  // by id (not just left to getActiveWard()) so a dashboard edit made to a
+  // ward other than the active one still gets its own file written --
+  // see saveData()'s _dirtyWardIds loop.
+  _dirtyWardIds.add(ward.wardId);
   autoSave();
   return true;
 }
 
 async function deleteWardFromState(wardId){
   // deleteWard() already updates the live array; schedule persistence.
+  _dirtyWardIds.delete(wardId); // gone from guardianData.wards -- nothing left to write for it
   autoSave();
   return true;
 }
@@ -2556,6 +2568,31 @@ async function saveData(){
   // it having landed before acting further (lockApp() wiping memory,
   // beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport)await saveSessionRestoreCache();
+  // Wards other than the active one can be dirtied from the dashboard
+  // (archive toggle, workflow status/assignee) without ever being opened.
+  // Give each one its own write here, independent of the active-ward/archive
+  // branches below, which only ever look at getActiveWard(). Deliberately
+  // NOT routed through writeWardToHandle(): that clears _dirtySinceExport
+  // and the recovery cache globally, which would be a lie here if the
+  // active ward below is still dirty (or its own write fails) -- only the
+  // branch that actually accounts for the FULL remaining dirty state should
+  // ever declare the app clean.
+  for(const wardId of Array.from(_dirtyWardIds)){
+    if(activeWard&&wardId===activeWard.wardId)continue; // handled below
+    const otherWardHandle=await loadWardZipHandle(wardId);
+    if(!otherWardHandle)continue; // no per-ward file for this ward yet -- nothing to write to
+    try{
+      const perm=await otherWardHandle.queryPermission({mode:'readwrite'});
+      if(perm!=='granted')continue; // stays dirty; retried on the next autosave
+      await writeOtherDirtyWardToHandle(wardId,otherWardHandle);
+      _consecutiveSaveFailures=0;
+      hideSaveError();
+    }catch(e){
+      console.error('save failed for ward',wardId,e);
+      _consecutiveSaveFailures++;
+      if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
+    }
+  }
   if(!activeWard)return;
   const wardHandle=await loadWardZipHandle(activeWard.wardId);
   if(wardHandle){
@@ -2732,9 +2769,56 @@ async function rememberWardZipHandle(wardId,handle){
       }
     }catch(e){/* non-critical */}
   }
+  // Warn (don't block) if this ward already had a DIFFERENT file remembered.
+  // Silently overwriting here is exactly how a ward ends up split across two
+  // files with only the newer one still receiving auto-saves -- e.g. a
+  // rename changed the suggested Save-As filename and the user saved to a
+  // fresh file instead of the old one, or a second copy of this ward's .sav
+  // was opened from another location.
+  const existingHandle=_wardZipHandles.get(wardId)||await loadPersistedWardZipHandle(wardId);
+  if(existingHandle&&existingHandle!==handle){
+    let sameFile=false;
+    if(typeof handle.isSameEntry==='function'){
+      try{sameFile=await handle.isSameEntry(existingHandle);}catch(e){/* different/unavailable handle -- treat as not confirmed same */}
+    }
+    if(!sameFile)showDuplicateWardFileWarning(wardId,existingHandle,handle);
+  }
   _wardZipHandles.set(wardId,handle);
   await savePersistedWardZipHandle(wardId,handle);
   await refreshAutoSaveArmedStatus();
+}
+
+// Non-blocking heads-up for the case above: two different physical files are
+// now both claiming to be this ward's save file, but only `newHandle` will
+// receive auto-saves going forward. Uses the same .app-toast markup as the
+// PWA-update and other-tab-open notices (pwa-ui.js / tab-coordination.js).
+function showDuplicateWardFileWarning(wardId,oldHandle,newHandle){
+  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  const wardName=(ward&&ward.wardName)||'This ward';
+  let notice=document.getElementById('dup-ward-file-notice');
+  if(!notice){
+    notice=document.createElement('div');
+    notice.id='dup-ward-file-notice';
+    notice.className='app-toast';
+    notice.style.top='6.25rem';
+    notice.style.bottom='auto';
+    notice.style.zIndex='10004';
+    notice.setAttribute('role','status');
+    notice.innerHTML='<div class="app-toast-body"><div class="app-toast-title"></div><div class="app-toast-desc"></div><div class="app-toast-actions"></div></div>';
+    document.body.appendChild(notice);
+  }
+  notice.querySelector('.app-toast-title').textContent=`Two save files for "${wardName}"`;
+  notice.querySelector('.app-toast-desc').textContent=
+    `"${oldHandle.name||'the previous file'}" was this ward's save file, but changes will now auto-save to "${newHandle.name||'the new file'}" instead. If the old file has changes you still need, open it and merge them before continuing.`;
+  const actions=notice.querySelector('.app-toast-actions');
+  actions.replaceChildren();
+  const dismiss=document.createElement('button');
+  dismiss.type='button';
+  dismiss.className='btn btn-outline-secondary btn-sm';
+  dismiss.textContent='Dismiss';
+  dismiss.addEventListener('click',()=>{notice.style.display='none';},{once:true});
+  actions.appendChild(dismiss);
+  notice.style.display='flex';
 }
 
 async function loadWardZipHandle(wardId=guardianData.activeWardId){
@@ -3099,6 +3183,7 @@ async function exportGuardianDataZip(){
       await rememberArchiveZipHandle(handle);
       clearSessionRestoreCache(); // only discard cache when file landing is verified via handle
     }
+    _dirtyWardIds.clear(); // every ward's current state just went into this archive
     _dirtySinceExport=false;
     hideAutoExportReminder();
     updateLastSavedIndicator();
@@ -3134,6 +3219,7 @@ async function backupAllWardsNow(){
       await rememberArchiveZipHandle(handle);
       clearSessionRestoreCache();
     }
+    _dirtyWardIds.clear(); // every ward's current state just went into this backup
     _dirtySinceExport=false;
     hideAutoExportReminder();
     updateLastSavedIndicator();
@@ -3172,6 +3258,7 @@ async function writeWardToHandle(wardId,handle,viaTimer){
     rollback();
     throw e;
   }
+  _dirtyWardIds.delete(wardId);
   _dirtySinceExport=false;
   clearSessionRestoreCache(); // this state is now safely in a .sav file
   hideAutoExportReminder();
@@ -3182,6 +3269,32 @@ async function writeWardToHandle(wardId,handle,viaTimer){
     detail: { fileName: handle.name, wardId, kind: 'ward', viaTimer: !!viaTimer }
   }));
   return 1;
+}
+
+// Writes a DIRTY WARD OTHER THAN THE ACTIVE ONE to its own already-authorized
+// file (dashboard archive toggle / workflow edits -- see saveData()'s
+// _dirtyWardIds loop). Deliberately lighter than writeWardToHandle(): it must
+// NOT clear _dirtySinceExport or the recovery cache, since neither reflects
+// only this one ward -- the active ward (or whatever else is still dirty)
+// may not have made it to disk yet in this same saveData() pass, and only
+// that branch is positioned to know the full remaining dirty state.
+async function writeOtherDirtyWardToHandle(wardId,handle){
+  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  if(!ward)throw new Error(`writeOtherDirtyWardToHandle: ward "${wardId}" not found`);
+  const rollback=await beginRecordingExport(`Auto-saved "${ward.wardName||'ward'}" in the background`,wardId);
+  try{
+    const blob=await buildWardZipBlob(wardId);
+    const writable=await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }catch(e){
+    rollback();
+    throw e;
+  }
+  _dirtyWardIds.delete(wardId);
+  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
+    detail: { fileName: handle.name, wardId, kind: 'ward', viaTimer: true }
+  }));
 }
 
 // Writes the full archive to an already-authorized handle. Retained for
@@ -3199,6 +3312,7 @@ async function writeArchiveToHandle(handle,viaTimer){
     rollback();
     throw e;
   }
+  _dirtyWardIds.clear(); // every ward's current state just went into this archive
   _dirtySinceExport=false;
   clearSessionRestoreCache(); // this state is now safely in a .sav file
   hideAutoExportReminder();
@@ -3507,8 +3621,18 @@ async function importSavArchiveOrWard(file, options = {}){
       updateSidebar();
     }
 
+    // Match the launch-time reopen paths (trySilentReopen/openWardFileAtLaunch):
+    // a single-ward file must be remembered as THAT ward's own handle, not as
+    // the whole-case archive handle -- otherwise this ward silently ends up
+    // with two live files (its original per-ward handle, still in
+    // _wardZipHandles, plus this one mis-filed as the archive), and whichever
+    // gets silently reopened at the next launch wins, orphaning the other.
     if(handle){
-      await rememberArchiveZipHandle(handle);
+      if(kind==='ward'&&imported.length===1&&imported[0].wardId){
+        await rememberWardZipHandle(imported[0].wardId,handle);
+      }else{
+        await rememberArchiveZipHandle(handle);
+      }
     }
 
     const auditMsg=kind==='ward'
@@ -5690,13 +5814,17 @@ function closeMobileSidebar(){
 // Safe because this all runs synchronously with no awaits in between, so no
 // other code can observe window.D pointing at the wrong ward mid-computation.
 function getWardHeadlineTotal(ward){
+  if(!ward)return null;
   const previousD=window.D;
   window.D=ward;
   let total=null;
   try{
     if(ward.inventoryType==='guardian')total=calc.total();
     else if(ward.inventoryType==='simplified')total=calcTotals().remaining;
-    else if(formEngine(ward.inventoryType)==='annual')total=calcTotalsAnnual().netAssetsFromD;
+    else if(formEngine(ward.inventoryType)==='annual'){
+      const t=calcTotalsAnnual(ward);
+      total=(t.netAssetsFromD!==0 || (t.schD1_total||t.schD2_ward||t.schD3_ward||t.schD4_ward||t.schD5_total)) ? t.netAssetsFromD : (t.netAssets||0);
+    }
   }catch(e){console.warn('Dashboard: could not compute total for ward',ward.wardId,e);}
   finally{window.D=previousD;}
   return total;
@@ -5718,6 +5846,8 @@ const INVENTORY_TYPE_META={
   guardian:   {iconName:'clipboard', accent:'#1e5799', accentText:'var(--accent-text)', totalLabel:"Ward's Value",  financial:true},
   simplified: {iconName:'receipt',   accent:'#1f7a3d', accentText:'var(--ok-text)',     totalLabel:'Ending Balance', financial:true},
   annual:     {iconName:'chart',     accent:'#820024', accentText:'var(--brand-text)',  totalLabel:'Net Assets',     financial:true},
+  finalAccounting: {iconName:'chart', accent:'#820024', accentText:'var(--brand-text)', totalLabel:'Net Assets',     financial:true},
+  trustAccounting: {iconName:'chart', accent:'#820024', accentText:'var(--brand-text)', totalLabel:'Net Assets',     financial:true},
   planSimplified:{iconName:'shield', accent:'#6b3fa0', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
   planAnnual:{iconName:'shield',     accent:'#4a3f9e', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
   planInitial:{iconName:'shield',    accent:'#2f6e8c', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
@@ -6994,7 +7124,7 @@ async function mountDashboardFeature(page){
 function inpS(id,label,val,req=false,type='text'){
   const isEmail=label.toLowerCase().includes('email');
   const isPhone=!isEmail&&label.toLowerCase().includes('phone');
-  const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('description')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
+  const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
   const isZip=!isEmail&&label.toLowerCase().includes('zip');
   const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
   const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
@@ -7064,10 +7194,11 @@ function yesNoCheckboxHTML(id,label,val,path,req,route){
 function yesNoCheckboxS(id,label,val,req=false){
   return yesNoCheckboxHTML(id,label,val,id,req);
 }
-function yesNoCheckboxD(label,val,setter,req=false){
+function yesNoCheckboxD(label,val,setter,reqOrRoute=false,explicitRoute=''){
   const id='chk_'+Math.random().toString(36).slice(2,9);
-  const path=(setter.match(/D(?:\[['"]([^'"]+)['"]\]|\.([\w.[\]]+))\s*=/)||[]).slice(1).find(Boolean)||'';
-  const route=(setter.match(/navigate\(['"]([^'"]+)['"]\)/)||[])[1];
+  const path=!setter?'':(!setter.includes('=')?setter:((setter.match(/D(?:\[['"]([^'"]+)['"]\]|\.([\w.[\]]+))\s*=/)||[]).slice(1).find(Boolean)||''));
+  const route=typeof reqOrRoute==='string'&&reqOrRoute.startsWith('/')?reqOrRoute:(explicitRoute||(setter.match(/navigate\(['"]([^'"]+)['"]\)/)||[])[1]||'');
+  const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
   return yesNoCheckboxHTML(id,label,val,path,req,route);
 }
 
