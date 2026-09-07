@@ -2783,10 +2783,33 @@ async function rememberWardZipHandle(wardId,handle){
     }
     if(!sameFile)showDuplicateWardFileWarning(wardId,existingHandle,handle);
   }
+  // Record the file's actual on-disk name on the ward itself so a later
+  // Save-As (handle lost, permission revoked, or no File System Access API
+  // support at all) can default back to THIS name instead of recomputing one
+  // from whatever the ward's name/case number happen to be at that moment --
+  // see suggestedWardFileName()'s comment for why that recompute drifts.
+  const ward=guardianData.wards.find(w=>w.wardId===wardId);
+  if(ward&&handle.name)ward.lastSavedFileName=handle.name;
   _wardZipHandles.set(wardId,handle);
   await savePersistedWardZipHandle(wardId,handle);
   await refreshAutoSaveArmedStatus();
 }
+
+// The name to default a Save-As dialog (or the auto-save status readout) to
+// for this ward. Prefers the name it was ACTUALLY last saved under
+// (lastSavedFileName, stamped by rememberWardZipHandle whenever a handle is
+// associated) over recomputing one fresh from the ward's current name/case
+// number: wardName/caseNumber can change after the first save (filled in
+// later, corrected, etc.), and getWardFileName() has no memory of history --
+// it will confidently suggest a name that doesn't match the file already on
+// disk, which is exactly how a ward ends up split across two files the
+// moment auto-save needs re-arming and the user doesn't notice the mismatch.
+// Only falls back to the fresh computation for a ward that has never been
+// saved under any handle yet.
+function suggestedWardFileName(ward){
+  return (ward&&ward.lastSavedFileName)||getWardFileName(ward);
+}
+window.suggestedWardFileName=suggestedWardFileName;
 
 // Non-blocking heads-up for the case above: two different physical files are
 // now both claiming to be this ward's save file, but only `newHandle` will
@@ -2907,7 +2930,7 @@ async function refreshAutoSaveArmedStatus(){
     }else if(window.showSaveFilePicker){
       if(activeWardId){
         const activeWard=getActiveWard();
-        const suggestedName=activeWard?getWardFileName(activeWard):'';
+        const suggestedName=activeWard?suggestedWardFileName(activeWard):'';
         el.textContent=suggestedName?`Auto-save: needs manual save (${suggestedName})`:'Auto-save: needs one manual save first';
       }else{
         el.textContent='Auto-save: no ward open';
@@ -3395,7 +3418,7 @@ async function finishWardExport(handle, ward){
   notifyProbateGuardianTabStateChanged();
   window.dispatchEvent(new CustomEvent('pg:backup-saved', {
     detail: {
-      fileName: handle ? handle.name : (ward ? getWardFileName(ward) : 'guardianshipwarddata.sav'),
+      fileName: handle ? handle.name : (ward ? suggestedWardFileName(ward) : 'guardianshipwarddata.sav'),
       wardId: ward && ward.wardId,
       kind: 'ward'
     }
@@ -3431,7 +3454,7 @@ async function saveBackupNow(){
     const wardName=activeWard.wardName||'ward';
     rollback=await beginRecordingExport(`Exported single ward "${wardName}" to ward file`, activeWard.wardId);
     const blob=await buildWardZipBlob(activeWard.wardId);
-    const fileName=getWardFileName(activeWard);
+    const fileName=suggestedWardFileName(activeWard);
     const handle=await saveBlobAs(blob,fileName,validateWardBackupOverwrite);
     await finishWardExport(handle, activeWard);
     alert(`Backup saved for ${activeWard.wardName||'this ward'}.`);

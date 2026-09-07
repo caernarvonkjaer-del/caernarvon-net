@@ -723,7 +723,9 @@ async function exportSingleWardZip(wardId) {
       rollback = await window.beginRecordingExport(`Exported single ward "${wardName}" to ward file`, wardId);
     }
     const blob = await window.buildWardZipBlob(wardId);
-    const fileName = typeof window.getWardFileName === 'function' ? window.getWardFileName(ward) : `${((ward.wardName || 'Ward').trim().replace(/[\s_]+/g, '-') || 'Ward')}-guardianshipwarddata.sav`;
+    const fileName = typeof window.suggestedWardFileName === 'function' ? window.suggestedWardFileName(ward)
+      : typeof window.getWardFileName === 'function' ? window.getWardFileName(ward)
+      : `${((ward.wardName || 'Ward').trim().replace(/[\s_]+/g, '-') || 'Ward')}-guardianshipwarddata.sav`;
     const validator = window.validateWardBackupOverwrite;
     if (typeof validator !== 'function') {
       throw new Error('validateWardBackupOverwrite is required but not available');
