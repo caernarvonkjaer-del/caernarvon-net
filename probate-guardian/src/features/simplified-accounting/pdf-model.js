@@ -1,6 +1,8 @@
 // Structured intermediate representation for Simplified Annual Accounting PDF generation.
 // Maps window.D into the unified, accessible court document model.
 
+import { yesNoText } from '../../core/form/form-contract.js';
+
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
@@ -65,7 +67,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     { label: 'Attorney for Guardian', value: d.attorney || '' },
     { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
     { label: 'County', value: county },
-    { label: 'Amended Form?', value: d.amendedForm ? 'Yes' : 'No' },
+    { label: 'Amended Form?', value: yesNoText(d.amendedForm) },
   ];
   if (d.gid) {
     caseInfoItems.push({ label: 'Guardianship Inception Date (GID)', value: fmtDate(d.gid) });

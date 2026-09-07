@@ -8,6 +8,32 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Read-side counterpart to the yes-no write contract below (writeDraftValue()/
+ * finalizeFieldValue(), which store the literal STRINGS 'Yes'/'No' for any
+ * control marked data-form-value="yes-no").
+ *
+ * Every such field is tri-state -- '' (never answered), 'Yes', or 'No' -- so
+ * a plain truthiness test is always wrong: 'No' is a non-empty string and
+ * therefore truthy. That exact mistake shipped in two PDF renderers
+ * (`d.amendedForm ? 'Yes' : 'No'`), which made every Annual and Simplified
+ * Accounting PDF print "Amended Form? Yes" in all three states, including
+ * the default. Render these fields through this helper rather than testing
+ * them directly.
+ *
+ * `blank` is what an unanswered field prints as; pass '' for a truly empty
+ * cell, or keep the 'No' default where the form treats "not answered" and
+ * "No" the same way on paper.
+ */
+export function yesNoText(value, blank = 'No') {
+  if (value === true) return 'Yes';
+  if (value === false) return 'No';
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (normalized === 'yes') return 'Yes';
+  if (normalized === 'no') return 'No';
+  return blank;
+}
+
+/**
  * Non-destructive storage sanitizer for identifier-like and free-form text.
  * Strips only unsafe control characters and trims leading/trailing whitespace.
  * Preserves quotes, apostrophes, dashes, slashes, uppercase/lowercase letters, and numbers.

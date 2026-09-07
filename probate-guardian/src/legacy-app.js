@@ -7329,12 +7329,6 @@ window.SCHEDULE_NAV_KEYS=SCHEDULE_NAV_KEYS;
 // A schedule's own "Next" button is disabled until computeNavChecks()
 // says that schedule is complete (a real row, or the "no items" checkbox).
 // afterChange() stays legacy in Milestone 8A and still needs this helper.
-function isScheduleIncomplete(route){
-  const key=route.startsWith('/')?route.slice(1):route;
-  if(!SCHEDULE_NAV_KEYS.includes(key))return false;
-  const r=computeNavChecks();
-  return !!(r&&!r.checks[key]);
-}
 // ═══════════════════════════════════════════════════════
 // FORM BINDING ENGINE
 // ═══════════════════════════════════════════════════════
@@ -7538,7 +7532,15 @@ function computeNavChecks(){
     const filled=v=>v!==''&&v!==null&&v!==undefined;
     const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip);
     const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
-    const rowsComplete=(rows,fields)=>(rows||[]).length>0&&(rows||[]).every(r=>rowHasAnyData(r)&&fields.every(f=>filled(r[f])));
+    // "I verify there are no X to report" (scheduleEmptyHTMLAnnual()) is an
+    // affirmative answer, not a blank -- an empty schedule the guardian has
+    // explicitly confirmed is complete, exactly as it already is for
+    // Guardian Inventory (whose validate() skips its empty-schedule error
+    // for a confirmed key). Without this, checking the box wrote state
+    // nothing read: the section could never go green and the filing could
+    // never reach 100%, with no way for the user to tell why.
+    const verifiedEmpty=k=>!!(D.scheduleNoItems&&D.scheduleNoItems[k]);
+    const rowsComplete=(rows,fields,noItemsKey)=>verifiedEmpty(noItemsKey)||((rows||[]).length>0&&(rows||[]).every(r=>rowHasAnyData(r)&&fields.every(f=>filled(r[f]))));
     const rowsStarted=(rows,fields)=>(rows||[]).some(r=>rowHasAnyData(r));
     const t=calcTotalsAnnual();
     const checks={
@@ -7552,21 +7554,21 @@ function computeNavChecks(){
       'a-p8':D.trusts.some(t=>t.name),
       'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany),
       'a-p10':filled(D.certDate)&&filled(D.certRecipients[0].name),
-      'a-p11':D.remuneration.some(r=>r.guardian||r.type||r.amount),
-      'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount']),
-      'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount']),
-      'a-schb2':rowsComplete(D.schB2,['bankAcct','checkNo','datePaid','payee','amount']),
-      'a-schb3':rowsComplete(D.schB3,['bankAcct','checkNo','datePaid','payee','amount']),
-      'a-schb4':rowsComplete(D.schB4,['checkNo','datePaid','category','payee','amount']),
-      'a-schc':(D.schC||[]).length>0&&(D.schC||[]).every(r=>rowHasAnyData(r)&&filled(r.description)&&filled(r.date)&&(filled(r.gain)||filled(r.loss))),
-      'a-schd1':rowsComplete(D.schD1,['description','accountNo','restricted','type','fullAmount','wardPct']),
-      'a-schd2':rowsComplete(D.schD2,['description','residence','income','fullValue','wardPct','carryingValue']),
-      'a-schd3':rowsComplete(D.schD3,['description','fullAmount','wardPct','carryingValue']),
-      'a-schd4':rowsComplete(D.schD4,['description','restricted','fullAmount','wardPct','carryingValue']),
-      'a-schd5':rowsComplete(D.schD5,['description','loanNo','loanType','fullDebt','wardPct']),
-      'a-sche':(D.schE||[]).length>0&&(D.schE||[]).every(r=>rowHasAnyData(r)&&filled(r.bankName)&&((filled(r.transferInDate)&&filled(r.transferInAmt))||(filled(r.transferOutDate)&&filled(r.transferOutAmt)))),
-      'a-schf1':rowsComplete(D.schF1,['description','bank','accountNo','courtOrderDate','salePrice']),
-      'a-schf2':rowsComplete(D.schF2,['description','bank','accountNo','courtOrderDate','salePrice']),
+      'a-p11':verifiedEmpty('remuneration')||D.remuneration.some(r=>r.guardian||r.type||r.amount),
+      'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount'],'scha'),
+      'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount'],'schb1'),
+      'a-schb2':rowsComplete(D.schB2,['bankAcct','checkNo','datePaid','payee','amount'],'schb2'),
+      'a-schb3':rowsComplete(D.schB3,['bankAcct','checkNo','datePaid','payee','amount'],'schb3'),
+      'a-schb4':rowsComplete(D.schB4,['checkNo','datePaid','category','payee','amount'],'schb4'),
+      'a-schc':verifiedEmpty('schc')||((D.schC||[]).length>0&&(D.schC||[]).every(r=>rowHasAnyData(r)&&filled(r.description)&&filled(r.date)&&(filled(r.gain)||filled(r.loss)))),
+      'a-schd1':rowsComplete(D.schD1,['description','accountNo','restricted','type','fullAmount','wardPct'],'schd1'),
+      'a-schd2':rowsComplete(D.schD2,['description','residence','income','fullValue','wardPct','carryingValue'],'schd2'),
+      'a-schd3':rowsComplete(D.schD3,['description','fullAmount','wardPct','carryingValue'],'schd3'),
+      'a-schd4':rowsComplete(D.schD4,['description','restricted','fullAmount','wardPct','carryingValue'],'schd4'),
+      'a-schd5':rowsComplete(D.schD5,['description','loanNo','loanType','fullDebt','wardPct'],'schd5'),
+      'a-sche':verifiedEmpty('sche')||((D.schE||[]).length>0&&(D.schE||[]).every(r=>rowHasAnyData(r)&&filled(r.bankName)&&((filled(r.transferInDate)&&filled(r.transferInAmt))||(filled(r.transferOutDate)&&filled(r.transferOutAmt))))),
+      'a-schf1':rowsComplete(D.schF1,['description','bank','accountNo','courtOrderDate','salePrice'],'schf1'),
+      'a-schf2':rowsComplete(D.schF2,['description','bank','accountNo','courtOrderDate','salePrice'],'schf2'),
     };
     const incomplete={
       'a-p1':!checks['a-p1'],

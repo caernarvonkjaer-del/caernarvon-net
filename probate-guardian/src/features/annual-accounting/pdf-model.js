@@ -2,6 +2,7 @@
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
+import { yesNoText } from '../../core/form/form-contract.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -80,7 +81,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
     { label: 'County', value: county },
     { label: 'Filing Type', value: d.filingType || 'Annual Accounting' },
-    { label: 'Amended Form?', value: d.amendedForm ? 'Yes' : 'No' },
+    { label: 'Amended Form?', value: yesNoText(d.amendedForm) },
   ];
   if (d.relatedCaseNumbers) {
     caseInfoItems.push({ label: 'Related Case Numbers', value: d.relatedCaseNumbers });

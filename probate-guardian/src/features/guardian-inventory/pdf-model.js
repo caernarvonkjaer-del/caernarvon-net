@@ -2,6 +2,8 @@
 // Single source of truth for section hierarchy, bookmark outlines, table structures,
 // metadata, reading order, and electronic signature formatting.
 
+import { yesNoText } from '../../core/form/form-contract.js';
+
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
@@ -125,7 +127,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
           { label: 'Attorney for Guardian', value: d.attorneyForGuardian || '' },
           { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
-          { label: 'Amended Form?', value: d.isAmended ? 'Yes' : 'No' },
+          { label: 'Amended Form?', value: yesNoText(d.isAmended) },
         ],
       },
       ...(d.witnesses && d.witnesses.length ? [{

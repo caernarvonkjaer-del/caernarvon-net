@@ -114,6 +114,34 @@ function setterPath(setter) {
   return match[1].replace(/^\./, '').replace(/\[(\d+)\]/g, '.$1');
 }
 
+/**
+ * Recomputes every schedule total currently on screen, so the figures at the
+ * bottom of a schedule page track the row the user is typing in instead of
+ * going stale until the next re-render.
+ *
+ * Declarative on purpose -- the same shape as Guardian Inventory's
+ * `[data-calcbind]`/updateCalcFields() pair. A total cell opts in by carrying
+ * `data-annual-total="<key>"` naming its key in calcTotalsAnnual()'s result,
+ * and nothing else has to be registered anywhere. This replaces a hardcoded
+ * `document.getElementById('schA_total')` refresh that left every schedule
+ * except A stale, and which no one would have thought to extend when adding
+ * a schedule.
+ *
+ * Cells whose displayed figure is an expression over several keys rather than
+ * one key (the Part IX bond worksheet's unrestricted-asset subtractions) are
+ * deliberately not tagged: they live on pages that have no editable inputs of
+ * their own, so they are always freshly rendered on arrival.
+ */
+function refreshAnnualTotals() {
+  const cells = document.querySelectorAll('[data-annual-total]');
+  if (!cells.length) return;
+  const t = calcTotalsAnnual();
+  cells.forEach((cell) => {
+    const key = cell.dataset.annualTotal;
+    if (key in t) cell.textContent = fmtAnnual(t[key]);
+  });
+}
+
 function persistAnnualControl(control, applyFormat = true) {
   const path = control.dataset.annualPath || control.dataset.fieldPath;
   if (!path) return;
@@ -147,11 +175,9 @@ function persistAnnualControl(control, applyFormat = true) {
   autoSave();
   updateNavDots();
   window.refreshWardInfoCard?.();
-  window.refreshWardInfoCard?.();
   if (control.dataset.syncWardName) syncActiveWardNameDisplay();
   if (control.dataset.syncGuardianName) syncGuardianNameDisplay();
-  const scheduleATotal = document.getElementById('schA_total');
-  if (scheduleATotal && path.startsWith('schA.')) scheduleATotal.textContent = fmtAnnual(calcTotalsAnnual().schA);
+  refreshAnnualTotals();
   // Party write-through (persistence-rewrite Milestone 4) -- see the matching
   // comment in src/form-events.js's persistFormControl(). Annual Accounting
   // binds its own inputs via data-annual-path instead of data-form-path, so
@@ -651,7 +677,7 @@ function pageSchAAnnual(){
         <div class="col-md-4">${inpD('Description',r.description,`D.schA[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Bank Name',r.bank,`D.schA[${i}].bank=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schA[${i}].accountNo=this.value`,true)}</div>
-        <div class="col-md-3">${inpD("Ward's Income Amount ",r.amount,`D.schA[${i}].amount=this.value;document.getElementById('schA_total').textContent=fmtAnnual(calcTotalsAnnual().schA)`,false,'number')}</div>
+        <div class="col-md-3">${inpD("Ward's Income Amount ",r.amount,`D.schA[${i}].amount=this.value`,false,'number')}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -662,7 +688,7 @@ function pageSchAAnnual(){
   <div class="schedule-instructions">Include all types of income such as SSI, Retirement, Disability benefits, interest or rental income. Do NOT include receipts from sale/disposal of principal assets (those go in Schedule C).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schA" data-route="/scha">+ Add Income Line</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule A Total — Income/Receipts Received During Period</div><div class="td" id="schA_total">${fmtAnnual(t.schA)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule A Total — Income/Receipts Received During Period</div><div class="td" data-annual-total="schA">${fmtAnnual(t.schA)}</div></div></div></div>
   ${renderScheduleDocsSection('schA')}
   ${pageNavAnnual('/p5','/schb1')}
   </div>`;
@@ -694,7 +720,7 @@ function pageSchB1Annual(){
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB1" data-route="/schb1">+ Add Entry</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-1 Total — Attorney Fees and Costs</div><div class="td">${fmtAnnual(t.schB1)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-1 Total — Attorney Fees and Costs</div><div class="td" data-annual-total="schB1">${fmtAnnual(t.schB1)}</div></div></div></div>
   ${renderScheduleDocsSection('schB1')}
   ${pageNavAnnual('/scha','/schb2')}
   </div>`;
@@ -726,7 +752,7 @@ function pageSchB2Annual(){
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB2" data-route="/schb2">+ Add Entry</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-2 Total — Guardian Fees and Costs</div><div class="td">${fmtAnnual(t.schB2)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-2 Total — Guardian Fees and Costs</div><div class="td" data-annual-total="schB2">${fmtAnnual(t.schB2)}</div></div></div></div>
   ${renderScheduleDocsSection('schB2')}
   ${pageNavAnnual('/schb1','/schb3')}
   </div>`;
@@ -756,7 +782,7 @@ function pageSchB3Annual(){
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB3" data-route="/schb3">+ Add Entry</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-3 Total — Other Court-Ordered Disbursements</div><div class="td">${fmtAnnual(t.schB3)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-3 Total — Other Court-Ordered Disbursements</div><div class="td" data-annual-total="schB3">${fmtAnnual(t.schB3)}</div></div></div></div>
   ${renderScheduleDocsSection('schB3')}
   ${pageNavAnnual('/schb2','/schb4')}
   </div>`;
@@ -793,7 +819,7 @@ function pageSchB4Annual(){
   <div class="schedule-instructions">Receipts, checks, and substantiating papers need not be filed with the court but shall be made available for inspection. List disbursements in check number order. If category is "Other," provide details in payee field.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB4" data-route="/schb4">+ Add Entry</button>
-  <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td">${fmtAnnual(t.schB4)}</div></div></div></div>
+  <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td" data-annual-total="schB4">${fmtAnnual(t.schB4)}</div></div></div></div>
   <div class="summary-box"><h2 class="subsection-heading">Category Summary</h2>${catSummary}</div>
   ${renderScheduleDocsSection('schB4')}
   ${pageNavAnnual('/schb3','/schc')}
@@ -823,9 +849,9 @@ function pageSchCAnnual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schC" data-route="/schc">+ Add Entry</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Total Gains / Additions</div><div class="td">${fmtAnnual(t.schC_gains)}</div></div>
-    <div class="tr"><div class="td">Total Losses / Reductions</div><div class="td">${fmtAnnual(t.schC_losses)}</div></div>
-    <div class="tr"><div class="td"><strong>Net Capital Adjustments</strong></div><div class="td"><strong>${fmtAnnual(t.schC_net)}</strong></div></div>
+    <div class="tr"><div class="td">Total Gains / Additions</div><div class="td" data-annual-total="schC_gains">${fmtAnnual(t.schC_gains)}</div></div>
+    <div class="tr"><div class="td">Total Losses / Reductions</div><div class="td" data-annual-total="schC_losses">${fmtAnnual(t.schC_losses)}</div></div>
+    <div class="tr"><div class="td"><strong>Net Capital Adjustments</strong></div><div class="td"><strong data-annual-total="schC_net">${fmtAnnual(t.schC_net)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schC')}
   ${pageNavAnnual('/schb4','/schd1')}
@@ -861,8 +887,8 @@ function pageSchD1Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD1" data-route="/schd1">+ Add Account</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Cash Assets in Restricted Depository</div><div class="td">${fmtAnnual(t.schD1_restricted)}</div></div>
-    <div class="tr"><div class="td"><strong>Total Cash Assets (Ward's Amount)</strong></div><div class="td"><strong>${fmtAnnual(t.schD1_total)}</strong></div></div>
+    <div class="tr"><div class="td">Cash Assets in Restricted Depository</div><div class="td" data-annual-total="schD1_restricted">${fmtAnnual(t.schD1_restricted)}</div></div>
+    <div class="tr"><div class="td"><strong>Total Cash Assets (Ward's Amount)</strong></div><div class="td"><strong data-annual-total="schD1_total">${fmtAnnual(t.schD1_total)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD1')}
   ${pageNavAnnual('/schc','/schd2')}
@@ -898,8 +924,8 @@ function pageSchD2Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD2" data-route="/schd2">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Carrying Value Total</div><div class="td">${fmtAnnual(t.schD2_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong>${fmtAnnual(t.schD2_ward)}</strong></div></div>
+    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD2_carrying">${fmtAnnual(t.schD2_carrying)}</div></div>
+    <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtAnnual(t.schD2_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD2')}
   ${pageNavAnnual('/schd1','/schd3')}
@@ -933,8 +959,8 @@ function pageSchD3Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD3" data-route="/schd3">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Carrying Value Total</div><div class="td">${fmtAnnual(t.schD3_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Ward's Amount Total</strong></div><div class="td"><strong>${fmtAnnual(t.schD3_ward)}</strong></div></div>
+    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD3_carrying">${fmtAnnual(t.schD3_carrying)}</div></div>
+    <div class="tr"><div class="td"><strong>Ward's Amount Total</strong></div><div class="td"><strong data-annual-total="schD3_ward">${fmtAnnual(t.schD3_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD3')}
   ${pageNavAnnual('/schd2','/schd4')}
@@ -969,9 +995,9 @@ function pageSchD4Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD4" data-route="/schd4">+ Add Asset</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td">${fmtAnnual(t.schD4_restricted)}</div></div>
-    <div class="tr"><div class="td">Carrying Value Total</div><div class="td">${fmtAnnual(t.schD4_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong>${fmtAnnual(t.schD4_ward)}</strong></div></div>
+    <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td" data-annual-total="schD4_restricted">${fmtAnnual(t.schD4_restricted)}</div></div>
+    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD4_carrying">${fmtAnnual(t.schD4_carrying)}</div></div>
+    <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtAnnual(t.schD4_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD4')}
   ${pageNavAnnual('/schd3','/schd5')}
@@ -1005,7 +1031,7 @@ function pageSchD5Annual(){
   <div class="schedule-instructions">Include mortgages, second mortgages, judgment liens, tax liens, credit cards, vehicle loans, unpaid medical/facility bills, promissory notes. Type: M=Mortgage, N=Note, L=Loan, O=Other.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD5" data-route="/schd5">+ Add Liability</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td"><strong>Schedule D-5 Total — Ward's Balance Due</strong></div><div class="td"><strong>${fmtAnnual(t.schD5_total)}</strong></div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td"><strong>Schedule D-5 Total — Ward's Balance Due</strong></div><div class="td"><strong data-annual-total="schD5_total">${fmtAnnual(t.schD5_total)}</strong></div></div></div></div>
   ${renderScheduleDocsSection('schD5')}
   ${pageNavAnnual('/schd4','/sche')}
   </div>`;

@@ -5,6 +5,7 @@ import {
   formatSafeTitleCase,
   writeDraftValue,
   finalizeFieldValue,
+  yesNoText,
 } from '../../src/core/form/form-contract.js';
 
 function createMockInput(initial = {}) {
@@ -128,6 +129,43 @@ describe('form-contract', () => {
       finalizeFieldValue(input);
       expect(window.D.caseNumber).toBe('25-002487-GD');
       expect(input.value).toBe('25-002487-GD');
+    });
+  });
+
+  describe('yesNoText (read side of the yes-no contract)', () => {
+    it('round-trips the strings the write side actually stores', () => {
+      // writeDraftValue()/finalizeFieldValue() store these literals for any
+      // control marked data-form-value="yes-no".
+      expect(yesNoText('Yes')).toBe('Yes');
+      expect(yesNoText('No')).toBe('No');
+    });
+
+    it("reports 'No' for a field the filer never answered", () => {
+      // The bug this exists to prevent: 'No' is a truthy non-empty string, so
+      // `d.amendedForm ? 'Yes' : 'No'` printed "Yes" in all three states.
+      expect(yesNoText('')).toBe('No');
+      expect(yesNoText(undefined)).toBe('No');
+      expect(yesNoText(null)).toBe('No');
+    });
+
+    it('accepts real booleans from forms that store them that way', () => {
+      expect(yesNoText(true)).toBe('Yes');
+      expect(yesNoText(false)).toBe('No');
+    });
+
+    it('tolerates casing and stray whitespace from imported files', () => {
+      expect(yesNoText('  yes ')).toBe('Yes');
+      expect(yesNoText('NO')).toBe('No');
+    });
+
+    it('leaves an unanswered field blank when the caller asks for that', () => {
+      expect(yesNoText('', '')).toBe('');
+      expect(yesNoText('Yes', '')).toBe('Yes');
+    });
+
+    it('falls back to the blank value for unrecognized junk', () => {
+      expect(yesNoText('maybe')).toBe('No');
+      expect(yesNoText(0)).toBe('No');
     });
   });
 });
