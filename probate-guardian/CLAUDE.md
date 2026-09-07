@@ -1,5 +1,15 @@
 # Claude Handoff Notes
 
+## Git: work on master, do not create branches
+
+Commit and push directly to `master`. Do not create feature branches for
+this project, and do not stage work on a branch "pending approval" to merge
+later — that just adds a merge step the user has to ask for.
+
+`master` is what deploys to caernarvon.net, so the bar for committing is a
+green suite, not a branch: run `npm test` (unit + e2e) and only commit once
+it passes.
+
 ## Local Playwright Chromium Path
 
 This Windows machine has Playwright's bundled Chromium browser installed at:
