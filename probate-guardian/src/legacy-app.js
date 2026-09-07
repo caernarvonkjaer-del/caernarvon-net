@@ -8124,7 +8124,13 @@ function computeNavChecks(){
                  D.q7SupplementalIns,D.q7Pension,D.q7Medicare,D.q7Medicaid,D.q7Va,D.q7Trusts,
                  D.q7PendingBenefits,D.q7Other)||filled(D.q7Explain))
         &&(!D.q7Other||filled(D.q7Explain)),
-      'pi-p5':provs.every(r=>filled(r.name)),
+      // Unlike pa-p5's Annual Plan (see its comment), the Initial Plan's
+      // Examining Providers exists because an examination already happened
+      // to establish the guardianship -- an empty table isn't a valid
+      // answer here, and a brand-new ward starts with exactly one blank row
+      // (see emptyInitialProvider()), which .every() on its own would call
+      // complete before anything is filled in.
+      'pi-p5':provs.length>0&&provs.every(r=>filled(r.name)),
       'pi-p6':INITIAL_ADLS.every(([k])=>filled(adls[k])),
       'pi-p7':anyOf(D.mentalAlzheimers,D.mentalAutism,D.mentalClosedHeadInjury,D.mentalDementia,
                     D.mentalDepression,D.mentalDevelopmental,D.mentalSubstance,D.mentalSchizophrenia,D.mentalOther)
@@ -8168,7 +8174,9 @@ function computeNavChecks(){
       'pm-cover':filled(D.wardName)&&filled(D.county)&&filled(D.periodFrom)&&filled(D.periodTo)
         &&filled(D.guardianName)&&filled(D.q1ResidenceName)&&filled(D.q1Street),
       'pm-p2':true,
-      'pm-p3':provs.every(r=>filled(r.last)),
+      // Same fix as pi-p5 above: an empty table shouldn't read as complete
+      // before any provider has actually been entered.
+      'pm-p3':provs.length>0&&provs.every(r=>filled(r.last)),
       'pm-p4':anyOf(D.q4Primary,D.q4Dentist,D.q4Specialist,D.q4PT,D.q4ST,D.q4OT,D.q4MinorDecides,D.q4Other)
         &&(!D.q4Other||filled(D.q4Explain)),
       'pm-p5':filled(D.q5SchoolProgress)&&filled(D.q5SocialDevelopment)&&filled(D.q5Communicates)&&filled(D.q5Interpersonal)
