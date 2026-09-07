@@ -3244,7 +3244,25 @@ function setupFallbackSaveReminder(){
   },15*60*1000);
 }
 
-function triggerImportZip(){
+// Tries showOpenFilePicker() first so opening a case file this way arms a
+// writable save handle (same as triggerOpenBackupSav()) -- without this,
+// autoSave() has nothing to write to, and the first edit after opening
+// forces an unexpected manual "Save As" with a freshly-generated filename
+// instead of the file that was actually opened.
+async function triggerImportZip(){
+  if(window.showOpenFilePicker){
+    try{
+      const [handle]=await window.showOpenFilePicker({
+        types:[{description:'Probate Guardian case file (.sav)',accept:{'application/octet-stream':['.sav','.zip']}}]
+      });
+      const file=await handle.getFile();
+      await importSavArchiveOrWard(file,{handle,isBackupFlow:false});
+      return;
+    }catch(e){
+      if(e&&e.name==='AbortError')return;
+      console.warn('showOpenFilePicker failed or cancelled, falling back to input',e);
+    }
+  }
   const inp=document.getElementById('zip-import-input');
   if(inp){inp.value='';inp.click();}
 }

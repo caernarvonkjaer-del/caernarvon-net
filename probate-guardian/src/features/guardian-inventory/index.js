@@ -848,7 +848,11 @@ function pageScheduleC5(){
 // ATTESTATION & FILING PAGES (D1–D5)
 // ═══════════════════════════════════════════════════════
 function pageD1(){
-  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===visiblePendingGuardianIndex||[
+  // Guardian #1 (index 0) is required and always shown, matching
+  // normalizeGuardians()'s own always-keep-index-0 rule -- without this,
+  // a brand-new filing with no guardian data typed in yet renders zero
+  // cards here, with no way to even see the required Guardian #1 fields.
+  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===0||i===visiblePendingGuardianIndex||[
     g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip
   ].some(value=>String(value||'').trim()));
   const cards=partyRecords.map(({g,i},visibleIndex)=>{

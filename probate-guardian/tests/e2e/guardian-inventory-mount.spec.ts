@@ -38,6 +38,14 @@ test.describe('guardian-inventory feature module', () => {
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('[data-inventory-action="save-pdf"]')).toBeVisible();
   });
+  test('Guardian #1\'s attestation card renders on /d1 for a brand-new filing with no guardian data typed in yet', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Fresh Guardian Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/d1'));
+
+    await expect(page.locator('.entry-card-header', { hasText: 'Guardian #1' })).toBeVisible();
+    await expect(page.locator('[data-bind="guardians.0.name"]')).toBeVisible();
+  });
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));

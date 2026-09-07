@@ -717,4 +717,39 @@ test.describe('unified case file', () => {
       await context.close();
     }
   });
+
+  test('triggerImportZip (the sidebar\'s "Open Data File" button) arms a writable case-file handle via showOpenFilePicker', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Open Data File Test Ward');
+
+      const result = await page.evaluate(async () => {
+        const w = window as any;
+        const { blob } = await w.buildCaseFileBlob();
+        const openHandle = {
+          name: 'opened-case.sav',
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          isSameEntry: async (other: any) => other && other.name === 'opened-case.sav',
+          getFile: async () => new File([blob], 'opened-case.sav', { type: 'application/octet-stream' }),
+          createWritable: async () => ({ write: async () => {}, close: async () => {} }),
+        };
+        w.showOpenFilePicker = async () => [openHandle];
+        w.confirm = () => true; // "replace the existing ward(s)?" prompt inside importSavArchiveOrWard()
+
+        await w.triggerImportZip();
+
+        const armed = await w.loadCaseFileHandle();
+        return { armedName: armed?.name };
+      });
+
+      expect(result.armedName).toBe('opened-case.sav');
+    } finally {
+      await context.close();
+    }
+  });
 });
