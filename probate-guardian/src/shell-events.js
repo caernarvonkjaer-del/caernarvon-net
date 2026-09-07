@@ -24,6 +24,7 @@ function handleShellClick(event) {
     case 'new-form': window.collapseWardControls?.(); window.navigate('/inventory-select'); break;
     case 'next-walkthrough': window.nextWalkthroughStep(); break;
     case 'open-backup-sav': window.collapseSaveControls?.(); window.triggerOpenBackupSav?.(); break;
+    case 'party-management': window.toggleHelpPanel(); window.navigate('/party-management'); break;
     case 'rename-ward': window.collapseWardControls?.(); window.showRenameWardModal(); break;
     case 'save-backup': window.collapseSaveControls?.(); window.saveBackupNow(); break;
     case 'skip-walkthrough': window.skipWalkthrough(); break;

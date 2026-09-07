@@ -55,6 +55,8 @@ document.addEventListener('click', (event) => {
     case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
+    case 'party-dismiss-pair': window.doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
+    case 'party-merge-keep': window.doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
     case 'print': window.printCurrentFilingPdf(); break;
     case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
@@ -75,6 +77,7 @@ document.addEventListener('input', (event) => {
   persistFormControl(control);
   if (control.dataset.formControl === 'county') window.filterCountyDropdown(control);
   if (control.dataset.formInput === 'activity-log') window.renderActivityLogList();
+  if (control.dataset.formInput === 'party-directory') window.renderPartyDirectoryRows();
   if (control.dataset.formInput === 'schedule-comment') window.updateScheduleComment(control.dataset.scheduleKey, control.value);
 });
 

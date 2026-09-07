@@ -328,3 +328,172 @@ test.describe('party-resolver (unwired hydration/dehydration core)', () => {
     expect(result.stillRobAtty).toBe('Rob Atty');
   });
 });
+
+// Party de-duplication (persistence-rewrite Milestone 7) -- findDuplicateCandidates(),
+// dismissPartyPair()/isPartyPairDismissed(), mergeParties(), and
+// referenceCountForParty(), all in src/core/party-resolver.js. Direct-logic
+// tests against hand-built parties/wards/cases, mirroring this file's own
+// style above; the real-UI proof lives in tests/e2e/party-dedupe.spec.ts.
+test.describe('party de-duplication (Milestone 7)', () => {
+  test('findDuplicateCandidates matches on exact case-insensitive name, flags strongMatch on shared contact info, and excludes dismissed pairs', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const nameOnly = w.createParty('guardian');
+      nameOnly.name = 'Jane Doe';
+      const nameOnlyDup = w.createParty('guardian');
+      nameOnlyDup.name = 'jane doe'; // case-insensitive match
+      const strong = w.createParty('attorney');
+      strong.name = 'Robert Atty';
+      strong.phone = '555-0100';
+      const strongDup = w.createParty('attorney');
+      strongDup.name = 'Robert Atty';
+      strongDup.phone = '555-0100';
+      const noMatch = w.createParty('preparer');
+      noMatch.name = 'Someone Else';
+
+      const before = w.findDuplicateCandidates();
+      w.dismissPartyPair(nameOnly.id, nameOnlyDup.id);
+      const after = w.findDuplicateCandidates();
+
+      return {
+        beforeCount: before.length,
+        afterCount: after.length,
+        strongPair: after.find((c: any) => [c.partyA.id, c.partyB.id].includes(strong.id)),
+        cfPartyCount: cf.parties.length,
+      };
+    });
+
+    expect(result.beforeCount).toBe(2); // nameOnly/nameOnlyDup, strong/strongDup
+    expect(result.afterCount).toBe(1); // the dismissed pair no longer surfaces
+    expect(result.strongPair.strongMatch).toBe(true);
+    expect(result.cfPartyCount).toBe(5);
+  });
+
+  test('isPartyPairDismissed is order-independent', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      w.dismissPartyPair('id-a', 'id-b');
+      return {
+        forward: w.isPartyPairDismissed('id-a', 'id-b'),
+        reverse: w.isPartyPairDismissed('id-b', 'id-a'),
+        unrelated: w.isPartyPairDismissed('id-a', 'id-c'),
+      };
+    });
+
+    expect(result.forward).toBe(true);
+    expect(result.reverse).toBe(true);
+    expect(result.unrelated).toBe(false);
+  });
+
+  test('mergeParties repoints every FK across multiple wards and a case, unions roles, and tombstones the discarded party', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const keep = w.createParty('guardian');
+      keep.name = 'Jane Doe';
+      keep.phone = '555-0100';
+      const discard = w.createParty('attorney'); // different role -- must union onto keep
+      discard.name = 'Jane Doe';
+      discard.email = 'jane@example.com'; // keep has none -- adoptable
+
+      const wardA: any = { wardId: 'a', inventoryType: 'guardian', guardianPartyIds: [discard.id], attorney: {} };
+      const wardB: any = { wardId: 'b', inventoryType: 'annual', guardianPartyIds: [null, discard.id], attorney_bar: '', attorney: '' };
+      const kase = w.createCase({ caseNumber: '24-1', county: 'Pinellas' });
+      kase.wardPartyId = discard.id;
+      cf.wards.push(wardA, wardB);
+
+      const refCountBefore = w.referenceCountForParty(discard.id);
+      const merged = w.mergeParties(keep.id, discard.id, { adoptBlankFields: true });
+
+      return {
+        merged,
+        keepId: keep.id,
+        refCountBefore,
+        refCountAfterDiscard: w.referenceCountForParty(discard.id),
+        refCountAfterKeep: w.referenceCountForParty(keep.id),
+        wardAPartyId: wardA.guardianPartyIds[0],
+        wardBPartyId: wardB.guardianPartyIds[1],
+        wardAGuardianName: wardA.guardians?.[0]?.name, // re-hydrated immediately, not "on next sync"
+        caseWardPartyId: kase.wardPartyId,
+        discardTombstone: discard.mergedInto,
+        keepRoles: keep.roles.slice().sort(),
+        keepEmail: keep.email,
+        keepPhone: keep.phone, // must be untouched -- keep's own value never overwritten
+      };
+    });
+
+    expect(result.merged).toBe(true);
+    expect(result.refCountBefore).toBe(3); // wardA guardian slot + wardB guardian slot + the case
+    expect(result.refCountAfterDiscard).toBe(0);
+    expect(result.refCountAfterKeep).toBe(3);
+    expect(result.wardAPartyId).toBe(result.keepId);
+    expect(result.wardBPartyId).toBe(result.keepId);
+    expect(result.caseWardPartyId).toBe(result.keepId);
+    expect(result.discardTombstone).toBe(result.keepId);
+    expect(result.keepRoles).toEqual(['attorney', 'guardian']);
+    expect(result.keepEmail).toBe('jane@example.com');
+    expect(result.keepPhone).toBe('555-0100');
+    expect(result.wardAGuardianName).toBe('Jane Doe');
+  });
+
+  test('mergeParties never overwrites a field keep already has, and adoptBlankFields:false skips backfill entirely', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const keep = w.createParty('guardian');
+      keep.name = 'Jane Doe';
+      keep.phone = '555-0100';
+      const discard = w.createParty('guardian');
+      discard.name = 'Jane Doe';
+      discard.phone = '555-9999'; // conflicting -- keep's own value wins, no prompt needed
+      discard.notes = 'some note';
+
+      w.mergeParties(keep.id, discard.id, { adoptBlankFields: false });
+
+      return { phone: keep.phone, notes: keep.notes };
+    });
+
+    expect(result.phone).toBe('555-0100');
+    expect(result.notes).toBeFalsy();
+  });
+
+  test('dismissedPartyPairs and a merged party\'s mergedInto tombstone survive a save/reload round-trip', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(async () => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const keep = w.createParty('guardian');
+      keep.name = 'Jane Doe';
+      const discard = w.createParty('guardian');
+      discard.name = 'John Smith'; // dismissed as "not the same person" below, not merged
+      const mergedAway = w.createParty('guardian');
+      mergedAway.name = 'Jane Doe';
+      w.mergeParties(keep.id, mergedAway.id, { adoptBlankFields: false });
+      w.dismissPartyPair(keep.id, discard.id);
+
+      const { blob } = await w.buildCaseFileBlob();
+      const zip = await w.JSZip.loadAsync(blob);
+      const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
+      await w.loadCaseFileFromZip(zip, manifest, null); // 'none' security mode -- no password needed
+
+      return {
+        partyCount: cf.parties.length,
+        mergedAwayTombstone: cf.parties.find((p: any) => p.id === mergedAway.id)?.mergedInto,
+        stillDismissed: w.isPartyPairDismissed(keep.id, discard.id),
+      };
+    });
+
+    expect(result.partyCount).toBe(3);
+    expect(result.mergedAwayTombstone).toBeTruthy();
+    expect(result.stillDismissed).toBe(true);
+  });
+});

@@ -340,6 +340,128 @@ export function syncIdentityField(filing, role, index = 0) {
   if (window.markDirtySinceExport) window.markDirtySinceExport();
 }
 
+// ── Party de-duplication (Milestone 7) ─────────────────────────────────────
+// Canonical fields a merge/comparison cares about, matching Party's own
+// nested shape (see createParty() above) rather than the flat shape
+// readRoleFields()/writeRoleFields() use -- there's no filing involved here.
+const PARTY_COMPARE_FIELDS = ['name', 'phone', 'email', 'secondaryEmail', 'notes'];
+
+function partyPairKey(idA, idB) {
+  return [idA, idB].sort().join('::');
+}
+
+/** True if this exact pair (either order) has been dismissed as "not the same person." */
+export function isPartyPairDismissed(idA, idB) {
+  const caseFile = window.caseFile;
+  const pairs = (caseFile && caseFile.dismissedPartyPairs) || [];
+  const key = partyPairKey(idA, idB);
+  return pairs.some(pair => Array.isArray(pair) && partyPairKey(pair[0], pair[1]) === key);
+}
+
+/** Remembers a pair as "not the same person" so it stops surfacing in the review queue. */
+export function dismissPartyPair(idA, idB) {
+  const caseFile = window.caseFile;
+  if (!caseFile) return;
+  if (!Array.isArray(caseFile.dismissedPartyPairs)) caseFile.dismissedPartyPairs = [];
+  if (!isPartyPairDismissed(idA, idB)) caseFile.dismissedPartyPairs.push([idA, idB].sort());
+}
+
+/**
+ * Candidate duplicate pairs: non-merged parties sharing an exact,
+ * case-insensitive, trimmed, non-empty name -- the same rule
+ * refreshCarrySourceSelect() already uses for wards (legacy-app.js). Pairs
+ * already dismissed are excluded. `strongMatch` is a prioritization signal
+ * only (a shared phone/email/taxId/barNumber on top of the name match), not
+ * a separate detection path -- see this file's persistence-rewrite plan §6.
+ */
+export function findDuplicateCandidates() {
+  const caseFile = window.caseFile;
+  const parties = ((caseFile && caseFile.parties) || []).filter(p => !p.mergedInto && String(p.name || '').trim());
+  const byName = new Map();
+  for (const party of parties) {
+    const key = party.name.trim().toLowerCase();
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(party);
+  }
+  const candidates = [];
+  for (const group of byName.values()) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const [a, b] = [group[i], group[j]];
+        if (isPartyPairDismissed(a.id, b.id)) continue;
+        const strongMatch = ['phone', 'email'].some(f => a[f] && b[f] && a[f] === b[f])
+          || ['taxId', 'barNumber'].some(f => a.identifiers?.[f] && b.identifiers?.[f] && a.identifiers[f] === b.identifiers[f]);
+        candidates.push({ partyA: a, partyB: b, strongMatch });
+      }
+    }
+  }
+  return candidates;
+}
+
+/** How many filing/case slots currently reference this party -- powers the directory's reference count. */
+export function referenceCountForParty(partyId) {
+  const caseFile = window.caseFile;
+  if (!caseFile || !partyId) return 0;
+  let count = 0;
+  for (const ward of caseFile.wards || []) count += slotsReferencing(ward, partyId).length;
+  for (const kase of caseFile.cases || []) if (kase.wardPartyId === partyId) count++;
+  return count;
+}
+
+/**
+ * Merges discardId into keepId: repoints every filing/case FK, unions
+ * roles, optionally backfills fields blank on keep from discard (never the
+ * reverse -- keep's own values are never overwritten), tombstones discard
+ * (mergedInto), and re-hydrates every filing now pointing at keep so the
+ * merge is visible immediately rather than waiting for the next edit.
+ * Does not call autoSave() -- same convention as syncIdentityField(), the
+ * caller (doMergeParties() in legacy-app.js) already does.
+ */
+export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {}) {
+  const keep = resolveParty(keepId);
+  const discard = resolveParty(discardId);
+  if (!keep || !discard || keep === discard) return false;
+
+  if (adoptBlankFields) {
+    for (const field of PARTY_COMPARE_FIELDS) {
+      if (!keep[field] && discard[field]) keep[field] = discard[field];
+    }
+    for (const field of ['taxId', 'barNumber']) {
+      keep.identifiers = keep.identifiers || { taxId: null, barNumber: null };
+      if (!keep.identifiers[field] && discard.identifiers?.[field]) keep.identifiers[field] = discard.identifiers[field];
+    }
+    for (const field of ['street', 'cityStateZip']) {
+      if (discard.address?.[field] && !keep.address?.[field]) {
+        keep.address = keep.address || { street: '', cityStateZip: '' };
+        keep.address[field] = discard.address[field];
+      }
+      if (discard.officeAddress?.[field] && !keep.officeAddress?.[field]) {
+        keep.officeAddress = keep.officeAddress || { street: '', cityStateZip: '' };
+        keep.officeAddress[field] = discard.officeAddress[field];
+      }
+    }
+  }
+
+  keep.roles = [...new Set([...(keep.roles || []), ...(discard.roles || [])])];
+
+  const caseFile = window.caseFile;
+  for (const ward of (caseFile && caseFile.wards) || []) {
+    for (const slot of slotsReferencing(ward, discardId)) {
+      setPartyIdForSlot(ward, slot.role, slot.index, keepId);
+      hydrateFromParty(keep, ward, slot.role, slot.index);
+    }
+  }
+  for (const kase of (caseFile && caseFile.cases) || []) {
+    if (kase.wardPartyId === discardId) kase.wardPartyId = keepId;
+  }
+
+  const now = new Date().toISOString();
+  discard.mergedInto = keepId;
+  discard.updatedAt = now;
+  keep.updatedAt = now;
+  return true;
+}
+
 // Bridged onto window for legacy-app.js (classic script) and for e2e tests
 // to call directly -- see this file's header comment.
 window.resolveParty = resolveParty;
@@ -353,3 +475,8 @@ window.getPartyIdForSlot = getPartyIdForSlot;
 window.setPartyIdForSlot = setPartyIdForSlot;
 window.slotsReferencing = slotsReferencing;
 window.syncIdentityField = syncIdentityField;
+window.isPartyPairDismissed = isPartyPairDismissed;
+window.dismissPartyPair = dismissPartyPair;
+window.findDuplicateCandidates = findDuplicateCandidates;
+window.referenceCountForParty = referenceCountForParty;
+window.mergeParties = mergeParties;

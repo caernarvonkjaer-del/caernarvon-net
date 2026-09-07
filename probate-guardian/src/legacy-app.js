@@ -160,15 +160,18 @@ function formDisplayName(type){
   return (INVENTORY_TYPES[type] && INVENTORY_TYPES[type].name) || 'Accounting';
 }
 
-// Case-level data structure. `parties` is unused so far -- reserved for the
-// shared party-record model (a later phase); every identity field still
-// lives inline on each ward for now, exactly as it always has.
+// Case-level data structure. `parties` is the shared party-record model
+// (src/core/party-resolver.js); `cases` groups filings by real-world matter
+// (src/core/case-resolver.js); `dismissedPartyPairs` remembers "not the same
+// person" decisions from the de-dup screen (pagePartyManagement()) so they
+// don't resurface every time it's opened.
 let caseFile = {
   guardianName: '',
   guardianEmail: '',
   wards: [],
   parties: [],
   cases: [],
+  dismissedPartyPairs: [],
   activeWardId: null
 };
 window.caseFile = caseFile;
@@ -2176,7 +2179,7 @@ async function lockApp(){
   if (window.releaseWardLock) await window.releaseWardLock();
   const handleToReload=await loadCaseFileHandle();
   _cryptoKey=null;
-  caseFile={guardianName:'',guardianEmail:'',wards:[],parties:[],cases:[],activeWardId:null};
+  caseFile={guardianName:'',guardianEmail:'',wards:[],parties:[],cases:[],dismissedPartyPairs:[],activeWardId:null};
   window.caseFile=caseFile;
   window.D={};
   activeInventoryType=null;
@@ -2332,6 +2335,7 @@ const ACTIVITY_EVENT_META={
   UNLOCK_LOCKOUT:   {label:'Locked out after repeated failures', iconName:'lock'},
   DATA_EXPORT:      {label:'Backup saved',             iconName:'download'},
   DATA_IMPORT:      {label:'Backup restored',          iconName:'upload'},
+  PARTY_MERGE:      {label:'Shared record merged',     iconName:'swap'},
 };
 let _activityLogEntries=[]; // newest-first, loaded once per page visit
 const ACTIVITY_LOG_RENDER_CAP=300; // safety cap on DOM rows, not on what's exported
@@ -2473,6 +2477,123 @@ function pageActivityLog(){
     <div class="activity-log-count" id="activity-log-count"></div>
     <div id="activity-log-rows" class="activity-log-rows"><div class="dashboard-empty-inline">Loading…</div></div>
   </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)
+// Follows pageActivityLog()'s own pattern immediately above: a static shell
+// rendered once by renderPage(), a body-refresh function called after every
+// action, and the existing global data-form-action/data-form-input dispatch
+// (src/form-events.js) -- no new event-dispatch convention needed. The
+// underlying logic (candidate detection, merge, dismissal) lives in
+// src/core/party-resolver.js, bridged onto window the same way
+// case-resolver.js's Case functions are.
+// ═══════════════════════════════════════════════════════
+const PARTY_FIELD_ROWS=[
+  ['name','Name'],
+  ['phone','Phone'],
+  ['email','Email'],
+  ['secondaryEmail','Secondary Email'],
+  ['identifiers.taxId','SSN/EIN/TIN'],
+  ['identifiers.barNumber','Bar Number'],
+  ['address.street','Street Address'],
+  ['address.cityStateZip','City/State/Zip'],
+  ['officeAddress.street','Office Street'],
+  ['officeAddress.cityStateZip','Office City/State/Zip'],
+  ['notes','Notes'],
+];
+function partyFieldValue(party,path){
+  return path.split('.').reduce((v,k)=>v&&v[k],party)||'';
+}
+function partyRoleBadgesHTML(party){
+  return (party.roles||[]).map(r=>`<span class="badge bg-secondary">${esc(r)}</span>`).join(' ');
+}
+function pagePartyManagement(){
+  return `<div class="schedule-page">
+    <h1>Manage Shared Records</h1>
+    <div class="schedule-instructions">Shared records (parties) hold one person's contact info for guardians, attorneys, and preparers, so it stays the same everywhere it's used. This screen surfaces records that look like the same person entered twice, and lets you search everything on file.</div>
+    <div id="party-dedupe-queue"></div>
+    <h2 class="subsection-heading" style="margin-top:1.5rem;">All Shared Records</h2>
+    <div class="mb-3"><label class="visually-hidden" for="party-directory-search">Search shared records by name</label><input type="text" id="party-directory-search" class="form-control form-control-sm" placeholder="Search by name…" autocomplete="off" data-form-input="party-directory"></div>
+    <div id="party-directory-rows"></div>
+  </div>`;
+}
+function renderPartyManagementBody(){
+  renderPartyDedupeQueue();
+  renderPartyDirectoryRows();
+}
+// Recomputed fresh on every call (page open, or after any merge/dismiss) --
+// candidates are cheap to derive and never cached, so the queue can never
+// go stale relative to caseFile.parties.
+function renderPartyDedupeQueue(){
+  const host=document.getElementById('party-dedupe-queue');
+  if(!host)return;
+  const candidates=window.findDuplicateCandidates();
+  if(!candidates.length){host.innerHTML='<div class="dashboard-empty-inline">No likely duplicates found.</div>';return;}
+  host.innerHTML=candidates.map(partyDedupeCardHTML).join('');
+}
+function partyDedupeCardHTML({partyA,partyB,strongMatch}){
+  const badge=strongMatch?'Same name and contact info':'Same name only';
+  const column=(party,other)=>`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    <div class="entry-card-header">${esc(party.name)||'(unnamed)'}</div>
+    <div class="entry-card-body">
+      <div class="mb-2">${partyRoleBadgesHTML(party)}</div>
+      ${PARTY_FIELD_ROWS.map(([path,label])=>{
+        const val=partyFieldValue(party,path);
+        const otherVal=partyFieldValue(other,path);
+        const differs=val!==otherVal;
+        return `<div class="row g-1 mb-1"><div class="col-5" style="font-size:.78rem;color:var(--ink-3);">${esc(label)}</div><div class="col-7" style="font-size:.85rem;${differs?'font-weight:700;color:var(--danger-text);':''}">${esc(val)||'—'}</div></div>`;
+      }).join('')}
+      <button type="button" class="btn btn-sm btn-primary mt-2 w-100" data-form-action="party-merge-keep" data-keep-id="${esc(party.id)}" data-discard-id="${esc(other.id)}">Keep This One</button>
+    </div>
+  </div></div>`;
+  return `<div class="entry-card mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="badge ${strongMatch?'bg-danger':'bg-secondary'}">${esc(badge)}</span>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-form-action="party-dismiss-pair" data-party-a="${esc(partyA.id)}" data-party-b="${esc(partyB.id)}">Not the Same Person</button>
+    </div>
+    <div class="row g-3">${column(partyA,partyB)}${column(partyB,partyA)}</div>
+  </div>`;
+}
+function renderPartyDirectoryRows(){
+  const host=document.getElementById('party-directory-rows');
+  if(!host)return;
+  const q=(document.getElementById('party-directory-search')?.value||'').trim().toLowerCase();
+  const parties=(caseFile.parties||[]).filter(p=>!p.mergedInto&&(!q||String(p.name||'').toLowerCase().includes(q)));
+  if(!parties.length){host.innerHTML='<div class="dashboard-empty-inline">No shared records yet.</div>';return;}
+  host.innerHTML=parties.map(p=>{
+    const count=window.referenceCountForParty(p.id);
+    return `<div class="entry-card mb-2">
+    <div class="d-flex justify-content-between align-items-center">
+      <div><strong>${esc(p.name)||'(unnamed)'}</strong> ${partyRoleBadgesHTML(p)}</div>
+      <span style="font-size:.8rem;color:var(--ink-3);">${count} reference${count===1?'':'s'}</span>
+    </div>
+  </div>`;
+  }).join('');
+}
+// The confirm() message doubles as the "prompt per-field" step the
+// persistence-rewrite plan calls for: it lists every field that would be
+// backfilled onto the kept record from the discarded one (blank-on-keep,
+// present-on-discard) so nothing is adopted silently. Cancelling aborts the
+// whole merge -- there's no partial-adopt state to manage.
+async function doPartyMergeKeep(keepId,discardId){
+  const keep=window.resolveParty(keepId),discard=window.resolveParty(discardId);
+  if(!keep||!discard)return;
+  const adoptable=PARTY_FIELD_ROWS.filter(([path])=>!partyFieldValue(keep,path)&&partyFieldValue(discard,path));
+  let message=`Merge "${discard.name}" into "${keep.name}"?\n\nEvery filing and case referencing "${discard.name}" will be updated to reference "${keep.name}" instead. This cannot be undone from within the app.`;
+  if(adoptable.length){
+    message+=`\n\nAlso fill in these currently-blank fields on "${keep.name}" from "${discard.name}":\n`+adoptable.map(([path,label])=>`• ${label}: ${partyFieldValue(discard,path)}`).join('\n');
+  }
+  if(!confirm(message))return;
+  window.mergeParties(keepId,discardId,{adoptBlankFields:adoptable.length>0});
+  await auditLog('PARTY_MERGE',`Merged "${discard.name}" into "${keep.name}"`,true);
+  autoSave();
+  renderPartyManagementBody();
+}
+async function doPartyDismissPair(idA,idB){
+  window.dismissPartyPair(idA,idB);
+  autoSave();
+  renderPartyManagementBody();
 }
 
 async function autoSave(){
@@ -2795,6 +2916,7 @@ async function buildCaseFileBlob(){
   zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
   zip.file('parties.enc',await encryptJSON(caseFile.parties||[]));
   zip.file('cases.enc',await encryptJSON(caseFile.cases||[]));
+  zip.file('partyDismissals.enc',await encryptJSON(caseFile.dismissedPartyPairs||[]));
   zip.file('manifest.json',JSON.stringify({
     format:'probate-guardian-case',
     version:CASE_FILE_FORMAT_VERSION,
@@ -3194,6 +3316,14 @@ async function importSavArchiveOrWard(file, options = {}){
         if(Array.isArray(c))importedCases=c;
       }catch(e){console.warn('Could not read cases from imported file',e);}
     }
+    let importedPartyDismissals=[];
+    const importedPartyDismissalsFile=zip.file('partyDismissals.enc');
+    if(importedPartyDismissalsFile){
+      try{
+        const d=await decryptJSONWithKey(await importedPartyDismissalsFile.async('string'),key);
+        if(Array.isArray(d))importedPartyDismissals=d;
+      }catch(e){console.warn('Could not read party dismissals from imported file',e);}
+    }
     if(!imported.length&&!guardianInfo)throw new Error('File contained no readable data.');
 
     const replacing=imported.filter(w=>caseFile.wards.some(x=>x.wardId===w.wardId)).length;
@@ -3224,6 +3354,10 @@ async function importSavArchiveOrWard(file, options = {}){
     if(!Array.isArray(caseFile.cases))caseFile.cases=[];
     for(const c of importedCases){
       if(c&&c.id&&!caseFile.cases.some(x=>x.id===c.id))caseFile.cases.push(c);
+    }
+    if(!Array.isArray(caseFile.dismissedPartyPairs))caseFile.dismissedPartyPairs=[];
+    for(const pair of importedPartyDismissals){
+      if(Array.isArray(pair)&&!caseFile.dismissedPartyPairs.some(p=>p[0]===pair[0]&&p[1]===pair[1]))caseFile.dismissedPartyPairs.push(pair);
     }
 
     for(const ward of imported){
@@ -3378,9 +3512,10 @@ async function saveSessionRestoreCache(){
     const guardian=await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail});
     const parties=await encryptJSON(caseFile.parties||[]);
     const cases=await encryptJSON(caseFile.cases||[]);
+    const partyDismissals=await encryptJSON(caseFile.dismissedPartyPairs||[]);
     await _sessionCachePut({
       savedAt:Date.now(),securityMode:_securityMode,salt:salt||null,verifier:verifier||null,
-      guardian,wards,parties,cases,activeWardId:caseFile.activeWardId||null
+      guardian,wards,parties,cases,partyDismissals,activeWardId:caseFile.activeWardId||null
     });
   }catch(e){console.warn('session-restore cache write failed',e);}
 }
@@ -3416,6 +3551,7 @@ async function checkSessionRestoreCacheAtLaunch(){
     caseFile.guardianEmail=(g&&g.guardianEmail)||'';
     caseFile.parties=cache.parties?(await decryptJSONWithKey(cache.parties,key))||[]:[];
     caseFile.cases=cache.cases?(await decryptJSONWithKey(cache.cases,key))||[]:[];
+    caseFile.dismissedPartyPairs=cache.partyDismissals?(await decryptJSONWithKey(cache.partyDismissals,key))||[]:[];
     caseFile.activeWardId=cache.activeWardId||restoredWards[0].wardId;
     _securityMode=cache.securityMode;
     _cryptoKey=key;
@@ -3708,6 +3844,7 @@ async function loadCaseFileFromZip(zip,manifest,key){
   caseFile.wards=[];
   caseFile.parties=[];
   caseFile.cases=[];
+  caseFile.dismissedPartyPairs=[];
   const partiesFile=zip.file('parties.enc');
   if(partiesFile){
     try{
@@ -3721,6 +3858,13 @@ async function loadCaseFileFromZip(zip,manifest,key){
       const cases=await decryptJSONWithKey(await casesFile.async('string'),key);
       if(Array.isArray(cases))caseFile.cases=cases;
     }catch(e){console.warn('Could not read cases from .sav file',e);}
+  }
+  const partyDismissalsFile=zip.file('partyDismissals.enc');
+  if(partyDismissalsFile){
+    try{
+      const dismissals=await decryptJSONWithKey(await partyDismissalsFile.async('string'),key);
+      if(Array.isArray(dismissals))caseFile.dismissedPartyPairs=dismissals;
+    }catch(e){console.warn('Could not read party dismissals from .sav file',e);}
   }
   for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
     const f=zip.file(entry.file);
@@ -5307,6 +5451,13 @@ async function renderPage(page){
     updateHelpContext('default');
     el.innerHTML=pageActivityLog();
     loadAndRenderActivityLog();
+    return;
+  }
+
+  if(page==='/party-management'){
+    updateHelpContext('default');
+    el.innerHTML=pagePartyManagement();
+    renderPartyManagementBody();
     return;
   }
 
@@ -8276,7 +8427,7 @@ function updateNavActive(page){
   });
 }
 
-const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log']; // valid regardless of activeInventoryType
+const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log','/party-management']; // valid regardless of activeInventoryType
 async function handleHash(){
   const h=window.location.hash.replace('#','');
   if(SPECIAL_PAGES.includes(h)){
