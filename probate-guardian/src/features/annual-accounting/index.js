@@ -146,6 +146,12 @@ function persistAnnualControl(control, applyFormat = true) {
   if (control.dataset.syncGuardianName) syncGuardianNameDisplay();
   const scheduleATotal = document.getElementById('schA_total');
   if (scheduleATotal && path.startsWith('schA.')) scheduleATotal.textContent = fmtAnnual(calcTotalsAnnual().schA);
+  // Party write-through (persistence-rewrite Milestone 4) -- see the matching
+  // comment in src/form-events.js's persistFormControl(). Annual Accounting
+  // binds its own inputs via data-annual-path instead of data-form-path, so
+  // it needs this same hook wired in separately.
+  const identitySlot = window.identitySlotForPath?.(window.D, path);
+  if (identitySlot) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
 }
 
 function bindEvents(container) {
@@ -183,6 +189,7 @@ function bindEvents(container) {
     switch (control.dataset.annualAction) {
       case 'add-row': addAnnualRow(collection, control.dataset.route); break;
       case 'duplicate-row': duplicateAnnualRow(collection, index, control.dataset.route); break;
+      case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-row': removeAnnualRow(collection, index, control.dataset.route); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
@@ -488,7 +495,7 @@ function pagePart3Annual(){
   let cards='';
   d.guardians.forEach((g,i)=>{
     cards+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${labels[i]}</span></div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-annual-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>

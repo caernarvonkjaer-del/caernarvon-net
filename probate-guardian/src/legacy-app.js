@@ -4252,6 +4252,62 @@ async function doLoadWardInfo(){
   updateNavDots();
 }
 
+// Tracks which identity slot ({role,index}) the Pick Party modal is
+// currently open for, set by showPickPartyModal() and read by doPickParty()/
+// doCreatePartyFromSlot() when the user confirms.
+let _pickPartySlot=null;
+
+function partyRoleLabel(role){
+  return role==='guardian'?'guardian':role==='attorney'?'attorney':role==='preparer'?'preparer':'ward';
+}
+
+// Opens the Pick Party modal for one identity slot on the active filing
+// (persistence rewrite Milestone 4). `role`/`index` identify the slot the
+// same way syncIdentityField() does -- see src/core/party-resolver.js.
+async function showPickPartyModal(role,index){
+  await ensureFragment('common-modals');
+  _pickPartySlot={role,index:Number(index)||0};
+  const currentName=(window.readRoleFields(window.D,role,_pickPartySlot.index)||{}).name;
+  document.getElementById('pick-party-slot-label').textContent=currentName?`"${esc(currentName)}"`:`this ${partyRoleLabel(role)}`;
+  const sel=document.getElementById('pick-party-existing');
+  const matches=(caseFile.parties||[]).filter(p=>!p.mergedInto&&p.roles.includes(role));
+  sel.innerHTML='<option value="">— Select —</option>'
+    +matches.map(p=>`<option value="${p.id}">${esc(p.name||'(unnamed)')}</option>`).join('');
+  showModal('pickPartyModal');
+}
+
+// "Link" — attaches the chosen existing party to the open slot, then
+// hydrates that party's current data into the slot, overwriting whatever
+// was there (matching today's carry-over overwrite behavior).
+async function doPickParty(){
+  const partyId=document.getElementById('pick-party-existing').value;
+  if(!partyId||!_pickPartySlot)return;
+  const party=window.resolveParty(partyId);
+  if(!party)return;
+  const {role,index}=_pickPartySlot;
+  closeModal('pickPartyModal');
+  window.setPartyIdForSlot(window.D,role,index,partyId);
+  window.hydrateFromParty(party,window.D,role,index);
+  autoSave();
+  renderPage(currentPage);
+  updateNavDots();
+}
+
+// "+ New Shared Record" — creates a brand-new party seeded from whatever is
+// already typed into the slot (dehydrate), then attaches it. Nothing
+// already entered is lost.
+async function doCreatePartyFromSlot(){
+  if(!_pickPartySlot)return;
+  const {role,index}=_pickPartySlot;
+  closeModal('pickPartyModal');
+  const party=window.createParty(role);
+  window.setPartyIdForSlot(window.D,role,index,party.id);
+  window.syncIdentityField(window.D,role,index);
+  autoSave();
+  renderPage(currentPage);
+  updateNavDots();
+}
+
 // Small banner shown at the top of a Cover page (Plan or Accounting), only
 // when a matching ward of the other type exists to load from — kept out of
 // the way otherwise.

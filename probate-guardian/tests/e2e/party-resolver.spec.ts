@@ -35,6 +35,34 @@ test.describe('party-resolver (unwired hydration/dehydration core)', () => {
     expect(result.rolesIncludesGuardian).toBe(true);
   });
 
+  test('identitySlotForPath recognizes array/object/flat identity paths and ignores everything else', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const planInitialFiling = { inventoryType: 'planInitial' };
+      const guardianFiling = { inventoryType: 'guardian' };
+      const annualFiling = { inventoryType: 'annual' };
+      return {
+        wardName: w.identitySlotForPath(planInitialFiling, 'wardName'),
+        arrayPath: w.identitySlotForPath(planInitialFiling, 'planGuardians.1.ssn'),
+        objectPath: w.identitySlotForPath(guardianFiling, 'attorney.phone'),
+        flatPath: w.identitySlotForPath(annualFiling, 'attorney_bar'),
+        nonIdentitySchedulePath: w.identitySlotForPath(annualFiling, 'schA.0.amount'),
+        nonIdentityTopLevelPath: w.identitySlotForPath(planInitialFiling, 'periodFrom'),
+        wrongTypeForThisPath: w.identitySlotForPath(guardianFiling, 'attorney_bar'), // guardian's attorney is an object, not flat
+      };
+    });
+
+    expect(result.wardName).toEqual({ role: 'ward', index: 0 });
+    expect(result.arrayPath).toEqual({ role: 'guardian', index: 1 });
+    expect(result.objectPath).toEqual({ role: 'attorney', index: 0 });
+    expect(result.flatPath).toEqual({ role: 'attorney', index: 0 });
+    expect(result.nonIdentitySchedulePath).toBeNull();
+    expect(result.nonIdentityTopLevelPath).toBeNull();
+    expect(result.wrongTypeForThisPath).toBeNull();
+  });
+
   test('guardian (Initial Inventory): guardian row, nested attorney object, and nested preparer object all round-trip', async ({ page }) => {
     await freshStartNoPassword(page);
 

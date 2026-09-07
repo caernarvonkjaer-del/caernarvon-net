@@ -31,6 +31,14 @@ function persistFormControl(control, applyFormat = true) {
   if (control.dataset.syncWardName) window.syncActiveWardNameDisplay();
   if (control.dataset.syncGuardianName) window.syncGuardianNameDisplay();
   if (control.dataset.formRoute) window.navigate(control.dataset.formRoute);
+  // Party write-through (persistence-rewrite Milestone 4): if this path is
+  // part of a guardian/attorney/preparer/ward identity slot that's linked
+  // to a shared party record, push the edit out to every other filing
+  // referencing that same party. A no-op for every other field, and a
+  // no-op for an identity field with no party attached yet -- see
+  // syncIdentityField()'s own comment in src/core/party-resolver.js.
+  const identitySlot = window.identitySlotForPath?.(window.D, control.dataset.formPath);
+  if (identitySlot) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
 }
 
 document.addEventListener('click', (event) => {
@@ -44,6 +52,7 @@ document.addEventListener('click', (event) => {
     case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': window.exportActivityLog(); break;
+    case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     case 'load-ward-info': window.showLoadWardInfoModal(); break;
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;

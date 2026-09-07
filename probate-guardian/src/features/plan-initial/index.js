@@ -448,7 +448,10 @@ function pagePlanISignatures(){
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">${title}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2">
+        <span>${title}</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>
+      </div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>

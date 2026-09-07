@@ -65,6 +65,27 @@
   </div>
 </div>
 
+<!-- Pick Party Modal — links a guardian/attorney/preparer/ward identity
+     slot on the active filing to a shared party record, either an existing
+     one (immediately overwriting the slot with that party's data) or a
+     brand-new one seeded from whatever is already typed into the slot. -->
+<div id="pickPartyModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:480px;">
+    <h2 style="margin-bottom:.5rem;color:var(--ink);">Link to Shared Record</h2>
+    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Link <strong id="pick-party-slot-label">this person</strong> to a shared record, so edits made here (or on any other filing linked to the same record) stay in sync everywhere.</p>
+    <div class="mb-3">
+      <label class="form-label" for="pick-party-existing">Existing Person</label>
+      <select class="form-select" id="pick-party-existing"></select>
+      <div style="font-size:.78rem;color:var(--ink-3);margin-top:.25rem;">Selecting a person here overwrites this slot's fields with that person's current record.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="pickPartyModal">Cancel</button>
+      <button class="btn btn-outline-primary flex-fill" data-modal-action="create-party-from-slot">+ New Shared Record</button>
+      <button class="btn btn-primary flex-fill" data-modal-action="pick-party">Link</button>
+    </div>
+  </div>
+</div>
+
 <!-- Switch Ward Picker Modal — shown when "Switch Ward" is clicked while
      the dropdown is still on the already-active ward, since switchWard()
      on the same ward is a silent no-op otherwise. -->

@@ -8,10 +8,12 @@ function handleModalClick(event) {
     case 'close-ward-locked': window.closeWardLockedModal(); break;
     case 'confirm-simplified-eligibility': window.doConfirmSimplifiedEligibility(); break;
     case 'convert-ward': window.doConvertWard(); break;
+    case 'create-party-from-slot': window.doCreatePartyFromSlot(); break;
     case 'delete-ward': window.doDeleteWard(); break;
     case 'delete-ward-year': window.doDeleteWardYear(); break;
     case 'guardian-setup': window.doGuardianSetup(); break;
     case 'load-ward-info': window.doLoadWardInfo(); break;
+    case 'pick-party': window.doPickParty(); break;
     case 'rename-ward': window.doRenameWard(); break;
     case 'save-backup': window.closeModal(actionElement.dataset.modalId); window.saveBackupNow(); break;
     case 'start-new-year': window.confirmStartNewYear(); break;
