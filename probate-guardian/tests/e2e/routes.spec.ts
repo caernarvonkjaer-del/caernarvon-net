@@ -88,7 +88,7 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).addWard('Beta Ward', 'annual'));
     await page.evaluate(() => (window as any).addWard('Gamma Ward', 'planSimplified'));
     await page.evaluate(() => (window as any).addWard('Delta Ward', 'annual'));
-    const beforePreferences = await page.evaluate(() => {
+    await page.evaluate(() => {
       const wards = (window as any).getCaseFile().wards;
       const periodTo = new Date();
       periodTo.setDate(periodTo.getDate() - 90);
@@ -100,9 +100,9 @@ test.describe('routes', () => {
       wards[2].periodTo = dueTodayPeriodEnd;
       wards[3].periodTo = dueTodayPeriodEnd;
       wards[3].dashboardWorkflow = { status: 'approved' };
-      return JSON.stringify(wards);
     });
     await page.evaluate(() => (window as any).navigate('/dashboard'));
+    const beforePreferences = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
 
     const main = page.locator('#main-content');
     await main.locator('[data-dashboard-bound="true"]').waitFor();

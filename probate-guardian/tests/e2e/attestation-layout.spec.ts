@@ -13,6 +13,10 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
       { name: 'Witness One', address: '1 Main Street', occupation: 'Notary' },
       { name: 'Witness Two', address: '2 Main Street', occupation: 'Agent' },
     ];
+    data.serviceRecipients = [
+      { name: 'Recipient One', address: '1 Main Street', cityStateZip: 'Tampa, FL' },
+      { name: 'Recipient Two', address: '2 Main Street', cityStateZip: 'Tampa, FL' },
+    ];
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
   const oneCardGrid = page.locator('.card-grid-2col').first();
@@ -109,9 +113,15 @@ test('Annual Accounting cards and cover layout use responsive 2-column grid', as
   expect(coverCols).toBe(2);
 
   // Signatures (/p3)
+  await page.evaluate(() => {
+    (window as any).D.guardians = [
+      { name: 'Guardian One' },
+      { name: 'Co-Guardian Two' },
+    ];
+  });
   await page.evaluate(() => (window as any).navigate('/p3'));
   const p3Grid = page.locator('.card-grid-2col').first();
-  await expect(p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(3);
+  await expect(p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(2);
   const p3Cols = await p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(p3Cols).toBe(2);
 
@@ -150,9 +160,15 @@ test('Simplified Accounting cards and cover layout use responsive 2-column grid'
   expect(coverCols).toBe(2);
 
   // Signatures (/p4)
+  await page.evaluate(() => {
+    (window as any).D.guardians = [
+      { name: 'Guardian One' },
+      { name: 'Co-Guardian Two' },
+    ];
+  });
   await page.evaluate(() => (window as any).navigate('/p4'));
   const p4Grid = page.locator('.card-grid-2col').first();
-  await expect(p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(3);
+  await expect(p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(2);
   const p4Cols = await p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(p4Cols).toBe(2);
 

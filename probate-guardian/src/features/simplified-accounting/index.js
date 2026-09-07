@@ -50,6 +50,39 @@ function bindEvents(container) {
     if (!actionElement) return;
     const index = Number.parseInt(actionElement.dataset.index, 10);
     switch (actionElement.dataset.simplifiedAction) {
+      case 'add-guardian': {
+        if ((window.D.guardians || []).length < 3) {
+          window.D.guardians = window.D.guardians || [];
+          window.D.guardians.push({ name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '' });
+          autoSave();
+          navigate('/p4');
+        }
+        break;
+      }
+      case 'remove-guardian': {
+        if (Array.isArray(window.D?.guardians)) {
+          window.D.guardians.splice(index, 1);
+          if (Array.isArray(window.D.guardianPartyIds)) window.D.guardianPartyIds.splice(index, 1);
+          autoSave();
+          navigate('/p4');
+        }
+        break;
+      }
+      case 'add-recipient': {
+        window.D.certRecipients = window.D.certRecipients || [];
+        window.D.certRecipients.push({ name: '', line2: '', line3: '' });
+        autoSave();
+        navigate('/p6');
+        break;
+      }
+      case 'remove-recipient': {
+        if (Array.isArray(window.D?.certRecipients)) {
+          window.D.certRecipients.splice(index, 1);
+          autoSave();
+          navigate('/p6');
+        }
+        break;
+      }
       case 'add-remuneration': window.D.remuneration.push({ guardian: '', type: '', description: '' }); autoSave(); navigate('/p7'); break;
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
       case 'open-court-portal': window.openFloridaCourtPortal(); break;
@@ -374,16 +407,14 @@ function pagePart3(){
 // ── Part IV – Guardians ─────────────────────────────────
 function pagePart4(){
   const d=window.D;
-  let html=`<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
-  <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>
-  <div class="row g-3 card-grid-2col">`;
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
-  d.guardians.forEach((g,i)=>{
-    html+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
+  const cards=(d.guardians||[]).map((g,i)=>{
+    const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
+    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]||`Co-Guardian #${i+1}`}</span><span class="entry-card-actions d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">${labels[i]}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-field-path="guardians.${i}.name" data-form-format="name"></div>
+          <div class="col-md-6"><label class="form-label">${labels[i]||`Co-Guardian #${i+1}`}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-field-path="guardians.${i}.name" data-form-format="name"></div>
           <div class="col-md-3"><label class="form-label" for="guardians_${i}_sigDate">Signature Date<span class="req">*</span></label><input type="text" inputmode="text" class="form-control" id="guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(g.signatureDate||''))}" data-form-path="guardians.${i}.signatureDate" data-field-path="guardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="guardians_${i}_sigDate_hint"><div id="guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
           <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(g.ssn||''))}" data-form-path="guardians.${i}.ssn" data-field-path="guardians.${i}.ssn" data-field-kind="ssn" data-field-format-policy="preserve" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
           <div class="col-md-4"><label class="form-label">Phone Number<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatPhone(g.phone||''))}" data-form-path="guardians.${i}.phone" data-field-path="guardians.${i}.phone" data-field-kind="phone" data-form-format="phone"></div>
@@ -395,9 +426,13 @@ function pagePart4(){
         </div>
       </div>
     </div></div>`;
-  });
-  html+=`</div>${renderScheduleDocsSection('p4')}${pageNavS('/p3','/p5')}</div>`;
-  return html;
+  }).join('');
+  const addCoBtn=(d.guardians||[]).length<3?`<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-simplified-action="add-guardian">+ Add Co-Guardian</button>`:'';
+  return `<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
+  <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>
+  <div class="row g-3 card-grid-2col mb-3">${cards}</div>
+  ${addCoBtn}
+  ${renderScheduleDocsSection('p4')}${pageNavS('/p3','/p5')}</div>`;
 }
 
 // ── Part V – Attorney Signature ─────────────────────────
@@ -432,11 +467,11 @@ function pagePart5(){
 
 function pagePart6(){
   const d=window.D;
-  function recipCard(i){
-    const r=d.certRecipients[i];
+  const cards=(d.certRecipients||[]).map((r,i)=>{
     const req=(i===0||i===2)?'<span class="req">*</span>':'';
+    const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-recipient" data-index="${i}">✕ Remove</button>`;
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">Recipient ${i+1}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Name and Address Line 1${req}</label><input type="text" class="form-control" value="${esc(formatName(r.name||''))}" data-form-path="certRecipients.${i}.name" data-form-format="name"></div>
@@ -445,7 +480,7 @@ function pagePart6(){
         </div>
       </div>
     </div></div>`;
-  }
+  }).join('');
   return `<div class="schedule-page">
     <h1>Part VI (Part X) — Guardian Attorney Certificate of Service</h1>
     <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
@@ -454,12 +489,10 @@ function pagePart6(){
       <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
     </div>
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-    <div class="row g-3 card-grid-2col mb-4">
-      ${recipCard(0)}
-      ${recipCard(1)}
-      ${recipCard(2)}
-      ${recipCard(3)}
+    <div class="row g-3 card-grid-2col mb-3">
+      ${cards}
     </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-simplified-action="add-recipient">+ Add Recipient</button>
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
     <div class="row g-3 card-grid-2col">
@@ -560,7 +593,6 @@ export function validateSimplified(){
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
   req(d.certServiceDate,'Part VI — Date of Service');
   req(d.certIndicator,'Part VI — "Indicate if"');
-  req(d.certRecipients[0].name,'Part VI — Recipient 1 — Name and Address');
-  req(d.certRecipients[2].name,'Part VI — Recipient 3 — Name and Address');
+  req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address');
   return errs;
 }

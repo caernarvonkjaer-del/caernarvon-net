@@ -148,8 +148,8 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
   await createSimplifiedWard(page, 'Simplified Accounting Layout Ward');
   await page.evaluate(() => {
     const data = (window as any).D;
-    data.guardians = [{}, {}];
-    data.remuneration = [{}, {}];
+    data.guardians = [{ name: 'Guardian 1' }, { name: 'Guardian 2' }];
+    data.remuneration = [{ guardian: 'Guardian 1', type: 'Services' }, { guardian: 'Guardian 2', type: 'Care' }];
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await assertCardColumns('/p4', '.col-12.col-md-6', 2, '.card-grid-2col');

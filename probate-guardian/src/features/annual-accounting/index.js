@@ -248,7 +248,15 @@ function duplicateAnnualRow(arrName,idx,route){
 }
 window.duplicateAnnualRow = duplicateAnnualRow;
 
+// Guardians and cert-of-service recipients are listed here so Parts III and
+// X get the same +Add/Remove affordance every other repeatable group on this
+// form already has. Both used to be a fixed run of pre-seeded blank cards
+// with no way to add or remove one -- which is what made a brand-new filing
+// open onto a wall of empty "Co-Guardian" cards. Guardian Inventory has
+// worked this way all along; this brings Annual in line with it.
 const annualRowFactories = {
+  guardians: () => ({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''}),
+  certRecipients: () => ({name:'',line2:'',line3:'',line4:''}),
   remuneration: () => ({guardian:'',type:'',amount:'',description:''}),
   schA: () => ({payer:'',description:'',bank:'',accountNo:'',amount:''}),
   schB1: () => ({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
@@ -265,9 +273,15 @@ const annualRowFactories = {
   schF1: () => ({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
   schF2: () => ({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
 };
+// The court form prints three guardian signature blocks and no more, so
+// Part III caps there; every other group on this form is open-ended.
+const ANNUAL_ROW_MAX = { guardians: 3 };
+
 function addAnnualRow(collection, route) {
   const factory = annualRowFactories[collection];
   if (!factory || !Array.isArray(window.D?.[collection])) return;
+  const max = ANNUAL_ROW_MAX[collection];
+  if (max && window.D[collection].length >= max) return;
   window.D[collection].push(factory());
   autoSave();
   navigate(route);
@@ -275,6 +289,9 @@ function addAnnualRow(collection, route) {
 function removeAnnualRow(collection, index, route) {
   if (!annualRowFactories[collection] || !Array.isArray(window.D?.[collection])) return;
   window.D[collection].splice(index, 1);
+  if (collection === 'guardians' && Array.isArray(window.D.guardianPartyIds)) {
+    window.D.guardianPartyIds.splice(index, 1);
+  }
   autoSave();
   navigate(route);
 }
@@ -557,8 +574,11 @@ function pagePart3Annual(){
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   let cards='';
   d.guardians.forEach((g,i)=>{
+    // Guardian #1 is the filer and always stays; only co-guardians can be
+    // removed, matching Guardian Inventory's D-1 page.
+    const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-annual-action="remove-row" data-collection="guardians" data-index="${i}" data-route="/p3">\u2715 Remove</button>`;
     cards+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-annual-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]}</span><span class="entry-card-actions d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-annual-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>
@@ -574,10 +594,12 @@ function pagePart3Annual(){
       </div>
     </div></div>`;
   });
+  const addCoBtn=d.guardians.length<3?`<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-annual-action="add-row" data-collection="guardians" data-route="/p3">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
   <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>
-  <div class="row g-3 card-grid-2col">${cards}</div>
+  <div class="row g-3 card-grid-2col mb-3">${cards}</div>
+  ${addCoBtn}
   ${pageNavAnnual('/p2','/p4')}
   </div>`;
 }
@@ -1265,10 +1287,10 @@ function pagePart9Annual(){
 // ── Part X — Certificate of Service ──────────────────────
 function pagePart10Annual(){
   const d=window.D;
-  function recipCard(i){
-    const r=d.certRecipients[i];
+  const cards=(d.certRecipients||[]).map((r,i)=>{
+    const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-annual-action="remove-row" data-collection="certRecipients" data-index="${i}" data-route="/p10">\u2715 Remove</button>`;
     return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header">Recipient ${i+1}</div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-12">${inpD('Name',r.name,`D.certRecipients[${i}].name=this.value`,i===0)}</div>
         <div class="col-12">${inpD('Line 2',r.line2,`D.certRecipients[${i}].line2=this.value`,false)}</div>
@@ -1276,7 +1298,7 @@ function pagePart10Annual(){
         <div class="col-12">${inpD('Line 4',r.line4,`D.certRecipients[${i}].line4=this.value`,false)}</div>
       </div></div>
     </div></div>`;
-  }
+  }).join('');
   return `<div class="schedule-page">
   <h1>Part X — Guardian Attorney Certificate of Service</h1>
   <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
@@ -1286,12 +1308,10 @@ function pagePart10Annual(){
     <div class="col-12"><div style="color:var(--danger-text);font-size:.75rem;font-weight:600;margin-top:.25rem;">* Recipient 1 name is required</div></div>
   </div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  <div class="row g-3 card-grid-2col mb-4">
-    ${recipCard(0)}
-    ${recipCard(1)}
-    ${recipCard(2)}
-    ${recipCard(3)}
+  <div class="row g-3 card-grid-2col mb-3">
+    ${cards}
   </div>
+  <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-md-6">
@@ -1380,7 +1400,7 @@ export function validateAnnual(){
   req(d.bondAmount,'Part IX — Bond Amount');
   req(d.bondingCompany,'Part IX — Bonding Company');
   req(d.certDate,'Part X — Certificate of Service Date');
-  req(d.certRecipients[0].name,'Part X — Recipient 1 Name');
+  req(d.certRecipients?.[0]?.name,'Part X — Recipient 1 Name');
 
   const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
   const checkRows=(rows,fields,schedLabel)=>{

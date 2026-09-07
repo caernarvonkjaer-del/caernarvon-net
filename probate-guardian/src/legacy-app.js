@@ -977,8 +977,15 @@ function sanitizeForExcel(s){
 
 // A co-guardian slot counts as "in use" if any field is filled, not just Name —
 // otherwise partially-filled co-guardian rows silently vanish from export/validation/checkmarks.
+// Annual Accounting binds officeStreet/officeCityStateZip where Simplified
+// binds residenceStreet/residenceCityStateZip, so both pairs have to be
+// checked here. Missing the office pair meant an Annual co-guardian with
+// only an office address read as "no data": skipped by validate() and
+// dropped from the exported court document.
 function guardianHasAnyData(g){
-  return !!(g&&(g.name||g.ssn||g.phone||g.email||g.mailingStreet||g.mailingCityStateZip||g.residenceStreet||g.residenceCityStateZip||g.signatureDate));
+  return !!(g&&(g.name||g.ssn||g.phone||g.email||g.mailingStreet||g.mailingCityStateZip
+    ||g.residenceStreet||g.residenceCityStateZip||g.officeStreet||g.officeCityStateZip
+    ||g.signatureDate));
 }
 
 // ── SECURITY VALIDATION ──────────────────────────────
@@ -5351,8 +5358,8 @@ async function doGuardianSetup(){
 async function navigate(page){
   // Only when actually leaving the page, not when a +Add button's own
   // onclick calls navigate() back to the SAME page to render the row it
-  // just pushed — see pruneBlankScheduleEntries().
-  if(page!==currentPage)pruneBlankScheduleEntries();
+  // just pushed — see pruneBlankCards().
+  if(page!==currentPage)pruneBlankCards();
   currentPage=page;
   window.location.hash=page;
   await renderPage(page);
@@ -7213,16 +7220,14 @@ const mk = {
 };
 window.mk=mk;
 
-// Schedules covered by pruneBlankScheduleEntries() (see navigate()): the
-// repeatable financial line-item schedules only, keyed by their property on
-// D, each mapped to the exact blank object its own +Add button pushes.
-// Deliberately NOT the guardian/preparer/attorney/recipient "party" arrays
-// (guardians, serviceRecipients) -- several pages assume those always hold
-// at least one entry, and pruning one to empty risks breaking that, not
-// just tidying an unused row. Also deliberately not `remuneration`, which
-// two different form engines push a different shape into (Plan forms:
-// guardian/type/description; Annual Accounting: +amount) -- one template
-// can't safely match both.
+// Financial line-item schedules covered by pruneBlankCards() (see
+// navigate()), keyed by their property on D, each mapped to the exact blank
+// object its own +Add button pushes. These need a deep compare against that
+// template rather than a generic emptiness test, because several of their
+// fields default to something other than '' -- Guardian's wardPercent
+// starts at 100, Annual's Yes/No fields start at 'No' -- and a generic test
+// would never recognize those as untouched. Party and plan cards, whose
+// fields are all seeded empty, use BLANK_CARD_COLLECTIONS below instead.
 const BLANK_SCHEDULE_ENTRY = {
   // Guardian form (Initial Inventory) -- same factory addEntry() already uses.
   scheduleA1:mk.a1, scheduleA2:mk.a2, scheduleB1:mk.b1, scheduleB2:mk.b2, scheduleB3:mk.b3,
@@ -7244,6 +7249,48 @@ const BLANK_SCHEDULE_ENTRY = {
   schF2:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
 };
 
+// The other card family: party cards (guardians, certificate-of-service
+// recipients, witnesses) and the Plan forms' repeatable rows. Unlike the
+// schedules above these seed every field to '' or null, so blankness is a
+// generic emptiness test -- listing their fields here would just create one
+// more registry to drift out of sync with the form, which is the failure
+// mode this whole area keeps hitting.
+//
+// Many of these are seeded in bulk at filing creation rather than by an
+// +Add button: an Annual Accounting starts life with three blank guardian
+// cards and four blank cert-of-service recipients, which is why a filing
+// nobody has touched shows a wall of empty "Co-Guardian" cards.
+//
+// `min` is the floor a group may not prune below, so the user always has a
+// card to type into. `types` lists the form engines the group is pruned on
+// -- a group is listed for a type ONLY once that form has a real +Add
+// affordance for it, because pruning cards the user has no way to recreate
+// would lock them out of the form entirely.
+const BLANK_CARD_COLLECTIONS = {
+  guardians:{min:1,types:['guardian','annual','simplified']},
+  serviceRecipients:{min:1,types:['guardian']},
+  witnesses:{min:0,types:['guardian']},
+  certRecipients:{min:1,types:['annual','simplified']},
+  remuneration:{min:0,types:['annual','simplified']},
+  // Plan-family repeatable rows, each already served by +Add/Remove.
+  q1Residences:{min:0,types:['planAnnual']},
+  q4Providers:{min:0,types:['planAnnual']},
+  q10Directives:{min:0,types:['planAnnual']},
+  q9Providers:{min:0,types:['planInitial']},
+  q2Residences:{min:0,types:['planMinor']},
+  q3Providers:{min:0,types:['planMinor']},
+};
+
+// Untouched when every value the card holds is empty. `false` counts as
+// empty (an unticked checkbox) but 0 does not -- a typed zero is a real
+// answer, and treating it as blank would delete the user's own work.
+function isBlankCard(card){
+  if(!card||typeof card!=='object')return false;
+  const values=Object.values(card);
+  if(!values.length)return false;
+  return values.every(v=>v===null||v===undefined||v===''||v===false||(Array.isArray(v)&&!v.length));
+}
+
 // Deep-equals the schedule's own blank-entry template above -- not a
 // generic "is this value empty" guess, since several schedules default a
 // field to something other than '' (Guardian's wardPercent starts at 100,
@@ -7259,28 +7306,64 @@ function isBlankScheduleEntry(key,entry){
   return true;
 }
 
-// Removes any entry in a covered schedule that's still exactly what +Add
-// left it as. Without this, clicking +Add and then navigating to another
-// tab without typing anything left that row permanently counted against
-// the schedule -- a false "started but incomplete" warning in the sidebar
-// forever, and (had the guardian not noticed) an empty numbered line item
-// in the PDF/Excel export. Called from navigate() only when actually
-// leaving the current page, never when a +Add button's own onclick
-// re-navigates to the SAME page to show the row it just added.
-function pruneBlankScheduleEntries(){
-  if(!window.D)return;
-  let changed=false;
+// Drops every card the user left completely untouched, across both
+// registries above, for whatever form type is currently open. Without this,
+// clicking +Add and navigating away without typing left that row counted
+// against the schedule forever -- a false "started but incomplete" in the
+// sidebar, and an empty numbered line item in the PDF/Excel export -- and
+// the bulk-seeded party cards produced the same result without the user
+// having clicked anything at all.
+//
+// Called from navigate() only when actually leaving the current page, never
+// when a +Add button's own handler re-navigates to the SAME page to render
+// the row it just pushed (that row is blank by definition and would be
+// deleted before the user ever saw it).
+//
+// Returns the number of cards removed. Silent by design: a blank card holds
+// nothing, so there is nothing to report losing.
+function pruneBlankCards(){
+  if(!window.D)return 0;
+  const engine=formEngine(activeInventoryType);
+  let removed=0;
+
   for(const key of Object.keys(BLANK_SCHEDULE_ENTRY)){
     const arr=window.D[key];
     if(!Array.isArray(arr)||!arr.length)continue;
     const kept=arr.filter(e=>!isBlankScheduleEntry(key,e));
     if(kept.length!==arr.length){
+      removed+=arr.length-kept.length;
       window.D[key]=kept;
-      changed=true;
     }
   }
-  if(changed)autoSave();
+
+  for(const key of Object.keys(BLANK_CARD_COLLECTIONS)){
+    const spec=BLANK_CARD_COLLECTIONS[key];
+    if(!spec.types.includes(engine))continue;
+    const arr=window.D[key];
+    if(!Array.isArray(arr)||!arr.length)continue;
+    const keep=[];
+    arr.forEach((card,i)=>{if(!isBlankCard(card))keep.push(i);});
+    // Backfill from the front until the group meets its floor. Anything
+    // kept this way is blank by definition, so nothing is lost.
+    for(let i=0;i<arr.length&&keep.length<spec.min;i++)if(!keep.includes(i))keep.push(i);
+    keep.sort((a,b)=>a-b);
+    if(keep.length===arr.length)continue;
+    removed+=arr.length-keep.length;
+    window.D[key]=keep.map(i=>arr[i]);
+    // guardianPartyIds is a parallel array indexed by guardian slot (see
+    // party-resolver.js's setPartyIdForSlot), so it has to be resequenced in
+    // lockstep -- otherwise every Link Person association after a removed
+    // card silently re-points at the wrong guardian.
+    if(key==='guardians'&&Array.isArray(window.D.guardianPartyIds)){
+      const ids=window.D.guardianPartyIds;
+      window.D.guardianPartyIds=keep.map(i=>ids[i]||null);
+    }
+  }
+
+  if(removed)autoSave();
+  return removed;
 }
+window.pruneBlankCards=pruneBlankCards;
 
 // ═══════════════════════════════════════════════════════
 // CALCULATIONS
@@ -7515,7 +7598,7 @@ function computeNavChecks(){
       's-p3':filled(D.periodFrom)&&filled(D.periodTo),
       's-p4':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g)),
       's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip),
-      's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients[0].name)&&filled(D.certRecipients[2].name),
+      's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name),
       's-p7':D.remuneration.some(r=>filled(r.guardian)&&filled(r.type)),
     };
     const incomplete={
@@ -7524,7 +7607,7 @@ function computeNavChecks(){
       's-p3':!checks['s-p3']&&hasAny(D.periodFrom,D.periodTo),
       's-p4':!checks['s-p4']&&(D.guardians.length>0||guardianHasAnyData(D.guardians[0]||{})),
       's-p5':!checks['s-p5']&&hasAny(D.attorney_barNumber,D.attorney_phone,D.attorney_street,D.attorney_cityStateZip),
-      's-p6':!checks['s-p6']&&hasAny(D.certServiceDate,D.certIndicator,D.certRecipients[0]?.name,D.certRecipients[2]?.name),
+      's-p6':!checks['s-p6']&&hasAny(D.certServiceDate,D.certIndicator,D.certRecipients?.[0]?.name),
       's-p7':!checks['s-p7']&&D.remuneration.some(r=>hasAny(r.guardian,r.type)),
     };
     return {checks,incomplete};
@@ -7553,7 +7636,7 @@ function computeNavChecks(){
       'a-p67':(()=>{const r=annualReconcileState(t);return !r.outOfBalance||r.explained;})(),
       'a-p8':D.trusts.some(t=>t.name),
       'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany),
-      'a-p10':filled(D.certDate)&&filled(D.certRecipients[0].name),
+      'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name),
       'a-p11':verifiedEmpty('remuneration')||D.remuneration.some(r=>r.guardian||r.type||r.amount),
       'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount'],'scha'),
       'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount'],'schb1'),

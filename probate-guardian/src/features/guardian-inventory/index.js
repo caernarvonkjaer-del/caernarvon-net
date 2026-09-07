@@ -429,7 +429,12 @@ function duplicateEntry(schedule,idx){
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
 function addGuardian(){pendingGuardianIndex=D.guardians.length;D.guardians.push(mk.guardian());renderPage('/d1');}
-function removeGuardian(i){D.guardians.splice(i,1);autoSave();renderPage('/d1');}
+function removeGuardian(i){
+  D.guardians.splice(i,1);
+  if (Array.isArray(D.guardianPartyIds)) D.guardianPartyIds.splice(i, 1);
+  autoSave();
+  renderPage('/d1');
+}
 function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5');}
 function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPage('/d5');}
 

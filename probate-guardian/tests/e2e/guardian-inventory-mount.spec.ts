@@ -169,7 +169,7 @@ test.describe('guardian-inventory feature module', () => {
     await page.evaluate(() => (window as any).navigate('/b2'));
     await page.evaluate(() => (window as any).addEntry('b2'));
     // A row that's still exactly what +Add left it as gets pruned by
-    // pruneBlankScheduleEntries() the moment navigate() actually leaves the
+    // pruneBlankCards() the moment navigate() actually leaves the
     // page (see legacy-app.js) -- deliberate, so an untouched +Add row
     // doesn't linger as a false "incomplete" warning or a blank PDF line.
     // Fill it in before the first switch so the cycle below is testing
