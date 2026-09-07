@@ -4804,22 +4804,37 @@ function emptyMinorGuardianSig(){return {name:'',tin:'',phone:'',mailingStreet:'
 // resetYearlyFieldsForNewYear()'s annual branch call it directly.
 
 function initializeEmptyData(type){
-  switch(formEngine(type)){
-    case 'guardian': return emptyDataGuardian();
-    // emptyDataSimplified() moved to src/core/state.js (an ES module) --
-    // pure data, needed at ward-creation time, before this ward's feature
-    // module is ever mounted. window.emptyDataSimplified is assigned there
-    // (loaded via a <script type="module"> tag in index.html) the same way
-    // fragment-loader.js exposes loadFragment; see that file's own comment
-    // for why this bridge is temporary/necessary.
-    case 'simplified': return window.emptyDataSimplified();
-    case 'annual': return window.emptyDataAnnual();
-    case 'planSimplified': return window.emptyDataPlanSimplified();
-    case 'planAnnual': return window.emptyDataPlanAnnual();
-    case 'planInitial': return window.emptyDataPlanInitial();
-    case 'planMinor': return window.emptyDataPlanMinor();
-    default: return emptyDataGuardian();
-  }
+  const data=(()=>{
+    switch(formEngine(type)){
+      case 'guardian': return emptyDataGuardian();
+      // emptyDataSimplified() moved to src/core/state.js (an ES module) --
+      // pure data, needed at ward-creation time, before this ward's feature
+      // module is ever mounted. window.emptyDataSimplified is assigned there
+      // (loaded via a <script type="module"> tag in index.html) the same way
+      // fragment-loader.js exposes loadFragment; see that file's own comment
+      // for why this bridge is temporary/necessary.
+      case 'simplified': return window.emptyDataSimplified();
+      case 'annual': return window.emptyDataAnnual();
+      case 'planSimplified': return window.emptyDataPlanSimplified();
+      case 'planAnnual': return window.emptyDataPlanAnnual();
+      case 'planInitial': return window.emptyDataPlanInitial();
+      case 'planMinor': return window.emptyDataPlanMinor();
+      default: return emptyDataGuardian();
+    }
+  })();
+  // Party-record references -- unwired so far (see the persistence-rewrite
+  // plan's later phases: hydration/dehydration, write-through, the party
+  // picker). Added here, once, rather than in each emptyData*() factory
+  // above, so every filing type gets the exact same shape regardless of
+  // which factory built it, and so the phases that actually consume these
+  // have one consistent place to look. guardianPartyIds starts empty and
+  // grows to match however many guardian rows a given type carries (1 for
+  // guardian/D-5, up to 4 for planInitial, etc.) once something populates it.
+  data.wardPartyId=null;
+  data.guardianPartyIds=[];
+  data.attorneyPartyId=null;
+  data.preparerPartyId=null;
+  return data;
 }
 
 // ═══════════════════════════════════════════════════════
