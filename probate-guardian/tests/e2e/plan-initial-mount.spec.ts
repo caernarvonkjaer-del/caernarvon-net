@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Plan Initial is the fourth feature extraction (Milestone 5 of
 // INDEX-SPLIT-PLAN.md) -- mirrors plan-annual-mount.spec.ts's shape.
@@ -82,5 +82,34 @@ test.describe('plan-initial feature module', () => {
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
+  });
+  test('Summary page completion badges agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Nav Parity Plan Initial Ward', 'planInitial');
+    const entries = [
+      { route: '/', key: 'pi-cover' },
+      { route: '/p2', key: 'pi-p2' },
+      { route: '/p3', key: 'pi-p3' },
+      { route: '/p4', key: 'pi-p4' },
+      { route: '/p5', key: 'pi-p5' },
+      { route: '/p6', key: 'pi-p6' },
+      { route: '/p7', key: 'pi-p7' },
+      { route: '/p8', key: 'pi-p8' },
+      { route: '/p9', key: 'pi-p9' },
+      { route: '/p10', key: 'pi-p10' },
+    ];
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+
+    await fillMinimalValidPlanInitialWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -106,11 +106,8 @@ function buildNavPlanMinor(container){
 
 function getSummaryConfigPlanMinor(){
   const d=window.D;
+  const nav=window.computeNavChecks();
   const fd=v=>v?String(v).substring(0,10):'—';
-  const hasResidences=(d.q2Residences||[]).length>0;
-  const hasProviders=(d.q3Providers||[]).length>0;
-  const hasSignatures=!!(d.guardianSigDate||d.coGuardianSigDate);
-  const s=v=>v?'complete':'not-started';
   return {
     formTitle:'Annual Plan — Minors — Summary',
     infoRows:[
@@ -125,13 +122,13 @@ function getSummaryConfigPlanMinor(){
       {
         heading:'Section Completion',
         lines:[
-          {label:'1. Present Residence',route:'/',status:s(d.q1ResidenceName||d.q1Street)},
-          {label:'2. Prior Residences (Past 12 Mos)',route:'/p2',status:s(hasResidences)},
-          {label:'3. Treatment Providers',route:'/p3',status:s(hasProviders)},
-          {label:'4. Medical & Dental Services',route:'/p4',status:s(d.q4ExamDate||d.q4DentalExamDate)},
-          {label:'5. Education & Social Development',route:'/p5',status:s(d.q5SchoolName||d.q5Social)},
-          {label:'Guardian Signatures',route:'/p6',status:s(hasSignatures)},
-          {label:'Preparer & Attorney',route:'/p7',status:s(d.preparerName||d.attorneyName)},
+          {label:'1. Present Residence',route:'/',status:navStatus(nav,'pm-cover')},
+          {label:'2. Prior Residences (Past 12 Mos)',route:'/p2',status:navStatus(nav,'pm-p2')},
+          {label:'3. Treatment Providers',route:'/p3',status:navStatus(nav,'pm-p3')},
+          {label:'4. Medical & Dental Services',route:'/p4',status:navStatus(nav,'pm-p4')},
+          {label:'5. Education & Social Development',route:'/p5',status:navStatus(nav,'pm-p5')},
+          {label:'Guardian Signatures',route:'/p6',status:navStatus(nav,'pm-p6')},
+          {label:'Preparer & Attorney',route:'/p7',status:navStatus(nav,'pm-p7')},
         ],
       },
     ],

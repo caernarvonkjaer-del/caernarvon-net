@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -113,10 +113,8 @@ function buildNavPlanInitial(container){
 
 function getSummaryConfigPlanInitial(){
   const d=window.D;
+  const nav=window.computeNavChecks();
   const fd=v=>v?String(v).substring(0,10):'—';
-  const hasProviders=(d.q9ExaminingProviders||[]).length>0;
-  const hasSignatures=!!(d.guardianSigDate||d.attorneySigDate);
-  const s=v=>v?'complete':'not-started';
   return {
     formTitle:'Initial Guardianship Plan — Summary',
     infoRows:[
@@ -132,20 +130,21 @@ function getSummaryConfigPlanInitial(){
       {
         heading:'Section Completion',
         lines:[
-          {label:'2–3. Setting & Medical Care',route:'/p2',status:s(d.q2Setting||d.q3MedPrimary||d.q3MedDentist)},
-          {label:'4–5. Mental Health & Personal Care',route:'/p3',status:s(d.q4Mental||d.q5Personal)},
-          {label:'6–7. Socialization & Benefits',route:'/p4',status:s(d.q6Social||d.q7Medicaid||d.q7Medicare||d.q7SSI||d.q7SS)},
-          {label:'9. Examining Providers',route:'/p5',status:s(hasProviders)},
+          {label:'Cover',route:'/',status:navStatus(nav,'pi-cover')},
+          {label:'2–3. Setting & Medical Care',route:'/p2',status:navStatus(nav,'pi-p2')},
+          {label:'4–5. Mental Health & Personal Care',route:'/p3',status:navStatus(nav,'pi-p3')},
+          {label:'6–7. Socialization & Benefits',route:'/p4',status:navStatus(nav,'pi-p4')},
+          {label:'9. Examining Providers',route:'/p5',status:navStatus(nav,'pi-p5')},
         ],
       },
       {
         heading:'Assessments & Signatures',
         lines:[
-          {label:'10A. Daily Living Activities (ADLs)',route:'/p6',status:s(d.adlMealPrep||d.adlFinances||d.adlHygiene||d.adlMedications)},
-          {label:'10B–D. Disabilities & Devices',route:'/p7',status:s(d.q10PhysicalExam||d.q10Devices)},
-          {label:'11. Advance Directives',route:'/p8',status:s(d.q11LivingWill||d.q11DNR||d.q11Surrogate||d.q11None)},
-          {label:'Signatures',route:'/p9',status:s(hasSignatures)},
-          {label:'Attorney Certification',route:'/p10',status:s(d.attorneyCertDate)},
+          {label:'10A. Daily Living',route:'/p6',status:navStatus(nav,'pi-p6')},
+          {label:'10B–D. Disabilities & Devices',route:'/p7',status:navStatus(nav,'pi-p7')},
+          {label:'11. Advance Directives',route:'/p8',status:navStatus(nav,'pi-p8')},
+          {label:'Signatures',route:'/p9',status:navStatus(nav,'pi-p9')},
+          {label:'Attorney Certification',route:'/p10',status:navStatus(nav,'pi-p10')},
         ],
       },
     ],

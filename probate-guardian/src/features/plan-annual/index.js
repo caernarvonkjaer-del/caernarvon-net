@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -114,11 +114,8 @@ function buildNavPlanAnnual(container){
 
 function getSummaryConfigPlanAnnual(){
   const d=window.D;
+  const nav=window.computeNavChecks();
   const fd=v=>v?String(v).substring(0,10):'—';
-  const hasResidences=(d.q1Residences||[]).length>0;
-  const hasProviders=(d.q4Providers||[]).length>0;
-  const hasSignatures=!!(d.guardianSigDate||d.attorneySigDate);
-  const s=v=>v?'complete':'not-started';
   return {
     formTitle:'Annual Guardianship Plan — Summary',
     infoRows:[
@@ -133,21 +130,22 @@ function getSummaryConfigPlanAnnual(){
       {
         heading:'Section Completion',
         lines:[
-          {label:'1. Places Ward Has Lived',route:'/p2',status:s(hasResidences)},
-          {label:'2–3. Residence Change & Care Plan',route:'/p3',status:s(d.q2NoMove||d.q2WithinCounty||d.q2OutsideCounty||d.q3AddressChanged)},
-          {label:'3G. Insurance & Benefits',route:'/p4',status:s(d.q3Medicaid||d.q3Medicare||d.q3SSI||d.q3SS||d.q3VA||d.q3Insurance)},
-          {label:'4. Medical Treatment & Providers',route:'/p5',status:s(hasProviders)},
-          {label:'5–7. Skills & Rights Restoration',route:'/p6',status:s(d.q5Social||d.q6Restoration)},
+          {label:'Cover',route:'/',status:navStatus(nav,'pa-cover')},
+          {label:'1. Places Ward Has Lived',route:'/p2',status:navStatus(nav,'pa-p2')},
+          {label:'2–3. Residence & Care',route:'/p3',status:navStatus(nav,'pa-p3')},
+          {label:'3G. Insurance & Benefits',route:'/p4',status:navStatus(nav,'pa-p4')},
+          {label:'4. Medical Treatment',route:'/p5',status:navStatus(nav,'pa-p5')},
+          {label:'5–7. Skills & Rights',route:'/p6',status:navStatus(nav,'pa-p6')},
         ],
       },
       {
         heading:'Assessments & Signatures',
         lines:[
-          {label:'8. Daily Living Activities (ADLs)',route:'/p7',status:s(d.adlMealPrep||d.adlFinances||d.adlHygiene||d.adlMedications)},
-          {label:'9. Disabilities & Devices',route:'/p8',status:s(d.q9PhysicalExam||d.q9Devices)},
-          {label:'10. Advance Directives',route:'/p9',status:s(d.q10LivingWill||d.q10DNR||d.q10Surrogate||d.q10None)},
-          {label:'11. Remuneration',route:'/p10',status:s(d.q11Remuneration)},
-          {label:'Signatures',route:'/p11',status:s(hasSignatures)},
+          {label:'8. Daily Living',route:'/p7',status:navStatus(nav,'pa-p7')},
+          {label:'9. Disabilities & Devices',route:'/p8',status:navStatus(nav,'pa-p8')},
+          {label:'10. Advance Directives',route:'/p9',status:navStatus(nav,'pa-p9')},
+          {label:'11. Remuneration',route:'/p10',status:navStatus(nav,'pa-p10')},
+          {label:'Signatures',route:'/p11',status:navStatus(nav,'pa-p11')},
         ],
       },
     ],

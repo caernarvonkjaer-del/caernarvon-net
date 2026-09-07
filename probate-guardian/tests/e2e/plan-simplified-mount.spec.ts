@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanSimplifiedWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Plan Simplified is the second feature extraction (Milestone 3 of
 // INDEX-SPLIT-PLAN.md) -- mirrors simplified-mount.spec.ts's shape, since
@@ -87,5 +87,27 @@ test.describe('plan-simplified feature module', () => {
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
+  });
+  test('Summary page completion badges agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Nav Parity Plan Simplified Ward', 'planSimplified');
+    const entries = [
+      { route: '/', key: 'ps-cover' },
+      { route: '/p2', key: 'ps-p2' },
+      { route: '/p3', key: 'ps-p3' },
+    ];
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
 });

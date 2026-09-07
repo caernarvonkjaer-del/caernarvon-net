@@ -27,6 +27,25 @@
  * including guardian-inventory (the global handler wraps window.navigate()).
  */
 
+/**
+ * Maps one or more computeNavChecks() keys to the 3-value status string
+ * renderStatusBadge()/SummaryCardLine.status expects, so a Summary page's
+ * badges can never drift from what the sidebar (applyNavChecks()) and
+ * Print Preview's export gate already show for the same section -- see
+ * computeNavChecks()'s own "single source of truth" comment (legacy-app.js).
+ *
+ * Multiple keys (e.g. Annual's single "Sch D1-D5" summary line covering
+ * five separate sidebar schedule checks) are ANDed for 'complete' and
+ * ORed for 'in-progress'.
+ */
+export function navStatus(nav, keys) {
+  const list = Array.isArray(keys) ? keys : [keys];
+  if (!nav) return 'not-started';
+  if (list.every(k => nav.checks?.[k])) return 'complete';
+  if (list.some(k => nav.checks?.[k] || nav.incomplete?.[k])) return 'in-progress';
+  return 'not-started';
+}
+
 export function renderStatusBadge(status) {
   if (status === 'complete')
     return `<span style="color:var(--ok-text);font-weight:600;">✓ Complete</span>`;

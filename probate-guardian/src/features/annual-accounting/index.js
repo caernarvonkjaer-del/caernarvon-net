@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -346,6 +346,7 @@ function pageNavAnnual(prev,next){
 }
 function getSummaryConfigAnnual(){
   const d=window.D;
+  const nav=window.computeNavChecks();
   const t=calcTotalsAnnual();
   const f=v=>fmtAnnual(v)||'—';
   const fd=v=>v?String(v).substring(0,10):'—';
@@ -360,29 +361,46 @@ function getSummaryConfigAnnual(){
       {label:'Attorney',value:esc(d.attorney)},
       {label:'County',value:esc(d.county)},
     ],
-    leftCards:[{
-      heading:'Financial Quick Summary',
-      lines:[
-        {label:'Starting Balance',value:f(d.startingBalance)},
-        {label:'Sch A — Income',value:f(t.schA)},
-        {label:'Total Disbursements (B-1 thru B-4)',value:f(t.totalDisb)},
-        {label:'Sch C — Capital Adj. Net',value:f(t.schC_net)},
-        {label:'Net Assets at End of Period',value:f(t.netAssets),isTotal:true},
-        {label:'Net Assets from Sch D (should match)',value:f(t.netAssetsFromD)},
-      ],
-    }],
+    leftCards:[
+      {
+        heading:'Financial Quick Summary',
+        lines:[
+          {label:'Starting Balance',value:f(d.startingBalance)},
+          {label:'Sch A — Income',value:f(t.schA)},
+          {label:'Total Disbursements (B-1 thru B-4)',value:f(t.totalDisb)},
+          {label:'Sch C — Capital Adj. Net',value:f(t.schC_net)},
+          {label:'Net Assets at End of Period',value:f(t.netAssets),isTotal:true},
+          {label:'Net Assets from Sch D (should match)',value:f(t.netAssetsFromD)},
+        ],
+      },
+      {
+        heading:'Section Completion',
+        lines:[
+          {label:'Part I — Case Info',route:'/',status:navStatus(nav,'a-p1')},
+          {label:'Part II — Accounting',route:'/p2',status:navStatus(nav,'a-p2')},
+          {label:'Part III — Guardians',route:'/p3',status:navStatus(nav,'a-p3')},
+          {label:'Part IV — Preparer',route:'/p4',status:navStatus(nav,'a-p4')},
+          {label:'Part V — Attorney',route:'/p5',status:navStatus(nav,'a-p5')},
+          {label:'Parts VI &amp; VII',route:'/p67',status:navStatus(nav,'a-p67')},
+          {label:'Part VIII — Trusts',route:'/p8',status:navStatus(nav,'a-p8')},
+          {label:'Part IX — Bond',route:'/p9',status:navStatus(nav,'a-p9')},
+          {label:'Part X — Cert. of Service',route:'/p10',status:navStatus(nav,'a-p10')},
+          {label:'Part XI — Remuneration',route:'/p11',status:navStatus(nav,'a-p11')},
+        ],
+      },
+    ],
     rightCards:[{
       heading:'Schedules',
       lines:[
-        {label:'Sch A — Income',route:'/scha'},
-        {label:'Sch B1 — Disbursements',route:'/schb1'},
-        {label:'Sch B2 — Disbursements',route:'/schb2'},
-        {label:'Sch B3 — Disbursements',route:'/schb3'},
-        {label:'Sch B4 — Disbursements',route:'/schb4'},
-        {label:'Sch C — Gains/Losses',route:'/schc'},
-        {label:'Sch D1–D5 — Assets & Liabilities',route:'/schd1'},
-        {label:'Sch E — Transfers',route:'/sche'},
-        {label:'Sch F1–F2 — Sales',route:'/schf1'},
+        {label:'Sch A — Income',route:'/scha',status:navStatus(nav,'a-scha')},
+        {label:'Sch B1 — Disbursements',route:'/schb1',status:navStatus(nav,'a-schb1')},
+        {label:'Sch B2 — Disbursements',route:'/schb2',status:navStatus(nav,'a-schb2')},
+        {label:'Sch B3 — Disbursements',route:'/schb3',status:navStatus(nav,'a-schb3')},
+        {label:'Sch B4 — Disbursements',route:'/schb4',status:navStatus(nav,'a-schb4')},
+        {label:'Sch C — Gains/Losses',route:'/schc',status:navStatus(nav,'a-schc')},
+        {label:'Sch D1–D5 — Assets & Liabilities',route:'/schd1',status:navStatus(nav,['a-schd1','a-schd2','a-schd3','a-schd4','a-schd5'])},
+        {label:'Sch E — Transfers',route:'/sche',status:navStatus(nav,'a-sche')},
+        {label:'Sch F1–F2 — Sales',route:'/schf1',status:navStatus(nav,['a-schf1','a-schf2'])},
       ],
     }],
     banner:{title:'NET ASSETS ON HAND',value:f(t.netAssetsFromD)},

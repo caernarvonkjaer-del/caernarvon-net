@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -108,14 +108,18 @@ function buildNavPlanSimplified(container){
 
 function getSummaryConfigPlanSimplified(){
   const d=window.D;
+  const nav=window.computeNavChecks();
   const fd=v=>v?String(v).substring(0,10):'—';
+  // Kept as a finer-grained progress count alongside (not instead of) the
+  // standardized page-level badges below -- computeNavChecks() has no
+  // equivalent partial-credit number, and this one's still accurate since
+  // it reads the same real fields ps-p2 itself checks.
   const q9total=[
     d.q1Residences,d.q2BestPlacement,d.q3MedicalTreatment,
     d.q4Diagnosis,d.q5SocialServices,d.q6Interaction,
     d.q7RestoreRights,d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None,
     d.q9Remuneration,
   ].filter(Boolean).length;
-  const g=(d.planGuardians||[])[0]||{};
   return {
     formTitle:'Simplified Annual Plan — Summary',
     infoRows:[
@@ -125,18 +129,11 @@ function getSummaryConfigPlanSimplified(){
       {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
     ],
     leftCards:[{
-      heading:'Plan Progress',
+      heading:'Section Completion',
       lines:[
-        {label:'Q1 — Residences',route:'/p2',status:d.q1Residences?'complete':'not-started'},
-        {label:'Q2 — Why This Placement',route:'/p2',status:d.q2BestPlacement?'complete':'not-started'},
-        {label:'Q3 — Medical Treatment',route:'/p2',status:d.q3MedicalTreatment?'complete':'not-started'},
-        {label:'Q4 — Diagnosis &amp; Conditions',route:'/p2',status:d.q4Diagnosis?'complete':'not-started'},
-        {label:'Q5 — Personal &amp; Social Services',route:'/p2',status:d.q5SocialServices?'complete':'not-started'},
-        {label:'Q6 — Interaction with Others',route:'/p2',status:d.q6Interaction?'complete':'not-started'},
-        {label:'Q7 — Rights Restoration',route:'/p2',status:d.q7RestoreRights?'complete':'not-started'},
-        {label:'Q8 — Advance Directives',route:'/p2',status:(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None)?'complete':'not-started'},
-        {label:'Q9 — Remuneration',route:'/p2',status:d.q9Remuneration?'complete':'not-started'},
-        {label:'Signatures',route:'/p3',status:g.name&&g.signatureDate?'complete':'not-started'},
+        {label:'Cover',route:'/',status:navStatus(nav,'ps-cover')},
+        {label:'The Plan — Questions 1–9',route:'/p2',status:navStatus(nav,'ps-p2')},
+        {label:'Signatures',route:'/p3',status:navStatus(nav,'ps-p3')},
       ],
     }],
     rightCards:[],

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Simplified Accounting is the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md) -- these specs go beyond routes.spec.ts's single
@@ -150,5 +150,31 @@ test.describe('simplified-accounting feature module', () => {
     expect(heapUsed === null || heapUsed > 0).toBe(true);
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
+  });
+  test('Summary page completion badges (Parts I-VII) agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'Nav Parity Simplified Ward');
+    const entries = [
+      { route: '/', key: 's-cover' },
+      { route: '/p2', key: 's-p2' },
+      { route: '/p3', key: 's-p3' },
+      { route: '/p4', key: 's-p4' },
+      { route: '/p5', key: 's-p5' },
+      { route: '/p6', key: 's-p6' },
+      { route: '/p7', key: 's-p7' },
+    ];
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+
+    await fillMinimalValidSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
 });

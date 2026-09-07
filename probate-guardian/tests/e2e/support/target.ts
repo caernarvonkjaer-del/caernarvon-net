@@ -432,3 +432,43 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
   });
   await page.evaluate(() => (window as any).flushPendingSave());
 }
+
+/**
+ * Cross-checks, for each {route, key} pair, that three sources of
+ * completion status for the same section all agree: computeNavChecks()'s
+ * own {checks, incomplete} result (the single source of truth), the
+ * sidebar's ✓/− mark (the [data-nav="<key>"] element applyNavChecks()
+ * writes into), and the Summary page's own badge for the line linking to
+ * that route (rendered by navStatus()/renderStatusBadge()). Call while on
+ * the /summary route -- the sidebar persists across routes for one form
+ * type, but the Summary markup itself only exists on that page.
+ *
+ * `key` may be an array for a Summary line that covers several sidebar
+ * checks at once (e.g. Annual's single "Sch D1-D5" line) -- there is no
+ * one sidebar element to compare against in that case, so `sidebarComplete`
+ * comes back null and only the computeNavChecks()/Summary agreement is
+ * checked.
+ */
+export async function crossCheckNavAndSummaryStatus(
+  page: Page,
+  entries: { route: string; key: string | string[] }[],
+): Promise<Array<{ route: string; expectComplete: boolean; sidebarComplete: boolean | null; summaryComplete: boolean | null }>> {
+  return page.evaluate((entries) => {
+    const w = window as any;
+    const nav = w.computeNavChecks();
+    return entries.map(({ route, key }) => {
+      const keys = Array.isArray(key) ? key : [key];
+      const expectComplete = keys.every((k) => !!nav.checks?.[k]);
+      const sidebarEl = keys.length === 1 ? document.querySelector(`[data-nav="${keys[0]}"] .nav-check`) : null;
+      const sidebarComplete = sidebarEl ? sidebarEl.classList.contains('complete') : null;
+      // Scoped to .summary-line specifically -- a card's footerAction link
+      // (e.g. "-> Complete Bond & Surety Info (D-4)") can point at the same
+      // route as a real status line and isn't wrapped in .summary-line, so
+      // an unscoped selector could match the wrong element first.
+      const link = document.querySelector(`.summary-line a[data-route="${route}"]`);
+      const line = link ? link.closest('.summary-line') : null;
+      const summaryComplete = line ? line.textContent!.includes('✓ Complete') : null;
+      return { route, expectComplete, sidebarComplete, summaryComplete };
+    });
+  }, entries);
+}

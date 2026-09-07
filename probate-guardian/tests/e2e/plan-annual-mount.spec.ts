@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanAnnualWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Plan Annual is the third feature extraction (Milestone 4 of
 // INDEX-SPLIT-PLAN.md) -- mirrors plan-simplified-mount.spec.ts's shape.
@@ -82,5 +82,35 @@ test.describe('plan-annual feature module', () => {
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
+  });
+  test('Summary page completion badges agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Nav Parity Plan Annual Ward', 'planAnnual');
+    const entries = [
+      { route: '/', key: 'pa-cover' },
+      { route: '/p2', key: 'pa-p2' },
+      { route: '/p3', key: 'pa-p3' },
+      { route: '/p4', key: 'pa-p4' },
+      { route: '/p5', key: 'pa-p5' },
+      { route: '/p6', key: 'pa-p6' },
+      { route: '/p7', key: 'pa-p7' },
+      { route: '/p8', key: 'pa-p8' },
+      { route: '/p9', key: 'pa-p9' },
+      { route: '/p10', key: 'pa-p10' },
+      { route: '/p11', key: 'pa-p11' },
+    ];
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+
+    await fillMinimalValidPlanAnnualWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
 });

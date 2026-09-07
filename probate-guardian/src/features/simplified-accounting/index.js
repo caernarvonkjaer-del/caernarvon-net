@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -150,6 +150,7 @@ function buildNavSimplified(container){
 
 function getSummaryConfigSimplified(){
   const d=window.D;
+  const nav=window.computeNavChecks();
   const t=calcTotals();
   const f=v=>fmtS(v)||'—';
   const fd=v=>v?String(v).substring(0,10):'—';
@@ -177,7 +178,18 @@ function getSummaryConfigSimplified(){
         {label:'Line 8 — Remaining Assets On Hand',value:f(t.remaining),isTotal:true},
       ],
     }],
-    rightCards:[],
+    rightCards:[{
+      heading:'Section Completion',
+      lines:[
+        {label:'Cover &amp; Part I',route:'/',status:navStatus(nav,'s-cover')},
+        {label:'Part II — Accounting',route:'/p2',status:navStatus(nav,'s-p2')},
+        {label:'Part III — Declaration',route:'/p3',status:navStatus(nav,'s-p3')},
+        {label:'Part IV — Guardians',route:'/p4',status:navStatus(nav,'s-p4')},
+        {label:'Part V — Atty Signature',route:'/p5',status:navStatus(nav,'s-p5')},
+        {label:'Part VI — Cert. of Service',route:'/p6',status:navStatus(nav,'s-p6')},
+        {label:'Part VII — Remuneration',route:'/p7',status:navStatus(nav,'s-p7')},
+      ],
+    }],
     banner:{title:'SIMPLIFIED ACCOUNTING — YEAR-ENDING ASSETS',value:f(t.remaining)},
     nextRoute:'/p2',
   };

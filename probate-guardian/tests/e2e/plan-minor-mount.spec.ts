@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanMinorWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanMinorWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Plan Minor is the fifth and last feature extraction (Milestone 6 of
 // INDEX-SPLIT-PLAN.md) -- mirrors plan-initial-mount.spec.ts's shape.
@@ -83,5 +83,31 @@ test.describe('plan-minor feature module', () => {
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
+  });
+  test('Summary page completion badges agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Nav Parity Plan Minor Ward', 'planMinor');
+    const entries = [
+      { route: '/', key: 'pm-cover' },
+      { route: '/p2', key: 'pm-p2' },
+      { route: '/p3', key: 'pm-p3' },
+      { route: '/p4', key: 'pm-p4' },
+      { route: '/p5', key: 'pm-p5' },
+      { route: '/p6', key: 'pm-p6' },
+      { route: '/p7', key: 'pm-p7' },
+    ];
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+
+    await fillMinimalValidPlanMinorWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
 });

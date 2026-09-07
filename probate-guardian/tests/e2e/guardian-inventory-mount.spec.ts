@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import JSZip from 'jszip';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Guardian Inventory is Milestone 8 of INDEX-SPLIT-PLAN.md: Phase A moved
 // page/nav/validation/row UI into src/features/guardian-inventory/index.js;
@@ -45,6 +45,35 @@ test.describe('guardian-inventory feature module', () => {
 
     await expect(page.locator('.entry-card-header', { hasText: 'Guardian #1' })).toBeVisible();
     await expect(page.locator('[data-bind="guardians.0.name"]')).toBeVisible();
+  });
+  test('Summary page completion badges (D1-D5) agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Nav Parity Guardian Ward', 'guardian');
+    const entries = [
+      { route: '/d1', key: 'd1' },
+      { route: '/d2', key: 'd2' },
+      { route: '/d3', key: 'd3' },
+      { route: '/d4', key: 'd4' },
+      { route: '/d5', key: 'd5' },
+    ];
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    const blankResults = await crossCheckNavAndSummaryStatus(page, entries);
+    for (const r of blankResults) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+    // The specific bug report: D-1 must NOT show complete on a genuinely
+    // blank filing (a validate() gap -- guardian #1 was skipped entirely
+    // when blank -- made this true before both that fix and this one).
+    expect(blankResults.find(r => r.route === '/d1')!.expectComplete).toBe(false);
+
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
   test('every page renders with no console errors, navigating via the extracted mount()', async ({ page }) => {
     const errors: string[] = [];

@@ -1,4 +1,4 @@
-import { renderSummaryPage } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -527,11 +527,7 @@ function pageHome(){
 // PAGE: SUMMARY
 // ═══════════════════════════════════════════════════════
 function getSummaryConfigGuardian(){
-  const hasAttest=D.guardians.some(g=>g.name);
-  const hasPreparer=!!(D.preparer.name||D.attorney.name);
-  const hasBond=!!(D.bondAmount||D.bondWaivedDate);
-  const hasService=D.serviceRecipients.some(r=>r.name);
-  const s=v=>v?'complete':'not-started';
+  const nav=window.computeNavChecks();
   return {
     formTitle:'Verified Initial Inventory — Summary',
     infoRows:[
@@ -587,11 +583,11 @@ function getSummaryConfigGuardian(){
       {
         heading:'Attestations &amp; Filings Completion',
         lines:[
-          {label:'D-1 — Guardian Attestation',route:'/d1',status:s(hasAttest)},
-          {label:'D-2 — Preparer &amp; Attorney',route:'/d2',status:s(hasPreparer)},
-          {label:'D-3 — Audit Fee &amp; Safe Deposit',route:'/d3',status:s(D.hasSafeDepositBox===false || (D.hasSafeDepositBox===true && (D.safeDepositBoxFiled===true || D.safeDepositBoxFiled===false)))},
-          {label:'D-4 — Bond &amp; Surety Info',route:'/d4',status:s(hasBond)},
-          {label:'D-5 — Certificate of Service',route:'/d5',status:s(hasService)},
+          {label:'D-1 — Guardian Attestation',route:'/d1',status:navStatus(nav,'d1')},
+          {label:'D-2 — Preparer &amp; Attorney',route:'/d2',status:navStatus(nav,'d2')},
+          {label:'D-3 — Audit Fee &amp; Safe Deposit',route:'/d3',status:navStatus(nav,'d3')},
+          {label:'D-4 — Bond &amp; Surety Info',route:'/d4',status:navStatus(nav,'d4')},
+          {label:'D-5 — Certificate of Service',route:'/d5',status:navStatus(nav,'d5')},
         ],
       },
     ],
@@ -1072,7 +1068,14 @@ export function validateGuardian(){
   d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`;req(e.defendantName,`${p} — Defendant Name`);req(e.actionDescription,`${p} — Action Description`);req(e.status,`${p} — Status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`);if(!e.actionDate)errors.push(`${p} — Action Date is required.`);if(e.estimatedSettlement<=0)errors.push(`${p} — Estimated Settlement must be > 0.`);});
   d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`;req(e.trustName,`${p} — Trust Name`);req(e.trusteeName,`${p} — Trustee Name`);req(e.trusteeAddress,`${p} — Trustee Address`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`);if(!e.dateCreated)errors.push(`${p} — Date Created is required.`);if(e.trustAmount<=0)errors.push(`${p} — Trust Amount must be > 0.`);});
   d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`;req(e.assetDescription,`${p} — Asset Description`);req(e.ownerName,`${p} — Owner Name`);req(e.ownerAddress,`${p} — Owner Address`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`);req(e.relationshipToWard,`${p} — Relationship to Ward`);if(e.totalAssetValue<=0)errors.push(`${p} — Total Asset Value must be > 0.`);});
-  d.guardians.filter(g=>[g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip].some(value=>String(value||'').trim())).forEach((g,i)=>{const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);if(!g.signatureDate)errors.push(`${p} — Signature Date is required.`);req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
+  // Guardian #1 (index 0) is required and always validated, matching
+  // pageD1()'s own always-show-index-0 rule -- only co-guardians (index>0)
+  // are optional and skipped when entirely blank. Using the ORIGINAL index
+  // for the "Guardian #N" label (not a post-filter index) also fixes a
+  // mislabeling bug this filter/forEach split previously had: a co-guardian
+  // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
+  // was still blank.
+  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);if(!g.signatureDate)errors.push(`${p} — Signature Date is required.`);req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
   req(d.preparer.name,'D-2 Preparer — Name');if(!d.preparer.signatureDate)errors.push('D-2 Preparer — Date is required.');req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
   req(d.attorney.name,'D-2 Attorney — Name');if(!d.attorney.signatureDate)errors.push('D-2 Attorney — Signature Date is required.');if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
   if (d.hasSafeDepositBox === null || d.hasSafeDepositBox === undefined) {

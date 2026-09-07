@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus } from './support/target';
 
 // Annual Accounting is the sixth feature extraction (Milestone 7 of
 // INDEX-SPLIT-PLAN.md) -- the largest yet, and the second Plan/Accounting
@@ -212,6 +212,48 @@ test.describe('annual-accounting feature module', () => {
 
     const state = await page.evaluate(() => (window as any).D.scheduleNoItems?.scha);
     expect(state).toBe(true);
+  });
+  test('Summary page completion badges (Parts + Schedules) agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Nav Parity Annual Ward', 'annual');
+    const entries = [
+      { route: '/', key: 'a-p1' },
+      { route: '/p2', key: 'a-p2' },
+      { route: '/p3', key: 'a-p3' },
+      { route: '/p4', key: 'a-p4' },
+      { route: '/p5', key: 'a-p5' },
+      { route: '/p67', key: 'a-p67' },
+      { route: '/p8', key: 'a-p8' },
+      { route: '/p9', key: 'a-p9' },
+      { route: '/p10', key: 'a-p10' },
+      { route: '/p11', key: 'a-p11' },
+      { route: '/scha', key: 'a-scha' },
+      { route: '/schb1', key: 'a-schb1' },
+      { route: '/schb2', key: 'a-schb2' },
+      { route: '/schb3', key: 'a-schb3' },
+      { route: '/schb4', key: 'a-schb4' },
+      { route: '/schc', key: 'a-schc' },
+      { route: '/schd1', key: ['a-schd1', 'a-schd2', 'a-schd3', 'a-schd4', 'a-schd5'] },
+      { route: '/sche', key: 'a-sche' },
+      { route: '/schf1', key: ['a-schf1', 'a-schf2'] },
+    ];
+
+    // Not every key is expected to be false on a blank filing (e.g. a-p67's
+    // reconciliation trivially balances at 0=0) -- the invariant under test
+    // is that all three sources always agree, not which way any one key
+    // starts out.
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
+      if (r.sidebarComplete !== null) expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
+    }
+
+    await fillMinimalValidAnnualWard(page);
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
+      expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
+      if (r.sidebarComplete !== null) expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
+    }
   });
 });
 
