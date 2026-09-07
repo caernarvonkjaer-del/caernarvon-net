@@ -1394,22 +1394,19 @@ function formatBarNumber(s){
   return String(s||'').replace(/\D/g,'').slice(0,6);
 }
 
-// Format bank account number — digits only, max 17 (longest standard US bank account length)
+// Format bank account number — preserved identifier (may contain letters/dashes/slashes)
 function formatAccountNumber(s){
-  return String(s||'').replace(/\D/g,'').slice(0,17);
+  return (window.sanitizeStoredText ? window.sanitizeStoredText(s) : String(s||'').trim());
 }
 
-// Format check number — digits only, max 10 (checks don't carry letters/dashes)
+// Format check number — preserved identifier (may contain letters/dashes, e.g. CHK-104A)
 function formatCheckNumber(s){
-  return String(s||'').replace(/\D/g,'').slice(0,10);
+  return (window.sanitizeStoredText ? window.sanitizeStoredText(s) : String(s||'').trim());
 }
 
-// Validate/format zip code to 5 digits (for combined City/State/Zip fields, extracts and validates zip)
-// Capitalize first letter of each word (title case)
-// Don't trim while typing — preserve spaces as user enters them
+// Format Name & Address — safe title case on blur, preserving acronyms and mixed case
 function formatName(s){
-  const sanitized=validateSecurityInput('name',s);
-  return sanitized.split(/(\s+)/).map(w=>w.match(/\s/) ? w : (w.charAt(0).toUpperCase()+w.slice(1))).join('');
+  return (window.formatSafeTitleCase ? window.formatSafeTitleCase(s) : String(s||'').trim());
 }
 
 // Same as formatName for addresses/streets
@@ -4935,6 +4932,8 @@ function emptyRowAnnual(type){
     default: return {};
   }
 }
+window.emptyRowAnnual = emptyRowAnnual;
+
 
 // Simplified Annual Plan — the person-side counterpart to the accountings.
 // emptyDataPlanSimplified() moved to src/core/state.js (Milestone 3, Phase
@@ -6711,28 +6710,46 @@ async function mountDashboardFeature(page){
   await getDashboardFeatureBridge().mountPage(document.getElementById('main-content'),page);
 }
 
+function formatDisplayDate(canonicalStr){
+  if(!canonicalStr)return '';
+  const match=String(canonicalStr).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(match){
+    return `${match[2]}/${match[3]}/${match[1]}`;
+  }
+  return canonicalStr;
+}
+window.formatDisplayDate = formatDisplayDate;
+
 function inpS(id,label,val,req=false,type='text'){
   const isEmail=label.toLowerCase().includes('email');
-  const isPhone=!isEmail&&label.toLowerCase().includes('phone');
-  const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
-  const isZip=!isEmail&&label.toLowerCase().includes('zip');
-  const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
-  const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
-  const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
-  const isBarNumber=!isEmail&&label.toLowerCase().includes('bar number');
+  const isDate=!isEmail&&(type==='date'||/\bdate\b/i.test(label));
+  const isPhone=!isEmail&&!isDate&&label.toLowerCase().includes('phone');
+  const isName=!isEmail&&!isDate&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
+  const isZip=!isEmail&&!isDate&&label.toLowerCase().includes('zip');
+  const isAddress=!isEmail&&!isDate&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
+  const isSSN=!isEmail&&!isDate&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
+  const isCaseNumber=!isEmail&&!isDate&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
+  const isBarNumber=!isEmail&&!isDate&&label.toLowerCase().includes('bar number');
   const isAmountField=type==='number';
+  const fieldKind=isDate?'date':isAmountField?'money':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'caseNumber':isBarNumber?'barNumber':'text';
+  const isPreserve=['text','caseNumber','accountNumber','checkNumber','barNumber','ssn'].includes(fieldKind);
+  const policy=isPreserve?'preserve':'normalize';
   const format=isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'city-state-zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'case-number':isBarNumber?'bar-number':type==='text'?'security':'';
   const syncWard=id==='wardName'?' data-sync-ward-name="true"':'';
   const syncGuardian=(id==='guardian'||id==='guardianName'||id==='guardianNames')?' data-sync-guardian-name="true"':'';
-  const formatted=isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
-  const inputType=isAmountField?'text':isSSN?'password':type;
-  const inputMode=isAmountField?' inputmode="decimal"':'';
+  const formatted=isDate?formatDisplayDate(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
+  const inputType=isAmountField?'text':isSSN?'password':(isDate?'text':type);
+  const inputMode=isAmountField?' inputmode="decimal"':(isDate?' inputmode="text"':'');
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode} value="${String(cleanedValue).replace(/"/g,'&quot;')}" data-form-path="${esc(id)}"${format?` data-form-format="${format}"`:''}${syncWard}${syncGuardian}>`;
+  const placeholder=isDate?' placeholder="MM/DD/YYYY"':'';
+  const hintId=`${id}_hint`;
+  const ariaDesc=isDate?` aria-describedby="${hintId}"`:'';
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode}${placeholder} value="${String(cleanedValue).replace(/"/g,'&quot;')}" data-form-path="${esc(id)}" data-field-path="${esc(id)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-form-format="${format}"`:''}${syncWard}${syncGuardian}${ariaDesc}>`;
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
-  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
+  const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div>`:'';
+  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}${hintHtml}</div>`;
 }
 // Filtered-autocomplete text input for county fields, using the same
 // D['id']=this.value write convention as the other Simplified/Plan field helpers.
@@ -6755,7 +6772,7 @@ function txtP(id,label,val,rows=4,req=false,hint=''){
   return `<div class="mb-3">
     <label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
     ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
-    <textarea class="form-control" id="${id}" rows="${rows}" data-form-path="${esc(id)}">${esc(val||'')}</textarea>
+    <textarea class="form-control" id="${id}" rows="${rows}" data-form-path="${esc(id)}" data-field-path="${esc(id)}" data-field-kind="text" data-field-format-policy="preserve" data-field-label="${esc(label)}" ${req?'data-field-required="true"':''}>${esc(val||'')}</textarea>
   </div>`;
 }
 
@@ -6810,9 +6827,14 @@ function radioP(id,label,val,options=['Yes','No'],req=false,hint=''){
 }
 
 function pageNavS(prev,next){
-  return `<div class="page-nav d-flex justify-content-between">
-    ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${esc(prev)}">← Back</button>`:'<span></span>'}
-    ${next?`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${esc(next)}">Next →</button>`:`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="/print">Preview & Export →</button>`}
+  const targetRoute=next||'/print';
+  const label=next?'Next →':'Preview & Export →';
+  return `<div class="page-nav-wrap no-print">
+    <div class="page-nav d-flex justify-content-between align-items-center">
+      ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${esc(prev)}">← Back</button>`:'<span></span>'}
+      <button id="page-next-btn" class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${esc(targetRoute)}">${label}</button>
+    </div>
+    <div id="page-local-guidance"></div>
   </div>`;
 }
 
@@ -7369,7 +7391,9 @@ function bindForms(){
       });
     } else {
       const inputType=el.dataset.inputType||'text';
-      if(inputType==='phone'){
+      if(inputType==='date'||el.dataset.fieldKind==='date'){
+        el.value=formatDisplayDate(cur||'');
+      }else if(inputType==='phone'){
         el.value=formatPhone(cur||'');
       }else if(inputType==='name'){
         el.value=formatName(cur||'');
@@ -7393,6 +7417,11 @@ function bindForms(){
         el.value=cur||'';
       }
       el.addEventListener('input',e=>{
+        if(el.dataset.fieldKind==='date'||inputType==='date'){
+          // Date formatting is handled by form-events.js (writeDraftValue on input / finalizeFieldValue on blur).
+          // Do not write raw unparsed text here to avoid non-canonical values in window.D.
+          return;
+        }
         let val=e.target.value;
         if(inputType==='decimal'){
           val=sanitizeNonNegativeDecimal(val);
@@ -7753,12 +7782,56 @@ function updateNavDots(){
 // go through afterChange()->updateNavDots() rather than renderPage(), so
 // the button rendered at page-load time would otherwise go stale until
 // the next full navigation.
+function isScheduleIncomplete(route){
+  if(!route)return false;
+  const key=route.startsWith('/')?route.slice(1):route;
+  const r=computeNavChecks();
+  if(!r||!r.checks)return false;
+  if(activeInventoryType==='guardian'){
+    if(!SCHEDULE_NAV_KEYS.includes(key))return false;
+    return !r.checks[key];
+  }
+  const prefixMap={
+    simplified:'s-',
+    annual:'a-',
+    planInitial:'pi-',
+    planAnnual:'pa-',
+    planMinor:'pm-',
+    planSimplified:'ps-',
+  };
+  const prefix=prefixMap[activeInventoryType];
+  if(!prefix)return false;
+  const navKey=key===''?'cover':key;
+  const fullKey=`${prefix}${navKey}`;
+  if(fullKey in r.checks){
+    return !r.checks[fullKey];
+  }
+  return false;
+}
+window.isScheduleIncomplete=isScheduleIncomplete;
+
 function updateCurrentScheduleNextButton(){
   const btn=document.getElementById('page-next-btn');
   if(!btn)return;
-  const disabled=isScheduleIncomplete(currentPage.split('?')[0]);
+  const route=(typeof currentPage==='string'?currentPage:'').split('?')[0];
+  const disabled=isScheduleIncomplete(route);
   btn.disabled=disabled;
   btn.title=disabled?'Add at least one item, or check the box verifying there are none, before continuing.':'';
+  const guidanceContainer=document.getElementById('page-local-guidance');
+  if(guidanceContainer&&typeof window.renderLocalSectionGuidance==='function'){
+    let rawErrors=[];
+    try {
+      const type=activeInventoryType||window.D?.inventoryType;
+      if(type==='guardian'&&typeof window.validateGuardian==='function')rawErrors=window.validateGuardian(window.D);
+      else if((type==='annual'||type==='finalAccounting'||type==='trustAccounting')&&typeof window.validateAnnual==='function')rawErrors=window.validateAnnual(window.D);
+      else if(type==='simplified'&&typeof window.validateSimplified==='function')rawErrors=window.validateSimplified(window.D);
+      else if(type==='planAnnual'&&typeof window.validatePlanAnnual==='function')rawErrors=window.validatePlanAnnual(window.D);
+      else if(type==='planInitial'&&typeof window.validatePlanInitial==='function')rawErrors=window.validatePlanInitial(window.D);
+      else if(type==='planMinor'&&typeof window.validatePlanMinor==='function')rawErrors=window.validatePlanMinor(window.D);
+      else if(type==='planSimplified'&&typeof window.validatePlanSimplified==='function')rawErrors=window.validatePlanSimplified(window.D);
+    } catch(e) {}
+    guidanceContainer.innerHTML=disabled?window.renderLocalSectionGuidance(route,rawErrors,6,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
+  }
 }
 
 // Filing progress for ANY ward, active or not. Same window.D swap trick
@@ -8643,12 +8716,12 @@ function linkLabelsToInputs(){
 // (e.g. "Period From" / "Period To", "Bond Period – From" / "– To").
 function enforceDateRanges(){
   const rows=new Set();
-  document.querySelectorAll('input[type="date"]').forEach(inp=>{
+  document.querySelectorAll('input[type="date"], [data-field-kind="date"]').forEach(inp=>{
     const row=inp.closest('.row');
     if(row)rows.add(row);
   });
   rows.forEach(row=>{
-    const dateInputs=[...row.querySelectorAll('input[type="date"]')];
+    const dateInputs=[...row.querySelectorAll('input[type="date"], [data-field-kind="date"]')];
     const labelText=inp=>{
       const lbl=inp.id&&row.querySelector(`label[for="${inp.id}"]`);
       return lbl?lbl.textContent:'';

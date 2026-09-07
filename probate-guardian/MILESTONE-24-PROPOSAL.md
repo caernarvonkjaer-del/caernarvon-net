@@ -103,27 +103,27 @@ Example:
 
 The existing `data-form-path`, `data-annual-path`, `data-form-format`, and inline setter patterns do not need to disappear in one pass. This milestone should add adapters so changed fields can participate in the new convention while older fields continue to work.
 
-### 2. Shared Field Commit API
+#### 2. Shared Field Commit API: writeDraftValue vs finalizeFieldValue
 
-Introduce one shared commit contract for changed fields, for example `commitFieldValue(control, options)`.
+Introduce an explicit two-phase commit contract for changed fields:
 
-The contract should own:
+1. **`writeDraftValue(control, options)`** (runs on `input` and `compositionend`):
+   - Reads raw intermediate text without destructive reformats or moving the user's caret.
+   - Writes to the model only when the draft value actually changes.
+   - Marks the case dirty and schedules autosave.
+   - Respects `compositionstart`, `compositionupdate`, and `compositionend` so IME input is not interrupted.
 
-- reading the raw value from the control;
-- applying the field's formatter policy at the correct time;
-- canonicalizing dates and other normalized values;
-- preserving identifiers without destructive cleanup;
-- writing exactly one committed value into the model;
-- marking the case dirty;
-- scheduling autosave;
-- refreshing nav/status indicators after the committed value lands;
-- preserving caret position where possible;
-- respecting `compositionstart`, `compositionupdate`, and `compositionend` so IME input is not reformatted mid-composition.
+2. **`finalizeFieldValue(control, options)`** (runs on `blur` / `focusout`):
+   - Canonicalizes dates to `YYYY-MM-DD`.
+   - Normalizes numeric amounts / decimals.
+   - Applies display-only title-casing to names and addresses.
+   - Writes back to the model and updates the DOM only when the normalized value differs from the draft.
+   - Refreshes navigation checkmarks and sidebar totals.
 
 Rules:
 
 - Preserve and normalize decisions belong in the commit layer, not in ad hoc event handlers.
-- Destructive or display-only formatting must not run on every keystroke. Apply it on blur/commit unless a specific structured field, such as phone or SSN/EIN, has tests proving live formatting does not break caret, paste, or assistive-tech flows.
+- Destructive or display-only formatting must not run on every keystroke. Apply it on blur/commit (`finalizeFieldValue`) unless a specific structured field, such as phone or SSN/EIN, has tests proving live formatting does not break caret, paste, or assistive-tech flows.
 - The Annual `data-annual-path` path, delegated `data-form-path` path, and legacy bind path may coexist temporarily, but changed fields must use or adapt into the shared commit API.
 
 ### 3. Formatter Policy: Preserve, Normalize, or Display-Only
@@ -155,17 +155,17 @@ Target shape:
 }
 ```
 
-Existing validators may continue returning strings during transition. New or changed validators should emit stable structured objects with `code`, `path`, `route`, `label`, `severity`, and `message`. A string adapter is transitional only and should be used only where a stable route/field mapping is documented. Presentation text must not become the long-term API for field identity.
+Existing validators returning strings during transition are mapped through an explicit per-form lookup registry rather than dynamic string parsing. New or changed validators should emit stable structured objects with `code`, `path`, `route`, `label`, `severity`, and `message`. Presentation text must not become the long-term API for field identity.
 
 ### 5. Shared Section-Status and Guidance Helper
 
-Extend the recent `computeNavChecks()`/`navStatus()` direction into a shared helper that can feed:
+Extend the recent `computeNavChecks()`/`navStatus()` direction into a shared helper that feeds:
 
 - sidebar completion badges;
 - Summary page badges;
-- disabled Next state and local missing-field text;
+- disabled Next state and local missing-field text (bounded to first 6 items + "and N more" with jump links);
 - Print Preview missing-fields panel;
-- PDF/DOCX/Excel export gating.
+- Full export gating (governed by full-form validation + supplemental PDF checks, separated from local navigation state).
 
 The helper should accept validation results plus route/section metadata and return a consistent status object. UI layers should render from that object instead of each surface re-interpreting raw strings.
 
@@ -262,8 +262,8 @@ Replace strict date-only entry assumptions with a shared date-entry path.
 Decision for this milestone:
 
 - Changed date fields should use accessible text inputs, not native `type="date"`, when flexible typed/pasted formats are required.
-- Use `inputmode="numeric"` and concise visible help such as `Use MM/DD/YYYY or YYYY-MM-DD`.
-- Parse and canonicalize on blur/commit through the shared field commit API.
+- Use `inputmode="text"` and concise visible help such as `Use MM/DD/YYYY or YYYY-MM-DD` so mobile keyboards easily support typing month names or standard numbers.
+- Parse and canonicalize on blur (`finalizeFieldValue`) through the shared field commit API.
 - Store only canonical `YYYY-MM-DD` values in the model.
 - Existing unchanged `type="date"` fields may remain during migration, but they must not be described as accepting flexible date text until converted.
 
@@ -272,9 +272,9 @@ Accepted user inputs should include:
 - `YYYY-MM-DD`
 - `MM/DD/YYYY`
 - `M/D/YYYY`
-- `MM/DD/YY` with an explicit pivot rule
 - `Month D, YYYY`
 - `Mon D YYYY`
+*(Note: 2-digit years are strictly rejected to prevent legal filing ambiguity; 4-digit years are required.)*
 
 Rules:
 

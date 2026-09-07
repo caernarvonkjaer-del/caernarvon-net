@@ -22,7 +22,7 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 const {
   esc, ic, inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatName, formatPhone, toggleSsnReveal,
+  formatName, formatPhone, formatDisplayDate, toggleSsnReveal,
 } = window;
 
 // print.js is dynamically imported only when the user reaches /print or
@@ -310,14 +310,14 @@ function pagePlanMSignatures(){
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${title}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
-          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
-          <div class="col-md-6"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.tin||'')}" data-form-path="planGuardians.${i}.tin" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-          <div class="col-md-6"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
-          <div class="col-12"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
-          <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" data-form-path="planGuardians.${i}.mailingStreet"></div>
-          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip"></div>
-          <div class="col-12"><label class="form-label">Email Address</label><input type="email" class="form-control" value="${esc(gd.email||'')}" data-form-path="planGuardians.${i}.email"></div>
+          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
+          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship" data-field-path="planGuardians.${i}.relationship"></div>
+          <div class="col-md-6"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.tin||'')}" data-form-path="planGuardians.${i}.tin" data-field-path="planGuardians.${i}.tin" data-field-kind="ssn" data-field-format-policy="preserve" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
+          <div class="col-md-6"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-field-kind="phone" data-form-format="phone"></div>
+          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+          <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" data-form-path="planGuardians.${i}.mailingStreet" data-field-path="planGuardians.${i}.mailingStreet"></div>
+          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip" data-field-path="planGuardians.${i}.mailingCityStateZip"></div>
+          <div class="col-12"><label class="form-label">Email Address</label><input type="email" class="form-control" value="${esc(gd.email||'')}" data-form-path="planGuardians.${i}.email" data-field-path="planGuardians.${i}.email"></div>
         </div>
       </div>
     </div></div>`;

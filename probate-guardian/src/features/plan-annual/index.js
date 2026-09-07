@@ -21,6 +21,7 @@ const {
   esc, ic, inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup,
   formatName, formatPhone, formatSSN, formatAddress, toggleSsnReveal,
+  formatDisplayDate,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
 } = window;
 
@@ -218,9 +219,9 @@ function pagePlanAResidences(){
         <div class="col-md-6"><label class="form-label">Type of facility</label><input type="text" class="form-control" placeholder="e.g. Assisted Living, Private Residence" value="${esc(r.facilityType||'')}" data-form-path="q1Residences.${i}.facilityType"></div>
         <div class="col-md-6"><label class="form-label">Street address</label><input type="text" class="form-control" value="${esc(r.street||'')}" data-form-path="q1Residences.${i}.street"></div>
         <div class="col-md-6"><label class="form-label">City, State and ZIP</label><input type="text" class="form-control" value="${esc(r.cityStateZip||'')}" data-form-path="q1Residences.${i}.cityStateZip"></div>
-        <div class="col-md-4"><label class="form-label">Phone number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q1Residences.${i}.phone" data-form-format="phone"></div>
-        <div class="col-md-4"><label class="form-label">Resided from</label><input type="date" class="form-control" value="${esc(r.from||'')}" data-form-path="q1Residences.${i}.from"></div>
-        <div class="col-md-4"><label class="form-label">Resided to</label><input type="date" class="form-control" value="${esc(r.to||'')}" data-form-path="q1Residences.${i}.to"></div>
+        <div class="col-md-4"><label class="form-label">Phone number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q1Residences.${i}.phone" data-field-path="q1Residences.${i}.phone" data-form-format="phone"></div>
+        <div class="col-md-4"><label class="form-label" for="q1_res_${i}_from">Resided from</label><input type="text" inputmode="text" class="form-control" id="q1_res_${i}_from" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.from||''))}" data-form-path="q1Residences.${i}.from" data-field-path="q1Residences.${i}.from" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q1_res_${i}_from_hint"><div id="q1_res_${i}_from_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+        <div class="col-md-4"><label class="form-label" for="q1_res_${i}_to">Resided to</label><input type="text" inputmode="text" class="form-control" id="q1_res_${i}_to" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.to||''))}" data-form-path="q1Residences.${i}.to" data-field-path="q1Residences.${i}.to" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q1_res_${i}_to_hint"><div id="q1_res_${i}_to_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
       </div></div>
     </div></div>`;
   }).join('');
@@ -451,22 +452,22 @@ function pagePlanADirectives(){
         </span>
       </div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q10Directives.${i}.title"></div>
-        <div class="col-md-3"><label class="form-label">Date executed / signed</label><input type="date" class="form-control" value="${esc(r.dateSigned||'')}" data-form-path="q10Directives.${i}.dateSigned"></div>
-        <div class="col-md-3"><label class="form-label">Name of person who signed</label><input type="text" class="form-control" value="${esc(r.signedBy||'')}" data-form-path="q10Directives.${i}.signedBy"></div>
-        <div class="col-md-6"><label class="form-label">Designated agent(s) or surrogate(s)</label><input type="text" class="form-control" value="${esc(r.agents||'')}" data-form-path="q10Directives.${i}.agents"></div>
-        <div class="col-md-6"><label class="form-label">Alternate agent(s) or surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" data-form-path="q10Directives.${i}.alternates"></div>
-        <div class="col-md-6"><label class="form-label">Relationship of agent(s) to the ward</label><input type="text" class="form-control" value="${esc(r.relationship||'')}" data-form-path="q10Directives.${i}.relationship"></div>
-        <div class="col-md-6"><label class="form-label">Contact information for agent(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" data-form-path="q10Directives.${i}.contact"></div>
+        <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q10Directives.${i}.title" data-field-path="q10Directives.${i}.title"></div>
+        <div class="col-md-3"><label class="form-label" for="q10_dir_${i}_dateSigned">Date executed / signed</label><input type="text" inputmode="text" class="form-control" id="q10_dir_${i}_dateSigned" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.dateSigned||''))}" data-form-path="q10Directives.${i}.dateSigned" data-field-path="q10Directives.${i}.dateSigned" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q10_dir_${i}_dateSigned_hint"><div id="q10_dir_${i}_dateSigned_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+        <div class="col-md-3"><label class="form-label">Name of person who signed</label><input type="text" class="form-control" value="${esc(r.signedBy||'')}" data-form-path="q10Directives.${i}.signedBy" data-field-path="q10Directives.${i}.signedBy"></div>
+        <div class="col-md-6"><label class="form-label">Designated agent(s) or surrogate(s)</label><input type="text" class="form-control" value="${esc(r.agents||'')}" data-form-path="q10Directives.${i}.agents" data-field-path="q10Directives.${i}.agents"></div>
+        <div class="col-md-6"><label class="form-label">Alternate agent(s) or surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" data-form-path="q10Directives.${i}.alternates" data-field-path="q10Directives.${i}.alternates"></div>
+        <div class="col-md-6"><label class="form-label">Relationship of agent(s) to the ward</label><input type="text" class="form-control" value="${esc(r.relationship||'')}" data-form-path="q10Directives.${i}.relationship" data-field-path="q10Directives.${i}.relationship"></div>
+        <div class="col-md-6"><label class="form-label">Contact information for agent(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" data-form-path="q10Directives.${i}.contact" data-field-path="q10Directives.${i}.contact"></div>
         <div class="col-md-4"><label class="form-label">Has a court suspended or revoked it?</label>
-          <select class="form-select" data-form-path="q10Directives.${i}.courtRevoked">
+          <select class="form-select" data-form-path="q10Directives.${i}.courtRevoked" data-field-path="q10Directives.${i}.courtRevoked">
             <option value="" ${!r.courtRevoked?'selected':''}>— select —</option>
             <option value="No" ${r.courtRevoked==='No'?'selected':''}>No</option>
             <option value="Yes" ${r.courtRevoked==='Yes'?'selected':''}>Yes</option>
           </select></div>
         ${r.courtRevoked==='Yes'?`
-        <div class="col-md-4"><label class="form-label">Date of order</label><input type="date" class="form-control" value="${esc(r.orderDate||'')}" data-form-path="q10Directives.${i}.orderDate"></div>
-        <div class="col-md-4"><label class="form-label">Entered in (county / state)</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q10Directives.${i}.orderCounty"></div>`:''}
+        <div class="col-md-4"><label class="form-label" for="q10_dir_${i}_orderDate">Date of order</label><input type="text" inputmode="text" class="form-control" id="q10_dir_${i}_orderDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.orderDate||''))}" data-form-path="q10Directives.${i}.orderDate" data-field-path="q10Directives.${i}.orderDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q10_dir_${i}_orderDate_hint"><div id="q10_dir_${i}_orderDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+        <div class="col-md-4"><label class="form-label">Entered in (county / state)</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q10Directives.${i}.orderCounty" data-field-path="q10Directives.${i}.orderCounty"></div>`:''}
       </div></div>
     </div></div>`;
   }).join('');
@@ -535,8 +536,8 @@ function pagePlanASignatures(){
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-7"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
-          <div class="col-md-5"><label class="form-label">Date Signed${reqMark}</label><input type="date" class="form-control" value="${esc(p.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
+          <div class="col-md-7"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
+          <div class="col-md-5"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${reqMark}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
           <div class="col-md-5"><label class="form-label">SSN / EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(p.ssn||''))}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
           <div class="col-md-7"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
           <div class="col-12"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email"></div>

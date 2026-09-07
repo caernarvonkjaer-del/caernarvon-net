@@ -1,4 +1,6 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -113,8 +115,12 @@ function setterPath(setter) {
 }
 
 function persistAnnualControl(control, applyFormat = true) {
-  const path = control.dataset.annualPath;
+  const path = control.dataset.annualPath || control.dataset.fieldPath;
   if (!path) return;
+  if (control.dataset.fieldKind === 'date') {
+    // Handled by form-events.js on blur to store canonical YYYY-MM-DD
+    return;
+  }
   let value = control.type === 'checkbox'
     ? (control.dataset.annualValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
     : control.value;
@@ -298,28 +304,36 @@ function inpD(label,val,setter,req=false,type='text'){
   const inputId='inp_'+Math.random().toString(36).slice(2,9);
   const path=setterPath(setter);
   const isEmail=label.toLowerCase().includes('email');
-  const isPhone=!isEmail&&label.toLowerCase().includes('phone');
-  const isName=!isEmail&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
-  const isZip=!isEmail&&label.toLowerCase().includes('zip');
-  const isAddress=!isEmail&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
-  const isSSN=!isEmail&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
-  const isCaseNumber=!isEmail&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
-  const isBarNumber=!isEmail&&label.toLowerCase().includes('bar number');
-  const isAccountNumber=!isEmail&&!label.toLowerCase().includes('bank name')&&!label.toLowerCase().includes('loan')&&(label.toLowerCase().includes('account number')||label.toLowerCase().includes('account #')||label.toLowerCase().includes('bank account'));
-  const isCheckNumber=!isEmail&&label.toLowerCase().includes('check #');
+  const isDate=!isEmail&&(type==='date'||/\bdate\b/i.test(label));
+  const isPhone=!isEmail&&!isDate&&label.toLowerCase().includes('phone');
+  const isName=!isEmail&&!isDate&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
+  const isZip=!isEmail&&!isDate&&label.toLowerCase().includes('zip');
+  const isAddress=!isEmail&&!isDate&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
+  const isSSN=!isEmail&&!isDate&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
+  const isCaseNumber=!isEmail&&!isDate&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
+  const isBarNumber=!isEmail&&!isDate&&label.toLowerCase().includes('bar number');
+  const isAccountNumber=!isEmail&&!isDate&&!label.toLowerCase().includes('bank name')&&!label.toLowerCase().includes('loan')&&(label.toLowerCase().includes('account number')||label.toLowerCase().includes('account #')||label.toLowerCase().includes('bank account'));
+  const isCheckNumber=!isEmail&&!isDate&&label.toLowerCase().includes('check #');
   const isAmountField=type==='number';
+  const fieldKind=isDate?'date':isAmountField?'money':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'caseNumber':isBarNumber?'barNumber':isAccountNumber?'accountNumber':isCheckNumber?'checkNumber':'text';
+  const isPreserve=['text','caseNumber','accountNumber','checkNumber','barNumber','ssn'].includes(fieldKind);
+  const policy=isPreserve?'preserve':'normalize';
   const format=isSSN?'ssn':isCaseNumber?'case':isBarNumber?'bar':isAccountNumber?'account':isCheckNumber?'check':isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':type==='text'?'security':'';
   const isWardNameField=path==='wardName';
   const isGuardianField=/^guardian(Name|Names)?$/.test(path)||path==='guardians.0.name';
-  const formatted=isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
-  const inputType=isAmountField?'text':isSSN?'password':type;
-  const inputMode=isAmountField?' inputmode="decimal"':'';
+  const formatted=isDate?formatDisplayDate(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
+  const inputType=isAmountField?'text':isSSN?'password':(isDate?'text':type);
+  const inputMode=isAmountField?' inputmode="decimal"':(isDate?' inputmode="text"':'');
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
   const isDollarField=isAmountField&&!isPercentField;
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}" autocomplete="off"${inputMode} value="${esc(cleanedValue)}" data-annual-path="${path}" data-annual-label="${esc(label)}"${format?` data-annual-format="${format}"`:''}${isWardNameField?' data-sync-ward-name="true"':''}${isGuardianField?' data-sync-guardian-name="true"':''}>`;
+  const placeholder=isDate?' placeholder="MM/DD/YYYY"':'';
+  const hintId=`${inputId}_hint`;
+  const ariaDesc=isDate?` aria-describedby="${hintId}"`:'';
+  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}" autocomplete="off"${inputMode}${placeholder} value="${esc(cleanedValue)}" data-annual-path="${path}" data-field-path="${path}" data-annual-label="${esc(label)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-annual-format="${format}"`:''}${isWardNameField?' data-sync-ward-name="true"':''}${isGuardianField?' data-sync-guardian-name="true"':''}${ariaDesc}>`;
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
-  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}</div>`;
+  const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div>`:'';
+  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}${hintHtml}</div>`;
 }
 function selD(label,val,setter,opts){
   const selectId='sel_'+Math.random().toString(36).slice(2,9);
@@ -339,9 +353,14 @@ function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
   return html.replace(new RegExp(`(>)(${escapedLabel})(<span class="req">\\*</span>)?(<\/label>)`),`$1$2${tooltipHtml}$3$4`);
 }
 function pageNavAnnual(prev,next){
-  return `<div class="page-nav d-flex justify-content-between">
-    ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev}">← Back</button>`:'<span></span>'}
-    ${next?`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${next}">Next →</button>`:`<button class="btn btn-primary btn-sm" data-form-action="navigate" data-route="/print">Preview & Export →</button>`}
+  const targetRoute=next||'/print';
+  const label=next?'Next →':'Preview & Export →';
+  return `<div class="page-nav-wrap no-print">
+    <div class="page-nav d-flex justify-content-between align-items-center">
+      ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev}">← Back</button>`:'<span></span>'}
+      <button id="page-next-btn" class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${targetRoute}">${label}</button>
+    </div>
+    <div id="page-local-guidance"></div>
   </div>`;
 }
 function getSummaryConfigAnnual(){

@@ -1,4 +1,6 @@
 import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
+import { writeDraftValue, finalizeFieldValue, getControlPath } from './core/form/form-contract.js';
+import { focusFieldByPath } from './core/validation/validation-adapter.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 
@@ -10,41 +12,26 @@ const formatters = {
   decimal: window.sanitizeNonNegativeDecimal,
   name: window.formatName,
   phone: window.formatPhone,
-  security: (value, input) => window.validateSecurityInput(input.dataset.formPath, value),
+  security: (value, input) => window.sanitizeStoredText ? window.sanitizeStoredText(value) : value,
   ssn: window.formatSSN,
 };
 
 function persistFormControl(control, applyFormat = true) {
-  if (!control.dataset.formPath) return;
-  let value = control instanceof HTMLInputElement && control.type === 'checkbox'
-    ? (control.dataset.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
-    : control.value;
-  const formatter = applyFormat && formatters[control.dataset.formFormat];
-  if (formatter) {
-    value = formatter(value, control);
-    control.value = value;
+  const path = getControlPath(control);
+  if (!path) return;
+  if (applyFormat) {
+    writeDraftValue(control);
+    finalizeFieldValue(control);
+  } else {
+    writeDraftValue(control);
   }
-  window.setPath(window.D, control.dataset.formPath, value);
-  window.autoSave();
-  window.updateNavDots();
-  window.refreshWardInfoCard?.();
-  if (control.dataset.syncWardName) window.syncActiveWardNameDisplay();
-  if (control.dataset.syncGuardianName) window.syncGuardianNameDisplay();
-  if (control.dataset.formRoute) window.navigate(control.dataset.formRoute);
-  // Party write-through (persistence-rewrite Milestone 4): if this path is
-  // part of a guardian/attorney/preparer/ward identity slot that's linked
-  // to a shared party record, push the edit out to every other filing
-  // referencing that same party. A no-op for every other field, and a
-  // no-op for an identity field with no party attached yet -- see
-  // syncIdentityField()'s own comment in src/core/party-resolver.js.
-  const identitySlot = window.identitySlotForPath?.(window.D, control.dataset.formPath);
-  if (identitySlot) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
 }
 
 document.addEventListener('click', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement) return;
   switch (actionElement.dataset.formAction) {
+    case 'jump-to-field': focusFieldByPath(actionElement.dataset.route, actionElement.dataset.fieldPath); break;
     case 'add-plan-row': window.addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
     case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
@@ -74,17 +61,31 @@ document.addEventListener('click', (event) => {
 document.addEventListener('input', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
-  persistFormControl(control);
+  if (control.dataset.fieldPath || control.dataset.formPath) {
+    writeDraftValue(control, { event });
+  }
   if (control.dataset.formControl === 'county') window.filterCountyDropdown(control);
   if (control.dataset.formInput === 'activity-log') window.renderActivityLogList();
   if (control.dataset.formInput === 'party-directory') window.renderPartyDirectoryRows();
   if (control.dataset.formInput === 'schedule-comment') window.updateScheduleComment(control.dataset.scheduleKey, control.value);
 });
 
+document.addEventListener('compositionend', (event) => {
+  const control = event.target;
+  if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
+  if (control.dataset.fieldPath || control.dataset.formPath) {
+    writeDraftValue(control, { event });
+  }
+});
+
 document.addEventListener('change', (event) => {
   const control = event.target;
   if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
-    persistFormControl(control);
+    writeDraftValue(control, { event });
+    finalizeFieldValue(control, { event });
+    if (control.dataset.formRoute && window.renderPage) {
+      window.renderPage(control.dataset.formRoute);
+    }
   }
   if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') window.pvSelect(control.value);
   if (control instanceof HTMLSelectElement && control.dataset.formChange === 'activity-log') window.renderActivityLogList();
@@ -92,7 +93,10 @@ document.addEventListener('change', (event) => {
     window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
   }
-  if (control instanceof HTMLSelectElement && control.dataset.formPath) persistFormControl(control);
+  if (control instanceof HTMLSelectElement && (control.dataset.fieldPath || control.dataset.formPath)) {
+    writeDraftValue(control, { event });
+    finalizeFieldValue(control, { event });
+  }
 });
 
 document.addEventListener('focusin', (event) => {
@@ -103,11 +107,10 @@ document.addEventListener('focusin', (event) => {
 
 document.addEventListener('focusout', (event) => {
   const control = event.target;
-  if (!(control instanceof HTMLInputElement)) return;
+  if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (control.dataset.formControl === 'county') setTimeout(() => window.hideCountyDropdown(control.id), 150);
-  if (control.dataset.formFormat === 'case-number') {
-    control.value = window.finalizeCaseNumber(control.value);
-    persistFormControl(control, false);
+  if (control.dataset.fieldPath || control.dataset.formPath) {
+    finalizeFieldValue(control, { event });
   }
 });
 

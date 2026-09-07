@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -239,10 +240,15 @@ export function pageNav(current){
   const prev=idx>0?PAGES[idx-1]:null;
   const next=idx<PAGES.length-1?PAGES[idx+1]:null;
   const nextDisabled=isScheduleIncomplete(current);
-  return `<div class="page-nav no-print d-flex justify-content-between align-items-center">
-    <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev.id}">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>
-    <small style="color:var(--ink-3);">Page ${idx+1} of ${PAGES.length}</small>
-    <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?'disabled title="Add at least one item, or check the box verifying there are none, before continuing."':''} data-form-action="navigate" data-route="${next.id}">Next: ${next.label} →</button>`:'&nbsp;'}</div>
+  const rawErrors=typeof validateGuardian==='function'?validateGuardian(window.D):[];
+  const guidanceHtml=nextDisabled?renderLocalSectionGuidance(current,rawErrors,6,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
+  return `<div class="page-nav-wrap no-print">
+    <div class="page-nav d-flex justify-content-between align-items-center">
+      <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev.id}">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>
+      <small style="color:var(--ink-3);">Page ${idx+1} of ${PAGES.length}</small>
+      <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?'disabled title="Add at least one item, or check the box verifying there are none, before continuing."':''} data-form-action="navigate" data-route="${next.id}">Next: ${next.label} →</button>`:'&nbsp;'}</div>
+    </div>
+    <div id="page-local-guidance">${guidanceHtml}</div>
   </div>`;
 }
 
@@ -256,15 +262,18 @@ function col(n,html){return `<div class="col-md-${n}">${html}</div>`;}
 function textInput(bind,placeholder='',type=''){
   const inputId='txt_'+Math.random().toString(36).slice(2,9);
   const dataType=type?` data-input-type="${type}"`:' data-input-type="text"';
+  const fieldKind=type||'text';
+  const isPreserve=['accountNumber','checkNumber','caseNumber','barNumber','ssn','text','identifier'].includes(fieldKind);
+  const policy=isPreserve?'preserve':'normalize';
   // SSN/EIN is real PII -- masked by default (type="password" only hides
   // the rendering; .value, oninput/data-bind, and formatSSN()'s live
   // dash-insertion all keep working exactly as for a text input) with a
   // lock/unlock toggle button to reveal it on demand. See toggleSsnReveal().
   if(type==='ssn'){
-    return `<div class="ssn-mask-wrap"><input class="form-control ssn-masked" id="${inputId}" type="text" autocomplete="off" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`
+    return `<div class="ssn-mask-wrap"><input class="form-control ssn-masked" id="${inputId}" type="text" autocomplete="off" data-bind="${bind}" data-field-path="${bind}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" placeholder="${placeholder}"${dataType}>`
       +`<button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`;
   }
-  return `<input class="form-control" id="${inputId}" data-bind="${bind}" placeholder="${placeholder}"${dataType}>`;
+  return `<input class="form-control" id="${inputId}" data-bind="${bind}" data-field-path="${bind}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" placeholder="${placeholder}"${dataType}>`;
 }
 
 
@@ -274,7 +283,12 @@ function numInput(bind){
   return isPercent?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`;
 }
 function dateInput(bind){
-  return `<input type="date" class="form-control" data-bind="${bind}">`;
+  const inputId='date_'+Math.random().toString(36).slice(2,9);
+  const hintId=`${inputId}_hint`;
+  return `<div class="date-field-wrap">
+    <input type="text" inputmode="text" class="form-control" id="${inputId}" placeholder="MM/DD/YYYY" data-bind="${bind}" data-field-path="${bind}" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="${hintId}">
+    <div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div>
+  </div>`;
 }
 function calcInput(calcbind){
   return `<input class="form-control" readonly data-calcbind="${calcbind}">`;

@@ -345,7 +345,11 @@ export function emptyDataAnnual() {
     // court needs the discrepancy documented, and export requires it.
     reconcileExplanation:'',
     // Part VIII – Trusts (up to 3)
-    trusts:[window.emptyRowAnnual('trust'),window.emptyRowAnnual('trust'),window.emptyRowAnnual('trust')],
+    trusts:[
+      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
+      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
+      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''}
+    ],
     // Part IX – Bond
     guardianRelationship:'Professional Guardian',
     restrictedDepositoryReceiptDate:'',
@@ -355,7 +359,7 @@ export function emptyDataAnnual() {
     certAttySignDate:'',
     certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
     // Part XI – Remuneration
-    remuneration:[window.emptyRowAnnual('remun')]
+    remuneration:[window.emptyRowAnnual ? window.emptyRowAnnual('remun') : {guardian:'',type:'',amount:'',description:''}]
   };
 }
 

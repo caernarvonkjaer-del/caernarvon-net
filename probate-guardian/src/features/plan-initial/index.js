@@ -26,7 +26,7 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 const {
   esc, ic, inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatName, formatPhone, toggleSsnReveal,
+  formatName, formatPhone, formatDisplayDate, toggleSsnReveal,
   INITIAL_ADLS, INITIAL_ADL_RATINGS,
 } = window;
 
@@ -293,12 +293,12 @@ function pagePlanIProviders(){
         </span>
       </div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Provider's first name, last name, and middle initial<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.name||'')}" data-form-path="q9Providers.${i}.name"></div>
-        <div class="col-md-3"><label class="form-label">Type of Provider</label><input type="text" class="form-control" value="${esc(r.providerType||'')}" data-form-path="q9Providers.${i}.providerType"></div>
-        <div class="col-md-3"><label class="form-label">Approximate Date of Exam</label><input type="date" class="form-control" value="${esc(r.examDate||'')}" data-form-path="q9Providers.${i}.examDate"></div>
-        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" data-form-path="q9Providers.${i}.street"></div>
-        <div class="col-md-6"><label class="form-label">City, State and Zip Code</label><input type="text" class="form-control" value="${esc(r.cityStateZip||'')}" data-form-path="q9Providers.${i}.cityStateZip"></div>
-        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q9Providers.${i}.phone" data-form-format="phone"></div>
+        <div class="col-md-6"><label class="form-label">Provider's first name, last name, and middle initial<span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.name||'')}" data-form-path="q9Providers.${i}.name" data-field-path="q9Providers.${i}.name"></div>
+        <div class="col-md-3"><label class="form-label">Type of Provider</label><input type="text" class="form-control" value="${esc(r.providerType||'')}" data-form-path="q9Providers.${i}.providerType" data-field-path="q9Providers.${i}.providerType"></div>
+        <div class="col-md-3"><label class="form-label" for="q9_prov_${i}_date">Approximate Date of Exam</label><input type="text" inputmode="text" class="form-control" id="q9_prov_${i}_date" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.examDate||''))}" data-form-path="q9Providers.${i}.examDate" data-field-path="q9Providers.${i}.examDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q9_prov_${i}_date_hint"><div id="q9_prov_${i}_date_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+        <div class="col-md-6"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(r.street||'')}" data-form-path="q9Providers.${i}.street" data-field-path="q9Providers.${i}.street"></div>
+        <div class="col-md-6"><label class="form-label">City, State and Zip Code</label><input type="text" class="form-control" value="${esc(r.cityStateZip||'')}" data-form-path="q9Providers.${i}.cityStateZip" data-field-path="q9Providers.${i}.cityStateZip"></div>
+        <div class="col-md-4"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(r.phone||'')}" data-form-path="q9Providers.${i}.phone" data-field-path="q9Providers.${i}.phone" data-form-format="phone"></div>
       </div></div>
     </div></div>`;
   }).join('');
@@ -385,18 +385,18 @@ function pagePlanIDirectives(){
     return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">Advance Directive ${i+1}</div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q11Directives.${i}.title"></div>
-        <div class="col-md-6"><label class="form-label">Date executed/signed</label><input type="date" class="form-control" value="${esc(r.dateSigned||'')}" data-form-path="q11Directives.${i}.dateSigned"></div>
-        <div class="col-md-6"><label class="form-label">Name of person who signed</label><input type="text" class="form-control" value="${esc(r.signedBy||'')}" data-form-path="q11Directives.${i}.signedBy"></div>
-        <div class="col-md-6"><label class="form-label">Relationship of Agent(s)/Surrogate(s) to the Ward</label><input type="text" class="form-control" value="${esc(r.relationship||'')}" data-form-path="q11Directives.${i}.relationship"></div>
-        <div class="col-md-6"><label class="form-label">Name of Designated Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.agents||'')}" data-form-path="q11Directives.${i}.agents"></div>
-        <div class="col-md-6"><label class="form-label">Name of any Alternate Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" data-form-path="q11Directives.${i}.alternates"></div>
-        <div class="col-md-6"><label class="form-label">Contact information for Agent(s)/Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" data-form-path="q11Directives.${i}.contact"></div>
+        <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q11Directives.${i}.title" data-field-path="q11Directives.${i}.title"></div>
+        <div class="col-md-6"><label class="form-label" for="q11_dir_${i}_dateSigned">Date executed/signed</label><input type="text" inputmode="text" class="form-control" id="q11_dir_${i}_dateSigned" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.dateSigned||''))}" data-form-path="q11Directives.${i}.dateSigned" data-field-path="q11Directives.${i}.dateSigned" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q11_dir_${i}_dateSigned_hint"><div id="q11_dir_${i}_dateSigned_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+        <div class="col-md-6"><label class="form-label">Name of person who signed</label><input type="text" class="form-control" value="${esc(r.signedBy||'')}" data-form-path="q11Directives.${i}.signedBy" data-field-path="q11Directives.${i}.signedBy"></div>
+        <div class="col-md-6"><label class="form-label">Relationship of Agent(s)/Surrogate(s) to the Ward</label><input type="text" class="form-control" value="${esc(r.relationship||'')}" data-form-path="q11Directives.${i}.relationship" data-field-path="q11Directives.${i}.relationship"></div>
+        <div class="col-md-6"><label class="form-label">Name of Designated Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.agents||'')}" data-form-path="q11Directives.${i}.agents" data-field-path="q11Directives.${i}.agents"></div>
+        <div class="col-md-6"><label class="form-label">Name of any Alternate Agent(s) or Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" data-form-path="q11Directives.${i}.alternates" data-field-path="q11Directives.${i}.alternates"></div>
+        <div class="col-md-6"><label class="form-label">Contact information for Agent(s)/Surrogate(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" data-form-path="q11Directives.${i}.contact" data-field-path="q11Directives.${i}.contact"></div>
         <div class="col-md-6"><label class="form-label" for="q11dir_${i}_revoked">Has a Court suspended or revoked the Order/Directive?</label>
-          <div class="form-check"><input class="form-check-input" type="checkbox" id="q11dir_${i}_revoked" ${r.courtRevoked==='Yes'?'checked':''} data-form-path="q11Directives.${i}.courtRevoked" data-form-value="yes-no"></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" id="q11dir_${i}_revoked" ${r.courtRevoked==='Yes'?'checked':''} data-form-path="q11Directives.${i}.courtRevoked" data-field-path="q11Directives.${i}.courtRevoked" data-form-value="yes-no"></div>
         </div>
-        <div class="col-md-6"><label class="form-label">Date of Order</label><input type="date" class="form-control" value="${esc(r.orderDate||'')}" data-form-path="q11Directives.${i}.orderDate"></div>
-        <div class="col-md-6"><label class="form-label">County/State entered</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q11Directives.${i}.orderCounty"></div>
+        <div class="col-md-6"><label class="form-label" for="q11_dir_${i}_orderDate">Date of Order</label><input type="text" inputmode="text" class="form-control" id="q11_dir_${i}_orderDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.orderDate||''))}" data-form-path="q11Directives.${i}.orderDate" data-field-path="q11Directives.${i}.orderDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q11_dir_${i}_orderDate_hint"><div id="q11_dir_${i}_orderDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+        <div class="col-md-6"><label class="form-label">County/State entered</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q11Directives.${i}.orderCounty" data-field-path="q11Directives.${i}.orderCounty"></div>
       </div></div>
     </div></div>`;
   }).join('');
@@ -452,13 +452,13 @@ function pagePlanISignatures(){
       </div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-form-format="name"></div>
-          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
-          <div class="col-md-6"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.ssn||'')}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
-          <div class="col-12"><label class="form-label">Date Signed</label><input type="date" class="form-control" value="${esc(gd.signatureDate||'')}" data-form-path="planGuardians.${i}.signatureDate"></div>
-          <div class="col-12"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" data-form-path="planGuardians.${i}.street"></div>
-          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" data-form-path="planGuardians.${i}.cityStateZip"></div>
+          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
+          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship" data-field-path="planGuardians.${i}.relationship"></div>
+          <div class="col-md-6"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.ssn||'')}" data-form-path="planGuardians.${i}.ssn" data-field-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
+          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-form-format="phone"></div>
+          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
+          <div class="col-12"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" data-form-path="planGuardians.${i}.street" data-field-path="planGuardians.${i}.street"></div>
+          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" data-form-path="planGuardians.${i}.cityStateZip" data-field-path="planGuardians.${i}.cityStateZip"></div>
         </div>
       </div>
     </div></div>`;
