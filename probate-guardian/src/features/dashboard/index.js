@@ -124,15 +124,27 @@ function triageControlsHTML() {
     </select></label>`;
 }
 
+function dashboardToolbarActionsHTML() {
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+  const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
+  return `<div class="dashboard-toolbar-actions">
+    <button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home', 16)} All Filings</button>
+    <button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${ic(isDark ? 'sun' : 'moon', 16)}</button>
+    <button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>
+  </div>`;
+}
+
 function dashboardToolbarHTML() {
   const search = `<span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search wards by name…" aria-label="Search wards by name" value="${esc(_dashboardSearch)}"></span>`;
-  if (isTriageRole()) return `${search}${triageControlsHTML()}`;
+  const actions = dashboardToolbarActionsHTML();
+  if (isTriageRole()) return `${search}${triageControlsHTML()}${actions}`;
   return `${search}
     <select id="dashboard-sort" class="form-select form-select-sm dashboard-sort-select" aria-label="Sort wards by">
       ${option('lastModified', 'Sort: Last Modified', _dashboardSort)}
       ${option('name', 'Sort: Name (A–Z)', _dashboardSort)}
       ${option('total', 'Sort: Total (High–Low)', _dashboardSort)}
-    </select>`;
+    </select>
+    ${actions}`;
 }
 
 function dashboardHeaderHTML() {

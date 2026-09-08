@@ -55,6 +55,9 @@ export function createFeatureBridge(loader) {
     disposeActiveFeature(container, mod);
     await mod.mount(container, page);
     activeFeatureByContainer.set(container, mod);
+    if (typeof window !== 'undefined' && typeof window.attachFormHeaderActions === 'function') {
+      window.attachFormHeaderActions(container);
+    }
   }
   return {
     mountPage,

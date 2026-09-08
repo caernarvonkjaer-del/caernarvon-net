@@ -59,13 +59,13 @@ function applyTheme(theme,persist){
   if(persist){
     saveAppState('theme',theme); // lands in the .sav file's appState section on the next write
   }
-  const btn=document.getElementById('theme-toggle-btn');
-  if(btn){
+  const btns=document.querySelectorAll('#theme-toggle-btn, .topnav-theme');
+  btns.forEach(btn=>{
     const isDark=theme==='dark';
     btn.innerHTML=ic(isDark?'sun':'moon',16);
     btn.setAttribute('aria-pressed',String(isDark));
     btn.setAttribute('aria-label','Switch to '+(isDark?'light':'dark')+' theme');
-  }
+  });
 }
 function toggleTheme(){
   applyTheme(currentTheme()==='dark' ? 'light' : 'dark', true);
@@ -386,9 +386,9 @@ const HELP_CONTENT = {
 function toggleHelpPanel(){
   helpPanelOpen=!helpPanelOpen;
   const panel=document.getElementById('help-panel');
-  const btn=document.getElementById('help-toggle-btn');
+  const btns=document.querySelectorAll('#help-toggle-btn, .topnav-help');
   panel.style.display=helpPanelOpen?'flex':'none';
-  if(btn)btn.setAttribute('aria-expanded',String(helpPanelOpen));
+  btns.forEach(btn=>btn.setAttribute('aria-expanded',String(helpPanelOpen)));
   if(helpPanelOpen){
     updateHelpContext();
     showContextualHelp();
@@ -396,11 +396,11 @@ function toggleHelpPanel(){
     // somewhere meaningful, not stranded on a now off-screen-adjacent button.
     const closeBtn=document.querySelector('.help-panel-close');
     if(closeBtn)closeBtn.focus();
-  }else if(btn){
+  }else if(btns.length){
     // Closing (via the close button, Escape, or toggling the "?" again)
     // returns focus to the control that opened it, so keyboard users don't
     // lose their place in the page.
-    btn.focus();
+    btns[0].focus();
   }
 }
 // Escape closes the help panel from anywhere inside it, and returns focus
