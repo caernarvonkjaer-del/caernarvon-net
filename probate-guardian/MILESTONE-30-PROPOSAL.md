@@ -23,7 +23,14 @@ Reduce duplicated E2E coverage, remove a real asynchronous ward-switch race, mak
 
 ### 1. Repair the `switchWard()` mount race
 
-In `src/legacy-app.js`, update `switchWard()` so every invoked `mount*Feature('/')` call is awaited before the function runs its shared post-mount UI work and resolves. Each mount helper is already asynchronous, and the normal `navigate()` path already awaits the same helpers; ward switching should provide the same completion guarantee.
+In `src/core/navigation/ward-lifecycle.js`, update `switchWard()` so every invoked `mount*Feature('/')` call is awaited before the function runs its shared post-mount UI work and resolves. Each mount helper is already asynchronous, and the normal `navigate()` path already awaits the same helpers; ward switching should provide the same completion guarantee.
+
+Two specific defects to correct:
+
+- **Un-awaited mounts**: None of the `mount*Feature('/')` calls in the switch-case block are currently awaited.
+- **`guardian` early-return**: The `guardian` case executes `return true` immediately after its mount call, bypassing the shared post-mount work (`linkLabelsToInputs`, `updateNavDots`, `updateHelpContext`, `closeMobileSidebar`) that every other case runs. Remove the early return so the guardian case falls through to the shared post-mount block, matching the behaviour of all other form engines.
+
+In addition, audit callers of `switchWard()` that fire-and-forget the result. In particular, the dashboard click handler in `src/features/dashboard/index.js` (the `'open-ward'` action) calls `switchWard(wardId)` without `await`; it must be awaited so the mount completes before any subsequent UI interaction.
 
 This is intentionally paired with the plan-spec refactor: those tests exercise remounting and should consume a deterministic, fully mounted application state rather than timing around the race.
 
@@ -38,6 +45,7 @@ type PlanMountConfig = {
   routes: string[];
   fillValidWard: (page: Page) => Promise<void>;
   triggerExport: (page: Page) => Promise<void>;
+  triggerBlockedExport: (page: Page) => Promise<void>;
   navChecks: Array<{ route: string; key: string }>;
   createFiling?: (page: Page) => Promise<void>;
   waitForReady?: (page: Page) => Promise<void>;
@@ -52,15 +60,19 @@ The runner will own the repeated contract presently shared by the four plan-moun
 4. Exercise remount cycling.
 5. Verify navigation and summary parity for the declared route/key pairs.
 
-For the blocked-export case, synchronize with the native dialog from the outset instead of using a fixed delay:
+For the blocked-export case only, synchronize with the native dialog from the outset instead of using the current `waitForTimeout(500)` delay:
 
 ```ts
 const [dialog] = await Promise.all([
   page.waitForEvent('dialog'),
-  config.triggerExport(page),
+  config.triggerBlockedExport(page),
 ]);
 // Preserve the current message assertion and dialog dismissal.
 ```
+
+The successful-export tests already use the event-driven `page.waitForEvent('download')` pattern and do not need this change.
+
+Note that the four plan specs use two different export trigger mechanisms: `plan-annual`, `plan-initial`, and `plan-minor` trigger export via `page.evaluate(() => doSavePdf*())`, while `plan-simplified` locates a `[data-plan-simplified-action="save-pdf"]` button, programmatically enables it (it starts disabled on an incomplete filing), and clicks it. The `triggerExport` and `triggerBlockedExport` callbacks must each accommodate this divergence — the simplified spec's blocked-export callback in particular needs to include the button-enable step as behavioural setup, not just a trigger.
 
 `createFiling` accommodates any feature that needs a nonstandard filing setup; `waitForReady` accommodates a feature-specific readiness condition without adding arbitrary global sleeps. Any assertion or setup unique to one filing remains in that filing's spec beside its call to the runner.
 
@@ -78,6 +90,8 @@ The fixture must not become a generic abstraction for unrelated form families. B
 ### Phase 1 acceptance criteria
 
 - `switchWard()` does not resolve before its selected feature has mounted.
+- The `guardian` case no longer early-returns before shared post-mount work.
+- All callers of `switchWard()` (including the dashboard `'open-ward'` handler) await the result.
 - The four plan specs use the shared fixture and retain filing-specific tests locally.
 - Blocked export waits on, asserts, and dismisses the native dialog without the replaced fixed wait.
 - Targeted runs for all four plan specs pass, followed by the full E2E suite.
@@ -119,7 +133,7 @@ Shared helper code may be placed in an existing appropriate E2E support location
 
 ### 1. Mark tests that need origin isolation
 
-Audit and tag the suites that use shared-origin facilities or cross-tab coordination:
+Audit and tag the suites that use shared-origin facilities or cross-tab coordination. The initial candidates are:
 
 - `ward-lock.spec.ts`
 - `backup-restore-sav.spec.ts`
@@ -128,6 +142,8 @@ Audit and tag the suites that use shared-origin facilities or cross-tab coordina
 - `tab-and-update.spec.ts`
 
 Use a clear Playwright tag or annotation (for example, `@origin-state`) at the appropriate describe/spec level. The audit must also check their imported helpers so that the classification reflects actual shared state, including `navigator.locks`, Service Workers, and `BroadcastChannel`.
+
+Critically, the audit scope must extend beyond the five suites listed above. Any spec that writes to IndexedDB via the case-file persistence layer (which includes every spec that calls `freshStartNoPassword` followed by `createWard`) is implicitly origin-coupled. Two workers running such specs concurrently against the same origin will collide on the same IDB database. The audit must determine whether a meaningful "stateless" subset actually exists. If it does not — or is too small to produce a material speedup — that is a valid outcome and the trial should be recorded as such rather than forced.
 
 ### 2. Measure a bounded parallel run
 
@@ -138,7 +154,7 @@ Against a local Vite preview build, run the untagged/stateless E2E tests with `-
 - CPU and memory pressure; and
 - whether preview-server startup/teardown is reliable under concurrency.
 
-Do not edit `playwright.config.ts` during this trial. If results are stable and materially beneficial, a subsequent reviewed change may define the permanent serial/parallel execution strategy. If not, retain the existing configuration and record the collision evidence.
+Do not edit `playwright.config.ts` during this trial. If results are stable and materially beneficial, a subsequent reviewed change may define the permanent serial/parallel execution strategy. If the stateless subset is empty or near-empty, skip the trial, record the IDB coupling evidence, and retain the existing single-worker configuration.
 
 ### Phase 3 acceptance criteria
 
