@@ -479,6 +479,7 @@ function pageHome(){
         <div id="instructionsZone" class="accordion-collapse collapse">
           <div class="accordion-body" style="padding:1rem 1.25rem;">
             <ul style="margin:0;padding-left:1.4rem;font-size:.8rem;">
+              <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
               <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
               <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
               <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, Attorney, County).</li>
