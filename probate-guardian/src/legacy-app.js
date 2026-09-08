@@ -932,6 +932,23 @@ let activeInventoryType = null;
 window.D = {}; // Current active ward's data
 let _saveTimer = null;
 let currentPage = '/';
+try {
+  Object.defineProperty(window, '_saveTimer', {
+    get: () => _saveTimer,
+    set: (v) => { _saveTimer = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, 'activeInventoryType', {
+    get: () => activeInventoryType,
+    set: (v) => { activeInventoryType = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, 'currentPage', {
+    get: () => currentPage,
+    set: (v) => { currentPage = v; },
+    configurable: true
+  });
+} catch (_) {}
 // A bare top-level `let`, like activeInventoryType above, isn't reachable
 // from an ES module (see src/core/state.js's file header) -- this tiny
 // accessor (a function declaration, so it's a real window property) is
@@ -944,6 +961,23 @@ let _autoExportTimer = null;
 let _lastSavedTickTimer = null;
 let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appState
 let _lastExportAt = null; // ms epoch of last successful export, or null if never
+try {
+  Object.defineProperty(window, '_dirtySinceExport', {
+    get: () => _dirtySinceExport,
+    set: (v) => { _dirtySinceExport = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, '_lastExportAt', {
+    get: () => _lastExportAt,
+    set: (v) => { _lastExportAt = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, '_autoExportIntervalMinutes', {
+    get: () => _autoExportIntervalMinutes,
+    set: (v) => { _autoExportIntervalMinutes = v; },
+    configurable: true
+  });
+} catch (_) {}
 window.PG_APP_VERSION = '1.5.30';
 
 // ═══════════════════════════════════════════════════════
@@ -967,6 +1001,23 @@ let _appState = {};        // key -> value; replaces the old `appState` IDB stor
 let _templateCache = {};   // type -> base64; replaces the old `templates` IDB store
 let _auditLogEntries = []; // {id, timestamp, eventType, details, success}; replaces `auditLog`
 let _auditLogNextId = 1;
+try {
+  Object.defineProperty(window, '_appState', {
+    get: () => _appState,
+    set: (v) => { _appState = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, '_templateCache', {
+    get: () => _templateCache,
+    set: (v) => { _templateCache = v; },
+    configurable: true
+  });
+  Object.defineProperty(window, '_auditLogEntries', {
+    get: () => _auditLogEntries,
+    set: (v) => { _auditLogEntries = v; },
+    configurable: true
+  });
+} catch (_) {}
 
 // ═══════════════════════════════════════════════════════
 // COMMON HELPERS
@@ -1803,6 +1854,13 @@ window.auditLog = auditLog;
 const PBKDF2_ITERATIONS=210000;
 const CRYPTO_VERIFIER_PLAINTEXT='PG_VERIFIER_V1';
 let _cryptoKey=null; // CryptoKey, set after unlock/create, cleared on lock
+try {
+  Object.defineProperty(window, '_cryptoKey', {
+    get: () => _cryptoKey,
+    set: (v) => { _cryptoKey = v; },
+    configurable: true
+  });
+} catch (_) {}
 
 function _b64FromBytes(bytes){
   let bin='';
@@ -1868,6 +1926,13 @@ async function deriveKeyFromPassword(password,saltB64){
 // AES-256-GCM as below; 'none' stores plain JSON with no password gate.
 // Loaded from appState at startup; see ensureUnlocked().
 let _securityMode='encrypted'; // 'encrypted' | 'none'
+try {
+  Object.defineProperty(window, '_securityMode', {
+    get: () => _securityMode,
+    set: (v) => { _securityMode = v; },
+    configurable: true
+  });
+} catch (_) {}
 const PLAIN_MODE_PREFIX='PLAIN:'; // self-describing tag, never produced by the
 // iv:ciphertext base64 format below, so decrypt can tell the two apart
 // unambiguously even if an archive mixes entries from both modes.
@@ -2825,6 +2890,13 @@ async function saveBlobAs(blob,suggestedName,preWriteValidator){
 // no more per-ward-vs-archive distinction, so there is nothing that can end
 // up "split" across two files the way a per-ward handle used to.
 let _caseFileHandle=null;
+try {
+  Object.defineProperty(window, '_caseFileHandle', {
+    get: () => _caseFileHandle,
+    set: (v) => { _caseFileHandle = v; },
+    configurable: true
+  });
+} catch (_) {}
 
 async function rememberCaseFileHandle(handle){
   if(!handle)return;

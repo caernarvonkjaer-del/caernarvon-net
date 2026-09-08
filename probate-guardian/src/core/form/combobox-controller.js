@@ -16,17 +16,18 @@ export class ComboboxController {
    * @param {string} [options.emptyClassName='ward-combobox-empty']
    * @param {string} [options.emptyText='No matches']
    */
-  constructor({
-    input,
-    dropdown,
-    items = [],
-    getItems = null,
-    onPick = null,
-    filterFn = null,
-    itemClassName = 'ward-combobox-item',
-    emptyClassName = 'ward-combobox-empty',
-    emptyText = 'No matches',
-  }) {
+  constructor(options = {}) {
+    const {
+      input,
+      dropdown,
+      items = [],
+      getItems = null,
+      filterFn = null,
+      itemClassName = 'ward-combobox-item',
+      emptyClassName = 'ward-combobox-empty',
+      emptyText = 'No matches',
+    } = options;
+    const pickCallback = options.onPick || null;
     if (!input || !dropdown) {
       throw new Error('ComboboxController requires both input and dropdown elements');
     }
@@ -34,7 +35,7 @@ export class ComboboxController {
     this.dropdown = dropdown;
     this.items = items;
     this.getItems = getItems;
-    this.onPick = onPick;
+    this.pickCallback = pickCallback;
     this.filterFn = filterFn;
     this.itemClassName = itemClassName;
     this.emptyClassName = emptyClassName;
@@ -205,8 +206,8 @@ export class ComboboxController {
     const label = typeof item === 'object' ? (item.label || item.name || '') : String(item);
     this.input.value = label;
     this.input.dispatchEvent(new Event('input', { bubbles: true }));
-    if (typeof this.onPick === 'function') {
-      this.onPick(item);
+    if (typeof this.pickCallback === 'function') {
+      this.pickCallback(item);
     }
     this.close();
   }

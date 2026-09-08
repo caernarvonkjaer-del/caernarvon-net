@@ -14,26 +14,107 @@
 // Deliberately minimal: only what the Simplified Accounting extraction
 // (Phase D) actually needs, not a speculative full state API.
 
+let _caseFile = {
+  activeWardId: null,
+  guardianName: '',
+  guardianEmail: '',
+  parties: [],
+  cases: [],
+  dismissedPartyPairs: [],
+  wards: [],
+  lastSavedFileName: '',
+};
+let _D = {};
+let _appState = {};
+let _templateCache = {};
+let _auditLogEntries = [];
+
+/** The canonical caseFile object. */
+export function getCaseFile() {
+  if (typeof window !== 'undefined' && window.caseFile) {
+    return window.caseFile;
+  }
+  return _caseFile;
+}
+
+export function setCaseFile(cf) {
+  _caseFile = cf;
+  if (typeof window !== 'undefined') {
+    window.caseFile = cf;
+  }
+}
+
 /** The full data object for whichever ward is currently active, or {} if none. */
 export function getD() {
-  return window.D;
+  if (typeof window !== 'undefined' && window.D) {
+    return window.D;
+  }
+  return _D;
+}
+
+export function setD(d) {
+  _D = d;
+  if (typeof window !== 'undefined') {
+    window.D = d;
+  }
+}
+
+export function getAppState(key) {
+  if (typeof window !== 'undefined' && window._appState) {
+    return key in window._appState ? window._appState[key] : null;
+  }
+  return key in _appState ? _appState[key] : null;
+}
+
+export function setAppState(key, val) {
+  _appState[key] = val;
+  if (typeof window !== 'undefined') {
+    if (!window._appState) window._appState = {};
+    window._appState[key] = val;
+  }
+}
+
+export function getAllAppState() {
+  if (typeof window !== 'undefined' && window._appState) {
+    return window._appState;
+  }
+  return _appState;
+}
+
+export function getTemplateCache() {
+  if (typeof window !== 'undefined' && window._templateCache) {
+    return window._templateCache;
+  }
+  return _templateCache;
+}
+
+export function setTemplateCache(type, b64) {
+  _templateCache[type] = b64;
+  if (typeof window !== 'undefined') {
+    if (!window._templateCache) window._templateCache = {};
+    window._templateCache[type] = b64;
+  }
 }
 
 /** The full ward record from caseFile.wards for the active ward, or null. */
 export function getActiveWard() {
-  return window.getActiveWard ? window.getActiveWard() : null;
+  if (typeof window !== 'undefined' && typeof window.getActiveWard === 'function') {
+    return window.getActiveWard();
+  }
+  const cf = getCaseFile();
+  if (cf && cf.activeWardId && Array.isArray(cf.wards)) {
+    return cf.wards.find((w) => w.wardId === cf.activeWardId) || null;
+  }
+  return null;
 }
 
 /**
  * The active ward's inventoryType key (e.g. 'simplified'), or null if no
- * ward is active. Reads window.D.inventoryType rather than legacy-app.js's
- * separate `activeInventoryType` variable (unreachable from a module, see
- * file header) -- the two are kept in sync by every legacy code path that
- * sets either (addWard/switchWard/convertExistingWard), so this is
- * equivalent for read purposes.
+ * ward is active. Reads window.D.inventoryType or internal _D.
  */
 export function getActiveInventoryType() {
-  return window.D && window.D.inventoryType ? window.D.inventoryType : null;
+  const d = getD();
+  return d && d.inventoryType ? d.inventoryType : null;
 }
 
 // Blank-ward data factory for the Simplified Accounting feature (Milestone 2,
@@ -370,9 +451,11 @@ export function emptyDataAnnual() {
 // window instead, the same pattern src/fragment-loader.js uses for
 // loadFragment(). Remove once a real src/main.js bootstrap exists to own
 // this wiring explicitly.
-window.emptyDataSimplified = emptyDataSimplified;
-window.emptyDataPlanSimplified = emptyDataPlanSimplified;
-window.emptyDataPlanAnnual = emptyDataPlanAnnual;
-window.emptyDataPlanInitial = emptyDataPlanInitial;
-window.emptyDataPlanMinor = emptyDataPlanMinor;
-window.emptyDataAnnual = emptyDataAnnual;
+if (typeof window !== 'undefined') {
+  window.emptyDataSimplified = emptyDataSimplified;
+  window.emptyDataPlanSimplified = emptyDataPlanSimplified;
+  window.emptyDataPlanAnnual = emptyDataPlanAnnual;
+  window.emptyDataPlanInitial = emptyDataPlanInitial;
+  window.emptyDataPlanMinor = emptyDataPlanMinor;
+  window.emptyDataAnnual = emptyDataAnnual;
+}
