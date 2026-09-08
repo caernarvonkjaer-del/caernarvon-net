@@ -81,15 +81,24 @@ test('Annual Accounting schedule entries use responsive Bootstrap grid columns',
     ];
   });
 
+  // Schedule A used to be pinned to a single column (a bare .col-12 with no
+  // lg-breakpoint pairing) while every other schedule paired up at col-lg-6
+  // -- an inconsistency, not a deliberate design choice, fixed to match its
+  // siblings (and Guardian Inventory's own two-per-row schedules).
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.evaluate(() => (window as any).navigate('/scha'));
-  const incomeColumns = page.locator('.schedule-entry-grid > .col-12 > .entry-card');
+  const incomeColumns = page.locator('.schedule-entry-grid > .col-12.col-lg-6 > .entry-card');
   await expect(incomeColumns).toHaveCount(2);
   const incomeXPositions = await incomeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
-  expect(incomeXPositions).toBe(1);
+  expect(incomeXPositions).toBe(2);
 
+  // Schedule B-1 (and every other B/C/D/E/F schedule) used to only pair up
+  // at the xxl breakpoint (1400px of VIEWPORT width, not available card
+  // width) -- effectively never on a laptop with the sidebar taking its
+  // share of the window. Lowered to col-lg-6, the same breakpoint Guardian
+  // Inventory already uses for its own schedule cards.
   await page.evaluate(() => (window as any).navigate('/schb1'));
-  const feeColumns = page.locator('.schedule-entry-grid > .col-12.col-xxl-6 > .entry-card');
+  const feeColumns = page.locator('.schedule-entry-grid > .col-12.col-lg-6 > .entry-card');
   await expect(feeColumns).toHaveCount(2);
   const feeXPositions = await feeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(feeXPositions).toBe(2);

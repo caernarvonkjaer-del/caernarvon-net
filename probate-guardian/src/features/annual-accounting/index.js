@@ -349,7 +349,13 @@ function inpD(label,val,setter,req=false,type='text'){
   const isEmail=label.toLowerCase().includes('email');
   const isDate=!isEmail&&(type==='date'||/\bdate\b/i.test(label));
   const isPhone=!isEmail&&!isDate&&label.toLowerCase().includes('phone');
-  const isName=!isEmail&&!isDate&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
+  // Excludes any label that also mentions "account" -- a handful of fields
+  // (Schedule E's "Bank Name / Account #") combine a name-like word with an
+  // account number in one input. Without this exclusion the whole thing
+  // routed through formatName()'s title-casing, which capitalized the first
+  // character of a typed account number (e.g. an account displayed to the
+  // guardian as "xxxx1234" printed as "Xxxx1234" on export).
+  const isName=!isEmail&&!isDate&&!label.toLowerCase().includes('account')&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
   const isZip=!isEmail&&!isDate&&label.toLowerCase().includes('zip');
   const isAddress=!isEmail&&!isDate&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
   const isSSN=!isEmail&&!isDate&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
@@ -365,7 +371,14 @@ function inpD(label,val,setter,req=false,type='text'){
   const isWardNameField=path==='wardName';
   const isGuardianField=/^guardian(Name|Names)?$/.test(path)||path==='guardians.0.name';
   const formatted=isDate?formatDisplayDate(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
-  const inputType=isAmountField?'text':isSSN?'password':(isDate?'text':type);
+  // NOT type="password" for SSN/EIN -- every other feature module masks
+  // these visually via CSS (.ssn-masked's -webkit-text-security, toggled by
+  // the reveal button below) precisely because a real password field in the
+  // DOM makes Chrome's password manager offer to save it, using whatever
+  // text input happens to sit nearest as the "username" -- e.g. a Signature
+  // Date field. This was the one inpD() call site still using the browser
+  // password mechanism instead of the shared masking convention.
+  const inputType=isAmountField?'text':(isDate?'text':type);
   const inputMode=isAmountField?' inputmode="decimal"':(isDate?' inputmode="text"':'');
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
   const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
@@ -373,7 +386,7 @@ function inpD(label,val,setter,req=false,type='text'){
   const placeholder=isDate?' placeholder="MM/DD/YYYY"':'';
   const hintId=`${inputId}_hint`;
   const ariaDesc=isDate?` aria-describedby="${hintId}"`:'';
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${inputId}" autocomplete="off"${inputMode}${placeholder} value="${esc(cleanedValue)}" data-annual-path="${path}" data-field-path="${path}" data-annual-label="${esc(label)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-annual-format="${format}"`:''}${isWardNameField?' data-sync-ward-name="true"':''}${isGuardianField?' data-sync-guardian-name="true"':''}${ariaDesc}>`;
+  const inputHtml=`<input type="${inputType}" class="form-control${isSSN?' ssn-masked':''}" id="${inputId}" autocomplete="off"${inputMode}${placeholder} value="${esc(cleanedValue)}" data-annual-path="${path}" data-field-path="${path}" data-annual-label="${esc(label)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-annual-format="${format}"`:''}${isWardNameField?' data-sync-ward-name="true"':''}${isGuardianField?' data-sync-guardian-name="true"':''}${ariaDesc}>`;
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
   const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div>`:'';
   return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}${hintHtml}</div>`;
@@ -692,7 +705,7 @@ function pageSchAAnnual(){
   const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schA && d.schA.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schA.map((r,i)=>`<div class="col-12"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schA.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schA',i,'/scha')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Income Source / Payer',r.payer,`D.schA[${i}].payer=this.value`,true)}</div>
@@ -721,7 +734,7 @@ function pageSchB1Annual(){
   const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schB1 && d.schB1.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schB1.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB1.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schB1',i,'/schb1')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB1[${i}].bankAcct=this.value`,true)}</div>
@@ -753,7 +766,7 @@ function pageSchB2Annual(){
   const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schB2 && d.schB2.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schB2.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB2.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schB2',i,'/schb2')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB2[${i}].bankAcct=this.value`,true)}</div>
@@ -785,7 +798,7 @@ function pageSchB3Annual(){
   const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schB3 && d.schB3.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schB3.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB3.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schB3',i,'/schb3')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB3[${i}].bankAcct=this.value`,true)}</div>
@@ -819,7 +832,7 @@ function pageSchB4Annual(){
   d.schB4.forEach(r=>{if(r.category&&cats[r.category]!==undefined)cats[r.category]+=n(r.amount);});
   let rows='';
   if(d.schB4 && d.schB4.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schB4.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schB4.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schB4',i,'/schb4')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB4[${i}].checkNo=this.value`,true)}</div>
@@ -853,7 +866,7 @@ function pageSchCAnnual(){
   const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schC && d.schC.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schC.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schC.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schC',i,'/schc')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
@@ -887,7 +900,7 @@ function pageSchD1Annual(){
   if(d.schD1 && d.schD1.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD1.map((r,i)=>{
       const wardAmt=n(r.fullAmount)*pct(r.wardPct);
-      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
         ${entryCardHeaderAnnual(`Line ${i+1} — ${r.description||'(no description)'}`,'schD1',i,'/schd1')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
@@ -924,7 +937,7 @@ function pageSchD2Annual(){
   if(d.schD2 && d.schD2.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD2.map((r,i)=>{
       const wardVal=n(r.fullValue)*pct(r.wardPct);
-      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD2',i,'/schd2')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
@@ -961,7 +974,7 @@ function pageSchD3Annual(){
   if(d.schD3 && d.schD3.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD3.map((r,i)=>{
       const wardAmt=n(r.fullAmount)*pct(r.wardPct);
-      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD3',i,'/schd3')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-6">${inpD('Description / Location / Owners',r.description,`D.schD3[${i}].description=this.value`,true)}</div>
@@ -996,7 +1009,7 @@ function pageSchD4Annual(){
   if(d.schD4 && d.schD4.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD4.map((r,i)=>{
       const wardVal=n(r.fullAmount)*pct(r.wardPct);
-      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD4',i,'/schd4')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
@@ -1033,7 +1046,7 @@ function pageSchD5Annual(){
   if(d.schD5 && d.schD5.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD5.map((r,i)=>{
       const wardBal=n(r.fullDebt)*pct(r.wardPct);
-      return `<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+      return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD5',i,'/schd5')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-4">${inpD('Description / Lender / Related Asset',r.description,`D.schD5[${i}].description=this.value`,true)}</div>
@@ -1066,7 +1079,7 @@ function pageSchEAnnual(){
   const totalOut=(d.schE||[]).reduce((s,r)=>s+n(r.transferOutAmt),0);
   let rows='';
   if(d.schE && d.schE.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schE.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schE.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schE',i,'/sche')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-4">${inpD('Bank Name / Account #',r.bankName,`D.schE[${i}].bankName=this.value`,true)}</div>
@@ -1099,7 +1112,7 @@ function pageSchF1Annual(){
   const total=(d.schF1||[]).reduce((s,r)=>s+n(r.salePrice),0);
   let rows='';
   if(d.schF1 && d.schF1.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schF1.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schF1.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Sale ${i+1}`,'schF1',i,'/schf1')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description of Sale / Address / Parties',r.description,`D.schF1[${i}].description=this.value`,true)}</div>
@@ -1129,7 +1142,7 @@ function pageSchF2Annual(){
   const total=(d.schF2||[]).reduce((s,r)=>s+n(r.salePrice),0);
   let rows='';
   if(d.schF2 && d.schF2.length>0){
-    rows='<div class="row g-3 schedule-entry-grid">'+d.schF2.map((r,i)=>`<div class="col-12 col-xxl-6"><div class="entry-card mb-2">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.schF2.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Sale ${i+1}`,'schF2',i,'/schf2')}
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Description of Sale / Purchaser / Agent',r.description,`D.schF2[${i}].description=this.value`,true)}</div>

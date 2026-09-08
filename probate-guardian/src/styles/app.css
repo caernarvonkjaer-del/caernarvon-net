@@ -981,6 +981,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .tooltip-icon:hover .tooltip-popup{opacity:1;visibility:visible;pointer-events:auto;}
 .tooltip-popup::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border:6px solid transparent;border-top-color:#111a2b;}
 .tooltip-popup strong{font-weight:650;color:#fff;}
+
+/* Any label -- a tooltip icon and required-asterisk pushing it over, or just
+   a two-word label ("Period From") -- can wrap to a second line once its
+   column narrows enough: a half-width entry-card, a dense 5-field schedule
+   row, a browser at high zoom. Left alone, only THAT column's input drops
+   down to make room while its siblings in the same row stay put, throwing
+   the row's inputs out of vertical alignment (reported against Annual
+   Accounting's Preparer/Attorney cards and the denser B/D schedules).
+   Reserving two lines of label height keeps a row's inputs level regardless
+   of which column ends up wrapping. Scoped to rows the :has() below confirms
+   actually hold 2+ side-by-side columns -- a lone full-width col-12 field
+   has no sibling to misalign against, so it's left with its normal
+   single-line label and no added space. */
+.row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"] .form-label{
+  min-height:2.15em;display:inline-flex;align-items:flex-start;flex-wrap:wrap;
+}
 /* ── Walkthrough ──────────────────────────────────────── */
 .walkthrough-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:9000;display:none;}
 .walkthrough-overlay.active{display:block;}
