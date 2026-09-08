@@ -8,6 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
 //   portable - built dist/portable/index.html opened via a literal file:// URL
 const target = process.env.PG_TARGET || 'source';
 const browser = process.env.PG_BROWSER || 'chromium';
+const chromiumExecutablePath = process.env.PG_CHROMIUM_EXECUTABLE_PATH;
 
 const TARGETS = {
   source:   { command: 'npx vite preview --outDir . --port 4321 --strictPort', url: 'http://localhost:4321/index.html', baseURL: 'http://localhost:4321/index.html' },
@@ -21,7 +22,13 @@ const webServer = TARGETS[target]
   : undefined;
 
 const BROWSERS = {
-  chromium: { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+  chromium: {
+    name: 'chromium',
+    use: {
+      ...devices['Desktop Chrome'],
+      ...(chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {}),
+    },
+  },
   edge: { name: 'edge', use: { ...devices['Desktop Chrome'], channel: 'msedge' } },
   firefox: { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
   webkit: { name: 'webkit', use: { ...devices['Desktop Safari'] } },

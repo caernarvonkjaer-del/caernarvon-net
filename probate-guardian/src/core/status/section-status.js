@@ -27,10 +27,11 @@ export function computeSectionStatus(currentRoute, navChecks = null, rawErrors =
 }
 
 /**
- * Renders bounded missing-field guidance near navigation buttons when Next is blocked.
- * Shows up to maxItems (default 6) with interactive jump links, plus "and N more...".
+ * Renders every missing field near navigation buttons when Next is blocked.
+ * The optional maxItems exists for callers with a deliberate compact mode;
+ * normal section guidance must not hide work behind an aggregate count.
  */
-export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItems = 6, options = {}) {
+export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItems = Infinity, options = {}) {
   const structured = adaptValidationErrors(rawErrors);
   const localErrors = structured.filter(
     (e) => e.route === currentRoute || (currentRoute === '/' && (e.route === '/' || (e.section && e.section.toLowerCase().includes('cover'))))

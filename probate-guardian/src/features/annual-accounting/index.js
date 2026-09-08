@@ -1,6 +1,7 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
+import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -142,6 +143,10 @@ function refreshAnnualTotals() {
   });
 }
 
+function annualDescriptor(data = window.D) {
+  return resolveFilingDescriptor(data).descriptor;
+}
+
 function persistAnnualControl(control, applyFormat = true) {
   const path = control.dataset.annualPath || control.dataset.fieldPath;
   if (!path) return;
@@ -196,6 +201,10 @@ function bindEvents(container) {
   }, options);
   container.addEventListener('change', (event) => {
     const control = event.target;
+    if (control instanceof HTMLSelectElement && control.dataset.annualPath === 'filingType') {
+      window.setAccountingFilingType?.(control.value);
+      return;
+    }
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {
       if (!window.D.scheduleNoItems) window.D.scheduleNoItems = {};
       window.D.scheduleNoItems[control.dataset.schedule] = control.checked;
@@ -370,7 +379,7 @@ function inpD(label,val,setter,req=false,type='text'){
   const format=isSSN?'ssn':isCaseNumber?'case':isBarNumber?'bar':isAccountNumber?'account':isCheckNumber?'check':isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':type==='text'?'security':'';
   const isWardNameField=path==='wardName';
   const isGuardianField=/^guardian(Name|Names)?$/.test(path)||path==='guardians.0.name';
-  const formatted=isDate?formatDisplayDate(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
+  const formatted=isDate?(window.getFieldDraftDisplay?.(path,formatDisplayDate(val))||formatDisplayDate(val)):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
   // NOT type="password" for SSN/EIN -- every other feature module masks
   // these visually via CSS (.ssn-masked's -webkit-text-security, toggled by
   // the reveal button below) precisely because a real password field in the
@@ -421,12 +430,13 @@ function pageNavAnnual(prev,next){
 }
 function getSummaryConfigAnnual(){
   const d=window.D;
+  const descriptor=annualDescriptor(d);
   const nav=window.computeNavChecks();
   const t=calcTotalsAnnual();
   const f=v=>fmtAnnual(v)||'—';
   const fd=v=>v?String(v).substring(0,10):'—';
   return {
-    formTitle:`${d.inventoryType==='finalAccounting'?'Final':d.inventoryType==='trustAccounting'?'Trust':'Annual'} Accounting — Summary`,
+    formTitle:`${descriptor?.displayName||'Annual Accounting'} — Summary`,
     infoRows:[
       {label:'Ward Name',value:esc(d.wardName)},
       {label:'Case Number',value:esc(d.caseNumber)},
@@ -620,9 +630,10 @@ function pagePart3Annual(){
 // ── Part IV ──────────────────────────────────────────────
 function pagePart4Annual(){
   const d=window.D; const p=d.preparer;
+  const copy=filingCopy(annualDescriptor(d));
   return `<div class="schedule-page">
   <h1>Part IV — Preparer Attestation</h1>
-  <div class="attestation-text">I have compiled the accompanying Annual Accounting of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of <strong>${esc(d.wardName)||'[ward]'}</strong> for the period <strong>${fmtD(d.periodFrom)}</strong> through <strong>${fmtD(d.periodTo)}</strong>. This compilation is limited to presenting information in the form of an Annual Accounting and is the representation of the guardian. I have not audited or reviewed the accompanying guardianship accounting and, accordingly, do not express an opinion or any other form of assurance on it.</div>
+  <div class="attestation-text">${esc(copy.preparerStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo))).replace(/\n/g,'<br>')}</div>
   <div style="color:var(--brand-text);font-size:.8rem;font-weight:700;margin-bottom:.75rem;">*** If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE. ***</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-md-6">
@@ -651,9 +662,10 @@ function pagePart4Annual(){
 // ── Part V ───────────────────────────────────────────────
 function pagePart5Annual(){
   const d=window.D;
+  const copy=filingCopy(annualDescriptor(d));
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
-  <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the annual guardianship accounting of the Guardian <strong>${esc(d.wardName)||'[ward]'}</strong> for the period <strong>${fmtD(d.periodFrom)}</strong> through <strong>${fmtD(d.periodTo)}</strong>. This annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in <strong>${d.attorney_county||d.county||'[county]'}</strong> County, Florida.</div>
+  <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo),d.attorney_county||d.county||'[county]'))}</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-md-6">
       <div class="entry-card mb-0 h-100">

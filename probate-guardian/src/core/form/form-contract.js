@@ -2,6 +2,14 @@
 // Governs storage sanitization, identifier preservation, date normalization, and blur formatting.
 
 import { parseFlexibleDate, formatDisplayDate } from './date-parser.js';
+import {
+  clearFieldDraft,
+  commitStoredDateDrafts,
+  formatDraftIssues,
+  getFieldDraft,
+  getFieldDraftIssues,
+  recordDateDraft,
+} from './commit-coordinator.js';
 
 if (typeof window !== 'undefined') {
   window._transientDrafts = window._transientDrafts || {};
@@ -128,17 +136,27 @@ export function writeDraftValue(control, options = {}) {
     : control.value;
 
   if (kind === 'date') {
-    // If user typed or pasted 8 unpunctuated digits (or 7 digits), auto-format it live in the control
-    if (/^\d{8}$/.test(rawValue) || /^\d{7}$/.test(rawValue)) {
+    // Only auto-format a complete eight-digit value. Seven digits can be a
+    // legitimate in-progress paste/entry, so formatting it moves the caret
+    // and used to make rapid entry unreliable.
+    if (/^\d{8}$/.test(rawValue)) {
       const parsed = parseFlexibleDate(rawValue);
       if (parsed) {
         control.value = formatDisplayDate(parsed);
-        window._transientDrafts[path] = control.value;
-        return;
       }
     }
-    // Keep draft in DOM / transient store during active typing; do not leak unparsed text into window.D
-    window._transientDrafts[path] = rawValue;
+    // Keep a durable draft outside the canonical date field. This survives a
+    // debounced save, navigation, and assistive-technology event timing
+    // without allowing invalid text into generated artifacts.
+    recordDateDraft({
+      data: window.D,
+      path,
+      rawValue: control.value,
+      label: control.dataset?.fieldLabel || '',
+      section: control.dataset?.fieldSection || '',
+      route: window.getCurrentPage?.() || window.location?.hash || '/',
+    });
+    if (window.autoSave) window.autoSave();
     return;
   }
 
@@ -179,19 +197,28 @@ export function finalizeFieldValue(control, options = {}) {
       // Empty date
       control.removeAttribute('aria-invalid');
       control.classList.remove('is-invalid');
-      delete window._transientDrafts[path];
+      clearFieldDraft(path, window.D);
       if (window.setPath) window.setPath(window.D, path, '');
     } else if (parsed === null) {
-      // Invalid date text: retain typed text visibly, mark aria-invalid, leave model uncommitted
+      // Invalid date text: retain both the visible draft and the previously
+      // committed canonical value. Clearing the model here caused a blurred
+      // or rapidly-entered date to disappear before export.
       control.setAttribute('aria-invalid', 'true');
       control.classList.add('is-invalid');
-      if (window.setPath) window.setPath(window.D, path, '');
+      recordDateDraft({
+        data: window.D,
+        path,
+        rawValue,
+        label: control.dataset?.fieldLabel || '',
+        section: control.dataset?.fieldSection || '',
+        route: window.getCurrentPage?.() || window.location?.hash || '/',
+      });
     } else {
       // Valid canonical date: update display & model
       control.removeAttribute('aria-invalid');
       control.classList.remove('is-invalid');
       control.value = formatDisplayDate(parsed);
-      delete window._transientDrafts[path];
+      clearFieldDraft(path, window.D);
       if (window.setPath) window.setPath(window.D, path, parsed);
     }
   } else if (kind === 'caseNumber' || control.dataset?.formFormat === 'case-number' || control.dataset?.annualFormat === 'case') {
@@ -236,10 +263,33 @@ export function finalizeFieldValue(control, options = {}) {
   if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
 }
 
+/**
+ * Commits every valid date draft currently mounted in the document. Invalid
+ * drafts remain visible and become explicit export blockers; they never erase
+ * a prior valid model value.
+ */
+export function commitPendingFieldValues(root = document) {
+  root.querySelectorAll?.('[data-field-kind="date"]').forEach((control) => {
+    // A programmatic state update can happen while an older rendered page is
+    // still connected (imports and recovery do this). Only finalize controls
+    // that actually received a user draft; otherwise a stale blank DOM value
+    // could overwrite the newer canonical model value at navigation time.
+    if (getFieldDraft(getControlPath(control), window.D)) finalizeFieldValue(control);
+  });
+  const committed = commitStoredDateDrafts(window.D, window.setPath);
+  return { committed, issues: getFieldDraftIssues(window.D) };
+}
+
+export function getFieldDraftIssueMessages(data = window.D) {
+  return formatDraftIssues(getFieldDraftIssues(data));
+}
+
 // Global exposure for legacy interop
 if (typeof window !== 'undefined') {
   window.sanitizeStoredText = sanitizeStoredText;
   window.formatSafeTitleCase = formatSafeTitleCase;
   window.writeDraftValue = writeDraftValue;
   window.finalizeFieldValue = finalizeFieldValue;
+  window.commitPendingFieldValues = commitPendingFieldValues;
+  window.getFieldDraftIssueMessages = getFieldDraftIssueMessages;
 }

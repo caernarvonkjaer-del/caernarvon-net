@@ -21,6 +21,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -66,7 +67,7 @@ export function planReadinessChecksInitial(){
 
 export function pagePrintPlanInitial(){
   window.queueAllScheduleDocValidations?.();
-  const errors=[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)]).messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   return `<div>
@@ -94,7 +95,7 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)]).messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const ward=(window.D.wardName||'InitialGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
   try{
@@ -108,7 +109,7 @@ export async function doSavePdf(){
 }
 
 export async function doSaveDocx(){
-  const errors=[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)]).messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const stat=document.getElementById('export-status');
   if(stat)stat.textContent='Generating Word document…';

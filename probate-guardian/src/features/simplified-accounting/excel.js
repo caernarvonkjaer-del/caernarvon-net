@@ -3,6 +3,7 @@
 // header. Statically imports back from index.js; see print.js's header for
 // why that circularity is safe.
 import { validateSimplified } from './index.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotals, guardianHasAnyData,
@@ -16,7 +17,7 @@ export const SIMPLIFIED_EXCEL_CAPS={
 };
 
 export async function doSaveExcel(){
-  const errors=validateSimplified();
+  const errors=prepareFilingOutput(window.D,()=>validateSimplified()).messages;
   if(errors.length){renderPage('/print');return;}
   const capOver=checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS);
   if(capOver.length){

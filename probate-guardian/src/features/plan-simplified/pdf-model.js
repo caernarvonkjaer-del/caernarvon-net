@@ -5,11 +5,14 @@
 // raster html2pdf/html2canvas export with a tagged, accessible,
 // non-raster PDF.
 
+import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+
 export function buildPlanSimplifiedModel(D) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
   const county = d.county || 'Pinellas';
+  const descriptor = resolveDescriptorForInventoryType('planSimplified');
 
   const fmtDate = (iso) => {
     if (!iso) return '';
@@ -31,6 +34,12 @@ export function buildPlanSimplifiedModel(D) {
     caseNumber,
     county,
   };
+  metadata.title = `${wardName} - ${caseNumber} - ${descriptor.displayName}`;
+  metadata.subject = descriptor.displayName;
+  metadata.formName = descriptor.documentTitle;
+  metadata.formSubtitle = descriptor.displayName;
+  metadata.keywords = `Florida, Probate, Guardianship, ${descriptor.displayName}`;
+  metadata.filingId = descriptor.id;
 
   const sections = [];
 

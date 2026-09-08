@@ -17,6 +17,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 function buildModelForPreview(D){
   return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -30,7 +31,8 @@ const {
 
 export function pagePrintAnnual(capOver){
   window.queueAllScheduleDocValidations?.();
-  const errors=[...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
+  const preflight=prepareFilingOutput(window.D,()=>[...validateAnnual(), ...getSupplementalFilingIssues(window.D)]);
+  const errors=preflight.messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   return `<div>
@@ -77,10 +79,11 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=[...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
+  const preflight=prepareFilingOutput(window.D,()=>[...validateAnnual(), ...getSupplementalFilingIssues(window.D)]);
+  const errors=preflight.messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const ward=(window.D.wardName||'AnnualAccounting').trim().replace(/[^a-z0-9]/gi,'_');
-  const formSlug=formDisplayName(window.D.inventoryType).replace(/[^a-z0-9]/gi,'');
+  const formSlug=(preflight.descriptor?.displayName||formDisplayName(window.D.inventoryType)).replace(/[^a-z0-9]/gi,'');
   const filename=`${ward}_${formSlug}.pdf`;
 
   try{
@@ -96,12 +99,13 @@ export async function doSavePdf(){
 }
 
 export async function doSaveDocx(){
-  const errors=[...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
+  const preflight=prepareFilingOutput(window.D,()=>[...validateAnnual(), ...getSupplementalFilingIssues(window.D)]);
+  const errors=preflight.messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const stat=document.getElementById('export-status');
   if(stat)stat.textContent='Generating Word document…';
   const ward=(window.D.wardName||'AnnualAccounting').trim().replace(/[^a-z0-9]/gi,'_');
-  const formSlug=formDisplayName(window.D.inventoryType).replace(/[^a-z0-9]/gi,'');
+  const formSlug=(preflight.descriptor?.displayName||formDisplayName(window.D.inventoryType)).replace(/[^a-z0-9]/gi,'');
   const filename=`${ward}_${formSlug}.docx`;
 
   try{
@@ -117,4 +121,3 @@ export async function doSaveDocx(){
     if(stat)stat.textContent='';
   }
 }
-

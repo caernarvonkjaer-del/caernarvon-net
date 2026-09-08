@@ -5,6 +5,8 @@ import {
   formatSafeTitleCase,
   writeDraftValue,
   finalizeFieldValue,
+  commitPendingFieldValues,
+  getFieldDraftIssueMessages,
   yesNoText,
 } from '../../src/core/form/form-contract.js';
 
@@ -145,10 +147,11 @@ describe('form-contract', () => {
       });
 
       finalizeFieldValue(input);
-      expect(window.D.periodFrom).toBe('');
+      expect(window.D.periodFrom).toBeUndefined();
       expect(input.value).toBe('02/30/2026'); // stays visible
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(input.classList.contains('is-invalid')).toBe(true);
+      expect(getFieldDraftIssueMessages()).toContain('Date entry - periodFrom must be a valid date using a four-digit year.');
     });
 
     it('sets aria-invalid on blur when 8-digit unpunctuated date is impossible calendar date', () => {
@@ -158,10 +161,37 @@ describe('form-contract', () => {
       });
 
       finalizeFieldValue(input);
-      expect(window.D.periodFrom).toBe('');
+      expect(window.D.periodFrom).toBeUndefined();
       expect(input.value).toBe('13012026');
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(input.classList.contains('is-invalid')).toBe(true);
+    });
+
+    it('keeps a prior committed date when a later draft is invalid', () => {
+      window.D.periodFrom = '2026-02-14';
+      const input = createMockInput({
+        dataset: { fieldPath: 'periodFrom', fieldKind: 'date', fieldLabel: 'Period From' },
+        value: '02/30/2026',
+      });
+
+      writeDraftValue(input);
+      finalizeFieldValue(input);
+
+      expect(window.D.periodFrom).toBe('2026-02-14');
+      expect(window.D.__fieldDrafts.periodFrom.rawValue).toBe('02/30/2026');
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('does not let a stale rendered date control overwrite programmatic state', () => {
+      window.D.periodFrom = '2026-02-14';
+      const staleControl = createMockInput({
+        dataset: { fieldPath: 'periodFrom', fieldKind: 'date' },
+        value: '',
+      });
+
+      commitPendingFieldValues({ querySelectorAll: () => [staleControl] });
+
+      expect(window.D.periodFrom).toBe('2026-02-14');
     });
 
     it('writes non-date fields directly on input and cleans on blur', () => {

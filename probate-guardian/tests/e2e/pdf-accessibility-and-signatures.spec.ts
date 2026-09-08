@@ -172,11 +172,11 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(rawPdfString).not.toContain('/Filter /DCTDecode'); // No JPEG screenshots
 
     // Document Metadata & Catalog Verification
-    expect(title).toBe('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
+    expect(title).toBe('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
     expect(subject).toBe('Verified Initial Inventory');
     expect(author).toBe('Probate Guardian');
     expect(lang).toBe('en-US');
-    expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
+    expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
     expect(rawPdfString).toContain('Verified Initial Inventory');
     expect(rawPdfString).toContain('/Lang (en-US)');
 

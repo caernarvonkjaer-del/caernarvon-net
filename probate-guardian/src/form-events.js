@@ -1,6 +1,8 @@
 import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
 import { writeDraftValue, finalizeFieldValue, getControlPath } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
+import './core/filing/filing-descriptor.js';
+import './core/filing/output-preflight.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 

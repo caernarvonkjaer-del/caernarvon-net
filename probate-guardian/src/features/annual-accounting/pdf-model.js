@@ -3,6 +3,7 @@
 
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 import { yesNoText } from '../../core/form/form-contract.js';
+import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -32,6 +33,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const county = d.county || 'Pinellas';
   const printDate = options.printDate || new Date().toISOString().slice(0, 10);
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';
+  const descriptor = resolveFilingDescriptor(d).descriptor;
+  const copy = filingCopy(descriptor);
 
   const fmtS = (v) => {
     const num = parseFloat(v) || 0;
@@ -56,13 +59,14 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const rec = annualReconcileState(t, d);
 
   const metadata = {
-    title: `${wardName} - ${caseNumber} - Annual Accounting - Printed ${printDate}`,
-    subject: 'Annual Accounting of Guardian of the Property (§ 744.3678)',
+    title: `${wardName} - ${caseNumber} - ${descriptor.displayName} - Printed ${printDate}`,
+    subject: copy.subject,
     author: 'Probate Guardian',
     creator: 'Probate Guardian',
-    formName: 'ANNUAL GUARDIANSHIP ACCOUNTING',
-    formSubtitle: `Annual Accounting — ${wardName}`,
-    keywords: 'Florida, Probate, Guardianship, Annual Accounting',
+    formName: descriptor.documentTitle,
+    formSubtitle: `${descriptor.displayName} — ${wardName}`,
+    keywords: copy.keywords,
+    filingId: descriptor.id,
     wardName,
     caseNumber,
     county,
@@ -80,7 +84,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     { label: 'Attorney for Guardian', value: d.attorney || '' },
     { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
     { label: 'County', value: county },
-    { label: 'Filing Type', value: d.filingType || 'Annual Accounting' },
+    { label: 'Filing Type', value: descriptor.displayName },
     { label: 'Amended Form?', value: yesNoText(d.amendedForm) },
   ];
   if (d.relatedCaseNumbers) {
@@ -270,7 +274,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `I have compiled the accompanying Annual Accounting of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of ${wardName} for the period ${fmtD(d.periodFrom)} through ${fmtD(d.periodTo)}. This compilation is limited to presenting information in the form of an Annual Accounting and is the representation of the guardian. I have not audited or reviewed the accompanying guardianship accounting and, accordingly, do not express an opinion or any other form of assurance on it.\n\nNOTICE: If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.`,
+        text: copy.preparerStatement(wardName, fmtD(d.periodFrom), fmtD(d.periodTo)),
       },
       {
         type: 'signature-block',
@@ -301,7 +305,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `The undersigned Attorney hereby notifies the Court of the filing of the annual guardianship accounting of the Guardian ${wardName} for the period ${fmtD(d.periodFrom)} through ${fmtD(d.periodTo)}. This annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${d.attorney_county || county} County, Florida.`,
+        text: copy.attorneyStatement(wardName, fmtD(d.periodFrom), fmtD(d.periodTo), d.attorney_county || county),
       },
       {
         type: 'signature-block',

@@ -21,6 +21,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -35,7 +36,7 @@ const {
 
 export function pagePrint(capOver){
   window.queueAllScheduleDocValidations?.();
-  const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)]).messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   const errPanel=errors.length?validationPanel(errors):'';
@@ -73,7 +74,7 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)]).messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const stat=document.getElementById('export-status');
   if(stat)stat.textContent='Generating PDF…';
@@ -95,7 +96,7 @@ export async function doSavePdf(){
 }
 
 export async function doSaveDocx(){
-  const errors=[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)]).messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const stat=document.getElementById('export-status');
   if(stat)stat.textContent='Generating Word document…';

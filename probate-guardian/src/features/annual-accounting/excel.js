@@ -10,6 +10,7 @@
 // loaded (see src/features/simplified-accounting/excel.js's comment on the
 // same pattern).
 import { validateAnnual } from './index.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotalsAnnual,
@@ -47,7 +48,8 @@ export const ANNUAL_EXCEL_CAPS={
   remuneration:{cap:25,label:'Part XI — Remuneration',route:'/p11'},
 };
 export async function doSaveExcel(){
-  const errors=validateAnnual(); if(errors.length){renderPage('/print');return;}
+  const preflight=prepareFilingOutput(window.D,()=>validateAnnual());
+  const errors=preflight.messages; if(errors.length){renderPage('/print');return;}
   // Backstop for the disabled Save-as-Excel button: silently dropping
   // entries from a court filing is bad enough that it's worth refusing
   // here too, in case this is ever reached by another path.
@@ -83,7 +85,7 @@ export async function doSaveExcel(){
       setCell(p1,'E18',fD(inv.periodFrom)); setCell(p1,'H18',fD(inv.periodTo));
       setCell(p1,'D20',inv.guardian); setCell(p1,'D21',inv.attorney);
       setCell(p1,'D22',inv.typeOfGuardianship);
-      setCell(p1,'J6',inv.amendedForm); setCell(p1,'H4',inv.filingType);
+      setCell(p1,'J6',inv.amendedForm); setCell(p1,'H4',preflight.descriptor?.filingTypeValue||inv.filingType);
       setCell(p1,'I12',inv.relatedCaseNumbers);
       setCell(p1,'D23',inv.county||'');
     }
@@ -443,6 +445,7 @@ export async function importExcel(input){
         D.typeOfGuardianship=gcStr(p1,'D22');
         D.amendedForm=gcStr(p1,'J6')||'No';
         D.filingType=gcStr(p1,'H4')||'Annual';
+        window.setAccountingFilingType?.(D.filingType);
         D.county=gcStr(p1,'D23')||'Pinellas';
         D.relatedCaseNumbers=gcStr(p1,'I12');
       }

@@ -8,6 +8,7 @@
 // loaded (see src/features/simplified-accounting/excel.js's comment on the
 // same pattern).
 import { validateGuardian } from './index.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, saveData, navigate,
@@ -40,7 +41,7 @@ export const GUARDIAN_EXCEL_CAPS={
 };
 
 export async function doSaveExcel(){
-  const errors=validateGuardian();
+  const errors=prepareFilingOutput(window.D,()=>validateGuardian()).messages;
   if(errors.length){renderPage('/print');return;}
   // Without this the overflow surfaces as a raw TypeError in the status
   // line below, which then clears itself after three seconds.

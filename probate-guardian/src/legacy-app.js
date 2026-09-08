@@ -157,8 +157,32 @@ function formEngine(type){
 // The filing's display name, e.g. "Final Accounting" — used in headings and
 // on the exported document so an alias never shows as "Annual Accounting".
 function formDisplayName(type){
-  return (INVENTORY_TYPES[type] && INVENTORY_TYPES[type].name) || 'Accounting';
+  return window.resolveDescriptorForInventoryType?.(type)?.displayName
+    || (INVENTORY_TYPES[type] && INVENTORY_TYPES[type].name)
+    || 'Accounting';
 }
+
+// Final and Trust accountings use the Annual engine, but they are distinct
+// legal filings. Keep their stored type and Part I selection atomic so every
+// later consumer resolves the same descriptor.
+function setAccountingFilingType(filingType){
+  const result=window.applyAccountingFilingType
+    ? window.applyAccountingFilingType(window.D,filingType)
+    : null;
+  if(result?.descriptor){
+    activeInventoryType=result.descriptor.inventoryType;
+  }else{
+    const fallback={Annual:'annual',Final:'finalAccounting',Trust:'trustAccounting'}[filingType];
+    if(!fallback)return result;
+    window.D.inventoryType=fallback;
+    window.D.filingType=filingType;
+    activeInventoryType=fallback;
+  }
+  updateSidebar();
+  autoSave();
+  return result;
+}
+window.setAccountingFilingType=setAccountingFilingType;
 
 // Case-level data structure. `parties` is the shared party-record model
 // (src/core/party-resolver.js); `cases` groups filings by real-world matter
@@ -2617,6 +2641,7 @@ async function flushPendingSave(){
     clearTimeout(_saveTimer);
     _saveTimer=null;
   }
+  window.commitPendingFieldValues?.();
   await saveData();
 }
 
@@ -2651,6 +2676,7 @@ async function saveData(){
   if(_securityMode==='encrypted'&&!_cryptoKey)return;
   const activeWard=getActiveWard();
   if(activeWard){
+    window.commitStoredDateDrafts?.(activeWard,window.setPath);
     activeWard.lastModified=new Date().toISOString();
     autosaveWardToFile(activeWard); // Tauri-only best-effort backup; no-op in the browser build
   }
@@ -5096,6 +5122,10 @@ function initializeEmptyData(type){
   data.preparerPartyId=null;
   // Case FK (Milestone 6) -- null until explicitly linked, same convention.
   data.caseId=null;
+  if(formEngine(type)==='annual'){
+    data.inventoryType=type;
+    data.filingType=type==='finalAccounting'?'Final':type==='trustAccounting'?'Trust':'Annual';
+  }
   return data;
 }
 
@@ -5359,7 +5389,10 @@ async function navigate(page){
   // Only when actually leaving the page, not when a +Add button's own
   // onclick calls navigate() back to the SAME page to render the row it
   // just pushed — see pruneBlankCards().
-  if(page!==currentPage)pruneBlankCards();
+  if(page!==currentPage){
+    window.commitPendingFieldValues?.();
+    pruneBlankCards();
+  }
   currentPage=page;
   window.location.hash=page;
   await renderPage(page);
@@ -6744,7 +6777,7 @@ function inpS(id,label,val,req=false,type='text'){
   const format=isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'city-state-zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'case-number':isBarNumber?'bar-number':type==='text'?'security':'';
   const syncWard=id==='wardName'?' data-sync-ward-name="true"':'';
   const syncGuardian=(id==='guardian'||id==='guardianName'||id==='guardianNames')?' data-sync-guardian-name="true"':'';
-  const formatted=isDate?formatDisplayDate(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
+  const formatted=isDate?(window.getFieldDraftDisplay?.(id,formatDisplayDate(val))||formatDisplayDate(val)):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
   const inputType=isAmountField?'text':isSSN?'password':(isDate?'text':type);
   const inputMode=isAmountField?' inputmode="decimal"':(isDate?' inputmode="text"':'');
   const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
@@ -7469,7 +7502,7 @@ function bindForms(){
     } else {
       const inputType=el.dataset.inputType||'text';
       if(inputType==='date'||el.dataset.fieldKind==='date'){
-        el.value=formatDisplayDate(cur||'');
+        el.value=window.getFieldDraftDisplay?.(path,formatDisplayDate(cur||''))||formatDisplayDate(cur||'');
       }else if(inputType==='phone'){
         el.value=formatPhone(cur||'');
       }else if(inputType==='name'){
@@ -7915,7 +7948,7 @@ function updateCurrentScheduleNextButton(){
       else if(type==='planMinor'&&typeof window.validatePlanMinor==='function')rawErrors=window.validatePlanMinor(window.D);
       else if(type==='planSimplified'&&typeof window.validatePlanSimplified==='function')rawErrors=window.validatePlanSimplified(window.D);
     } catch(e) {}
-    guidanceContainer.innerHTML=disabled?window.renderLocalSectionGuidance(route,rawErrors,6,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
+    guidanceContainer.innerHTML=disabled?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
   }
 }
 

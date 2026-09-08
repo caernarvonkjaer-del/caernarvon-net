@@ -4,11 +4,14 @@
 // tagged/vector PDF engine's block vocabulary, replacing the raster
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
+import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+
 export function buildPlanMinorModel(D) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = `${d.ucn || ''} ${d.ref || ''}`.trim();
   const county = d.county || 'Pinellas';
+  const descriptor = resolveDescriptorForInventoryType('planMinor');
 
   const fmtDate = (iso) => {
     if (!iso) return '';
@@ -30,6 +33,12 @@ export function buildPlanMinorModel(D) {
     caseNumber,
     county,
   };
+  metadata.title = `${wardName} - ${caseNumber} - ${descriptor.displayName}`;
+  metadata.subject = descriptor.displayName;
+  metadata.formName = descriptor.documentTitle;
+  metadata.formSubtitle = descriptor.displayName;
+  metadata.keywords = `Florida, Probate, Guardianship, ${descriptor.displayName}`;
+  metadata.filingId = descriptor.id;
 
   const sections = [];
   const explainNotice = (text) => (text ? [{ type: 'notice', text: `Explanation: ${text}` }] : []);

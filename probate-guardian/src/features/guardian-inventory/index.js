@@ -241,7 +241,7 @@ export function pageNav(current){
   const next=idx<PAGES.length-1?PAGES[idx+1]:null;
   const nextDisabled=isScheduleIncomplete(current);
   const rawErrors=typeof validateGuardian==='function'?validateGuardian(window.D):[];
-  const guidanceHtml=nextDisabled?renderLocalSectionGuidance(current,rawErrors,6,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
+  const guidanceHtml=nextDisabled?renderLocalSectionGuidance(current,rawErrors,Infinity,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
   return `<div class="page-nav-wrap no-print">
     <div class="page-nav d-flex justify-content-between align-items-center">
       <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev.id}">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>

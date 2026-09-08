@@ -66,3 +66,27 @@ describe('"Amended Form?" prints the filer\'s actual answer', () => {
     });
   });
 });
+
+describe('Annual-family filing identity in generated output', () => {
+  for (const [inventoryType, filingType, formName, attestationName] of [
+    ['finalAccounting', 'Final', 'FINAL GUARDIANSHIP ACCOUNTING', 'Final Accounting'],
+    ['trustAccounting', 'Trust', 'TRUST GUARDIANSHIP ACCOUNTING', 'Trust Accounting'],
+  ]) {
+    test(`${filingType} uses its own headers and signed-attestation language`, () => {
+      const model = buildAnnualAccountingModel({
+        ...annualBase,
+        inventoryType,
+        filingType,
+        periodFrom: '2026-01-01',
+        periodTo: '2026-12-31',
+      });
+      const preparer = model.sections.find((section) => section.id === 'part4').blocks[0].text;
+      const attorney = model.sections.find((section) => section.id === 'part5').blocks[0].text;
+
+      expect(model.metadata.formName).toBe(formName);
+      expect(model.metadata.title).toContain(attestationName);
+      expect(preparer).toContain(attestationName);
+      expect(attorney).toContain(attestationName.toLowerCase());
+    });
+  }
+});

@@ -15,6 +15,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
+import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 
 function buildModelForPreview(D){
   return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -27,7 +28,7 @@ const {
 
 export function pagePrintSimplified(capOver){
   window.queueAllScheduleDocValidations?.();
-  const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)]).messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   return `<div>
@@ -74,7 +75,7 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)]).messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const ward=(window.D.wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
   const filename=`${ward}_SimplifiedAccounting.pdf`;
@@ -92,7 +93,7 @@ export async function doSavePdf(){
 }
 
 export async function doSaveDocx(){
-  const errors=[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  const errors=prepareFilingOutput(window.D,()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)]).messages;
   if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
   const stat=document.getElementById('export-status');
   if(stat)stat.textContent='Generating Word document…';

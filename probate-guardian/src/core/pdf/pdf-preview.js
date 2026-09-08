@@ -23,6 +23,7 @@ import { generateCourtFormPdf } from './pdf-engine.js';
 import { finalizeCourtFormPdf } from './pdf-finalizer.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
 import { announceStatus } from '../status/live-region.js';
+import { prepareFilingOutput } from '../filing/output-preflight.js';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -80,6 +81,13 @@ async function renderPagesInto(container, pdfBytes) {
 export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-container') {
   const container = document.getElementById(containerId);
   if (!container) return;
+  const preflight = prepareFilingOutput(D);
+  if (preflight.structuredIssues.length) {
+    const message = preflight.messages.join(' ');
+    announceStatus(`Preview is blocked. ${message}`, { priority: 'assertive', containerId: 'print-preview-status' });
+    container.innerHTML = `<p class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);">Preview is blocked: ${escapeHtml(message)}</p>`;
+    return;
+  }
   announceStatus('Generating preview…', { containerId: 'print-preview-status' });
   container.innerHTML = '<p class="pdf-preview-loading no-print" style="padding:2rem;text-align:center;color:var(--ink-3);">Generating preview…</p>';
   try {
@@ -103,6 +111,11 @@ export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-co
 // since the new tab never contains any app chrome to begin with.
 export async function printGeneratedPdf(buildModel, D) {
   try {
+    const preflight = prepareFilingOutput(D);
+    if (preflight.structuredIssues.length) {
+      alert(`Cannot print. ${preflight.messages.join(' ')}`);
+      return;
+    }
     const model = buildModel(D);
     const doc = await generateCourtFormPdf(model);
     const pdfBytes = await finalizeCourtFormPdf(doc);

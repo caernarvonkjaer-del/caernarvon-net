@@ -2,6 +2,7 @@
 // Maps window.D into the unified, accessible court document model.
 
 import { yesNoText } from '../../core/form/form-contract.js';
+import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -10,6 +11,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const county = d.county || 'Pinellas';
   const printDate = options.printDate || new Date().toISOString().slice(0, 10);
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';
+  const descriptor = resolveDescriptorForInventoryType('simplified');
 
   const fmtS = (v) => {
     const n = parseFloat(v) || 0;
@@ -54,6 +56,12 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     county,
     signatureStyle,
   };
+  metadata.title = `${wardName} - ${caseNumber} - ${descriptor.displayName} - Printed ${printDate}`;
+  metadata.subject = `${descriptor.displayName} of Guardian of the Property`;
+  metadata.formName = descriptor.documentTitle;
+  metadata.formSubtitle = descriptor.displayName;
+  metadata.keywords = `Florida, Probate, Guardianship, ${descriptor.displayName}`;
+  metadata.filingId = descriptor.id;
 
   const sections = [];
 

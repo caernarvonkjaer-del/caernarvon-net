@@ -213,6 +213,71 @@ test.describe('annual-accounting feature module', () => {
     const state = await page.evaluate(() => (window as any).D.scheduleNoItems?.scha);
     expect(state).toBe(true);
   });
+
+  test('rapid Schedule B-2 date entry commits every date before navigation', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Rapid Date Entry Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/schb2'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schB2"]').click();
+
+    // Model the reported fast/paste-like sequence: all four fields emit input
+    // in one turn, then navigation begins before any individual blur handler
+    // is relied upon to commit its value.
+    await page.evaluate(() => {
+      const values: Record<string, string> = {
+        'schB2.0.periodFrom': '02/14/2026',
+        'schB2.0.periodTo': '03/14/2026',
+        'schB2.0.datePaid': '03/15/2026',
+        'schB2.0.courtOrderDate': '01/31/2026',
+      };
+      for (const [path, value] of Object.entries(values)) {
+        const input = document.querySelector<HTMLInputElement>(`[data-annual-path="${path}"]`)!;
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      (window as any).navigate('/schb3');
+    });
+
+    await page.evaluate(() => (window as any).navigate('/schb2'));
+    const dates = await page.evaluate(() => (window as any).D.schB2[0]);
+    expect(dates).toMatchObject({
+      periodFrom: '2026-02-14',
+      periodTo: '2026-03-14',
+      datePaid: '2026-03-15',
+      courtOrderDate: '2026-01-31',
+    });
+  });
+
+  test('Final and Trust aliases use their own legal copy and PDF identity', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    for (const [inventoryType, label, title] of [
+      ['finalAccounting', 'Final Accounting', 'FINAL GUARDIANSHIP ACCOUNTING'],
+      ['trustAccounting', 'Trust Accounting', 'TRUST GUARDIANSHIP ACCOUNTING'],
+    ]) {
+      await createWard(page, `${label} Identity Ward`, inventoryType);
+      await page.evaluate(() => (window as any).navigate('/p4'));
+      await expect(page.locator('#main-content')).toContainText(label);
+
+      const identity = await page.evaluate(async () => {
+        const mod = await import('/probate-guardian/src/features/annual-accounting/pdf-model.js');
+        const model = mod.buildAnnualAccountingModel((window as any).D);
+        return {
+          filingType: (window as any).D.filingType,
+          inventoryType: (window as any).D.inventoryType,
+          formName: model.metadata.formName,
+          title: model.metadata.title,
+          preparer: model.sections.find((section: any) => section.id === 'part4')?.blocks?.[0]?.text,
+        };
+      });
+
+      expect(identity.filingType).toBe(label.replace(' Accounting', ''));
+      expect(identity.inventoryType).toBe(inventoryType);
+      expect(identity.formName).toBe(title);
+      expect(identity.title).toContain(label);
+      expect(identity.preparer).toContain(label);
+    }
+  });
   test('Summary page completion badges (Parts + Schedules) agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Nav Parity Annual Ward', 'annual');

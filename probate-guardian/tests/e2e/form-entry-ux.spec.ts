@@ -28,11 +28,13 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await gidInput.fill('02/14/26');
     await gidInput.blur();
 
-    // Invalid date retains raw text, marks aria-invalid="true", model date is cleared/empty
+    // Invalid date retains raw text, marks aria-invalid="true", and preserves
+    // the last valid canonical value so a mistyped date cannot silently erase
+    // data before the blocking export check is resolved.
     await expect(gidInput).toHaveValue('02/14/26');
     await expect(gidInput).toHaveAttribute('aria-invalid', 'true');
     const invalidStoredGid = await page.evaluate(() => (window as any).D.gid);
-    expect(invalidStoredGid).toBe('');
+    expect(invalidStoredGid).toBe('2026-02-14');
   });
 
   test('non-destructive identifier and punctuation preservation', async ({ page }) => {

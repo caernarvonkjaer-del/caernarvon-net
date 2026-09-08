@@ -229,7 +229,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     // 3. Document Title: Must contain /ViewerPreferences << /DisplayDocTitle true >>
     expect(rawPdfString).toContain('/ViewerPreferences');
     expect(rawPdfString).toContain('/DisplayDocTitle true');
-    expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
+    expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
     const extractedText = await extractPdfText(rawPdfString);
     expect(extractedText).toContain('Verified Initial Inventory');
     expect(extractedText).toContain('Harold Thomas Bennett');
@@ -241,7 +241,7 @@ test.describe('Milestone 19: PDF Accessibility, WCAG 2.1 & PDF/UA-1 Tagged Struc
     expect(metadataObj).toContain('/Type /Metadata');
     expect(metadataObj).toContain('/Subtype /XML');
     expect(metadataObj).toContain('<dc:title>');
-    expect(metadataObj).toContain('Harold Thomas Bennett - 26-002487-GD - Printed 2026-09-03');
+    expect(metadataObj).toContain('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
     expect(metadataObj).toContain('<dc:creator>');
     expect(metadataObj).toContain('Probate Guardian');
 

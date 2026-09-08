@@ -4,6 +4,7 @@
 
 import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
+import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -13,6 +14,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const gid = d.gid || '';
   const printDate = options.printDate || new Date().toISOString().slice(0, 10);
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';
+  const descriptor = resolveDescriptorForInventoryType('guardian');
 
   // Format currency
   const fmt = (v) => {
@@ -66,6 +68,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     gid,
     signatureStyle,
   };
+  const outputName = descriptor.outputName || descriptor.displayName;
+  metadata.title = `${wardName} - ${caseNumber} - ${outputName} - Printed ${printDate}`;
+  metadata.subject = outputName;
+  metadata.formName = descriptor.documentTitle;
+  metadata.formSubtitle = outputName;
+  metadata.keywords = `Florida, Probate, Guardianship, ${outputName}`;
+  metadata.filingId = descriptor.id;
 
   const isConfirmedEmpty = (key) => !!(d.scheduleNoItems && d.scheduleNoItems[key]);
   const activeDocPeriod = resolveActiveDocPeriod(d);
