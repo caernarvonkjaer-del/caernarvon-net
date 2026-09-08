@@ -7559,6 +7559,10 @@ function bindForms(){
     el.setAttribute('data-bound','1');
     const path=el.dataset.bind;
     const cur=getPath(window.D,path);
+    // Captured so a blur firing after a ward switch (see the caseNumber and
+    // name/address blur listeners below) can tell its window.D has moved on
+    // to a different ward entirely, not just been edited in place.
+    const boundD=window.D;
 
     if(el.type==='checkbox'){
       el.checked=!!cur;
@@ -7627,12 +7631,6 @@ function bindForms(){
         }else if(inputType==='phone'){
           val=formatPhone(val);
           e.target.value=val;
-        }else if(inputType==='name'){
-          val=formatName(val);
-          e.target.value=val;
-        }else if(inputType==='address'){
-          val=formatAddress(val);
-          e.target.value=val;
         }else if(inputType==='ssn'){
           val=formatSSN(val);
           e.target.value=val;
@@ -7668,7 +7666,34 @@ function bindForms(){
       // inputType formatters above do.
       if(inputType==='caseNumber'){
         el.addEventListener('blur',()=>{
+          // A ward switch (see switchWard()) reassigns window.D to a
+          // different ward's object -- synchronously, well before that
+          // ward's page actually finishes mounting -- so a blur that fires
+          // late (mount is async; nothing here awaits it) can land after
+          // window.D has already moved on. isConnected can't catch this: the
+          // old page can still be sitting in the DOM at that moment. Compare
+          // against the exact object this listener was bound to instead. The
+          // raw value was already saved to the correct ward by the 'input'
+          // listener above; skipping the format-only step below when the
+          // ward has moved on costs nothing since re-mounting it re-binds
+          // this field fresh from its own (already-correct) stored value.
+          if(window.D!==boundD)return;
           el.value=finalizeCaseNumber(el.value);
+          setPath(window.D,path,el.value);afterChange(path);
+        });
+      }
+      // Name/address formatting is finalize-only, same reasoning as modal-events.js's
+      // handleModalBlur: formatName()/formatAddress() title-case a complete value and
+      // trim it, which reads a live "ga" mid-word as the state abbreviation "GA" and
+      // eats a just-typed trailing space. Fields that also carry data-field-path
+      // already get this once on blur from form-events.js's finalizeFieldValue; this
+      // covers the few remaining data-bind-only fields (schedule description cells).
+      if((inputType==='name'||inputType==='address')&&!el.dataset.fieldPath){
+        el.addEventListener('blur',()=>{
+          // See the caseNumber blur listener just above for why this checks
+          // object identity rather than el.isConnected.
+          if(window.D!==boundD)return;
+          el.value=inputType==='name'?formatName(el.value):formatAddress(el.value);
           setPath(window.D,path,el.value);afterChange(path);
         });
       }

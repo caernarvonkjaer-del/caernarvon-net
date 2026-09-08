@@ -176,7 +176,11 @@ test.describe('guardian-inventory feature module', () => {
     // real row survival, not accidentally relying on pruning not having
     // run yet.
     await page.fill('input[data-bind="scheduleB2.0.description"]', 'Seed row');
-    // This field auto-title-cases as a "name"-type data-bind input.
+    // This field title-cases as a "name"-type data-bind input, but only on
+    // blur (not live per-keystroke -- see legacy-app.js's bindForms(), which
+    // would otherwise misread an in-progress 2-letter word as a state
+    // abbreviation and force-uppercase it mid-typing).
+    await page.locator('input[data-bind="scheduleB2.0.description"]').blur();
     await expect(page.locator('input[data-bind="scheduleB2.0.description"]')).toHaveValue('Seed Row');
 
     for (let i = 0; i < 15; i++) {
