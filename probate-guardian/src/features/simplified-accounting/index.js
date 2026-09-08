@@ -25,6 +25,7 @@ const {
   formatDisplayDate,
   sanitizeNonNegativeDecimal, sanitizeNegativeAmounts,
   renderScheduleDocsSection, browserRecommendationNotice, pageIntroRow,
+  linkAccordions,
   yesNoCheckboxS, inpS, countyInputS, pageNavS, calcTotals,
   guardianHasAnyData, checkExcelCapacity,
 } = window;
@@ -144,6 +145,7 @@ export async function mount(container, page) {
   container.innerHTML = html;
   bindEvents(container);
   container.scrollTop = 0;
+  if (page === '/' || !page) linkAccordions('instructionsZoneSimplified', 'importZoneCover');
   if (page === '/print') await _printModule.mountPreview();
 }
 
@@ -244,27 +246,48 @@ function pageCover(){
   const t=calcTotals();
   return `<div class="schedule-page">
     <h1>Cover &amp; Part I — Required Information</h1>
-    ${browserRecommendationNotice()}
-    <div class="schedule-instructions">Fields marked <span class="req">*</span> are required before export.</div>
-    ${pageIntroRow(`<div class="accordion mb-0">
-      <div class="accordion-item">
-        <h2 class="accordion-header">
-          <button class="accordion-button py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZoneCover" aria-expanded="true">
-            <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing simplified accounting template)
-          </button>
-        </h2>
-        <div id="importZoneCover" class="accordion-collapse collapse show">
-          <div class="accordion-body import-zone-body p-4 text-center">
-            <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
-              <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
-              <input type="file" accept=".xlsx" class="d-none" data-simplified-change="import-excel">
-            </label>
-            <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the previously exported Simplified Accounting Excel file</p>
-            <div id="import-progress" class="mt-2" style="font-size:.8rem;"></div>
+    <div class="instructions-import-row">
+      <div class="accordion mb-0">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#instructionsZoneSimplified" aria-expanded="false">
+              ${ic('clipboard',15)} General Instructions
+            </button>
+          </h2>
+          <div id="instructionsZoneSimplified" class="accordion-collapse collapse">
+            <div class="accordion-body" style="padding:1rem 1.25rem;">
+              <ul style="margin:0;padding-left:1.4rem;font-size:.8rem;">
+                <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
+                <li>Ward Name and Case Number auto-populate all form pages.</li>
+                <li>Verify that this guardianship meets the designated depository criteria under Fla. Stat. § 744.3679.</li>
+                <li>Complete Parts I through VII, including guardian signatures and attorney certification.</li>
+                <li>Use Print Preview to save as PDF or Excel for filing.</li>
+              </ul>
+              ${browserRecommendationNotice('margin-top:0.75rem;margin-bottom:0;')}
+            </div>
           </div>
         </div>
       </div>
-    </div>`)}
+      <div class="accordion mb-0">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#importZoneCover" aria-expanded="false">
+              <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/></svg> Import Excel File (existing simplified accounting template)
+            </button>
+          </h2>
+          <div id="importZoneCover" class="accordion-collapse collapse">
+            <div class="accordion-body import-zone-body p-4 text-center">
+              <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;">
+                <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
+                <input type="file" accept=".xlsx" class="d-none" data-simplified-change="import-excel">
+              </label>
+              <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the previously exported Simplified Accounting Excel file</p>
+              <div id="import-progress" class="mt-2" style="font-size:.8rem;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="summary-box mb-3">
       <h2 class="subsection-heading">Eligibility — Fla. Stat. § 744.3679</h2>
       <div class="schedule-instructions" style="margin-bottom:.75rem;">The simplified form may only be used when <strong>all</strong> property of the estate is held in a designated depository under § 69.031, and the <strong>only</strong> transactions in that account are interest accrual, deposits from a settlement, or financial institution service charges. If either answer below is "No," use the standard Annual Accounting instead.</div>
