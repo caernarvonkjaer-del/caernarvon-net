@@ -55,7 +55,18 @@ function handleModalInput(event) {
 }
 
 function handleModalFocus(event) {
-  if (event.target instanceof HTMLInputElement && event.target.dataset.modalInput === 'convert-source') {
+  if (!(event.target instanceof HTMLInputElement)) return;
+  if (event.target.dataset.modalInput === 'format-name') {
+    // The OS's own hardware-keyboard text prediction/autocapitalize competes
+    // with this field's live formatName() capitalization (double-capitalizing
+    // letters, and sometimes eating the space key to accept a suggestion)
+    // unless turned off before the first keystroke -- set it here, on focus,
+    // rather than only in the markup, so no format-name field can ship
+    // without it regardless of which fragment declares it.
+    event.target.setAttribute('autocapitalize', 'off');
+    event.target.setAttribute('autocorrect', 'off');
+    event.target.setAttribute('spellcheck', 'false');
+  } else if (event.target.dataset.modalInput === 'convert-source') {
     window.onConvertSourceFocus();
   }
 }
