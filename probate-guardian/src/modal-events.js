@@ -1,4 +1,4 @@
-function handleModalClick(event) {
+async function handleModalClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-modal-action]') : null;
   if (!actionElement) return;
 
@@ -18,7 +18,7 @@ function handleModalClick(event) {
     case 'rename-ward': window.doRenameWard(); break;
     case 'save-backup': window.closeModal(actionElement.dataset.modalId); window.saveBackupNow(); break;
     case 'start-new-year': window.confirmStartNewYear(); break;
-    case 'switch-ward': window.closeModal('switchWardPickerModal'); window.switchWard(actionElement.dataset.wardId); break;
+    case 'switch-ward': window.closeModal('switchWardPickerModal'); await window.switchWard(actionElement.dataset.wardId); break;
   }
 }
 

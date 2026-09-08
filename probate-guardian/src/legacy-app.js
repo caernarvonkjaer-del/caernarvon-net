@@ -4908,7 +4908,7 @@ document.addEventListener('click',e=>{
   }
 });
 
-function handleSwitchWardClick(){
+async function handleSwitchWardClick(){
   const input=document.getElementById('ward-selector');
   if(!input)return;
   let wardId=input.dataset.wardId||'';
@@ -4930,7 +4930,7 @@ function handleSwitchWardClick(){
     showSwitchWardPickerModal();
     return;
   }
-  switchWard(wardId);
+  await switchWard(wardId);
 }
 
 async function showSwitchWardPickerModal(){

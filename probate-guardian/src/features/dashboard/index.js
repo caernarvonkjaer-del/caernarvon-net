@@ -680,7 +680,7 @@ function dashboardActionElement(target) {
   return target instanceof Element ? target.closest('[data-dashboard-action]') : null;
 }
 
-function handleDashboardClick(event) {
+async function handleDashboardClick(event) {
   const actionElement = dashboardActionElement(event.target);
   if (!actionElement || !_dashboardContainer?.contains(actionElement)) return;
   const wardId = actionElement.dataset.wardId;
@@ -704,7 +704,7 @@ function handleDashboardClick(event) {
       break;
     case 'link-case': window.showPickCaseModal(wardId); break;
     case 'new-year': showStartNewYearModal(wardId); break;
-    case 'open-ward': switchWard(wardId); break;
+    case 'open-ward': await switchWard(wardId); break;
     case 'pdf': quickExportPdf(wardId); break;
     case 'prior-years': showPriorYearsModal(wardId); break;
     case 'select-existing': showConvertWardModal(); break;

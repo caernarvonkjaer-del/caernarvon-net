@@ -31,7 +31,7 @@ async function captureDownload(page: import('@playwright/test').Page, trigger: (
   return { path: savePath, filename: download.suggestedFilename() };
 }
 
-test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', () => {
+test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: '@origin-state' }, () => {
 
   test('Save Controls has Backup All Wards (.sav) and Open Backup (.sav) buttons with correct attributes', async ({ browser }) => {
     const context = await browser.newContext();

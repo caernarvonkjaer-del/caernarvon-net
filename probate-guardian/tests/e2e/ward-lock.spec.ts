@@ -3,7 +3,7 @@ import { chooseNoPassword, createWard, gotoApp, startNewCase } from './support/t
 
 const target = process.env.PG_TARGET || 'source';
 
-test.describe('Ward-level Tab Locks', () => {
+test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
   // Web Locks API is not available on file:// protocol in chromium, 
   // so this test applies primarily to dev/dist over http.
   test.skip(target === 'file', 'Web Locks API is disabled or behaves differently on file:// protocol');

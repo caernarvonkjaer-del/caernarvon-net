@@ -3,7 +3,7 @@ import { gotoApp } from './support/target';
 
 const target = process.env.PG_TARGET || 'source';
 
-test('service worker registration is limited to the hosted web build', async ({ page }) => {
+test('service worker registration is limited to the hosted web build', { tag: '@origin-state' }, async ({ page }) => {
   await gotoApp(page);
 
   if (target === 'web') {

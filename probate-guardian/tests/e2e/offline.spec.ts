@@ -48,7 +48,7 @@ async function generatedManifest(): Promise<{ cacheVersion: string; entries: Arr
   return JSON.parse(match[1]);
 }
 
-test.describe('hosted offline cache', () => {
+test.describe('hosted offline cache', { tag: '@origin-state' }, () => {
   test.skip(!webTarget, 'Service workers apply only to the built hosted target');
   test.describe.configure({ mode: 'serial' });
 

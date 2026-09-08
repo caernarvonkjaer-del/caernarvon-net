@@ -259,27 +259,25 @@ export async function switchWard(wardId) {
     const formEngine = typeof window.formEngine === 'function' ? window.formEngine(ward.inventoryType) : null;
     switch (formEngine) {
       case 'guardian':
-        if (typeof window.mountGuardianFeature === 'function') window.mountGuardianFeature('/');
-        if (typeof window.updateHelpContext === 'function') window.updateHelpContext();
-        if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
-        return true;
+        if (typeof window.mountGuardianFeature === 'function') await window.mountGuardianFeature('/');
+        break;
       case 'simplified':
-        if (typeof window.mountSimplifiedFeature === 'function') window.mountSimplifiedFeature('/');
+        if (typeof window.mountSimplifiedFeature === 'function') await window.mountSimplifiedFeature('/');
         break;
       case 'annual':
-        if (typeof window.mountAnnualFeature === 'function') window.mountAnnualFeature('/');
+        if (typeof window.mountAnnualFeature === 'function') await window.mountAnnualFeature('/');
         break;
       case 'planSimplified':
-        if (typeof window.mountPlanSimplifiedFeature === 'function') window.mountPlanSimplifiedFeature('/');
+        if (typeof window.mountPlanSimplifiedFeature === 'function') await window.mountPlanSimplifiedFeature('/');
         break;
       case 'planAnnual':
-        if (typeof window.mountPlanAnnualFeature === 'function') window.mountPlanAnnualFeature('/');
+        if (typeof window.mountPlanAnnualFeature === 'function') await window.mountPlanAnnualFeature('/');
         break;
       case 'planInitial':
-        if (typeof window.mountPlanInitialFeature === 'function') window.mountPlanInitialFeature('/');
+        if (typeof window.mountPlanInitialFeature === 'function') await window.mountPlanInitialFeature('/');
         break;
       case 'planMinor':
-        if (typeof window.mountPlanMinorFeature === 'function') window.mountPlanMinorFeature('/');
+        if (typeof window.mountPlanMinorFeature === 'function') await window.mountPlanMinorFeature('/');
         break;
     }
     if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();

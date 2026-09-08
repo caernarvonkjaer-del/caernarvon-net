@@ -4,7 +4,7 @@ import { chooseNoPassword, createWard, gotoApp, startNewCase } from './support/t
 const warningText = 'Probate Guardian is already open in another tab. Save or close that tab before continuing here.';
 const target = process.env.PG_TARGET || 'source';
 
-test('detects a clean second tab and lets the notice be dismissed', async ({ browser }) => {
+test('detects a clean second tab and lets the notice be dismissed', { tag: '@origin-state' }, async ({ browser }) => {
   const context = await browser.newContext();
   const first = await context.newPage();
   await gotoApp(first);
@@ -22,7 +22,7 @@ test('detects a clean second tab and lets the notice be dismissed', async ({ bro
   await context.close();
 });
 
-test('warns when another tab has an active case', async ({ browser }) => {
+test('warns when another tab has an active case', { tag: '@origin-state' }, async ({ browser }) => {
   const context = await browser.newContext();
   const first = await context.newPage();
   await gotoApp(first);
@@ -38,7 +38,7 @@ test('warns when another tab has an active case', async ({ browser }) => {
   await context.close();
 });
 
-test('warns when another tab reports unsaved changes', async ({ browser }) => {
+test('warns when another tab reports unsaved changes', { tag: '@origin-state' }, async ({ browser }) => {
   const context = await browser.newContext();
   const first = await context.newPage();
   await gotoApp(first);
@@ -94,7 +94,7 @@ async function installServiceWorkerMock(page: any) {
   });
 }
 
-test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', async ({ page }) => {
+test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', { tag: '@origin-state' }, async ({ page }) => {
   test.skip(target === 'portable', 'Service-worker update UX is disabled for file:// portable builds');
   await installServiceWorkerMock(page);
   await gotoApp(page);
@@ -104,7 +104,7 @@ test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', async 
   await expect.poll(() => page.evaluate(() => (window as any).__swMessages)).toContainEqual({ type: 'ACTIVATE_UPDATE' });
 });
 
-test('confirms before activating an update with unsaved work', async ({ page }) => {
+test('confirms before activating an update with unsaved work', { tag: '@origin-state' }, async ({ page }) => {
   test.skip(target === 'portable', 'Service-worker update UX is disabled for file:// portable builds');
   await installServiceWorkerMock(page);
   await gotoApp(page);

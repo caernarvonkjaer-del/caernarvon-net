@@ -1,4 +1,5 @@
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { Page } from '@playwright/test';
 
@@ -471,4 +472,23 @@ export async function crossCheckNavAndSummaryStatus(
       return { route, expectComplete, sidebarComplete, summaryComplete };
     });
   }, entries);
+}
+
+// window.showSaveFilePicker/showOpenFilePicker are deleted for every test
+// (see below), so exportGuardianDataZip()/the startup Open flow always take
+// the download-link / <input type=file> fallback path real Firefox/Safari
+// users hit today (saveBlobAs(), index.html:3884; openCaseFileAtLaunch(),
+// index.html:4550). Fixtures are generated live through the real export flow
+// rather than hand-authored, since hand-crafting a byte-correct
+// AES-256-GCM+HMAC archive would be far more fragile than just using the app
+// to make one. Shared by save-open-sav's case-file-roundtrip and
+// dashboard-backup specs.
+export async function exportAndCapture(page: Page): Promise<string> {
+  const downloadPromise = page.waitForEvent('download');
+  page.once('dialog', (d) => d.accept()); // exportGuardianDataZip()'s completion alert()
+  await page.evaluate(() => { void (window as any).exportGuardianDataZip(); });
+  const download = await downloadPromise;
+  const savePath = path.join(os.tmpdir(), `pg-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sav`);
+  await download.saveAs(savePath);
+  return savePath;
 }

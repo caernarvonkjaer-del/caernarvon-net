@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, startNewCase, chooseNoPassword } from './support/target';
 
-test.describe('startup', () => {
+test.describe('startup', { tag: '@origin-state' }, () => {
   test('fresh install shows the startup-choice screen, no console errors', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
