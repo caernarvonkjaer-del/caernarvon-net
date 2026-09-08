@@ -3,6 +3,9 @@ import { writeDraftValue, finalizeFieldValue, getControlPath } from './core/form
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
+import './core/form/form-fields.js';
+import './core/form/combobox-controller.js';
+import './core/form/schedule-definitions.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 

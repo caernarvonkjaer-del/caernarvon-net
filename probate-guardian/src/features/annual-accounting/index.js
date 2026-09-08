@@ -2,6 +2,8 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
+import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
+import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -245,64 +247,25 @@ export function mountNav(container) {
 }
 
 // Same idea as the Plan-family's planEmptyRow-family row CRUD, but for the
-// Annual Accounting schedules, which store their rows in D.schA/D.schB1/…
-// and are rendered inline rather than through a shared row factory. Takes
-// the array name so one function serves all 14 schedules.
-function duplicateAnnualRow(arrName,idx,route){
-  const list=window.D&&window.D[arrName];
-  if(!list||!list[idx])return;
-  list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
-  autoSave();
-  navigate(route);
+function duplicateAnnualRow(arrName, idx, route) {
+  if (duplicateCollectionRow(arrName, idx, window.D)) {
+    autoSave();
+    navigate(route);
+  }
 }
 window.duplicateAnnualRow = duplicateAnnualRow;
 
-// Guardians and cert-of-service recipients are listed here so Parts III and
-// X get the same +Add/Remove affordance every other repeatable group on this
-// form already has. Both used to be a fixed run of pre-seeded blank cards
-// with no way to add or remove one -- which is what made a brand-new filing
-// open onto a wall of empty "Co-Guardian" cards. Guardian Inventory has
-// worked this way all along; this brings Annual in line with it.
-const annualRowFactories = {
-  guardians: () => ({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''}),
-  certRecipients: () => ({name:'',line2:'',line3:'',line4:''}),
-  remuneration: () => ({guardian:'',type:'',amount:'',description:''}),
-  schA: () => ({payer:'',description:'',bank:'',accountNo:'',amount:''}),
-  schB1: () => ({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB2: () => ({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB3: () => ({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB4: () => ({checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
-  schC: () => ({description:'',date:'',gain:'',loss:''}),
-  schD1: () => ({description:'',accountNo:'',restricted:'No',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
-  schD2: () => ({description:'',residence:'No',income:'No',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
-  schD3: () => ({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
-  schD4: () => ({description:'',restricted:'No',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
-  schD5: () => ({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
-  schE: () => ({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
-  schF1: () => ({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
-  schF2: () => ({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
-};
-// The court form prints three guardian signature blocks and no more, so
-// Part III caps there; every other group on this form is open-ended.
-const ANNUAL_ROW_MAX = { guardians: 3 };
-
 function addAnnualRow(collection, route) {
-  const factory = annualRowFactories[collection];
-  if (!factory || !Array.isArray(window.D?.[collection])) return;
-  const max = ANNUAL_ROW_MAX[collection];
-  if (max && window.D[collection].length >= max) return;
-  window.D[collection].push(factory());
-  autoSave();
-  navigate(route);
+  if (addCollectionRow(collection, window.D)) {
+    autoSave();
+    navigate(route);
+  }
 }
 function removeAnnualRow(collection, index, route) {
-  if (!annualRowFactories[collection] || !Array.isArray(window.D?.[collection])) return;
-  window.D[collection].splice(index, 1);
-  if (collection === 'guardians' && Array.isArray(window.D.guardianPartyIds)) {
-    window.D.guardianPartyIds.splice(index, 1);
+  if (removeCollectionRow(collection, index, window.D)) {
+    autoSave();
+    navigate(route);
   }
-  autoSave();
-  navigate(route);
 }
 
 function buildNavAnnual(container){
@@ -353,56 +316,21 @@ function buildNavAnnual(container){
 export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return x<0?`(${Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`${x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
 export function fmtD(s){return s?String(s).substring(0,10):'';}
 function inpD(label,val,setter,req=false,type='text'){
-  const inputId='inp_'+Math.random().toString(36).slice(2,9);
-  const path=setterPath(setter);
-  const isEmail=label.toLowerCase().includes('email');
-  const isDate=!isEmail&&(type==='date'||/\bdate\b/i.test(label));
-  const isPhone=!isEmail&&!isDate&&label.toLowerCase().includes('phone');
-  // Excludes any label that also mentions "account" -- a handful of fields
-  // (Schedule E's "Bank Name / Account #") combine a name-like word with an
-  // account number in one input. Without this exclusion the whole thing
-  // routed through formatName()'s title-casing, which capitalized the first
-  // character of a typed account number (e.g. an account displayed to the
-  // guardian as "xxxx1234" printed as "Xxxx1234" on export).
-  const isName=!isEmail&&!isDate&&!label.toLowerCase().includes('account')&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
-  const isZip=!isEmail&&!isDate&&label.toLowerCase().includes('zip');
-  const isAddress=!isEmail&&!isDate&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
-  const isSSN=!isEmail&&!isDate&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
-  const isCaseNumber=!isEmail&&!isDate&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
-  const isBarNumber=!isEmail&&!isDate&&label.toLowerCase().includes('bar number');
-  const isAccountNumber=!isEmail&&!isDate&&!label.toLowerCase().includes('bank name')&&!label.toLowerCase().includes('loan')&&(label.toLowerCase().includes('account number')||label.toLowerCase().includes('account #')||label.toLowerCase().includes('bank account'));
-  const isCheckNumber=!isEmail&&!isDate&&label.toLowerCase().includes('check #');
-  const isAmountField=type==='number';
-  const fieldKind=isDate?'date':isAmountField?'money':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'caseNumber':isBarNumber?'barNumber':isAccountNumber?'accountNumber':isCheckNumber?'checkNumber':'text';
-  const isPreserve=['text','caseNumber','accountNumber','checkNumber','barNumber','ssn'].includes(fieldKind);
-  const policy=isPreserve?'preserve':'normalize';
-  const format=isSSN?'ssn':isCaseNumber?'case':isBarNumber?'bar':isAccountNumber?'account':isCheckNumber?'check':isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':type==='text'?'security':'';
-  const isWardNameField=path==='wardName';
-  const isGuardianField=/^guardian(Name|Names)?$/.test(path)||path==='guardians.0.name';
-  const formatted=isDate?(window.getFieldDraftDisplay?.(path,formatDisplayDate(val))||formatDisplayDate(val)):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):isAccountNumber?formatAccountNumber(val):isCheckNumber?formatCheckNumber(val):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):val||'';
-  // NOT type="password" for SSN/EIN -- every other feature module masks
-  // these visually via CSS (.ssn-masked's -webkit-text-security, toggled by
-  // the reveal button below) precisely because a real password field in the
-  // DOM makes Chrome's password manager offer to save it, using whatever
-  // text input happens to sit nearest as the "username" -- e.g. a Signature
-  // Date field. This was the one inpD() call site still using the browser
-  // password mechanism instead of the shared masking convention.
-  const inputType=isAmountField?'text':(isDate?'text':type);
-  const inputMode=isAmountField?' inputmode="decimal"':(isDate?' inputmode="text"':'');
-  const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
-  const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
-  const isDollarField=isAmountField&&!isPercentField;
-  const placeholder=isDate?' placeholder="MM/DD/YYYY"':'';
-  const hintId=`${inputId}_hint`;
-  const ariaDesc=isDate?` aria-describedby="${hintId}"`:'';
-  const inputHtml=`<input type="${inputType}" class="form-control${isSSN?' ssn-masked':''}" id="${inputId}" autocomplete="off"${inputMode}${placeholder} value="${esc(cleanedValue)}" data-annual-path="${path}" data-field-path="${path}" data-annual-label="${esc(label)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-annual-format="${format}"`:''}${isWardNameField?' data-sync-ward-name="true"':''}${isGuardianField?' data-sync-guardian-name="true"':''}${ariaDesc}>`;
-  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
-  const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div>`:'';
-  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}${hintHtml}</div>`;
+  return renderFormField({
+    path: setterPath(setter),
+    label,
+    value: val,
+    type,
+    required: req,
+  });
 }
 function selD(label,val,setter,opts){
-  const selectId='sel_'+Math.random().toString(36).slice(2,9);
-  return `<div class="mb-2"><label class="form-label" for="${selectId}">${label}</label><select class="form-select" id="${selectId}" data-annual-path="${setterPath(setter)}"><option value="">— select —</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  return renderSelectField({
+    path: setterPath(setter),
+    label,
+    value: val,
+    options: opts,
+  });
 }
 // County-field counterpart to selD() -- same custom-setter-string
 // convention, but a filtered-autocomplete text input instead of a <select>.
@@ -411,11 +339,14 @@ function countyInputD(label,val,setter){
   return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}</label>${countyAutocompleteHTML(inputId,val,setterPath(setter))}</div>`;
 }
 function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
-  const html=inpD(label,val,setter,req,type);
-  const tooltipHtml=tooltip(tooltipKey);
-  if(!tooltipHtml)return html;
-  const escapedLabel=label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return html.replace(new RegExp(`(>)(${escapedLabel})(<span class="req">\\*</span>)?(<\/label>)`),`$1$2${tooltipHtml}$3$4`);
+  return renderFormField({
+    path: setterPath(setter),
+    label,
+    value: val,
+    type,
+    required: req,
+    tooltipKey,
+  });
 }
 function pageNavAnnual(prev,next){
   const targetRoute=next||'/print';

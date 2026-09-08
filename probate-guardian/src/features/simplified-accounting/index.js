@@ -1,4 +1,6 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderFormField } from '../../core/form/form-fields.js';
+import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -51,42 +53,49 @@ function bindEvents(container) {
     const index = Number.parseInt(actionElement.dataset.index, 10);
     switch (actionElement.dataset.simplifiedAction) {
       case 'add-guardian': {
-        if ((window.D.guardians || []).length < 3) {
-          window.D.guardians = window.D.guardians || [];
-          window.D.guardians.push({ name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '' });
+        if (addCollectionRow('guardians', window.D)) {
           autoSave();
           navigate('/p4');
         }
         break;
       }
       case 'remove-guardian': {
-        if (Array.isArray(window.D?.guardians)) {
-          window.D.guardians.splice(index, 1);
-          if (Array.isArray(window.D.guardianPartyIds)) window.D.guardianPartyIds.splice(index, 1);
+        if (removeCollectionRow('guardians', index, window.D)) {
           autoSave();
           navigate('/p4');
         }
         break;
       }
       case 'add-recipient': {
-        window.D.certRecipients = window.D.certRecipients || [];
-        window.D.certRecipients.push({ name: '', line2: '', line3: '' });
-        autoSave();
-        navigate('/p6');
-        break;
-      }
-      case 'remove-recipient': {
-        if (Array.isArray(window.D?.certRecipients)) {
-          window.D.certRecipients.splice(index, 1);
+        if (addCollectionRow('certRecipients', window.D)) {
           autoSave();
           navigate('/p6');
         }
         break;
       }
-      case 'add-remuneration': window.D.remuneration.push({ guardian: '', type: '', description: '' }); autoSave(); navigate('/p7'); break;
+      case 'remove-recipient': {
+        if (removeCollectionRow('certRecipients', index, window.D)) {
+          autoSave();
+          navigate('/p6');
+        }
+        break;
+      }
+      case 'add-remuneration': {
+        if (addCollectionRow('remuneration', window.D)) {
+          autoSave();
+          navigate('/p7');
+        }
+        break;
+      }
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
       case 'open-court-portal': window.openFloridaCourtPortal(); break;
-      case 'remove-remuneration': window.D.remuneration.splice(index, 1); autoSave(); navigate('/p7'); break;
+      case 'remove-remuneration': {
+        if (removeCollectionRow('remuneration', index, window.D)) {
+          autoSave();
+          navigate('/p7');
+        }
+        break;
+      }
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
@@ -414,15 +423,15 @@ function pagePart4(){
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]||`Co-Guardian #${i+1}`}</span><span class="entry-card-actions d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">${labels[i]||`Co-Guardian #${i+1}`}'s Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(g.name||''))}" data-form-path="guardians.${i}.name" data-field-path="guardians.${i}.name" data-form-format="name"></div>
-          <div class="col-md-3"><label class="form-label" for="guardians_${i}_sigDate">Signature Date<span class="req">*</span></label><input type="text" inputmode="text" class="form-control" id="guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(g.signatureDate||''))}" data-form-path="guardians.${i}.signatureDate" data-field-path="guardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="guardians_${i}_sigDate_hint"><div id="guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div></div>
-          <div class="col-md-3"><label class="form-label">SSN / EIN<span class="req">*</span></label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(g.ssn||''))}" data-form-path="guardians.${i}.ssn" data-field-path="guardians.${i}.ssn" data-field-kind="ssn" data-field-format-policy="preserve" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-          <div class="col-md-4"><label class="form-label">Phone Number<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatPhone(g.phone||''))}" data-form-path="guardians.${i}.phone" data-field-path="guardians.${i}.phone" data-field-kind="phone" data-form-format="phone"></div>
-          <div class="col-md-8"><label class="form-label">Email Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(g.email)}" data-form-path="guardians.${i}.email" data-field-path="guardians.${i}.email"></div>
-          <div class="col-md-6"><label class="form-label">Mailing Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.mailingStreet||''))}" data-form-path="guardians.${i}.mailingStreet" data-field-path="guardians.${i}.mailingStreet" data-field-kind="address" data-form-format="address"></div>
-          <div class="col-md-6"><label class="form-label">Mailing City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.mailingCityStateZip||''))}" data-form-path="guardians.${i}.mailingCityStateZip" data-field-path="guardians.${i}.mailingCityStateZip" data-field-kind="zip" data-form-format="city-state-zip"></div>
-          <div class="col-md-6"><label class="form-label">Residence / Corporate Street Address<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatAddress(g.residenceStreet||''))}" data-form-path="guardians.${i}.residenceStreet" data-field-path="guardians.${i}.residenceStreet" data-field-kind="address" data-form-format="address"></div>
-          <div class="col-md-6"><label class="form-label">Residence / Corporate City / State / Zip<span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatCityStateZip(g.residenceCityStateZip||''))}" data-form-path="guardians.${i}.residenceCityStateZip" data-field-path="guardians.${i}.residenceCityStateZip" data-field-kind="zip" data-form-format="city-state-zip"></div>
+          <div class="col-md-6">${renderFormField({ path: `guardians.${i}.name`, label: `${labels[i]||`Co-Guardian #${i+1}`}'s Name`, value: g.name, required: true })}</div>
+          <div class="col-md-3">${renderFormField({ path: `guardians.${i}.signatureDate`, label: 'Signature Date', value: g.signatureDate, type: 'date', required: true, id: `guardians_${i}_sigDate` })}</div>
+          <div class="col-md-3">${renderFormField({ path: `guardians.${i}.ssn`, label: 'SSN / EIN', value: g.ssn, required: true })}</div>
+          <div class="col-md-4">${renderFormField({ path: `guardians.${i}.phone`, label: 'Phone Number', value: g.phone, required: true })}</div>
+          <div class="col-md-8">${renderFormField({ path: `guardians.${i}.email`, label: 'Email Address', value: g.email, type: 'email', required: true })}</div>
+          <div class="col-md-6">${renderFormField({ path: `guardians.${i}.mailingStreet`, label: 'Mailing Street Address', value: g.mailingStreet, required: true })}</div>
+          <div class="col-md-6">${renderFormField({ path: `guardians.${i}.mailingCityStateZip`, label: 'Mailing City / State / Zip', value: g.mailingCityStateZip, required: true })}</div>
+          <div class="col-md-6">${renderFormField({ path: `guardians.${i}.residenceStreet`, label: 'Residence / Corporate Street Address', value: g.residenceStreet, required: true })}</div>
+          <div class="col-md-6">${renderFormField({ path: `guardians.${i}.residenceCityStateZip`, label: 'Residence / Corporate City / State / Zip', value: g.residenceCityStateZip, required: true })}</div>
         </div>
       </div>
     </div></div>`;

@@ -6761,6 +6761,16 @@ function formatDisplayDate(canonicalStr){
 window.formatDisplayDate = formatDisplayDate;
 
 function inpS(id,label,val,req=false,type='text'){
+  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
+    return window.renderFormField({
+      path: id,
+      label,
+      value: val,
+      type,
+      required: req,
+      id,
+    });
+  }
   const isEmail=label.toLowerCase().includes('email');
   const isDate=!isEmail&&(type==='date'||/\bdate\b/i.test(label));
   const isPhone=!isEmail&&!isDate&&label.toLowerCase().includes('phone');
