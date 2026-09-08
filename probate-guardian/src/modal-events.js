@@ -41,32 +41,28 @@ function getModalFocusables(modal) {
 
 function handleModalInput(event) {
   if (!(event.target instanceof HTMLInputElement)) return;
-  if (event.target.dataset.modalInput === 'format-name') {
-    const input = event.target;
-    const formatted = window.formatName(input.value);
-    if (formatted !== input.value) {
-      const caret = input.selectionStart;
-      input.value = formatted;
-      input.setSelectionRange(caret, caret);
-    }
-  } else if (event.target.dataset.modalInput === 'convert-source') {
+  // format-name fields are intentionally NOT reformatted here on every
+  // keystroke: formatName()/formatSafeTitleCase() is a *finalize* formatter
+  // (it trims trailing whitespace, and treats a bare 2-letter word as a
+  // state abbreviation to uppercase) meant to run once on a complete value.
+  // Applied live it fights normal typing -- typing "ga" toward "Garrett"
+  // gets read as the abbreviation "GA" and uppercased, and a trailing space
+  // gets trimmed the instant it's typed, making the space key look broken.
+  // See handleModalBlur for the one-time formatting on blur instead.
+  if (event.target.dataset.modalInput === 'convert-source') {
     window.onConvertSourceInput();
   }
 }
 
-function handleModalFocus(event) {
+function handleModalBlur(event) {
   if (!(event.target instanceof HTMLInputElement)) return;
   if (event.target.dataset.modalInput === 'format-name') {
-    // The OS's own hardware-keyboard text prediction/autocapitalize competes
-    // with this field's live formatName() capitalization (double-capitalizing
-    // letters, and sometimes eating the space key to accept a suggestion)
-    // unless turned off before the first keystroke -- set it here, on focus,
-    // rather than only in the markup, so no format-name field can ship
-    // without it regardless of which fragment declares it.
-    event.target.setAttribute('autocapitalize', 'off');
-    event.target.setAttribute('autocorrect', 'off');
-    event.target.setAttribute('spellcheck', 'false');
-  } else if (event.target.dataset.modalInput === 'convert-source') {
+    event.target.value = window.formatName(event.target.value);
+  }
+}
+
+function handleModalFocus(event) {
+  if (event.target instanceof HTMLInputElement && event.target.dataset.modalInput === 'convert-source') {
     window.onConvertSourceFocus();
   }
 }
@@ -117,6 +113,7 @@ function handleModalChange(event) {
 document.addEventListener('click', handleModalClick);
 document.addEventListener('input', handleModalInput);
 document.addEventListener('focusin', handleModalFocus);
+document.addEventListener('focusout', handleModalBlur);
 document.addEventListener('keydown', handleModalKeydown);
 document.addEventListener('change', handleModalChange);
 

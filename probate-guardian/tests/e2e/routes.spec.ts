@@ -258,6 +258,9 @@ test.describe('routes', () => {
     await expect(page.locator('#lazy-fragment-host [onclick], #lazy-fragment-host [oninput], #lazy-fragment-host [onchange], #lazy-fragment-host [onfocus], #lazy-fragment-host [onkeydown]')).toHaveCount(0);
 
     await page.locator('#new-ward-name').fill('alpha modal ward');
+    // Name fields format on blur (not live per-keystroke -- see modal-events.js's
+    // handleModalBlur), so leaving the field is what title-cases it.
+    await page.locator('#new-ward-type').focus();
     await expect(page.locator('#new-ward-name')).toHaveValue('Alpha Modal Ward');
     await page.locator('#addWardModal [data-modal-action="add-ward"]').click();
     await expect(page.locator('#addWardModal')).toBeHidden();
