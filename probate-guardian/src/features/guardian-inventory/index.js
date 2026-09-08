@@ -482,7 +482,6 @@ function pageHome(){
               <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
               <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
               <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, Attorney, County).</li>
-              <li>Work through Schedules A-1 through C-5, then complete Parts III–VI (Attestations &amp; Filings).</li>
               <li>Use Print Preview to save as PDF or Excel for filing.</li>
             </ul>
             ${browserRecommendationNotice('margin-top:0.75rem;margin-bottom:0;')}

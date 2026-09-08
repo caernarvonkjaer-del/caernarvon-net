@@ -449,7 +449,6 @@ function pagePart1Annual(){
               <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
               <li>Ward Name and Case Number auto-populate all schedule headers.</li>
               <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
-              <li>Work through Schedules A through F-2, then complete Parts II–X (Attestations, Remuneration &amp; Filings).</li>
               <li>Use Print Preview to save as PDF or Excel for filing.</li>
             </ul>
             ${browserRecommendationNotice('margin-top:0.75rem;margin-bottom:0;')}
