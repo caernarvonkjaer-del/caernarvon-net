@@ -42,7 +42,13 @@ function getModalFocusables(modal) {
 function handleModalInput(event) {
   if (!(event.target instanceof HTMLInputElement)) return;
   if (event.target.dataset.modalInput === 'format-name') {
-    event.target.value = window.formatName(event.target.value);
+    const input = event.target;
+    const formatted = window.formatName(input.value);
+    if (formatted !== input.value) {
+      const caret = input.selectionStart;
+      input.value = formatted;
+      input.setSelectionRange(caret, caret);
+    }
   } else if (event.target.dataset.modalInput === 'convert-source') {
     window.onConvertSourceInput();
   }
