@@ -113,7 +113,7 @@ test.describe('routes', () => {
       await expect(primaryMetrics.filter({ hasText: 'Approaching Deadlines' })).toContainText('1');
       await expect(primaryMetrics.filter({ hasText: 'Pending Court Review' })).toContainText('1');
       await expect(main.locator('.dashboard-triage-summary')).not.toContainText('Combined total');
-      await expect(main.locator('.dashboard-summary-secondary')).toContainText('Combined total');
+      await expect(main.locator('.dashboard-summary-secondary')).toHaveCount(0);
     };
 
     await expect(main.locator('.dashboard-family-row')).toHaveCount(4);

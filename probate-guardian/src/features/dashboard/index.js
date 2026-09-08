@@ -128,7 +128,6 @@ function dashboardToolbarActionsHTML() {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
   return `<div class="dashboard-toolbar-actions">
-    <button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home', 16)} All Filings</button>
     <button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${ic(isDark ? 'sun' : 'moon', 16)}</button>
     <button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>
   </div>`;
@@ -317,14 +316,12 @@ function renderDashboardSummary() {
   if (!container) return;
   const activeWards = projectWards(getCaseFile().wards).filter(w => !w.isArchived);
   const metrics = getDashboardMetrics(activeWards);
-  const combinedTotal = activeWards.reduce((s, w) => s + (w.total || 0), 0);
   container.innerHTML = `<div class="dashboard-summary-strip dashboard-triage-summary">
     <div class="dashboard-stat dashboard-stat-action"><div class="dashboard-stat-num dashboard-metric-alert">${metrics.actionItems}</div><div class="dashboard-stat-label">Action Items / Exceptions</div></div>
     <div class="dashboard-stat dashboard-stat-deadline"><div class="dashboard-stat-num dashboard-metric-warn">${metrics.approachingDeadlines}</div><div class="dashboard-stat-label">Approaching Deadlines</div></div>
     <div class="dashboard-stat dashboard-stat-pending"><div class="dashboard-stat-num dashboard-metric-pending">${metrics.pendingCourtReview}</div><div class="dashboard-stat-label">Pending Court Review</div></div>
     <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${activeWards.length}</div><div class="dashboard-stat-label">Active Filings</div></div>
-  </div>
-  <div class="dashboard-summary-secondary">Combined total <strong>${formatDashboardCurrency(activeWards.length ? combinedTotal : null)}</strong></div>`;
+  </div>`;
 }
 
 // Shows a one-time "Continue where you left off" banner when the app
