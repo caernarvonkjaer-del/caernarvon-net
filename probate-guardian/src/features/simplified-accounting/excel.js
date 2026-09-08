@@ -4,12 +4,13 @@
 // why that circularity is safe.
 import { validateSimplified } from './index.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotals, guardianHasAnyData,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, capitalizeImportedFields, sanitizeObjectDataInPlace, autoSave,
-  getCurrentPage, checkExcelCapacity, ExcelJS,
+  getCurrentPage, checkExcelCapacity,
 } = window;
 
 export const SIMPLIFIED_EXCEL_CAPS={
@@ -40,6 +41,7 @@ export async function doSaveExcel(){
     const buf=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
 
+    const ExcelJS=await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
 
@@ -163,13 +165,7 @@ export async function doSaveExcel(){
     }
 
     const ward2=(inv.wardName||'SimplifiedAccounting').replace(/[^a-z0-9]/gi,'_');
-    try{workbook.definedNames.model=[];}catch(e){}
-    const outBuf=await workbook.xlsx.writeBuffer();
-    const blob=new Blob([outBuf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`${ward2}_SimplifiedAccounting.xlsx`;a.click();
-    URL.revokeObjectURL(url);
+    await saveWorkbookFile(workbook, `${ward2}_SimplifiedAccounting.xlsx`);
   }catch(err){
     console.error('Excel export failed:',err);
     alert('Excel export failed: '+err.message);
@@ -197,6 +193,7 @@ export async function importExcel(input){
     try{
       // No template-cache write here — an imported file is extracted and
       // discarded, never retained (see the note above ensureTemplate()).
+      const ExcelJS=await getExcelJS();
       const workbook=new ExcelJS.Workbook();
       await workbook.xlsx.load(e.target.result);
       assertWorkbookWithinLimits(workbook);

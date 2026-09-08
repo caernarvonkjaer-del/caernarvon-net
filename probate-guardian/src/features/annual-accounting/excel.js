@@ -11,6 +11,7 @@
 // same pattern).
 import { validateAnnual } from './index.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotalsAnnual,
@@ -18,7 +19,7 @@ const {
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, unwrapCellValue, capitalizeImportedFields,
   sanitizeObjectDataInPlace, autoSave, getCurrentPage, checkExcelCapacity,
-  ExcelJS, r2,
+  r2,
 } = window;
 
 // Line 20 (net assets computed from the accounting) and Line 30 (net assets
@@ -74,6 +75,7 @@ export async function doSaveExcel(){
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+    const ExcelJS = await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
 
@@ -364,13 +366,7 @@ export async function doSaveExcel(){
 
     const wardFile=(inv.wardName||'Accounting').replace(/[^a-z0-9]/gi,'_');
     const formSlug=formDisplayName(inv.inventoryType).replace(/[^a-z0-9]/gi,'');
-    try{workbook.definedNames.model=[];}catch(e){}
-    const outBuf=await workbook.xlsx.writeBuffer();
-    const blob=new Blob([outBuf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`${wardFile}_${formSlug}.xlsx`;a.click();
-    URL.revokeObjectURL(url);
+    await saveWorkbookFile(workbook, `${wardFile}_${formSlug}.xlsx`);
   }catch(err){
     console.error('Excel export failed:',err);
     alert('Excel export failed: '+err.message);
@@ -396,6 +392,7 @@ export async function importExcel(input){
     try{
       // No template-cache write here — an imported file is extracted and
       // discarded, never retained (see the note above ensureTemplate()).
+      const ExcelJS = await getExcelJS();
       const workbook=new ExcelJS.Workbook();
       await workbook.xlsx.load(e.target.result);
       assertWorkbookWithinLimits(workbook);

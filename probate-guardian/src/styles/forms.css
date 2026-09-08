@@ -1,0 +1,180 @@
+/* ── SSN Masking ──────────────────────────────────────── */
+.ssn-mask-wrap{position:relative;}
+.ssn-mask-wrap input{padding-right:2.4rem;}
+/* -webkit-text-security has no standard equivalent and no fallback: where it
+   is unsupported the SSN renders in plain text rather than as dots. Supported
+   in Chrome/Edge/Safari and in Firefox 118+. It is a display mask only -- the
+   value is in the DOM either way -- so this is a shoulder-surfing measure, not
+   a security control, and nothing downstream depends on it. */
+.ssn-masked:not(.ssn-revealed){-webkit-text-security:disc;}
+.ssn-reveal-btn{position:absolute;top:0;right:0;bottom:0;width:2.4rem;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--ink-4);cursor:pointer;padding:0;}
+.ssn-reveal-btn:hover{color:var(--ink-2);}
+
+/* ── Labels & Typography ──────────────────────────────── */
+.form-label, label.form-label, label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bottom:.25rem;letter-spacing:.005em;}
+.form-check-label{font-size:.88rem;color:var(--ink-2);}
+.form-check-label-sm{font-size:.85rem;}
+.form-text{color:var(--ink-3);font-size:.8rem;}
+.req{color:var(--danger-text);font-weight:700;margin-left:.15rem;}
+
+/* ── Form Controls & Inputs ───────────────────────────── */
+.form-control,.form-select,.custom-select{font-size:.88rem;border-color:var(--field);border-radius:var(--r-sm);color:var(--ink);background-color:var(--surface);transition:border-color .15s,box-shadow .15s;}
+.form-control:focus,.form-select:focus,.custom-select:focus{border-color:var(--brand-text);box-shadow:0 0 0 3px rgba(130,0,36,.14);}
+.form-control::placeholder{color:var(--ink-4);opacity:1;}
+.custom-select{display:block;width:100%;padding:.42rem .75rem;font-size:.88rem;border:1px solid var(--field);border-radius:var(--r-sm);background-color:var(--surface);}
+.form-check-input{border-color:var(--field);}
+.form-check-input:focus{border-color:var(--brand-text);box-shadow:0 0 0 3px rgba(130,0,36,.14);}
+.form-check-input:checked{background-color:var(--brand);border-color:var(--brand);}
+
+/* Dark mode form controls: light gray background with flat black text across all forms */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .custom-select,
+[data-theme="dark"] .ward-picker-select,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="tel"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: #dde3eb;
+  color: #000000;
+  border-color: #94a3b8;
+  font-weight: 500;
+}
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .custom-select:focus,
+[data-theme="dark"] .ward-picker-select:focus,
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="number"]:focus,
+[data-theme="dark"] input[type="date"]:focus,
+[data-theme="dark"] input[type="password"]:focus,
+[data-theme="dark"] input[type="email"]:focus,
+[data-theme="dark"] input[type="tel"]:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  background-color: #eef3f8;
+  color: #000000;
+  border-color: #820024;
+  box-shadow: 0 0 0 3px rgba(232,135,156,.35);
+}
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #556275;
+  opacity: 1;
+}
+[data-theme="dark"] .input-group-text {
+  background-color: #c8d2df;
+  color: #000000;
+  border-color: #94a3b8;
+  font-weight: 600;
+}
+[data-theme="dark"] .form-control[readonly],
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] input[readonly],
+[data-theme="dark"] input[data-calcbind],
+[data-theme="dark"] input:disabled,
+[data-theme="dark"] textarea[readonly],
+[data-theme="dark"] textarea:disabled {
+  background-color: #cbd4e1 !important;
+  color: #111111 !important;
+  border-color: #94a3b8;
+  font-weight: 600;
+}
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .ward-picker-select {
+  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+[data-theme="dark"] option {
+  background-color: #dde3eb;
+  color: #000000;
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.8;
+  cursor: pointer;
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+[data-theme="dark"] .ssn-reveal-btn {
+  color: #222222;
+}
+[data-theme="dark"] .ssn-reveal-btn:hover {
+  color: #000000;
+}
+[data-theme="dark"] .form-check-input {
+  background-color: #dde3eb;
+  border-color: #94a3b8;
+}
+[data-theme="dark"] .form-check-input:checked {
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* WCAG 2.5.5 wants at least a 44x44 tap target -- a bare native checkbox
+   is much smaller than that. */
+.form-check{display:flex;align-items:center;gap:.5rem;min-height:2.75rem;margin:0;padding-left:0;cursor:pointer;}
+.form-check .form-check-input{float:none;margin-left:0;flex-shrink:0;}
+.form-check-label{cursor:pointer;padding:.6rem 0;line-height:1.3;margin:0;}
+
+/* ── Buttons ──────────────────────────────────────────── */
+.btn{--bs-btn-font-weight:600;--bs-btn-border-radius:var(--r-sm);transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .1s;}
+.btn:disabled,.btn.disabled{--bs-btn-disabled-color:var(--ink-4);--bs-btn-disabled-bg:var(--surface);--bs-btn-disabled-border-color:var(--line);}
+.btn:active{transform:translateY(1px);}
+
+.btn-primary{--bs-btn-bg:#820024;--bs-btn-border-color:#820024;--bs-btn-hover-bg:#6b001e;--bs-btn-hover-border-color:#6b001e;--bs-btn-active-bg:#540017;--bs-btn-active-border-color:#540017;}
+.btn.btn-outline-primary{color:var(--brand-text)!important;border-color:var(--brand-text)!important;background-color:transparent!important;}
+.btn.btn-outline-primary:hover,.btn.btn-outline-primary:focus-visible{color:#fff!important;background-color:var(--brand)!important;border-color:var(--brand)!important;}
+.btn-outline-success{--bs-btn-color:var(--brand-text);--bs-btn-border-color:var(--brand-200);--bs-btn-bg:var(--surface);--bs-btn-hover-bg:var(--brand);--bs-btn-hover-color:#fff;--bs-btn-hover-border-color:var(--brand);}
+.btn.btn-outline-danger{color:var(--danger-text)!important;border-color:var(--danger-text)!important;background-color:transparent!important;}
+.btn.btn-outline-danger:hover,.btn.btn-outline-danger:focus-visible{color:#fff!important;background-color:var(--danger)!important;border-color:var(--danger)!important;}
+.btn-outline-secondary{--bs-btn-color:var(--ink-2);--bs-btn-border-color:var(--line);--bs-btn-bg:var(--surface);--bs-btn-hover-bg:var(--ink-2);--bs-btn-hover-color:var(--surface);--bs-btn-hover-border-color:var(--ink-2);}
+.btn-secondary{--bs-btn-bg:#3b475b;--bs-btn-border-color:#3b475b;--bs-btn-hover-bg:#2e3849;--bs-btn-hover-border-color:#2e3849;--bs-btn-active-bg:#252e3c;}
+.btn-danger{--bs-btn-bg:#a3122f;--bs-btn-border-color:#a3122f;--bs-btn-hover-bg:#870f27;--bs-btn-hover-border-color:#870f27;--bs-btn-active-bg:#700c20;}
+.badge.bg-primary{background-color:var(--brand)!important;}
+.badge.bg-secondary{background-color:#4d5766!important;}
+
+/* ── Validation Highlight & Summary ───────────────────── */
+.validation-error-field{border:1px solid var(--danger)!important;background-color:#fdf6f7;box-shadow:0 0 0 3px rgba(163,18,47,.12)!important;}
+[data-theme="dark"] .validation-error-field{background-color:var(--brand-050)!important;}
+
+.validation-panel{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--danger);border-radius:var(--r);box-shadow:var(--sh-2);margin-bottom:1.25rem;overflow:hidden;}
+.validation-head{display:flex;align-items:flex-start;gap:.7rem;padding:.85rem 1.1rem;background:#fdf6f7;border-bottom:1px solid #f0d9de;}
+[data-theme="dark"] .validation-head{background:var(--brand-050);border-bottom-color:var(--brand-200);}
+.validation-head .ic{color:var(--danger-text);margin-top:.12rem;}
+.validation-title{font-weight:700;font-size:.93rem;color:var(--danger-text);letter-spacing:-.01em;}
+.validation-sub{font-size:.79rem;color:var(--ink-3);margin-top:.12rem;line-height:1.5;}
+.validation-groups{max-height:22rem;overflow-y:auto;}
+.validation-group{padding:.65rem 1.1rem;border-bottom:1px solid var(--line-2);}
+.validation-group:last-child{border-bottom:none;}
+.validation-group-head{display:flex;align-items:center;gap:.5rem;}
+.validation-group-name{font-weight:650;font-size:.83rem;color:var(--ink);}
+.validation-count{font-size:.68rem;font-weight:700;color:#8a0f28;background:#fdeaee;border:1px solid #f0cdd5;border-radius:999px;padding:.06rem .45rem;line-height:1.5;}
+[data-theme="dark"] .validation-count{color:var(--danger-text);background:var(--brand-100);border-color:var(--brand-200);}
+.validation-go{margin-left:auto;display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;font-weight:600;color:var(--accent-text);background:none;border:none;cursor:pointer;padding:.15rem .25rem;border-radius:var(--r-xs);font-family:inherit;}
+.validation-go:hover{color:#174470;text-decoration:underline;}
+[data-theme="dark"] .validation-go:hover{color:#9cc7ec;}
+.validation-fields{display:flex;flex-wrap:wrap;gap:.3rem .4rem;margin-top:.45rem;}
+.validation-field{font-size:.77rem;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-xs);padding:.13rem .42rem;}
+
+/* ── Plan (Narrative) Form Controls ───────────────────── */
+.plan-field-hint{font-size:.79rem;color:var(--ink-3);line-height:1.5;margin-bottom:.4rem;}
+.plan-radio-row{display:flex;flex-wrap:wrap;gap:1.1rem;padding:.15rem 0;}
+.plan-check{margin-bottom:.3rem;}
+.plan-check .form-check-label{font-size:.88rem;color:var(--ink-2);}
+.plan-question{border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;background:var(--surface);}
+.plan-question-num{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);margin-bottom:.5rem;}
+.plan-conditional{margin-left:1.1rem;padding-left:.9rem;border-left:2px solid var(--line);}
+.plan-sig-block{border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;background:var(--surface);}
+.plan-sig-block h3{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-4);margin:0 0 .75rem;}
+.plan-check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.1rem .9rem;}
+
+/* Reserving two lines of label height keeps a row's inputs level */
+.row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"] .form-label{
+  min-height:2.15em;display:inline-flex;align-items:flex-start;flex-wrap:wrap;
+}

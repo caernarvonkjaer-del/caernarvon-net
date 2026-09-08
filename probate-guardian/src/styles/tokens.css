@@ -1,0 +1,76 @@
+/* ── Design tokens ────────────────────────────────────── */
+/* Light is the baseline and never changes. Every dark-mode value below is
+   contrast-verified the same way the light ramp was: every -text token
+   clears 4.5:1 against every surface it actually renders on; --field clears
+   3:1 (WCAG 1.4.11). Filled buttons/badges (--brand, --ok, --warn, --danger,
+   --accent) are deliberately NOT redefined for dark — a maroon button with
+   white text on top is a self-contained island whose contrast never depends
+   on the surrounding page, so it stays identical in both themes. The
+   corresponding *-text tokens exist because that same maroon/red/amber/green
+   fails badly as plain text on a dark surface (as low as 1.5:1) — those get
+   a lighter tint instead. NONE of this reaches the court-document or PDF
+   output paths: verified zero of these custom properties are referenced by
+   #print-doc-container or exportHelpGuideAsPDF()
+   rule — those are independently hardcoded and immune to theme changes. */
+:root{
+  /* Brand — deep court maroon. Used as an accent, never as a flood fill. */
+  --brand:#820024;--brand-600:#6b001e;--brand-700:#540017;
+  --brand-050:#fdf5f7;--brand-100:#f6e3e8;--brand-200:#e8c3cd;
+  --brand-text:var(--brand);
+  /* Ink — cool near-black through muted grey. Every step clears WCAG AA
+     (4.5:1) on white, --surface-2 and --surface-3, so hierarchy is carried
+     by contrast steps that are all still readable:
+     ink 16.8 · ink-2 9.4 · ink-3 6.7 · ink-4 5.2 (on white). */
+  --ink:#111a2b;--ink-2:#3b475b;--ink-3:#525d6e;--ink-4:#626d7e;
+  /* Structure. --line is decorative (dividers, card edges); --field is the
+     input/control boundary and must clear 3:1 per WCAG 1.4.11. */
+  --line:#e3e8ef;--line-2:#eef1f6;--field:#848c9a;
+  --surface:#fff;--surface-2:#f7f9fc;--surface-3:#eef2f8;
+  --navy:#1a2d4a;--accent:#1e5799;--accent-050:#f2f7fc;--accent-text:var(--accent);
+  --ok:#1f7a3d;--warn:#9a5a00;--danger:#a3122f;
+  --ok-text:var(--ok);--warn-text:var(--warn);--danger-text:var(--danger);
+  /* Bootstrap token mapping */
+  --bs-body-color:var(--ink-2);--bs-body-bg:var(--surface-2);
+  --bs-heading-color:var(--ink);--bs-secondary-color:var(--ink-3);
+  --bs-tertiary-color:var(--ink-4);--bs-border-color:var(--line);
+  --bs-link-color:var(--accent-text);--bs-link-hover-color:var(--brand-text);
+  /* Radii */
+  --r-xs:4px;--r-sm:6px;--r:8px;--r-lg:12px;
+  /* Elevation — layered, low-opacity, cool-tinted */
+  --sh-1:0 1px 2px rgba(17,26,43,.05);
+  --sh-2:0 1px 3px rgba(17,26,43,.07),0 4px 12px -4px rgba(17,26,43,.10);
+  --sh-3:0 2px 6px rgba(17,26,43,.07),0 14px 32px -10px rgba(17,26,43,.18);
+  /* Selected (not focused) — soft, because the state is also carried by the
+     accent stripe and the "Active" badge, never by colour alone. Keyboard
+     focus is a real outline; see the :focus-visible rule below. */
+  --ring-soft:0 0 0 2px var(--brand-200);
+  --ease:cubic-bezier(.16,1,.3,1);
+  color-scheme:light;
+}
+/* Dark palette. The pre-paint script starts with the OS preference;
+   applyTheme() restores the .sav file's setting after the file loads. */
+:root[data-theme="dark"]{
+  --brand-text:#e8879c;      /* 6.06:1 worst-case vs surface/brand-050/100 */
+  --brand-050:#241620;--brand-100:#33202b;--brand-200:#5c3341;
+  --ink:#eef1f6;--ink-2:#c3ccd9;--ink-3:#dfe8f5;--ink-4:#edf3ff;
+  /* ink   16.2 · ink-2 8.6 · ink-3 7.0 · ink-4 8.4 — worst case across
+     surface / surface-2 / surface-3, mirroring the light-mode ramp while
+     keeping the sidebar micro-labels and toggles readable against dark UI
+     surfaces. */
+  --line:#2b3546;--line-2:#212a38;--field:#69758a; /* field: 3.43:1 worst */
+  --surface:#1a2230;--surface-2:#10151d;--surface-3:#232d3d;
+  --accent-050:#111d2b;--accent-text:#7cb0e0;   /* 6.04:1 worst-case */
+  --ok-text:#5fbf7f;--warn-text:#e0a94a;--danger-text:#f27f95; /* all >=5.4:1 */
+  /* Bootstrap token mapping for dark mode */
+  --bs-body-color:var(--ink-2);--bs-body-bg:var(--surface-2);
+  --bs-heading-color:var(--ink);--bs-secondary-color:var(--ink-3);
+  --bs-tertiary-color:var(--ink-4);--bs-border-color:var(--line);
+  --bs-link-color:var(--accent-text);--bs-link-hover-color:var(--brand-text);
+  --bs-emphasis-color:var(--ink);--bs-emphasis-color-rgb:238,241,246;
+  --bs-table-color:var(--ink-2);--bs-table-bg:transparent;
+  --bs-table-border-color:var(--line);
+  --bs-table-striped-color:var(--ink);--bs-table-striped-bg:rgba(255,255,255,.03);
+  --bs-table-active-color:var(--ink);--bs-table-active-bg:var(--surface-3);
+  --bs-table-hover-color:var(--ink);--bs-table-hover-bg:var(--surface-3);
+  color-scheme:dark;
+}

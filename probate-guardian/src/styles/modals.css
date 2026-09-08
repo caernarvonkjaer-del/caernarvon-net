@@ -1,0 +1,69 @@
+/* ── Bootstrap Modal Overrides ────────────────────────── */
+.modal-content{background-color:var(--surface);color:var(--ink-2);border:1px solid var(--line);}
+.modal-header,.modal-footer{border-color:var(--line);}
+.modal-title{color:var(--ink);}
+.dropdown-menu{background-color:var(--surface);color:var(--ink-2);border:1px solid var(--line);}
+.dropdown-item{color:var(--ink-2);}
+.dropdown-item:hover,.dropdown-item:focus{background-color:var(--surface-2);color:var(--ink);}
+[data-theme="dark"] .btn-close{filter:invert(1) grayscale(100%) brightness(200%);}
+
+/* ── Custom Modal System & Overlays ───────────────────── */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,16,28,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--line);color:var(--ink-2);border-radius:var(--r-lg);padding:1.85rem;max-width:400px;width:100%;box-shadow:0 32px 72px -16px rgba(10,16,28,.45),0 0 0 1px rgba(17,26,43,.05);animation:modalIn .25s var(--ease);}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.985);}to{opacity:1;transform:none;}}
+
+.modal-box-title{margin-bottom:.5rem;color:var(--ink);}
+.modal-box-intro{font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;}
+.modal-actions-right{display:flex;justify-content:flex-end;}
+.modal-box h1,.modal-box h2{font-weight:700;letter-spacing:-.02em;}
+.modal-box h2{font-size:1.18rem;}
+.modal-box h1{font-size:1.35rem;}
+
+/* ── Startup & Security Modals ────────────────────────── */
+#startup-choice-overlay{z-index:10002;}
+#startup-choice-overlay .modal-box{max-width:520px;}
+#security-choice-overlay{z-index:10001;}
+#security-choice-overlay .modal-box{max-width:560px;}
+#unlock-overlay{z-index:10000;}
+#unlock-overlay .modal-box,#ward-locked-overlay .modal-box{max-width:420px;}
+#ward-locked-overlay{z-index:10002;}
+
+.unlock-subtitle{font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;}
+#startup-newcase-link{display:none;padding-left:0;}
+#unlock-confirm-row,#unlock-remember-row{display:none;}
+#unlock-error{display:none;color:var(--danger-text);font-size:.83rem;margin-bottom:.75rem;}
+#startup-file-status{display:none;font-size:.82rem;}
+
+.security-choice-option{display:block;width:100%;border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;margin-bottom:.9rem;cursor:pointer;transition:border-color .15s,box-shadow .15s,background .15s;background:var(--surface);font:inherit;color:inherit;text-align:left;box-shadow:var(--sh-1);}
+.security-choice-option:hover{border-color:var(--accent-text);background:var(--accent-050);box-shadow:var(--sh-2);}
+.security-choice-option:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
+.security-choice-header{display:flex;align-items:center;gap:.55rem;margin-bottom:.55rem;}
+.security-choice-icon{display:inline-flex;color:var(--ink-2);}
+.security-choice-title{font-weight:700;font-size:.94rem;color:var(--ink);letter-spacing:-.01em;}
+.security-choice-list{margin:0;padding-left:1.2rem;font-size:.8rem;line-height:1.6;color:var(--ink-2);}
+.security-choice-list li{margin-bottom:.3rem;}
+
+/* ── Common Modals (Fragments) ────────────────────────── */
+#dropzone-overlay{display:none;position:fixed;inset:0;z-index:10001;background:rgba(26,45,74,.9);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:#fff;align-items:center;justify-content:center;font-size:1.35rem;font-weight:650;letter-spacing:-.01em;text-align:center;pointer-events:none;}
+.dropzone-box{border:2px dashed rgba(255,255,255,.5);border-radius:16px;padding:2.5rem 4rem;}
+
+#fallbackSaveModal .modal-box{max-width:460px;}
+#convertWardModal .modal-box,
+#pickPartyModal .modal-box,
+#pickCaseModal .modal-box,
+#startNewYearModal .modal-box,
+#priorYearsModal .modal-box,
+#deleteYearModal .modal-box,
+#simplifiedEligibilityModal .modal-box{max-width:480px;}
+#switchWardPickerModal .modal-box{max-width:420px;}
+
+.modal-title-danger{color:var(--danger-text)!important;}
+.modal-desc{font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;}
+.modal-desc-sm{font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;}
+.modal-note-box{font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;}
+.modal-help-text{font-size:.78rem;color:var(--ink-3);margin-top:.25rem;}
+.modal-help-text-sm{font-size:.8rem;color:var(--ink-3);margin-top:.35rem;}
+.modal-autonote{font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;}
+#carry-source-wrap,#elig-carry-source-wrap{display:none;}
+.modal-scroll-list{margin-bottom:1rem;max-height:340px;overflow-y:auto;}

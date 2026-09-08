@@ -1,0 +1,40 @@
+/* ── Print Preview Banner & Pager Bar ─────────────────── */
+.print-preview-banner{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--navy);border-radius:var(--r-sm);padding:.75rem 1rem;margin-bottom:1.25rem;font-size:.83rem;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;box-shadow:var(--sh-1);}
+
+/* scroll-margin-top keeps scrollIntoView from tucking this container's top
+   edge underneath the sticky .pv-bar above it */
+#print-doc-container{max-width:9.5in;margin:0 auto;scroll-margin-top:6.5rem;overflow-x:auto;}
+#print-doc-container{font-family:'Segoe UI',system-ui,sans-serif;color:#000;}
+
+.pv-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:rgba(255,255,255,.92);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border:1px solid var(--line);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem;box-shadow:var(--sh-2);position:sticky;top:.75rem;z-index:100;}
+[data-theme="dark"] .pv-bar{background:rgba(16,21,29,.92);}
+.pv-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);white-space:nowrap;}
+.pv-select{flex:1;min-width:15rem;max-width:32rem;font-size:.85rem;}
+.pv-count{font-size:.78rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.pv-nav{display:flex;gap:.35rem;margin-left:auto;}
+.pv-nav .btn{padding:.28rem .6rem;font-size:.78rem;}
+
+/* Single-page mode */
+#print-doc-container.pv-single>.pdf-page{display:none;}
+#print-doc-container.pv-single>.pdf-page.pv-show{display:block;}
+
+/* ── Vector PDF Canvas & TextLayer Overlay ────────────── */
+.pdf-page{position:relative;background:#fff;border:1px solid #d0dae8;border-radius:4px;margin:0 auto 1.5rem;box-shadow:var(--sh-2);}
+.pdf-page canvas{display:block;}
+
+.pdf-page .textLayer{position:absolute;inset:0;overflow:clip;line-height:1;text-align:initial;opacity:1;forced-color-adjust:none;transform-origin:0 0;z-index:1;}
+.pdf-page .textLayer span,.pdf-page .textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%;-webkit-user-select:text;-moz-user-select:text;user-select:text;}
+.pdf-page .textLayer .markedContent{display:contents;}
+.pdf-page .textLayer ::selection{background:rgba(0,100,255,.35);}
+
+/* ── Court Document Tables ────────────────────────────── */
+.doc-table{width:100%;border-collapse:collapse;font-size:.73rem;}
+.doc-table th{background:#820024;color:#fff;padding:.28rem .38rem;text-align:left;font-size:.7rem;font-weight:600;}
+.doc-table th.right,.doc-table td.right{text-align:right;}
+.doc-table td{padding:.28rem .38rem;border-bottom:1px solid #ddd;vertical-align:top;}
+.doc-table tr:nth-child(even) td{background:#f9f9f9;}
+.doc-table .total-row td{font-weight:700;border-top:2px solid #1a2d4a;background:#eef3fa!important;}
+[data-theme="dark"] .doc-table th{background:var(--brand);color:#fff;}
+[data-theme="dark"] .doc-table td{border-bottom:1px solid var(--line);color:var(--ink-2);background-color:transparent;}
+[data-theme="dark"] .doc-table tr:nth-child(even) td{background-color:rgba(255,255,255,.03);color:var(--ink-2);}
+[data-theme="dark"] .doc-table .total-row td{border-top:2px solid var(--line);background-color:var(--surface-3)!important;color:var(--ink)!important;}

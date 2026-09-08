@@ -17,6 +17,8 @@ import './core/navigation/router.js';
 import './core/modals/convert-ward-modal.js';
 import './core/modals/year-manager-modal.js';
 import './core/modals/eligibility-modal.js';
+import './core/excel/exceljs-loader.js';
+import './core/pdf/html2pdf-loader.js';
 import './fragment-loader.js';
 import './features-loader.js';
 import './shell-events.js';

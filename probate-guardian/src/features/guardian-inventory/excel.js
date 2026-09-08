@@ -9,13 +9,13 @@
 // same pattern).
 import { validateGuardian } from './index.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, saveData, navigate,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, unwrapCellValue, capitalizeImportedFields,
   sanitizeObjectData, checkExcelCapacity, mk,
-  ExcelJS,
 } = window;
 
 // Each cap is the total row count across that schedule's template pages
@@ -69,6 +69,7 @@ export async function doSaveExcel(){
     const buf=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
 
+    const ExcelJS = await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
 
@@ -386,17 +387,7 @@ export async function doSaveExcel(){
 
     if(stat)stat.textContent='Writing file…';
     const stem=(inv.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
-    try{workbook.definedNames.model=[];}catch(e){}
-    const xlsx=await workbook.xlsx.writeBuffer();
-    const blob=new Blob([xlsx],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`${stem}_InitialInventory.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    await saveWorkbookFile(workbook, `${stem}_InitialInventory.xlsx`);
     if(stat)stat.textContent='✓ Exported!';
   }catch(e){
     console.error(e);
@@ -416,6 +407,7 @@ export async function importExcel(input){
     if(!check.ok){if(prog)prog.textContent='✗ '+check.message;return;}
     if(prog)prog.textContent='Reading file…';
     const buf=await file.arrayBuffer();
+    const ExcelJS=await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     if(prog)prog.textContent='Parsing Excel…';
     await workbook.xlsx.load(buf);

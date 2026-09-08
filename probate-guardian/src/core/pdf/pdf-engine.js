@@ -96,6 +96,14 @@ export async function createJsPdfInstance() {
   };
 
   if (typeof window === 'undefined') return null;
+  if (!window.jspdf && !window.jsPDF && typeof window.html2pdf !== 'function') {
+    try {
+      const { getHtml2Pdf } = await import('./html2pdf-loader.js');
+      await getHtml2Pdf();
+    } catch (e) {
+      // headless / node environment fallback
+    }
+  }
   if (window.jspdf && window.jspdf.jsPDF) {
     const pdf = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
     patchOutlineDestinations(pdf);

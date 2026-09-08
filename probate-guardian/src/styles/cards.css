@@ -1,0 +1,102 @@
+/* ── Entry Cards & Repeatable Blocks ─────────────────── */
+.entry-card,.summary-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-1);}
+.entry-card{margin-bottom:1rem;overflow:hidden;}
+.import-zone-body{border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);}
+.attorney-certification-card{width:calc(50% - .5rem);}
+@media (min-width:768px) and (max-width:900px){.card-grid-2col>.col-md-6{width:100%;}}
+.liability-fields{max-width:none;}
+.liability-fields .row{margin-bottom:.15rem;}
+.liability-fields .row:last-child{align-items:flex-end;}
+@media (max-width: 900px){.attorney-certification-card{width:100%;}}
+
+.entry-card-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.6rem;padding:.55rem .85rem;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.85rem;font-weight:650;color:var(--ink);letter-spacing:-.005em;}
+.entry-card-actions{display:flex;align-items:center;justify-content:center;gap:.4rem;grid-column:2;margin-left:0;}
+.entry-card-actions .btn{padding:.2rem .5rem;font-size:.75rem;white-space:nowrap;}
+.entry-card-body{padding:.9rem .85rem;}
+.entry-card-footer{padding:.5rem .85rem;background:var(--surface-2);border-top:1px solid var(--line);text-align:right;font-size:.88rem;font-weight:700;color:var(--brand-text);}
+
+/* Tablet / small laptop grid tuning for dense schedules */
+@media (min-width:768px) and (max-width:1279.98px){
+  .schedule-page .col-md-1,
+  .schedule-page .col-md-2,
+  .schedule-page .col-md-3{flex:0 0 auto;width:33.3333%;}
+}
+
+/* ── Schedule Totals ──────────────────────────────────── */
+.schedule-totals{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-top:2px solid var(--brand);border-radius:var(--r);padding:.85rem 1.15rem;margin-top:1.25rem;font-size:.88rem;box-shadow:var(--sh-2);}
+.schedule-totals td,.schedule-totals .td{padding:.22rem 0;}
+.schedule-totals td:last-child,.schedule-totals .td:last-child{color:var(--ink);font-variant-numeric:tabular-nums;}
+.schedule-totals tr:first-child td,.schedule-totals .tr:first-child .td{font-weight:700;font-size:.96rem;padding-bottom:.4rem;}
+.schedule-totals tr:not(:first-child) td,.schedule-totals .tr:not(:first-child) .td{color:var(--ink-3);}
+.schedule-totals tr:not(:first-child) td:last-child,.schedule-totals .tr:not(:first-child) .td:last-child{color:var(--ink-2);font-weight:600;}
+.schedule-totals table{width:100%;margin:0;}
+.schedule-totals td:last-child{text-align:right;font-weight:700;}
+.schedule-totals .tbl{display:table;width:100%;margin:0;}
+.schedule-totals .tbl .tr{display:table-row;}
+.schedule-totals .tbl .td{display:table-cell;}
+.schedule-totals .tbl .td:last-child{text-align:right;font-weight:700;}
+
+/* ── Summary Boxes & Lines ────────────────────────────── */
+.summary-box{padding:1rem 1.1rem;margin-bottom:1rem;}
+.summary-inventory-total{padding-top:.71rem;padding-bottom:.71rem;}
+.cover-info-row{align-items:stretch;}
+.cover-info-row>.col-md-6{display:flex;}
+.cover-info-row>.col-md-6>.summary-box{flex:1;margin-bottom:0;}
+.summary-box h2,.subsection-heading{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);margin-bottom:.6rem;}
+.summary-line{display:flex;justify-content:space-between;gap:1rem;font-size:.83rem;padding:.32rem 0;border-bottom:1px solid var(--line-2);color:var(--ink-2);}
+.summary-line:last-child{border-bottom:none;}
+.summary-line.total{font-weight:700;border-bottom:none;border-top:1px solid var(--line);color:var(--ink);padding-top:.45rem;margin-top:.2rem;}
+.summary-line a{color:var(--accent-text);text-decoration:none;font-size:.83rem;font-weight:500;}
+.summary-line a:hover{text-decoration:underline;}
+
+/* ── Readiness Panel ──────────────────────────────────── */
+.readiness-panel{border-left-color:var(--accent);}
+.readiness-panel .validation-head{background:var(--accent-050);border-bottom-color:#dbe7f4;}
+[data-theme="dark"] .readiness-panel .validation-head{background:var(--surface-2);border-bottom-color:#22384d;}
+.readiness-panel .validation-title{color:var(--ink);}
+.readiness-panel .validation-head .ic{color:var(--accent-text);}
+.readiness-list{display:flex;flex-direction:column;gap:.3rem;margin-top:.35rem;}
+.readiness-row{display:flex;align-items:flex-start;gap:.5rem;font-size:.8rem;color:var(--ink-2);line-height:1.5;}
+.readiness-mark{flex-shrink:0;width:1.1rem;text-align:center;font-weight:700;}
+.readiness-mark.ok{color:var(--ok-text);}
+.readiness-mark.pending{color:var(--warn-text);}
+.readiness-mark.manual{color:var(--ink-4);}
+
+/* ── Tables & Schedule Data Grids ─────────────────────── */
+.table,.table > :not(caption) > * > *{color:var(--ink-2);border-color:var(--line);background-color:transparent;}
+.table th,.table > thead > tr > th,.table > :not(caption) > * > th{color:var(--ink);background-color:transparent;}
+.table td,.table > tbody > tr > td,.table > :not(caption) > * > td{color:var(--ink-2);background-color:transparent;}
+.table-striped > tbody > tr:nth-of-type(odd) > *{background-color:rgba(255,255,255,.025);color:var(--ink-2);}
+.table-hover > tbody > tr:hover > *{background-color:var(--surface-3);color:var(--ink);}
+.card{background-color:var(--surface);color:var(--ink-2);border-color:var(--line);}
+
+.plan-benefits-table,.plan-rights-table,.plan-adl-table,.doc-table{font-size:.85rem;color:var(--ink-2);}
+.plan-benefits-table th,.plan-rights-table th,.plan-adl-table th,.doc-table th,
+.plan-benefits-table > thead > tr > th,.plan-rights-table > thead > tr > th,.plan-adl-table > thead > tr > th,.doc-table > thead > tr > th,
+.plan-benefits-table > :not(caption) > * > th,.plan-rights-table > :not(caption) > * > th,.plan-adl-table > :not(caption) > * > th,.doc-table > :not(caption) > * > th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-4);font-weight:700;background-color:transparent;}
+.plan-benefits-table td,.plan-rights-table td,.plan-adl-table td,.doc-table td,
+.plan-benefits-table > tbody > tr > td,.plan-rights-table > tbody > tr > td,.plan-adl-table > tbody > tr > td,.doc-table > tbody > tr > td,
+.plan-benefits-table > :not(caption) > * > td,.plan-rights-table > :not(caption) > * > td,.plan-adl-table > :not(caption) > * > td,.doc-table > :not(caption) > * > td{vertical-align:middle;color:var(--ink-2);background-color:transparent;}
+.plan-rights-table td:first-child,.plan-adl-table td:first-child,
+.plan-rights-table > :not(caption) > * > td:first-child,.plan-adl-table > :not(caption) > * > td:first-child{line-height:1.4;color:var(--ink)!important;font-weight:500;}
+
+/* ── Supporting Cards & Row Types ─────────────────────── */
+.schedule-empty{display:flex;align-items:center;gap:.65rem;padding:1rem 1.15rem;margin-bottom:1rem;border:1px dashed #d4dbe6;border-radius:var(--r);background:var(--surface);color:var(--ink-3);font-size:.86rem;}
+[data-theme="dark"] .schedule-empty{border-color:#2c3648;}
+.schedule-empty .ic{color:var(--ink-4);}
+.schedule-empty-check{display:flex;align-items:center;gap:.6rem;margin:0;cursor:pointer;color:var(--ink-2);}
+.schedule-empty-check input{flex-shrink:0;width:1.05rem;height:1.05rem;cursor:pointer;}
+.vehicle-value-links{font-size:.79rem;color:var(--ink-3);line-height:1.55;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:.6rem .8rem;margin:.2rem 0 .75rem;}
+
+.schedule-docs-section{margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--line);}
+.schedule-docs-section h4{font-size:.7rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin:0 0 .45rem;}
+.schedule-docs-section h4.mt{margin-top:1.2rem;}
+.schedule-docs-hint{color:var(--ink-3);font-size:.82rem;margin-bottom:.65rem;}
+.sched-doc-row{display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:.4rem;background:var(--surface);}
+.sched-doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem;color:var(--ink);}
+.sched-doc-meta{color:var(--ink-3);font-size:.78rem;flex-shrink:0;}
+.sched-doc-empty{color:var(--ink-3);font-style:italic;font-size:.85rem;margin-bottom:.5rem;}
+
+.prior-year-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .7rem;border:1px solid var(--line);border-radius:6px;margin-bottom:.4rem;font-size:.85rem;}
+.prior-year-current{color:var(--ink-3);font-style:italic;background:var(--surface-2);}
+.attestation-text{font-size:.76rem;font-style:italic;margin-bottom:.75rem;}

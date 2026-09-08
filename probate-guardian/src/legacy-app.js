@@ -906,6 +906,9 @@ async function exportHelpGuideAsPDF(){
   // can only appear once, at the end. Drawing per page keeps the rule and the
   // page numbers crisp vector text at any zoom.
   try{
+    if (typeof html2pdf !== 'function' && typeof window.getHtml2Pdf === 'function') {
+      await window.getHtml2Pdf();
+    }
     await html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf){
       const total=pdf.internal.getNumberOfPages();
       const w=pdf.internal.pageSize.getWidth();
