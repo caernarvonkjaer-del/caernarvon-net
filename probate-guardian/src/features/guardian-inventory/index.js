@@ -468,7 +468,6 @@ function witnessCardsHTML(){
 function pageHome(){
   return `<div class="schedule-page">
   <h1>Verified Initial Inventory — Case Information</h1>
-  ${browserRecommendationNotice()}
   <div class="instructions-import-row">
     <div class="accordion mb-0">
       <div class="accordion-item">
@@ -486,6 +485,7 @@ function pageHome(){
               <li>Work through Schedules A-1 through C-5, then complete Parts III–VI (Attestations &amp; Filings).</li>
               <li>Use Print Preview to save as PDF or Excel for filing.</li>
             </ul>
+            ${browserRecommendationNotice('margin-top:0.75rem;margin-bottom:0;')}
           </div>
         </div>
       </div>

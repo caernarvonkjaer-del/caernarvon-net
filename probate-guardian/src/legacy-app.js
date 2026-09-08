@@ -8288,8 +8288,8 @@ function linkAccordions(idA,idB){
 // Chrome and Edge support writable file handles for background .sav updates.
 // Other browsers require deliberate exports, so show this notice on every
 // form's Case Info or Cover page.
-function browserRecommendationNotice(){
-  return `<div class="schedule-instructions" style="margin-bottom:1rem;">${ic('alert',15)} <strong>Chrome or Microsoft Edge is recommended</strong> for the best experience — only those browsers support automatically saving your work in the background as you go. Firefox and Safari work fine too, but you'll need to save a backup file (.sav) manually and more often.</div>`;
+function browserRecommendationNotice(style = 'margin-bottom:1rem;'){
+  return `<div class="schedule-instructions" style="${style}">${ic('alert',15)} <strong>Chrome or Microsoft Edge is recommended</strong> for the best experience — only those browsers support automatically saving your work in the background as you go. Firefox and Safari work fine too, but you'll need to save a backup file (.sav) manually and more often.</div>`;
 }
 // Same idea for the Annual Accounting schedules, which store their rows in
 // D.schA / D.schB1 / … and are rendered inline rather than through
