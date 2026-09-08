@@ -7,15 +7,15 @@
 <!-- Durable case saves use a user-chosen .sav file, so the old browser-quota
      warning was removed. IndexedDB is still used for temporary recovery and
      launch preferences; see STORAGE STRATEGY below. -->
-<div id="dropzone-overlay" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(26,45,74,.9);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;align-items:center;justify-content:center;font-size:1.35rem;font-weight:650;letter-spacing:-.01em;text-align:center;pointer-events:none;">
-  <div style="border:2px dashed rgba(255,255,255,.5);border-radius:16px;padding:2.5rem 4rem;"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Drop .sav file to import case data</div>
+<div id="dropzone-overlay">
+  <div class="dropzone-box"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Drop .sav file to import case data</div>
 </div>
 
 <!-- 15-minute dirty-state reminder for browsers without writable file handles. -->
 <div id="fallbackSaveModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:460px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Save Your Work</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">This browser can't automatically save your work in the background — only Chrome and Edge support that. You have changes that haven't been saved to a backup file (.sav) yet. Save now to avoid losing them.</p>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Save Your Work</h2>
+    <p class="modal-desc">This browser can't automatically save your work in the background — only Chrome and Edge support that. You have changes that haven't been saved to a backup file (.sav) yet. Save now to avoid losing them.</p>
     <div class="d-flex gap-2">
       <button class="btn btn-primary flex-fill" data-modal-action="save-backup" data-modal-id="fallbackSaveModal">Save Now</button>
       <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="fallbackSaveModal">Remind Me Later</button>
@@ -24,21 +24,21 @@
 </div>
 <!-- Convert Existing Ward Modal -->
 <div id="convertWardModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Create New Form for Existing Ward</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Creates a new form of a different inventory type, with data carried over from the one you pick below.</p>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Create New Form for Existing Ward</h2>
+    <p class="modal-desc-sm">Creates a new form of a different inventory type, with data carried over from the one you pick below.</p>
     <div class="mb-3">
       <label class="form-label" for="convert-source-ward">Ward</label>
       <div class="ward-combobox-wrap" id="convert-source-ward-wrap">
         <input type="text" class="form-control ward-picker-select" id="convert-source-ward" placeholder="Type or select a ward…" autocomplete="off" data-modal-input="convert-source">
-        <div id="convert-source-ward-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
+        <div id="convert-source-ward-dropdown" class="ward-combobox-dropdown" role="listbox" aria-label="Matching wards"></div>
       </div>
     </div>
     <div class="mb-3">
       <label class="form-label" for="convert-target-type">New Form</label>
       <select class="form-select" id="convert-target-type"></select>
     </div>
-    <div id="convert-note" style="font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;"></div>
+    <div id="convert-note" class="modal-note-box"></div>
     <div class="d-flex gap-2">
       <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="convertWardModal">Cancel</button>
       <button class="btn btn-primary flex-fill" data-modal-action="convert-ward">Create Form</button>
@@ -52,13 +52,13 @@
      one (immediately overwriting the slot with that party's data) or a
      brand-new one seeded from whatever is already typed into the slot. -->
 <div id="pickPartyModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Link to Shared Record</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Link <strong id="pick-party-slot-label">this person</strong> to a shared record, so edits made here (or on any other filing linked to the same record) stay in sync everywhere.</p>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Link to Shared Record</h2>
+    <p class="modal-desc-sm">Link <strong id="pick-party-slot-label">this person</strong> to a shared record, so edits made here (or on any other filing linked to the same record) stay in sync everywhere.</p>
     <div class="mb-3">
       <label class="form-label" for="pick-party-existing">Existing Person</label>
       <select class="form-select" id="pick-party-existing"></select>
-      <div style="font-size:.78rem;color:var(--ink-3);margin-top:.25rem;">Selecting a person here overwrites this slot's fields with that person's current record.</div>
+      <div class="modal-help-text">Selecting a person here overwrites this slot's fields with that person's current record.</div>
     </div>
     <div class="d-flex gap-2">
       <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="pickPartyModal">Cancel</button>
@@ -73,9 +73,9 @@
      existing one or a brand-new one seeded from the filing's own case
      number/county. Mirrors the Pick Party modal exactly. -->
 <div id="pickCaseModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Link to Case</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Link <strong id="pick-case-ward-name">this filing</strong> to a Case, so it groups with that Case's other filings on the dashboard even if the case number is later edited on only one of them.</p>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Link to Case</h2>
+    <p class="modal-desc-sm">Link <strong id="pick-case-ward-name">this filing</strong> to a Case, so it groups with that Case's other filings on the dashboard even if the case number is later edited on only one of them.</p>
     <div class="mb-3">
       <label class="form-label" for="pick-case-existing">Existing Case</label>
       <select class="form-select" id="pick-case-existing"></select>
@@ -92,20 +92,20 @@
      the dropdown is still on the already-active ward, since switchWard()
      on the same ward is a silent no-op otherwise. -->
 <div id="switchWardPickerModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:420px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Switch Filing</h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;"><strong id="switch-ward-picker-current-name">This filing</strong> is already active. Choose another one below:</p>
-    <div id="switch-ward-picker-list" class="recently-opened-list" style="margin-bottom:1rem;max-height:340px;overflow-y:auto;"></div>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Switch Filing</h2>
+    <p class="modal-desc-sm"><strong id="switch-ward-picker-current-name">This filing</strong> is already active. Choose another one below:</p>
+    <div id="switch-ward-picker-list" class="recently-opened-list modal-scroll-list"></div>
     <button class="btn btn-secondary w-100" data-modal-action="close" data-modal-id="switchWardPickerModal">Cancel</button>
   </div>
 </div>
 
 <!-- Start New Year Modal -->
 <div id="startNewYearModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Start New Year — <span id="new-year-ward-name"></span></h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">This saves the current year exactly as it stands (still editable anytime from "prior years") and opens a new blank year for this ward.</p>
-    <div id="new-year-note" style="font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;"></div>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Start New Year — <span id="new-year-ward-name"></span></h2>
+    <p class="modal-desc-sm">This saves the current year exactly as it stands (still editable anytime from "prior years") and opens a new blank year for this ward.</p>
+    <div id="new-year-note" class="modal-note-box"></div>
     <div class="d-flex gap-2">
       <button class="btn btn-secondary flex-fill" data-modal-action="close" data-modal-id="startNewYearModal">Cancel</button>
       <button class="btn btn-primary flex-fill" data-modal-action="start-new-year">Start New Year</button>
@@ -115,9 +115,9 @@
 
 <!-- Prior Years Modal -->
 <div id="priorYearsModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Prior Years — <span id="prior-years-ward-name"></span></h2>
-    <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;">Every year is fully editable. Opening one makes it the active year for this ward; the year you're leaving is saved exactly as you left it.</p>
+  <div class="modal-box">
+    <h2 class="modal-box-title">Prior Years — <span id="prior-years-ward-name"></span></h2>
+    <p class="modal-desc-sm">Every year is fully editable. Opening one makes it the active year for this ward; the year you're leaving is saved exactly as you left it.</p>
     <div id="prior-years-list" class="mb-3"></div>
     <button class="btn btn-secondary w-100" data-modal-action="close" data-modal-id="priorYearsModal">Close</button>
   </div>
@@ -125,9 +125,9 @@
 
 <!-- Delete Year Modal -->
 <div id="deleteYearModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:1rem;color:var(--danger-text);">Delete This Year?</h2>
-    <p id="delete-year-msg" style="margin-bottom:1rem;color:var(--ink-3);"></p>
+  <div class="modal-box">
+    <h2 class="modal-box-title modal-title-danger">Delete This Year?</h2>
+    <p id="delete-year-msg" class="modal-desc"></p>
     <div class="d-flex gap-2">
       <button class="btn btn-danger flex-fill" data-modal-action="delete-ward-year">Delete Year</button>
       <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="deleteYearModal">Cancel</button>
@@ -138,12 +138,12 @@
 <!-- Add Ward Modal -->
 <div id="addWardModal" class="modal-overlay">
   <div class="modal-box">
-    <h2 style="margin-bottom:1rem;color:var(--ink);">Add New Form</h2>
+    <h2 class="modal-box-title mb-3">Add New Form</h2>
     <div class="mb-3">
       <label class="form-label" for="new-ward-name">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
         <input type="text" class="form-control" id="new-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" data-modal-input="format-name">
-        <div id="new-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
+        <div id="new-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox" aria-label="Ward name suggestions"></div>
       </div>
       <datalist id="ward-name-suggestions"></datalist>
     </div>
@@ -161,30 +161,30 @@
         <option value="planMinor">Annual Plan — Minors</option>
       </select>
     </div>
-    <div class="mb-3" id="carry-source-wrap" style="display:none;">
+    <div class="mb-3" id="carry-source-wrap">
       <label class="form-label" for="carry-source-ward">Load Ward Info From</label>
       <select class="form-select" id="carry-source-ward" data-modal-change="carry-source">
         <option value="">— Start Blank —</option>
       </select>
-      <div style="font-size:.8rem;color:var(--ink-3);margin-top:.35rem;">Carries over the ward's name, case number, county, and guardian contact details from an existing case, so you don't have to retype them. Signature dates are never carried over.</div>
-      <div id="carry-source-autonote" style="font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;"></div>
+      <div class="modal-help-text-sm">Carries over the ward's name, case number, county, and guardian contact details from an existing case, so you don't have to retype them. Signature dates are never carried over.</div>
+      <div id="carry-source-autonote" class="modal-autonote"></div>
     </div>
-    <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" data-modal-action="add-ward" style="flex:1;">Create Form</button>
-      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="addWardModal" style="flex:1;">Cancel</button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary flex-fill" data-modal-action="add-ward">Create Form</button>
+      <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="addWardModal">Cancel</button>
     </div>
   </div>
 </div>
 
 <!-- Simplified Accounting Eligibility Modal -->
 <div id="simplifiedEligibilityModal" class="modal-overlay">
-  <div class="modal-box" style="max-width:480px;">
-    <h2 style="margin-bottom:1rem;color:var(--ink);">Simplified Annual Accounting — Eligibility</h2>
+  <div class="modal-box">
+    <h2 class="modal-box-title mb-3">Simplified Annual Accounting — Eligibility</h2>
     <div class="mb-3">
       <label class="form-label" for="elig-ward-name">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
         <input type="text" class="form-control" id="elig-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" data-modal-input="format-name">
-        <div id="elig-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox"></div>
+        <div id="elig-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox" aria-label="Ward name suggestions"></div>
       </div>
       <datalist id="elig-ward-name-suggestions"></datalist>
     </div>
@@ -205,17 +205,17 @@
         <option value="No">No</option>
       </select>
     </div>
-    <div class="mb-3" id="elig-carry-source-wrap" style="display:none;">
+    <div class="mb-3" id="elig-carry-source-wrap">
       <label class="form-label" for="elig-carry-source-ward">Load Ward Info From</label>
       <select class="form-select" id="elig-carry-source-ward">
         <option value="">— Start Blank —</option>
       </select>
-      <div style="font-size:.8rem;color:var(--ink-3);margin-top:.35rem;">Carries over the ward's name, case number, and county from an existing Simplified Annual Plan, so you don't have to retype them.</div>
-      <div id="elig-carry-source-autonote" style="font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;"></div>
+      <div class="modal-help-text-sm">Carries over the ward's name, case number, and county from an existing Simplified Annual Plan, so you don't have to retype them.</div>
+      <div id="elig-carry-source-autonote" class="modal-autonote"></div>
     </div>
-    <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" data-modal-action="confirm-simplified-eligibility" style="flex:1;">Continue</button>
-      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="simplifiedEligibilityModal" style="flex:1;">Cancel</button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary flex-fill" data-modal-action="confirm-simplified-eligibility">Continue</button>
+      <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="simplifiedEligibilityModal">Cancel</button>
     </div>
   </div>
 </div>
@@ -223,14 +223,14 @@
 <!-- Rename Ward Modal -->
 <div id="renameWardModal" class="modal-overlay">
   <div class="modal-box">
-    <h2 style="margin-bottom:1rem;color:var(--ink);">Rename Ward</h2>
+    <h2 class="modal-box-title mb-3">Rename Ward</h2>
     <div class="mb-3">
       <label class="form-label" for="rename-ward-input">Ward Name</label>
       <input type="text" class="form-control" id="rename-ward-input" placeholder="" data-modal-input="format-name">
     </div>
-    <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-primary" data-modal-action="rename-ward" style="flex:1;">Rename</button>
-      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="renameWardModal" style="flex:1;">Cancel</button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary flex-fill" data-modal-action="rename-ward">Rename</button>
+      <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="renameWardModal">Cancel</button>
     </div>
   </div>
 </div>
@@ -238,11 +238,11 @@
 <!-- Confirm Delete Modal -->
 <div id="deleteWardModal" class="modal-overlay">
   <div class="modal-box">
-    <h2 style="margin-bottom:1rem;color:var(--danger-text);">Delete Form?</h2>
-    <p id="delete-ward-msg" style="margin-bottom:1rem;color:var(--ink-3);">Are you sure you want to delete this form? This action cannot be undone.</p>
-    <div style="display:flex;gap:.5rem;">
-      <button class="btn btn-danger" data-modal-action="delete-ward" style="flex:1;">Delete Form</button>
-      <button class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="deleteWardModal" style="flex:1;">Cancel</button>
+    <h2 class="modal-box-title modal-title-danger">Delete Form?</h2>
+    <p id="delete-ward-msg" class="modal-desc">Are you sure you want to delete this form? This action cannot be undone.</p>
+    <div class="d-flex gap-2">
+      <button class="btn btn-danger flex-fill" data-modal-action="delete-ward">Delete Form</button>
+      <button class="btn btn-outline-secondary flex-fill" data-modal-action="close" data-modal-id="deleteWardModal">Cancel</button>
     </div>
   </div>
 </div>
@@ -250,8 +250,8 @@
 <!-- Guardian Setup Modal -->
 <div id="guardianSetupModal" class="modal-overlay">
   <div class="modal-box">
-    <h2 style="margin-bottom:1rem;color:var(--ink);">Guardian Information</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;">Enter your information. You can update this anytime.</p>
+    <h2 class="modal-box-title mb-3">Guardian Information</h2>
+    <p class="modal-desc">Enter your information. You can update this anytime.</p>
     <div class="mb-3">
       <label class="form-label" for="setup-guardian-name">Your Name</label>
       <input type="text" class="form-control" id="setup-guardian-name" placeholder="Your full name" data-modal-input="format-name">

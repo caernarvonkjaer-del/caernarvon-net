@@ -107,6 +107,9 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 /* Figures line up in columns — essential in an accounting ledger. */
 .num,.ward-info-total,.ward-card-total,.dashboard-stat-num,.dashboard-type-header-subtotal,
 .schedule-totals,.entry-card-footer,.summary-line{font-variant-numeric:tabular-nums;}
+/* ── Save error banner ────────────────────────────────── */
+#save-error-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(180deg,#a3122f,#8b0f28);color:#fff;padding:.7rem 1rem;font-size:.84rem;font-weight:500;text-align:center;box-shadow:0 6px 20px -6px rgba(163,18,47,.6);}
+.save-error-dismiss{margin-left:1rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:5px;padding:.15rem .6rem;font-size:.75rem;font-weight:600;cursor:pointer;}
 /* Keyboard focus. A real outline (not a box-shadow) is used as the baseline:
    it follows each element's own border-radius, can't be clipped by an
    overflow container, and survives Windows High Contrast mode, where
@@ -171,6 +174,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    Light-on-light: it sits below the maroon header, on the white sidebar. */
 .sidebar-context{padding:.5rem 1.1rem;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.45rem;color:var(--ink-3);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;}
 .sidebar-context .ic{color:var(--accent-text);}
+#sidebar-context{display:none;}
 .nav-section{padding:.4rem 0;}
 /* Separates the ward metrics card (net assets, filing progress) above from
    the form navigation below -- previously just stacked directly on top of
@@ -178,7 +182,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    "pages within this ward's form". */
 #nav-sections{border-top:1px solid var(--line);margin-top:.6rem;padding-top:.5rem;}
 .nav-section-label{padding:.85rem .95rem .3rem;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);}
-.nav-section-label.nav-section-toggle{display:flex;align-items:center;gap:.35rem;cursor:pointer;user-select:none;}
+.nav-section-label.nav-section-toggle{display:flex;align-items:center;gap:.35rem;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .nav-section-label.nav-section-toggle:hover{color:var(--ink-2);}
 .nav-section-label-text{flex:1 1 auto;}
 .nav-section-chevron{flex-shrink:0;font-size:.6rem;color:var(--ink-4);}
@@ -236,7 +240,16 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    moments, but the save-controls toggle would show the identical ring. */
 #ward-controls-toggle-btn,#save-controls-toggle-btn{outline:none!important;box-shadow:none!important;}
 #ward-controls-toggle-btn:focus,#save-controls-toggle-btn:focus{outline:none!important;box-shadow:none!important;}
+#ward-controls-toggle-btn{display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);}
+#close-ward-btn,#rename-ward-btn,#delete-ward-btn,#ward-info-display{display:none;}
 .ward-picker-actions .btn{flex:1;padding:.4rem .3rem;font-size:.75rem;font-weight:600;border-radius:var(--r-sm);}
+.sidebar-save-section{padding:1rem .8rem 1.1rem;border-top:1px solid var(--line);background:var(--surface-2);}
+#last-saved-indicator{display:block;margin-bottom:.15rem;font-size:.75rem;color:var(--ink-3);}
+#auto-save-armed-indicator{display:block;margin-bottom:.65rem;font-size:.75rem;color:var(--ink-4);}
+#save-controls-toggle-btn{display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);}
+.auto-save-interval-label{display:block;font-size:.75rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;}
+#auto-export-interval-select{font-size:.75rem;}
+.hidden-file-input{display:none;}
 .ward-info-card{background:linear-gradient(180deg,var(--surface-2),var(--surface-3));border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r);padding:.75rem .85rem;}
 .ward-info-head{display:flex;align-items:center;gap:.45rem;margin-bottom:.6rem;}
 .ward-info-icon{display:inline-flex;line-height:1;}
@@ -260,6 +273,7 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .ward-progress-jump:hover{text-decoration:underline;}
 .ward-progress-jump .ic{flex:0 0 auto;}
 .main-content{flex:1;overflow-y:auto;padding:1.75rem 2.25rem 2rem;background:var(--surface-2);}
+.main-content-loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);}
 /* Page title: a short brand rule beneath reads more considered than a
    full-width divider, and ties the page back to the sidebar accent. */
 .schedule-page h1{position:relative;font-size:1.32rem;font-weight:700;color:var(--ink);letter-spacing:-.02em;border-bottom:1px solid var(--line);padding-bottom:.7rem;margin-bottom:1.25rem;}
@@ -805,7 +819,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
    time and the user had to keep moving the mouse back to the button.
    Sticky pins it at a fixed screen position regardless of page height,
    the same treatment already used for the bottom .page-nav bar. */
-.pv-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);border:1px solid var(--line);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem;box-shadow:var(--sh-2);position:sticky;top:.75rem;z-index:100;}
+.pv-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:rgba(255,255,255,.92);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border:1px solid var(--line);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem;box-shadow:var(--sh-2);position:sticky;top:.75rem;z-index:100;}
 [data-theme="dark"] .pv-bar{background:rgba(16,21,29,.92);}
 .pv-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);white-space:nowrap;}
 .pv-select{flex:1;min-width:15rem;max-width:32rem;font-size:.85rem;}
@@ -951,6 +965,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .validation-error-field{border:1px solid var(--danger)!important;background-color:#fdf6f7;box-shadow:0 0 0 3px rgba(163,18,47,.12)!important;}
 [data-theme="dark"] .validation-error-field{background-color:var(--brand-050)!important;}
 .help-panel{position:fixed;right:0;top:0;bottom:0;width:410px;max-width:100vw;background:var(--surface);border-left:1px solid var(--line);box-shadow:-2px 0 8px rgba(17,26,43,.04),-24px 0 60px -20px rgba(17,26,43,.3);z-index:5000;display:flex;flex-direction:column;animation:slideInRight .35s var(--ease);font-family:inherit;}
+#help-panel{display:none;}
+.help-panel-placeholder{color:var(--ink-3);font-size:.9rem;}
 @keyframes slideInRight{from{transform:translateX(100%);}to{transform:translateX(0);}}
 .help-panel-header{padding:1.15rem 1.3rem;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
 .help-panel-title{display:flex;align-items:center;gap:.7rem;min-width:0;}
@@ -1003,8 +1019,16 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
 .walkthrough-highlight{position:absolute;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 0 3px #820024,0 0 20px 3px rgba(130,0,36,.5);z-index:9001;animation:wt-pulse 2.2s ease-in-out infinite;pointer-events:none;}
 @keyframes wt-pulse{0%,100%{box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 0 3px #820024,0 0 16px 2px rgba(130,0,36,.4);}50%{box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 0 3px #a3123f,0 0 28px 6px rgba(130,0,36,.6);}}
 .walkthrough-tooltip{position:fixed;background:var(--surface);color:var(--ink);padding:1.4rem;border-radius:var(--r-lg);z-index:9002;width:370px;max-width:calc(100vw - 32px);box-shadow:0 24px 60px -12px rgba(0,0,0,.4);animation:slideUp .3s var(--ease);border:1px solid rgba(255,255,255,.6);font-family:inherit;}
+#walkthrough-tooltip{display:none;}
+.walkthrough-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;gap:.8rem;}
+#walkthrough-progress{font-size:.78rem;color:#525d6e;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
+[data-theme="dark"] #walkthrough-progress{color:var(--ink-3);}
+#walkthrough-progress-bar{height:4px;background:#eee;border-radius:2px;overflow:hidden;}
+[data-theme="dark"] #walkthrough-progress-bar{background:var(--line);}
+#walkthrough-progress-bar div{height:100%;background:#820024;border-radius:2px;width:0;transition:width .3s ease;}
 .walkthrough-tooltip h3{margin:0;font-size:1.02rem;font-weight:700;color:var(--ink);letter-spacing:-.02em;}
 .walkthrough-tooltip p{margin:.9rem 0 0 0;font-size:.89rem;line-height:1.65;color:var(--ink-2);}
+#walkthrough-text{margin:.9rem 0 0 0;line-height:1.6;}
 .walkthrough-buttons{display:flex;gap:.6rem;margin-top:1.3rem;}
 .walkthrough-buttons button{flex:1;padding:.65rem;font-size:.86rem;border:none;border-radius:var(--r);cursor:pointer;font-weight:600;transition:background .15s,border-color .15s,color .15s,box-shadow .15s,transform .1s;font-family:inherit;}
 .walkthrough-buttons button:active{transform:translateY(1px);}
@@ -1021,10 +1045,47 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6{color:var(--ink);}
    ════════════════════════════════════════════════════════ */
 
 
-.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,16,28,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,16,28,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;}
 .modal-overlay.show{display:flex;}
 .modal-box{background:var(--surface);border:1px solid var(--line);color:var(--ink-2);border-radius:var(--r-lg);padding:1.85rem;max-width:400px;width:100%;box-shadow:0 32px 72px -16px rgba(10,16,28,.45),0 0 0 1px rgba(17,26,43,.05);animation:modalIn .25s var(--ease);}
+#startup-choice-overlay{z-index:10002;}
+#startup-choice-overlay .modal-box{max-width:520px;}
+#security-choice-overlay{z-index:10001;}
+#security-choice-overlay .modal-box{max-width:560px;}
+#unlock-overlay{z-index:10000;}
+#unlock-overlay .modal-box,#ward-locked-overlay .modal-box{max-width:420px;}
+#ward-locked-overlay{z-index:10002;}
+.modal-box-title{margin-bottom:.5rem;color:var(--ink);}
+.modal-box-intro{font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;}
+.unlock-subtitle{font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;}
+#startup-newcase-link{display:none;padding-left:0;}
+#unlock-confirm-row,#unlock-remember-row{display:none;}
+.form-check-label-sm{font-size:.85rem;}
+#unlock-error{display:none;color:var(--danger-text);font-size:.83rem;margin-bottom:.75rem;}
+.modal-actions-right{display:flex;justify-content:flex-end;}
 @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.985);}to{opacity:1;transform:none;}}
+
+/* ── Modals & Dialogs (common-modals fragment) ───────── */
+#dropzone-overlay{display:none;position:fixed;inset:0;z-index:10001;background:rgba(26,45,74,.9);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:#fff;align-items:center;justify-content:center;font-size:1.35rem;font-weight:650;letter-spacing:-.01em;text-align:center;pointer-events:none;}
+.dropzone-box{border:2px dashed rgba(255,255,255,.5);border-radius:16px;padding:2.5rem 4rem;}
+#fallbackSaveModal .modal-box{max-width:460px;}
+#convertWardModal .modal-box,
+#pickPartyModal .modal-box,
+#pickCaseModal .modal-box,
+#startNewYearModal .modal-box,
+#priorYearsModal .modal-box,
+#deleteYearModal .modal-box,
+#simplifiedEligibilityModal .modal-box{max-width:480px;}
+#switchWardPickerModal .modal-box{max-width:420px;}
+.modal-title-danger{color:var(--danger-text)!important;}
+.modal-desc{font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;}
+.modal-desc-sm{font-size:.83rem;color:var(--ink-3);margin-bottom:1rem;}
+.modal-note-box{font-size:.78rem;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:.6rem .75rem;margin-bottom:1rem;}
+.modal-help-text{font-size:.78rem;color:var(--ink-3);margin-top:.25rem;}
+.modal-help-text-sm{font-size:.8rem;color:var(--ink-3);margin-top:.35rem;}
+.modal-autonote{font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;}
+#carry-source-wrap,#elig-carry-source-wrap{display:none;}
+.modal-scroll-list{margin-bottom:1rem;max-height:340px;overflow-y:auto;}
 /* A corner card rather than a full-width fixed bar — the old "unsaved
    changes" reminder spanned the whole viewport and sat on top of whatever
    was underneath it (often the page's own action buttons). This uses the

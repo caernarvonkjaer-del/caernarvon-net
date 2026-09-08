@@ -2066,7 +2066,7 @@ function promptCreatePassword(hasExistingData){
     document.getElementById('unlock-subtitle').textContent=hasExistingData
       ?'This app now encrypts case data at rest. Choose a master password — your existing wards will be encrypted with it.'
       :'Choose a master password to encrypt all case data stored on this device.';
-    document.getElementById('unlock-confirm-row').style.display='';
+    document.getElementById('unlock-confirm-row').style.display='block';
     document.getElementById('unlock-password').value='';
     document.getElementById('unlock-password-confirm').value='';
     document.getElementById('unlock-error').style.display='none';

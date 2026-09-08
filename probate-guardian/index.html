@@ -20,9 +20,9 @@
 <link rel="stylesheet" href="./src/styles/app.css">
 </head>
 <body>
-<div id="save-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(180deg,#a3122f,#8b0f28);color:#fff;padding:.7rem 1rem;font-size:.84rem;font-weight:500;text-align:center;box-shadow:0 6px 20px -6px rgba(163,18,47,.6);">
+<div id="save-error-banner">
   <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4.2 21 19.8H3Z"/><path d="M12 10v4.2"/><circle cx="12" cy="17.4" r=".9" fill="currentColor" stroke="none"/></svg> Your work could not be saved. Check your connection/storage and try again.
-  <button type="button" data-shell-action="dismiss-save-error" style="margin-left:1rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:5px;padding:.15rem .6rem;font-size:.75rem;font-weight:600;cursor:pointer;">Dismiss</button>
+  <button type="button" class="save-error-dismiss" data-shell-action="dismiss-save-error">Dismiss</button>
 </div>
 <div id="auto-export-reminder" class="app-toast" role="status" aria-live="polite" aria-atomic="true">
   <span class="app-toast-icon"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg></span>
@@ -51,7 +51,7 @@
         </div>
       </div>
     </div>
-    <div class="sidebar-context" id="sidebar-context" style="display:none;">
+    <div class="sidebar-context" id="sidebar-context">
       <span id="sidebar-context-icon"></span><span id="sidebar-context-label"></span>
     </div>
 
@@ -72,22 +72,22 @@
            being filled out, to give the schedule list below more room --
            see applyWardControlsCollapsedState(). Not shown at all until a
            ward exists, same as the controls it toggles. -->
-      <button type="button" class="btn btn-sm btn-link w-100 ward-controls-toggle" id="ward-controls-toggle-btn" data-shell-action="toggle-ward-controls" style="display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);" aria-expanded="true">Hide filing controls ▴</button>
+      <button type="button" class="btn btn-sm btn-link w-100 ward-controls-toggle" id="ward-controls-toggle-btn" data-shell-action="toggle-ward-controls" aria-expanded="true">Hide filing controls ▴</button>
       <button type="button" class="btn btn-sm btn-primary w-100 ward-picker-switch-btn ward-collapsible" data-shell-action="switch-ward">Switch Filing</button>
       <button type="button" class="btn btn-outline-primary w-100 ward-add-btn ward-collapsible" data-shell-action="new-form">+ New Form</button>
       <div class="ward-picker-actions ward-collapsible">
-        <button type="button" class="btn btn-outline-secondary" id="close-ward-btn" data-shell-action="close-ward" style="display:none;" title="Close active filing and return to dashboard"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Close</button>
-        <button type="button" class="btn btn-outline-secondary" id="rename-ward-btn" data-shell-action="rename-ward" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/></svg> Rename</button>
-        <button type="button" class="btn btn-outline-danger" id="delete-ward-btn" data-shell-action="delete-ward" style="display:none;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
+        <button type="button" class="btn btn-outline-secondary" id="close-ward-btn" data-shell-action="close-ward" title="Close active filing and return to dashboard"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Close</button>
+        <button type="button" class="btn btn-outline-secondary" id="rename-ward-btn" data-shell-action="rename-ward"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/></svg> Rename</button>
+        <button type="button" class="btn btn-outline-danger" id="delete-ward-btn" data-shell-action="delete-ward"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
       </div>
-      <div id="ward-info-display" class="ward-info-card" style="display:none;"></div>
+      <div id="ward-info-display" class="ward-info-card"></div>
     </div>
 
     <div class="nav-section sidebar-scroll" id="nav-sections"></div>
-    <div class="nav-section" style="padding:1rem .8rem 1.1rem;border-top:1px solid var(--line);background:var(--surface-2);">
-      <small id="last-saved-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.15rem;font-size:.75rem;color:var(--ink-3);">No backup saved yet</small>
-      <small id="auto-save-armed-indicator" role="status" aria-live="polite" style="display:block;margin-bottom:.65rem;font-size:.75rem;color:var(--ink-4);">Auto-save: needs one manual save first</small>
-      <button type="button" class="btn btn-sm btn-link w-100 save-controls-toggle" id="save-controls-toggle-btn" data-shell-action="toggle-save-controls" style="display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);" aria-expanded="true">Hide save controls ▴</button>
+    <div class="nav-section sidebar-save-section">
+      <small id="last-saved-indicator" role="status" aria-live="polite">No backup saved yet</small>
+      <small id="auto-save-armed-indicator" role="status" aria-live="polite">Auto-save: needs one manual save first</small>
+      <button type="button" class="btn btn-sm btn-link w-100 save-controls-toggle" id="save-controls-toggle-btn" data-shell-action="toggle-save-controls" aria-expanded="true">Hide save controls ▴</button>
       <!-- A plain block-level wrapper, toggled as one unit, rather than
            setting style.display on each child directly -- several of them
            (the label especially) hardcode display:block inline already,
@@ -95,8 +95,8 @@
            the browser's inline-by-default styling for a <label> instead of
            restoring the block layout this row needs. -->
       <div id="save-controls-body">
-        <label for="auto-export-interval-select" style="display:block;font-size:.75rem;font-weight:700;color:var(--ink-4);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.11em;">Auto-Save Every</label>
-        <select id="auto-export-interval-select" class="form-select form-select-sm mb-2" style="font-size:.75rem;" aria-describedby="auto-save-interval-help">
+        <label for="auto-export-interval-select" class="auto-save-interval-label">Auto-Save Every</label>
+        <select id="auto-export-interval-select" class="form-select form-select-sm mb-2" aria-describedby="auto-save-interval-help">
           <option value="5">5 minutes</option>
           <option value="10" selected>10 minutes</option>
           <option value="30">30 minutes</option>
@@ -105,10 +105,10 @@
         <small id="auto-save-interval-help" class="visually-hidden">How often this device tries to save a backup automatically, when a backup file is already open.</small>
         <button class="btn btn-outline-primary btn-sm w-100 mb-2" data-shell-action="export-data"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Save Data File (.sav)</button>
         <button class="btn btn-outline-primary btn-sm w-100 mb-2" data-shell-action="import-data"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/></svg> Open Data File (.sav)</button>
-        <input type="file" id="zip-import-input" accept=".sav,.zip" aria-label="Choose a data backup .sav file to import" style="display:none">
+        <input type="file" id="zip-import-input" class="hidden-file-input" accept=".sav,.zip" aria-label="Choose a data backup .sav file to import">
         <button class="btn btn-outline-primary btn-sm w-100 mb-2" data-shell-action="backup-all-wards" title="Save a complete backup containing all filings"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Backup All Filings (.sav)</button>
         <button class="btn btn-outline-primary btn-sm w-100 mb-2" data-shell-action="open-backup-sav" title="Open and restore an all-filings backup file"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Open Backup (.sav)</button>
-        <input type="file" id="backup-import-input" accept=".sav,.zip" aria-label="Choose an all-filings backup .sav file to restore" style="display:none">
+        <input type="file" id="backup-import-input" class="hidden-file-input" accept=".sav,.zip" aria-label="Choose an all-filings backup .sav file to restore">
         <button id="lock-app-btn" class="btn btn-outline-secondary btn-sm w-100 mb-2" data-shell-action="lock"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/></svg> Lock</button>
         <button class="btn btn-outline-danger btn-sm w-100" data-shell-action="clear-data">Clear All Data</button>
       </div>
@@ -124,11 +124,11 @@
   </div>
 
   <main class="main-content" id="main-content" aria-label="Filing content" tabindex="-1">
-    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Loading…</div>
+    <div class="main-content-loading">Loading…</div>
   </main>
 
   <!-- Help Panel -->
-  <div class="help-panel" id="help-panel" style="display:none;" role="region" aria-label="Help and guidance">
+  <div class="help-panel" id="help-panel" role="region" aria-label="Help and guidance">
     <div class="help-panel-header">
       <div class="help-panel-title">
         <span class="help-panel-badge">?</span>
@@ -140,7 +140,7 @@
       <button type="button" class="help-panel-close" data-shell-action="toggle-help" aria-label="Close help">&times;</button>
     </div>
     <div class="help-panel-content" id="help-panel-content">
-      <p style="color:var(--ink-3);font-size:.9rem;">Select a section to see help information.</p>
+      <p class="help-panel-placeholder">Select a section to see help information.</p>
     </div>
     <div class="help-panel-footer">
       <button type="button" class="help-btn help-btn-primary" data-shell-action="start-walkthrough">Start guided tour</button>
@@ -153,15 +153,15 @@
 
 <!-- Walkthrough overlay -->
 <div class="walkthrough-overlay" id="walkthrough-overlay"></div>
-<div class="walkthrough-tooltip" id="walkthrough-tooltip" style="display:none;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;gap:.8rem;">
+<div class="walkthrough-tooltip" id="walkthrough-tooltip">
+  <div class="walkthrough-header">
     <h3 id="walkthrough-title" aria-label="Walkthrough step title">Tour Step</h3>
-    <span id="walkthrough-progress" style="font-size:.78rem;color:#525d6e;font-weight:700;letter-spacing:.03em;white-space:nowrap;" aria-live="polite" aria-label="Progress through tour"></span>
+    <span id="walkthrough-progress" aria-live="polite" aria-label="Progress through tour"></span>
   </div>
-  <div id="walkthrough-progress-bar" style="height:4px;background:#eee;border-radius:2px;overflow:hidden;">
-    <div style="height:100%;background:#820024;border-radius:2px;width:0;transition:width .3s ease;"></div>
+  <div id="walkthrough-progress-bar">
+    <div></div>
   </div>
-  <p id="walkthrough-text" style="margin:.9rem 0 0 0;line-height:1.6;"></p>
+  <p id="walkthrough-text"></p>
   <div class="walkthrough-buttons">
     <button type="button" class="walkthrough-skip" data-shell-action="skip-walkthrough">Skip Tour</button>
     <button type="button" class="walkthrough-next" data-shell-action="next-walkthrough">Next →</button>
@@ -169,10 +169,10 @@
 </div>
 
 <!-- Open/start screen shown after the recovery and remembered-handle checks. -->
-<div id="startup-choice-overlay" class="modal-overlay" style="z-index:10002;">
-  <div class="modal-box" style="max-width:520px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Probate Guardian</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This app keeps nothing in this browser between visits — your whole case lives in one .sav file you choose and control. Open it to continue where you left off, or start a brand-new case.</p>
+<div id="startup-choice-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <h2 class="modal-box-title">Probate Guardian</h2>
+    <p class="modal-box-intro">This app keeps nothing in this browser between visits — your whole case lives in one .sav file you choose and control. Open it to continue where you left off, or start a brand-new case.</p>
     <p id="startup-file-status" class="alert alert-warning" role="alert">The previously opened case file could not be found. If you restored it, select it again below so this browser can reconnect to it.</p>
     <button type="button" class="security-choice-option" data-startup-action="open-ward">
       <div class="security-choice-header">
@@ -199,17 +199,17 @@
          has opened or saved a real .sav file before (see
          hasOpenedCaseBefore()) — Open is the fast path by then, so Start
          New only needs a small way out, not equal billing. -->
-    <button id="startup-newcase-link" type="button" class="btn btn-link" style="display:none;padding-left:0;" data-startup-action="start-new-ward">Start a new case instead</button>
-    <input type="file" id="startup-open-input" accept=".sav,.zip" aria-label="Open a saved case file" style="display:none" data-startup-change="open-ward">
+    <button id="startup-newcase-link" type="button" class="btn btn-link" data-startup-action="start-new-ward">Start a new case instead</button>
+    <input type="file" id="startup-open-input" class="hidden-file-input" accept=".sav,.zip" aria-label="Open a saved case file" data-startup-change="open-ward">
   </div>
 </div>
 
 <!-- Data Protection Level Overlay — shown once, before the first master
      password screen, on a truly fresh install. -->
-<div id="security-choice-overlay" class="modal-overlay" style="z-index:10001;">
-  <div class="modal-box" style="max-width:560px;">
-    <h2 style="margin-bottom:.5rem;color:var(--ink);">Choose How to Protect This Data</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">This file holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this ward going forward and cannot be changed later without starting over.</strong></p>
+<div id="security-choice-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <h2 class="modal-box-title">Choose How to Protect This Data</h2>
+    <p class="modal-box-intro">This file holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this ward going forward and cannot be changed later without starting over.</strong></p>
     <button type="button" class="security-choice-option" data-startup-action="select-security" data-security-mode="none">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/></svg></span>
@@ -236,34 +236,34 @@
 </div>
 
 <!-- Unlock / Master Password Overlay (encryption-at-rest gate) -->
-<div id="unlock-overlay" class="modal-overlay" style="z-index:10000;">
-  <div class="modal-box" style="max-width:420px;">
-    <h2 id="unlock-title" style="margin-bottom:.5rem;color:var(--ink);">Unlock Probate Guardian</h2>
-    <p id="unlock-subtitle" style="font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;"></p>
+<div id="unlock-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <h2 id="unlock-title" class="modal-box-title">Unlock Probate Guardian</h2>
+    <p id="unlock-subtitle" class="unlock-subtitle"></p>
     <div class="mb-3">
-      <label class="form-label">Master Password</label>
+      <label class="form-label" for="unlock-password">Master Password</label>
       <input type="password" class="form-control" id="unlock-password" autocomplete="new-password">
     </div>
-    <div class="mb-3" id="unlock-confirm-row" style="display:none;">
-      <label class="form-label">Confirm Master Password</label>
+    <div class="mb-3" id="unlock-confirm-row">
+      <label class="form-label" for="unlock-password-confirm">Confirm Master Password</label>
       <input type="password" class="form-control" id="unlock-password-confirm" autocomplete="new-password">
     </div>
-    <div class="mb-3 form-check" id="unlock-remember-row" style="display:none;">
+    <div class="mb-3 form-check" id="unlock-remember-row">
       <input type="checkbox" class="form-check-input" id="unlock-remember-checkbox">
-      <label class="form-check-label" for="unlock-remember-checkbox" style="font-size:.85rem;">
+      <label class="form-check-label form-check-label-sm" for="unlock-remember-checkbox">
         Remember this password on this device (Windows Credential Manager)
       </label>
     </div>
-    <div id="unlock-error" style="display:none;color:var(--danger-text);font-size:.83rem;margin-bottom:.75rem;"></div>
+    <div id="unlock-error"></div>
     <button type="button" class="btn btn-primary w-100" id="unlock-submit-btn" data-startup-action="submit-unlock">Continue</button>
   </div>
 </div>
 
-<div id="ward-locked-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ward-locked-title" style="z-index:10002;">
-  <div class="modal-box" style="max-width:420px;">
-    <h2 id="ward-locked-title" style="margin-bottom:.5rem;color:var(--ink);">This filing is already open in another tab</h2>
-    <p style="font-size:.85rem;color:var(--ink-3);margin-bottom:1.25rem;">Close that tab, or open a different filing there, to release it.</p>
-    <div style="display:flex;justify-content:flex-end;">
+<div id="ward-locked-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ward-locked-title">
+  <div class="modal-box">
+    <h2 id="ward-locked-title" class="modal-box-title">This filing is already open in another tab</h2>
+    <p class="modal-box-intro">Close that tab, or open a different filing there, to release it.</p>
+    <div class="modal-actions-right">
       <button type="button" class="btn btn-primary" id="close-ward-locked" data-modal-action="close-ward-locked">OK</button>
     </div>
   </div>

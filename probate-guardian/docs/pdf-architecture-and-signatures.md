@@ -53,7 +53,7 @@ Final print and Save-as-PDF use one finalized bundled PDF. Supplemental files ar
 
 ### Hierarchical Bookmark Hierarchy (App/Form Sequence)
 
-```
+```text
 ├── Part I — Required Information (Cover)
 ├── Part II — Summary of Assets (Summary)
 ├── Part III — Assets of the Ward
@@ -82,9 +82,10 @@ Final print and Save-as-PDF use one finalized bundled PDF. Supplemental files ar
 ### Typography Engine & Full Font Embedding (Milestone 19-5)
 
 All PDF generation across Probate Guardian is standardized on **Liberation Sans** (SIL Open Font License 1.1), embedded directly as subsetted TrueType font programs (`PG_SANS_REGULAR_B64`, `PG_SANS_BOLD_B64`, `PG_SANS_ITALIC_B64`) in `src/assets/embedded-fonts.js`:
+
 - **Regular**: Body copy, form fields, table data, narrative answers
 - **Bold**: Form titles, section headings, table headers, total rollups, signatures
-   - **Italic**: Legal notices and statutory citations
+- **Italic**: Legal notices and statutory citations
 
 ### Signature Presentation
 
@@ -97,7 +98,7 @@ Legacy `useSlashS` values in saved ward files are ignored by the user interface 
 
 Probate Guardian generates fully compliant **PDF/UA-1 (ISO 14289-1)** app-authored court-form pages conforming to WCAG 2.1 AA and Section 508 accessibility standards. Uploaded supplemental PDF pages are user-supplied and copied inline for filing; their accessibility conformance remains the filer's responsibility.
 
-### Structural Tagging & Engine Features:
+### Structural Tagging & Engine Features
 
 1. **Structure Tree Root (`/StructTreeRoot`)**: A logical tree mapping every visual block to standard tags (`/Document`, `/Part`, `/H1`, `/H2`, `/Table`, `/TR`, `/TH`, `/TD`, `/P`, `/Figure`).
 2. **Marked Content Operators (`BDC ... EMC`)**: Wrapping 100% of text operators across all pages with unique structure tag identifiers (`/MCID`).
