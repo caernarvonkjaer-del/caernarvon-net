@@ -260,9 +260,9 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     // numbered schedule pages -- Cover/D1-D5/Print are never gated this way,
     // by design. A brand-new schedule has 0 rows, so validateGuardian()'s
     // only possible error here is the schedule-empty message (whose jump
-    // link has no real field target -- see validation-adapter.js's row-level
-    // path derivation, which only covers a-1/a-2/b-1). A row must exist
-    // before any per-field jump link with a real focusable target appears.
+    // link has no real field target -- the "none apply" checkbox itself
+    // carries no data-bind/id). A row must exist before any per-field jump
+    // link with a real focusable target appears.
     await expect(page.locator('#page-next-btn')).toBeDisabled();
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]').click();
 
@@ -289,6 +289,178 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     expect(targetPath).toBeTruthy();
     await firstLink.click();
     await expect(page.locator(`[data-bind="${targetPath}"]`)).toBeFocused();
+  });
+
+  // Milestone 33, Item 3 (sub-phase 3a): Schedules B-2 through C-5 share the
+  // exact same "row + dot-path" shape A-1/A-2/B-1 already proved above, so
+  // one config-driven loop covers all eight rather than eight near-identical
+  // copies of the same test. B-2's own vehicle-field ID exception gets its
+  // own dedicated test right after this loop.
+  const ROW_SCHEDULES: { key: string; route: string }[] = [
+    { key: 'b2', route: '/b2' },
+    { key: 'b3', route: '/b3' },
+    { key: 'b4', route: '/b4' },
+    { key: 'c1', route: '/c1' },
+    { key: 'c2', route: '/c2' },
+    { key: 'c3', route: '/c3' },
+    { key: 'c4', route: '/c4' },
+    { key: 'c5', route: '/c5' },
+  ];
+  for (const { key, route } of ROW_SCHEDULES) {
+    test(`disabled Next guidance on Schedule ${key.toUpperCase()} identifies every missing item once a row exists`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, `Guardian ${key.toUpperCase()} Guidance Ward`, 'guardian');
+      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.locator(`[data-inventory-action="add-entry"][data-schedule="${key}"]`).click();
+
+      const expectedCount = await page.evaluate((r) => {
+        const raw = (window as any).validateGuardian();
+        const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+        return structured.filter((e: any) => e.route === r).length;
+      }, route);
+      expect(expectedCount).toBeGreaterThan(0);
+
+      const guidance = page.locator('#page-local-guidance');
+      await expect(guidance).toBeVisible();
+      const jumpLinks = guidance.locator('[data-form-action="jump-to-field"]');
+      await expect(jumpLinks).toHaveCount(expectedCount);
+
+      const firstLink = jumpLinks.first();
+      const targetPath = await firstLink.getAttribute('data-field-path');
+      expect(targetPath).toBeTruthy();
+      await firstLink.click();
+      await expect(page.locator(`[data-bind="${targetPath}"]`)).toBeFocused();
+    });
+  }
+
+  test('Schedule B-2 vehicle fields resolve jump links via their element id, not a dot-path', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian B-2 Vehicle Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/b2'));
+    await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
+    // renderB2Fields() renders Year/Make/Model/VIN/Odometer as raw inputs
+    // with no data-bind at all once a row is marked a vehicle -- their only
+    // focusable selector is the input's own literal id.
+    await page.locator('[data-inventory-change="toggle-vehicle"][data-index="0"]').check();
+
+    const yearPath = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return structured.find((e: any) => e.route === '/b2' && e.label === 'Year')?.path;
+    });
+    expect(yearPath).toBe('b2-vehicle-year-0');
+    await page.evaluate((p) => (window as any).focusFieldByPath('/b2', p), yearPath);
+    await expect(page.locator(`#${yearPath}`)).toBeFocused();
+  });
+
+  // D-1 through D-5 are never gated by isScheduleIncomplete() for Guardian
+  // (see the file-header comment), so #page-local-guidance never actually
+  // renders a jump link for them in the live product -- there is no on-page
+  // UI surface to click through here. These sections' path derivation is
+  // still worth proving directly, though: adaptValidationErrors() and
+  // focusFieldByPath() are the same two functions a real jump link would use
+  // if one were ever wired up for these routes, and today's bugs (D-1's
+  // hardcoded guardian-#1 fallback; D-2's Preparer/Attorney fields resolving
+  // to nothing) live entirely inside them.
+  test('D-1 Guardian #2 signature-date jump link targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian D-1 Co-Guardian Ward', 'guardian');
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.guardians[0] = { name: 'Guardian One', signatureDate: '01/01/2024', ssnEin: '123-45-6789', phone: '555-111-2222', streetAddress: '1 Main St', cityStateZip: 'Tampa, FL 33601' };
+      w.D.guardians.push({ name: 'Guardian Two', signatureDate: '', ssnEin: '987-65-4321', phone: '555-333-4444', streetAddress: '2 Oak St', cityStateZip: 'Tampa, FL 33602' });
+    });
+    await page.evaluate(() => (window as any).navigate('/d1'));
+
+    const targetPath = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('Signature Date'))?.path;
+    });
+    expect(targetPath).toBe('guardians.1.signatureDate');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/d1', p), targetPath);
+    await expect(page.locator(`[data-bind="${targetPath}"]`)).toBeFocused();
+  });
+
+  test('D-2 Preparer and Attorney fields resolve to distinct targets despite sharing bare labels', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian D-2 Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/d2'));
+
+    const paths = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return {
+        preparerDate: structured.find((e: any) => e.section === 'D-2 Preparer' && e.label === 'Date is required.')?.path,
+        attorneySignatureDate: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label === 'Signature Date is required.')?.path,
+        attorneyFilingDate: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label === 'Filing Date is required.')?.path,
+      };
+    });
+    expect(paths.preparerDate).toBe('preparer.signatureDate');
+    expect(paths.attorneySignatureDate).toBe('attorney.signatureDate');
+    expect(paths.attorneyFilingDate).toBe('attorney.filingDate');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/d2', p), paths.attorneyFilingDate);
+    await expect(page.locator(`[data-bind="${paths.attorneyFilingDate}"]`)).toBeFocused();
+  });
+
+  test('D-3 Safe Deposit Box radios and D-4 Bond fields resolve real, distinct targets', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian D-3-D-4 Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/d3'));
+
+    // D-3's two questions are mutually exclusive at any one time (the second
+    // only applies once the first is answered Yes) -- a fresh ward hits the
+    // first, unanswered-question branch.
+    const sdbPath = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return structured.find((e: any) => e.section === 'D-3')?.path;
+    });
+    expect(sdbPath).toBe('sdb-yes');
+    await page.evaluate((p) => (window as any).focusFieldByPath('/d3', p), sdbPath);
+    await expect(page.locator(`#${sdbPath}`)).toBeFocused();
+
+    await page.evaluate(() => (window as any).navigate('/d4'));
+    const bondPaths = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return {
+        amount: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bond Amount'))?.path,
+        from: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bond Period From'))?.path,
+        to: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bond Period To'))?.path,
+        company: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bonding Company'))?.path,
+      };
+    });
+    expect(bondPaths).toEqual({ amount: 'bondAmount', from: 'bondPeriodFrom', to: 'bondPeriodTo', company: 'bondingCompany' });
+    await page.evaluate((p) => (window as any).focusFieldByPath('/d4', p), bondPaths.company);
+    await expect(page.locator(`[data-bind="${bondPaths.company}"]`)).toBeFocused();
+  });
+
+  test('D-5 resolves its three distinct shapes: bare service date, recipient rows, and attorney', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian D-5 Ward', 'guardian');
+    await page.evaluate(() => {
+      (window as any).D.serviceRecipients = [{ name: '', address: '', cityStateZip: '' }];
+    });
+    await page.evaluate(() => (window as any).navigate('/d5'));
+
+    const paths = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return {
+        serviceDate: structured.find((e: any) => e.section === 'D-5')?.path,
+        recipientName: structured.find((e: any) => e.section === 'D-5 Recipient 1' && e.label === 'Name')?.path,
+        attorneyName: structured.find((e: any) => e.section === 'D-5 Attorney' && e.label === 'Name')?.path,
+      };
+    });
+    expect(paths.serviceDate).toBe('serviceDate');
+    expect(paths.recipientName).toBe('serviceRecipients.0.name');
+    expect(paths.attorneyName).toBe('serviceAttorney.name');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/d5', p), paths.recipientName);
+    await expect(page.locator(`[data-bind="${paths.recipientName}"]`)).toBeFocused();
   });
 
   test('Print Preview panel and the blocked-export alert agree on how many issues remain', async ({ page }) => {

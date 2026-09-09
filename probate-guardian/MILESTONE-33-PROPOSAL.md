@@ -333,6 +333,60 @@ test could not distinguish from a wrong route), and the full Chromium
 in the same file's keyword-based `path` inference) remains unaddressed —
 out of scope for this fix, which is scoped to routing, not field focus.
 
+**Field-path accuracy (sub-phase 3a: Guardian Inventory complete).** Three
+parallel research passes mapped every validator's exact error strings, state
+paths, and DOM binding attributes across all 9 filing types, confirming the
+full field-path gap is larger than one session (Guardian needs 13 new
+section branches; the Annual/Final/Trust/Simplified family needs ~25 more
+across 11 schedules and 9 Cover/Part sections, several with real
+cross-engine field-naming divergences (`attorney_bar` vs `attorney_barNumber`,
+`officeStreet` vs `residenceStreet`, `certDate` vs `certServiceDate`); the
+four Plan types need ~35 more, including a formType-conditional guardian
+array shape, an attorney-name key that differs 3 ways, and two different
+row-index extraction strategies depending on whether the type's validator
+indexes a pre-filtered or raw array). Per the Migration Sequence discipline,
+this is landing as its own sub-phase rather than combined with the other
+three families.
+
+This sub-phase closes Guardian Inventory's remaining 13 sections (B-2
+through D-5) in `adaptValidationErrors()` (`src/core/validation/validation-adapter.js`),
+extending the exact `if (sLower.startsWith(...))` pattern already proven by
+the existing A-1/A-2/B-1 branches — no new abstraction needed. Notable
+findings along the way: three fields (B-2's five vehicle sub-fields, D-3's
+two Safe-Deposit-Box radios) have no `data-bind` at all and resolve only via
+their literal element `id`, an exception `focusFieldByPath()`'s existing
+`#${escaped}` selector already handles with no code change there; D-1 and
+D-5's array rows use their own "Guardian #N"/"Recipient N" ordinals in the
+section string rather than "row N", needing a separate local regex; and D-1's
+fix incidentally corrects a real live bug where every co-guardian's missing
+signature date used to jump to guardian #1's field regardless of which
+guardian was actually incomplete, because the old generic fallback hardcoded
+index 0. D-2's Preparer and Attorney share the "D-2" prefix and can only be
+told apart by the *section* text, since their detail text is bare, identical
+labels ("Name", "Phone", etc.) for both parties.
+
+The Annual/Final/Trust/Simplified family and the four Plan types remain open
+(sub-phases 3b/3c/3d, each scoped separately when reached) — the shared
+bottom-of-chain generic fallback is still wrong for their attorney/preparer/
+signature-date fields today (e.g. an Annual "Attorney Bar Number" error's
+detail contains the word "attorney" and currently misresolves to the bare
+`attorney` name field), deliberately left as-is rather than patched
+partially, since a correct fix needs formType-gated branches that belong
+with each family's own dedicated work.
+
+Verified: 15 new e2e tests in `tests/e2e/navigation-status.contract.spec.ts`
+(a config-driven loop over B-2 through C-5 reusing the existing A-1
+assertion shape, plus dedicated tests for B-2's vehicle-ID exception and the
+D-1 co-guardian regression, D-2's Preparer/Attorney disambiguation, and
+D-3/D-4/D-5's flat and mixed shapes — the D-1 through D-5 tests call
+`adaptValidationErrors()`/`focusFieldByPath()` directly rather than through
+the local-guidance UI panel, since that panel never renders for these routes
+for Guardian by design, per `isScheduleIncomplete()`'s 11-key whitelist), the
+broader Guardian regression set (`guardian-inventory-mount.spec.ts`,
+`verified-inventory-workflow.spec.ts`, `attestation-layout.spec.ts`),
+`npm run test:unit` (173 passing), and the full Chromium `source` suite
+(282 passed, 5 skipped, 0 failed).
+
 ## Goal
 
 Make the E2E suite a reliable safety net for actual application changes rather

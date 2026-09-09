@@ -174,6 +174,13 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
     const sLower = section.toLowerCase();
     const rowMatch = sLower.match(/row\s*(\d+)/i);
     const rowIdx = rowMatch ? parseInt(rowMatch[1], 10) - 1 : 0;
+    // D-1 ("D-1 Guardian #N") and D-5's recipient array ("D-5 Recipient N")
+    // put their row ordinal in the section string too, but not as "row N" --
+    // computed separately so the two never cross-match each other's prefix.
+    const guardianOrdMatch = sLower.match(/guardian\s*#?\s*(\d+)/i);
+    const guardianOrdIdx = guardianOrdMatch ? parseInt(guardianOrdMatch[1], 10) - 1 : 0;
+    const recipientMatch = sLower.match(/recipient\s*(\d+)/i);
+    const recipientIdx = recipientMatch ? parseInt(recipientMatch[1], 10) - 1 : 0;
 
     if (sLower.startsWith('a-1') || sLower.startsWith('a1')) {
       if (dLower.includes('property description') || dLower.includes('description')) path = `scheduleA1.${rowIdx}.propertyDescription`;
@@ -192,6 +199,119 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       else if (dLower.includes('account')) path = `scheduleB1.${rowIdx}.accountNumber`;
       else if (dLower.includes('street')) path = `scheduleB1.${rowIdx}.streetAddress`;
       else if (dLower.includes('city') || dLower.includes('zip')) path = `scheduleB1.${rowIdx}.cityStateZip`;
+    } else if (sLower.startsWith('b-2') || sLower.startsWith('b2')) {
+      // Vehicle sub-fields (Year/Make/Model/VIN/Odometer Mileage) are raw
+      // inputs with no data-bind at all (guardian-inventory/index.js's
+      // renderB2Fields()) -- their only focusable selector is the literal
+      // element id, not a dot-path.
+      if (dLower.includes('year')) path = `b2-vehicle-year-${rowIdx}`;
+      else if (dLower.includes('make')) path = `b2-vehicle-make-${rowIdx}`;
+      else if (dLower.includes('model')) path = `b2-vehicle-model-${rowIdx}`;
+      else if (dLower.includes('vin')) path = `b2-vehicle-vin-${rowIdx}`;
+      else if (dLower.includes('odometer') || dLower.includes('mileage')) path = `b2-vehicle-mileage-${rowIdx}`;
+      else if (dLower.includes('description')) path = `scheduleB2.${rowIdx}.description`;
+      else if (dLower.includes('street')) path = `scheduleB2.${rowIdx}.streetAddress`;
+      else if (dLower.includes('city') || dLower.includes('zip')) path = `scheduleB2.${rowIdx}.cityStateZip`;
+      else if (dLower.includes('valuation method')) path = `scheduleB2.${rowIdx}.valuationMethod`;
+      else if (dLower.includes('value')) path = `scheduleB2.${rowIdx}.fullAssetValue`;
+    } else if (sLower.startsWith('b-3') || sLower.startsWith('b3')) {
+      if (dLower.includes('description')) path = `scheduleB3.${rowIdx}.description`;
+      else if (dLower.includes('street')) path = `scheduleB3.${rowIdx}.streetAddress`;
+      else if (dLower.includes('city') || dLower.includes('zip')) path = `scheduleB3.${rowIdx}.cityStateZip`;
+      else if (dLower.includes('value')) path = `scheduleB3.${rowIdx}.fullAssetValue`;
+    } else if (sLower.startsWith('b-4') || sLower.startsWith('b4')) {
+      if (dLower.includes('lender name')) path = `scheduleB4.${rowIdx}.lenderName`;
+      else if (dLower.includes('related property')) path = `scheduleB4.${rowIdx}.relatedProperty`;
+      else if (dLower.includes('lender address')) path = `scheduleB4.${rowIdx}.lenderAddress`;
+      else if (dLower.includes('liability balance')) path = `scheduleB4.${rowIdx}.fullLiabilityBalance`;
+    } else if (sLower.startsWith('c-1') || sLower.startsWith('c1')) {
+      if (dLower.includes('payer name')) path = `scheduleC1.${rowIdx}.payerName`;
+      else if (dLower.includes('type of income')) path = `scheduleC1.${rowIdx}.typeOfIncome`;
+      else if (dLower.includes('payer address')) path = `scheduleC1.${rowIdx}.payerAddress`;
+      else if (dLower.includes('basis for payment')) path = `scheduleC1.${rowIdx}.paymentBasis`;
+      else if (dLower.includes('income amount')) path = `scheduleC1.${rowIdx}.annualIncomeAmount`;
+    } else if (sLower.startsWith('c-2') || sLower.startsWith('c2')) {
+      if (dLower.includes('claimant name')) path = `scheduleC2.${rowIdx}.claimantName`;
+      else if (dLower.includes('lawsuit description')) path = `scheduleC2.${rowIdx}.lawsuitDescription`;
+      else if (dLower.includes('court') || dLower.includes('jurisdiction')) path = `scheduleC2.${rowIdx}.courtJurisdiction`;
+      else if (dLower.includes('case number')) path = `scheduleC2.${rowIdx}.caseNumber`;
+      else if (dLower.includes('date filed')) path = `scheduleC2.${rowIdx}.dateFiled`;
+      else if (dLower.includes('amount of claim')) path = `scheduleC2.${rowIdx}.amountOfClaim`;
+    } else if (sLower.startsWith('c-3') || sLower.startsWith('c3')) {
+      if (dLower.includes('defendant name')) path = `scheduleC3.${rowIdx}.defendantName`;
+      else if (dLower.includes('action description')) path = `scheduleC3.${rowIdx}.actionDescription`;
+      else if (dLower.includes('status')) path = `scheduleC3.${rowIdx}.status`;
+      else if (dLower.includes('court') || dLower.includes('jurisdiction')) path = `scheduleC3.${rowIdx}.courtJurisdiction`;
+      else if (dLower.includes('action date')) path = `scheduleC3.${rowIdx}.actionDate`;
+      else if (dLower.includes('estimated settlement')) path = `scheduleC3.${rowIdx}.estimatedSettlement`;
+    } else if (sLower.startsWith('c-4') || sLower.startsWith('c4')) {
+      if (dLower.includes('trust name')) path = `scheduleC4.${rowIdx}.trustName`;
+      else if (dLower.includes('trustee name')) path = `scheduleC4.${rowIdx}.trusteeName`;
+      else if (dLower.includes('trustee address')) path = `scheduleC4.${rowIdx}.trusteeAddress`;
+      else if (dLower.includes('trustee city')) path = `scheduleC4.${rowIdx}.trusteeCityStateZip`;
+      else if (dLower.includes('date created')) path = `scheduleC4.${rowIdx}.dateCreated`;
+      else if (dLower.includes('trust amount')) path = `scheduleC4.${rowIdx}.trustAmount`;
+    } else if (sLower.startsWith('c-5') || sLower.startsWith('c5')) {
+      if (dLower.includes('asset description')) path = `scheduleC5.${rowIdx}.assetDescription`;
+      else if (dLower.includes('owner name')) path = `scheduleC5.${rowIdx}.ownerName`;
+      else if (dLower.includes('owner address')) path = `scheduleC5.${rowIdx}.ownerAddress`;
+      else if (dLower.includes('owner city') || dLower.includes('zip')) path = `scheduleC5.${rowIdx}.ownerCityStateZip`;
+      else if (dLower.includes('relationship')) path = `scheduleC5.${rowIdx}.relationshipToWard`;
+      else if (dLower.includes('total asset value')) path = `scheduleC5.${rowIdx}.totalAssetValue`;
+    } else if (sLower.startsWith('d-1')) {
+      // "D-1 Guardian #N" -- fixing a real live bug where every co-guardian's
+      // missing signature date used to point at guardian #1 regardless of
+      // which one was actually incomplete (see the old bottom-of-chain
+      // fallback below, which still hardcodes index 0 for other formTypes).
+      if (dLower.includes('name')) path = `guardians.${guardianOrdIdx}.name`;
+      else if (dLower.includes('signature date')) path = `guardians.${guardianOrdIdx}.signatureDate`;
+      else if (dLower.includes('ssn')) path = `guardians.${guardianOrdIdx}.ssnEin`;
+      else if (dLower.includes('phone')) path = `guardians.${guardianOrdIdx}.phone`;
+      else if (dLower.includes('street')) path = `guardians.${guardianOrdIdx}.streetAddress`;
+      else if (dLower.includes('city') || dLower.includes('zip')) path = `guardians.${guardianOrdIdx}.cityStateZip`;
+    } else if (sLower.startsWith('d-2')) {
+      // Preparer and Attorney share the "D-2" prefix and are disambiguated
+      // only by the SECTION text, never the detail (bare labels like "Name"
+      // or "Phone" say nothing about which party they belong to).
+      if (sLower.includes('preparer')) {
+        if (dLower.includes('name')) path = 'preparer.name';
+        else if (dLower.includes('ssn')) path = 'preparer.ssnEin';
+        else if (dLower.includes('phone')) path = 'preparer.phone';
+        else if (dLower.includes('street')) path = 'preparer.streetAddress';
+        else if (dLower.includes('city') || dLower.includes('zip')) path = 'preparer.cityStateZip';
+        else if (dLower.includes('date')) path = 'preparer.signatureDate'; // Preparer's own error text says just "Date", not "Signature Date"
+      } else if (sLower.includes('attorney')) {
+        if (dLower.includes('name')) path = 'attorney.name';
+        else if (dLower.includes('filing date')) path = 'attorney.filingDate'; // must check before the generic "signature date" below
+        else if (dLower.includes('signature date')) path = 'attorney.signatureDate';
+        else if (dLower.includes('bar number')) path = 'attorney.barNumber';
+        else if (dLower.includes('phone')) path = 'attorney.phone';
+        else if (dLower.includes('street')) path = 'attorney.streetAddress';
+        else if (dLower.includes('city') || dLower.includes('zip')) path = 'attorney.cityStateZip';
+      }
+    } else if (sLower === 'd-3') {
+      // Yes/No radios with no data-bind/id matching the state field name --
+      // the only focusable target is the radio input's own literal id.
+      if (dLower.includes('filed')) path = 'sdb-filed-yes';
+      else path = 'sdb-yes';
+    } else if (sLower === 'd-4') {
+      if (dLower.includes('bond amount')) path = 'bondAmount';
+      else if (dLower.includes('bond period from')) path = 'bondPeriodFrom';
+      else if (dLower.includes('bond period to')) path = 'bondPeriodTo';
+      else if (dLower.includes('bonding company')) path = 'bondingCompany';
+    } else if (sLower.startsWith('d-5')) {
+      if (sLower.includes('recipient')) {
+        if (dLower.includes('name')) path = `serviceRecipients.${recipientIdx}.name`;
+        else if (dLower.includes('city') || dLower.includes('zip')) path = `serviceRecipients.${recipientIdx}.cityStateZip`;
+        else if (dLower.includes('address')) path = `serviceRecipients.${recipientIdx}.address`;
+      } else if (sLower.includes('attorney')) {
+        if (dLower.includes('name')) path = 'serviceAttorney.name';
+        else if (dLower.includes('signature date')) path = 'serviceAttorney.signatureDate';
+        else if (dLower.includes('bar number')) path = 'serviceAttorney.barNumber';
+        else if (dLower.includes('phone')) path = 'serviceAttorney.phone';
+        else if (dLower.includes('street')) path = 'serviceAttorney.streetAddress';
+        else if (dLower.includes('city') || dLower.includes('zip')) path = 'serviceAttorney.cityStateZip';
+      } else if (dLower.includes('service date')) path = 'serviceDate';
     } else if (dLower.includes('ward')) path = 'wardName';
     else if (dLower.includes('case number')) path = 'caseNumber';
     else if (dLower.includes('county')) path = 'county';
