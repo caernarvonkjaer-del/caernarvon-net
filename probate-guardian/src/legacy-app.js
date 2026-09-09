@@ -8068,8 +8068,8 @@ function updateCurrentScheduleNextButton(){
   const guidanceContainer=document.getElementById('page-local-guidance');
   if(guidanceContainer&&typeof window.renderLocalSectionGuidance==='function'){
     let rawErrors=[];
+    const type=activeInventoryType||window.D?.inventoryType;
     try {
-      const type=activeInventoryType||window.D?.inventoryType;
       if(type==='guardian'&&typeof window.validateGuardian==='function')rawErrors=window.validateGuardian(window.D);
       else if((type==='annual'||type==='finalAccounting'||type==='trustAccounting')&&typeof window.validateAnnual==='function')rawErrors=window.validateAnnual(window.D);
       else if(type==='simplified'&&typeof window.validateSimplified==='function')rawErrors=window.validateSimplified(window.D);
@@ -8078,7 +8078,7 @@ function updateCurrentScheduleNextButton(){
       else if(type==='planMinor'&&typeof window.validatePlanMinor==='function')rawErrors=window.validatePlanMinor(window.D);
       else if(type==='planSimplified'&&typeof window.validatePlanSimplified==='function')rawErrors=window.validatePlanSimplified(window.D);
     } catch(e) {}
-    guidanceContainer.innerHTML=disabled?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
+    guidanceContainer.innerHTML=disabled?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:'Add at least one item, or check the box verifying there are none, before continuing.'},type):'';
   }
 }
 

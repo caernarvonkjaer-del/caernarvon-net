@@ -52,26 +52,38 @@ type's own validator on `window` (`validateAnnual`, `validateSimplified`,
 exactly. Verified with the full existing Chromium `source` suite plus the
 new contract file, all passing, before this was considered landed.
 
-**Known remaining limitation, not fixed by this pilot:** `resolveRouteFromSection()`
-(`src/core/validation/validation-adapter.js`) only recognizes Guardian's
-`a-1`/`d-2`-style section labels and Annual/Simplified/Plan's `part 1`/`part 2`
-labels; it silently defaults every unrecognized section string to route `/`.
-The four Plan types' validators label their own sections narratively ("1.
-Residences", "5–7. Skills & Rights", "9. Disabilities & Devices", ...), none
-of which match, so once the guidance-panel fix above made itemized guidance
-possible at all for Plan types, it surfaced that nearly every missing field
-in the entire filing — not just the Cover page — currently appears bucketed
-onto the Cover page's guidance panel. This pilot's own contract test only
-asserts internal agreement (the guidance panel shows exactly what
-`adaptValidationErrors()` computes for a route, the same technique
-`crossCheckNavAndSummaryStatus()` already uses elsewhere in this suite), so
-it does not fail over this — but it means "local" guidance for the four Plan
-types is not yet actually local. Building a correct section-to-route mapping
-for each Plan type's own numbering is real, separate, per-type product work
-and is out of scope for this pilot; it should be its own reviewed change
-before Guardian/Annual/Simplified migrate into this contract, since Annual
-and Simplified may have the same defaulting problem for any section label
-that doesn't match `part N` exactly.
+**Resolved (follow-up fix, landed after the pilot above).** The limitation
+this section originally recorded — `resolveRouteFromSection()` bucketing
+every unrecognized section label onto Cover — turned out to affect Annual
+and Simplified too, not just the four Plan types, once actually verified
+against all six validators' real section labels (not assumed from the
+Plan-only pilot's own scope): Annual/Simplified label sections with Roman
+numerals ("Part II", "Parts VI & VII"), which the legacy Arabic-digit table
+(`'part 1'`, `'part 2'`, ...) never matched either — only each type's literal
+"Cover" and Annual's "Part I" (which defaults to the same route it needs, by
+accident) resolved correctly; everything else fell through to `/`, and
+several Plan labels containing "signature"/"guardian"/"preparer"/"attorney"
+were actively misrouted to Guardian-Inventory's own `/d1`/`/d2`/`/d4` pages.
+
+Fixed by reusing `legacy-app.js`'s existing `errorRoute()` — a regex-based
+resolver already driving Print Preview's "Go to section" links, verified
+correct for every real Guardian/Annual/Simplified label — as
+`resolveRouteFromSection()`'s first resolution step, and adding a small
+type-scoped exact-match table for the four Plan types' narrative headings
+(which have no shared pattern a regex can generalize, and reuse labels like
+bare "Signatures" across types for different pages — it resolves to `/p11`
+for Plan Annual, `/p9` for Plan Initial, `/p3` for Plan Simplified). `filingType`
+now threads from `legacy-app.js`'s `updateCurrentScheduleNextButton()`
+through `renderLocalSectionGuidance()`/`adaptValidationErrors()` to
+`resolveRouteFromSection()`. Verified: 5 new unit tests (the three-way
+"Signatures" collision is the clearest proof type-scoping was actually
+necessary), new e2e regression tests per Plan type plus one each for Annual
+and Simplified proving a jump link now lands on the field's real page while
+standing on it (not just that the item count matched, which the prior pilot
+test could not distinguish from a wrong route), and the full Chromium
+`source` suite, all passing. Field-path accuracy (a related but distinct gap
+in the same file's keyword-based `path` inference) remains unaddressed —
+out of scope for this fix, which is scoped to routing, not field focus.
 
 ## Goal
 

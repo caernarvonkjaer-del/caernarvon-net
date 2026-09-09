@@ -31,8 +31,8 @@ export function computeSectionStatus(currentRoute, navChecks = null, rawErrors =
  * The optional maxItems exists for callers with a deliberate compact mode;
  * normal section guidance must not hide work behind an aggregate count.
  */
-export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItems = Infinity, options = {}) {
-  const structured = adaptValidationErrors(rawErrors);
+export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItems = Infinity, options = {}, filingType = 'guardian') {
+  const structured = adaptValidationErrors(rawErrors, filingType);
   const localErrors = structured.filter(
     (e) => e.route === currentRoute || (currentRoute === '/' && (e.route === '/' || (e.section && e.section.toLowerCase().includes('cover'))))
   );

@@ -29,6 +29,11 @@ type PlanNavStatusConfig = {
   // four types; Plan Minor has no case number field at all, so it uses
   // periodFrom instead (also blank-by-default, also a direct label match).
   jumpTestFieldPath: string;
+  // A section this type's validator always flags on a blank ward, whose
+  // fields live on a real, non-Cover page -- used to prove guidance shown
+  // WHILE ON that page correctly attributes the error there (see the
+  // "identifies a missing field while already on its own page" test below).
+  nonCoverRoute: string;
   triggerBlockedExport: (page: Page) => Promise<void>;
 };
 
@@ -38,6 +43,7 @@ const CONFIGS: PlanNavStatusConfig[] = [
     filingType: 'planAnnual',
     validateFnName: 'validatePlanAnnual',
     jumpTestFieldPath: 'caseNumber',
+    nonCoverRoute: '/p2',
     triggerBlockedExport: (page) => page.evaluate(() => (window as any).doSavePdfPlanAnnual()),
   },
   {
@@ -45,6 +51,7 @@ const CONFIGS: PlanNavStatusConfig[] = [
     filingType: 'planInitial',
     validateFnName: 'validatePlanInitial',
     jumpTestFieldPath: 'caseNumber',
+    nonCoverRoute: '/p2',
     triggerBlockedExport: (page) => page.evaluate(() => (window as any).doSavePdfPlanInitial()),
   },
   {
@@ -52,6 +59,10 @@ const CONFIGS: PlanNavStatusConfig[] = [
     filingType: 'planMinor',
     validateFnName: 'validatePlanMinor',
     jumpTestFieldPath: 'periodFrom',
+    // Plan Minor's own '3. Treatment Providers' section only ever fires
+    // per-row (no rows exist on a blank ward, so no error) -- '4. Medical
+    // Services' is the first section guaranteed to fire unconditionally.
+    nonCoverRoute: '/p4',
     triggerBlockedExport: (page) => page.evaluate(() => (window as any).doSavePdfPlanMinor()),
   },
   {
@@ -59,6 +70,7 @@ const CONFIGS: PlanNavStatusConfig[] = [
     filingType: 'planSimplified',
     validateFnName: 'validatePlanSimplified',
     jumpTestFieldPath: 'caseNumber',
+    nonCoverRoute: '/p2',
     // Same reasoning as plan-simplified-mount.spec.ts: this filing type's
     // export button is disabled/enabled rather than an alert-only guard, so
     // the blocked path has to force it enabled before clicking.
@@ -69,7 +81,7 @@ const CONFIGS: PlanNavStatusConfig[] = [
   },
 ];
 
-for (const { featureName, filingType, validateFnName, jumpTestFieldPath, triggerBlockedExport } of CONFIGS) {
+for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCoverRoute, triggerBlockedExport } of CONFIGS) {
   test.describe(`${featureName} navigation/status contract`, () => {
     test('disabled Next guidance on the blank Cover page lists every missing item, from the same validator Print Preview uses', async ({ page }) => {
       await freshStartNoPassword(page);
@@ -84,11 +96,11 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, trigger
       // calls internally to group errors onto routes -- reusing it here (rather
       // than re-deriving route/section logic in the test) means this asserts
       // against the real production grouping, not a parallel guess at it.
-      const expectedCoverCount = await page.evaluate((fnName) => {
+      const expectedCoverCount = await page.evaluate(({ fnName, filingType }) => {
         const raw = (window as any)[fnName]();
-        const structured = (window as any).adaptValidationErrors(raw);
+        const structured = (window as any).adaptValidationErrors(raw, filingType);
         return structured.filter((e: any) => e.route === '/').length;
-      }, validateFnName);
+      }, { fnName: validateFnName, filingType });
       expect(expectedCoverCount).toBeGreaterThan(0);
 
       await expect(guidance.locator('[data-form-action="jump-to-field"]')).toHaveCount(expectedCoverCount);
@@ -104,6 +116,24 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, trigger
       await jumpLink.click();
 
       await expect(page.locator(`[data-form-path="${jumpTestFieldPath}"]`)).toBeFocused();
+    });
+
+    test('guidance identifies a missing field while already on its own page, not bucketed onto Cover', async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, `${featureName} Route Bucketing Ward`, filingType);
+      await page.evaluate((r) => (window as any).navigate(r), nonCoverRoute);
+
+      // Before the section->route resolution fix, every one of this type's
+      // non-Cover section labels fell through to '/' by default -- visiting
+      // this page directly, the guidance panel would show NOTHING (its
+      // filter is an exact currentRoute match unless currentRoute is '/'),
+      // even though computeNavChecks() already knows this page is
+      // incomplete. This is the most direct proof the bucketing bug is
+      // fixed: the item now actually appears while standing on its own page.
+      const guidance = page.locator('#page-local-guidance');
+      await expect(guidance).toBeVisible();
+      const jumpLinks = guidance.locator(`[data-form-action="jump-to-field"][data-route="${nonCoverRoute}"]`);
+      await expect(jumpLinks.first()).toBeVisible();
     });
 
     test('Print Preview banner and the blocked-export alert agree on how many issues remain', async ({ page }) => {

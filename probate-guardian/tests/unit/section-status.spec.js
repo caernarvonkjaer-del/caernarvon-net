@@ -41,4 +41,15 @@ describe('section-status', () => {
     const html = renderLocalSectionGuidance('/', []);
     expect(html).toBe('');
   });
+
+  it('threads filingType through to route resolution so a jump link lands on the field\'s real page', () => {
+    // "Signatures" resolves to a different real route for every Plan type
+    // (see validation-adapter.spec.js) -- filtered here to currentRoute='/p3'
+    // so it survives renderLocalSectionGuidance's own currentRoute filter,
+    // proving the filingType argument actually reaches resolveRouteFromSection
+    // rather than only affecting some other, unrelated behavior.
+    const rawErrors = ['Signatures — Guardian 1 printed name is required'];
+    const html = renderLocalSectionGuidance('/p3', rawErrors, Infinity, {}, 'planSimplified');
+    expect(html).toContain('data-route="/p3"');
+  });
 });
