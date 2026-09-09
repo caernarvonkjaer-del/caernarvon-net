@@ -628,3 +628,7 @@ export function validateSimplified(){
   req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address');
   return errs;
 }
+// Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
+// exposing this lets the shared guidance panel itemize Simplified's own missing
+// fields instead of only showing a generic message.
+window.validateSimplified = validateSimplified;

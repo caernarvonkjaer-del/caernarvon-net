@@ -7,6 +7,13 @@ import './core/ward-lock.js';
 import './core/form/form-fields.js';
 import './core/form/combobox-controller.js';
 import './core/form/schedule-definitions.js';
+// Milestone 33, Phase 2.3: eager, load-order-independent import so
+// window.renderLocalSectionGuidance (used by legacy-app.js's shared
+// updateCurrentScheduleNextButton() for every filing type) exists from the
+// first render, rather than only after whichever feature happens to import
+// it first (previously only guardian-inventory/index.js and
+// annual-accounting/index.js did).
+import './core/status/section-status.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

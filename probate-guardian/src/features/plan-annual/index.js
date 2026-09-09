@@ -671,3 +671,7 @@ export function validatePlanAnnual(){
   req(g0.signatureDate,'Signatures — Guardian date signed is required');
   return errs;
 }
+// Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
+// exposing this lets the shared guidance panel itemize Plan Annual's own
+// missing fields instead of only showing a generic message.
+window.validatePlanAnnual = validatePlanAnnual;

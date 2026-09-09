@@ -322,3 +322,7 @@ export function validatePlanSimplified(){
   req(g.signatureDate,'Signatures — Guardian 1 date signed is required');
   return errs;
 }
+// Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
+// exposing this lets the shared guidance panel itemize Plan Simplified's own
+// missing fields instead of only showing a generic message.
+window.validatePlanSimplified = validatePlanSimplified;

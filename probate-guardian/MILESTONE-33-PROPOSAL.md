@@ -19,8 +19,59 @@ phases in one change"), Phase 2.1's filing-identity contract has been
 implemented and verified for its Annual/Final/Trust pilot scope only
 (`tests/e2e/filing-identity.contract.spec.ts`, plus new helpers
 `getPdfMetadata()` in `tests/e2e/support/pdf-extract.ts` and
-`tests/e2e/support/docx-extract.ts`). Guardian, Simplified, the four Plan
-types, and Phases 2.2 through 5 remain proposal-only.
+`tests/e2e/support/docx-extract.ts`). Guardian, Simplified, and Phases 2.2
+(form entry), 2.4 (persistence/recovery), 3, 4, and 5 remain proposal-only.
+
+Migration Sequence step 2 ("Shared navigation/status pilot") has also landed,
+for its Plan-family pilot scope only: `tests/e2e/navigation-status.contract.spec.ts`
+covers, for all four Plan types, three checks `plan-fixture.ts`'s existing
+mount tests don't touch — disabled-Next guidance itemizing every missing
+field, a jump link actually moving focus, and Print Preview's banner agreeing
+with the blocked-export alert on how many issues remain. Guardian, Annual,
+and Simplified are not yet migrated into this contract.
+
+**Real gap found and fixed during this pilot, not assumed away:** the
+itemized guidance panel this section's own Phase 2.3 language describes
+("disabled Next guidance identifies every local missing item") did not
+actually work for eight of the app's nine filing types before this pilot.
+`renderLocalSectionGuidance()` (`src/core/status/section-status.js`) was
+previously imported only by `guardian-inventory/index.js` and
+`annual-accounting/index.js`, so `window.renderLocalSectionGuidance` existed
+only by session load-order accident for every other type, and only
+`guardian-inventory/index.js` ever exposed its validator as
+`window.validateGuardian` — the one binding
+`legacy-app.js`'s `updateCurrentScheduleNextButton()` actually reads per
+filing type. Annual, Simplified, and all four Plan types therefore always
+fell back to one generic "Add at least one item..." message with no per-field
+jump links, regardless of how many fields were actually missing. Fixed by
+(1) importing `section-status.js` eagerly in `src/main.js` rather than
+depending on which feature happens to mount first, and (2) exposing each
+type's own validator on `window` (`validateAnnual`, `validateSimplified`,
+`validatePlanAnnual`, `validatePlanInitial`, `validatePlanMinor`,
+`validatePlanSimplified`), mirroring guardian-inventory's existing pattern
+exactly. Verified with the full existing Chromium `source` suite plus the
+new contract file, all passing, before this was considered landed.
+
+**Known remaining limitation, not fixed by this pilot:** `resolveRouteFromSection()`
+(`src/core/validation/validation-adapter.js`) only recognizes Guardian's
+`a-1`/`d-2`-style section labels and Annual/Simplified/Plan's `part 1`/`part 2`
+labels; it silently defaults every unrecognized section string to route `/`.
+The four Plan types' validators label their own sections narratively ("1.
+Residences", "5–7. Skills & Rights", "9. Disabilities & Devices", ...), none
+of which match, so once the guidance-panel fix above made itemized guidance
+possible at all for Plan types, it surfaced that nearly every missing field
+in the entire filing — not just the Cover page — currently appears bucketed
+onto the Cover page's guidance panel. This pilot's own contract test only
+asserts internal agreement (the guidance panel shows exactly what
+`adaptValidationErrors()` computes for a route, the same technique
+`crossCheckNavAndSummaryStatus()` already uses elsewhere in this suite), so
+it does not fail over this — but it means "local" guidance for the four Plan
+types is not yet actually local. Building a correct section-to-route mapping
+for each Plan type's own numbering is real, separate, per-type product work
+and is out of scope for this pilot; it should be its own reviewed change
+before Guardian/Annual/Simplified migrate into this contract, since Annual
+and Simplified may have the same defaulting problem for any section label
+that doesn't match `part N` exactly.
 
 ## Goal
 
