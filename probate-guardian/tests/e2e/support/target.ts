@@ -2,14 +2,18 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { Page } from '@playwright/test';
+import { currentTarget } from './target-profile';
 
 // package.json has "type": "module", so this file runs as ESM under
 // Playwright's loader -- no __dirname available, derive it the ESM way.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // See playwright.config.ts — same PG_TARGET values, same four parity targets
-// from INDEX-SPLIT-PLAN.md's Milestone 1 acceptance criteria.
-const target = process.env.PG_TARGET || 'source';
+// from INDEX-SPLIT-PLAN.md's Milestone 1 acceptance criteria. `dev` and any
+// unrecognized value resolve to null here (see target-profile.ts); this file
+// only ever branches on 'portable' specifically, so null is equivalent to
+// "not portable" for its purposes.
+const target = currentTarget;
 
 // Every browser project forces the File System Access API's feature-detect
 // off, so the app always takes the download/upload fallback path that real

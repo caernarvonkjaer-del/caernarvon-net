@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
+import { currentTarget, skipEnvironmentLimitation } from './support/target-profile';
 
-const sourceTarget = (process.env.PG_TARGET || 'source') === 'source';
+const sourceTarget = currentTarget === 'source';
 
 test('failed feature chunk shows a reload action instead of a blank view', async ({ page }) => {
-  test.skip(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
+  skipEnvironmentLimitation(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
 
   await freshStartNoPassword(page);
   await page.evaluate(() => (window as any).addWard('Chunk Retry Ward', 'guardian'));

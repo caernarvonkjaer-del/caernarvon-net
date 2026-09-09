@@ -118,6 +118,12 @@ type TargetProfile = {
 };
 ```
 
+`DistributionTarget` intentionally covers only the three shipped distribution
+targets; `dev` (the live Vite dev server `tests/e2e/support/target.ts` also
+accepts via `PG_TARGET=dev`, per its own "four parity targets" comment) is a
+local convenience mode, not a distribution target, and is deliberately out of
+scope for this vocabulary.
+
 `playwright.config.ts`, `tests/e2e/support/target.ts`, and target-sensitive
 specs import or derive their behavior from this one vocabulary. Eliminate
 ad-hoc string checks such as `target === 'file'`.
@@ -226,7 +232,15 @@ product's real output behavior — that is Milestone 33's job.
   Final and Trust as explicit, distinct entries.
 - A fresh, reproducible Chromium source baseline is recorded immediately
   before implementation begins.
-- No existing spec file is modified, renamed, or retired by this milestone.
+- No existing spec file is renamed, retired, or rewritten into a new format
+  by this milestone. Phase 0.2–0.3's required migration of the 6 files that
+  derive `PG_TARGET` or call `test.skip()` directly (`target.ts`,
+  `ward-lock.spec.ts`, `offline.spec.ts`, `feature-load-failure.spec.ts`,
+  `tab-and-update.spec.ts`, `pwa-registration.spec.ts`) is a surgical import
+  and call-site swap in each — same tests, same titles, same behavior except
+  the one confirmed bug fix (`ward-lock.spec.ts` now actually skips on
+  `portable`, which the old `target === 'file'` check never did) — not the
+  wholesale rewrite this bullet originally read as prohibiting entirely.
 
 ## Verification
 

@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { chooseNoPassword, createWard, gotoApp, startNewCase } from './support/target';
+import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 const warningText = 'Probate Guardian is already open in another tab. Save or close that tab before continuing here.';
-const target = process.env.PG_TARGET || 'source';
+const target = currentTarget;
 
 test('detects a clean second tab and lets the notice be dismissed', { tag: '@origin-state' }, async ({ browser }) => {
   const context = await browser.newContext();
@@ -95,7 +96,7 @@ async function installServiceWorkerMock(page: any) {
 }
 
 test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', { tag: '@origin-state' }, async ({ page }) => {
-  test.skip(target === 'portable', 'Service-worker update UX is disabled for file:// portable builds');
+  skipExpectedTargetExclusion(target === 'portable', 'Service-worker update UX is disabled for file:// portable builds');
   await installServiceWorkerMock(page);
   await gotoApp(page);
 
@@ -105,7 +106,7 @@ test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', { tag:
 });
 
 test('confirms before activating an update with unsaved work', { tag: '@origin-state' }, async ({ page }) => {
-  test.skip(target === 'portable', 'Service-worker update UX is disabled for file:// portable builds');
+  skipExpectedTargetExclusion(target === 'portable', 'Service-worker update UX is disabled for file:// portable builds');
   await installServiceWorkerMock(page);
   await gotoApp(page);
   await page.evaluate(() => {

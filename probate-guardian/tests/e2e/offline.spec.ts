@@ -3,8 +3,9 @@ import { readFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chooseNoPassword, gotoApp, startNewCase } from './support/target';
+import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
-const webTarget = process.env.PG_TARGET === 'web';
+const webTarget = currentTarget === 'web';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 type OfflineStatus = {
@@ -49,7 +50,7 @@ async function generatedManifest(): Promise<{ cacheVersion: string; entries: Arr
 }
 
 test.describe('hosted offline cache', { tag: '@origin-state' }, () => {
-  test.skip(!webTarget, 'Service workers apply only to the built hosted target');
+  skipExpectedTargetExclusion(!webTarget, 'Service workers apply only to the built hosted target');
   test.describe.configure({ mode: 'serial' });
 
   test('first load installs the atomic critical shell', async ({ page, context }) => {

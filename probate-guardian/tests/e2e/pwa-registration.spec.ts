@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { gotoApp } from './support/target';
+import { currentTarget } from './support/target-profile';
 
-const target = process.env.PG_TARGET || 'source';
+const target = currentTarget;
 
 test('service worker registration is limited to the hosted web build', { tag: '@origin-state' }, async ({ page }) => {
   await gotoApp(page);

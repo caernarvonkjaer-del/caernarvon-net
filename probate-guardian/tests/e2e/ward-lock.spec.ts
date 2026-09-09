@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { chooseNoPassword, createWard, gotoApp, startNewCase } from './support/target';
-
-const target = process.env.PG_TARGET || 'source';
+import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
-  // Web Locks API is not available on file:// protocol in chromium, 
-  // so this test applies primarily to dev/dist over http.
-  test.skip(target === 'file', 'Web Locks API is disabled or behaves differently on file:// protocol');
+  // src/core/ward-lock.js has its own explicit "file:// protocol bypass"
+  // (navigator.locks behaves differently/is bypassed on file:// origins),
+  // and `portable` is the only target served via a literal file:// URL --
+  // this used to check a target string ('file') that playwright.config.ts
+  // never actually produces, so it could never skip on any real run.
+  skipExpectedTargetExclusion(currentTarget === 'portable', 'Web Locks API is bypassed on file:// protocol (src/core/ward-lock.js), which is how the portable target is served');
 
   test('same-tab lifecycle: releases previous lock and acquires new one on switch', async ({ browser }) => {
     const context = await browser.newContext();
