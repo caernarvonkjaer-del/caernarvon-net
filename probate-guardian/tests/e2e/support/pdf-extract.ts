@@ -73,3 +73,20 @@ export async function getPdfMetadata(pdfData: Uint8Array | string): Promise<PdfI
     author: typeof i.Author === 'string' ? i.Author : '',
   };
 }
+
+export type PdfInspectionResult = {
+  text: string;
+  metadata: PdfInfoMetadata;
+};
+
+/**
+ * Milestone 33, Phase 3.1: returns structured observations for both visible
+ * text and metadata dictionary, eliminating duplicated extract calls.
+ */
+export async function inspectPdf(pdfData: Uint8Array | string): Promise<PdfInspectionResult> {
+  const [text, metadata] = await Promise.all([
+    extractPdfText(pdfData),
+    getPdfMetadata(pdfData),
+  ]);
+  return { text, metadata };
+}

@@ -314,6 +314,8 @@ export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
     const d = (window as any).D;
     Object.assign(d, {
       wardName: d.wardName || 'Plan Minor Export Test Ward',
+      ucn: d.ucn || '2026-CP-000987',
+      caseNumber: d.caseNumber || '2026-CP-000987',
       county: 'Pinellas',
       periodFrom: '2026-01-01',
       periodTo: '2026-12-31',

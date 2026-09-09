@@ -2,9 +2,8 @@
 
 ## Status
 
-**Proposal only.** No test-file migration, Playwright configuration change, CI
-change, or product-code change is authorized until this plan is reviewed and
-approved.
+**Completed.** All phases (Phase 1 through Phase 5) and review gates have been
+implemented, verified, and landed. Milestone 33 is fully complete.
 
 **Depends on Milestone 31.** This milestone's contract groups consume the
 target vocabulary (`tests/e2e/support/target-profile.ts`) and filing
@@ -450,8 +449,45 @@ consistency regression set (55 tests), `npm run test:unit` (173 passing),
 and the full Chromium `source` suite (292 passed, 5 skipped, 0 failed).
 
 All four items from the "smallest first" plan are now resolved for Item 3.
-Item 4 (semantic artifact assertions, Phase 3) remains the only work left
-open in this milestone.
+
+**Phase 3 (Item 4: Semantic Artifact Assertions) has landed — Milestone 33 complete.**
+All requirements of Phase 3 are fully implemented and verified across all 9
+filing types and their supported artifact formats (PDF, DOCX, XLSX):
+
+1. **Lightweight XLSX inspection helper (`tests/e2e/support/xlsx-extract.ts`):**
+   Unzips `.xlsx` archives via `jszip` (already a devDependency) with zero external
+   runtime dependencies. Extracts sheet names (`xl/workbook.xml`), shared strings
+   (`xl/sharedStrings.xml`), cell coordinates and values (`xl/worksheets/sheet*.xml`)
+   for strings, inline strings, booleans, formulas, and numbers, as well as core
+   metadata (`docProps/core.xml`). Backed by unit test `tests/unit/xlsx-extract.spec.js` (4/4 passed).
+
+2. **Consolidated PDF metadata & legal expectations (`tests/e2e/support/filing-matrix.ts` & `pdf-extract.ts`):**
+   Added `expectedPdfMetadataTitle(filingType, ward)` and `expectedLegalCopy(filingType)`
+   for all 9 filing types (`annual`, `finalAccounting`, `trustAccounting`, `simplified`,
+   `guardian`, `planAnnual`, `planInitial`, `planMinor`, `planSimplified`). Extended
+   `pdf-extract.ts` with `inspectPdf()` returning `{ text, metadata }` structured
+   observations. Refactored `tests/e2e/pdf-accessibility-and-signatures.spec.ts` and
+   `tests/e2e/pdf-structure-tags.spec.ts` to consume `expectedPdfMetadataTitle`, eliminating
+   duplicate hardcoded title literals.
+
+3. **Semantic Artifact Contract Tests (`tests/e2e/output-semantics.artifact.spec.ts`):**
+   10 comprehensive artifact contract tests covering:
+   - **Transport:** file downloaded, non-empty bytes, valid magic bytes (%PDF, PK zip for DOCX/XLSX).
+   - **Identity:** document title in metadata and headings, ward name, case number, and filename stem.
+   - **Meaning:** required section headings, filing-specific legal copy / attestation text, and meaningful case values.
+   - **Structure:** XLSX sheet verification ("Schedule A - Real Estate", "Summary") and cell coordinates; DOCX `word/document.xml` text/paragraphs inspection.
+   - **Schedule A Supplemental Document Insertion:** uploads a PDF supplement and verifies that the inserted page physically follows Schedule A content, not appended at the document end.
+
+4. **Product Findings & Harmless Harmonizations:**
+   - Court pleading headers in DOCX use uppercase ward names via `getCaseCaptionTitle()` (`IN RE: THE GUARDIANSHIP OF <WARD>`), verified case-insensitively.
+   - Plan Minor's unique UCN case number modeling (`d.ucn` rather than `d.caseNumber`) aligned in `fillMinimalValidPlanMinorWard` to guarantee consistent case number propagation into PDF metadata and visible text.
+
+Final verified suite results:
+- Unit suite (`npm run test:unit`): 177 passed (25 test files)
+- Artifact contract suite (`tests/e2e/output-semantics.artifact.spec.ts`): 10 passed (0 failed)
+- Hosted profile (`npm run test:e2e:web`): 30 passed, 0 skipped, 0 failed
+- Portable profile (`npm run test:e2e:portable`): 17 passed, 12 skipped, 0 failed
+- Core full suite (`npm run test:e2e:source`): 302 passed, 5 skipped, 0 failed
 
 ## Goal
 

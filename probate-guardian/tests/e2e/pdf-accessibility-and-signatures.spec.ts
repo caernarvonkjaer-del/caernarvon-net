@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { freshStartNoPassword } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
+import { expectedPdfMetadataTitle } from './support/filing-matrix';
 
 async function inspectPdfPages(pdfData: string) {
   const data = new Uint8Array(Buffer.from(pdfData, 'latin1'));
@@ -172,11 +173,12 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(rawPdfString).not.toContain('/Filter /DCTDecode'); // No JPEG screenshots
 
     // Document Metadata & Catalog Verification
-    expect(title).toBe('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
+    const expectedTitle = expectedPdfMetadataTitle('guardian', 'Harold Thomas Bennett', '26-002487-GD', '2026-09-03');
+    expect(title).toBe(expectedTitle);
     expect(subject).toBe('Verified Initial Inventory');
     expect(author).toBe('Probate Guardian');
     expect(lang).toBe('en-US');
-    expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
+    expect(rawPdfString).toContain(expectedTitle);
     expect(rawPdfString).toContain('Verified Initial Inventory');
     expect(rawPdfString).toContain('/Lang (en-US)');
 

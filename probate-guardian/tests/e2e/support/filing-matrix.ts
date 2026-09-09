@@ -135,3 +135,114 @@ export function filingCapabilities(id: FilingType): FilingCapabilities {
   if (!entry) throw new Error(`No filing-matrix entry for ${id}`);
   return entry;
 }
+
+/**
+ * Milestone 33, Phase 3.3: Authoritative expected PDF Info metadata.title string
+ * constructed from descriptor properties, eliminating duplicated literals.
+ */
+export function expectedPdfMetadataTitle(
+  id: FilingType,
+  wardName: string,
+  caseNumber: string,
+  printDate?: string
+): string {
+  const cap = filingCapabilities(id);
+  if (cap.family === 'plan') {
+    return `${wardName} - ${caseNumber} - ${cap.displayName}`;
+  }
+  const dateStr = printDate || '2026-09-03';
+  // Guardian uses outputName "Verified Initial Inventory", which matches its displayName
+  return `${wardName} - ${caseNumber} - ${cap.displayName} - Printed ${dateStr}`;
+}
+
+export type ExpectedLegalCopy = {
+  requiredHeadings: string[];
+  requiredStatements: string[];
+  prohibitedStatements?: string[];
+};
+
+/**
+ * Milestone 33, Phase 3.2: Authoritative legal attestation and heading expectations
+ * asserting document meaning across PDF and DOCX outputs.
+ */
+export function expectedLegalCopy(id: FilingType): ExpectedLegalCopy {
+  switch (id) {
+    case 'annual':
+      return {
+        requiredHeadings: ['Part III', 'Part IV', 'Part V'],
+        requiredStatements: [
+          'accompanying Annual Accounting of assets and liabilities',
+          'filing of the annual accounting of the Guardian',
+          "it constitutes a full and correct account of all the ward's property",
+        ],
+      };
+    case 'finalAccounting':
+      return {
+        requiredHeadings: ['Part III', 'Part IV', 'Part V'],
+        requiredStatements: [
+          'accompanying Final Accounting of assets and liabilities',
+          'filing of the final accounting of the Guardian',
+          "it constitutes a full and correct account of all the ward's property",
+        ],
+        prohibitedStatements: [
+          'accompanying Annual Accounting of assets and liabilities',
+          'filing of the annual accounting of the Guardian',
+        ],
+      };
+    case 'trustAccounting':
+      return {
+        requiredHeadings: ['Part III', 'Part IV', 'Part V'],
+        requiredStatements: [
+          'accompanying Trust Accounting of assets and liabilities',
+          'filing of the trust accounting of the Guardian',
+          "it constitutes a full and correct account of all the ward's property",
+        ],
+        prohibitedStatements: [
+          'accompanying Annual Accounting of assets and liabilities',
+          'filing of the annual accounting of the Guardian',
+        ],
+      };
+    case 'simplified':
+      return {
+        requiredHeadings: ['Part III', 'Part IV'],
+        requiredStatements: [
+          "it constitutes a full and correct account of all the ward's property of which this guardian has control",
+        ],
+      };
+    case 'guardian':
+      return {
+        requiredHeadings: ['ATTESTATIONS & OATHS OF GUARDIAN & PREPARER', 'ATTORNEY ATTESTATION'],
+        requiredStatements: [
+          'Under penalties of perjury, I declare that I have read the foregoing Verified Initial Inventory',
+        ],
+      };
+    case 'planAnnual':
+      return {
+        requiredHeadings: ['Annual Guardianship Plan'],
+        requiredStatements: [
+          'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan',
+        ],
+      };
+    case 'planInitial':
+      return {
+        requiredHeadings: ['Initial Guardianship Plan'],
+        requiredStatements: [
+          'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan',
+        ],
+      };
+    case 'planMinor':
+      return {
+        requiredHeadings: ['Annual Guardianship Plan', 'Minor'],
+        requiredStatements: [
+          'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan',
+        ],
+      };
+    case 'planSimplified':
+      return {
+        requiredHeadings: ['Simplified Annual Plan'],
+        requiredStatements: [
+          'Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true',
+        ],
+      };
+  }
+}

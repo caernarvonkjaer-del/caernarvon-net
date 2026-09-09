@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
+import { expectedPdfMetadataTitle } from './support/filing-matrix';
 
 test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Content', () => {
   test('Slice 19A: generates tagged PDF with /StructTreeRoot, /ParentTree, /Tabs /S, /ViewerPreferences, and marked content operators', async ({ page }) => {
@@ -227,9 +228,10 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     expect(catalogObj).toContain('/Lang (en-US)');
 
     // 3. Document Title: Must contain /ViewerPreferences << /DisplayDocTitle true >>
+    const expectedTitle = expectedPdfMetadataTitle('guardian', 'Harold Thomas Bennett', '26-002487-GD', '2026-09-03');
     expect(rawPdfString).toContain('/ViewerPreferences');
     expect(rawPdfString).toContain('/DisplayDocTitle true');
-    expect(rawPdfString).toContain('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
+    expect(rawPdfString).toContain(expectedTitle);
     const extractedText = await extractPdfText(rawPdfString);
     expect(extractedText).toContain('Verified Initial Inventory');
     expect(extractedText).toContain('Harold Thomas Bennett');
@@ -241,7 +243,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     expect(metadataObj).toContain('/Type /Metadata');
     expect(metadataObj).toContain('/Subtype /XML');
     expect(metadataObj).toContain('<dc:title>');
-    expect(metadataObj).toContain('Harold Thomas Bennett - 26-002487-GD - Verified Initial Inventory - Printed 2026-09-03');
+    expect(metadataObj).toContain(expectedTitle);
     expect(metadataObj).toContain('<dc:creator>');
     expect(metadataObj).toContain('Probate Guardian');
 
