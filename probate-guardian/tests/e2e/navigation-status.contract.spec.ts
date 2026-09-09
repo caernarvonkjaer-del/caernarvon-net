@@ -1,43 +1,88 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard } from './support/target';
 
-// Milestone 33, Phase 2.3 pilot -- Plan family only (Migration Sequence,
-// step 2: "extend the existing Plan fixture ... then migrate Guardian,
-// Simplified, and Annual only after parity is demonstrated"). This is
-// additive to plan-fixture.ts's registerPlanMountTests, which already
-// proves route-mount cleanliness and Summary/sidebar/computeNavChecks()
-// parity for all four Plan types -- it is not duplicated here. This file
-// covers the three navigation/status behaviors that fixture doesn't touch:
+// Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
+// status pilot ... then migrate Guardian, Simplified, and Annual only after
+// parity is demonstrated"). The Plan-family pilot proved the shape; Annual
+// and Simplified now share the same config-driven test loop (their
+// architecture matches the Plan types closely enough to reuse it verbatim).
+// Guardian does NOT reuse this loop -- its Next-button gate only ever covers
+// the 11 numbered schedule pages (Cover/D1-D5/Print are never gated, by
+// design), a brand-new schedule has 0 rows so no per-field jump link exists
+// until one is added, its fields use data-field-path (never data-form-path),
+// and its Print Preview issue count lives in a different element entirely
+// (.validation-panel .validation-title, not .print-preview-banner). Per this
+// milestone's own Phase 2 instruction ("preserve filing-specific route and
+// status cases locally when they do not fit a shared contract"), Guardian
+// gets its own hand-written block below instead of forced config entries.
+//
+// This is additive to plan-fixture.ts's registerPlanMountTests, which
+// already proves route-mount cleanliness and Summary/sidebar/
+// computeNavChecks() parity for the four Plan types -- not duplicated here.
+// It covers the behaviors that fixture doesn't touch:
 //   - disabled Next guidance lists every locally missing item, not a count
 //     or a single generic message;
 //   - a rendered jump link actually moves focus to the field it names; and
 //   - Print Preview's banner and the blocked-export alert agree with the
 //     underlying validator on how many issues remain.
-// Guardian, Annual, and Simplified are deliberately out of scope for this
-// pilot; they migrate in only once this shape is reviewed and confirmed.
 
-type PlanNavStatusConfig = {
+type NavStatusConfig = {
   featureName: string;
-  filingType: 'planAnnual' | 'planInitial' | 'planMinor' | 'planSimplified';
-  validateFnName: 'validatePlanAnnual' | 'validatePlanInitial' | 'validatePlanMinor' | 'validatePlanSimplified';
+  filingType: 'annual' | 'simplified' | 'planAnnual' | 'planInitial' | 'planMinor' | 'planSimplified';
+  validateFnName: 'validateAnnual' | 'validateSimplified' | 'validatePlanAnnual' | 'validatePlanInitial' | 'validatePlanMinor' | 'validatePlanSimplified';
   // A Cover field guaranteed blank on a freshly created ward AND correctly
   // path-resolved by validation-adapter.js's generic label matcher. wardName
-  // is filled by createWard() itself, and every type's county input starts
-  // pre-populated with a default sample county ("Pinellas") -- neither is
-  // ever blank, so neither can stand in for "the field a jump link should
-  // land on". caseNumber is blank-by-default and universal to three of the
-  // four types; Plan Minor has no case number field at all, so it uses
-  // periodFrom instead (also blank-by-default, also a direct label match).
+  // is filled by createWard() itself, and every Plan type's county input
+  // starts pre-populated with a default sample county ("Pinellas") -- neither
+  // is ever blank, so neither can stand in for "the field a jump link should
+  // land on". caseNumber is blank-by-default and works for every type here;
+  // Plan Minor has no case number field at all, so it uses periodFrom
+  // instead (also blank-by-default, also a direct label match).
   jumpTestFieldPath: string;
   // A section this type's validator always flags on a blank ward, whose
   // fields live on a real, non-Cover page -- used to prove guidance shown
   // WHILE ON that page correctly attributes the error there (see the
   // "identifies a missing field while already on its own page" test below).
   nonCoverRoute: string;
+  // Overrides the default createWard(page, name, filingType) -- needed for
+  // Simplified, which requires its own eligibility-modal flow.
+  createFiling?: (page: Page, name: string) => Promise<void>;
   triggerBlockedExport: (page: Page) => Promise<void>;
 };
 
-const CONFIGS: PlanNavStatusConfig[] = [
+const CONFIGS: NavStatusConfig[] = [
+  {
+    featureName: 'Annual',
+    filingType: 'annual',
+    validateFnName: 'validateAnnual',
+    jumpTestFieldPath: 'caseNumber',
+    // 'Part II — Starting Balance', guaranteed blank on a fresh ward.
+    nonCoverRoute: '/p2',
+    // No bare window.doSavePdf global exists -- the real handler is a
+    // closure-private _printModule.doSavePdf(), reachable only through the
+    // delegated click handler, same as annual-mount.spec.ts's own
+    // blocked-export test.
+    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    }),
+  },
+  {
+    featureName: 'Simplified',
+    filingType: 'simplified',
+    validateFnName: 'validateSimplified',
+    jumpTestFieldPath: 'caseNumber',
+    // 'Part II — Starting Balance (Line 1)', guaranteed blank on a fresh ward.
+    nonCoverRoute: '/p2',
+    // createWard() alone can't create a Simplified ward -- it has its own
+    // eligibility-modal flow first (see createSimplifiedWard()'s own doc
+    // comment in support/target.ts).
+    createFiling: (page, name) => createSimplifiedWard(page, name),
+    triggerBlockedExport: (page) => page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    }),
+  },
   {
     featureName: 'Plan Annual',
     filingType: 'planAnnual',
@@ -81,11 +126,13 @@ const CONFIGS: PlanNavStatusConfig[] = [
   },
 ];
 
-for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCoverRoute, triggerBlockedExport } of CONFIGS) {
+for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCoverRoute, createFiling, triggerBlockedExport } of CONFIGS) {
+  const makeFiling = (page: Page, name: string) => (createFiling ? createFiling(page, name) : createWard(page, name, filingType));
+
   test.describe(`${featureName} navigation/status contract`, () => {
     test('disabled Next guidance on the blank Cover page lists every missing item, from the same validator Print Preview uses', async ({ page }) => {
       await freshStartNoPassword(page);
-      await createWard(page, `${featureName} Nav Guidance Ward`, filingType);
+      await makeFiling(page, `${featureName} Nav Guidance Ward`);
       await page.evaluate(() => (window as any).navigate('/'));
 
       await expect(page.locator('#page-next-btn')).toBeDisabled();
@@ -108,7 +155,7 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
 
     test('a jump link moves focus to the field it names', async ({ page }) => {
       await freshStartNoPassword(page);
-      await createWard(page, `${featureName} Jump Link Ward`, filingType);
+      await makeFiling(page, `${featureName} Jump Link Ward`);
       await page.evaluate(() => (window as any).navigate('/'));
 
       const jumpLink = page.locator(`#page-local-guidance [data-form-action="jump-to-field"][data-field-path="${jumpTestFieldPath}"]`);
@@ -120,7 +167,7 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
 
     test('guidance identifies a missing field while already on its own page, not bucketed onto Cover', async ({ page }) => {
       await freshStartNoPassword(page);
-      await createWard(page, `${featureName} Route Bucketing Ward`, filingType);
+      await makeFiling(page, `${featureName} Route Bucketing Ward`);
       await page.evaluate((r) => (window as any).navigate(r), nonCoverRoute);
 
       // Before the section->route resolution fix, every one of this type's
@@ -138,7 +185,7 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
 
     test('Print Preview banner and the blocked-export alert agree on how many issues remain', async ({ page }) => {
       await freshStartNoPassword(page);
-      await createWard(page, `${featureName} Export Gate Parity Ward`, filingType);
+      await makeFiling(page, `${featureName} Export Gate Parity Ward`);
       await page.evaluate(() => (window as any).navigate('/print'));
 
       // The banner's own rendered count is the ground truth here (it is
@@ -166,3 +213,79 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
     });
   });
 }
+
+// Guardian Inventory doesn't fit the shared loop above -- see the file
+// header comment for why (narrower Next-button gate, data-field-path
+// instead of data-form-path, a differently-shaped Print Preview issue
+// count). Its "guidance identifies a missing field while already on its own
+// page" case is skipped: Guardian's routing was never bucketed onto Cover to
+// begin with (Cover is never gated there at all), so there's nothing
+// distinct left to prove beyond what the first test below already shows.
+test.describe('Guardian Inventory navigation/status contract', () => {
+  test('disabled Next guidance on a schedule page identifies every missing item once a row exists', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian Nav Guidance Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/a1'));
+
+    // isScheduleIncomplete()'s SCHEDULE_NAV_KEYS whitelist gates only the 11
+    // numbered schedule pages -- Cover/D1-D5/Print are never gated this way,
+    // by design. A brand-new schedule has 0 rows, so validateGuardian()'s
+    // only possible error here is the schedule-empty message (whose jump
+    // link has no real field target -- see validation-adapter.js's row-level
+    // path derivation, which only covers a-1/a-2/b-1). A row must exist
+    // before any per-field jump link with a real focusable target appears.
+    await expect(page.locator('#page-next-btn')).toBeDisabled();
+    await page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]').click();
+
+    const expectedCount = await page.evaluate(() => {
+      const raw = (window as any).validateGuardian();
+      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
+      return structured.filter((e: any) => e.route === '/a1').length;
+    });
+    expect(expectedCount).toBeGreaterThan(0);
+
+    const guidance = page.locator('#page-local-guidance');
+    await expect(guidance).toBeVisible();
+    const jumpLinks = guidance.locator('[data-form-action="jump-to-field"]');
+    await expect(jumpLinks).toHaveCount(expectedCount);
+
+    // Guardian's own field markup never emits data-form-path (only the
+    // shared Plan-type field builder in legacy-app.js does) -- the jump
+    // link's target must be located via data-field-path instead. The jump
+    // link button itself also carries data-field-path (to know what to
+    // focus), so the post-click assertion targets data-bind instead, which
+    // only the actual input carries.
+    const firstLink = jumpLinks.first();
+    const targetPath = await firstLink.getAttribute('data-field-path');
+    expect(targetPath).toBeTruthy();
+    await firstLink.click();
+    await expect(page.locator(`[data-bind="${targetPath}"]`)).toBeFocused();
+  });
+
+  test('Print Preview panel and the blocked-export alert agree on how many issues remain', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian Export Gate Parity Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/print'));
+
+    // Unlike the other filing types, Guardian's .print-preview-banner
+    // carries no dynamic issue count -- the count lives in the separate
+    // validation panel validationPanel() renders alongside it.
+    const panelText = await page.locator('.validation-panel .validation-title').innerText();
+    const match = panelText.match(/(\d+)\s+required field/);
+    expect(match, `validation panel did not report a required-field count: "${panelText}"`).not.toBeNull();
+    const expectedCount = Number(match![1]);
+    expect(expectedCount).toBeGreaterThan(0);
+
+    const dialogPromise = page.waitForEvent('dialog');
+    const triggerPromise = page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    });
+    const dialog = await dialogPromise;
+    const alertMessage = dialog.message();
+    await dialog.accept();
+    await triggerPromise;
+
+    expect(alertMessage).toContain(`${expectedCount} required field`);
+  });
+});

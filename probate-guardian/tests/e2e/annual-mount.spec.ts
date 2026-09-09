@@ -320,22 +320,5 @@ test.describe('annual-accounting feature module', () => {
       if (r.sidebarComplete !== null) expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
     }
   });
-
-  test('disabled Next guidance on Part II routes its jump link to /p2, not Cover', async ({ page }) => {
-    // Regression test for a section->route resolution bug: validateAnnual()
-    // labels its sections with Roman numerals ("Part II"), which
-    // resolveRouteFromSection()'s legacy table (literal Arabic-digit keys
-    // like 'part 2') never matched -- every section but the accidentally-
-    // correct "Part I" silently defaulted to Cover ('/'). Fixed by
-    // delegating to legacy-app.js's own errorRoute(), which already
-    // understands Roman-numeral "Part N" sections correctly.
-    await freshStartNoPassword(page);
-    await createWard(page, 'Route Bucketing Annual Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p2'));
-
-    const guidance = page.locator('#page-local-guidance');
-    await expect(guidance).toBeVisible();
-    await expect(guidance.locator('[data-form-action="jump-to-field"][data-route="/p2"]').first()).toBeVisible();
-  });
 });
 

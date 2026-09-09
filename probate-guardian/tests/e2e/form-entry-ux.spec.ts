@@ -121,9 +121,13 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await freshStartNoPassword(page);
     await createWard(page, 'Harold Annual Date Ward', 'annual');
 
-    // On Annual Accounting cover page
-    const periodFromInput = page.locator('[data-field-path="periodFrom"]');
-    const periodToInput = page.locator('[data-field-path="periodTo"]');
+    // On Annual Accounting cover page. data-form-path (not data-field-path)
+    // is used here because a disabled-Next guidance jump-to-field button can
+    // also carry data-field-path="periodFrom" on a blank Cover page (Annual's
+    // Cover-gate bug fix means guidance now legitimately renders there) --
+    // data-form-path is unique to the real input.
+    const periodFromInput = page.locator('[data-form-path="periodFrom"]');
+    const periodToInput = page.locator('[data-form-path="periodTo"]');
     await expect(periodFromInput).toBeVisible();
     await expect(periodToInput).toBeVisible();
 

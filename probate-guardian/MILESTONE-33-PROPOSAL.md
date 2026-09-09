@@ -23,12 +23,51 @@ implemented and verified for its Annual/Final/Trust pilot scope only
 (form entry), 2.4 (persistence/recovery), 3, 4, and 5 remain proposal-only.
 
 Migration Sequence step 2 ("Shared navigation/status pilot") has also landed,
-for its Plan-family pilot scope only: `tests/e2e/navigation-status.contract.spec.ts`
+initially for its Plan-family pilot scope: `tests/e2e/navigation-status.contract.spec.ts`
 covers, for all four Plan types, three checks `plan-fixture.ts`'s existing
 mount tests don't touch — disabled-Next guidance itemizing every missing
 field, a jump link actually moving focus, and Print Preview's banner agreeing
-with the blocked-export alert on how many issues remain. Guardian, Annual,
-and Simplified are not yet migrated into this contract.
+with the blocked-export alert on how many issues remain.
+
+**Guardian, Annual, and Simplified have since migrated into this contract
+too.** Annual and Simplified reuse the exact same config-driven test loop as
+the four Plan types (their architecture matches closely enough). Guardian
+does not: its Next-button gate only ever covers the 11 numbered schedule
+pages (Cover/D1–D5/Print are never gated, by design), a brand-new schedule
+has 0 rows so no per-field jump link exists until one is added, its field
+markup uses `data-field-path` (never `data-form-path`), and its Print
+Preview issue count lives in `.validation-panel .validation-title`, not
+`.print-preview-banner`. Per this document's own Phase 2 instruction
+("preserve filing-specific route and status cases locally when they do not
+fit a shared contract"), Guardian gets its own hand-written two-test block in
+the same file instead of forced config entries.
+
+Migrating Annual surfaced one more real, separate bug, fixed first: Annual's
+Cover page (route `/`) could never get its Next button disabled or its
+guidance panel populated, because `isScheduleIncomplete()` (`src/legacy-app.js`)
+looked up the nav-check key `'a-cover'`, but `computeNavChecks()` actually
+stores Annual's Cover-page completeness under `'a-p1'` (Annual's Cover page
+is labeled "Part I", not "Cover") — the lookup always missed, silently
+reporting Cover complete no matter how many required fields were blank.
+Fixed with a one-line per-type override (`{annual: 'p1'}`) in
+`isScheduleIncomplete()`'s key derivation; Simplified and the four Plan types
+are unaffected (their Cover-equivalent keys already match the generic
+`<prefix>cover` convention). One pre-existing, unrelated test
+(`form-entry-ux.spec.ts`'s 8-digit date auto-mask test) used a `data-field-path`
+selector on Annual's Cover page that was only unambiguous *because* that
+page's guidance panel was previously always empty (the very bug just fixed);
+once guidance legitimately renders there, the same selector also matched a
+jump-to-field button and had to be tightened to `data-form-path` (unique to
+the real input) — a real, if minor, side effect of the fix, not a new defect.
+
+**Two known, related gaps intentionally left unaddressed:**
+`finalAccounting`/`trustAccounting` (the other two `formEngine()==='annual'`
+aliases) are missing from `isScheduleIncomplete()`'s `prefixMap` entirely, so
+*no* page is ever gated for them, not just Cover — a larger version of the
+same class of bug, out of scope since the user's request was Guardian/Annual/
+Simplified specifically. And field-path accuracy (the same
+`adaptValidationErrors()` keyword-based `path` inference already flagged as
+out of scope for the route-bucketing fix above) remains unaddressed.
 
 **Real gap found and fixed during this pilot, not assumed away:** the
 itemized guidance panel this section's own Phase 2.3 language describes
