@@ -81,6 +81,38 @@ accuracy (the same `adaptValidationErrors()` keyword-based `path` inference
 already flagged as out of scope for the route-bucketing fix above) remains
 unaddressed.
 
+**Migration Sequence step 3 ("Form entry and persistence contracts") has
+landed**, sized to what two research passes confirmed was actually
+missing rather than the full checklist verbatim: `tests/e2e/form-entry.contract.spec.ts`
+(7 tests) and `tests/e2e/persistence-recovery.contract.spec.ts` (4 tests).
+Both checklists turned out to describe mechanisms already shared and
+type-agnostic in the product code (the two-phase `writeDraftValue`/
+`finalizeFieldValue` pipeline in `src/core/form/form-contract.js`,
+`autoSave()`, the `__fieldDrafts` draft store, and the persistence layer in
+`src/core/persistence/*.js`, confirmed to have zero `switch(inventoryType)`
+branches), so most new tests use one or two representative filing types
+rather than full per-type duplication — unlike the navigation-status
+contract, whose bugs were genuinely per-type.
+
+The flagship new test closes the single highest-value gap found: no
+existing test combined an invalid draft surviving a real save-and-reopen
+cycle with export still being blocked afterward (each half was proven
+separately — `case-file-roundtrip.spec.ts` proves incomplete data survives
+reopen but never attempts export after; the navigation-status contract
+proves export blocking live, with no save/reopen around it). Also closed:
+real paste (via actual OS clipboard, not `.fill()`, since nothing in this
+suite exercised true paste mechanics before), a real Tab keypress commit
+(every prior test used `.blur()` only), zero date-field coverage on any Plan
+type, bar-number normalization (untested anywhere before), name/address/
+city-state-zip formatting on the modern pipeline (previously proven only via
+Guardian's legacy `data-bind` path), encrypted-mode recovery-cache restore
+including the wrong-password path, and pending-valid-draft commit via save
+rather than only blur. IME/composition is covered via synthetic
+`compositionend` dispatch only — Playwright has no real IME automation
+primitive, and this is documented as such rather than implied to be true IME
+coverage. Verified: full Chromium `source` suite, all passing, before this
+was considered landed.
+
 **Real gap found and fixed during this pilot, not assumed away:** the
 itemized guidance panel this section's own Phase 2.3 language describes
 ("disabled Next guidance identifies every local missing item") did not
@@ -291,7 +323,15 @@ across supported targets:
 - auto-save and pending valid input commits;
 - invalid input preservation and output blocking;
 - recovery cache restore/decline/clear behavior;
-- legacy migration fixtures; and
+- ~~legacy migration fixtures~~ (struck: there is nothing left to migrate.
+  The old-format migration path was intentionally removed when the app
+  unified to a single case-file format — `case-file-protection.spec.ts` and
+  `dashboard-backup.spec.ts` already document this directly, both noting the
+  version-1/2 migration scenarios are "simply impossible" now, not merely
+  unhandled. `CASE_FILE_FORMAT_VERSION` is written once and never branched on
+  anywhere in the repo; anything that isn't today's exact format is rejected
+  outright with an error, not migrated. Confirmed during Migration Sequence
+  step 3's own research, not assumed); and
 - multi-tab lock contention where the target supports it.
 
 Continue to keep specialized archive/security tests in their existing specs;
