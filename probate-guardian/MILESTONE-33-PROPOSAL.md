@@ -387,6 +387,72 @@ broader Guardian regression set (`guardian-inventory-mount.spec.ts`,
 `npm run test:unit` (173 passing), and the full Chromium `source` suite
 (282 passed, 5 skipped, 0 failed).
 
+**Field-path accuracy (sub-phases 3b/3c/3d: Annual/Final/Trust, Simplified,
+and the four Plan types — landed together, per your instruction).** Extends
+`adaptValidationErrors()` with formType-gated branches for the remaining
+seven filing types, inserted after Guardian's own chain and before the old
+generic fallback (left unchanged as the last-resort case, now effectively
+dead for these seven types since every one of their sections has its own
+dedicated branch). Every validator string was read directly from source
+before writing the corresponding branch, not assumed from the earlier
+research passes' summaries.
+
+Notable shapes and real issues handled:
+- Annual/Final/Trust and Simplified's Part III/Part IV guardian-row errors
+  put their "Guardian #N —"/"Co-Guardian #N —" ordinal in the *detail* half
+  of the message, not the section — the opposite convention from Guardian
+  Inventory's own schedules, and from Annual's own `checkRows()` schedules
+  (Schedule A, B-1–B-4, C, D-1–D-5, E, F-1/F-2), which put a "Line N —"
+  ordinal in the detail instead. Two new regexes cover this, both scoped to
+  the detail string rather than reusing Guardian's section-scoped `rowMatch`.
+- Cross-engine field-naming divergences confirmed and handled distinctly:
+  `attorney_bar` (Annual) vs `attorney_barNumber` (Simplified); `certDate`
+  vs `certServiceDate`; Annual's guardian rows have no residence/mailing
+  split (`mailingStreet`/`mailingCityStateZip` only) where Simplified's have
+  both pairs; Annual's preparer field is named `street`, not `streetAddress`.
+- A real ordering bug caught and fixed before it shipped: Schedule D-5's
+  "Loan Type" label contains the substring "type", so a naive keyword chain
+  checking bare "type" (Schedule D-1's own field) before "loan type" would
+  have misrouted D-5's field to D-1's. Reordered, with a regression test.
+- Two schedules whose error message can't name a single field
+  (Schedule C's "Gain or Loss amount is required", Schedule E's 4-way
+  Transfer In/Out message) resolve to the first field of the pair as a
+  documented approximation — the message itself gives no way to disambiguate
+  further, and this is still strictly better than the empty path before.
+- The four Plan types' row-level errors ("row 1 needs...", "Row 1: ...")
+  all put a bare ordinal at the start of the detail, covered by one shared
+  regex — but planAnnual's own validator indexes into a *pre-filtered* copy
+  of its array (blank rows stripped before indexing) while planInitial's and
+  planMinor's index the raw array directly. planAnnual's fix carries an
+  explicit code comment flagging this as a pre-existing modeling gap in the
+  product validator itself, not something a path-resolution fix can correct
+  without changing product validation behavior — still a strict improvement
+  over the empty path it resolved to before.
+- planInitial has two separate, never-synced attorney-name fields
+  (`attorneyName`, cosmetic-only on Cover; `attorney_name`, the one actually
+  validated on Attorney Certification) — resolved to the validated one.
+- Every Plan type's "explanation required when X" message is conditional on
+  a base question already being answered a certain way, and several share
+  near-identical wording with that base question's own message — handled by
+  checking the more specific "explanation"/"describe" message first in each
+  chain (planSimplified's Question 7/9 pairs, planInitial's Section 2-3/6-7
+  explain fields, planAnnual's Section 9 mental/physical explain fields).
+
+Verified: 10 new e2e tests in `tests/e2e/navigation-status.contract.spec.ts`
+(one representative test per notable shape/bug per family, not an
+exhaustive enumeration of the ~85 new branches — Final/Trust aliases share
+Annual's exact validator so aren't re-tested separately, matching
+`annual-mount.spec.ts`'s own precedent for that alias), the full existing
+47-test navigation-status contract spec (no regressions on the Cover-level
+jump-link tests that previously passed only by coincidental generic-fallback
+field-name matches), the broader Annual/Simplified/Plan-type mount and
+consistency regression set (55 tests), `npm run test:unit` (173 passing),
+and the full Chromium `source` suite (292 passed, 5 skipped, 0 failed).
+
+All four items from the "smallest first" plan are now resolved for Item 3.
+Item 4 (semantic artifact assertions, Phase 3) remains the only work left
+open in this milestone.
+
 ## Goal
 
 Make the E2E suite a reliable safety net for actual application changes rather

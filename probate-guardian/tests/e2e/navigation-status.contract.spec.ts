@@ -490,3 +490,287 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     expect(alertMessage).toContain(`${expectedCount} required field`);
   });
 });
+
+// Milestone 33, Item 3 (sub-phases 3b/3c/3d): field-path accuracy for the
+// Annual/Final/Trust/Simplified accounting family and the four Plan types.
+// Guardian Inventory's own sub-phase (3a) is covered above. These target the
+// specific real bugs and trickiest shapes found while extending
+// adaptValidationErrors() to these seven remaining filing types -- not an
+// exhaustive enumeration of every one of the ~85 new field branches added,
+// which would just be re-deriving the source rather than proving anything.
+// Like the Guardian D-1 through D-5 tests above, these call
+// validate*()/adaptValidationErrors()/focusFieldByPath() directly rather
+// than through a real page's guidance panel: several of these pages (e.g.
+// Annual's Part III, which also validates guardian #1's own fields) have
+// other required fields blank on a fresh ward too, so isolating "the one
+// jump link this test is about" from a real, busy panel would be fragile;
+// calling the same three production functions the panel itself calls is
+// just as direct a proof of the fix.
+test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub-phase 3b)', () => {
+  // finalAccounting/trustAccounting share this exact validateAnnual() code
+  // path (formEngine() aliases) -- one instance proves the fix for all
+  // three, same reasoning annual-mount.spec.ts's own alias test already
+  // uses for legal-copy/identity differences.
+  test('Part III co-guardian #2 signature date targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual Co-Guardian Ward', 'annual');
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.guardians = [
+        { name: 'Guardian One', signatureDate: '01/01/2024', ssn: '123-45-6789', phone: '555-111-2222', mailingStreet: '1 Main St', mailingCityStateZip: 'Tampa, FL 33601' },
+        { name: 'Guardian Two', signatureDate: '', ssn: '987-65-4321', phone: '555-333-4444', mailingStreet: '2 Oak St', mailingCityStateZip: 'Tampa, FL 33602' },
+      ];
+    });
+    await page.evaluate(() => (window as any).navigate('/p3'));
+
+    const targetPath = await page.evaluate(() => {
+      const raw = (window as any).validateAnnual();
+      const structured = (window as any).adaptValidationErrors(raw, 'annual');
+      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('Signature Date'))?.path;
+    });
+    expect(targetPath).toBe('guardians.1.signatureDate');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p3', p), targetPath);
+    await expect(page.locator(`[data-form-path="${targetPath}"]`)).toBeFocused();
+  });
+
+  test('Schedule B-1 row resolves via the detail-side "Line N" ordinal, not the section', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual Schedule B-1 Ward', 'annual');
+    await page.evaluate(() => {
+      (window as any).D.schB1 = [{ bankAcct: '111222333', checkNo: '1001', datePaid: '01/01/2024', payee: '', amount: '500' }];
+    });
+    await page.evaluate(() => (window as any).navigate('/schb1'));
+
+    const targetPath = await page.evaluate(() => {
+      const raw = (window as any).validateAnnual();
+      const structured = (window as any).adaptValidationErrors(raw, 'annual');
+      return structured.find((e: any) => e.section === 'Schedule B-1' && e.label.includes('Payee'))?.path;
+    });
+    expect(targetPath).toBe('schB1.0.payee');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/schb1', p), targetPath);
+    await expect(page.locator(`[data-annual-path="${targetPath}"], [data-form-path="${targetPath}"]`)).toBeFocused();
+  });
+
+  test('Part IV Preparer and Part V Attorney resolve to their own distinct field shapes', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual Preparer Attorney Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/p4'));
+
+    const paths = await page.evaluate(() => {
+      const raw = (window as any).validateAnnual();
+      const structured = (window as any).adaptValidationErrors(raw, 'annual');
+      return {
+        // Annual's preparer field is named `street`, not `streetAddress` --
+        // its own shape, distinct from Guardian Inventory's D-2 preparer.
+        preparerStreet: structured.find((e: any) => e.section === 'Part IV' && e.label.includes('Preparer Street'))?.path,
+        // Flat, underscore-prefixed scalar, not a nested attorney object.
+        attorneyBar: structured.find((e: any) => e.section === 'Part V' && e.label.includes('Bar Number'))?.path,
+      };
+    });
+    expect(paths.preparerStreet).toBe('preparer.street');
+    expect(paths.attorneyBar).toBe('attorney_bar');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p4', p), paths.preparerStreet);
+    await expect(page.locator(`[data-form-path="${paths.preparerStreet}"]`)).toBeFocused();
+  });
+
+  test('Schedule D-1 "Type" and D-5 "Loan Type" resolve to distinct fields (ordering regression)', async ({ page }) => {
+    // A naive keyword match ("type" before "loan type") would make D-5's
+    // "Loan Type" label resolve to schD5.N.type instead of .loanType, since
+    // "Loan Type" contains "type" as a substring -- caught while writing
+    // this branch, not from a real bug report; still worth a regression
+    // test since it's an easy mistake to reintroduce.
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual D-1 D-5 Type Ward', 'annual');
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.schD1 = [{ description: 'Checking Account', accountNo: '4455', restricted: 'No', type: '', fullAmount: '1000', wardPct: '100' }];
+      w.D.schD5 = [{ description: 'Auto Loan', loanNo: '99', loanType: '', fullDebt: '5000', wardPct: '100' }];
+    });
+    await page.evaluate(() => (window as any).navigate('/schd1'));
+
+    const paths = await page.evaluate(() => {
+      const raw = (window as any).validateAnnual();
+      const structured = (window as any).adaptValidationErrors(raw, 'annual');
+      return {
+        d1Type: structured.find((e: any) => e.section === 'Schedule D-1' && e.label.includes('Type') && !e.label.includes('Loan'))?.path,
+        d5LoanType: structured.find((e: any) => e.section === 'Schedule D-5' && e.label.includes('Loan Type'))?.path,
+      };
+    });
+    expect(paths.d1Type).toBe('schD1.0.type');
+    expect(paths.d5LoanType).toBe('schD5.0.loanType');
+  });
+
+  test('Schedule C "Gain or Loss" compound message resolves to the first field of the pair (documented approximation)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual Schedule C Ward', 'annual');
+    await page.evaluate(() => {
+      (window as any).D.schC = [{ description: 'Sale of stock', date: '01/01/2024', gain: '', loss: '' }];
+    });
+    await page.evaluate(() => (window as any).navigate('/schc'));
+
+    const targetPath = await page.evaluate(() => {
+      const raw = (window as any).validateAnnual();
+      const structured = (window as any).adaptValidationErrors(raw, 'annual');
+      return structured.find((e: any) => e.section === 'Schedule C' && e.label.includes('Gain or Loss'))?.path;
+    });
+    expect(targetPath).toBe('schC.0.gain');
+  });
+});
+
+test.describe('Simplified field-path accuracy (Milestone 33, Item 3, sub-phase 3c)', () => {
+  test('Part IV guardian residence/mailing pair and Part V/VI field-name divergences from Annual', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'Simplified Field Shape Ward');
+    await page.evaluate(() => {
+      (window as any).D.guardians[0] = {
+        name: 'Guardian One', signatureDate: '01/01/2024', ssn: '123-45-6789', phone: '555-111-2222', email: 'g1@example.com',
+        mailingStreet: '1 Main St', mailingCityStateZip: 'Tampa, FL 33601', residenceStreet: '', residenceCityStateZip: '',
+      };
+    });
+    await page.evaluate(() => (window as any).navigate('/p4'));
+
+    const p4Path = await page.evaluate(() => {
+      const raw = (window as any).validateSimplified();
+      const structured = (window as any).adaptValidationErrors(raw, 'simplified');
+      // Simplified's own residence/mailing address split -- Annual has no
+      // equivalent field pair on its guardian rows.
+      return structured.find((e: any) => e.section === 'Part IV' && e.label.includes('Residence Street'))?.path;
+    });
+    expect(p4Path).toBe('guardians.0.residenceStreet');
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p4', p), p4Path);
+    await expect(page.locator(`[data-form-path="${p4Path}"]`)).toBeFocused();
+
+    await page.evaluate(() => (window as any).navigate('/p5'));
+    const otherPaths = await page.evaluate(() => {
+      const raw = (window as any).validateSimplified();
+      const structured = (window as any).adaptValidationErrors(raw, 'simplified');
+      return {
+        // Simplified names this attorney_barNumber; Annual names the
+        // conceptually identical field attorney_bar.
+        barNumber: structured.find((e: any) => e.section === 'Part V' && e.label.includes('Bar Number'))?.path,
+      };
+    });
+    expect(otherPaths.barNumber).toBe('attorney_barNumber');
+
+    await page.evaluate(() => (window as any).navigate('/p6'));
+    const p6Path = await page.evaluate(() => {
+      const raw = (window as any).validateSimplified();
+      const structured = (window as any).adaptValidationErrors(raw, 'simplified');
+      // Simplified names this certServiceDate; Annual names the
+      // conceptually identical field certDate.
+      return structured.find((e: any) => e.section === 'Part VI' && e.label.includes('Date of Service'))?.path;
+    });
+    expect(p6Path).toBe('certServiceDate');
+  });
+});
+
+test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3d)', () => {
+  test('Plan Annual "1. Residences" resolves through the filtered-array index (documented modeling caveat)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Plan Annual Residences Ward', 'planAnnual');
+    await page.evaluate(() => {
+      // Non-blank street with a blank name keeps this row in the
+      // validator's own filter (r.name||r.street||r.cityStateZip) while
+      // still failing its !r.name check.
+      (window as any).D.q1Residences = [{ name: '', street: '123 Group Home Ln', cityStateZip: 'Tampa, FL 33601' }];
+    });
+    await page.evaluate(() => (window as any).navigate('/p2'));
+
+    const targetPath = await page.evaluate(() => {
+      const raw = (window as any).validatePlanAnnual();
+      const structured = (window as any).adaptValidationErrors(raw, 'planAnnual');
+      return structured.find((e: any) => e.section === '1. Residences' && e.label.includes('row'))?.path;
+    });
+    expect(targetPath).toBe('q1Residences.0.name');
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p2', p), targetPath);
+    await expect(page.locator(`[data-form-path="${targetPath}"]`)).toBeFocused();
+  });
+
+  test('Plan Initial Examining Providers uses the raw array index; Attorney Certification resolves attorney_name', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Plan Initial Providers Ward', 'planInitial');
+    await page.evaluate(() => {
+      const w = window as any;
+      // Row 0 complete, row 1 has data but no name -- unlike Plan Annual,
+      // this validator indexes the raw array directly (no pre-filter), so
+      // the error's row number always matches the real array position.
+      w.D.q9Providers = [
+        { name: 'Dr. First', providerType: 'Psychiatrist' },
+        { name: '', providerType: 'Neurologist' },
+      ];
+    });
+    await page.evaluate(() => (window as any).navigate('/p5'));
+
+    const providerPath = await page.evaluate(() => {
+      const raw = (window as any).validatePlanInitial();
+      const structured = (window as any).adaptValidationErrors(raw, 'planInitial');
+      return structured.find((e: any) => e.section === '9. Examining Providers')?.path;
+    });
+    expect(providerPath).toBe('q9Providers.1.name');
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p5', p), providerPath);
+    await expect(page.locator(`[data-form-path="${providerPath}"]`)).toBeFocused();
+
+    await page.evaluate(() => (window as any).navigate('/p10'));
+    const attorneyPath = await page.evaluate(() => {
+      const raw = (window as any).validatePlanInitial();
+      const structured = (window as any).adaptValidationErrors(raw, 'planInitial');
+      // attorney_name here, not the separate, cosmetic-only, never-validated
+      // attorneyName field this type also shows on its Cover page.
+      return structured.find((e: any) => e.section === 'Attorney Certification' && e.label.includes('Attorney name'))?.path;
+    });
+    expect(attorneyPath).toBe('attorney_name');
+  });
+
+  test('Plan Minor "Preparer & Attorney" resolves three same-page fields to three distinct targets', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Plan Minor Preparer Attorney Ward', 'planMinor');
+    await page.evaluate(() => (window as any).navigate('/p7'));
+
+    const paths = await page.evaluate(() => {
+      const raw = (window as any).validatePlanMinor();
+      const structured = (window as any).adaptValidationErrors(raw, 'planMinor');
+      return {
+        preparerName: structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Preparer name'))?.path,
+        attorneyName: structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney name'))?.path,
+        attorneySignatureDate: structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney signature date'))?.path,
+      };
+    });
+    expect(paths).toEqual({ preparerName: 'preparer_name', attorneyName: 'attorney_name', attorneySignatureDate: 'attorney_signatureDate' });
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p7', p), paths.attorneySignatureDate);
+    await expect(page.locator(`[data-form-path="${paths.attorneySignatureDate}"]`)).toBeFocused();
+  });
+
+  test('Plan Simplified resolves conditional "explanation" fields ahead of the base question they qualify', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Plan Simplified Explain Ward', 'planSimplified');
+    await page.evaluate(() => {
+      const w = window as any;
+      // Answering Yes satisfies the base "must be answered" check but
+      // triggers its own, otherwise-identically-worded "Question N" family
+      // explanation requirement.
+      w.D.q7RestoreRights = 'Yes';
+      w.D.q7RestoreExplain = '';
+      w.D.q9Remuneration = 'Yes';
+      w.D.q9RemunerationExplain = '';
+    });
+    await page.evaluate(() => (window as any).navigate('/p2'));
+
+    const paths = await page.evaluate(() => {
+      const raw = (window as any).validatePlanSimplified();
+      const structured = (window as any).adaptValidationErrors(raw, 'planSimplified');
+      return {
+        q7: structured.find((e: any) => e.section === 'The Plan' && e.label.includes('Question 7 explanation'))?.path,
+        q9: structured.find((e: any) => e.section === 'The Plan' && e.label.includes('Question 9 explanation'))?.path,
+      };
+    });
+    expect(paths).toEqual({ q7: 'q7RestoreExplain', q9: 'q9RemunerationExplain' });
+
+    await page.evaluate((p) => (window as any).focusFieldByPath('/p2', p), paths.q7);
+    await expect(page.locator(`[data-form-path="${paths.q7}"]`)).toBeFocused();
+  });
+});

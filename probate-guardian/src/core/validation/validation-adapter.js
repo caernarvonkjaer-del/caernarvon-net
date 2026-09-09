@@ -181,6 +181,23 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
     const guardianOrdIdx = guardianOrdMatch ? parseInt(guardianOrdMatch[1], 10) - 1 : 0;
     const recipientMatch = sLower.match(/recipient\s*(\d+)/i);
     const recipientIdx = recipientMatch ? parseInt(recipientMatch[1], 10) - 1 : 0;
+    // Annual's checkRows() schedules (A, B-1..B-4, C, D-1..D-5, E, F-1/F-2)
+    // put "Line N — <field>" in the DETAIL half, not the section -- opposite
+    // of Guardian Inventory's convention above.
+    const detailLineMatch = detail.match(/^Line\s+(\d+)\s+—\s+(.+)$/i);
+    // Annual's Part III and Simplified's Part IV guardian rows put
+    // "(Co-)Guardian #N — <field>" in the detail too, sharing this one
+    // pattern across both engines (Simplified's own co-guardian label is
+    // literally "Co-Guardian #N"; Annual's is always "Guardian #N", which
+    // the optional "Co-" group still matches).
+    const detailGuardianMatch = detail.match(/^(?:Co-)?Guardian #(\d+)\s+—\s+(.+)$/i);
+    // The four Plan types' row errors ("row 1 needs...", "Row 1: ...") all
+    // start with a bare ordinal in the detail -- one pattern covers
+    // planAnnual's (filtered-array-indexed) and planInitial/planMinor's
+    // (raw-array-indexed) row messages alike; see the planAnnual branch
+    // below for why its index can point at the wrong row.
+    const detailRowMatch = detail.match(/^row\s+(\d+)/i);
+    const detailRowIdx = detailRowMatch ? parseInt(detailRowMatch[1], 10) - 1 : 0;
 
     if (sLower.startsWith('a-1') || sLower.startsWith('a1')) {
       if (dLower.includes('property description') || dLower.includes('description')) path = `scheduleA1.${rowIdx}.propertyDescription`;
@@ -312,6 +329,338 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('street')) path = 'serviceAttorney.streetAddress';
         else if (dLower.includes('city') || dLower.includes('zip')) path = 'serviceAttorney.cityStateZip';
       } else if (dLower.includes('service date')) path = 'serviceDate';
+    } else if (['annual', 'finalAccounting', 'trustAccounting'].includes(formType)) {
+      // Milestone 33, Item 3 (sub-phase 3b). Annual/Final/Trust share this
+      // one validator (validateAnnual()); verified directly against
+      // src/features/annual-accounting/index.js.
+      if (sLower === 'part i') {
+        if (dLower.includes('ward name')) path = 'wardName';
+        else if (dLower.includes('case number')) path = 'caseNumber';
+        else if (dLower.includes('guardianship inception date')) path = 'gid';
+        else if (dLower.includes('accounting period from')) path = 'periodFrom';
+        else if (dLower.includes('accounting period to')) path = 'periodTo';
+        else if (dLower.includes('county')) path = 'county';
+        else if (dLower.includes('filing type')) path = 'filingType';
+        // Bare "Guardian" -- Part I's flat single field, distinct from the
+        // guardians[] array Part III validates below. Checked last so it
+        // never intercepts "Guardianship Inception Date" above.
+        else if (dLower.includes('guardian')) path = 'guardian';
+      } else if (sLower === 'part ii') {
+        if (dLower.includes('starting balance')) path = 'startingBalance';
+      } else if (sLower === 'part iii' && detailGuardianMatch) {
+        const idx = parseInt(detailGuardianMatch[1], 10) - 1;
+        const f = detailGuardianMatch[2].toLowerCase();
+        if (f.includes('name')) path = `guardians.${idx}.name`;
+        else if (f.includes('signature date')) path = `guardians.${idx}.signatureDate`;
+        else if (f.includes('ssn')) path = `guardians.${idx}.ssn`;
+        else if (f.includes('phone')) path = `guardians.${idx}.phone`;
+        else if (f.includes('mailing street')) path = `guardians.${idx}.mailingStreet`;
+        else if (f.includes('mailing city')) path = `guardians.${idx}.mailingCityStateZip`;
+      } else if (sLower === 'part iv') {
+        // Field name is `street`, not `streetAddress` -- Annual's own
+        // preparer shape, distinct from Guardian Inventory's D-2 preparer.
+        if (dLower.includes('preparer name')) path = 'preparer.name';
+        else if (dLower.includes('preparer signature date')) path = 'preparer.signatureDate';
+        else if (dLower.includes('preparer ssn')) path = 'preparer.ssn';
+        else if (dLower.includes('preparer phone')) path = 'preparer.phone';
+        else if (dLower.includes('preparer street')) path = 'preparer.street';
+        else if (dLower.includes('preparer city')) path = 'preparer.cityStateZip';
+      } else if (sLower === 'part v') {
+        // Flat, top-level, underscore-prefixed scalars -- not a nested
+        // object like Guardian Inventory's attorney/serviceAttorney.
+        if (dLower.includes('bar number')) path = 'attorney_bar';
+        else if (dLower.includes('phone')) path = 'attorney_phone';
+        else if (dLower.includes('street')) path = 'attorney_street';
+        else if (dLower.includes('city')) path = 'attorney_cityStateZip';
+        else if (dLower.includes('signature date')) path = 'attorney_signatureDate';
+      } else if (sLower === 'schedule a' && detailLineMatch) {
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('payer')) path = `schA.${idx}.payer`;
+        else if (f.includes('description')) path = `schA.${idx}.description`;
+        else if (f.includes('bank')) path = `schA.${idx}.bank`;
+        else if (f.includes('account')) path = `schA.${idx}.accountNo`;
+        else if (f.includes('amount')) path = `schA.${idx}.amount`;
+      } else if ((sLower === 'schedule b-1' || sLower === 'schedule b-2' || sLower === 'schedule b-3') && detailLineMatch) {
+        const schKey = sLower === 'schedule b-1' ? 'schB1' : sLower === 'schedule b-2' ? 'schB2' : 'schB3';
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('bank account')) path = `${schKey}.${idx}.bankAcct`;
+        else if (f.includes('check')) path = `${schKey}.${idx}.checkNo`;
+        else if (f.includes('date paid')) path = `${schKey}.${idx}.datePaid`;
+        else if (f.includes('payee')) path = `${schKey}.${idx}.payee`;
+        else if (f.includes('amount')) path = `${schKey}.${idx}.amount`;
+      } else if (sLower === 'schedule b-4' && detailLineMatch) {
+        // No bankAcct field on B-4, unlike B-1..B-3.
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('check')) path = `schB4.${idx}.checkNo`;
+        else if (f.includes('date paid')) path = `schB4.${idx}.datePaid`;
+        else if (f.includes('category')) path = `schB4.${idx}.category`;
+        else if (f.includes('payee')) path = `schB4.${idx}.payee`;
+        else if (f.includes('amount')) path = `schB4.${idx}.amount`;
+      } else if (sLower === 'schedule c' && detailLineMatch) {
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('description')) path = `schC.${idx}.description`;
+        else if (f.includes('date of adjustment')) path = `schC.${idx}.date`;
+        // "Gain or Loss amount" is satisfied by either field -- the message
+        // gives no way to tell which is actually missing. Best-effort:
+        // route to the first of the pair, documented approximation.
+        else if (f.includes('gain or loss')) path = `schC.${idx}.gain`;
+      } else if (/^schedule d-[1-5]$/.test(sLower) && detailLineMatch) {
+        const schKey = 'schD' + sLower.slice(-1);
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('personal residence')) path = `${schKey}.${idx}.residence`; // D-2 only
+        else if (f.includes('income property')) path = `${schKey}.${idx}.income`; // D-2 only
+        else if (f.includes('description')) path = `${schKey}.${idx}.description`;
+        else if (f.includes('account')) path = `${schKey}.${idx}.accountNo`; // D-1 only
+        else if (f.includes('restricted')) path = `${schKey}.${idx}.restricted`; // D-1/D-4
+        // "loan type" must be checked before the bare "type" below, or
+        // D-5's "Loan Type" label would match D-1's "type" field instead.
+        else if (f.includes('loan type')) path = `${schKey}.${idx}.loanType`; // D-5 only
+        else if (f.includes('type')) path = `${schKey}.${idx}.type`; // D-1 only
+        else if (f.includes('full value')) path = `${schKey}.${idx}.fullValue`; // D-2 only
+        else if (f.includes('full amount')) path = `${schKey}.${idx}.fullAmount`; // D-1/D-3/D-4
+        else if (f.includes("ward's %")) path = `${schKey}.${idx}.wardPct`;
+        else if (f.includes('carrying value')) path = `${schKey}.${idx}.carryingValue`; // D-2/D-3/D-4
+        else if (f.includes('loan #')) path = `${schKey}.${idx}.loanNo`; // D-5 only
+        else if (f.includes('full debt')) path = `${schKey}.${idx}.fullDebt`; // D-5 only
+      } else if (sLower === 'schedule e' && detailLineMatch) {
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('bank name')) path = `schE.${idx}.bankName`;
+        // Compound message spans two field pairs (Transfer In date+amount,
+        // Transfer Out date+amount) -- same documented-approximation
+        // pattern as Schedule C above.
+        else if (f.includes('transfer in') || f.includes('transfer out')) path = `schE.${idx}.transferInDate`;
+      } else if ((sLower === 'schedule f-1' || sLower === 'schedule f-2') && detailLineMatch) {
+        const schKey = sLower === 'schedule f-1' ? 'schF1' : 'schF2';
+        const idx = parseInt(detailLineMatch[1], 10) - 1;
+        const f = detailLineMatch[2].toLowerCase();
+        if (f.includes('description')) path = `${schKey}.${idx}.description`;
+        else if (f.includes('bank')) path = `${schKey}.${idx}.bank`;
+        else if (f.includes('account')) path = `${schKey}.${idx}.accountNo`;
+        else if (f.includes('court order date')) path = `${schKey}.${idx}.courtOrderDate`;
+        else if (f.includes('sale price')) path = `${schKey}.${idx}.salePrice`;
+      } else if (sLower.startsWith('parts vi')) {
+        // Free-form reconciliation sentence -- no keyword in the detail
+        // maps to a field, so the section itself is the discriminator.
+        path = 'reconcileExplanation';
+      } else if (sLower === 'part ix') {
+        if (dLower.includes('bond amount')) path = 'bondAmount';
+        else if (dLower.includes('bonding company')) path = 'bondingCompany';
+      } else if (sLower === 'part x') {
+        if (dLower.includes('certificate of service date')) path = 'certDate';
+        // Only Recipient 1 is ever validated -- index is always 0, not a
+        // loop, so no ordinal regex is needed here.
+        else if (dLower.includes('recipient')) path = 'certRecipients.0.name';
+      }
+    } else if (formType === 'simplified') {
+      // Milestone 33, Item 3 (sub-phase 3c). Verified directly against
+      // src/features/simplified-accounting/index.js.
+      if (sLower === 'cover') {
+        if (dLower.includes('depository')) path = 'eligDepository';
+        else if (dLower.includes('eligibility')) path = 'eligOnlyTransactions';
+        else if (dLower.includes('name of ward')) path = 'wardName';
+        else if (dLower.includes('case number')) path = 'caseNumber';
+        else if (dLower.includes('social security number')) path = 'ssn';
+        else if (dLower.includes('guardianship inception date')) path = 'gid';
+        else if (dLower.includes('accounting period from')) path = 'periodFrom';
+        else if (dLower.includes('accounting period to')) path = 'periodTo';
+        // Checked before the bare "guardian" catch-all below, since this
+        // detail text also contains the substring "guardian".
+        else if (dLower.includes('attorney for guardian')) path = 'attorney';
+        else if (dLower.includes('type of guardianship')) path = 'typeOfGuardianship';
+        else if (dLower.includes('county')) path = 'county';
+        else if (dLower.includes('amended form')) path = 'amendedForm';
+        else if (dLower.includes('guardian')) path = 'guardian';
+      } else if (sLower === 'part ii') {
+        // Each of these carries a fixed "(Line N)" document-line-number
+        // annotation, but every field here is a flat scalar, not a row --
+        // detailLineMatch's ^Line-anchored pattern never matches these
+        // (the annotation isn't at the start of the detail), so there's no
+        // risk of misreading it as a repeatable row.
+        if (dLower.includes('starting balance')) path = 'startingBalance';
+        else if (dLower.includes('interest income')) path = 'interestIncome';
+        else if (dLower.includes('deposits pursuant to settlement')) path = 'depositsSettlement';
+        else if (dLower.includes('service charges')) path = 'serviceCharges';
+        else if (dLower.includes('federal income tax')) path = 'federalIncomeTax';
+      } else if (sLower === 'part iv' && detailGuardianMatch) {
+        const idx = parseInt(detailGuardianMatch[1], 10) - 1;
+        const f = detailGuardianMatch[2].toLowerCase();
+        if (f.includes('name')) path = `guardians.${idx}.name`;
+        else if (f.includes('signature date')) path = `guardians.${idx}.signatureDate`;
+        else if (f.includes('ssn')) path = `guardians.${idx}.ssn`;
+        else if (f.includes('phone')) path = `guardians.${idx}.phone`;
+        else if (f.includes('email')) path = `guardians.${idx}.email`;
+        // Simplified splits mailing vs residence address, unlike Annual's
+        // single mailing-only pair -- both must be checked, and "mailing"
+        // before "residence" (or vice versa) doesn't matter since the two
+        // words never co-occur in the same label.
+        else if (f.includes('mailing street')) path = `guardians.${idx}.mailingStreet`;
+        else if (f.includes('mailing city')) path = `guardians.${idx}.mailingCityStateZip`;
+        else if (f.includes('residence street')) path = `guardians.${idx}.residenceStreet`;
+        else if (f.includes('residence city')) path = `guardians.${idx}.residenceCityStateZip`;
+      } else if (sLower === 'part v') {
+        // Bar-number field is named differently from Annual's attorney_bar.
+        if (dLower.includes('bar number')) path = 'attorney_barNumber';
+        else if (dLower.includes('phone number')) path = 'attorney_phone';
+        else if (dLower.includes('street address')) path = 'attorney_street';
+        else if (dLower.includes('city/state/zip')) path = 'attorney_cityStateZip';
+      } else if (sLower === 'part vi') {
+        // Service-date field is named differently from Annual's certDate.
+        if (dLower.includes('date of service')) path = 'certServiceDate';
+        else if (dLower.includes('indicate if')) path = 'certIndicator';
+        else if (dLower.includes('recipient')) path = 'certRecipients.0.name';
+      }
+    } else if (formType === 'planAnnual') {
+      // Milestone 33, Item 3 (sub-phase 3d). Verified directly against
+      // src/features/plan-annual/index.js. Section-prefix strings here
+      // (including the en dashes) match PLAN_SECTION_ROUTE_MAPS above.
+      if (sLower === 'cover') {
+        if (dLower.includes('name of ward')) path = 'wardName';
+        else if (dLower.includes('case number')) path = 'caseNumber';
+        else if (dLower.includes('county')) path = 'county';
+        else if (dLower.includes('guardianship inception date')) path = 'gid';
+        else if (dLower.includes('reporting period from')) path = 'periodFrom';
+        else if (dLower.includes('reporting period to')) path = 'periodTo';
+        else if (dLower.includes('guardian name')) path = 'guardian';
+        else if (dLower.includes('where the ward is living')) path = 'wardLiving';
+        else if (dLower.includes('address where the ward resides')) path = 'residenceAddress';
+        else if (dLower.includes('city/state/zip where the ward resides')) path = 'residenceCityStateZip';
+      } else if (sLower === '1. residences' && detailRowMatch) {
+        // The validator indexes into a FILTERED copy of q1Residences (blank
+        // rows stripped before indexing), not the raw array the DOM binds
+        // against -- this can point at the wrong row when an earlier row
+        // is entirely blank. Pre-existing modeling gap in
+        // validatePlanAnnual() itself; still a strict improvement over the
+        // empty path this resolved to before.
+        path = `q1Residences.${detailRowIdx}.name`;
+      } else if (sLower.startsWith('2–3')) {
+        if (dLower.startsWith('explain')) path = 'q3SettingExplain';
+        else if (dLower.includes('area of specialty')) path = 'q3MedSpecialistArea';
+      } else if (sLower === '4. medical treatment' && detailRowMatch) {
+        // Same pre-filtered-index caveat as "1. Residences" above.
+        path = `q4Providers.${detailRowIdx}.name`;
+      } else if (sLower.startsWith('9. disabilities')) {
+        if (dLower.startsWith('explain') && dLower.includes('mental')) path = 'q9MentalExplain';
+        else if (dLower.startsWith('explain') && dLower.includes('physical')) path = 'q9PhysExplain';
+      } else if (sLower === '10. advance directives') {
+        if (dLower.startsWith('describe')) path = 'q10ExecOtherText';
+      } else if (sLower === '11. remuneration') {
+        if (dLower.includes("guardian's name")) path = 'q11NoRemunerationName';
+      } else if (sLower === 'signatures') {
+        // Only planGuardians[0] is ever validated here -- no ordinal loop.
+        if (dLower.includes('printed name')) path = 'planGuardians.0.name';
+        else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+      }
+    } else if (formType === 'planInitial') {
+      // Verified directly against src/features/plan-initial/index.js.
+      if (sLower === 'cover') {
+        if (dLower.includes('name of ward')) path = 'wardName';
+        else if (dLower.includes('case number')) path = 'caseNumber';
+        else if (dLower.includes('county')) path = 'county';
+        else if (dLower.includes('guardianship inception date')) path = 'inceptionDate';
+        else if (dLower.includes('date letters were signed')) path = 'lettersSignedDate';
+        else if (dLower.includes('guardian name')) path = 'guardianNames';
+        else if (dLower.includes('where the ward is living')) path = 'wardLiving';
+        else if (dLower.includes('address where ward resides')) path = 'residenceAddress';
+        else if (dLower.includes('city/state/zip')) path = 'residenceCityStateZip';
+      } else if (sLower.startsWith('2–3. setting')) {
+        if (dLower.includes('best-suited residential setting is required')) path = 'q2Setting';
+        else if (dLower.startsWith('explanation') && dLower.includes('residential')) path = 'q2Explain';
+        else if (dLower.includes('specialist area of specialty')) path = 'q3MedSpecialistArea';
+        else if (dLower.startsWith('explanation') && dLower.includes('medical')) path = 'q3MedExplain';
+      } else if (sLower.startsWith('4–5')) {
+        if (dLower.includes('mental health service provision')) path = 'q4Mental';
+        // This one message's detail is literally just "Explanation is
+        // required" -- no keyword at all -- so it's matched by exact
+        // equality, not a substring, to avoid catching q5Explain's longer
+        // "Explanation for..." message below.
+        else if (dLower === 'explanation is required') path = 'q4Explain';
+        else if (dLower.includes('personal care provision')) path = 'q5Personal';
+        else if (dLower.startsWith('explanation for') && dLower.includes('personal care')) path = 'q5Explain';
+      } else if (sLower.startsWith('6–7')) {
+        if (dLower.includes('other" socialization')) path = 'q6Explain';
+        else if (dLower.includes('trusts, pending benefits')) path = 'q7Explain';
+      } else if (sLower === '9. examining providers' && detailRowMatch) {
+        // Raw array index -- no pre-filtering, unlike planAnnual's rows.
+        path = `q9Providers.${detailRowIdx}.name`;
+      } else if (sLower.startsWith('10b')) {
+        if (dLower.includes('other" mental')) path = 'mentalExplain';
+        else if (dLower.includes('other" physical')) path = 'physExplain';
+        else if (dLower.includes('other" device currently used')) path = 'usesExplain';
+      } else if (sLower === '11. advance directives') {
+        if (dLower.includes('other" advance directive')) path = 'q11ExecOtherText';
+        else if (dLower.includes('other" device needed')) path = 'needsExplain';
+        else if (dLower.includes('recommendations are incorporated is required')) path = 'committeeIncorporated';
+        else if (dLower.includes('recommendations are not incorporated')) path = 'committeeExplain';
+      } else if (sLower === 'signatures') {
+        if (dLower.includes('guardian name is required')) path = 'planGuardians.0.name';
+        else if (dLower.includes('guardian signature date')) path = 'planGuardians.0.signatureDate';
+      } else if (sLower === 'attorney certification') {
+        // attorney_name here -- distinct from the separate, cosmetic-only,
+        // never-validated attorneyName field shown on this type's Cover.
+        if (dLower.includes('attorney name')) path = 'attorney_name';
+        else if (dLower.includes('attorney signature date')) path = 'attorney_signatureDate';
+      }
+    } else if (formType === 'planMinor') {
+      // Verified directly against src/features/plan-minor/index.js.
+      if (sLower === 'cover') {
+        if (dLower.includes("minor's name")) path = 'wardName';
+        else if (dLower.includes('county')) path = 'county';
+        else if (dLower.includes('reporting period from')) path = 'periodFrom';
+        else if (dLower.includes('reporting period to')) path = 'periodTo';
+        else if (dLower.includes('guardian name')) path = 'guardianName';
+        else if (dLower.includes('current residence name')) path = 'q1ResidenceName';
+        else if (dLower.includes('current residence street')) path = 'q1Street';
+        else if (dLower.includes('amended form version')) path = 'amendedVersion';
+      } else if (sLower === '3. treatment providers' && detailRowMatch) {
+        path = `q3Providers.${detailRowIdx}.last`;
+      } else if (sLower === '4. medical services') {
+        if (dLower.startsWith('explanation')) path = 'q4Explain';
+      } else if (sLower.startsWith('5. education')) {
+        if (dLower.includes('school progress')) path = 'q5SchoolProgress';
+        else if (dLower.includes('social development description')) path = 'q5SocialDevelopment';
+        else if (dLower.includes('communication statement')) path = 'q5Communicates';
+        else if (dLower.includes('interpersonal')) path = 'q5Interpersonal';
+        else if (dLower.startsWith('explanation')) path = 'q5Explain';
+      } else if (sLower === 'guardian signatures') {
+        if (dLower.includes('guardian name is required')) path = 'planGuardians.0.name';
+        else if (dLower.includes('guardian signature date')) path = 'planGuardians.0.signatureDate';
+      } else if (sLower === 'preparer & attorney') {
+        if (dLower.includes('preparer name')) path = 'preparer_name';
+        else if (dLower.includes('attorney name')) path = 'attorney_name';
+        else if (dLower.includes('attorney signature date')) path = 'attorney_signatureDate';
+      }
+    } else if (formType === 'planSimplified') {
+      // Verified directly against src/features/plan-simplified/index.js.
+      if (sLower === 'cover') {
+        if (dLower.includes('name of ward')) path = 'wardName';
+        else if (dLower.includes('case number')) path = 'caseNumber';
+        else if (dLower.includes('county')) path = 'county';
+        else if (dLower.includes('reporting period from')) path = 'periodFrom';
+        else if (dLower.includes('reporting period to')) path = 'periodTo';
+      } else if (sLower === 'the plan') {
+        // "Question N explanation" must be checked before the bare
+        // "Question N" it's conditional on, for both 7 and 9.
+        if (dLower.includes('question 1')) path = 'q1Residences'; // free-text field, not an array despite the name
+        else if (dLower.includes('question 2')) path = 'q2BestPlacement';
+        else if (dLower.includes('question 3')) path = 'q3MedicalTreatment';
+        else if (dLower.includes('question 4')) path = 'q4Diagnosis';
+        else if (dLower.includes('question 5')) path = 'q5SocialServices';
+        else if (dLower.includes('question 6')) path = 'q6Interaction';
+        else if (dLower.includes('question 7 explanation')) path = 'q7RestoreExplain';
+        else if (dLower.includes('question 7')) path = 'q7RestoreRights';
+        else if (dLower.includes('question 8 requires a description')) path = 'q8OtherText';
+        else if (dLower.includes('question 9 explanation')) path = 'q9RemunerationExplain';
+        else if (dLower.includes('question 9')) path = 'q9Remuneration';
+      } else if (sLower === 'signatures') {
+        if (dLower.includes('printed name')) path = 'planGuardians.0.name';
+        else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+      }
     } else if (dLower.includes('ward')) path = 'wardName';
     else if (dLower.includes('case number')) path = 'caseNumber';
     else if (dLower.includes('county')) path = 'county';
