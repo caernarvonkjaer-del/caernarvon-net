@@ -3,11 +3,10 @@
 .entry-card{margin-bottom:1rem;overflow:hidden;}
 .import-zone-body{border:2px dashed var(--brand);border-top:none;border-radius:0 0 8px 8px;background:var(--surface-2);}
 .attorney-certification-card{width:calc(50% - .5rem);}
-@media (min-width:768px) and (max-width:900px){.card-grid-2col>.col-md-6{width:100%;}}
 .liability-fields{max-width:none;}
 .liability-fields .row{margin-bottom:.15rem;}
 .liability-fields .row:last-child{align-items:flex-end;}
-@media (max-width: 900px){.attorney-certification-card{width:100%;}}
+@media (max-width: 991.98px){.attorney-certification-card{width:100%;}}
 
 .entry-card-header{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.6rem;padding:.55rem .85rem;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.85rem;font-weight:650;color:var(--ink);letter-spacing:-.005em;}
 .entry-card-actions{display:flex;align-items:center;justify-content:center;gap:.4rem;grid-column:2;margin-left:0;}

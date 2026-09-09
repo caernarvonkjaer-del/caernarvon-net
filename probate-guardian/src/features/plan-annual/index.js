@@ -206,7 +206,7 @@ function pagePlanAResidences(){
   const d=window.D;
   const rows=(d.q1Residences||[]).map((r,i)=>{
     const set=f=>`D.q1Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Residence ${i+1}</span>
         <span class="entry-card-actions">
@@ -325,7 +325,7 @@ function pagePlanAProviders(){
   const d=window.D;
   const rows=(d.q4Providers||[]).map((r,i)=>{
     const set=f=>`D.q4Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Provider ${i+1}</span>
         <span class="entry-card-actions">
@@ -532,7 +532,7 @@ function pagePlanASignatures(){
   const block=(i,label)=>{
     const p=g[i]||{};
     const reqMark=i===0?'<span class="req">*</span>':'';
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -573,7 +573,7 @@ function pagePlanASignatures(){
     <h2 class="subsection-heading mt-4">Certification of Guardian's Attorney</h2>
     <div class="schedule-instructions">The attorney notifies the court of this filing and represents that the plan conforms to Florida Guardianship Law. Leave blank if no attorney is involved.</div>
     <div class="row g-3 card-grid-2col mb-3">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Attorney Certification</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">

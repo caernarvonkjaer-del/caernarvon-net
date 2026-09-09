@@ -20,8 +20,8 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
   const oneCardGrid = page.locator('.card-grid-2col').first();
-  await expect(oneCardGrid.locator(':scope > .col-md-6 > .entry-card')).toHaveCount(1);
-  const oneCardWidth = await oneCardGrid.locator(':scope > .col-md-6 > .entry-card').evaluate((card) => (card as HTMLElement).getBoundingClientRect().width);
+  await expect(oneCardGrid.locator(':scope > .col-lg-6 > .entry-card')).toHaveCount(1);
+  const oneCardWidth = await oneCardGrid.locator(':scope > .col-lg-6 > .entry-card').evaluate((card) => (card as HTMLElement).getBoundingClientRect().width);
   expect(oneCardWidth).toBeLessThan(600);
 
   await page.evaluate(() => {
@@ -37,7 +37,7 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
 
   await page.setViewportSize({ width: 1280, height: 900 });
   const desktop = await grid.evaluate((element) => {
-    const cards = [...element.querySelectorAll(':scope > .col-md-6 > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
+    const cards = [...element.querySelectorAll(':scope > .col-lg-6 > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
     return { columns: new Set(cards.map(card => card.x)).size, width: cards[0]?.width || 0 };
   });
   expect(desktop.columns).toBe(2);
@@ -45,7 +45,7 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
 
   await page.setViewportSize({ width: 700, height: 900 });
   const mobile = await grid.evaluate((element) => {
-    const cards = [...element.querySelectorAll(':scope > .col-md-6 > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
+    const cards = [...element.querySelectorAll(':scope > .col-lg-6 > .entry-card')].map(card => (card as HTMLElement).getBoundingClientRect());
     return new Set(cards.map(card => card.x)).size;
   });
   expect(mobile).toBe(1);
@@ -53,14 +53,14 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.evaluate(() => (window as any).navigate('/d2'));
   const d2Grid = page.locator('.card-grid-2col').first();
-  await expect(d2Grid.locator(':scope > .col-md-6')).toHaveCount(2);
-  const d2Columns = await d2Grid.locator(':scope > .col-md-6').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  await expect(d2Grid.locator(':scope > .col-lg-6')).toHaveCount(2);
+  const d2Columns = await d2Grid.locator(':scope > .col-lg-6').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(d2Columns).toBe(2);
 
   await page.evaluate(() => (window as any).navigate('/d5'));
   const recipientGrid = page.locator('.card-grid-2col');
   await expect(recipientGrid).toBeVisible();
-  const recipientColumns = await recipientGrid.locator(':scope > .col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  const recipientColumns = await recipientGrid.locator(':scope > .col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(recipientColumns).toBe(2);
   await expect(recipientGrid.locator('input[data-bind="serviceRecipients.0.address"]')).toBeVisible();
   const certification = page.locator('.attorney-certification-card');
@@ -70,7 +70,7 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   await page.evaluate(() => (window as any).navigate('/'));
   const witnessGrid = page.locator('.card-grid-2col');
   await expect(witnessGrid).toBeVisible();
-  const witnessColumns = await witnessGrid.locator(':scope > .col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
+  const witnessColumns = await witnessGrid.locator(':scope > .col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(witnessColumns).toBe(2);
   const witnessName = witnessGrid.locator('input[data-bind="witnesses.0.name"]');
   const witnessAddress = witnessGrid.locator('input[data-bind="witnesses.0.address"]');
@@ -88,7 +88,7 @@ test('Guardian Inventory removes empty co-guardian placeholders from active stat
   });
   await page.evaluate(() => (window as any).navigate('/d1'));
   expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(1);
-  await expect(page.locator('.card-grid-2col > .col-md-6 > .entry-card')).toHaveCount(1);
+  await expect(page.locator('.card-grid-2col > .col-lg-6 > .entry-card')).toHaveCount(1);
 });
 
 test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) => {
@@ -97,7 +97,7 @@ test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) =>
   await page.evaluate(() => { (window as any).D.guardians[0].name = 'Primary Guardian'; });
   await page.evaluate(() => (window as any).navigate('/d1'));
   await page.locator('[data-inventory-action="add-guardian"]').click();
-  await expect(page.locator('.card-grid-2col > .col-md-6 > .entry-card')).toHaveCount(2);
+  await expect(page.locator('.card-grid-2col > .col-lg-6 > .entry-card')).toHaveCount(2);
 });
 
 test('Annual Accounting cards and cover layout use responsive 2-column grid', async ({ page }) => {
@@ -121,27 +121,27 @@ test('Annual Accounting cards and cover layout use responsive 2-column grid', as
   });
   await page.evaluate(() => (window as any).navigate('/p3'));
   const p3Grid = page.locator('.card-grid-2col').first();
-  await expect(p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(2);
-  const p3Cols = await p3Grid.locator(':scope > .col-12.col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  await expect(p3Grid.locator(':scope > .col-12.col-lg-6 > .entry-card')).toHaveCount(2);
+  const p3Cols = await p3Grid.locator(':scope > .col-12.col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(p3Cols).toBe(2);
 
   // Preparer (/p4)
   await page.evaluate(() => (window as any).navigate('/p4'));
-  const p4Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  const p4Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p4Card).toBeVisible();
   const p4Width = await p4Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p4Width).toBeLessThan(700);
 
   // Attorney (/p5)
   await page.evaluate(() => (window as any).navigate('/p5'));
-  const p5Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  const p5Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p5Card).toBeVisible();
   const p5Width = await p5Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p5Width).toBeLessThan(700);
 
   // Service / Cert (/p10)
   await page.evaluate(() => (window as any).navigate('/p10'));
-  const p10CertCard = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  const p10CertCard = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p10CertCard).toBeVisible();
   const p10CertWidth = await p10CertCard.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p10CertWidth).toBeLessThan(700);
@@ -168,20 +168,20 @@ test('Simplified Accounting cards and cover layout use responsive 2-column grid'
   });
   await page.evaluate(() => (window as any).navigate('/p4'));
   const p4Grid = page.locator('.card-grid-2col').first();
-  await expect(p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card')).toHaveCount(2);
-  const p4Cols = await p4Grid.locator(':scope > .col-12.col-md-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
+  await expect(p4Grid.locator(':scope > .col-12.col-lg-6 > .entry-card')).toHaveCount(2);
+  const p4Cols = await p4Grid.locator(':scope > .col-12.col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(p4Cols).toBe(2);
 
   // Attorney (/p5)
   await page.evaluate(() => (window as any).navigate('/p5'));
-  const p5Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  const p5Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p5Card).toBeVisible();
   const p5Width = await p5Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p5Width).toBeLessThan(700);
 
   // Recipients & Cert (/p6)
   await page.evaluate(() => (window as any).navigate('/p6'));
-  const p6Card = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  const p6Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p6Card).toBeVisible();
 });
 
@@ -195,7 +195,7 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
   const paCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(paCoverBoxes).toHaveCount(2);
   await page.evaluate(() => (window as any).navigate('/p11'));
-  const paSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  const paSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(paSigCards.first()).toBeVisible();
 
   // Plan Initial
@@ -204,10 +204,10 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
   const piCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(piCoverBoxes).toHaveCount(2);
   await page.evaluate(() => (window as any).navigate('/p9'));
-  const piSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  const piSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(piSigCards.first()).toBeVisible();
   await page.evaluate(() => (window as any).navigate('/p10'));
-  const piAttyCard = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card').first();
+  const piAttyCard = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(piAttyCard).toBeVisible();
 
   // Plan Minor
@@ -216,10 +216,10 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
   const pmCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(pmCoverBoxes).toHaveCount(2);
   await page.evaluate(() => (window as any).navigate('/p6'));
-  const pmSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  const pmSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(pmSigCards.first()).toBeVisible();
   await page.evaluate(() => (window as any).navigate('/p7'));
-  const pmPrepAttyCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  const pmPrepAttyCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(pmPrepAttyCards).toHaveCount(2);
   const pmPrepAttyCols = await pmPrepAttyCards.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(pmPrepAttyCols).toBe(2);
@@ -230,7 +230,7 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
   const psCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(psCoverBoxes).toHaveCount(2);
   await page.evaluate(() => (window as any).navigate('/p3'));
-  const psSigCards = page.locator('.card-grid-2col > .col-12.col-md-6 > .entry-card');
+  const psSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(psSigCards.first()).toBeVisible();
 });
 

@@ -128,8 +128,8 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
     data.q10Directives = [{}, {}];
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await assertCardColumns('/p2', '.col-12.col-xl-6', 2);
-  await assertCardColumns('/p5', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p2', '.col-12.col-lg-6', 2);
+  await assertCardColumns('/p5', '.col-12.col-lg-6', 2);
   await assertCardColumns('/p9', '.col-12', 1);
 
   await createWard(page, 'Initial Plan Layout Ward', 'planInitial');
@@ -138,7 +138,7 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
     data.q9Providers = [{}, {}];
     data.q11Directives = [{}, {}];
   });
-  await assertCardColumns('/p5', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p5', '.col-12.col-lg-6', 2);
   await assertCardColumns('/p8', '.col-12', 1);
 
   await createWard(page, 'Minor Plan Layout Ward', 'planMinor');
@@ -147,8 +147,8 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
     data.q2Residences = [{}, {}];
     data.q3Providers = [{}, {}];
   });
-  await assertCardColumns('/p2', '.col-12.col-xl-6', 2);
-  const minorProviderCards = await assertCardColumns('/p3', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p2', '.col-12.col-lg-6', 2);
+  const minorProviderCards = await assertCardColumns('/p3', '.col-12.col-lg-6', 2);
 
   await page.setViewportSize({ width: 700, height: 900 });
   const mobileXPositions = await minorProviderCards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -161,8 +161,8 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
     data.remuneration = [{ guardian: 'Guardian 1', type: 'Services' }, { guardian: 'Guardian 2', type: 'Care' }];
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await assertCardColumns('/p4', '.col-12.col-md-6', 2, '.card-grid-2col');
-  await assertCardColumns('/p7', '.col-12.col-xl-6', 2);
+  await assertCardColumns('/p4', '.col-12.col-lg-6', 2, '.card-grid-2col');
+  await assertCardColumns('/p7', '.col-12.col-lg-6', 2);
 
   await createWard(page, 'Simplified Plan Layout Ward', 'planSimplified');
   await page.evaluate(() => (window as any).navigate('/p2'));

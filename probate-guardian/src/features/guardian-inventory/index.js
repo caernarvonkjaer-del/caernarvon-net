@@ -448,7 +448,7 @@ function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());
 function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);autoSave();renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
-  return list.map((w,i)=>`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+  return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
     <div class="entry-card-header">
       <span>Inventory Witness ${i+1}</span>
       <span class="entry-card-actions">
@@ -875,7 +875,7 @@ function pageD1(){
     const title=isFirst?'Guardian #1':`Co-Guardian #${visibleIndex+1}`;
     const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
     const linkBtn=`<button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>`;
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${linkBtn}${removeBtn}</div></div>
       <div class="entry-card-body">
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
@@ -898,7 +898,7 @@ function pageD2(){
   return `<div class="schedule-page">
   <h1>Part IV: Preparer &amp; Guardian Attorney Attestations</h1>
   <div class="row g-3 card-grid-2col">
-  <div class="col-12 col-md-6">
+  <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Preparer Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.</p>
   <div class="entry-card mb-0 h-100">
@@ -913,7 +913,7 @@ function pageD2(){
     </div>
   </div>
   </div>
-  <div class="col-12 col-md-6">
+  <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
   <div class="entry-card mb-0 h-100">
@@ -1013,7 +1013,7 @@ function pageD4(){
 function pageD5(){
   const cards=D.serviceRecipients.map((r,i)=>{
     const removeBtn=D.serviceRecipients.length>1?`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-recipient" data-index="${i}">✕ Remove</button>`:'';
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header"><span>Recipient ${i+1}</span>${removeBtn}</div>
       <div class="entry-card-body">
         ${formRow(col(12,reqLabel('Name')+textInput(`serviceRecipients.${i}.name`,'','name')))}

@@ -185,7 +185,7 @@ function pagePlanMResidences(){
   const d=window.D;
   const rows=(d.q2Residences||[]).map((r,i)=>{
     const set=f=>`D.q2Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Residence ${i+1}</span>
         <span class="entry-card-actions">
@@ -217,7 +217,7 @@ function pagePlanMProviders(){
   const d=window.D;
   const rows=(d.q3Providers||[]).map((r,i)=>{
     const set=f=>`D.q3Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Provider ${i+1}</span>
         <span class="entry-card-actions">
@@ -306,7 +306,7 @@ function pagePlanMSignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${title}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -347,7 +347,7 @@ function pagePlanMPreparerAttorney(){
   return `<div class="schedule-page">
     <h1>Certification of Preparer &amp; Attorney</h1>
     <div class="row g-3 card-grid-2col mb-3">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Preparer</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="preparer" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
@@ -364,7 +364,7 @@ function pagePlanMPreparerAttorney(){
           </div>
         </div>
       </div>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Attorney</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">

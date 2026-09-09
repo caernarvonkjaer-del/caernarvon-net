@@ -552,7 +552,7 @@ function pagePart3Annual(){
     // Guardian #1 is the filer and always stays; only co-guardians can be
     // removed, matching Guardian Inventory's D-1 page.
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-annual-action="remove-row" data-collection="guardians" data-index="${i}" data-route="/p3">\u2715 Remove</button>`;
-    cards+=`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    cards+=`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]}</span><span class="entry-card-actions d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-annual-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -588,7 +588,7 @@ function pagePart4Annual(){
   <div class="attestation-text">${esc(copy.preparerStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo))).replace(/\n/g,'<br>')}</div>
   <div style="color:var(--brand-text);font-size:.8rem;font-weight:700;margin-bottom:.75rem;">*** If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE. ***</div>
   <div class="row g-3 card-grid-2col">
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-lg-6">
       <div class="entry-card mb-0 h-100">
         <div class="entry-card-header d-flex justify-content-between align-items-center gap-2">
           <span>Preparer Attestation</span>
@@ -619,7 +619,7 @@ function pagePart5Annual(){
   <h1>Part V — Guardian Attorney Signature</h1>
   <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo),d.attorney_county||d.county||'[county]'))}</div>
   <div class="row g-3 card-grid-2col">
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-lg-6">
       <div class="entry-card mb-0 h-100">
         <div class="entry-card-header d-flex justify-content-between align-items-center gap-2">
           <span>Guardian Attorney Attestation</span>
@@ -1266,7 +1266,7 @@ function pagePart10Annual(){
   const d=window.D;
   const cards=(d.certRecipients||[]).map((r,i)=>{
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-annual-action="remove-row" data-collection="certRecipients" data-index="${i}" data-route="/p10">\u2715 Remove</button>`;
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-12">${inpD('Name',r.name,`D.certRecipients[${i}].name=this.value`,i===0)}</div>
@@ -1291,7 +1291,7 @@ function pagePart10Annual(){
   <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
   <div class="row g-3 card-grid-2col">
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-lg-6">
       <div class="entry-card mb-0 h-100">
         <div class="entry-card-header">Attorney Certification</div>
         <div class="entry-card-body">

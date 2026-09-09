@@ -21,10 +21,10 @@
 .dashboard-top-row{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;gap:1.1rem;margin-bottom:1rem;}
 .dashboard-top-row.single-col{grid-template-columns:1fr;}
 .dashboard-top-row .inventory-convert-banner{height:100%;grid-column:auto;}
-@media (max-width:900px){.dashboard-top-row{grid-template-columns:1fr;}}
+@media (max-width:991.98px){.dashboard-top-row{grid-template-columns:1fr;}}
 .instructions-import-row{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:1.1rem;margin-bottom:1.25rem;}
 .instructions-import-row>.schedule-instructions{margin-bottom:0;}
-@media (max-width:900px){.instructions-import-row{grid-template-columns:1fr;}}
+@media (max-width:991.98px){.instructions-import-row{grid-template-columns:1fr;}}
 
 .dashboard-deadlines-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:.9rem 1.1rem;box-shadow:var(--sh-1);height:100%;}
 .dashboard-worklist-tabs{display:flex;gap:.3rem;margin-bottom:.7rem;border-bottom:1px solid var(--line);}
@@ -236,12 +236,12 @@
   .dashboard-triage-actions{grid-column:1/-1;}
   .dashboard-triage-actions:before{flex:0 0 100%;}
 }
-@media (max-width:900px){
+@media (max-width:991.98px){
   .dashboard-page-header{align-items:stretch;flex-direction:column;}
   .dashboard-header-actions{justify-content:flex-start;}
   .dashboard-summary-strip{grid-template-columns:1fr 1fr;}
 }
-@media (max-width:620px){
+@media (max-width:575.98px){
   .dashboard-header-actions{justify-content:flex-start;}
   .dashboard-header-actions .dashboard-control{flex:1;min-width:130px;}
   .dashboard-new-existing{width:100%;}

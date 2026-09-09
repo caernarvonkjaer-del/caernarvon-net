@@ -284,7 +284,7 @@ function pagePlanIProviders(){
   const d=window.D;
   const rows=(d.q9Providers||[]).map((r,i)=>{
     const set=f=>`D.q9Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
-    return `<div class="col-12 col-xl-6"><div class="entry-card mb-2">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Provider ${i+1}</span>
         <span class="entry-card-actions">
@@ -445,7 +445,7 @@ function pagePlanISignatures(){
   const cb=(id,label)=>chkP(id,label,d[id]);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2">
         <span>${title}</span>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>
@@ -493,7 +493,7 @@ function pagePlanIAttorney(){
     <h1>Certification and Signature of Guardian's Attorney</h1>
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
     <div class="row g-3 card-grid-2col mb-3">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header">Attorney Certification</div>
           <div class="entry-card-body">

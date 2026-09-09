@@ -227,7 +227,7 @@ function pagePlanSSignatures(){
   const g=d.planGuardians||[];
   const block=(i,label)=>{
     const p=g[i]||{};
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -249,7 +249,7 @@ function pagePlanSSignatures(){
       ${block(1,'Guardian / Guardian Advocate 2 (if any)')}
     </div>
     <div class="row g-3 card-grid-2col mb-3">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Preparer</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="preparer" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
@@ -265,7 +265,7 @@ function pagePlanSSignatures(){
           </div>
         </div>
       </div>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Guardian's Attorney</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">

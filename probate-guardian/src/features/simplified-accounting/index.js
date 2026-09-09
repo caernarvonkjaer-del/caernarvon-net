@@ -442,7 +442,7 @@ function pagePart4(){
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   const cards=(d.guardians||[]).map((g,i)=>{
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${labels[i]||`Co-Guardian #${i+1}`}</span><span class="entry-card-actions d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -474,7 +474,7 @@ function pagePart5(){
     <h1>Part V — Guardian Attorney Signature</h1>
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3 card-grid-2col">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Guardian Attorney Attestation</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
@@ -502,7 +502,7 @@ function pagePart6(){
   const cards=(d.certRecipients||[]).map((r,i)=>{
     const req=(i===0||i===2)?'<span class="req">*</span>':'';
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-recipient" data-index="${i}">✕ Remove</button>`;
-    return `<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
+    return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
@@ -528,7 +528,7 @@ function pagePart6(){
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
     <div class="row g-3 card-grid-2col">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header">Attorney Certification</div>
           <div class="entry-card-body">
@@ -554,7 +554,7 @@ function pagePart7(){
   const d=window.D;
   let rows='';
   if (d.remuneration && d.remuneration.length > 0) {
-    rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-xl-6"><div class="entry-card mb-0 h-100">
+    rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header">
         <span>Remuneration Entry ${i+1}</span>
         <span class="entry-card-actions">
