@@ -33,3 +33,18 @@ For local E2E runs, Edge is also available through the project config:
 $env:PG_BROWSER='edge'
 npx.cmd playwright test --reporter=list
 ```
+
+For any changes to the data schema, update this document on an ongoing basis:
+`probate-guardian-data-model.csv`.
+
+## Test index
+
+`TEST-INDEX.md` lists every file under `tests/unit` and `tests/e2e` with a
+one-line summary of what it covers, plus a category/scope breakdown and
+instructions for running a lite, changed-files-targeted subset during local
+iteration. Whenever you add, remove, rename, or meaningfully repurpose a
+test file (unit spec, e2e spec, or e2e support helper) — or change what
+category/filing-type scope it covers — update the matching row(s) in
+`TEST-INDEX.md` in the same commit. The lite subset is for fast iteration
+only; still run the full `npm test` before committing.
+
