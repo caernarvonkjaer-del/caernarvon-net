@@ -1502,11 +1502,31 @@ function formatAddress(s){
 // Combined "City, State Zip" fields: capitalize city words, uppercase a
 // 2-letter state abbreviation, and leave the zip digits untouched.
 function formatCityStateZip(s){
+  if(window.formatCityStateZip && window.formatCityStateZip !== formatCityStateZip){
+    return window.formatCityStateZip(s);
+  }
+  const US_POSTAL_STATES = new Set([
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+    'DC', 'PR', 'VI', 'GU', 'AS', 'MP',
+  ]);
+  const TITLE_CASE_CITY_PREFIXES = new Set(['St', 'Mt', 'Ft']);
   return String(s||'').split(/(\s+)/).map(w=>{
     if(w.match(/\s/)||w==='')return w;
-    if(/^\d+$/.test(w))return w;
-    if(/^[A-Za-z]{2}$/.test(w))return w.toUpperCase();
-    return w.charAt(0).toUpperCase()+w.slice(1);
+    if(/^\d+(-\d+)?$/.test(w))return w;
+    const match = w.match(/^([a-zA-Z]+)([^a-zA-Z]*)$/);
+    if(match){
+      const [, alpha, punct] = match;
+      const upper = alpha.toUpperCase();
+      const title = alpha.charAt(0).toUpperCase() + alpha.slice(1).toLowerCase();
+      if(TITLE_CASE_CITY_PREFIXES.has(title)) return title + punct;
+      if(US_POSTAL_STATES.has(upper)) return upper + punct;
+      if(/^[a-z]+$/.test(alpha)) return title + punct;
+    }
+    return w;
   }).join('');
 }
 

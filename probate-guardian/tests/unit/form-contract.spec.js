@@ -3,6 +3,7 @@ global.window = global;
 import {
   sanitizeStoredText,
   formatSafeTitleCase,
+  formatCityStateZip,
   writeDraftValue,
   finalizeFieldValue,
   commitPendingFieldValues,
@@ -69,10 +70,14 @@ describe('form-contract', () => {
   });
 
   describe('formatSafeTitleCase', () => {
-    it('capitalizes purely lowercase words', () => {
+    it('capitalizes purely lowercase words without uppercasing 2-letter honorifics, suffixes, or short names', () => {
       expect(formatSafeTitleCase('john doe')).toBe('John Doe');
+      expect(formatSafeTitleCase('dr. sarah chen')).toBe('Dr. Sarah Chen');
+      expect(formatSafeTitleCase('harold t. bennett jr.')).toBe('Harold T. Bennett Jr.');
+      expect(formatSafeTitleCase('ed smith')).toBe('Ed Smith');
       expect(formatSafeTitleCase('main street')).toBe('Main Street');
-      expect(formatSafeTitleCase('tampa, fl')).toBe('Tampa, FL');
+      expect(formatSafeTitleCase('1425 sunset dr.')).toBe('1425 Sunset Dr.');
+      expect(formatSafeTitleCase('100 oak st.')).toBe('100 Oak St.');
     });
 
     it('preserves uppercase acronyms and mixed-case names untouched', () => {
@@ -81,6 +86,20 @@ describe('form-contract', () => {
       expect(formatSafeTitleCase('Acme Holdings LLC')).toBe('Acme Holdings LLC');
       expect(formatSafeTitleCase("Jane O'Connor")).toBe("Jane O'Connor");
       expect(formatSafeTitleCase('Robert McLeod')).toBe('Robert McLeod');
+    });
+  });
+
+  describe('formatCityStateZip', () => {
+    it('uppercases valid 2-letter state abbreviations while preserving city prefix title casing and zips', () => {
+      expect(formatCityStateZip('tampa, fl 33602')).toBe('Tampa, FL 33602');
+      expect(formatCityStateZip('tampa, fl')).toBe('Tampa, FL');
+      expect(formatCityStateZip('st. petersburg, fl')).toBe('St. Petersburg, FL');
+      expect(formatCityStateZip('mt. dora, fl 32757')).toBe('Mt. Dora, FL 32757');
+      expect(formatCityStateZip('port st. lucie, fl 34984')).toBe('Port St. Lucie, FL 34984');
+      expect(formatCityStateZip('ft. lauderdale, fl')).toBe('Ft. Lauderdale, FL');
+      expect(formatCityStateZip('new york, ny 10001')).toBe('New York, NY 10001');
+      expect(formatCityStateZip('33602')).toBe('33602');
+      expect(formatCityStateZip('33602-1234')).toBe('33602-1234');
     });
   });
 

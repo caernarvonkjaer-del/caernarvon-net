@@ -53,9 +53,10 @@ export function sanitizeStoredText(value) {
 }
 
 /**
- * Safe title-casing formatter.
+ * Safe title-casing formatter for Names and Street Addresses.
  * Converts only purely lowercase words to title-case.
  * Leaves all-caps acronyms (e.g. "SSI", "USAA", "LLC") and mixed-case names (e.g. "McLeod", "O'Connor") 100% untouched.
+ * Does NOT uppercase 2-letter words (e.g. "Dr." stays "Dr.", "St." stays "St.", "Ed" stays "Ed").
  */
 export function formatSafeTitleCase(s) {
   if (!s) return '';
@@ -65,13 +66,52 @@ export function formatSafeTitleCase(s) {
     const match = word.match(/^([a-zA-Z]+)([^a-zA-Z]*)$/);
     if (match) {
       const [, alpha, trailingPunct] = match;
-      // 2-letter state abbreviations uppercase (e.g. FL, NY, CA)
-      if (/^[a-zA-Z]{2}$/.test(alpha)) {
-        return alpha.toUpperCase() + trailingPunct;
-      }
       // Purely lowercase word capitalizes
       if (/^[a-z]+$/.test(alpha)) {
         return alpha.charAt(0).toUpperCase() + alpha.slice(1) + trailingPunct;
+      }
+    }
+    return word;
+  }).join('');
+}
+
+export const US_POSTAL_STATES = new Set([
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+  'DC', 'PR', 'VI', 'GU', 'AS', 'MP',
+]);
+
+export const TITLE_CASE_CITY_PREFIXES = new Set(['St', 'Mt', 'Ft']);
+
+/**
+ * Combined "City, State Zip" formatter:
+ * - Capitalizes city words (e.g. "tampa" -> "Tampa")
+ * - Preserves title-case for city abbreviations (e.g. "st. petersburg" -> "St. Petersburg", "mt. dora" -> "Mt. Dora")
+ * - Uppercases valid 2-letter US postal state abbreviations (e.g. "fl" -> "FL", "ny" -> "NY")
+ * - Leaves numeric zip codes untouched (e.g. "33602", "33602-1234")
+ */
+export function formatCityStateZip(s) {
+  if (!s) return '';
+  const cleaned = sanitizeStoredText(s);
+  return cleaned.split(/(\s+)/).map((word) => {
+    if (word.match(/\s/) || word === '') return word;
+    if (/^\d+(-\d+)?$/.test(word)) return word;
+    const match = word.match(/^([a-zA-Z]+)([^a-zA-Z]*)$/);
+    if (match) {
+      const [, alpha, trailingPunct] = match;
+      const upper = alpha.toUpperCase();
+      const title = alpha.charAt(0).toUpperCase() + alpha.slice(1).toLowerCase();
+      if (TITLE_CASE_CITY_PREFIXES.has(title)) {
+        return title + trailingPunct;
+      }
+      if (US_POSTAL_STATES.has(upper)) {
+        return upper + trailingPunct;
+      }
+      if (/^[a-z]+$/.test(alpha)) {
+        return title + trailingPunct;
       }
     }
     return word;
@@ -99,7 +139,8 @@ export function getControlKind(control) {
   if (format === 'check' || format === 'check-number' || path.includes('check')) return 'identifier';
   if (format === 'bar-number' || path.includes('barnumber') || path.includes('bar_')) return 'identifier';
   if (format === 'name' || path.includes('name')) return 'name';
-  if (format === 'address' || format === 'city-state-zip' || path.includes('address') || path.includes('street')) return 'address';
+  if (format === 'city-state-zip' || format === 'zip' || path.includes('citystatezip') || path.includes('zip')) return 'zip';
+  if (format === 'address' || path.includes('address') || path.includes('street')) return 'address';
   if (format === 'phone' || path.includes('phone')) return 'phone';
   if (format === 'ssn' || path.includes('ssn') || path.includes('ein')) return 'ssn';
   if (format === 'decimal' || control.type === 'number') return 'money';
@@ -230,7 +271,7 @@ export function finalizeFieldValue(control, options = {}) {
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (kind === 'zip' || control.dataset?.formFormat === 'city-state-zip' || control.dataset?.annualFormat === 'zip') {
-    const formatted = window.formatCityStateZip ? window.formatCityStateZip(rawValue) : rawValue;
+    const formatted = formatCityStateZip(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (policy === 'preserve') {
@@ -288,6 +329,7 @@ export function getFieldDraftIssueMessages(data = window.D) {
 if (typeof window !== 'undefined') {
   window.sanitizeStoredText = sanitizeStoredText;
   window.formatSafeTitleCase = formatSafeTitleCase;
+  window.formatCityStateZip = formatCityStateZip;
   window.writeDraftValue = writeDraftValue;
   window.finalizeFieldValue = finalizeFieldValue;
   window.commitPendingFieldValues = commitPendingFieldValues;
