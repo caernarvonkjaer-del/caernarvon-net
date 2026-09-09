@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, startNewCase, chooseNoPassword } from './support/target';
+import { currentTargetProfile, skipExpectedTargetExclusion, skipEnvironmentLimitation } from './support/target-profile';
 
 test.describe('startup', { tag: '@origin-state' }, () => {
   test('fresh install shows the startup-choice screen, no console errors', async ({ page }) => {
@@ -38,7 +39,27 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     await expect(page.locator('#unlock-password-confirm')).toBeVisible(); // confirm row only shown when creating
   });
 
-  test('a deleted remembered case file falls back without poisoning later launches', async ({ page }) => {
+  test('a deleted remembered case file falls back without poisoning later launches', async ({ page, browserName }) => {
+    // The "remembered file handle" launch-preference mechanism (pg-launch-pref)
+    // stores a real FileSystemFileHandle, which requires the File System
+    // Access API -- target-profile.ts's supportsFileSystemAccessAutomation
+    // is already false for portable/file:// origins for exactly this reason
+    // (they never get FSA pickers, regardless of automation). Confirmed by
+    // running this profile for real: navigator.storage.getDirectory() throws
+    // a SecurityError under file://, not a product bug.
+    skipExpectedTargetExclusion(!currentTargetProfile?.supportsFileSystemAccessAutomation, 'the remembered-launch-file mechanism (pg-launch-pref, a FileSystemFileHandle) depends on the File System Access API, unsupported on file:// origins');
+    // Confirmed by running the cross-browser smoke profile for real: this
+    // test's own setup stores a real OPFS-derived FileSystemFileHandle into
+    // IndexedDB via structured clone, then relies on the app's
+    // forgetPersistedCaseFileHandle() deleting that key once the handle
+    // proves unreadable. Firefox round-trips it as an empty object rather
+    // than the app ever observing a failure to clean up after (the read-back
+    // is `{}`, not the original handle nor `undefined`) -- the File System
+    // Access API's persistence/permission extensions this depends on
+    // (queryPermission and friends) are a Chromium-originated surface Firefox
+    // doesn't implement the same way. A harness/API-support limitation, not
+    // a product bug -- Edge is unaffected (same underlying Chromium engine).
+    skipEnvironmentLimitation(browserName !== 'chromium', "Firefox's File System Access API support doesn't round-trip a persisted FileSystemFileHandle through IndexedDB the same way Chromium-based browsers do");
     await gotoApp(page);
     await page.evaluate(async () => {
       const root = await navigator.storage.getDirectory();

@@ -153,6 +153,75 @@ selectors from a since-replaced tour widget, fixed alongside it. Verified:
 full Chromium `source` suite, all passing, with several tests measurably
 faster (no more flat 500ms/1000ms/300ms pads).
 
+**Migration Sequence step 4 ("Distribution profiles") has landed.** The
+underlying mechanism (`PG_TARGET`/`PG_BROWSER` env-var-driven
+`playwright.config.ts` targeting, all four `BROWSERS` project defs, the
+`source`/`web`/`portable` vocabulary in `target-profile.ts`, and the
+three-category skip classification) already existed in full; what was
+missing was npm-runnable commands (every run previously required manually
+exporting env vars), a way to scope hosted/portable runs to
+distribution-sensitive specs only rather than the whole suite, and
+profile-labeled reporting. New `scripts/run-e2e-profile.mjs` (matching this
+repo's existing small `scripts/*.mjs` helper pattern) sets `PG_TARGET`/
+`PG_BROWSER` on a spawned child process directly rather than depending on
+`cross-env` or shell-specific syntax, rebuilds `dist/web`/`dist/portable`
+first when needed (both were stale relative to `src/` — confirmed, not
+assumed), and prints a `=== profile: <target>/<browser> ===` banner. Six new
+npm scripts (`test:e2e:source`/`web`/`portable`/`firefox`/`webkit`/`edge`,
+plus `test:e2e:all-profiles`) wrap it; `HOW-TO-RUN.txt` documents them as the
+primary way to run a specific profile.
+
+Every profile was actually executed against the real curated spec lists (not
+just documented) — all four browser engines are genuinely installed in this
+environment (Chromium/Firefox/WebKit via Playwright, Edge via the system
+install) — and this surfaced four more real, narrowly-scoped gaps, the same
+"discover by executing" discipline as every prior step in this milestone:
+
+- **`backup-restore-sav.spec.ts`'s cross-tab-lock-contention test** exercises
+  the exact same Web Locks API `ward-lock.spec.ts` already documents as
+  bypassed on file:// origins (`src/core/ward-lock.js`) — it just never had
+  the matching `skipExpectedTargetExclusion` guard `ward-lock.spec.ts`'s own
+  describe block already has. Added, using the same reason text.
+- **`startup.spec.ts`'s "a deleted remembered case file" test** calls
+  `navigator.storage.getDirectory()` directly, which throws a `SecurityError`
+  under `portable` (file://) — `target-profile.ts`'s own
+  `supportsFileSystemAccessAutomation: false` for `portable` already declares
+  exactly this ("file:// origins do not get FSA pickers regardless of
+  automation"); the test just wasn't using that existing flag. Added.
+- **The same `startup.spec.ts` test also fails under Firefox** for an
+  unrelated reason: it round-trips a real OPFS-derived `FileSystemFileHandle`
+  through IndexedDB and depends on the app's `forgetPersistedCaseFileHandle()`
+  cleanup actually firing; Firefox's File System Access API support doesn't
+  round-trip a persisted handle through IndexedDB the same way Chromium-based
+  browsers do (Edge, same engine, is unaffected — confirmed by actually
+  running it). Classified `skipEnvironmentLimitation`, not a target exclusion
+  — this is a harness/browser-API-support limitation, not a distribution
+  target difference.
+- **`form-entry.contract.spec.ts`'s real-paste test** calls
+  `context.grantPermissions(['clipboard-read', ...])`, which throws "Unknown
+  permission" outside Chromium — Playwright only supports granting clipboard
+  permissions on Chromium-based browsers (Edge included). Also classified
+  `skipEnvironmentLimitation`.
+
+**Known, documented gap, not papered over:** the "hosted parity" profile's
+row in Phase 5 §1 also names "chunk-load failure," but the only existing
+test for that (`feature-load-failure.spec.ts`) is explicitly `source`-only
+by design — it needs an unhashed, unbundled chunk URL to intercept, which
+doesn't exist in a hashed/versioned web build. There is no web-mode
+chunk-load-failure test today; noted here rather than substituting the wrong
+test into the profile.
+
+Final verified results, all real executions:
+
+| Profile | Result |
+| --- | --- |
+| `source/chromium` (Core full) | 263 passed, 5 skipped, 0 failed |
+| `web/chromium` (Hosted parity) | 30 passed, 0 skipped, 0 failed |
+| `portable/chromium` (Portable parity) | 17 passed, 12 skipped, 0 failed |
+| `source/firefox` (Cross-browser smoke) | 53 passed, 2 skipped, 0 failed |
+| `source/webkit` (Cross-browser smoke) | 53 passed, 2 skipped, 0 failed |
+| `source/edge` (Cross-browser smoke) | 55 passed, 0 skipped, 0 failed |
+
 **Real gap found and fixed during this pilot, not assumed away:** the
 itemized guidance panel this section's own Phase 2.3 language describes
 ("disabled Next guidance identifies every local missing item") did not

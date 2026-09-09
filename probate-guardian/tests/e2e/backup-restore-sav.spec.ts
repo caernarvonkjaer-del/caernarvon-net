@@ -10,6 +10,7 @@ import {
   chooseEncrypted,
   createWard
 } from './support/target';
+import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 async function ensureSaveControlsOpen(page: import('@playwright/test').Page) {
   const saveToggleBtn = page.locator('#save-controls-toggle-btn');
@@ -349,6 +350,10 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
   });
 
   test('Open Backup restores wards through switchWard/activateWard and respects cross-tab lock contention', async ({ browser }) => {
+    // Same exclusion ward-lock.spec.ts's own describe-level guard already
+    // documents: src/core/ward-lock.js explicitly bypasses the Web Locks API
+    // on file:// origins, which is how the portable target is served.
+    skipExpectedTargetExclusion(currentTarget === 'portable', 'Web Locks API is bypassed on file:// protocol (src/core/ward-lock.js), which is how the portable target is served');
     const context = await browser.newContext();
     try {
       const tab1 = await context.newPage();

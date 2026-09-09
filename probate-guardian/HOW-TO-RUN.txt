@@ -51,10 +51,21 @@ SOURCE / DEVELOPMENT MODE:
 BUILD AND VALIDATION COMMANDS (maintainers):
 - Build both releases: npm run build
 - Run the default source/Chromium suite: npm test
-- Select a target in PowerShell, then run Playwright:
+- Milestone 33, Phase 5's distribution/browser execution profiles (each sets
+  PG_TARGET/PG_BROWSER itself via scripts/run-e2e-profile.mjs -- no manual
+  $env: needed, and web/portable rebuild dist/ first automatically):
+  npm run test:e2e:source     # Core full: source/Chromium, the whole suite
+  npm run test:e2e:web        # Hosted parity: web/Chromium, distribution-sensitive specs only
+  npm run test:e2e:portable   # Portable parity: portable/Chromium, distribution-sensitive specs only
+  npm run test:e2e:firefox    # Cross-browser smoke: source/Firefox
+  npm run test:e2e:webkit     # Cross-browser smoke: source/WebKit
+  npm run test:e2e:edge       # Cross-browser smoke: source/Edge
+  npm run test:e2e:all-profiles  # all six, one at a time (release validation)
+- For anything outside those six profiles (e.g. PG_TARGET='dev', or a custom
+  spec subset), select a target/browser manually in PowerShell, then run
+  Playwright directly:
   $env:PG_TARGET='source'     # source, dev, web, or portable
   npx playwright test
-- Select another installed browser when needed:
   $env:PG_BROWSER='firefox'   # chromium, edge, firefox, or webkit
   npx playwright test
 - Measure final startup and lifecycle behavior:

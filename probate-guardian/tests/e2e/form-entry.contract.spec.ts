@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard } from './support/target';
+import { skipEnvironmentLimitation } from './support/target-profile';
 
 // Milestone 33, Phase 2.2 -- Migration Sequence step 3. Organized by field
 // behavior, not page ownership, per this milestone's own instruction. Each
@@ -13,12 +14,18 @@ import { freshStartNoPassword, createWard } from './support/target';
 // annual-mount.spec.ts's rapid Schedule B-2 date test -- not duplicated here.
 
 test.describe('Form entry contract', () => {
-  test('a real paste commits the same way typing does', async ({ page, context }) => {
+  test('a real paste commits the same way typing does', async ({ page, context, browserName }) => {
     // form-events.js has no dedicated 'paste' listener -- a paste is only
     // ever exercised via the native 'input' event a real paste produces, the
     // same as typing. Using the actual OS clipboard (via grantPermissions +
     // Ctrl+V) rather than a synthetic ClipboardEvent proves the real
     // browser-native paste path, not just a hand-rolled approximation of one.
+    // Confirmed by running the cross-browser smoke profile for real:
+    // grantPermissions(['clipboard-read', ...]) throws "Unknown permission"
+    // outside Chromium -- Playwright only supports clipboard permission
+    // grants there (Edge included, same underlying engine); this is a
+    // harness limitation, not a product behavior difference.
+    skipEnvironmentLimitation(browserName !== 'chromium', 'Playwright only supports granting clipboard-read/clipboard-write permissions on Chromium-based browsers');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await freshStartNoPassword(page);
     await createWard(page, 'Paste Entry Ward', 'guardian');
