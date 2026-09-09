@@ -113,6 +113,46 @@ primitive, and this is documented as such rather than implied to be true IME
 coverage. Verified: full Chromium `source` suite, all passing, before this
 was considered landed.
 
+**Step 3's other half — replacing fixed timing delays — has also now
+landed.** The Migration Sequence's own wording for step 3 was "replace
+timing delays while preserving specialized backup, lock, and migration
+tests" (also separately listed as Phase 4 item 1); the contract files above
+covered the first half only. All 18 `page.waitForTimeout()` calls across 6
+spec files were individually researched against what they actually waited
+for. Two were real bugs, not just smells: 5 occurrences (in
+`annual-mount.spec.ts`, `guardian-inventory-mount.spec.ts`,
+`simplified-mount.spec.ts`, and two files added earlier in this same step)
+registered a dialog handler *after* already committing to a click, racing it
+with a flat 500ms guess rather than the `page.waitForEvent('dialog')`-before-trigger
+pattern this repo's own `plan-fixture.ts` already gets right — fixed by
+copying that pattern. `importSavArchiveOrWard()`
+(`src/core/persistence/case-file.js`) turned out to already dispatch a
+`pg:backup-restored` event once `caseFile.wards` is fully merged (before its
+own completion `alert()`) — `verified-inventory-workflow.spec.ts` already
+used the sibling `pg:backup-saved` event correctly; `backup-restore-sav.spec.ts`'s
+6 occurrences now use the same idiom (one exception: a test asserting a
+dialog-count needed `expect.poll()` instead, since the event fires before
+that count reaches its final value). `annual-mount.spec.ts`'s own Excel-import
+test had already established `page.waitForFunction()` polling `window.D`'s
+post-import value as the right idiom — reused for Simplified's equivalent
+case. Three occurrences in `verified-inventory-workflow.spec.ts` were pure
+redundancy on top of Playwright's own auto-retrying `expect(...).toBeVisible()`/`.click()`
+calls immediately following them — deleted outright. One
+(`guided-tour-navigation.spec.ts`) was replaced with a poll on the
+walkthrough title actually changing rather than a padded guess against a
+production `setTimeout(...,300)` — this one needed a second pass: the
+poll's initial "no previous title" sentinel matched the tour tooltip's
+static placeholder text on the very first check, resolving before the real
+title ever rendered, caught by actually running the test rather than trusting
+the fix on inspection alone. Exactly one fixed delay remains, by design:
+`verified-inventory-workflow.spec.ts`'s "no unprompted auto-tour" check has
+no event to wait for an absence, so it stays a documented fixed delay (with
+the comment now naming the actual commit, `cab6b67`, that removed the timer
+it guards against) — its own next assertion was also checking stale
+selectors from a since-replaced tour widget, fixed alongside it. Verified:
+full Chromium `source` suite, all passing, with several tests measurably
+faster (no more flat 500ms/1000ms/300ms pads).
+
 **Real gap found and fixed during this pilot, not assumed away:** the
 itemized guidance panel this section's own Phase 2.3 language describes
 ("disabled Next guidance identifies every local missing item") did not

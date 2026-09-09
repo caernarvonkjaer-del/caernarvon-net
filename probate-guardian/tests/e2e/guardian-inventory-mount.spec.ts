@@ -121,13 +121,17 @@ test.describe('guardian-inventory feature module', () => {
     await createWard(page, 'Incomplete Guardian Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/print'));
 
-    let alertMessage = '';
-    page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    // dialog must be registered before the trigger, not after -- otherwise
+    // this races the dialog handler rather than waiting on it deterministically.
+    const dialogPromise = page.waitForEvent('dialog');
+    const triggerPromise = page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    await page.waitForTimeout(500);
+    const dialog = await dialogPromise;
+    const alertMessage = dialog.message();
+    await dialog.accept();
+    await triggerPromise;
 
     expect(alertMessage).toContain('Cannot export');
   });

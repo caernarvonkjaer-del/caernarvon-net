@@ -76,13 +76,17 @@ test.describe('Persistence and recovery contract', () => {
       expect(draft?.rawValue).toBe('02/14/26');
 
       await reopenPage.evaluate(() => (window as any).navigate('/print'));
-      let alertMessage = '';
-      reopenPage.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-      await reopenPage.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      // dialog must be registered before the trigger, not after -- otherwise
+      // this races the dialog handler rather than waiting on it deterministically.
+      const dialogPromise = reopenPage.waitForEvent('dialog');
+      const triggerPromise = reopenPage.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
         button.disabled = false;
         button.click();
       });
-      await reopenPage.waitForTimeout(500);
+      const dialog = await dialogPromise;
+      const alertMessage = dialog.message();
+      await dialog.accept();
+      await triggerPromise;
       expect(alertMessage).toContain('Cannot export — 1 required field missing');
     } finally {
       await reopenContext.close();

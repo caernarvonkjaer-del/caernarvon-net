@@ -35,13 +35,17 @@ test.describe('simplified-accounting feature module', () => {
     await createSimplifiedWard(page, 'Incomplete Simplified Ward');
     await page.evaluate(() => (window as any).navigate('/print'));
 
-    let alertMessage = '';
-    page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
-    await page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    // dialog must be registered before the trigger, not after -- otherwise
+    // this races the dialog handler rather than waiting on it deterministically.
+    const dialogPromise = page.waitForEvent('dialog');
+    const triggerPromise = page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    await page.waitForTimeout(500);
+    const dialog = await dialogPromise;
+    const alertMessage = dialog.message();
+    await dialog.accept();
+    await triggerPromise;
 
     expect(alertMessage).toContain('Cannot export');
   });
@@ -85,7 +89,9 @@ test.describe('simplified-accounting feature module', () => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
-    await page.waitForTimeout(1000);
+    // Poll the actual completion signal instead of guessing a timeout -- same
+    // idiom annual-mount.spec.ts's own Excel-import test already establishes.
+    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000456', { timeout: 10_000 });
 
     const imported = await page.evaluate(() => ({
       wardName: (window as any).D.wardName,

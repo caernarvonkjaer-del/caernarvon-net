@@ -14,7 +14,13 @@ test('detects a clean second tab and lets the notice be dismissed', { tag: '@ori
   await gotoApp(second);
 
   const notice = second.locator('#tab-safety-notice');
-  await second.waitForTimeout(1000);
+  // showCleanPeerNotice() renders synchronously and deterministically once
+  // evaluatePeers()'s localStorage read completes -- there's no later race
+  // to protect against here. Asserting visibility first proves the
+  // mechanism actually ran and rendered something (the negated content
+  // check below could otherwise pass trivially before anything has
+  // rendered), rather than guessing a settle duration.
+  await expect(notice).toBeVisible();
   await expect(notice).not.toContainText(warningText);
   if (await notice.isVisible()) {
     await notice.getByRole('button', { name: 'Dismiss' }).evaluate(button => (button as HTMLButtonElement).click());

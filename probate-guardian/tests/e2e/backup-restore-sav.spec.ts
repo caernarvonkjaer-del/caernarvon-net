@@ -21,6 +21,17 @@ async function ensureSaveControlsOpen(page: import('@playwright/test').Page) {
   }
 }
 
+// importSavArchiveOrWard() (src/core/persistence/case-file.js) dispatches
+// this once caseFile.wards is fully merged, before its own completion
+// alert() -- registered as a page-side promise before the triggering
+// setInputFiles() call, same idiom this file's own pg:backup-saved usage
+// in verified-inventory-workflow.spec.ts already establishes.
+function waitForBackupRestored(page: import('@playwright/test').Page) {
+  return page.evaluate(() => new Promise((resolve) => {
+    window.addEventListener('pg:backup-restored', (e) => resolve((e as CustomEvent).detail), { once: true });
+  }));
+}
+
 async function captureDownload(page: import('@playwright/test').Page, trigger: () => Promise<void>) {
   const downloadPromise = page.waitForEvent('download');
   page.once('dialog', (d) => d.accept());
@@ -148,10 +159,11 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       });
 
       // Trigger Open Backup (.sav) using the file input
+      const restoredPromise = waitForBackupRestored(page);
       await page.setInputFiles('#backup-import-input', backupPath);
+      await restoredPromise;
 
       // Verify wards are restored
-      await page.waitForTimeout(1000);
       const wardCount = await page.evaluate(() => (window as any).caseFile.wards.length);
       const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
 
@@ -207,8 +219,9 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
         }
       });
 
+      const restoredPromise = waitForBackupRestored(page);
       await page.setInputFiles('#backup-import-input', backupPath);
-      await page.waitForTimeout(1000);
+      await restoredPromise;
 
       const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
       expect(wardNames).toContain('Secret Ward 1');
@@ -257,11 +270,13 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       });
 
       await page.setInputFiles('#backup-import-input', singleWardPath);
-      await page.waitForTimeout(1000);
+      // pg:backup-restored fires before the completion alert(), so waiting on
+      // it risks checking dialogMessages before the 2nd dialog is recorded --
+      // poll the exact value under test instead.
+      await expect.poll(() => dialogMessages.length).toBe(2);
 
       // One confirmation dialog, then the completion alert -- same flow as
       // restoring a many-ward backup, just with "1 ward(s)".
-      expect(dialogMessages.length).toBe(2);
       expect(dialogMessages[0]).toContain('Restore backup containing 1 ward(s)');
       expect(dialogMessages[1]).toContain('Backup restored');
 
@@ -310,7 +325,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       // First restore the backup to load the ward
       await page.setInputFiles('#backup-import-input', backupPath);
-      await page.waitForTimeout(1000);
+      await page.waitForFunction(() => (window as any).D?.caseNumber === 'CASE-SAVED-IN-BACKUP', { timeout: 10_000 });
 
       const caseNum1 = await page.evaluate(() => (window as any).D?.caseNumber);
       expect(caseNum1).toBe('CASE-SAVED-IN-BACKUP');
@@ -324,7 +339,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       // Re-restore backup; switchWard must rebind window.D to the newly hydrated ward object
       await page.setInputFiles('#backup-import-input', backupPath);
-      await page.waitForTimeout(1000);
+      await page.waitForFunction(() => (window as any).D?.caseNumber === 'CASE-SAVED-IN-BACKUP', { timeout: 10_000 });
 
       const reboundCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
       expect(reboundCaseNum).toBe('CASE-SAVED-IN-BACKUP');
@@ -368,9 +383,10 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       // Restore the backup in Tab 2
       await tab2.setInputFiles('#backup-import-input', backupPath);
-      await tab2.waitForTimeout(1000);
 
-      // switchWard -> activateWard hit contention and triggered ward locked modal on Tab 2
+      // switchWard -> activateWard hit contention and triggered ward locked modal on Tab 2.
+      // expect(...).toBeVisible() already auto-retries precisely on this element;
+      // a fixed wait beforehand would be pure redundancy on top of it.
       const lockedModal = tab2.locator('#ward-locked-overlay');
       await expect(lockedModal).toBeVisible();
 

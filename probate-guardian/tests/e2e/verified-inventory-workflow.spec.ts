@@ -37,9 +37,17 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     expect(labelAudit.emptyVisibleLabels).toBe(0);
 
     // 2. Verify No Unprompted Auto-Tour
-    // Wait 1.5s to ensure old setTimeout(startWalkthrough, 1000) does not appear
+    // Commit cab6b67 removed handleHash()'s setTimeout(startWalkthrough, 1000)
+    // (guarded by !walkthroughCompleted && !firstLaunchSeen); there is no
+    // event for an absence, so this waits 500ms past that timer's own delay
+    // to catch a regression that reintroduces it.
     await page.waitForTimeout(1500);
-    const walkthroughOverlay = page.locator('.pg-walkthrough-overlay, .driver-popover, #walkthrough-modal');
+    // #walkthrough-overlay/.active is the current implementation (see
+    // guided-tour-navigation.spec.ts) -- the previous selectors here
+    // (.pg-walkthrough-overlay, .driver-popover, #walkthrough-modal) matched
+    // no element in the current app at all, so this assertion would have
+    // passed trivially even if the auto-tour timer above were reintroduced.
+    const walkthroughOverlay = page.locator('#walkthrough-overlay.active, .pg-walkthrough-overlay, .driver-popover, #walkthrough-modal');
     await expect(walkthroughOverlay).toHaveCount(0);
 
     // 3. Test Case Number Normalization Rules on Cover Page
@@ -92,8 +100,10 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     }
 
     // 5. Test Schedule B-2 Vehicle In-Place DOM Stability
+    // navigate() fully awaits renderPage()/mountGuardianFeature() before
+    // page.evaluate() resolves, and the click below already auto-waits for
+    // actionability -- a fixed wait here was pure redundancy on top of both.
     await page.evaluate(() => (window as any).navigate('/b2'));
-    await page.waitForTimeout(300);
 
     // Add item to B-2
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
@@ -128,8 +138,9 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await page.locator('input[data-bind="scheduleB2.0.wardPercent"]').fill('100');
 
     // 6. Test Schedule D-3 Safe Deposit Tri-State Controls
+    // navigate() fully awaits rendering before page.evaluate() resolves, and
+    // the expect(...).toBeVisible() below already auto-retries precisely.
     await page.evaluate(() => (window as any).navigate('/d3'));
-    await page.waitForTimeout(300);
 
     // Safe Deposit Box Yes/No Radios
     const sdbYes = page.locator('#sdb-yes');
@@ -152,8 +163,9 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await sdbFiledYes.check();
 
     // 7. Verify Summary Page reflects completion
+    // navigate() fully awaits rendering before page.evaluate() resolves, and
+    // the expect(...).toBeVisible() below already auto-retries precisely.
     await page.evaluate(() => (window as any).navigate('/summary'));
-    await page.waitForTimeout(300);
 
     const d3Status = page.locator('text=D-3 — Audit Fee & Safe Deposit');
     await expect(d3Status).toBeVisible();
