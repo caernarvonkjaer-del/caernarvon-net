@@ -13,6 +13,15 @@ Do not begin this milestone until Milestone 31 is approved and landed, and
 re-verify the baseline below against the tree as it stands after Milestone 31,
 not the figures recorded here.
 
+**Progress.** Milestone 31 landed (commit `c1c50c1`). Per this document's own
+Migration Sequence ("begin with Annual/Final/Trust... do not combine all
+phases in one change"), Phase 2.1's filing-identity contract has been
+implemented and verified for its Annual/Final/Trust pilot scope only
+(`tests/e2e/filing-identity.contract.spec.ts`, plus new helpers
+`getPdfMetadata()` in `tests/e2e/support/pdf-extract.ts` and
+`tests/e2e/support/docx-extract.ts`). Guardian, Simplified, the four Plan
+types, and Phases 2.2 through 5 remain proposal-only.
+
 ## Goal
 
 Make the E2E suite a reliable safety net for actual application changes rather
@@ -107,18 +116,21 @@ For Final and Trust, assert their own court heading plus preparer and attorney
 attestation language. The test must prove they are not emitted as Annual
 Accountings.
 
-**M25 sequencing decision:** this assertion is currently known to fail —
-Milestone 25 (filing-descriptor/identity work, not yet implemented) is what
-fixes the hard-coded "Annual Accounting" wording that leaks into Final/Trust
-PDF output (`src/features/annual-accounting/pdf-model.js`, the preparer and
-attorney attestation blocks). Write the Final/Trust portion of this contract
-now, but mark it skipped using Milestone 31 Phase 0's `temporary-gap`
-classification with an explicit reference to Milestone 25 as the owning
-milestone. This documents the exact expected behavior immediately without
-committing a known-red test against CLAUDE.md's standing rule that master's
-bar is a green suite. Un-skip it as part of Milestone 25's own acceptance
-criteria once that milestone's identity fix lands — Milestone 25 is not
-complete until this assertion passes unskipped.
+**M25 sequencing decision — superseded, corrected during Phase 2.1
+execution:** this section originally assumed Milestone 25 (filing-descriptor/
+identity work) was not yet implemented, and planned to write the Final/Trust
+portion of this assertion as a `temporary-gap` skip referencing it. By the
+time this pilot was executed, Milestone 25 had already landed (commit
+`32626d3`, "feat: unify filing identity and field commits") — verified
+directly, not taken on report: `src/core/filing/filing-descriptor.js` already
+declares fully distinct `documentTitle`/`displayName`/`filenameStem` per
+alias, `pdf-model.js` and `print.js` both resolve identity through
+`resolveFilingDescriptor()`/`filingCopy()` rather than a hard-coded string,
+and `annual-mount.spec.ts` already had a passing model-level identity test
+predating this milestone. The Final/Trust portion of this contract was
+therefore written and verified as a real, currently-passing assertion against
+the actual generated PDF/DOCX bytes (`tests/e2e/filing-identity.contract.spec.ts`)
+— not skipped. No further Milestone 25 dependency remains for this milestone.
 
 ### 2. Form entry contract
 
@@ -375,9 +387,10 @@ assertion.
   declared artifact test; every unsupported pair is explicitly declared
   unavailable.
 - Final and Trust prove their own UI, summary, print, metadata, filename, and
-  legal-attestation output rather than inheriting Annual expectations (or are
-  explicitly `temporary-gap`-skipped pending Milestone 25, per the sequencing
-  decision above).
+  legal-attestation output rather than inheriting Annual expectations. (The
+  Milestone 25 dependency originally anticipated here was already resolved
+  before this pilot ran — see the corrected sequencing note above — so this
+  is a real passing assertion, not a `temporary-gap` skip.)
 - Navigation/status contracts prove sidebar, Summary, Next guidance, jump
   links, print preview, and export gates agree.
 - Form-entry workflow tests cover typing, paste, blur/tab, rapid entry,

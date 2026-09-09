@@ -22,12 +22,14 @@ export type FilingCapabilities = {
   /** Matches INVENTORY_TYPES[id].label in src/legacy-app.js. */
   displayName: string;
   /**
-   * The authoritative document title this filing type's output should carry.
-   * For finalAccounting/trustAccounting this is the CORRECT title, not
-   * necessarily what the PDF currently emits -- Milestone 25 is what makes
-   * the PDF match this value; Milestone 33's filing-identity contract is
-   * what proves it (currently skipped as a temporary-gap pending Milestone 25
-   * for exactly these two entries).
+   * The authoritative document title this filing type's output should
+   * carry -- verified byte-for-byte against
+   * src/core/filing/filing-descriptor.js's DESCRIPTORS[id].documentTitle
+   * (the actual PDF/DOCX metadata.title/formName source), not derived from
+   * displayName. Milestone 25 (commit 32626d3, landed before this matrix
+   * was corrected) is what makes finalAccounting/trustAccounting emit their
+   * own distinct title instead of Annual's; Milestone 33's filing-identity
+   * contract proves it against the real generated artifact.
    */
   documentTitle: string;
   /** Every route this filing type's feature module mounts, verified against
@@ -74,55 +76,55 @@ const PLAN_MINOR_ROUTES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', '
 export const FILING_MATRIX: readonly FilingCapabilities[] = [
   {
     id: 'guardian', family: 'inventory',
-    displayName: 'Verified Initial Inventory', documentTitle: 'Verified Initial Inventory',
+    displayName: 'Verified Initial Inventory', documentTitle: 'VERIFIED INITIAL INVENTORY',
     routeSet: GUARDIAN_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'simplified', family: 'accounting',
-    displayName: 'Simplified Annual Accounting', documentTitle: 'Simplified Annual Accounting',
+    displayName: 'Simplified Annual Accounting', documentTitle: 'SIMPLIFIED ANNUAL ACCOUNTING',
     routeSet: SIMPLIFIED_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'annual', family: 'accounting',
-    displayName: 'Annual Accounting', documentTitle: 'Annual Accounting',
+    displayName: 'Annual Accounting', documentTitle: 'ANNUAL GUARDIANSHIP ACCOUNTING',
     routeSet: ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'finalAccounting', family: 'accounting',
-    displayName: 'Final Accounting', documentTitle: 'Final Accounting',
+    displayName: 'Final Accounting', documentTitle: 'FINAL GUARDIANSHIP ACCOUNTING',
     routeSet: ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: true,
   },
   {
     id: 'trustAccounting', family: 'accounting',
-    displayName: 'Trust Accounting', documentTitle: 'Trust Accounting',
+    displayName: 'Trust Accounting', documentTitle: 'TRUST GUARDIANSHIP ACCOUNTING',
     routeSet: ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: true,
   },
   {
     id: 'planSimplified', family: 'plan',
-    displayName: 'Simplified Annual Plan', documentTitle: 'Simplified Annual Plan',
+    displayName: 'Simplified Annual Plan', documentTitle: 'SIMPLIFIED ANNUAL PLAN',
     routeSet: PLAN_SIMPLIFIED_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'planAnnual', family: 'plan',
-    displayName: 'Annual Guardianship Plan', documentTitle: 'Annual Guardianship Plan',
+    displayName: 'Annual Guardianship Plan', documentTitle: 'ANNUAL GUARDIANSHIP PLAN',
     routeSet: PLAN_ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'planInitial', family: 'plan',
-    displayName: 'Initial Guardianship Plan', documentTitle: 'Initial Guardianship Plan',
+    displayName: 'Initial Guardianship Plan', documentTitle: 'INITIAL GUARDIANSHIP PLAN',
     routeSet: PLAN_INITIAL_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'planMinor', family: 'plan',
-    displayName: 'Annual Plan — Minors', documentTitle: 'Annual Plan — Minors',
+    displayName: 'Annual Plan — Minors', documentTitle: 'ANNUAL GUARDIANSHIP PLAN - MINOR',
     routeSet: PLAN_MINOR_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
