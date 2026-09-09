@@ -26,8 +26,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "jszip": "^3.10.1",
-    "pdfjs-dist": "^6.3.289",
     "subset-font": "^2.7.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
@@ -36,6 +34,8 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "pdf-lib": "^1.17.1"
+    "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289"
   }
 }
