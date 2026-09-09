@@ -210,16 +210,13 @@ doesn't exist in a hashed/versioned web build. There is no web-mode
 chunk-load-failure test today; noted here rather than substituting the wrong
 test into the profile.
 
-**Outstanding task, owned by `MILESTONE-34-PROPOSAL.md`: add the web-mode
-chunk-load-failure test.** `feature-load-failure.spec.ts` intercepts a
-stable path (`**/src/features/dashboard/index.js`), which only exists
-because `source` serves unbundled ES modules directly — `dist/web`'s build
-hashes filenames (e.g. `assets/dashboard-lbmMcAnk.js`), so the exact glob
-won't survive a rebuild. Milestone 34 records the two things already
-confirmed while scoping this (the route glob needs to be hash-agnostic or
-manifest-driven; the dashboard chunk is precached at `"offline"` tier, not
-`"critical"`, which affects when a fresh session's request actually reaches
-the network) so its own implementation doesn't have to rediscover them.
+**Resolved by `MILESTONE-34-PROPOSAL.md`: the web-mode chunk-load-failure
+test has landed.** `feature-load-failure.spec.ts` now has a `web`-target
+sibling alongside its original `source`-only test, reading the dashboard
+chunk's real built (hashed) URL from `dist/web/sw.js`'s generated
+`PRECACHE_MANIFEST` rather than a stable unbundled path, and is wired into
+`scripts/run-e2e-profile.mjs`'s `HOSTED_PARITY_SPECS` list so
+`npm run test:e2e:web` covers it going forward.
 
 Final verified results, all real executions:
 

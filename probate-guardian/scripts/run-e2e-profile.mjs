@@ -34,12 +34,12 @@ const HOSTED_PARITY_SPECS = [
   'tests/e2e/case-file-roundtrip.spec.ts',
   'tests/e2e/backup-restore-sav.spec.ts',
   'tests/e2e/dashboard-backup.spec.ts',
-  // Known gap, not papered over: the doc's "hosted parity" row also names
-  // "chunk-load failure," but the only existing test for that
-  // (feature-load-failure.spec.ts) is explicitly source-only by design (it
-  // needs an unhashed, unbundled chunk URL to intercept, which doesn't exist
-  // in a hashed/versioned web build) -- there is no web-mode equivalent
-  // today. See MILESTONE-33-PROPOSAL.md's Phase 5 progress note.
+  // Milestone 34: the doc's "hosted parity" row names "chunk-load failure";
+  // feature-load-failure.spec.ts now has a web-mode sibling test (manifest-
+  // driven, hashed-chunk interception) alongside its original source-only
+  // test, closing the gap MILESTONE-33-PROPOSAL.md's Phase 5 progress note
+  // recorded.
+  'tests/e2e/feature-load-failure.spec.ts',
 ];
 
 const PORTABLE_PARITY_SPECS = [

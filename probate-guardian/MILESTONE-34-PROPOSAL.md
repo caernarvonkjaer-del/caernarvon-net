@@ -2,8 +2,13 @@
 
 ## Status
 
-**Proposal only.** No test-file change or product-code change is authorized
-until this plan is reviewed and approved. This document holds the first
+**Implemented, not yet verified by test execution.** The web-mode
+chunk-load-failure test has been written (`tests/e2e/feature-load-failure.spec.ts`)
+and wired into `scripts/run-e2e-profile.mjs`'s `HOSTED_PARITY_SPECS`, per the
+Proposed Approach and Acceptance Criteria below. It has not yet been run
+against a fresh `dist/web` build — this document will be updated to
+"Completed" once `npm run test:e2e:web` (and the full `source` suite) are
+confirmed passing with this test included. This document holds the first
 piece of what may grow into a small set of distribution-target-specific
 failure-mode tests; only the piece below is scoped so far.
 
@@ -124,223 +129,16 @@ better once both are written) that:
 - Verified against the full Chromium `source` suite and the `web` profile,
   same discipline as every Milestone 33 step.
 
-## Follow-On Bug-Correction Plan
+## Related, Out-of-Scope Work
 
-The browser review identified additional print-preview and filing-quality
-issues. They are recorded here for sequencing, but they do not expand
-Milestone 34's implementation scope: Milestone 34 remains the web-target
-chunk-load-failure test only. Product-code changes below require a later
-milestone or an explicitly approved scope change.
+Two related planning documents were split out of this file on 2026-09-09 so
+this document could stay scoped to the web-mode chunk-load-failure test
+above — neither expands or gates Milestone 34's own scope:
 
-### Phase A: Shared export and validation contracts
-
-1. **Make readiness status reflect export eligibility.**
-   Audit the shared `prepareFilingOutput()` boundary and each plan readiness
-   panel. The preview banner must not say `Ready to export` while an automatic
-   readiness check is outstanding or while a required manual filing action is
-   still unresolved. Keep manual reminders visibly distinct from machine-
-   verifiable blockers, but use unambiguous status text and button gating.
-   Add contract tests for: no issues, automatic issue, supplemental issue,
-   and manual-only reminder.
-
-2. **Validate annual filing periods and related dates.**
-   Add shared date rules for ordering, one-day annual periods, and dates that
-   fall outside the relevant accounting/reporting period. Apply them to
-   Annual, Final, Trust, Simplified Annual Accounting, and the annual Plan
-   variants where the rule is applicable. Add boundary tests for same-day,
-   reversed, just-under-one-year, valid annual, and out-of-period service
-   dates. Ensure errors flow through the existing field-path/highlight system.
-
-3. **Audit validation-to-field mapping.**
-   Verify that every new semantic error identifies the correct form field and
-   does not regress the existing required-field contract. Test both live
-   preview navigation and export blocking, including rapid date entry followed
-   immediately by navigation.
-
-### Phase B: Shared PDF rendering correctness
-
-4. **Remove duplicate accounting footer identity text.**
-   Define one source of truth for the footer subtitle and ward name, then make
-   the shared footer render each exactly once for Annual, Final, Trust, and
-   Simplified Accounting. Add PDF text assertions for one, two, and three
-   guardians and for every accounting filing descriptor.
-
-5. **Make preview pagination derive from the finalized PDF.**
-   Compare the page count rendered by pdf.js with the finalized PDF's page
-   count and expose one shared count to the toolbar and footer contract. Add
-   regression tests with and without supplemental pages. Include a test that
-   re-renders the preview after navigation so stale pager DOM cannot survive a
-   new PDF.
-
-6. **Handle continuation-header titles without silent truncation.**
-   Replace the current first-line-only behavior with a bounded, intentional
-   layout: wrap within the header cell, shorten through a documented title
-   policy, or move the full section title to a second line. Add a generated-PDF
-   text/layout test using the longest section titles and long ward/case names.
-
-7. **Normalize address composition at the PDF model boundary.**
-   Centralize street/city-state-ZIP joining and whitespace/comma cleanup, then
-   use it in all PDF models instead of ad hoc template interpolation. Preserve
-   user-entered apartment/unit text and avoid changing unrelated free-form
-   notes. Add unit tests for missing components, existing commas, compact
-   `City FL ZIP` input, and multi-line addresses.
-
-### Phase C: Filing-specific output and form semantics
-
-8. **Suppress empty optional co-guardian/signature blocks.**
-   Render optional co-guardian blocks only when the corresponding party has
-   meaningful data; retain the required primary guardian block. Cover Initial,
-   Annual, Minor, and Simplified Plans, with tests for zero, one, and multiple
-   co-guardians.
-
-9. **Make binary and multi-choice answers explicitly tri-state.**
-   Audit plan checkboxes and validators so an unanswered question is distinct
-   from `No`, and mutually exclusive choices cannot silently accept an
-   incomplete answer. Update PDF output and readiness checks together. Add
-   tests for unanswered, explicit No/none, one selected option, and conflicting
-   options.
-
-10. **Separate Trust and Final Accounting copy from Annual Accounting copy.**
-    Audit descriptor-driven titles, audit-fee language, attorney
-    certifications, headings, and metadata. Preserve shared calculations and
-    rendering while supplying filing-specific copy where required. Add PDF
-    text/metadata assertions proving Trust and Final output does not contain
-    Annual-only wording.
-
-11. **Detect cross-filing county drift.**
-    Define the case-level source of truth for county and compare filings that
-    share a case number. Report a warning or blocker according to filing
-    policy, including attorney-county overrides. Add a multi-filing contract
-    test covering matching counties, mismatched counties, and missing county
-    data.
-
-### Phase D: Supplemental documents and evidence-dependent UI findings
-
-12. **Reproduce and classify garbled supplemental-document output.**
-    Preserve the original affected PDF as a fixture if available, then compare
-    source bytes, pdf.js extracted text, canvas rendering, and the finalized
-    packet. Only after the failure boundary is known should validation reject
-    the file, warn about OCR/encoding quality, or change rendering. Add a
-    regression fixture test for the confirmed failure mode.
-
-13. **Investigate Trust Accounting toolbar absence and page-count reports.**
-    Capture the exact build, generated PDF, and preview DOM for each affected
-    filing. Verify whether the issue is stale DOM, an async pager race, a
-    finalized-PDF difference, or an older deployed build before changing the
-    shared pager. Do not add a product fix based only on a screenshot or text
-    extraction report.
-
-14. **Collect layout evidence before changing visual behavior.**
-    Dates splitting across lines, cramped Schedule B cells, clipped Question 5
-    content, narrow labels, and missing zoom controls need representative PDFs,
-    viewport dimensions, and an agreed layout threshold. After that evidence
-    exists, add targeted PDF/layout tests rather than broad visual rewrites.
-
-## Explicitly Deferred Preferences
-
-The following are useful product ideas, but are not bugs to implement in the
-correction plan without a product decision: masked preview mode for SSN/EIN,
-duplicate-name drift warnings, `None reported` in empty schedules, export
-button regrouping, zoom/fit controls, wording polish such as `an Annual
-Accounting`, and expanded `/s/` signature guidance. They may become separate
-UX proposals after the defect work is prioritized.
-
-## Recommended Order and Dependencies
-
-Implement Phase A first because its validation and export-status contracts
-control whether later PDF and filing-specific fixes can be trusted. Implement
-Phase B next because the footer, pagination, header, and address helpers are
-shared across all filing families. Implement Phase C after the shared
-contracts stabilize. Phase D begins with evidence collection and should not
-be converted into product changes until the affected artifacts are available.
-
-Each follow-on milestone should include focused unit/contract tests, the
-affected filing-specific E2E coverage, and a final `source` plus `web`
-execution-profile run where the changed surface is exercised.
-
-## Documentation Status Addendum (2026-09-09)
-
-This addendum tracks planning artifacts only; it does not change Milestone
-34 implementation scope.
-
-- Completed: Plan Annual wildcard dictionary rows expanded to exact
-   `rights.*`, `adls.*`, and `benefits.*` field entries in
-   `probate-guardian-data-model.csv`.
-- Completed: Plan Initial wildcard dictionary rows expanded to exact `q3`,
-   `q6`, `q7`, `adls`, `mental*`, `phys*`, `uses*`, `needs*`, `q9Providers[]`,
-   `q11Directives[]`, and `planGuardians[]` field entries in
-   `probate-guardian-data-model.csv`.
-- Completed: Delivery copy refreshed to
-   `C:\Users\clkmt07\Downloads\probate-guardian-data-model.csv`.
-- Still pending (separate documentation scope): migration of the CSV to the
-   canonical 20-column contract and execution of the stricter
-   `(scope, storage_root, field_path, persistence_status)` uniqueness checker.
-
-## Documentation-Only Data-Model Remediation
-
-This section records the remaining schema work requested during the review.
-It is documentation work only: it authorizes no product-code, test-code, or
-runtime changes.
-
-### Current Findings
-
-- Initial Inventory is now represented through its scalar fields, collection
-   references, and expanded A-1 through C-5 row fields in the companion CSV.
-- Annual Plan and Initial Plan still need their wildcard entries expanded into
-   exact persisted paths. The affected groups include checkbox fields,
-   conditional explanations, certification fields, rights/ADL maps, directive
-   rows, provider rows, and guardian signature rows.
-- The same collection name does not imply the same row shape. In particular,
-   Plan Annual and Plan Initial `planGuardians[]` rows differ, and the plan
-   provider/directive collections must remain filing-specific.
-- Common-looking names in the CSV are not always canonical storage paths.
-   Filing scope must remain separate from the actual `D.*` or `caseFile.*`
-   path.
-- Annual calculation outputs are runtime-derived values, not persisted fields.
-   The CSV must use the actual names returned by `calcTotalsAnnual()` and
-   `annualReconcileState()`.
-
-### Documentation Tasks
-
-1. Expand Plan Annual wildcards into exact fields: cover fields; Q2 movement
-    choices; Q3 setting, medical, mental-health, personal-care, and social
-    groups; benefits; Q5 narrative fields; rights; ADLs; Q9 disability/device
-    groups; Q10 directives; Q11 remuneration; certification; guardians; and
-    attorney fields.
-2. Expand Plan Initial wildcards into exact fields: cover fields; Q2-Q7
-    choices and explanations; provider rows; ADLs; mental/physical/device
-    groups; committee recommendations; directives; certification; guardian
-    rows; and attorney fields.
-3. Add collection metadata for every repeatable group: canonical path,
-    minimum rows, maximum rows, initial row count, row factory, and party-ID
-    synchronization behavior.
-4. Add type metadata: boolean versus Yes/No enum, nullable date, currency,
-    percentage, phone, ZIP, identifier, free text, and keyed enum values.
-5. Add conditional metadata such as `required_when` for amended forms,
-    vehicle details, "Other" explanations, rights restoration, directive
-    details, remuneration, and certification choices.
-6. Correct source attribution so each row points to its actual factory,
-    renderer, validator, or calculation function.
-7. Add provenance columns for `source_symbol`, `source_line`, `storage_root`,
-   and `persistence_status` (`persisted`, `derived`, `runtime`, or
-   `export-only`).
-
-### Documentation Acceptance Criteria
-
-- No wildcard field names remain in the canonical field table.
-- Every persisted property in each `emptyData*()` factory has an explicit
-   field or collection-row entry.
-- Plan Annual and Plan Initial collections are documented separately even
-   where their collection names match.
-- Every derived field names an actual returned calculation property or is
-   removed from the persisted-field table.
-- Every row has a filing scope, canonical storage path, data type, requiredness
-   rule, sensitivity classification, persistence status, and source symbol.
-- The executable CSV checker defined in
-   `DATA-MODEL-REMEDIATION-PLAN.md` is run against the canonical CSV, including
-   its duplicate-key, wildcard-path, blank-path, and metadata-domain checks.
-- The canonical CSV is `probate-guardian/probate-guardian-data-model.csv`.
-   A delivery copy may be written to
-   `C:\Users\clkmt07\Downloads\probate-guardian-data-model.csv`, but the
-   external copy is not part of repository acceptance; when present, it should
-   be refreshed from the canonical workspace CSV.
+- `MILESTONE-34-1-PROPOSAL.md` — a follow-on bug-correction plan (validation
+  contracts, shared PDF rendering fixes, filing-specific output semantics,
+  and supplemental-document/evidence-dependent findings) from a browser
+  review, unrelated to distribution-target test coverage.
+- `MILESTONE-34-2-PROPOSAL.md` — data-model documentation remediation
+  (`DATA-MODEL-REMEDIATION-PLAN.md` / `probate-guardian-data-model.csv`
+  harmonization), documentation-only, unrelated to this test.
