@@ -1,50 +1,73 @@
-import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { test, expect, type Page, type Locator } from '@playwright/test';
+import {
+  freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard,
+  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard,
+  fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanAnnualWard,
+  fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
+} from './support/target';
 import { extractPdfText, getPdfMetadata } from './support/pdf-extract';
 import { extractDocx } from './support/docx-extract';
 import { filingCapabilities, type FilingType } from './support/filing-matrix';
 
-// Milestone 33, Phase 2.1 -- pilot scope per the proposal's own Migration
-// Sequence ("begin with Annual/Final/Trust"): the shared annual-accounting
-// engine is where Milestone 25's filing-identity unification (commit
-// 32626d3, "feat: unify filing identity and field commits") is what makes
-// three otherwise-identical-code filing types emit distinct legal identity
-// via src/core/filing/filing-descriptor.js. Verified directly against the
-// current tree before writing this contract: filing-descriptor.js already
-// has fully distinct documentTitle/displayName/filenameStem per alias,
-// pdf-model.js and print.js both resolve identity through it (not a
-// hard-coded "Annual Accounting" string), and annual-mount.spec.ts already
-// has a passing model-level identity test. This contract goes one layer
-// further: it proves the *generated PDF/DOCX file*, not just the in-memory
-// model object, carries the right identity -- the semantic-artifact
-// direction Phase 3 formalizes.
+// Milestone 33, Phase 2.1. Landed in two passes per the proposal's own
+// Migration Sequence ("begin with Annual/Final/Trust... do not combine all
+// phases in one change"): the pilot below (Annual/Final/Trust) proved the
+// mechanism -- Milestone 25's filing-identity unification (commit 32626d3)
+// is what makes three otherwise-identical-code filing types emit distinct
+// legal identity via src/core/filing/filing-descriptor.js, and pdf-extract.ts's
+// getPdfMetadata()/docx-extract.ts's extractDocx() proved out generically
+// enough to extend. This file now also covers the remaining 6 filing types
+// (guardian, simplified, and the four Plan types): their identity-resolution
+// *mechanism* is already the same shared engine (DESCRIPTORS, PDF/DOCX
+// generation, export-gating), verified directly against each type's own
+// print.js rather than assumed -- the real per-type variance is
+// selector/filename config data (see EXPORT_ACTIONS/FILENAME_STEMS below),
+// not a different mechanism.
 //
-// Guardian, Simplified, and the four Plan types are out of scope for this
-// pass; they get their own identity-contract coverage once this pilot's new
-// helpers (pdf-extract.ts's getPdfMetadata, support/docx-extract.ts) are
-// proven here, per the proposal's "do not combine all phases in one change"
-// instruction.
+// Setup uses direct window.D injection (the existing fillMinimalValid*Ward
+// helpers already established by each type's own mount spec) rather than
+// driving every page by hand -- Non-Negotiable #7 permits controlled
+// window.D state for model- and artifact-focused setup; this contract tests
+// artifact identity, not field-entry behavior. The PDF/DOCX bytes themselves
+// are still produced through the real Save as PDF/Save as Word buttons and a
+// real download event (not by calling the generator functions directly), so
+// filename derivation and the preflight "allowed to export" gate are
+// exercised for real, not simulated.
 //
-// Setup uses direct window.D injection (fillMinimalValidAnnualWard(),
-// already established by annual-mount.spec.ts/target.ts) rather than
-// driving all ~11 Annual pages by hand for three filing-type variants --
-// Non-Negotiable #7 permits controlled window.D state for model- and
-// artifact-focused setup; this contract tests artifact identity, not
-// field-entry behavior. The PDF/DOCX bytes themselves are still produced
-// through the real Save as PDF/Save as Word buttons and a real download
-// event (not by calling the generator functions directly), so filename
-// derivation and the preflight "allowed to export" gate are exercised for
-// real, not simulated.
+// Two things deliberately NOT asserted, matching the pilot's own actual
+// scope, not a new gap this extension introduces:
+// - No attestation-prose assertion beyond the document title/heading. The
+//   pilot itself only ever checks pdfText/docx.visibleText contain
+//   expected.documentTitle -- not deeper Preparer/Attorney paragraphs, whose
+//   presence and shape genuinely differ per type (confirmed: Simplified has
+//   no Preparer block; planAnnual/planInitial have no Preparer role at all;
+//   planMinor's is mandatory; planSimplified's is conditional on
+//   d.preparer_name). Solving that is Phase 3's ("semantic artifacts")
+//   territory, not this contract's.
+// - No "filing identifier" PDF/DOCX metadata assertion. Confirmed this isn't
+//   wired into the generated bytes for ANY of the 9 types, including the
+//   already-landed pilot: pdf-engine.js's setProperties() call never
+//   forwards metadata.filingId, and DOCX's docProps/core.xml never writes
+//   one either. A pre-existing product gap, not something to paper over with
+//   an assertion the real bytes can't satisfy (Non-Negotiable #1).
 
-const PILOT_TYPES: FilingType[] = ['annual', 'finalAccounting', 'trustAccounting'];
+type IdentityConfig = {
+  filingType: FilingType;
+  createFiling: (page: Page, name: string) => Promise<void>;
+  exportActionAttr: string;
+  savePdfValue: string;
+  saveWordValue: string;
+  // Each type hardcodes its own filename stem in its own print.js rather
+  // than deriving it from the descriptor the way Annual's family does
+  // (confirmed directly per type) -- an explicit table, not a computed one.
+  filenameStem: string;
+  // Defaults to the sidebar section label every type but Guardian uses.
+  identityLabelLocator?: (page: Page) => Locator;
+};
 
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks);
-}
+const DEFAULT_IDENTITY_LABEL_LOCATOR = (page: Page) => page.locator('#sidebar .nav-section-label').first();
 
-async function setFilingIdentity(page: Page, id: FilingType): Promise<void> {
+async function setAnnualFamilyIdentity(page: Page, id: FilingType): Promise<void> {
   await fillMinimalValidAnnualWard(page);
   if (id !== 'annual') {
     const filingTypeValue = id === 'finalAccounting' ? 'Final' : 'Trust';
@@ -54,43 +77,118 @@ async function setFilingIdentity(page: Page, id: FilingType): Promise<void> {
   }
 }
 
-test.describe('Filing identity contract (Annual / Final / Trust pilot)', () => {
-  for (const id of PILOT_TYPES) {
+// Every createFiling below is a COMPLETE creation+fill step (ward creation
+// included) -- Simplified needs its own eligibility-modal flow
+// (createSimplifiedWard), not the generic createWard() every other type
+// uses, so createFiling can't assume a ward already exists the way a
+// fill-only helper would.
+const CONFIGS: IdentityConfig[] = [
+  {
+    filingType: 'annual',
+    createFiling: async (page, name) => { await createWard(page, name, 'annual'); await setAnnualFamilyIdentity(page, 'annual'); },
+    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word',
+    filenameStem: 'AnnualAccounting',
+  },
+  {
+    filingType: 'finalAccounting',
+    createFiling: async (page, name) => { await createWard(page, name, 'finalAccounting'); await setAnnualFamilyIdentity(page, 'finalAccounting'); },
+    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word',
+    filenameStem: 'FinalAccounting',
+  },
+  {
+    filingType: 'trustAccounting',
+    createFiling: async (page, name) => { await createWard(page, name, 'trustAccounting'); await setAnnualFamilyIdentity(page, 'trustAccounting'); },
+    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word',
+    filenameStem: 'TrustAccounting',
+  },
+  {
+    filingType: 'guardian',
+    createFiling: async (page, name) => { await createWard(page, name, 'guardian'); await fillMinimalValidGuardianWard(page); },
+    exportActionAttr: 'data-inventory-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word',
+    filenameStem: 'InitialInventory',
+    // Guardian's sidebar hardcodes "Case Info" as its first .nav-section-label
+    // (buildNavGuardian()) -- confirmed directly, not the filing-type name
+    // every other type's sidebar shows. The real visible-identity surface is
+    // a Cover-route <h1> instead (guardian-inventory/index.js's pageHome()).
+    identityLabelLocator: (page) => page.getByRole('heading', { level: 1 }),
+  },
+  {
+    filingType: 'simplified',
+    createFiling: async (page, name) => { await createSimplifiedWard(page, name); await fillMinimalValidSimplifiedWard(page); },
+    exportActionAttr: 'data-simplified-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word',
+    filenameStem: 'SimplifiedAccounting',
+  },
+  {
+    filingType: 'planAnnual',
+    createFiling: async (page, name) => { await createWard(page, name, 'planAnnual'); await fillMinimalValidPlanAnnualWard(page); },
+    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-annual', saveWordValue: 'save-word-plan-annual',
+    filenameStem: 'AnnualGuardianshipPlan',
+  },
+  {
+    filingType: 'planInitial',
+    createFiling: async (page, name) => { await createWard(page, name, 'planInitial'); await fillMinimalValidPlanInitialWard(page); },
+    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-initial', saveWordValue: 'save-word-plan-initial',
+    filenameStem: 'InitialGuardianshipPlan',
+  },
+  {
+    filingType: 'planMinor',
+    createFiling: async (page, name) => { await createWard(page, name, 'planMinor'); await fillMinimalValidPlanMinorWard(page); },
+    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-minor', saveWordValue: 'save-word-plan-minor',
+    filenameStem: 'AnnualPlanMinors',
+  },
+  {
+    filingType: 'planSimplified',
+    createFiling: async (page, name) => { await createWard(page, name, 'planSimplified'); await fillMinimalValidPlanSimplifiedWard(page); },
+    exportActionAttr: 'data-plan-simplified-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word',
+    filenameStem: 'SimplifiedAnnualPlan',
+  },
+];
+
+async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks);
+}
+
+test.describe('Filing identity contract', () => {
+  for (const config of CONFIGS) {
+    const { filingType: id, createFiling, exportActionAttr, savePdfValue, saveWordValue, filenameStem } = config;
+    const identityLabelLocator = config.identityLabelLocator || DEFAULT_IDENTITY_LABEL_LOCATOR;
     const expected = filingCapabilities(id);
+    const pdfActionSelector = `[${exportActionAttr}="${savePdfValue}"]`;
+    const wordActionSelector = `[${exportActionAttr}="${saveWordValue}"]`;
 
-    test(`${id}: sidebar, Summary, PDF, and DOCX all agree on filing identity`, async ({ page }) => {
+    test(`${id}: sidebar/heading, Summary, PDF, and DOCX all agree on filing identity`, async ({ page }) => {
       await freshStartNoPassword(page);
-      await createWard(page, `${expected.displayName} Identity Ward`, id);
-      await setFilingIdentity(page, id);
+      await createFiling(page, `${expected.displayName} Identity Ward`);
 
-      // Surface 1: sidebar section label (buildNavAnnual()'s first
-      // .nav-section-label, driven by formDisplayName(D.inventoryType)).
-      await expect(page.locator('#sidebar .nav-section-label').first()).toHaveText(expected.displayName);
+      // Surface 1: the type's own visible identity label (sidebar section
+      // label for every type but Guardian, whose sidebar doesn't carry
+      // filing identity -- see identityLabelLocator above).
+      await expect(identityLabelLocator(page)).toContainText(expected.displayName);
 
-      // Surface 2: Summary page heading (getSummaryConfigAnnual()'s formTitle).
+      // Surface 2: Summary page heading (each type's own getSummaryConfigX()).
       await page.evaluate(() => (window as any).navigate('/summary'));
       await expect(page.getByRole('heading', { level: 1 })).toContainText(expected.displayName);
 
       // Surface 3: export gate agrees this valid filing is allowed to export.
       await page.evaluate(() => (window as any).navigate('/print'));
-      await expect(page.locator('[data-annual-action="save-pdf"]')).toBeEnabled();
-      await expect(page.locator('[data-annual-action="save-word"]')).toBeEnabled();
+      await expect(page.locator(pdfActionSelector)).toBeEnabled();
+      await expect(page.locator(wordActionSelector)).toBeEnabled();
 
       // Surface 4: the real generated PDF -- metadata and visible legal copy.
       const pdfDownloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-      await page.locator('[data-annual-action="save-pdf"]').click();
+      await page.locator(pdfActionSelector).click();
       const pdfDownload = await pdfDownloadPromise;
-      const formSlug = expected.displayName.replace(/[^a-z0-9]/gi, '');
-      expect(pdfDownload.suggestedFilename()).toMatch(new RegExp(`_${formSlug}\\.pdf$`));
+      expect(pdfDownload.suggestedFilename()).toMatch(new RegExp(`_${filenameStem}\\.pdf$`));
       const pdfBytes = await readAll(await pdfDownload.createReadStream());
 
       // pdfMeta.title/subject/keywords are composed identification strings
-      // (pdf-model.js's metadata.title = "<ward> - <case> - <displayName> -
-      // Printed <date>"; subject/keywords come from filingCopy(descriptor),
-      // both built around descriptor.displayName), not the court-form
-      // heading itself -- that heading is descriptor.documentTitle
-      // (metadata.formName), which pdf-engine.js prints as the page's
-      // actual title text, asserted below via the extracted page text.
+      // (pdf-model.js's metadata.title built around descriptor.displayName),
+      // not the court-form heading itself -- that heading is
+      // descriptor.documentTitle (metadata.formName), which pdf-engine.js
+      // prints as the page's actual title text, asserted below via the
+      // extracted page text.
       const pdfMeta = await getPdfMetadata(pdfBytes);
       expect(pdfMeta.title).toContain(expected.displayName);
       expect(pdfMeta.subject).toContain(expected.displayName);
@@ -100,9 +198,9 @@ test.describe('Filing identity contract (Annual / Final / Trust pilot)', () => {
 
       // Surface 5: the real generated DOCX -- metadata and visible legal copy.
       const docxDownloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-      await page.locator('[data-annual-action="save-word"]').click();
+      await page.locator(wordActionSelector).click();
       const docxDownload = await docxDownloadPromise;
-      expect(docxDownload.suggestedFilename()).toMatch(new RegExp(`_${formSlug}\\.docx$`));
+      expect(docxDownload.suggestedFilename()).toMatch(new RegExp(`_${filenameStem}\\.docx$`));
       const docxBytes = await readAll(await docxDownload.createReadStream());
 
       const docx = await extractDocx(docxBytes);
@@ -110,9 +208,10 @@ test.describe('Filing identity contract (Annual / Final / Trust pilot)', () => {
       expect(docx.visibleText).toContain(expected.documentTitle);
 
       // Final/Trust must not be emitted as Annual Accountings -- the exact
-      // premise Milestone 25 fixed and this contract now proves against the
-      // real artifact, not just the in-memory model.
-      if (id !== 'annual') {
+      // premise Milestone 25 fixed and this contract proves against the real
+      // artifact, not just the in-memory model. Only meaningful for types
+      // that alias another type's code path; none of the other 6 do.
+      if (id === 'finalAccounting' || id === 'trustAccounting') {
         const annual = filingCapabilities('annual');
         expect(pdfMeta.title, `${id}'s PDF metadata must not identify as Annual Accounting`).not.toContain(annual.displayName);
         expect(pdfText, `${id}'s PDF heading must not read as an Annual Accounting`).not.toContain(annual.documentTitle);

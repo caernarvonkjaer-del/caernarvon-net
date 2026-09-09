@@ -53,7 +53,17 @@ const DESCRIPTORS = {
   },
   planMinor: {
     id: 'annual-plan-minor', family: 'plan', engineId: 'planMinor',
-    inventoryType: 'planMinor', displayName: 'Annual Plan - Minors',
+    inventoryType: 'planMinor',
+    // Corrected to an em dash (was a plain hyphen), matching the three
+    // hardcoded live-UI strings in src/features/plan-minor/index.js
+    // (sidebar section label, Summary formTitle, Cover page <h1> -- all
+    // "Annual Plan — Minors") -- confirmed directly. This descriptor's
+    // displayName is what pdf-model.js writes into the real generated PDF/
+    // DOCX metadata.subject, so the two disagreed on this filing type's own
+    // name across UI vs. exported artifact until now. Found by Milestone
+    // 33's filing-identity contract, the first test to compare this field
+    // against a real generated artifact for this type.
+    displayName: 'Annual Plan — Minors',
     documentTitle: 'ANNUAL GUARDIANSHIP PLAN - MINOR', filenameStem: 'Annual-Plan-Minor',
     capabilities: { pdf: true, docx: true, excel: false },
   },
