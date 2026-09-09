@@ -3,9 +3,10 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 
 // Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
 // status pilot ... then migrate Guardian, Simplified, and Annual only after
-// parity is demonstrated"). The Plan-family pilot proved the shape; Annual
-// and Simplified now share the same config-driven test loop (their
-// architecture matches the Plan types closely enough to reuse it verbatim).
+// parity is demonstrated"). The Plan-family pilot proved the shape; Annual,
+// Simplified, and Annual's finalAccounting/trustAccounting formEngine()
+// aliases now share the same config-driven test loop (their architecture
+// matches the Plan types closely enough to reuse it verbatim).
 // Guardian does NOT reuse this loop -- its Next-button gate only ever covers
 // the 11 numbered schedule pages (Cover/D1-D5/Print are never gated, by
 // design), a brand-new schedule has 0 rows so no per-field jump link exists
@@ -28,7 +29,7 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 
 type NavStatusConfig = {
   featureName: string;
-  filingType: 'annual' | 'simplified' | 'planAnnual' | 'planInitial' | 'planMinor' | 'planSimplified';
+  filingType: 'annual' | 'finalAccounting' | 'trustAccounting' | 'simplified' | 'planAnnual' | 'planInitial' | 'planMinor' | 'planSimplified';
   validateFnName: 'validateAnnual' | 'validateSimplified' | 'validatePlanAnnual' | 'validatePlanInitial' | 'validatePlanMinor' | 'validatePlanSimplified';
   // A Cover field guaranteed blank on a freshly created ward AND correctly
   // path-resolved by validation-adapter.js's generic label matcher. wardName
@@ -62,6 +63,34 @@ const CONFIGS: NavStatusConfig[] = [
     // closure-private _printModule.doSavePdf(), reachable only through the
     // delegated click handler, same as annual-mount.spec.ts's own
     // blocked-export test.
+    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    }),
+  },
+  {
+    // finalAccounting/trustAccounting are formEngine()==='annual' aliases --
+    // same module, same validateAnnual(), same rendered print.js markup,
+    // just different displayed legal copy (see annual-mount.spec.ts's
+    // "Final and Trust aliases use their own legal copy" test). isScheduleIncomplete()
+    // used to have no prefixMap entry for either, so their Next-button gate
+    // and guidance panel were bypassed on every page, not just Cover.
+    featureName: 'Final Accounting',
+    filingType: 'finalAccounting',
+    validateFnName: 'validateAnnual',
+    jumpTestFieldPath: 'caseNumber',
+    nonCoverRoute: '/p2',
+    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      button.disabled = false;
+      button.click();
+    }),
+  },
+  {
+    featureName: 'Trust Accounting',
+    filingType: 'trustAccounting',
+    validateFnName: 'validateAnnual',
+    jumpTestFieldPath: 'caseNumber',
+    nonCoverRoute: '/p2',
     triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();

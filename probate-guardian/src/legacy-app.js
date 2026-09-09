@@ -8042,6 +8042,8 @@ function isScheduleIncomplete(route){
   const prefixMap={
     simplified:'s-',
     annual:'a-',
+    finalAccounting:'a-',
+    trustAccounting:'a-',
     planInitial:'pi-',
     planAnnual:'pa-',
     planMinor:'pm-',
@@ -8050,11 +8052,13 @@ function isScheduleIncomplete(route){
   const prefix=prefixMap[activeInventoryType];
   if(!prefix)return false;
   // Every prefixed type stores its Cover-page completeness under
-  // '<prefix>cover' except Annual, whose Cover page is labeled "Part I" (not
-  // "Cover") -- computeNavChecks() stores it as 'a-p1'. Without this override
-  // the lookup below always misses for Annual's Cover route, silently
-  // reporting it complete regardless of how many required fields are blank.
-  const coverKeyOverride={annual:'p1'};
+  // '<prefix>cover' except Annual (and its finalAccounting/trustAccounting
+  // formEngine() aliases, same computeNavChecks() branch, same 'a-p1' key),
+  // whose Cover page is labeled "Part I" (not "Cover") -- computeNavChecks()
+  // stores it as 'a-p1'. Without this override the lookup below always
+  // misses for these three types' Cover route, silently reporting it
+  // complete regardless of how many required fields are blank.
+  const coverKeyOverride={annual:'p1',finalAccounting:'p1',trustAccounting:'p1'};
   const navKey=key===''?(coverKeyOverride[activeInventoryType]||'cover'):key;
   const fullKey=`${prefix}${navKey}`;
   if(fullKey in r.checks){

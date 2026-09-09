@@ -60,14 +60,26 @@ once guidance legitimately renders there, the same selector also matched a
 jump-to-field button and had to be tightened to `data-form-path` (unique to
 the real input) — a real, if minor, side effect of the fix, not a new defect.
 
-**Two known, related gaps intentionally left unaddressed:**
-`finalAccounting`/`trustAccounting` (the other two `formEngine()==='annual'`
-aliases) are missing from `isScheduleIncomplete()`'s `prefixMap` entirely, so
-*no* page is ever gated for them, not just Cover — a larger version of the
-same class of bug, out of scope since the user's request was Guardian/Annual/
-Simplified specifically. And field-path accuracy (the same
-`adaptValidationErrors()` keyword-based `path` inference already flagged as
-out of scope for the route-bucketing fix above) remains unaddressed.
+**`finalAccounting`/`trustAccounting` fixed and migrated too (follow-up).**
+The two other `formEngine()==='annual'` aliases, initially left out of the
+Guardian/Annual/Simplified migration above, turned out to have a larger
+version of the same Cover-key bug: `isScheduleIncomplete()`'s `prefixMap` had
+no entry for either at all, so `prefix` was `undefined` and the function
+returned `false` unconditionally — *no* page was ever gated for these two
+types, not just Cover, meaning Next was never disabled and guidance never
+populated anywhere for a Final or Trust Accounting filing. Their route
+resolution was already correct (same `annual-accounting` module, same
+Roman-numeral labels, `errorRoute()` doesn't branch on filing type) — only
+the completeness gate was broken. Fixed by adding
+`finalAccounting:'a-'`/`trustAccounting:'a-'` to `prefixMap` and the same
+Cover-key override Annual needed (`'p1'` for all three); both now have their
+own config entries in the shared contract loop, reusing `validateAnnual()`
+directly (same function, doesn't branch on `activeInventoryType`).
+
+**One known, related gap intentionally left unaddressed:** field-path
+accuracy (the same `adaptValidationErrors()` keyword-based `path` inference
+already flagged as out of scope for the route-bucketing fix above) remains
+unaddressed.
 
 **Real gap found and fixed during this pilot, not assumed away:** the
 itemized guidance panel this section's own Phase 2.3 language describes
