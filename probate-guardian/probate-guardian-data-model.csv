@@ -1,0 +1,596 @@
+scope,field_name,field_label,data_type,requiredness,sensitive,persisted,derived_or_input,notes,source
+case_file,activeWardId,Active ward ID,string,optional,no,yes,input,Foreign key to caseFile.wards,src/core/state.js
+case_file,guardianName,Account guardian name,string,optional,no,yes,input,Case-file owner,src/core/state.js
+case_file,guardianEmail,Account guardian email,string,email optional,no,yes,input,Case-file owner,src/core/state.js
+case_file,parties,Parties,array<object>,optional,contains PII,yes,input,Canonical party records,src/core/state.js
+case_file,cases,Cases,array<object>,optional,case data,yes,input,Case registry,src/core/state.js
+case_file,dismissedPartyPairs,Dismissed party duplicate pairs,array<object>,optional,no,yes,input,Duplicate-review decisions,src/core/state.js
+case_file,wards,Wards,array<object>,optional,contains PII,yes,input,All filing records,src/core/state.js
+case_file,lastSavedFileName,Last saved file name,string,optional,no,yes,derived,Persistence UI state,src/core/state.js
+common,inventoryType,Filing inventory type,enum,required,no,yes,input,guardian; simplified; annual; finalAccounting; trustAccounting; planSimplified; planAnnual; planInitial; planMinor,src/core/filing/filing-descriptor.js
+common,wardName,Name of ward,string,required,no,yes,input,Shared by all filings,src/core/state.js
+common,caseNumber,Case number,string,required,no,yes,input,Not present on Plan Minor which uses ucn/ref,src/core/state.js
+common,county,County,enum/string,required,no,yes,input,Florida county; default Pinellas,src/core/state.js
+common,periodFrom,Reporting/accounting period from,date,required for annual filings,no,yes,input,ISO date YYYY-MM-DD,src/core/state.js
+common,periodTo,Reporting/accounting period to,date,required for annual filings,no,yes,input,ISO date YYYY-MM-DD,src/core/state.js
+common,amendedForm,Amended form,enum,required by some filings,no,yes,input,Yes/No,src/core/state.js
+common,amendedVersion,Amended version,string,conditional,no,yes,input,Required when amendedForm is Yes,src/core/state.js
+common,guardian,Guardian name,string,required for accounting,no,yes,input,Primary guardian display name,src/core/state.js
+common,attorney,Attorney name,string,required for accounting,no,yes,input,Linked/display attorney name,src/core/state.js
+common,typeOfGuardianship,Type of guardianship,string,required for accounting,no,yes,input,Usually Plenary,src/core/state.js
+common,gid,Guardianship inception date,date,required by accounting/plans,no,yes,input,ISO date,src/core/state.js
+common,ssn,Social Security Number,string,required for simplified accounting,yes,yes,input,Masked in form but exported in filing PDF,src/core/state.js
+accounting,simplified.eligDepository,All property in designated depository,enum,required, no,yes,input,Yes/No eligibility gate,src/core/state.js
+accounting,simplified.eligOnlyTransactions,Only permitted transactions,enum,required,no,yes,input,Yes/No eligibility gate,src/core/state.js
+accounting,simplified.startingBalance,Starting balance,decimal,required,no,yes,input,Currency amount,src/core/state.js
+accounting,simplified.interestIncome,Interest income,decimal,required,no,yes,input,Currency amount,src/core/state.js
+accounting,simplified.depositsSettlement,Settlement deposits,decimal,required,no,yes,input,Currency amount,src/core/state.js
+accounting,simplified.serviceCharges,Financial institution service charges,decimal,required,no,yes,input,Currency amount,src/core/state.js
+accounting,simplified.federalIncomeTax,Federal income tax,decimal,required,no,yes,input,Currency amount,src/core/state.js
+accounting,simplified.guardians[].name,Guardian printed name,string,required for active guardian,no,yes,input,Repeatable guardian row,src/core/state.js
+accounting,simplified.guardians[].ssn,Guardian SSN/EIN,string,required for active guardian,yes,yes,input,Sensitive identifier,src/core/state.js
+accounting,simplified.guardians[].phone,Guardian phone,string,required for active guardian,no,yes,input,Formatted phone,src/core/state.js
+accounting,simplified.guardians[].email,Guardian email,string,required for active guardian,no,yes,input,Email address,src/core/state.js
+accounting,simplified.guardians[].mailingStreet,Mailing street,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,simplified.guardians[].mailingCityStateZip,Mailing city/state/ZIP,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,simplified.guardians[].residenceStreet,Residence/corporate street,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,simplified.guardians[].residenceCityStateZip,Residence/corporate city/state/ZIP,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,simplified.guardians[].signatureDate,Guardian signature date,date,required for active guardian,no,yes,input,ISO date,src/core/state.js
+accounting,simplified.attorney_barNumber,Attorney bar number,string,required,no,yes,input,Normalized identifier,src/core/state.js
+accounting,simplified.attorney_phone,Attorney phone,string,required,no,yes,input,Formatted phone,src/core/state.js
+accounting,simplified.attorney_street,Attorney street,string,required,no,yes,input,Address component,src/core/state.js
+accounting,simplified.attorney_cityStateZip,Attorney city/state/ZIP,string,required,no,yes,input,Address component,src/core/state.js
+accounting,simplified.attorney_signatureDate,Attorney signature date,date,required,no,yes,input,ISO date,src/core/state.js
+accounting,simplified.certServiceDate,Certificate service date,date,required,no,yes,input,ISO date; should be checked against period,src/core/state.js
+accounting,simplified.certAttySignDate,Certificate attorney signature date,date,optional,no,yes,input,ISO date,src/core/state.js
+accounting,simplified.certAttyBarNumber,Certificate attorney bar number,string,optional,no,yes,input,Identifier,src/core/state.js
+accounting,simplified.certAttyPhone,Certificate attorney phone,string,optional,no,yes,input,Formatted phone,src/core/state.js
+accounting,simplified.certAttyStreet,Certificate attorney street,string,optional,no,yes,input,Address component,src/core/state.js
+accounting,simplified.certAttyCityStateZip,Certificate attorney city/state/ZIP,string,optional,no,yes,input,Address component,src/core/state.js
+accounting,simplified.certIndicator,Certificate indicator,string,optional,no,yes,input,Service/certification choice,src/core/state.js
+accounting,simplified.certRecipients[].name,Service recipient name,string,required for populated row,no,yes,input,Repeatable row,src/core/state.js
+accounting,simplified.certRecipients[].line2,Service recipient address line 2,string,optional,no,yes,input,Address/free text,src/core/state.js
+accounting,simplified.certRecipients[].line3,Service recipient address line 3,string,optional,no,yes,input,Address/free text,src/core/state.js
+accounting,simplified.certRecipients[].line4,Service recipient address line 4,string,optional,no,yes,input,Address/free text,src/core/state.js
+accounting,simplified.remuneration[].guardian,Remuneration guardian,string,conditional,no,yes,input,Required when row used,src/core/form/schedule-definitions.js
+accounting,simplified.remuneration[].type,Remuneration type,string,conditional,no,yes,input,Required when row used,src/core/form/schedule-definitions.js
+accounting,simplified.remuneration[].description,Remuneration description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+accounting,simplified.remuneration[].amount,Remuneration amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+accounting,annual.filingType,Filing type,enum,required,no,yes,input,Annual; Final; Trust,src/core/state.js
+accounting,annual.relatedCaseNumbers,Related case numbers,string,optional,no,yes,input,Case relationship metadata,src/core/state.js
+accounting,annual.startingBalance,Starting balance,decimal,required,no,yes,input,Currency amount,src/core/state.js
+accounting,annual.guardians[].name,Guardian name,string,required for active guardian,no,yes,input,Up to three rows,src/core/state.js
+accounting,annual.guardians[].ssn,Guardian SSN/EIN,string,required for active guardian,yes,yes,input,Sensitive identifier,src/core/state.js
+accounting,annual.guardians[].phone,Guardian phone,string,required for active guardian,no,yes,input,Formatted phone,src/core/state.js
+accounting,annual.guardians[].email,Guardian email,string,required for active guardian,no,yes,input,Email address,src/core/state.js
+accounting,annual.guardians[].mailingStreet,Guardian mailing street,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,annual.guardians[].mailingCityStateZip,Guardian mailing city/state/ZIP,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,annual.guardians[].officeStreet,Guardian office/residence street,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,annual.guardians[].officeCityStateZip,Guardian office/residence city/state/ZIP,string,required for active guardian,no,yes,input,Address component,src/core/state.js
+accounting,annual.guardians[].signatureDate,Guardian signature date,date,required for active guardian,no,yes,input,ISO date,src/core/state.js
+accounting,annual.guardians[].signatureDateLabel,Guardian signature date label,string,optional,no,yes,input,Display metadata,src/core/state.js
+accounting,annual.preparer.name,Preparer name,string,required,no,yes,input,Party field,src/core/state.js
+accounting,annual.preparer.ssn,Preparer SSN/EIN,string,optional,yes,yes,input,Sensitive identifier,src/core/state.js
+accounting,annual.preparer.phone,Preparer phone,string,required,no,yes,input,Formatted phone,src/core/state.js
+accounting,annual.preparer.street,Preparer street,string,required,no,yes,input,Address component,src/core/state.js
+accounting,annual.preparer.cityStateZip,Preparer city/state/ZIP,string,required,no,yes,input,Address component,src/core/state.js
+accounting,annual.preparer.signatureDate,Preparer signature date,date,required,no,yes,input,ISO date,src/core/state.js
+accounting,annual.attorney_bar,Attorney bar number,string,required,no,yes,input,Identifier,src/core/state.js
+accounting,annual.attorney_phone,Attorney phone,string,required,no,yes,input,Formatted phone,src/core/state.js
+accounting,annual.attorney_street,Attorney street,string,required,no,yes,input,Address component,src/core/state.js
+accounting,annual.attorney_cityStateZip,Attorney city/state/ZIP,string,required,no,yes,input,Address component,src/core/state.js
+accounting,annual.attorney_county,Attorney county,string,optional,no,yes,input,Can diverge from filing county; validation candidate,src/core/state.js
+accounting,annual.attorney_signatureDate,Attorney signature date,date,required,no,yes,input,ISO date,src/core/state.js
+accounting,annual.reconcileExplanation,Reconciliation explanation,string,conditional,no,yes,input,Required when accounting does not reconcile,src/core/state.js
+accounting,annual.guardianRelationship,Guardian relationship,string,required,no,yes,input,Part IX bond section,src/core/state.js
+accounting,annual.restrictedDepositoryReceiptDate,Restricted depository receipt date,date,optional,no,yes,input,ISO date,src/core/state.js
+accounting,annual.bondAmount,Bond amount,decimal,optional,no,yes,input,Currency amount,src/core/state.js
+accounting,annual.bondPeriodFrom,Bond period from,date,optional,no,yes,input,ISO date,src/core/state.js
+accounting,annual.bondPeriodTo,Bond period to,date,optional,no,yes,input,ISO date,src/core/state.js
+accounting,annual.bondingCompany,Bonding company,string,optional,no,yes,input,Party/company name,src/core/state.js
+accounting,annual.certDate,Certificate of service date,date,required,no,yes,input,ISO date,src/core/state.js
+accounting,annual.certIndicator,Certificate indicator,string,optional,no,yes,input,Service/certification choice,src/core/state.js
+accounting,annual.certAttySignDate,Certificate attorney signature date,date,optional,no,yes,input,ISO date,src/core/state.js
+accounting,annual.remuneration[].guardian,Remuneration guardian,string,conditional,no,yes,input,Repeatable row,src/core/form/schedule-definitions.js
+accounting,annual.remuneration[].type,Remuneration type,string,conditional,no,yes,input,Repeatable row,src/core/form/schedule-definitions.js
+accounting,annual.remuneration[].amount,Remuneration amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+accounting,annual.remuneration[].description,Remuneration description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+accounting,annual.trusts[].hasTrust,Has trust,enum,conditional,no,yes,input,Yes/No,src/core/state.js
+accounting,annual.trusts[].createdAfterGID,Created after GID,enum,conditional,no,yes,input,Yes/No,src/core/state.js
+accounting,annual.trusts[].name,Trust name,string,conditional,no,yes,input,Required when trust exists,src/core/state.js
+accounting,annual.trusts[].trustee,Trustee,string,conditional,no,yes,input,Party name,src/core/state.js
+accounting,annual.trusts[].accountNo,Trust account number,string,optional,yes,yes,input,Financial identifier,src/core/state.js
+accounting,annual.trusts[].dateCreated,Trust creation date,date,optional,no,yes,input,ISO date,src/core/state.js
+accounting,annual.trusts[].trustType,Trust type,string,optional,no,yes,input,Trust classification,src/core/state.js
+accounting,annual.trusts[].wardPct,Ward percentage,decimal,optional,no,yes,input,Percentage,src/core/state.js
+accounting,annual.trusts[].wardAmount,Ward amount,decimal,optional,no,yes,input,Currency amount,src/core/state.js
+inventory,guardian.caseNumber,Case number,string,required,no,yes,input,Initial Inventory identity,src/core/state.js
+inventory,guardian.gid,Guardianship inception date,date,required,no,yes,input,ISO date,src/core/state.js
+inventory,guardian.guardianName,Primary guardian name,string,required,no,yes,input,Initial Inventory cover field,src/legacy-app.js
+inventory,guardian.attorneyForGuardian,Attorney for guardian,string,required,no,yes,input,Initial Inventory cover field; distinct from accounting attorney,src/legacy-app.js
+inventory,guardian.hasSafeDepositBox,Safe deposit box exists,boolean,optional,no,yes,input,Nullable boolean in initial state,src/legacy-app.js
+inventory,guardian.safeDepositBoxFiled,Safe deposit box filed,boolean,optional,no,yes,input,Nullable boolean in initial state,src/legacy-app.js
+inventory,guardian.isAmended,Amended inventory,boolean,optional,no,yes,input,Initial Inventory uses a boolean rather than the Yes/No amendedForm enum,src/legacy-app.js
+inventory,guardian.scheduleNoItems,Schedule no-items confirmations,object,optional,no,yes,input,Dynamic schedule-keyed confirmation map,src/legacy-app.js
+inventory,guardian.scheduleA1,Schedule A-1 rows,array<object>,optional,contains financial data,yes,input,Repeatable real-estate rows,src/legacy-app.js
+inventory,guardian.scheduleA2,Schedule A-2 rows,array<object>,optional,contains financial data,yes,input,Repeatable real-estate-liability rows,src/legacy-app.js
+inventory,guardian.scheduleB1,Schedule B-1 rows,array<object>,optional,contains financial data,yes,input,Repeatable cash rows,src/legacy-app.js
+inventory,guardian.scheduleB2,Schedule B-2 rows,array<object>,optional,contains financial data,yes,input,Repeatable personal-property rows,src/legacy-app.js
+inventory,guardian.scheduleB3,Schedule B-3 rows,array<object>,optional,contains financial data,yes,input,Repeatable intangible-property rows,src/legacy-app.js
+inventory,guardian.scheduleB4,Schedule B-4 rows,array<object>,optional,contains financial data,yes,input,Repeatable personal-property-liability rows,src/legacy-app.js
+inventory,guardian.scheduleC1,Schedule C-1 rows,array<object>,optional,contains financial data,yes,input,Repeatable income rows,src/legacy-app.js
+inventory,guardian.scheduleC2,Schedule C-2 rows,array<object>,optional,contains legal data,yes,input,Repeatable lawsuits-against rows,src/legacy-app.js
+inventory,guardian.scheduleC3,Schedule C-3 rows,array<object>,optional,contains legal data,yes,input,Repeatable lawsuits-by-ward rows,src/legacy-app.js
+inventory,guardian.scheduleC4,Schedule C-4 rows,array<object>,optional,contains financial data,yes,input,Repeatable trust rows,src/legacy-app.js
+inventory,guardian.scheduleC5,Schedule C-5 rows,array<object>,optional,contains financial data,yes,input,Repeatable joint-owner rows,src/legacy-app.js
+inventory,guardian.scheduleA1[].propertyDescription,Real property description,string,optional,no,yes,input,Schedule A-1 row field,src/legacy-app.js
+inventory,guardian.scheduleA1[].streetAddress,Real property street address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleA1[].cityStateZip,Real property city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleA1[].notes,Real property notes,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleA1[].isPersonalResidence,Personal residence indicator,boolean,optional,no,yes,input,Checkbox,src/legacy-app.js
+inventory,guardian.scheduleA1[].isIncomeProperty,Income property indicator,boolean,optional,no,yes,input,Checkbox,src/legacy-app.js
+inventory,guardian.scheduleA1[].fullAssetValue,Full asset value,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleA1[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleA2[].lenderName,Lender name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleA2[].lenderAddress,Lender address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleA2[].lenderCityStateZip,Lender city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleA2[].accountNumber,Liability account number,string,optional,yes,yes,input,Financial identifier,src/legacy-app.js
+inventory,guardian.scheduleA2[].notes,Liability notes,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleA2[].liabilityType,Liability type,string,optional,no,yes,input,Default Mortgage,src/legacy-app.js
+inventory,guardian.scheduleA2[].fullDebtBalance,Full debt balance,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleA2[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleB1[].institutionName,Institution name,string,optional,no,yes,input,Financial institution,src/legacy-app.js
+inventory,guardian.scheduleB1[].isRestricted,Restricted indicator,boolean,optional,no,yes,input,Checkbox,src/legacy-app.js
+inventory,guardian.scheduleB1[].accountType,Account type,string,optional,no,yes,input,Account classification,src/legacy-app.js
+inventory,guardian.scheduleB1[].accountNumber,Account number,string,optional,yes,yes,input,Financial identifier,src/legacy-app.js
+inventory,guardian.scheduleB1[].streetAddress,Institution street address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB1[].cityStateZip,Institution city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB1[].fullAssetAmount,Full asset amount,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleB1[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleB2[].description,Personal property description,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleB2[].streetAddress,Personal property street address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB2[].cityStateZip,Personal property city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB2[].valuationMethod,Valuation method,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleB2[].fullAssetValue,Full asset value,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleB2[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleB2[].inSafeDepositBox,In safe deposit box,boolean,optional,no,yes,input,Checkbox,src/legacy-app.js
+inventory,guardian.scheduleB2[].amountInSDB,Safe deposit box amount,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleB2[].isVehicle,Vehicle indicator,boolean,optional,no,yes,input,Conditional vehicle block,src/legacy-app.js
+inventory,guardian.scheduleB2[].vehicleYear,Vehicle year,string,conditional,no,yes,input,Required when isVehicle is true,src/legacy-app.js
+inventory,guardian.scheduleB2[].vehicleMake,Vehicle make,string,conditional,no,yes,input,Required when isVehicle is true,src/legacy-app.js
+inventory,guardian.scheduleB2[].vehicleModel,Vehicle model,string,conditional,no,yes,input,Required when isVehicle is true,src/legacy-app.js
+inventory,guardian.scheduleB2[].vehicleVin,Vehicle VIN,string,conditional,yes,yes,input,Required when isVehicle is true,src/legacy-app.js
+inventory,guardian.scheduleB2[].odometerMileage,Odometer mileage,string,conditional,no,yes,input,Required when isVehicle is true,src/legacy-app.js
+inventory,guardian.scheduleB3[].description,Intangible property description,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleB3[].streetAddress,Custodian street address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB3[].cityStateZip,Custodian city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB3[].isRestricted,Restricted indicator,boolean,optional,no,yes,input,Checkbox,src/legacy-app.js
+inventory,guardian.scheduleB3[].fullAssetValue,Full asset value,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleB3[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleB3[].inSafeDepositBox,In safe deposit box,boolean,optional,no,yes,input,Checkbox,src/legacy-app.js
+inventory,guardian.scheduleB3[].amountInSDB,Safe deposit box amount,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleB4[].lenderName,Lender name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleB4[].relatedProperty,Related property,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleB4[].accountNumber,Liability account number,string,optional,yes,yes,input,Financial identifier,src/legacy-app.js
+inventory,guardian.scheduleB4[].lenderAddress,Lender address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleB4[].liabilityType,Liability type,string,optional,no,yes,input,Default Loan,src/legacy-app.js
+inventory,guardian.scheduleB4[].fullLiabilityBalance,Full liability balance,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleB4[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleC1[].payerName,Payer name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleC1[].payerAddress,Payer address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC1[].payerCityStateZip,Payer city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC1[].typeOfIncome,Type of income,string,optional,no,yes,input,Income classification,src/legacy-app.js
+inventory,guardian.scheduleC1[].frequencyOfPayment,Payment frequency,string,optional,no,yes,input,Default Monthly,src/legacy-app.js
+inventory,guardian.scheduleC1[].paymentBasis,Payment basis,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleC1[].annualIncomeAmount,Annual income amount,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleC1[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleC2[].claimantName,Claimant name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleC2[].lawsuitDescription,Lawsuit description,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleC2[].courtJurisdiction,Court jurisdiction,string,optional,no,yes,input,Legal data,src/legacy-app.js
+inventory,guardian.scheduleC2[].caseNumber,Case number,string,optional,yes,yes,input,Court/legal identifier,src/legacy-app.js
+inventory,guardian.scheduleC2[].claimantAddress,Claimant address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC2[].dateFiled,Date filed,date,optional,no,yes,input,ISO date,src/legacy-app.js
+inventory,guardian.scheduleC2[].amountOfClaim,Claim amount,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleC2[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleC3[].defendantName,Defendant name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleC3[].actionDescription,Action description,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleC3[].status,Action status,string,optional,no,yes,input,Legal status,src/legacy-app.js
+inventory,guardian.scheduleC3[].courtJurisdiction,Court jurisdiction,string,optional,no,yes,input,Legal data,src/legacy-app.js
+inventory,guardian.scheduleC3[].caseNumber,Case number,string,optional,yes,yes,input,Court/legal identifier,src/legacy-app.js
+inventory,guardian.scheduleC3[].actionDate,Action date,date,optional,no,yes,input,ISO date,src/legacy-app.js
+inventory,guardian.scheduleC3[].estimatedSettlement,Estimated settlement,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleC3[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleC4[].trustName,Trust name,string,optional,no,yes,input,Trust identity,src/legacy-app.js
+inventory,guardian.scheduleC4[].trusteeName,Trustee name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleC4[].trusteeAddress,Trustee address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC4[].trusteeCityStateZip,Trustee city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC4[].dateCreated,Trust creation date,date,optional,no,yes,input,ISO date,src/legacy-app.js
+inventory,guardian.scheduleC4[].accountNumber,Trust account number,string,optional,yes,yes,input,Financial identifier,src/legacy-app.js
+inventory,guardian.scheduleC4[].trustType,Trust type,string,optional,no,yes,input,Default Pooled,src/legacy-app.js
+inventory,guardian.scheduleC4[].trustAmount,Trust amount,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleC4[].wardPercent,Ward percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.scheduleC5[].assetDescription,Asset description,string,optional,no,yes,input,Free text,src/legacy-app.js
+inventory,guardian.scheduleC5[].ownerName,Owner name,string,optional,no,yes,input,Party name,src/legacy-app.js
+inventory,guardian.scheduleC5[].ownerAddress,Owner address,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC5[].ownerCityStateZip,Owner city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+inventory,guardian.scheduleC5[].relationshipToWard,Relationship to ward,string,optional,no,yes,input,Relationship,src/legacy-app.js
+inventory,guardian.scheduleC5[].totalAssetValue,Total asset value,decimal,optional,no,yes,input,Currency amount,src/legacy-app.js
+inventory,guardian.scheduleC5[].jointOwnerPercent,Joint owner percentage,decimal,optional,no,yes,input,Percentage 0-100,src/legacy-app.js
+inventory,guardian.guardians[].name,Guardian name,string,required,no,yes,input,Primary and co-guardian rows,src/core/state.js
+inventory,guardian.guardians[].ssnEin,Guardian SSN/EIN,string,required,yes,yes,input,Sensitive identifier,src/core/state.js
+inventory,guardian.guardians[].phone,Guardian phone,string,required,no,yes,input,Formatted phone,src/core/state.js
+inventory,guardian.guardians[].email,Guardian email,string,optional,no,yes,input,Email address,src/core/state.js
+inventory,guardian.guardians[].streetAddress,Guardian street address,string,required,no,yes,input,Address component,src/core/state.js
+inventory,guardian.guardians[].cityStateZip,Guardian city/state/ZIP,string,required,no,yes,input,Address component,src/core/state.js
+inventory,guardian.guardians[].signatureDate,Guardian signature date,date,required,no,yes,input,ISO date,src/core/state.js
+inventory,guardian.preparer.name,Preparer name,string,required,no,yes,input,Party field,src/core/state.js
+inventory,guardian.preparer.ssnEin,Preparer SSN/EIN,string,optional,yes,yes,input,Sensitive identifier,src/core/state.js
+inventory,guardian.preparer.phone,Preparer phone,string,required,no,yes,input,Formatted phone,src/core/state.js
+inventory,guardian.preparer.email,Preparer email,string,optional,no,yes,input,Email address,src/core/state.js
+inventory,guardian.preparer.streetAddress,Preparer street address,string,required,no,yes,input,Address component,src/core/state.js
+inventory,guardian.preparer.cityStateZip,Preparer city/state/ZIP,string,required,no,yes,input,Address component,src/core/state.js
+inventory,guardian.attorney.name,Attorney name,string,required,no,yes,input,Party field,src/core/state.js
+inventory,guardian.attorney.barNumber,Attorney bar number,string,required,no,yes,input,Identifier,src/core/state.js
+inventory,guardian.attorney.phone,Attorney phone,string,required,no,yes,input,Formatted phone,src/core/state.js
+inventory,guardian.attorney.email,Attorney email,string,optional,no,yes,input,Email address,src/core/state.js
+inventory,guardian.attorney.streetAddress,Attorney street address,string,required,no,yes,input,Address component,src/core/state.js
+inventory,guardian.attorney.cityStateZip,Attorney city/state/ZIP,string,required,no,yes,input,Address component,src/core/state.js
+inventory,guardian.attorney.signatureDate,Attorney signature date,date,required,no,yes,input,ISO date,src/core/state.js
+inventory,guardian.attorney.filingDate,Attorney filing date,date,optional,no,yes,input,Nullable date in initial state,src/legacy-app.js
+inventory,guardian.serviceDate,Service date,date,required,no,yes,input,Must be checked against filing period where applicable,src/core/state.js
+inventory,guardian.serviceRecipients,Certificate-of-service recipients,array<object>,optional,contains PII,yes,input,Repeatable recipient rows,src/legacy-app.js
+inventory,guardian.serviceAttorney,Service attorney,object,optional,contains PII,yes,input,Name/bar/phone/address/email fields,src/legacy-app.js
+inventory,guardian.serviceAttorney.email,Service attorney email,string,optional,no,yes,input,Email address,src/legacy-app.js
+inventory,guardian.witnesses,Witnesses present during inventory,array<object>,optional,contains PII,yes,input,Optional witness rows,src/legacy-app.js
+inventory,guardian.bondAmount,Bond amount,decimal,optional,no,yes,input,Currency amount,src/core/state.js
+inventory,guardian.bondPeriodFrom,Bond period from,date,optional,no,yes,input,ISO date,src/core/state.js
+inventory,guardian.bondPeriodTo,Bond period to,date,optional,no,yes,input,ISO date,src/core/state.js
+inventory,guardian.bondingCompany,Bonding company,string,optional,no,yes,input,Party/company name,src/core/state.js
+plan_simplified,q1Residences,Current residence description,string,required,no,yes,input,Single free-text response,src/core/state.js
+plan_simplified,q2BestPlacement,Best placement response,string,required,no,yes,input,Question 2,src/core/state.js
+plan_simplified,q3MedicalTreatment,Medical treatment response,string,required,no,yes,input,Question 3,src/core/state.js
+plan_simplified,q4Diagnosis,Diagnosis response,string,required,no,yes,input,Question 4,src/core/state.js
+plan_simplified,q5SocialServices,Personal/social services,string,required,no,yes,input,Question 5,src/core/state.js
+plan_simplified,q6Interaction,Ward interaction,string,required,no,yes,input,Question 6,src/core/state.js
+plan_simplified,q7RestoreRights,Restore rights choice,enum,required,no,yes,input,Yes/No; explicit unanswered state needed,src/core/state.js
+plan_simplified,q7RestoreExplain,Restore rights explanation,string,conditional,no,yes,input,Required when q7RestoreRights is Yes,src/core/state.js
+plan_simplified,q8DNR,Do Not Resuscitate directive,boolean,optional,no,yes,input,Checkbox,src/core/state.js
+plan_simplified,q8LivingWill,Living will directive,boolean,optional,no,yes,input,Checkbox,src/core/state.js
+plan_simplified,q8Surrogate,Health care surrogate,boolean,optional,no,yes,input,Checkbox,src/core/state.js
+plan_simplified,q8POA,Power of attorney,boolean,optional,no,yes,input,Checkbox,src/core/state.js
+plan_simplified,q8Other,Other directive,boolean,optional,no,yes,input,Checkbox,src/core/state.js
+plan_simplified,q8OtherText,Other directive detail,string,conditional,no,yes,input,Required when q8Other is true,src/core/state.js
+plan_simplified,q8None,None of the above,boolean,optional,no,yes,input,Mutually exclusive answer candidate,src/core/state.js
+plan_simplified,q9Remuneration,Remuneration response,string,required,no,yes,input,Question 9,src/core/state.js
+plan_simplified,q9RemunerationExplain,Remuneration explanation,string,conditional,no,yes,input,Conditional explanation,src/core/state.js
+plan_simplified,planGuardians[].name,Plan guardian name,string,required for primary,no,yes,input,Repeatable signature row,src/core/state.js
+plan_simplified,planGuardians[].signatureDate,Guardian signature date,date,required for primary,no,yes,input,ISO date,src/core/state.js
+plan_simplified,planGuardians[].email,Guardian email,string,required for primary,no,yes,input,Email address,src/core/state.js
+plan_simplified,planGuardians[].phone,Guardian phone,string,required for primary,no,yes,input,Formatted phone,src/core/state.js
+plan_simplified,planGuardians[].mailingAddress,Guardian mailing address,string,required for primary,no,yes,input,Combined address,src/core/state.js
+plan_annual,rights.marry,Right to marry status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.vote,Right to vote status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.govBenefits,Right to apply for government benefits status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.driver,Right to hold driver's license status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.travel,Right to travel status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.employment,Right to seek or retain employment status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.contract,Right to contract status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.sue,Right to sue and be sued status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.property,Right to manage/dispose of property status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.residence,Right to determine residence status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.medical,Right to consent to medical treatment status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,rights.social,Right to make social-environment decisions status,enum,required,no,yes,input,Configured right state,src/legacy-app.js
+plan_annual,adls.eating,Eating ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.prepareMeals,Prepare meals ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.heavyChores,Heavy chores ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.lightHousekeeping,Light housekeeping ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.managingMoney,Managing money ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.dressing,Dressing ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.transportation,Transportation ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.walking,Walking/mobility rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.toileting,Toileting ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.stairs,Climbing stairs ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.transferring,Transfer ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.laundry,Laundry ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.shopping,Shopping ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.bathing,Bathing ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.grooming,Grooming ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,adls.medication,Medication administration ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_annual,benefits.socialSecurity.eligible,Social Security eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.ssdi.eligible,SSDI eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.hmo.eligible,HMO eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.ssi.eligible,SSI eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.stateSupplement.eligible,State supplement eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.institutionalCare.eligible,Institutional care program eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.supplementalIns.eligible,Supplemental insurance eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.pension.eligible,Pension eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.medicare.eligible,Medicare eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.medicaid.eligible,Medicaid eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.trusts.eligible,Trust benefit eligibility,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.socialSecurity.appliedFor,Social Security applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.ssdi.appliedFor,SSDI applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.hmo.appliedFor,HMO applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.ssi.appliedFor,SSI applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.stateSupplement.appliedFor,State supplement applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.institutionalCare.appliedFor,Institutional care program applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.supplementalIns.appliedFor,Supplemental insurance applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.pension.appliedFor,Pension applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.medicare.appliedFor,Medicare applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.medicaid.appliedFor,Medicaid applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,benefits.trusts.appliedFor,Trust benefit applied-for status,boolean,optional,no,yes,input,Configured benefit key,src/legacy-app.js
+plan_annual,q1Residences[].name,Residence/facility name,string,required for populated row,no,yes,input,Repeatable row,src/core/form/schedule-definitions.js
+plan_annual,q1Residences[].facilityType,Facility type,string,optional,no,yes,input,Repeatable row,src/core/state.js
+plan_annual,q1Residences[].street,Residence street,string,optional,no,yes,input,Address component,src/core/form/schedule-definitions.js
+plan_annual,q1Residences[].cityStateZip,Residence city/state/ZIP,string,optional,no,yes,input,Address component,src/core/form/schedule-definitions.js
+plan_annual,q1Residences[].phone,Residence phone,string,optional,no,yes,input,Formatted phone,src/core/form/schedule-definitions.js
+plan_annual,q1Residences[].from,Resided from,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+plan_annual,q1Residences[].to,Resided to,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+plan_annual,q4Providers[].name,Provider name,string,required for populated row,no,yes,input,Repeatable row,src/core/form/schedule-definitions.js
+plan_annual,q4Providers[].providerType,Provider type,string,optional,no,yes,input,Provider classification,src/core/form/schedule-definitions.js
+plan_annual,q4Providers[].visits,Number of visits,integer,optional,no,yes,input,Count,src/core/form/schedule-definitions.js
+plan_annual,q4Providers[].street,Provider street,string,optional,no,yes,input,Address component,src/core/form/schedule-definitions.js
+plan_annual,q4Providers[].cityStateZip,Provider city/state/ZIP,string,optional,no,yes,input,Address component,src/core/form/schedule-definitions.js
+plan_annual,q4Providers[].phone,Provider phone,string,optional,no,yes,input,Formatted phone,src/core/form/schedule-definitions.js
+plan_annual,planGuardians[].name,Plan guardian name,string,required for primary,no,yes,input,Repeatable signature row,src/core/state.js
+plan_annual,planGuardians[].ssn,Guardian SSN/EIN,string,required for primary,yes,yes,input,Sensitive identifier,src/core/state.js
+plan_annual,planGuardians[].mailingStreet,Guardian mailing street,string,required for primary,no,yes,input,Address component,src/core/state.js
+plan_annual,planGuardians[].mailingCityStateZip,Guardian mailing city/state/ZIP,string,required for primary,no,yes,input,Address component,src/core/state.js
+plan_annual,planGuardians[].officeStreet,Guardian office street,string,optional,no,yes,input,Address component,src/core/state.js
+plan_annual,planGuardians[].officeCityStateZip,Guardian office city/state/ZIP,string,optional,no,yes,input,Address component,src/core/state.js
+plan_annual,planGuardians[].phone,Guardian phone,string,required for primary,no,yes,input,Formatted phone,src/core/state.js
+plan_annual,planGuardians[].email,Guardian email,string,optional,no,yes,input,Email address,src/core/state.js
+plan_annual,planGuardians[].signatureDate,Guardian signature date,date,required for primary,no,yes,input,ISO date,src/core/state.js
+plan_initial,q2Setting,Best-suited residential setting,enum,required,no,yes,input,Choice plus q2Explain when Other,src/core/state.js
+plan_initial,q3MedPrimary,Primary care service provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedDentist,Dentist service provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedOphthalmologist,Ophthalmologist service provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedSpecialist,Specialist service provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedSpecialistArea,Specialist practice area,string,conditional,no,yes,input,Required when q3MedSpecialist is true,src/core/state.js
+plan_initial,q3MedPT,Physical therapy provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedST,Speech therapy provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedOT,Occupational therapy provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedWardDecides,Ward decides medical care,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedOther,Other medical service provided,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q3MedExplain,Medical service explanation,string,conditional,no,yes,input,Required when q3MedOther is true,src/core/state.js
+plan_initial,q4Mental,Mental health service provision,enum,required,no,yes,input,Choice plus explanation,src/core/state.js
+plan_initial,q5Personal,Personal care provision,enum,required,no,yes,input,Choice plus explanation,src/core/state.js
+plan_initial,q6CareFacility,Socialization via care facility,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q6NursesAides,Socialization via nurses/aides,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q6FamilyFriends,Socialization via family/friends,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q6DayProgram,Socialization via day program,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q6WardDecides,Ward decides socialization/recreation,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q6Other,Other socialization/recreation arrangement,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q6Explain,Socialization/recreation explanation,string,conditional,no,yes,input,Required when q6Other is true,src/core/state.js
+plan_initial,q7SocialSecurity,Social Security benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Ssdi,SSDI benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Hmo,HMO benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Ssi,SSI benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7StateSupplement,State supplement benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7InstitutionalCare,Institutional care benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7SupplementalIns,Supplemental insurance status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Pension,Pension benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Medicare,Medicare benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Medicaid,Medicaid benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Va,VA benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Trusts,Trust benefit status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7PendingBenefits,Pending benefits indicator,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Other,Other benefit/insurance status,boolean,optional,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,q7Explain,Benefits and insurance explanation,string,conditional,no,yes,input,Required when q7Other is true,src/core/state.js
+plan_initial,q9Providers[].name,Examining provider name,string,required for populated row,no,yes,input,Repeatable row field,src/legacy-app.js
+plan_initial,q9Providers[].providerType,Examining provider type,string,optional,no,yes,input,Repeatable row field,src/legacy-app.js
+plan_initial,q9Providers[].examDate,Exam date,date,optional,no,yes,input,ISO date,src/legacy-app.js
+plan_initial,q9Providers[].street,Examining provider street,string,optional,no,yes,input,Address component,src/legacy-app.js
+plan_initial,q9Providers[].cityStateZip,Examining provider city/state/ZIP,string,optional,no,yes,input,Address component,src/legacy-app.js
+plan_initial,q9Providers[].phone,Examining provider phone,string,optional,no,yes,input,Formatted phone,src/legacy-app.js
+plan_initial,adls.lightHousekeeping,Light housekeeping ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.medication,Medication administration ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.managingMoney,Managing money ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.bathing,Bathing ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.prepareMeals,Prepare meals ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.stairs,Climbing stairs ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.shopping,Shopping ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.laundry,Laundry ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.toileting,Toileting ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.dressing,Dressing ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.transferring,Transfer ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.eating,Eating ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.walking,Walking/mobility ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.grooming,Grooming ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,adls.heavyChores,Heavy chores ability rating,enum,required,no,yes,input,Configured ADL rating,src/legacy-app.js
+plan_initial,mentalAlzheimers,Alzheimer's diagnosis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalAutism,Autism diagnosis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalClosedHeadInjury,Closed head injury indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalDementia,Dementia diagnosis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalDepression,Depression diagnosis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalDevelopmental,Developmental disability indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalSubstance,Substance-related diagnosis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalSchizophrenia,Schizophrenia diagnosis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalOther,Other mental condition indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,mentalExplain,Mental condition explanation,string,conditional,no,yes,input,Required when mentalOther is true,src/core/state.js
+plan_initial,physMobility,Mobility impairment indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physBlindness,Blindness indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physDeafness,Deafness indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physDiabetic,Diabetes indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physParkinsons,Parkinson's indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physArthritis,Arthritis indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physOther,Other physical condition indicator,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,physExplain,Physical condition explanation,string,conditional,no,yes,input,Required when physOther is true,src/core/state.js
+plan_initial,usesDentures,Dentures currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesHearingAid,Hearing aid currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesWheelchair,Wheelchair currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesWalker,Walker currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesCrutches,Crutches currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesProsthetics,Prosthetics currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesGlasses,Glasses currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesNone,No assistive devices currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesOther,Other assistive device currently used,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,usesExplain,Assistive-device-in-use explanation,string,conditional,no,yes,input,Required when usesOther is true,src/core/state.js
+plan_initial,needsDentures,Dentures needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsHearingAid,Hearing aid needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsWheelchair,Wheelchair needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsWalker,Walker needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsCrutches,Crutches needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsProsthetics,Prosthetics needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsGlasses,Glasses needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsNone,No assistive devices needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsOther,Other assistive device needed,boolean,required,no,yes,input,Checkbox answer,src/core/state.js
+plan_initial,needsExplain,Assistive-device-needed explanation,string,conditional,no,yes,input,Required when needsOther is true,src/core/state.js
+plan_initial,committeeIncorporated,Committee recommendations incorporated,enum,required,no,yes,input,Yes/No,src/core/state.js
+plan_initial,q11Directives[].title,Advance directive title,string,required for populated row,no,yes,input,Repeatable row field,src/legacy-app.js
+plan_initial,q11Directives[].dateSigned,Advance directive signed date,date,optional,no,yes,input,ISO date,src/legacy-app.js
+plan_initial,q11Directives[].signedBy,Advance directive signed by,string,optional,no,yes,input,Signer name,src/legacy-app.js
+plan_initial,q11Directives[].agents,Advance directive agents,string,optional,no,yes,input,Named agents,src/legacy-app.js
+plan_initial,q11Directives[].alternates,Advance directive alternates,string,optional,no,yes,input,Alternate agents,src/legacy-app.js
+plan_initial,q11Directives[].relationship,Advance directive relationship,string,optional,no,yes,input,Relationship field,src/legacy-app.js
+plan_initial,q11Directives[].contact,Advance directive contact,string,optional,no,yes,input,Contact details,src/legacy-app.js
+plan_initial,q11Directives[].courtRevoked,Advance directive court revoked indicator,string,optional,no,yes,input,Text indicator in row schema,src/legacy-app.js
+plan_initial,q11Directives[].orderDate,Advance directive order date,date,optional,no,yes,input,ISO date,src/legacy-app.js
+plan_initial,q11Directives[].orderCounty,Advance directive order county,string,optional,no,yes,input,Court county,src/legacy-app.js
+plan_initial,planGuardians[].name,Plan guardian name,string,required for primary,no,yes,input,Up to four signature blocks,src/core/state.js
+plan_initial,planGuardians[].ssn,Plan guardian SSN/EIN,string,required for primary,yes,yes,input,Sensitive identifier,src/core/state.js
+plan_initial,planGuardians[].street,Plan guardian street,string,required for primary,no,yes,input,Address component,src/core/state.js
+plan_initial,planGuardians[].phone,Plan guardian phone,string,required for primary,no,yes,input,Formatted phone,src/core/state.js
+plan_initial,planGuardians[].cityStateZip,Plan guardian city/state/ZIP,string,required for primary,no,yes,input,Address component,src/core/state.js
+plan_initial,planGuardians[].signatureDate,Plan guardian signature date,date,required for primary,no,yes,input,ISO date,src/core/state.js
+plan_initial,planGuardians[].relationship,Plan guardian relationship,string,optional,no,yes,input,Guardian relationship to ward,src/core/state.js
+plan_minor,ucn,UCN,string,optional,no,yes,input,Minor-plan identity field,src/core/state.js
+plan_minor,ref,Reference number,string,optional,no,yes,input,Minor-plan identity field,src/core/state.js
+plan_minor,professionalGuardian,Professional guardian indicator,enum,optional,no,yes,input,Yes/No,src/core/state.js
+plan_minor,publicGuardian,Public guardian indicator,enum,optional,no,yes,input,Yes/No,src/core/state.js
+plan_minor,guardianName,Guardian name,string,required,no,yes,input,Primary guardian display name,src/core/state.js
+plan_minor,q1ResidenceName,Current residence name,string,required,no,yes,input,Question 1,src/core/state.js
+plan_minor,q1Street,Current residence street,string,required,no,yes,input,Address component,src/core/state.js
+plan_minor,q1City,Current residence city,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,q1State,Current residence state,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,q1Zip,Current residence ZIP,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,q1Phone,Current residence phone,string,optional,no,yes,input,Formatted phone,src/core/state.js
+plan_minor,q2Residences[],Prior-year residence,array<object>,optional,no,yes,input,name/street/city/state/zip/phone,src/core/state.js
+plan_minor,q3Providers[],Treatment provider,array<object>,optional,no,yes,input,first/mi/last/providerType/visits/street/city/state/zip/phone,src/core/state.js
+plan_minor,q4*,Medical service answers,boolean/string,required,no,yes,input,Checkboxes and frequency fields,src/core/state.js
+plan_minor,q5*,Education and social development answers,boolean/string,required,no,yes,input,Question 5 narrative and choice fields,src/core/state.js
+plan_minor,planGuardians[].name,Guardian name,string,required for primary,no,yes,input,Signature row,src/core/state.js
+plan_minor,planGuardians[].tin,Guardian taxpayer ID,string,required for primary,yes,yes,input,Sensitive identifier,src/core/state.js
+plan_minor,planGuardians[].phone,Guardian phone,string,required for primary,no,yes,input,Formatted phone,src/core/state.js
+plan_minor,planGuardians[].mailingStreet,Guardian mailing street,string,required for primary,no,yes,input,Address component,src/core/state.js
+plan_minor,planGuardians[].mailingCityStateZip,Guardian city/state/ZIP,string,required for primary,no,yes,input,Address component,src/core/state.js
+plan_minor,planGuardians[].email,Guardian email,string,optional,no,yes,input,Email address,src/core/state.js
+plan_minor,planGuardians[].signatureDate,Guardian signature date,date,required for primary,no,yes,input,ISO date,src/core/state.js
+plan_minor,preparer_name,Preparer name,string,required,no,yes,input,Certification,src/core/state.js
+plan_minor,preparer_tin,Preparer taxpayer ID,string,optional,yes,yes,input,Sensitive identifier,src/core/state.js
+plan_minor,preparer_phone,Preparer phone,string,optional,no,yes,input,Formatted phone,src/core/state.js
+plan_minor,preparer_mailingStreet,Preparer mailing street,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,preparer_cityStateZip,Preparer city/state/ZIP,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,preparer_email,Preparer email,string,optional,no,yes,input,Email address,src/core/state.js
+plan_minor,preparer_signatureDate,Preparer signature date,date,required,no,yes,input,ISO date,src/core/state.js
+plan_minor,attorney_name,Attorney name,string,required,no,yes,input,Certification,src/core/state.js
+plan_minor,attorney_bar,Attorney bar number,string,optional,no,yes,input,Identifier,src/core/state.js
+plan_minor,attorney_phone,Attorney phone,string,optional,no,yes,input,Formatted phone,src/core/state.js
+plan_minor,attorney_street,Attorney street,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,attorney_cityStateZip,Attorney city/state/ZIP,string,optional,no,yes,input,Address component,src/core/state.js
+plan_minor,attorney_email,Attorney email,string,optional,no,yes,input,Email address,src/core/state.js
+plan_minor,attorney_signatureDate,Attorney signature date,date,required,no,yes,input,ISO date,src/core/state.js
+schedules,schA[].payer,Income payer,string,optional,no,yes,input,Repeatable annual schedule row,src/core/form/schedule-definitions.js
+schedules,schA[].description,Income description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+schedules,schA[].bank,Bank,string,optional,no,yes,input,Financial institution,src/core/form/schedule-definitions.js
+schedules,schA[].accountNo,Account number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schA[].amount,Income amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schB1[].bankAcct,Guardian fee bank/account,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schB1[].checkNo,Guardian fee check number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schB1[].periodFrom,Fee period from,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schB1[].periodTo,Fee period to,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schB1[].datePaid,Date paid,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schB1[].payee,Payee,string,optional,no,yes,input,Party name,src/core/form/schedule-definitions.js
+schedules,schB1[].courtOrderDate,Court order date,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schB1[].amount,Fee amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schB2[].bankAcct,Attorney fee bank/account,string,optional,yes,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].checkNo,Attorney fee check number,string,optional,yes,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].periodFrom,Fee period from,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].periodTo,Fee period to,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].datePaid,Date paid,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].payee,Payee,string,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].courtOrderDate,Court order date,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB2[].amount,Fee amount,decimal,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].bankAcct,Professional fee bank/account,string,optional,yes,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].checkNo,Professional fee check number,string,optional,yes,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].periodFrom,Fee period from,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].periodTo,Fee period to,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].datePaid,Date paid,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].payee,Payee,string,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].courtOrderDate,Court order date,date,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB3[].amount,Fee amount,decimal,optional,no,yes,input,Same row schema as B-1,src/core/form/schedule-definitions.js
+schedules,schB4[].bankAcct,Disbursement bank/account,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schB4[].checkNo,Disbursement check number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schB4[].datePaid,Date paid,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schB4[].payee,Payee,string,optional,no,yes,input,Party name,src/core/form/schedule-definitions.js
+schedules,schB4[].description,Disbursement description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+schedules,schB4[].category,Disbursement category,enum,optional,no,yes,input,Configured category list,src/core/form/schedule-definitions.js
+schedules,schB4[].amount,Disbursement amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schC[].description,Capital transaction description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+schedules,schC[].date,Transaction date,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schC[].gain,Capital gain,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schC[].loss,Capital loss,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD1[].description,Bank account description,string,optional,no,yes,input,Asset description,src/core/form/schedule-definitions.js
+schedules,schD1[].accountNo,Account number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schD1[].restricted,Restricted indicator,enum,optional,no,yes,input,Yes/No,src/core/form/schedule-definitions.js
+schedules,schD1[].type,Account type,string,optional,no,yes,input,Account classification,src/core/form/schedule-definitions.js
+schedules,schD1[].fullAmount,Full amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD1[].wardPct,Ward percentage,decimal,optional,no,yes,input,Percentage,src/core/form/schedule-definitions.js
+schedules,schD1[].restrictedAmt,Restricted amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD2[].description,Securities description,string,optional,no,yes,input,Asset description,src/core/form/schedule-definitions.js
+schedules,schD2[].residence,Residence indicator,enum,optional,no,yes,input,Yes/No,src/core/form/schedule-definitions.js
+schedules,schD2[].income,Income indicator,enum,optional,no,yes,input,Yes/No,src/core/form/schedule-definitions.js
+schedules,schD2[].fullValue,Full value,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD2[].wardPct,Ward percentage,decimal,optional,no,yes,input,Percentage,src/core/form/schedule-definitions.js
+schedules,schD2[].carryingValue,Carrying value,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD2[].wardValue,Ward value,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD3[].description,Real estate description,string,optional,no,yes,input,Asset description,src/core/form/schedule-definitions.js
+schedules,schD3[].fullAmount,Full amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD3[].wardPct,Ward percentage,decimal,optional,no,yes,input,Percentage,src/core/form/schedule-definitions.js
+schedules,schD3[].carryingValue,Carrying value,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD3[].wardAmount,Ward amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD4[].description,Personal property description,string,optional,no,yes,input,Asset description,src/core/form/schedule-definitions.js
+schedules,schD4[].restricted,Restricted indicator,enum,optional,no,yes,input,Yes/No,src/core/form/schedule-definitions.js
+schedules,schD4[].fullAmount,Full amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD4[].wardPct,Ward percentage,decimal,optional,no,yes,input,Percentage,src/core/form/schedule-definitions.js
+schedules,schD4[].carryingValue,Carrying value,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD4[].wardValue,Ward value,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD4[].restrictedAmt,Restricted amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD5[].description,Liability description,string,optional,no,yes,input,Liability description,src/core/form/schedule-definitions.js
+schedules,schD5[].loanNo,Loan number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schD5[].loanType,Loan type,string,optional,no,yes,input,Classification,src/core/form/schedule-definitions.js
+schedules,schD5[].fullDebt,Full debt,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schD5[].wardPct,Ward percentage,decimal,optional,no,yes,input,Percentage,src/core/form/schedule-definitions.js
+schedules,schD5[].wardBalance,Ward balance,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schE[].bankName,Bank name, string,optional,no,yes,input,Transfer row,src/core/form/schedule-definitions.js
+schedules,schE[].transferInDate,Transfer in date,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schE[].transferInAmt,Transfer in amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schE[].transferOutDate,Transfer out date,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schE[].transferOutAmt,Transfer out amount,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schF1[].description,Real property sale description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+schedules,schF1[].bank,Bank,string,optional,no,yes,input,Financial institution,src/core/form/schedule-definitions.js
+schedules,schF1[].accountNo,Account number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schF1[].courtOrderDate,Court order date,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schF1[].salePrice,Sale price,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+schedules,schF2[].description,Personal property sale description,string,optional,no,yes,input,Free text,src/core/form/schedule-definitions.js
+schedules,schF2[].bank,Bank,string,optional,no,yes,input,Financial institution,src/core/form/schedule-definitions.js
+schedules,schF2[].accountNo,Account number,string,optional,yes,yes,input,Financial identifier,src/core/form/schedule-definitions.js
+schedules,schF2[].courtOrderDate,Court order date,date,optional,no,yes,input,ISO date,src/core/form/schedule-definitions.js
+schedules,schF2[].salePrice,Sale price,decimal,optional,no,yes,input,Currency amount,src/core/form/schedule-definitions.js
+derived,annual.calculated.schA,Schedule A income total,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual from schA[].amount,src/features/annual-accounting/totals.js
+derived,annual.calculated.schB1,Schedule B-1 total,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual from schB1[].amount,src/features/annual-accounting/totals.js
+derived,annual.calculated.schB2,Schedule B-2 total,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual from schB2[].amount,src/features/annual-accounting/totals.js
+derived,annual.calculated.schB3,Schedule B-3 total,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual from schB3[].amount,src/features/annual-accounting/totals.js
+derived,annual.calculated.schB4,Schedule B-4 total,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual from schB4[].amount,src/features/annual-accounting/totals.js
+derived,annual.calculated.totalDisb,Total disbursements,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual as schB1 + schB2 + schB3 + schB4,src/features/annual-accounting/totals.js
+derived,annual.calculated.netAssets,Net assets,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual,src/features/annual-accounting/totals.js
+derived,annual.calculated.netAssetsFromD,Net assets from Schedule D,decimal,n/a,no,no,derived,Returned by calcTotalsAnnual,src/features/annual-accounting/totals.js
+derived,annual.calculated.reconciliation.diff,Reconciliation difference,decimal,n/a,no,no,derived,Returned by annualReconcileState,src/features/annual-accounting/totals.js
+derived,annual.calculated.reconciliation.outOfBalance,Accounting out of balance,boolean,n/a,no,no,derived,Returned by annualReconcileState,src/features/annual-accounting/totals.js
+derived,annual.calculated.reconciliation.explanation,Reconciliation explanation,string,n/a,no,no,derived,Read from D.reconcileExplanation and returned by annualReconcileState,src/features/annual-accounting/totals.js
+derived,annual.calculated.reconciliation.explained,Out-of-balance condition explained,boolean,n/a,no,no,derived,Returned by annualReconcileState,src/features/annual-accounting/totals.js
+derived,simplified.calculated.totalIncome,Total income,decimal,n/a,no,no,derived,Computed as interestIncome + depositsSettlement,src/features/simplified-accounting/pdf-model.js
+derived,simplified.calculated.totalDisbursements,Total disbursements,decimal,n/a,no,no,derived,Computed as serviceCharges + federalIncomeTax,src/features/simplified-accounting/pdf-model.js
+derived,simplified.calculated.remaining,Remaining balance,decimal,n/a,no,no,derived,Computed as startingBalance + totalIncome - totalDisbursements,src/features/simplified-accounting/pdf-model.js
+derived,pdf.pageCount,Finalized PDF page count,integer,n/a,no,no,derived,Generated by PDF engine/pdf.js; not user-entered,src/core/pdf/pdf-engine.js
+derived,pdf.metadata.title,PDF metadata title,string,n/a,no,no,derived,Generated from ward/case/filing/print date,src/core/pdf/pdf-engine.js
+derived,persistence.contentDigest,Supplemental file content digest,string,n/a,no,yes,derived,Used to identify uploaded files,src/core/pdf/supplemental-pdf.js
