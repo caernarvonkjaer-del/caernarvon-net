@@ -22,7 +22,8 @@
     "check:types": "tsc --noEmit",
     "measure:baseline": "node scripts/measure-baseline.mjs",
     "measure:lifecycle": "node scripts/measure-lifecycle.mjs",
-    "generate:fonts": "node scripts/generate-embedded-font.mjs"
+    "generate:fonts": "node scripts/generate-embedded-font.mjs",
+    "verify:data-model": "node scripts/verify-data-model.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

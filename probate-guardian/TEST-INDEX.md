@@ -89,7 +89,7 @@ the same commit.
 | pwa-registration.spec.ts | PWA/service-worker registration |
 | recovery-cache.spec.ts | Crash recovery cache |
 | routes.spec.ts | Route table behavior |
-| schedule-card-layout.spec.ts | Schedule entry cards use responsive two-column flow |
+| schedule-card-layout.spec.ts | Responsive schedule/Plan card grids; shared multi-column label and input-group alignment |
 | security.spec.ts | Milestone 11: security boundaries |
 | signature-style-removal.spec.ts | Signature-style controls/legacy bindings absent from every form route |
 | simplified-mount.spec.ts | simplified-accounting feature module mount/dispose/routing |

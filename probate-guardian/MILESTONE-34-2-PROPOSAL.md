@@ -2,14 +2,15 @@
 
 ## Status
 
-**Proposal only, documentation scope.** No product-code, test-code, or
-runtime change is authorized by this document. Split out of
-`MILESTONE-34-PROPOSAL.md` (2026-09-09) so that document could stay scoped
-to its actual, ready-to-implement web-mode chunk-load-failure test; this is
-long-term field-naming/schema documentation harmonization work tracked
-alongside `DATA-MODEL-REMEDIATION-PLAN.md` and
-`probate-guardian-data-model.csv`, unrelated to distribution-target test
-coverage.
+**Approved — ready to execute.** Split out of `MILESTONE-34-PROPOSAL.md`
+(2026-09-09) so that document could stay scoped to its actual, ready-to-
+implement web-mode chunk-load-failure test; this is long-term field-naming/
+schema documentation harmonization work tracked alongside
+`DATA-MODEL-REMEDIATION-PLAN.md` and `probate-guardian-data-model.csv`,
+unrelated to distribution-target test coverage. Scope is the canonical CSV,
+its provenance/constraint metadata, and the `scripts/verify-data-model.mjs`
+checker — this is real, authorized execution work, not a documentation-only
+placeholder.
 
 **Known open inconsistency:** `DATA-MODEL-REMEDIATION-PLAN.md`'s canonical
 CSV column contract (`scope,storage_root,field_path,field_label,data_type,
@@ -43,11 +44,11 @@ product-code or test-code scope.
   canonical 20-column contract and implementation/execution of the stricter
   `(scope, storage_root, field_path, persistence_status)` uniqueness checker.
 
-## Documentation-Only Data-Model Remediation
+## Data Model Remediation
 
-This section records the remaining schema work requested during the review.
-It is documentation work only: it authorizes no product-code, test-code, or
-runtime changes.
+This section records the remaining schema work requested during the review:
+completing the canonical CSV, its provenance/constraint metadata, and the
+verifier script that checks it.
 
 ### Current Findings
 
@@ -121,3 +122,29 @@ runtime changes.
   A delivery copy may be written to a contributor's Downloads directory, but
   the external copy is not part of repository acceptance; when present, it
   should be refreshed from the canonical workspace CSV.
+
+## Status: Complete (2026-09-09)
+
+All acceptance criteria above are met. `probate-guardian-data-model.csv`
+migrated from its old 10-column shape to the full canonical 20-column
+contract (836 rows, up from 595 — see `DATA-MODEL-REMEDIATION-PLAN.md`'s
+Completion Checklist for exactly what the added 241 rows are and why; the
+largest single piece was roughly 190 Plan Annual/Plan Initial/Plan Minor
+fields the old CSV never documented at all, found by cross-checking every
+`emptyData*()` factory's real keys field-by-field rather than assuming the
+old CSV's coverage was already complete).
+`scripts/verify-data-model.mjs` is committed and passes:
+`npm run verify:data-model` → `verify-data-model: OK — 836 rows, header and
+all constraints valid.` No product-code, test-code, or runtime file was
+touched — this milestone's own scope is the CSV and the verifier script.
+
+One real, pre-existing runtime data-model bug was found during the audit
+(not fixed, since fixing it is outside this milestone's documentation/tooling
+scope): Simplified Accounting's "Add Co-Guardian" button pushes a row shaped
+for Annual Accounting (`officeStreet`/`officeCityStateZip`) into a collection
+Simplified's own rendering/validation code reads as
+`residenceStreet`/`residenceCityStateZip`, and `simplified-accounting/excel.js`
+hardcodes exactly 3 guardian slots, so a 4th+ co-guardian is invisible to
+Excel export/import even though it prints correctly in the PDF. Documented
+in the CSV's `simplified_accounting.guardians[]` rows' `notes`. If this
+should be fixed, it needs its own explicitly-scoped milestone.
