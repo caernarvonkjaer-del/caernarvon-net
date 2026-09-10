@@ -1,5 +1,6 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
-import { renderFormField } from '../../core/form/form-fields.js';
+import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
+import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
@@ -325,7 +326,7 @@ function pageCover(){
             <div class="col-md-8">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
             <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
           </div>
-          ${inpS('typeOfGuardianship','Type of Guardianship',d.typeOfGuardianship,true)}
+          ${renderSelectField({path:'typeOfGuardianship',label:'Type of Guardianship',value:d.typeOfGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_TYPE_OPTIONS,d.typeOfGuardianship),required:true})}
         </div>
       </div>
     </div>

@@ -1,4 +1,6 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderSelectField } from '../../core/form/form-fields.js';
+import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -167,7 +169,7 @@ function pagePlanICover(){
             <div class="col-12">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
             <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
             <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
-            <div class="col-12">${inpS('successorGuardianship','Successor Guardianship? (if applicable)',d.successorGuardianship)}</div>
+            <div class="col-12">${renderSelectField({path:'successorGuardianship',label:'Successor Guardianship? (if applicable)',value:d.successorGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_LIFECYCLE_OPTIONS,d.successorGuardianship)})}</div>
             <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
             <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
             <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,false,'date')}</div>

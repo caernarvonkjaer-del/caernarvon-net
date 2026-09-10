@@ -24,6 +24,7 @@ the same commit.
 | filing-descriptor.spec.js | Filing type → descriptor/copy resolution |
 | form-contract.spec.js | Stored-text sanitization, safe title-casing, form contract helpers |
 | form-fields.spec.js | inferFieldKind, renderFormField, renderSelectField, renderTextareaField |
+| guardianship-options.spec.js | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output |
 | live-region.spec.js | ARIA live-region announcer helper |
 | plan-annual-pdf-model.spec.js | Plan Annual PDF model output (incl. attorney email fields) |
@@ -65,6 +66,7 @@ the same commit.
 | form-field-labels.spec.ts | All visible form controls have accessible names, across form types |
 | guardian-inventory-mount.spec.ts | guardian-inventory feature module mount/dispose/routing |
 | guided-tour-navigation.spec.ts | Guided-tour filing steps stay attached to active sidebar navigation |
+| guardianship-selection-controls.spec.ts | Existing guardianship type/lifecycle fields expose GD-derived select options |
 | navigation-status.contract.spec.ts | Guardian Inventory nav/status contract; Annual/Final/Trust, Simplified, and Plan-type field-path accuracy (Milestone 33 item 3, sub-phases 3b/3c/3d) |
 | offline.spec.ts | Hosted offline cache (`@origin-state`) |
 | output-semantics.artifact.spec.ts | Milestone 33 Phase 3: output semantics artifact contract |
@@ -143,7 +145,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | Category | Files |
 |---|---|
 | persistence | case-file.spec.js, ward-lock.spec.js |
-| form-data | form-contract.spec.js, form-fields.spec.js, validation-adapter.spec.js, date-parser.spec.js, date-rules.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js |
+| form-data | form-contract.spec.js, form-fields.spec.js, guardianship-options.spec.js, validation-adapter.spec.js, date-parser.spec.js, date-rules.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js |
 | pdf-export (models) | guardian-inventory-pdf-model.spec.js (guardian), plan-annual-pdf-model.spec.js (planAnnual), supplemental-pdf.spec.js (annual/finalAccounting/trustAccounting) |
 | docx-xlsx-export | docx-engine.spec.js, excel-engine.spec.js, xlsx-extract.spec.js |
 | navigation | router.spec.js, tab-state.spec.js |
@@ -161,7 +163,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | form-data | planAnnual | plan-annual-mount.spec.ts |
 | form-data | planInitial | plan-initial-mount.spec.ts |
 | form-data | planMinor | plan-minor-mount.spec.ts |
-| form-data | all forms | form-entry-ux.spec.ts, form-entry.contract.spec.ts, filing-capability-matrix.spec.ts, date-validation.contract.spec.ts |
+| form-data | all forms | form-entry-ux.spec.ts, form-entry.contract.spec.ts, filing-capability-matrix.spec.ts, guardianship-selection-controls.spec.ts, date-validation.contract.spec.ts |
 | form-data | planSimplified/planAnnual/planInitial/planMinor | plan-readiness.contract.spec.ts |
 | navigation | all forms | navigation-status.contract.spec.ts, filing-identity.contract.spec.ts, routes.spec.ts |
 | pdf-export | all forms | pdf-accessibility-and-signatures.spec.ts, pdf-fonts-and-xmp.spec.ts, pdf-structure-tags.spec.ts, pdf-table-semantics.spec.ts, pdf-preview-viewer.spec.ts, attestation-layout.spec.ts, output-semantics.artifact.spec.ts |

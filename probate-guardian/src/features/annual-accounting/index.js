@@ -4,6 +4,7 @@ import { renderLocalSectionGuidance } from '../../core/status/section-status.js'
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
+import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
@@ -504,7 +505,7 @@ function pagePart1Annual(){
           <div class="col-md-8">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
           <div class="col-md-4">${countyInputD('County',d.county,"D.county=this.value")}</div>
         </div>
-        ${inpD('Type of Guardianship',d.typeOfGuardianship,"D.typeOfGuardianship=this.value")}
+        ${renderSelectField({path:'typeOfGuardianship',label:'Type of Guardianship',value:d.typeOfGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_TYPE_OPTIONS,d.typeOfGuardianship),required:true})}
         ${inpD('Related Case Numbers (siblings/relatives with guardianships)',d.relatedCaseNumbers,"D.relatedCaseNumbers=this.value")}
       </div>
     </div>

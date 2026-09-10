@@ -1,5 +1,6 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
+import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -525,7 +526,7 @@ function pageHome(){
         <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
-        ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',[['Plenary','Plenary'],['Limited','Limited'],['Voluntary','Voluntary'],['Minor - Person','Minor - Person'],['Minor - Property','Minor - Property'],['Minor - Person - Property','Minor - Person - Property']],D.typeOfGuardianship)))}
+        ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',optionsWithLegacyValuePairs(GUARDIANSHIP_TYPE_OPTIONS,D.typeOfGuardianship),D.typeOfGuardianship)))}
         ${formRow(col(12,optLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
       </div>
     </div>
