@@ -92,7 +92,8 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
 
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 1366, height: 768 });
-  await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
+  await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(0);
+  await expect(main.locator('#dashboard-search')).toHaveCount(1);
   await page.screenshot({ path: testInfo.outputPath('milestone-15-light-1366x768.png'), fullPage: false });
 
   await page.setViewportSize({ width: 390, height: 844 });

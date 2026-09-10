@@ -123,7 +123,12 @@ test.describe('routes', () => {
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
     await expect(main.locator('#dashboard-role')).toHaveCount(0);
     await expect(main.locator('.dashboard-family-row')).toHaveCount(0);
-    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
+    // The Status/Deadline/Contact/Assignment selects were retired; the toolbar
+    // now carries search alone, and the column headers do the narrowing.
+    await expect(main.locator('#dashboard-status-filter')).toHaveCount(0);
+    await expect(main.locator('#dashboard-deadline-filter')).toHaveCount(0);
+    await expect(main.locator('#dashboard-contact-filter')).toHaveCount(0);
+    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(0);
     await expect(main.locator('.dashboard-supervisor-control')).toHaveCount(0);
     await expect(main.locator('[data-dashboard-action="select-existing"]')).toHaveCount(1);
     await expect(main.locator('.dashboard-page-header [data-dashboard-action="select-existing"]')).toHaveText(/New Filing from Existing/);
@@ -133,8 +138,14 @@ test.describe('routes', () => {
     await expectPrimaryMetricStrip();
 
     // The filing controls moved out of the sidebar into the header cluster.
+    // Close and Delete then moved on into each row's Actions cell, so the
+    // header keeps only Rename and New Form.
     await expect(main.locator('.dashboard-page-header .dashboard-filing-controls')).toHaveCount(1);
     await expect(main.locator('.dashboard-page-header #new-ward-btn')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header #new-ward-btn')).toHaveText(/^\s*New Form\s*$/);
+    await expect(main.locator('.dashboard-page-header .dashboard-close-ward')).toHaveCount(0);
+    await expect(main.locator('.dashboard-page-header .dashboard-delete-ward')).toHaveCount(0);
+    await expect(main.locator('.dashboard-triage-actions [data-dashboard-action="delete"]')).toHaveCount(4);
 
     await expect(main.locator('[data-dashboard-change="workflow-status"]')).toHaveCount(4);
     await expect(main.locator('[data-dashboard-change="assignee"]')).toHaveCount(4);
@@ -142,17 +153,15 @@ test.describe('routes', () => {
     await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Beta Ward' })).toHaveAttribute('data-dashboard-priority', 'pending');
     await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Gamma Ward' })).toHaveAttribute('data-dashboard-priority', 'warning');
     await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Delta Ward' })).toHaveAttribute('data-dashboard-priority', 'approved');
-    await page.locator('#dashboard-deadline-filter').selectOption('due-soon');
+    // Search replaces the retired selects as the way to narrow the queue.
+    await page.locator('#dashboard-search').fill('Gamma');
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(1);
     await expect(main.locator('.dashboard-triage-row')).toContainText('Gamma Ward');
-    await expect(main.locator('.dashboard-triage-row')).not.toContainText('Beta Ward');
-    await expect(main.locator('.dashboard-triage-row')).not.toContainText('Delta Ward');
-    await page.locator('#dashboard-deadline-filter').selectOption('all');
-
-    await expect(page.locator('#dashboard-assignment-filter')).toContainText('Alex Attorney');
-    await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
-    await expect(page.evaluate(() => localStorage.getItem('pg-dashboard-preferences-v1'))).resolves.toContain('professional');
+    await page.locator('#dashboard-search').fill('Alex Attorney');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(1);
+    await expect(main.locator('.dashboard-triage-row')).toContainText('Alpha Ward');
+    await page.locator('#dashboard-search').fill('');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
 
     const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
     expect(afterPreferences).toBe(beforePreferences);
@@ -162,7 +171,6 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/inventory-select'));
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await page.locator('#dashboard-assignment-filter').selectOption('all');
     await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getCaseFile().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
     expect(await page.evaluate(() => (window as any).getCaseFile().wards[2].archived)).toBe(true);

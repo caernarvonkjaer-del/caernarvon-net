@@ -4,7 +4,6 @@
 // mountDashboardFeature() bridge, using the same window.createFeatureBridge()
 // pattern as Guardian, Simplified, Plan, and Annual features.
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
-import { loadDashboardPreferences, saveDashboardPreferences } from './preferences.js';
 import { caseNumberOf } from '../../core/case-resolver.js';
 
 const {
@@ -24,11 +23,6 @@ let _dashboardSearch = '';
 let _archivedSectionOpen = false;
 let _dashboardContainer = null;
 let _dashboardHost = null;
-let _dashboardPreferences = loadDashboardPreferences();
-let _dashboardStatusFilter = 'all';
-let _dashboardDeadlineFilter = 'all';
-let _dashboardContactFilter = 'all';
-let _dashboardAssignmentFilter = 'all';
 // Milestone 36-2: the sort carries a direction so a header click can flip it.
 let _dashboardTriageSort = { key: 'priority', direction: 'asc' };
 
@@ -60,49 +54,6 @@ function option(value, label, selectedValue) {
   return `<option value="${esc(value)}"${value === selectedValue ? ' selected' : ''}>${esc(label)}</option>`;
 }
 
-function uniqueFilterOptions(rows, values) {
-  const options = new Map();
-  rows.forEach(row => values(row).forEach(item => {
-    if (item?.key && !options.has(item.key)) options.set(item.key, item.label);
-  }));
-  return [...options.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-}
-
-function assignmentFilterHTML(rows, label = 'Assignment', extraClass = '') {
-  const assignees = uniqueFilterOptions(rows, row => row.assigneeKey ? [{ key: row.assigneeKey, label: row.assigneeName }] : []);
-  if (!['all', 'unassigned'].includes(_dashboardAssignmentFilter) && !assignees.some(([key]) => key === _dashboardAssignmentFilter)) {
-    _dashboardAssignmentFilter = 'all';
-  }
-  return `<label class="dashboard-control${extraClass ? ` ${extraClass}` : ''}"><span>${esc(label)}</span><select id="dashboard-assignment-filter" class="form-select form-select-sm">
-    ${option('all', 'All assignments', _dashboardAssignmentFilter)}
-    ${option('unassigned', 'Unassigned', _dashboardAssignmentFilter)}
-    ${assignees.map(([key, name]) => option(key, name, _dashboardAssignmentFilter)).join('')}
-  </select></label>`;
-}
-
-function triageControlsHTML() {
-  const rows = projectWards(getCaseFile().wards).filter(row => !row.isArchived);
-  const contacts = uniqueFilterOptions(rows, row => row.filingContacts.map(item => ({ key: item.filterKey, label: item.name })));
-  if (_dashboardContactFilter !== 'all' && !contacts.some(([key]) => key === _dashboardContactFilter)) _dashboardContactFilter = 'all';
-  return `
-    <label class="dashboard-control"><span>Status</span><select id="dashboard-status-filter" class="form-select form-select-sm">
-      ${option('all', 'All statuses', _dashboardStatusFilter)}
-      ${Object.entries(WORKFLOW_LABELS).filter(([key]) => key !== 'closed').map(([key, label]) => option(key, label, _dashboardStatusFilter)).join('')}
-    </select></label>
-    <label class="dashboard-control"><span>Deadline</span><select id="dashboard-deadline-filter" class="form-select form-select-sm">
-      ${option('all', 'All deadlines', _dashboardDeadlineFilter)}
-      ${option('overdue', 'Overdue', _dashboardDeadlineFilter)}
-      ${option('due-soon', 'Due within 14 days', _dashboardDeadlineFilter)}
-      ${option('future', 'Later', _dashboardDeadlineFilter)}
-      ${option('none', 'No deadline', _dashboardDeadlineFilter)}
-    </select></label>
-    <label class="dashboard-control"><span>Contact</span><select id="dashboard-contact-filter" class="form-select form-select-sm">
-      ${option('all', 'All contacts', _dashboardContactFilter)}
-      ${contacts.map(([key, label]) => option(key, label, _dashboardContactFilter)).join('')}
-    </select></label>
-    ${assignmentFilterHTML(rows, 'Assignment')}`;
-}
-
 function dashboardToolbarActionsHTML() {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
@@ -116,22 +67,21 @@ function dashboardToolbarHTML() {
   const searchHint = 'Search by ward, case #, or contact…';
   const search = `<label class="dashboard-control dashboard-search-control"><span>Search</span><span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="${esc(searchHint)}" aria-label="${esc(searchHint)}" value="${esc(_dashboardSearch)}"></span></label>`;
   const actions = dashboardToolbarActionsHTML();
-  return `${search}${triageControlsHTML()}${actions}`;
+  return `${search}${actions}`;
 }
 
 function dashboardHeaderHTML() {
   const wards = getCaseFile().wards;
   const activeWardId = getCaseFile().activeWardId;
   const activeWard = wards.find(w => w.wardId === activeWardId);
-  // Milestone 36-1: Close, Rename and Delete acted on a filing but lived in the
-  // sidebar, invisible from the dashboard where filings are chosen. They join
-  // the header's filing-controls cluster, alongside Close Active Filing.
+  // Milestone 36-1 moved Close, Rename and Delete here from the sidebar. Close
+  // and Delete then moved on again into the row's own Actions cell, where they
+  // sit beside Open on the filing they act on. Rename stays: it is the one of
+  // the three that only ever applies to whichever filing is currently open.
   const activeWardControls = activeWard ? `
-    <button type="button" class="btn btn-sm btn-outline-secondary dashboard-close-ward" id="close-ward-btn" data-dashboard-action="close-ward" title="Close active filing and release lock">${ic('close', 14)} Close Active Filing</button>
     <button type="button" class="btn btn-sm btn-outline-secondary dashboard-rename-ward" id="rename-ward-btn" data-dashboard-action="rename-ward" title="Rename active filing">${ic('pencil', 14)} Rename</button>
-    <button type="button" class="btn btn-sm btn-outline-danger dashboard-delete-ward" id="delete-ward-btn" data-dashboard-action="delete-ward" data-ward-id="${esc(activeWard.wardId)}" title="Delete active filing">${ic('trash', 14)} Delete</button>
   ` : '';
-  const newFormBtn = `<button type="button" class="btn btn-sm btn-outline-primary dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} + New Form</button>`;
+  const newFormBtn = `<button type="button" class="btn btn-sm btn-outline-primary dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} New Form</button>`;
   const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all filings into a single combined .sav archive">${ic('archive', 14)} Export All Filings</button>` : '';
   const newExistingBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>`;
 
@@ -356,8 +306,15 @@ function triageActionButtons(row) {
   const priorYears = row.sourceWard.years?.length
     ? `<button class="btn btn-sm btn-outline-secondary" data-dashboard-action="prior-years" data-ward-id="${id}">Prior years</button>`
     : '<span class="dashboard-action-empty" aria-hidden="true"></span>';
+  // Close acts on the open filing, so it belongs to that filing's own row
+  // rather than to the page. Every other row reserves the column, for the
+  // same alignment reason as Prior years above.
+  const close = row.wardId === getCaseFile().activeWardId
+    ? `<button class="btn btn-sm btn-outline-secondary dashboard-close-ward" id="close-ward-btn" data-dashboard-action="close-ward" data-ward-id="${id}" title="Close this filing and release its lock">Close</button>`
+    : '<span class="dashboard-action-empty" aria-hidden="true"></span>';
   return `<div class="dashboard-triage-actions dashboard-triage-cell" data-label="Actions">
     <button class="btn btn-sm btn-primary" data-dashboard-action="open-ward" data-ward-id="${id}">Open</button>
+    ${close}
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="backup" data-ward-id="${id}">Backup</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="pdf" data-ward-id="${id}">PDF</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="new-year" data-ward-id="${id}">New year</button>
@@ -374,17 +331,6 @@ function getTriageRows(rows) {
     filtered = filtered.filter(row => [row.wardName, row.caseNumber, row.assigneeName, ...row.filingContacts.map(item => item.name)]
       .some(value => String(value || '').toLocaleLowerCase('en-US').includes(query)));
   }
-  if (_dashboardStatusFilter !== 'all') filtered = filtered.filter(row => row.workflowStatus === _dashboardStatusFilter);
-  if (_dashboardDeadlineFilter !== 'all') {
-    filtered = filtered.filter(row => {
-      if (!row.isDeadlineActionable) return false;
-      if (_dashboardDeadlineFilter === 'due-soon') return row.deadlineBucket === 'today' || row.deadlineBucket === 'due-soon';
-      return row.deadlineBucket === _dashboardDeadlineFilter;
-    });
-  }
-  if (_dashboardContactFilter !== 'all') filtered = filtered.filter(row => row.filingContacts.some(item => item.filterKey === _dashboardContactFilter));
-  if (_dashboardAssignmentFilter === 'unassigned') filtered = filtered.filter(row => !row.assigneeKey);
-  else if (_dashboardAssignmentFilter !== 'all') filtered = filtered.filter(row => row.assigneeKey === _dashboardAssignmentFilter);
 
   if (_dashboardTriageSort === 'priority') return filtered.slice().sort(compareDashboardPriority);
   if (_dashboardTriageSort === 'deadline') return filtered.slice().sort((a, b) => (a.deadlineDate?.getTime() ?? Infinity) - (b.deadlineDate?.getTime() ?? Infinity));
@@ -653,17 +599,6 @@ function handleDashboardChange(event) {
   if (!(target instanceof HTMLSelectElement || target instanceof HTMLInputElement)) return;
   if (target.dataset.dashboardChange) {
     void updateDashboardWorkflow(target.dataset.wardId, target.dataset.dashboardChange, target.value);
-  } else if (!(target instanceof HTMLSelectElement)) return;
-  else if (target.id === 'dashboard-status-filter') { _dashboardStatusFilter = target.value; renderDashboardGrid(); }
-  else if (target.id === 'dashboard-deadline-filter') { _dashboardDeadlineFilter = target.value; renderDashboardGrid(); }
-  else if (target.id === 'dashboard-contact-filter') { _dashboardContactFilter = target.value; renderDashboardGrid(); }
-  else if (target.id === 'dashboard-assignment-filter') {
-    _dashboardAssignmentFilter = target.value;
-    _dashboardPreferences = saveDashboardPreferences({
-      ..._dashboardPreferences,
-      supervisingProfessionalFilter: target.value === 'all' ? null : target.value,
-    });
-    renderDashboardGrid();
   }
 }
 
@@ -724,8 +659,6 @@ function renderDashboardPage() {
 // legacy-app.js's mountDashboardFeature().
 export async function mount(container, page) {
   _dashboardHost = container;
-  _dashboardPreferences = loadDashboardPreferences();
-  _dashboardAssignmentFilter = _dashboardPreferences.supervisingProfessionalFilter || 'all';
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
   renderDashboardPage();
 }
@@ -736,10 +669,6 @@ export function dispose(container) {
   // Reset session-only state on page change
   _dashboardSearch = '';
   _archivedSectionOpen = false;
-  _dashboardStatusFilter = 'all';
-  _dashboardDeadlineFilter = 'all';
-  _dashboardContactFilter = 'all';
-  _dashboardAssignmentFilter = 'all';
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
   _dashboardHost = null;
 }

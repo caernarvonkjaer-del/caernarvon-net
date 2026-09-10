@@ -22,7 +22,14 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
 
       await page.evaluate(() => (window as any).navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
-      await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
+      // The assignment select that used to write this preference was retired
+      // with the rest of the toolbar filters, so seed the stored payload
+      // directly. What this test guards is that dashboard preferences live in
+      // localStorage and never reach the case-file archive.
+      await page.evaluate(() => localStorage.setItem(
+        'pg-dashboard-preferences-v1',
+        JSON.stringify({ supervisingProfessionalFilter: 'alex attorney', onboardingDismissed: true }),
+      ));
 
       const archive = await page.evaluate(async () => {
         const { blob } = await (window as any).buildCaseFileBlob();

@@ -14,8 +14,6 @@
 .dashboard-metric-alert{color:var(--danger-text);}
 .dashboard-metric-warn{color:var(--warn-text);}
 .dashboard-metric-pending{color:var(--accent-text);}
-.dashboard-summary-secondary{text-align:right;color:var(--ink-4);font-size:.74rem;margin:0 .15rem 1.1rem;}
-.dashboard-summary-secondary strong{color:var(--ink-3);font-weight:700;}
 
 /* ── Dashboard Layout & Worklists ─────────────────────── */
 .dashboard-top-row{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;gap:1.1rem;margin-bottom:1rem;}
@@ -48,17 +46,9 @@
 .dashboard-priority-badge-pending{color:var(--accent-text);border-color:color-mix(in srgb,var(--accent-text) 38%,var(--line));background:color-mix(in srgb,var(--accent-text) 9%,var(--surface));}
 .dashboard-priority-badge-approved{color:var(--ok-text);border-color:color-mix(in srgb,var(--ok-text) 32%,var(--line));background:color-mix(in srgb,var(--ok-text) 8%,var(--surface));}
 
-.dashboard-family-row,.dashboard-triage-row,.ward-card{border-left-width:4px;}
-.dashboard-family-row.dashboard-priority-standard,.dashboard-triage-row.dashboard-priority-standard,.ward-card.dashboard-priority-standard{border-left-color:var(--line);}
-.dashboard-family-row.dashboard-priority-urgent,.dashboard-triage-row.dashboard-priority-urgent,.ward-card.dashboard-priority-urgent{border-left-color:var(--danger-text);background:color-mix(in srgb,var(--danger-text) 6%,var(--surface));}
-.dashboard-family-row.dashboard-priority-warning,.dashboard-triage-row.dashboard-priority-warning,.ward-card.dashboard-priority-warning{border-left-color:var(--warn-text);background:color-mix(in srgb,var(--warn-text) 6%,var(--surface));}
-.dashboard-family-row.dashboard-priority-pending,.dashboard-triage-row.dashboard-priority-pending,.ward-card.dashboard-priority-pending{border-left-color:var(--accent-text);}
-.dashboard-family-row.dashboard-priority-approved,.dashboard-triage-row.dashboard-priority-approved,.ward-card.dashboard-priority-approved{border-left-color:var(--ok-text);background:var(--surface-2);}
-.dashboard-family-row.dashboard-priority-archived,.dashboard-triage-row.dashboard-priority-archived,.ward-card.dashboard-priority-archived{border-left-color:var(--ink-4);background:var(--surface-2);}
 
 /* ── Triage Worklist & Queue ──────────────────────────── */
 .dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);container-type:inline-size;container-name:triage-queue;}
-.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(110px,1fr) minmax(90px,.8fr) minmax(110px,.8fr) minmax(90px,.7fr) minmax(130px,1fr) minmax(100px,.7fr) minmax(190px,1.2fr);align-items:center;gap:.7rem;padding:.65rem .75rem;}
 .dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(110px,1fr) minmax(90px,.8fr) minmax(110px,.8fr) minmax(90px,.7fr) minmax(130px,1fr) minmax(100px,.7fr) minmax(390px,auto);align-items:center;gap:.7rem;padding:.65rem .75rem;}
 .dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.67rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-sort-btn{background:none;border:none;font:inherit;color:inherit;text-transform:inherit;font-weight:inherit;font-size:inherit;padding:0;display:inline-flex;align-items:center;gap:.25rem;cursor:pointer;text-align:left;}
@@ -83,11 +73,9 @@
 .dashboard-status-ready-to-file{background:var(--ok-bg);color:var(--ok-text);}
 .dashboard-status-pending-court-review{background:var(--warn-bg);color:var(--warn-text);}
 .dashboard-status-approved{background:var(--brand-050);color:var(--brand-text);}
-.dashboard-triage-actions{display:flex;gap:.25rem;flex-wrap:wrap;}
-.dashboard-triage-actions .btn{font-size:.68rem;padding:.22rem .38rem;}
-/* A fixed seven-column grid, not a flex row: every action lands in the same
-   column on every row even when Prior years is an empty cell. */
-.dashboard-triage-actions{display:grid;grid-template-columns:repeat(7,max-content);gap:.25rem;align-items:center;}
+/* A fixed eight-column grid, not a flex row: every action lands in the same
+   column on every row even when Close or Prior years is an empty cell. */
+.dashboard-triage-actions{display:grid;grid-template-columns:repeat(8,max-content);gap:.25rem;align-items:center;}
 .dashboard-triage-actions .btn{font-size:.68rem;padding:.22rem .38rem;white-space:nowrap;}
 .dashboard-action-empty{display:inline-block;width:1px;}
 .dashboard-workflow-select{font-size:.74rem;font-weight:600;min-width:0;max-width:100%;}
@@ -136,7 +124,6 @@
 .dashboard-page-kicker{margin-bottom:.2rem;color:var(--brand-text);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
 .dashboard-header-actions{display:flex;align-items:flex-end;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;}
 .dashboard-header-actions .dashboard-control{margin:0;}
-.dashboard-supervisor-control{min-width:190px;}
 /* The filing controls relocated from the sidebar in Milestone 36-1. They act
    on the active filing, so they group together rather than sitting loose in a
    row of page-level actions. */
@@ -155,35 +142,13 @@
 [data-theme="dark"] .dashboard-search-input{background-color:transparent!important;color:#000000!important;border:none!important;}
 [data-theme="dark"] .dashboard-search-input:focus{background-color:transparent!important;color:#000000!important;border:none!important;box-shadow:none!important;}
 [data-theme="dark"] .dashboard-search-input::placeholder{color:#556275!important;}
-.dashboard-control.dashboard-sort-control{flex:0 1 280px;min-width:180px;}
-.dashboard-sort-select{height:36px;font-size:.88rem;padding:0 2rem 0 .65rem;box-sizing:border-box;border:1px solid var(--field);border-radius:var(--r-sm);line-height:normal;}
 .dashboard-control{display:flex;flex-direction:column;gap:.2rem;min-width:150px;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-control select{height:36px;box-sizing:border-box;}
 .dashboard-control span{padding-left:.1rem;}
 .dashboard-toolbar-actions{margin-left:auto;display:inline-flex;align-items:center;gap:.45rem;flex-shrink:0;}
 .dashboard-toolbar-actions .topnav-btn{height:36px;box-sizing:border-box;}
 .dashboard-toolbar-actions .topnav-theme,.dashboard-toolbar-actions .topnav-help{width:36px;padding:0;}
-.dashboard-role-control{min-width:120px;}
 
-.dashboard-onboarding{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem .9rem;margin-bottom:1rem;border:1px solid var(--brand-200);border-left:3px solid var(--brand);border-radius:var(--r-sm);background:var(--brand-050);color:var(--ink);}
-[data-theme="dark"] .dashboard-onboarding{background:var(--brand-100);}
-.dashboard-onboarding-actions{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
-.dashboard-family-feature{margin-bottom:1.25rem;}
-.dashboard-family-feature h2,.dashboard-family-list h2{font-size:.78rem;text-transform:uppercase;color:var(--ink-4);margin:0 0 .6rem;}
-.dashboard-family-feature-grid{grid-template-columns:minmax(272px,420px);}
-.dashboard-family-list{margin-bottom:1rem;}
-.dashboard-family-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:.7rem;width:100%;padding:.65rem .75rem;border:1px solid var(--line);border-bottom:0;background:var(--surface);color:inherit;text-align:left;cursor:pointer;}
-.dashboard-family-row:first-of-type{border-radius:var(--r-sm) var(--r-sm) 0 0;}
-.dashboard-family-row:last-child{border-bottom:1px solid var(--line);border-radius:0 0 var(--r-sm) var(--r-sm);}
-.dashboard-family-row:only-child{border-radius:var(--r-sm);}
-.dashboard-family-row:hover{background:var(--surface-2);}
-.dashboard-family-icon{display:inline-flex;color:var(--accent-text);}
-.dashboard-family-info{display:flex;flex-direction:column;min-width:0;}
-.dashboard-family-info strong{color:var(--ink);}
-.dashboard-family-info strong,.dashboard-family-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.dashboard-family-info small{color:var(--ink-4);}
-.dashboard-family-next{display:flex;justify-content:flex-end;min-width:90px;}
-.dashboard-family-progress{font-weight:700;color:var(--ink-3);font-variant-numeric:tabular-nums;}
 
 /* ── Dashboard Type Sections & Collapsibles ───────────── */
 .dashboard-type-section{margin-bottom:2rem;}
@@ -245,35 +210,56 @@
 .inventory-convert-banner .btn{flex-shrink:0;width:auto;}
 
 /* ── Dashboard Responsive Breakpoints ─────────────────── */
+/* Three tiers. The queue's own width drives the row layout through its
+   container query, so the table degrades on the same rules whether it is the
+   viewport or the sidebar that squeezed it. Page chrome outside the queue
+   still keys off the viewport. */
+
+/* Tier 1 -- the action cluster runs out of room before the columns do. */
 @container triage-queue (max-width:1240px){
   .dashboard-triage-actions{grid-template-columns:repeat(4,max-content);}
 }
+
+/* Tier 2 (tablet) -- eight columns stop fitting, so each row becomes a small
+   two-column card and the column headings move inline as field labels. */
 @container triage-queue (max-width:1040px){
   .dashboard-triage-header{display:none;}
-  .dashboard-triage-row{grid-template-columns:1fr 1fr;min-width:0;}
+  .dashboard-triage-row{grid-template-columns:1fr 1fr;min-width:0;gap:.55rem .7rem;padding:.7rem .8rem;}
   .dashboard-triage-cell:before{content:attr(data-label);display:block;margin-bottom:.24rem;color:var(--ink-4);font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
-  .dashboard-triage-actions{grid-column:1/-1;}
-  .dashboard-triage-actions{grid-column:1/-1;grid-template-columns:repeat(4,max-content);}
-  .dashboard-triage-actions:before{flex:0 0 100%;}
+  .dashboard-triage-actions{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));gap:.3rem;padding-top:.15rem;border-top:1px solid var(--line-2);}
+  .dashboard-triage-actions:before{grid-column:1/-1;}
+  .dashboard-triage-actions .btn{width:100%;}
 }
-@media (max-width:991.98px){
-  .dashboard-page-header{align-items:stretch;flex-direction:column;}
-  .dashboard-header-actions{justify-content:flex-start;}
-  .dashboard-summary-strip{grid-template-columns:1fr 1fr;}
-}
-@media (max-width:575.98px){
-  .dashboard-header-actions{justify-content:flex-start;}
-  .dashboard-header-actions .dashboard-control{flex:1;min-width:130px;}
-  .dashboard-filing-controls{border-right:0;padding-right:0;}
-  .dashboard-new-existing{width:100%;}
-  .dashboard-summary-strip{grid-template-columns:1fr 1fr;}
-  .dashboard-onboarding{align-items:flex-start;flex-direction:column;}
-  .dashboard-family-row{grid-template-columns:auto minmax(0,1fr) auto;}
-  .dashboard-family-row .btn{display:none;}
-}
+
+/* Tier 3 (phone) -- one field per line. The actions stay two-up rather than
+   stacking: eight full-width buttons would be most of a screen on their own. */
 @container triage-queue (max-width:540px){
   .dashboard-triage-row{grid-template-columns:1fr;}
-  .dashboard-triage-actions{grid-column:auto;}
-  .dashboard-triage-actions{grid-column:auto;grid-template-columns:1fr;}
+  .dashboard-triage-actions{grid-column:auto;grid-template-columns:repeat(2,minmax(0,1fr));}
+  .dashboard-triage-actions .btn{padding:.4rem .3rem;font-size:.72rem;}
+  /* Alignment across rows is what the reserved cells buy, and stacked cards
+     have no alignment left to keep -- so they become plain gaps here. */
   .dashboard-action-empty{display:none;}
+}
+
+@media (max-width:991.98px){
+  .dashboard-page-header{align-items:stretch;flex-direction:column;gap:.85rem;}
+  .dashboard-header-actions{justify-content:flex-start;}
+  .dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .dashboard-toolbar{gap:.5rem;}
+  .dashboard-control.dashboard-search-control{flex:1 1 100%;}
+  .dashboard-toolbar-actions{margin-left:0;}
+}
+
+@media (max-width:575.98px){
+  .dashboard-page-title h1{font-size:1.35rem;}
+  .dashboard-page-title p{font-size:.8rem;}
+  /* Header buttons go full width: at this size they are the page's primary
+     controls and a 31px-tall auto-width button is an awkward tap target. */
+  .dashboard-header-actions{display:grid;grid-template-columns:1fr;gap:.4rem;}
+  .dashboard-header-actions>.btn,.dashboard-new-existing,.dashboard-export-all{width:100%;}
+  .dashboard-filing-controls{border-right:0;padding-right:0;display:grid;grid-template-columns:1fr;gap:.4rem;}
+  .dashboard-filing-controls .btn{width:100%;}
+  .dashboard-summary-strip{gap:.45rem;}
+  .dashboard-stat-label{font-size:.62rem;}
 }
