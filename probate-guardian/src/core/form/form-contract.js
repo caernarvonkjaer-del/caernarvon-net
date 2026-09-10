@@ -139,22 +139,55 @@ export function getControlPath(control) {
 /**
  * Retrieves the field kind classification.
  */
+/**
+ * Splits a model path into lowercase word tokens across dot, underscore,
+ * hyphen, digit and camelCase boundaries. `preparer.ssnEin` becomes
+ * "preparer ssn ein".
+ *
+ * Kind inference used bare substring matching until Milestone 36-6, so the
+ * path `committeeIncorporated` matched the needle 'ein' inside
+ * "committ(ein)corporated" and a yes/no checkbox was classified as an SSN
+ * field. finalizeFieldValue() then ran formatSSN('Yes'), which strips every
+ * non-digit, and wrote the empty string back over the answer the same event
+ * had just recorded. Matching whole words ends that class of collision
+ * instead of patching the one needle that happened to collide.
+ */
+function pathTokens(rawPath) {
+  return String(rawPath || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[^A-Za-z0-9]+/g, ' ')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * True when `needle` appears in `tokens` as a whole word. A trailing plural
+ * 's' is tolerated so `guardianNames` still classifies as a name field.
+ */
+function hasPathWord(tokens, needle) {
+  return new RegExp(`(?:^| )${needle}s?(?: |$)`).test(tokens);
+}
+
 export function getControlKind(control) {
   if (!control) return 'text';
   if (control.dataset?.fieldKind) return control.dataset.fieldKind;
-  const path = getControlPath(control).toLowerCase();
+  // A checkbox or radio carries a state, not text. Classifying it by path
+  // could route it to a text formatter that has nothing meaningful to format.
+  if (control.type === 'checkbox' || control.type === 'radio') return 'boolean';
+  const tokens = pathTokens(getControlPath(control));
+  const has = needle => hasPathWord(tokens, needle);
   const format = control.dataset?.formFormat || control.dataset?.annualFormat || '';
-  if (format === 'case-number' || path.includes('casenumber')) return 'identifier';
-  if (format === 'account' || format === 'account-number' || path.includes('account')) return 'identifier';
-  if (format === 'check' || format === 'check-number' || path.includes('check')) return 'identifier';
-  if (format === 'bar-number' || path.includes('barnumber') || path.includes('bar_')) return 'identifier';
-  if (format === 'name' || path.includes('name')) return 'name';
-  if (format === 'city-state-zip' || format === 'zip' || path.includes('citystatezip') || path.includes('zip')) return 'zip';
-  if (format === 'address' || path.includes('address') || path.includes('street')) return 'address';
-  if (format === 'phone' || path.includes('phone')) return 'phone';
-  if (format === 'ssn' || path.includes('ssn') || path.includes('ein')) return 'ssn';
+  if (format === 'case-number' || has('case number')) return 'identifier';
+  if (format === 'account' || format === 'account-number' || has('account')) return 'identifier';
+  if (format === 'check' || format === 'check-number' || has('check')) return 'identifier';
+  if (format === 'bar-number' || has('bar number') || has('bar')) return 'identifier';
+  if (format === 'name' || has('name')) return 'name';
+  if (format === 'city-state-zip' || format === 'zip' || has('city state zip') || has('zip')) return 'zip';
+  if (format === 'address' || has('address') || has('street')) return 'address';
+  if (format === 'phone' || has('phone')) return 'phone';
+  if (format === 'ssn' || has('ssn') || has('ein')) return 'ssn';
   if (format === 'decimal' || control.type === 'number') return 'money';
-  if (control.type === 'date' || path.includes('date')) return 'date';
+  if (control.type === 'date' || has('date')) return 'date';
   return 'text';
 }
 
@@ -164,7 +197,7 @@ export function getControlKind(control) {
 export function getControlPolicy(control) {
   if (control.dataset?.fieldFormatPolicy) return control.dataset.fieldFormatPolicy;
   const kind = getControlKind(control);
-  if (kind === 'identifier' || kind === 'text') return 'preserve';
+  if (kind === 'identifier' || kind === 'text' || kind === 'boolean') return 'preserve';
   if (kind === 'date' || kind === 'money' || kind === 'phone' || kind === 'ssn' || kind === 'percent') return 'normalize';
   if (kind === 'name' || kind === 'address') return 'display-only';
   return 'preserve';
@@ -238,11 +271,16 @@ export function finalizeFieldValue(control, options = {}) {
   const kind = getControlKind(control);
   const policy = getControlPolicy(control);
   const isCheckbox = control?.type === 'checkbox';
+  const isRadio = control?.type === 'radio';
   let rawValue = isCheckbox
     ? (control.dataset?.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
-    : control.value;
+    : (isRadio ? (control.checked ? control.value : (window.getPath ? window.getPath(window.D, path) : '')) : control.value);
 
-  if (kind === 'date') {
+  // A state control is written through untouched. No text formatter may run
+  // against a checkbox or radio whatever kind the path happened to infer.
+  if (isCheckbox || isRadio || kind === 'boolean') {
+    if (window.setPath) window.setPath(window.D, path, rawValue);
+  } else if (kind === 'date') {
     const parsed = parseFlexibleDate(rawValue);
     if (parsed === '') {
       // Empty date

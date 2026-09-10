@@ -378,7 +378,9 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.addPage();
     pageNum++;
     attachmentPageNumbers.add(pageNum);
-    curY = 0;
+    // Rule 2.520 applies to attachment pages too: start the content box one
+    // inch down, not at the paper edge.
+    curY = margin;
   };
 
   const checkPageSpace = (neededHeight, sectionTitle) => {
@@ -439,14 +441,17 @@ export async function generateCourtFormPdf(model, options = {}) {
   });
 
   const getSupportingDocumentImageLayout = (sourceWidth, sourceHeight, fullPage = false) => {
-    const maxWidth = fullPage ? pageWidth : contentWidth;
-    const maxHeight = fullPage ? pageHeight : pageBottom - curY;
+    // A full-page exhibit is bounded by the content box, never the paper.
+    // Scaling to pageWidth/pageHeight printed scans edge to edge with a
+    // zero-inch margin on all four sides, against Rule 2.520's one inch.
+    const maxWidth = contentWidth;
+    const maxHeight = fullPage ? (pageHeight - 2 * margin) : pageBottom - curY;
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
     const width = sourceWidth * scale;
     const height = sourceHeight * scale;
     return {
-      x: fullPage ? (pageWidth - width) / 2 : margin,
-      y: fullPage ? (pageHeight - height) / 2 : curY,
+      x: fullPage ? margin + (contentWidth - width) / 2 : margin,
+      y: fullPage ? margin + ((pageHeight - 2 * margin) - height) / 2 : curY,
       width,
       height,
     };
@@ -712,7 +717,10 @@ export async function generateCourtFormPdf(model, options = {}) {
 
       else if (block.type === 'key-value-grid') {
         const items = block.items || [];
-        if (block.title) {
+        // Suppress only the duplicate draw. block.title still feeds the
+        // accessibility structure below, matching docx-engine.js:447.
+        const shouldRenderKvTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
+        if (shouldRenderKvTitle) {
           checkPageSpace(20, sec.title);
           const subHNode = structureTree.addStructureElement({
             tag: subHTag,
@@ -881,7 +889,8 @@ export async function generateCourtFormPdf(model, options = {}) {
         // "Yes —"/"No —" text prefix in the tagged content carries the
         // actual checked-state information for screen readers.
         const items = block.items || [];
-        if (block.title) {
+        const shouldRenderChecklistTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
+        if (shouldRenderChecklistTitle) {
           checkPageSpace(20, sec.title);
           const chHNode = structureTree.addStructureElement({
             tag: subHTag,
@@ -944,7 +953,10 @@ export async function generateCourtFormPdf(model, options = {}) {
 
       else if (block.type === 'table') {
         const { headers, rows, totals, colWidths, colAlign, title: tblTitle } = block;
-        if (tblTitle && tblTitle !== sec.title) {
+        // Case-insensitive and trimmed, so 'SCHEDULE A: Income' and
+        // 'Schedule A: Income' count as the same heading.
+        const shouldRenderTblTitle = !!(tblTitle && tblTitle.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
+        if (shouldRenderTblTitle) {
           checkPageSpace(20, sec.title);
           const tblHNode = structureTree.addStructureElement({
             tag: subHTag,

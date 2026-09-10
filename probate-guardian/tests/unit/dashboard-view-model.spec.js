@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  compareDashboardColumn,
   compareDashboardPriority,
   deriveFilingContacts,
   deriveWardDeadline,
@@ -134,5 +135,62 @@ describe('dashboard view model', () => {
     ]);
 
     expect(metrics).toEqual({ actionItems: 2, approachingDeadlines: 1, pendingCourtReview: 1 });
+  });
+
+  test('sorts columns direction-aware and breaks ties with priority', () => {
+    const rowA = {
+      wardName: 'Alice',
+      displayType: 'Annual Accounting',
+      caseNumber: '26-000100-GD',
+      workflowStatus: 'approved',
+      deadlineDate: new Date('2026-09-01'),
+      assigneeName: 'Judge Baker',
+      lastModified: '2026-08-01T10:00:00Z',
+      priorityRank: 2,
+    };
+    const rowB = {
+      wardName: 'Bob',
+      displayType: 'Initial Inventory',
+      caseNumber: '26-000200-GD',
+      workflowStatus: 'draft',
+      deadlineDate: new Date('2026-09-15'),
+      assigneeName: 'Judge Adams',
+      lastModified: '2026-08-02T10:00:00Z',
+      priorityRank: 1,
+    };
+
+    // Name: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'name', 'asc')).toBeLessThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'name', 'desc')).toBeGreaterThan(0);
+
+    // Form Type: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'type', 'asc')).toBeLessThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'type', 'desc')).toBeGreaterThan(0);
+
+    // Case Number: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'case', 'asc')).toBeLessThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'case', 'desc')).toBeGreaterThan(0);
+
+    // Status: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'status', 'asc')).toBeLessThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'status', 'desc')).toBeGreaterThan(0);
+
+    // Deadline: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'deadline', 'asc')).toBeLessThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'deadline', 'desc')).toBeGreaterThan(0);
+
+    // Judge: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'judge', 'asc')).toBeGreaterThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'judge', 'desc')).toBeLessThan(0);
+
+    // Last Modified: asc & desc
+    expect(compareDashboardColumn(rowA, rowB, 'lastModified', 'asc')).toBeLessThan(0);
+    expect(compareDashboardColumn(rowA, rowB, 'lastModified', 'desc')).toBeGreaterThan(0);
+
+    // Tie-break: identical judge falls back to priority
+    const rowC = { ...rowA, assigneeName: 'Judge Baker', priorityRank: 3 };
+    const rowD = { ...rowB, assigneeName: 'Judge Baker', priorityRank: 1 };
+    expect(compareDashboardColumn(rowC, rowD, 'judge', 'asc')).toBeGreaterThan(0);
+    expect(compareDashboardColumn(rowD, rowC, 'judge', 'asc')).toBeLessThan(0);
   });
 });

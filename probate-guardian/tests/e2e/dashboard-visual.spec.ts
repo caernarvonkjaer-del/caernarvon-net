@@ -40,7 +40,6 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
 
   const main = page.locator('#main-content');
   await main.locator('[data-dashboard-bound="true"]').waitFor();
-  await page.locator('#dashboard-role').selectOption('professional');
   await page.locator('[data-shell-action="hide-auto-export-reminder"]').click();
 
   for (const theme of ['light', 'dark']) {
@@ -93,14 +92,12 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
 
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 1366, height: 768 });
-  await page.locator('#dashboard-role').selectOption('assistant');
-  await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(1);
-  await expect(main.locator('.dashboard-supervisor-control')).toContainText('Working on behalf of');
-  await page.screenshot({ path: testInfo.outputPath('milestone-15-assistant-light-1366x768.png'), fullPage: false });
+  await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
+  await page.screenshot({ path: testInfo.outputPath('milestone-15-light-1366x768.png'), fullPage: false });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => document.querySelector('.sidebar')?.getBoundingClientRect().right <= 1);
-  await page.screenshot({ path: testInfo.outputPath('milestone-15-assistant-light-390x844.png'), fullPage: false });
+  await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-light-390x844.png'), fullPage: false });
   await main.locator('.dashboard-triage-row').first().scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-row-light-390x844.png'), fullPage: false });
 });

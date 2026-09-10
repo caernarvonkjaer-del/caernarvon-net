@@ -151,14 +151,15 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .ward-picker-actions{display:flex;gap:.4rem;margin-bottom:.75rem;}
 
 /* Bootstrap's .btn-link focus style is a colored box-shadow ring, not just
-   the outline property -- suppressing only outline leaves it showing. Both
-   collapse toggles share this styling, so both get it removed; requested
-   specifically for the ward-controls one after it kept appearing at odd
-   moments, but the save-controls toggle would show the identical ring. */
-#ward-controls-toggle-btn,#save-controls-toggle-btn{outline:none!important;box-shadow:none!important;}
-#ward-controls-toggle-btn:focus,#save-controls-toggle-btn:focus{outline:none!important;box-shadow:none!important;}
-#ward-controls-toggle-btn{display:none;padding:.2rem 0;font-size:.75rem;color:var(--ink-4);}
-#close-ward-btn,#rename-ward-btn,#delete-ward-btn,#ward-info-display{display:none;}
+   the outline property -- suppressing only outline leaves it showing. The
+   ward-controls toggle this was first requested for went away with the
+   sidebar filing controls (Milestone 36-1); the save-controls toggle shows
+   the identical ring, so the rule stays for it. */
+#save-controls-toggle-btn{outline:none!important;box-shadow:none!important;}
+#save-controls-toggle-btn:focus{outline:none!important;box-shadow:none!important;}
+/* The close/rename/delete filing buttons moved to the dashboard header and
+   are visible there. Only the sidebar's ward info card stays hidden. */
+#ward-info-display{display:none;}
 .ward-picker-actions .btn{flex:1;padding:.4rem .3rem;font-size:.75rem;font-weight:600;border-radius:var(--r-sm);}
 
 .sidebar-save-section{padding:1rem .8rem 1.1rem;border-top:1px solid var(--line);background:var(--surface-2);}
@@ -279,8 +280,12 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 
 .tooltip-icon{display:inline-flex;align-items:center;justify-content:center;width:1.15rem;height:1.15rem;margin-left:.4rem;background:var(--brand-100);color:var(--brand-text);border:1px solid var(--brand-200);border-radius:50%;font-size:.7rem;font-weight:700;cursor:help;position:relative;flex-shrink:0;transition:background .15s,color .15s;}
 .tooltip-icon:hover{background:var(--brand);color:#fff;border-color:var(--brand);}
-.tooltip-popup{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);background:#111a2b;color:#fff;padding:.65rem .85rem;border-radius:var(--r-sm);font-size:.8rem;font-weight:400;white-space:nowrap;max-width:280px;z-index:9999;pointer-events:auto;opacity:0;visibility:hidden;transition:opacity .18s,visibility .18s;line-height:1.5;box-shadow:var(--sh-3);}
-.tooltip-icon:hover .tooltip-popup{opacity:1;visibility:visible;pointer-events:auto;}
+/* display:none at rest, not just opacity/visibility: the popup is positioned against a 1.15rem
+   icon and centred with translateX(-50%), so a laid-out box spills past the column and inflates
+   scrollWidth even while invisible. allow-discrete + @starting-style keep the fade. */
+.tooltip-popup{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);background:#111a2b;color:#fff;padding:.65rem .85rem;border-radius:var(--r-sm);font-size:.8rem;font-weight:400;white-space:normal;width:max-content;max-width:280px;z-index:9999;pointer-events:none;opacity:0;display:none;transition:opacity .18s,display .18s allow-discrete;line-height:1.5;box-shadow:var(--sh-3);}
+.tooltip-icon:hover .tooltip-popup{display:block;opacity:1;pointer-events:auto;}
+@starting-style{.tooltip-icon:hover .tooltip-popup{opacity:0;}}
 .tooltip-popup::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border:6px solid transparent;border-top-color:#111a2b;}
 .tooltip-popup strong{font-weight:650;color:#fff;}
 

@@ -802,7 +802,7 @@ function pageScheduleC1(){
 function pageScheduleC2(){
   const entries=D.scheduleC2.map((e,i)=>entryCard(`Lawsuit ${i+1}`,i,'c2',`
     ${formRow(col(6,reqLabel('Claimant / Petitioner Name')+textInput(`scheduleC2.${i}.claimantName`,'','name')),col(6,reqLabel('Type of Lawsuit / Description')+textInput(`scheduleC2.${i}.lawsuitDescription`,'e.g., Mortgage Foreclosure','name')))}
-    ${formRow(col(6,reqLabel('Court / Jurisdiction')+textInput(`scheduleC2.${i}.courtJurisdiction`,'e.g., 6th Judicial / Pinellas')),col(6,reqLabel('Case Number')+textInput(`scheduleC2.${i}.caseNumber`)))}
+    ${formRow(col(6,reqLabel('Court / Jurisdiction')+textInput(`scheduleC2.${i}.courtJurisdiction`,'e.g., Circuit Court / County')),col(6,reqLabel('Case Number')+textInput(`scheduleC2.${i}.caseNumber`)))}
     ${formRow(col(12,reqLabel('Claimant / Attorney Address')+textInput(`scheduleC2.${i}.claimantAddress`,'','address')))}
     ${formRow(col(3,reqLabel('Date Filed')+dateInput(`scheduleC2.${i}.dateFiled`)),col(3,reqLabel('Amount of Claim ($)')+numInput(`scheduleC2.${i}.amountOfClaim`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC2.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC2.${i}.wardC2`)))}
   `)).join('');

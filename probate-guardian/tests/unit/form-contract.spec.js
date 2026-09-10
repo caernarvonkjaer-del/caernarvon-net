@@ -11,6 +11,7 @@ import {
   yesNoText,
   triStateText,
   isTriStateAnswer,
+  getControlKind,
 } from '../../src/core/form/form-contract.js';
 
 function createMockInput(initial = {}) {
@@ -276,5 +277,47 @@ describe('form-contract', () => {
     expect(isTriStateAnswer(undefined)).toBe(false);
     expect(isTriStateAnswer(false)).toBe(true);
     expect(isTriStateAnswer('No')).toBe(true);
+  });
+
+  describe('getControlKind & boundary inference', () => {
+    it('classifies checkbox and radio controls as boolean regardless of path substrings', () => {
+      const chk = createMockInput({
+        type: 'checkbox',
+        dataset: { formPath: 'committeeIncorporated', formValue: 'yes-no' },
+        checked: true,
+      });
+      expect(getControlKind(chk)).toBe('boolean');
+    });
+
+    it('does not classify mid-word ein substring in committeeIncorporated as ssn', () => {
+      const textInput = createMockInput({
+        type: 'text',
+        dataset: { formPath: 'committeeIncorporated' },
+      });
+      expect(getControlKind(textInput)).toBe('text');
+    });
+
+    it('classifies genuine EIN identifiers as ssn', () => {
+      const einInput = createMockInput({
+        type: 'text',
+        dataset: { formPath: 'guardian.ein' },
+      });
+      expect(getControlKind(einInput)).toBe('ssn');
+    });
+
+    it('retains Yes and No on yes-no checkbox finalize without SSN erasure', () => {
+      window.formatSSN = (s) => String(s || '').replace(/\D/g, '');
+      const chk = createMockInput({
+        type: 'checkbox',
+        dataset: { formPath: 'committeeIncorporated', formValue: 'yes-no' },
+        checked: true,
+      });
+      finalizeFieldValue(chk);
+      expect(window.D.committeeIncorporated).toBe('Yes');
+
+      chk.checked = false;
+      finalizeFieldValue(chk);
+      expect(window.D.committeeIncorporated).toBe('No');
+    });
   });
 });

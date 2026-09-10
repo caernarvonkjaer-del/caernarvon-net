@@ -49,7 +49,7 @@ test.describe('party de-duplication (Milestone 7)', () => {
     // creating a new form (see ward-lock.spec.ts's own "auto-collapse" test)
     // -- re-expand it before reaching for Help.
     const wardControlsToggle = page.locator('#ward-controls-toggle-btn');
-    if ((await wardControlsToggle.textContent())?.includes('Show')) await wardControlsToggle.click();
+    if (await wardControlsToggle.count() > 0 && (await wardControlsToggle.textContent())?.includes('Show')) await wardControlsToggle.click();
 
     // Reach the screen through the real Help-panel button, not window.navigate.
     await page.click('[data-shell-action="toggle-help"]');

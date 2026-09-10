@@ -66,12 +66,14 @@ test.describe('routes', () => {
     // dashboard role ever reached its render branch) -- see Milestone 8.
     await expect(main.locator('#dashboard-group-toggle')).toHaveCount(0);
 
+    // Milestone 36-1: the single professional layout renders triage rows. The
+    // archived section below still renders ward cards.
     await page.locator('#dashboard-search').fill('Alpha');
-    await expect(main.locator('.ward-card')).toHaveCount(1);
-    await expect(main.locator('.ward-card')).toContainText('Alpha Dashboard Ward');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(1);
+    await expect(main.locator('.dashboard-triage-row')).toContainText('Alpha Dashboard Ward');
 
-    await main.locator('[data-dashboard-action="archive"]').dispatchEvent('click');
-    await expect(main.locator('.ward-card')).toHaveCount(0);
+    await main.locator('[data-dashboard-action="archive"]').first().dispatchEvent('click');
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(0);
     await main.getByRole('button', { name: /Archived \/ Closed Wards/ }).dispatchEvent('click');
     await expect(main.locator('.ward-card')).toContainText('Alpha Dashboard Ward');
 
@@ -81,7 +83,7 @@ test.describe('routes', () => {
     await expect(main.locator('[onchange], [onclick], [oninput], [onkeydown]')).toHaveCount(0);
   });
 
-  test('role-aware dashboard triage uses local preferences without mutating wards', async ({ page }) => {
+  test('dashboard triage uses local preferences without mutating wards', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('<img src=x onerror=alert(1)> Alpha Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
@@ -116,29 +118,24 @@ test.describe('routes', () => {
       await expect(main.locator('.dashboard-summary-secondary')).toHaveCount(0);
     };
 
-    await expect(main.locator('.dashboard-family-row')).toHaveCount(4);
-    await expect(main.locator('#dashboard-role')).toHaveCount(1);
-    await expect(main.locator('.dashboard-page-header #dashboard-role')).toHaveCount(1);
-    await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(0);
+    // Milestone 36-1 collapsed the family/professional/assistant layouts to a
+    // single professional one, so there is no role select and no role walk.
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
+    await expect(main.locator('#dashboard-role')).toHaveCount(0);
+    await expect(main.locator('.dashboard-family-row')).toHaveCount(0);
+    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
+    await expect(main.locator('.dashboard-supervisor-control')).toHaveCount(0);
     await expect(main.locator('[data-dashboard-action="select-existing"]')).toHaveCount(1);
     await expect(main.locator('.dashboard-page-header [data-dashboard-action="select-existing"]')).toHaveText(/New Filing from Existing/);
     await expect(main.locator('.inventory-convert-banner')).toHaveCount(0);
     await expect(main.locator('img[src="x"]')).toHaveCount(0);
     await expect(main).toContainText('<img src=x onerror=alert(1)> Alpha Ward');
     await expectPrimaryMetricStrip();
-    await expect(main.locator('.dashboard-worklist-tab').filter({ hasText: 'Deadlines' })).toContainText('2');
-    await expect(main.locator('.dashboard-deadlines-list')).not.toContainText('Beta Ward');
-    await expect(main.locator('.dashboard-deadlines-list')).not.toContainText('Delta Ward');
-    await expect(main.locator('[data-dashboard-action="select-existing"]')).toHaveCount(1);
-    await expect(main.locator('.dashboard-family-row').filter({ hasText: 'Alpha Ward' })).toHaveAttribute('data-dashboard-priority', 'urgent');
-    await expect(main.locator('.dashboard-family-row').filter({ hasText: 'Gamma Ward' })).toHaveAttribute('data-dashboard-priority', 'warning');
 
-    await page.locator('#dashboard-role').selectOption('professional');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
-    await expect(main.locator('#dashboard-role')).toHaveCount(1);
-    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
-    await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(0);
-    await expectPrimaryMetricStrip();
+    // The filing controls moved out of the sidebar into the header cluster.
+    await expect(main.locator('.dashboard-page-header .dashboard-filing-controls')).toHaveCount(1);
+    await expect(main.locator('.dashboard-page-header #new-ward-btn')).toHaveCount(1);
+
     await expect(main.locator('[data-dashboard-change="workflow-status"]')).toHaveCount(4);
     await expect(main.locator('[data-dashboard-change="assignee"]')).toHaveCount(4);
     await expect(main.locator('.dashboard-triage-row').filter({ hasText: 'Alpha Ward' })).toHaveAttribute('data-dashboard-priority', 'urgent');
@@ -152,15 +149,10 @@ test.describe('routes', () => {
     await expect(main.locator('.dashboard-triage-row')).not.toContainText('Delta Ward');
     await page.locator('#dashboard-deadline-filter').selectOption('all');
 
-    await page.locator('#dashboard-role').selectOption('assistant');
-    await expect(main.locator('#dashboard-role')).toHaveCount(1);
-    await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(1);
-    await expect(main.locator('.dashboard-page-header #dashboard-assignment-filter')).toHaveCount(1);
-    await expectPrimaryMetricStrip();
     await expect(page.locator('#dashboard-assignment-filter')).toContainText('Alex Attorney');
     await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
-    await expect(page.evaluate(() => localStorage.getItem('pg-dashboard-preferences-v1'))).resolves.toContain('assistant');
+    await expect(page.evaluate(() => localStorage.getItem('pg-dashboard-preferences-v1'))).resolves.toContain('professional');
 
     const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
     expect(afterPreferences).toBe(beforePreferences);
@@ -182,7 +174,6 @@ test.describe('routes', () => {
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
-    await page.locator('#dashboard-role').selectOption('professional');
 
     const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Ward' });
     await row.locator('[data-dashboard-change="workflow-status"]').selectOption('approved');

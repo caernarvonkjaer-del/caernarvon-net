@@ -321,7 +321,7 @@ const HELP_CONTENT = {
     <div class="help-section-title">When It's Due</div>
     <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.362(1)) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
     <div class="help-section-title">Don't Forget the Disaster Plan</div>
-    <p>Per Administrative Order 2024-025, a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately.</p>
+    <p>Where required by local administrative order, a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately.</p>
     <div class="help-section-title">Activities of Daily Living</div>
     <p>Rate all fifteen honestly. These become the baseline the court compares future Annual Plans against.</p>
     <div class="help-section-title">Advance Directives</div>
@@ -567,7 +567,7 @@ const WALKTHROUGH_PLAN_INITIAL=[
   {element:'[data-page="/p6"]',title:'7. Daily Living',text:'Rate the ward on fifteen activities of daily living — this tells the court how much support the ward needs.',position:'right'},
   {element:'[data-page="/p8"]',title:'8. Advance Directives',text:'Either confirm there are no pre-existing advance directives (and how you verified that), or record the ones the ward executed, including whether a court has suspended or revoked them.',position:'right'},
   {element:'[data-page="/p9"]',title:'9. Signatures',text:'Each guardian signs under penalty of perjury, certifying the plan reflects the ward\'s wishes and rights. Up to four guardians can sign.',position:'right'},
-  {element:'[data-page="/print"]',title:'10. Review & File',text:'Print Preview lists anything still missing and adds a readiness check. Remember: a separate Disaster Plan must also be filed alongside this report per Administrative Order 2024-025. Export as PDF; this form has no Excel version.',position:'left'},
+  {element:'[data-page="/print"]',title:'10. Review & File',text:'Print Preview lists anything still missing and adds a readiness check. Export as PDF; this form has no Excel version.',position:'left'},
 ];
 
 const WALKTHROUGH_PLAN_MINOR=[
@@ -1474,9 +1474,11 @@ function selectCountyOption(id,county){
   hideCountyDropdown(id);
 }
 
-// Format Florida Bar Number — digits only, max 6 (Fla. Bar member numbers are 6-digit numeric IDs)
+// Format Florida Bar Number — digits only, max 7. Florida Bar member numbers
+// run up to seven digits; capping at six silently dropped the last digit of a
+// seven-digit number and printed a different attorney's number onto a filing.
 function formatBarNumber(s){
-  return String(s||'').replace(/\D/g,'').slice(0,6);
+  return String(s||'').replace(/\D/g,'').slice(0,7);
 }
 
 // Format bank account number — preserved identifier (may contain letters/dashes/slashes)
@@ -4301,20 +4303,20 @@ function createWardId(){
 // accepted by the same set.
 const ACCOUNTING_FORM_TYPES=['guardian','simplified','annual','finalAccounting','trustAccounting'];
 const PRIOR_ACCOUNTING_SOURCES=['guardian','simplified','annual','finalAccounting','trustAccounting'];
+// Which existing filings may seed a new one at creation time. Every filing for
+// the same ward carries the same identity and contact block, so any type is a
+// valid source for any other; the picker used to list one counterpart only and
+// silently omitted the ward's other filings (Milestone 36-7 item 17).
 const CARRY_SOURCE_TYPE={
-  planInitial:['guardian'], planSimplified:['simplified'], planAnnual:['annual'],
-  // No dedicated Accounting counterpart exists for a Plan-for-Minors ward,
-  // but its Initial Inventory (same ward, same identity/contact fields) is
-  // exactly as valid a source as it is for planInitial above -- this was
-  // simply missing since planMinor was added later (Milestone 6). Convert
-  // Ward intentionally does NOT gain a new option from this: see the
-  // explicit planMinor exclusion in convertTargetsFor() below.
-  planMinor:['guardian'],
-  guardian:['planInitial'],
-  simplified:['planSimplified',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='simplified')],
-  annual:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='annual')],
-  finalAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='finalAccounting')],
-  trustAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='trustAccounting')]
+  planInitial:['guardian','annual','simplified','finalAccounting','trustAccounting','planInitial','planAnnual','planSimplified','planMinor'],
+  planSimplified:['simplified','guardian','annual','finalAccounting','trustAccounting','planSimplified','planInitial','planAnnual','planMinor'],
+  planAnnual:['annual','guardian','simplified','finalAccounting','trustAccounting','planAnnual','planInitial','planSimplified','planMinor'],
+  planMinor:['guardian','annual','simplified','finalAccounting','trustAccounting','planMinor','planInitial','planAnnual','planSimplified'],
+  guardian:['planInitial','annual','simplified','finalAccounting','trustAccounting','planAnnual','planSimplified','planMinor'],
+  simplified:['planSimplified',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='simplified'),'planInitial','planAnnual','planMinor'],
+  annual:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='annual'),'planInitial','planSimplified','planMinor'],
+  finalAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='finalAccounting'),'planInitial','planSimplified','planMinor'],
+  trustAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='trustAccounting'),'planInitial','planSimplified','planMinor']
 };
 
 // Source types allowed for a target type (always an array).
@@ -4331,14 +4333,27 @@ function carryWardsFor(type,excludeWardId){
 // carrying over only shared identity/contact fields — never signature dates,
 // financial data, or anything specific to the Accounting filing itself.
 function carryOverFieldsForPlan(sourceWard,planType){
-  const src=sourceWard;
+  const src=sourceWard||{};
+  const caseNum=src.caseNumber||src.ucn||src.ref||'';
+  const gName=src.guardianName||src.guardianNames||src.guardian||(src.guardians&&src.guardians[0]?.name)||(src.planGuardians&&src.planGuardians[0]?.name)||'';
+  const attyName=src.attorneyForGuardian||src.attorney||src.attorney_name||src.attorneyName||'';
+  const attyBar=src.attorneyBar||src.attorney_bar||'';
+  const attyPhone=src.attorneyPhone||src.attorney_phone||'';
+  const attyEmail=src.attorneyEmail||src.attorney_email||'';
+  const attyStreet=src.attorneyAddress||src.attorney_street||'';
+  const attyCityStateZip=src.attorneyCityStateZip||src.attorney_cityStateZip||'';
+  const gs=(src.guardians&&src.guardians.length?src.guardians:src.planGuardians)||[];
+
   if(planType==='planInitial'){
-    const g=(src.guardians||[])[0]||{};
+    const g=gs[0]||{};
     return {
-      wardName:src.wardName||'', caseNumber:src.caseNumber||'', county:src.county||'Pinellas',
-      inceptionDate:src.gid||'', guardianNames:src.guardianName||'', attorneyName:src.attorneyForGuardian||'',
+      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      inceptionDate:src.gid||src.inceptionDate||'', guardianNames:gName,
+      attorneyName:attyName, attorney_name:attyName, attorney_bar:attyBar,
+      attorney_phone:attyPhone, attorney_email:attyEmail, attorney_street:attyStreet,
+      attorney_cityStateZip:attyCityStateZip,
       planGuardians:[
-        {name:g.name||'',ssn:g.ssnEin||'',street:g.streetAddress||'',phone:g.phone||'',cityStateZip:g.cityStateZip||'',signatureDate:'',relationship:''},
+        {name:g.name||gName||'',ssn:g.ssn||g.ssnEin||g.tin||'',street:g.streetAddress||g.street||g.mailingStreet||'',phone:g.phone||'',cityStateZip:g.cityStateZip||g.mailingCityStateZip||'',signatureDate:'',relationship:g.relationship||''},
         {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
         {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
         {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}
@@ -4346,33 +4361,30 @@ function carryOverFieldsForPlan(sourceWard,planType){
     };
   }
   if(planType==='planSimplified'){
-    const gs=src.guardians||[];
-    const mail=g=>[g.mailingStreet,g.mailingCityStateZip].filter(Boolean).join(', ');
+    const mail=g=>[g.mailingStreet||g.streetAddress||g.street,g.mailingCityStateZip||g.cityStateZip].filter(Boolean).join(', ');
     return {
-      wardName:src.wardName||'', caseNumber:src.caseNumber||'', county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
       planGuardians:[0,1].map(i=>{
-        const g=gs[i]||{};
-        return {name:g.name||'',signatureDate:'',email:g.email||'',phone:g.phone||'',mailingAddress:mail(g)};
+        const g=gs[i]||(i===0?{name:gName}:{});
+        return {name:g.name||(i===0?gName:'')||'',signatureDate:'',email:g.email||'',phone:g.phone||'',mailingAddress:mail(g)};
       })
     };
   }
   if(planType==='planAnnual'){
-    const gs=src.guardians||[];
     return {
-      wardName:src.wardName||'', caseNumber:src.caseNumber||'', county:src.county||'Pinellas',
-      gid:src.gid||'', guardian:src.guardian||'', attorney:src.attorney||'',
+      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
       planGuardians:[0,1,2].map(i=>{
-        const g=gs[i]||{};
+        const g=gs[i]||(i===0?{name:gName}:{});
         return {
-          name:g.name||'',ssn:g.ssn||'',phone:g.phone||'',email:g.email||'',signatureDate:'',
-          mailingStreet:g.mailingStreet||'',mailingCityStateZip:g.mailingCityStateZip||'',
-          officeStreet:g.officeStreet||'',officeCityStateZip:g.officeCityStateZip||'',relationship:''
+          name:g.name||(i===0?gName:'')||'',ssn:g.ssn||g.ssnEin||g.tin||'',phone:g.phone||'',email:g.email||'',signatureDate:'',
+          mailingStreet:g.mailingStreet||g.streetAddress||g.street||'',mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
+          officeStreet:g.officeStreet||'',officeCityStateZip:g.officeCityStateZip||'',relationship:g.relationship||''
         };
       })
     };
   }
   if(planType==='planMinor'){
-    const gs=src.guardians||[];
     // A source ward may be an Initial Inventory (ssnEin/streetAddress/
     // cityStateZip) or an accounting (ssn/mailingStreet/mailingCityStateZip),
     // so each field falls back across both naming conventions.
@@ -4381,13 +4393,22 @@ function carryOverFieldsForPlan(sourceWard,planType){
       ucn:src.caseNumber||'', // planMinor stores the case number as "ucn"
       guardianName:src.guardianName||src.guardian||'',
       attorney_name:src.attorneyForGuardian||src.attorney||'',
+      // planMinor stores the case number as "ucn"
+      ucn:caseNum, ref:src.ref||'',
+      guardianName:gName,
+      attorney_name:attyName,
+      attorney_bar:attyBar,
+      attorney_phone:attyPhone,
+      attorney_email:attyEmail,
+      attorney_street:attyStreet,
+      attorney_cityStateZip:attyCityStateZip,
       planGuardians:[0,1].map(i=>{
-        const g=gs[i]||{};
+        const g=gs[i]||(i===0?{name:gName}:{});
         return {
-          name:g.name||'', tin:g.ssn||g.ssnEin||'', phone:g.phone||'',
-          mailingStreet:g.mailingStreet||g.streetAddress||'',
+          name:g.name||(i===0?gName:'')||'', tin:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'',
+          mailingStreet:g.mailingStreet||g.streetAddress||g.street||'',
           mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
-          relationship:'', email:g.email||'', signatureDate:''
+          relationship:g.relationship||'', email:g.email||'', signatureDate:''
         };
       })
     };
@@ -4397,20 +4418,36 @@ function carryOverFieldsForPlan(sourceWard,planType){
 
 // The reverse direction: builds a partial data object to merge onto a
 // freshly-created (or existing) Accounting ward, carrying identity/contact
-// fields FROM its matching Plan ward. Mirrors carryOverFieldsForPlan's three
-// pairings exactly, just with source and target swapped.
+// fields FROM its matching Plan ward. Mirrors carryOverFieldsForPlan's pairings.
+// fields FROM its matching Plan ward. Mirrors carryOverFieldsForPlan's
+// pairings, just with source and target swapped.
 function carryOverFieldsForAccounting(sourceWard,accountingType){
-  const src=sourceWard;
+  const src=sourceWard||{};
+  const caseNum=src.caseNumber||src.ucn||src.ref||'';
+  const gName=src.guardianNames||src.guardianName||src.guardian||(src.planGuardians&&src.planGuardians[0]?.name)||(src.guardians&&src.guardians[0]?.name)||'';
+  const attyName=src.attorneyName||src.attorney_name||src.attorneyForGuardian||src.attorney||'';
+  const attyBar=src.attorneyBar||src.attorney_bar||'';
+  const attyPhone=src.attorneyPhone||src.attorney_phone||'';
+  const attyEmail=src.attorneyEmail||src.attorney_email||'';
+  const attyStreet=src.attorneyAddress||src.attorney_street||'';
+  const attyCityStateZip=src.attorneyCityStateZip||src.attorney_cityStateZip||'';
+  const gs=src.planGuardians||src.guardians||[];
+
   if(accountingType==='guardian'){
-    const g=(src.planGuardians||[])[0]||{};
+    const g=gs[0]||{};
     return {
-      wardName:src.wardName||'', caseNumber:src.caseNumber||'', county:src.county||'Pinellas',
-      gid:src.inceptionDate||'', guardianName:src.guardianNames||'', attorneyForGuardian:src.attorneyName||'',
-      guardians:[{name:g.name||'',ssnEin:g.ssn||'',phone:g.phone||'',streetAddress:g.street||'',cityStateZip:g.cityStateZip||'',signatureDate:null}]
+      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      gid:src.inceptionDate||src.gid||'', guardianName:gName, attorneyForGuardian:attyName,
+      attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
+      attorneyAddress:attyStreet, attorneyCityStateZip:attyCityStateZip,
+      guardians:[{
+        name:g.name||gName||'', ssnEin:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'',
+        streetAddress:g.street||g.streetAddress||g.mailingStreet||'',
+        cityStateZip:g.cityStateZip||g.mailingCityStateZip||'', signatureDate:null
+      }]
     };
   }
   if(accountingType==='simplified'){
-    const gs=src.planGuardians||[];
     // mailingAddress was joined as "street, cityStateZip" on the way out —
     // split on the first comma to reverse it. Best-effort for addresses
     // typed directly on the Plan rather than carried over originally.
@@ -4420,25 +4457,32 @@ function carryOverFieldsForAccounting(sourceWard,accountingType){
       return i===-1?{street:s,cityStateZip:''}:{street:s.slice(0,i),cityStateZip:s.slice(i+2)};
     };
     return {
-      wardName:src.wardName||'', caseNumber:src.caseNumber||'', county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
       guardians:[0,1,2].map(i=>{
-        const g=gs[i]||{};
-        const {street,cityStateZip}=split(g.mailingAddress);
-        return {name:g.name||'',ssn:'',phone:g.phone||'',email:g.email||'',mailingStreet:street,mailingCityStateZip:cityStateZip,residenceStreet:'',residenceCityStateZip:'',signatureDate:''};
+        const g=gs[i]||(i===0?{name:gName}:{});
+        const addr=g.mailingStreet?{street:g.mailingStreet,cityStateZip:g.mailingCityStateZip||''}:split(g.mailingAddress||g.streetAddress||g.street);
+        return {
+          name:g.name||(i===0?gName:'')||'', ssn:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'', email:g.email||'',
+          mailingStreet:addr.street||'', mailingCityStateZip:addr.cityStateZip||'',
+          residenceStreet:'', residenceCityStateZip:'', signatureDate:''
+        };
       })
     };
   }
   if(accountingType==='annual'){
-    const gs=src.planGuardians||[];
     return {
-      wardName:src.wardName||'', caseNumber:src.caseNumber||'', county:src.county||'Pinellas',
-      gid:src.gid||'', guardian:src.guardian||'', attorney:src.attorney||'',
+      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
+      attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
       guardians:[0,1,2].map(i=>{
-        const g=gs[i]||{};
+        const g=gs[i]||(i===0?{name:gName}:{});
         return {
-          name:g.name||'',ssn:g.ssn||'',phone:g.phone||'',email:g.email||'',
-          mailingStreet:g.mailingStreet||'',mailingCityStateZip:g.mailingCityStateZip||'',
-          officeStreet:g.officeStreet||'',officeCityStateZip:g.officeCityStateZip||'',signatureDate:'',signatureDateLabel:''
+          name:g.name||(i===0?gName:'')||'', ssn:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'', email:g.email||'',
+          mailingStreet:g.mailingStreet||g.streetAddress||g.street||'',
+          mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
+          officeStreet:g.officeStreet||'', officeCityStateZip:g.officeCityStateZip||'',
+          signatureDate:'', signatureDateLabel:''
         };
       })
     };
@@ -4886,6 +4930,10 @@ function wardSelectorShowDropdown(query){
     input.removeAttribute('aria-activedescendant');
     input.setAttribute('aria-expanded','false');
     comboboxHide(dropdown);
+    // Picking an option switches the filing outright. It used to only stage a
+    // choice that the separate Switch Filing button consumed, so selecting an
+    // entry by mouse or by ArrowDown+Enter left the active filing unchanged.
+    if(item.wardId)switchWard(item.wardId);
   });
   [...dropdown.querySelectorAll('[role="option"]')].forEach((option,index)=>{
     option.id=`ward-selector-option-${index}`;
@@ -4971,7 +5019,6 @@ async function handleSwitchWardClick(){
     }
   }
   if(!wardId)return;
-  collapseWardControls();
   if(wardId===caseFile.activeWardId){
     showSwitchWardPickerModal();
     return;
@@ -5338,6 +5385,17 @@ async function doAddWard(){
   const carrySourceId=document.getElementById('carry-source-ward').value;
   console.log('doAddWard - name:',name,'type:',type,'carrySourceId:',carrySourceId);
   if(!name){alert('Please enter a ward name');return;}
+  if(type==='planMinor'){
+    const candidateSource=carrySourceId?caseFile.wards.find(w=>w.wardId===carrySourceId):null;
+    const sameNameWard=caseFile.wards.find(w=>
+      (w.wardName||'').trim().toLowerCase()===name.toLowerCase()&&(w.inventoryType!=='planMinor'||w.gid||w.inceptionDate)
+    );
+    const adultIndicator=candidateSource||sameNameWard;
+    if(adultIndicator&&(adultIndicator.inventoryType!=='planMinor'||adultIndicator.gid||adultIndicator.inceptionDate)){
+      const proceed=confirm(`Annual Plan (Minors) is typically used for minor wards, but existing records for "${name}" indicate an adult filing or adult guardianship inception date. Do you want to continue creating this minor plan?`);
+      if(!proceed)return;
+    }
+  }
   if(type==='simplified'){
     closeModal('addWardModal');
     showSimplifiedEligibilityModal(name,carrySourceId);
@@ -5761,27 +5819,12 @@ function refreshWardInfoCard(){
 // the toggle so their choice sticks for the rest of the session, including
 // across switching to a different ward, instead of silently re-collapsing
 // under them every time updateSidebar() runs.
-let _wardControlsCollapsed=false;
-let _wardControlsUserToggled=false;
-function applyWardControlsCollapsedState(){
-  document.querySelectorAll('.ward-collapsible').forEach(el=>{
-    el.style.display=_wardControlsCollapsed?'none':'';
-  });
-  const btn=document.getElementById('ward-controls-toggle-btn');
-  if(!btn)return;
-  btn.textContent=_wardControlsCollapsed?'Show filing controls ▾':'Hide filing controls ▴';
-  btn.setAttribute('aria-expanded',String(!_wardControlsCollapsed));
-}
-function collapseWardControls(){
-  _wardControlsCollapsed=true;
-  _wardControlsUserToggled=true;
-  applyWardControlsCollapsedState();
-}
-function toggleWardControls(){
-  _wardControlsCollapsed=!_wardControlsCollapsed;
-  _wardControlsUserToggled=true;
-  applyWardControlsCollapsedState();
-}
+// The sidebar's collapsible filing controls (Switch Filing, + New Form,
+// Close/Rename/Delete) moved to the dashboard header in Milestone 36-1, and
+// the toggle that reclaimed sidebar space for the schedule list went with
+// them. collapseWardControls() is kept as a no-op because shell-events.js
+// still calls it defensively on close/delete/rename/new-form.
+function collapseWardControls(){}
 window.collapseWardControls=collapseWardControls;
 
 // Same pattern as the ward controls above, for the backup/auto-save block
@@ -5832,26 +5875,9 @@ function updateSidebar(){
 
   // Show ward info if active
   refreshWardInfoCard();
-  const closeBtn=document.getElementById('close-ward-btn');
-  const renameBtn=document.getElementById('rename-ward-btn');
-  const deleteBtn=document.getElementById('delete-ward-btn');
-
-  if(activeWardId){
-    if(closeBtn)closeBtn.style.display='block';
-    renameBtn.style.display='block';
-    deleteBtn.style.display='block';
-  }else{
-    if(closeBtn)closeBtn.style.display='none';
-    renameBtn.style.display='none';
-    deleteBtn.style.display='none';
-  }
-
-  // The toggle itself only makes sense once there's something to toggle --
-  // hidden on a fresh install with no ward selected yet.
-  const toggleBtn=document.getElementById('ward-controls-toggle-btn');
-  if(toggleBtn)toggleBtn.style.display=activeWardId?'block':'none';
-  if(activeInventoryType&&!_wardControlsUserToggled)_wardControlsCollapsed=true;
-  applyWardControlsCollapsedState();
+  // Close / Rename / Delete now render in the dashboard header, which owns
+  // their visibility. The sidebar must not reach for them by id: on a form
+  // page they are not in the document at all.
 
   const saveToggleBtn=document.getElementById('save-controls-toggle-btn');
   if(saveToggleBtn)saveToggleBtn.style.display=activeWardId?'block':'none';
@@ -5950,17 +5976,31 @@ async function showConvertWardModal(){
 // Every other Plan-related pair (Plan->Plan, Accounting->non-matching Plan,
 // anything with planMinor, which has no Accounting counterpart) is left out
 // rather than shown with field mapping that doesn't actually apply.
+// Convert Ward is a heavier operation than seeding a new filing, and stays
+// restricted to the counterpart pairings it has always offered. It is kept
+// separate from CARRY_SOURCE_TYPE deliberately: widening what may be carried
+// must not widen what may be converted.
+const CONVERT_SOURCE_TYPE={
+  planInitial:['guardian'], planSimplified:['simplified'], planAnnual:['annual'],
+  planMinor:['guardian'],
+  guardian:['planInitial'],
+  simplified:['planSimplified',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='simplified')],
+  annual:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='annual')],
+  finalAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='finalAccounting')],
+  trustAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='trustAccounting')]
+};
+function convertSourcesFor(type){return CONVERT_SOURCE_TYPE[type]||[];}
+
 function convertTargetsFor(srcType){
-  // Any target that names this source as a valid carry source, minus the
-  // source's own type. Derived from CARRY_SOURCE_TYPE so the two stay in
-  // step — adding a new accounting type only has to be declared there.
-  // planMinor is excluded explicitly: CARRY_SOURCE_TYPE now lists it as a
-  // valid Load-Ward-Info/Add-Ward carry TARGET (guardian -> planMinor, same
-  // as guardian -> planInitial), but that's a different question from
-  // whether it can be converted to/from -- it still has no Accounting
-  // counterpart, per this function's comment above.
-  return Object.keys(CARRY_SOURCE_TYPE)
-    .filter(target=>target!==srcType&&target!=='planMinor'&&carrySourcesFor(target).includes(srcType));
+  // Any target that names this source as a valid CONVERT source, minus the
+  // source's own type. Deliberately keyed to CONVERT_SOURCE_TYPE rather than
+  // CARRY_SOURCE_TYPE: Milestone 36-7 widened what may be carried at creation
+  // time, and that must not widen what may be converted.
+  // planMinor is excluded explicitly -- it is a valid carry TARGET
+  // (guardian -> planMinor, same as guardian -> planInitial), but it still has
+  // no Accounting counterpart to convert to or from.
+  return Object.keys(CONVERT_SOURCE_TYPE)
+    .filter(target=>target!==srcType&&target!=='planMinor'&&convertSourcesFor(target).includes(srcType));
 }
 
 function updateConvertTargetOptions(){
@@ -7828,7 +7868,9 @@ function computeNavChecks(){
       'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate),
       // Complete when the two lines agree, or the difference is explained.
       'a-p67':(()=>{const r=annualReconcileState(t);return !r.outOfBalance||r.explained;})(),
-      'a-p8':D.trusts.some(t=>t.name),
+      // Part VIII is satisfied either by naming a trust or by certifying there
+      // are none, matching the verifiedEmpty pattern the other Annual checks use.
+      'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name),
       'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany),
       'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name),
       'a-p11':verifiedEmpty('remuneration')||D.remuneration.some(r=>r.guardian||r.type||r.amount),
@@ -8602,8 +8644,10 @@ function renderScheduleDocsSection(scheduleKey){
   queueScheduleDocValidation(scheduleKey,slot);
   const period=scheduleDocPeriodKey();
   const [pf,pt]=period.split('__');
+  const fmtPf=pf?formatDisplayDate(pf)||pf:'';
+  const fmtPt=pt?formatDisplayDate(pt)||pt:'';
   const periodNote=activeInventoryType==='guardian'?''
-    :(pf||pt?` — accounting period ${pf||'?'} to ${pt||'?'}`:' — set the accounting period on the Cover page to file these by year');
+    :(fmtPf||fmtPt?` — accounting period ${fmtPf||'?'} to ${fmtPt||'?'}`:' — set the accounting period on the Cover page to file these by year');
   const filesHtml=slot.files.length?slot.files.map((f,i)=>{
     const status=f.technicalStatus||'pending';
     const warnings=Array.isArray(f.technicalWarnings)?f.technicalWarnings:[];

@@ -48,4 +48,22 @@ describe('Plan tri-state PDF output', () => {
       expect.objectContaining({ label: 'Yes', checked: false }),
     ]));
   });
+
+  test('marks an Initial Plan explicit Yes and No committee answers accurately', () => {
+    const modelYes = buildPlanInitialModel({ committeeIncorporated: 'Yes' });
+    const committeeYes = modelYes.sections.flatMap((section) => section.blocks || [])
+      .find((block) => block.type === 'checklist' && block.title?.includes('Committee Recommendations'));
+    expect(committeeYes.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Yes', checked: true }),
+      expect.objectContaining({ label: 'No', checked: false }),
+    ]));
+
+    const modelNo = buildPlanInitialModel({ committeeIncorporated: 'No', committeeExplain: 'Awaiting updated report' });
+    const committeeNo = modelNo.sections.flatMap((section) => section.blocks || [])
+      .find((block) => block.type === 'checklist' && block.title?.includes('Committee Recommendations'));
+    expect(committeeNo.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'No', checked: true }),
+      expect.objectContaining({ label: 'Yes', checked: false }),
+    ]));
+  });
 });

@@ -56,7 +56,7 @@ export function planReadinessChecksInitial(){
   ];
   const manual=[
     'File within 60 days after the Letters of Guardianship are signed (F.S. 744.362(1)).',
-    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)), and file an updated Disaster Plan (Administrative Order 2024-025).",
+    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
     'Serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).',
     'Attach a copy of any pre-existing advance directive described in the Question 1 narrative unless already filed with the court -- advance directives need only be filed once.',
     'Non-professional guardians must complete the 8-hour education course and file proof within 4 months after appointment (F.S. 744.3145(2), (4)).',

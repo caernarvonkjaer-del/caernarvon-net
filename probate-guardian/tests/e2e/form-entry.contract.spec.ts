@@ -126,14 +126,13 @@ test.describe('Form entry contract', () => {
     await createWard(page, 'Identifier Policy Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/p5'));
 
-    // Normalize policy: bar number keeps digits only, capped at 6 -- tested
-    // nowhere else in this suite (form-entry-ux.spec.ts only covers case
-    // number normalization, and only via Guardian's legacy data-bind path).
+    // Normalize policy: bar number keeps digits only, capped at 7 per Milestone 36-6
+    // (Florida Bar numbers run up to seven digits).
     const barInput = page.locator('[data-form-path="attorney_bar"]');
     await expect(barInput).toBeVisible();
     await barInput.fill('AB-123456789');
     await barInput.blur();
-    expect(await barInput.inputValue()).toBe('123456');
+    expect(await barInput.inputValue()).toBe('1234567');
 
     // Preserve policy on the modern data-field-path pipeline (not Guardian's
     // legacy data-bind path, the only place preserve-policy is proven today).

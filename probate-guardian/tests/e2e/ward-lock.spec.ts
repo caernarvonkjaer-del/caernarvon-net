@@ -244,13 +244,9 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
       const wardAId = await page.evaluate(() => (window as any).caseFile.activeWardId);
 
-      // Expand sidebar ward controls if collapsed
-      const toggleBtn = page.locator('#ward-controls-toggle-btn');
-      if (await toggleBtn.isVisible()) {
-        await toggleBtn.click();
-      }
-      const sidebarCloseBtn = page.locator('#close-ward-btn');
-      await expect(sidebarCloseBtn).toBeVisible();
+      // Milestone 36-1 moved the filing controls out of the sidebar, so Close
+      // now exists only in the dashboard header, asserted below.
+      await expect(page.locator('.sidebar #close-ward-btn')).toHaveCount(0);
 
       // Go to dashboard -> active ward is still loaded and held
       await page.evaluate(() => window.location.hash = '#/dashboard');
@@ -264,7 +260,6 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await dashboardCloseBtn.click();
       await page.waitForFunction(() => (window as any).caseFile.activeWardId === null);
       await expect(page.locator('button.dashboard-close-ward')).toBeHidden();
-      await expect(sidebarCloseBtn).toBeHidden();
 
       // Lock should be released
       const heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -274,36 +269,19 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
     }
   });
 
-  test('auto-collapse: selecting actions in Show Ward Controls and Show Save Controls collapses the menus', async ({ page }) => {
+  test('auto-collapse: selecting actions in Show Save Controls collapses the menus', async ({ page }) => {
     await gotoApp(page);
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Collapse Test Ward');
 
-    const wardToggleBtn = page.locator('#ward-controls-toggle-btn');
     const saveToggleBtn = page.locator('#save-controls-toggle-btn');
 
-    // 1. Expand ward controls if collapsed
-    if (await wardToggleBtn.textContent().then(t => t?.includes('Show'))) {
-      await wardToggleBtn.click();
-    }
-    await expect(wardToggleBtn).toHaveText('Hide filing controls ▴');
+    // The ward-controls collapse toggle went away with the sidebar filing
+    // controls in Milestone 36-1; only the save-controls toggle remains.
+    await expect(page.locator('#ward-controls-toggle-btn')).toHaveCount(0);
 
-    // Clicking New Form collapses ward controls
-    await page.locator('[data-shell-action="new-form"]').click();
-    await expect(wardToggleBtn).toHaveText('Show filing controls ▾');
-
-    // Re-expand ward controls
-    await wardToggleBtn.click();
-    await expect(wardToggleBtn).toHaveText('Hide filing controls ▴');
-
-    // Switching ward collapses ward controls
-    await page.locator('[data-shell-action="switch-ward"]').click();
-    await expect(wardToggleBtn).toHaveText('Show filing controls ▾');
-    await page.locator('#switchWardPickerModal [data-modal-action="close"]').click();
-    await expect(page.locator('#switchWardPickerModal')).not.toHaveClass(/show/);
-
-    // 2. Save controls
+    // Save controls
     if (await saveToggleBtn.textContent().then(t => t?.includes('Show'))) {
       await saveToggleBtn.click();
     }

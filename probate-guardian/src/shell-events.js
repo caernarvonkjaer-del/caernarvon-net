@@ -34,7 +34,6 @@ function handleShellClick(event) {
     case 'toggle-mobile-sidebar': window.toggleMobileSidebar(); break;
     case 'toggle-save-controls': window.toggleSaveControls(); break;
     case 'toggle-theme': window.toggleTheme(); break;
-    case 'toggle-ward-controls': window.toggleWardControls(); break;
   }
 }
 

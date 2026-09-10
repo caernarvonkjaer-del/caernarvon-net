@@ -9,16 +9,20 @@ export function createWardId() {
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 
+// Which existing filings may seed a new one at creation time. Every filing for
+// the same ward carries the same identity and contact block, so any type is a
+// valid source for any other; the picker used to list one counterpart only and
+// silently omitted the ward's other filings (Milestone 36-7 item 17).
 export const CARRY_SOURCE_TYPE = {
-  planInitial: ['guardian'],
-  planSimplified: ['simplified'],
-  planAnnual: ['annual'],
-  planMinor: ['guardian'],
-  guardian: ['planInitial'],
-  simplified: ['planSimplified', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'simplified')],
-  annual: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'annual')],
-  finalAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'finalAccounting')],
-  trustAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'trustAccounting')],
+  planInitial: ['guardian', 'annual', 'simplified', 'finalAccounting', 'trustAccounting', 'planInitial', 'planAnnual', 'planSimplified', 'planMinor'],
+  planSimplified: ['simplified', 'guardian', 'annual', 'finalAccounting', 'trustAccounting', 'planSimplified', 'planInitial', 'planAnnual', 'planMinor'],
+  planAnnual: ['annual', 'guardian', 'simplified', 'finalAccounting', 'trustAccounting', 'planAnnual', 'planInitial', 'planSimplified', 'planMinor'],
+  planMinor: ['guardian', 'annual', 'simplified', 'finalAccounting', 'trustAccounting', 'planMinor', 'planInitial', 'planAnnual', 'planSimplified'],
+  guardian: ['planInitial', 'annual', 'simplified', 'finalAccounting', 'trustAccounting', 'planAnnual', 'planSimplified', 'planMinor'],
+  simplified: ['planSimplified', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'simplified'), 'planInitial', 'planAnnual', 'planMinor'],
+  annual: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'annual'), 'planInitial', 'planSimplified', 'planMinor'],
+  finalAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'finalAccounting'), 'planInitial', 'planSimplified', 'planMinor'],
+  trustAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'trustAccounting'), 'planInitial', 'planSimplified', 'planMinor'],
 };
 
 export function carrySourcesFor(type) {
@@ -33,24 +37,40 @@ export function carryWardsFor(type, excludeWardId) {
 
 export function carryOverFieldsForPlan(sourceWard, planType) {
   const src = sourceWard || {};
+  const caseNum = src.caseNumber || src.ucn || src.ref || '';
+  const gName = src.guardianName || src.guardianNames || src.guardian || (src.guardians && src.guardians[0]?.name) || (src.planGuardians && src.planGuardians[0]?.name) || '';
+  const attyName = src.attorneyForGuardian || src.attorney || src.attorney_name || src.attorneyName || '';
+  const attyBar = src.attorneyBar || src.attorney_bar || '';
+  const attyPhone = src.attorneyPhone || src.attorney_phone || '';
+  const attyEmail = src.attorneyEmail || src.attorney_email || '';
+  const attyStreet = src.attorneyAddress || src.attorney_street || '';
+  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || '';
+  const gs = (src.guardians && src.guardians.length ? src.guardians : src.planGuardians) || [];
+
   if (planType === 'planInitial') {
-    const g = (src.guardians || [])[0] || {};
+    const g = gs[0] || {};
     return {
       wardName: src.wardName || '',
-      caseNumber: src.caseNumber || '',
+      caseNumber: caseNum,
       county: src.county || 'Pinellas',
-      inceptionDate: src.gid || '',
-      guardianNames: src.guardianName || '',
-      attorneyName: src.attorneyForGuardian || '',
+      inceptionDate: src.gid || src.inceptionDate || '',
+      guardianNames: gName,
+      attorneyName: attyName,
+      attorney_name: attyName,
+      attorney_bar: attyBar,
+      attorney_phone: attyPhone,
+      attorney_email: attyEmail,
+      attorney_street: attyStreet,
+      attorney_cityStateZip: attyCityStateZip,
       planGuardians: [
         {
-          name: g.name || '',
-          ssn: g.ssnEin || '',
-          street: g.streetAddress || '',
+          name: g.name || gName || '',
+          ssn: g.ssn || g.ssnEin || g.tin || '',
+          street: g.streetAddress || g.street || g.mailingStreet || '',
           phone: g.phone || '',
-          cityStateZip: g.cityStateZip || '',
+          cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
           signatureDate: '',
-          relationship: '',
+          relationship: g.relationship || '',
         },
         { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
         { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
@@ -59,16 +79,15 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     };
   }
   if (planType === 'planSimplified') {
-    const gs = src.guardians || [];
-    const mail = (g) => [g.mailingStreet, g.mailingCityStateZip].filter(Boolean).join(', ');
+    const mail = (g) => [g.mailingStreet || g.streetAddress || g.street, g.mailingCityStateZip || g.cityStateZip].filter(Boolean).join(', ');
     return {
       wardName: src.wardName || '',
-      caseNumber: src.caseNumber || '',
+      caseNumber: caseNum,
       county: src.county || 'Pinellas',
       planGuardians: [0, 1].map((i) => {
-        const g = gs[i] || {};
+        const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
-          name: g.name || '',
+          name: g.name || (i === 0 ? gName : '') || '',
           signatureDate: '',
           email: g.email || '',
           phone: g.phone || '',
@@ -78,27 +97,153 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     };
   }
   if (planType === 'planAnnual') {
-    const gs = src.guardians || [];
     return {
       wardName: src.wardName || '',
-      caseNumber: src.caseNumber || '',
+      caseNumber: caseNum,
       county: src.county || 'Pinellas',
-      gid: src.gid || '',
-      guardian: src.guardian || '',
-      attorney: src.attorney || '',
+      gid: src.gid || src.inceptionDate || '',
+      guardian: gName,
+      attorney: attyName,
       planGuardians: [0, 1, 2].map((i) => {
-        const g = gs[i] || {};
+        const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
-          name: g.name || '',
-          ssn: g.ssn || '',
+          name: g.name || (i === 0 ? gName : '') || '',
+          ssn: g.ssn || g.ssnEin || g.tin || '',
           phone: g.phone || '',
           email: g.email || '',
           signatureDate: '',
-          mailingStreet: g.mailingStreet || '',
-          mailingCityStateZip: g.mailingCityStateZip || '',
+          mailingStreet: g.mailingStreet || g.streetAddress || g.street || '',
+          mailingCityStateZip: g.mailingCityStateZip || g.cityStateZip || '',
           officeStreet: g.officeStreet || '',
           officeCityStateZip: g.officeCityStateZip || '',
-          relationship: '',
+          relationship: g.relationship || '',
+        };
+      }),
+    };
+  }
+  if (planType === 'planMinor') {
+    return {
+      wardName: src.wardName || '',
+      county: src.county || 'Pinellas',
+      ucn: caseNum,
+      ref: src.ref || '',
+      guardianName: gName,
+      attorney_name: attyName,
+      attorney_bar: attyBar,
+      attorney_phone: attyPhone,
+      attorney_email: attyEmail,
+      attorney_street: attyStreet,
+      attorney_cityStateZip: attyCityStateZip,
+      planGuardians: [0, 1].map((i) => {
+        const g = gs[i] || (i === 0 ? { name: gName } : {});
+        return {
+          name: g.name || (i === 0 ? gName : '') || '',
+          tin: g.ssn || g.ssnEin || g.tin || '',
+          phone: g.phone || '',
+          mailingStreet: g.mailingStreet || g.streetAddress || g.street || '',
+          mailingCityStateZip: g.mailingCityStateZip || g.cityStateZip || '',
+          relationship: g.relationship || '',
+          email: g.email || '',
+          signatureDate: '',
+        };
+      }),
+    };
+  }
+  return {};
+}
+
+export function carryOverFieldsForAccounting(sourceWard, accountingType) {
+  const src = sourceWard || {};
+  const caseNum = src.caseNumber || src.ucn || src.ref || '';
+  const gName = src.guardianNames || src.guardianName || src.guardian || (src.planGuardians && src.planGuardians[0]?.name) || (src.guardians && src.guardians[0]?.name) || '';
+  const attyName = src.attorneyName || src.attorney_name || src.attorneyForGuardian || src.attorney || '';
+  const attyBar = src.attorneyBar || src.attorney_bar || '';
+  const attyPhone = src.attorneyPhone || src.attorney_phone || '';
+  const attyEmail = src.attorneyEmail || src.attorney_email || '';
+  const attyStreet = src.attorneyAddress || src.attorney_street || '';
+  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || '';
+  const gs = src.planGuardians || src.guardians || [];
+
+  if (accountingType === 'guardian') {
+    const g = gs[0] || {};
+    return {
+      wardName: src.wardName || '',
+      caseNumber: caseNum,
+      county: src.county || 'Pinellas',
+      gid: src.inceptionDate || src.gid || '',
+      guardianName: gName,
+      attorneyForGuardian: attyName,
+      attorneyBar: attyBar,
+      attorneyPhone: attyPhone,
+      attorneyEmail: attyEmail,
+      attorneyAddress: attyStreet,
+      attorneyCityStateZip: attyCityStateZip,
+      guardians: [
+        {
+          name: g.name || gName || '',
+          ssnEin: g.ssn || g.ssnEin || g.tin || '',
+          phone: g.phone || '',
+          streetAddress: g.street || g.streetAddress || g.mailingStreet || '',
+          cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
+          signatureDate: null,
+        },
+      ],
+    };
+  }
+  if (accountingType === 'simplified') {
+    const split = (addr) => {
+      const s = String(addr || '');
+      const i = s.indexOf(', ');
+      return i === -1 ? { street: s, cityStateZip: '' } : { street: s.slice(0, i), cityStateZip: s.slice(i + 2) };
+    };
+    return {
+      wardName: src.wardName || '',
+      caseNumber: caseNum,
+      county: src.county || 'Pinellas',
+      gid: src.gid || src.inceptionDate || '',
+      guardian: gName,
+      attorney: attyName,
+      guardians: [0, 1, 2].map((i) => {
+        const g = gs[i] || (i === 0 ? { name: gName } : {});
+        const addr = g.mailingStreet ? { street: g.mailingStreet, cityStateZip: g.mailingCityStateZip || '' } : split(g.mailingAddress || g.streetAddress || g.street);
+        return {
+          name: g.name || (i === 0 ? gName : '') || '',
+          ssn: g.ssn || g.ssnEin || g.tin || '',
+          phone: g.phone || '',
+          email: g.email || '',
+          mailingStreet: addr.street || '',
+          mailingCityStateZip: addr.cityStateZip || '',
+          residenceStreet: '',
+          residenceCityStateZip: '',
+          signatureDate: '',
+        };
+      }),
+    };
+  }
+  if (accountingType === 'annual') {
+    return {
+      wardName: src.wardName || '',
+      caseNumber: caseNum,
+      county: src.county || 'Pinellas',
+      gid: src.gid || src.inceptionDate || '',
+      guardian: gName,
+      attorney: attyName,
+      attorneyBar: attyBar,
+      attorneyPhone: attyPhone,
+      attorneyEmail: attyEmail,
+      guardians: [0, 1, 2].map((i) => {
+        const g = gs[i] || (i === 0 ? { name: gName } : {});
+        return {
+          name: g.name || (i === 0 ? gName : '') || '',
+          ssn: g.ssn || g.ssnEin || g.tin || '',
+          phone: g.phone || '',
+          email: g.email || '',
+          mailingStreet: g.mailingStreet || g.streetAddress || g.street || '',
+          mailingCityStateZip: g.mailingCityStateZip || g.cityStateZip || '',
+          officeStreet: g.officeStreet || '',
+          officeCityStateZip: g.officeCityStateZip || '',
+          signatureDate: '',
+          signatureDateLabel: '',
         };
       }),
     };
@@ -338,4 +483,5 @@ if (typeof window !== 'undefined') {
   window.carrySourcesFor = carrySourcesFor;
   window.carryWardsFor = carryWardsFor;
   window.carryOverFieldsForPlan = carryOverFieldsForPlan;
+  window.carryOverFieldsForAccounting = carryOverFieldsForAccounting;
 }

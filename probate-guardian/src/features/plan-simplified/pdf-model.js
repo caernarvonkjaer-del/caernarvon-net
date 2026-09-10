@@ -179,7 +179,7 @@ export function buildPlanSimplifiedModel(D) {
       }, atty] : []),
       {
         type: 'notice',
-        text: 'Filing: For Pinellas County cases, file the original with the Clerk of the Circuit Court, 315 Court Street, Room 106, Clearwater, FL 33756. For Pasco County cases, provide the original to the Clerk & Comptroller, P.O. Box 338, New Port Richey, FL 34656-0338. E-filing instructions are at myflcourtaccess.com.',
+        text: 'Filing: File the original with the Clerk of the Circuit Court in the county of jurisdiction. E-filing instructions are at myflcourtaccess.com.',
       },
     ],
   });

@@ -204,3 +204,48 @@ test('multi-column labels retain their required marker and natural height', asyn
   await expect(affix).toBeVisible();
   expect(await affix.evaluate((element) => getComputedStyle(element).fontSize)).toBe('14.08px');
 });
+
+test('tablet-band schedule field rows do not overflow horizontally or render narrower than 118px', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).addWard('Tablet Layout Ward', 'annual'));
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.schB1 = [
+      { bankAcct: '1', checkNo: '100', periodFrom: '2026-01-01', periodTo: '2026-01-31', datePaid: '2026-02-01', payee: 'Attorney One', courtOrderDate: '2026-01-15', amount: 100 },
+    ];
+    data.schD1 = [
+      { description: 'Bank Checking Account', accountNo: '1234', restricted: 'No', type: 'Checking', fullAmount: 100, wardPct: 1 },
+    ];
+  });
+
+  const tabletViewports = [
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+  ];
+
+  for (const viewport of tabletViewports) {
+    await page.setViewportSize(viewport);
+    for (const route of ['/schb1', '/schd1']) {
+      await page.evaluate((r) => (window as any).navigate(r), route);
+      await expect(page.locator('.schedule-page')).toBeVisible();
+
+      const rowMetrics = await page.locator('.schedule-page .row:has(>[class*="col-"])').evaluateAll((rows) =>
+        rows.map((r) => {
+          const rowEl = r as HTMLElement;
+          const cols = [...rowEl.querySelectorAll<HTMLElement>(':scope > [class*="col-"]')];
+          const minColWidth = cols.reduce((min, c) => Math.min(min, c.getBoundingClientRect().width), Infinity);
+          return {
+            noHorizontalOverflow: rowEl.scrollWidth <= rowEl.clientWidth + 1,
+            minColWidth: cols.length ? minColWidth : 999,
+          };
+        })
+      );
+
+      for (const m of rowMetrics) {
+        expect(m.noHorizontalOverflow, `no horizontal overflow at ${viewport.width}x${viewport.height} on ${route}`).toBe(true);
+        expect(m.minColWidth, `column width >= 118px floor at ${viewport.width}x${viewport.height} on ${route}`).toBeGreaterThanOrEqual(118);
+      }
+    }
+  }
+});
+

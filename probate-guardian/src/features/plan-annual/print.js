@@ -70,7 +70,7 @@ export function planReadinessChecksAnnual(){
     'File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367).',
     'Serve a copy on all interested persons and file the certificate of service.',
     'If you marked any right as capable of restoration, file the separate petition to restore it — this plan does not restore rights.',
-    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)), and file an updated Disaster Plan (Administrative Order 2024-025).",
+    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
     'Attach copies of any advance directives listed in Question 10 unless already filed with the court -- advance directives need only be filed once.',
     'If ward is an APD client with a Developmental Services Habilitation Plan (DSHP / Chapter 393), attach the current support plan (F.S. 393.0651).',
     "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the ward's assets.",

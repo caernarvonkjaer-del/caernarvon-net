@@ -22,7 +22,6 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
 
       await page.evaluate(() => (window as any).navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
-      await page.locator('#dashboard-role').selectOption('assistant');
       await page.locator('#dashboard-assignment-filter').selectOption('unassigned');
 
       const archive = await page.evaluate(async () => {
@@ -90,7 +89,6 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await createWard(page, 'Workflow Roundtrip Ward');
       await page.evaluate(() => (window as any).navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
-      await page.locator('#dashboard-role').selectOption('professional');
       const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Roundtrip Ward' });
       await row.locator('[data-dashboard-change="workflow-status"]').selectOption('pending-court-review');
       await row.locator('[data-dashboard-change="assignee"]').fill('Alex Attorney');

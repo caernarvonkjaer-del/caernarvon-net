@@ -160,7 +160,7 @@ function pagePlanICover(){
   const d=window.D;
   return `<div class="schedule-page">
     <h1>Initial Guardianship Plan — Cover</h1>
-    <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan. Per Administrative Order 2024-025, a separate Disaster Plan must also be filed — the app does not produce that document.</div>
+    <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.</div>
     <div class="row g-3 mb-3 cover-info-row">
       <div class="col-md-6">
         <div class="summary-box">
@@ -435,7 +435,7 @@ function pagePlanIDirectives(){
         +cb('needsOther','Other'),
         'needsExplain',d.needsExplain,d.needsOther))}
     ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
-      yesNoCheckboxS('committeeIncorporated','',d.committeeIncorporated)
+      yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated)
       +(d.committeeIncorporated==='No'?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
     ${renderScheduleDocsSection('planIDirectives')}
     ${pageNavS('/p7','/p9')}

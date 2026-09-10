@@ -191,6 +191,33 @@ export function compareDashboardPriority(left, right) {
   return left.wardName.localeCompare(right.wardName);
 }
 
+export function compareDashboardColumn(left, right, sortKey = 'priority', direction = 'asc') {
+  const dir = direction === 'desc' ? -1 : 1;
+  if (!sortKey || sortKey === 'priority') {
+    return compareDashboardPriority(left, right) * dir;
+  }
+  let diff = 0;
+  if (sortKey === 'name' || sortKey === 'ward') {
+    diff = (left.wardName || '').localeCompare(right.wardName || '');
+  } else if (sortKey === 'type') {
+    diff = (left.displayType || '').localeCompare(right.displayType || '');
+  } else if (sortKey === 'case') {
+    diff = (left.caseNumber || '').localeCompare(right.caseNumber || '');
+  } else if (sortKey === 'status') {
+    diff = (left.workflowStatus || '').localeCompare(right.workflowStatus || '');
+  } else if (sortKey === 'deadline') {
+    const leftDue = left.deadlineDate?.getTime() ?? Number.POSITIVE_INFINITY;
+    const rightDue = right.deadlineDate?.getTime() ?? Number.POSITIVE_INFINITY;
+    diff = leftDue - rightDue;
+  } else if (sortKey === 'judge' || sortKey === 'assignee') {
+    diff = (left.assigneeName || '').localeCompare(right.assigneeName || '');
+  } else if (sortKey === 'lastModified') {
+    diff = new Date(left.lastModified || 0).getTime() - new Date(right.lastModified || 0).getTime();
+  }
+  if (diff !== 0) return diff * dir;
+  return compareDashboardPriority(left, right);
+}
+
 export function getDashboardMetrics(projectedWards) {
   const active = projectedWards.filter(ward => !ward.isArchived);
   return {

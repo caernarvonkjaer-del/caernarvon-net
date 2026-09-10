@@ -202,7 +202,17 @@ function bindEvents(container) {
   eventControllers.set(container, controller);
   const options = { signal: controller.signal };
   container.addEventListener('input', (event) => {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) persistAnnualControl(event.target);
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      // formatName()/formatAddress() title-case a complete value and trim it,
+      // which eats a just-typed trailing space and moves the caret to the end.
+      // bindForms() in legacy-app.js made these finalize-only long ago; this
+      // module binds its own inputs and was never brought along, so typing
+      // "Morgan Reyes" here used to store "MorganReyes". Digit-count limiting
+      // and the decimal formatters stay live: they behave like maxlength
+      // rather than rewriting whole words.
+      const isWordFormat = ['name', 'address', 'zip', 'security', 'case'].includes(event.target.dataset.annualFormat);
+      persistAnnualControl(event.target, !isWordFormat);
+    }
   }, options);
   container.addEventListener('change', (event) => {
     const control = event.target;
@@ -222,8 +232,22 @@ function bindEvents(container) {
   }, options);
   container.addEventListener('focusout', (event) => {
     const control = event.target;
-    if (!(control instanceof HTMLInputElement) || control.dataset.annualFormat !== 'case') return;
-    control.value = finalizeCaseNumber(control.value);
+    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
+    const format = control.dataset.annualFormat;
+    if (format === 'case') {
+      control.value = finalizeCaseNumber(control.value);
+    } else if (format === 'name') {
+      control.value = formatName(control.value);
+    } else if (format === 'address') {
+      control.value = formatAddress(control.value);
+    } else if (format === 'zip') {
+      applyZipLimit(control);
+      control.value = formatCityStateZip(control.value);
+    } else if (format === 'security') {
+      control.value = validateSecurityInput(control.dataset.annualLabel, control.value);
+    } else {
+      return;
+    }
     persistAnnualControl(control, false);
   }, options);
   container.addEventListener('click', (event) => {
@@ -656,12 +680,12 @@ function entryCardHeaderAnnual(title, collection, idx, route) {
   </div>`;
 }
 
-function scheduleEmptyHTMLAnnual(key, noun, collectionKey) {
+function scheduleEmptyHTMLAnnual(key, noun, collectionKey, customLabel = null) {
   const checked = !!(window.D && window.D.scheduleNoItems && window.D.scheduleNoItems[key]);
   return `<div class="schedule-empty">
     <label class="schedule-empty-check">
-      <input type="checkbox" ${checked ? 'checked' : ''} data-annual-change="schedule-no-items" data-schedule="${key}" data-collection="${collectionKey}">
-      <span>I verify there are no ${noun} to report for this schedule.</span>
+      <input type="checkbox" ${checked ? 'checked' : ''} data-annual-change="schedule-no-items" data-schedule="${key}" ${collectionKey ? `data-collection="${collectionKey}"` : ''}>
+      <span>${customLabel || `I verify there are no ${noun} to report for this schedule.`}</span>
     </label>
   </div>`;
 }
@@ -1221,7 +1245,7 @@ function pagePart8Annual(){
   <div class="row g-2 mb-3">
     <div class="col-md-6">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts&&d.trusts[0]&&d.trusts[0].hasTrust||'No','trusts.0.hasTrust','/p8')}</div>
   </div>
-  ${hasTrusts ? `<div class="row g-3 schedule-entry-grid">${cards}</div>` : `<div class="schedule-empty"><p class="text-muted mb-0">No trusts indicated. Check the box above if the ward has one or more trusts.</p></div>`}
+  ${hasTrusts ? `<div class="row g-3 schedule-entry-grid">${cards}</div>` : scheduleEmptyHTMLAnnual('a-p8', 'trusts', null, 'I certify there are no trusts')}
   ${pageNavAnnual('/p67','/p9')}
   </div>`;
 }

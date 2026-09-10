@@ -201,7 +201,6 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
 
       await page.evaluate(() => (window as any).navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
-      await page.locator('#dashboard-role').selectOption('professional');
 
       const wardAId = await page.evaluate(() => (window as any).caseFile.wards.find((w: any) => w.wardName === 'Dash Ward A')?.wardId);
       const backupBtn = page.locator(`[data-dashboard-action="backup"][data-ward-id="${wardAId}"]`).first();

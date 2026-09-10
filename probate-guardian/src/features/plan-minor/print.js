@@ -49,7 +49,7 @@ export function planReadinessChecksMinor(){
     "Attach the physician's statement of an examination of the ward no more than 180 days before the beginning of the plan period (F.S. 744.3675), if the certification box for it is checked.",
     'Serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).',
     "If the minor reaches 18 years of age (sui juris) during the reporting period, prepare for final discharge under F.S. 744.527.",
-    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)), and file an updated Disaster Plan (Administrative Order 2024-025).",
+    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
     "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the minor's assets.",
     'Confirm the guardian address on file with the Clerk matches the address on this plan.',
     'If you are a professional or public guardian, confirm the corresponding registration is current.',
