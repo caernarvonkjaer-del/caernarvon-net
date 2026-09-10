@@ -90,8 +90,9 @@ export function pagePrintPlanInitial(){
 }
 
 export async function mountPreview(){
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanInitialModel, window.D);
-  await mountPdfPreview(buildPlanInitialModel, window.D);
+  const baseIssues = () => [...validatePlanInitial(), ...getSupplementalFilingIssues(window.D)];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanInitialModel, window.D, baseIssues);
+  await mountPdfPreview(buildPlanInitialModel, window.D, baseIssues);
 }
 
 export async function doSavePdf(){

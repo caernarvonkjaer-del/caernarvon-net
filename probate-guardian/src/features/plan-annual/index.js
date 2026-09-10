@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -606,6 +607,12 @@ export function validatePlanAnnual(){
   req(d.gid,'Cover — Guardianship Inception Date is required');
   req(d.periodFrom,'Cover — Reporting Period From is required');
   req(d.periodTo,'Cover — Reporting Period To is required');
+  errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
+    sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+  }));
+  errs.push(...checkDateOrder(d.gid,d.periodFrom,{
+    sectionLabel:'Cover',earlierLabel:'Guardianship Inception Date',laterLabel:'Reporting Period From',allowSameDay:true,
+  }));
   req(d.guardian,'Cover — Guardian Name(s) is required');
   req(d.wardLiving,'Cover — where the ward is living must be answered');
   req(d.residenceAddress,'Cover — address where the ward resides is required');
@@ -626,6 +633,7 @@ export function validatePlanAnnual(){
   if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Residence & Care — area of specialty is required');
 
   const provs=(d.q4Providers||[]).filter(r=>r&&(r.name||r.providerType||r.visits));
+  if(!provs.length)errs.push('4. Medical Treatment — at least one provider must be listed');
   provs.forEach((r,i)=>{if(!r.name)errs.push(`4. Medical Treatment — row ${i+1} needs a provider name`);});
 
   req(d.q5SocialSkills,'5–7. Skills & Rights — question 5 (social skills) is required');
@@ -669,6 +677,15 @@ export function validatePlanAnnual(){
   const g0=(d.planGuardians||[])[0]||{};
   req(g0.name,'Signatures — Guardian printed name is required');
   req(g0.signatureDate,'Signatures — Guardian date signed is required');
+  req(g0.mailingStreet,'Signatures — Guardian mailing street address is required');
+  req(g0.phone,'Signatures — Guardian phone number is required');
+  req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
+  errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
+    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian date signed',allowSameDay:true,
+  }));
+  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
+    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
+  }));
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

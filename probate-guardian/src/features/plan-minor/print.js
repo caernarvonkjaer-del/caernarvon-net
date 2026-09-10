@@ -77,8 +77,9 @@ export function pagePrintPlanMinor(){
 }
 
 export async function mountPreview(){
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanMinorModel, window.D);
-  await mountPdfPreview(buildPlanMinorModel, window.D);
+  const baseIssues = () => [...validatePlanMinor(), ...getSupplementalFilingIssues(window.D)];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanMinorModel, window.D, baseIssues);
+  await mountPdfPreview(buildPlanMinorModel, window.D, baseIssues);
 }
 
 export async function doSavePdf(){

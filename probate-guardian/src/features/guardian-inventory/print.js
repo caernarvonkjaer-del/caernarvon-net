@@ -69,8 +69,9 @@ export function pagePrint(capOver){
 // renders the actual generated PDF (canvas + selectable text layer) into
 // #print-doc-container, replacing the old buildPrintHTML() reconstruction.
 export async function mountPreview(){
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D);
-  await mountPdfPreview(buildModelForPreview, window.D);
+  const baseIssues = () => [...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
+  await mountPdfPreview(buildModelForPreview, window.D, baseIssues);
 }
 
 export async function doSavePdf(){

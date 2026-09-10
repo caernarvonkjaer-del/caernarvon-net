@@ -3,6 +3,7 @@
 
 import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { composePdfAddress } from '../../core/pdf/address-format.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -167,8 +168,8 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         'Phone': g.phone || '',
         'SSN/EIN': g.ssn || '',
         'Email': g.email || '',
-        'Mailing Address': `${g.mailingStreet || ''}, ${g.mailingCityStateZip || ''}`.replace(/^, /, ''),
-        'Residence Address': `${g.residenceStreet || ''}, ${g.residenceCityStateZip || ''}`.replace(/^, /, ''),
+        'Mailing Address': composePdfAddress(g.mailingStreet, g.mailingCityStateZip),
+        'Residence Address': composePdfAddress(g.residenceStreet, g.residenceCityStateZip),
       },
     };
   });
@@ -217,7 +218,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           'Phone': d.attorney_phone || '',
           'Primary Email': d.attorney_email || '',
           ...(d.attorney_secondaryEmail ? { 'Secondary Email': d.attorney_secondaryEmail } : {}),
-          'Address': `${d.attorney_street || ''}, ${d.attorney_cityStateZip || ''}`.replace(/^, /, ''),
+          'Address': composePdfAddress(d.attorney_street, d.attorney_cityStateZip),
         },
       },
     ],
@@ -278,7 +279,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           'Florida Bar #': d.certAttyBarNumber || d.attorney_barNumber || '',
           'Phone': d.certAttyPhone || d.attorney_phone || '',
           'Primary Email': d.attorney_email || '',
-          'Address': `${d.certAttyStreet || d.attorney_street || ''}, ${d.certAttyCityStateZip || d.attorney_cityStateZip || ''}`.replace(/^, /, ''),
+          'Address': composePdfAddress(d.certAttyStreet || d.attorney_street, d.certAttyCityStateZip || d.attorney_cityStateZip),
         },
       },
     ],

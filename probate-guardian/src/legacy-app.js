@@ -1734,12 +1734,16 @@ function pvStep(delta){
   n=Math.max(1,Math.min(pages.length,n));
   pvSelect(String(n));
 }
-function initPrintPager(){
+function initPrintPager(options={}){
   const cont=document.getElementById('print-doc-container');
   if(!cont)return;
   const pages=pvPages();
   if(pages.length<2)return;                       // nothing to page through
-  if(document.getElementById('pv-bar'))return;    // already built this render
+  const existing=document.getElementById('pv-bar');
+  if(existing){
+    if(!options.refresh)return;
+    existing.remove();
+  }
   if(!(_pvSelection==='all'||(parseInt(_pvSelection,10)>=1&&parseInt(_pvSelection,10)<=pages.length))){
     _pvSelection='1';
   }

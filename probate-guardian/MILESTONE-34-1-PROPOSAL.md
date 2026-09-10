@@ -26,7 +26,50 @@ each other. Still one document; these are not separate proposal files.
 
 ### Milestone 34-1A: Validation & Export Gating
 
-**Status: Proposal only, not started.**
+**Status: Items 1, 2, and 3 all implemented and tested. 34-1A complete.**
+
+Item 2: new `checkDateOrder()` helper (`src/core/validation/date-rules.js`)
+wired into `validateAnnual`/`validateSimplified`/`validatePlanAnnual`/
+`validatePlanMinor`/`validatePlanSimplified` for period ordering (with
+exact-same-day rejection), GID-not-after-period-start, and signature/
+preparer/attorney/certification dates not-before-period-end. New priority-
+ordered branches added to `validation-adapter.js` so these new messages
+(several of which contain both the "from" and "to"/GID label as substrings)
+resolve to the correct field, not the first-matching bare label. Six
+existing e2e fixtures' canned signature/cert dates were adjusted to satisfy
+the new rules (they previously predated their own filing's period end).
+7 new unit tests (`date-rules.spec.js`) + 13 new e2e contract tests
+(`date-validation.contract.spec.ts`, including field-path routing
+regressions).
+
+Item 1: promoted the confirmed drift between each Plan type's readiness
+panel and its actual validator into real blocking checks —
+`validatePlanAnnual`/`validatePlanInitial` now require guardian
+street/mailingStreet+phone+ssn and at least one provider row;
+`validatePlanMinor` now requires guardian mailingStreet+phone+tin, at least
+one treatment-provider row, and `preparer_signatureDate` (previously only
+`preparer_name` was required); `validatePlanSimplified` now requires
+guardian email+phone+mailingAddress. `certPhysicianAttached` (Plan Annual)
+moved from the readiness panel's `auto` list into `manual`, matching Plan
+Minor's existing treatment of the same fact — DECISION applied as
+recommended (depends on an external, unverifiable-by-software fact, so it's
+a reminder, never an export blocker). Fixed the shared `pdf-preview.js`'s
+`mountPdfPreview()`/`printGeneratedPdf()`, which called
+`prepareFilingOutput(D)` with no `baseIssues` and gated on `structuredIssues`
+(draft/identity issues only, never carries the caller's baseIssues) instead
+of `messages`/`canExport` — meaning the embedded preview could render a
+clean PDF on the same page whose own banner reported missing required
+fields. This affected all 7 filing modules that call this shared preview
+(Guardian, Annual, Simplified, and all 4 Plan types), not just the Plan
+family, so the fix and its regression test cover all 7.
+New `tests/e2e/plan-readiness.contract.spec.ts` (9 tests:
+ready/blocked agreement per type + the manual-reminder DECISION) and a new
+regression block in `pdf-preview-viewer.spec.ts` (7 tests, one per feature)
+proving an incomplete filing's preview is now blocked, not silently
+rendered.
+
+177 targeted e2e tests + 184 unit tests re-verified green across every
+touched filing type and the shared preview/validation-adapter modules.
 
 1. **Make readiness status reflect export eligibility.**
    Audit the shared `prepareFilingOutput()` boundary and each plan readiness
@@ -69,7 +112,27 @@ each other. Still one document; these are not separate proposal files.
 
 ### Milestone 34-1B: Shared PDF Engine Polish
 
-**Status: Proposal only, not started.**
+**Status: Items 4, 5, 6, and 7 implemented with targeted unit and E2E
+coverage. 34-1B complete pending the repository-required full regression
+suite before commit.**
+
+The shared PDF engine now owns a single footer identity contract: models pass
+only their filing descriptor as `formSubtitle`, while the engine appends the
+ward once. This removes the Annual/Final/Trust duplicate ward-name output.
+`composePdfAddress()` centralizes presentation-only street/city-state-ZIP
+joining for accounting and inventory PDF models, preserving entered unit text
+while removing empty commas and inconsistent whitespace. Continuation-header
+cells now use two-line wrapping in a taller bounded bar, with a visible
+ellipsis only for exceptional overflow rather than silently taking the first
+line. Finally, the preview pager refreshes only after pdf.js renders finalized
+PDF bytes and rebuilds itself on rerender; its displayed count is therefore
+the same count used for Save/Print.
+
+Targeted verification: `npm.cmd run check:types`; focused Vitest coverage
+(`pdf-address-format.spec.js`, `amended-form-line.spec.js`); and the Edge
+`pdf-preview-viewer.spec.ts` suite, including the finalized-page-count and
+rerender regression. Full `npm test` has not been run because `CLAUDE.md`
+requires explicit permission before that suite.
 
 4. **Remove duplicate accounting footer identity text.**
    Define one source of truth for the footer subtitle and ward name, then make

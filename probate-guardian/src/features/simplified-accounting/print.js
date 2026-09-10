@@ -70,8 +70,9 @@ export function pagePrintSimplified(capOver){
 }
 
 export async function mountPreview(){
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D);
-  await mountPdfPreview(buildModelForPreview, window.D);
+  const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
+  await mountPdfPreview(buildModelForPreview, window.D, baseIssues);
 }
 
 export async function doSavePdf(){

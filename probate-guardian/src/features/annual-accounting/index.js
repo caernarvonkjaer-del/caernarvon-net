@@ -1,6 +1,7 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
@@ -1353,6 +1354,12 @@ export function validateAnnual(){
   req(d.county,'Part I — County');
   req(d.filingType,'Part I — Filing Type');
   req(d.startingBalance,'Part II — Starting Balance');
+  errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
+    sectionLabel:'Part I',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
+  }));
+  errs.push(...checkDateOrder(d.gid,d.periodFrom,{
+    sectionLabel:'Part I',earlierLabel:'Guardianship Inception Date (GID)',laterLabel:'Accounting Period From',allowSameDay:true,
+  }));
   d.guardians.forEach((g,i)=>{
     if(i>0&&!guardianHasAnyData(g))return;
     const p=`Part III — Guardian #${i+1}`;
@@ -1362,6 +1369,9 @@ export function validateAnnual(){
     req(g.phone,`${p} — Phone`);
     req(g.mailingStreet,`${p} — Mailing Street`);
     req(g.mailingCityStateZip,`${p} — Mailing City/State/Zip`);
+    errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
+      sectionLabel:p,earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
+    }));
   });
   req(d.preparer.name,'Part IV — Preparer Name');
   req(d.preparer.signatureDate,'Part IV — Preparer Signature Date');
@@ -1369,14 +1379,23 @@ export function validateAnnual(){
   req(d.preparer.phone,'Part IV — Preparer Phone');
   req(d.preparer.street,'Part IV — Preparer Street');
   req(d.preparer.cityStateZip,'Part IV — Preparer City/State/Zip');
+  errs.push(...checkDateOrder(d.periodTo,d.preparer.signatureDate,{
+    sectionLabel:'Part IV',earlierLabel:'Accounting Period To',laterLabel:'Preparer Signature Date',allowSameDay:true,
+  }));
   req(d.attorney_bar,'Part V — Attorney Bar Number');
   req(d.attorney_phone,'Part V — Attorney Phone');
   req(d.attorney_street,'Part V — Attorney Street');
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
   req(d.attorney_signatureDate,'Part V — Attorney Signature Date');
+  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
+    sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Attorney Signature Date',allowSameDay:true,
+  }));
   req(d.bondAmount,'Part IX — Bond Amount');
   req(d.bondingCompany,'Part IX — Bonding Company');
   req(d.certDate,'Part X — Certificate of Service Date');
+  errs.push(...checkDateOrder(d.periodTo,d.certDate,{
+    sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Certificate of Service Date',allowSameDay:true,
+  }));
   req(d.certRecipients?.[0]?.name,'Part X — Recipient 1 Name');
 
   const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);

@@ -65,6 +65,55 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     });
   }
 
+  test('pager uses the finalized PDF page count and is rebuilt after a preview rerender', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Finalized Pager Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+
+    await expect.poll(() => page.locator('#print-doc-container .pdf-page').count(), { timeout: 15000 }).toBeGreaterThan(1);
+    const previewPageCount = await page.locator('#print-doc-container .pdf-page').count();
+    const finalizedPageCount = await page.evaluate(async () => {
+      const { buildVerifiedInventoryModel } = await (window as any).loadGuardianPdf();
+      const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
+      const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
+      const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
+      const doc = await generateCourtFormPdf(buildVerifiedInventoryModel((window as any).D));
+      const finalized = await finalizeCourtFormPdf(doc);
+      const pdfjs = await ensurePdfjs();
+      return (await pdfjs.getDocument({ data: finalized }).promise).numPages;
+    });
+
+    expect(previewPageCount).toBe(finalizedPageCount);
+    await expect(page.locator('#pv-count')).toHaveText(`Page 1 of ${finalizedPageCount}`);
+
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect.poll(() => page.locator('#print-doc-container .pdf-page').count(), { timeout: 15000 }).toBe(finalizedPageCount);
+    await expect(page.locator('#pv-bar')).toHaveCount(1);
+    await expect(page.locator('#pv-count')).toHaveText(`Page 1 of ${finalizedPageCount}`);
+  });
+
+  // Milestone 34-1A, Item 1: mountPdfPreview()/printGeneratedPdf() used to
+  // call prepareFilingOutput(D) with no baseIssues argument, and gated on
+  // its structuredIssues (draft/identity issues only) rather than its
+  // messages/canExport (which fold baseIssues in) -- so an incomplete
+  // filing's embedded preview could render a clean, complete-looking PDF
+  // on the very same page whose own banner reported N required fields
+  // missing and disabled the export buttons. A brand-new, unfilled ward
+  // reliably has validator issues for every one of these seven types.
+  for (const feature of FEATURES) {
+    test(`${feature.name}: an incomplete filing's embedded preview is blocked, not silently rendered`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await feature.create(page, `${feature.name} Blocked Preview Ward`);
+      await page.evaluate(() => (window as any).navigate('/print'));
+
+      const errorMessage = page.locator('#print-doc-container .pdf-preview-error');
+      await expect(errorMessage).toBeVisible();
+      await expect(errorMessage).toContainText('Preview is blocked');
+      await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    });
+  }
+
   test('Print opens the generated PDF as a same-origin blob: URL, never touching app chrome', async ({ page, context }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Print Blob Ward', 'guardian');

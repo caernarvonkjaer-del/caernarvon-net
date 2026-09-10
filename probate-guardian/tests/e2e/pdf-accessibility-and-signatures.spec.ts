@@ -113,7 +113,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         scheduleB3: [],
         scheduleB4: [],
         scheduleC1: [
-          { payerName: 'Social Security Administration', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
+          { payerName: 'Social Security Administration', payerAddress: '6401 Security Boulevard, Baltimore, MD 21235', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
         ],
         scheduleC2: [],
         scheduleC3: [],

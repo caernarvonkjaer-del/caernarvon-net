@@ -311,7 +311,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
     // Framed 3-column bounded metadata bar (contentWidth = 468 pt)
     const barTop = headerTop + 30;
-    const barHeight = 18;
+    const barHeight = 24;
     doc.setFillColor(248, 249, 251);
     doc.rect(margin, barTop, contentWidth, barHeight, 'FD');
     doc.setDrawColor(180, 190, 205);
@@ -325,19 +325,22 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(50, 60, 75);
-    // Clamp each cell to its 156pt column so overlong text can't bleed into
-    // adjacent columns. splitTextToSize returns an array; we always take [0].
+    // A continuation header has room for two 8pt lines per cell. This is an
+    // intentional title policy: wrap first, then visibly ellipsize only an
+    // exceptional third line rather than silently discarding it.
     const COL_W = 156;
     const COL_PAD = 10; // left+right pad inside column
+    const headerLines = (label) => {
+      const lines = doc.splitTextToSize(String(label || ''), COL_W - COL_PAD);
+      if (lines.length <= 2) return lines.length ? lines : [''];
+      return [lines[0], `${lines[1].replace(/\.+$/, '')}...`];
+    };
     const wardLabel = `Ward: ${wardName}`;
-    const wardLine = doc.splitTextToSize(wardLabel, COL_W - COL_PAD)[0] || wardLabel;
-    doc.text(wardLine, margin + 6, barTop + 12);
+    doc.text(headerLines(wardLabel), margin + 6, barTop + 10, { lineHeightFactor: 1 });
     const midLabel = sectionTitle || '';
-    const midLine = doc.splitTextToSize(midLabel, COL_W - COL_PAD)[0] || midLabel;
-    doc.text(midLine, margin + 234, barTop + 12, { align: 'center' });
+    doc.text(headerLines(midLabel), margin + 234, barTop + 10, { align: 'center', lineHeightFactor: 1 });
     const caseLabel = `Case #: ${caseNumber || 'Pending'}`;
-    const caseLine = doc.splitTextToSize(caseLabel, COL_W - COL_PAD)[0] || caseLabel;
-    doc.text(caseLine, pageWidth - margin - 6, barTop + 12, { align: 'right' });
+    doc.text(headerLines(caseLabel), pageWidth - margin - 6, barTop + 10, { align: 'right', lineHeightFactor: 1 });
     writeArtifactEnd(doc);
   };
 
@@ -368,7 +371,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.addPage();
     pageNum++;
     drawHeader(sectionTitle);
-    curY = 132;
+    curY = 140;
   };
 
   const startNewAttachmentPage = () => {

@@ -109,12 +109,14 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('[data-inventory-action="save-pdf"]')).toBeVisible();
 
-    // Live region should exist with role="status" and aria-live="polite"
+    // A blank filing is now correctly blocked by the shared export gate, so
+    // its preview announcement is assertive rather than a misleading polite
+    // "ready" status.
     const liveRegion = page.locator('#print-preview-status');
     await expect(liveRegion).toBeAttached();
-    await expect(liveRegion).toHaveAttribute('role', 'status');
-    await expect(liveRegion).toHaveAttribute('aria-live', 'polite');
-    await expect(liveRegion).toContainText('Preview ready.');
+    await expect(liveRegion).toHaveAttribute('role', 'alert');
+    await expect(liveRegion).toHaveAttribute('aria-live', 'assertive');
+    await expect(liveRegion).toContainText('Preview is blocked.');
   });
 
   test('8-digit unpunctuated date input auto-masks on typing and commits valid canonical date on blur across forms', async ({ page }) => {

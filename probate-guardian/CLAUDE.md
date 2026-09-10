@@ -21,7 +21,7 @@ C:\Users\No Name\AppData\Local\ms-playwright\chromium-1234\chrome-win64\chrome.e
 Use this path if Playwright tries to launch the missing headless-shell path:
 
 ```text
-C:\Users\No Name\AppData\Local\ms-playwright\chromium_headless_shell-1234\chrome-win64\headless_shell.exe
+C:\Users\No Name\AppData\Local\ms-playwright\chromium_headless_shell-1234\chrome-headless-shell-win64\chrome-headless-shell.exe
 ```
 
 The path was confirmed by querying the bundled Playwright package's
@@ -48,3 +48,4 @@ category/filing-type scope it covers — update the matching row(s) in
 `TEST-INDEX.md` in the same commit. The lite subset is for fast iteration
 only; still run the full `npm test` before committing.
 
+Ask permission before running the full regression suite.

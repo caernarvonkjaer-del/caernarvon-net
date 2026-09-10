@@ -9,13 +9,14 @@ the same commit.
 
 | File | Covers |
 |---|---|
-| amended-form-line.spec.js | "Amended Form?" prints the filer's actual answer; Annual-family filing identity in generated output |
+| amended-form-line.spec.js | "Amended Form?" prints the filer's actual answer; Annual-family identity and single-source footer subtitle |
 | case-file.spec.js | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers |
 | circuit-lookup.spec.js | FL county → judicial circuit lookup helpers |
 | combobox-controller.spec.js | ComboboxController widget behavior |
 | dashboard-preferences.spec.js | Dashboard preference load/save/reset |
 | dashboard-view-model.spec.js | Dashboard priority ordering, filing contacts, ward deadline derivation |
 | date-parser.spec.js | Flexible date parsing, display formatting, leap-year/days-in-month helpers |
+| date-rules.spec.js | Milestone 34-1A: checkDateOrder() shared date-ordering validation rule |
 | docx-engine.spec.js | Court-form DOCX generation from PDF models |
 | excel-engine.spec.js | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.) |
 | filing-descriptor.spec.js | Filing type → descriptor/copy resolution |
@@ -24,6 +25,7 @@ the same commit.
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output |
 | live-region.spec.js | ARIA live-region announcer helper |
 | plan-annual-pdf-model.spec.js | Plan Annual PDF model output (incl. attorney email fields) |
+| pdf-address-format.spec.js | Canonical PDF address composition and punctuation/whitespace cleanup |
 | prune-cards.spec.js | Blank-card/blank-schedule-entry detection for pruning |
 | router.spec.js | Navigation router services (navigate, registerRoute, getCurrentPage) |
 | schedule-definitions.spec.js | SCHEDULE_SCHEMAS and collection row helpers |
@@ -50,6 +52,7 @@ the same commit.
 | case-write-through.spec.ts | Milestone 6: case write-through |
 | dashboard-backup.spec.ts | Dashboard preference isolation and single-ward backup/export |
 | dashboard-visual.spec.ts | Milestone 15: dashboard coherence across viewports/themes |
+| date-validation.contract.spec.ts | Milestone 34-1A item 2: date-order validation (period ordering, GID, signature dates) for Annual/Simplified/Plan Annual/Plan Minor/Plan Simplified, incl. field-path routing regressions |
 | feature-load-failure.spec.ts | Failed feature chunk shows reload action instead of blank view |
 | filing-capability-matrix.spec.ts | Filing capability matrix audit |
 | filing-identity.contract.spec.ts | Filing-identity contract across all 9 filing types |
@@ -68,7 +71,7 @@ the same commit.
 | pdf-accessibility-and-signatures.spec.ts | Non-raster PDF generation, signatures & bookmarks |
 | pdf-fonts-and-xmp.spec.ts | Embedded fonts & PDF/UA-1 XMP metadata |
 | pdf-form-specific.spec.ts | PDF accessibility: accounting & inventory filing-specific coverage |
-| pdf-preview-viewer.spec.ts | Milestone 19-3: shared PDF preview/print viewer |
+| pdf-preview-viewer.spec.ts | Shared PDF preview/print viewer; M34-1A export-gating parity across all 7 features; M34-1B finalized-PDF pager refresh |
 | pdf-structure-tags.spec.ts | Tagged structure, StructTreeRoot & marked content |
 | pdf-table-semantics.spec.ts | Table semantics, colspan & multi-page continuation |
 | persistence-recovery.contract.spec.ts | Persistence and recovery contract |
@@ -76,6 +79,7 @@ the same commit.
 | plan-initial-mount.spec.ts | Plan Initial feature module (via registerPlanMountTests) |
 | plan-minor-mount.spec.ts | Plan Minor feature module (via registerPlanMountTests) |
 | plan-pdf-wcag-compliance.spec.ts | Milestone 19-2: Plan-* features on the shared vector PDF engine |
+| plan-readiness.contract.spec.ts | Milestone 34-1A item 1: readiness panel and export-gating agreement across all 4 Plan types; certPhysicianAttached manual-reminder DECISION |
 | plan-simplified-mount.spec.ts | Plan Simplified feature module (via registerPlanMountTests) |
 | pwa-registration.spec.ts | PWA/service-worker registration |
 | recovery-cache.spec.ts | Crash recovery cache |
@@ -134,7 +138,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | Category | Files |
 |---|---|
 | persistence | case-file.spec.js, ward-lock.spec.js |
-| form-data | form-contract.spec.js, form-fields.spec.js, validation-adapter.spec.js, date-parser.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js |
+| form-data | form-contract.spec.js, form-fields.spec.js, validation-adapter.spec.js, date-parser.spec.js, date-rules.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js |
 | pdf-export (models) | guardian-inventory-pdf-model.spec.js (guardian), plan-annual-pdf-model.spec.js (planAnnual), supplemental-pdf.spec.js (annual/finalAccounting/trustAccounting) |
 | docx-xlsx-export | docx-engine.spec.js, excel-engine.spec.js, xlsx-extract.spec.js |
 | navigation | router.spec.js, tab-state.spec.js |
@@ -152,7 +156,8 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | form-data | planAnnual | plan-annual-mount.spec.ts |
 | form-data | planInitial | plan-initial-mount.spec.ts |
 | form-data | planMinor | plan-minor-mount.spec.ts |
-| form-data | all forms | form-entry-ux.spec.ts, form-entry.contract.spec.ts, filing-capability-matrix.spec.ts |
+| form-data | all forms | form-entry-ux.spec.ts, form-entry.contract.spec.ts, filing-capability-matrix.spec.ts, date-validation.contract.spec.ts |
+| form-data | planSimplified/planAnnual/planInitial/planMinor | plan-readiness.contract.spec.ts |
 | navigation | all forms | navigation-status.contract.spec.ts, filing-identity.contract.spec.ts, routes.spec.ts |
 | pdf-export | all forms | pdf-accessibility-and-signatures.spec.ts, pdf-fonts-and-xmp.spec.ts, pdf-structure-tags.spec.ts, pdf-table-semantics.spec.ts, pdf-preview-viewer.spec.ts, attestation-layout.spec.ts, output-semantics.artifact.spec.ts |
 | pdf-export | guardian + annual/finalAccounting/trustAccounting | pdf-form-specific.spec.ts, supplemental-pdf-accounting.spec.ts |

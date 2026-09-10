@@ -4,6 +4,7 @@
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
+import { composePdfAddress } from '../../core/pdf/address-format.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -64,7 +65,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     author: 'Probate Guardian',
     creator: 'Probate Guardian',
     formName: descriptor.documentTitle,
-    formSubtitle: `${descriptor.displayName} — ${wardName}`,
+    formSubtitle: descriptor.displayName,
     keywords: copy.keywords,
     filingId: descriptor.id,
     wardName,
@@ -238,8 +239,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
         'Phone': g.phone || '',
         'SSN / EIN': g.ssn || '',
         'Email': g.email || '',
-        'Mailing Address': `${g.mailingStreet || ''}, ${g.mailingCityStateZip || ''}`.replace(/^, /, ''),
-        'Residence / Office': `${g.officeStreet || ''}, ${g.officeCityStateZip || ''}`.replace(/^, /, ''),
+        'Mailing Address': composePdfAddress(g.mailingStreet, g.mailingCityStateZip),
+        'Residence / Office': composePdfAddress(g.officeStreet, g.officeCityStateZip),
       },
     };
   });
@@ -287,7 +288,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         details: {
           'Phone': p.phone || '',
           'SSN / EIN': p.ssn || '',
-          'Address': `${p.street || ''}, ${p.cityStateZip || ''}`.replace(/^, /, ''),
+          'Address': composePdfAddress(p.street, p.cityStateZip),
         },
       },
     ],
@@ -320,7 +321,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           'Phone': d.attorney_phone || '',
           'Primary Email': d.attorney_email || '',
           ...(d.attorney_secondaryEmail ? { 'Secondary Email': d.attorney_secondaryEmail } : {}),
-          'Address': `${d.attorney_street || ''}, ${d.attorney_cityStateZip || ''}`.replace(/^, /, ''),
+          'Address': composePdfAddress(d.attorney_street, d.attorney_cityStateZip),
         },
       },
     ],
@@ -978,7 +979,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
       'Phone': d.attorney_phone || '',
       'Primary Email': d.attorney_email || '',
-      'Address': `${d.attorney_street || ''}, ${d.attorney_cityStateZip || ''}`.replace(/^, /, ''),
+      'Address': composePdfAddress(d.attorney_street, d.attorney_cityStateZip),
     },
   });
 

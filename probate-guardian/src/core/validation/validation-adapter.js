@@ -334,7 +334,15 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       // one validator (validateAnnual()); verified directly against
       // src/features/annual-accounting/index.js.
       if (sLower === 'part i') {
-        if (dLower.includes('ward name')) path = 'wardName';
+        // Milestone 34-1A, Item 2: date-order messages read "<later label>
+        // must be on or after <earlier label>", so both "accounting period
+        // from" and "accounting period to" appear as substrings in either
+        // direction's message -- these must be checked, by exact prefix,
+        // before the bare label checks below or they misroute.
+        if (dLower.startsWith('accounting period to must be on or after')) path = 'periodTo';
+        else if (dLower.startsWith('accounting period from and accounting period to cannot be the same day')) path = 'periodTo';
+        else if (dLower.startsWith('accounting period from must be on or after')) path = 'periodFrom';
+        else if (dLower.includes('ward name')) path = 'wardName';
         else if (dLower.includes('case number')) path = 'caseNumber';
         else if (dLower.includes('guardianship inception date')) path = 'gid';
         else if (dLower.includes('accounting period from')) path = 'periodFrom';
@@ -461,7 +469,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       // Milestone 33, Item 3 (sub-phase 3c). Verified directly against
       // src/features/simplified-accounting/index.js.
       if (sLower === 'cover') {
-        if (dLower.includes('depository')) path = 'eligDepository';
+        // Milestone 34-1A, Item 2: see Annual's Part I comment above -- same
+        // ambiguity, same fix, checked first.
+        if (dLower.startsWith('accounting period to must be on or after')) path = 'periodTo';
+        else if (dLower.startsWith('accounting period from and accounting period to cannot be the same day')) path = 'periodTo';
+        else if (dLower.startsWith('accounting period from must be on or after')) path = 'periodFrom';
+        else if (dLower.includes('depository')) path = 'eligDepository';
         else if (dLower.includes('eligibility')) path = 'eligOnlyTransactions';
         else if (dLower.includes('name of ward')) path = 'wardName';
         else if (dLower.includes('case number')) path = 'caseNumber';
@@ -509,6 +522,7 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('phone number')) path = 'attorney_phone';
         else if (dLower.includes('street address')) path = 'attorney_street';
         else if (dLower.includes('city/state/zip')) path = 'attorney_cityStateZip';
+        else if (dLower.includes('signature date')) path = 'attorney_signatureDate';
       } else if (sLower === 'part vi') {
         // Service-date field is named differently from Annual's certDate.
         if (dLower.includes('date of service')) path = 'certServiceDate';
@@ -520,7 +534,14 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       // src/features/plan-annual/index.js. Section-prefix strings here
       // (including the en dashes) match PLAN_SECTION_ROUTE_MAPS above.
       if (sLower === 'cover') {
-        if (dLower.includes('name of ward')) path = 'wardName';
+        // Milestone 34-1A, Item 2: same ambiguity/fix as Annual's Part I,
+        // but planAnnual's "guardianship inception date" bare check is
+        // checked BEFORE "reporting period from" below -- without this,
+        // the GID-order message would misroute to gid, not periodFrom.
+        if (dLower.startsWith('reporting period to must be on or after')) path = 'periodTo';
+        else if (dLower.startsWith('reporting period from and reporting period to cannot be the same day')) path = 'periodTo';
+        else if (dLower.startsWith('reporting period from must be on or after')) path = 'periodFrom';
+        else if (dLower.includes('name of ward')) path = 'wardName';
         else if (dLower.includes('case number')) path = 'caseNumber';
         else if (dLower.includes('county')) path = 'county';
         else if (dLower.includes('guardianship inception date')) path = 'gid';
@@ -553,8 +574,15 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         if (dLower.includes("guardian's name")) path = 'q11NoRemunerationName';
       } else if (sLower === 'signatures') {
         // Only planGuardians[0] is ever validated here -- no ordinal loop.
+        // The new attorney date-order check (Item 2) also says "date
+        // signed" -- checked first so it doesn't misroute to the guardian.
         if (dLower.includes('printed name')) path = 'planGuardians.0.name';
+        else if (dLower.includes('attorney') && dLower.includes('date signed')) path = 'attorney_signatureDate';
         else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+        // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
+        else if (dLower.includes('mailing street')) path = 'planGuardians.0.mailingStreet';
+        else if (dLower.includes('phone')) path = 'planGuardians.0.phone';
+        else if (dLower.includes('ssn')) path = 'planGuardians.0.ssn';
       }
     } else if (formType === 'planInitial') {
       // Verified directly against src/features/plan-initial/index.js.
@@ -600,6 +628,10 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'signatures') {
         if (dLower.includes('guardian name is required')) path = 'planGuardians.0.name';
         else if (dLower.includes('guardian signature date')) path = 'planGuardians.0.signatureDate';
+        // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
+        else if (dLower.includes('street address')) path = 'planGuardians.0.street';
+        else if (dLower.includes('phone')) path = 'planGuardians.0.phone';
+        else if (dLower.includes('ssn')) path = 'planGuardians.0.ssn';
       } else if (sLower === 'attorney certification') {
         // attorney_name here -- distinct from the separate, cosmetic-only,
         // never-validated attorneyName field shown on this type's Cover.
@@ -609,7 +641,11 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
     } else if (formType === 'planMinor') {
       // Verified directly against src/features/plan-minor/index.js.
       if (sLower === 'cover') {
-        if (dLower.includes("minor's name")) path = 'wardName';
+        // Milestone 34-1A, Item 2: same ambiguity/fix as Annual's Part I
+        // (no GID field on this type, so only the period-order pair applies).
+        if (dLower.startsWith('reporting period to must be on or after')) path = 'periodTo';
+        else if (dLower.startsWith('reporting period from and reporting period to cannot be the same day')) path = 'periodTo';
+        else if (dLower.includes("minor's name")) path = 'wardName';
         else if (dLower.includes('county')) path = 'county';
         else if (dLower.includes('reporting period from')) path = 'periodFrom';
         else if (dLower.includes('reporting period to')) path = 'periodTo';
@@ -630,15 +666,24 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'guardian signatures') {
         if (dLower.includes('guardian name is required')) path = 'planGuardians.0.name';
         else if (dLower.includes('guardian signature date')) path = 'planGuardians.0.signatureDate';
+        // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
+        else if (dLower.includes('mailing street')) path = 'planGuardians.0.mailingStreet';
+        else if (dLower.includes('phone')) path = 'planGuardians.0.phone';
+        else if (dLower.includes('taxpayer id')) path = 'planGuardians.0.tin';
       } else if (sLower === 'preparer & attorney') {
         if (dLower.includes('preparer name')) path = 'preparer_name';
+        else if (dLower.includes('preparer signature date')) path = 'preparer_signatureDate';
         else if (dLower.includes('attorney name')) path = 'attorney_name';
         else if (dLower.includes('attorney signature date')) path = 'attorney_signatureDate';
       }
     } else if (formType === 'planSimplified') {
       // Verified directly against src/features/plan-simplified/index.js.
       if (sLower === 'cover') {
-        if (dLower.includes('name of ward')) path = 'wardName';
+        // Milestone 34-1A, Item 2: same ambiguity/fix as Annual's Part I
+        // (no GID field on this type, so only the period-order pair applies).
+        if (dLower.startsWith('reporting period to must be on or after')) path = 'periodTo';
+        else if (dLower.startsWith('reporting period from and reporting period to cannot be the same day')) path = 'periodTo';
+        else if (dLower.includes('name of ward')) path = 'wardName';
         else if (dLower.includes('case number')) path = 'caseNumber';
         else if (dLower.includes('county')) path = 'county';
         else if (dLower.includes('reporting period from')) path = 'periodFrom';
@@ -658,8 +703,17 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('question 9 explanation')) path = 'q9RemunerationExplain';
         else if (dLower.includes('question 9')) path = 'q9Remuneration';
       } else if (sLower === 'signatures') {
+        // The new preparer/attorney date-order checks (Item 2) also say
+        // "date signed" -- checked first so they don't misroute to the
+        // sole guardian's own signature-date field.
         if (dLower.includes('printed name')) path = 'planGuardians.0.name';
+        else if (dLower.includes('preparer') && dLower.includes('date signed')) path = 'preparer_signatureDate';
+        else if (dLower.includes('attorney') && dLower.includes('date signed')) path = 'attorney_signatureDate';
         else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+        // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
+        else if (dLower.includes('email')) path = 'planGuardians.0.email';
+        else if (dLower.includes('phone')) path = 'planGuardians.0.phone';
+        else if (dLower.includes('mailing address')) path = 'planGuardians.0.mailingAddress';
       }
     } else if (dLower.includes('ward')) path = 'wardName';
     else if (dLower.includes('case number')) path = 'caseNumber';

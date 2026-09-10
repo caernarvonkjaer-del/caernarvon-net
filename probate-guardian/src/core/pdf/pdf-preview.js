@@ -73,16 +73,33 @@ async function renderPagesInto(container, pdfBytes) {
   }
 }
 
+function refreshPreviewPager() {
+  // The router attempts pager initialization before the asynchronous PDF is
+  // available. Refresh only after pdf.js has rendered the finalized bytes so
+  // its page count is the same count the user will save or print.
+  if (typeof window.initPrintPager === 'function') window.initPrintPager({ refresh: true });
+}
+
 // buildModel(D) must be the exact same model builder doSavePdf() for that
 // feature uses, so preview and
 // Save-as-PDF can never diverge again by construction (this is also the
 // fix for the signature-style-radio/preview divergence
 // MILESTONE-19-3-PROPOSAL.md called out).
-export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-container') {
+//
+// baseIssues must be the same validateX()+getSupplementalFilingIssues()
+// combination each feature's own doSavePdf()/doSaveDocx() already passes to
+// prepareFilingOutput() (Milestone 34-1A, Item 1) -- omitting it here used
+// to mean the embedded preview could render a filing clean while the print
+// page's own banner blocked export for the exact same missing fields, since
+// prepareFilingOutput()'s `structuredIssues` never carries the caller's
+// baseIssues at all (only draft/identity issues do); checking `canExport`
+// (which does fold baseIssues in, via `messages`) is what actually wires
+// this argument in, not just adding it.
+export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container') {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const preflight = prepareFilingOutput(D);
-  if (preflight.structuredIssues.length) {
+  const preflight = prepareFilingOutput(D, baseIssues);
+  if (!preflight.canExport) {
     const message = preflight.messages.join(' ');
     announceStatus(`Preview is blocked. ${message}`, { priority: 'assertive', containerId: 'print-preview-status' });
     container.innerHTML = `<p class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);">Preview is blocked: ${escapeHtml(message)}</p>`;
@@ -93,7 +110,9 @@ export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-co
   try {
     const model = buildModel(D);
     const doc = await generateCourtFormPdf(model);
-    await renderPagesInto(container, await finalizeCourtFormPdf(doc));
+    const finalizedBytes = await finalizeCourtFormPdf(doc);
+    await renderPagesInto(container, finalizedBytes);
+    refreshPreviewPager();
     announceStatus('Preview ready.', { containerId: 'print-preview-status' });
   } catch (e) {
     console.error('PDF preview render failed', e);
@@ -109,10 +128,10 @@ export async function mountPdfPreview(buildModel, D, containerId = 'print-doc-co
 // the missing frame-src only govern embedding, not top-level navigation --
 // and it structurally can't repeat the .mobile-topbar-overlay bug class,
 // since the new tab never contains any app chrome to begin with.
-export async function printGeneratedPdf(buildModel, D) {
+export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
   try {
-    const preflight = prepareFilingOutput(D);
-    if (preflight.structuredIssues.length) {
+    const preflight = prepareFilingOutput(D, baseIssues);
+    if (!preflight.canExport) {
       alert(`Cannot print. ${preflight.messages.join(' ')}`);
       return;
     }

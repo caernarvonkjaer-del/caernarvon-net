@@ -56,9 +56,15 @@ export function planReadinessChecksAnnual(){
     {label:'Question 9 — mental and physical disabilities answered',ok:!!((d.q9MentalNone||d.q9MentalDementia||d.q9MentalAlzheimers||d.q9MentalAutism||d.q9MentalHeadInjury||d.q9MentalDevelopmental||d.q9MentalIntellectual||d.q9MentalSchizophrenia||d.q9MentalDepression||d.q9MentalSubstance||d.q9MentalOther)&&(d.q9PhysNone||d.q9PhysMobility||d.q9PhysBlindness||d.q9PhysDeafness||d.q9PhysDiabetic||d.q9PhysParkinsons||d.q9PhysArthritis||d.q9PhysOther))},
     {label:'Question 10 — advance directives answered',ok:!!d.q10NoDirectives!==!!d.q10Executed},
     {label:'Question 11 — remuneration declared',ok:d.q11NoRemuneration?has(d.q11NoRemunerationName):!!(d.q11ReceivedName||d.q11Amount||d.q11From)},
-    {label:"Physician's report confirmed attached (certification box)",ok:!!d.certPhysicianAttached},
   ];
   const manual=[
+    // Milestone 34-1A, Item 1: this depends on an external, unverifiable-
+    // by-software fact (whether the physician's statement is actually
+    // attached), same reasoning Plan Minor already applies to its own
+    // physician's-statement reminder -- moved out of `auto` so the
+    // readiness panel can't imply this is a machine-checked, export-
+    // blocking requirement when it never has been.
+    "Confirm the physician's statement of an examination within 90 days before the plan period is attached, and check the certification box for it.",
     "File the physician's report separately, at the same time as this plan. The app does not produce it.",
     'File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367).',
     'Serve a copy on all interested persons and file the certificate of service.',
@@ -96,8 +102,9 @@ export function pagePrintPlanAnnual(){
 }
 
 export async function mountPreview(){
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanAnnualModel, window.D);
-  await mountPdfPreview(buildPlanAnnualModel, window.D);
+  const baseIssues = () => [...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanAnnualModel, window.D, baseIssues);
+  await mountPdfPreview(buildPlanAnnualModel, window.D, baseIssues);
 }
 
 export async function doSavePdf(){

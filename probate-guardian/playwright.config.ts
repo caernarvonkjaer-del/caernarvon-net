@@ -1,4 +1,7 @@
-import { defineConfig, devices } from '@playwright/test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { chromium, defineConfig, devices } from '@playwright/test';
 
 // PG_TARGET selects which of Milestone 1's four parity targets the suite
 // runs against (see INDEX-SPLIT-PLAN.md / tests/e2e/support/target.ts):
@@ -8,7 +11,69 @@ import { defineConfig, devices } from '@playwright/test';
 //   portable - built dist/portable/index.html opened via a literal file:// URL
 const target = process.env.PG_TARGET || 'source';
 const browser = process.env.PG_BROWSER || 'chromium';
-const chromiumExecutablePath = process.env.PG_CHROMIUM_EXECUTABLE_PATH;
+
+function existingPath(candidates: string[]) {
+  return candidates.find((candidate) => {
+    try {
+      return fs.existsSync(candidate);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function playwrightBrowsersRoot() {
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH && process.env.PLAYWRIGHT_BROWSERS_PATH !== '0') {
+    return process.env.PLAYWRIGHT_BROWSERS_PATH;
+  }
+
+  if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, 'ms-playwright');
+  }
+
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Caches', 'ms-playwright');
+  }
+
+  return path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache'), 'ms-playwright');
+}
+
+function latestBrowserInstall(root: string, prefix: string) {
+  try {
+    if (!fs.existsSync(root)) return undefined;
+
+    return fs.readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
+      .map((entry) => entry.name)
+      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
+      .at(0);
+  } catch {
+    return undefined;
+  }
+}
+
+function defaultChromiumExecutablePath() {
+  if (process.env.PG_CHROMIUM_EXECUTABLE_PATH) {
+    return process.env.PG_CHROMIUM_EXECUTABLE_PATH;
+  }
+
+  const browsersRoot = playwrightBrowsersRoot();
+  const headlessShellInstall = latestBrowserInstall(browsersRoot, 'chromium_headless_shell-');
+  const chromiumInstall = latestBrowserInstall(browsersRoot, 'chromium-');
+
+  return existingPath([
+    ...(headlessShellInstall ? [
+      path.join(browsersRoot, headlessShellInstall, 'chrome-headless-shell-win64', 'chrome-headless-shell.exe'),
+      path.join(browsersRoot, headlessShellInstall, 'chrome-win64', 'headless_shell.exe'),
+    ] : []),
+    ...(chromiumInstall ? [
+      path.join(browsersRoot, chromiumInstall, 'chrome-win64', 'chrome.exe'),
+    ] : []),
+    chromium.executablePath(),
+  ]) || chromium.executablePath();
+}
+
+const chromiumExecutablePath = defaultChromiumExecutablePath();
 
 const TARGETS = {
   source:   { command: 'npx vite preview --outDir . --port 4321 --strictPort', url: 'http://localhost:4321/index.html', baseURL: 'http://localhost:4321/index.html' },

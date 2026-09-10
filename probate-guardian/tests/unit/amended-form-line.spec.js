@@ -89,4 +89,16 @@ describe('Annual-family filing identity in generated output', () => {
       expect(attorney).toContain(attestationName.toLowerCase());
     });
   }
+
+  test('footer subtitle contains the filing descriptor but never embeds the ward name', () => {
+    for (const [inventoryType, filingType, subtitle] of [
+      ['annual', 'Annual', 'Annual Accounting'],
+      ['finalAccounting', 'Final', 'Final Accounting'],
+      ['trustAccounting', 'Trust', 'Trust Accounting'],
+    ]) {
+      const model = buildAnnualAccountingModel({ ...annualBase, inventoryType, filingType });
+      expect(model.metadata.formSubtitle).toBe(subtitle);
+      expect(model.metadata.formSubtitle).not.toContain(annualBase.wardName);
+    }
+  });
 });

@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -298,6 +299,9 @@ export function validatePlanSimplified(){
   req(d.county,'Cover — County is required');
   req(d.periodFrom,'Cover — Reporting Period From is required');
   req(d.periodTo,'Cover — Reporting Period To is required');
+  errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
+    sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+  }));
   req(d.q1Residences,'The Plan — Question 1 (places resided) is required');
   req(d.q2BestPlacement,'The Plan — Question 2 (why this placement) is required');
   req(d.q3MedicalTreatment,'The Plan — Question 3 (medical treatment) is required');
@@ -320,6 +324,18 @@ export function validatePlanSimplified(){
   const g=(d.planGuardians||[])[0]||{};
   req(g.name,'Signatures — Guardian 1 printed name is required');
   req(g.signatureDate,'Signatures — Guardian 1 date signed is required');
+  req(g.email,'Signatures — Guardian 1 email is required');
+  req(g.phone,'Signatures — Guardian 1 phone is required');
+  req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required');
+  errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
+    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian 1 date signed',allowSameDay:true,
+  }));
+  errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
+    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Preparer date signed',allowSameDay:true,
+  }));
+  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
+    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
+  }));
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

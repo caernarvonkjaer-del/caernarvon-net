@@ -35,10 +35,12 @@ product-code or test-code scope.
   `q6`, `q7`, `adls`, `mental*`, `phys*`, `uses*`, `needs*`, `q9Providers[]`,
   `q11Directives[]`, and `planGuardians[]` field entries in
   `probate-guardian-data-model.csv`.
-- Completed: Delivery copy refreshed to
-  `C:\Users\clkmt07\Downloads\probate-guardian-data-model.csv`.
+- A delivery copy may be refreshed from the canonical CSV on request. Its
+  location is deliberately environment-local (for example,
+  `~/Downloads/probate-guardian-data-model.csv`) and is not a repository
+  artifact or acceptance criterion.
 - Still pending (separate documentation scope): migration of the CSV to the
-  canonical 20-column contract and execution of the stricter
+  canonical 20-column contract and implementation/execution of the stricter
   `(scope, storage_root, field_path, persistence_status)` uniqueness checker.
 
 ## Documentation-Only Data-Model Remediation
@@ -51,10 +53,12 @@ runtime changes.
 
 - Initial Inventory is now represented through its scalar fields, collection
   references, and expanded A-1 through C-5 row fields in the companion CSV.
-- Annual Plan and Initial Plan still need their wildcard entries expanded into
-  exact persisted paths. The affected groups include checkbox fields,
-  conditional explanations, certification fields, rights/ADL maps, directive
-  rows, provider rows, and guardian signature rows.
+- Plan Annual and Plan Initial wildcard entries have been expanded into exact
+  persisted paths in the current inventory. The canonical-schema migration
+  must preserve that granularity for checkbox fields, conditional
+  explanations, certification fields, rights/ADL maps, directive rows,
+  provider rows, and guardian signature rows; it must not reintroduce pattern
+  rows as substitutes for concrete paths.
 - The same collection name does not imply the same row shape. In particular,
   Plan Annual and Plan Initial `planGuardians[]` rows differ, and the plan
   provider/directive collections must remain filing-specific.
@@ -86,9 +90,18 @@ runtime changes.
    details, remuneration, and certification choices.
 6. Correct source attribution so each row points to its actual factory,
    renderer, validator, or calculation function.
-7. Add provenance columns for `source_symbol`, `source_line`, `storage_root`,
-   and `persistence_status` (`persisted`, `derived`, `runtime`, or
-   `export-only`).
+7. Add provenance columns for `source_file`, `source_symbol`, optional
+   `source_line`, `storage_root`, and `persistence_status` (`persisted`,
+   `derived`, `runtime`, or `export-only`). `source_file` plus
+   `source_symbol` are the durable provenance contract; populate
+   `source_line` only when it materially helps a reviewer locate a stable
+   declaration, and leave it blank otherwise.
+8. Add a zero-dependency Node verifier at `scripts/verify-data-model.mjs` and
+   a documented package-script entry. It must parse the canonical CSV and
+   reject wrong column order/count, blank `field_path` values, wildcard paths,
+   invalid metadata-domain values, and duplicate
+   `(scope, storage_root, field_path, persistence_status)` keys. It is
+   documentation-quality tooling only and must not alter application behavior.
 
 ### Documentation Acceptance Criteria
 
@@ -101,11 +114,10 @@ runtime changes.
   removed from the persisted-field table.
 - Every row has a filing scope, canonical storage path, data type, requiredness
   rule, sensitivity classification, persistence status, and source symbol.
-- The executable CSV checker defined in
-  `DATA-MODEL-REMEDIATION-PLAN.md` is run against the canonical CSV, including
+- `scripts/verify-data-model.mjs` is committed, documented, and run against
+  the canonical CSV, including
   its duplicate-key, wildcard-path, blank-path, and metadata-domain checks.
 - The canonical CSV is `probate-guardian/probate-guardian-data-model.csv`.
-  A delivery copy may be written to
-  `C:\Users\clkmt07\Downloads\probate-guardian-data-model.csv`, but the
-  external copy is not part of repository acceptance; when present, it should
-  be refreshed from the canonical workspace CSV.
+  A delivery copy may be written to a contributor's Downloads directory, but
+  the external copy is not part of repository acceptance; when present, it
+  should be refreshed from the canonical workspace CSV.

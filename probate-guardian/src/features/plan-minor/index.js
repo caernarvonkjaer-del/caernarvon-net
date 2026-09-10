@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -396,11 +397,16 @@ export function validatePlanMinor(){
   req(d.county,'Cover — County is required');
   req(d.periodFrom,'Cover — Reporting Period From is required');
   req(d.periodTo,'Cover — Reporting Period To is required');
+  errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
+    sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+  }));
   req(d.guardianName,'Cover — Guardian Name(s) is required');
   req(d.q1ResidenceName,'Cover — Current Residence Name is required');
   req(d.q1Street,'Cover — Current Residence Street Address is required');
   if(d.amendedForm==='Yes')req(d.amendedVersion,'Cover — Amended Form version is required');
 
+  const q3provs=(d.q3Providers||[]).filter(r=>r&&r.last);
+  if(!q3provs.length)errs.push('3. Treatment Providers — At least one provider must be listed');
   (d.q3Providers||[]).forEach((r,i)=>{
     if(r&&(r.first||r.providerType||r.street||r.city||r.phone)&&!r.last)
       errs.push(`3. Treatment Providers — Row ${i+1}: Provider last name is required`);
@@ -423,10 +429,23 @@ export function validatePlanMinor(){
   const g0=(d.planGuardians||[])[0]||{};
   req(g0.name,'Guardian Signatures — Guardian name is required');
   req(g0.signatureDate,'Guardian Signatures — Guardian signature date is required');
+  req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required');
+  req(g0.phone,'Guardian Signatures — Guardian phone is required');
+  req(g0.tin,'Guardian Signatures — Guardian taxpayer ID is required');
+  errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
+    sectionLabel:'Guardian Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian signature date',allowSameDay:true,
+  }));
 
   req(d.preparer_name,'Preparer & Attorney — Preparer name is required');
+  req(d.preparer_signatureDate,'Preparer & Attorney — Preparer signature date is required');
   req(d.attorney_name,'Preparer & Attorney — Attorney name is required');
   req(d.attorney_signatureDate,'Preparer & Attorney — Attorney signature date is required');
+  errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
+    sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Preparer signature date',allowSameDay:true,
+  }));
+  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
+    sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Attorney signature date',allowSameDay:true,
+  }));
 
   return errs;
 }

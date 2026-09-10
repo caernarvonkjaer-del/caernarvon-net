@@ -547,6 +547,8 @@ export function validatePlanInitial(){
   if(d.q6Other)req(d.q6Explain,'6–7. Socialization & Benefits — Explanation for "Other" socialization is required');
   if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)req(d.q7Explain,'6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other');
 
+  const q9provs=(d.q9Providers||[]).filter(r=>r&&r.name);
+  if(!q9provs.length)errs.push('9. Examining Providers — At least one provider must be listed');
   (d.q9Providers||[]).forEach((r,i)=>{
     if(r&&(r.providerType||r.examDate||r.street||r.cityStateZip||r.phone)&&!r.name)
       errs.push(`9. Examining Providers — Row ${i+1}: Provider name is required`);
@@ -578,6 +580,9 @@ export function validatePlanInitial(){
   const g0=(d.planGuardians||[])[0]||{};
   req(g0.name,'Signatures — Guardian name is required');
   req(g0.signatureDate,'Signatures — Guardian signature date is required');
+  req(g0.street,'Signatures — Guardian street address is required');
+  req(g0.phone,'Signatures — Guardian phone is required');
+  req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
 
   req(d.attorney_name,'Attorney Certification — Attorney name is required');
   req(d.attorney_signatureDate,'Attorney Certification — Attorney signature date is required');

@@ -84,8 +84,9 @@ export function pagePrintPlanSimplified(){
 }
 
 export async function mountPreview(){
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanSimplifiedModel, window.D);
-  await mountPdfPreview(buildPlanSimplifiedModel, window.D);
+  const baseIssues = () => [...validatePlanSimplified(), ...getSupplementalFilingIssues(window.D)];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanSimplifiedModel, window.D, baseIssues);
+  await mountPdfPreview(buildPlanSimplifiedModel, window.D, baseIssues);
 }
 
 export async function doSavePdf(){

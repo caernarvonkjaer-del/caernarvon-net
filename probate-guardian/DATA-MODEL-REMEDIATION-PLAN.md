@@ -17,8 +17,8 @@ scope,storage_root,field_path,field_label,data_type,format,requiredness,required
 | Column | Meaning |
 |---|---|
 | `scope` | Filing or storage scope, such as `case_file`, `guardian`, `plan_annual`, or `annual_accounting`. |
-| `storage_root` | Actual root object: `caseFile`, `D`, runtime calculation object, or export metadata. |
-| `field_path` | Canonical path below the root, such as `guardians[].ssnEin` or `rights.<rightKey>`. |
+| `storage_root` | Strictly the top-level identifier: `caseFile`, `D`, a named runtime-calculation object, or export metadata. Never put a nested object here. |
+| `field_path` | The complete dot/bracket path below `storage_root`, such as `guardians[].ssnEin`, `q3Setting.facilityName`, or `rights.<rightKey>`. |
 | `field_label` | User-facing label, not an internal variable name. |
 | `data_type` | `string`, `boolean`, `enum`, `date`, `decimal`, `integer`, `object`, or `array<object>`. |
 | `format` | More specific format such as `currency`, `percentage`, `phone`, `zip`, `ssn-ein`, `bar-number`, or `iso-date`. |
@@ -31,12 +31,12 @@ scope,storage_root,field_path,field_label,data_type,format,requiredness,required
 | `collection_min` / `collection_max` | Collection constraints. Use `unbounded` where the code uses `Infinity`. |
 | `initial_item_count` | Number of rows created by the empty-data factory. |
 | `sync_party_ids` | Party-ID collection synchronized with the row collection, or blank. |
-| `source_file` / `source_symbol` / `source_line` | Provenance for the factory, renderer, validator, or calculation. |
+| `source_file` / `source_symbol` / `source_line` | Provenance for the factory, renderer, validator, or calculation. `source_file` and `source_symbol` are required; `source_line` is optional because line numbers are inherently volatile. |
 | `notes` | Clarifying information, compatibility notes, or migration warnings. |
 
 ## Required Normalization Rules
 
-1. Use actual storage paths. Filing scope is metadata and must not be prefixed into `field_path`.
+1. Use actual storage paths. Filing scope is metadata and must not be prefixed into `field_path`. `storage_root` is only the top-level identifier; every nested segment belongs in `field_path` (for example, `storage_root=D`, `field_path=q3Setting.facilityName`, never `storage_root=D.q3Setting`).
 2. Keep similarly named collections separate when their row shapes differ. For example, Plan Annual and Plan Initial `planGuardians[]` are different schemas.
 3. Expand wildcard entries such as `q3Med*`, `q9Mental*`, `rights.*`, and `adls.*` into explicit rows. A separate pattern/domain row may document the key set, but it cannot replace the individual fields.
 4. Record nullable dates as `data_type=date` with `format=iso-date` and document null/empty initialization in `notes`.
@@ -45,7 +45,7 @@ scope,storage_root,field_path,field_label,data_type,format,requiredness,required
 7. Keep derived calculations in the same dictionary only when `persistence_status=derived` and the name matches an actual returned property.
 8. Treat SSN/EIN, account numbers, VINs, bar numbers, case identifiers, phones, email addresses, and uploaded document content as sensitive according to their data class.
 9. Attribute each field to the actual owning factory or implementation. Do not cite `state.js` for fields defined by a legacy factory or a schedule schema.
-10. Treat `probate-guardian/probate-guardian-data-model.csv` as canonical. A delivery copy may be written to `C:\Users\clkmt07\Downloads\probate-guardian-data-model.csv`, but external-copy equality is not a repository acceptance criterion.
+10. Treat `probate-guardian/probate-guardian-data-model.csv` as canonical. A delivery copy may be written to a contributor's Downloads directory when requested, but external-copy equality is not a repository acceptance criterion.
 
 ## Collection Inventory To Complete
 
@@ -94,7 +94,7 @@ Simplified Accounting calculations are runtime values, not persisted fields:
 - [ ] Add enum domains and conditional requirement expressions.
 - [ ] Correct all storage-root and source-symbol inconsistencies.
 - [ ] Confirm all derived names against implementation return values.
-- [ ] Validate the canonical CSV with an executable checker: parse it with a CSV parser; reject blank `field_path` values; reject wildcard paths in canonical rows; reject invalid enum values in `data_type`, `requiredness`, `sensitive`, `persistence_status`, and `derived_or_input`; and reject duplicate keys on `(scope, storage_root, field_path, persistence_status)`.
-- [ ] Run the checker as a documented one-off PowerShell/Node command during remediation; promote it to a committed docs-check only if the project later approves repository automation.
-- [ ] Refresh the Downloads delivery copy from the canonical workspace CSV when a delivery copy is requested; do not use Downloads-copy equality as repository acceptance.
+- [ ] Add `scripts/verify-data-model.mjs`, a zero-dependency Node checker, and expose it through a documented package script. It must verify exact header/order and row column counts; reject blank `field_path` values and wildcard paths in canonical rows; reject invalid enum values in `data_type`, `requiredness`, `sensitive`, `persistence_status`, and `derived_or_input`; and reject duplicate keys on `(scope, storage_root, field_path, persistence_status)`.
+- [ ] Run the committed checker against the canonical CSV during remediation and retain a passing command in the milestone handoff. Repository-wide CI automation remains a separate approval decision.
+- [ ] Refresh a requested Downloads delivery copy from the canonical workspace CSV; do not use delivery-copy equality as repository acceptance.
 - [ ] Update every affected unit and E2E test in the same milestone as any runtime data-structure change. Cover exact field names, collection row shapes, boolean versus Yes/No enum behavior, nullable dates, tri-state answers, identity-party mappings, minimal-valid fixtures, validation counts, jump-link field paths, PDF/export fixtures, and any compatibility aliases or migrations introduced to preserve existing saved data.

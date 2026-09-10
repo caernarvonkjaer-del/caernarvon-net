@@ -1,5 +1,6 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderFormField } from '../../core/form/form-fields.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
@@ -600,6 +601,12 @@ export function validateSimplified(){
   req(d.typeOfGuardianship,'Cover — Type of Guardianship');
   req(d.county,'Cover — County');
   req(d.amendedForm,'Cover — Amended Form?');
+  errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
+    sectionLabel:'Cover',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
+  }));
+  errs.push(...checkDateOrder(d.gid,d.periodFrom,{
+    sectionLabel:'Cover',earlierLabel:'Guardianship Inception Date (GID)',laterLabel:'Accounting Period From',allowSameDay:true,
+  }));
   req(d.startingBalance,'Part II — Starting Balance (Line 1)');
   req(d.interestIncome,'Part II — Interest Income (Line 2)');
   req(d.depositsSettlement,'Part II — Deposits Pursuant to Settlement (Line 3)');
@@ -618,12 +625,21 @@ export function validateSimplified(){
     req(g.mailingCityStateZip,`Part IV — ${p} — Mailing City/State/Zip`);
     req(g.residenceStreet,`Part IV — ${p} — Residence Street Address`);
     req(g.residenceCityStateZip,`Part IV — ${p} — Residence City/State/Zip`);
+    errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
+      sectionLabel:`Part IV — ${p}`,earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
+    }));
   });
   req(d.attorney_barNumber,'Part V — Attorney Bar Number');
   req(d.attorney_phone,'Part V — Attorney Phone Number');
   req(d.attorney_street,'Part V — Attorney Street Address');
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
+  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
+    sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
+  }));
   req(d.certServiceDate,'Part VI — Date of Service');
+  errs.push(...checkDateOrder(d.periodTo,d.certServiceDate,{
+    sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Date of Service',allowSameDay:true,
+  }));
   req(d.certIndicator,'Part VI — "Indicate if"');
   req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address');
   return errs;

@@ -189,14 +189,14 @@ export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> 
       attorney_phone: '555-555-5557',
       attorney_street: '123 Main St',
       attorney_cityStateZip: 'Clearwater, FL 33755',
-      certServiceDate: '2026-01-02',
+      certServiceDate: '2027-01-05',
       certIndicator: 'Mailed',
     });
     d.guardians = [{
       name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com',
       mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755',
       residenceStreet: '123 Main St', residenceCityStateZip: 'Clearwater, FL 33755',
-      signatureDate: '2026-01-02',
+      signatureDate: '2027-01-05',
     }];
     d.certRecipients = [
       { name: 'Recipient One', line2: '', line3: '' },
@@ -242,7 +242,7 @@ export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<vo
       q9Remuneration: 'No',
     });
     d.planGuardians = [
-      { name: 'Sample Guardian', signatureDate: '2026-01-02', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
+      { name: 'Sample Guardian', signatureDate: '2027-01-05', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
       { name: '', signatureDate: '', email: '', phone: '', mailingAddress: '' },
     ];
     (window as any).autoSave();
@@ -300,7 +300,7 @@ export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> 
       certPhysicianAttached: true,
     });
     d.planGuardians = [
-      { name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', signatureDate: '2026-01-02', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', officeStreet: '', officeCityStateZip: '', relationship: 'Professional Guardian' },
+      { name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', signatureDate: '2027-01-05', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', officeStreet: '', officeCityStateZip: '', relationship: 'Professional Guardian' },
       { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
       { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
     ];
@@ -334,11 +334,12 @@ export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
       q5NoUnmetNeeds: true,
       certConsulted: true,
       preparer_name: 'Sample Preparer',
+      preparer_signatureDate: '2027-01-12',
       attorney_name: 'Sample Attorney',
-      attorney_signatureDate: '2026-01-12',
+      attorney_signatureDate: '2027-01-12',
     });
     d.planGuardians = [
-      { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2026-01-11' },
+      { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2027-01-11' },
       { name: '', tin: '', phone: '', mailingStreet: '', mailingCityStateZip: '', relationship: '', email: '', signatureDate: '' },
     ];
     (window as any).autoSave();
@@ -425,14 +426,14 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
       // every schedule.
       reconcileExplanation: 'Test fixture: Schedule D listings intentionally left blank.',
     });
-    d.guardians[0] = { ...d.guardians[0], name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-12-30' };
-    d.preparer = { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-12-30' };
+    d.guardians[0] = { ...d.guardians[0], name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
+    d.preparer = { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
     Object.assign(d, {
       attorney_bar: '123456',
       attorney_phone: '555-555-5555',
       attorney_street: '123 Main St',
       attorney_cityStateZip: 'Clearwater, FL 33755',
-      attorney_signatureDate: '2026-12-30',
+      attorney_signatureDate: '2027-01-05',
     });
     d.certRecipients[0] = { ...d.certRecipients[0], name: 'Sample Recipient' };
     (window as any).autoSave();
