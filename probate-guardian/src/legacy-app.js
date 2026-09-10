@@ -8825,7 +8825,10 @@ async function handleHash(){
 
 window.addEventListener('hashchange',handleHash);
 window.addEventListener('beforeunload',flushPendingSave);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)flushPendingSave();});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)flushPendingSave();
+  else updateLastSavedIndicator(); // background tabs throttle the 30s ticker, so the "X minutes ago" text can go stale while hidden
+});
 
 // beforeunload cannot reliably await either file or IndexedDB writes. The
 // recovery snapshot is best-effort, so retain the native dirty-state warning.

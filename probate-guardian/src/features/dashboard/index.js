@@ -134,15 +134,16 @@ function dashboardToolbarActionsHTML() {
 }
 
 function dashboardToolbarHTML() {
-  const search = `<span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search wards by name…" aria-label="Search wards by name" value="${esc(_dashboardSearch)}"></span>`;
+  const searchHint = isTriageRole() ? 'Search by ward, case #, or contact…' : 'Search wards by name…';
+  const search = `<label class="dashboard-control dashboard-search-control"><span>Search</span><span class="dashboard-search-wrap">${ic('search', 15)}<input type="text" id="dashboard-search" class="form-control form-control-sm dashboard-search-input" placeholder="${esc(searchHint)}" aria-label="${esc(searchHint)}" value="${esc(_dashboardSearch)}"></span></label>`;
   const actions = dashboardToolbarActionsHTML();
   if (isTriageRole()) return `${search}${triageControlsHTML()}${actions}`;
   return `${search}
-    <select id="dashboard-sort" class="form-select form-select-sm dashboard-sort-select" aria-label="Sort wards by">
-      ${option('lastModified', 'Sort: Last Modified', _dashboardSort)}
-      ${option('name', 'Sort: Name (A–Z)', _dashboardSort)}
-      ${option('total', 'Sort: Total (High–Low)', _dashboardSort)}
-    </select>
+    <label class="dashboard-control dashboard-sort-control"><span>Sort</span><select id="dashboard-sort" class="form-select form-select-sm dashboard-sort-select" aria-label="Sort wards by">
+      ${option('lastModified', 'Last Modified', _dashboardSort)}
+      ${option('name', 'Name (A–Z)', _dashboardSort)}
+      ${option('total', 'Total (High–Low)', _dashboardSort)}
+    </select></label>
     ${actions}`;
 }
 
