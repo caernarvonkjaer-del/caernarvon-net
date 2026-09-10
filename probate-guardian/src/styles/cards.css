@@ -14,11 +14,28 @@
 .entry-card-body{padding:.9rem .85rem;}
 .entry-card-footer{padding:.5rem .85rem;background:var(--surface-2);border-top:1px solid var(--line);text-align:right;font-size:.88rem;font-weight:700;color:var(--brand-text);}
 
-/* Tablet / small laptop grid tuning for dense schedules */
-@media (min-width:768px) and (max-width:1279.98px){
-  .schedule-page .col-md-1,
-  .schedule-page .col-md-2,
-  .schedule-page .col-md-3{flex:0 0 auto;width:33.3333%;}
+/* A field row sizes its columns against its own width rather than the
+   viewport: an entry card is half the content column, so a viewport media
+   query reasons about twice the room the fields really get. */
+.schedule-page .row:has(>[class*="col-md-"]){container:field-row/inline-size;}
+/* Annual's Schedule D rows are six 2/12 columns wide, under 140px each below
+   ~820px; a quarter each drops them into an even four-across grid. This pushes
+   a row that summed to 12 (B-1's 5/3/2/2) past 100% so its last column wraps --
+   the accepted cost of keeping the dense rows legible. */
+@container field-row (max-width:820px){
+  .schedule-page .row>.col-md-1,
+  .schedule-page .row>.col-md-2{width:25%;}
+}
+@container field-row (max-width:520px){
+  .schedule-page .row>.col-md-1,.schedule-page .row>.col-md-2,
+  .schedule-page .row>.col-md-3,.schedule-page .row>.col-md-4,
+  .schedule-page .row>.col-md-5,.schedule-page .row>.col-md-6{width:50%;}
+  .schedule-page .row>.col-md-7,.schedule-page .row>.col-md-8,
+  .schedule-page .row>.col-md-9,.schedule-page .row>.col-md-10,
+  .schedule-page .row>.col-md-11{width:100%;}
+}
+@container field-row (max-width:340px){
+  .schedule-page .row>[class*="col-md-"]{width:100%;}
 }
 
 /* ── Schedule Totals ──────────────────────────────────── */

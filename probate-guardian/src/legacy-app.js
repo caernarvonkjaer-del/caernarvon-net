@@ -7693,8 +7693,13 @@ function bindForms(){
           val=formatCheckNumber(val);
           e.target.value=val;
         }else if(inputType==='zip'){
+          // Digit-count limiting stays live (same as maxlength), but title
+          // casing is finalize-only -- see the name/address blur listener
+          // below for why: formatCityStateZip() has the same bare-2-letter-
+          // word-reads-as-a-state-abbreviation defect as formatSafeTitleCase,
+          // so typing "ph" toward "Philadelphia" would get force-uppercased
+          // to "PH" before the city name is even finished.
           applyZipLimit(e.target);
-          e.target.value=formatCityStateZip(e.target.value);
           val=e.target.value;
         }else if(inputType==='county'){
           filterCountyDropdown(e.target);
