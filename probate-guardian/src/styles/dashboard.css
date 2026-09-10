@@ -72,11 +72,6 @@
 .dashboard-triage-muted{color:var(--ink-4);font-size:.78rem;}
 .dashboard-triage-deadline{display:flex;align-items:flex-start;flex-direction:column;gap:.25rem;min-width:0;}
 .dashboard-priority-reason{font-size:.76rem;line-height:1.25;}
-.dashboard-status{display:inline-flex;padding:.2rem .45rem;border-radius:4px;background:var(--surface-2);color:var(--ink-2);font-size:.72rem;font-weight:700;}
-.dashboard-status-disapproved-needs-correction{background:var(--danger-bg);color:var(--danger-text);}
-.dashboard-status-ready-to-file{background:var(--ok-bg);color:var(--ok-text);}
-.dashboard-status-pending-court-review{background:var(--warn-bg);color:var(--warn-text);}
-.dashboard-status-approved{background:var(--brand-050);color:var(--brand-text);}
 /* A fixed eight-column grid, not a flex row: every action lands in the same
    column on every row even when Close or Prior years is an empty cell. */
 .dashboard-triage-actions{display:grid;grid-template-columns:repeat(8,max-content);gap:.25rem;align-items:center;}

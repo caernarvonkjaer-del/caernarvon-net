@@ -95,16 +95,52 @@ function refreshPreviewPager() {
 // baseIssues at all (only draft/identity issues do); checking `canExport`
 // (which does fold baseIssues in, via `messages`) is what actually wires
 // this argument in, not just adding it.
-export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container') {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const preflight = prepareFilingOutput(D, baseIssues);
-  if (!preflight.canExport) {
-    const message = preflight.messages.join(' ');
-    announceStatus(`Preview is blocked. ${message}`, { priority: 'assertive', containerId: 'print-preview-status' });
-    container.innerHTML = `<p class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);">Preview is blocked: ${escapeHtml(message)}</p>`;
-    return;
+// A blocked filing can carry fifty-odd messages, and printing them as one
+// run-on paragraph is what the banner used to do. Every message is shaped
+// "<section> — <detail>", so the section is the natural grouping key, and the
+// leading token of it collapses "D-2 Preparer" and "D-2 Attorney" onto the one
+// schedule the filer would actually navigate to.
+function groupPreflightMessages(messages) {
+  const groups = new Map();
+  for (const raw of messages) {
+    const text = String(raw).trim();
+    const dash = text.indexOf('—');
+    const section = dash > 0 ? text.slice(0, dash).trim() : '';
+    const detail = dash > 0 ? text.slice(dash + 1).trim() : text;
+    const key = section ? section.split(/\s+/)[0] : 'General';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(section && section !== key ? `${section.slice(key.length).trim()} — ${detail}` : detail);
   }
+  return groups;
+}
+
+function blockedPanelHTML(messages) {
+  const groups = groupPreflightMessages(messages);
+  const total = messages.length;
+  // A section with one item reads better on the section's own line than as a
+  // one-entry nested list -- and most of a blank filing's sections are exactly
+  // that, one schedule needing an entry or the verified-empty box.
+  const items = [...groups.entries()].map(([section, details]) => `<li class="pdf-preview-blocked-group">
+    <span class="pdf-preview-blocked-section">${escapeHtml(section)}</span>
+    <span class="pdf-preview-blocked-count">${details.length}</span>
+    ${details.length === 1
+      ? `<span class="pdf-preview-blocked-single">${escapeHtml(details[0])}</span>`
+      : `<ul>${details.map((d) => `<li>${escapeHtml(d)}</li>`).join('')}</ul>`}
+  </li>`).join('');
+  return `<div class="pdf-preview-blocked no-print">
+    <p class="pdf-preview-blocked-title">Preview blocked</p>
+    <p class="pdf-preview-blocked-summary">${total} required item${total === 1 ? '' : 's'} still missing, across ${groups.size} section${groups.size === 1 ? '' : 's'}.</p>
+    <div class="pdf-preview-blocked-actions">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-preview-action="override">Preview anyway</button>
+    </div>
+    <details class="pdf-preview-blocked-details">
+      <summary>Show what is missing</summary>
+      <ul class="pdf-preview-blocked-list">${items}</ul>
+    </details>
+  </div>`;
+}
+
+async function renderPreviewInto(container, buildModel, D, { draft = false } = {}) {
   announceStatus('Generating preview…', { containerId: 'print-preview-status' });
   container.innerHTML = '<p class="pdf-preview-loading no-print" style="padding:2rem;text-align:center;color:var(--ink-3);">Generating preview…</p>';
   try {
@@ -112,13 +148,34 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     const doc = await generateCourtFormPdf(model);
     const finalizedBytes = await finalizeCourtFormPdf(doc);
     await renderPagesInto(container, finalizedBytes);
+    if (draft) {
+      // Prepended after the pages render, because renderPagesInto() clears the
+      // container. The filer overrode a gate; the reason has to stay on screen.
+      container.insertAdjacentHTML('afterbegin', `<p class="pdf-preview-draft-notice no-print">Draft preview. Required items are still missing, so this is not ready to file. Saving and printing stay blocked until they are filled in.</p>`);
+    }
     refreshPreviewPager();
-    announceStatus('Preview ready.', { containerId: 'print-preview-status' });
+    announceStatus(draft ? 'Draft preview ready. Required items are still missing.' : 'Preview ready.', { containerId: 'print-preview-status' });
   } catch (e) {
     console.error('PDF preview render failed', e);
     announceStatus(`Preview failed to render: ${e.message}`, { priority: 'assertive', containerId: 'print-preview-status' });
     container.innerHTML = `<p class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);">Preview failed to render: ${escapeHtml(e.message)}</p>`;
   }
+}
+
+export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const preflight = prepareFilingOutput(D, baseIssues);
+  if (!preflight.canExport) {
+    // Announce the count, not the list -- an assertive region reading fifty
+    // items aloud is worse than useless. The list is on the page to be read.
+    announceStatus(`Preview is blocked. ${preflight.messages.length} required items are still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
+    container.innerHTML = blockedPanelHTML(preflight.messages);
+    container.querySelector('[data-preview-action="override"]')
+      ?.addEventListener('click', () => { void renderPreviewInto(container, buildModel, D, { draft: true }); });
+    return;
+  }
+  await renderPreviewInto(container, buildModel, D);
 }
 
 // Print: opens the same generated PDF blob and lets the browser/OS PDF
@@ -132,7 +189,10 @@ export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
   try {
     const preflight = prepareFilingOutput(D, baseIssues);
     if (!preflight.canExport) {
-      alert(`Cannot print. ${preflight.messages.join(' ')}`);
+      // The full list belongs on the Print Preview panel, which groups it and
+      // can be read at leisure. An alert box holding fifty sentences cannot.
+      const count = preflight.messages.length;
+      alert(`Cannot print: ${count} required item${count === 1 ? '' : 's'} still missing. Open Print Preview to see what they are.`);
       return;
     }
     const model = buildModel(D);

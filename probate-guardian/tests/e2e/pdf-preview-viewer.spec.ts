@@ -113,10 +113,18 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
       await feature.create(page, `${feature.name} Blocked Preview Ward`);
       await page.evaluate(() => (window as any).navigate('/print'));
 
-      const errorMessage = page.locator('#print-doc-container .pdf-preview-error');
-      await expect(errorMessage).toBeVisible();
-      await expect(errorMessage).toContainText('Preview is blocked');
+      const blocked = page.locator('#print-doc-container .pdf-preview-blocked');
+      await expect(blocked).toBeVisible();
+      await expect(blocked).toContainText('Preview blocked');
+      // The list is behind a disclosure rather than printed as one paragraph.
+      await expect(blocked.locator('.pdf-preview-blocked-summary')).toContainText(/\d+ required items? still missing/);
+      await expect(blocked.locator('.pdf-preview-blocked-list')).not.toBeVisible();
       await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+
+      // The override renders the draft and says so; it does not lift the gate.
+      await blocked.locator('[data-preview-action="override"]').click();
+      await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
+      await expect(page.locator('#print-doc-container .pdf-preview-draft-notice')).toBeVisible();
     });
   }
 

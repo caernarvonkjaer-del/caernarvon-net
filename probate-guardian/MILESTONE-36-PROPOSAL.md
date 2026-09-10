@@ -586,6 +586,34 @@ minor-specific type is chosen for a ward whose existing data indicates an adult.
 Soft is the right strength: the app cannot know the ward's age directly, only infer
 it, and a hard block on an inference would be worse than the current silence.
 
+### 19. The blocked Print Preview banner is an unreadable wall of text
+
+**Reproduced on Initial Inventory.** A filing with nothing filled in yields 47
+preflight messages, and `pdf-preview.js` joined all of them with a space into a
+single paragraph: "Preview is blocked: Cover — Case Number is required. Cover —
+Guardianship Inception Date (GID) is required. ..." for roughly forty lines. The
+same list went into an `alert()` on Print. Fourteen of those messages are the
+identical sentence about verifying a schedule has no entries, repeated once per
+schedule. Nothing about the presentation helps a filer decide what to do next, and
+the assertive live region read the whole thing aloud.
+
+**There is also no way past it.** The gate is all or nothing, so a filer cannot see
+the document taking shape while filling it in, which is exactly when looking at it
+is most useful. Every message is shaped `<section> — <detail>`, so the data needed
+to group and count it is already there and merely discarded.
+
+**Tasks.** Replace the paragraph with a count, a grouped and collapsed breakdown,
+and an override. Group by the leading token of the section prefix so "D-2 Preparer"
+and "D-2 Attorney" collapse onto the one schedule the filer would navigate to.
+Announce the count rather than the list. Add a "Preview anyway" button that renders
+the draft with a persistent notice explaining what it is.
+
+**Scope the override to the screen.** It unblocks the embedded preview only. Save
+and Print stay gated, because an incomplete court form that has left the app is a
+different kind of mistake from one displayed on the filer's own monitor, and the
+draft notice cannot follow the file. The Print alert is shortened to a count and a
+pointer to the preview rather than carrying the list itself.
+
 ---
 
 ## Verification & Acceptance Plan
