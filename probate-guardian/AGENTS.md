@@ -53,3 +53,4 @@ category/filing-type scope it covers — update the matching row(s) in
 only; still run the full `npm test` before committing.
 
 Ask permission before running the full regression suite.
+Do not run tests before commit and/or push for documentation only updates.
