@@ -1,4 +1,8 @@
 /* ── Dashboard Metrics Strip ──────────────────────────── */
+/* The dashboard's own width, not the window's, is what its layout has to
+   answer to -- the sidebar takes a fixed slice of the window, so the two are
+   never the same number. Everything below queries this. */
+[data-dashboard-root]{container-type:inline-size;container-name:dashboard-page;}
 .dashboard-summary-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(110px,.55fr);gap:.65rem;margin-bottom:.45rem;}
 .dashboard-stat{position:relative;min-width:0;overflow:hidden;text-align:left;padding:.85rem .9rem .8rem 1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-1);}
 .dashboard-stat:before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--accent);}
@@ -210,38 +214,98 @@
   .dashboard-triage-actions{grid-template-columns:repeat(4,max-content);}
 }
 
-/* Tier 2 (tablet) -- eight columns stop fitting, so each row becomes a small
-   two-column card and the column headings move inline as field labels. */
+/* Tier 2 (tablet) -- eight columns stop fitting, so each filing becomes its
+   own card. The queue sheds its frame here so the cards are the objects on the
+   page rather than bands inside a table, and each card splits into three
+   parts: an identity header, a ruled field grid, and an action footer. Without
+   that split the labels and values read as one drift of loose text. */
 @container triage-queue (max-width:1040px){
+  .dashboard-triage-queue{border:0;background:transparent;overflow:visible;}
   .dashboard-triage-header{display:none;}
-  .dashboard-triage-row{grid-template-columns:1fr 1fr;min-width:0;gap:.55rem .7rem;padding:.7rem .8rem;}
-  .dashboard-triage-cell:before{content:attr(data-label);display:block;margin-bottom:.24rem;color:var(--ink-4);font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
-  .dashboard-triage-actions{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));gap:.3rem;padding-top:.15rem;border-top:1px solid var(--line-2);}
-  .dashboard-triage-actions:before{grid-column:1/-1;}
-  .dashboard-triage-actions .btn{width:100%;}
+  .dashboard-triage-row{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;padding:0;
+    background:var(--surface);border:1px solid var(--line);border-left-width:4px;
+    border-radius:var(--r-sm);margin-bottom:.7rem;overflow:hidden;
+  }
+  .dashboard-triage-row:last-child{margin-bottom:0;}
+  .dashboard-triage-cell{padding:.6rem .8rem;min-width:0;}
+  .dashboard-triage-cell:before{content:attr(data-label);display:block;margin-bottom:.24rem;color:var(--ink-4);font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
+
+  /* Explicit placement, not source order: the flow puts Contacts between
+     Deadline and Judge, which strands Judge alone on a half-empty line. */
+  .dashboard-triage-ward{grid-column:1/-1;grid-row:1;padding-bottom:0;}
+  .dashboard-triage-filing{grid-column:1/-1;grid-row:2;padding-top:.1rem;border-bottom:1px solid var(--line);}
+  .dashboard-triage-case{grid-column:1;grid-row:3;}
+  .dashboard-triage-status{grid-column:2;grid-row:3;}
+  .dashboard-triage-deadline{grid-column:1;grid-row:4;}
+  .dashboard-triage-assignee{grid-column:2;grid-row:4;}
+  .dashboard-triage-contacts{grid-column:1/-1;grid-row:5;}
+  .dashboard-triage-actions{grid-column:1/-1;grid-row:6;}
+
+  /* The card's own rules. Column one carries the vertical one, so it stops at
+     the grid rather than running the full width of the card. */
+  .dashboard-triage-case,.dashboard-triage-deadline{border-right:1px solid var(--line-2);}
+  .dashboard-triage-case,.dashboard-triage-status,
+  .dashboard-triage-deadline,.dashboard-triage-assignee{border-bottom:1px solid var(--line-2);}
+
+  /* Ward and form type are the card's title block, so they drop their field
+     labels and take type sizing instead. */
+  .dashboard-triage-ward:before,.dashboard-triage-filing:before{display:none;}
+  .dashboard-triage-ward strong{font-size:1rem;letter-spacing:-.015em;white-space:normal;}
+  .dashboard-triage-filing span{font-size:.8rem;color:var(--ink-3);white-space:normal;}
+
+  /* Keep the link-case control beside the number rather than dropping it to a
+     line of its own underneath. */
+  .dashboard-triage-case span{display:inline;white-space:normal;}
+  .dashboard-triage-case .dashboard-link-case-btn{vertical-align:baseline;}
+
+  .dashboard-triage-contacts{flex-direction:row;flex-wrap:wrap;gap:.15rem .9rem;align-items:baseline;}
+  .dashboard-triage-contacts:before{flex:0 0 100%;}
+
+  /* Footer. Flex rather than a fixed grid so each line of buttons fills the
+     card edge to edge -- a four-column grid left a hole wherever a reserved
+     cell fell, which is what made the cluster look broken. */
+  .dashboard-triage-actions{display:flex;flex-wrap:wrap;gap:.4rem;padding:.65rem .8rem;background:var(--surface-2);border-top:1px solid var(--line);}
+  .dashboard-triage-actions:before{flex:0 0 100%;margin-bottom:.1rem;}
+  .dashboard-triage-actions .btn{flex:1 1 auto;min-width:104px;padding:.35rem .5rem;font-size:.72rem;}
+  /* Nothing left to align between cards, so the reserved cells become nothing. */
+  .dashboard-action-empty{display:none;}
+
+  .dashboard-triage-queue-closed .dashboard-triage-row{background:var(--surface-2);}
+  .dashboard-triage-queue-closed .dashboard-triage-actions{background:transparent;}
 }
 
-/* Tier 3 (phone) -- one field per line. The actions stay two-up rather than
-   stacking: eight full-width buttons would be most of a screen on their own. */
+/* Tier 3 (phone) -- one field per line. The card keeps its header, its rules
+   and its footer; only the two-column field grid collapses, so the explicit
+   row and column placement from Tier 2 gets handed back to the flow. */
 @container triage-queue (max-width:540px){
   .dashboard-triage-row{grid-template-columns:1fr;}
-  .dashboard-triage-actions{grid-column:auto;grid-template-columns:repeat(2,minmax(0,1fr));}
-  .dashboard-triage-actions .btn{padding:.4rem .3rem;font-size:.72rem;}
-  /* Alignment across rows is what the reserved cells buy, and stacked cards
-     have no alignment left to keep -- so they become plain gaps here. */
-  .dashboard-action-empty{display:none;}
+  .dashboard-triage-cell{grid-column:1/-1;grid-row:auto;}
+  .dashboard-triage-case,.dashboard-triage-deadline{border-right:0;}
+  /* Two-up rather than stacked: eight full-width buttons would be most of a
+     screen on their own. */
+  .dashboard-triage-actions .btn{flex:1 1 46%;min-width:0;padding:.42rem .35rem;}
 }
 
-@media (max-width:991.98px){
+/* The page chrome used viewport media queries, which is wrong here: the
+   sidebar takes ~260px, so a 1200px window leaves a ~750px content column that
+   no viewport breakpoint ever sees. That is how four metric tiles ended up
+   squeezed four-across in a column too narrow for them. These key off the
+   dashboard's own width instead, like the queue already did. */
+@container dashboard-page (max-width:820px){
   .dashboard-page-header{align-items:stretch;flex-direction:column;gap:.85rem;}
   .dashboard-header-actions{justify-content:flex-start;}
-  .dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));}
   .dashboard-toolbar{gap:.5rem;}
   .dashboard-control.dashboard-search-control{flex:1 1 100%;}
   .dashboard-toolbar-actions{margin-left:0;}
 }
 
-@media (max-width:575.98px){
+/* Four tiles want roughly 140px each before the labels start wrapping. */
+@container dashboard-page (max-width:780px){
+  .dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+@container dashboard-page (max-width:520px){
   .dashboard-page-title h1{font-size:1.35rem;}
   .dashboard-page-title p{font-size:.8rem;}
   /* Header buttons go full width: at this size they are the page's primary

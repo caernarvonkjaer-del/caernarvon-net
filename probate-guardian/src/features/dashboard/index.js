@@ -300,7 +300,7 @@ function triageRowHTML(row) {
       <span>${esc(row.caseNumber || '—')}</span>
       <button type="button" class="btn btn-link btn-sm p-0 ms-1 dashboard-link-case-btn" title="Link this filing to a Case" aria-label="Link ${esc(row.wardName || 'this filing')} to a Case" data-dashboard-action="link-case" data-ward-id="${esc(row.wardId)}"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h9.6V19H3.4Z"/></svg></button>
     </div>
-    <div class="dashboard-triage-cell" data-label="Status">${workflowStatusControl(row)}</div>
+    <div class="dashboard-triage-cell dashboard-triage-status" data-label="Status">${workflowStatusControl(row)}</div>
     <div class="dashboard-triage-deadline dashboard-triage-cell" data-label="Deadline">${deadlineDisplay(row)}</div>
     <div class="dashboard-triage-contacts dashboard-triage-cell" data-label="Contacts">${contacts}</div>
     <div class="dashboard-triage-assignee dashboard-triage-cell" data-label="Judge">${assignmentControl(row)}</div>
