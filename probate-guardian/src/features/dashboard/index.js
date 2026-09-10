@@ -10,9 +10,9 @@ const {
   esc, ic, navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, saveAppState,
-  getWardHeadlineTotal, getWardProgress, typeIcon, INVENTORY_TYPE_META, formatDashboardCurrency,
+  getWardHeadlineTotal, getWardProgress, typeIcon,
   switchWard, showStartNewYearModal, confirmDeleteWard, showRenameWardModal,
-  showConvertWardModal, showAddWardModal, showPriorYearsModal, fmtDateCard, formatRelativeTime,
+  showConvertWardModal, showAddWardModal, showPriorYearsModal, formatRelativeTime,
   INVENTORY_TYPES, formEngine,
 } = window;
 
@@ -20,7 +20,7 @@ const {
 // These would be window properties if the dashboard stayed monolithic, but now that
 // they're module-private via closure, they live entirely here.
 let _dashboardSearch = '';
-let _archivedSectionOpen = false;
+let _closedSectionOpen = false;
 let _dashboardContainer = null;
 let _dashboardHost = null;
 // Milestone 36-2: the sort carries a direction so a header click can flip it.
@@ -107,8 +107,8 @@ function setDashboardSearch(value) {
   renderDashboardGrid();
 }
 
-function toggleArchivedSection() {
-  _archivedSectionOpen = !_archivedSectionOpen;
+function toggleClosedSection() {
+  _closedSectionOpen = !_closedSectionOpen;
   renderDashboardGrid();
 }
 
@@ -142,80 +142,6 @@ function priorityBadgeHTML(row, includeWorkflowStates = false) {
     return '<span class="dashboard-priority-badge dashboard-priority-badge-approved">Approved</span>';
   }
   return '';
-}
-
-// Small badge shown on a ward card: overdue (red), due within two weeks
-// (amber), or a plain future date (muted) — closed/archived cases never show
-// one, since a deadline on a case that's already done is just noise.
-function formatDeadlineBadge(projectedWard) {
-  if (projectedWard.isArchived) return '';
-  const { deadlineDate: dueDate, deadlineBasis: basis, daysUntilDeadline: diffDays } = projectedWard;
-  if (!dueDate) return '';
-  if (!projectedWard.isDeadlineActionable) {
-    const text = `Due ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    return `<div class="ward-card-deadline deadline-ok" title="${esc(basis)}">${text}</div>`;
-  }
-  let cls, text;
-  if (diffDays < 0) { cls = 'deadline-overdue'; text = `${ic('alert', 12)} ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'} overdue`; }
-  else if (diffDays === 0) { cls = 'deadline-soon'; text = `${ic('alert', 12)} Due today`; }
-  else if (diffDays <= 14) { cls = 'deadline-soon'; text = `${ic('alert', 12)} Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`; }
-  else { cls = 'deadline-ok'; text = `Due ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`; }
-  return `<div class="ward-card-deadline ${cls}" title="${esc(basis)}">${text}</div>`;
-}
-
-function wardCardHTML(projectedWard) {
-  const ward = projectedWard.sourceWard;
-  const headline = projectedWard.total;
-  const meta = INVENTORY_TYPE_META[projectedWard.inventoryType] || { iconName: 'folder', accent: '#525d6e', accentText: 'var(--ink-3)', totalLabel: 'Total' };
-  const typeLabel = projectedWard.displayType;
-  const lastMod = projectedWard.lastModified ? formatRelativeTime(new Date(projectedWard.lastModified).getTime()) : 'never saved';
-  const caseFile = getCaseFile();
-  const isActive = projectedWard.wardId === caseFile.activeWardId;
-  const hasPeriod = projectedWard.inventoryType !== 'guardian' && (ward.periodFrom || ward.periodTo);
-  const hasGid = projectedWard.inventoryType === 'guardian' && ward.gid;
-  const periodHTML = hasPeriod ? `<div class="ward-card-period">FY ${esc(fmtDateCard(ward.periodFrom) || '?')} – ${esc(fmtDateCard(ward.periodTo) || '?')}</div>`
-    : hasGid ? `<div class="ward-card-period">GID: ${esc(fmtDateCard(ward.gid) || '?')}</div>` : '';
-  // A Plan holds no money, so a dollar headline would be meaningless (and a
-  // bare "—" under a "Total" label reads as a real, zero figure). Show how
-  // much of the filing is done instead.
-  const isFinancial = meta.financial !== false;
-  const prog = isFinancial ? null : projectedWard.progress;
-  const headlineHTML = isFinancial
-    ? `<div class="ward-card-total-label">${esc(meta.totalLabel)}</div>
-       <div class="ward-card-total">${formatDashboardCurrency(headline)}</div>`
-    : `<div class="ward-card-total-label">${esc(meta.totalLabel)}</div>
-       <div class="ward-card-total">${prog ? prog.pct : 0}<span style="font-size:1rem;font-weight:600;">%</span></div>
-       ${prog ? `<div class="ward-card-modified">${prog.complete} of ${prog.total} sections complete</div>` : ''}`;
-  const priority = dashboardPriority(projectedWard);
-  const priorityBadge = priorityBadgeHTML(projectedWard, true);
-  return `<div class="ward-card dashboard-priority-${priority}${isActive ? ' ward-card-active' : ''}${projectedWard.isArchived ? ' ward-card-archived' : ''}" data-dashboard-priority="${priority}" style="--card-accent:${meta.accent}">
-    <div class="ward-card-header">
-      <span class="ward-card-icon">${typeIcon(projectedWard.inventoryType, 20)}</span>
-      <div class="ward-card-title">
-        <div class="ward-card-name">${esc(ward.wardName || '(unnamed)')}</div>
-        <div class="ward-card-type">${esc(typeLabel)}</div>
-        ${periodHTML}
-        ${formatDeadlineBadge(projectedWard)}
-      </div>
-      <span class="ward-card-badges">${isActive ? '<span class="badge bg-primary ward-card-badge">Active</span>' : projectedWard.isArchived ? '<span class="badge bg-secondary ward-card-badge">Closed</span>' : ''}${priorityBadge}</span>
-    </div>
-    <div class="ward-card-body">
-      ${headlineHTML}
-      <div class="ward-card-modified">Last modified: ${esc(lastMod)}</div>
-      ${(ward.years && ward.years.length) ? `<button type="button" class="btn btn-link ward-card-prior-years-link" data-dashboard-action="prior-years" data-ward-id="${esc(ward.wardId)}">${ward.years.length} prior year${ward.years.length === 1 ? '' : 's'} ▸</button>` : ''}
-    </div>
-    <div class="ward-card-quick-actions">
-      <button class="btn btn-sm btn-outline-secondary" title="Save an encrypted backup of just this ward" aria-label="Backup ${esc(ward.wardName || 'this ward')}" data-dashboard-action="backup" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/></svg> Backup</button>
-      <button class="btn btn-sm btn-outline-secondary" title="Open Print Preview to export a PDF" aria-label="Export PDF for ${esc(ward.wardName || 'this ward')}" data-dashboard-action="pdf" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> PDF</button>
-      <button class="btn btn-sm btn-outline-secondary" title="Archive this year and open a new one" aria-label="Start a new year for ${esc(ward.wardName || 'this ward')}" data-dashboard-action="new-year" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.6v12.8M5.6 12h12.8"/></svg> New Year</button>
-      <button class="btn btn-sm btn-outline-secondary" title="Link this filing to another filing's Case, so they group together on the dashboard even if the case number changes later" aria-label="Link ${esc(ward.wardName || 'this filing')} to a Case" data-dashboard-action="link-case" data-ward-id="${esc(ward.wardId)}">${ic('folder', 14)} Link to Case</button>
-      <button class="btn btn-sm btn-outline-secondary" title="${projectedWard.isArchived ? 'Move back to active caseload' : 'Mark this case as closed'}" aria-label="${projectedWard.isArchived ? 'Restore' : 'Archive'} ${esc(ward.wardName || 'this ward')}" data-dashboard-action="archive" data-ward-id="${esc(projectedWard.wardId)}" aria-pressed="${projectedWard.isArchived}">${projectedWard.isArchived ? ic('undo', 14) + ' Restore' : ic('archive', 14) + ' Archive'}</button>
-      <button class="btn btn-sm btn-outline-danger" title="Permanently delete this form" aria-label="Delete ${esc(ward.wardName || 'this ward')}" data-dashboard-action="delete" data-ward-id="${esc(ward.wardId)}"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/></svg> Delete</button>
-    </div>
-    <div class="ward-card-footer">
-      <button class="btn btn-sm btn-primary w-100" data-dashboard-action="open-ward" data-ward-id="${esc(ward.wardId)}">${isActive ? 'Continue Editing →' : 'Open Filing →'}</button>
-    </div>
-  </div>`;
 }
 
 function renderDashboardSummary() {
@@ -319,14 +245,16 @@ function triageActionButtons(row) {
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="pdf" data-ward-id="${id}">PDF</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="new-year" data-ward-id="${id}">New year</button>
     ${priorYears}
-    <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="archive" data-ward-id="${id}">${row.isArchived ? 'Restore' : 'Archive'}</button>
+    <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="archive" data-ward-id="${id}" aria-pressed="${row.isArchived}" title="${row.isArchived ? 'Move this filing back to the active queue' : 'Move this filing to Closed Filings'}">${row.isArchived ? 'Reopen' : 'Mark Closed'}</button>
     <button class="btn btn-sm btn-outline-danger" data-dashboard-action="delete" data-ward-id="${id}">Delete</button>
   </div>`;
 }
 
-function getTriageRows(rows) {
+// Search and sort, applied the same way to whichever set of filings it is
+// given, so the closed list responds to the search box like the active one.
+function applyQueueQuery(rows) {
   const query = _dashboardSearch.trim().toLocaleLowerCase('en-US');
-  let filtered = rows.filter(row => !row.isArchived);
+  let filtered = rows;
   if (query) {
     filtered = filtered.filter(row => [row.wardName, row.caseNumber, row.assigneeName, ...row.filingContacts.map(item => item.name)]
       .some(value => String(value || '').toLocaleLowerCase('en-US').includes(query)));
@@ -337,6 +265,14 @@ function getTriageRows(rows) {
   return filtered.slice().sort((a, b) => compareDashboardColumn(a, b, _dashboardTriageSort.key, _dashboardTriageSort.direction));
 }
 
+function getTriageRows(rows) {
+  return applyQueueQuery(rows.filter(row => !row.isArchived));
+}
+
+function getClosedRows(rows) {
+  return applyQueueQuery(rows.filter(row => row.isArchived));
+}
+
 function formatContactRole(role) {
   if (!role) return '';
   if (role === 'preparer') return 'Preparer';
@@ -344,53 +280,70 @@ function formatContactRole(role) {
   return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-function renderTriageQueue(projectedWards) {
-  const rows = getTriageRows(projectedWards);
-  const body = rows.map(row => {
-    const priority = dashboardPriority(row);
-    const contacts = row.filingContacts.length
-      ? row.filingContacts.map(item => `<span class="dashboard-contact-item"><span class="dashboard-contact-role">${esc(formatContactRole(item.role))}:</span> <span class="dashboard-contact-name">${esc(item.name)}</span></span>`).join('')
-      : '<span class="dashboard-triage-muted">No filing contact</span>';
-    return `<article class="dashboard-triage-row dashboard-priority-${priority}" data-dashboard-priority="${priority}" data-dashboard-ward-id="${esc(row.wardId)}">
-      <div class="dashboard-triage-cell dashboard-triage-ward" data-label="Ward">
-        <strong>${esc(row.wardName || '(unnamed)')}</strong>
-      </div>
-      <div class="dashboard-triage-cell dashboard-triage-filing" data-label="Form Type">
-        <span>${esc(row.displayType)}</span>
-      </div>
-      <div class="dashboard-triage-cell dashboard-triage-case" data-label="Case Number">
-        <span>${esc(row.caseNumber || '—')}</span>
-        <button type="button" class="btn btn-link btn-sm p-0 ms-1 dashboard-link-case-btn" title="Link this filing to a Case" aria-label="Link ${esc(row.wardName || 'this filing')} to a Case" data-dashboard-action="link-case" data-ward-id="${esc(row.wardId)}"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h9.6V19H3.4Z"/></svg></button>
-      </div>
-      <div class="dashboard-triage-cell" data-label="Status">${workflowStatusControl(row)}</div>
-      <div class="dashboard-triage-deadline dashboard-triage-cell" data-label="Deadline">${deadlineDisplay(row)}</div>
-      <div class="dashboard-triage-contacts dashboard-triage-cell" data-label="Contacts">${contacts}</div>
-      <div class="dashboard-triage-assignee dashboard-triage-cell" data-label="Judge">${assignmentControl(row)}</div>
-      ${triageActionButtons(row)}
-    </article>`;
-  }).join('');
+// One queue row. Shared by the active queue and the closed-filings queue so a
+// filing looks and behaves the same in both -- the closed section used to draw
+// ward cards from the retired family layout, which gave it a different set of
+// actions and no columns.
+function triageRowHTML(row) {
+  const priority = dashboardPriority(row);
+  const contacts = row.filingContacts.length
+    ? row.filingContacts.map(item => `<span class="dashboard-contact-item"><span class="dashboard-contact-role">${esc(formatContactRole(item.role))}:</span> <span class="dashboard-contact-name">${esc(item.name)}</span></span>`).join('')
+    : '<span class="dashboard-triage-muted">No filing contact</span>';
+  return `<article class="dashboard-triage-row dashboard-priority-${priority}" data-dashboard-priority="${priority}" data-dashboard-ward-id="${esc(row.wardId)}">
+    <div class="dashboard-triage-cell dashboard-triage-ward" data-label="Ward">
+      <strong>${esc(row.wardName || '(unnamed)')}</strong>
+    </div>
+    <div class="dashboard-triage-cell dashboard-triage-filing" data-label="Form Type">
+      <span>${esc(row.displayType)}</span>
+    </div>
+    <div class="dashboard-triage-cell dashboard-triage-case" data-label="Case Number">
+      <span>${esc(row.caseNumber || '—')}</span>
+      <button type="button" class="btn btn-link btn-sm p-0 ms-1 dashboard-link-case-btn" title="Link this filing to a Case" aria-label="Link ${esc(row.wardName || 'this filing')} to a Case" data-dashboard-action="link-case" data-ward-id="${esc(row.wardId)}"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h9.6V19H3.4Z"/></svg></button>
+    </div>
+    <div class="dashboard-triage-cell" data-label="Status">${workflowStatusControl(row)}</div>
+    <div class="dashboard-triage-deadline dashboard-triage-cell" data-label="Deadline">${deadlineDisplay(row)}</div>
+    <div class="dashboard-triage-contacts dashboard-triage-cell" data-label="Contacts">${contacts}</div>
+    <div class="dashboard-triage-assignee dashboard-triage-cell" data-label="Judge">${assignmentControl(row)}</div>
+    ${triageActionButtons(row)}
+  </article>`;
+}
 
+// The column strip. The closed queue gets plain labels rather than a second set
+// of sort buttons: the sort state is single and global, so a second set would
+// claim to sort that list independently when it does not. It still needs the
+// headings, though -- above the container query's breakpoint the rows carry no
+// inline data-label prefixes.
+function triageHeaderHTML(sortable = true) {
   const sortBtn = (key, label) => {
+    if (!sortable) return `<span>${esc(label)}</span>`;
     const isSorted = _dashboardTriageSort.key === key;
     const dir = isSorted ? _dashboardTriageSort.direction : 'none';
     const ariaSort = isSorted ? (dir === 'asc' ? 'ascending' : 'descending') : 'none';
     const indicator = isSorted ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
     return `<button type="button" class="dashboard-sort-btn" data-dashboard-sort="${key}" aria-sort="${ariaSort}">${esc(label)}<span class="dashboard-sort-indicator" aria-hidden="true">${indicator}</span></button>`;
   };
-
-  return `<div class="dashboard-triage-queue">
-    <div class="dashboard-triage-header">
-      ${sortBtn('name', 'Ward')}
-      ${sortBtn('type', 'Form Type')}
-      ${sortBtn('case', 'Case #')}
-      ${sortBtn('status', 'Status')}
-      ${sortBtn('deadline', 'Deadline')}
-      <span title="Filing contacts (unsortable)">Contacts</span>
-      ${sortBtn('judge', 'Judge')}
-      <span>Actions</span>
-    </div>
-    ${body || '<div class="dashboard-empty-inline">No filings match these filters.</div>'}
+  return `<div class="dashboard-triage-header">
+    ${sortBtn('name', 'Ward')}
+    ${sortBtn('type', 'Form Type')}
+    ${sortBtn('case', 'Case #')}
+    ${sortBtn('status', 'Status')}
+    ${sortBtn('deadline', 'Deadline')}
+    <span title="Filing contacts (unsortable)">Contacts</span>
+    ${sortBtn('judge', 'Judge')}
+    <span>Actions</span>
   </div>`;
+}
+
+function triageQueueHTML(rows, { sortable = true, emptyMessage = '', extraClass = '' } = {}) {
+  const body = rows.map(triageRowHTML).join('');
+  return `<div class="dashboard-triage-queue${extraClass ? ` ${extraClass}` : ''}">
+    ${triageHeaderHTML(sortable)}
+    ${body || `<div class="dashboard-empty-inline">${esc(emptyMessage)}</div>`}
+  </div>`;
+}
+
+function renderTriageQueue(projectedWards) {
+  return triageQueueHTML(getTriageRows(projectedWards), { emptyMessage: 'No filings match this search.' });
 }
 
 function renderDashboardGrid() {
@@ -406,13 +359,23 @@ function renderDashboardGrid() {
     return;
   }
   const projectedWards = projectWards(allWards);
-  // Milestone 36-1 collapsed three role layouts to one. The archived/closed
-  // section below was shared by both former branches and stays.
+  // Active filings sit directly under the metric strip; closed ones collapse
+  // into the disclosure at the foot of the page. It opens only when the reader
+  // asks: _closedSectionOpen is session state seeded false and reset by
+  // dispose(), so every arrival at the dashboard finds it shut.
   let html = renderTriageQueue(projectedWards);
-  const archived = projectedWards.filter(w => w.isArchived);
-  if (archived.length) {
-    html += `<div class="dashboard-section-divider"><button class="btn btn-sm btn-outline-secondary" data-dashboard-action="toggle-archived" aria-expanded="${_archivedSectionOpen}">${_archivedSectionOpen ? '▾' : '▸'} Archived / Closed Wards (${archived.length})</button></div>`;
-    if (_archivedSectionOpen) html += `<div class="dashboard-grid dashboard-grid-archived">${archived.map(wardCardHTML).join('')}</div>`;
+  const closed = getClosedRows(projectedWards);
+  if (closed.length) {
+    html += `<div class="dashboard-closed-section">
+      <button type="button" class="dashboard-closed-toggle" data-dashboard-action="toggle-closed" aria-expanded="${_closedSectionOpen}" aria-controls="dashboard-closed-queue">
+        <span class="dashboard-closed-chevron" aria-hidden="true">${_closedSectionOpen ? '▾' : '▸'}</span>
+        <span class="dashboard-closed-label">Closed Filings</span>
+        <span class="dashboard-closed-count">${closed.length}</span>
+      </button>
+      <div id="dashboard-closed-queue"${_closedSectionOpen ? '' : ' hidden'}>
+        ${triageQueueHTML(closed, { sortable: false, extraClass: 'dashboard-triage-queue-closed' })}
+      </div>
+    </div>`;
   }
   container.innerHTML = html;
 }
@@ -584,7 +547,7 @@ async function handleDashboardClick(event) {
     case 'pdf': quickExportPdf(wardId); break;
     case 'prior-years': showPriorYearsModal(wardId); break;
     case 'select-existing': showConvertWardModal(); break;
-    case 'toggle-archived': toggleArchivedSection(); break;
+    case 'toggle-closed': toggleClosedSection(); break;
   }
 }
 
@@ -668,7 +631,7 @@ export function dispose(container) {
   container.innerHTML = '';
   // Reset session-only state on page change
   _dashboardSearch = '';
-  _archivedSectionOpen = false;
+  _closedSectionOpen = false;
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
   _dashboardHost = null;
 }

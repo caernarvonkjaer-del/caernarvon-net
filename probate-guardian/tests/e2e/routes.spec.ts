@@ -66,16 +66,23 @@ test.describe('routes', () => {
     // dashboard role ever reached its render branch) -- see Milestone 8.
     await expect(main.locator('#dashboard-group-toggle')).toHaveCount(0);
 
-    // Milestone 36-1: the single professional layout renders triage rows. The
-    // archived section below still renders ward cards.
+    // The single professional layout renders triage rows, and the closed
+    // disclosure at the foot of the page now renders the same rows rather than
+    // the retired family layout's ward cards.
     await page.locator('#dashboard-search').fill('Alpha');
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(1);
     await expect(main.locator('.dashboard-triage-row')).toContainText('Alpha Dashboard Ward');
 
     await main.locator('[data-dashboard-action="archive"]').first().dispatchEvent('click');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(0);
-    await main.getByRole('button', { name: /Archived \/ Closed Wards/ }).dispatchEvent('click');
-    await expect(main.locator('.ward-card')).toContainText('Alpha Dashboard Ward');
+    // Closed filings leave the active queue and the disclosure starts shut.
+    await expect(main.locator('.dashboard-triage-queue:not(.dashboard-triage-queue-closed) .dashboard-triage-row')).toHaveCount(0);
+    await expect(main.locator('#dashboard-closed-queue')).toBeHidden();
+    await expect(main.locator('.dashboard-closed-toggle')).toHaveAttribute('aria-expanded', 'false');
+
+    await main.getByRole('button', { name: /Closed Filings/ }).dispatchEvent('click');
+    await expect(main.locator('#dashboard-closed-queue')).toBeVisible();
+    await expect(main.locator('.ward-card')).toHaveCount(0);
+    await expect(main.locator('.dashboard-triage-queue-closed .dashboard-triage-row')).toContainText('Alpha Dashboard Ward');
 
     await page.evaluate(() => (window as any).navigate('/inventory-select'));
     await page.evaluate(() => (window as any).navigate('/dashboard'));

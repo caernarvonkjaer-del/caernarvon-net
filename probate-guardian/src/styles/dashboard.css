@@ -84,37 +84,8 @@
 .dashboard-workflow-ready-to-file,.dashboard-workflow-approved{color:var(--ok-text);border-color:color-mix(in srgb,var(--ok-text) 38%,var(--field));background-color:color-mix(in srgb,var(--ok-text) 7%,var(--surface));font-weight:700;}
 
 /* ── Dashboard Grid & Filing Cards ────────────────────── */
-.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:1.1rem;}
-.ward-card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);display:flex;flex-direction:column;box-shadow:var(--sh-1);transition:box-shadow .2s var(--ease),transform .2s var(--ease),border-color .2s;overflow:hidden;}
-.ward-card:before{content:'';position:absolute;inset:0 0 auto;height:3px;background:var(--card-accent,var(--accent));}
-.ward-card:hover{box-shadow:var(--sh-3);transform:translateY(-2px);border-color:#d5dded;}
-[data-theme="dark"] .ward-card:hover{border-color:#3a465c;}
-.ward-card-active{border-color:var(--brand-200);box-shadow:0 1px 3px rgba(130,0,36,.10),0 12px 26px -12px rgba(130,0,36,.40);}
-.ward-card-active:before{background:var(--brand);}
-.ward-card-header{display:flex;align-items:flex-start;gap:.6rem;padding:1rem .95rem .5rem;}
-.ward-card-icon{display:inline-flex;line-height:1;color:var(--card-accent,var(--accent));padding-top:.1rem;}
-.ward-card-title{flex:1;min-width:0;}
-.ward-card-name{font-weight:700;font-size:1rem;color:var(--ink);letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ward-card-type{font-size:.79rem;color:var(--ink-3);margin-top:.15rem;}
-.ward-card-period{font-size:.74rem;color:var(--ink-4);margin-top:.1rem;}
-.ward-card-deadline{font-size:.74rem;font-weight:600;margin-top:.15rem;}
-.ward-card-deadline.deadline-overdue{color:var(--danger-text);}
-.ward-card-deadline.deadline-soon{color:var(--warn-text);}
-.ward-card-deadline.deadline-ok{color:var(--ink-4);font-weight:500;}
 .badge{font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:.32em .6em;}
 .ward-card-badge{align-self:flex-start;font-size:.68rem;}
-.ward-card-badges{display:flex;align-items:flex-end;gap:.35rem;flex-direction:column;}
-.ward-card-body{padding:0 .95rem .8rem;}
-.ward-card-total-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);font-weight:700;}
-.ward-card-total{font-size:1.55rem;font-weight:700;line-height:1.2;letter-spacing:-.025em;color:var(--ink);margin:.2rem 0 .4rem;}
-.ward-card-modified{font-size:.76rem;color:var(--ink-4);}
-.ward-card-prior-years-link{display:block;padding:.3rem 0 0;font-size:.76rem;text-decoration:none;}
-.ward-card-quick-actions{display:flex;gap:.4rem;padding:0 .95rem .7rem;}
-.ward-card-quick-actions .btn{flex:1;font-size:.76rem;padding:.32rem .4rem;border-radius:var(--r-sm);}
-.ward-card-footer{padding:.65rem .95rem;border-top:1px solid var(--line-2);background:var(--surface-2);margin-top:auto;}
-.ward-card-archived{background:var(--surface-2);}
-.ward-card-archived:before{background:var(--ink-4);}
-.ward-card-archived .ward-card-total{color:var(--ink-3) !important;}
 
 /* ── Dashboard Page Header & Controls ─────────────────── */
 .dashboard-page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1.25rem;margin-bottom:1rem;}
@@ -161,8 +132,6 @@
 .dashboard-type-header-name{font-weight:700;font-size:.92rem;color:var(--ink);letter-spacing:-.01em;}
 .dashboard-type-header-count{font-size:.79rem;color:var(--ink-4);font-weight:500;}
 .dashboard-type-header-subtotal{margin-left:auto;font-weight:700;font-size:1rem;color:var(--ink);letter-spacing:-.02em;}
-.dashboard-section-divider{margin:1.5rem 0 .85rem;border-color:var(--line);}
-.dashboard-grid-archived{margin-top:.85rem;}
 .dashboard-empty{grid-column:1/-1;text-align:center;padding:3.5rem 1rem;color:var(--ink-3);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r-lg);}
 .dashboard-empty-inline{grid-column:1/-1;text-align:center;padding:1.5rem 1rem;color:var(--ink-4);font-style:italic;font-size:.88rem;}
 
@@ -208,6 +177,27 @@
 .inventory-convert-title{font-weight:700;color:var(--ink);font-size:.98rem;letter-spacing:-.01em;}
 .inventory-convert-desc{font-size:.82rem;color:var(--ink-3);margin-top:.2rem;}
 .inventory-convert-banner .btn{flex-shrink:0;width:auto;}
+
+/* ── Closed Filings Disclosure ────────────────────────── */
+/* Closed filings render through the same queue markup as active ones, so the
+   only thing this section adds is the disclosure around it and a muted
+   treatment -- a closed filing should read as settled, not as a live row
+   competing for attention. */
+.dashboard-closed-section{margin-top:1.5rem;}
+.dashboard-closed-toggle{display:flex;align-items:center;gap:.5rem;width:100%;padding:.6rem .8rem;font:inherit;text-align:left;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer;transition:background .15s,border-color .15s;}
+.dashboard-closed-toggle:hover{background:var(--surface);border-color:var(--brand-200);color:var(--ink);}
+.dashboard-closed-toggle:focus-visible{outline:2px solid var(--brand-text);outline-offset:2px;}
+.dashboard-closed-chevron{display:inline-flex;justify-content:center;width:.9rem;color:var(--ink-4);flex-shrink:0;}
+.dashboard-closed-label{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;}
+.dashboard-closed-count{margin-left:auto;min-width:1.5rem;padding:.05rem .4rem;border-radius:999px;background:var(--line);color:var(--ink-3);font-size:.72rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;}
+#dashboard-closed-queue{margin-top:.6rem;}
+/* Stated rather than left to the UA sheet: .dashboard-triage-queue sets
+   display on the child, and a stylesheet that re-declares display on a
+   [hidden] ancestor's descendants is exactly how a collapsed panel leaks. */
+#dashboard-closed-queue[hidden]{display:none;}
+.dashboard-triage-queue-closed{background:var(--surface-2);}
+.dashboard-triage-queue-closed .dashboard-triage-row{color:var(--ink-3);}
+.dashboard-triage-queue-closed .dashboard-triage-ward strong{color:var(--ink-2);font-weight:600;}
 
 /* ── Dashboard Responsive Breakpoints ─────────────────── */
 /* Three tiers. The queue's own width drives the row layout through its
