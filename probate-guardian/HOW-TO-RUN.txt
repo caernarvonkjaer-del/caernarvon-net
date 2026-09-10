@@ -880,7 +880,7 @@ New in 1.5.3:
     verified), and signatures for up to four guardians plus the attorney
   * Gets its own "Clerk's review readiness" check on Print Preview, and a
     reminder that a separate Disaster Plan must be filed alongside it per
-    Administrative Order 2019-005
+    Administrative Order 2024-025
   * Exports as PDF, same as the other Plans; no Excel version
 
 New in 1.5.2:

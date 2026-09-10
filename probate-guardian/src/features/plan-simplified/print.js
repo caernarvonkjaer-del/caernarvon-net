@@ -52,7 +52,10 @@ export function planReadinessChecksSimplified(){
   const manual=[
     'File within the deadline set by the court for your case.',
     'Serve a copy on all interested persons, and file the certificate of service.',
-    'If the ward executed any advance directive listed in Question 8, attach copies unless already filed.',
+    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)), and file an updated Disaster Plan (Administrative Order 2024-025).",
+    'If the ward executed any advance directive listed in Question 8, attach copies unless already filed -- advance directives need only be filed once.',
+    'Attach the Annual Financial Statement / Affidavit if required for this case (mandatory if the guardian has property delegation and annual accountings were waived).',
+    "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the ward's assets.",
     'If you are a professional guardian, confirm your registration with the Office of Public & Professional Guardians is current.',
     'Confirm the guardian address on file with the Clerk matches the address on this plan.',
     "File the physician's report separately if the court requires one for this reporting period.",

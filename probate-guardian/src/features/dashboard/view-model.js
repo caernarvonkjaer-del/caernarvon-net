@@ -100,7 +100,7 @@ export function deriveWardDeadline(ward) {
   if (ward.inventoryType === 'planInitial') {
     return {
       deadlineDate: addLocalDays(ward.lettersSignedDate, 60),
-      deadlineBasis: '60 days after the Letters of Guardianship were signed (F.S. 744.632)',
+      deadlineBasis: '60 days after the Letters of Guardianship were signed (F.S. 744.362(1))',
     };
   }
   if (['planAnnual', 'planSimplified', 'planMinor'].includes(ward.inventoryType)) {

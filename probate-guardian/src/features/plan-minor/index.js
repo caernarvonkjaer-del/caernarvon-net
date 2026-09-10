@@ -402,6 +402,7 @@ export function validatePlanMinor(){
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
   }));
+  req(d.ucn||d.ref,'Cover — Case Number is required');
   req(d.guardianName,'Cover — Guardian Name(s) is required');
   req(d.q1ResidenceName,'Cover — Current Residence Name is required');
   req(d.q1Street,'Cover — Current Residence Street Address is required');
@@ -438,10 +439,17 @@ export function validatePlanMinor(){
     sectionLabel:'Guardian Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian signature date',allowSameDay:true,
   }));
 
-  req(d.preparer_name,'Preparer & Attorney — Preparer name is required');
-  req(d.preparer_signatureDate,'Preparer & Attorney — Preparer signature date is required');
-  req(d.attorney_name,'Preparer & Attorney — Attorney name is required');
-  req(d.attorney_signatureDate,'Preparer & Attorney — Attorney signature date is required');
+  // Milestone 35-3: preparer and attorney are optional roles (pro se filers
+  // and Guardian Advocates need neither) -- required only once the filer has
+  // started entering one, same reasoning as Plan Initial's attorney fields.
+  if(d.preparer_name||d.preparer_signatureDate){
+    req(d.preparer_name,'Preparer & Attorney — Preparer name is required');
+    req(d.preparer_signatureDate,'Preparer & Attorney — Preparer signature date is required');
+  }
+  if(d.attorney_name||d.attorney_signatureDate){
+    req(d.attorney_name,'Preparer & Attorney — Attorney name is required');
+    req(d.attorney_signatureDate,'Preparer & Attorney — Attorney signature date is required');
+  }
   errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
     sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Preparer signature date',allowSameDay:true,
   }));

@@ -33,19 +33,24 @@ export function planReadinessChecksMinor(){
   const provs=(d.q3Providers||[]).filter(r=>r&&r.last);
   const auto=[
     {label:"Minor's name, county, and reporting period are on the plan",ok:has(d.wardName)&&has(d.county)&&has(d.periodFrom)&&has(d.periodTo)},
+    {label:'Case number (UCN or Case #) is on the plan',ok:has(d.ucn)||has(d.ref)},
     {label:'Current residence and address stated',ok:has(d.q1ResidenceName)&&has(d.q1Street)},
     {label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
     {label:'Guardian address, phone and taxpayer ID provided',ok:has(g0.mailingStreet)&&has(g0.phone)&&has(g0.tin)},
     {label:'Question 4 — provision of medical services selected',ok:!!(d.q4Primary||d.q4Dentist||d.q4Specialist||d.q4PT||d.q4ST||d.q4OT||d.q4MinorDecides||d.q4Other)},
     {label:"Question 5 — school progress, social development, communication, and interpersonal statements completed",ok:has(d.q5SchoolProgress)&&has(d.q5SocialDevelopment)&&has(d.q5Communicates)&&has(d.q5Interpersonal)},
     {label:'Question 5E — unmet social needs answered',ok:!!(d.q5NoUnmetNeeds||d.q5DoesNotCareToSocialize||d.q5UnmetNeeds||d.q5Other)},
-    {label:'Preparer certification completed',ok:has(d.preparer_name)&&has(d.preparer_signatureDate)},
-    {label:'Attorney certification signed and dated',ok:has(d.attorney_name)&&has(d.attorney_signatureDate)},
+    {label:'Preparer certification completed (if a preparer is named)',ok:!(d.preparer_name||d.preparer_signatureDate)||(has(d.preparer_name)&&has(d.preparer_signatureDate))},
+    {label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_signatureDate)||(has(d.attorney_name)&&has(d.attorney_signatureDate))},
     {label:`Treatment providers listed (${provs.length})`,ok:provs.length>0},
   ];
   const manual=[
-    "Attach the physician's statement of an examination of the ward no more than 90 days before the beginning of the plan period, if the certification box for it is checked.",
+    "File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367).",
+    "Attach the physician's statement of an examination of the ward no more than 180 days before the beginning of the plan period (F.S. 744.3675), if the certification box for it is checked.",
     'Serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).',
+    "If the minor reaches 18 years of age (sui juris) during the reporting period, prepare for final discharge under F.S. 744.527.",
+    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)), and file an updated Disaster Plan (Administrative Order 2024-025).",
+    "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the minor's assets.",
     'Confirm the guardian address on file with the Clerk matches the address on this plan.',
     'If you are a professional or public guardian, confirm the corresponding registration is current.',
     'This general checklist is not derived from an official Clerk\'s Review form for this document — confirm current local filing requirements before submitting.',

@@ -715,6 +715,12 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
     await expect(page.locator(`[data-form-path="${providerPath}"]`)).toBeFocused();
 
     await page.evaluate(() => (window as any).navigate('/p10'));
+    // Milestone 35-3: attorney fields are pro se-safe -- required only once
+    // the filer has started entering one (see validatePlanInitial()). Seed
+    // just the bar number so the conditional block fires and attorney_name
+    // still resolves a real error/path, without claiming attorney fields are
+    // unconditionally required for a blank filing (they no longer are).
+    await page.evaluate(() => { (window as any).D.attorney_bar = '123456'; });
     const attorneyPath = await page.evaluate(() => {
       const raw = (window as any).validatePlanInitial();
       const structured = (window as any).adaptValidationErrors(raw, 'planInitial');
@@ -730,15 +736,39 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
     await createWard(page, 'Plan Minor Preparer Attorney Ward', 'planMinor');
     await page.evaluate(() => (window as any).navigate('/p7'));
 
-    const paths = await page.evaluate(() => {
-      const raw = (window as any).validatePlanMinor();
-      const structured = (window as any).adaptValidationErrors(raw, 'planMinor');
-      return {
-        preparerName: structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Preparer name'))?.path,
-        attorneyName: structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney name'))?.path,
-        attorneySignatureDate: structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney signature date'))?.path,
-      };
+    // Milestone 35-3: preparer and attorney are optional roles, required only
+    // once the filer has started entering one -- each pair's own "required"
+    // check (preparer_name, attorney_name, attorney_signatureDate) is also
+    // exactly what activates its conditional block (see validatePlanMinor()),
+    // so a single D state can't leave a target field blank while also using
+    // it to activate the block. Seed the *other* field in each pair instead:
+    // preparer_signatureDate activates the preparer block while preparer_name
+    // stays blank (and vice versa for attorney_name/attorney_signatureDate),
+    // still proving each field genuinely resolves its own real error/path
+    // rather than claiming either role is unconditionally required.
+    const preparerName = await page.evaluate(() => {
+      const w = window as any;
+      w.D.preparer_signatureDate = '2027-01-15';
+      const structured = w.adaptValidationErrors(w.validatePlanMinor(), 'planMinor');
+      const path = structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Preparer name'))?.path;
+      w.D.preparer_signatureDate = '';
+      return path;
     });
+    const attorneyName = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_signatureDate = '2027-01-15';
+      const structured = w.adaptValidationErrors(w.validatePlanMinor(), 'planMinor');
+      const path = structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney name'))?.path;
+      w.D.attorney_signatureDate = '';
+      return path;
+    });
+    const attorneySignatureDate = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_name = 'John Attorney';
+      const structured = w.adaptValidationErrors(w.validatePlanMinor(), 'planMinor');
+      return structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney signature date'))?.path;
+    });
+    const paths = { preparerName, attorneyName, attorneySignatureDate };
     expect(paths).toEqual({ preparerName: 'preparer_name', attorneyName: 'attorney_name', attorneySignatureDate: 'attorney_signatureDate' });
 
     await page.evaluate((p) => (window as any).focusFieldByPath('/p7', p), paths.attorneySignatureDate);

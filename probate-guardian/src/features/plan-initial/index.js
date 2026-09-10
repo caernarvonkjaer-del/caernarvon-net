@@ -158,7 +158,7 @@ function pagePlanICover(){
   const d=window.D;
   return `<div class="schedule-page">
     <h1>Initial Guardianship Plan — Cover</h1>
-    <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan. Per Administrative Order 2019-005, a separate Disaster Plan must also be filed — the app does not produce that document.</div>
+    <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan. Per Administrative Order 2024-025, a separate Disaster Plan must also be filed — the app does not produce that document.</div>
     <div class="row g-3 mb-3 cover-info-row">
       <div class="col-md-6">
         <div class="summary-box">
@@ -584,8 +584,15 @@ export function validatePlanInitial(){
   req(g0.phone,'Signatures — Guardian phone is required');
   req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
 
-  req(d.attorney_name,'Attorney Certification — Attorney name is required');
-  req(d.attorney_signatureDate,'Attorney Certification — Attorney signature date is required');
+  // Milestone 35-3: pro se filers and Guardian Advocates (Ch. 393, exempt from
+  // attorney representation under Fla. Prob. R. 5.030) must be able to export
+  // without an attorney. Attorney fields are required only once the filer has
+  // started entering one -- matching validatePlanAnnual/validatePlanSimplified's
+  // existing non-blocking handling of the same fields.
+  if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate){
+    req(d.attorney_name,'Attorney Certification — Attorney name is required');
+    req(d.attorney_signatureDate,'Attorney Certification — Attorney signature date is required');
+  }
 
   return errs;
 }

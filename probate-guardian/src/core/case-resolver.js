@@ -25,10 +25,13 @@ export function resolveCase(caseId) {
   return caseFile.cases.find(c => c.id === caseId) || null;
 }
 
-/** planMinor alone stores its case number as `ucn`; every other type uses `caseNumber`. */
+/** planMinor alone stores its case number as `ucn`, with `ref` (a distinct, independently-editable
+ * secondary reference) as fallback -- matching dashboard/view-model.js's own `caseNumber || ucn || ref`
+ * precedence -- so a filing that only has `ref` filled in still resolves to a case. Every other type uses
+ * `caseNumber`. */
 export function caseNumberOf(ward) {
   if (!ward) return '';
-  return ward.inventoryType === 'planMinor' ? (ward.ucn || '') : (ward.caseNumber || '');
+  return ward.inventoryType === 'planMinor' ? (ward.ucn || ward.ref || '') : (ward.caseNumber || '');
 }
 
 export function countyOf(ward) {

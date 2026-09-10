@@ -319,9 +319,9 @@ const HELP_CONTENT = {
     <p>A <strong>Plan</strong> reports on the ward as a person — where they live, the care they receive, their abilities. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
     <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">When It's Due</div>
-    <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.632) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
+    <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.362(1)) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
     <div class="help-section-title">Don't Forget the Disaster Plan</div>
-    <p>Per Administrative Order 2019-005, a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately.</p>
+    <p>Per Administrative Order 2024-025, a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately.</p>
     <div class="help-section-title">Activities of Daily Living</div>
     <p>Rate all fifteen honestly. These become the baseline the court compares future Annual Plans against.</p>
     <div class="help-section-title">Advance Directives</div>
@@ -567,7 +567,7 @@ const WALKTHROUGH_PLAN_INITIAL=[
   {element:'[data-page="/p6"]',title:'7. Daily Living',text:'Rate the ward on fifteen activities of daily living — this tells the court how much support the ward needs.',position:'right'},
   {element:'[data-page="/p8"]',title:'8. Advance Directives',text:'Either confirm there are no pre-existing advance directives (and how you verified that), or record the ones the ward executed, including whether a court has suspended or revoked them.',position:'right'},
   {element:'[data-page="/p9"]',title:'9. Signatures',text:'Each guardian signs under penalty of perjury, certifying the plan reflects the ward\'s wishes and rights. Up to four guardians can sign.',position:'right'},
-  {element:'[data-page="/print"]',title:'10. Review & File',text:'Print Preview lists anything still missing and adds a readiness check. Remember: a separate Disaster Plan must also be filed alongside this report per Administrative Order 2019-005. Export as PDF; this form has no Excel version.',position:'left'},
+  {element:'[data-page="/print"]',title:'10. Review & File',text:'Print Preview lists anything still missing and adds a readiness check. Remember: a separate Disaster Plan must also be filed alongside this report per Administrative Order 2024-025. Export as PDF; this form has no Excel version.',position:'left'},
 ];
 
 const WALKTHROUGH_PLAN_MINOR=[

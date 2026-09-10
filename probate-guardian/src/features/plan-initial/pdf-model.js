@@ -55,7 +55,7 @@ export function buildPlanInitialModel(D, options) {
     blocks: [
       {
         type: 'notice',
-        text: 'Pursuant to F.S. 744.632, this report with original signatures is due within 60 days after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.',
+        text: 'Pursuant to F.S. 744.362(1), this report with original signatures is due within 60 days after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.',
       },
       {
         type: 'key-value-grid',
