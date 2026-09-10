@@ -539,12 +539,12 @@ function renderTriageQueue(projectedWards) {
       <div class="dashboard-triage-cell" data-label="Status">${workflowStatusControl(row)}</div>
       <div class="dashboard-triage-deadline dashboard-triage-cell" data-label="Deadline">${deadlineDisplay(row)}</div>
       <div class="dashboard-triage-contacts dashboard-triage-cell" data-label="Contacts">${contacts}</div>
-      <div class="dashboard-triage-assignee dashboard-triage-cell" data-label="Assignment">${assignmentControl(row)}</div>
+      <div class="dashboard-triage-assignee dashboard-triage-cell" data-label="Judge">${assignmentControl(row)}</div>
       ${triageActionButtons(row)}
     </article>`;
   }).join('');
   return `<div class="dashboard-triage-queue">
-    <div class="dashboard-triage-header"><span>Ward</span><span>Form Type</span><span>Case #</span><span>Status</span><span>Deadline</span><span>Contacts</span><span>Assignment</span><span>Actions</span></div>
+    <div class="dashboard-triage-header"><span>Ward</span><span>Form Type</span><span>Case #</span><span>Status</span><span>Deadline</span><span>Contacts</span><span>Judge</span><span>Actions</span></div>
     ${body || '<div class="dashboard-empty-inline">No filings match these filters.</div>'}
   </div>`;
 }

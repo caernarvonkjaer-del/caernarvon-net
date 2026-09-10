@@ -168,3 +168,39 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
   await page.evaluate(() => (window as any).navigate('/p2'));
   await expect(page.locator('.entry-card')).toHaveCount(0);
 });
+
+test('multi-column labels retain their required marker and natural height', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Plan Label Layout Ward', 'planAnnual');
+  await page.evaluate(() => {
+    (window as any).D.q1Residences = [{}];
+    (window as any).navigate('/p2');
+  });
+  await page.setViewportSize({ width: 800, height: 900 });
+
+  const label = page.locator('.entry-card .row.g-2 .form-label').filter({ hasText: 'Facility name' });
+  await expect(label).toBeVisible();
+  const layout = await label.evaluate((element) => {
+    const marker = element.querySelector('.req') as HTMLElement;
+    const range = document.createRange();
+    range.selectNodeContents(element.firstChild!);
+    const textLines = [...range.getClientRects()];
+    const lastTextLine = textLines.at(-1)!;
+    return {
+      markerTop: marker.getBoundingClientRect().top,
+      lastTextBottom: lastTextLine.bottom,
+      minHeight: getComputedStyle(element).minHeight,
+    };
+  });
+  expect(layout.markerTop).toBeLessThanOrEqual(layout.lastTextBottom + 1);
+  expect(layout.minHeight).toBe('0px');
+
+  await createWard(page, 'Inventory Affix Ward', 'guardian');
+  await page.evaluate(() => {
+    (window as any).D.scheduleB1 = [{ institutionName: 'Bank One', fullAssetAmount: 1000 }];
+    (window as any).navigate('/b1');
+  });
+  const affix = page.locator('.input-group-text').first();
+  await expect(affix).toBeVisible();
+  expect(await affix.evaluate((element) => getComputedStyle(element).fontSize)).toBe('14.08px');
+});

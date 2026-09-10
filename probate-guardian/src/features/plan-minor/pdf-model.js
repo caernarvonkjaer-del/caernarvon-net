@@ -5,6 +5,7 @@
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { triStateText } from '../../core/form/form-contract.js';
 
 export function buildPlanMinorModel(D) {
   const d = D || {};
@@ -59,6 +60,9 @@ export function buildPlanMinorModel(D) {
           { label: 'Case #', value: d.ref || '' },
           { label: 'For the period', value: `${fmtDate(d.periodFrom)} to ${fmtDate(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
+          { label: 'Amended Form?', value: triStateText(d.amendedForm) },
+          { label: 'Professional Guardian?', value: triStateText(d.professionalGuardian) },
+          { label: 'Public Guardian?', value: triStateText(d.publicGuardian) },
         ],
       },
       {
@@ -222,7 +226,9 @@ export function buildPlanMinorModel(D) {
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
       makeSigBlock('Guardian', g[0] || {}, guardianFields(g[0] || {})),
-      makeSigBlock('Co-Guardian', g[1] || {}, guardianFields(g[1] || {})),
+      ...(g[1] && [g[1].name, g[1].signatureDate, g[1].tin, g[1].phone, g[1].mailingStreet, g[1].mailingCityStateZip].some(Boolean)
+        ? [makeSigBlock('Co-Guardian', g[1], guardianFields(g[1]))]
+        : []),
     ],
   });
 

@@ -4,6 +4,8 @@ import { freshStartNoPassword } from './support/target';
 const VIEWPORTS = [
   { name: 'desktop', width: 1920, height: 1080 },
   { name: 'laptop', width: 1366, height: 768 },
+  { name: 'triage-dead-zone-wide', width: 1280, height: 800 },
+  { name: 'triage-dead-zone-narrow', width: 1150, height: 800 },
   { name: 'tablet', width: 768, height: 1024 },
   { name: 'mobile', width: 390, height: 844 },
 ];
@@ -76,6 +78,12 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
         };
       });
       expect(overflow, `${theme} ${viewport.name} dashboard overflow`).toEqual({ page: false, escaped: [] });
+      await expect(main.locator('.dashboard-triage-assignee').first(), `${theme} ${viewport.name} judge is visible`).toBeVisible();
+      await expect(main.locator('.dashboard-triage-actions').first(), `${theme} ${viewport.name} actions are visible`).toBeVisible();
+      const queueOverflow = await main.locator('.dashboard-triage-queue').evaluate((queue) => queue.scrollWidth <= queue.clientWidth + 1);
+      expect(queueOverflow, `${theme} ${viewport.name} triage queue does not scroll horizontally`).toBe(true);
+      await expect(main.locator('.dashboard-triage-header')).toContainText('Judge');
+      await expect(main.locator('.dashboard-triage-header')).not.toContainText('Assignment');
       await page.screenshot({
         path: testInfo.outputPath(`milestone-15-${theme}-${viewport.name}-${viewport.width}x${viewport.height}.png`),
         fullPage: false,

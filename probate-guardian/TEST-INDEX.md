@@ -10,7 +10,9 @@ the same commit.
 | File | Covers |
 |---|---|
 | amended-form-line.spec.js | "Amended Form?" prints the filer's actual answer; Annual-family identity and single-source footer subtitle |
+| annual-accounting-pdf-model.spec.js | Trust Accounting PDF-model table layout for percentage and currency columns |
 | case-file.spec.js | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers |
+| case-county-drift.spec.js | Case-authoritative county mismatch advisory detection |
 | circuit-lookup.spec.js | FL county → judicial circuit lookup helpers |
 | combobox-controller.spec.js | ComboboxController widget behavior |
 | dashboard-preferences.spec.js | Dashboard preference load/save/reset |
@@ -25,6 +27,8 @@ the same commit.
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output |
 | live-region.spec.js | ARIA live-region announcer helper |
 | plan-annual-pdf-model.spec.js | Plan Annual PDF model output (incl. attorney email fields) |
+| plan-co-guardian-pdf.spec.js | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians |
+| plan-tristate.spec.js | Schema-aware legacy Plan Yes/No migration and tri-state PDF rendering |
 | pdf-address-format.spec.js | Canonical PDF address composition and punctuation/whitespace cleanup |
 | prune-cards.spec.js | Blank-card/blank-schedule-entry detection for pruning |
 | router.spec.js | Navigation router services (navigate, registerRoute, getCurrentPage) |
@@ -70,6 +74,7 @@ the same commit.
 | party-write-through.spec.ts | Milestone 4: party write-through (planInitial + annual) |
 | pdf-accessibility-and-signatures.spec.ts | Non-raster PDF generation, signatures & bookmarks |
 | pdf-fonts-and-xmp.spec.ts | Embedded fonts & PDF/UA-1 XMP metadata |
+| pdf-evidence-lab.spec.ts | Milestone 34-1D source/PDF.js/canvas/final-packet and Trust preview evidence capture |
 | pdf-form-specific.spec.ts | PDF accessibility: accounting & inventory filing-specific coverage |
 | pdf-preview-viewer.spec.ts | Shared PDF preview/print viewer; M34-1A export-gating parity across all 7 features; M34-1B finalized-PDF pager refresh |
 | pdf-structure-tags.spec.ts | Tagged structure, StructTreeRoot & marked content |

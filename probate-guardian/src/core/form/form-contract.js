@@ -41,6 +41,16 @@ export function yesNoText(value, blank = 'No') {
   return blank;
 }
 
+// Use for plan questions where the court form requires an explicit answer.
+// Legacy false values remain "No"; only absent/null values remain unanswered.
+export function triStateText(value) {
+  return yesNoText(value, '');
+}
+
+export function isTriStateAnswer(value) {
+  return triStateText(value) !== '';
+}
+
 /**
  * Non-destructive storage sanitizer for identifier-like and free-form text.
  * Strips only unsafe control characters and trims leading/trailing whitespace.

@@ -139,7 +139,7 @@ export function dateInputHTML({
   id = '',
   section = '',
   className = 'form-control',
-  hint = 'Use MM/DD/YYYY or YYYY-MM-DD',
+  hint = 'Use MM/DD/YYYY',
 }) {
   const inputId = id || `date_${path.replace(/[^a-zA-Z0-9_]/g, '_')}`;
   const reqMark = required ? '<span class="req">*</span>' : '';

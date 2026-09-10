@@ -57,7 +57,7 @@
 .dashboard-family-row.dashboard-priority-archived,.dashboard-triage-row.dashboard-priority-archived,.ward-card.dashboard-priority-archived{border-left-color:var(--ink-4);background:var(--surface-2);}
 
 /* ── Triage Worklist & Queue ──────────────────────────── */
-.dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);}
+.dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);container-type:inline-size;container-name:triage-queue;}
 .dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(110px,1fr) minmax(90px,.8fr) minmax(110px,.8fr) minmax(90px,.7fr) minmax(130px,1fr) minmax(100px,.7fr) minmax(190px,1.2fr);align-items:center;gap:.7rem;padding:.65rem .75rem;}
 .dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.67rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-triage-row{border-bottom:1px solid var(--line-2);font-size:.8rem;}
@@ -229,7 +229,7 @@
 .inventory-convert-banner .btn{flex-shrink:0;width:auto;}
 
 /* ── Dashboard Responsive Breakpoints ─────────────────── */
-@media (max-width:1100px){
+@container triage-queue (max-width:1040px){
   .dashboard-triage-header{display:none;}
   .dashboard-triage-row{grid-template-columns:1fr 1fr;min-width:0;}
   .dashboard-triage-cell:before{content:attr(data-label);display:block;margin-bottom:.24rem;color:var(--ink-4);font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
@@ -249,6 +249,8 @@
   .dashboard-onboarding{align-items:flex-start;flex-direction:column;}
   .dashboard-family-row{grid-template-columns:auto minmax(0,1fr) auto;}
   .dashboard-family-row .btn{display:none;}
+}
+@container triage-queue (max-width:540px){
   .dashboard-triage-row{grid-template-columns:1fr;}
   .dashboard-triage-actions{grid-column:auto;}
 }

@@ -167,6 +167,7 @@ export function emptyDataSimplified() {
 // "Confirmed facts" / recurring Problem 1).
 export function emptyDataPlanSimplified() {
   return {
+    planTriStateSchemaVersion:1,
     wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'Pinellas',
     q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
     q5SocialServices:'', q6Interaction:'',
@@ -198,6 +199,7 @@ export function emptyDataPlanAnnual() {
   const adls = {}; window.PLAN_ADLS.forEach(([k]) => adls[k] = '');
   const benefits = {}; window.PLAN_BENEFITS.forEach(([k]) => benefits[k] = { eligible: false, appliedFor: false });
   return {
+    planTriStateSchemaVersion:1,
     // Cover
     wardName:'', caseNumber:'', ssn:'', county:'Pinellas',
     periodFrom:'', periodTo:'', gid:'', guardian:'', attorney:'',
@@ -281,6 +283,7 @@ export function emptyDataPlanAnnual() {
 export function emptyDataPlanInitial() {
   const adls = {}; window.INITIAL_ADLS.forEach(([k]) => adls[k] = '');
   return {
+    planTriStateSchemaVersion:1,
     // Cover
     wardName:'', caseNumber:'', county:'Pinellas', periodFrom:'', periodTo:'',
     inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
@@ -357,6 +360,7 @@ export function emptyDataPlanInitial() {
 // read directly (Milestone 6 plan's "Confirmed facts").
 export function emptyDataPlanMinor() {
   return {
+    planTriStateSchemaVersion:1,
     // Cover
     wardName:'', county:'Pinellas', ucn:'', ref:'', periodFrom:'', periodTo:'',
     amendedForm:'', amendedVersion:'', professionalGuardian:'', publicGuardian:'',

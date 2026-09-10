@@ -156,7 +156,7 @@ export function renderFormField({
         ? `<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${lockIcon}</button></div>`
         : inputHtml;
 
-  const hintText = hint || (isDate ? 'Use MM/DD/YYYY or YYYY-MM-DD' : '');
+  const hintText = hint || (isDate ? 'Use MM/DD/YYYY' : '');
   const hintHtml = hintText
     ? `<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">${esc(hintText)}</div>`
     : '';

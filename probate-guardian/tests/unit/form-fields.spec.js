@@ -72,7 +72,8 @@ describe('renderFormField', () => {
     expect(html).toContain('data-field-kind="date"');
     expect(html).toContain('data-field-format-policy="normalize"');
     expect(html).toContain('aria-describedby=');
-    expect(html).toContain('Use MM/DD/YYYY or YYYY-MM-DD');
+    expect(html).toContain('Use MM/DD/YYYY');
+    expect(html).not.toContain('YYYY-MM-DD');
   });
 
   it('renders money input wrapped with dollar sign input-group', () => {

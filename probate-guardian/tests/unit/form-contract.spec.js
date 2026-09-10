@@ -9,6 +9,8 @@ import {
   commitPendingFieldValues,
   getFieldDraftIssueMessages,
   yesNoText,
+  triStateText,
+  isTriStateAnswer,
 } from '../../src/core/form/form-contract.js';
 
 function createMockInput(initial = {}) {
@@ -264,5 +266,15 @@ describe('form-contract', () => {
       expect(yesNoText('maybe')).toBe('No');
       expect(yesNoText(0)).toBe('No');
     });
+  });
+
+  it('triStateText preserves unanswered distinct from explicit No', () => {
+    expect(triStateText(undefined)).toBe('');
+    expect(triStateText(null)).toBe('');
+    expect(triStateText(false)).toBe('No');
+    expect(triStateText(true)).toBe('Yes');
+    expect(isTriStateAnswer(undefined)).toBe(false);
+    expect(isTriStateAnswer(false)).toBe(true);
+    expect(isTriStateAnswer('No')).toBe(true);
   });
 });

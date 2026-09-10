@@ -864,7 +864,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
       title: 'Trust Accounts Details',
       headers: ['#', 'Name of Trust', 'Trustee', 'Account #', 'After GID?', "Ward's %", "Ward's Amount"],
       rows: trustRows,
-      colWidths: [6, 26, 20, 16, 12, 10, 10],
+      // Keep the final percentage and currency columns wide enough for their
+      // distinct headers and a normal dollar amount. The prior 10/10 split
+      // collided the headers and wrapped `$49,075.00` in the Trust PDF.
+      colWidths: [5, 25, 18, 14, 10, 12, 16],
       colAlign: ['center', 'left', 'left', 'left', 'center', 'right', 'right'],
     });
   }

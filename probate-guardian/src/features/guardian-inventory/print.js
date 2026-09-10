@@ -22,6 +22,7 @@ import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-e
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -36,11 +37,13 @@ const {
 
 export function pagePrint(capOver){
   window.queueAllScheduleDocValidations?.();
-  const errors=prepareFilingOutput(window.D,()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)]).messages;
+  const preflight=prepareFilingOutput(window.D,()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)]);
+  const errors=preflight.messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   const errPanel=errors.length?validationPanel(errors):'';
   const warnPanel=supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:'';
+  const advisoryPanel=renderOutputAdvisories(preflight.advisories);
   const canExport=errors.length===0;
   const canExportExcel=canExport&&capOver.length===0;
   return `<div>
@@ -58,6 +61,7 @@ export function pagePrint(capOver){
   </div>
 
   ${errPanel}
+  ${advisoryPanel}
   ${warnPanel}
   ${capOver.length?excelCapacityPanel(capOver):''}
   <div id="print-doc-container"></div>

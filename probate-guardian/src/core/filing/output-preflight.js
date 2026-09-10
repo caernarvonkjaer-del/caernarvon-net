@@ -3,6 +3,7 @@
 // date input.
 
 import { resolveFilingDescriptor } from './filing-descriptor.js';
+import { countyDriftWarnings } from '../case-county-drift.js';
 import {
   commitStoredDateDrafts,
   formatDraftIssues,
@@ -29,11 +30,13 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     ...resolvedBaseIssues.map(messageFor),
     ...formatDraftIssues(structuredIssues),
   ];
+  const advisories = countyDriftWarnings(target);
 
   return {
     descriptor: identity.descriptor,
     structuredIssues,
     messages,
+    advisories,
     canExport: messages.length === 0,
   };
 }

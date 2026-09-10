@@ -16,6 +16,7 @@ import {
 } from './launch-preferences.js';
 import { clearSessionRestoreCache } from './recovery-cache.js';
 import { getCaseFile, getTemplateCache } from '../state.js';
+import { migratePlanTriState } from '../filing/plan-tristate.js';
 
 export const CASE_FILE_FORMAT_VERSION = 1;
 
@@ -641,7 +642,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
       }
       let ward;
       try {
-        ward = sanitizeObjectData(await decryptJSONWithKey(await f.async('string'), key));
+        ward = migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(await f.async('string'), key)));
       } catch (err) {
         throw new Error(`The file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
       }

@@ -6,6 +6,7 @@
 // non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { triStateText } from '../../core/form/form-contract.js';
 
 export function buildPlanSimplifiedModel(D) {
   const d = D || {};
@@ -92,7 +93,7 @@ export function buildPlanSimplifiedModel(D) {
       {
         type: 'key-value-grid',
         items: [
-          { label: 'Q7. Should any of the rights previously delegated to the guardian advocate(s)/guardian(s) be restored to the ward at this time?', value: d.q7RestoreRights || '' },
+          { label: 'Q7. Should any of the rights previously delegated to the guardian advocate(s)/guardian(s) be restored to the ward at this time?', value: triStateText(d.q7RestoreRights) },
           ...(d.q7RestoreRights === 'Yes' ? [{ label: 'Explanation', value: d.q7RestoreExplain || '' }] : []),
         ],
       },
@@ -102,7 +103,7 @@ export function buildPlanSimplifiedModel(D) {
       {
         type: 'key-value-grid',
         items: [
-          { label: 'Q9. As the Guardian Advocate(s)/Guardian(s) have you received any payments, goods, or services for work or care provided on behalf of the ward?', value: d.q9Remuneration || '' },
+          { label: 'Q9. As the Guardian Advocate(s)/Guardian(s) have you received any payments, goods, or services for work or care provided on behalf of the ward?', value: triStateText(d.q9Remuneration) },
           ...(d.q9Remuneration === 'Yes' ? [{ label: 'Explanation', value: d.q9RemunerationExplain || '' }] : []),
         ],
       },

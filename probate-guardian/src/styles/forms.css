@@ -15,10 +15,12 @@
 .form-check-label{font-size:.88rem;color:var(--ink-2);}
 .form-check-label-sm{font-size:.85rem;}
 .form-text{color:var(--ink-3);font-size:.8rem;}
-.req{color:var(--danger-text);font-weight:700;margin-left:.15rem;}
+.req{color:var(--danger-text);font-weight:700;white-space:nowrap;}
+.req:before{content:'\00a0';}
 
 /* ── Form Controls & Inputs ───────────────────────────── */
 .form-control,.form-select,.custom-select{font-size:.88rem;border-color:var(--field);border-radius:var(--r-sm);color:var(--ink);background-color:var(--surface);transition:border-color .15s,box-shadow .15s;}
+.input-group-text{font-size:.88rem;line-height:1.5;border-color:var(--field);}
 .form-control:focus,.form-select:focus,.custom-select:focus{border-color:var(--brand-text);box-shadow:0 0 0 3px rgba(130,0,36,.14);}
 .form-control::placeholder{color:var(--ink-4);opacity:1;}
 .custom-select{display:block;width:100%;padding:.42rem .75rem;font-size:.88rem;border:1px solid var(--field);border-radius:var(--r-sm);background-color:var(--surface);}
@@ -174,7 +176,7 @@
 .plan-sig-block h3{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-4);margin:0 0 .75rem;}
 .plan-check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.1rem .9rem;}
 
-/* Reserving two lines of label height keeps a row's inputs level */
-.row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"] .form-label{
-  min-height:2.15em;display:inline-flex;align-items:flex-start;flex-wrap:wrap;
-}
+/* Labels keep their natural height. Bootstrap stretches sibling columns to the
+   tallest real label in a row; a fixed two-line reservation added dead space
+   and let an isolated required marker wrap onto its own line. */
+.row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"] .form-label{display:block;}

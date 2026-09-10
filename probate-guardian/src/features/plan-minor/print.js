@@ -19,6 +19,7 @@ import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-e
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -54,7 +55,8 @@ export function planReadinessChecksMinor(){
 
 export function pagePrintPlanMinor(){
   window.queueAllScheduleDocValidations?.();
-  const errors=prepareFilingOutput(window.D,()=>[...validatePlanMinor(), ...getSupplementalFilingIssues(window.D)]).messages;
+  const preflight=prepareFilingOutput(window.D,()=>[...validatePlanMinor(), ...getSupplementalFilingIssues(window.D)]);
+  const errors=preflight.messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   return `<div>
@@ -70,6 +72,7 @@ export function pagePrintPlanMinor(){
       </div>
     </div>
     ${errors.length?validationPanel(errors):''}
+    ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
     ${planReadinessPanel()}
     <div id="print-doc-container"></div>

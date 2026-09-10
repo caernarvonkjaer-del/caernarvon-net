@@ -5,6 +5,7 @@
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { triStateText } from '../../core/form/form-contract.js';
 
 export function buildPlanInitialModel(D, options) {
   const d = D || {};
@@ -384,8 +385,8 @@ export function buildPlanInitialModel(D, options) {
         type: 'checklist',
         title: 'F. Examining Committee Recommendations Incorporated?',
         items: [
-          { checked: d.committeeIncorporated === 'Yes', label: 'Yes' },
-          { checked: d.committeeIncorporated === 'No', label: 'No' },
+          { checked: triStateText(d.committeeIncorporated) === 'Yes', label: 'Yes' },
+          { checked: triStateText(d.committeeIncorporated) === 'No', label: 'No' },
         ],
       },
       ...explainNotice(d.committeeExplain),
@@ -458,7 +459,11 @@ export function buildPlanInitialModel(D, options) {
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
       makeSigBlock('Guardian', g[0] || {}),
-      makeSigBlock('Co-Guardian', g[1] || {}),
+      // Optional co-guardian placeholders are editor affordances, not signed
+      // filing content. Render only a meaningfully populated second signer.
+      ...(g[1] && [g[1].name, g[1].signatureDate, g[1].ssn, g[1].phone, g[1].street, g[1].cityStateZip].some(Boolean)
+        ? [makeSigBlock('Co-Guardian', g[1])]
+        : []),
     ],
   });
 

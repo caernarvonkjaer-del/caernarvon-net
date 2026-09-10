@@ -2,6 +2,7 @@
 import { encryptJSON, decryptJSONWithKey, deriveAndVerifyKey, getSecurityMode, getCryptoKey, setCryptoKey } from './crypto.js';
 import { loadAppState, saveAppState } from './launch-preferences.js';
 import { getCaseFile, setAppState } from '../state.js';
+import { migratePlanTriState } from '../filing/plan-tristate.js';
 
 export const SESSION_CACHE_DB = 'pg-session-cache';
 export const SESSION_CACHE_STORE = 'snapshot';
@@ -143,7 +144,7 @@ export async function checkSessionRestoreCacheAtLaunch() {
     }
     const restoredWards = [];
     for (const w of cache.wards) {
-      const ward = sanitizeObjectData(await decryptJSONWithKey(w.enc, key));
+      const ward = migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(w.enc, key)));
       if (ward && ward.wardId) restoredWards.push(ward);
     }
     if (!restoredWards.length) throw new Error('Archive contained no readable data.');

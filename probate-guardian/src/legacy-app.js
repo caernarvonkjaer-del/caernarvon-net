@@ -1742,6 +1742,13 @@ function initPrintPager(options={}){
   const existing=document.getElementById('pv-bar');
   if(existing){
     if(!options.refresh)return;
+    const existingActions=existing.querySelector('.pv-shell-actions');
+    const printHeading=document.querySelector('.schedule-page > h1, .schedule-page h1');
+    if(existingActions&&printHeading){
+      existingActions.classList.remove('pv-shell-actions');
+      existingActions.classList.add('form-header-actions');
+      printHeading.appendChild(existingActions);
+    }
     existing.remove();
   }
   if(!(_pvSelection==='all'||(parseInt(_pvSelection,10)>=1&&parseInt(_pvSelection,10)<=pages.length))){
@@ -1753,18 +1760,33 @@ function initPrintPager(options={}){
   bar.id='pv-bar';
   bar.className='pv-bar no-print';
   bar.innerHTML=`
-    <span class="pv-label">Viewing</span>
-    <select id="pv-select" class="form-select form-select-sm pv-select"
-            aria-label="Choose which page of the filing to preview"
-            data-form-change="preview-page">
-      ${opts}
-      <option value="all">All pages (continuous)</option>
-    </select>
-    <span class="pv-count" id="pv-count"></span>
-    <span class="pv-nav">
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-prev" data-form-action="preview-step" data-step="-1">← Prev</button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
+    <span class="pv-viewing"><span class="pv-label">Viewing</span>
+      <select id="pv-select" class="form-select form-select-sm pv-select"
+              aria-label="Choose which page of the filing to preview"
+              data-form-change="preview-page">
+        ${opts}
+        <option value="all">All pages (continuous)</option>
+      </select>
+    </span>
+    <span class="pv-navigation"><span class="pv-count" id="pv-count"></span>
+      <span class="pv-nav">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-prev" data-form-action="preview-step" data-step="-1">← Prev</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
+      </span>
     </span>`;
+  const headerActions=document.querySelector('.schedule-page > h1 .form-header-actions, .schedule-page h1 .form-header-actions');
+  if(headerActions){
+    headerActions.classList.remove('form-header-actions');
+    headerActions.classList.add('pv-shell-actions');
+    bar.appendChild(headerActions);
+  }else{
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const helpOpen=typeof window.isHelpPanelOpen==='function'&&window.isHelpPanelOpen();
+    const shellActions=document.createElement('div');
+    shellActions.className='pv-shell-actions';
+    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
+    bar.appendChild(shellActions);
+  }
   cont.parentNode.insertBefore(bar,cont);
   pvApply();
 }
@@ -6897,7 +6919,7 @@ function inpS(id,label,val,req=false,type='text'){
   const ariaDesc=isDate?` aria-describedby="${hintId}"`:'';
   const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode}${placeholder} value="${String(cleanedValue).replace(/"/g,'&quot;')}" data-form-path="${esc(id)}" data-field-path="${esc(id)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-form-format="${format}"`:''}${syncWard}${syncGuardian}${ariaDesc}>`;
   const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
-  const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY or YYYY-MM-DD</div>`:'';
+  const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div>`:'';
   return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}${hintHtml}</div>`;
 }
 // Filtered-autocomplete text input for county fields, using the same

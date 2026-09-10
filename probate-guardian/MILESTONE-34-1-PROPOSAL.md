@@ -167,7 +167,27 @@ requires explicit permission before that suite.
 
 ### Milestone 34-1C: Filing & Form Semantics
 
-**Status: Proposal only, not started.**
+**Status: Items 8–11 implemented; focused verification complete, full
+regression verification pending.**
+
+Implemented the optional co-guardian signature contract across all four Plan
+PDF models, retaining the required primary guardian and suppressing empty
+editor placeholders. Added unit coverage for absent and populated optional
+co-guardians in Annual, Initial, Minor, and Simplified Plans.
+
+Plan yes/no values now preserve an unanswered value separately from explicit
+legacy `false`/`No` through the shared tri-state contract. Plan validators
+require unanswered binary answers where applicable, while PDFs render an
+explicit `No` rather than silently blanking it. Multi-choice questions retain
+their explicit `None` option and conflicting-selection validation. A per-ward
+schema version migrates legacy Plan booleans during both `.sav` import and
+session recovery, leaving omitted values unanswered instead of silently
+converting them to `No`.
+
+County is authoritative at `caseFile.cases[].county`; filing and attorney
+county differences produce non-blocking output advisories without overwriting
+stored filing data. The same advisory is rendered on all seven filing print
+surfaces.
 
 8. **Suppress empty optional co-guardian/signature blocks.**
    Render optional co-guardian blocks only when the corresponding party has
@@ -209,7 +229,11 @@ requires explicit permission before that suite.
 
 ### Milestone 34-1D: Supplemental PDF Evidence Lab
 
-**Status: Proposal only, not started.**
+**Status: Complete.** The evidence harness classified the supplied Trust
+packet: its supplemental page rendered cleanly, toolbar/page count matched
+the finalized 14-page PDF, and a distinct Trust-details table collision was
+reproduced visually and corrected with a redacted regression. See
+`docs/m34-1d-evidence-lab.md`.
 
 12. **Reproduce and classify garbled supplemental-document output.**
     Preserve the original affected PDF as a fixture if available, then compare
@@ -233,11 +257,11 @@ requires explicit permission before that suite.
 
 ### Milestone 34-1E: Dashboard and Presentation Polish
 
-**Status: Proposal only, not started.** Reported during this same review
-round but orthogonal to 34-1A-D — these are UI/CSS presentation bugs in the
-dashboard, print-preview chrome, and shared form-entry layout, not filing
-validation or PDF-content correctness, so they carry no dependency on the
-other four sub-milestones (see sequencing note below).
+**Status: Complete.** The dashboard triage queue responds to its rendered
+width, the preview pager groups navigation and shell actions on one row, date
+hints consistently use MM/DD/YYYY, and shared form CSS protects required
+markers while aligning input-group sizing. Focused unit and Edge coverage
+documents those contracts.
 
 15. **Fix the dashboard triage table's responsive dead zone (~1101px-1380px)
     with container queries.** Root cause, confirmed directly against the
