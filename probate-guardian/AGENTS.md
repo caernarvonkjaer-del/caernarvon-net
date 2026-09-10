@@ -34,8 +34,12 @@ $env:PG_BROWSER='edge'
 npx.cmd playwright test --reporter=list
 ```
 
-For any changes to the data schema, update this document on an ongoing basis:
-`probate-guardian-data-model.csv`.
+For any change to a filing's persisted data shape (a new field, a renamed
+field, a changed collection's min/max/row shape, a new derived calculation),
+update the matching row(s) in `probate-guardian-data-model.csv` in the same
+commit, following the canonical column contract in
+`DATA-MODEL-REMEDIATION-PLAN.md`. Run `npm run verify:data-model` before
+committing.
 
 ## Test index
 
