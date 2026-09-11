@@ -415,6 +415,7 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
       gid: '2025-01-01',
       county: 'Pinellas',
       filingType: d.filingType || 'Annual',
+      amendedForm: 'No',
       startingBalance: '10000',
       bondAmount: '5000',
       bondingCompany: 'Sample Bonding Co.',
@@ -427,6 +428,11 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
       // every schedule.
       reconcileExplanation: 'Test fixture: Schedule D listings intentionally left blank.',
     });
+    d.trusts = (d.trusts || []).map((trust: Record<string, unknown>, index: number) => ({
+      ...trust,
+      hasTrust: index === 0 ? 'No' : '',
+      createdAfterGID: '',
+    }));
     d.guardians[0] = { ...d.guardians[0], name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
     d.preparer = { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
     Object.assign(d, {

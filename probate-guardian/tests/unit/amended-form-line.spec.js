@@ -9,7 +9,8 @@ import { buildVerifiedInventoryModel } from '../../src/features/guardian-invento
 // the old `d.amendedForm ? 'Yes' : 'No'` was wrong in all three states. All
 // three renderers now go through yesNoText(); these cases pin that down on the
 // finished model rather than on the helper, so a future edit that reintroduces
-// an inline ternary at a call site fails here.
+// an inline ternary at a call site fails here. Milestone 37-5 keeps an
+// unanswered value blank rather than silently treating it as No.
 
 function amendedLine(model) {
   for (const section of model.sections) {
@@ -48,8 +49,8 @@ describe('"Amended Form?" prints the filer\'s actual answer', () => {
         expect(amendedLine(build('No'))).toBe('No');
       });
 
-      test('prints No on an untouched filing', () => {
-        expect(amendedLine(build(''))).toBe('No');
+      test('leaves an unanswered filing blank rather than inventing No', () => {
+        expect(amendedLine(build(''))).toBe('');
       });
 
       test('prints Yes only when the filer answered Yes', () => {

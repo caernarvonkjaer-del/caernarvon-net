@@ -200,7 +200,7 @@ function pagePlanSQuestions(){
       txtP('q6Interaction','Interaction with others',d.q6Interaction,4,true,'If the ward is not able to interact, state why.'))}
 
     ${q(7,'Should any of the rights previously delegated to the guardian advocate(s) / guardian(s) be restored to the ward at this time?',
-      yesNoCheckboxS('q7RestoreRights','Restore any rights?',d.q7RestoreRights,true)
+      yesNoCheckboxS('q7RestoreRights','Restore any rights?',d.q7RestoreRights,true,'/p2')
       +(d.q7RestoreRights==='Yes'?`<div class="plan-conditional">${txtP('q7RestoreExplain','Identify the specific right(s) and explain why they should be restored',d.q7RestoreExplain,4,true,'For example: to consent to medical treatment, to determine residence, to manage property.')}</div>`:''))}
 
     ${q(8,'Since the guardianship was established or the last annual report, the following was executed by or on behalf of the ward:',
@@ -215,7 +215,7 @@ function pagePlanSQuestions(){
 
     ${q(9,'As the guardian advocate(s) / guardian(s), have you received any payments, goods, or services for work or care provided on behalf of the ward?',
       `<div class="plan-field-hint">This does <strong>not</strong> include payments, goods, or services received from a government benefits program such as Social Security, Medicaid, Medicare, or the Agency for Persons with Disabilities.</div>`
-      +yesNoCheckboxS('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,true)
+      +yesNoCheckboxS('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,true,'/p2')
       +(d.q9Remuneration==='Yes'?`<div class="plan-conditional">${txtP('q9RemunerationExplain','Please explain',d.q9RemunerationExplain,3,true)}</div>`:''))}
 
     ${renderScheduleDocsSection('planQuestions')}

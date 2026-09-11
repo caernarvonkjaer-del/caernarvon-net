@@ -58,7 +58,7 @@ export async function doSaveExcel(){
       setCell(p1,'D18',inv.typeOfGuardianship||'');
       setCell(p1,'F4',fmtD(inv.gid));
       setCell(p1,'G2',inv.county||'');
-      setCell(p1,'I5',inv.amendedForm||'No');
+      setCell(p1,'I5',inv.amendedForm||'');
       const t=calcTotals();
       setCell(p1,'H20',n(inv.startingBalance));
       setCell(p1,'G23',n(inv.interestIncome));
@@ -210,7 +210,7 @@ export async function importExcel(input){
         window.D.typeOfGuardianship=gc('D18');
         window.D.gid=gc('F4').substring(0,10);
         window.D.county=gc('G2')||'Pinellas';
-        window.D.amendedForm=gc('I5')||'No';
+        window.D.amendedForm=gc('I5');
         window.D.startingBalance=gc('H20');
         window.D.interestIncome=gc('G23');
         window.D.depositsSettlement=gc('G24');

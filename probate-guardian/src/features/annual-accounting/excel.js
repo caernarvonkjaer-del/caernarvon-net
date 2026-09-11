@@ -225,7 +225,7 @@ export async function doSaveExcel(){
     const sd1=workbook.getWorksheet('SCH D-1 CASH p1');
     if(sd1){
       inv.schD1.forEach((r,i)=>{
-        if(i<11){const row=25+(i*3); setCell(sd1,`C${row}`,r.description||''); setCell(sd1,`E${row}`,r.accountNo||''); setCell(sd1,`F${row}`,r.restricted||'No'); setCell(sd1,`G${row}`,r.type||''); setCell(sd1,`H${row}`,nv(r.fullAmount)); setCell(sd1,`I${row}`,pv(r.wardPct));}
+        if(i<11){const row=25+(i*3); setCell(sd1,`C${row}`,r.description||''); setCell(sd1,`E${row}`,r.accountNo||''); setCell(sd1,`F${row}`,r.restricted||''); setCell(sd1,`G${row}`,r.type||''); setCell(sd1,`H${row}`,nv(r.fullAmount)); setCell(sd1,`I${row}`,pv(r.wardPct));}
       });
     }
 
@@ -233,7 +233,7 @@ export async function doSaveExcel(){
     const sd2=workbook.getWorksheet('SCH D-2 REAL ESTATE p1');
     if(sd2){
       inv.schD2.forEach((r,i)=>{
-        if(i<8){const row=20+(i*4); setCell(sd2,`C${row}`,r.description||''); setCell(sd2,`E${row}`,r.residence||'No'); setCell(sd2,`F${row}`,r.income||'No'); setCell(sd2,`G${row}`,nv(r.fullValue)); setCell(sd2,`H${row}`,pv(r.wardPct)); setCell(sd2,`I${row}`,nv(r.carryingValue));}
+        if(i<8){const row=20+(i*4); setCell(sd2,`C${row}`,r.description||''); setCell(sd2,`E${row}`,r.residence||''); setCell(sd2,`F${row}`,r.income||''); setCell(sd2,`G${row}`,nv(r.fullValue)); setCell(sd2,`H${row}`,pv(r.wardPct)); setCell(sd2,`I${row}`,nv(r.carryingValue));}
       });
     }
 
@@ -249,7 +249,7 @@ export async function doSaveExcel(){
     const sd4=workbook.getWorksheet('SCH D-4 INTANGIBLE p1 ');
     if(sd4){
       inv.schD4.forEach((r,i)=>{
-        if(i<9){const row=18+(i*4); setCell(sd4,`C${row}`,r.description||''); setCell(sd4,`F${row}`,r.restricted||'No'); setCell(sd4,`G${row}`,nv(r.fullAmount)); setCell(sd4,`H${row}`,pv(r.wardPct)); setCell(sd4,`I${row}`,nv(r.carryingValue));}
+        if(i<9){const row=18+(i*4); setCell(sd4,`C${row}`,r.description||''); setCell(sd4,`F${row}`,r.restricted||''); setCell(sd4,`G${row}`,nv(r.fullAmount)); setCell(sd4,`H${row}`,pv(r.wardPct)); setCell(sd4,`I${row}`,nv(r.carryingValue));}
       });
     }
 
@@ -302,11 +302,11 @@ export async function doSaveExcel(){
     // (confirmed via its Yes/No data-validation list attached to H10/20/30).
     const p8=workbook.getWorksheet('PART VIII');
     if(p8){
-      setCell(p8,'D8',(inv.trusts.some(t=>t.hasTrust==='Yes'))?'Yes':'No');
+      setCell(p8,'D8',inv.trusts?.[0]?.hasTrust||'');
       const trustRows=[[10,12,13,14,15,16,17,18],[20,22,23,24,25,26,27,28],[30,32,33,34,35,36,37,38]];
       inv.trusts.forEach((t,i)=>{
         const rows=trustRows[i];
-        setCell(p8,`H${rows[0]}`,t.createdAfterGID||'No');
+        setCell(p8,`H${rows[0]}`,t.createdAfterGID||'');
         setCell(p8,`D${rows[1]}`,t.name||'');
         setCell(p8,`D${rows[2]}`,t.trustee||'');
         setCell(p8,`D${rows[3]}`,t.accountNo||'');
@@ -440,7 +440,7 @@ export async function importExcel(input){
         D.guardian=gcStr(p1,'D20');
         D.attorney=gcStr(p1,'D21');
         D.typeOfGuardianship=gcStr(p1,'D22');
-        D.amendedForm=gcStr(p1,'J6')||'No';
+        D.amendedForm=gcStr(p1,'J6');
         D.filingType=gcStr(p1,'H4')||'Annual';
         window.setAccountingFilingType?.(D.filingType);
         D.county=gcStr(p1,'D23')||'Pinellas';
@@ -547,7 +547,7 @@ export async function importExcel(input){
       if(sd1)for(let i=0;i<11;i++){
         const row=25+(i*3);
         const desc=gcStr(sd1,`C${row}`),amt=gcNum(sd1,`H${row}`);
-        if(rowHasData(desc,amt))D.schD1.push({description:desc,accountNo:gcStr(sd1,`E${row}`),restricted:gcStr(sd1,`F${row}`)||'No',type:gcStr(sd1,`G${row}`),fullAmount:amt,wardPct:gcPct(sd1,`I${row}`),restrictedAmt:''});
+        if(rowHasData(desc,amt))D.schD1.push({description:desc,accountNo:gcStr(sd1,`E${row}`),restricted:gcStr(sd1,`F${row}`),type:gcStr(sd1,`G${row}`),fullAmount:amt,wardPct:gcPct(sd1,`I${row}`),restrictedAmt:''});
       }
 
       // Schedule D-2 — real estate
@@ -556,7 +556,7 @@ export async function importExcel(input){
       if(sd2)for(let i=0;i<8;i++){
         const row=20+(i*4);
         const desc=gcStr(sd2,`C${row}`),val=gcNum(sd2,`G${row}`);
-        if(rowHasData(desc,val))D.schD2.push({description:desc,residence:gcStr(sd2,`E${row}`)||'No',income:gcStr(sd2,`F${row}`)||'No',fullValue:val,wardPct:gcPct(sd2,`H${row}`),carryingValue:gcNum(sd2,`I${row}`),wardValue:''});
+        if(rowHasData(desc,val))D.schD2.push({description:desc,residence:gcStr(sd2,`E${row}`),income:gcStr(sd2,`F${row}`),fullValue:val,wardPct:gcPct(sd2,`H${row}`),carryingValue:gcNum(sd2,`I${row}`),wardValue:''});
       }
 
       // Schedule D-3 — personal property
@@ -574,7 +574,7 @@ export async function importExcel(input){
       if(sd4)for(let i=0;i<9;i++){
         const row=18+(i*4);
         const desc=gcStr(sd4,`C${row}`),amt=gcNum(sd4,`G${row}`);
-        if(rowHasData(desc,amt))D.schD4.push({description:desc,restricted:gcStr(sd4,`F${row}`)||'No',fullAmount:amt,wardPct:gcPct(sd4,`H${row}`),carryingValue:gcNum(sd4,`I${row}`),wardValue:'',restrictedAmt:''});
+        if(rowHasData(desc,amt))D.schD4.push({description:desc,restricted:gcStr(sd4,`F${row}`),fullAmount:amt,wardPct:gcPct(sd4,`H${row}`),carryingValue:gcNum(sd4,`I${row}`),wardValue:'',restrictedAmt:''});
       }
 
       // Schedule D-5 — mortgages / liabilities
@@ -613,11 +613,11 @@ export async function importExcel(input){
       const p8=workbook.getWorksheet('PART VIII');
       if(p8){
         const trustRows=[[10,12,13,14,15,16,17,18],[20,22,23,24,25,26,27,28],[30,32,33,34,35,36,37,38]];
-        const hasAnyTrust=gcStr(p8,'D8')==='Yes';
+        const hasTrust=gcStr(p8,'D8');
         D.trusts=trustRows.map(rows=>{
           const [gidRow,nameRow,trusteeRow,acctRow,dateRow,typeRow,pctRow,amtRow]=rows;
           return {
-            hasTrust:hasAnyTrust?'Yes':'No', createdAfterGID:gcStr(p8,`H${gidRow}`)||'No',
+            hasTrust, createdAfterGID:gcStr(p8,`H${gidRow}`),
             name:gcStr(p8,`D${nameRow}`), trustee:gcStr(p8,`D${trusteeRow}`),
             accountNo:gcStr(p8,`D${acctRow}`), dateCreated:gcDate(p8,`D${dateRow}`),
             trustType:gcStr(p8,`D${typeRow}`), wardPct:gcStr(p8,`D${pctRow}`), wardAmount:gcNum(p8,`D${amtRow}`)

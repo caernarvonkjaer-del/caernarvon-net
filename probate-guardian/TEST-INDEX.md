@@ -54,6 +54,7 @@ the same commit.
 | ward-carryover.spec.js               | Milestone 36-7: Ward carryover sources and multi-plan mapping fidelity                                                    |
 | ward-lock.spec.js                    | Ward lock acquire/release/current-lock services                                                                           |
 | xlsx-extract.spec.js                 | Milestone 33 Phase 3.1: xlsx-extract helper (reads support/xlsx-extract.ts)                                               |
+| yes-no-radio-migration.spec.js      | Milestone 37-5: shared explicit Yes/No radio renderer and bespoke checkbox/select migration guards                       |
 
 ## tests/unit/support (helpers, not runnable specs)
 

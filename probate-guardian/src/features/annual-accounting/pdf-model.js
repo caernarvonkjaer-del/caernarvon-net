@@ -86,7 +86,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
     { label: 'County', value: county },
     { label: 'Filing Type', value: descriptor.displayName },
-    { label: 'Amended Form?', value: yesNoText(d.amendedForm) },
+    { label: 'Amended Form?', value: yesNoText(d.amendedForm, '') },
   ];
   if (d.relatedCaseNumbers) {
     caseInfoItems.push({ label: 'Related Case Numbers', value: d.relatedCaseNumbers });
@@ -553,7 +553,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       String(i + 1),
       r.description || '',
       r.accountNo || '',
-      r.restricted || 'No',
+      r.restricted || '',
       r.type || '',
       fmtS(r.fullAmount),
       r.wardPct ? `${r.wardPct}%` : '100%',
@@ -592,8 +592,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
     return [
       String(i + 1),
       r.description || '',
-      r.residence || 'No',
-      r.income || 'No',
+      r.residence || '',
+      r.income || '',
       fmtS(r.fullValue),
       r.wardPct ? `${r.wardPct}%` : '100%',
       fmtS(cv),
@@ -671,7 +671,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     return [
       String(i + 1),
       r.description || '',
-      r.restricted || 'No',
+      r.restricted || '',
       fmtS(r.fullAmount),
       r.wardPct ? `${r.wardPct}%` : '100%',
       fmtS(cv),
@@ -837,14 +837,14 @@ export function buildAnnualAccountingModel(D, options = {}) {
   }
 
   const trustList = (d.trusts || []).filter((t) => t && t.name);
-  const hasAnyTrust = (d.trusts && d.trusts.some((t) => t && t.hasTrust === 'Yes')) || trustList.length > 0;
+  const hasAnyTrust = d.trusts?.[0]?.hasTrust === 'Yes';
   const trustBlocks = [
     {
       type: 'key-value-grid',
       tag: 'Table',
       title: 'Trust Disclosure',
       items: [
-        { label: 'Does the Ward have one or more Trusts?', value: hasAnyTrust ? 'Yes' : 'No' },
+        { label: 'Does the Ward have one or more Trusts?', value: yesNoText(d.trusts?.[0]?.hasTrust, '') },
       ],
     },
   ];
@@ -854,7 +854,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       t.name || '',
       t.trustee || '',
       t.accountNo || '',
-      t.createdAfterGID || 'No',
+      t.createdAfterGID || '',
       t.wardPct ? `${t.wardPct}%` : '100%',
       fmtS(t.wardAmount),
     ]);

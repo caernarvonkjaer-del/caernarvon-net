@@ -129,7 +129,7 @@ export function emptyDataSimplified() {
   return {
     wardName:'', ssn:'', caseNumber:'', periodFrom:'', periodTo:'',
     attorney:'', guardian:'', typeOfGuardianship:'', county:'Pinellas',
-    amendedForm:'No', gid:'',
+    amendedForm:'', gid:'',
     eligDepository:'', eligOnlyTransactions:'',
     startingBalance:'',
     interestIncome:'',
@@ -167,7 +167,7 @@ export function emptyDataSimplified() {
 // "Confirmed facts" / recurring Problem 1).
 export function emptyDataPlanSimplified() {
   return {
-    planTriStateSchemaVersion:1,
+    planTriStateSchemaVersion:2,
     wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'Pinellas',
     q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
     q5SocialServices:'', q6Interaction:'',
@@ -199,7 +199,7 @@ export function emptyDataPlanAnnual() {
   const adls = {}; window.PLAN_ADLS.forEach(([k]) => adls[k] = '');
   const benefits = {}; window.PLAN_BENEFITS.forEach(([k]) => benefits[k] = { eligible: false, appliedFor: false });
   return {
-    planTriStateSchemaVersion:1,
+    planTriStateSchemaVersion:2,
     // Cover
     wardName:'', caseNumber:'', ssn:'', county:'Pinellas',
     periodFrom:'', periodTo:'', gid:'', guardian:'', attorney:'',
@@ -287,7 +287,7 @@ export function emptyDataPlanAnnual() {
 export function emptyDataPlanInitial() {
   const adls = {}; window.INITIAL_ADLS.forEach(([k]) => adls[k] = '');
   return {
-    planTriStateSchemaVersion:1,
+    planTriStateSchemaVersion:2,
     // Cover
     wardName:'', caseNumber:'', county:'Pinellas', periodFrom:'', periodTo:'',
     inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
@@ -366,7 +366,7 @@ export function emptyDataPlanInitial() {
 // read directly (Milestone 6 plan's "Confirmed facts").
 export function emptyDataPlanMinor() {
   return {
-    planTriStateSchemaVersion:1,
+    planTriStateSchemaVersion:2,
     // Cover
     wardName:'', county:'Pinellas', ucn:'', ref:'', periodFrom:'', periodTo:'',
     amendedForm:'', amendedVersion:'', professionalGuardian:'', publicGuardian:'',
@@ -411,7 +411,7 @@ export function emptyDataAnnual() {
     // Part I
     wardName:'', caseNumber:'', gid:'', periodFrom:'', periodTo:'',
     guardian:'', attorney:'', typeOfGuardianship:'', county:'Pinellas',
-    amendedForm:'No', filingType:'Annual', relatedCaseNumbers:'',
+    amendedForm:'', filingType:'Annual', relatedCaseNumbers:'',
     // Part II
     startingBalance:'',
     // Part III – guardians (up to 3)
@@ -437,9 +437,9 @@ export function emptyDataAnnual() {
     reconcileExplanation:'',
     // Part VIII – Trusts (up to 3)
     trusts:[
-      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
-      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
-      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''}
+      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
+      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
+      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''}
     ],
     // Part IX – Bond
     guardianRelationship:'Professional Guardian',

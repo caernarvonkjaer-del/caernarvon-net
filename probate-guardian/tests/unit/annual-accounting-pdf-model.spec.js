@@ -18,7 +18,7 @@ describe('Trust Accounting PDF model', () => {
     expect(details.colWidths.reduce((total, width) => total + width, 0)).toBe(100);
   });
 
-  test('Part VIII outputs No for trust disclosure when ward has no trusts', () => {
+  test('Part VIII leaves an unanswered trust disclosure blank', () => {
     const model = buildAnnualAccountingModel({
       inventoryType: 'annual',
       trusts: [],
@@ -28,7 +28,7 @@ describe('Trust Accounting PDF model', () => {
     const kv = part8.blocks.find((block) => block.type === 'key-value-grid');
     expect(kv).toBeDefined();
     expect(kv.items).toEqual([
-      { label: 'Does the Ward have one or more Trusts?', value: 'No' },
+      { label: 'Does the Ward have one or more Trusts?', value: '' },
     ]);
   });
 

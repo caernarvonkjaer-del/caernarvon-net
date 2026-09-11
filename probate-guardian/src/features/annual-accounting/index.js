@@ -37,7 +37,7 @@ const {
   formatAccountNumber, formatBarNumber, formatCaseNumber, formatCheckNumber,
   finalizeCaseNumber, applyZipLimit, validateSecurityInput,
   sanitizeDecimal, sanitizeNonNegativeDecimal,
-  toggleSsnReveal, tooltip, countyAutocompleteHTML, yesNoCheckboxD,
+  toggleSsnReveal, tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
   guardianHasAnyData, checkExcelCapacity,
@@ -899,7 +899,7 @@ function pageSchD1Annual(){
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schD1[${i}].accountNo=this.value`,true)}</div>
-          <div class="col-md-2"><label class="form-label" for="schD1_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD1_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD1.${i}.restricted" data-annual-value="yes-no"></div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD1_restricted_${i}`,'Restricted?',r.restricted,`schD1.${i}.restricted`,true)}${tooltip('restricted')}</div>
           <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
@@ -935,8 +935,8 @@ function pageSchD2Annual(){
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD2',i,'/schd2')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
-          <div class="col-md-2"><label class="form-label" for="schD2_residence_${i}">Personal Residence? <span class="req">*</span>${tooltip('personal_residence')}</label><input class="form-check-input" type="checkbox" id="schD2_residence_${i}" ${r.residence==='Yes'?'checked':''} data-annual-path="schD2.${i}.residence" data-annual-value="yes-no"></div>
-          <div class="col-md-2"><label class="form-label" for="schD2_income_${i}">Income Property? <span class="req">*</span>${tooltip('income_property')}</label><input class="form-check-input" type="checkbox" id="schD2_income_${i}" ${r.income==='Yes'?'checked':''} data-annual-path="schD2.${i}.income" data-annual-value="yes-no"></div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_residence_${i}`,'Personal Residence?',r.residence,`schD2.${i}.residence`,true)}${tooltip('personal_residence')}</div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_income_${i}`,'Income Property?',r.income,`schD2.${i}.income`,true)}${tooltip('income_property')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -1007,7 +1007,7 @@ function pageSchD4Annual(){
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD4',i,'/schd4')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
-          <div class="col-md-2"><label class="form-label" for="schD4_restricted_${i}">Restricted? <span class="req">*</span>${tooltip('restricted')}</label><input class="form-check-input" type="checkbox" id="schD4_restricted_${i}" ${r.restricted==='Yes'?'checked':''} data-annual-path="schD4.${i}.restricted" data-annual-value="yes-no"></div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD4_restricted_${i}`,'Restricted?',r.restricted,`schD4.${i}.restricted`,true)}${tooltip('restricted')}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -1247,7 +1247,7 @@ function pagePart8Annual(){
   <h1>Part VIII — Trust Information</h1>
   <div class="schedule-instructions">If a trust was created after the Guardianship Inception Date, you MUST file a separate trust accounting for that trust.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-6">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts&&d.trusts[0]&&d.trusts[0].hasTrust||'No','trusts.0.hasTrust','/p8')}</div>
+    <div class="col-md-6">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts?.[0]?.hasTrust||'','trusts.0.hasTrust','/p8')}</div>
   </div>
   ${hasTrusts ? `<div class="row g-3 schedule-entry-grid">${cards}</div>` : scheduleEmptyHTMLAnnual('a-p8', 'trusts', null, 'I certify there are no trusts')}
   ${pageNavAnnual('/p67','/p9')}
@@ -1382,6 +1382,7 @@ export function validateAnnual(){
   req(d.gid,'Part I — Guardianship Inception Date (GID)');
   req(d.county,'Part I — County');
   req(d.filingType,'Part I — Filing Type');
+  req(d.amendedForm,'Part I — Amended Form?');
   req(d.startingBalance,'Part II — Starting Balance');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Part I',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
@@ -1460,6 +1461,12 @@ export function validateAnnual(){
   });
   checkRows(d.schF1,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-1');
   checkRows(d.schF2,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-2');
+  req(d.trusts?.[0]?.hasTrust,'Part VIII — Does the Ward have one or more Trusts?');
+  if(d.trusts?.[0]?.hasTrust==='Yes'){
+    (d.trusts||[]).filter(t=>Object.entries(t||{}).some(([key,value])=>key!=='hasTrust'&&value!==''&&value!=null)).forEach((t,i)=>{
+      req(t.createdAfterGID,`Part VIII — Trust ${i+1} — Was created after the GID?`);
+    });
+  }
 
   // Reconciliation. Net assets are derived two independent ways: Line 20
   // (starting balance + income − disbursements ± gains/losses) and Line 30

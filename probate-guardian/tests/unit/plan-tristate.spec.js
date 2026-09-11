@@ -27,6 +27,19 @@ describe('Plan tri-state migration', () => {
     });
     expect(ward.q7RestoreRights).toBe(false);
   });
+
+  test('migrates legacy directive boolean values without changing omitted values', () => {
+    const initial = migratePlanTriState({
+      inventoryType: 'planInitial', planTriStateSchemaVersion: 1,
+      q11Directives: [{ courtRevoked: true }, {}],
+    });
+    const annual = migratePlanTriState({
+      inventoryType: 'planAnnual', planTriStateSchemaVersion: 1,
+      q10Directives: [{ courtRevoked: false }, {}],
+    });
+    expect(initial.q11Directives).toEqual([{ courtRevoked: 'Yes' }, {}]);
+    expect(annual.q10Directives).toEqual([{ courtRevoked: 'No' }, {}]);
+  });
 });
 
 describe('Plan tri-state PDF output', () => {

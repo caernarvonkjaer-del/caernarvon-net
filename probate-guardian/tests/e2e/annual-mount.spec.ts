@@ -176,10 +176,9 @@ test.describe('annual-accounting feature module', () => {
 
     // Navigate to Part VIII
     await page.evaluate(() => (window as any).navigate('/p8'));
-    const trustCheckbox = page.locator('#main-content input[type="checkbox"][data-annual-path="trusts.0.hasTrust"], #main-content input[type="checkbox"][data-form-path="trusts.0.hasTrust"]');
-    await expect(trustCheckbox).toBeVisible();
-    await trustCheckbox.check();
-    await trustCheckbox.dispatchEvent('change');
+    const trustYes = page.locator('#main-content input[type="radio"][data-form-path="trusts.0.hasTrust"][value="Yes"]');
+    await expect(trustYes).toBeVisible();
+    await trustYes.check();
 
     const hasTrustVal = await page.evaluate(() => (window as any).D.trusts?.[0]?.hasTrust);
     expect(hasTrustVal).toBe('Yes');

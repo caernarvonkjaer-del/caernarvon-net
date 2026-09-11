@@ -20,7 +20,7 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 // Milestone 4 plan's "Confirmed facts" and "Design decisions").
 const {
   esc, ic, inpS, countyInputS, radioP, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup,
+  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
   formatName, formatPhone, formatSSN, formatAddress, toggleSsnReveal,
   formatDisplayDate,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
@@ -472,12 +472,7 @@ function pagePlanADirectives(){
         <div class="col-md-6"><label class="form-label">Alternate agent(s) or surrogate(s)</label><input type="text" class="form-control" value="${esc(r.alternates||'')}" data-form-path="q10Directives.${i}.alternates" data-field-path="q10Directives.${i}.alternates"></div>
         <div class="col-md-6"><label class="form-label">Relationship of agent(s) to the ward</label><input type="text" class="form-control" value="${esc(r.relationship||'')}" data-form-path="q10Directives.${i}.relationship" data-field-path="q10Directives.${i}.relationship"></div>
         <div class="col-md-6"><label class="form-label">Contact information for agent(s)</label><input type="text" class="form-control" value="${esc(r.contact||'')}" data-form-path="q10Directives.${i}.contact" data-field-path="q10Directives.${i}.contact"></div>
-        <div class="col-md-4"><label class="form-label">Has a court suspended or revoked it?</label>
-          <select class="form-select" data-form-path="q10Directives.${i}.courtRevoked" data-field-path="q10Directives.${i}.courtRevoked">
-            <option value="" ${!r.courtRevoked?'selected':''}>— select —</option>
-            <option value="No" ${r.courtRevoked==='No'?'selected':''}>No</option>
-            <option value="Yes" ${r.courtRevoked==='Yes'?'selected':''}>Yes</option>
-          </select></div>
+        <div class="col-md-4">${yesNoCheckboxS(`q10dir_${i}_revoked`,'Has a court suspended or revoked it?',r.courtRevoked,false,'/p9')}</div>
         ${r.courtRevoked==='Yes'?`
         <div class="col-md-4"><label class="form-label" for="q10_dir_${i}_orderDate">Date of order</label><input type="text" inputmode="text" class="form-control" id="q10_dir_${i}_orderDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.orderDate||''))}" data-form-path="q10Directives.${i}.orderDate" data-field-path="q10Directives.${i}.orderDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q10_dir_${i}_orderDate_hint"><div id="q10_dir_${i}_orderDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
         <div class="col-md-4"><label class="form-label">Entered in (county / state)</label><input type="text" class="form-control" value="${esc(r.orderCounty||'')}" data-form-path="q10Directives.${i}.orderCounty" data-field-path="q10Directives.${i}.orderCounty"></div>`:''}

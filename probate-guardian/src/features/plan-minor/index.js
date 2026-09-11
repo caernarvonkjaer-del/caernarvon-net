@@ -156,7 +156,7 @@ function pagePlanMCover(){
             <div class="col-12">${inpS('ref','Case #',d.ref)}</div>
             <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,true,'date')}</div>
             <div class="col-md-6">${inpS('periodTo','To',d.periodTo,true,'date')}</div>
-            <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm)}</div>
+            <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,false,'/')}</div>
             <div class="col-md-6 mt-2">${d.amendedForm==='Yes'?radioP('amendedVersion','Version',d.amendedVersion,['1st','2nd','3rd']):''}</div>
           </div>
         </div>

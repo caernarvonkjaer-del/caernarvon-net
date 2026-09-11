@@ -5138,15 +5138,15 @@ function emptyRowAnnual(type){
     case 'schB3': return {bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
     case 'schB4': return {checkNo:'',datePaid:'',category:'',payee:'',amount:''};
     case 'schC':  return {description:'',date:'',gain:'',loss:''};
-    case 'schD1': return {description:'',accountNo:'',restricted:'No',type:'',fullAmount:'',wardPct:'',restrictedAmt:''};
-    case 'schD2': return {description:'',residence:'No',income:'No',fullValue:'',wardPct:'',carryingValue:'',wardValue:''};
+    case 'schD1': return {description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''};
+    case 'schD2': return {description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''};
     case 'schD3': return {description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''};
-    case 'schD4': return {description:'',restricted:'No',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''};
+    case 'schD4': return {description:'',restricted:'',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''};
     case 'schD5': return {description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''};
     case 'schE':  return {bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''};
     case 'schF1': return {description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''};
     case 'schF2': return {description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''};
-    case 'trust': return {hasTrust:'No',createdAfterGID:'No',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''};
+    case 'trust': return {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''};
     case 'remun': return {guardian:'',type:'',amount:'',description:''};
     default: return {};
   }
@@ -6173,7 +6173,7 @@ function convertToSimplified(src,srcType,dest){
   // Annual family -> Simplified. Same ward, same period, smaller form.
   dest.periodFrom=src.periodFrom||'';
   dest.periodTo=src.periodTo||'';
-  dest.amendedForm=src.amendedForm||'No';
+  dest.amendedForm=src.amendedForm||'';
   dest.attorney_barNumber=src.attorney_bar||'';
   dest.attorney_phone=src.attorney_phone||'';
   dest.attorney_street=src.attorney_street||'';
@@ -6209,7 +6209,7 @@ function convertSimplifiedToAnnual(src,dest){
   dest.startingBalance=total!=null?String(total):'';
   dest.periodFrom=src.periodFrom||'';
   dest.periodTo=src.periodTo||'';
-  dest.amendedForm=src.amendedForm||'No';
+  dest.amendedForm=src.amendedForm||'';
   dest.attorney_bar=src.attorney_barNumber||'';
   dest.attorney_phone=src.attorney_phone||'';
   dest.attorney_street=src.attorney_street||'';
@@ -6352,7 +6352,7 @@ function resetYearlyFieldsForNewYear(data,type){
     data.certServiceDate='';
     data.certAttySignDate='';
     data.periodFrom='';data.periodTo='';
-    data.amendedForm='No';
+    data.amendedForm='';
     data.interestIncome='';data.depositsSettlement='';data.serviceCharges='';data.federalIncomeTax='';
   }else if(formEngine(type)==='annual'){
     clearDate(data.preparer);
@@ -6360,7 +6360,7 @@ function resetYearlyFieldsForNewYear(data,type){
     data.certDate='';
     data.certAttySignDate='';
     data.periodFrom='';data.periodTo='';
-    data.amendedForm='No';
+    data.amendedForm='';
     data.schA=[];data.schB1=[];data.schB2=[];data.schB3=[];data.schB4=[];
     data.schC=[];data.schE=[];data.schF1=[];data.schF2=[];
   }else if(type==='planSimplified'){
@@ -7013,31 +7013,35 @@ function chkP(id,label,checked){
     <label class="form-check-label" for="${id}">${label}</label>
   </div>`;
 }
-// Yes/No fields that were a 2-option select or radio pair, now a single
-// checkbox -- but unlike chkP() above, these keep writing the literal
-// 'Yes'/'No' STRING the rest of the app already reads everywhere (required-
-// field checks, d.field==='Yes' conditionals gating other rendered
-// content, PDF/Excel export cells expecting that exact text) rather than
-// switching to a JS boolean, so nothing downstream needs to change to
-// match. `writeExpr` takes a literal "%V%" placeholder standing in for
-// whichever of 'Yes'/'No' the checkbox resolves to; the two wrappers below
-// cover this app's two setter conventions (a fixed D['id']=, or a custom
-// setter string) the same way countyInputS()/countyInputD() do for county.
-function yesNoCheckboxHTML(id,label,val,path,req,route){
-  return `<div class="form-check plan-check">
-    <input class="form-check-input" type="checkbox" id="${id}" ${val==='Yes'?'checked':''} data-form-path="${esc(path)}" data-form-value="yes-no"${route?` data-form-route="${esc(route)}"`:''}>
-    <label class="form-check-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
-  </div>`;
+// Explicit binary answers retain the literal 'Yes'/'No' string contract used
+// by validators and every output format. Unlike the former checkbox, a radio
+// pair has a real unanswered state: neither option is selected and the model
+// remains ''. `binding` permits Annual Accounting's isolated event contract
+// without teaching its schedule controls to use the general form listener.
+function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form'){
+  const safeId=String(id||path||'yes_no').replace(/[^A-Za-z0-9_-]/g,'_');
+  const groupId=`yesno_${safeId}`;
+  const pathAttr=binding==='annual'?'data-annual-path':'data-form-path';
+  const routeAttr=route?` data-form-route="${esc(route)}"`:'';
+  return `<fieldset class="plan-yes-no mb-2" data-yes-no-group="${esc(path)}">
+    <legend class="form-label mb-1">${esc(label)}${req?'<span class="req">*</span>':''}</legend>
+    <div class="plan-radio-row">
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_yes" value="Yes" ${val==='Yes'?'checked':''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_yes">Yes</label></div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_no" value="No" ${val==='No'?'checked':''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_no">No</label></div>
+    </div>
+  </fieldset>`;
 }
-function yesNoCheckboxS(id,label,val,req=false){
-  return yesNoCheckboxHTML(id,label,val,id,req);
+function yesNoCheckboxS(id,label,val,req=false,route=''){
+  return yesNoRadioHTML(id,label,val,id,req,route);
 }
 function yesNoCheckboxD(label,val,setter,reqOrRoute=false,explicitRoute=''){
-  const id='chk_'+Math.random().toString(36).slice(2,9);
   const path=!setter?'':(!setter.includes('=')?setter:((setter.match(/D(?:\[['"]([^'"]+)['"]\]|\.([\w.[\]]+))\s*=/)||[]).slice(1).find(Boolean)||''));
   const route=typeof reqOrRoute==='string'&&reqOrRoute.startsWith('/')?reqOrRoute:(explicitRoute||(setter.match(/navigate\(['"]([^'"]+)['"]\)/)||[])[1]||'');
   const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
-  return yesNoCheckboxHTML(id,label,val,path,req,route);
+  return yesNoRadioHTML(path||label,label,val,path,req,route);
+}
+function yesNoRadioAnnualHTML(id,label,val,path,req=false){
+  return yesNoRadioHTML(id,label,val,path,req,'','annual');
 }
 
 // Inline radio group. Also used later for the Annual/Initial plans' 3-way
@@ -7463,10 +7467,10 @@ const BLANK_SCHEDULE_ENTRY = {
   schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
   schB4:()=>({checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
   schC:()=>({description:'',date:'',gain:'',loss:''}),
-  schD1:()=>({description:'',accountNo:'',restricted:'No',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
-  schD2:()=>({description:'',residence:'No',income:'No',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
+  schD1:()=>({description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
+  schD2:()=>({description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
   schD3:()=>({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
-  schD4:()=>({description:'',restricted:'No',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
+  schD4:()=>({description:'',restricted:'',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
   schD5:()=>({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
   schE:()=>({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
   schF1:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
