@@ -23,6 +23,7 @@ import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.j
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
+import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -37,27 +38,44 @@ export function planReadinessChecksInitial(){
   const provs=(d.q9Providers||[]).filter(r=>r&&r.name);
   const adls=d.adls||{};
   const directives=(d.q11Directives||[]).filter(r=>r&&(r.title||r.dateSigned||r.signedBy));
+  // Milestone 37-3: stable `id` on every item (never rendered --
+  // planReadinessPanel() only reads .label/.ok), same as Plan Simplified's
+  // pilot (tests/unit/plan-simplified-parity.spec.js). cover.guardianNames,
+  // plan.q6q7, plan.q11needs, and signatures.certifications are new: none
+  // had any readiness item before this milestone despite being required by
+  // validatePlanInitial() below. cover.wardResidence and plan.q10bcd are
+  // existing items whose predicate was incomplete (missing
+  // residenceCityStateZip and the "assistive devices currently used"
+  // question respectively) -- extended in place rather than split, since
+  // each is already the validator's own combined section (residence; "10B-D.
+  // Disabilities & Devices"). See tests/unit/plan-initial-parity.spec.js.
   const auto=[
-    {label:'Ward name, case number and county are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.county)},
-    {label:'Guardianship Inception Date and date Letters were signed are stated',ok:has(d.inceptionDate)&&has(d.lettersSignedDate)},
-    {label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
-    {label:'Guardian address, phone and SSN/EIN provided',ok:has(g0.street)&&has(g0.phone)&&has(g0.ssn)},
-    {label:"Ward's current living arrangement and address stated",ok:has(d.wardLiving)&&has(d.residenceAddress)},
-    {label:'Question 2 — best-suited residential setting selected',ok:has(d.q2Setting)},
-    {label:'Question 3 — medical service provisions selected',ok:!!(d.q3MedPrimary||d.q3MedDentist||d.q3MedOphthalmologist||d.q3MedSpecialist||d.q3MedPT||d.q3MedST||d.q3MedOT||d.q3MedWardDecides||d.q3MedOther)},
-    {label:'Question 4 — mental health service provision selected',ok:has(d.q4Mental)},
-    {label:'Question 5 — personal care provision selected',ok:has(d.q5Personal)},
-    {label:`Question 9 — examining providers listed (${provs.length})`,ok:provs.length>0},
-    {label:`Question 10A — all fifteen activities of daily living rated`,ok:INITIAL_ADLS.every(([k])=>has(adls[k]))},
-    {label:'Question 10B/C — mental and physical disabilities answered',ok:!!((d.mentalAlzheimers||d.mentalAutism||d.mentalClosedHeadInjury||d.mentalDementia||d.mentalDepression||d.mentalDevelopmental||d.mentalSubstance||d.mentalSchizophrenia||d.mentalOther)&&(d.physMobility||d.physBlindness||d.physDeafness||d.physDiabetic||d.physParkinsons||d.physArthritis||d.physOther))},
-    {label:'Question 11 — advance directives answered (none, or executed directives listed)',ok:!!d.q11NoDirectives!==!!d.q11Executed},
-    {label:'Question 10F — examining committee recommendation question answered',ok:has(d.committeeIncorporated)},
-    {label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_bar||d.attorney_signatureDate)||(has(d.attorney_name)&&has(d.attorney_signatureDate))},
+    {id:'cover.wardCaseCounty',label:'Ward name, case number and county are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.county)},
+    {id:'cover.dates',label:'Guardianship Inception Date and date Letters were signed are stated',ok:has(d.inceptionDate)&&has(d.lettersSignedDate)},
+    {id:'cover.guardianNames',label:"Guardian name(s) are on the plan",ok:has(d.guardianNames)},
+    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
+    {id:'signatures.guardian1.contact',label:'Guardian address, phone and SSN/EIN provided',ok:has(g0.street)&&has(g0.phone)&&has(g0.ssn)},
+    {id:'cover.wardResidence',label:"Ward's current living arrangement and address, including city/state/ZIP, are stated",ok:has(d.wardLiving)&&has(d.residenceAddress)&&has(d.residenceCityStateZip)},
+    {id:'plan.q2',label:'Question 2 — best-suited residential setting selected',ok:has(d.q2Setting)},
+    {id:'plan.q3',label:'Question 3 — medical service provisions selected',ok:!!(d.q3MedPrimary||d.q3MedDentist||d.q3MedOphthalmologist||d.q3MedSpecialist||d.q3MedPT||d.q3MedST||d.q3MedOT||d.q3MedWardDecides||d.q3MedOther)},
+    {id:'plan.q4',label:'Question 4 — mental health service provision selected',ok:has(d.q4Mental)},
+    {id:'plan.q5',label:'Question 5 — personal care provision selected',ok:has(d.q5Personal)},
+    {id:'plan.q6q7',label:'Question 6 — socialization/recreation option selected',ok:!!(d.q6CareFacility||d.q6NursesAides||d.q6FamilyFriends||d.q6DayProgram||d.q6WardDecides||d.q6Other)},
+    {id:'plan.q9providers',label:`Question 9 — examining providers listed (${provs.length})`,ok:provs.length>0},
+    {id:'plan.q10a.adls',label:`Question 10A — all fifteen activities of daily living rated`,ok:INITIAL_ADLS.every(([k])=>has(adls[k]))},
+    {id:'plan.q10bcd',label:'Question 10B–D — mental disabilities, physical disabilities, and assistive devices currently used are answered',ok:!!((d.mentalAlzheimers||d.mentalAutism||d.mentalClosedHeadInjury||d.mentalDementia||d.mentalDepression||d.mentalDevelopmental||d.mentalSubstance||d.mentalSchizophrenia||d.mentalOther)&&(d.physMobility||d.physBlindness||d.physDeafness||d.physDiabetic||d.physParkinsons||d.physArthritis||d.physOther)&&(d.usesDentures||d.usesHearingAid||d.usesWheelchair||d.usesWalker||d.usesCrutches||d.usesProsthetics||d.usesGlasses||d.usesNone||d.usesOther))},
+    {id:'plan.q11needs',label:'Question 11 — assistive devices needed selected',ok:!!(d.needsDentures||d.needsHearingAid||d.needsWheelchair||d.needsWalker||d.needsCrutches||d.needsProsthetics||d.needsGlasses||d.needsNone||d.needsOther)},
+    {id:'plan.q11directives',label:'Question 11 — advance directives answered (none, or executed directives listed)',ok:!!d.q11NoDirectives!==!!d.q11Executed},
+    {id:'plan.q10f.committee',label:'Question 10F — examining committee recommendation question answered',ok:has(d.committeeIncorporated)},
+    {id:'signatures.certifications',label:'At least one certification statement is checked',ok:!!(d.certIncapacitatedNoCopy||d.certMinorNoCopy||d.certConsulted||d.certRecognizeRights||d.certNoRestriction||d.certProvidesCare)},
+    {id:'signatures.attorney',label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_bar||d.attorney_signatureDate)||(has(d.attorney_name)&&has(d.attorney_signatureDate))},
   ];
   const manual=[
     'File within 60 days after the Letters of Guardianship are signed (F.S. 744.362(1)).',
     "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
-    'Serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).',
+    hasSixthCircuitLocalGuidance(d.county)
+      ? 'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).'
+      : 'Serve a copy on all interested persons, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).',
     'Attach a copy of any pre-existing advance directive described in the Question 1 narrative unless already filed with the court -- advance directives need only be filed once.',
     'Non-professional guardians must complete the 8-hour education course and file proof within 4 months after appointment (F.S. 744.3145(2), (4)).',
     "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the ward's assets.",

@@ -2,13 +2,30 @@
 
 ## Status
 
-**Implemented, not yet verified by test execution.** The web-mode
+**Implemented; the added test is verified.** The web-mode
 chunk-load-failure test has been written (`tests/e2e/feature-load-failure.spec.ts`)
 and wired into `scripts/run-e2e-profile.mjs`'s `HOSTED_PARITY_SPECS`, per the
-Proposed Approach and Acceptance Criteria below. It has not yet been run
-against a fresh `dist/web` build — this document will be updated to
-"Completed" once `npm run test:e2e:web` (and the full `source` suite) are
-confirmed passing with this test included. This document holds the first
+Proposed Approach and Acceptance Criteria below. On 2026-09-10, it was run
+for real against a freshly built `dist/web` (`npm run build:web`):
+`PG_TARGET=web PG_BROWSER=chromium npx playwright test
+tests/e2e/feature-load-failure.spec.ts` passed (the `web`-mode test ran and
+passed; the existing `source`-only test correctly skipped), and
+`PG_TARGET=source PG_BROWSER=chromium npx playwright test
+tests/e2e/feature-load-failure.spec.ts` also passed (the `source`-only test
+unchanged and passing; the new `web`-mode test correctly skipped). That
+confirms the added test itself is genuine and the existing test is
+untouched, per this milestone's own Acceptance Criteria and Non-Negotiable
+#3.
+
+This was a targeted run of the one changed spec file against both targets,
+not the full suites. Milestone 37-2 originally called for a full
+`npm run test:e2e:web` (the whole `HOSTED_PARITY_SPECS` set) and a full
+`npm run test:e2e:source` (the entire `tests/e2e/` suite) before recording
+that milestone's own closeout; the requester explicitly accepted this
+narrower, single-spec-file verification in place of that fuller run
+(2026-09-10) and closed 37-2 on that basis — see
+`MILESTONE-37-PROPOSAL.md`'s 37-2 section for that record. The full-suite
+run itself has still never been performed. This document holds the first
 piece of what may grow into a small set of distribution-target-specific
 failure-mode tests; only the piece below is scoped so far.
 

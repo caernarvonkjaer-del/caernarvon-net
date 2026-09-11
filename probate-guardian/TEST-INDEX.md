@@ -19,6 +19,7 @@ the same commit.
 | circuit-lookup.spec.js               | FL county → judicial circuit lookup helpers                                                                               |
 | combobox-controller.spec.js          | ComboboxController widget behavior                                                                                        |
 | content-corrections.spec.js          | Sub-milestone 36-5: content corrections (AO removal guard, Part VIII no-trust certification, date format, clerk guidance) |
+| county-guidance.spec.js              | Milestone 37-1: hasSixthCircuitLocalGuidance() Pinellas/Pasco allow-list, case/whitespace, no blank-county default        |
 | dashboard-preferences.spec.js        | Dashboard preference load/save/reset                                                                                      |
 | dashboard-view-model.spec.js         | Dashboard priority ordering, filing contacts, ward deadline derivation                                                    |
 | date-parser.spec.js                  | Flexible date parsing, display formatting, leap-year/days-in-month helpers                                                |
@@ -32,8 +33,13 @@ the same commit.
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |
 | live-region.spec.js                  | ARIA live-region announcer helper                                                                                         |
+| plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 17 auto conditions, incl. 3 newly mapped        |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |
+| plan-initial-parity.spec.js          | Milestone 37-3: readiness-checklist/export-validator parity proof for all 19 auto conditions, incl. 6 newly mapped        |
+| plan-minor-parity.spec.js            | Milestone 37-3: readiness-checklist/export-validator parity proof for all 14 auto conditions, incl. 3 newly mapped        |
+| plan-readiness-county.spec.js        | Milestone 37-1: all four Plans certificate-of-service readiness wording gated on Pinellas/Pasco vs. other counties        |
+| plan-simplified-parity.spec.js       | Milestone 37-3 pilot: readiness-checklist/export-validator parity proof for all 13 auto conditions, incl. 4 newly mapped  |
 | plan-tristate.spec.js                | Schema-aware legacy Plan Yes/No migration and tri-state PDF rendering                                                     |
 | pdf-address-format.spec.js           | Canonical PDF address composition and punctuation/whitespace cleanup                                                      |
 | prune-cards.spec.js                  | Blank-card/blank-schedule-entry detection for pruning                                                                     |
@@ -47,6 +53,12 @@ the same commit.
 | ward-carryover.spec.js               | Milestone 36-7: Ward carryover sources and multi-plan mapping fidelity                                                    |
 | ward-lock.spec.js                    | Ward lock acquire/release/current-lock services                                                                           |
 | xlsx-extract.spec.js                 | Milestone 33 Phase 3.1: xlsx-extract helper (reads support/xlsx-extract.ts)                                               |
+
+## tests/unit/support (helpers, not runnable specs)
+
+| File                      | Purpose                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| plan-readiness-parity.js  | Milestone 37-3: withOverrides()/autoById() shared by each Plan-type parity spec    |
 
 ## tests/e2e (Playwright, `npm run test:e2e`)
 
@@ -151,7 +163,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | Category            | Files                                                                                                                                                                                                                                                                            |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | persistence         | case-file.spec.js, ward-lock.spec.js                                                                                                                                                                                                                                             |
-| form-data           | form-contract.spec.js, form-fields.spec.js, guardianship-options.spec.js, validation-adapter.spec.js, date-parser.spec.js, date-rules.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js |
+| form-data           | form-contract.spec.js, form-fields.spec.js, guardianship-options.spec.js, validation-adapter.spec.js, date-parser.spec.js, date-rules.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js, plan-simplified-parity.spec.js (planSimplified), plan-initial-parity.spec.js (planInitial), plan-annual-parity.spec.js (planAnnual), plan-minor-parity.spec.js (planMinor) |
 | pdf-export (models) | guardian-inventory-pdf-model.spec.js (guardian), plan-annual-pdf-model.spec.js (planAnnual), supplemental-pdf.spec.js (annual/finalAccounting/trustAccounting)                                                                                                                   |
 | docx-xlsx-export    | docx-engine.spec.js, excel-engine.spec.js, xlsx-extract.spec.js                                                                                                                                                                                                                  |
 | navigation          | router.spec.js, tab-state.spec.js                                                                                                                                                                                                                                                |

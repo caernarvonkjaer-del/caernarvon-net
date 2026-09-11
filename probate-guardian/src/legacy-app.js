@@ -315,13 +315,19 @@ const HELP_CONTENT = {
   },
   'plan-initial': {
     title: 'Initial Guardianship Plan Guide',
-    content: `<div class="help-section-title">Plan vs. Accounting</div>
+    // content is a function (not the plain string every other entry uses)
+    // because the Disaster Plan paragraph is Sixth Circuit (Pinellas/Pasco)
+    // local guidance -- AO 2024-025 PA/PI-CIR Section E, see
+    // core/filing/county-guidance.js -- gated on the active filing's county
+    // per Milestone 37-1. showContextualHelp() calls this at render time so
+    // it stays current across a county change or a filing switch.
+    content: () => `<div class="help-section-title">Plan vs. Accounting</div>
     <p>A <strong>Plan</strong> reports on the ward as a person — where they live, the care they receive, their abilities. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
     <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">When It's Due</div>
     <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.362(1)) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
-    <div class="help-section-title">Don't Forget the Disaster Plan</div>
-    <p>Where required by local administrative order, a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately.</p>
+    ${hasSixthCircuitLocalGuidance(window.D?.county)?`<div class="help-section-title">Don't Forget the Disaster Plan</div>
+    <p>Local Sixth Judicial Circuit requirement (Administrative Order No. 2024-025 PA/PI-CIR): a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately. If the ward is a minor child residing with their parent or another relative who is serving as guardian, that guardian is exempt from this requirement.</p>`:''}
     <div class="help-section-title">Activities of Daily Living</div>
     <p>Rate all fifteen honestly. These become the baseline the court compares future Annual Plans against.</p>
     <div class="help-section-title">Advance Directives</div>
@@ -413,8 +419,9 @@ document.addEventListener('keydown',(e)=>{
 
 function showContextualHelp(){
   const content=HELP_CONTENT[currentHelpContext]||HELP_CONTENT['default'];
+  const body=typeof content.content==='function'?content.content():content.content;
   const panel=document.getElementById('help-panel-content');
-  panel.innerHTML=`<h3>${content.title}</h3>${content.content}`;
+  panel.innerHTML=`<h3>${content.title}</h3>${body}`;
   panel.scrollTop=0;
 }
 
@@ -1426,6 +1433,16 @@ function circuitCourtCaption(county,probateDivision){
   const c=(county||'Pinellas').trim()||'Pinellas';
   const ord=(CIRCUIT_ORDINALS[circuitForCounty(c)]||'Sixth').toUpperCase();
   return `IN THE CIRCUIT COURT OF THE ${ord} JUDICIAL CIRCUIT<br>IN AND FOR ${esc(c.toUpperCase())} COUNTY, FLORIDA${probateDivision?', PROBATE DIVISION':''}`;
+}
+// Local duplicate of core/filing/county-guidance.js's hasSixthCircuitLocalGuidance()
+// -- this classic script can't import that ES module (same reason
+// circuitForCounty above duplicates circuit-lookup.js rather than importing
+// it). Deliberately NOT circuitForCounty()===6: that lookup's fallback for a
+// blank/unrecognized county is Sixth Circuit, which would wrongly show a
+// Pinellas/Pasco-only local requirement on an unfinished or invalid filing.
+function hasSixthCircuitLocalGuidance(county){
+  const normalized=(county||'').trim().toLowerCase();
+  return normalized==='pinellas'||normalized==='pasco';
 }
 
 // Shared markup: a plain text input plus an initially-empty dropdown right
@@ -6709,7 +6726,7 @@ function pageInventorySelector(){
 
   <div class="summary-box mt-4">
     <h2 class="subsection-heading">About Probate Guardian</h2>
-    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Probate Guardian helps guardians — and the attorneys who assist them — prepare the court-required filings for guardianship cases in Pinellas and Pasco County, Florida. It walks you through each required field, calculates totals automatically, and produces a filing-ready PDF or the official Clerk of Court Excel template.</p>
+    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Probate Guardian helps guardians — and the attorneys who assist them — prepare the court-required filings for Florida guardianship cases. It walks you through each required field, calculates totals automatically, and produces a filing-ready PDF or the official Clerk of Court Excel template.</p>
 
     <h2 class="subsection-heading mt-3">Who Should Use This</h2>
     <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardians of the <strong>property</strong>, who file an <strong>Initial Inventory</strong>, a <strong>Simplified Annual Accounting</strong>, or a full <strong>Annual Accounting</strong> — and guardians of the <strong>person</strong>, who file a <strong>Plan</strong> reporting on the ward's residence, care, and wellbeing. If you are guardian of both, you file one of each; create a separate form for each filing and give them the same case number, and the dashboard will keep them together.</p>

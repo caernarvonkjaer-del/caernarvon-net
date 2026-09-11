@@ -23,6 +23,7 @@ import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.j
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
+import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -37,21 +38,37 @@ export function planReadinessChecksSimplified(){
   const d=window.D;
   const has=v=>!!(v!==''&&v!==null&&v!==undefined);
   const g0=(d.planGuardians||[])[0]||{};
+  // Milestone 37-3: every item below carries a stable `id` -- never shown in
+  // the UI (planReadinessPanel() only reads .label/.ok) -- so the fixture-
+  // based parity suite (tests/unit/plan-simplified-readiness-parity.spec.js)
+  // can assert against a condition identifier instead of fragile label text.
+  // cover.wardCaseCounty, plan.q2, plan.q5, and plan.q6 are new: county,
+  // Question 2 (why this placement), Question 5 (personal/social services),
+  // and Question 6 (interaction with others) are all required by
+  // validatePlanSimplified() below but had no readiness item at all before
+  // this milestone -- a filer could see every check pass here and still be
+  // blocked at Print Preview by one of these four. See that parity suite for
+  // the full auto/validator mapping and the fixtures proving it.
   const auto=[
-    {label:'Reporting period is stated',ok:has(d.periodFrom)&&has(d.periodTo)},
-    {label:'Ward name and case number are on the plan',ok:has(d.wardName)&&has(d.caseNumber)},
-    {label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
-    {label:'Guardian contact details provided (email, phone, mailing address)',ok:has(g0.email)&&has(g0.phone)&&has(g0.mailingAddress)},
-    {label:"Ward's residences for the year are listed",ok:has(d.q1Residences)},
-    {label:'Professional medical / mental health treatment is listed',ok:has(d.q3MedicalTreatment)},
-    {label:'Current diagnosis and continuing need for a guardian is stated',ok:has(d.q4Diagnosis)},
-    {label:'Rights-restoration question answered',ok:has(d.q7RestoreRights)},
-    {label:'Advance directives question answered',ok:!!(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None)},
-    {label:'Remuneration declared',ok:has(d.q9Remuneration)},
+    {id:'cover.period',label:'Reporting period is stated',ok:has(d.periodFrom)&&has(d.periodTo)},
+    {id:'cover.wardCaseCounty',label:'Ward name, case number, and county are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.county)},
+    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
+    {id:'signatures.guardian1.contact',label:'Guardian contact details provided (email, phone, mailing address)',ok:has(g0.email)&&has(g0.phone)&&has(g0.mailingAddress)},
+    {id:'plan.q1',label:"Ward's residences for the year are listed",ok:has(d.q1Residences)},
+    {id:'plan.q2',label:'Question 2 — reason this placement best suits the ward is stated',ok:has(d.q2BestPlacement)},
+    {id:'plan.q3',label:'Professional medical / mental health treatment is listed',ok:has(d.q3MedicalTreatment)},
+    {id:'plan.q4',label:'Current diagnosis and continuing need for a guardian is stated',ok:has(d.q4Diagnosis)},
+    {id:'plan.q5',label:'Question 5 — personal and social services described',ok:has(d.q5SocialServices)},
+    {id:'plan.q6',label:'Question 6 — interaction with others described',ok:has(d.q6Interaction)},
+    {id:'plan.q7',label:'Rights-restoration question answered',ok:has(d.q7RestoreRights)},
+    {id:'plan.q8',label:'Advance directives question answered',ok:!!(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None)},
+    {id:'plan.q9',label:'Remuneration declared',ok:has(d.q9Remuneration)},
   ];
   const manual=[
     'File within the deadline set by the court for your case.',
-    'Serve a copy on all interested persons, and file the certificate of service.',
+    hasSixthCircuitLocalGuidance(d.county)
+      ? 'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons, and file the certificate of service.'
+      : "Serve a copy of this plan on the ward -- unless the ward is a minor or was declared totally incapacitated -- and on the ward's attorney, if any. Provide additional copies to anyone else the court directs (F.S. 744.367(3)(b)).",
     "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
     'If the ward executed any advance directive listed in Question 8, attach copies unless already filed -- advance directives need only be filed once.',
     'Attach the Annual Financial Statement / Affidavit if required for this case (mandatory if the guardian has property delegation and annual accountings were waived).',
