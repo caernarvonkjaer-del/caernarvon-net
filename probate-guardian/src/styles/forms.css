@@ -177,17 +177,18 @@
 .plan-check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.1rem .9rem;}
 
 /* Labels keep their natural height. Bootstrap stretches sibling columns to the
-   tallest real label in a row; a fixed two-line reservation added dead space
-   and let an isolated required marker wrap onto its own line. */
-.row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"] .form-label{display:block;}
+/* ── Multi-Column Row & Field Alignment ───────────────────── */
+/* Align field controls (inputs, selects, choice groups) at the top of the field area
+   so that fields in the same row align horizontally across columns, regardless of subtext
+   (e.g., date hints) or label length. */
 
-/* Align row-adjacent input, choice, and display fields to the bottom when labels span multiple lines */
 .row > [class*="col-"],
 .row > [class*="col"],
 .form-row > [class*="col-"],
 .form-row > [class*="col"] {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
 }
 
 .row > [class*="col-"] > .form-label,
@@ -197,24 +198,28 @@
 .form-row > [class*="col-"] > .form-label,
 .form-row > [class*="col"] > .form-label,
 .form-row > [class*="col-"] > label,
-.form-row > [class*="col"] > label {
+.form-row > [class*="col"] > label,
+.plan-yes-no legend {
   margin-top: 0;
+  margin-bottom: 0.35rem;
 }
 
-.row > [class*="col-"] > .form-label + *,
-.row > [class*="col"] > .form-label + *,
-.row > [class*="col-"] > label + *,
-.row > [class*="col"] > label + *,
-.form-row > [class*="col-"] > .form-label + *,
-.form-row > [class*="col"] > .form-label + *,
-.form-row > [class*="col-"] > label + *,
-.form-row > [class*="col"] > label + * {
-  margin-top: auto;
+/* For multi-column rows in cards/schedules, ensure 1-line and 2-line labels align vertically
+   at the bottom of the label zone so adjacent input fields start at the exact same vertical baseline. */
+.schedule-entry-grid .row > [class*="col-"] > .form-label,
+.entry-card-body .row > [class*="col-"] > .form-label,
+.card-grid-2col .row > [class*="col-"] > .form-label,
+.schedule-entry-grid .row > [class*="col-"] > legend,
+.entry-card-body .row > [class*="col-"] > legend,
+.card-grid-2col .row > [class*="col-"] > legend {
+  min-height: 2.1rem;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
 }
 
-.row > [class*="col-"] > :only-child,
-.row > [class*="col"] > :only-child,
-.form-row > [class*="col-"] > :only-child,
-.form-row > [class*="col"] > :only-child {
-  margin-top: auto;
+.form-text {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
 }
+
