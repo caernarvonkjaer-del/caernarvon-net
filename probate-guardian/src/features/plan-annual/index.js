@@ -299,10 +299,24 @@ function pagePlanABenefits(){
   const b=d.benefits||{};
   const rows=PLAN_BENEFITS.map(([k,label])=>{
     const v=b[k]||{};
+    const eligVal=v.eligible===true?'Yes':(v.eligible===false?'No':(v.eligible||''));
+    const appVal=v.appliedFor===true?'Yes':(v.appliedFor===false?'No':(v.appliedFor||''));
     return `<tr>
       <td>${label}</td>
-      <td class="text-center"><input class="form-check-input" type="checkbox" ${v.eligible?'checked':''} data-form-path="benefits.${k}.eligible" data-form-value="boolean" aria-label="${esc(label)} — eligible"></td>
-      <td class="text-center"><input class="form-check-input" type="checkbox" ${v.appliedFor?'checked':''} data-form-path="benefits.${k}.appliedFor" data-form-value="boolean" aria-label="${esc(label)} — applied for"></td>
+      <td class="text-center">
+        <select class="form-select form-select-sm" data-form-path="benefits.${k}.eligible" aria-label="${esc(label)} — eligible">
+          <option value="" ${!eligVal?'selected':''}>—</option>
+          <option value="Yes" ${eligVal==='Yes'?'selected':''}>Yes</option>
+          <option value="No" ${eligVal==='No'?'selected':''}>No</option>
+        </select>
+      </td>
+      <td class="text-center">
+        <select class="form-select form-select-sm" data-form-path="benefits.${k}.appliedFor" aria-label="${esc(label)} — applied for">
+          <option value="" ${!appVal?'selected':''}>—</option>
+          <option value="Yes" ${appVal==='Yes'?'selected':''}>Yes</option>
+          <option value="No" ${appVal==='No'?'selected':''}>No</option>
+        </select>
+      </td>
     </tr>`;
   }).join('');
   return `<div class="schedule-page">

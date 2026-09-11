@@ -7,7 +7,7 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../co
 // the same window.createFeatureBridge() pattern as Simplified, Plan, and
 // Annual features.
 const {
-  esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange,
+  esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
   sanitizeNegativeAmounts, linkLabelsToInputs, enforceDateRanges, setupAmountFieldValidation,
   updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
   browserRecommendationNotice, toggleSsnReveal, renderScheduleDocsSection,
@@ -163,6 +163,19 @@ function bindEvents(container) {
       D.safeDepositBoxFiled = control.value === 'true';
       autoSave();
       updateNavDots();
+    }
+    if (control.dataset.inventoryInput === 'vehicle') {
+      const field = control.dataset.field;
+      if (field === 'vehicleMake' || field === 'vehicleModel') {
+        const index = Number.parseInt(control.dataset.index, 10);
+        const formatted = formatName(control.value);
+        control.value = formatted;
+        if (D.scheduleB2?.[index]) {
+          D.scheduleB2[index][field] = formatted;
+          syncB2VehicleDescription(index);
+        }
+        autoSave();
+      }
     }
   }, options);
 
@@ -527,7 +540,7 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
         ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',optionsWithLegacyValuePairs(GUARDIANSHIP_TYPE_OPTIONS,D.typeOfGuardianship),D.typeOfGuardianship)))}
-        ${formRow(col(12,optLabel('Amended Form?')+checkboxInput('isAmended','Amended Form?')))}
+        ${formRow(col(12,yesNoRadioHTML('amendedForm','Amended Form?',D.amendedForm||(D.isAmended?'Yes':(D.isAmended===false?'No':'')),'amendedForm')))}
       </div>
     </div>
   </div>
@@ -622,7 +635,7 @@ function pageSummary(){ return renderSummaryPage(getSummaryConfigGuardian()); }
 // ═══════════════════════════════════════════════════════
 function pageScheduleA1(){
   const entries=D.scheduleA1.map((e,i)=>entryCard(`Property ${i+1}`,i,'a1',`
-    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,optLabel('Personal Residence?')+checkboxInput(`scheduleA1.${i}.isPersonalResidence`,'Personal Residence?')),col(3,optLabel('Income Property?')+checkboxInput(`scheduleA1.${i}.isIncomeProperty`,'Income Property?')))}
+    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,yesNoRadioHTML(`schA1_res_${i}`,'Personal Residence?',e.residence||(e.isPersonalResidence?'Yes':(e.isPersonalResidence===false?'No':'')),`scheduleA1.${i}.residence`)),col(3,yesNoRadioHTML(`schA1_inc_${i}`,'Income Property?',e.income||(e.isIncomeProperty?'Yes':(e.isIncomeProperty===false?'No':'')),`scheduleA1.${i}.income`)))}
     ${formRow(col(12,reqLabel('Street Address')+textInput(`scheduleA1.${i}.streetAddress`,'','address')))}
     ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`scheduleA1.${i}.cityStateZip`,'','zip')),col(6,optLabel('Notes (joint ownership, etc.)')+textInput(`scheduleA1.${i}.notes`)))}
     ${formRow(col(4,reqLabel('Full Asset Value as of GID ($)')+numInput(`scheduleA1.${i}.fullAssetValue`)),col(4,reqLabel("Ward's Ownership % (0-100)")+numInput(`scheduleA1.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleA1.${i}.wardValue`)))}
@@ -658,7 +671,7 @@ function pageScheduleA2(){
 
 function pageScheduleB1(){
   const entries=D.scheduleB1.map((e,i)=>entryCard(`Account ${i+1}`,i,'b1',`
-    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,optLabel('Restricted?')+checkboxInput(`scheduleB1.${i}.isRestricted`,'Restricted')),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
+    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,yesNoRadioHTML(`schB1_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB1.${i}.restricted`)),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
     ${formRow(col(6,reqLabel('Street Address of Institution')+textInput(`scheduleB1.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB1.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Full Asset Amount ($)')+numInput(`scheduleB1.${i}.fullAssetAmount`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB1.${i}.wardPercent`)),col(4,optLabel("Ward's Amount (calculated)")+calcInput(`scheduleB1.${i}.wardAmt`)))}
   `)).join('');
@@ -719,19 +732,27 @@ function toggleB2Vehicle(i,checked){
   if(!e)return;
   e.isVehicle=checked;
   if(checked){
+    e.inSafeDepositBox = '';
     syncB2VehicleDescription(i);
   }
   autoSave();
-  const container=document.getElementById(`b2-fields-${i}`);
-  if(container){
-    container.innerHTML=renderB2Fields(e, i);
-    bindForms();
-  }else{
-    renderPage(getCurrentPage());
-  }
+  renderPage(getCurrentPage());
 }
 function pageScheduleB2(){
   const entries=D.scheduleB2.map((e,i)=>{
+    const isVeh = !!e.isVehicle;
+    const valueRow = isVeh
+      ? formRow(
+          col(4,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),
+          col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),
+          col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`))
+        )
+      : formRow(
+          col(3,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),
+          col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),
+          col(3,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`)),
+          col(3,yesNoRadioHTML(`schB2_sdb_${i}`,'In Safe Deposit Box?',e.inSafeDepositBox===true?'Yes':(e.inSafeDepositBox===false?'No':(e.inSafeDepositBox||'')),`scheduleB2.${i}.inSafeDepositBox`))
+        );
     return entryCard(`Item ${i+1}`,i,'b2',`
     ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" data-inventory-change="toggle-vehicle" data-index="${i}"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
     <div id="b2-fields-${i}">
@@ -739,7 +760,7 @@ function pageScheduleB2(){
     </div>
     ${formRow(col(6,reqLabel('Location – Street Address')+textInput(`scheduleB2.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB2.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(6,reqLabel('Valuation Method &amp; Condition')+textInput(`scheduleB2.${i}.valuationMethod`,'e.g., Kelly Blue Book — fair condition')))}
-    ${formRow(col(3,reqLabel('Full Asset Value ($)')+numInput(`scheduleB2.${i}.fullAssetValue`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleB2.${i}.wardPercent`)),col(3,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB2.${i}.wardB2`)),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB2.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
+    ${valueRow}
   `);
   }).join('');
   return `<div class="schedule-page">
@@ -755,7 +776,7 @@ function pageScheduleB3(){
   const entries=D.scheduleB3.map((e,i)=>entryCard(`Asset ${i+1}`,i,'b3',`
     ${formRow(col(12,reqLabel('Description (include account, policy, or certificate number)')+`<input class="form-control" data-bind="scheduleB3.${i}.description" data-input-type="name">`))}
     ${formRow(col(6,reqLabel('Street Address / Custodian Address')+textInput(`scheduleB3.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB3.${i}.cityStateZip`,'','zip')))}
-    ${formRow(col(3,optLabel('Restricted?')+checkboxInput(`scheduleB3.${i}.isRestricted`,'Restricted')),col(3,optLabel('In Safe Deposit Box?')+checkboxInput(`scheduleB3.${i}.inSafeDepositBox`,'In Safe Deposit Box?')))}
+    ${formRow(col(3,yesNoRadioHTML(`schB3_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB3.${i}.restricted`)),col(3,yesNoRadioHTML(`schB3_sdb_${i}`,'In Safe Deposit Box?',e.inSafeDepositBox===true?'Yes':(e.inSafeDepositBox===false?'No':(e.inSafeDepositBox||'')),`scheduleB3.${i}.inSafeDepositBox`)))}
     ${formRow(col(4,reqLabel('Full Asset Value ($)')+numInput(`scheduleB3.${i}.fullAssetValue`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB3.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB3.${i}.wardB3`)))}
   `)).join('');
   return `<div class="schedule-page">

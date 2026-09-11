@@ -127,7 +127,7 @@ describe('checklist and export validator field parity', () => {
     planSimplified: ['attorney_signatureDate', 'preparer_signatureDate'],
     planMinor: ['amendedForm', 'amendedVersion', 'preparer_signatureDate', 'ref', 'ucn'],
     planInitial: [],
-    annual: [],
+    annual: ['amendedForm'],
   };
 
   const BRANCH_MARKERS = {

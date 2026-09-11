@@ -941,7 +941,7 @@ function pageSchD2Annual(){
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-3"><label class="form-label">Ward's Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
+          <div class="col-md-3"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -955,7 +955,7 @@ function pageSchD2Annual(){
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD2" data-route="/schd2">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD2_carrying">${fmtAnnual(t.schD2_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtAnnual(t.schD2_ward)}</strong></div></div>
+    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtAnnual(t.schD2_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD2')}
   ${pageNavAnnual('/schd1','/schd3')}
@@ -1012,7 +1012,7 @@ function pageSchD4Annual(){
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-2"><label class="form-label">Ward's Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
+          <div class="col-md-2"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -1027,7 +1027,7 @@ function pageSchD4Annual(){
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td" data-annual-total="schD4_restricted">${fmtAnnual(t.schD4_restricted)}</div></div>
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD4_carrying">${fmtAnnual(t.schD4_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Ward's Value Total</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtAnnual(t.schD4_ward)}</strong></div></div>
+    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtAnnual(t.schD4_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD4')}
   ${pageNavAnnual('/schd3','/schd5')}
@@ -1183,9 +1183,9 @@ function pagePart67Annual(){
   <div class="summary-box">
     <h2 class="subsection-heading">Part VII — Assets &amp; Liabilities at End of Period</h2>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd1">Schedule D-1 — Cash Assets</a></span><span>${fmtAnnual(t.schD1_total)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Ward's Value)</a></span><span>${fmtAnnual(t.schD2_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Total Value)</a></span><span>${fmtAnnual(t.schD2_ward)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd3">Schedule D-3 — Personal Property (Ward's Amount)</a></span><span>${fmtAnnual(t.schD3_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Ward's Value)</a></span><span>${fmtAnnual(t.schD4_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Total Value)</a></span><span>${fmtAnnual(t.schD4_ward)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd5">Schedule D-5 — Liabilities (Ward's Balance)</a></span><span>(${fmtAnnual(t.schD5_total)})</span></div>
     <div class="summary-line grand"><span>Line 30 — Net Assets at End of Period</span><span>${fmtAnnual(t.netAssetsFromD)}</span></div>
   </div>

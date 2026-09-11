@@ -180,3 +180,41 @@
    tallest real label in a row; a fixed two-line reservation added dead space
    and let an isolated required marker wrap onto its own line. */
 .row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"] .form-label{display:block;}
+
+/* Align row-adjacent input, choice, and display fields to the bottom when labels span multiple lines */
+.row > [class*="col-"],
+.row > [class*="col"],
+.form-row > [class*="col-"],
+.form-row > [class*="col"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.row > [class*="col-"] > .form-label,
+.row > [class*="col"] > .form-label,
+.row > [class*="col-"] > label,
+.row > [class*="col"] > label,
+.form-row > [class*="col-"] > .form-label,
+.form-row > [class*="col"] > .form-label,
+.form-row > [class*="col-"] > label,
+.form-row > [class*="col"] > label {
+  margin-top: 0;
+}
+
+.row > [class*="col-"] > .form-label + *,
+.row > [class*="col"] > .form-label + *,
+.row > [class*="col-"] > label + *,
+.row > [class*="col"] > label + *,
+.form-row > [class*="col-"] > .form-label + *,
+.form-row > [class*="col"] > .form-label + *,
+.form-row > [class*="col-"] > label + *,
+.form-row > [class*="col"] > label + * {
+  margin-top: auto;
+}
+
+.row > [class*="col-"] > :only-child,
+.row > [class*="col"] > :only-child,
+.form-row > [class*="col-"] > :only-child,
+.form-row > [class*="col"] > :only-child {
+  margin-top: auto;
+}

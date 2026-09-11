@@ -317,8 +317,7 @@ const HELP_CONTENT = {
     title: 'Initial Guardianship Plan Guide',
     // content is a function (not the plain string every other entry uses)
     // because the Disaster Plan paragraph is Sixth Circuit (Pinellas/Pasco)
-    // local guidance -- AO 2024-025 PA/PI-CIR Section E, see
-    // core/filing/county-guidance.js -- gated on the active filing's county
+    // local guidance -- see core/filing/county-guidance.js -- gated on the active filing's county
     // per Milestone 37-1. showContextualHelp() calls this at render time so
     // it stays current across a county change or a filing switch.
     content: () => `<div class="help-section-title">Plan vs. Accounting</div>
@@ -327,7 +326,7 @@ const HELP_CONTENT = {
     <div class="help-section-title">When It's Due</div>
     <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.362(1)) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
     ${hasSixthCircuitLocalGuidance(window.D?.county)?`<div class="help-section-title">Don't Forget the Disaster Plan</div>
-    <p>Local Sixth Judicial Circuit requirement (Administrative Order No. 2024-025 PA/PI-CIR): a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately. If the ward is a minor child residing with their parent or another relative who is serving as guardian, that guardian is exempt from this requirement.</p>`:''}
+    <p>Local Sixth Judicial Circuit requirement (Administrative Order): a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately. If the ward is a minor child residing with their parent or another relative who is serving as guardian, that guardian is exempt from this requirement.</p>`:''}
     <div class="help-section-title">Activities of Daily Living</div>
     <p>Rate all fifteen honestly. These become the baseline the court compares future Annual Plans against.</p>
     <div class="help-section-title">Advance Directives</div>
@@ -2816,6 +2815,8 @@ async function saveData(){
   // it having landed before acting further (lockApp() wiping memory,
   // beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport)await saveSessionRestoreCache();
+  window._lastAutoSavedAt = Date.now();
+  updateLastSavedIndicator();
   const handle=await loadCaseFileHandle();
   if(!handle)return;
   try{
@@ -3147,11 +3148,15 @@ function formatRelativeTime(ts){
 function updateLastSavedIndicator(){
   const el=document.getElementById('last-saved-indicator');
   if(!el)return;
-  if(_dirtySinceExport){
+  const lastExport = (typeof window !== 'undefined' && window._lastExportAt !== undefined) ? window._lastExportAt : _lastExportAt;
+  const lastAutoSave = (typeof window !== 'undefined' && window._lastAutoSavedAt !== undefined) ? window._lastAutoSavedAt : _lastAutoSavedAt;
+  const lastSave = Math.max(lastExport || 0, lastAutoSave || 0);
+
+  if(_dirtySinceExport && !lastSave){
     el.textContent='● Unsaved changes';
     el.style.color='var(--warn-text)';
-  }else if(_lastExportAt){
-    el.textContent=`✓ Last backup: ${formatRelativeTime(_lastExportAt)}`;
+  }else if(lastSave){
+    el.textContent=`✓ Last backup: ${formatRelativeTime(lastSave)}`;
     el.style.color='var(--ok-text)';
   }else{
     el.textContent='No backup saved yet';
@@ -5572,6 +5577,7 @@ async function navigate(page){
   // onclick calls navigate() back to the SAME page to render the row it
   // just pushed — see pruneBlankCards().
   if(page!==currentPage){
+    _navSectionExpandedKey=null;
     window.commitPendingFieldValues?.();
     pruneBlankCards();
   }
@@ -5638,7 +5644,7 @@ function getWardHeadlineTotal(ward){
 // the filing-progress percentage is shown instead — a "$0.00" or a bare "—"
 // under a "Total" label reads as a real figure and is actively misleading.
 const INVENTORY_TYPE_META={
-  guardian:   {iconName:'clipboard', accent:'#1e5799', accentText:'var(--accent-text)', totalLabel:"Ward's Value",  financial:true},
+  guardian:   {iconName:'clipboard', accent:'#1e5799', accentText:'var(--accent-text)', totalLabel:'Total Value',  financial:true},
   simplified: {iconName:'receipt',   accent:'#1f7a3d', accentText:'var(--ok-text)',     totalLabel:'Ending Balance', financial:true},
   annual:     {iconName:'chart',     accent:'#820024', accentText:'var(--brand-text)',  totalLabel:'Net Assets',     financial:true},
   finalAccounting: {iconName:'chart', accent:'#820024', accentText:'var(--brand-text)', totalLabel:'Net Assets',     financial:true},
@@ -6762,8 +6768,8 @@ async function showAddWardModalForType(type){
 function emptyDataGuardian(){
   return {
     wardName:'',caseNumber:'',gid:null,county:'Pinellas',guardianName:'',
-    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:null,
-    safeDepositBoxFiled:null,isAmended:false,
+    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:'',
+    safeDepositBoxFiled:'',amendedForm:'',
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
     scheduleB4:[],scheduleC1:[],scheduleC2:[],scheduleC3:[],scheduleC4:[],scheduleC5:[],
     // Per-schedule "I verify there are no items of this type" checkbox --
@@ -7456,11 +7462,11 @@ const mk = {
   preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null}),
   attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null}),
   recipient:()=>({name:'',address:'',cityStateZip:''}),
-  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',isPersonalResidence:false,isIncomeProperty:false,fullAssetValue:0,wardPercent:100}),
+  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',isPersonalResidence:false,isIncomeProperty:false,fullAssetValue:0,wardPercent:100}),
   a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
-  b1:()=>({institutionName:'',isRestricted:false,accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
-  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
-  b3:()=>({description:'',streetAddress:'',cityStateZip:'',isRestricted:false,fullAssetValue:0,wardPercent:100,inSafeDepositBox:false,amountInSDB:0}),
+  b1:()=>({institutionName:'',restricted:'',isRestricted:false,accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
+  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
+  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',isRestricted:false,fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0}),
   b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
   c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
   c2:()=>({claimantName:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
@@ -8263,46 +8269,33 @@ function applyNavChecks(checks,incomplete={}){
   renderProgressSummary(checks);
 }
 
-// Session-only memory of which fully-complete nav sections the user has
-// manually re-opened (keyed by ward + section label, so one ward's choice
-// doesn't leak onto another's identically-labeled section) -- mirrors
-// _dashboardExpandedSections' pattern but inverted: a complete section
-// defaults to COLLAPSED, and membership here means "force it back open".
-let _navSectionExpanded=new Set();
+// Session-only memory of the single sidebar nav section the user explicitly
+// opened. If null, the section containing the current page is expanded. The
+// key includes the ward id so one ward's sidebar state never leaks onto
+// another ward with identically-labeled sections.
+let _navSectionExpandedKey=null;
 function toggleNavSection(key){
-  if(_navSectionExpanded.has(key))_navSectionExpanded.delete(key);
-  else _navSectionExpanded.add(key);
+  _navSectionExpandedKey=_navSectionExpandedKey===key?null:key;
   updateNavDots();
 }
-// Collapses a sidebar nav-section into a single green ✓ once every one of
-// its data-nav children is complete, so a finished Schedule A/B/C block
-// stops eating vertical space. Reads DOM structure only (no hardcoded
-// per-form-type section map) -- works for every buildNav*() sidebar as
-// long as it follows the existing .nav-section > .nav-section-label +
-// [data-nav] buttons shape. An incomplete section stays plain (not
-// collapsible -- only a fully-complete section becomes a toggleable
-// accordion) and gets NO badge: each of its child items already shows
-// its own red −/green ✓ (applyNavChecks() above), so a section-level −
-// on top of those would just be a redundant second mark for the same
-// information. The green ✓ is the exception -- it's the only indicator
-// left once the section collapses and hides those child marks.
+// Turns sidebar nav sections into a single global accordion: opening one
+// section collapses every other section. Reads DOM structure only (no
+// hardcoded per-form-type section map) -- works for every buildNav*()
+// sidebar that follows the existing .nav-section > .nav-section-label +
+// .nav-link-item shape. Collapsed completed sections show ✓; collapsed
+// incomplete sections show − so hidden child status is not lost.
 function applyNavSectionCollapse(checks){
   const container=document.getElementById('nav-sections');
   if(!container)return;
-  // If the page currently on screen belongs to this section, it stays
-  // expanded regardless of the completed/collapsed default -- otherwise
-  // navigating (e.g. the page footer's own Next button) into a finished
-  // section's next schedule would land you on a page with no visible
-  // highlight in the sidebar. Deliberately NOT recorded in
-  // _navSectionExpanded: it's not a manual choice, so leaving that page
-  // lets the section collapse again on its own, same as if it had never
-  // been opened.
   const currentKey=getCurrentPageKey();
+  const currentPagePath=(currentPage||'').split('?')[0];
   container.querySelectorAll('.nav-section').forEach(section=>{
     const label=section.querySelector(':scope > .nav-section-label');
     if(!label)return;
     if(label.dataset.origHtml===undefined)label.dataset.origHtml=label.innerHTML;
+    const links=[...section.querySelectorAll(':scope > .nav-link-item')];
     const navKeys=[...section.querySelectorAll('[data-nav]')].map(el=>el.dataset.nav).filter(k=>k in checks);
+    const hasCurrentLink=links.some(link=>link.dataset.page===currentPagePath||link.dataset.route===currentPagePath);
     const plain=()=>{
       section.classList.remove('collapsed');
       label.classList.remove('nav-section-toggle');
@@ -8310,23 +8303,19 @@ function applyNavSectionCollapse(checks){
       label.onclick=null;label.onkeydown=null;
       label.innerHTML=`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`;
     };
-    if(!navKeys.length){plain();return;}
-    const allComplete=navKeys.every(k=>checks[k]);
+    if(!links.length){plain();return;}
+    const allComplete=navKeys.length?navKeys.every(k=>checks[k]):null;
     const sectionKey=`${caseFile.activeWardId||''}:${label.dataset.origHtml}`;
-    if(!allComplete){
-      _navSectionExpanded.delete(sectionKey);
-      plain();
-      return;
-    }
-    const expanded=_navSectionExpanded.has(sectionKey)||navKeys.includes(currentKey);
+    const expanded=_navSectionExpandedKey?_navSectionExpandedKey===sectionKey:(navKeys.includes(currentKey)||hasCurrentLink);
     section.classList.toggle('collapsed',!expanded);
     label.classList.add('nav-section-toggle');
     label.setAttribute('role','button');
     label.setAttribute('tabindex','0');
     label.setAttribute('aria-expanded',String(expanded));
+    const collapsedMark=allComplete===null?'':`<span class="nav-section-check ${allComplete?'complete':'incomplete'}">${allComplete?'✓':'−'}</span>`;
     label.innerHTML=`<span class="nav-section-chevron">${expanded?'▾':'▸'}</span>`
       +`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`
-      +(expanded?'':'<span class="nav-section-check complete">✓</span>');
+      +(expanded?'':collapsedMark);
     label.onclick=()=>toggleNavSection(sectionKey);
     label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleNavSection(sectionKey);}};
   });

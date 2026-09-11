@@ -1,4 +1,4 @@
-import { PDFDocument } from '../../../lib/pdf-lib.esm.js';
+import { PDFDocument, degrees } from '../../../lib/pdf-lib.esm.js';
 import {
   assertFilingEligibleSupplement,
   dataUrlToBytes,
@@ -33,6 +33,10 @@ export async function finalizeCourtFormPdf(doc) {
     throw new Error('Supplemental PDFs exceed the total packet page limit.');
   }
 
+  const targetW = filing.getPageCount() > 0
+    ? ((filing.getPage(0).getRotation().angle % 180 === 0) ? filing.getPage(0).getWidth() : filing.getPage(0).getHeight())
+    : 612;
+
   for (const sourcePage of sourcePages) {
     const file = sourcePage.file || sourcePage;
     let sourceDocument = sourceDocuments.get(file.dataUrl);
@@ -43,6 +47,25 @@ export async function finalizeCourtFormPdf(doc) {
     }
 
     const [originalPage] = await filing.copyPages(sourceDocument, [sourcePage.sourcePageIndex]);
+
+    // Auto-rotate landscape orientation (width > height) to portrait
+    const rotAngle = originalPage.getRotation().angle;
+    const isLandscape = (rotAngle % 180 === 0)
+      ? (originalPage.getWidth() > originalPage.getHeight())
+      : (originalPage.getHeight() > originalPage.getWidth());
+
+    if (isLandscape) {
+      originalPage.setRotation(degrees((rotAngle + 90) % 360));
+    }
+
+    // Limit width to maximum available on page (targetW)
+    const currentRot = originalPage.getRotation().angle;
+    const effectiveWidth = (currentRot % 180 === 0) ? originalPage.getWidth() : originalPage.getHeight();
+    if (effectiveWidth > targetW) {
+      const factor = targetW / effectiveWidth;
+      originalPage.scale(factor, factor);
+    }
+
     filing.removePage(sourcePage.pageNumber - 1);
     filing.insertPage(sourcePage.pageNumber - 1, originalPage);
   }

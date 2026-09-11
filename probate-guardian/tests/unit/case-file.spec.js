@@ -148,3 +148,22 @@ describe('case file packaging and filename helpers', () => {
     expect(singleManifest.wards[0].wardId).toBe('w-101');
   });
 });
+
+describe('incremental save timestamp indicator', () => {
+  test('recordAutoSaveTimestamp updates _lastAutoSavedAt and updates indicator', async () => {
+    const { recordAutoSaveTimestamp, updateLastSavedIndicator } = await import('../../src/core/persistence/case-file.js');
+    const now = Date.now();
+    recordAutoSaveTimestamp(now);
+    expect(window._lastAutoSavedAt).toBe(now);
+
+    if (typeof document !== 'undefined') {
+      const indicatorEl = document.createElement('div');
+      indicatorEl.id = 'last-saved-indicator';
+      document.body.appendChild(indicatorEl);
+
+      updateLastSavedIndicator();
+      expect(indicatorEl.textContent).toContain('Last backup:');
+      document.body.removeChild(indicatorEl);
+    }
+  });
+});

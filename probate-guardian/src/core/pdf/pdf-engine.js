@@ -985,16 +985,30 @@ export async function generateCourtFormPdf(model, options = {}) {
         });
 
         const drawTableHeader = (isContinuation = false) => {
+          doc.setFont('PGSans', 'bold');
+          doc.setFontSize(8);
+
+          // Pre-calculate header line wrapping and dynamic header height to prevent overlap
+          const headerLineData = headers.map((hText, hIdx) => {
+            const colW = calculatedColWidths[hIdx];
+            const usableW = Math.max(10, colW - 6);
+            const lines = doc.splitTextToSize(String(hText || ''), usableW);
+            return { lines, colW };
+          });
+
+          const maxLines = Math.max(1, ...headerLineData.map(h => h.lines.length));
+          const dynamicHeaderHeight = Math.max(18, maxLines * 9 + 5);
+
           if (isContinuation) {
             // ISO 14289-1 (PDF/UA-1 Clause 7.5): Repeated table headers across multi-page
             // continuations are visual pagination artifacts and MUST NOT be added as duplicate
             // TR / TH elements in the logical structure tree.
             writeArtifactStart(doc, 'Pagination', 'Header');
             doc.setFillColor(128, 0, 32); // Deep Burgundy (#800020)
-            doc.rect(margin, curY, contentWidth, headerHeight, 'F');
+            doc.rect(margin, curY, contentWidth, dynamicHeaderHeight, 'F');
             doc.setDrawColor(100, 0, 25);
             doc.setLineWidth(0.75);
-            doc.rect(margin, curY, contentWidth, headerHeight, 'S');
+            doc.rect(margin, curY, contentWidth, dynamicHeaderHeight, 'S');
 
             doc.setFont('PGSans', 'bold');
             doc.setFontSize(8);
@@ -1002,30 +1016,35 @@ export async function generateCourtFormPdf(model, options = {}) {
 
             let curColX = margin;
             for (let hIdx = 0; hIdx < headers.length; hIdx++) {
-              const colW = calculatedColWidths[hIdx];
+              const { lines, colW } = headerLineData[hIdx];
               const align = (colAlign && colAlign[hIdx]) || 'left';
-              const textX = align === 'right' ? curColX + colW - 5 : align === 'center' ? curColX + (colW / 2) : curColX + 5;
-              doc.text(headers[hIdx], textX, curY + 12, { align });
+              const textX = align === 'right' ? curColX + colW - 4 : align === 'center' ? curColX + (colW / 2) : curColX + 4;
+              const totalTextH = lines.length * 8.5;
+              const startY = curY + ((dynamicHeaderHeight - totalTextH) / 2) + 6.5;
+
+              lines.forEach((lineText, lIdx) => {
+                doc.text(lineText, textX, startY + (lIdx * 8.5), { align });
+              });
 
               if (hIdx > 0) {
                 doc.setDrawColor(160, 40, 65);
                 doc.setLineWidth(0.5);
-                doc.line(curColX, curY, curColX, curY + headerHeight);
+                doc.line(curColX, curY, curColX, curY + dynamicHeaderHeight);
               }
               curColX += colW;
             }
             writeArtifactEnd(doc);
-            curY += headerHeight;
+            curY += dynamicHeaderHeight;
             return;
           }
 
           // Initial Table Header (Single logical TR/TH row in structure tree)
           writeArtifactStart(doc, 'Layout');
           doc.setFillColor(128, 0, 32); // Deep Burgundy (#800020)
-          doc.rect(margin, curY, contentWidth, headerHeight, 'F');
+          doc.rect(margin, curY, contentWidth, dynamicHeaderHeight, 'F');
           doc.setDrawColor(100, 0, 25);
           doc.setLineWidth(0.75);
-          doc.rect(margin, curY, contentWidth, headerHeight, 'S');
+          doc.rect(margin, curY, contentWidth, dynamicHeaderHeight, 'S');
           writeArtifactEnd(doc);
 
           doc.setFont('PGSans', 'bold');
@@ -1039,9 +1058,11 @@ export async function generateCourtFormPdf(model, options = {}) {
 
           let curColX = margin;
           for (let hIdx = 0; hIdx < headers.length; hIdx++) {
-            const colW = calculatedColWidths[hIdx];
+            const { lines, colW } = headerLineData[hIdx];
             const align = (colAlign && colAlign[hIdx]) || 'left';
-            const textX = align === 'right' ? curColX + colW - 5 : align === 'center' ? curColX + (colW / 2) : curColX + 5;
+            const textX = align === 'right' ? curColX + colW - 4 : align === 'center' ? curColX + (colW / 2) : curColX + 4;
+            const totalTextH = lines.length * 8.5;
+            const startY = curY + ((dynamicHeaderHeight - totalTextH) / 2) + 6.5;
 
             const thNode = structureTree.addStructureElement({
               tag: 'TH',
@@ -1051,19 +1072,21 @@ export async function generateCourtFormPdf(model, options = {}) {
               parent: headerTr,
             });
             writeMarkedContentStart(doc, 'TH', thNode.mcid);
-            doc.text(headers[hIdx], textX, curY + 12, { align });
+            lines.forEach((lineText, lIdx) => {
+              doc.text(lineText, textX, startY + (lIdx * 8.5), { align });
+            });
             writeMarkedContentEnd(doc);
 
             if (hIdx > 0) {
               writeArtifactStart(doc, 'Layout');
               doc.setDrawColor(160, 40, 65);
               doc.setLineWidth(0.5);
-              doc.line(curColX, curY, curColX, curY + headerHeight);
+              doc.line(curColX, curY, curColX, curY + dynamicHeaderHeight);
               writeArtifactEnd(doc);
             }
             curColX += colW;
           }
-          curY += headerHeight;
+          curY += dynamicHeaderHeight;
         };
 
         // A cell's value is normally a plain string/number, rendered as one

@@ -274,6 +274,14 @@ export async function buildSingleWardExportBlob(wardId) {
   return blob;
 }
 
+let _lastAutoSavedAt = null;
+
+export function recordAutoSaveTimestamp(ts = Date.now()) {
+  _lastAutoSavedAt = ts;
+  if (typeof window !== 'undefined') window._lastAutoSavedAt = ts;
+  updateLastSavedIndicator();
+}
+
 function formatRelativeTime(ts) {
   const diffMin = Math.floor((Date.now() - ts) / 60000);
   if (diffMin < 1) return 'just now';
@@ -297,11 +305,14 @@ export function updateLastSavedIndicator() {
   if (!el) return;
   const dirty = isDirtySinceExport();
   const lastExport = (typeof window !== 'undefined' && window._lastExportAt !== undefined) ? window._lastExportAt : _lastExportAt;
-  if (dirty) {
+  const lastAutoSave = (typeof window !== 'undefined' && window._lastAutoSavedAt !== undefined) ? window._lastAutoSavedAt : _lastAutoSavedAt;
+  const lastSave = Math.max(lastExport || 0, lastAutoSave || 0);
+
+  if (dirty && !lastSave) {
     el.textContent = '● Unsaved changes';
     el.style.color = 'var(--warn-text)';
-  } else if (lastExport) {
-    el.textContent = `✓ Last backup: ${formatRelativeTime(lastExport)}`;
+  } else if (lastSave) {
+    el.textContent = `✓ Last backup: ${formatRelativeTime(lastSave)}`;
     el.style.color = 'var(--ok-text)';
   } else {
     el.textContent = 'No backup saved yet';

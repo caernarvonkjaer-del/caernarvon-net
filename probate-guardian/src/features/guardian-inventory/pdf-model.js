@@ -289,7 +289,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
-    [20, 17, 20, 18, 9, 16],
+    [18, 22, 24, 15, 9, 12],
     ['left', 'left', 'left', 'right', 'center', 'right'],
     [restrictedCash]
   );
@@ -304,7 +304,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
-    [22, 22, 16, 14, 12, 14],
+    [24, 24, 16, 13, 9, 14],
     ['left', 'left', 'left', 'right', 'right', 'right']
   );
 
