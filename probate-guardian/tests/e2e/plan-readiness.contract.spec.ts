@@ -74,14 +74,14 @@ const CONFIGS: ReadinessConfig[] = [
 
 for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabel, saveButtonSelector } of CONFIGS) {
   test.describe(`${featureName} readiness/export-gating contract`, () => {
-    test('a fully completed plan reads "all checks pass" and is not blocked from export', async ({ page }) => {
+    test('a fully completed plan preserves manual-review wording and is not blocked from export', async ({ page }) => {
       await freshStartNoPassword(page);
       await createWard(page, `${featureName} Readiness Ready Ward`, filingType);
       await fill(page);
       await page.evaluate(() => (window as any).navigate('/print'));
 
       await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-      await expect(page.locator('.readiness-panel .validation-title')).toContainText('all checks pass');
+      await expect(page.locator('.readiness-panel .validation-title')).toContainText('Automated checks passed; manual review remains');
       await expect(page.locator('.readiness-panel .readiness-mark.pending')).toHaveCount(0);
       await expect(page.locator(saveButtonSelector)).toBeEnabled();
     });
@@ -125,7 +125,7 @@ test.describe('Plan Annual physician-statement reminder (DECISION: manual, not b
     // outstanding auto check, since it depends on an external,
     // unverifiable-by-software fact.
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-    await expect(page.locator('.readiness-panel .validation-title')).toContainText('all checks pass');
+    await expect(page.locator('.readiness-panel .validation-title')).toContainText('Automated checks passed; manual review remains');
     await expect(page.locator('[data-form-action="save-pdf-plan-annual"]')).toBeEnabled();
 
     const manualList = page.locator('.readiness-panel .validation-group', { hasText: "can't verify" });

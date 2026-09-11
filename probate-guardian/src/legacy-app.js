@@ -1659,7 +1659,7 @@ function validationPanel(errors,opts){
   }).join('');
   const n=errors.length;
   return `<div class="validation-panel no-print">
-    <div class="validation-head">
+    <summary class="validation-head">
       ${ic('alert',17)}
       <div>
         <div class="validation-title">${n} required field${n===1?'':'s'} still missing</div>
@@ -2372,7 +2372,7 @@ async function lockApp(){
           caseFile.wards=restoredWards;
           caseFile.guardianName=(g&&g.guardianName)||'';
           caseFile.guardianEmail=(g&&g.guardianEmail)||'';
-          caseFile.activeWardId=cache.activeWardId||restoredWards[0].wardId;
+          caseFile.activeWardId=null;
         }
       }
     }catch(e){console.error('Could not reload case data from the recovery cache after unlocking',e);}
@@ -2848,7 +2848,7 @@ function getActiveWard(){
 function getProbateGuardianTabState(){
   const activeWard=getActiveWard();
   return {
-    hasActiveCase: caseFile.wards.length>0,
+    hasActiveCase: !!activeWard,
     activeCase: activeWard?{
       wardId: activeWard.wardId||'',
       wardName: activeWard.wardName||'',
@@ -3738,7 +3738,7 @@ async function checkSessionRestoreCacheAtLaunch(){
     caseFile.parties=cache.parties?(await decryptJSONWithKey(cache.parties,key))||[]:[];
     caseFile.cases=cache.cases?(await decryptJSONWithKey(cache.cases,key))||[]:[];
     caseFile.dismissedPartyPairs=cache.partyDismissals?(await decryptJSONWithKey(cache.partyDismissals,key))||[]:[];
-    caseFile.activeWardId=cache.activeWardId||restoredWards[0].wardId;
+    caseFile.activeWardId=null;
     _securityMode=cache.securityMode;
     _cryptoKey=key;
     _appState.securityMode=cache.securityMode;
@@ -4282,8 +4282,7 @@ async function restoreFromFileBackupIfEmpty(){
       }catch(e){console.warn('skipping unreadable backup file',entry.name,e);}
     }
     if(caseFile.wards.length>0){
-      caseFile.activeWardId=caseFile.wards[0].wardId;
-      await saveAppState('activeWardId',caseFile.activeWardId);
+      caseFile.activeWardId=null;
       console.info(`Restored ${caseFile.wards.length} ward(s) from on-disk backup.`);
     }
   }catch(e){console.warn('restore-from-backup failed',e);}
@@ -4826,12 +4825,6 @@ async function activateWard(ward, opts = {}) {
     await ensureGuardianFeatureReady();
   }
 
-  try {
-    await saveAppState('activeWardId', ward.wardId);
-  } catch (e) {
-    console.warn('saveAppState activeWardId failed', e);
-  }
-
   updateSidebar();
   await refreshAutoSaveArmedStatus();
   notifyProbateGuardianTabStateChanged();
@@ -4846,11 +4839,6 @@ async function unloadWard() {
   caseFile.activeWardId = null;
   window.D = {};
   activeInventoryType = null;
-  try {
-    await saveAppState('activeWardId', null);
-  } catch (e) {
-    console.warn('saveAppState activeWardId null failed', e);
-  }
   updateSidebar();
   await refreshAutoSaveArmedStatus();
   notifyProbateGuardianTabStateChanged();
@@ -7259,18 +7247,20 @@ function planReadinessChecks(){
 function planReadinessPanel(){
   const {auto,manual}=planReadinessChecks();
   const pending=auto.filter(a=>!a.ok).length;
+  const local=['pinellas','pasco'].includes(String(window.D?.county||'').trim().toLowerCase());
+  const title=local?"Clerk's Review Readiness":'Filing Readiness';
   const rows=auto.map(a=>`<div class="readiness-row">
       <span class="readiness-mark ${a.ok?'ok':'pending'}">${a.ok?'✓':'⚠'}</span>
       <span>${esc(a.label)}</span>
     </div>`).join('');
-  return `<div class="validation-panel readiness-panel no-print">
+  return `<details class="validation-panel readiness-panel no-print"${pending?' open':''}>
     <div class="validation-head">
       ${ic('shield',17)}
       <div>
-        <div class="validation-title">Clerk's review readiness${pending?` — ${pending} item${pending===1?'':'s'} outstanding`:' — all checks pass'}</div>
+        <div class="validation-title">${title}${pending?` — ${pending} item${pending===1?'':'s'} outstanding`:' — Automated checks passed; manual review remains'}</div>
         <div class="validation-sub">Mirrors what the Clerk of Court looks for when reviewing a plan. Passing every check does not guarantee approval.</div>
       </div>
-    </div>
+    </summary>
     <div class="validation-group">
       <div class="validation-group-head"><span class="validation-group-name">Checked from your plan</span></div>
       <div class="readiness-list">${rows}</div>
@@ -7279,7 +7269,7 @@ function planReadinessPanel(){
       <div class="validation-group-head"><span class="validation-group-name">Before you file — the app can't verify these</span></div>
       <div class="readiness-list">${manual.map(m=>`<div class="readiness-row"><span class="readiness-mark manual">•</span><span>${esc(m)}</span></div>`).join('')}</div>
     </div>
-  </div>`;
+  </details>`;
 }
 
 // pagePrintPlanSimplified()/doSavePdfPlanSimplified() moved to
@@ -7413,9 +7403,11 @@ function checkExcelCapacity(caps){
     // Remuneration is filtered before writing, so only rows with content
     // actually consume a slot. Every other schedule writes each array
     // element positionally, blank or not.
-    const count=key==='remuneration'
-      ? list.filter(r=>r&&(r.guardian||r.type||r.amount||r.description)).length
-      : list.length;
+    const count=typeof info.isPopulated==='function'
+      ? list.filter(info.isPopulated).length
+      : key==='remuneration'
+        ? list.filter(r=>r&&(r.guardian||r.type||r.amount||r.description)).length
+        : list.length;
     if(count>info.cap)over.push({label:info.label,route:info.route,cap:info.cap,count:count});
   }
   return over;

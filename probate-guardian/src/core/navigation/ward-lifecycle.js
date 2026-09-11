@@ -1,6 +1,5 @@
 // Ward lifecycle management: creation, activation, exclusive locking, switching, and deletion.
 import { getCaseFile, getD, setD } from '../state.js';
-import { saveAppState } from '../persistence/launch-preferences.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
@@ -8,6 +7,36 @@ export function createWardId() {
 
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
+let dashboardEntryPromise = null;
+
+/** Safely ends editor focus before the dashboard is rendered. */
+export async function enterDashboardEditingFocus() {
+  if (dashboardEntryPromise) return dashboardEntryPromise;
+  dashboardEntryPromise = (async () => {
+    const caseFile = getCaseFile();
+    if (!caseFile.activeWardId) return true;
+    try {
+      window.commitPendingFieldValues?.();
+      window.pruneBlankCards?.();
+      if (typeof window.flushPendingSave === 'function') await window.flushPendingSave({ requireRecovery: true });
+      if (typeof window.releaseWardLock === 'function') await window.releaseWardLock();
+    } catch (error) {
+      console.error('Unable to safely leave editor for dashboard:', error);
+      window.showSaveError?.(error);
+      return false;
+    }
+    caseFile.activeWardId = null;
+    setD({});
+    window.activeInventoryType = null;
+    window._visitedPages?.clear?.();
+    window.updateSidebar?.();
+    await window.refreshAutoSaveArmedStatus?.();
+    window.notifyProbateGuardianTabStateChanged?.();
+    return true;
+  })();
+  try { return await dashboardEntryPromise; }
+  finally { dashboardEntryPromise = null; }
+}
 
 // Which existing filings may seed a new one at creation time. Every filing for
 // the same ward carries the same identity and contact block, so any type is a
@@ -308,12 +337,6 @@ export async function activateWard(ward, opts = {}) {
     }
   }
 
-  try {
-    await saveAppState('activeWardId', ward.wardId);
-  } catch (e) {
-    console.warn('saveAppState activeWardId failed', e);
-  }
-
   if (typeof window !== 'undefined') {
     if (typeof window.updateSidebar === 'function') window.updateSidebar();
     if (typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
@@ -323,29 +346,7 @@ export async function activateWard(ward, opts = {}) {
 }
 
 export async function unloadWard() {
-  if (typeof window !== 'undefined' && typeof window.flushPendingSave === 'function') {
-    await window.flushPendingSave();
-  }
-  if (typeof window !== 'undefined' && window.releaseWardLock) {
-    await window.releaseWardLock();
-  }
-  const caseFile = getCaseFile();
-  caseFile.activeWardId = null;
-  setD({});
-  if (typeof window !== 'undefined') {
-    window.activeInventoryType = null;
-  }
-  try {
-    await saveAppState('activeWardId', null);
-  } catch (e) {
-    console.warn('saveAppState activeWardId null failed', e);
-  }
-  if (typeof window !== 'undefined') {
-    if (typeof window.updateSidebar === 'function') window.updateSidebar();
-    if (typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
-    if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
-    if (typeof window.navigate === 'function') window.navigate('/dashboard');
-  }
+  if (await enterDashboardEditingFocus() && typeof window !== 'undefined' && typeof window.navigate === 'function') window.navigate('/dashboard');
 }
 
 export async function addWard(wardName, inventoryType) {
@@ -475,6 +476,7 @@ export async function renameWard(wardId, newName) {
 if (typeof window !== 'undefined') {
   window.createWardId = createWardId;
   window.activateWard = activateWard;
+  window.enterDashboardEditingFocus = enterDashboardEditingFocus;
   window.unloadWard = unloadWard;
   window.addWard = addWard;
   window.switchWard = switchWard;

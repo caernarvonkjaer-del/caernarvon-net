@@ -72,15 +72,10 @@ function dashboardToolbarHTML() {
 
 function dashboardHeaderHTML() {
   const wards = getCaseFile().wards;
-  const activeWardId = getCaseFile().activeWardId;
-  const activeWard = wards.find(w => w.wardId === activeWardId);
   // Milestone 36-1 moved Close, Rename and Delete here from the sidebar. Close
   // and Delete then moved on again into the row's own Actions cell, where they
   // sit beside Open on the filing they act on. Rename stays: it is the one of
   // the three that only ever applies to whichever filing is currently open.
-  const activeWardControls = activeWard ? `
-    <button type="button" class="btn btn-sm btn-outline-secondary dashboard-rename-ward" id="rename-ward-btn" data-dashboard-action="rename-ward" title="Rename active filing">${ic('pencil', 14)} Rename</button>
-  ` : '';
   const newFormBtn = `<button type="button" class="btn btn-sm btn-outline-primary dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} New Form</button>`;
   const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all filings into a single combined .sav archive">${ic('archive', 14)} Export All Filings</button>` : '';
   const newExistingBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>`;
@@ -93,7 +88,6 @@ function dashboardHeaderHTML() {
     </div>
     <div class="dashboard-header-actions">
       <div class="dashboard-filing-controls">
-        ${activeWardControls}
         ${newFormBtn}
       </div>
       ${exportAllBtn}
@@ -182,7 +176,7 @@ function showContinuePromptIfNeeded() {
         <div class="continue-prompt-ward-name">${esc(last.wardName || '(unnamed)')}</div>
         <div class="continue-prompt-meta">${esc(typeLabel)} · ${formatRelativeTime(last.timestamp)}</div>
       </div>
-      <button type="button" class="continue-prompt-btn" data-dashboard-action="open-ward" data-ward-id="${esc(last.wardId)}">Open</button>
+      <button type="button" class="continue-prompt-btn" data-dashboard-action="open-ward" data-ward-id="${esc(last.wardId)}">Edit</button>
       <button type="button" class="continue-prompt-dismiss" data-dashboard-action="dismiss-continue" aria-label="Dismiss">&times;</button>
     </div>
   </div>`;
@@ -232,20 +226,13 @@ function triageActionButtons(row) {
   const priorYears = row.sourceWard.years?.length
     ? `<button class="btn btn-sm btn-outline-secondary" data-dashboard-action="prior-years" data-ward-id="${id}">Prior years</button>`
     : '<span class="dashboard-action-empty" aria-hidden="true"></span>';
-  // Close acts on the open filing, so it belongs to that filing's own row
-  // rather than to the page. Every other row reserves the column, for the
-  // same alignment reason as Prior years above.
-  const close = row.wardId === getCaseFile().activeWardId
-    ? `<button class="btn btn-sm btn-outline-secondary dashboard-close-ward" id="close-ward-btn" data-dashboard-action="close-ward" data-ward-id="${id}" title="Close this filing and release its lock">Close</button>`
-    : '<span class="dashboard-action-empty" aria-hidden="true"></span>';
   return `<div class="dashboard-triage-actions dashboard-triage-cell" data-label="Actions">
-    <button class="btn btn-sm btn-primary" data-dashboard-action="open-ward" data-ward-id="${id}">Open</button>
-    ${close}
+    <button class="btn btn-sm btn-primary" data-dashboard-action="open-ward" data-ward-id="${id}">Edit</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="backup" data-ward-id="${id}">Backup</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="pdf" data-ward-id="${id}">PDF</button>
     <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="new-year" data-ward-id="${id}">New year</button>
     ${priorYears}
-    <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="archive" data-ward-id="${id}" aria-pressed="${row.isArchived}" title="${row.isArchived ? 'Move this filing back to the active queue' : 'Move this filing to Closed Filings'}">${row.isArchived ? 'Reopen' : 'Mark Closed'}</button>
+    <button class="btn btn-sm btn-outline-secondary" data-dashboard-action="archive" data-ward-id="${id}" aria-pressed="${row.isArchived}" title="${row.isArchived ? 'Move this filing back to the active queue' : 'Move this filing to Closed Filings'}">${row.isArchived ? 'Mark Open' : 'Mark Closed'}</button>
     <button class="btn btn-sm btn-outline-danger" data-dashboard-action="delete" data-ward-id="${id}">Delete</button>
   </div>`;
 }

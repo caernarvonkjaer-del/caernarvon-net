@@ -65,6 +65,8 @@ test.describe('Persistence and recovery contract', () => {
       await reopenPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
       await reopenPage.setInputFiles('#startup-open-input', savPath);
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Invalid Draft Ward');
 
       // The draft data itself survived the round trip. getFieldDraftDisplay()
@@ -151,6 +153,8 @@ test.describe('Persistence and recovery contract', () => {
     });
     await gotoApp(page);
     await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+    await expect(page.locator('#ward-selector')).toHaveValue('');
+    await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
     await expect(page.locator('#ward-selector')).toHaveValue('Encrypted Recovery Ward');
   });
 
@@ -179,6 +183,8 @@ test.describe('Persistence and recovery contract', () => {
       await reopenPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
       await reopenPage.setInputFiles('#startup-open-input', savPath);
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Plan Ward');
     } finally {
       await reopenContext.close();

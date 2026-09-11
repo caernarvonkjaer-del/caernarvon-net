@@ -186,7 +186,6 @@ export async function buildCaseFileBlob() {
   }
 
   const appStateBlob = {
-    activeWardId: caseFile.activeWardId,
     theme: await loadAppState('theme'),
     walkthroughCompleted: await loadAppState('walkthroughCompleted'),
     firstLaunchSeen: await loadAppState('firstLaunchSeen'),

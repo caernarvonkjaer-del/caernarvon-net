@@ -3,6 +3,7 @@ import { renderFormField, renderSelectField } from '../../core/form/form-fields.
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
+import { createSimplifiedGuardian, getSimplifiedGuardianAddressConflicts, normalizeSimplifiedGuardianCompatibility, resolveSimplifiedGuardianAddressConflict } from './guardian-compatibility.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -56,7 +57,7 @@ function bindEvents(container) {
     const index = Number.parseInt(actionElement.dataset.index, 10);
     switch (actionElement.dataset.simplifiedAction) {
       case 'add-guardian': {
-        if (addCollectionRow('guardians', window.D)) {
+        if (addCollectionRow('guardians', window.D, createSimplifiedGuardian)) {
           autoSave();
           navigate('/p4');
         }
@@ -103,6 +104,13 @@ function bindEvents(container) {
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
+      case 'resolve-guardian-address-conflict': {
+        if (resolveSimplifiedGuardianAddressConflict(window.D, index, actionElement.dataset.field, actionElement.dataset.choice)) {
+          autoSave();
+          navigate('/p4');
+        }
+        break;
+      }
     }
   }, options);
   container.addEventListener('change', (event) => {
@@ -127,6 +135,7 @@ function ensureLazyModules() {
 
 export async function mount(container, page) {
   await ensureLazyModules();
+  normalizeSimplifiedGuardianCompatibility(window.D, { persistedSource: true });
   sanitizeNegativeAmounts();
   let html;
   switch (page) {
@@ -442,6 +451,7 @@ function pagePart3(){
 // ── Part IV – Guardians ─────────────────────────────────
 function pagePart4(){
   const d=window.D;
+  const conflicts=getSimplifiedGuardianAddressConflicts(d);
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   const cards=(d.guardians||[]).map((g,i)=>{
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
@@ -463,8 +473,10 @@ function pagePart4(){
     </div></div>`;
   }).join('');
   const addCoBtn=(d.guardians||[]).length<3?`<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-simplified-action="add-guardian">+ Add Co-Guardian</button>`:'';
+  const conflictControls=conflicts.map(conflict=>`<div class="validation-panel mb-3"><div class="validation-title">Guardian address needs your decision</div><div class="validation-sub">Guardian #${conflict.rowIndex+1}: the saved residence value and recovered legacy value differ.</div><div class="d-flex gap-2 mt-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-simplified-action="resolve-guardian-address-conflict" data-index="${conflict.rowIndex}" data-field="${conflict.field}" data-choice="canonical">Keep residence value</button><button type="button" class="btn btn-outline-primary btn-sm" data-simplified-action="resolve-guardian-address-conflict" data-index="${conflict.rowIndex}" data-field="${conflict.field}" data-choice="legacy">Use recovered legacy value</button></div></div>`).join('');
   return `<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
   <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>
+  ${conflictControls}
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
   ${addCoBtn}
   ${renderScheduleDocsSection('p4')}${pageNavS('/p3','/p5')}</div>`;
@@ -588,6 +600,7 @@ function pagePart7(){
 export function validateSimplified(){
   const d=window.D;
   const errs=[];
+  getSimplifiedGuardianAddressConflicts(d).forEach(conflict=>errs.push(`Part IV — Guardian #${conflict.rowIndex+1} — resolve conflicting residence address before export`));
   const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
   const reqYes=(v,label)=>{if(v!=='Yes')errs.push(label);};
   reqYes(d.eligDepository,'Cover — Eligibility: all estate property must be held in a designated depository under § 69.031 — otherwise use the standard Annual Accounting');

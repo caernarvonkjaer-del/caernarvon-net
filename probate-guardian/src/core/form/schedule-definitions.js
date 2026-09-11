@@ -151,7 +151,7 @@ export const SCHEDULE_SCHEMAS = {
 /**
  * Adds a new clean row to a collection, respecting max constraint and party synchronization.
  */
-export function addCollectionRow(collectionKey, data = (typeof window !== 'undefined' ? window.D : null)) {
+export function addCollectionRow(collectionKey, data = (typeof window !== 'undefined' ? window.D : null), factoryOverride = null) {
   if (!data) return false;
   const schema = SCHEDULE_SCHEMAS[collectionKey];
   if (!schema) return false;
@@ -164,7 +164,9 @@ export function addCollectionRow(collectionKey, data = (typeof window !== 'undef
     return false;
   }
 
-  data[collectionKey].push(schema.factory());
+  const factory = factoryOverride || schema.factory;
+  if (typeof factory !== 'function') return false;
+  data[collectionKey].push(factory());
 
   if (schema.syncPartyIds) {
     const partyKey = schema.syncPartyIds;
@@ -173,6 +175,7 @@ export function addCollectionRow(collectionKey, data = (typeof window !== 'undef
     }
     data[partyKey].push(null);
   }
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-add');
 
   return true;
 }
@@ -203,6 +206,7 @@ export function duplicateCollectionRow(collectionKey, index, data = (typeof wind
     }
     data[partyKey].splice(index + 1, 0, null);
   }
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-duplicate');
 
   return true;
 }
@@ -231,6 +235,7 @@ export function removeCollectionRow(collectionKey, index, data = (typeof window 
       data[partyKey].splice(index, 1);
     }
   }
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-remove');
 
   return true;
 }

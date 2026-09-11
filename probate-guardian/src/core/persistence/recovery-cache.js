@@ -91,7 +91,6 @@ export async function saveSessionRestoreCache() {
       parties,
       cases,
       partyDismissals,
-      activeWardId: caseFile.activeWardId || null,
     });
   } catch (e) {
     console.warn('session-restore cache write failed', e);
@@ -156,7 +155,7 @@ export async function checkSessionRestoreCacheAtLaunch() {
     caseFile.parties = cache.parties ? (await decryptJSONWithKey(cache.parties, key)) || [] : [];
     caseFile.cases = cache.cases ? (await decryptJSONWithKey(cache.cases, key)) || [] : [];
     caseFile.dismissedPartyPairs = cache.partyDismissals ? (await decryptJSONWithKey(cache.partyDismissals, key)) || [] : [];
-    caseFile.activeWardId = cache.activeWardId || restoredWards[0].wardId;
+    caseFile.activeWardId = null;
 
     setCryptoKey(key);
     setAppState('securityMode', cache.securityMode);

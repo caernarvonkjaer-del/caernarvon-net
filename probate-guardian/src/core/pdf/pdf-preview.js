@@ -24,6 +24,7 @@ import { finalizeCourtFormPdf } from './pdf-finalizer.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
 import { announceStatus } from '../status/live-region.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
+import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -131,7 +132,7 @@ function blockedPanelHTML(messages) {
     <p class="pdf-preview-blocked-title">Preview blocked</p>
     <p class="pdf-preview-blocked-summary">${total} required item${total === 1 ? '' : 's'} still missing, across ${groups.size} section${groups.size === 1 ? '' : 's'}.</p>
     <div class="pdf-preview-blocked-actions">
-      <button type="button" class="btn btn-sm btn-outline-secondary" data-preview-action="override">Preview anyway</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-preview-action="override">Continue despite outstanding requirements</button>
     </div>
     <details class="pdf-preview-blocked-details">
       <summary>Show what is missing</summary>
@@ -140,7 +141,7 @@ function blockedPanelHTML(messages) {
   </div>`;
 }
 
-async function renderPreviewInto(container, buildModel, D, { draft = false } = {}) {
+async function renderPreviewInto(container, buildModel, D) {
   announceStatus('Generating preview…', { containerId: 'print-preview-status' });
   container.innerHTML = '<p class="pdf-preview-loading no-print" style="padding:2rem;text-align:center;color:var(--ink-3);">Generating preview…</p>';
   try {
@@ -148,13 +149,8 @@ async function renderPreviewInto(container, buildModel, D, { draft = false } = {
     const doc = await generateCourtFormPdf(model);
     const finalizedBytes = await finalizeCourtFormPdf(doc);
     await renderPagesInto(container, finalizedBytes);
-    if (draft) {
-      // Prepended after the pages render, because renderPagesInto() clears the
-      // container. The filer overrode a gate; the reason has to stay on screen.
-      container.insertAdjacentHTML('afterbegin', `<p class="pdf-preview-draft-notice no-print">Draft preview. Required items are still missing, so this is not ready to file. Saving and printing stay blocked until they are filled in.</p>`);
-    }
     refreshPreviewPager();
-    announceStatus(draft ? 'Draft preview ready. Required items are still missing.' : 'Preview ready.', { containerId: 'print-preview-status' });
+    announceStatus('Preview ready.', { containerId: 'print-preview-status' });
   } catch (e) {
     console.error('PDF preview render failed', e);
     announceStatus(`Preview failed to render: ${e.message}`, { priority: 'assertive', containerId: 'print-preview-status' });
@@ -165,14 +161,26 @@ async function renderPreviewInto(container, buildModel, D, { draft = false } = {
 export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container') {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const preflight = prepareFilingOutput(D, baseIssues);
-  if (!preflight.canExport) {
+  beginFreshPreview();
+  const authorization = authorizeFilingOutput(D, baseIssues, { capability: 'preview' });
+  if (authorization.status !== 'allowed') {
     // Announce the count, not the list -- an assertive region reading fifty
     // items aloud is worse than useless. The list is on the page to be read.
-    announceStatus(`Preview is blocked. ${preflight.messages.length} required items are still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
-    container.innerHTML = blockedPanelHTML(preflight.messages);
+    announceStatus(`Preview is blocked. ${authorization.issues.length} required items are still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
+    container.innerHTML = blockedPanelHTML(authorization.issues.map(issue => issue.message));
     container.querySelector('[data-preview-action="override"]')
-      ?.addEventListener('click', () => { void renderPreviewInto(container, buildModel, D, { draft: true }); });
+      ?.addEventListener('click', () => {
+        if (authorization.status === 'blocked') return;
+        if (!window.confirm('Requirements remain outstanding. Continue with ordinary preview and output?')) return;
+        if (acknowledgeOutstandingRequirements(D, baseIssues)) {
+          document.querySelectorAll('[data-form-action*="save"], [data-simplified-action^="save"], [data-annual-action^="save"], [data-inventory-action^="save"]').forEach((control) => {
+            // Format-capacity controls carry their own explicit explanation and
+            // remain unavailable because their output would omit data.
+            if (!String(control.title || '').toLowerCase().includes('template can hold')) control.disabled = false;
+          });
+          void renderPreviewInto(container, buildModel, D);
+        }
+      });
     return;
   }
   await renderPreviewInto(container, buildModel, D);

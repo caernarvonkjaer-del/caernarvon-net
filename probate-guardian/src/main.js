@@ -21,6 +21,7 @@ import './core/persistence/case-file.js';
 import './core/persistence/templates.js';
 import './core/navigation/ward-lifecycle.js';
 import './core/navigation/router.js';
+import './core/filing/output-authorization.js';
 import './core/modals/convert-ward-modal.js';
 import './core/modals/year-manager-modal.js';
 import './core/modals/eligibility-modal.js';
@@ -38,6 +39,7 @@ import './pwa-ui.js';
 import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
 import { navigate } from './core/navigation/router.js';
 import { activateWard, switchWard } from './core/navigation/ward-lifecycle.js';
+import { markFilingRevisionChanged, isOutputAcknowledgedFor } from './core/filing/output-authorization.js';
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
 if (typeof window !== 'undefined') {
@@ -61,6 +63,8 @@ if (typeof window !== 'undefined') {
   window.navigate = navigate;
   window.activateWard = activateWard;
   window.switchWard = switchWard;
+  window.markFilingRevisionChanged = markFilingRevisionChanged;
+  window.isOutputAcknowledgedFor = isOutputAcknowledgedFor;
 }
 
 console.log('Probate Guardian ESM bootstrap initialized.');

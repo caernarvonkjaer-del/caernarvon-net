@@ -64,7 +64,7 @@ export function closeMobileSidebar() {
   if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
-export async function navigate(page) {
+export async function navigate(page, { updateHash = true } = {}) {
   const previousPage = getCurrentPage();
   if (page !== previousPage) {
     if (typeof window !== 'undefined') {
@@ -84,9 +84,13 @@ export async function navigate(page) {
     }
   }
 
+  if (page === '/dashboard' && typeof window !== 'undefined' && typeof window.enterDashboardEditingFocus === 'function') {
+    if (!await window.enterDashboardEditingFocus()) return false;
+  }
+
   setCurrentPage(page);
   if (typeof window !== 'undefined') {
-    window.location.hash = page;
+    if (updateHash) window.location.hash = page;
   }
 
   await renderPage(page);

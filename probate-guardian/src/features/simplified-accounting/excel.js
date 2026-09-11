@@ -14,8 +14,18 @@ const {
 } = window;
 
 export const SIMPLIFIED_EXCEL_CAPS={
+  guardians:{cap:3,label:'Part IV - Guardians',route:'/p4',isPopulated:guardianHasAnyData},
   remuneration:{cap:27,label:'Part VII — Remuneration',route:'/p7'},
 };
+
+function guardianSlotsFromWorkbook(sheet) {
+  const text = (address) => readCellText(sheet.getCell(address));
+  const slot = (signatureDate, name, ssn, phone, email, mailingStreet, mailingCityStateZip, residenceStreet, residenceCityStateZip) => ({
+    name: text(name), signatureDate: text(signatureDate).substring(0, 10), ssn: text(ssn), phone: text(phone), email: text(email),
+    mailingStreet: text(mailingStreet), mailingCityStateZip: text(mailingCityStateZip), residenceStreet: text(residenceStreet), residenceCityStateZip: text(residenceCityStateZip),
+  });
+  return [slot('D15','F15','B17','B19','B21','F17','F19','F21','F23'), slot('D25','F25','B27','B29','B31','F27','F29','F31','F33'), slot('D35','F35','B37','B39','B41','F37','F39','F41','F43')];
+}
 
 export async function doSaveExcel(){
   const errors=prepareFilingOutput(window.D,()=>validateSimplified()).messages;
@@ -266,6 +276,14 @@ export async function importExcel(input){
       }
 
       // PARTS V, VI — Attorney and Certificate of Service
+      if(p34){
+        if(!window.confirm('Replace the first three guardian slots with the values from this workbook? Any additional saved guardians will be kept.')) return;
+        const overflowRows=(window.D.guardians||[]).slice(3);
+        const overflowPartyIds=(window.D.guardianPartyIds||[]).slice(3);
+        window.D.guardians=[...guardianSlotsFromWorkbook(p34),...overflowRows];
+        window.D.guardianPartyIds=[null,null,null,...overflowPartyIds];
+      }
+
       const p56=workbook.getWorksheet('PARTS V, VI ');
       if(p56){
         const gc56=(addr)=>readCellText(p56.getCell(addr));

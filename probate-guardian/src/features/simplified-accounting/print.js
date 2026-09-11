@@ -16,6 +16,7 @@ import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-e
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { filingReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 
 function buildModelForPreview(D){
@@ -65,6 +66,7 @@ export function pagePrintSimplified(capOver){
       </div>
     </div>
     ${errors.length?validationPanel(errors):''}
+    ${filingReadinessCard(window.D, preflight.structuredIssues)}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
     ${capOver.length?excelCapacityPanel(capOver):''}

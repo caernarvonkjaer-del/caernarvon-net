@@ -9,9 +9,12 @@ import {
   formatDraftIssues,
   getFieldDraftIssues,
 } from '../form/commit-coordinator.js';
+import { createIssue } from '../validation/issue-registry.js';
 
-function messageFor(issue) {
-  return typeof issue === 'string' ? issue : issue?.message || String(issue);
+function normalizeIssue(issue) {
+  if (typeof issue === 'string') return createIssue('validation.legacy-unmapped', { message: issue });
+  if (issue?.code) return createIssue(issue.code, issue);
+  return createIssue('validation.legacy-unmapped', { message: issue?.message || String(issue) });
 }
 
 export function prepareFilingOutput(data, baseIssues = [], options = {}) {
@@ -22,14 +25,18 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     : baseIssues;
 
   const identity = resolveFilingDescriptor(target);
-  const structuredIssues = [
-    ...getFieldDraftIssues(target),
-    ...identity.issues,
+  const base = (resolvedBaseIssues || []).map(normalizeIssue);
+  const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
+  const rawMessages = [
+    ...structuredIssues.map(issue => issue?.message || String(issue)),
   ];
-  const messages = [
-    ...resolvedBaseIssues.map(messageFor),
-    ...formatDraftIssues(structuredIssues),
-  ];
+  // Existing feature-owned save actions still consume `messages`.  Once the
+  // in-memory acknowledgement matches this filing revision, bypassable issues
+  // remain visible in `structuredIssues` but no longer veto ordinary output.
+  const acknowledged = typeof window !== 'undefined'
+    && typeof window.isOutputAcknowledgedFor === 'function'
+    && window.isOutputAcknowledgedFor(target, identity.descriptor);
+  const messages = acknowledged && structuredIssues.every(issue => issue.bypassable !== false) ? [] : rawMessages;
   const advisories = countyDriftWarnings(target);
 
   return {
