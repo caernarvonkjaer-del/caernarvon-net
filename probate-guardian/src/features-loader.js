@@ -149,5 +149,17 @@ window.loadPlanInitialPdf = loadPlanInitialPdf;
 window.loadPlanAnnualPdf = loadPlanAnnualPdf;
 window.loadPlanMinorPdf = loadPlanMinorPdf;
 window.loadPlanSimplifiedPdf = loadPlanSimplifiedPdf;
-document.dispatchEvent(new Event('features-loader-ready'));
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    console.warn('Vite asset chunk preload error detected (stale deployment). Reloading page...', event);
+    window.location.reload();
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && /Failed to fetch dynamically imported module/i.test(event.reason.message || '')) {
+      console.warn('Stale dynamic module import failure detected. Reloading page...');
+      window.location.reload();
+    }
+  });
+}
+
 

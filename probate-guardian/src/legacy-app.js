@@ -8948,6 +8948,10 @@ const TEMPLATE_FILES={
   guardian:'a_InitialInventory (3).xlsx',
 };
 
+function isValidXlsxB64(b64) {
+  return typeof b64 === 'string' && (b64.startsWith('UEsDB') || b64.startsWith('UEsBA'));
+}
+
 async function fetchAndCacheTemplate(type,filename){
   if(location.protocol==='file:')return null;
   try{
@@ -8961,6 +8965,11 @@ async function fetchAndCacheTemplate(type,filename){
       reader.onload=async(e)=>{
         try{
           const b64=e.target.result.split(',')[1];
+          if(!isValidXlsxB64(b64)){
+            console.warn(`Fetched template for ${type} is not a valid XLSX zip file. Skipping cache.`);
+            resolve(null);
+            return;
+          }
           console.log(`Caching ${type} template...`);
           await saveTemplate(type,b64);
           console.log(`${type} template auto-loaded successfully`);
@@ -8988,15 +8997,16 @@ function embeddedTemplate(type){
 // Imported spreadsheets are parsed and discarded. Only bundled blank
 // templates enter the in-memory template cache and subsequent .sav writes.
 async function ensureTemplate(type){
-  const existing=await loadTemplate(type);
-  if(existing)return existing;
   const bundled=embeddedTemplate(type);
-  if(bundled){
-    // Cache the bundled template so later exports skip the lookup.
-    try{await saveTemplate(type,bundled);}catch(e){console.warn('Could not cache bundled template',type,e);}
-    return bundled;
-  }
-  return fetchAndCacheTemplate(type,TEMPLATE_FILES[type]);
+  if(bundled&&isValidXlsxB64(bundled))return bundled;
+
+  const existing=await loadTemplate(type);
+  if(existing&&isValidXlsxB64(existing))return existing;
+
+  const fetched=await fetchAndCacheTemplate(type,TEMPLATE_FILES[type]);
+  if(fetched&&isValidXlsxB64(fetched))return fetched;
+
+  return (bundled&&typeof bundled==='string')?bundled:null;
 }
 
 async function autoLoadTemplates(){

@@ -153,8 +153,15 @@ async function renderPreviewInto(container, buildModel, D) {
     announceStatus('Preview ready.', { containerId: 'print-preview-status' });
   } catch (e) {
     console.error('PDF preview render failed', e);
-    announceStatus(`Preview failed to render: ${e.message}`, { priority: 'assertive', containerId: 'print-preview-status' });
-    container.innerHTML = `<p class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);">Preview failed to render: ${escapeHtml(e.message)}</p>`;
+    const isChunkError = /dynamically imported module|Failed to fetch|central directory/i.test(e?.message || '');
+    const userMsg = isChunkError
+      ? 'A new version of Probate Guardian was deployed. Please reload the page to load updated assets.'
+      : `Preview failed to render: ${escapeHtml(e.message)}`;
+    const actionBtn = isChunkError
+      ? `<br/><button type="button" class="btn btn-sm btn-primary mt-3" onclick="window.location.reload()">Reload Page</button>`
+      : '';
+    announceStatus(userMsg, { priority: 'assertive', containerId: 'print-preview-status' });
+    container.innerHTML = `<div class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);"><p>${userMsg}</p>${actionBtn}</div>`;
   }
 }
 
