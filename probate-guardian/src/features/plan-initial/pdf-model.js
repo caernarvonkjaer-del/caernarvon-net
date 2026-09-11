@@ -6,6 +6,7 @@
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { triStateText } from '../../core/form/form-contract.js';
+import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildPlanInitialModel(D, options) {
   const d = D || {};
@@ -429,7 +430,7 @@ export function buildPlanInitialModel(D, options) {
       signatureDate: fmtDate(p.signatureDate),
       signatureStyle,
       fields: [
-        [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: p.ssn || '' }, { label: 'Phone Number', value: p.phone || '' }],
+        [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: maskSSN(p.ssn || '') }, { label: 'Phone Number', value: p.phone || '' }],
         [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Street Address', value: p.street || '' }, { label: 'City / State / ZIP', value: p.cityStateZip || '' }],
       ],
     };

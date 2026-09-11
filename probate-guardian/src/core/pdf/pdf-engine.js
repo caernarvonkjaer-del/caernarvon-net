@@ -25,6 +25,16 @@ import {
   assertFilingEligibleSupplement,
   resolveActiveDocPeriod,
 } from './supplemental-pdf.js';
+import { maskSSN } from './ssn-format.js';
+
+function sanitizeDisplayValue(label, value) {
+  if (!value) return '';
+  const l = String(label || '').toLowerCase();
+  if (l.includes('ssn') || l.includes('social security') || l.includes('taxpayer id') || /\btin\b/.test(l)) {
+    return maskSSN(value);
+  }
+  return value;
+}
 
 export async function createJsPdfInstance() {
   const patchOutlineDestinations = (pdf) => {
@@ -764,7 +774,8 @@ export async function generateCourtFormPdf(model, options = {}) {
           const labelLines = doc.splitTextToSize(String(item.label || ''), KV_LABEL_MAX_W);
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
-          const valueLines = doc.splitTextToSize(String(item.value || ''), valueMaxW);
+          const val = sanitizeDisplayValue(item.label, item.value);
+          const valueLines = doc.splitTextToSize(String(val || ''), valueMaxW);
           return { labelLines, valueLines, lines: Math.max(labelLines.length, valueLines.length, 1) };
         };
 
@@ -1436,9 +1447,10 @@ export async function generateCourtFormPdf(model, options = {}) {
               // overflow into the right margin. Each field column is
               // contentWidth/cols wide; subtract 4pt for left padding.
               const fieldMaxW = colW - 4;
-              const fieldLines = field.label.toLowerCase().includes('address')
-                ? formatMailingAddress(field.value).flatMap(line => doc.splitTextToSize(line, fieldMaxW))
-                : doc.splitTextToSize(String(field.value), fieldMaxW);
+              const fVal = sanitizeDisplayValue(field.label, field.value);
+              const fieldLines = String(field.label || '').toLowerCase().includes('address')
+                ? formatMailingAddress(fVal).flatMap(line => doc.splitTextToSize(line, fieldMaxW))
+                : doc.splitTextToSize(String(fVal), fieldMaxW);
               doc.text(fieldLines, fx, rowY + 9);
               writeMarkedContentEnd(doc);
             }
@@ -1450,7 +1462,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           const detailKeys = Object.keys(block.details);
           let detailY = curY + 28;
           for (const k of detailKeys) {
-            const val = block.details[k];
+            const val = sanitizeDisplayValue(k, block.details[k]);
             if (val) {
               const detailNode = structureTree.addStructureElement({
                 tag: 'P',

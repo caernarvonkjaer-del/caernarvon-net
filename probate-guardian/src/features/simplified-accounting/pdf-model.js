@@ -4,6 +4,7 @@
 import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddress } from '../../core/pdf/address-format.js';
+import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -70,7 +71,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const caseInfoItems = [
     { label: 'Name of Ward', value: wardName },
     { label: 'Case Number', value: caseNumber },
-    { label: 'Social Security Number', value: d.ssn || '' },
+    { label: 'Social Security Number', value: maskSSN(d.ssn || '') },
     { label: 'Accounting Period', value: `From: ${fmtDate(d.periodFrom)}  To: ${fmtDate(d.periodTo)}` },
     { label: 'Guardian', value: d.guardian || '' },
     { label: 'Attorney for Guardian', value: d.attorney || '' },
@@ -166,7 +167,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       signatureDate: fmtDate(g.signatureDate),
       details: {
         'Phone': g.phone || '',
-        'SSN/EIN': g.ssn || '',
+        'SSN/EIN': maskSSN(g.ssn || ''),
         'Email': g.email || '',
         'Mailing Address': composePdfAddress(g.mailingStreet, g.mailingCityStateZip),
         'Residence Address': composePdfAddress(g.residenceStreet, g.residenceCityStateZip),

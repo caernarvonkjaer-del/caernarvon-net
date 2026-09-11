@@ -5,6 +5,7 @@
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildPlanAnnualModel(D) {
   const d = D || {};
@@ -60,7 +61,7 @@ export function buildPlanAnnualModel(D) {
       {
         type: 'key-value-grid',
         items: [
-          { label: 'Social Security Number', value: d.ssn || '' },
+          { label: 'Social Security Number', value: maskSSN(d.ssn || '') },
           { label: 'Guardianship Inception Date', value: fmtDate(d.gid) },
           { label: 'For the period', value: `${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardian || '' },
@@ -488,7 +489,7 @@ export function buildPlanAnnualModel(D) {
     signerName: p.name || '',
     signatureDate: fmtDate(p.signatureDate),
     fields: [
-      [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: p.ssn || '' }, { label: 'Phone Number', value: p.phone || '' }],
+      [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: maskSSN(p.ssn || '') }, { label: 'Phone Number', value: p.phone || '' }],
       [{ label: 'Email Address', value: p.email || '' }, { label: 'Relationship to Ward', value: p.relationship || '' }],
       [{ label: 'Mailing Street Address', value: p.mailingStreet || '' }, { label: 'Mailing City / State / ZIP', value: p.mailingCityStateZip || '' }],
       [{ label: 'Residence or Office Street Address', value: p.officeStreet || '' }, { label: 'Residence or Office City / State / ZIP', value: p.officeCityStateZip || '' }],

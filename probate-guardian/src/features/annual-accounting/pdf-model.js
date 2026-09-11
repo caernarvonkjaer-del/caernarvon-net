@@ -5,6 +5,7 @@ import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddress } from '../../core/pdf/address-format.js';
+import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -237,7 +238,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       signatureDate: fmtD(g.signatureDate),
       details: {
         'Phone': g.phone || '',
-        'SSN / EIN': g.ssn || '',
+        'SSN / EIN': maskSSN(g.ssn || ''),
         'Email': g.email || '',
         'Mailing Address': composePdfAddress(g.mailingStreet, g.mailingCityStateZip),
         'Residence / Office': composePdfAddress(g.officeStreet, g.officeCityStateZip),
@@ -287,7 +288,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         signatureDate: fmtD(p.signatureDate),
         details: {
           'Phone': p.phone || '',
-          'SSN / EIN': p.ssn || '',
+          'SSN / EIN': maskSSN(p.ssn || ''),
           'Address': composePdfAddress(p.street, p.cityStateZip),
         },
       },

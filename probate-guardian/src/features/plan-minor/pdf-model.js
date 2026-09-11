@@ -6,6 +6,7 @@
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { triStateText } from '../../core/form/form-contract.js';
+import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildPlanMinorModel(D) {
   const d = D || {};
@@ -197,7 +198,7 @@ export function buildPlanMinorModel(D) {
   // Page 5: Certification + guardian signatures
   const g = d.planGuardians || [];
   const guardianFields = (p) => [
-    [{ label: 'Printed Name', value: p.name || '' }, { label: 'Taxpayer ID #', value: p.tin || '' }, { label: 'Telephone #', value: p.phone || '' }],
+    [{ label: 'Printed Name', value: p.name || '' }, { label: 'Taxpayer ID #', value: maskSSN(p.tin || '') }, { label: 'Telephone #', value: p.phone || '' }],
     [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Email Address', value: p.email || '' }],
     [{ label: 'Mailing Address', value: p.mailingStreet || '' }, { label: 'City / State / Zip', value: p.mailingCityStateZip || '' }],
   ];
@@ -247,7 +248,7 @@ export function buildPlanMinorModel(D) {
         text: 'The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification of the information contained herein. I have not audited or reviewed the guardianship plan or documents supporting its preparation, and accordingly do not express an opinion or any other form of assurance as to the accuracy of the information contained in the plan.',
       },
       makeSigBlock('Preparer', { name: d.preparer_name, signatureDate: d.preparer_signatureDate }, [
-        [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Taxpayer ID #', value: d.preparer_tin || '' }, { label: 'Telephone #', value: d.preparer_phone || '' }],
+        [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Taxpayer ID #', value: maskSSN(d.preparer_tin || '') }, { label: 'Telephone #', value: d.preparer_phone || '' }],
         [{ label: 'Email Address', value: d.preparer_email || '' }],
         [{ label: 'Mailing Address', value: d.preparer_mailingStreet || '' }, { label: 'City / State / Zip', value: d.preparer_cityStateZip || '' }],
       ]),

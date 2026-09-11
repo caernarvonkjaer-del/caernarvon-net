@@ -6,6 +6,7 @@ import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddress } from '../../core/pdf/address-format.js';
+import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -430,7 +431,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signatureStyle,
     signatureDate: fmtDate(g.signatureDate),
     fields: [
-      [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: g.ssnEin || '' }],
+      [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: maskSSN(g.ssnEin || '') }],
       [{ label: 'Address', value: composePdfAddress(g.streetAddress, g.cityStateZip) }],
     ],
   }));
@@ -445,7 +446,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signatureStyle,
     signatureDate: fmtDate(preparer.signatureDate),
     fields: [
-      [{ label: 'Phone', value: preparer.phone || '' }, { label: 'SSN/EIN', value: preparer.ssnEin || '' }],
+      [{ label: 'Phone', value: preparer.phone || '' }, { label: 'SSN/EIN', value: maskSSN(preparer.ssnEin || '') }],
       [{ label: 'Address', value: composePdfAddress(preparer.streetAddress, preparer.cityStateZip) }],
     ],
   };
