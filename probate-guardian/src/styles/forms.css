@@ -11,7 +11,7 @@
 .ssn-reveal-btn:hover{color:var(--ink-2);}
 
 /* ── Labels & Typography ──────────────────────────────── */
-.form-label, label.form-label, label{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bottom:.25rem;letter-spacing:.005em;}
+.form-label, label.form-label, label, legend.form-label, .plan-yes-no legend{font-size:.78rem;font-weight:600;color:var(--ink-2);margin-bottom:.25rem;letter-spacing:.005em;float:none;width:auto;line-height:1.35;display:inline-flex;align-items:center;flex-wrap:wrap;gap:.25rem;}
 .form-check-label{font-size:.88rem;color:var(--ink-2);}
 .form-check-label-sm{font-size:.85rem;}
 .form-text{color:var(--ink-3);font-size:.8rem;}

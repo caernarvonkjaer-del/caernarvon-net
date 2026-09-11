@@ -278,15 +278,15 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .help-btn-ghost{background:var(--surface);color:var(--ink-2);border:1px solid var(--line);}
 .help-btn-ghost:hover{border-color:var(--brand-200);color:var(--brand-text);background:var(--brand-050);}
 
-.tooltip-icon{display:inline-flex;align-items:center;justify-content:center;width:1.15rem;height:1.15rem;margin-left:.4rem;background:var(--brand-100);color:var(--brand-text);border:1px solid var(--brand-200);border-radius:50%;font-size:.7rem;font-weight:700;cursor:help;position:relative;flex-shrink:0;transition:background .15s,color .15s;}
+.tooltip-icon{display:inline-flex;align-items:center;justify-content:center;width:1.15rem;height:1.15rem;margin-left:.35rem;margin-right:.1rem;background:var(--brand-100);color:var(--brand-text);border:1px solid var(--brand-200);border-radius:50%;font-size:.7rem;font-weight:700;cursor:help;position:relative;flex-shrink:0;vertical-align:middle;transition:background .15s,color .15s;}
 .tooltip-icon:hover{background:var(--brand);color:#fff;border-color:var(--brand);}
 /* display:none at rest, not just opacity/visibility: the popup is positioned against a 1.15rem
    icon and centred with translateX(-50%), so a laid-out box spills past the column and inflates
    scrollWidth even while invisible. allow-discrete + @starting-style keep the fade. */
-.tooltip-popup{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);background:#111a2b;color:#fff;padding:.65rem .85rem;border-radius:var(--r-sm);font-size:.8rem;font-weight:400;white-space:normal;width:max-content;max-width:280px;z-index:9999;pointer-events:none;opacity:0;display:none;transition:opacity .18s,display .18s allow-discrete;line-height:1.5;box-shadow:var(--sh-3);}
+.tooltip-popup{position:absolute;bottom:calc(100% + 9px);left:-0.5rem;transform:none;background:#111a2b;color:#fff;padding:.65rem .85rem;border-radius:var(--r-sm);font-size:.8rem;font-weight:400;white-space:normal;width:max-content;max-width:280px;z-index:9999;pointer-events:none;opacity:0;display:none;transition:opacity .18s,display .18s allow-discrete;line-height:1.5;box-shadow:var(--sh-3);}
 .tooltip-icon:hover .tooltip-popup{display:block;opacity:1;pointer-events:auto;}
 @starting-style{.tooltip-icon:hover .tooltip-popup{opacity:0;}}
-.tooltip-popup::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;height:0;border:6px solid transparent;border-top-color:#111a2b;}
+.tooltip-popup::after{content:'';position:absolute;top:100%;left:0.8rem;transform:none;width:0;height:0;border:6px solid transparent;border-top-color:#111a2b;}
 .tooltip-popup strong{font-weight:650;color:#fff;}
 
 /* ── Walkthrough ──────────────────────────────────────── */

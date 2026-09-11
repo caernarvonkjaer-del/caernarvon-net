@@ -7009,13 +7009,14 @@ function chkP(id,label,checked){
 // pair has a real unanswered state: neither option is selected and the model
 // remains ''. `binding` permits Annual Accounting's isolated event contract
 // without teaching its schedule controls to use the general form listener.
-function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form'){
+function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form',tooltipKey=''){
   const safeId=String(id||path||'yes_no').replace(/[^A-Za-z0-9_-]/g,'_');
   const groupId=`yesno_${safeId}`;
   const pathAttr=binding==='annual'?'data-annual-path':'data-form-path';
   const routeAttr=route?` data-form-route="${esc(route)}"`:'';
+  const tooltipHtml=(tooltipKey && typeof tooltip==='function')?tooltip(tooltipKey):'';
   return `<fieldset class="plan-yes-no mb-2" data-yes-no-group="${esc(path)}">
-    <legend class="form-label mb-1">${esc(label)}${req?'<span class="req">*</span>':''}</legend>
+    <legend class="form-label mb-1">${esc(label)}${tooltipHtml}${req?'<span class="req">*</span>':''}</legend>
     <div class="plan-radio-row">
       <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_yes" value="Yes" ${val==='Yes'?'checked':''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_yes">Yes</label></div>
       <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_no" value="No" ${val==='No'?'checked':''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_no">No</label></div>
@@ -7364,7 +7365,7 @@ function sanitizeNegativeAmounts(){
   }
 }
 function n(v){return parseFloat(v)||0;}
-function pct(v){const p=parseFloat(v);return isNaN(p)?0:p>1?p/100:p;}
+function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v);return isNaN(p)?1:p>1?p/100:p;}
 
 // calcTotalsAnnual() and annualReconcileState() moved to src/features/annual-accounting/totals.js (Milestone 19E).
 // Eagerly loaded via src/features-loader.js to serve as the single source of truth across

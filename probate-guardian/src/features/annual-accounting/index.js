@@ -140,11 +140,29 @@ function setterPath(setter) {
  */
 function refreshAnnualTotals() {
   const cells = document.querySelectorAll('[data-annual-total]');
-  if (!cells.length) return;
   const t = calcTotalsAnnual();
   cells.forEach((cell) => {
     const key = cell.dataset.annualTotal;
     if (key in t) cell.textContent = fmtAnnual(t[key]);
+  });
+
+  const d = window.D || {};
+  document.querySelectorAll('[data-annual-calc]').forEach((input) => {
+    const path = input.dataset.annualCalc;
+    if (!path) return;
+    const parts = path.split('.');
+    const sch = parts[0], idx = parseInt(parts[1], 10);
+    const r = d[sch]?.[idx];
+    if (!r) return;
+    let val = 0;
+    if (sch === 'schD1' || sch === 'schD3') {
+      val = n(r.fullAmount) * pct(r.wardPct);
+    } else if (sch === 'schD2' || sch === 'schD4') {
+      val = n(r.fullValue || r.fullAmount) * pct(r.wardPct);
+    } else if (sch === 'schD5') {
+      val = n(r.fullDebt) * pct(r.wardPct);
+    }
+    input.value = fmtAnnual(val);
   });
 }
 
@@ -904,7 +922,7 @@ function pageSchD1Annual(){
           <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
-          <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}"></div>
+          <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}" data-annual-calc="schD1.${i}.wardAmt"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -941,7 +959,7 @@ function pageSchD2Annual(){
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-3"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
+          <div class="col-md-3"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD2.${i}.wardVal"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -976,7 +994,7 @@ function pageSchD3Annual(){
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD3[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD3[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}"></div>
+          <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}" data-annual-calc="schD3.${i}.wardAmt"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -1012,7 +1030,7 @@ function pageSchD4Annual(){
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-2"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}"></div>
+          <div class="col-md-2"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD4.${i}.wardVal"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -1049,7 +1067,7 @@ function pageSchD5Annual(){
           <div class="col-md-2"><label class="form-label" for="schD5_loanType_${i}">Type (M/N/L/O) <span class="req">*</span></label><select class="form-select" id="schD5_loanType_${i}" data-annual-path="schD5.${i}.loanType"><option value="">—</option>${LIAB_TYPES.map(lt=>`<option value="${lt}" ${r.loanType===lt?'selected':''}>${lt}</option>`).join('')}</select></div>
           <div class="col-md-2">${inpDWithTooltip('Full Debt Amount','full_debt',r.fullDebt,`D.schD5[${i}].fullDebt=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's %",'ward_pct',r.wardPct,`D.schD5[${i}].wardPct=this.value`,true,'number')}</div>
-          <div class="col-md-2"><label class="form-label">Ward's Balance Due</label><input class="form-control" readonly value="${fmtAnnual(wardBal)}"></div>
+          <div class="col-md-2"><label class="form-label">Ward's Balance Due</label><input class="form-control" readonly value="${fmtAnnual(wardBal)}" data-annual-calc="schD5.${i}.wardBal"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';

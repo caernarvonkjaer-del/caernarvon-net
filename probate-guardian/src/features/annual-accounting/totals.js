@@ -7,8 +7,9 @@ export function n(v) {
 }
 
 export function pct(v) {
+  if (v === '' || v === null || v === undefined) return 1;
   const p = parseFloat(v);
-  return isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+  return isNaN(p) ? 1 : p > 1 ? p / 100 : p;
 }
 
 export function calcTotalsAnnual(customD) {
