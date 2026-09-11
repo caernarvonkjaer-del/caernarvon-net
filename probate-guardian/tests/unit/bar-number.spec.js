@@ -2,9 +2,8 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
-// Milestone 36-6 item 15. Florida Bar member numbers run up to seven digits.
-// formatBarNumber() capped at six, so a seven-digit number lost its last digit
-// with no warning and printed a different attorney's number onto a filing.
+// Florida Bar member numbers are sequential identifiers. Normalize them to the
+// current eight-digit representation so leading zeroes are retained consistently.
 //
 // formatBarNumber lives in legacy-app.js, which is a browser-bound script
 // rather than an importable module, so the function is sliced out of the
@@ -29,21 +28,23 @@ function loadFormatBarNumber() {
 describe('formatBarNumber', () => {
   const formatBarNumber = loadFormatBarNumber();
 
-  it('keeps a six-digit bar number intact', () => {
-    expect(formatBarNumber('008921')).toBe('008921');
+  it('pads a shorter bar number with leading zeroes', () => {
+    expect(formatBarNumber('008921')).toBe('00008921');
+    expect(formatBarNumber('89214')).toBe('00089214');
   });
 
-  it('keeps a seven-digit bar number intact', () => {
-    expect(formatBarNumber('0089214')).toBe('0089214');
+  it('keeps an eight-digit bar number intact', () => {
+    expect(formatBarNumber('00089214')).toBe('00089214');
+    expect(formatBarNumber('12345678')).toBe('12345678');
   });
 
-  it('strips non-digits without dropping a significant digit', () => {
-    expect(formatBarNumber('008-9214')).toBe('0089214');
-    expect(formatBarNumber(' 12 34 567 ')).toBe('1234567');
+  it('strips non-digits before normalizing the identifier', () => {
+    expect(formatBarNumber('008-9214')).toBe('00089214');
+    expect(formatBarNumber(' 12 34 567 ')).toBe('01234567');
   });
 
-  it('caps at seven digits rather than six', () => {
-    expect(formatBarNumber('12345678')).toBe('1234567');
+  it('limits input to eight digits', () => {
+    expect(formatBarNumber('123456789')).toBe('12345678');
   });
 
   it('handles empty and nullish input', () => {

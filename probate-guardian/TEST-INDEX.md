@@ -12,7 +12,7 @@ the same commit.
 | amended-form-line.spec.js            | "Amended Form?" prints the filer's actual answer; Annual-family identity and single-source footer subtitle                |
 | annual-accounting-pdf-model.spec.js  | Trust Accounting PDF-model table layout for percentage and currency columns                                               |
 | annual-accounting-pdf-model.spec.js  | Trust/Annual Accounting PDF-model table layout, Part VIII trust disclosure, and duplicate title suppression               |
-| bar-number.spec.js                   | Milestone 36-6: formatBarNumber accepts seven-digit Florida Bar numbers without truncating                                |
+| bar-number.spec.js                   | Florida Bar-number normalization: eight digits preserved, shorter values left-padded, and non-digits removed               |
 | case-file.spec.js                    | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers                                   |
 | case-county-drift.spec.js            | Case-authoritative county mismatch advisory detection                                                                     |
 | checklist-export-parity.spec.js      | Milestone 36-6: section checklist vs export validation rule parity                                                        |

@@ -2,13 +2,16 @@
 
 ## Status
 
-**Proposed — not started.** Eleven requested changes plus seven validated defects
-from an external QA pass, grouped into seven sequentially executable sub-milestones
-(36-1 through 36-7). Every problem statement below was root-caused by direct code
-read against `master` at `78ee85a`, not inferred from the request text; file and
-line citations are current as of that commit. The QA-sourced items in 36-6 and 36-7
-were additionally reproduced against a running build before being accepted — see
-the QA Findings Triage appendix for what was accepted, rejected, and left open.
+**Implemented on `master`; this is now a historical implementation record.** The
+original proposal was researched against `78ee85a`. The implementation and its
+follow-up work are present through `bcfd939` (`feat(milestone-36): condense the
+blocked Print Preview banner and add a draft override`). As a result, the original
+file/line citations and future-tense task language below describe the planning
+baseline, not the current source tree.
+
+Do not use the task lists below as instructions for new changes without first
+re-checking current code. The completion map identifies the commits that supersede
+that baseline; the current source and tests are authoritative.
 
 Two scope questions were resolved with the requester before drafting:
 
@@ -21,7 +24,26 @@ Two scope questions were resolved with the requester before drafting:
 
 ---
 
-## Requested Change Inventory
+## Completion Map
+
+| Scope | Current condition | Primary implementation commits |
+|---|---|---|
+| 36-1 Dashboard shell consolidation | Shipped, then refined for row actions, responsive layout, and closed filings. | `e5fb9cf`, `1d32f79`, `38f328b`, `4913206` |
+| 36-2 Sortable columns and judge propagation | Shipped. Header sorting is directional; explicit case-linked filings update together and matching unlinked case numbers require confirmation. | `e5fb9cf` |
+| 36-3 Schedule form-field alignment | Shipped with wider container-query coverage and layout tests. | `e5fb9cf` |
+| 36-4 PDF margins and duplicate titles | Shipped. Supporting-document images are bounded to the one-inch content area; duplicate visible block titles are suppressed without losing structural metadata. | `e5fb9cf` |
+| 36-5 Content corrections | Shipped, including generalized clerk guidance, the no-trusts certification, and date-display correction. | `e5fb9cf` |
+| 36-6 Data-entry correctness defects | Shipped, including the Initial Plan tri-state/accessibility repair, classifier guard, Annual typing behavior, bar-number cap, and parity coverage. | `e5fb9cf` |
+| 36-7 Navigation and creation defects | Shipped, including direct combobox switching, carry-source coverage, and the minor-plan soft warning. The blocked-preview usability item was completed as a follow-up. | `e5fb9cf`, `bcfd939` |
+
+The test files listed in the original verification plan were added or updated in
+the same implementation series. This document does not certify a fresh test run at
+the current `HEAD`; use the repository test workflow before any subsequent code
+change.
+
+---
+
+## Original Requested Change Inventory
 
 | # | Request | Sub-milestone |
 |---|---|---|
@@ -616,7 +638,11 @@ pointer to the preview rather than carrying the list itself.
 
 ---
 
-## Verification & Acceptance Plan
+## Original Verification and Acceptance Plan
+
+The following was the implementation-time test plan. The associated tests landed
+with the implementation commits listed above. It remains useful as a coverage index,
+but it is not evidence of a fresh run against the current `HEAD`.
 
 ### Unit tests
 
@@ -666,7 +692,7 @@ deserves a test that fails on the next instance, not just this one:
   Expect this to fail on more than the one field found here; that list is the
   finding.
 
-### Review gate
+### Historical sequencing note
 
 **36-6 lands first, ahead of every layout item.** Its four defects corrupt or discard
 data the user typed; a misaligned column does not. 36-1 lands next: it deletes a
@@ -682,29 +708,39 @@ filing controls — the spec update ships in the same commit as the code.
 
 ---
 
-## Open Decisions
+## Decisions Recorded by the Implementation
 
-These need a product answer before the affected task starts; none blocks the others.
+The decisions below are no longer open for MS 36. They describe current behavior
+and should be changed only through a new, explicitly scoped milestone.
 
-1. **36-1, task 3** — with `assistant` removed, does the "Working on behalf of"
-   supervisor filter stay, merge with the Assignment filter, or go?
-2. **36-2, task 1** — is Contacts sortable on its first contact, or not sortable?
-3. **36-2, task 3** — does the `Sort` select survive alongside clickable headers?
-4. **36-2, task 6** — judge propagation across `caseId`-linked filings
-   (recommended) or across matching case-number text with confirmation?
-5. **36-5, item 10** — generic clerk guidance (recommended) or county-conditional
-   text driven by the existing `county` field?
-6. **36-6, item 12** — fix the classifier by requiring word boundaries (smaller) or
-   by making an explicit `data-field-kind` mandatory on every formattable control
-   (ends the class)?
-7. **36-6, item 13** — does the checklist/validator reconciliation land here, or
-   does this milestone ship only the test that exposes the gaps, with the
-   reconciliation deferred to a revived 35-4?
-8. **36-6, item 15** — silently cap bar numbers at seven digits, or reject
-   over-length input with a validation error (recommended)?
-9. **36-7, item 16** — after 36-1 removes the sidebar filing controls, does the
-   filing combobox move to the dashboard, stay in the sidebar as a self-contained
-   switcher, or disappear in favor of the dashboard's Open action?
+1. The dashboard has one professional triage layout; the role-specific toolbar
+   filters and the family renderer were removed.
+2. Contacts remains unsortable. Ward, Form Type, Case #, Status, Deadline, and
+   Judge are sortable from their column headers.
+3. The separate Sort select was removed. Header sorting owns the session-only sort
+   state; the active header cycles ascending, descending, then back to Priority.
+4. Judge changes propagate automatically across explicitly `caseId`-linked filings.
+   Matching unlinked case numbers receive a confirmation prompt before propagation.
+5. Clerk guidance was generalized rather than maintained as county-specific address
+   or Sixth-Circuit administrative-order copy.
+6. Field-kind inference now avoids accidental mid-word matches, and value formatting
+   is guarded so checkbox and radio controls are never text-formatted.
+7. Checklist/export parity coverage landed as a guard; broader reconciliation remains
+   a separate data-model and product-policy concern rather than an active MS 36 task.
+8. Florida Bar numbers normalize to eight digits: shorter numeric values are
+   left-padded with zeroes, and eight-digit values are retained. Input beyond eight
+   digits is currently truncated; a visible over-length validation error remains a
+   possible future enhancement.
+9. The sidebar combobox remains and switches the active filing directly on selection;
+   the removed separate Switch Filing button is no longer required.
+
+## Follow-up Boundaries
+
+- Existing names previously saved without spaces cannot be repaired reliably by an
+  automatic migration; the typing fix prevents new corruption but does not infer the
+  intended spacing of historical values.
+- Any change to the eight-digit bar-number truncation policy, checklist/export policy,
+  or dashboard sorting cycle requires a separately approved follow-up.
 
 ---
 

@@ -1491,11 +1491,12 @@ function selectCountyOption(id,county){
   hideCountyDropdown(id);
 }
 
-// Format Florida Bar Number — digits only, max 7. Florida Bar member numbers
-// run up to seven digits; capping at six silently dropped the last digit of a
-// seven-digit number and printed a different attorney's number onto a filing.
+// Format Florida Bar Number — a fixed-width, digits-only identifier. Bar numbers
+// are sequential; retain all eight significant positions and normalize shorter
+// values with leading zeroes when editing finishes.
 function formatBarNumber(s){
-  return String(s||'').replace(/\D/g,'').slice(0,7);
+  const digits=String(s??'').replace(/\D/g,'').slice(0,8);
+  return digits?digits.padStart(8,'0'):'';
 }
 
 // Format bank account number — preserved identifier (may contain letters/dashes/slashes)
@@ -7741,7 +7742,10 @@ function bindForms(){
           val=formatCaseNumber(val);
           e.target.value=val;
         }else if(inputType==='barNumber'){
-          val=formatBarNumber(val);
+          // Padding while a person is still typing would turn the first digit
+          // into 0000000N and make the next digit land in the wrong place.
+          // Keep only digits live; apply the fixed-width representation on blur.
+          val=String(val??'').replace(/\D/g,'').slice(0,8);
           e.target.value=val;
         }else if(inputType==='accountNumber'){
           val=formatAccountNumber(val);
@@ -7787,6 +7791,13 @@ function bindForms(){
           // this field fresh from its own (already-correct) stored value.
           if(window.D!==boundD)return;
           el.value=finalizeCaseNumber(el.value);
+          setPath(window.D,path,el.value);afterChange(path);
+        });
+      }
+      if(inputType==='barNumber'){
+        el.addEventListener('blur',()=>{
+          if(window.D!==boundD)return;
+          el.value=formatBarNumber(el.value);
           setPath(window.D,path,el.value);afterChange(path);
         });
       }

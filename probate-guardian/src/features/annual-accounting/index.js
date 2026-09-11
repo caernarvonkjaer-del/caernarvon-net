@@ -210,7 +210,9 @@ function bindEvents(container) {
       // "Morgan Reyes" here used to store "MorganReyes". Digit-count limiting
       // and the decimal formatters stay live: they behave like maxlength
       // rather than rewriting whole words.
-      const isWordFormat = ['name', 'address', 'zip', 'security', 'case'].includes(event.target.dataset.annualFormat);
+      // Bar numbers are padded to their fixed width only after entry finishes;
+      // padding on every keystroke would make ordinary typing impossible.
+      const isWordFormat = ['name', 'address', 'zip', 'security', 'case', 'bar'].includes(event.target.dataset.annualFormat);
       persistAnnualControl(event.target, !isWordFormat);
     }
   }, options);
@@ -245,6 +247,8 @@ function bindEvents(container) {
       control.value = formatCityStateZip(control.value);
     } else if (format === 'security') {
       control.value = validateSecurityInput(control.dataset.annualLabel, control.value);
+    } else if (format === 'bar') {
+      control.value = formatBarNumber(control.value);
     } else {
       return;
     }
