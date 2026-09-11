@@ -63,6 +63,7 @@ function bindEvents(container) {
         break;
       }
       case 'remove-guardian': {
+        if (index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !window.confirm(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`)) break;
         if (removeCollectionRow('guardians', index, window.D)) {
           autoSave();
           navigate('/p4');

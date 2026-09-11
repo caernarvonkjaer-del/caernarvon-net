@@ -179,7 +179,9 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
     await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getCaseFile().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
-    await expect(main.locator('.dashboard-triage-row')).toHaveCount(3);
+    // Archived filings remain visible in the dashboard's all-filings review
+    // queue; archive changes workflow state, not the row's visibility.
+    await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
     expect(await page.evaluate(() => (window as any).getCaseFile().wards[2].archived)).toBe(true);
   });
 
@@ -306,7 +308,7 @@ test.describe('routes', () => {
     await page.locator('#q1Residences').fill('A supported residence');
     await expect.poll(() => page.evaluate(() => (window as any).D.q1Residences)).toBe('A supported residence');
 
-    const restoreRights = page.locator('#q7RestoreRights');
+    const restoreRights = page.locator('input[type="radio"][data-form-path="q7RestoreRights"][value="Yes"]');
     await restoreRights.check();
     await expect.poll(() => page.evaluate(() => (window as any).D.q7RestoreRights)).toBe('Yes');
     await expect(page.locator('[data-form-path][oninput], [data-form-path][onchange], [data-form-path][onfocus], [data-form-path][onblur], [data-form-control][oninput], [data-form-control][onfocus], [data-form-control][onblur]')).toHaveCount(0);

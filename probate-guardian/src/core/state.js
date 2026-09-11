@@ -136,11 +136,7 @@ export function emptyDataSimplified() {
     depositsSettlement:'',
     serviceCharges:'',
     federalIncomeTax:'',
-    guardians:[
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''},
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''},
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''}
-    ],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''}],
     attorney_barNumber:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_signatureDate:'',
     certServiceDate:'',
@@ -175,10 +171,7 @@ export function emptyDataPlanSimplified() {
     q8DNR:false, q8LivingWill:false, q8Surrogate:false, q8POA:false,
     q8Other:false, q8OtherText:'', q8None:false,
     q9Remuneration:'', q9RemunerationExplain:'',
-    planGuardians:[
-      {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''},
-      {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}
-    ]
+    planGuardians:[{name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}]
   };
 }
 
@@ -267,11 +260,7 @@ export function emptyDataPlanAnnual() {
     certNoRestriction:false, certProvidesMedical:false, certPhysicianAttached:false,
     certRecognizeRights:false, certRightsChangedExplain:'',
     // Guardians (form provides three signature blocks) + attorney
-    planGuardians:[
-      {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''},
-      {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''},
-      {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''}
-    ],
+    planGuardians:[{name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''}],
     attorney_signatureDate:'', attorney_bar:'', attorney_phone:'',
     attorney_street:'', attorney_cityStateZip:''
   };
@@ -345,12 +334,7 @@ export function emptyDataPlanInitial() {
     certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
     certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
     // Guardians (form provides up to four signature blocks) + attorney
-    planGuardians:[
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-      {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}
-    ],
+    planGuardians:[{name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}],
     attorney_name:'', attorney_bar:'', attorney_phone:'',
     attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:''
   };
@@ -388,7 +372,7 @@ export function emptyDataPlanMinor() {
     certIncapacitated:false, certMinor:false, certConsulted:false,
     certNoRestriction:false, certProvidesCare:false, certPhysicianAttached:false,
     // Guardian + Co-Guardian signature blocks
-    planGuardians:[window.emptyMinorGuardianSig(),window.emptyMinorGuardianSig()],
+    planGuardians:[window.emptyMinorGuardianSig()],
     // Preparer certification
     preparer_name:'', preparer_tin:'', preparer_phone:'',
     preparer_mailingStreet:'', preparer_cityStateZip:'', preparer_email:'', preparer_signatureDate:'',
@@ -415,11 +399,7 @@ export function emptyDataAnnual() {
     // Part II
     startingBalance:'',
     // Part III – guardians (up to 3)
-    guardians:[
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''},
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''},
-      {name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''}
-    ],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''}],
     // Part IV – preparer
     preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:''},
     // Part V – attorney

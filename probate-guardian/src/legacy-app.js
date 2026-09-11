@@ -1763,12 +1763,8 @@ function initPrintPager(options={}){
   if(existing){
     if(!options.refresh)return;
     const existingActions=existing.querySelector('.pv-shell-actions');
-    const printHeading=document.querySelector('.schedule-page > h1, .schedule-page h1');
-    if(existingActions&&printHeading){
-      existingActions.classList.remove('pv-shell-actions');
-      existingActions.classList.add('form-header-actions');
-      printHeading.appendChild(existingActions);
-    }
+    const destination=document.querySelector('[data-preview-shell-actions]');
+    if(existingActions&&destination)destination.replaceChildren(existingActions);
     existing.remove();
   }
   if(!(_pvSelection==='all'||(parseInt(_pvSelection,10)>=1&&parseInt(_pvSelection,10)<=pages.length))){
@@ -1794,18 +1790,19 @@ function initPrintPager(options={}){
         <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
       </span>
     </span>`;
+  const destination=document.querySelector('[data-preview-shell-actions]');
   const headerActions=document.querySelector('.schedule-page > h1 .form-header-actions, .schedule-page h1 .form-header-actions');
-  if(headerActions){
+  if(headerActions&&destination&& !destination.querySelector('.pv-shell-actions')){
     headerActions.classList.remove('form-header-actions');
     headerActions.classList.add('pv-shell-actions');
-    bar.appendChild(headerActions);
-  }else{
+    destination.appendChild(headerActions);
+  }else if(destination&&!destination.querySelector('.pv-shell-actions')){
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
     const helpOpen=typeof window.isHelpPanelOpen==='function'&&window.isHelpPanelOpen();
     const shellActions=document.createElement('div');
     shellActions.className='pv-shell-actions';
     shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
-    bar.appendChild(shellActions);
+    destination.appendChild(shellActions);
   }
   cont.parentNode.insertBefore(bar,cont);
   pvApply();
@@ -7031,6 +7028,39 @@ function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form'){
     </div>
   </fieldset>`;
 }
+
+function planGuardianBlank(type){
+  if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''};
+  if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''};
+  if(type==='planMinor')return window.emptyMinorGuardianSig();
+  return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''};
+}
+function planGuardianHasAnyData(g){return !!(g&&Object.values(g).some(v=>v!==''&&v!==null&&v!==undefined&&v!==false));}
+function planGuardianMax(type){return type==='planInitial'?4:type==='planAnnual'?3:2;}
+function normalizePlanGuardians(data=window.D){
+  const rows=Array.isArray(data?.planGuardians)?data.planGuardians:[];
+  const primary=rows[0]||planGuardianBlank(data?.inventoryType);
+  const kept=[primary,...rows.slice(1).filter(planGuardianHasAnyData)].slice(0,planGuardianMax(data?.inventoryType));
+  if(data) data.planGuardians=kept;
+  return kept;
+}
+function addPlanGuardian(route){
+  const d=window.D; const rows=normalizePlanGuardians(d);
+  if(rows.length>=planGuardianMax(d.inventoryType))return false;
+  rows.push(planGuardianBlank(d.inventoryType)); d.planGuardians=rows; autoSave(); navigate(route); return true;
+}
+function removePlanGuardian(index,route){
+  const d=window.D; const rows=normalizePlanGuardians(d);
+  if(index<=0||index>=rows.length)return false;
+  const row=rows[index];
+  if(planGuardianHasAnyData(row)&&!window.confirm(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`))return false;
+  rows.splice(index,1); d.planGuardians=rows;
+  if(Array.isArray(d.guardianPartyIds))d.guardianPartyIds.splice(index,1);
+  autoSave(); navigate(route); return true;
+}
+window.normalizePlanGuardians=normalizePlanGuardians;
+window.addPlanGuardian=addPlanGuardian;
+window.removePlanGuardian=removePlanGuardian;
 function yesNoCheckboxS(id,label,val,req=false,route=''){
   return yesNoRadioHTML(id,label,val,id,req,route);
 }

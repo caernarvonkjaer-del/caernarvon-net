@@ -225,11 +225,11 @@ function pagePlanSQuestions(){
 
 function pagePlanSSignatures(){
   const d=window.D;
-  const g=d.planGuardians||[];
+  const g=window.normalizePlanGuardians(d);
   const block=(i,label)=>{
     const p=g[i]||{};
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><span class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${i?`<button type="button" class="btn btn-outline-danger btn-sm" data-form-action="remove-plan-guardian" data-index="${i}" data-route="/p3">Remove</button>`:''}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -246,9 +246,9 @@ function pagePlanSSignatures(){
     <div class="attestation-text mb-3">Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.</div>
     <div class="schedule-instructions mb-3">The form provides space for two guardians or guardian advocates. Fill in the second block only if there is a co-guardian.</div>
     <div class="row g-3 card-grid-2col mb-4">
-      ${block(0,'Guardian / Guardian Advocate 1')}
-      ${block(1,'Guardian / Guardian Advocate 2 (if any)')}
+      ${g.map((_,i)=>block(i,i?'Co-Guardian':'Guardian / Guardian Advocate')).join('')}
     </div>
+    ${g.length<2?'<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-form-action="add-plan-guardian" data-route="/p3">+ Add Co-Guardian</button>':''}
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">

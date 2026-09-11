@@ -38,6 +38,8 @@ document.addEventListener('click', (event) => {
   switch (actionElement.dataset.formAction) {
     case 'jump-to-field': focusFieldByPath(actionElement.dataset.route, actionElement.dataset.fieldPath); break;
     case 'add-plan-row': window.addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
+    case 'add-plan-guardian': window.addPlanGuardian(actionElement.dataset.route); break;
+    case 'remove-plan-guardian': window.removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;

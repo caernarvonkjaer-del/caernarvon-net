@@ -293,6 +293,7 @@ function addAnnualRow(collection, route) {
   }
 }
 function removeAnnualRow(collection, index, route) {
+  if (collection === 'guardians' && index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !window.confirm(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`)) return;
   if (removeCollectionRow(collection, index, window.D)) {
     autoSave();
     navigate(route);

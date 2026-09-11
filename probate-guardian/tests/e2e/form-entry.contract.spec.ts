@@ -126,13 +126,13 @@ test.describe('Form entry contract', () => {
     await createWard(page, 'Identifier Policy Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/p5'));
 
-    // Normalize policy: bar number keeps digits only, capped at 7 per Milestone 36-6
-    // (Florida Bar numbers run up to seven digits).
+    // Normalize policy: bar number keeps digits only. Eight-digit values are
+    // preserved for forward compatibility; shorter numbers are zero-padded.
     const barInput = page.locator('[data-form-path="attorney_bar"]');
     await expect(barInput).toBeVisible();
     await barInput.fill('AB-123456789');
     await barInput.blur();
-    expect(await barInput.inputValue()).toBe('1234567');
+    expect(await barInput.inputValue()).toBe('12345678');
 
     // Preserve policy on the modern data-field-path pipeline (not Guardian's
     // legacy data-bind path, the only place preserve-policy is proven today).

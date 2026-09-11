@@ -309,7 +309,7 @@ function pagePlanMSignatures(){
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
-      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${title}</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button></div>
+      <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${title}</span><span class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${i?`<button type="button" class="btn btn-outline-danger btn-sm" data-form-action="remove-plan-guardian" data-index="${i}" data-route="/p6">Remove</button>`:''}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
@@ -336,9 +336,9 @@ function pagePlanMSignatures(){
       null,null,false)}
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     <div class="row g-3 card-grid-2col mb-4">
-      ${g(0,'Guardian')}
-      ${g(1,'Co-Guardian')}
+      ${window.normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
     </div>
+    ${(d.planGuardians||[]).length<2?'<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-form-action="add-plan-guardian" data-route="/p6">+ Add Co-Guardian</button>':''}
     ${renderScheduleDocsSection('planMSignatures')}
     ${pageNavS('/p5','/p7')}
   </div>`;

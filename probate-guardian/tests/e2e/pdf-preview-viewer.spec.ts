@@ -88,15 +88,18 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     await expect(page.locator('#pv-count')).toHaveText(`Page 1 of ${finalizedPageCount}`);
     await expect(page.locator('#pv-bar .pv-navigation #pv-prev')).toBeVisible();
     await expect(page.locator('#pv-bar .pv-navigation #pv-next')).toBeVisible();
-    await expect(page.locator('#pv-bar .pv-shell-actions')).toContainText('All Filings');
-    await expect(page.locator('#pv-bar .pv-shell-actions [data-shell-action="toggle-theme"]')).toBeVisible();
-    await expect(page.locator('#pv-bar .pv-shell-actions [data-shell-action="toggle-help"]')).toBeVisible();
+    await expect(page.locator('#pv-bar .pv-shell-actions')).toHaveCount(0);
+    const shellActions = page.locator('.print-preview-banner [data-preview-shell-actions] .pv-shell-actions');
+    await expect(shellActions).toContainText('All Filings');
+    await expect(shellActions.locator('[data-shell-action="toggle-theme"]')).toBeVisible();
+    await expect(shellActions.locator('[data-shell-action="toggle-help"]')).toBeVisible();
 
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect.poll(() => page.locator('#print-doc-container .pdf-page').count(), { timeout: 15000 }).toBe(finalizedPageCount);
     await expect(page.locator('#pv-bar')).toHaveCount(1);
     await expect(page.locator('#pv-count')).toHaveText(`Page 1 of ${finalizedPageCount}`);
-    await expect(page.locator('#pv-bar .pv-shell-actions')).toContainText('All Filings');
+    await expect(page.locator('#pv-bar .pv-shell-actions')).toHaveCount(0);
+    await expect(page.locator('.print-preview-banner [data-preview-shell-actions] .pv-shell-actions')).toContainText('All Filings');
   });
 
   // Milestone 34-1A, Item 1: mountPdfPreview()/printGeneratedPdf() used to
