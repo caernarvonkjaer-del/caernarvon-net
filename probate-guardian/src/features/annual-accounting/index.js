@@ -918,7 +918,7 @@ function pageSchD1Annual(){
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-4">${inpD('Description (Bank, account type)',r.description,`D.schD1[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schD1[${i}].accountNo=this.value`,true)}</div>
-          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD1_restricted_${i}`,'Restricted?',r.restricted,`schD1.${i}.restricted`,true)}${tooltip('restricted')}</div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD1_restricted_${i}`,'Restricted?',r.restricted,`schD1.${i}.restricted`,true,'restricted')}</div>
           <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
@@ -954,8 +954,8 @@ function pageSchD2Annual(){
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD2',i,'/schd2')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
-          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_residence_${i}`,'Personal Residence?',r.residence,`schD2.${i}.residence`,true)}${tooltip('personal_residence')}</div>
-          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_income_${i}`,'Income Property?',r.income,`schD2.${i}.income`,true)}${tooltip('income_property')}</div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_residence_${i}`,'Personal Residence?',r.residence,`schD2.${i}.residence`,true,'personal_residence')}</div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_income_${i}`,'Income Property?',r.income,`schD2.${i}.income`,true,'income_property')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
@@ -1026,7 +1026,7 @@ function pageSchD4Annual(){
         ${entryCardHeaderAnnual(`Line ${i+1}`,'schD4',i,'/schd4')}
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
-          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD4_restricted_${i}`,'Restricted?',r.restricted,`schD4.${i}.restricted`,true)}${tooltip('restricted')}</div>
+          <div class="col-md-2">${yesNoRadioAnnualHTML(`schD4_restricted_${i}`,'Restricted?',r.restricted,`schD4.${i}.restricted`,true,'restricted')}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>

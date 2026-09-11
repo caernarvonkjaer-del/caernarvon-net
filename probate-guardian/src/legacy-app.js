@@ -7065,8 +7065,8 @@ function yesNoCheckboxD(label,val,setter,reqOrRoute=false,explicitRoute=''){
   const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
   return yesNoRadioHTML(path||label,label,val,path,req,route);
 }
-function yesNoRadioAnnualHTML(id,label,val,path,req=false){
-  return yesNoRadioHTML(id,label,val,path,req,'','annual');
+function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey=''){
+  return yesNoRadioHTML(id,label,val,path,req,'','annual',tooltipKey);
 }
 
 // Inline radio group. Also used later for the Annual/Initial plans' 3-way
