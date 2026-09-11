@@ -401,6 +401,54 @@ repository workflow.
 
 ## Milestone 37-4: Advance-Directive Card Creation and Visibility
 
+### Status: Complete (2026-09-10)
+
+`q10Directives`/`q11Directives` no longer pre-seed blank cards (state.js
+factories and legacy-app.js's new-year reset paths both changed to `[]`).
+Initial Plan gained the real +Add/Remove affordance it never had (only
+Annual Plan did before this item); both plans' entire directive section --
+type checkboxes, cards, Add Directive -- is now gated on
+`q11Executed`/`q10Executed`, matching the Decision Recorded above. Checking
+the box now also force-re-renders the page and creates exactly one blank
+card if the collection is empty (a `data-form-change="ensure-directive-row"`
+hook in `src/form-events.js`, since the plain `chkP()` checkbox this app
+uses elsewhere has no `data-form-route` and so does not otherwise trigger a
+live re-render) -- preserving the pre-37-4 UX of a card appearing
+immediately on check, now without the pre-seeding bug. Unchecking hides
+without deleting; rechecking restores the same records; a second check
+after data already exists does not append a duplicate blank card.
+
+PDF/Word output (`buildPlanInitialModel`/`buildPlanAnnualModel`, shared by
+both formats) now gates the detail-card section on the executed flag, not
+just on populated rows -- legacy/imported data that has records while
+execution is unchecked no longer leaks into generated output.
+
+Found and fixed one real regression while verifying: `schedule-card-layout.
+spec.ts`'s Initial Plan fixture set `q11Directives` directly without ever
+setting `q11Executed`, which only worked because cards rendered
+unconditionally before this milestone -- exactly the bug being fixed. Fixed
+by adding the flag to the fixture, matching the Annual Plan fixture beside
+it that already had it.
+
+Also found while implementing: the `BLANK_CARD_COLLECTIONS` config and
+`pruneBlankCards()` in `src/legacy-app.js` are dead code, silently shadowed
+at runtime by `src/core/form/prune-cards.js`'s module version (`window.
+BLANK_CARD_COLLECTIONS = ...` / `window.pruneBlankCards = ...` on module
+load overwrites the classic-script globals). `q11Directives` was added to
+the real (module) config; the legacy-app.js copy was left alone with a note
+explaining the shadowing, not edited, since editing it would have been
+inert.
+
+Verification: `tests/unit/plan-directive-cards.spec.js` (factory defaults +
+PDF model gating, 7 tests), two new cases in `tests/unit/prune-cards.spec.js`,
+`tests/e2e/plan-directive-cards.spec.ts` (2 tests, live checkbox/Add/Remove
+interaction for both plans) -- all new, all passing. Regression: 164 unit
+tests and 27 e2e tests (including both Plan types' full mount/export-PDF
+suites, the readiness/export-gating contract, and schedule-card-layout.spec.ts
+after its fixture fix), all passing. `npm run verify:data-model` passing
+after updating `q10Directives`/`q11Directives`'s collection_min/max/
+initial_item_count rows.
+
 ### Decision Recorded
 
 On every form that uses repeatable advance-directive detail cards, those cards

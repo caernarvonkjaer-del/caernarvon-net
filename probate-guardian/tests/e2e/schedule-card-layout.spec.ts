@@ -136,6 +136,11 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
   await page.evaluate(() => {
     const data = (window as any).D;
     data.q9Providers = [{}, {}];
+    // Milestone 37-4: q11Directives cards only render once q11Executed is
+    // checked (previously rendered unconditionally -- the bug that item
+    // fixed), so this fixture needs the flag, matching Annual Plan's
+    // q10Executed above.
+    data.q11Executed = true;
     data.q11Directives = [{}, {}];
   });
   await assertCardColumns('/p5', '.col-12.col-lg-6', 2);

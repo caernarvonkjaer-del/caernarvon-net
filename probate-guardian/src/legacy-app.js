@@ -6393,7 +6393,8 @@ function resetYearlyFieldsForNewYear(data,type){
     // last year's forward would defeat the purpose of the annual review.
     if(data.rights)Object.keys(data.rights).forEach(k=>data.rights[k]='');
     if(data.adls)Object.keys(data.adls).forEach(k=>data.adls[k]='');
-    data.q10Directives=[emptyPlanDirective()];
+    // Milestone 37-4: empty, not pre-seeded -- see state.js's identical note.
+    data.q10Directives=[];
     data.q11NoRemuneration=false;data.q11NoRemunerationName='';
     data.q11ReceivedName='';data.q11Amount='';data.q11From='';data.q11SubmittedToCourt=false;
     data.certIncapacitatedNoCopy=false;data.certMinorNoCopy=false;data.certConsulted=false;
@@ -6444,7 +6445,8 @@ function resetYearlyFieldsForNewYear(data,type){
     data.q11StepInterviewed=false;data.q11StepMedicalProviders=false;data.q11StepAttorney=false;
     data.q11Executed=false;data.q11ExecDNR=false;data.q11ExecHealthcare=false;
     data.q11ExecPOA=false;data.q11ExecOther=false;data.q11ExecOtherText='';
-    data.q11Directives=[emptyPlanDirective(),emptyPlanDirective()];
+    // Milestone 37-4: empty, not pre-seeded -- see state.js's identical note.
+    data.q11Directives=[];
     data.certIncapacitatedNoCopy=false;data.certMinorNoCopy=false;data.certConsulted=false;
     data.certRecognizeRights=false;data.certNoRestriction=false;data.certProvidesCare=false;
     data.attorney_signatureDate='';
@@ -7488,6 +7490,14 @@ const BLANK_SCHEDULE_ENTRY = {
 // -- a group is listed for a type ONLY once that form has a real +Add
 // affordance for it, because pruning cards the user has no way to recreate
 // would lock them out of the form entirely.
+//
+// Milestone 37-4 note: this const and pruneBlankCards() below are shadowed
+// at runtime by src/core/form/prune-cards.js, which does `window.
+// BLANK_CARD_COLLECTIONS = ...` / `window.pruneBlankCards = ...` on module
+// load -- a classic-script function declaration IS a window property (see
+// this file's other such comments), so the later module-script assignment
+// wins and every bare `pruneBlankCards()` call in this file actually runs
+// that module's version. Edit core/form/prune-cards.js's copy, not this one.
 const BLANK_CARD_COLLECTIONS = {
   guardians:{min:1,types:['guardian','annual','simplified']},
   serviceRecipients:{min:1,types:['guardian']},

@@ -144,5 +144,31 @@ describe('prune-cards', () => {
       expect(data.q4Providers.length).toBe(0);
       expect(data.q10Directives.length).toBe(0);
     });
+
+    // Milestone 37-4: q11Directives joined BLANK_CARD_COLLECTIONS once
+    // Initial Plan gained a real +Add/Remove affordance for it.
+    it('prunes an untouched Plan Initial directive row to 0', () => {
+      const data = {
+        q11Directives: [
+          { title: '', dateSigned: '', signedBy: '', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: '', orderDate: '', orderCounty: '' },
+        ],
+      };
+
+      const removed = pruneBlankCards(data, 'planInitial');
+      expect(removed).toBe(1);
+      expect(data.q11Directives.length).toBe(0);
+    });
+
+    it('preserves a populated Plan Initial directive row', () => {
+      const data = {
+        q11Directives: [
+          { title: 'Healthcare Surrogate', dateSigned: '', signedBy: '', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: '', orderDate: '', orderCounty: '' },
+        ],
+      };
+
+      const removed = pruneBlankCards(data, 'planInitial');
+      expect(removed).toBe(0);
+      expect(data.q11Directives.length).toBe(1);
+    });
   });
 });

@@ -10,6 +10,10 @@ export const BLANK_CARD_COLLECTIONS = {
   q1Residences: { min: 0, types: ['planAnnual'] },
   q4Providers: { min: 0, types: ['planAnnual'] },
   q10Directives: { min: 0, types: ['planAnnual'] },
+  // Milestone 37-4: Initial Plan gained a real +Add/Remove affordance for
+  // this collection (see pagePlanIDirectives()); excluded before that
+  // existed, per this table's own rule above.
+  q11Directives: { min: 0, types: ['planInitial'] },
   q9Providers: { min: 0, types: ['planInitial'] },
   q2Residences: { min: 0, types: ['planMinor'] },
   q3Providers: { min: 0, types: ['planMinor'] },

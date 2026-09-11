@@ -36,6 +36,7 @@ the same commit.
 | plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 17 auto conditions, incl. 3 newly mapped        |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |
+| plan-directive-cards.spec.js         | Milestone 37-4: directive-collection factory defaults and PDF/Word model gating on q10Executed/q11Executed                |
 | plan-initial-parity.spec.js          | Milestone 37-3: readiness-checklist/export-validator parity proof for all 19 auto conditions, incl. 6 newly mapped        |
 | plan-minor-parity.spec.js            | Milestone 37-3: readiness-checklist/export-validator parity proof for all 14 auto conditions, incl. 3 newly mapped        |
 | plan-readiness-county.spec.js        | Milestone 37-1: all four Plans certificate-of-service readiness wording gated on Pinellas/Pasco vs. other counties        |
@@ -101,6 +102,7 @@ the same commit.
 | pdf-table-semantics.spec.ts              | Table semantics, colspan & multi-page continuation                                                                                                                                       |
 | persistence-recovery.contract.spec.ts    | Persistence and recovery contract                                                                                                                                                        |
 | plan-annual-mount.spec.ts                | Plan Annual feature module (via registerPlanMountTests)                                                                                                                                  |
+| plan-directive-cards.spec.ts             | Milestone 37-4: directive-card checkbox check/uncheck/recheck (create, hide-not-delete, restore), Add/Remove, for Plan Initial and Plan Annual                                           |
 | plan-initial-mount.spec.ts               | Plan Initial feature module (via registerPlanMountTests)                                                                                                                                 |
 | plan-minor-mount.spec.ts                 | Plan Minor feature module (via registerPlanMountTests)                                                                                                                                   |
 | plan-pdf-wcag-compliance.spec.ts         | Milestone 19-2: Plan-\* features on the shared vector PDF engine                                                                                                                         |

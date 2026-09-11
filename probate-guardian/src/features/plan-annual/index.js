@@ -443,6 +443,18 @@ function pagePlanADisabilities(){
 function pagePlanADirectives(){
   const d=window.D;
   const cb=(id,label)=>chkP(id,label,d[id]);
+  // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page on
+  // change (no data-form-route), which is fine for most checkboxes here but
+  // not this one -- the type controls, cards, and Add Directive button below
+  // only exist in the DOM once q10Executed is true, so checking it must
+  // force a fresh render to reveal them. data-form-change="ensure-directive-
+  // row" also gives an empty collection exactly one blank card immediately
+  // (src/form-events.js), matching the UX before this collection stopped
+  // being pre-seeded.
+  const q10ExecutedCb=`<div class="form-check plan-check">
+    <input class="form-check-input" type="checkbox" id="q10Executed" ${d.q10Executed?'checked':''} data-form-path="q10Executed" data-form-value="boolean" data-form-route="/p9" data-form-change="ensure-directive-row" data-collection="q10Directives">
+    <label class="form-check-label" for="q10Executed">The ward executed the following advance directives</label>
+  </div>`;
   const blocks=(d.q10Directives||[]).map((r,i)=>{
     const set=f=>`D.q10Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12"><div class="entry-card mb-2">
@@ -485,7 +497,7 @@ function pagePlanADirectives(){
           ${cb('q10StepMedicalProviders',"Requested documents from the ward's medical providers")}
           ${cb('q10StepAttorney',"Requested documents from the ward's attorney")}
         </div></div>`:''}
-      <div class="plan-check-grid mt-2">${cb('q10Executed','The ward executed the following advance directives')}</div>
+      <div class="plan-check-grid mt-2">${q10ExecutedCb}</div>
       ${d.q10Executed?`<div class="plan-conditional mt-2">
         <div class="plan-check-grid">
           ${cb('q10ExecDNR','Order Not to Resuscitate (DNR), F.S. 401.45(3)')}

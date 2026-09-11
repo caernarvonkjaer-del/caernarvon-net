@@ -385,7 +385,12 @@ function pagePlanIDirectives(){
   const dirs=(d.q11Directives||[]).map((r,i)=>{
     const set=f=>`D.q11Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12"><div class="entry-card mb-2">
-      <div class="entry-card-header">Advance Directive ${i+1}</div>
+      <div class="entry-card-header">
+        <span>Advance Directive ${i+1}</span>
+        <span class="entry-card-actions">
+          <button class="btn btn-sm btn-outline-danger ms-auto" data-form-action="remove-plan-row" data-collection="q11Directives" data-index="${i}" data-route="/p8">✕ Remove</button>
+        </span>
+      </div>
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-6"><label class="form-label">Title of the order or directive</label><input type="text" class="form-control" value="${esc(r.title||'')}" data-form-path="q11Directives.${i}.title" data-field-path="q11Directives.${i}.title"></div>
         <div class="col-md-6"><label class="form-label" for="q11_dir_${i}_dateSigned">Date executed/signed</label><input type="text" inputmode="text" class="form-control" id="q11_dir_${i}_dateSigned" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(r.dateSigned||''))}" data-form-path="q11Directives.${i}.dateSigned" data-field-path="q11Directives.${i}.dateSigned" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="q11_dir_${i}_dateSigned_hint"><div id="q11_dir_${i}_dateSigned_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
@@ -414,14 +419,27 @@ function pagePlanIDirectives(){
         +cb('q11StepAttorney',"Requested documents from the ward's attorney"),
         null,null,false))}
     ${planQ('11b','The ward executed the following advance directives:',
-      chkP('q11Executed','The ward executed advance directives (complete below)',d.q11Executed)
-      +planCheckGroup('',
+      // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page
+      // on change (no data-form-route), which is fine for most checkboxes
+      // here but not this one -- the type controls, cards, and Add Directive
+      // button below only exist in the DOM once q11Executed is true, so
+      // checking it must force a fresh render to reveal them. data-form-
+      // change="ensure-directive-row" also gives an empty collection exactly
+      // one blank card immediately (src/form-events.js), matching the UX
+      // before this collection stopped being pre-seeded.
+      `<div class="form-check plan-check">
+        <input class="form-check-input" type="checkbox" id="q11Executed" ${d.q11Executed?'checked':''} data-form-path="q11Executed" data-form-value="boolean" data-form-route="/p8" data-form-change="ensure-directive-row" data-collection="q11Directives">
+        <label class="form-check-label" for="q11Executed">The ward executed advance directives (complete below)</label>
+      </div>`
+      +(d.q11Executed?planCheckGroup('',
         cb('q11ExecDNR','Order Not to Resuscitate, F.S. 401.45(3) ("DNR")')
         +cb('q11ExecHealthcare','Advance Directive for Healthcare (healthcare surrogate, living will, or anatomical gift)')
         +cb('q11ExecPOA','Durable Power of Attorney, F.S. Chapter 709')
         +cb('q11ExecOther','Other'),
         'q11ExecOtherText',d.q11ExecOtherText,d.q11ExecOther,'Describe the "Other" directive.')
-      +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:''))}
+      +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:'')
+      +`<button class="btn btn-outline-primary btn-sm mt-2" data-form-action="add-plan-row" data-collection="q11Directives" data-row-type="directive" data-route="/p8">+ Add Directive</button>`
+      :''))}
     ${planQ('E','The assistive devices needed by the Ward (devices needed but not currently owned) are:',
       planCheckGroup('',
         cb('needsDentures','Dentures')

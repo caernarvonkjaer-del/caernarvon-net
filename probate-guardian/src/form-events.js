@@ -88,6 +88,18 @@ document.addEventListener('change', (event) => {
   if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
     writeDraftValue(control, { event });
     finalizeFieldValue(control, { event });
+    // Milestone 37-4: checking a Plan's directive-execution box (q10Executed/
+    // q11Executed) reveals an empty detail-card collection rather than a
+    // pre-seeded one -- give it exactly one blank card immediately, matching
+    // the UX before that collection stopped being pre-seeded, rather than
+    // making the filer press "+ Add Directive" for the very first row. Runs
+    // before the route re-render below so the fresh render sees the new row.
+    if (control.dataset.formChange === 'ensure-directive-row' && control.checked) {
+      const collection = control.dataset.collection;
+      if (collection && window.D && !(window.D[collection] || []).length) {
+        window.D[collection] = [window.emptyPlanDirective()];
+      }
+    }
     if (control.dataset.formRoute && window.renderPage) {
       window.renderPage(control.dataset.formRoute);
     }

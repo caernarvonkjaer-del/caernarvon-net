@@ -254,7 +254,11 @@ export function emptyDataPlanAnnual() {
     q10StepInterviewed:false, q10StepMedicalProviders:false, q10StepAttorney:false,
     q10Executed:false, q10ExecDNR:false, q10ExecHealthcare:false,
     q10ExecPOA:false, q10ExecOther:false, q10ExecOtherText:'',
-    q10Directives:[window.emptyPlanDirective()],
+    // Milestone 37-4: empty by default -- a directive card is created only
+    // once q10Executed is checked (see pagePlanADirectives()'s "ensure-
+    // directive-row" handler) or the user presses Add Directive, not seeded
+    // up front regardless of whether the ward executed anything.
+    q10Directives:[],
     // Q11 — remuneration
     q11NoRemuneration:false, q11NoRemunerationName:'',
     q11ReceivedName:'', q11Amount:'', q11From:'', q11SubmittedToCourt:false,
@@ -334,7 +338,9 @@ export function emptyDataPlanInitial() {
     q11StepInterviewed:false, q11StepMedicalProviders:false, q11StepAttorney:false,
     q11Executed:false, q11ExecDNR:false, q11ExecHealthcare:false,
     q11ExecPOA:false, q11ExecOther:false, q11ExecOtherText:'',
-    q11Directives:[window.emptyPlanDirective(),window.emptyPlanDirective()],
+    // Milestone 37-4: empty by default -- see q10Directives's identical note
+    // above (pagePlanIDirectives() is Initial Plan's equivalent handler).
+    q11Directives:[],
     // Certification — six "check all that apply" statements
     certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
     certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,

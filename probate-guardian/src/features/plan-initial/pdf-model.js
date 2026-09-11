@@ -393,8 +393,11 @@ export function buildPlanInitialModel(D, options) {
     ],
   });
 
-  // Page 8: Advance directive detail
-  const dirs = (d.q11Directives || []).filter(r => r && (r.title || r.dateSigned || r.signedBy));
+  // Page 8: Advance directive detail. Milestone 37-4: gated on q11Executed,
+  // not just on populated rows -- legacy/imported data can carry directive
+  // records while execution is unchecked (hidden in the UI), and the output
+  // must agree with what the filer currently sees, not with leftover data.
+  const dirs = d.q11Executed ? (d.q11Directives || []).filter(r => r && (r.title || r.dateSigned || r.signedBy)) : [];
   sections.push({
     id: 'directive-detail',
     title: 'Advance Directive Detail',

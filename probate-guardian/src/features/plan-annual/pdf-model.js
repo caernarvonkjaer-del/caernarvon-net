@@ -401,8 +401,9 @@ export function buildPlanAnnualModel(D) {
     ],
   });
 
-  // Page 10: Q10 directives
-  const dirs = (d.q10Directives || []).filter(r => r && (r.title || r.dateSigned || r.signedBy));
+  // Page 10: Q10 directives. Milestone 37-4: gated on q10Executed, not just
+  // on populated rows -- see plan-initial/pdf-model.js's identical note.
+  const dirs = d.q10Executed ? (d.q10Directives || []).filter(r => r && (r.title || r.dateSigned || r.signedBy)) : [];
   sections.push({
     id: 'q10',
     title: 'Question 10',
