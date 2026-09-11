@@ -61,7 +61,7 @@ export async function doSaveExcel(){
     if(!templateB64){alert('Template not loaded. Please import the Excel template first.');return;}
 
     const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
-    const yesNo=b=>b?'Yes':'No';
+    const yesNo=v=>(v==='Yes'||v===true)?'Yes':((v==='No'||v===false)?'No':'');
     const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
 
     if(stat)stat.textContent='Loading template…';
@@ -144,7 +144,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+1}`,e.accountNumber||'');
         setCell(pg,`C${r+2}`,e.streetAddress||'');
         setCell(pg,`C${r+3}`,e.cityStateZip||'');
-        setCell(pg,`E${r}`,yesNo(e.isRestricted));
+        setCell(pg,`E${r}`,yesNo(e.restricted!=null?e.restricted:e.isRestricted));
         setCell(pg,`F${r}`,e.accountType||'');
         setCell(pg,`G${r}`,e.fullAssetAmount||'');
         setCell(pg,`H${r}`,e.wardPercent||'');
@@ -184,7 +184,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r}`,e.description||'');
         setCell(pg,`C${r+1}`,e.streetAddress||'');
         setCell(pg,`C${r+2}`,e.cityStateZip||'');
-        setCell(pg,`E${r}`,yesNo(e.isRestricted));
+        setCell(pg,`E${r}`,yesNo(e.restricted!=null?e.restricted:e.isRestricted));
         setCell(pg,`F${r}`,e.fullAssetValue||'');
         setCell(pg,`G${r}`,e.wardPercent||'');
         setCell(pg,`J${r}`,yesNo(e.inSafeDepositBox));

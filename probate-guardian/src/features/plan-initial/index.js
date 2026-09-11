@@ -261,22 +261,22 @@ function pagePlanISocialBenefits(){
         'q6Explain',d.q6Explain,d.q6Other))}
     ${planQ('7','The Ward has the following health insurance, accident insurance, private benefits, or governmental benefits received to meet any part of the costs of medical, mental health or related services:',
       planCheckGroup('',
-        cb('q7SocialSecurity','Social Security')
-        +cb('q7Ssdi','Social Security Disability Income (SSDI)')
-        +cb('q7Hmo','Health Maintenance Organization (HMO)')
-        +cb('q7Ssi','Supplemental Security Income (SSI)')
-        +cb('q7StateSupplement','Optional State Supplement')
-        +cb('q7InstitutionalCare','Institutional Care Program')
-        +cb('q7SupplementalIns','Supplemental Insurance')
-        +cb('q7Pension','Pension')
-        +cb('q7Medicare','Medicare')
-        +cb('q7Medicaid','Medicaid')
-        +cb('q7Va','VA')
-        +cb('q7Trusts','Trusts (explain type and how it covers costs below)')
-        +cb('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)')
+        yesNoCheckboxS('q7SocialSecurity','Social Security',d.q7SocialSecurity)
+        +yesNoCheckboxS('q7Ssdi','Social Security Disability Income (SSDI)',d.q7Ssdi)
+        +yesNoCheckboxS('q7Hmo','Health Maintenance Organization (HMO)',d.q7Hmo)
+        +yesNoCheckboxS('q7Ssi','Supplemental Security Income (SSI)',d.q7Ssi)
+        +yesNoCheckboxS('q7StateSupplement','Optional State Supplement',d.q7StateSupplement)
+        +yesNoCheckboxS('q7InstitutionalCare','Institutional Care Program',d.q7InstitutionalCare)
+        +yesNoCheckboxS('q7SupplementalIns','Supplemental Insurance',d.q7SupplementalIns)
+        +yesNoCheckboxS('q7Pension','Pension',d.q7Pension)
+        +yesNoCheckboxS('q7Medicare','Medicare',d.q7Medicare)
+        +yesNoCheckboxS('q7Medicaid','Medicaid',d.q7Medicaid)
+        +yesNoCheckboxS('q7Va','VA',d.q7Va)
+        +yesNoCheckboxS('q7Trusts','Trusts (explain type and how it covers costs below)',d.q7Trusts)
+        +yesNoCheckboxS('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)',d.q7PendingBenefits)
         +cb('q7Other','Other'),
-        'q7Explain',d.q7Explain,d.q7Trusts||d.q7PendingBenefits||d.q7Other,
-        'If Trusts or Pending Benefits is checked, explain below.'))}
+        'q7Explain',d.q7Explain,(d.q7Trusts==='Yes'||d.q7PendingBenefits==='Yes'||d.q7Other),
+        'If Trusts or Pending Benefits is Yes, explain below.'))}
     ${renderScheduleDocsSection('planISocialBenefits')}
     ${pageNavS('/p3','/p5')}
   </div>`;

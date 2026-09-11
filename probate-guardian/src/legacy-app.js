@@ -7659,14 +7659,48 @@ const calc={
   totalC3:()=>r2(D.scheduleC3.reduce((s,e)=>s+calc.wardC3(e),0)),
   totalC4:()=>r2(D.scheduleC4.reduce((s,e)=>s+calc.wardC4(e),0)),
   totalC5:()=>r2(D.scheduleC5.reduce((s,e)=>s+calc.wardC5(e),0)),
-  restrictedCash:()=>r2(D.scheduleB1.filter(e=>e.isRestricted).reduce((s,e)=>s+calc.wardAmt(e),0)),
-  unrestrictedCash:()=>r2(D.scheduleB1.filter(e=>!e.isRestricted).reduce((s,e)=>s+calc.wardAmt(e),0)),
-  restrictedIntang:()=>r2(D.scheduleB3.filter(e=>e.isRestricted).reduce((s,e)=>s+calc.wardB3(e),0)),
-  unrestrictedIntang:()=>r2(D.scheduleB3.filter(e=>!e.isRestricted).reduce((s,e)=>s+calc.wardB3(e),0)),
+  restrictedCash:()=>r2(D.scheduleB1.filter(e=>e.restricted==='Yes'||e.isRestricted===true).reduce((s,e)=>s+calc.wardAmt(e),0)),
+  unrestrictedCash:()=>r2(D.scheduleB1.filter(e=>e.restricted!=='Yes'&&!e.isRestricted).reduce((s,e)=>s+calc.wardAmt(e),0)),
+  restrictedIntang:()=>r2(D.scheduleB3.filter(e=>e.restricted==='Yes'||e.isRestricted===true).reduce((s,e)=>s+calc.wardB3(e),0)),
+  unrestrictedIntang:()=>r2(D.scheduleB3.filter(e=>e.restricted!=='Yes'&&!e.isRestricted).reduce((s,e)=>s+calc.wardB3(e),0)),
   bondRequired:()=>calc.unrestrictedCash()+calc.totalB2()+calc.unrestrictedIntang(),
   auditFee:()=>calc.total()>25000?85:0,
 };
 window.calc=calc;
+
+function normalizeWardData(d){
+  if(!d||typeof d!=='object')return d;
+  (d.scheduleA1||[]).forEach(r=>{
+    if(r.residence==null||r.residence===''){if(r.isPersonalResidence===true)r.residence='Yes';else if(r.isPersonalResidence===false)r.residence='No';}
+    if(r.income==null||r.income===''){if(r.isIncomeProperty===true)r.income='Yes';else if(r.isIncomeProperty===false)r.income='No';}
+  });
+  (d.scheduleB1||[]).forEach(r=>{
+    if(r.restricted==null||r.restricted===''){if(r.isRestricted===true)r.restricted='Yes';else if(r.isRestricted===false)r.restricted='No';}
+  });
+  (d.scheduleB2||[]).forEach(r=>{
+    if(r.inSafeDepositBox===true)r.inSafeDepositBox='Yes';else if(r.inSafeDepositBox===false)r.inSafeDepositBox='No';
+  });
+  (d.scheduleB3||[]).forEach(r=>{
+    if(r.restricted==null||r.restricted===''){if(r.isRestricted===true)r.restricted='Yes';else if(r.isRestricted===false)r.restricted='No';}
+    if(r.inSafeDepositBox===true)r.inSafeDepositBox='Yes';else if(r.inSafeDepositBox===false)r.inSafeDepositBox='No';
+  });
+  if(d.hasSafeDepositBox===true)d.hasSafeDepositBox='Yes';else if(d.hasSafeDepositBox===false)d.hasSafeDepositBox='No';
+  if(d.safeDepositBoxFiled===true)d.safeDepositBoxFiled='Yes';else if(d.safeDepositBoxFiled===false)d.safeDepositBoxFiled='No';
+  if(d.amendedForm==null||d.amendedForm===''){if(d.isAmended===true)d.amendedForm='Yes';else if(d.isAmended===false)d.amendedForm='No';}
+  if(d.benefits&&typeof d.benefits==='object'){
+    Object.keys(d.benefits).forEach(k=>{
+      const b=d.benefits[k];
+      if(b&&typeof b==='object'){
+        if(b.eligible===true)b.eligible='Yes';else if(b.eligible===false)b.eligible='No';
+        if(b.appliedFor===true)b.appliedFor='Yes';else if(b.appliedFor===false)b.appliedFor='No';
+      }
+    });
+  }
+  const q7Keys=['q7SocialSecurity','q7Ssdi','q7Hmo','q7Ssi','q7StateSupplement','q7InstitutionalCare','q7SupplementalIns','q7Pension','q7Medicare','q7Medicaid','q7Va','q7Trusts','q7PendingBenefits'];
+  q7Keys.forEach(k=>{if(d[k]===true)d[k]='Yes';else if(d[k]===false)d[k]='No';});
+  return d;
+}
+window.normalizeWardData=normalizeWardData;
 
 // ═══════════════════════════════════════════════════════
 // Page navigation helper moved to src/features/guardian-inventory/index.js

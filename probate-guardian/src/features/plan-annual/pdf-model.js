@@ -245,7 +245,8 @@ export function buildPlanAnnualModel(D) {
         colAlign: ['left', 'center', 'center'],
         rows: planBenefits.map(([k, label]) => {
           const v = b[k] || {};
-          return [label, v.eligible ? 'Yes' : 'No', v.appliedFor ? 'Yes' : 'No'];
+          const fmtTri = val => (val === 'Yes' || val === true) ? 'Yes' : ((val === 'No' || val === false) ? 'No' : '—');
+          return [label, fmtTri(v.eligible), fmtTri(v.appliedFor)];
         }),
       },
       {

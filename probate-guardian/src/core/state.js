@@ -53,6 +53,9 @@ export function getD() {
 }
 
 export function setD(d) {
+  if (d && typeof window !== 'undefined' && typeof window.normalizeWardData === 'function') {
+    window.normalizeWardData(d);
+  }
   _D = d;
   if (typeof window !== 'undefined') {
     window.D = d;
