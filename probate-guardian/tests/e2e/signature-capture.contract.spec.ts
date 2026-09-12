@@ -123,6 +123,79 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
   });
 });
 
+// Milestone 39-C: "Upload background-transparency gate" -- the luminance-
+// threshold fix lives in the one shared capture widget
+// (src/core/signature/signature-pad.js), so proving it once here, through
+// the real Upload tab and a real produced PNG, covers every role/filing
+// type 39-C touches; it needs no per-type re-proof (unlike the field-shape
+// rollout below, which is genuinely per-type).
+test.describe('Milestone 39-C: Upload background-transparency (luminance-threshold fix)', () => {
+  // Builds a real PNG in the browser -- a light "paper" background plus a
+  // dark "ink" square placed well away from the edges -- and returns it as
+  // a Buffer suitable for page.setInputFiles(), so the test exercises the
+  // actual file-upload path rather than injecting a data URL directly.
+  async function buildSyntheticUploadPng(page: import('@playwright/test').Page) {
+    const dataUrl = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 100;
+      canvas.height = 40;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff'; // light background, above the default threshold
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#111111'; // dark ink, well below the default threshold
+      ctx.fillRect(30, 10, 20, 20);
+      return canvas.toDataURL('image/png');
+    });
+    return Buffer.from(dataUrl.split(',')[1], 'base64');
+  }
+
+  test('an uploaded photo\'s light background is stripped to transparent; the dark ink is kept opaque', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Sig Upload Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await gotoSignaturesPage(page);
+
+    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    await page.locator('[data-sig-tab="upload"]').click();
+
+    const buffer = await buildSyntheticUploadPng(page);
+    await page.setInputFiles('[data-sig-upload]', { name: 'upload.png', mimeType: 'image/png', buffer });
+
+    // Wait for the async Image/onload decode to finish and the upload
+    // preview canvas to actually be painted before applying.
+    await expect.poll(() => page.locator('[data-sig-panel="upload"] canvas').evaluate((c) => {
+      const ctx = (c as HTMLCanvasElement).getContext('2d')!;
+      const data = ctx.getImageData(0, 0, (c as HTMLCanvasElement).width, (c as HTMLCanvasElement).height).data;
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return true;
+      return false;
+    })).toBe(true);
+
+    await page.locator('[data-sig-action="apply"]').click();
+    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+
+    const { bgAlpha, inkAlpha } = await page.evaluate(async () => {
+      const dataUrl = (window as any).D.planGuardians[0].signatureImage;
+      return new Promise<{ bgAlpha: number; inkAlpha: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          const bg = ctx.getImageData(5, 5, 1, 1).data;
+          const ink = ctx.getImageData(40, 20, 1, 1).data;
+          resolve({ bgAlpha: bg[3], inkAlpha: ink[3] });
+        };
+        img.src = dataUrl;
+      });
+    });
+    expect(bgAlpha).toBe(0);
+    expect(inkAlpha).toBe(255);
+  });
+});
+
 // Milestone 39-C: rolls 39-B's exact mechanism out to the three remaining
 // Plan types. Each type's Guardian card is the same collection-row shape as
 // the pilot -- one full legacy/Unsigned/incomplete/Stamp-draw cycle per type

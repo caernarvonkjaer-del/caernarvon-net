@@ -16,12 +16,12 @@ renderer in `src/core/pdf/pdf-engine.js` and Plan Simplified's own
 "Persistence design"/"Implementation Plan" and "Spike results" sections for
 what was built and what was learned building it. **39-C: both authorization
 gates cleared, and the rollout is landed for Plan Annual, Plan Initial, Plan
-Minor, Simplified Accounting, and Annual/Final/Trust Accounting** (see
+Minor, Simplified Accounting, and Annual/Final/Trust Accounting; the Upload
+background-transparency luminance-threshold fix itself is also landed** (see
 "39-C: Multi-Role, Multi-Filing-Type Rollout" below for what changed and
 its own "Verification Plan" for what was run). The remaining 39-C scope —
-Guardian Inventory (the last, most-card-heavy type) and the Upload
-background-transparency luminance-threshold fix itself — has not been
-started; each begins only on the requester's explicit go-ahead, same
+Guardian Inventory, the last and most card-heavy filing type — has not been
+started; it begins only on the requester's explicit go-ahead, same
 discipline as every other sub-milestone. 39-D and 39-E remain a
 recommendation-recorded draft — do not implement yet.** What started as
 one research conversation (ephemeral PDF annotation for Print Preview) grew,
@@ -1048,6 +1048,43 @@ description update reflecting the file's growing scope as each type lands.
    where applicable), `npm run verify:data-model` passing (870 rows).
    `TEST-INDEX.md` updated.
 
+**Upload background-transparency gate (luminance-threshold fix) — landed and run:**
+
+Implemented entirely within `src/core/signature/signature-pad.js`, as scoped
+above: a new pure `removeLightBackground(pixels, threshold)` (default
+threshold 200, ITU-R BT.601 luminance weights) mutates a canvas
+`ImageData.data` array in place, dropping any pixel at or above the
+threshold to alpha 0; `drawToCanvas()` takes a `stripBackground` option and
+runs this pass only for the Upload tab's `img.onload` path (Draw/Type stay
+untouched — already transparent by construction). No new dependency, no
+per-role wiring — every role/filing type gets this automatically since it
+lives in the one shared capture widget.
+
+1. `tests/unit/signature-capture.spec.js` extended with 6 new tests against
+   the exact scenarios this section's own verification plan called for:
+   plain white background/dark ink (fully separated), off-white/gray
+   background (still stripped at the default threshold), an exact
+   threshold-boundary case (just-below kept, at-or-above stripped), and two
+   tests that deliberately document where the heuristic degrades rather
+   than hiding it — low-contrast ink landing close enough to the
+   background's own luminance to be misclassified, and a shadow gradient
+   where the bright paper is correctly removed but the shadow band is
+   incorrectly kept opaque (a "halo" around the signature). All pass; the
+   two "known limit" tests assert the degraded behavior itself, so a future
+   retune that changes it is a visible, deliberate diff, not a silent
+   regression.
+2. `tests/e2e/signature-capture.contract.spec.ts` extended with a new
+   `Milestone 39-C: Upload background-transparency` test (27 total in the
+   file) that exercises the real Upload tab end to end: builds a genuine
+   PNG in the browser (white background, black ink square), uploads it via
+   `page.setInputFiles()` (a real file input, not an injected data URL),
+   applies it, then decodes the resulting stored `signatureImage` back
+   through a fresh canvas and asserts alpha 0 at a background sample pixel
+   and alpha 255 at an ink sample pixel. Proves the fix once, through the
+   shared widget, rather than per role/filing type. All 27 tests in the
+   file pass.
+3. Full unit suite (446 tests, 50 files) re-run clean.
+
 ---
 
 ## 39-D: Reusable, Versioned Per-Party Signature Stamp
@@ -1274,13 +1311,13 @@ Order and Dependencies."
   (complete, confirmed table, zero "not yet confirmed" cells, plus one
   previously-missed card found and added) and the Upload
   background-transparency gate (resolved: luminance-threshold background
-  removal, scoped as its own spike within 39-C, not yet built). **Rollout
-  landed and verified for Plan Annual, Plan Initial, Plan Minor, Simplified
-  Accounting, and Annual/Final/Trust Accounting** (see "Recommended
-  sequencing" and "Verification Plan (39-C)" above). Remaining scope —
-  Guardian Inventory and the Upload luminance-threshold fix itself — still
-  requires the requester's explicit go-ahead before starting, matching
-  39-A/39-B's own authorization pattern.
+  removal). **Rollout landed and verified for Plan Annual, Plan Initial,
+  Plan Minor, Simplified Accounting, and Annual/Final/Trust Accounting; the
+  Upload luminance-threshold fix itself is also landed and verified** (see
+  "Recommended sequencing" and "Verification Plan (39-C)" above). Remaining
+  scope — Guardian Inventory, the last and most card-heavy filing type —
+  still requires the requester's explicit go-ahead before starting,
+  matching 39-A/39-B's own authorization pattern.
 - **39-D** may not be authorized until the compound party+entry reference
   design, the single-ward export/import fix (confirmed necessary — see
   Design above), and the storage-growth question are resolved with the

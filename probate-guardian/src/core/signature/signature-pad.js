@@ -52,6 +52,33 @@ export function validateSignatureImage(dataUrl) {
   return { valid: true, error: null, width: dims.width, height: dims.height };
 }
 
+// Milestone 39-C: "Upload background-transparency gate" -- resolved as a
+// bounded, client-side luminance-threshold heuristic (MILESTONE-39-PROPOSAL.md
+// "Upload background-transparency gate"). Any pixel at or above the
+// threshold is treated as background and dropped to alpha 0; anything
+// darker (the actual ink) is left untouched. This is deliberately a
+// heuristic, not real segmentation, and has known, accepted limits: a
+// colored or textured background, low-contrast ink close to the threshold,
+// or a shadow gradient across the page can all produce a partially-removed
+// or partially-kept background. See tests/unit/signature-capture.spec.js
+// for the exact scenarios this was tuned and verified against.
+export const DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD = 200;
+
+/**
+ * Mutates `pixels` (an RGBA byte sequence, e.g. ImageData.data) in place:
+ * any pixel whose perceptual luminance (ITU-R BT.601 weights) is at or
+ * above `threshold` has its alpha channel set to 0. Returns `pixels` for
+ * convenience. Pure and DOM-free so it can be unit-tested directly against
+ * plain arrays, without a real canvas.
+ */
+export function removeLightBackground(pixels, threshold = DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD) {
+  for (let i = 0; i < pixels.length; i += 4) {
+    const luminance = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+    if (luminance >= threshold) pixels[i + 3] = 0;
+  }
+  return pixels;
+}
+
 /**
  * Draws `source` (an HTMLImageElement) onto a fresh canvas, scaled down to
  * fit MAX_SIGNATURE_WIDTH_PX/MAX_SIGNATURE_HEIGHT_PX if needed, and returns
@@ -60,21 +87,23 @@ export function validateSignatureImage(dataUrl) {
  * effect of canvas re-encoding: canvas pixel data carries no EXIF concept,
  * so redrawing and re-exporting via toDataURL() cannot carry it forward.
  *
- * Real, honest limitation (not addressed here): this does not remove an
- * uploaded photo's own opaque background (e.g. a photographed signature on
- * white paper) -- true background transparency for an arbitrary upload
- * would need real image segmentation, a materially bigger feature than this
- * spike scopes. Draw/type mode canvases are transparent by construction
- * (never filled before drawing); an uploaded image keeps whatever
- * background it already had.
+ * `stripBackground` runs the luminance-threshold pass above before export
+ * -- Upload mode only (Draw/Type canvases are transparent by construction,
+ * never filled before drawing, so they need no such pass; see
+ * `removeLightBackground()`'s own doc comment for this heuristic's limits).
  */
-function drawToCanvas(source, naturalWidth, naturalHeight) {
+function drawToCanvas(source, naturalWidth, naturalHeight, { stripBackground = false } = {}) {
   const scale = Math.min(1, MAX_SIGNATURE_WIDTH_PX / naturalWidth, MAX_SIGNATURE_HEIGHT_PX / naturalHeight);
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(naturalWidth * scale));
   canvas.height = Math.max(1, Math.round(naturalHeight * scale));
   const ctx = canvas.getContext('2d');
   ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+  if (stripBackground) {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    removeLightBackground(imageData.data);
+    ctx.putImageData(imageData, 0, 0);
+  }
   return canvas.toDataURL('image/png');
 }
 
@@ -179,7 +208,7 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
     if (!file) return;
     const img = new Image();
     img.onload = () => {
-      uploadedDataUrl = drawToCanvas(img, img.naturalWidth, img.naturalHeight);
+      uploadedDataUrl = drawToCanvas(img, img.naturalWidth, img.naturalHeight, { stripBackground: true });
       const ctx = uploadPreview.getContext('2d');
       ctx.clearRect(0, 0, uploadPreview.width, uploadPreview.height);
       ctx.drawImage(img, 0, 0, uploadPreview.width, uploadPreview.height);

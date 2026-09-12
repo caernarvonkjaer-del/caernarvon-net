@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   validateSignatureImage, readPngDimensions,
   MAX_SIGNATURE_WIDTH_PX, MAX_SIGNATURE_FILE_SIZE_BYTES,
+  removeLightBackground, DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD,
 } from '../../src/core/signature/signature-pad.js';
 import { checkSignatureState, inferLegacySignatureState, SIGNATURE_STATES } from '../../src/core/validation/signature-state.js';
 
@@ -71,6 +72,84 @@ describe('signature-pad: validateSignatureImage', () => {
     const result = validateSignatureImage(`data:image/png;base64,${btoa(binary)}`);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/content check/i);
+  });
+});
+
+// Milestone 39-C: "Upload background-transparency gate" -- these cover the
+// exact scenarios MILESTONE-39-PROPOSAL.md's own verification plan calls
+// for (plain white/dark ink, off-white/gray, low-contrast ink, a shadow
+// gradient), documenting both where the heuristic holds and where it
+// visibly degrades, rather than only proving the happy path.
+describe('signature-pad: removeLightBackground (Upload transparency fix)', () => {
+  // Builds a flat RGBA byte array from [r, g, b, a] pixel tuples, matching
+  // the layout removeLightBackground() expects from a real ImageData.data.
+  function pixels(...rgba) {
+    return new Uint8ClampedArray(rgba.flat());
+  }
+
+  it('strips a plain white background and keeps dark ink opaque', () => {
+    const white = [255, 255, 255, 255];
+    const ink = [10, 10, 10, 255]; // near-black pen
+    const data = pixels(white, ink, white);
+    removeLightBackground(data);
+    expect(data[3]).toBe(0); // background pixel 1
+    expect(data[7]).toBe(255); // ink pixel
+    expect(data[11]).toBe(0); // background pixel 2
+  });
+
+  it('strips an off-white/gray background at the default threshold', () => {
+    const offWhite = [235, 235, 230, 255]; // luminance ~234
+    const midGray = [210, 210, 210, 255]; // luminance 210, still >= 200 default
+    const data = pixels(offWhite, midGray);
+    removeLightBackground(data);
+    expect(data[3]).toBe(0);
+    expect(data[7]).toBe(0);
+  });
+
+  it('keeps a pixel just below the threshold opaque and strips one at or above it', () => {
+    // Pure gray (R=G=B=v) makes luminance === v exactly, so the boundary is
+    // easy to hit precisely.
+    const belowThreshold = [DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD - 1, DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD - 1, DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD - 1, 255];
+    const atThreshold = [DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD, DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD, DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD, 255];
+    const data = pixels(belowThreshold, atThreshold);
+    removeLightBackground(data);
+    expect(data[3]).toBe(255); // just below threshold: kept opaque
+    expect(data[7]).toBe(0); // at threshold: stripped
+  });
+
+  it('known limit: low-contrast ink near the threshold is not reliably distinguished from background', () => {
+    // A pale/faded pen stroke can land close enough to the same gray level
+    // as the paper itself that the heuristic cannot separate the two --
+    // this is the "low-contrast ink" limitation MILESTONE-39-PROPOSAL.md's
+    // Upload background-transparency gate documents, not a bug to fix here.
+    const paleInk = [190, 188, 185, 255]; // faded pen, luminance ~188
+    const paperNearby = [205, 205, 200, 255]; // luminance ~204, barely different
+    const data = pixels(paleInk, paperNearby);
+    removeLightBackground(data);
+    expect(data[3]).toBe(255); // pale ink survives (below threshold)...
+    expect(data[7]).toBe(0); // ...but its nearly-identical paper neighbor is stripped
+    // The two source pixels differ by only ~16 luminance units yet land on
+    // opposite sides of the cutoff -- exactly the fragility being documented.
+  });
+
+  it('known limit: a shadow gradient across the page is only partially removed', () => {
+    // A photographed page lit unevenly can shade from bright paper down
+    // through a mid-gray shadow before reaching true ink -- the threshold
+    // can only cut once, so part of the shadow survives as an opaque
+    // "halo" around the signature rather than being fully removed.
+    const brightPaper = [250, 250, 250, 255];
+    const shadowEdge = [150, 150, 150, 255]; // shadow, well under threshold
+    const trueInk = [15, 15, 15, 255];
+    const data = pixels(brightPaper, shadowEdge, trueInk);
+    removeLightBackground(data);
+    expect(data[3]).toBe(0); // bright paper: correctly removed
+    expect(data[7]).toBe(255); // shadow: incorrectly kept opaque (the known limit)
+    expect(data[11]).toBe(255); // true ink: correctly kept opaque
+  });
+
+  it('returns the same array it mutates, for convenient chaining', () => {
+    const data = pixels([255, 255, 255, 255]);
+    expect(removeLightBackground(data)).toBe(data);
   });
 });
 
