@@ -14,8 +14,15 @@ renderer in `src/core/pdf/pdf-engine.js` and Plan Simplified's own
 `index.js`/`print.js`/`pdf-model.js`; `tests/unit/signature-capture.spec.js`,
 `tests/e2e/signature-capture.contract.spec.ts`. See each sub-milestone's own
 "Persistence design"/"Implementation Plan" and "Spike results" sections for
-what was built and what was learned building it. **39-C through 39-E remain
-a recommendation-recorded draft — do not implement yet.** What started as
+what was built and what was learned building it. **39-C: both authorization
+gates cleared, and the rollout to Plan Annual, Plan Initial, and Plan Minor
+is landed** (see "39-C: Multi-Role, Multi-Filing-Type Rollout" below for
+what changed and its own "Verification Plan" for what was run). The
+remaining 39-C scope — Simplified/Annual Accounting and Guardian Inventory,
+and the Upload background-transparency luminance-threshold fix itself —
+has not been started; each begins only on the requester's explicit
+go-ahead, same discipline as every other sub-milestone. 39-D and
+39-E remain a recommendation-recorded draft — do not implement yet.** What started as
 one research conversation (ephemeral PDF annotation for Print Preview) grew,
 over several rounds of review, into two architecturally distinct
 capabilities plus a substantial cross-filing-type rollout. It is now split
@@ -757,103 +764,103 @@ across every future role rather than fixing it once.
 
 ## 39-C: Multi-Role, Multi-Filing-Type Rollout
 
-Extends 39-B's proven mechanism to every other signature-bearing card. This
-is real, substantial survey work in its own right — a partial inventory,
-gathered while scoping this document, already shows the pattern is not
-uniform:
+Extends 39-B's proven mechanism to every other signature-bearing card.
+**Both gates below are now cleared** — the inventory is complete (audited
+directly against every listed file, zero "not yet confirmed" cells remain)
+and the Upload background-transparency question has a decision. Clearing
+these gates authorizes design/estimation work, per this document's own
+"Implementation Gate" section; actual multi-file implementation still
+starts only on the requester's explicit go-ahead, the same discipline
+39-A and 39-B were each individually authorized under.
 
-| Filing type | Role / card | Field | Requiredness today |
-| --- | --- | --- | --- |
-| Plan Simplified | Guardian | `planGuardians[0].signatureDate` | Hard required (39-B's target) |
-| Plan Simplified | Preparer / Attorney | `d.preparer_signatureDate` / `d.attorney_signatureDate` | Not required — order-check only |
-| Plan Annual | Guardian | `planGuardians[0].signatureDate` | Hard required |
-| Plan Annual | Attorney | `d.attorney_signatureDate` | Not required — order-check only |
-| Plan Initial | Guardian | `planGuardians[0].signatureDate` | Hard required |
-| Plan Initial | Attorney | `d.attorney_signatureDate` | Conditional — required only once the filer starts entering attorney info (Milestone 35-3: pro se/Guardian Advocate exemption, Fla. Prob. R. 5.030) |
-| Plan Minor | Guardian | `planGuardians[0].signatureDate` | Hard required |
-| Plan Minor | Preparer, Attorney | `d.preparer_signatureDate`, `d.attorney_signatureDate` | Conditional, same once-started rule as Plan Initial |
-| Annual/Final/Trust Accounting | Guardian(s) | `guardians[i].signatureDate` (collection, multiple co-guardians) | Hard required per row |
-| Annual/Final/Trust Accounting | Preparer | `d.preparer.signatureDate` — **nested object, not a flat scalar** | Hard required |
-| Annual/Final/Trust Accounting | Attorney (Part V) | `d.attorney_signatureDate` | Hard required |
-| Annual/Final/Trust Accounting | Attorney, Certificate of Service (Part X) | `d.certAttySignDate` — a **second, separate** attorney-signs card | Not yet confirmed |
-| Simplified Accounting | Guardian(s) | `guardians[i].signatureDate` (collection) | Hard required per row |
-| Simplified Accounting | Attorney | `d.attorney_signatureDate` | Not required — order-check only |
-| Guardian Inventory | Guardian(s) (D-1) | `guardians[i].signatureDate` (collection) | Hard required per row |
-| Guardian Inventory | Preparer (D-2) | `d.preparer.signatureDate` — nested object | Hard required |
-| Guardian Inventory | Attorney (D-2) | `d.attorney.signatureDate` — nested object | Hard required |
-| Guardian Inventory | Attorney, Certificate of Service (D-5) | `d.serviceAttorney.signatureDate` — a **third**, separate nested-object card | Hard required |
+| Filing type | Role / card | Field | Shape | Validator predicate | Requiredness |
+| --- | --- | --- | --- | --- | --- |
+| Plan Simplified | Guardian | `planGuardians[0].signatureDate` | collection row | Hard `req()` (39-B's target — done) | Hard required |
+| Plan Simplified | Preparer / Attorney | `d.preparer_signatureDate` / `d.attorney_signatureDate` | scalar | Order-check only | Not required |
+| Plan Annual | Guardian | `d.planGuardians[0].signatureDate` | collection row | Hard `req()`, `plan-annual/index.js:698-699` | Hard required |
+| Plan Annual | Guardian's Attorney | `d.attorney_signatureDate` | scalar | Order-check only, `plan-annual/index.js:706-708` | Not required |
+| Plan Initial | Guardian | `d.planGuardians[0].signatureDate` | collection row | Hard `req()`, `plan-initial/index.js:597-601` | Hard required |
+| Plan Initial | Guardian's Attorney | `d.attorney_signatureDate` | scalar | Conditional-once-started, `plan-initial/index.js:608-611` | Conditional (Milestone 35-3 pro se/Guardian Advocate exemption) |
+| Plan Minor | Guardian | `d.planGuardians[0].signatureDate` | collection row | Hard `req()`, `plan-minor/index.js:432-437` | Hard required |
+| Plan Minor | Preparer | `d.preparer_signatureDate` (flat scalar, despite the name) | scalar | Conditional-once-started, `plan-minor/index.js:445-448` | Conditional, same once-started rule |
+| Plan Minor | Guardian's Attorney | `d.attorney_signatureDate` | scalar | Conditional-once-started, `plan-minor/index.js:449-452` | Conditional, same once-started rule |
+| Annual/Final/Trust Accounting | Guardian(s) (Part III) | `d.guardians[i].signatureDate` | collection row | Hard per row (row 0 unconditional, extras conditional on populated data), `annual-accounting/index.js:1412-1424` | Hard required per populated row |
+| Annual/Final/Trust Accounting | Preparer (Part IV) | `d.preparer.signatureDate` | nested object | Hard `req()`, `annual-accounting/index.js:1425-1430` | Hard required |
+| Annual/Final/Trust Accounting | Attorney (Part V) | `d.attorney_signatureDate` | scalar | Hard `req()`, `annual-accounting/index.js:1438` | Hard required |
+| Annual/Final/Trust Accounting | Attorney, Certificate of Service (Part X) | `d.certAttySignDate` | scalar | **Resolved: unvalidated.** No `req()`, no `checkDateOrder()` — confirmed absent from `validateAnnual()` entirely | Not enforced at all today — weaker than every other card in this table |
+| Simplified Accounting | Guardian(s) (Part IV) | `d.guardians[i].signatureDate` | collection row | Hard per row, `simplified-accounting/index.js:630-646` | Hard required per populated row |
+| Simplified Accounting | Attorney (Part V) | `d.attorney_signatureDate` | scalar | Order-check only, `simplified-accounting/index.js:651-653` | Not required |
+| Simplified Accounting | Attorney, Certificate of Service (Part VI) — **not in the original draft table, found during the audit** | `d.certAttySignDate` | scalar | **Unvalidated**, confirmed absent from `validateSimplified()` entirely | Not enforced at all today — same gap as Annual/Final/Trust's Part X card |
+| Guardian Inventory | Guardian(s) (D-1) | `d.guardians[i].signatureDate` | collection row | Hard, `guardian-inventory/index.js:1119` | Hard required per row |
+| Guardian Inventory | Preparer (D-2) | `d.preparer.signatureDate` | nested object | Hard, `guardian-inventory/index.js:1120` | Hard required (confirmed — matched the original draft's guess) |
+| Guardian Inventory | Attorney (D-2, Attestation) | `d.attorney.signatureDate` | nested object | Hard, `guardian-inventory/index.js:1121` | Hard required |
+| Guardian Inventory | Attorney, Certificate of Service (D-5) | `d.serviceAttorney.signatureDate` | nested object | Hard, `guardian-inventory/index.js:1130` | Hard required (confirmed — matched the original draft's guess) |
 
-This table is a starting inventory, not a finished audit — several card
-headings and the Certificate-of-Service requiredness above are marked
-unconfirmed. **Three distinct field shapes already exist and 39-C's design
-must handle all of them:** top-level scalar (`d.attorney_signatureDate`),
-nested object (`d.preparer.signatureDate`), and collection row
-(`guardians[i].signatureDate`). A single filing type can also have more
-than one card for nominally the same role (Guardian Inventory's D-2 and D-5
-are both "the attorney," for two different certifications) — each such
-card gets its own independent `signatureState`/`signatureImage`, never a
-role-wide shared one.
+**Three distinct field shapes exist, confirmed across all 6 remaining
+filing types, and 39-C's design must handle all of them:** top-level scalar
+(`d.attorney_signatureDate`), nested object (`d.preparer.signatureDate`),
+and collection row (`d.guardians[i].signatureDate`). A single filing type
+can also have more than one card for nominally the same role (Guardian
+Inventory's D-2 and D-5 are both "the attorney," Annual/Final/Trust
+Accounting and Simplified Accounting each have a primary Attorney card plus
+a separate Certificate-of-Service Attorney card) — each such card gets its
+own independent `signatureState`/`signatureImage`, never a role-wide shared
+one. Also confirmed during the audit: all 6 remaining filing types already
+render their signature blocks through the same shared, generic
+`signature-block` type in `src/core/pdf/pdf-engine.js` that Plan
+Simplified does (Guardian Inventory routes through it via a re-exported
+alias, `guardian-inventory/pdf-engine.js` → `generateVerifiedInventoryPdf`
+→ `generateCourtFormPdf`) — 39-B's own finding that "39-C needs no further
+`pdf-engine.js` change" is now confirmed for every remaining type, not just
+assumed to extend.
 
-### Inventory gate — required before any 39-C migration work starts
+### Inventory gate — cleared
 
-A partial table is not an executable plan. Before any filing type beyond
-the 39-B pilot is touched, complete the inventory: for every signature-
-bearing card in the remaining eight filing types, confirm and record (a)
-its exact field path and shape (scalar / nested object / collection row),
-(b) the validator predicate that currently governs it (hard `req()`,
-conditional-once-started, or order-check-only), (c) the `pdf-model.js`
-location that renders its signature block today, (d) which record owns its
-persisted data (the filing itself, or a nested object under it), and (e)
-its confirmed requiredness — including the two still-unconfirmed
-Certificate-of-Service cards above. Only once that full table has no
-"not yet confirmed" cells does a filing type's own migration begin. This
-mirrors the discipline already used elsewhere in this project (e.g. the
-Milestone 34-2 data-model audit) of treating "probably complete" as
-insufficient before real field-by-field verification.
+Audited directly against every filing type's own validator and
+`pdf-model.js` (file:line citations in the table above); the table has zero
+remaining "not yet confirmed" cells. Two things surfaced during the audit
+that the original draft didn't anticipate:
 
-### Upload background-transparency gate — resolve before rollout, not after
+1. **A fourth validator-predicate category: unvalidated entirely.**
+   Annual/Final/Trust Accounting's Part X and Simplified Accounting's Part
+   VI Certificate-of-Service Attorney cards have no requiredness rule of
+   any kind today — not hard-required, not conditional, not even
+   order-check-only. This needs no new product decision: 39-B's existing
+   rule already applies uniformly regardless of a card's prior
+   requiredness (Unsigned always passes; "/s/" or Stamp must be completed
+   once chosen). For these two cards specifically, adopting the tri-state
+   control is a pure improvement with no loosening to weigh — Unsigned
+   trivially passes, exactly matching today's actual (zero) enforcement,
+   and choosing "/s/"/Stamp adds a real completeness check where none
+   exists today.
+2. **A card the original draft table omitted entirely:** Simplified
+   Accounting's Part VI Certificate-of-Service Attorney card
+   (`d.certAttySignDate`) — structurally identical to Annual/Final/Trust
+   Accounting's Part X card, and missed for the same reason (it's a second,
+   easy-to-overlook attorney card distinct from the primary Part V
+   Attorney). Added to the table above.
 
-A second, real gate alongside the Inventory Gate above, found while building
-39-B, not anticipated when this document was first drafted: the capture
-mechanism's three modes (Draw, Type, Upload) do not all satisfy 39-B's own
-"Data safety" requirement of a transparent background. Draw and Type are
-transparent by construction — the canvas is never filled before drawing.
-Upload is not: it draws the uploaded photo's own pixels as-is, and a
-photographed signature on paper carries that paper's opaque background
-forward untouched. Confirmed, not hypothetical: an uploaded stamp currently
-renders as a small opaque box sitting on the signature line, not a mark
-that looks like it belongs there. Because 39-C's entire design is "reuse
-39-B's exact mechanism... rather than redesigning per type," rolling out
-unchanged would multiply this same defect across every future role's
-Upload option in all eight remaining filing types, rather than fixing it
-once. Resolve which of the following before 39-C proceeds — this document
-takes no position, since it's a real product trade-off between effort and
-Upload's visual quality, not a technical question with one right answer:
+### Upload background-transparency gate — resolved: luminance-threshold fix
 
-1. **Luminance-threshold background removal, Upload only.** A correction to
-   this document's own earlier framing: true, general-purpose background
-   removal needs real image segmentation, but that overstates what this
-   specific case needs. A signature is normally ink on plain, light paper —
-   a straightforward, bounded pass over the uploaded image's own pixel data
-   (read `ImageData`, treat any pixel above a brightness threshold as
-   background, set its alpha to 0, keep darker "ink" pixels opaque) handles
-   the common case reasonably well, entirely client-side, no new
-   dependency. Real, honest limits: it degrades on shadows, colored or
-   textured paper, low-contrast ink, or uneven lighting — a heuristic, not
-   a guarantee, and would need its own empirical tuning/spike the same way
-   39-B's core mechanism did.
-2. **Ship Upload as-is, with a UI hint** ("for best results, use a plain
-   white background and even lighting"). Zero additional implementation;
-   the opaque-box artifact remains a real, known visual defect for anyone
-   who doesn't follow the hint.
-3. **Drop Upload, keep only Draw and Type** (both already fully correct).
-   Simplest and removes the defect entirely, at the cost of a capability
-   filers may reasonably expect (reusing an existing signature image rather
-   than redrawing one with a mouse/touchpad).
-
-No option is assumed here; whichever is chosen becomes part of 39-C's own
-scope (or a follow-up to it) rather than something 39-C silently inherits
-unresolved.
+**Decision: option 1, luminance-threshold background removal, Upload only.**
+The requester chose this over shipping a UI hint or dropping Upload
+entirely. A bounded, client-side pass over the uploaded image's own pixel
+data (read `ImageData`, treat any pixel above a brightness threshold as
+background and set its alpha to 0, keep darker "ink" pixels opaque) —
+entirely within `src/core/signature/signature-pad.js`'s existing Upload
+tab, no new dependency, and shared automatically by every role/filing type
+39-C touches since the fix lives in the one shared capture widget, not per
+role. This is real, honest, and scoped as its own small spike within 39-C's
+implementation, not assumed solved by this decision alone: it needs its own
+empirical threshold-tuning pass (the doc's own framing above already flags
+degraded results on shadows, colored/textured paper, low-contrast ink, and
+uneven lighting) before it ships, the same way 39-B's core mechanism was
+spiked and verified rather than assumed. Verification for this specific
+piece: unit tests for the threshold pass against a range of synthetic
+sample images (plain white background/dark ink; off-white/gray background;
+low-contrast ink; a background with a shadow gradient), documenting where
+the heuristic holds and where it visibly degrades — the same "know its real
+limits" bar 39-B's own image-safety work was held to.
 
 ### Recommended sequencing
 
@@ -867,6 +874,65 @@ Certificate-of-Service outliers). Each filing type's own rollout should be
 verified independently before moving to the next, matching this project's
 established per-sub-milestone verification discipline.
 
+**Plan Annual, Plan Initial, and Plan Minor: done, verified.** Every card
+identified in the inventory table above for these three types now has the
+tri-state control — Plan Annual's Guardian and Attorney; Plan Initial's
+Guardian and Attorney; Plan Minor's Guardian, Preparer, and Attorney.
+Simplified/Annual Accounting and Guardian Inventory remain unstarted.
+
+- **The scalar field shape needed a real generalization to
+  `signature-state-control.js`, not just wiring.** The module's own
+  original design (39-B) assumed `${path}.signatureState` as a dot-path,
+  which is correct for the nested-object and collection-row shapes but
+  cannot address a flat, underscore-prefixed scalar like
+  `attorney_signatureState` — `window.setPath`/`getPath` split strictly on
+  ".", so `"attorney" + ".signatureState"` resolves to a new nested
+  `d.attorney.signatureState`, not the real field. Fixed by adding optional
+  `statePath`/`imagePath` overrides to `renderSignatureStateControl()`/
+  `mountSignatureStateControls()` (`path` now only needs to be a stable,
+  unique card identifier for grouping/mounting when an override is given);
+  the nested-object and collection-row call sites needed no change, since
+  their default-computed paths were already correct. This also required
+  correcting `mountSignatureStateControls()`'s `setImage(path, dataUrl)`
+  callback contract to receive the already-resolved image path rather than
+  a bare card id, updating Plan Simplified's own 39-B call site
+  (`plan-simplified/index.js`) to match — a real, if narrow, behavior
+  change to already-shipped code, re-verified against 39-B's own e2e suite
+  (all 4 tests re-ran clean).
+- **A fourth validator-predicate category surfaced during the inventory
+  audit and needed a decision, resolved without a new product question**
+  (see the Inventory Gate section above): two cards (both
+  Certificate-of-Service Attorney cards, out of scope for this pass — see
+  Simplified/Annual Accounting below) had no requiredness of any kind
+  today. 39-B's own rule already covers this for free (Unsigned trivially
+  passes, matching today's actual zero enforcement).
+- **The "conditional-once-started" pro se/Guardian Advocate exemption
+  (Milestone 35-3, Plan Initial's and Plan Minor's Attorney/Preparer cards)
+  needed its own "started" trigger extended, not just a completeness
+  check.** An explicit "/s/"/Stamp choice with every other field still
+  blank now also counts as "started" (previously only a typed name/bar/date
+  did); an explicit or default Unsigned choice still does not, preserving
+  the exemption. Verified directly: a fully blank attorney/preparer card
+  still exports cleanly; selecting Signature Stamp with nothing else filled
+  in now correctly blocks on both the name and the image.
+- **A real, pre-existing, unrelated bug found while writing this rollout's
+  e2e coverage, not introduced by it — confirmed via `git stash` against the
+  unmodified baseline.** `tests/e2e/support/target.ts`'s
+  `fillMinimalValidPlanInitialWard()` never sets `q7Trusts`/
+  `q7PendingBenefits`, which default to the tri-state *string* `"No"` —
+  and `validatePlanInitial()`'s `if(d.q7Trusts||d.q7PendingBenefits||
+  d.q7Other)` (index.js:581) treats any non-blank string, including an
+  explicit "No", as needing an explanation. This is the exact class of bug
+  `form-contract.js`'s own `yesNoText()` doc comment warns about
+  ("'No' is a non-empty string and therefore truthy"). It currently blocks
+  `plan-readiness.contract.spec.ts`'s own "a fully completed plan ... is
+  not blocked from export" test for Plan Initial, and one
+  `plan-initial-mount.spec.ts` PDF-export test, on master today,
+  independent of this milestone. Worked around in this rollout's own new
+  tests (reset the two fields to `''` before asserting) rather than fixed,
+  since fixing `validatePlanInitial()` is outside 39-C's scope — flagged
+  here for the requester to prioritize separately.
+
 ### Verification Plan (39-C)
 
 Per filing type landed: extend 39-B's `tests/e2e/signature-capture.contract.spec.ts`
@@ -875,6 +941,39 @@ collection row) rather than one new file per filing type, since it's the
 same mechanism under test each time — a `probate-guardian-data-model.csv`
 update for every new field (per `AGENTS.md`), and a `TEST-INDEX.md`
 description update reflecting the file's growing scope as each type lands.
+
+**Plan Annual/Initial/Minor — landed and run:**
+
+1. `tests/e2e/signature-capture.contract.spec.ts` extended with 13 new
+   tests (legacy-migration/Unsigned/incomplete-"/s/"/Stamp-draw-and-apply
+   per type's Guardian card, plus blank-passes/Stamp-paints coverage per
+   scalar Attorney/Preparer card), each Stamp test confirming the image is
+   actually painted via pdf.js's own operator list on that type's own
+   finalized PDF, not just "didn't throw." All 17 tests in the file
+   (4 pilot + 13 new) pass.
+2. `tests/unit/plan-annual-parity.spec.js`, `plan-initial-parity.spec.js`,
+   `plan-minor-parity.spec.js` each extended with dedicated tri-state
+   parity coverage (Unsigned-passes, Stamp-incomplete-blocks, and for the
+   scalar cards, blank-card-passes/Stamp-applied-passes), plus the
+   pre-existing blank-signature-date cases corrected to explicit
+   `signatureState: 'typed'` fixtures (blanking a date alone is no longer a
+   blocker by itself, same correction 39-B made for the pilot). All three
+   files pass, plus `tests/unit/checklist-export-parity.spec.js`'s
+   known-gaps allow-list extended for the new fields.
+3. Full unit suite (440 tests, 50 files) and the broader PDF/signature e2e
+   regression (`pdf-accessibility-and-signatures.spec.ts`,
+   `pdf-structure-tags.spec.ts`, `plan-pdf-wcag-compliance.spec.ts`,
+   `pdf-form-specific.spec.ts` — 16 e2e tests) re-run clean after touching
+   the shared `signature-state-control.js` module and all three
+   `pdf-model.js` files. `plan-annual-mount.spec.ts`/`plan-initial-mount.spec.ts`/
+   `plan-minor-mount.spec.ts` and `plan-readiness.contract.spec.ts` re-run
+   clean except the two pre-existing Plan Initial failures noted above
+   (confirmed unrelated via `git stash`).
+4. `probate-guardian-data-model.csv` updated (14 new rows: signatureState/
+   signatureImage for Plan Annual's/Initial's/Minor's Guardian rows and
+   Attorney scalars, plus Minor's Preparer scalar; existing signatureDate/
+   requiredness rows narrowed to reference the new field where applicable),
+   `npm run verify:data-model` passing (856 rows). `TEST-INDEX.md` updated.
 
 ---
 
@@ -1098,11 +1197,16 @@ Order and Dependencies."
   and the real Upload-background-transparency question flagged in "Real
   limitation found building this," each need their own authorization; the
   spike does not imply either.
-- **39-C** may not be authorized until both of its gates clear: the
-  Inventory Gate (a complete, confirmed table with no "not yet confirmed"
-  cells) and the Upload background-transparency gate (the requester picks
-  one of that section's three options — resolve, hint-only, or drop
-  Upload).
+- **39-C**: both authorization gates cleared — the Inventory Gate
+  (complete, confirmed table, zero "not yet confirmed" cells, plus one
+  previously-missed card found and added) and the Upload
+  background-transparency gate (resolved: luminance-threshold background
+  removal, scoped as its own spike within 39-C, not yet built). **Rollout
+  landed and verified for Plan Annual, Plan Initial, and Plan Minor** (see
+  "Recommended sequencing" and "Verification Plan (39-C)" above). Remaining
+  scope — Simplified/Annual Accounting, Guardian Inventory, and the Upload
+  luminance-threshold fix itself — still requires the requester's explicit
+  go-ahead before starting, matching 39-A/39-B's own authorization pattern.
 - **39-D** may not be authorized until the compound party+entry reference
   design, the single-ward export/import fix (confirmed necessary — see
   Design above), and the storage-growth question are resolved with the

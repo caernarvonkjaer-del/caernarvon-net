@@ -107,7 +107,13 @@ const CASES = [
   { autoId: 'cover.residence', override: { q1ResidenceName: '' }, message: 'Cover — Current Residence Name is required' },
   { autoId: 'cover.residence', override: { q1Street: '' }, message: 'Cover — Current Residence Street Address is required' },
   { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.name': '' }, message: 'Guardian Signatures — Guardian name is required' },
-  { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.signatureDate': '' }, message: 'Guardian Signatures — Guardian signature date is required' },
+  // Milestone 39-C: blanking signatureDate alone no longer blocks by itself
+  // -- see plan-annual-parity.spec.js's identical note.
+  {
+    autoId: 'signatures.guardian1.core',
+    override: { 'planGuardians.0.signatureState': 'typed', 'planGuardians.0.signatureDate': '' },
+    message: 'Guardian Signatures — Guardian date signed is required to apply "/s/" Signed',
+  },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.mailingStreet': '' }, message: 'Guardian Signatures — Guardian mailing street address is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.phone': '' }, message: 'Guardian Signatures — Guardian phone is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.tin': '' }, message: 'Guardian Signatures — Guardian taxpayer ID is required' },
@@ -118,15 +124,17 @@ const CASES = [
   { autoId: 'plan.q5', override: { q5Communicates: '' }, message: '5. Education & Social Development — Communication statement is required' },
   { autoId: 'plan.q5', override: { q5Interpersonal: '' }, message: '5. Education & Social Development — Interpersonal relationships statement is required' },
   { autoId: 'plan.q5e', override: { q5NoUnmetNeeds: false }, message: '5. Education & Social Development — Unmet social needs option is required' },
+  // Milestone 39-C: typing just a name is no longer "started but incomplete"
+  // by itself -- see plan-initial-parity.spec.js's identical note.
   {
     autoId: 'signatures.preparer',
-    override: { preparer_name: 'Sam Preparer', preparer_signatureDate: '' },
-    message: 'Preparer & Attorney — Preparer signature date is required',
+    override: { preparer_name: 'Sam Preparer', preparer_signatureState: 'typed', preparer_signatureDate: '' },
+    message: 'Preparer & Attorney — Preparer date signed is required to apply "/s/" Signed',
   },
   {
     autoId: 'signatures.attorney',
-    override: { attorney_name: 'Sam Attorney', attorney_signatureDate: '' },
-    message: 'Preparer & Attorney — Attorney signature date is required',
+    override: { attorney_name: 'Sam Attorney', attorney_signatureState: 'typed', attorney_signatureDate: '' },
+    message: 'Preparer & Attorney — Attorney date signed is required to apply "/s/" Signed',
   },
   { autoId: 'plan.q3providers', override: { q3Providers: [] }, message: '3. Treatment Providers — At least one provider must be listed' },
 ];
@@ -144,6 +152,76 @@ describe('Plan Minor readiness/export parity', () => {
 
     const preflight = runPreflight(fixture);
     expect(preflight.messages).toContain(message);
+    expect(preflight.canExport).toBe(false);
+  });
+});
+
+// Milestone 39-C: the three-state signature control's own dedicated parity
+// coverage on Plan Minor's Guardian, Preparer and Attorney cards -- same
+// discipline as plan-simplified-parity.spec.js's 39-B pilot coverage.
+describe('Plan Minor: Milestone 39-C tri-state signature parity', () => {
+  test('Guardian explicitly Unsigned validates and exports cleanly, with no signature fields filled', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'none',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual([]);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Guardian with Signature Stamp selected but no image blocks with a distinct message', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'stamp',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toContain('Guardian Signatures — Guardian signature stamp image is required');
+    expect(preflight.canExport).toBe(false);
+  });
+
+  // Milestone 35-3's pro se/Guardian Advocate exemption must survive the
+  // tri-state rollout: fully blank preparer and attorney cards still don't
+  // block.
+  test('Preparer and Attorney left entirely blank do not block (pro se / Guardian Advocate exemption)', () => {
+    const fixture = withOverrides(BASELINE, {});
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.preparer').ok).toBe(true);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Preparer with Signature Stamp applied (name and image present) validates and exports cleanly', () => {
+    const fixture = withOverrides(BASELINE, {
+      preparer_name: 'Sam Preparer',
+      preparer_signatureState: 'stamp',
+      preparer_signatureImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.preparer').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Attorney with Signature Stamp selected (no name, no image yet) counts as started and blocks', () => {
+    const fixture = withOverrides(BASELINE, {
+      attorney_signatureState: 'stamp',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toContain('Preparer & Attorney — Attorney name is required');
+    expect(preflight.messages).toContain('Preparer & Attorney — Attorney signature stamp image is required');
     expect(preflight.canExport).toBe(false);
   });
 });

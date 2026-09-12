@@ -91,7 +91,11 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p3') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (path, dataUrl) => window.setPath(window.D, `${path}.signatureImage`, dataUrl),
+      // Milestone 39-C: mountSignatureStateControls() now hands back the
+      // already-fully-resolved image path (it may be a flat scalar path
+      // like `attorney_signatureImage` for other roles, not always
+      // `${cardId}.signatureImage`) -- write it directly, no concatenation.
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
       route: '/p3',
     }));
   }

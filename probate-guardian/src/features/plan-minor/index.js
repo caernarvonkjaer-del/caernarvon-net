@@ -1,6 +1,8 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { isTriStateAnswer } from '../../core/form/form-contract.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -32,6 +34,9 @@ const {
 // extracted Plan features. No excel.js: no Plan filing type has Excel
 // support (confirmed by grep -- see the Milestone 6 plan's "Confirmed
 // facts").
+// Milestone 39-C: see plan-annual/index.js's identical comment.
+const signatureHandles = new WeakMap();
+
 let _printModule = null;
 let _printModulePromise = null;
 function ensurePrintModule() {
@@ -74,10 +79,20 @@ export async function mount(container, page) {
   }
   container.innerHTML = html;
   container.scrollTop = 0;
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/p6' || page === '/p7') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      route: page,
+    }));
+  }
   if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -317,6 +332,7 @@ function pagePlanMSignatures(){
           <div class="col-md-6"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.tin||'')}" data-form-path="planGuardians.${i}.tin" data-field-path="planGuardians.${i}.tin" data-field-kind="ssn" data-field-format-policy="preserve" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
           <div class="col-md-6"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-field-kind="phone" data-form-format="phone"></div>
           <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(gd.signatureState, gd.signatureDate), route: '/p6', signatureImage: gd.signatureImage })}</div>
           <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" data-form-path="planGuardians.${i}.mailingStreet" data-field-path="planGuardians.${i}.mailingStreet"></div>
           <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip" data-field-path="planGuardians.${i}.mailingCityStateZip"></div>
           <div class="col-12"><label class="form-label">Email Address</label><input type="email" class="form-control" value="${esc(gd.email||'')}" data-form-path="planGuardians.${i}.email" data-field-path="planGuardians.${i}.email"></div>
@@ -359,6 +375,7 @@ function pagePlanMPreparerAttorney(){
               <div class="col-md-6">${inpS('preparer_tin','Taxpayer ID #',d.preparer_tin)}</div>
               <div class="col-md-6">${inpS('preparer_phone','Telephone #',d.preparer_phone)}</div>
               <div class="col-12">${inpS('preparer_signatureDate','Date Signed',d.preparer_signatureDate,false,'date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate), route: '/p7', signatureImage: d.preparer_signatureImage, statePath: 'preparer_signatureState', imagePath: 'preparer_signatureImage' })}</div>
               <div class="col-12">${inpS('preparer_mailingStreet','Mailing Address',d.preparer_mailingStreet)}</div>
               <div class="col-12">${inpS('preparer_cityStateZip','City / State / Zip',d.preparer_cityStateZip)}</div>
               <div class="col-12">${inpS('preparer_email','Email Address',d.preparer_email)}</div>
@@ -378,6 +395,7 @@ function pagePlanMPreparerAttorney(){
               <div class="col-12">${inpS('attorney_cityStateZip','City / State / Zip',d.attorney_cityStateZip)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Telephone #',d.attorney_phone)}</div>
               <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,true,'date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p7', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-12">${inpS('attorney_email',"Primary Email (e-filing)",d.attorney_email)}</div>
               <div class="col-12">${inpS('attorney_secondary_email',"Secondary Email (optional)",d.attorney_secondary_email)}</div>
             </div>
@@ -431,7 +449,16 @@ export function validatePlanMinor(){
   if(!anyCert)errs.push('Guardian Signatures — At least one certification statement must be checked');
   const g0=(d.planGuardians||[])[0]||{};
   req(g0.name,'Guardian Signatures — Guardian name is required');
-  req(g0.signatureDate,'Guardian Signatures — Guardian signature date is required');
+  // Milestone 39-C: replaces the old unconditional req(g0.signatureDate,...)
+  // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
+  // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
+  // is already unconditionally required immediately above.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    date: g0.signatureDate,
+    image: g0.signatureImage,
+    sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
+  }));
   req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required');
   req(g0.phone,'Guardian Signatures — Guardian phone is required');
   req(g0.tin,'Guardian Signatures — Guardian taxpayer ID is required');
@@ -442,13 +469,26 @@ export function validatePlanMinor(){
   // Milestone 35-3: preparer and attorney are optional roles (pro se filers
   // and Guardian Advocates need neither) -- required only once the filer has
   // started entering one, same reasoning as Plan Initial's attorney fields.
-  if(d.preparer_name||d.preparer_signatureDate){
+  // Milestone 39-C: an explicit "/s/"/Stamp choice also counts as "started"
+  // (see Plan Initial's identical comment); an explicit or default Unsigned
+  // choice does not, preserving the pro se exemption.
+  if(d.preparer_name||d.preparer_signatureDate||(d.preparer_signatureState&&d.preparer_signatureState!=='none')){
     req(d.preparer_name,'Preparer & Attorney — Preparer name is required');
-    req(d.preparer_signatureDate,'Preparer & Attorney — Preparer signature date is required');
+    errs.push(...checkSignatureState({
+      state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate),
+      date: d.preparer_signatureDate,
+      image: d.preparer_signatureImage,
+      sectionLabel: 'Preparer & Attorney', roleLabel: 'Preparer',
+    }));
   }
-  if(d.attorney_name||d.attorney_signatureDate){
+  if(d.attorney_name||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
     req(d.attorney_name,'Preparer & Attorney — Attorney name is required');
-    req(d.attorney_signatureDate,'Preparer & Attorney — Attorney signature date is required');
+    errs.push(...checkSignatureState({
+      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+      date: d.attorney_signatureDate,
+      image: d.attorney_signatureImage,
+      sectionLabel: 'Preparer & Attorney', roleLabel: 'Attorney',
+    }));
   }
   errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
     sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Preparer signature date',allowSameDay:true,

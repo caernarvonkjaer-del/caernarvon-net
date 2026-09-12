@@ -123,10 +123,18 @@ describe('checklist and export validator field parity', () => {
   // Every entry is a real gap, not an exemption -- shrink this list, never
   // grow it, as 35-4 reconciles each filing type.
   const KNOWN_GAPS = {
-    planAnnual: ['attorney_signatureDate'],
+    // Milestone 39-C: the new tri-state signature control's own fields
+    // (attorney_/preparer_ signatureState/signatureImage) extend the same
+    // pre-existing, already-accepted gap these attorney/preparer date
+    // fields represent -- computeNavChecks()'s sidebar section-check never
+    // tracked attorney_signatureDate either. `attorney` (planAnnual only) is
+    // new too: checkSignatureState()'s own `name` argument for that role
+    // (see plan-annual/index.js) is the first reference to the bare
+    // `d.attorney` field inside validatePlanAnnual()'s body.
+    planAnnual: ['attorney', 'attorney_signatureDate', 'attorney_signatureImage', 'attorney_signatureState'],
     planSimplified: ['attorney_signatureDate', 'preparer_signatureDate'],
-    planMinor: ['amendedForm', 'amendedVersion', 'preparer_signatureDate', 'ref', 'ucn'],
-    planInitial: [],
+    planMinor: ['amendedForm', 'amendedVersion', 'attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState', 'ref', 'ucn'],
+    planInitial: ['attorney_signatureImage', 'attorney_signatureState'],
     annual: ['amendedForm'],
   };
 

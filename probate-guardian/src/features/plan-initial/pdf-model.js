@@ -429,6 +429,9 @@ export function buildPlanInitialModel(D, options) {
       signerName: p.name || '',
       signatureDate: fmtDate(p.signatureDate),
       signatureStyle,
+      // Milestone 39-C
+      signatureState: p.signatureState || '',
+      signatureImage: p.signatureImage || '',
       fields: [
         [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: maskSSN(p.ssn || '') }, { label: 'Phone Number', value: p.phone || '' }],
         [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Street Address', value: p.street || '' }, { label: 'City / State / ZIP', value: p.cityStateZip || '' }],
@@ -507,6 +510,9 @@ export function buildPlanInitialModel(D, options) {
         signerName: d.attorney_name || '',
         signatureDate: fmtDate(d.attorney_signatureDate),
         signatureStyle,
+        // Milestone 39-C
+        signatureState: d.attorney_signatureState || '',
+        signatureImage: d.attorney_signatureImage || '',
         fields: [
           [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Bar Number', value: d.attorney_bar || '' }, { label: 'Phone Number', value: d.attorney_phone || '' }],
           [{ label: 'Primary Email', value: d.attorney_email || '' }, ...(d.attorney_secondaryEmail ? [{ label: 'Secondary Email', value: d.attorney_secondaryEmail }] : [])],

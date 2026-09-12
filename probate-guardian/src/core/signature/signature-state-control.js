@@ -11,16 +11,28 @@ function esc(s) {
 }
 
 /**
- * `path` is the data-form-path prefix for this signature (e.g.
- * `planGuardians.0` or `attorney`, per that role's own field-shape --
- * MILESTONE-39-PROPOSAL.md 39-C's inventory decides the exact prefix per
- * role/type; this renderer only needs `${path}.signatureState` to be a
- * real, writable model path). `route` re-renders the current page on
- * change so the capture widget mounts/unmounts with the new state, the
- * same pattern this app already uses for other conditionally-rendered
- * sections (e.g. legacy-app.js's directive-execution checkboxes).
+ * `path` is a stable identifier for this card (e.g. `planGuardians.0` or
+ * `attorney`) -- it groups this control's DOM together and, by default, is
+ * also the data-form-path prefix (`${path}.signatureState`/`.signatureImage`),
+ * which is correct for 39-B/39-C's nested-object and collection-row field
+ * shapes (`d.preparer.signatureDate`, `d.guardians[i].signatureDate`).
+ *
+ * Milestone 39-C: a third field shape exists -- flat, underscore-prefixed
+ * scalars (`d.attorney_signatureDate`, not `d.attorney.signatureDate`) --
+ * that the default `${path}.signatureState` concatenation cannot address,
+ * since `window.setPath`/`getPath` split strictly on ".". Pass explicit
+ * `statePath`/`imagePath` (e.g. `attorney_signatureState`) to override the
+ * default for that shape; `path` still only needs to be a unique card
+ * identifier in that case, not a real model path itself.
+ *
+ * `route` re-renders the current page on change so the capture widget
+ * mounts/unmounts with the new state, the same pattern this app already
+ * uses for other conditionally-rendered sections (e.g. legacy-app.js's
+ * directive-execution checkboxes).
  */
-export function renderSignatureStateControl({ path, state, route, signatureImage }) {
+export function renderSignatureStateControl({ path, state, route, signatureImage, statePath, imagePath }) {
+  const resolvedStatePath = statePath || `${path}.signatureState`;
+  const resolvedImagePath = imagePath || `${path}.signatureImage`;
   const groupName = `sigstate_${path.replace(/[^A-Za-z0-9]/g, '_')}`;
   const options = [
     { value: SIGNATURE_STATES.NONE, label: 'Unsigned' },
@@ -29,7 +41,7 @@ export function renderSignatureStateControl({ path, state, route, signatureImage
   ];
   const current = state || SIGNATURE_STATES.NONE;
   const radios = options.map((opt) => `<div class="form-check form-check-inline">
-    <input class="form-check-input" type="radio" name="${groupName}" id="${groupName}_${opt.value}" value="${opt.value}" ${current === opt.value ? 'checked' : ''} data-form-path="${esc(path)}.signatureState" data-field-path="${esc(path)}.signatureState" data-form-route="${esc(route)}">
+    <input class="form-check-input" type="radio" name="${groupName}" id="${groupName}_${opt.value}" value="${opt.value}" ${current === opt.value ? 'checked' : ''} data-form-path="${esc(resolvedStatePath)}" data-field-path="${esc(resolvedStatePath)}" data-form-route="${esc(route)}">
     <label class="form-check-label" for="${groupName}_${opt.value}">${opt.label}</label>
   </div>`).join('');
 
@@ -45,7 +57,7 @@ export function renderSignatureStateControl({ path, state, route, signatureImage
     <legend class="form-label mb-1">Signature</legend>
     <div class="plan-radio-row">${radios}</div>
     ${preview}
-    <div data-signature-pad-mount="${esc(path)}"></div>
+    <div data-signature-pad-mount="${esc(path)}" data-signature-image-path="${esc(resolvedImagePath)}"></div>
   </fieldset>`;
 }
 
@@ -65,12 +77,13 @@ export function mountSignatureStateControls(container, { setImage, route }) {
   const handles = [];
   mounts.forEach((mountEl) => {
     const path = mountEl.dataset.signaturePadMount;
+    const imagePath = mountEl.dataset.signatureImagePath || `${path}.signatureImage`;
     const group = container.querySelector(`[data-signature-state-group="${CSS.escape(path)}"]`);
     const checkedRadio = group?.querySelector('input[type="radio"]:checked');
     if (checkedRadio?.value !== 'stamp') return;
     const handle = mountSignaturePad(mountEl, {
       onApply: (dataUrl) => {
-        setImage(path, dataUrl);
+        setImage(imagePath, dataUrl);
         window.markDirtySinceExport?.();
         window.autoSave?.();
         if (route && window.renderPage) window.renderPage(route);

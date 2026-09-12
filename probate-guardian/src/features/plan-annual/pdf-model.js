@@ -489,6 +489,9 @@ export function buildPlanAnnualModel(D) {
     role,
     signerName: p.name || '',
     signatureDate: fmtDate(p.signatureDate),
+    // Milestone 39-C
+    signatureState: p.signatureState || '',
+    signatureImage: p.signatureImage || '',
     fields: [
       [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: maskSSN(p.ssn || '') }, { label: 'Phone Number', value: p.phone || '' }],
       [{ label: 'Email Address', value: p.email || '' }, { label: 'Relationship to Ward', value: p.relationship || '' }],
@@ -564,6 +567,9 @@ export function buildPlanAnnualModel(D) {
         role: "Guardian's Attorney",
         signerName: d.attorney || '',
         signatureDate: fmtDate(d.attorney_signatureDate),
+        // Milestone 39-C
+        signatureState: d.attorney_signatureState || '',
+        signatureImage: d.attorney_signatureImage || '',
         fields: [
           [{ label: 'Attorney Name', value: d.attorney || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
           [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: attorneySecondaryEmail }],

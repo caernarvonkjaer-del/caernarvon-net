@@ -5244,7 +5244,7 @@ function emptyInitialProvider(){return {name:'',providerType:'',examDate:'',stre
 
 function emptyMinorResidence(){return {name:'',street:'',city:'',state:'',zip:'',phone:''};}
 function emptyMinorProvider(){return {first:'',mi:'',last:'',street:'',city:'',state:'',zip:'',phone:'',providerType:'',visits:''};}
-function emptyMinorGuardianSig(){return {name:'',tin:'',phone:'',mailingStreet:'',mailingCityStateZip:'',relationship:'',email:'',signatureDate:''};}
+function emptyMinorGuardianSig(){return {name:'',tin:'',phone:'',mailingStreet:'',mailingCityStateZip:'',relationship:'',email:'',signatureDate:'',signatureState:'',signatureImage:''};}
 
 // emptyDataPlanMinor() moved to src/core/state.js (Milestone 6, Phase A),
 // reached via window.emptyDataPlanMinor() from initializeEmptyData() below
@@ -7025,10 +7025,11 @@ function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form',tool
 }
 
 function planGuardianBlank(type){
-  if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''};
-  if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''};
+  // Milestone 39-C: every Plan type's guardian row now carries signatureState/
+  // signatureImage (39-B piloted planSimplified's only).
+  if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''};
+  if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''};
   if(type==='planMinor')return window.emptyMinorGuardianSig();
-  // Milestone 39-B pilot: only planSimplified's guardian row carries these.
   return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:'',signatureState:'',signatureImage:''};
 }
 function planGuardianHasAnyData(g){return !!(g&&Object.values(g).some(v=>v!==''&&v!==null&&v!==undefined&&v!==false));}

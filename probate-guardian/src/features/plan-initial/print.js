@@ -24,6 +24,7 @@ import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -53,7 +54,16 @@ export function planReadinessChecksInitial(){
     {id:'cover.wardCaseCounty',label:'Ward name, case number and county are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.county)},
     {id:'cover.dates',label:'Guardianship Inception Date and date Letters were signed are stated',ok:has(d.inceptionDate)&&has(d.lettersSignedDate)},
     {id:'cover.guardianNames',label:"Guardian name(s) are on the plan",ok:has(d.guardianNames)},
-    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
+    // Milestone 39-C: reuses checkSignatureState() directly (not a
+    // hand-derived boolean) so these readiness items can never drift from
+    // what validatePlanInitial() actually blocks on -- AGENTS.md Section 4's
+    // Parity Invariant, same as Plan Simplified's 39-B pilot.
+    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&checkSignatureState({
+      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+      date: g0.signatureDate,
+      image: g0.signatureImage,
+      sectionLabel: 'Signatures', roleLabel: 'Guardian',
+    }).length===0},
     {id:'signatures.guardian1.contact',label:'Guardian address, phone and SSN/EIN provided',ok:has(g0.street)&&has(g0.phone)&&has(g0.ssn)},
     {id:'cover.wardResidence',label:"Ward's current living arrangement and address, including city/state/ZIP, are stated",ok:has(d.wardLiving)&&has(d.residenceAddress)&&has(d.residenceCityStateZip)},
     {id:'plan.q2',label:'Question 2 — best-suited residential setting selected',ok:has(d.q2Setting)},
@@ -68,7 +78,12 @@ export function planReadinessChecksInitial(){
     {id:'plan.q11directives',label:'Question 11 — advance directives answered (none, or executed directives listed)',ok:!!d.q11NoDirectives!==!!d.q11Executed},
     {id:'plan.q10f.committee',label:'Question 10F — examining committee recommendation question answered',ok:has(d.committeeIncorporated)},
     {id:'signatures.certifications',label:'At least one certification statement is checked',ok:!!(d.certIncapacitatedNoCopy||d.certMinorNoCopy||d.certConsulted||d.certRecognizeRights||d.certNoRestriction||d.certProvidesCare)},
-    {id:'signatures.attorney',label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_bar||d.attorney_signatureDate)||(has(d.attorney_name)&&has(d.attorney_signatureDate))},
+    {id:'signatures.attorney',label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_bar||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none'))||(has(d.attorney_name)&&checkSignatureState({
+      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+      date: d.attorney_signatureDate,
+      image: d.attorney_signatureImage,
+      sectionLabel: 'Attorney Certification', roleLabel: 'Attorney',
+    }).length===0)},
   ];
   const manual=[
     'File within 60 days after the Letters of Guardianship are signed (F.S. 744.362(1)).',

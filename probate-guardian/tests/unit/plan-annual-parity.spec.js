@@ -110,6 +110,10 @@ const ALL_AUTO_IDS = [
   'cover.period', 'cover.wardCaseGid', 'cover.county', 'cover.guardianName', 'signatures.guardian1.core',
   'signatures.guardian1.contact', 'cover.wardResidence', 'plan.q1residences', 'plan.q2', 'plan.q3',
   'plan.q4providers', 'plan.q5', 'plan.q6rights', 'plan.q8adls', 'plan.q9', 'plan.q10directives', 'plan.q11remuneration',
+  // Milestone 39-C: new readiness item for the attorney card's own tri-state
+  // signature control -- see plan-simplified-parity.spec.js's identical
+  // 39-B note.
+  'signatures.attorney',
 ];
 
 describe('Plan Annual readiness baseline', () => {
@@ -133,7 +137,16 @@ const CASES = [
   { autoId: 'cover.county', override: { county: '' }, message: 'Cover — County is required' },
   { autoId: 'cover.guardianName', override: { guardian: '' }, message: 'Cover — Guardian Name(s) is required' },
   { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.name': '' }, message: 'Signatures — Guardian printed name is required' },
-  { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.signatureDate': '' }, message: 'Signatures — Guardian date signed is required' },
+  // Milestone 39-C: blanking signatureDate alone no longer blocks by itself
+  // -- with no explicit signatureState, inferLegacySignatureState() reads a
+  // blank date as Unsigned (a fully valid choice). Explicitly selecting
+  // "/s/" Signed is what makes a blank date a real blocker now; see the
+  // dedicated tri-state tests below for the Unsigned-passes case.
+  {
+    autoId: 'signatures.guardian1.core',
+    override: { 'planGuardians.0.signatureState': 'typed', 'planGuardians.0.signatureDate': '' },
+    message: 'Signatures — Guardian date signed is required to apply "/s/" Signed',
+  },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.mailingStreet': '' }, message: 'Signatures — Guardian mailing street address is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.phone': '' }, message: 'Signatures — Guardian phone number is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.ssn': '' }, message: 'Signatures — Guardian SSN/EIN is required' },
@@ -168,5 +181,79 @@ describe('Plan Annual readiness/export parity', () => {
     const preflight = runPreflight(fixture);
     expect(preflight.messages).toContain(message);
     expect(preflight.canExport).toBe(false);
+  });
+});
+
+// Milestone 39-C: the three-state signature control's own dedicated parity
+// coverage on Plan Annual's Guardian and Attorney cards -- same discipline
+// as plan-simplified-parity.spec.js's 39-B pilot coverage.
+describe('Plan Annual: Milestone 39-C tri-state signature parity', () => {
+  test('Guardian explicitly Unsigned validates and exports cleanly, with no signature fields filled', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'none',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual([]);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Guardian with Signature Stamp selected but no image blocks with a distinct message', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'stamp',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toContain('Signatures — Guardian signature stamp image is required');
+    expect(preflight.canExport).toBe(false);
+  });
+
+  // The attorney card has never had any requiredness of its own ("Leave
+  // blank if no attorney is involved") -- confirming that stays true here:
+  // an entirely blank attorney card is not a blocker.
+  test('Attorney left entirely blank does not block (no attorney involved)', () => {
+    const fixture = withOverrides(BASELINE, {});
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Attorney with "/s/" Signed selected but no typed name blocks (name has no independent requirement here)', () => {
+    const fixture = withOverrides(BASELINE, {
+      // BASELINE never sets `attorney` (it's undefined, not ''); explicit ''
+      // here so checkSignatureState's own `name !== undefined` skip-check
+      // doesn't mistake "field never set" for "checking name is optional
+      // here" -- production's emptyDataPlanAnnual() always seeds attorney:''.
+      attorney: '',
+      attorney_signatureState: 'typed',
+      attorney_signatureDate: '2025-12-01',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toContain('Signatures — Attorney printed name is required to apply "/s/" Signed');
+    expect(preflight.canExport).toBe(false);
+  });
+
+  test('Attorney with Signature Stamp applied (image present) validates and exports cleanly', () => {
+    const fixture = withOverrides(BASELINE, {
+      attorney: 'Sam Attorney',
+      attorney_signatureState: 'stamp',
+      attorney_signatureImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.canExport).toBe(true);
   });
 });

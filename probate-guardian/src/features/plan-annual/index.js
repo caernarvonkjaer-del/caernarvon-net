@@ -1,5 +1,7 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -31,6 +33,12 @@ const {
 // other two extracted features. No excel.js: no Plan filing type has Excel
 // support (confirmed by grep -- see the Milestone 4 plan's "Confirmed
 // facts").
+// Milestone 39-C: tracks the capture-widget handles mountSignatureStateControls()
+// returns, per rendered container, so mount() can tear them down (canvas
+// listeners, drag state) before the next render replaces the DOM -- same
+// pattern as Plan Simplified's own pilot (39-B).
+const signatureHandles = new WeakMap();
+
 let _printModule = null;
 let _printModulePromise = null;
 function ensurePrintModule() {
@@ -78,10 +86,20 @@ export async function mount(container, page) {
   }
   container.innerHTML = html;
   container.scrollTop = 0;
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/p11') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      route: '/p11',
+    }));
+  }
   if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -560,6 +578,7 @@ function pagePlanASignatures(){
         <div class="row g-2">
           <div class="col-md-7"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
           <div class="col-md-5"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${reqMark}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p11', signatureImage: p.signatureImage })}</div>
           <div class="col-md-5"><label class="form-label">SSN / EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(p.ssn||''))}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
           <div class="col-md-7"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
           <div class="col-12"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email"></div>
@@ -601,6 +620,7 @@ function pagePlanASignatures(){
             <div class="row g-2">
               <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney)}</div>
               <div class="col-md-5">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p11', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-6">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
               <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
@@ -696,7 +716,16 @@ export function validatePlanAnnual(){
 
   const g0=(d.planGuardians||[])[0]||{};
   req(g0.name,'Signatures — Guardian printed name is required');
-  req(g0.signatureDate,'Signatures — Guardian date signed is required');
+  // Milestone 39-C: replaces the old unconditional req(g0.signatureDate,...)
+  // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
+  // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
+  // is already unconditionally required immediately above.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    date: g0.signatureDate,
+    image: g0.signatureImage,
+    sectionLabel: 'Signatures', roleLabel: 'Guardian',
+  }));
   req(g0.mailingStreet,'Signatures — Guardian mailing street address is required');
   req(g0.phone,'Signatures — Guardian phone number is required');
   req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
@@ -705,6 +734,18 @@ export function validatePlanAnnual(){
   }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
+  }));
+  // Milestone 39-C: the attorney card has never had any requiredness of its
+  // own ("Leave blank if no attorney is involved") -- name is passed here
+  // (unlike Guardian's omission above) because nothing else in this
+  // validator makes attorney name required, so an explicit "/s/"/Stamp
+  // choice with no typed name would otherwise pass silently.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+    name: d.attorney,
+    date: d.attorney_signatureDate,
+    image: d.attorney_signatureImage,
+    sectionLabel: 'Signatures', roleLabel: 'Attorney',
   }));
   return errs;
 }

@@ -22,6 +22,7 @@ import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
 import { isTriStateAnswer } from '../../core/form/form-contract.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -45,14 +46,33 @@ export function planReadinessChecksMinor(){
     {id:'cover.caseNumber',label:'Case number (UCN or Case #) is on the plan',ok:has(d.ucn)||has(d.ref)},
     {id:'cover.guardianName',label:'Guardian Name is on the plan',ok:has(d.guardianName)},
     {id:'cover.residence',label:'Current residence and address stated',ok:has(d.q1ResidenceName)&&has(d.q1Street)},
-    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
+    // Milestone 39-C: reuses checkSignatureState() directly (not a
+    // hand-derived boolean) so these readiness items can never drift from
+    // what validatePlanMinor() actually blocks on -- AGENTS.md Section 4's
+    // Parity Invariant, same as Plan Simplified's 39-B pilot.
+    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&checkSignatureState({
+      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+      date: g0.signatureDate,
+      image: g0.signatureImage,
+      sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
+    }).length===0},
     {id:'signatures.guardian1.contact',label:'Guardian address, phone and taxpayer ID provided',ok:has(g0.mailingStreet)&&has(g0.phone)&&has(g0.tin)},
     {id:'signatures.certifications',label:'At least one certification statement is checked',ok:!!(d.certIncapacitated||d.certMinor||d.certConsulted||d.certNoRestriction||d.certProvidesCare||d.certPhysicianAttached)},
     {id:'plan.q4',label:'Question 4 — provision of medical services selected',ok:!!(d.q4Primary||d.q4Dentist||d.q4Specialist||d.q4PT||d.q4ST||d.q4OT||d.q4MinorDecides||d.q4Other)},
     {id:'plan.q5',label:"Question 5 — school progress, social development, communication, and interpersonal statements completed",ok:has(d.q5SchoolProgress)&&has(d.q5SocialDevelopment)&&has(d.q5Communicates)&&has(d.q5Interpersonal)},
     {id:'plan.q5e',label:'Question 5E — unmet social needs answered',ok:!!(d.q5NoUnmetNeeds||d.q5DoesNotCareToSocialize||d.q5UnmetNeeds||d.q5Other)},
-    {id:'signatures.preparer',label:'Preparer certification completed (if a preparer is named)',ok:!(d.preparer_name||d.preparer_signatureDate)||(has(d.preparer_name)&&has(d.preparer_signatureDate))},
-    {id:'signatures.attorney',label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_signatureDate)||(has(d.attorney_name)&&has(d.attorney_signatureDate))},
+    {id:'signatures.preparer',label:'Preparer certification completed (if a preparer is named)',ok:!(d.preparer_name||d.preparer_signatureDate||(d.preparer_signatureState&&d.preparer_signatureState!=='none'))||(has(d.preparer_name)&&checkSignatureState({
+      state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate),
+      date: d.preparer_signatureDate,
+      image: d.preparer_signatureImage,
+      sectionLabel: 'Preparer & Attorney', roleLabel: 'Preparer',
+    }).length===0)},
+    {id:'signatures.attorney',label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none'))||(has(d.attorney_name)&&checkSignatureState({
+      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+      date: d.attorney_signatureDate,
+      image: d.attorney_signatureImage,
+      sectionLabel: 'Preparer & Attorney', roleLabel: 'Attorney',
+    }).length===0)},
     {id:'plan.q3providers',label:`Treatment providers listed (${provs.length})`,ok:provs.length>0},
   ];
   const manual=[

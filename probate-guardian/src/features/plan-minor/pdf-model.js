@@ -192,6 +192,9 @@ export function buildPlanMinorModel(D) {
     role,
     signerName: p.name || '',
     signatureDate: fmtDate(p.signatureDate),
+    // Milestone 39-C
+    signatureState: p.signatureState || '',
+    signatureImage: p.signatureImage || '',
     fields,
   });
 
@@ -247,7 +250,7 @@ export function buildPlanMinorModel(D) {
         title: 'Certification and Signature of Preparer',
         text: 'The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification of the information contained herein. I have not audited or reviewed the guardianship plan or documents supporting its preparation, and accordingly do not express an opinion or any other form of assurance as to the accuracy of the information contained in the plan.',
       },
-      makeSigBlock('Preparer', { name: d.preparer_name, signatureDate: d.preparer_signatureDate }, [
+      makeSigBlock('Preparer', { name: d.preparer_name, signatureDate: d.preparer_signatureDate, signatureState: d.preparer_signatureState, signatureImage: d.preparer_signatureImage }, [
         [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Taxpayer ID #', value: maskSSN(d.preparer_tin || '') }, { label: 'Telephone #', value: d.preparer_phone || '' }],
         [{ label: 'Email Address', value: d.preparer_email || '' }],
         [{ label: 'Mailing Address', value: d.preparer_mailingStreet || '' }, { label: 'City / State / Zip', value: d.preparer_cityStateZip || '' }],
@@ -257,7 +260,7 @@ export function buildPlanMinorModel(D) {
         title: "Certification and Signature of Guardian's Attorney",
         text: "The undersigned hereby notifies the Court of the filing of this Annual Guardianship Plan. This plan is the representation of the guardian. I have not audited the accompanying plan. The undersigned attorney represents that he/she has examined the contents of this plan and that it conforms to the requirements of the Florida Guardianship Law.",
       },
-      makeSigBlock("Guardian's Attorney", { name: d.attorney_name, signatureDate: d.attorney_signatureDate }, [
+      makeSigBlock("Guardian's Attorney", { name: d.attorney_name, signatureDate: d.attorney_signatureDate, signatureState: d.attorney_signatureState, signatureImage: d.attorney_signatureImage }, [
         [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
         [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondary_email || '' }],
         [{ label: 'Mailing Address', value: d.attorney_street || '' }, { label: 'City / State / Zip', value: d.attorney_cityStateZip || '' }],

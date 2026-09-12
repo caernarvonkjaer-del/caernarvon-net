@@ -263,9 +263,11 @@ export function emptyDataPlanAnnual() {
     certNoRestriction:false, certProvidesMedical:false, certPhysicianAttached:false,
     certRecognizeRights:false, certRightsChangedExplain:'',
     // Guardians (form provides three signature blocks) + attorney
-    planGuardians:[{name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''}],
+    planGuardians:[{name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''}],
     attorney_signatureDate:'', attorney_bar:'', attorney_phone:'',
-    attorney_street:'', attorney_cityStateZip:''
+    attorney_street:'', attorney_cityStateZip:'',
+    // Milestone 39-C
+    attorney_signatureState:'', attorney_signatureImage:''
   };
 }
 
@@ -337,9 +339,11 @@ export function emptyDataPlanInitial() {
     certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
     certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
     // Guardians (form provides up to four signature blocks) + attorney
-    planGuardians:[{name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}],
+    planGuardians:[{name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''}],
     attorney_name:'', attorney_bar:'', attorney_phone:'',
-    attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:''
+    attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:'',
+    // Milestone 39-C
+    attorney_signatureState:'', attorney_signatureImage:''
   };
 }
 
@@ -379,9 +383,13 @@ export function emptyDataPlanMinor() {
     // Preparer certification
     preparer_name:'', preparer_tin:'', preparer_phone:'',
     preparer_mailingStreet:'', preparer_cityStateZip:'', preparer_email:'', preparer_signatureDate:'',
+    // Milestone 39-C
+    preparer_signatureState:'', preparer_signatureImage:'',
     // Attorney certification
     attorney_name:'', attorney_bar:'', attorney_phone:'',
-    attorney_street:'', attorney_cityStateZip:'', attorney_email:'', attorney_signatureDate:''
+    attorney_street:'', attorney_cityStateZip:'', attorney_email:'', attorney_signatureDate:'',
+    // Milestone 39-C
+    attorney_signatureState:'', attorney_signatureImage:''
   };
 }
 

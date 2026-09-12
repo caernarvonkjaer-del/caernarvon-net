@@ -15,7 +15,7 @@ the same commit.
 | bar-number.spec.js                   | Florida Bar-number normalization: eight digits preserved, shorter values left-padded, and non-digits removed               |
 | case-file.spec.js                    | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers                                   |
 | case-county-drift.spec.js            | Case-authoritative county mismatch advisory detection                                                                     |
-| checklist-export-parity.spec.js      | Milestone 36-6: section checklist vs export validation rule parity                                                        |
+| checklist-export-parity.spec.js      | Milestone 36-6: section checklist vs export validation rule parity; Milestone 39-C's new signatureState/Image fields added to the known-gaps allow-list |
 | circuit-lookup.spec.js               | FL county → judicial circuit lookup helpers                                                                               |
 | combobox-controller.spec.js          | ComboboxController widget behavior                                                                                        |
 | content-corrections.spec.js          | Sub-milestone 36-5: content corrections (AO removal guard, Part VIII no-trust certification, date format, clerk guidance) |
@@ -33,12 +33,12 @@ the same commit.
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |
 | live-region.spec.js                  | ARIA live-region announcer helper                                                                                         |
-| plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 17 auto conditions, incl. 3 newly mapped        |
+| plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 18 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |
 | plan-directive-cards.spec.js         | Milestone 37-4: directive-collection factory defaults and PDF/Word model gating on q10Executed/q11Executed                |
-| plan-initial-parity.spec.js          | Milestone 37-3: readiness-checklist/export-validator parity proof for all 19 auto conditions, incl. 6 newly mapped        |
-| plan-minor-parity.spec.js            | Milestone 37-3: readiness-checklist/export-validator parity proof for all 14 auto conditions, incl. 3 newly mapped        |
+| plan-initial-parity.spec.js          | Milestone 37-3: readiness-checklist/export-validator parity proof for all 19 auto conditions, incl. 6 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
+| plan-minor-parity.spec.js            | Milestone 37-3: readiness-checklist/export-validator parity proof for all 14 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Preparer/Attorney tri-state signature parity |
 | plan-readiness-county.spec.js        | Milestone 37-1: all four Plans certificate-of-service readiness wording gated on Pinellas/Pasco vs. other counties        |
 | plan-simplified-parity.spec.js       | Milestone 37-3 pilot: readiness-checklist/export-validator parity proof for all 13 auto conditions, incl. 4 newly mapped  |
 | plan-tristate.spec.js                | Schema-aware legacy Plan Yes/No migration and tri-state PDF rendering                                                     |
@@ -117,7 +117,7 @@ the same commit.
 | routes.spec.ts                           | Route table behavior                                                                                                                                                                     |
 | schedule-card-layout.spec.ts             | Responsive schedule/Plan card grids; shared multi-column label and input-group alignment                                                                                                 |
 | security.spec.ts                         | Milestone 11: security boundaries                                                                                                                                                        |
-| signature-capture.contract.spec.ts       | Milestone 39-B: three-state signature control (Unsigned/"/s/"/Stamp) on Plan Simplified's Guardian card                                                                                  |
+| signature-capture.contract.spec.ts       | Milestone 39-B: three-state signature control (Unsigned/"/s/"/Stamp) on Plan Simplified's Guardian card (pilot); Milestone 39-C: rolled out to Plan Annual/Initial/Minor's Guardian, Attorney, and (Minor) Preparer cards, incl. per-card stamp-image-paint proof via pdf.js's operator list |
 | signature-style-removal.spec.ts          | Signature-style controls/legacy bindings absent from every form route                                                                                                                    |
 | simplified-mount.spec.ts                 | simplified-accounting feature module mount/dispose/routing                                                                                                                               |
 | skip-classification-audit.spec.ts        | Milestone 31 Phase 0.3: static audit that every test.skip() is classified via target-profile.ts helpers                                                                                  |
@@ -186,7 +186,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | form-data   | simplified                                        | simplified-mount.spec.ts                                                                                                                                                                                                |
 | form-data   | annual                                            | annual-mount.spec.ts, annual-field-formatting.spec.ts, annual-schedule-consistency.spec.ts                                                                                                                              |
 | form-data   | planSimplified                                    | plan-simplified-mount.spec.ts                                                                                                                                                                                           |
-| form-data   | planSimplified                                    | signature-capture.contract.spec.ts (Milestone 39-B)                                                                                                                                                                     |
+| form-data   | planSimplified/planAnnual/planInitial/planMinor   | signature-capture.contract.spec.ts (Milestone 39-B pilot, Milestone 39-C rollout)                                                                                                                                       |
 | form-data   | planAnnual                                        | plan-annual-mount.spec.ts                                                                                                                                                                                               |
 | form-data   | planInitial                                       | plan-initial-mount.spec.ts                                                                                                                                                                                              |
 | form-data   | planMinor                                         | plan-minor-mount.spec.ts                                                                                                                                                                                                |

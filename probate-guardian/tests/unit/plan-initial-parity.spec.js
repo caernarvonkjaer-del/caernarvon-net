@@ -131,7 +131,13 @@ const CASES = [
   { autoId: 'cover.dates', override: { lettersSignedDate: '' }, message: 'Cover — Date Letters Were Signed is required' },
   { autoId: 'cover.guardianNames', override: { guardianNames: '' }, message: 'Cover — Guardian Name(s) is required' },
   { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.name': '' }, message: 'Signatures — Guardian name is required' },
-  { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.signatureDate': '' }, message: 'Signatures — Guardian signature date is required' },
+  // Milestone 39-C: blanking signatureDate alone no longer blocks by itself
+  // -- see plan-annual-parity.spec.js's identical note.
+  {
+    autoId: 'signatures.guardian1.core',
+    override: { 'planGuardians.0.signatureState': 'typed', 'planGuardians.0.signatureDate': '' },
+    message: 'Signatures — Guardian date signed is required to apply "/s/" Signed',
+  },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.street': '' }, message: 'Signatures — Guardian street address is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.phone': '' }, message: 'Signatures — Guardian phone is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.ssn': '' }, message: 'Signatures — Guardian SSN/EIN is required' },
@@ -152,10 +158,14 @@ const CASES = [
   { autoId: 'plan.q11directives', override: { q11NoDirectives: false, q11Executed: false }, message: '11. Advance Directives — Select exactly one: no pre-existing directives, or directives were executed' },
   { autoId: 'plan.q10f.committee', override: { committeeIncorporated: '' }, message: '11. Advance Directives — Whether examining-committee recommendations are incorporated is required' },
   { autoId: 'signatures.certifications', override: { certIncapacitatedNoCopy: false }, message: 'Signatures — At least one certification statement must be checked' },
+  // Milestone 39-C: typing just a name (no tri-state choice, no date) is no
+  // longer "started but incomplete" by itself -- the default/inferred state
+  // is Unsigned (name alone doesn't imply a signature method was chosen).
+  // Explicitly choosing "/s/" is what makes a blank date a real blocker now.
   {
     autoId: 'signatures.attorney',
-    override: { attorney_name: 'Sam Attorney', attorney_signatureDate: '' },
-    message: 'Attorney Certification — Attorney signature date is required',
+    override: { attorney_name: 'Sam Attorney', attorney_signatureState: 'typed', attorney_signatureDate: '' },
+    message: 'Attorney Certification — Attorney date signed is required to apply "/s/" Signed',
   },
 ];
 
@@ -173,5 +183,75 @@ describe('Plan Initial readiness/export parity', () => {
     const preflight = runPreflight(fixture);
     expect(preflight.messages).toContain(message);
     expect(preflight.canExport).toBe(false);
+  });
+});
+
+// Milestone 39-C: the three-state signature control's own dedicated parity
+// coverage on Plan Initial's Guardian and Attorney cards -- same discipline
+// as plan-simplified-parity.spec.js's 39-B pilot coverage.
+describe('Plan Initial: Milestone 39-C tri-state signature parity', () => {
+  test('Guardian explicitly Unsigned validates and exports cleanly, with no signature fields filled', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'none',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual([]);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Guardian with Signature Stamp selected but no image blocks with a distinct message', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'stamp',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toContain('Signatures — Guardian signature stamp image is required');
+    expect(preflight.canExport).toBe(false);
+  });
+
+  // Milestone 35-3's pro se/Guardian Advocate exemption must survive the
+  // tri-state rollout: a fully blank attorney card still does not block.
+  test('Attorney left entirely blank does not block (pro se / Guardian Advocate exemption)', () => {
+    const fixture = withOverrides(BASELINE, {});
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  // Selecting a real signature method with nothing else filled in also
+  // counts as "started," even though typing nothing else would not.
+  test('Attorney with Signature Stamp selected (no name, no image yet) counts as started and blocks', () => {
+    const fixture = withOverrides(BASELINE, {
+      attorney_signatureState: 'stamp',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toContain('Attorney Certification — Attorney name is required');
+    expect(preflight.messages).toContain('Attorney Certification — Attorney signature stamp image is required');
+    expect(preflight.canExport).toBe(false);
+  });
+
+  test('Attorney with Signature Stamp applied (name and image present) validates and exports cleanly', () => {
+    const fixture = withOverrides(BASELINE, {
+      attorney_name: 'Sam Attorney',
+      attorney_signatureState: 'stamp',
+      attorney_signatureImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.attorney').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.canExport).toBe(true);
   });
 });

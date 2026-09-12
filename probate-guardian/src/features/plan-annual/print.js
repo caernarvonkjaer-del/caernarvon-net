@@ -24,6 +24,7 @@ import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -55,8 +56,24 @@ export function planReadinessChecksAnnual(){
     {id:'cover.wardCaseGid',label:'Ward name, case number and inception date are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.gid)},
     {id:'cover.county',label:'County is on the plan',ok:has(d.county)},
     {id:'cover.guardianName',label:'Guardian Name(s) is on the plan',ok:has(d.guardian)},
-    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
+    // Milestone 39-C: reuses checkSignatureState() directly (not a
+    // hand-derived boolean) so these readiness items can never drift from
+    // what validatePlanAnnual() actually blocks on -- AGENTS.md Section 4's
+    // Parity Invariant, same as Plan Simplified's 39-B pilot.
+    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&checkSignatureState({
+      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+      date: g0.signatureDate,
+      image: g0.signatureImage,
+      sectionLabel: 'Signatures', roleLabel: 'Guardian',
+    }).length===0},
     {id:'signatures.guardian1.contact',label:'Guardian address, phone and SSN/EIN provided',ok:has(g0.mailingStreet)&&has(g0.phone)&&has(g0.ssn)},
+    {id:'signatures.attorney',label:'Attorney certification signature complete (if attorney included)',ok:checkSignatureState({
+      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+      name: d.attorney,
+      date: d.attorney_signatureDate,
+      image: d.attorney_signatureImage,
+      sectionLabel: 'Signatures', roleLabel: 'Attorney',
+    }).length===0},
     {id:'cover.wardResidence',label:"Ward's current residence and living arrangement, including city/state/ZIP, stated",ok:has(d.wardLiving)&&has(d.residenceAddress)&&has(d.residenceCityStateZip)},
     {id:'plan.q1residences',label:`Residences for the year listed (${res.length})`,ok:res.length>0},
     {id:'plan.q2',label:'Question 2 — address change addressed',ok:!!(d.q2NoMove||d.q2WithinCounty||d.q2WithinCircuit||d.q2OutsideApproved||d.q2OutsideVenuePetition)},

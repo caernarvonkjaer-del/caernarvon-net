@@ -1,6 +1,8 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -31,6 +33,9 @@ const {
   formatName, formatPhone, formatDisplayDate, toggleSsnReveal,
   INITIAL_ADLS, INITIAL_ADL_RATINGS,
 } = window;
+
+// Milestone 39-C: see plan-annual/index.js's identical comment.
+const signatureHandles = new WeakMap();
 
 let _printModule = null;
 let _printModulePromise = null;
@@ -78,10 +83,20 @@ export async function mount(container, page) {
   }
   container.innerHTML = html;
   container.scrollTop = 0;
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/p9' || page === '/p10') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      route: page,
+    }));
+  }
   if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -475,6 +490,7 @@ function pagePlanISignatures(){
           <div class="col-md-6"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.ssn||'')}" data-form-path="planGuardians.${i}.ssn" data-field-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
           <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-form-format="phone"></div>
           <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(gd.signatureState, gd.signatureDate), route: '/p9', signatureImage: gd.signatureImage })}</div>
           <div class="col-12"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" data-form-path="planGuardians.${i}.street" data-field-path="planGuardians.${i}.street"></div>
           <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" data-form-path="planGuardians.${i}.cityStateZip" data-field-path="planGuardians.${i}.cityStateZip"></div>
         </div>
@@ -522,6 +538,7 @@ function pagePlanIAttorney(){
               <div class="col-12">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>
               <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p10', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             </div>
           </div>
         </div>
@@ -595,7 +612,16 @@ export function validatePlanInitial(){
   if(!anyCert)errs.push('Signatures — At least one certification statement must be checked');
   const g0=(d.planGuardians||[])[0]||{};
   req(g0.name,'Signatures — Guardian name is required');
-  req(g0.signatureDate,'Signatures — Guardian signature date is required');
+  // Milestone 39-C: replaces the old unconditional req(g0.signatureDate,...)
+  // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
+  // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
+  // is already unconditionally required immediately above.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    date: g0.signatureDate,
+    image: g0.signatureImage,
+    sectionLabel: 'Signatures', roleLabel: 'Guardian',
+  }));
   req(g0.street,'Signatures — Guardian street address is required');
   req(g0.phone,'Signatures — Guardian phone is required');
   req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
@@ -604,10 +630,20 @@ export function validatePlanInitial(){
   // attorney representation under Fla. Prob. R. 5.030) must be able to export
   // without an attorney. Attorney fields are required only once the filer has
   // started entering one -- matching validatePlanAnnual/validatePlanSimplified's
-  // existing non-blocking handling of the same fields.
-  if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate){
+  // existing non-blocking handling of the same fields. Milestone 39-C: an
+  // explicit "/s/"/Stamp choice also counts as "started" (a filer who opens
+  // the tri-state control and picks a real signature method has started,
+  // even with every other attorney field still blank); an explicit or
+  // default Unsigned choice does not, by itself, count as "started" --
+  // preserving the pro se exemption.
+  if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
     req(d.attorney_name,'Attorney Certification — Attorney name is required');
-    req(d.attorney_signatureDate,'Attorney Certification — Attorney signature date is required');
+    errs.push(...checkSignatureState({
+      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+      date: d.attorney_signatureDate,
+      image: d.attorney_signatureImage,
+      sectionLabel: 'Attorney Certification', roleLabel: 'Attorney',
+    }));
   }
 
   return errs;
