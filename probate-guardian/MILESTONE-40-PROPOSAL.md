@@ -3,7 +3,7 @@
 ## Status
 
 **Planning index only — no delivery is authorized.** The former single
-draft has been split into five independently reviewed and approved
+draft has been split into six independently reviewed and approved
 deliveries, the same pattern used for Milestone 38. Approval or
 implementation of one does not authorize another.
 
@@ -14,6 +14,7 @@ implementation of one does not authorize another.
 | 40C | Validated browser QA/UX remediation (county defaulting, Cover labeling, date-range entry, readiness/export parity, carryover, Plan Initial Q7 validation bug) | Ready to scope for implementation | `MILESTONE-40C-PROPOSAL.md` |
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | Ready to scope for implementation | `MILESTONE-40E-PROPOSAL.md` |
+| 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`) and its false "Last backup" indicator bugs | Ready to scope for implementation | `MILESTONE-40F-PROPOSAL.md` |
 
 ## How These Ended Up Together
 
@@ -24,8 +25,11 @@ feature, and the party PIN is a general security control, not a
 PDF/signature feature either. 40C records the validated browser QA/UX
 findings reviewed after Milestone 37. 40D and 40E each surfaced
 independently while reviewing unrelated work (the portfolio UI starter
-kit, and a live PDF export bug report). None of the five depends on any
-other; there is no required implementation order between them.
+kit, and a live PDF export bug report). 40F surfaced from a requested
+review of the autosave feature, which found two complete, independent
+implementations of the same save pipeline silently shadowing each other.
+None of the six depends on any other; there is no required implementation
+order between them.
 
 ## Approval
 
