@@ -2,12 +2,14 @@
 
 ## Status
 
-**Blocked — not a workable implementation plan yet.** This is scoped as far
-as it can go without requester decisions on what the PIN is actually meant
-to protect against. Approving this delivery number does not mean approving
-an implementation; three open decisions below must be answered first, and
-the plan may change shape once they are. Approval of another Milestone 40
-delivery does not authorize this work.
+**Withdrawn — will not be implemented.** Presented as an explicit choice
+against dropping the feature entirely; the requester chose to drop it. The
+realistic threat model (a shared-session deterrent, not a real security
+boundary, since the file is already encrypted behind a master password —
+see below) was judged not worth building for. This delivery is closed; no
+further scoping or implementation should occur under 40B unless a future
+request reopens it with a materially different shape (e.g. a real
+second-factor control rather than a party attribute).
 
 ## Goal
 
@@ -45,23 +47,15 @@ actually wanted, this is a materially different and larger feature than "a
 attribute — and should be scoped as such rather than retrofitted onto this
 shape.
 
-## Open Decisions Required Before Implementation
+## Decision (Resolved)
 
-1. **Confirm the threat model above** (shared-session deterrent, not a
-   cryptographic control) is actually what's wanted, before any storage
-   design is picked.
-2. **Where does PIN entry/creation live?** On the party record itself
-   (wherever attorney/preparer/guardian contact info is already edited),
-   or inline the first time a signature image is captured?
-3. **What happens if the PIN is forgotten?** Is there a recovery path, or
-   does losing it mean the party's stored stamp(s) become permanently
-   unreusable (a new party record, or a support-mediated reset)?
-4. **Does a wrong entry get rate-limited or locked out?** A 4-digit space
-   is guessable within a single unlocked session without some throttle.
+Presented to the requester as an explicit choice among: (1) build it as a
+shared-session deterrent only, hashed, with UI copy that makes no stronger
+claim; (2) scope a materially larger real authentication control instead;
+or (3) drop the feature. The requester chose to drop it — along with the
+three dependent implementation questions (PIN entry location, forgotten-PIN
+recovery, rate-limiting), which are now moot.
 
 ## Next Step
 
-Answer the four questions above (or redirect the feature's shape
-entirely) before this delivery is re-scoped into an implementable plan
-with concrete file references, acceptance criteria, and a verification
-plan, matching the other Milestone 40 deliveries.
+None. This delivery is closed.

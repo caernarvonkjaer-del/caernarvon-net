@@ -10,7 +10,7 @@ implementation of one does not authorize another.
 | Delivery | Scope | Status | Proposal |
 | --- | --- | --- | --- |
 | 40A | Deprecate and remove DOCX export, including its test surface | Ready to scope for implementation | `MILESTONE-40A-PROPOSAL.md` |
-| 40B | 4-digit PIN per party for signature stamps | **Blocked** — needs requester decisions on threat model, entry UI, recovery, rate-limiting | `MILESTONE-40B-PROPOSAL.md` |
+| 40B | 4-digit PIN per party for signature stamps | **Withdrawn** — requester chose not to build it (deterrent-only value judged not worth it) | `MILESTONE-40B-PROPOSAL.md` |
 | 40C | Validated browser QA/UX remediation (county defaulting, Cover labeling, date-range entry, readiness/export parity, carryover, Plan Initial Q7 validation bug) | Ready to scope for implementation | `MILESTONE-40C-PROPOSAL.md` |
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | Ready to scope for implementation | `MILESTONE-40E-PROPOSAL.md` |
@@ -35,5 +35,4 @@ plan. Before implementing any one, obtain explicit approval naming that
 delivery, re-check its assumptions against current `master` (several
 reference exact file/line locations that may have moved), select tests
 through `TEST-INDEX.md`, and follow `AGENTS.md`'s commit and regression
-policy. 40B is not yet at that stage — its open decisions need answers
-before it has concrete steps to approve.
+policy. 40B is withdrawn and will not be scoped further.
