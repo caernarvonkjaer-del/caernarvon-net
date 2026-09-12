@@ -368,14 +368,18 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await page.evaluate(() => {
       const w = window as any;
       w.D.guardians[0] = { name: 'Guardian One', signatureDate: '01/01/2024', ssnEin: '123-45-6789', phone: '555-111-2222', streetAddress: '1 Main St', cityStateZip: 'Tampa, FL 33601' };
-      w.D.guardians.push({ name: 'Guardian Two', signatureDate: '', ssnEin: '987-65-4321', phone: '555-333-4444', streetAddress: '2 Oak St', cityStateZip: 'Tampa, FL 33602' });
+      // Milestone 39-C: a blank date with no signatureState now legitimately
+      // resolves to Unsigned (checkSignatureState() correctly reports no
+      // error) -- signatureState must be set explicitly to "typed" to force
+      // a real, findable "date signed" error for this test to target.
+      w.D.guardians.push({ name: 'Guardian Two', signatureDate: '', signatureState: 'typed', ssnEin: '987-65-4321', phone: '555-333-4444', streetAddress: '2 Oak St', cityStateZip: 'Tampa, FL 33602' });
     });
     await page.evaluate(() => (window as any).navigate('/d1'));
 
     const targetPath = await page.evaluate(() => {
       const raw = (window as any).validateGuardian();
       const structured = (window as any).adaptValidationErrors(raw, 'guardian');
-      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('Signature Date'))?.path;
+      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('date signed'))?.path;
     });
     expect(targetPath).toBe('guardians.1.signatureDate');
 
@@ -386,14 +390,23 @@ test.describe('Guardian Inventory navigation/status contract', () => {
   test('D-2 Preparer and Attorney fields resolve to distinct targets despite sharing bare labels', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian D-2 Ward', 'guardian');
+    // Milestone 39-C: a blank date with no signatureState now legitimately
+    // resolves to Unsigned (no error) -- both cards' signatureState must be
+    // set explicitly to "typed" to force real, findable "date signed"
+    // errors for this test to target.
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.preparer.signatureState = 'typed';
+      w.D.attorney.signatureState = 'typed';
+    });
     await page.evaluate(() => (window as any).navigate('/d2'));
 
     const paths = await page.evaluate(() => {
       const raw = (window as any).validateGuardian();
       const structured = (window as any).adaptValidationErrors(raw, 'guardian');
       return {
-        preparerDate: structured.find((e: any) => e.section === 'D-2 Preparer' && e.label === 'Date is required.')?.path,
-        attorneySignatureDate: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label === 'Signature Date is required.')?.path,
+        preparerDate: structured.find((e: any) => e.section === 'D-2 Preparer' && e.label.includes('date signed'))?.path,
+        attorneySignatureDate: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label.includes('date signed'))?.path,
         attorneyFilingDate: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label === 'Filing Date is required.')?.path,
       };
     });
@@ -514,11 +527,15 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
   test('Part III co-guardian #2 signature date targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Co-Guardian Ward', 'annual');
+    // Milestone 39-C: a blank date with no signatureState now legitimately
+    // resolves to Unsigned (checkSignatureState() correctly reports no
+    // error) -- signatureState must be set explicitly to "typed" to force
+    // a real, findable "date signed" error for this test to target.
     await page.evaluate(() => {
       const w = window as any;
       w.D.guardians = [
         { name: 'Guardian One', signatureDate: '01/01/2024', ssn: '123-45-6789', phone: '555-111-2222', mailingStreet: '1 Main St', mailingCityStateZip: 'Tampa, FL 33601' },
-        { name: 'Guardian Two', signatureDate: '', ssn: '987-65-4321', phone: '555-333-4444', mailingStreet: '2 Oak St', mailingCityStateZip: 'Tampa, FL 33602' },
+        { name: 'Guardian Two', signatureDate: '', signatureState: 'typed', ssn: '987-65-4321', phone: '555-333-4444', mailingStreet: '2 Oak St', mailingCityStateZip: 'Tampa, FL 33602' },
       ];
     });
     await page.evaluate(() => (window as any).navigate('/p3'));
@@ -526,7 +543,7 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
     const targetPath = await page.evaluate(() => {
       const raw = (window as any).validateAnnual();
       const structured = (window as any).adaptValidationErrors(raw, 'annual');
-      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('Signature Date'))?.path;
+      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('date signed'))?.path;
     });
     expect(targetPath).toBe('guardians.1.signatureDate');
 
@@ -765,8 +782,12 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
     const attorneySignatureDate = await page.evaluate(() => {
       const w = window as any;
       w.D.attorney_name = 'John Attorney';
+      // Milestone 39-C: a blank date with no signatureState now legitimately
+      // resolves to Unsigned (no error) -- signatureState must be set
+      // explicitly to "typed" to force a real, findable "date signed" error.
+      w.D.attorney_signatureState = 'typed';
       const structured = w.adaptValidationErrors(w.validatePlanMinor(), 'planMinor');
-      return structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney signature date'))?.path;
+      return structured.find((e: any) => e.section === 'Preparer & Attorney' && e.label.includes('Attorney') && e.label.includes('date signed'))?.path;
     });
     const paths = { preparerName, attorneyName, attorneySignatureDate };
     expect(paths).toEqual({ preparerName: 'preparer_name', attorneyName: 'attorney_name', attorneySignatureDate: 'attorney_signatureDate' });

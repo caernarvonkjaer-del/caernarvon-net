@@ -29,20 +29,26 @@ const has = (v) => v !== '' && v !== null && v !== undefined;
  */
 export function checkSignatureState({ state, name, date, image, sectionLabel, roleLabel }) {
   const errs = [];
+  // Guardian Inventory's own convention already embeds the role/ordinal in
+  // sectionLabel itself ("D-1 Guardian #2", "D-2 Preparer") rather than
+  // this shared function's usual sectionLabel/roleLabel split ("Part III"/
+  // "Guardian #2") -- passing roleLabel: '' in that case must not leave a
+  // stray double space in the message.
+  const rolePrefix = roleLabel ? `${roleLabel} ` : '';
   const normalized = has(state) ? state : SIGNATURE_STATES.NONE;
   if (normalized === SIGNATURE_STATES.NONE) return errs;
   if (normalized === SIGNATURE_STATES.TYPED) {
-    if (name !== undefined && !has(name)) errs.push(`${sectionLabel} — ${roleLabel} printed name is required to apply "/s/" Signed`);
-    if (!has(date)) errs.push(`${sectionLabel} — ${roleLabel} date signed is required to apply "/s/" Signed`);
+    if (name !== undefined && !has(name)) errs.push(`${sectionLabel} — ${rolePrefix}printed name is required to apply "/s/" Signed`);
+    if (!has(date)) errs.push(`${sectionLabel} — ${rolePrefix}date signed is required to apply "/s/" Signed`);
     return errs;
   }
   if (normalized === SIGNATURE_STATES.STAMP) {
-    if (!has(image)) errs.push(`${sectionLabel} — ${roleLabel} signature stamp image is required`);
+    if (!has(image)) errs.push(`${sectionLabel} — ${rolePrefix}signature stamp image is required`);
     return errs;
   }
   // An unrecognized value (corrupt data, a future state this code doesn't
   // know about yet) is treated as incomplete, never a silent pass.
-  errs.push(`${sectionLabel} — ${roleLabel} signature selection is invalid`);
+  errs.push(`${sectionLabel} — ${rolePrefix}signature selection is invalid`);
   return errs;
 }
 

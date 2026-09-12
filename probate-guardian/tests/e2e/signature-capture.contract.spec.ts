@@ -4,6 +4,7 @@ import {
   fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanAnnualWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
   fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard,
+  fillMinimalValidGuardianWard,
 } from './support/target';
 
 // Milestone 39-B: three-state signature control (Unsigned / "/s/" Signed /
@@ -699,5 +700,111 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
+  });
+});
+
+// Milestone 39-C: Guardian Inventory -- the last, most card-heavy filing
+// type in the rollout. Guardian (D-1) is the familiar collection-row shape;
+// Preparer (D-2) and Attorney (D-2, the attestation card) and Attorney,
+// Certificate of Service (D-5) are all nested objects (`d.preparer.*`,
+// `d.attorney.*`, `d.serviceAttorney.*`) -- a shape already proven by
+// Annual Accounting's Preparer card, so this rollout needs no further
+// generalization to signature-state-control.js, just wiring. Unlike every
+// other filing type in this table, all four of these cards were already
+// hard-required before 39-C (see MILESTONE-39-PROPOSAL.md's inventory
+// table) -- the tri-state control replaces an unconditional signatureDate
+// requirement with the same Unsigned/"/s/"/Stamp choice every other role
+// gets, not a new requirement.
+test.describe('Milestone 39-C: signature state control rollout -- Guardian Inventory', () => {
+  async function gotoPage(page: import('@playwright/test').Page, route: string, groupPath: string) {
+    await page.evaluate((r) => (window as any).navigate(r), route);
+    await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
+  }
+
+  test('Guardian (D-1) legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Sig Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page); // sets signatureDate, never signatureState
+    await gotoPage(page, '/d1', 'guardians.0');
+
+    await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
+    await page.waitForTimeout(200);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+
+    await gotoPage(page, '/d1', 'guardians.0');
+    await page.evaluate(() => { (window as any).D.guardians[0].signatureDate = ''; });
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
+    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+  });
+
+  test('Guardian (D-1) Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Sig Stamp Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await gotoPage(page, '/d1', 'guardians.0');
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('signature canvas not visible');
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
+    await page.mouse.up();
+    await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
+    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
+  });
+
+  test('Preparer (D-2) Signature Stamp: incomplete blocks, then applying it unblocks and paints', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Sig Preparer Stamp Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page); // sets preparer.name, never preparer.signatureState
+    await page.evaluate(() => { (window as any).D.preparer.signatureState = 'stamp'; });
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('body')).toContainText('D-2 Preparer — signature stamp image is required', { timeout: 10000 });
+    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+
+    await page.evaluate((img) => { (window as any).D.preparer.signatureImage = img; }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
+  });
+
+  test('Attorney (D-2 attestation) Signature Stamp applied paints an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Sig Attorney Stamp Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page); // sets attorney.name, never attorney.signatureState
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.attorney.signatureState = 'stamp';
+      d.attorney.signatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
+  });
+
+  test('Attorney, Certificate of Service (D-5) Signature Stamp applied paints an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Sig CoS Stamp Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page); // sets serviceAttorney.name, never serviceAttorney.signatureState
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.serviceAttorney.signatureState = 'stamp';
+      d.serviceAttorney.signatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
   });
 });

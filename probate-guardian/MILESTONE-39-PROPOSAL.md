@@ -19,10 +19,10 @@ gates cleared, and the rollout is landed for Plan Annual, Plan Initial, Plan
 Minor, Simplified Accounting, and Annual/Final/Trust Accounting; the Upload
 background-transparency luminance-threshold fix itself is also landed** (see
 "39-C: Multi-Role, Multi-Filing-Type Rollout" below for what changed and
-its own "Verification Plan" for what was run). The remaining 39-C scope —
-Guardian Inventory, the last and most card-heavy filing type — has not been
-started; it begins only on the requester's explicit go-ahead, same
-discipline as every other sub-milestone. 39-D and 39-E remain a
+its own "Verification Plan" for what was run). **The rollout is now also
+landed for Guardian Inventory, the last and most card-heavy filing type** —
+39-C's own rollout is now complete across every filing type in the
+inventory table. 39-D and 39-E remain a
 recommendation-recorded draft — do not implement yet.** What started as
 one research conversation (ephemeral PDF annotation for Print Preview) grew,
 over several rounds of review, into two architecturally distinct
@@ -879,7 +879,8 @@ established per-sub-milestone verification discipline.
 identified in the inventory table above for these three types now has the
 tri-state control — Plan Annual's Guardian and Attorney; Plan Initial's
 Guardian and Attorney; Plan Minor's Guardian, Preparer, and Attorney.
-Simplified/Annual Accounting and Guardian Inventory remain unstarted.
+Simplified/Annual Accounting's own rollout follows below, and Guardian
+Inventory's after that.
 
 - **The scalar field shape needed a real generalization to
   `signature-state-control.js`, not just wiring.** The module's own
@@ -976,6 +977,78 @@ Preparer, Attorney, and Attorney Certificate of Service.
   `verify-data-model`'s own duplicate-key check, corrected by updating the
   existing row in place instead.
 
+**Guardian Inventory: done, verified — the rollout's last filing type.**
+Every card in the inventory table above now has the tri-state control —
+Guardian (D-1, collection row), Preparer (D-2, nested object), Attorney
+(D-2 attestation, nested object), and Attorney, Certificate of Service
+(D-5, nested object). Both of Guardian Inventory's nested-object attorney
+cards needed no further generalization to `signature-state-control.js` —
+the nested-object default path resolution already handled them correctly,
+same as Annual Accounting's Preparer card before it.
+
+- **A real, if narrow, data-loss risk found and fixed, unique to this
+  filing type.** Guardian Inventory is the only rolled-out type with an
+  active "prune this row if it's empty" mechanism
+  (`normalizeGuardians()`/`guardianHasData()`, used by its own
+  "+ Add Co-Guardian" flow) — no other filing type auto-prunes a collection
+  row this way. Before this fix, a co-guardian who drew and applied a
+  signature stamp image before typing a name would have that image silently
+  discarded the next time the page re-rendered, since `guardianHasData()`
+  never checked `signatureImage`. Fixed by adding it to that check (and to
+  `pageD1()`'s own duplicate copy of the same field list) — confirmed via
+  the CSV notes and a comment at the fix site, not just inferred.
+- **checkSignatureState()'s shared `sectionLabel`/`roleLabel` split needed a
+  real accommodation for a card family with its own, different,
+  pre-existing section-naming convention, not just a wiring choice.**
+  Annual/Simplified Accounting's own rollout (and Plan-family's) put the
+  role/ordinal in `roleLabel` ("Part III"/"Guardian #N"), which becomes part
+  of the message's DETAIL half after the `" — "` split. Guardian Inventory's
+  own pre-existing `req()` messages instead put the role/ordinal directly in
+  the SECTION half ("D-1 Guardian #2", "D-2 Preparer") — matching this
+  existing convention, not inventing a new one, was the correct call, but
+  `checkSignatureState()` had no way to produce a message with an empty
+  role suffix without a stray double space. Fixed by teaching
+  `checkSignatureState()` to treat a falsy `roleLabel` as "already folded
+  into `sectionLabel`" (no behavior change for every existing caller, which
+  all pass a real role string); Guardian Inventory's own four call sites
+  pass `sectionLabel: 'D-1 Guardian #${i+1}'`/`'D-2 Preparer'`/
+  `'D-2 Attorney'`/`'D-5 Attorney'` with `roleLabel: ''`, needing zero new
+  ordinal/role-extraction logic in `validation-adapter.js` beyond the same
+  keyword additions every other type needed (below).
+- **A real, live regression found in already-shipped work from this same
+  milestone — not introduced by this pass, but only surfaced by it, and
+  fixed here rather than left for a future one.**
+  `src/core/validation/validation-adapter.js` (Milestone 24's structured
+  jump-link resolver) was never updated for `checkSignatureState()`'s own
+  message vocabulary ("date signed", "printed name", "signature stamp
+  image") for every card this milestone converted to it, in every earlier
+  landed pass, plan-family included — only Plan Annual's and Plan
+  Simplified's own `'signatures'` branches happened to get partial
+  `"date signed"`/`"printed name"` recognition when they were written; nine
+  other branches across Guardian Inventory, Annual Accounting, Simplified
+  Accounting, and Plan Initial/Minor did not, and none had `"signature
+  stamp image"` recognition at all. In the live product this meant clicking
+  a validation panel's jump link for a blocked "/s/ Signed, no date" or
+  "Signature Stamp, no image" state silently failed to move focus, for
+  every one of those cards. Found by actually running
+  `tests/e2e/navigation-status.contract.spec.ts` for the first time against
+  this rollout's own changes (a file none of the four earlier 39-C passes
+  had re-run) — 5 of its tests failed, 4 as a direct result of this gap.
+  Fixed comprehensively rather than only for Guardian Inventory: every
+  `sectionLabel`/`roleLabel` pair used by any `checkSignatureState()` call
+  site in the codebase (verified by direct grep, not sampling) now has
+  matching keyword recognition in `validation-adapter.js`, including the
+  previously entirely-unhandled "signature stamp image" case everywhere it
+  can occur. The 4 fixed tests' own fixtures also needed updating, for a
+  related reason: a blank signature date with no explicit `signatureState`
+  now correctly infers "Unsigned" (a real pass, not a bug) rather than the
+  old unconditional "date is required" error these tests were built
+  against — each now sets `signatureState: 'typed'` explicitly to exercise
+  a genuine, findable completeness error, the same pattern this rollout's
+  own e2e specs already use throughout. The remaining, 5th failure (D-3
+  Safe Deposit Box radios) is unrelated to signatures entirely and confirmed
+  pre-existing via `git stash` against the unmodified baseline.
+
 ### Verification Plan (39-C)
 
 Per filing type landed: extend 39-B's `tests/e2e/signature-capture.contract.spec.ts`
@@ -1047,6 +1120,44 @@ description update reflecting the file's growing scope as each type lands.
    signatureDate/requiredness rows narrowed to reference the new field
    where applicable), `npm run verify:data-model` passing (870 rows).
    `TEST-INDEX.md` updated.
+
+**Guardian Inventory — landed and run, completing the 39-C rollout:**
+
+1. `tests/e2e/signature-capture.contract.spec.ts` extended with 5 more new
+   tests (32 total in the file): a Guardian legacy-migration/Unsigned/
+   incomplete-"/s/" cycle and a Stamp-draw-and-apply-paint test for D-1,
+   plus Stamp-paint coverage for the Preparer (D-2), Attorney (D-2
+   attestation), and Attorney Certificate of Service (D-5) cards. All 32
+   tests pass.
+2. `tests/e2e/navigation-status.contract.spec.ts` run in full for the first
+   time against this rollout (not just this pass's own new work) — found
+   and fixed the pre-existing `validation-adapter.js` jump-link gap
+   described above, affecting 4 tests across Guardian Inventory, Annual
+   Accounting, and Plan Minor. 56 of 57 tests pass; the 1 remaining failure
+   (D-3 Safe Deposit Box radios) is unrelated to signatures and confirmed
+   pre-existing via `git stash` against the unmodified baseline.
+3. No unit-test parity suite exists for this feature family either (same
+   "no `planReadinessChecksX()`-style readiness panel" finding as
+   Simplified/Annual Accounting above) — verification runs through the e2e
+   suite above, exercising the real `validateGuardian()` export-blocking
+   path end to end.
+4. Full unit suite (446 tests, 50 files) re-run clean after touching the
+   shared `signature-state.js`/`validation-adapter.js` modules.
+   `guardian-inventory-mount.spec.ts` (11 tests) re-run clean except its one
+   pre-existing D-3 Audit Fee failure (confirmed via `git stash`,
+   independent of this milestone). A broader 14-file e2e sweep spanning
+   every filing type's own mount/contract/identity/output-semantics/preview
+   suites (97 tests) re-run clean except the already-documented "blocked
+   preview override" pre-existing flake and the already-documented
+   Plan-Initial `q7Trusts` bug, both noted above and confirmed unrelated.
+5. `probate-guardian-data-model.csv` updated (10 new rows: signatureState/
+   signatureImage for the Guardian collection row, Preparer, Attorney, and
+   Attorney/Certificate-of-Service Attorney nested objects; two
+   pre-existing, previously-undocumented `signatureDate` rows added for
+   Preparer and Certificate-of-Service Attorney, found missing during this
+   pass; existing `signatureDate`/requiredness rows narrowed to reference
+   the new field where applicable), `npm run verify:data-model` passing
+   (880 rows). `TEST-INDEX.md` updated.
 
 **Upload background-transparency gate (luminance-threshold fix) — landed and run:**
 
@@ -1311,13 +1422,12 @@ Order and Dependencies."
   (complete, confirmed table, zero "not yet confirmed" cells, plus one
   previously-missed card found and added) and the Upload
   background-transparency gate (resolved: luminance-threshold background
-  removal). **Rollout landed and verified for Plan Annual, Plan Initial,
-  Plan Minor, Simplified Accounting, and Annual/Final/Trust Accounting; the
+  removal). **Rollout complete and verified for every filing type in the
+  inventory table — Plan Annual, Plan Initial, Plan Minor, Simplified
+  Accounting, Annual/Final/Trust Accounting, and Guardian Inventory; the
   Upload luminance-threshold fix itself is also landed and verified** (see
-  "Recommended sequencing" and "Verification Plan (39-C)" above). Remaining
-  scope — Guardian Inventory, the last and most card-heavy filing type —
-  still requires the requester's explicit go-ahead before starting,
-  matching 39-A/39-B's own authorization pattern.
+  "Recommended sequencing" and "Verification Plan (39-C)" above). 39-C has
+  no remaining scope.
 - **39-D** may not be authorized until the compound party+entry reference
   design, the single-ward export/import fix (confirmed necessary — see
   Design above), and the storage-growth question are resolved with the

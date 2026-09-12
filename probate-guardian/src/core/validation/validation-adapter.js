@@ -189,8 +189,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
     // "(Co-)Guardian #N — <field>" in the detail too, sharing this one
     // pattern across both engines (Simplified's own co-guardian label is
     // literally "Co-Guardian #N"; Annual's is always "Guardian #N", which
-    // the optional "Co-" group still matches).
-    const detailGuardianMatch = detail.match(/^(?:Co-)?Guardian #(\d+)\s+—\s+(.+)$/i);
+    // the optional "Co-" group still matches). Milestone 39-C: checkSignatureState()'s
+    // own tri-state messages ("Guardian #N date signed is required...")
+    // put the ordinal in this same detail position but join it to the rest
+    // with a plain space, not " — " -- the dash is therefore optional here,
+    // not required, so both message shapes match one pattern.
+    const detailGuardianMatch = detail.match(/^(?:Co-)?Guardian #(\d+)\s+(?:—\s+)?(.+)$/i);
     // The four Plan types' row errors ("row 1 needs...", "Row 1: ...") all
     // start with a bare ordinal in the detail -- one pattern covers
     // planAnnual's (filtered-array-indexed) and planInitial/planMinor's
@@ -280,7 +284,16 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       // missing signature date used to point at guardian #1 regardless of
       // which one was actually incomplete (see the old bottom-of-chain
       // fallback below, which still hardcodes index 0 for other formTypes).
-      if (dLower.includes('name')) path = `guardians.${guardianOrdIdx}.name`;
+      //
+      // Milestone 39-C: checkSignatureState() is called here with an empty
+      // roleLabel and the ordinal folded into sectionLabel itself (e.g.
+      // "D-1 Guardian #2"), matching this card's own pre-existing
+      // convention exactly -- so its "date signed"/"signature stamp image"
+      // wording is just two more keywords in this same section-scoped
+      // dLower check, not a different message shape to parse.
+      if (dLower.includes('date signed')) path = `guardians.${guardianOrdIdx}.signatureDate`;
+      else if (dLower.includes('signature stamp image')) path = `guardians.${guardianOrdIdx}.signatureImage`;
+      else if (dLower.includes('name')) path = `guardians.${guardianOrdIdx}.name`;
       else if (dLower.includes('signature date')) path = `guardians.${guardianOrdIdx}.signatureDate`;
       else if (dLower.includes('ssn')) path = `guardians.${guardianOrdIdx}.ssnEin`;
       else if (dLower.includes('phone')) path = `guardians.${guardianOrdIdx}.phone`;
@@ -291,7 +304,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       // only by the SECTION text, never the detail (bare labels like "Name"
       // or "Phone" say nothing about which party they belong to).
       if (sLower.includes('preparer')) {
-        if (dLower.includes('name')) path = 'preparer.name';
+        // Milestone 39-C: checkSignatureState()'s "date signed"/"signature
+        // stamp image" wording, checked before the older generic "date"
+        // catch-all below so they resolve to the same field it already did.
+        if (dLower.includes('date signed')) path = 'preparer.signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'preparer.signatureImage';
+        else if (dLower.includes('name')) path = 'preparer.name';
         else if (dLower.includes('ssn')) path = 'preparer.ssnEin';
         else if (dLower.includes('phone')) path = 'preparer.phone';
         else if (dLower.includes('street')) path = 'preparer.streetAddress';
@@ -299,7 +317,10 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('date')) path = 'preparer.signatureDate'; // Preparer's own error text says just "Date", not "Signature Date"
       } else if (sLower.includes('attorney')) {
         if (dLower.includes('name')) path = 'attorney.name';
-        else if (dLower.includes('filing date')) path = 'attorney.filingDate'; // must check before the generic "signature date" below
+        else if (dLower.includes('filing date')) path = 'attorney.filingDate'; // must check before the generic "signature date"/"date signed" below
+        // Milestone 39-C: checkSignatureState()'s own wording.
+        else if (dLower.includes('date signed')) path = 'attorney.signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'attorney.signatureImage';
         else if (dLower.includes('signature date')) path = 'attorney.signatureDate';
         else if (dLower.includes('bar number')) path = 'attorney.barNumber';
         else if (dLower.includes('phone')) path = 'attorney.phone';
@@ -323,6 +344,9 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('address')) path = `serviceRecipients.${recipientIdx}.address`;
       } else if (sLower.includes('attorney')) {
         if (dLower.includes('name')) path = 'serviceAttorney.name';
+        // Milestone 39-C: checkSignatureState()'s own wording.
+        else if (dLower.includes('date signed')) path = 'serviceAttorney.signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'serviceAttorney.signatureImage';
         else if (dLower.includes('signature date')) path = 'serviceAttorney.signatureDate';
         else if (dLower.includes('bar number')) path = 'serviceAttorney.barNumber';
         else if (dLower.includes('phone')) path = 'serviceAttorney.phone';
@@ -358,7 +382,11 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'part iii' && detailGuardianMatch) {
         const idx = parseInt(detailGuardianMatch[1], 10) - 1;
         const f = detailGuardianMatch[2].toLowerCase();
-        if (f.includes('name')) path = `guardians.${idx}.name`;
+        // Milestone 39-C: checkSignatureState()'s own wording, checked
+        // first so it doesn't need the older "signature date" phrase.
+        if (f.includes('date signed')) path = `guardians.${idx}.signatureDate`;
+        else if (f.includes('signature stamp image')) path = `guardians.${idx}.signatureImage`;
+        else if (f.includes('name')) path = `guardians.${idx}.name`;
         else if (f.includes('signature date')) path = `guardians.${idx}.signatureDate`;
         else if (f.includes('ssn')) path = `guardians.${idx}.ssn`;
         else if (f.includes('phone')) path = `guardians.${idx}.phone`;
@@ -367,7 +395,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'part iv') {
         // Field name is `street`, not `streetAddress` -- Annual's own
         // preparer shape, distinct from Guardian Inventory's D-2 preparer.
-        if (dLower.includes('preparer name')) path = 'preparer.name';
+        // Milestone 39-C: checkSignatureState()'s wording only ever
+        // prefixes "Preparer" (name omitted from that call), checked
+        // before the older exact "preparer signature date" phrase.
+        if (dLower.includes('preparer') && dLower.includes('date signed')) path = 'preparer.signatureDate';
+        else if (dLower.includes('preparer') && dLower.includes('signature stamp image')) path = 'preparer.signatureImage';
+        else if (dLower.includes('preparer name')) path = 'preparer.name';
         else if (dLower.includes('preparer signature date')) path = 'preparer.signatureDate';
         else if (dLower.includes('preparer ssn')) path = 'preparer.ssn';
         else if (dLower.includes('preparer phone')) path = 'preparer.phone';
@@ -376,7 +409,14 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'part v') {
         // Flat, top-level, underscore-prefixed scalars -- not a nested
         // object like Guardian Inventory's attorney/serviceAttorney.
-        if (dLower.includes('bar number')) path = 'attorney_bar';
+        // Milestone 39-C: name IS passed to this card's checkSignatureState()
+        // call (d.attorney is never independently required elsewhere in
+        // validateAnnual()), so "printed name" is a real, new message here --
+        // routes to the bare scalar `attorney` field, not a nested `.name`.
+        if (dLower.includes('printed name')) path = 'attorney';
+        else if (dLower.includes('date signed')) path = 'attorney_signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'attorney_signatureImage';
+        else if (dLower.includes('bar number')) path = 'attorney_bar';
         else if (dLower.includes('phone')) path = 'attorney_phone';
         else if (dLower.includes('street')) path = 'attorney_street';
         else if (dLower.includes('city')) path = 'attorney_cityStateZip';
@@ -464,6 +504,14 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         // Only Recipient 1 is ever validated -- index is always 0, not a
         // loop, so no ordinal regex is needed here.
         else if (dLower.includes('recipient')) path = 'certRecipients.0.name';
+        // Milestone 39-C: this card's own Attorney signature date
+        // (certAttySignDate), distinct from the certDate service date
+        // above -- name IS passed to this checkSignatureState() call for
+        // the same reason as Part V's attorney (d.attorney is shared and
+        // never independently required elsewhere in validateAnnual()).
+        else if (dLower.includes('printed name')) path = 'attorney';
+        else if (dLower.includes('date signed')) path = 'certAttySignDate';
+        else if (dLower.includes('signature stamp image')) path = 'certAttySignatureImage';
       }
     } else if (formType === 'simplified') {
       // Milestone 33, Item 3 (sub-phase 3c). Verified directly against
@@ -503,7 +551,11 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'part iv' && detailGuardianMatch) {
         const idx = parseInt(detailGuardianMatch[1], 10) - 1;
         const f = detailGuardianMatch[2].toLowerCase();
-        if (f.includes('name')) path = `guardians.${idx}.name`;
+        // Milestone 39-C: checkSignatureState()'s own wording, checked
+        // first so it doesn't need the older "signature date" phrase.
+        if (f.includes('date signed')) path = `guardians.${idx}.signatureDate`;
+        else if (f.includes('signature stamp image')) path = `guardians.${idx}.signatureImage`;
+        else if (f.includes('name')) path = `guardians.${idx}.name`;
         else if (f.includes('signature date')) path = `guardians.${idx}.signatureDate`;
         else if (f.includes('ssn')) path = `guardians.${idx}.ssn`;
         else if (f.includes('phone')) path = `guardians.${idx}.phone`;
@@ -518,7 +570,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (f.includes('residence city')) path = `guardians.${idx}.residenceCityStateZip`;
       } else if (sLower === 'part v') {
         // Bar-number field is named differently from Annual's attorney_bar.
-        if (dLower.includes('bar number')) path = 'attorney_barNumber';
+        // Milestone 39-C: checkSignatureState() here omits `name` (d.attorney
+        // is already required on Cover), so only "date signed"/"signature
+        // stamp image" are new -- no "printed name" case is possible.
+        if (dLower.includes('date signed')) path = 'attorney_signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'attorney_signatureImage';
+        else if (dLower.includes('bar number')) path = 'attorney_barNumber';
         else if (dLower.includes('phone number')) path = 'attorney_phone';
         else if (dLower.includes('street address')) path = 'attorney_street';
         else if (dLower.includes('city/state/zip')) path = 'attorney_cityStateZip';
@@ -528,6 +585,11 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         if (dLower.includes('date of service')) path = 'certServiceDate';
         else if (dLower.includes('indicate if')) path = 'certIndicator';
         else if (dLower.includes('recipient')) path = 'certRecipients.0.name';
+        // Milestone 39-C: this card's own Attorney signature date
+        // (certAttySignDate) -- name is also omitted from this
+        // checkSignatureState() call (same shared, Cover-required d.attorney).
+        else if (dLower.includes('date signed')) path = 'certAttySignDate';
+        else if (dLower.includes('signature stamp image')) path = 'certAttySignatureImage';
       }
     } else if (formType === 'planAnnual') {
       // Milestone 33, Item 3 (sub-phase 3d). Verified directly against
@@ -578,7 +640,9 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         // signed" -- checked first so it doesn't misroute to the guardian.
         if (dLower.includes('printed name')) path = 'planGuardians.0.name';
         else if (dLower.includes('attorney') && dLower.includes('date signed')) path = 'attorney_signatureDate';
+        else if (dLower.includes('attorney') && dLower.includes('signature stamp image')) path = 'attorney_signatureImage';
         else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'planGuardians.0.signatureImage';
         // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
         else if (dLower.includes('mailing street')) path = 'planGuardians.0.mailingStreet';
         else if (dLower.includes('phone')) path = 'planGuardians.0.phone';
@@ -626,7 +690,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('recommendations are incorporated is required')) path = 'committeeIncorporated';
         else if (dLower.includes('recommendations are not incorporated')) path = 'committeeExplain';
       } else if (sLower === 'signatures') {
+        // Milestone 39-C: checkSignatureState() omits `name` for this card
+        // (g0.name is already unconditionally required above it), so only
+        // "date signed"/"signature stamp image" are new wordings here.
         if (dLower.includes('guardian name is required')) path = 'planGuardians.0.name';
+        else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'planGuardians.0.signatureImage';
         else if (dLower.includes('guardian signature date')) path = 'planGuardians.0.signatureDate';
         // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
         else if (dLower.includes('street address')) path = 'planGuardians.0.street';
@@ -635,7 +704,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       } else if (sLower === 'attorney certification') {
         // attorney_name here -- distinct from the separate, cosmetic-only,
         // never-validated attorneyName field shown on this type's Cover.
+        // Milestone 39-C: `name` is also omitted from this card's
+        // checkSignatureState() call (attorney_name is already required
+        // above it), so only "date signed"/"signature stamp image" are new.
         if (dLower.includes('attorney name')) path = 'attorney_name';
+        else if (dLower.includes('date signed')) path = 'attorney_signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'attorney_signatureImage';
         else if (dLower.includes('attorney signature date')) path = 'attorney_signatureDate';
       }
     } else if (formType === 'planMinor') {
@@ -664,16 +738,30 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('interpersonal')) path = 'q5Interpersonal';
         else if (dLower.startsWith('explanation')) path = 'q5Explain';
       } else if (sLower === 'guardian signatures') {
+        // Milestone 39-C: checkSignatureState() omits `name` for this card
+        // (g0.name is already required above it) -- only "date signed"/
+        // "signature stamp image" are new wordings.
         if (dLower.includes('guardian name is required')) path = 'planGuardians.0.name';
+        else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+        else if (dLower.includes('signature stamp image')) path = 'planGuardians.0.signatureImage';
         else if (dLower.includes('guardian signature date')) path = 'planGuardians.0.signatureDate';
         // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
         else if (dLower.includes('mailing street')) path = 'planGuardians.0.mailingStreet';
         else if (dLower.includes('phone')) path = 'planGuardians.0.phone';
         else if (dLower.includes('taxpayer id')) path = 'planGuardians.0.tin';
       } else if (sLower === 'preparer & attorney') {
+        // Milestone 39-C: `name` is omitted from both cards' checkSignatureState()
+        // calls (preparer_name/attorney_name are already required above
+        // them), so only "date signed"/"signature stamp image" are new --
+        // each checked with its own role keyword first so they don't
+        // cross-match the other role's field.
         if (dLower.includes('preparer name')) path = 'preparer_name';
+        else if (dLower.includes('preparer') && dLower.includes('date signed')) path = 'preparer_signatureDate';
+        else if (dLower.includes('preparer') && dLower.includes('signature stamp image')) path = 'preparer_signatureImage';
         else if (dLower.includes('preparer signature date')) path = 'preparer_signatureDate';
         else if (dLower.includes('attorney name')) path = 'attorney_name';
+        else if (dLower.includes('attorney') && dLower.includes('date signed')) path = 'attorney_signatureDate';
+        else if (dLower.includes('attorney') && dLower.includes('signature stamp image')) path = 'attorney_signatureImage';
         else if (dLower.includes('attorney signature date')) path = 'attorney_signatureDate';
       }
     } else if (formType === 'planSimplified') {
@@ -710,6 +798,12 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
         else if (dLower.includes('preparer') && dLower.includes('date signed')) path = 'preparer_signatureDate';
         else if (dLower.includes('attorney') && dLower.includes('date signed')) path = 'attorney_signatureDate';
         else if (dLower.includes('date signed')) path = 'planGuardians.0.signatureDate';
+        // Milestone 39-C: the guardian's own card is the only one of these
+        // three roles with a real checkSignatureState() call today (Plan
+        // Simplified's Preparer/Attorney fields stay order-check-only, not
+        // hard-required -- see the Guardian Inventory audit table), so
+        // "signature stamp image" can only ever mean the guardian's.
+        else if (dLower.includes('signature stamp image')) path = 'planGuardians.0.signatureImage';
         // Milestone 34-1A, Item 1: newly-promoted guardian contact fields.
         else if (dLower.includes('email')) path = 'planGuardians.0.email';
         else if (dLower.includes('phone')) path = 'planGuardians.0.phone';

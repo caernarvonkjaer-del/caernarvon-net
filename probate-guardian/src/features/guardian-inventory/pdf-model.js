@@ -430,6 +430,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signature: formatSignature(g.name),
     signatureStyle,
     signatureDate: fmtDate(g.signatureDate),
+    signatureState: g.signatureState || '',
+    signatureImage: g.signatureImage || '',
     fields: [
       [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: maskSSN(g.ssnEin || '') }],
       [{ label: 'Address', value: composePdfAddress(g.streetAddress, g.cityStateZip) }],
@@ -445,6 +447,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signature: formatSignature(preparer.name),
     signatureStyle,
     signatureDate: fmtDate(preparer.signatureDate),
+    signatureState: preparer.signatureState || '',
+    signatureImage: preparer.signatureImage || '',
     fields: [
       [{ label: 'Phone', value: preparer.phone || '' }, { label: 'SSN/EIN', value: maskSSN(preparer.ssnEin || '') }],
       [{ label: 'Address', value: composePdfAddress(preparer.streetAddress, preparer.cityStateZip) }],
@@ -501,6 +505,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         signature: formatSignature(attorney.name),
         signatureStyle,
         signatureDate: fmtDate(attorney.signatureDate),
+        signatureState: attorney.signatureState || '',
+        signatureImage: attorney.signatureImage || '',
         fields: [
           [{ label: 'Florida Bar #', value: attorneyDetails['Florida Bar #'] }, { label: 'Filing Date', value: attorneyDetails['Filing Date'] }, { label: 'Phone', value: attorneyDetails.Phone }],
           [{ label: 'Primary Email', value: attorneyDetails['Primary Email'] }, { label: 'Secondary Email', value: attorneyDetails['Secondary Email'] || '' }],
@@ -583,6 +589,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         signature: formatSignature(serviceAttorney.name),
         signatureStyle,
         signatureDate: fmtDate(serviceAttorney.signatureDate),
+        signatureState: serviceAttorney.signatureState || '',
+        signatureImage: serviceAttorney.signatureImage || '',
         fields: [
           [{ label: 'Florida Bar #', value: serviceAttorney.barNumber || '' }, { label: 'Phone', value: serviceAttorney.phone || '' }],
           [{ label: 'Primary Email', value: serviceAttorney.email || attorney.email || '' }],

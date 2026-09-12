@@ -1,6 +1,8 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -31,12 +33,17 @@ let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
 const eventControllers = new WeakMap();
+const signatureHandles = new WeakMap();
 let pendingGuardianIndex = null;
 let visiblePendingGuardianIndex = null;
 function guardianHasData(guardian) {
   return [
     guardian?.name, guardian?.signatureDate, guardian?.ssnEin, guardian?.phone,
     guardian?.streetAddress, guardian?.cityStateZip,
+    // Milestone 39-C: a co-guardian who has drawn/applied a signature stamp
+    // image before typing a name must not be silently pruned by
+    // normalizeGuardians() -- that image can't be recreated once discarded.
+    guardian?.signatureImage,
   ].some(value => String(value || '').trim());
 }
 function normalizeGuardians() {
@@ -99,6 +106,14 @@ export async function mount(container, page) {
   afterChange('');
   container.scrollTop = 0;
   if(page==='/')linkAccordions('instructionsZone','importZone');
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/d1' || page === '/d2' || page === '/d5') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      route: page,
+    }));
+  }
   linkLabelsToInputs();
   enforceDateRanges();
   setupAmountFieldValidation();
@@ -113,6 +128,8 @@ export async function mount(container, page) {
 export function dispose(container) {
   eventControllers.get(container)?.abort();
   eventControllers.delete(container);
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -890,7 +907,7 @@ function pageD1(){
   // a brand-new filing with no guardian data typed in yet renders zero
   // cards here, with no way to even see the required Guardian #1 fields.
   const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===0||i===visiblePendingGuardianIndex||[
-    g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip
+    g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage
   ].some(value=>String(value||'').trim()));
   const cards=partyRecords.map(({g,i},visibleIndex)=>{
     const isFirst=visibleIndex===0;
@@ -903,6 +920,7 @@ function pageD1(){
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
         ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')))}
+        ${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/d1', signatureImage: g.signatureImage })}
       </div>
     </div></div>`;
   }).join('');
@@ -932,6 +950,7 @@ function pageD2(){
       ${formRow(col(5,reqLabel("Preparer's Name")+textInput('preparer.name','','name')),col(3,reqLabel('Date')+dateInput('preparer.signatureDate')),col(4,reqLabel('SSN / EIN')+textInput('preparer.ssnEin','','ssn')))}
       ${formRow(col(4,reqLabel('Phone Number')+textInput('preparer.phone','','phone')),col(8,reqLabel('Street Address')+textInput('preparer.streetAddress','','address')))}
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('preparer.cityStateZip','','zip')))}
+      ${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(D.preparer.signatureState, D.preparer.signatureDate), route: '/d2', signatureImage: D.preparer.signatureImage })}
     </div>
   </div>
   </div>
@@ -948,6 +967,7 @@ function pageD2(){
       ${formRow(col(4,reqLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,reqLabel('Phone Number')+textInput('attorney.phone','','phone')))}
       ${formRow(col(6,reqLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,reqLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,reqLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
+      ${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(D.attorney.signatureState, D.attorney.signatureDate), route: '/d2', signatureImage: D.attorney.signatureImage })}
     </div>
   </div>
   </div>
@@ -1056,6 +1076,7 @@ function pageD5(){
       ${formRow(col(5,reqLabel("Attorney's Name")+textInput('serviceAttorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')),col(4,reqLabel('Florida Bar Number')+textInput('serviceAttorney.barNumber','','barNumber')))}
       ${formRow(col(4,reqLabel('Phone')+textInput('serviceAttorney.phone','','phone')),col(8,reqLabel('Street Address')+textInput('serviceAttorney.streetAddress','','address')))}
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('serviceAttorney.cityStateZip','','zip')))}
+      ${renderSignatureStateControl({ path: 'serviceAttorney', state: inferLegacySignatureState(D.serviceAttorney.signatureState, D.serviceAttorney.signatureDate), route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
     </div>
   </div>
   ${pageNav('/d5')}</div>`;
@@ -1116,9 +1137,9 @@ export function validateGuardian(){
   // mislabeling bug this filter/forEach split previously had: a co-guardian
   // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
   // was still blank.
-  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);if(!g.signatureDate)errors.push(`${p} — Signature Date is required.`);req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
-  req(d.preparer.name,'D-2 Preparer — Name');if(!d.preparer.signatureDate)errors.push('D-2 Preparer — Date is required.');req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
-  req(d.attorney.name,'D-2 Attorney — Name');if(!d.attorney.signatureDate)errors.push('D-2 Attorney — Signature Date is required.');if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
+  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:''}));req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
+  req(d.preparer.name,'D-2 Preparer — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:''}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
+  req(d.attorney.name,'D-2 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:''}));if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
   if (d.hasSafeDepositBox === null || d.hasSafeDepositBox === undefined) {
     errors.push('D-3 — Safe Deposit Box question must be answered (Yes or No).');
   } else if (d.hasSafeDepositBox === true && (d.safeDepositBoxFiled === null || d.safeDepositBoxFiled === undefined)) {
@@ -1127,7 +1148,7 @@ export function validateGuardian(){
   req(d.bondAmount,'D-4 — Bond Amount');if(!d.bondPeriodFrom)errors.push('D-4 — Bond Period From is required.');if(!d.bondPeriodTo)errors.push('D-4 — Bond Period To is required.');req(d.bondingCompany,'D-4 — Bonding Company');
   d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`;req(r.name,`${p} — Name`);req(r.address,`${p} — Address`);req(r.cityStateZip,`${p} — City/State/Zip`);});
   if(!d.serviceDate)errors.push('D-5 — Service Date is required.');
-  req(d.serviceAttorney.name,'D-5 Attorney — Name');if(!d.serviceAttorney.signatureDate)errors.push('D-5 Attorney — Signature Date is required.');req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number');req(d.serviceAttorney.phone,'D-5 Attorney — Phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip');
+  req(d.serviceAttorney.name,'D-5 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:''}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number');req(d.serviceAttorney.phone,'D-5 Attorney — Phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip');
   return errors;
 }
 
