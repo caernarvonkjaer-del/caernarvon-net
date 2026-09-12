@@ -9,6 +9,34 @@ assumptions, scope changes deliberately, and defer to the requester on
 product, scope, and legal-interpretation calls. This document is the default
 contract for all work here; Section 2 covers deviations.
 
+## 0. Portfolio Archetype & Tech Stack Pinning (Approach A)
+
+This organization organizes projects across three standardized archetypes:
+
+- **Archetype 1 (Client-Side Static PWA)**: Vanilla ES Modules, Bootstrap, Web Crypto, client-side PDF/Excel generation.
+- **Archetype 2 (Python Data & Document Pipeline)**: Python 3.11+, Streamlit, PyMuPDF, OCR/LLM entity extraction, local crypto.
+- **Archetype 3 (Full-Stack Containerized Web App)**: React 19/TS/Vite/Tailwind frontend, FastAPI/SQLAlchemy/Alembic backend.
+
+### Pinned Stack for this Repository: Archetype 1 (Client-Side Static PWA)
+
+- **Runtime & Architecture**: Client-side transitional hybrid (classic script `legacy-app.js` + ES Modules in `src/main.js` and feature modules), native browser APIs.
+- **UI & Layout**: Vanilla JS + Bootstrap 5 CSS + custom styles. **No React, Vue, Svelte, or JSX.**
+- **Build & Dev Tooling**: Vite (dev server & bundle preview), Node.js (scripts & tooling).
+- **Testing Engine**: Vitest (unit testing) + Playwright (browser e2e specs).
+- **Security & Crypto**: Web Crypto API (`SubtleCrypto` AES-GCM / PBKDF2), zero unencrypted cloud transmission.
+- **Document Generation**: `pdf-lib` / `pdfjs` client-side PDF compilation, `exceljs` spreadsheets.
+- **Persistence**: Local `.sav` JSON blobs (user-selectable AES-GCM encryption with password, or optional plaintext), single-source-of-truth CSV data dictionary.
+
+### Quick Command Reference
+
+- **Build / Dev Server**: `npm run dev`
+- **Lite Unit Test**: `npx vitest run tests/unit/<spec>.spec.js`
+- **Targeted E2E**: `npx playwright test tests/e2e/<spec>.spec.ts`
+- **Data Model Verification**: `npm run verify:data-model`
+- **Full Regression (Ask First)**: `npm test`
+
+---
+
 ## 1. Git & Execution Discipline
 
 - **Direct to Master**: Commit and push directly to `master`. Never create feature branches.
@@ -101,3 +129,35 @@ implementation or review to discover.
 - **Security & Sensitivity**: New stored data needs an explicit sensitivity classification and a stated threat model — what it actually protects against, and what it doesn't — never implying a stronger guarantee than the mechanism provides.
 - **UI/UX Consistency**: Prefer this app's existing patterns (card layout, label conventions, accessibility structure) over inventing a new one, and name the pattern being reused.
 - **Legal/Compliance Framing**: Never assert or resolve a legal-sufficiency question in a planning document — flag it for a qualified person to check, and be precise about what this app's own validation does and does not guarantee.
+
+---
+
+## 9. Form Architecture & 3-Tier Target Composition
+
+When scaffolding new forms or executing authorized milestone refactors, adhere to a 3-tier hierarchical component target:
+
+```text
+Tier 1: Atomic Field Primitives (types, masks, formatting, validation attributes)
+   ↓
+Tier 2: Centrally Managed Card Templates (identity, case header, attorney, demographics)
+   ↓
+Tier 3: Declarative Form Composition (pages assemble sequences of cards)
+```
+
+- **Tier 1 (Field Primitives)**: Centralize atomic field renderers (text, date, currency, phone, masked SSN/EIN, tri-state radios) in `src/core/form/form-fields.js`. Prefer canonical primitives for new fields over writing raw, unadorned `<input>` tags.
+- **Tier 2 (Card Templates)**: Centralize common structural sections (e.g. Case Caption, Ward Demographics, Guardian & Attorney Information) as reusable card components consuming Tier 1 primitives.
+  - *Collection Grid Boundary*: Collection cards with divergent statutory schemas (e.g. accounting asset schedules vs. plan residence logs) must use **form-specific row factories** (Section 3) to prevent cross-form schema bleeding.
+- **Tier 3 (Form Composition)**: Form pages act as declarative orchestrators composing card templates and form-specific collections, keeping lifecycle logic (mount/dispose/nav) separate from DOM markup generation.
+- **Scope & Legacy Maintenance**: Existing forms contain legacy markup and specialized controls (e.g. `Plan Annual`, `Guardian Inventory`). Localized bug fixes and maintenance tasks to existing form views must not be blocked by, nor forced into, an unauthorized whole-form 3-tier refactor.
+
+---
+
+## 10. UI Styling & Design System Governance
+
+- **Authoritative Styles**: `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is the authoritative source of truth for this repository's design system. The `templates/ui-starter/` directory serves as reference starter boilerplate for greenfield projects.
+- **Design Tokens**: Standardize UI colors on semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`). Avoid arbitrary hardcoded hex values in component stylesheets.
+  - *Allowed Exceptions*: Token definitions themselves, vendor styles, print/court-document output styles (which remain intentionally hardcoded for print fidelity), embedded SVG assets, and high-contrast accessibility overrides.
+- **Dark/Light Theme Engine**: Support both Light and Dark modes using `tokens.css`. Use a synchronous `<head>` pre-paint script (`src/prepaint.js`) to avoid theme flash (FOUC) on startup.
+- **UI Preference Persistence**: Theme and other pure UI-only display preferences (not case/filing data) belong in `localStorage`, never in `.sav`/case state — they carry nothing sensitive and must be readable synchronously before first paint, which an encrypted or async-loaded case file cannot guarantee. Current `legacy-app.js` theme handling does not yet follow this (theme still lives in `.sav` app state); closing that gap is an independently gated Milestone 40 candidate, not yet authorized.
+- **Iconography**: Use the lightweight SVG icon system (`icons.js` / `ic(name, size)`). When using icons inside interactive controls (`<button>`, `<a>`), always supply an accessible name via `aria-label`, `title`, or visible text.
+- **Card & Summary Anatomy**: Use standardized `.entry-card` and `.summary-box` classes with scoped container queries (`cards.css`) for consistent multi-column responsive layout across screens.
