@@ -44,6 +44,8 @@
 .pdf-preview-blocked-group>ul{grid-column:1/-1;margin:.2rem 0 0;padding-left:1.1rem;font-size:.82rem;color:var(--ink-3);}
 .pdf-preview-blocked-single{grid-column:1/-1;font-size:.82rem;color:var(--ink-3);}
 .pdf-preview-blocked-group>ul>li{margin:.12rem 0;}
+.pdf-preview-blocked-jump{font-size:inherit;line-height:inherit;color:var(--primary-color,#0d6efd);}
+.pdf-preview-blocked-jump:hover{text-decoration:underline;}
 .pdf-preview-draft-notice{max-width:34rem;margin:0 auto 1.25rem;padding:.7rem .95rem;background:color-mix(in srgb,var(--warn-text) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn-text) 45%,var(--line));border-radius:var(--r-sm);color:var(--warn-text);font-size:.85rem;font-weight:600;text-align:center;}
 
 .pdf-page{position:relative;background:#fff;border:1px solid #d0dae8;border-radius:4px;margin:0 auto 1.5rem;box-shadow:var(--sh-2);}

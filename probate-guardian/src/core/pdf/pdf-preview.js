@@ -26,6 +26,7 @@ import { AnnotationSession, computeContentFingerprint } from './pdf-annotate.js'
 import { announceStatus } from '../status/live-region.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
+import { adaptValidationErrors } from '../validation/validation-adapter.js';
 
 // Milestone 39-A: base64 round-trip for a persisted annotated PDF
 // (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
@@ -211,22 +212,49 @@ function refreshPreviewPager() {
 // "<section> — <detail>", so the section is the natural grouping key, and the
 // leading token of it collapses "D-2 Preparer" and "D-2 Attorney" onto the one
 // schedule the filer would actually navigate to.
-function groupPreflightMessages(messages) {
+//
+// Milestone 39-E: grouping now runs on adaptValidationErrors()'s own
+// structured split (the same section/detail parse this used to redo ad hoc)
+// so each item also carries the route/path the resolver already computed --
+// letting each one become a real jump-to-field link instead of static text,
+// reusing the exact resolver renderLocalSectionGuidance() already calls for
+// this same purpose elsewhere.
+function groupStructuredIssues(structured) {
   const groups = new Map();
-  for (const raw of messages) {
-    const text = String(raw).trim();
-    const dash = text.indexOf('—');
-    const section = dash > 0 ? text.slice(0, dash).trim() : '';
-    const detail = dash > 0 ? text.slice(dash + 1).trim() : text;
+  for (const issue of structured) {
+    const section = issue.section || '';
     const key = section ? section.split(/\s+/)[0] : 'General';
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(section && section !== key ? `${section.slice(key.length).trim()} — ${detail}` : detail);
+    const text = section && section !== key ? `${section.slice(key.length).trim()} — ${issue.label}` : issue.label;
+    groups.get(key).push({ text, route: issue.route, path: issue.path });
   }
   return groups;
 }
 
-function blockedPanelHTML(messages) {
-  const groups = groupPreflightMessages(messages);
+// The global `[data-form-action]` click delegation (src/form-events.js)
+// already handles "jump-to-field" for every other page's own local guidance
+// -- Print Preview needs no new listener, just this same markup. A missing
+// `path` still degrades gracefully: focusFieldByPath() navigates to `route`
+// (resolveRouteFromSection() always resolves to at least '/') and simply
+// finds nothing to focus, rather than doing nothing at all.
+//
+// data-jump-path, not data-field-path: focusFieldByPath()'s own findTarget()
+// searches for the real field by, among others, a `[data-field-path=...]`
+// selector -- a button carrying that same attribute name IS a match for its
+// own selector. renderLocalSectionGuidance()'s identical-looking button
+// never hits this, only by DOM-order luck: it always sits below the real
+// field on the very page it names, so querySelector finds the real field
+// first. Print Preview's jump link points at a field on a *different*
+// route entirely, so when it's the only match in the current DOM, it gets
+// mistaken for its own target -- confirmed live: the button received focus
+// instead of navigating anywhere.
+function jumpLinkHTML(item) {
+  return `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start pdf-preview-blocked-jump" data-form-action="jump-to-field" data-route="${escapeHtml(item.route || '')}" data-jump-path="${escapeHtml(item.path || '')}">${escapeHtml(item.text)}</button>`;
+}
+
+function blockedPanelHTML(messages, filingType) {
+  const structured = adaptValidationErrors(messages, filingType);
+  const groups = groupStructuredIssues(structured);
   const total = messages.length;
   // A section with one item reads better on the section's own line than as a
   // one-entry nested list -- and most of a blank filing's sections are exactly
@@ -235,8 +263,8 @@ function blockedPanelHTML(messages) {
     <span class="pdf-preview-blocked-section">${escapeHtml(section)}</span>
     <span class="pdf-preview-blocked-count">${details.length}</span>
     ${details.length === 1
-      ? `<span class="pdf-preview-blocked-single">${escapeHtml(details[0])}</span>`
-      : `<ul>${details.map((d) => `<li>${escapeHtml(d)}</li>`).join('')}</ul>`}
+      ? `<span class="pdf-preview-blocked-single">${jumpLinkHTML(details[0])}</span>`
+      : `<ul>${details.map((d) => `<li>${jumpLinkHTML(d)}</li>`).join('')}</ul>`}
   </li>`).join('');
   return `<div class="pdf-preview-blocked no-print">
     <p class="pdf-preview-blocked-title">Preview blocked</p>
@@ -333,7 +361,7 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     // Announce the count, not the list -- an assertive region reading fifty
     // items aloud is worse than useless. The list is on the page to be read.
     announceStatus(`Preview is blocked. ${authorization.issues.length} required items are still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
-    container.innerHTML = blockedPanelHTML(authorization.issues.map(issue => issue.message));
+    container.innerHTML = blockedPanelHTML(authorization.issues.map(issue => issue.message), D.inventoryType);
     container.querySelector('[data-preview-action="override"]')
       ?.addEventListener('click', () => {
         if (authorization.status === 'blocked') return;

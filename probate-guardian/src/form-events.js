@@ -36,7 +36,18 @@ document.addEventListener('click', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement) return;
   switch (actionElement.dataset.formAction) {
-    case 'jump-to-field': focusFieldByPath(actionElement.dataset.route, actionElement.dataset.fieldPath); break;
+    // Milestone 39-E: Print Preview's cross-route jump links carry
+    // data-jump-path, not data-field-path -- focusFieldByPath()'s own
+    // findTarget() treats `[data-field-path=...]` as one way to locate the
+    // REAL target field, so a button using that same attribute name IS a
+    // match for its own selector. renderLocalSectionGuidance()'s
+    // same-route buttons (data-field-path, unchanged) never hit this: the
+    // real field is always already on the page they're rendered into, so
+    // querySelector finds it first in DOM order. A cross-route link has no
+    // such field in the current DOM, so its own button becomes the only
+    // match and gets mistaken for the target -- confirmed live before this
+    // fix (the button received focus instead of navigating anywhere).
+    case 'jump-to-field': focusFieldByPath(actionElement.dataset.route, actionElement.dataset.jumpPath || actionElement.dataset.fieldPath); break;
     case 'add-plan-row': window.addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
     case 'add-plan-guardian': window.addPlanGuardian(actionElement.dataset.route); break;
     case 'remove-plan-guardian': window.removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;

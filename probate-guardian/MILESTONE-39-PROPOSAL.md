@@ -22,8 +22,12 @@ background-transparency luminance-threshold fix itself is also landed** (see
 its own "Verification Plan" for what was run). **The rollout is now also
 landed for Guardian Inventory, the last and most card-heavy filing type** —
 39-C's own rollout is now complete across every filing type in the
-inventory table. 39-D and 39-E remain a
-recommendation-recorded draft — do not implement yet.** What started as
+inventory table. **39-E: landed and verified** — Print Preview's blocked
+panel now resolves a working jump-to-field link for every filing type,
+reusing `validation-adapter.js`'s existing resolver (see "39-E: Print
+Preview Missing-Signature Navigation" below for what changed, including a
+real cross-route jump-link bug found and fixed along the way). 39-D remains
+a recommendation-recorded draft — do not implement yet.** What started as
 one research conversation (ephemeral PDF annotation for Print Preview) grew,
 over several rounds of review, into two architecturally distinct
 capabilities plus a substantial cross-filing-type rollout. It is now split
@@ -1383,6 +1387,49 @@ focuses the correct field. Not a data-model change — no
 `probate-guardian-data-model.csv` update needed for 39-E. Add the new test
 file to `TEST-INDEX.md`.
 
+### Status: landed and verified
+
+Implemented as scoped: `pdf-preview.js`'s `blockedPanelHTML()` now calls
+`adaptValidationErrors(messages, D.inventoryType)` instead of its own ad hoc
+prefix-split grouping, keeping the exact same visual grouping/heading
+behavior (same "first token of section" key, same collapsed single-item
+vs. nested-list layout) but with each item now carrying the resolver's own
+`route`/`path`. Item 2 of the plan (new `validation-adapter.js` routing
+branches for 39-B's tri-state messages) turned out to already be done —
+the 39-C completion pass fixed exactly this gap across every
+`checkSignatureState()` call site in the codebase (see 39-C's own findings
+above). `D.inventoryType` (already set on every ward at creation) was
+enough to supply the filing type — no signature change to `mountPdfPreview()`
+itself was needed, since `D` was already passed in.
+
+- **A real, cross-route-specific bug found and fixed, not present in the
+  reused mechanism's original single-route use.** `renderLocalSectionGuidance()`'s
+  existing jump button and `focusFieldByPath()`'s own `findTarget()` both
+  use the attribute name `data-field-path` — the button carries the
+  target's path under that name, and `findTarget()` also checks
+  `[data-field-path=...]` as one way to locate the real field. This never
+  misfired for `renderLocalSectionGuidance()` only because that guidance is
+  always local to the very page the field is already on, so
+  `querySelector` finds the real field first in DOM order. Print Preview's
+  jump links are inherently cross-route (the field is never in the current
+  DOM), so the button became the *only* match and got mistaken for its own
+  target — confirmed live: clicking it focused the button itself and never
+  navigated anywhere. Fixed by giving Print Preview's own button a
+  non-colliding attribute, `data-jump-path`, and teaching the one shared
+  `jump-to-field` click handler (`form-events.js`) to prefer it, falling
+  back to `data-field-path` for `renderLocalSectionGuidance()`'s unchanged,
+  already-tested button — zero behavior change to the existing mechanism,
+  confirmed via the existing `form-entry-ux.spec.ts`/`navigation-status.contract.spec.ts`
+  tests that depend on its exact current attribute shape.
+- Two new e2e tests in `tests/e2e/print-preview-signature-jump.spec.ts`:
+  Plan Simplified's Guardian card (the 39-B pilot's own scalar/collection-row
+  shape) and Guardian Inventory's Preparer card (proving the different
+  section-embedded `roleLabel: ''` message shape 39-C's Guardian Inventory
+  rollout introduced resolves correctly too). Both pass. Full unit suite
+  (447 tests) and the broader `pdf-preview-viewer.spec.ts`/
+  `form-entry-ux.spec.ts`/`navigation-status.contract.spec.ts`/
+  `signature-capture.contract.spec.ts` regression re-run clean.
+
 ---
 
 ## Related, Out-of-Scope Work
@@ -1432,6 +1479,8 @@ Order and Dependencies."
   design, the single-ward export/import fix (confirmed necessary — see
   Design above), and the storage-growth question are resolved with the
   requester.
-- **39-E** depends on 39-B: it needs 39-B's new signature-state error
-  messages and validation-adapter routing branches to exist before its own
-  jump-to-link work has anything real to resolve.
+- **39-E**: landed and verified — depended on 39-B's signature-state error
+  messages and 39-C's `validation-adapter.js` routing branches, both of
+  which now exist for every filing type (see "39-E: Print Preview
+  Missing-Signature Navigation" above and its own "Status" for what
+  landed). 39-E has no remaining scope.
