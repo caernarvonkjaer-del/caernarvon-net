@@ -14,6 +14,9 @@ export const SCHEDULE_SCHEMAS = {
       officeStreet: '',
       officeCityStateZip: '',
       signatureDate: '',
+      // Milestone 39-C
+      signatureState: '',
+      signatureImage: '',
     }),
     label: 'Co-Guardian',
     floor: 1,

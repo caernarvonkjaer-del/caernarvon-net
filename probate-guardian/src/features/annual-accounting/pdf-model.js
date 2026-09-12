@@ -236,6 +236,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
       signature: formatSig(g.name),
       signatureStyle,
       signatureDate: fmtD(g.signatureDate),
+      // Milestone 39-C
+      signatureState: g.signatureState || '',
+      signatureImage: g.signatureImage || '',
       details: {
         'Phone': g.phone || '',
         'SSN / EIN': maskSSN(g.ssn || ''),
@@ -286,6 +289,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
         signature: formatSig(p.name),
         signatureStyle,
         signatureDate: fmtD(p.signatureDate),
+        // Milestone 39-C
+        signatureState: p.signatureState || '',
+        signatureImage: p.signatureImage || '',
         details: {
           'Phone': p.phone || '',
           'SSN / EIN': maskSSN(p.ssn || ''),
@@ -317,6 +323,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
         signature: formatSig(d.attorney),
         signatureStyle,
         signatureDate: fmtD(d.attorney_signatureDate),
+        // Milestone 39-C
+        signatureState: d.attorney_signatureState || '',
+        signatureImage: d.attorney_signatureImage || '',
         details: {
           'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
           'Phone': d.attorney_phone || '',
@@ -979,6 +988,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
     signature: formatSig(d.attorney),
     signatureStyle,
     signatureDate: fmtD(d.certAttySignDate),
+    // Milestone 39-C
+    signatureState: d.certAttySignatureState || '',
+    signatureImage: d.certAttySignatureImage || '',
     details: {
       'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
       'Phone': d.attorney_phone || '',

@@ -4,6 +4,8 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/fo
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { createSimplifiedGuardian, getSimplifiedGuardianAddressConflicts, normalizeSimplifiedGuardianCompatibility, resolveSimplifiedGuardianAddressConflict } from './guardian-compatibility.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -44,6 +46,8 @@ let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
 const eventControllers = new WeakMap();
+// Milestone 39-C: see plan-annual/index.js's identical comment.
+const signatureHandles = new WeakMap();
 
 function bindEvents(container) {
   eventControllers.get(container)?.abort();
@@ -158,12 +162,22 @@ export async function mount(container, page) {
   bindEvents(container);
   container.scrollTop = 0;
   if (page === '/' || !page) linkAccordions('instructionsZoneSimplified', 'importZoneCover');
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/p4' || page === '/p5' || page === '/p6') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      route: page,
+    }));
+  }
   if (page === '/print') await _printModule.mountPreview();
 }
 
 export function dispose(container) {
   eventControllers.get(container)?.abort();
   eventControllers.delete(container);
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -461,6 +475,7 @@ function pagePart4(){
         <div class="row g-2">
           <div class="col-md-6">${renderFormField({ path: `guardians.${i}.name`, label: `${labels[i]||`Co-Guardian #${i+1}`}'s Name`, value: g.name, required: true })}</div>
           <div class="col-md-3">${renderFormField({ path: `guardians.${i}.signatureDate`, label: 'Signature Date', value: g.signatureDate, type: 'date', required: true, id: `guardians_${i}_sigDate` })}</div>
+          <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/p4', signatureImage: g.signatureImage })}</div>
           <div class="col-md-3">${renderFormField({ path: `guardians.${i}.ssn`, label: 'SSN / EIN', value: g.ssn, required: true })}</div>
           <div class="col-md-4">${renderFormField({ path: `guardians.${i}.phone`, label: 'Phone Number', value: g.phone, required: true })}</div>
           <div class="col-md-8">${renderFormField({ path: `guardians.${i}.email`, label: 'Email Address', value: g.email, type: 'email', required: true })}</div>
@@ -496,6 +511,7 @@ function pagePart5(){
             <div class="row g-2">
               <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
               <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,true)}</div>
               <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,true)}</div>
               <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
@@ -550,6 +566,7 @@ function pagePart6(){
             <div class="row g-2">
               <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
               <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate), route: '/p6', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
               <div class="col-md-3">${inpS('certAttyBarNumber','Bar Number',d.certAttyBarNumber)}</div>
               <div class="col-md-4">${inpS('certAttyPhone','Phone Number',d.certAttyPhone)}</div>
               <div class="col-md-8">${inpS('certAttyStreet','Street Address',d.certAttyStreet)}</div>
@@ -632,7 +649,16 @@ export function validateSimplified(){
     if(i>0&&!guardianHasAnyData(g))return;
     const p=gLabel[i];
     req(g.name,`Part IV — ${p} — Name`);
-    req(g.signatureDate,`Part IV — ${p} — Signature Date`);
+    // Milestone 39-C: replaces the old unconditional req(g.signatureDate,...)
+    // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
+    // rule as 39-B's Guardian pilot. name omitted: g.name is already
+    // unconditionally required immediately above.
+    errs.push(...checkSignatureState({
+      state: inferLegacySignatureState(g.signatureState, g.signatureDate),
+      date: g.signatureDate,
+      image: g.signatureImage,
+      sectionLabel: 'Part IV', roleLabel: p,
+    }));
     req(g.ssn,`Part IV — ${p} — SSN/EIN`);
     req(g.phone,`Part IV — ${p} — Phone Number`);
     req(g.email,`Part IV — ${p} — Email Address`);
@@ -651,12 +677,33 @@ export function validateSimplified(){
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
   }));
+  // Milestone 39-C: attorney_name (d.attorney) is already independently,
+  // unconditionally required at Cover ("Cover — Attorney for Guardian"
+  // above) -- name omitted here to avoid a duplicate message for the same
+  // blank field.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+    date: d.attorney_signatureDate,
+    image: d.attorney_signatureImage,
+    sectionLabel: 'Part V', roleLabel: 'Attorney',
+  }));
   req(d.certServiceDate,'Part VI — Date of Service');
   errs.push(...checkDateOrder(d.periodTo,d.certServiceDate,{
     sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Date of Service',allowSameDay:true,
   }));
   req(d.certIndicator,'Part VI — "Indicate if"');
   req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address');
+  // Milestone 39-C: certAttySignDate had no requiredness of any kind before
+  // this -- not even order-check-only (confirmed during the 39-C inventory
+  // audit). The attorney name here is the same shared `d.attorney` field
+  // Part V uses (already required at Cover), so name is omitted for the
+  // same reason as Part V's own check above.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate),
+    date: d.certAttySignDate,
+    image: d.certAttySignatureImage,
+    sectionLabel: 'Part VI', roleLabel: 'Attorney',
+  }));
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

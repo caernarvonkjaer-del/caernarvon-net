@@ -139,11 +139,15 @@ export function emptyDataSimplified() {
     depositsSettlement:'',
     serviceCharges:'',
     federalIncomeTax:'',
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:''}],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''}],
     attorney_barNumber:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_signatureDate:'',
+    // Milestone 39-C
+    attorney_signatureState:'', attorney_signatureImage:'',
     certServiceDate:'',
     certAttySignDate:'',
+    // Milestone 39-C
+    certAttySignatureState:'', certAttySignatureImage:'',
     certAttyBarNumber:'', certAttyPhone:'', certAttyStreet:'', certAttyCityStateZip:'',
     certRecipients:[
       {name:'',line2:'',line3:''},
@@ -410,12 +414,14 @@ export function emptyDataAnnual() {
     // Part II
     startingBalance:'',
     // Part III – guardians (up to 3)
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''}],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',signatureState:'',signatureImage:''}],
     // Part IV – preparer
-    preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:''},
+    preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
     // Part V – attorney
     attorney_bar:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_county:'Pinellas', attorney_signatureDate:'',
+    // Milestone 39-C
+    attorney_signatureState:'', attorney_signatureImage:'',
     // Schedules
     schA:[], schB1:[], schB2:[], schB3:[], schB4:[],
     schC:[], schD1:[], schD2:[], schD3:[], schD4:[], schD5:[],
@@ -439,6 +445,8 @@ export function emptyDataAnnual() {
     // Part X – Cert of Service
     certDate:'', certIndicator:'',
     certAttySignDate:'',
+    // Milestone 39-C
+    certAttySignatureState:'', certAttySignatureImage:'',
     certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
     // Part XI – Remuneration
     remuneration:[window.emptyRowAnnual ? window.emptyRowAnnual('remun') : {guardian:'',type:'',amount:'',description:''}]

@@ -6,6 +6,8 @@ import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-de
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -52,6 +54,8 @@ let _printModule = null;
 let _excelModule = null;
 let _lazyModulesPromise = null;
 const eventControllers = new WeakMap();
+// Milestone 39-C: see plan-annual/index.js's identical comment.
+const signatureHandles = new WeakMap();
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
@@ -104,12 +108,22 @@ export async function mount(container, page) {
   bindEvents(container);
   container.scrollTop = 0;
   if (page === '/' || !page || page === '/p1') linkAccordions('instructionsZoneAnnual', 'importZonePart1');
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/p3' || page === '/p4' || page === '/p5' || page === '/p10') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      route: page,
+    }));
+  }
   if (page === '/print') await _printModule.mountPreview();
 }
 
 export function dispose(container) {
   eventControllers.get(container)?.abort();
   eventControllers.delete(container);
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -607,6 +621,7 @@ function pagePart3Annual(){
         <div class="row g-2">
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>
           <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',g.signatureDate,`D.guardians[${i}].signatureDate=this.value`,true,'date')}</div>
+          <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/p3', signatureImage: g.signatureImage })}</div>
           <div class="col-md-4">${inpDWithTooltip('SSN / EIN','ssn_ein',g.ssn,`D.guardians[${i}].ssn=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Phone Number',g.phone,`D.guardians[${i}].phone=this.value`,true)}</div>
           <div class="col-md-8">${inpD('Email Address',g.email,`D.guardians[${i}].email=this.value`,true)}</div>
@@ -647,6 +662,7 @@ function pagePart4Annual(){
           <div class="row g-2">
             <div class="col-md-5">${inpD("Preparer's Name",p.name,"D.preparer.name=this.value",true)}</div>
             <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',p.signatureDate,"D.preparer.signatureDate=this.value",true,'date')}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p4', signatureImage: p.signatureImage })}</div>
             <div class="col-md-4">${inpDWithTooltip("Preparer's SSN / EIN",'ssn_ein',p.ssn,"D.preparer.ssn=this.value",true)}</div>
             <div class="col-md-4">${inpD("Preparer's Phone Number",p.phone,"D.preparer.phone=this.value",true)}</div>
             <div class="col-md-8">${inpD("Preparer's Street Address",p.street,"D.preparer.street=this.value",true)}</div>
@@ -678,6 +694,7 @@ function pagePart5Annual(){
           <div class="row g-2">
             <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
             <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",true,'date')}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",true)}</div>
             <div class="col-md-4">${inpD("Phone Number",d.attorney_phone,"D.attorney_phone=this.value",true)}</div>
             <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",true,'email')}</div>
@@ -1347,6 +1364,7 @@ function pagePart10Annual(){
           <div class="row g-2">
             <div class="col-md-5">${inpD('Attorney Name',d.attorney,"D.attorney=this.value")}</div>
             <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',d.certAttySignDate,"D.certAttySignDate=this.value",false,'date')}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate), route: '/p10', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
             <div class="col-md-4">${inpD('Bar Number',d.attorney_bar,"D.attorney_bar=this.value")}</div>
             <div class="col-md-4">${inpD('Phone Number',d.attorney_phone,"D.attorney_phone=this.value")}</div>
             <div class="col-md-8">${inpD('Street Address',d.attorney_street,"D.attorney_street=this.value")}</div>
@@ -1413,7 +1431,16 @@ export function validateAnnual(){
     if(i>0&&!guardianHasAnyData(g))return;
     const p=`Part III — Guardian #${i+1}`;
     req(g.name,`${p} — Name`);
-    req(g.signatureDate,`${p} — Signature Date`);
+    // Milestone 39-C: replaces the old unconditional req(g.signatureDate,...)
+    // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
+    // rule as 39-B's Guardian pilot. name omitted: g.name is already
+    // unconditionally required immediately above.
+    errs.push(...checkSignatureState({
+      state: inferLegacySignatureState(g.signatureState, g.signatureDate),
+      date: g.signatureDate,
+      image: g.signatureImage,
+      sectionLabel: 'Part III', roleLabel: `Guardian #${i+1}`,
+    }));
     req(g.ssn,`${p} — SSN/EIN`);
     req(g.phone,`${p} — Phone`);
     req(g.mailingStreet,`${p} — Mailing Street`);
@@ -1423,7 +1450,15 @@ export function validateAnnual(){
     }));
   });
   req(d.preparer.name,'Part IV — Preparer Name');
-  req(d.preparer.signatureDate,'Part IV — Preparer Signature Date');
+  // Milestone 39-C: replaces the old unconditional
+  // req(d.preparer.signatureDate,...) -- name omitted: d.preparer.name is
+  // already unconditionally required immediately above.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(d.preparer.signatureState, d.preparer.signatureDate),
+    date: d.preparer.signatureDate,
+    image: d.preparer.signatureImage,
+    sectionLabel: 'Part IV', roleLabel: 'Preparer',
+  }));
   req(d.preparer.ssn,'Part IV — Preparer SSN/EIN');
   req(d.preparer.phone,'Part IV — Preparer Phone');
   req(d.preparer.street,'Part IV — Preparer Street');
@@ -1435,7 +1470,18 @@ export function validateAnnual(){
   req(d.attorney_phone,'Part V — Attorney Phone');
   req(d.attorney_street,'Part V — Attorney Street');
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
-  req(d.attorney_signatureDate,'Part V — Attorney Signature Date');
+  // Milestone 39-C: replaces the old unconditional
+  // req(d.attorney_signatureDate,...). Unlike Preparer/Guardian above,
+  // d.attorney (the attorney's own name) is never required anywhere in this
+  // validator -- checked directly, confirmed absent -- so name IS passed
+  // here to avoid a silent "/s/"/Stamp pass with no typed name.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+    name: d.attorney,
+    date: d.attorney_signatureDate,
+    image: d.attorney_signatureImage,
+    sectionLabel: 'Part V', roleLabel: 'Attorney',
+  }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Attorney Signature Date',allowSameDay:true,
   }));
@@ -1446,6 +1492,18 @@ export function validateAnnual(){
     sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Certificate of Service Date',allowSameDay:true,
   }));
   req(d.certRecipients?.[0]?.name,'Part X — Recipient 1 Name');
+  // Milestone 39-C: certAttySignDate had no requiredness of any kind before
+  // this -- not even order-check-only (confirmed during the 39-C inventory
+  // audit). name is passed for the same reason as Part V above -- this
+  // card's "Attorney Name" field is the same shared, never-independently-
+  // required d.attorney field.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate),
+    name: d.attorney,
+    date: d.certAttySignDate,
+    image: d.certAttySignatureImage,
+    sectionLabel: 'Part X', roleLabel: 'Attorney',
+  }));
 
   const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
   const checkRows=(rows,fields,schedLabel)=>{

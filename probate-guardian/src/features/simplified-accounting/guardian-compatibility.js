@@ -1,5 +1,6 @@
 export function createSimplifiedGuardian() {
-  return { name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '' };
+  // Milestone 39-C
+  return { name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' };
 }
 
 const pairs = [['residenceStreet', 'officeStreet'], ['residenceCityStateZip', 'officeCityStateZip']];

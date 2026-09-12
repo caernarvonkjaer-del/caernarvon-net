@@ -436,6 +436,15 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
     d.guardians[0] = { ...d.guardians[0], name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
     d.preparer = { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
     Object.assign(d, {
+      // Milestone 39-C: d.attorney (the attorney's own printed name) was
+      // never set here before -- harmless while attorney_signatureDate had
+      // no completeness check of its own, but validateAnnual()'s new
+      // checkSignatureState() call infers this legacy signatureDate as
+      // signatureState 'typed' and then correctly requires a printed name
+      // to go with it (d.attorney has no independent requirement elsewhere
+      // in validateAnnual(), confirmed directly) -- a real, if narrow,
+      // pre-existing gap this fixture happened not to exercise before.
+      attorney: 'Sample Attorney',
       attorney_bar: '123456',
       attorney_phone: '555-555-5555',
       attorney_street: '123 Main St',

@@ -15,14 +15,15 @@ renderer in `src/core/pdf/pdf-engine.js` and Plan Simplified's own
 `tests/e2e/signature-capture.contract.spec.ts`. See each sub-milestone's own
 "Persistence design"/"Implementation Plan" and "Spike results" sections for
 what was built and what was learned building it. **39-C: both authorization
-gates cleared, and the rollout to Plan Annual, Plan Initial, and Plan Minor
-is landed** (see "39-C: Multi-Role, Multi-Filing-Type Rollout" below for
-what changed and its own "Verification Plan" for what was run). The
-remaining 39-C scope — Simplified/Annual Accounting and Guardian Inventory,
-and the Upload background-transparency luminance-threshold fix itself —
-has not been started; each begins only on the requester's explicit
-go-ahead, same discipline as every other sub-milestone. 39-D and
-39-E remain a recommendation-recorded draft — do not implement yet.** What started as
+gates cleared, and the rollout is landed for Plan Annual, Plan Initial, Plan
+Minor, Simplified Accounting, and Annual/Final/Trust Accounting** (see
+"39-C: Multi-Role, Multi-Filing-Type Rollout" below for what changed and
+its own "Verification Plan" for what was run). The remaining 39-C scope —
+Guardian Inventory (the last, most-card-heavy type) and the Upload
+background-transparency luminance-threshold fix itself — has not been
+started; each begins only on the requester's explicit go-ahead, same
+discipline as every other sub-milestone. 39-D and 39-E remain a
+recommendation-recorded draft — do not implement yet.** What started as
 one research conversation (ephemeral PDF annotation for Print Preview) grew,
 over several rounds of review, into two architecturally distinct
 capabilities plus a substantial cross-filing-type rollout. It is now split
@@ -933,6 +934,48 @@ Simplified/Annual Accounting and Guardian Inventory remain unstarted.
   since fixing `validatePlanInitial()` is outside 39-C's scope — flagged
   here for the requester to prioritize separately.
 
+**Simplified Accounting and Annual/Final/Trust Accounting: done, verified.**
+Every card in the inventory table above for these two feature families now
+has the tri-state control — Simplified Accounting's Guardian, Attorney, and
+Attorney Certificate of Service; Annual/Final/Trust Accounting's Guardian,
+Preparer, Attorney, and Attorney Certificate of Service.
+
+- **Neither feature family has a `planReadinessChecksX()`-style readiness
+  panel at all — checked directly.** Milestone 37-3's readiness/export
+  parity mechanism (`auto`/`manual` arrays, the drift this milestone's own
+  Plan-family rollout had to keep in sync) was built specifically for the
+  four Plan types; Simplified and Annual/Final/Trust Accounting rely solely
+  on `computeNavChecks()`'s legacy sidebar checklist, with no separate
+  structured readiness object to drift from. This rollout therefore touched
+  only each type's validator, `pdf-model.js`, and data model — no
+  readiness-panel changes were needed or possible.
+- **A second real, pre-existing gap surfaced, this one caused by this
+  rollout's own change, not independent of it — found and fixed, not just
+  flagged.** `tests/e2e/support/target.ts`'s `fillMinimalValidAnnualWard()`
+  sets `attorney_signatureDate` but never `d.attorney` (the attorney's
+  printed name). This was harmless before 39-C, since `attorney_signatureDate`
+  had no completeness check of any kind; `validateAnnual()`'s new
+  `checkSignatureState()` call correctly infers the existing date as legacy
+  `signatureState: 'typed'` and then requires a name to go with it (`d.attorney`
+  has no independent requirement anywhere in `validateAnnual()`, confirmed
+  directly) — surfacing a real, if narrow, latent gap: a signed attorney
+  date with no attorney name was previously accepted as a "complete" filing.
+  Fixed by adding `attorney: 'Sample Attorney'` to the fixture (matching
+  what a real minimal-valid filing should already have looked like);
+  re-verified the 5 other e2e specs sharing this fixture
+  (`annual-field-formatting`, `annual-mount`, `filing-identity.contract`,
+  `output-semantics.artifact`, `pdf-evidence-lab`, `pdf-preview-viewer`) all
+  still pass.
+- **The two Certificate-of-Service Attorney cards found during the
+  Inventory Gate audit needed real CSV work, not a clean addition.**
+  Simplified Accounting's Part VI `certAttySignDate` row already existed
+  (as `optional`, matching its prior zero-enforcement state) and only
+  needed narrowing to `conditional`. Annual/Final/Trust Accounting's Part X
+  `certAttySignDate` also already had a row this pass initially missed on
+  first pass -- inserting a duplicate was caught immediately by
+  `verify-data-model`'s own duplicate-key check, corrected by updating the
+  existing row in place instead.
+
 ### Verification Plan (39-C)
 
 Per filing type landed: extend 39-B's `tests/e2e/signature-capture.contract.spec.ts`
@@ -974,6 +1017,36 @@ description update reflecting the file's growing scope as each type lands.
    Attorney scalars, plus Minor's Preparer scalar; existing signatureDate/
    requiredness rows narrowed to reference the new field where applicable),
    `npm run verify:data-model` passing (856 rows). `TEST-INDEX.md` updated.
+
+**Simplified Accounting and Annual/Final/Trust Accounting — landed and run:**
+
+1. `tests/e2e/signature-capture.contract.spec.ts` extended with 9 more new
+   tests (26 total in the file): a Guardian legacy-migration/Unsigned/
+   incomplete-"/s/" cycle and a Stamp-draw-and-apply-paint test per feature
+   family, plus blank-passes/Stamp-paints coverage for Simplified
+   Accounting's Attorney and Attorney-Certificate-of-Service cards and
+   Annual/Final/Trust Accounting's Preparer, Attorney, and Attorney-
+   Certificate-of-Service cards. All 26 tests pass.
+2. No unit-test parity suite exists for these two feature families (see
+   the "no `planReadinessChecksX()`-style readiness panel" finding above) —
+   verification for validator-level correctness runs through the e2e suite
+   above instead, which exercises the real `validateSimplified()`/
+   `validateAnnual()` export-blocking path end to end. `tests/unit/checklist-export-parity.spec.js`'s
+   known-gaps allow-list extended for `validateAnnual()`'s new field
+   references (`attorney`, `attorney_signatureState/Image`,
+   `certAttySignDate`, `certAttySignatureState/Image`).
+3. Full unit suite (440 tests, 50 files), the broader PDF/signature e2e
+   regression (same 4 files as above, 16 e2e tests), and
+   `simplified-mount.spec.ts`/`annual-mount.spec.ts` (28 e2e tests total)
+   re-run clean after touching the shared `signature-state-control.js`
+   module and both `pdf-model.js` files.
+4. `probate-guardian-data-model.csv` updated (14 new rows across both
+   feature families: signatureState/signatureImage for each type's Guardian
+   row and Attorney scalar, Annual's Preparer nested object, and both
+   types' newly-documented Certificate-of-Service Attorney scalar; existing
+   signatureDate/requiredness rows narrowed to reference the new field
+   where applicable), `npm run verify:data-model` passing (870 rows).
+   `TEST-INDEX.md` updated.
 
 ---
 
@@ -1202,11 +1275,12 @@ Order and Dependencies."
   previously-missed card found and added) and the Upload
   background-transparency gate (resolved: luminance-threshold background
   removal, scoped as its own spike within 39-C, not yet built). **Rollout
-  landed and verified for Plan Annual, Plan Initial, and Plan Minor** (see
-  "Recommended sequencing" and "Verification Plan (39-C)" above). Remaining
-  scope — Simplified/Annual Accounting, Guardian Inventory, and the Upload
-  luminance-threshold fix itself — still requires the requester's explicit
-  go-ahead before starting, matching 39-A/39-B's own authorization pattern.
+  landed and verified for Plan Annual, Plan Initial, Plan Minor, Simplified
+  Accounting, and Annual/Final/Trust Accounting** (see "Recommended
+  sequencing" and "Verification Plan (39-C)" above). Remaining scope —
+  Guardian Inventory and the Upload luminance-threshold fix itself — still
+  requires the requester's explicit go-ahead before starting, matching
+  39-A/39-B's own authorization pattern.
 - **39-D** may not be authorized until the compound party+entry reference
   design, the single-ward export/import fix (confirmed necessary — see
   Design above), and the storage-growth question are resolved with the

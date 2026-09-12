@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 import {
-  freshStartNoPassword, createWard,
+  freshStartNoPassword, createWard, createSimplifiedWard,
   fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanAnnualWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
+  fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard,
 } from './support/target';
 
 // Milestone 39-B: three-state signature control (Unsigned / "/s/" Signed /
@@ -431,5 +432,199 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-minor', 'buildPlanMinorModel')).toBe(true);
+  });
+});
+
+// Milestone 39-C, continued: Simplified Accounting and Annual Accounting
+// (the shared 'annual' feature also serving Final/Trust Accounting, which
+// carry no separate code path -- confirmed during the 39-C inventory audit,
+// so testing 'annual' alone covers all three). Guardian is the
+// collection-row shape (same as the Plan-family rollout above); Preparer
+// (Annual only) is nested-object; Attorney and the Certificate-of-Service
+// Attorney cards are the scalar shape.
+test.describe('Milestone 39-C: signature state control rollout -- Simplified Accounting', () => {
+  async function gotoPage(page: import('@playwright/test').Page, route: string, groupPath: string) {
+    await page.evaluate((r) => (window as any).navigate(r), route);
+    await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
+  }
+
+  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'SA Sig Ward');
+    await fillMinimalValidSimplifiedWard(page); // sets signatureDate, never signatureState
+    await gotoPage(page, '/p4', 'guardians.0');
+
+    await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
+    await page.waitForTimeout(200);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+
+    await gotoPage(page, '/p4', 'guardians.0');
+    await page.evaluate(() => { (window as any).D.guardians[0].signatureDate = ''; });
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
+    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+  });
+
+  test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'SA Sig Stamp Ward');
+    await fillMinimalValidSimplifiedWard(page);
+    await gotoPage(page, '/p4', 'guardians.0');
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('signature canvas not visible');
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
+    await page.mouse.up();
+    await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
+    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
+  });
+
+  test('Attorney (Part V) and Attorney Certificate of Service (Part VI) Signature Stamp both paint an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'SA Sig Attorney Stamp Ward');
+    await fillMinimalValidSimplifiedWard(page); // sets attorney name, never attorney_signatureState/certAttySignatureState
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.attorney_signatureState = 'stamp';
+      d.attorney_signatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
+
+    // Part VI's Certificate-of-Service Attorney card is a genuinely separate
+    // field (certAttySignatureState/Image, not attorney_*) -- confirmed by
+    // also exercising it, not assuming the same result as Part V above.
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.attorney_signatureState = ''; d.attorney_signatureImage = '';
+      d.certAttySignatureState = 'stamp';
+      d.certAttySignatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
+  });
+
+  test('Attorney Certificate of Service left entirely blank does not block (previously unvalidated card)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'SA Sig CoS Blank Ward');
+    await fillMinimalValidSimplifiedWard(page); // never sets certAttySignDate/certAttySignatureState
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+  });
+});
+
+test.describe('Milestone 39-C: signature state control rollout -- Annual Accounting (also Final/Trust)', () => {
+  async function gotoPage(page: import('@playwright/test').Page, route: string, groupPath: string) {
+    await page.evaluate((r) => (window as any).navigate(r), route);
+    await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
+  }
+
+  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'AA Sig Ward', 'annual');
+    await fillMinimalValidAnnualWard(page); // sets signatureDate, never signatureState
+    await gotoPage(page, '/p3', 'guardians.0');
+
+    await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
+    await page.waitForTimeout(200);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+
+    await gotoPage(page, '/p3', 'guardians.0');
+    await page.evaluate(() => { (window as any).D.guardians[0].signatureDate = ''; });
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
+    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+  });
+
+  test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'AA Sig Stamp Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    await gotoPage(page, '/p3', 'guardians.0');
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('signature canvas not visible');
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
+    await page.mouse.up();
+    await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
+    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
+  });
+
+  test('Preparer Signature Stamp applied paints an image', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'AA Sig Preparer Stamp Ward', 'annual');
+    await fillMinimalValidAnnualWard(page); // sets preparer.name, never preparer.signatureState
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.preparer.signatureState = 'stamp';
+      d.preparer.signatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
+  });
+
+  test('Attorney (Part V) with Signature Stamp selected but no image blocks, then applying it unblocks and paints', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'AA Sig Attorney Stamp Ward', 'annual');
+    await fillMinimalValidAnnualWard(page); // sets d.attorney (name) but never attorney_signatureState
+    await page.evaluate(() => { (window as any).D.attorney_signatureState = 'stamp'; });
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('body')).toContainText('Part V — Attorney signature stamp image is required', { timeout: 10000 });
+    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.attorney = 'Sample Attorney';
+      d.attorney_signatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
+  });
+
+  test('Attorney Certificate of Service (Part X) Signature Stamp applied paints an image (previously unvalidated card)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'AA Sig CoS Stamp Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    await page.evaluate((img) => {
+      const d = (window as any).D;
+      d.certAttySignatureState = 'stamp';
+      d.certAttySignatureImage = img;
+    }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+    expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
   });
 });

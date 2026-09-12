@@ -135,7 +135,17 @@ describe('checklist and export validator field parity', () => {
     planSimplified: ['attorney_signatureDate', 'preparer_signatureDate'],
     planMinor: ['amendedForm', 'amendedVersion', 'attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState', 'ref', 'ucn'],
     planInitial: ['attorney_signatureImage', 'attorney_signatureState'],
-    annual: ['amendedForm'],
+    // Milestone 39-C: `attorney`/`attorney_signatureState`/`attorney_signatureImage`
+    // are new here for the same reason as planAnnual's own `attorney` entry
+    // above -- d.attorney is never independently required anywhere in
+    // validateAnnual(), confirmed directly, so checkSignatureState()'s name
+    // argument is passed for both the Part V and Part X attorney cards,
+    // making `d.attorney` a real reference inside this function's body for
+    // the first time. `certAttySignDate`/`certAttySignatureState`/
+    // `certAttySignatureImage` are new because Part X's attorney card had no
+    // requiredness of any kind before this (also confirmed during the 39-C
+    // inventory audit) -- computeNavChecks() never tracked it either.
+    annual: ['amendedForm', 'attorney', 'attorney_signatureImage', 'attorney_signatureState', 'certAttySignDate', 'certAttySignatureImage', 'certAttySignatureState'],
   };
 
   const BRANCH_MARKERS = {

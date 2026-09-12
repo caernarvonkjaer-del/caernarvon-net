@@ -165,6 +165,9 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       signature: formatSig(g.name),
       signatureStyle,
       signatureDate: fmtDate(g.signatureDate),
+      // Milestone 39-C
+      signatureState: g.signatureState || '',
+      signatureImage: g.signatureImage || '',
       details: {
         'Phone': g.phone || '',
         'SSN/EIN': maskSSN(g.ssn || ''),
@@ -214,6 +217,9 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         signature: formatSig(d.attorney),
         signatureStyle,
         signatureDate: fmtDate(d.attorney_signatureDate),
+        // Milestone 39-C
+        signatureState: d.attorney_signatureState || '',
+        signatureImage: d.attorney_signatureImage || '',
         details: {
           'Florida Bar #': d.attorney_barNumber || '',
           'Phone': d.attorney_phone || '',
@@ -276,6 +282,9 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         signature: formatSig(d.attorney),
         signatureStyle,
         signatureDate: fmtDate(d.certAttySignDate),
+        // Milestone 39-C
+        signatureState: d.certAttySignatureState || '',
+        signatureImage: d.certAttySignatureImage || '',
         details: {
           'Florida Bar #': d.certAttyBarNumber || d.attorney_barNumber || '',
           'Phone': d.certAttyPhone || d.attorney_phone || '',
