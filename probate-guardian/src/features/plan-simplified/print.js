@@ -109,7 +109,10 @@ export function pagePrintPlanSimplified(){
 export async function mountPreview(){
   const baseIssues = () => [...validatePlanSimplified(), ...getSupplementalFilingIssues(window.D)];
   window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanSimplifiedModel, window.D, baseIssues);
-  await mountPdfPreview(buildPlanSimplifiedModel, window.D, baseIssues);
+  // Milestone 39-A pilot: Simplified Annual Plan is the only filing type
+  // gated into the annotation editor for this spike (MILESTONE-39-PROPOSAL.md
+  // 39-A, "Recommended Decisions" #2).
+  await mountPdfPreview(buildPlanSimplifiedModel, window.D, baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){

@@ -20,11 +20,113 @@
 // (pdfjs-dist stays a devDependency purely as the upstream source these
 // two files are copied from -- see lib/VENDORED-LIBRARIES.md.)
 import { generateCourtFormPdf } from './pdf-engine.js';
-import { finalizeCourtFormPdf } from './pdf-finalizer.js';
+import { finalizeCourtFormPdf, saveFinalizedPdf } from './pdf-finalizer.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
+import { AnnotationSession, computeContentFingerprint } from './pdf-annotate.js';
 import { announceStatus } from '../status/live-region.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
+
+// Milestone 39-A: base64 round-trip for a persisted annotated PDF
+// (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
+// spreading a large Uint8Array into String.fromCharCode at once.
+function bytesToBase64(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+function base64ToBytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+// One annotation session per mounted preview, torn down and rebuilt on every
+// re-render (MILESTONE-39-PROPOSAL.md 39-A: "the spike must add a place to
+// hold that reference for the preview's lifetime and clear it on every
+// re-render" -- renderPagesInto()'s own pdf/page locals still go out of
+// scope on every call, this is the place that survives it).
+let _annotationSession = null;
+function destroyAnnotationSession() {
+  if (_annotationSession) {
+    _annotationSession.destroy();
+    _annotationSession = null;
+  }
+}
+
+function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'pdf-annotate-toolbar no-print';
+  toolbar.setAttribute('role', 'toolbar');
+  toolbar.setAttribute('aria-label', 'Annotate PDF');
+  toolbar.innerHTML = `
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-annotate-action="toggle" aria-pressed="false">Annotate PDF</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-annotate-action="note" aria-pressed="false" hidden>Add Note</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-annotate-action="highlight" aria-pressed="false" hidden>Highlight</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-annotate-action="undo" hidden>Undo</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-annotate-action="clear" hidden>Clear Annotations</button>
+    <button type="button" class="btn btn-outline-primary btn-sm" data-annotate-action="save" hidden>Save Annotated PDF</button>
+    <span class="pdf-annotate-status" role="status" aria-live="polite"></span>
+  `;
+  container.insertBefore(toolbar, container.firstChild);
+
+  const toggleBtn = toolbar.querySelector('[data-annotate-action="toggle"]');
+  const noteBtn = toolbar.querySelector('[data-annotate-action="note"]');
+  const highlightBtn = toolbar.querySelector('[data-annotate-action="highlight"]');
+  const undoBtn = toolbar.querySelector('[data-annotate-action="undo"]');
+  const clearBtn = toolbar.querySelector('[data-annotate-action="clear"]');
+  const saveBtn = toolbar.querySelector('[data-annotate-action="save"]');
+  const statusEl = toolbar.querySelector('.pdf-annotate-status');
+  const subButtons = [noteBtn, highlightBtn, undoBtn, clearBtn, saveBtn];
+  const { NONE, FREETEXT, HIGHLIGHT } = pdfjsLib.AnnotationEditorType;
+
+  function setActiveTool(mode) {
+    noteBtn.setAttribute('aria-pressed', String(mode === FREETEXT));
+    highlightBtn.setAttribute('aria-pressed', String(mode === HIGHLIGHT));
+    session.setMode(mode);
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    const nowOn = toggleBtn.getAttribute('aria-pressed') !== 'true';
+    toggleBtn.setAttribute('aria-pressed', String(nowOn));
+    subButtons.forEach((btn) => { btn.hidden = !nowOn; });
+    if (!nowOn) setActiveTool(NONE);
+  });
+  noteBtn.addEventListener('click', () => {
+    setActiveTool(noteBtn.getAttribute('aria-pressed') === 'true' ? NONE : FREETEXT);
+  });
+  highlightBtn.addEventListener('click', () => {
+    setActiveTool(highlightBtn.getAttribute('aria-pressed') === 'true' ? NONE : HIGHLIGHT);
+  });
+  undoBtn.addEventListener('click', () => session.undo());
+  clearBtn.addEventListener('click', () => {
+    if (session.isEmpty()) return;
+    if (!window.confirm('Remove all annotations from this preview?')) return;
+    session.clearAll();
+  });
+  saveBtn.addEventListener('click', async () => {
+    try {
+      const bytes = await session.saveAnnotatedBytes();
+      const ward = (D.wardName || 'Preview').replace(/[^a-z0-9]/gi, '_');
+      saveFinalizedPdf(bytes, `${ward}_Annotated.pdf`);
+      // Persisted per 39-A's "Persistence design": the filing's own
+      // regenerated (unannotated) content fingerprint at capture time, not
+      // the annotated bytes' own content -- drift is measured against the
+      // underlying form data, which is what can silently change later.
+      D.printAnnotations = { pdfBytes: bytesToBase64(bytes), contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
+      window.markDirtySinceExport?.();
+      window.autoSave?.();
+      if (statusEl) statusEl.textContent = 'Annotations saved with this filing.';
+    } catch (e) {
+      console.error('Save Annotated PDF failed', e);
+      if (statusEl) statusEl.textContent = `Save Annotated PDF failed: ${e.message || e}`;
+    }
+  });
+}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -43,13 +145,19 @@ function escapeHtml(s) {
 // so the canvas visibly overflowed the padded box). legacy-app.js's
 // pv-pager (pvPages()/pvShowAll()/pvApply()) was generalized to recognize
 // `pdf-page` in its own right, so no compatibility class is needed here.
+// Returns the live pdfjsLib/PDFDocumentProxy/per-page render info alongside
+// the DOM side effect -- Milestone 39-A needs all three kept alive for the
+// preview's lifetime (annotation editing and Save Annotated PDF both act on
+// this same parsed document), where every prior caller only needed the DOM
+// result and let pdf/page go out of scope on return.
 async function renderPagesInto(container, pdfBytes) {
   const pdfjsLib = await ensurePdfjs();
-  const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+  const pdfDocument = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
   container.innerHTML = '';
   const scale = 1.5;
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
+  const pages = [];
+  for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+    const page = await pdfDocument.getPage(pageNum);
     const viewport = page.getViewport({ scale });
 
     const pageWrap = document.createElement('div');
@@ -71,7 +179,9 @@ async function renderPagesInto(container, pdfBytes) {
     await page.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
     const textContent = await page.getTextContent();
     await new pdfjsLib.TextLayer({ textContentSource: textContent, container: textLayerDiv, viewport }).render();
+    pages.push({ pageIndex: pageNum - 1, page, viewport, pageWrap });
   }
+  return { pdfjsLib, pdfDocument, pages };
 }
 
 function refreshPreviewPager() {
@@ -141,17 +251,62 @@ function blockedPanelHTML(messages) {
   </div>`;
 }
 
-async function renderPreviewInto(container, buildModel, D) {
+async function renderPreviewInto(container, buildModel, D, options = {}) {
   announceStatus('Generating preview…', { containerId: 'print-preview-status' });
   container.innerHTML = '<p class="pdf-preview-loading no-print" style="padding:2rem;text-align:center;color:var(--ink-3);">Generating preview…</p>';
+  destroyAnnotationSession();
   try {
     const model = buildModel(D);
     const doc = await generateCourtFormPdf(model);
     const finalizedBytes = await finalizeCourtFormPdf(doc);
-    await renderPagesInto(container, finalizedBytes);
+
+    // Milestone 39-A "Persistence design": fingerprint the fresh,
+    // *unannotated* regenerated content -- this is what drift is measured
+    // against, since that's what can silently change between sessions. A
+    // lightweight parse (no canvas render) just for the fingerprint, kept
+    // separate from the real render below so a fingerprint mismatch never
+    // costs a second full page-render pass.
+    let bytesToRender = finalizedBytes;
+    let fingerprint = null;
+    if (options.annotate) {
+      const pdfjsLib = await ensurePdfjs();
+      // No .destroy() here: PDFDocumentProxy doesn't have one (it lives on
+      // the loading task getDocument() returns, which this discards along
+      // with its .promise) -- matching renderPagesInto()'s own existing
+      // pattern of never destroying a parsed document, just letting it go
+      // out of scope. getDocument({data}) transfers the buffer to the
+      // worker (detaching it) rather than copying it -- confirmed the hard
+      // way, this must run against a copy of finalizedBytes, never the
+      // original, since renderPagesInto() below still needs an intact
+      // buffer when bytesToRender ends up being finalizedBytes itself.
+      const freshDoc = await pdfjsLib.getDocument({ data: finalizedBytes.slice() }).promise;
+      fingerprint = await computeContentFingerprint(freshDoc);
+      const stored = D.printAnnotations;
+      if (stored && stored.contentFingerprint === fingerprint && stored.pdfBytes) {
+        bytesToRender = base64ToBytes(stored.pdfBytes);
+      } else if (stored) {
+        delete D.printAnnotations;
+        window.markDirtySinceExport?.();
+        window.autoSave?.();
+        announceStatus('This filing changed since your saved annotations were made, so they were discarded.', { priority: 'assertive', containerId: 'print-preview-status' });
+      }
+    }
+
+    const { pdfjsLib, pdfDocument, pages } = await renderPagesInto(container, bytesToRender);
+
+    if (options.annotate) {
+      const session = new AnnotationSession(pdfjsLib, container, pdfDocument);
+      for (const { pageIndex, page, viewport, pageWrap } of pages) {
+        await session.addPage(pageIndex, page, viewport, pageWrap);
+      }
+      _annotationSession = session;
+      mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint);
+    }
+
     refreshPreviewPager();
     announceStatus('Preview ready.', { containerId: 'print-preview-status' });
   } catch (e) {
+    destroyAnnotationSession();
     console.error('PDF preview render failed', e);
     const isChunkError = /dynamically imported module|Failed to fetch|central directory/i.test(e?.message || '');
     const userMsg = isChunkError
@@ -165,10 +320,14 @@ async function renderPreviewInto(container, buildModel, D) {
   }
 }
 
-export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container') {
+// options.annotate: Milestone 39-A's per-filing-type gate -- opt-in only,
+// so the shared preview stays a fork-free single module while only the
+// pilot (Simplified Annual Plan) mounts the annotation editor.
+export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container', options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
   beginFreshPreview();
+  destroyAnnotationSession();
   const authorization = authorizeFilingOutput(D, baseIssues, { capability: 'preview' });
   if (authorization.status !== 'allowed') {
     // Announce the count, not the list -- an assertive region reading fifty
@@ -185,12 +344,12 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
             // remain unavailable because their output would omit data.
             if (!String(control.title || '').toLowerCase().includes('template can hold')) control.disabled = false;
           });
-          void renderPreviewInto(container, buildModel, D);
+          void renderPreviewInto(container, buildModel, D, options);
         }
       });
     return;
   }
-  await renderPreviewInto(container, buildModel, D);
+  await renderPreviewInto(container, buildModel, D, options);
 }
 
 // Print: opens the same generated PDF blob and lets the browser/OS PDF

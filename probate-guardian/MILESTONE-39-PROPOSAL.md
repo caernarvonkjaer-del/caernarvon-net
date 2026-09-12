@@ -2,14 +2,21 @@
 
 ## Status
 
-**Recommendation-recorded draft — do not implement yet.** What started as one
-research conversation (ephemeral PDF annotation for Print Preview) grew, over
-several rounds of review, into two architecturally distinct capabilities plus
-a substantial cross-filing-type rollout. It is now split into five lettered
+**39-A: spiked and landed** (`src/core/pdf/pdf-annotate.js`,
+`src/core/pdf/pdf-preview.js`, `src/styles/print.css`,
+`src/features/plan-simplified/print.js`; `tests/e2e/pdf-annotate.spec.ts`,
+`tests/unit/print-annotation-persistence.spec.js`) — see 39-A's own
+"Persistence design" and "Spike results" for what was built and what was
+learned building it. **39-B through 39-E remain a recommendation-recorded
+draft — do not implement yet.** What started as one research conversation
+(ephemeral PDF annotation for Print Preview) grew, over several rounds of
+review, into two architecturally distinct capabilities plus a substantial
+cross-filing-type rollout. It is now split into five lettered
 sub-milestones, the same discipline `MILESTONE-34-1-PROPOSAL.md` used for the
 same reason: each can be scoped, spiked, and authorized independently instead
-of as one omnibus decision. This document authorizes no runtime, dependency,
-or build change on its own — each sub-milestone below carries its own gate.
+of as one omnibus decision. Beyond 39-A's own landed spike, this document
+authorizes no further runtime, dependency, or build change on its own — each
+remaining sub-milestone below carries its own gate.
 
 ## Goal
 
@@ -207,54 +214,87 @@ can follow whenever convenient after it.
    and color — this version has no FreeText underline editor parameter,
    though it can render existing underline annotations.
 
-### Persistence design (39-A)
+### Persistence design (39-A) — built and tested, not just planned
 
-Confirmed directly against the vendored `6.3.289` build: `pdf.js` already
-has a native, serializable annotation-storage format —
-`AnnotationStorage.serializable` (a `{map, hash, transfer}` structure), and
-`page.render()` already accepts an `annotationStorage` parameter (used
-internally for the print-rendering intent — confirmed at
-`RenderingIntentFlag.PRINT` branch). This is the same structure
-`saveDocument()` already consumes. Storing and reapplying pdf.js's own
-native format is strongly preferred over inventing a bespoke annotation
-schema — it stays compatible with `saveDocument()`'s existing output path
-for free and needs no hand-serialization of each editor type's internal
-fields.
+**Status: this section describes what was actually implemented and
+empirically verified via `tests/e2e/pdf-annotate.spec.ts`
+(`src/core/pdf/pdf-annotate.js`, `src/core/pdf/pdf-preview.js`), not a
+forward-looking design.** The mechanism below corrects the version
+originally drafted here, which assumed storing pdf.js's raw
+`AnnotationStorage.serializable` map and reapplying it directly — building
+the real thing surfaced that this doesn't work the way that draft assumed
+(see "Reapply mechanism," below), and the actual shipped design instead
+persists the *full annotated PDF bytes*.
 
-- **New field:** `d.printAnnotations` — `{ storage: <pdf.js serializable
-  annotationStorage blob>, contentFingerprint: <string>, capturedAt: <iso
+- **New field:** `d.printAnnotations` — `{ pdfBytes: <base64-encoded
+  saveDocument() output>, contentFingerprint: <string>, capturedAt: <iso
   date> }`. Lives directly on the filing document itself, the same way
   39-B's `signatureImage` does — not a separate case-file-wide collection.
-- **Drift detection — the real unresolved risk persistence introduces.**
-  The PDF is regenerated fresh from `window.D` on every render; nothing
-  guarantees a given page's layout is identical between two regenerations
-  of the same filing (a longer typed answer, an added co-guardian, or any
-  future content change can shift what lands on a given page).
-  `contentFingerprint` must capture enough about the source content at
-  capture time to detect that drift on reload — candidate: page count plus
-  a hash of each page's extracted text via `page.getTextContent()`. On a
-  mismatch, discard the stored annotations with a clear warning rather
-  than reapply potentially-misplaced marks — the same discard-with-warning
-  UX Decision #3 already commits to for a same-session data change,
-  extended to also run once at load time.
-- **Reapply mechanism — the spike must confirm which of two outcomes is
-  actually achievable, not assume the better one.** Feeding the stored
-  `serializable` blob into `page.render({..., annotationStorage})` is
-  confirmed to bake annotations into a rendered page (the existing
-  PRINT-intent code path does exactly this). Whether that same stored blob
-  can also rehydrate a live, still-editable `AnnotationEditorUIManager`
-  layer — so a filer can keep editing a previously-added note, not just
-  see it — is unconfirmed and depends on internals not yet read in detail.
-  Report which is actually achievable: editable rehydration is the better
-  outcome, but a baked-in-only reapply (existing marks effectively frozen
-  once the preview closes, new annotations still addable) is an acceptable
-  fallback if rehydration proves impractical.
-- **Data model:** new `probate-guardian-data-model.csv` row for
-  `printAnnotations` on the pilot filing type. Sensitivity: a FreeText note
-  is filer-typed free text, and nothing stops a filer from typing something
-  personal into it — classify conservatively as `personal`, not `none`,
-  even though the mechanism itself introduces no new category of stored
-  data beyond whatever the filer chooses to type.
+  Storing the *whole annotated PDF*, not a bare annotation-storage diff, is
+  a real, measurable cost: this roughly doubles what a Print Preview save
+  adds to the `.sav` file relative to storing just the annotation data —
+  acceptable for a single-filing-type spike, but worth a size/compression
+  pass before any wider rollout (39-A doesn't extend to other filing types,
+  so this doesn't block the pilot; flag it if 39-A itself is ever
+  broadened beyond one type).
+- **Drift detection, as designed and now confirmed working.** The PDF is
+  regenerated fresh from `window.D` on every render; nothing guarantees a
+  given page's layout is identical between two regenerations of the same
+  filing (a longer typed answer, an added co-guardian, or any future
+  content change can shift what lands on a given page).
+  `computeContentFingerprint()` hashes page count plus each page's
+  extracted text (`page.getTextContent()`) against the fresh, *unannotated*
+  regeneration — computed via a lightweight throwaway parse (no canvas
+  render), kept deliberately separate from the real page-render pass so a
+  mismatch never costs a second full render. On a mismatch, the stored
+  annotations are discarded with an assertive announcement rather than
+  reapplied. One real bug found and fixed building this: `pdfjsLib.
+  getDocument({data})` transfers (detaches) the source buffer to the
+  worker rather than copying it, so the fingerprint pre-parse must run
+  against a **copy** of the bytes (`finalizedBytes.slice()`) — parsing the
+  same buffer twice throws `postMessage: ArrayBuffer ... already detached`.
+- **Reapply mechanism — resolved empirically, not assumed.** Two things
+  were tested directly, and they diverge from what the original draft
+  hoped for:
+  1. **The annotation itself genuinely survives as real, portable PDF
+     data.** Re-parsing the stored `pdfBytes` independently and calling
+     `page.getAnnotations({intent: 'display'})` on them returns a real
+     `{subtype: 'FreeText', ...}` annotation object — confirmed in the
+     e2e spec. This is exactly what a plain PDF annotation looks like to
+     any tool, this app included; the save/reopen round trip is not lossy
+     at the file level.
+  2. **It does not come back as a live, editable `AnnotationEditorLayer`
+     editor on its own.** Reopening a preview whose fingerprint matches a
+     stored, previously-annotated file swaps in the stored bytes for
+     display, but zero `.freeTextEditor` DOM nodes exist until the filer
+     interacts again — confirmed by counting them immediately after
+     reopen with no user action. So this milestone's own predicted
+     fallback is the actual, confirmed outcome: **baked-in-only reapply**.
+     A previously-added note is preserved and visible (baked into the
+     canvas render the same way any other PDF content is), but it is not
+     re-editable as an annotation-layer object without redrawing it. A
+     genuinely live-editable round trip would need a materially different
+     mechanism than "swap in saved bytes" — likely reconstructing editor
+     instances from `page.getAnnotations()`'s output at mount time, which
+     is real, separate follow-on work if editable persistence turns out to
+     matter, not a small extension of what's built here.
+  3. One further, smaller finding: the annotation's plain-text `Contents`
+     field on the (re-parsed, e2e-checked) FreeText object came back
+     empty even though real text was typed into it — pdf.js's own FreeText
+     serialization apparently carries the visible text elsewhere (its
+     appearance stream / rich-text representation), not the classic PDF
+     `/Contents` string. Worth confirming visually in an external viewer
+     (Implementation Plan step 4) before relying on `/Contents` for
+     anything; not chased further in this spike since it doesn't change
+     the baked-in-only conclusion above.
+- **Data model:** `probate-guardian-data-model.csv` has real rows now —
+  `printAnnotations.pdfBytes`, `.contentFingerprint`, `.capturedAt`, scoped
+  to `plan_simplified` — added in the same commit as this implementation,
+  `npm run verify:data-model` passing. Sensitivity: classified `personal`
+  (not `none`): a FreeText note is filer-typed free text, and nothing
+  stops a filer from typing something personal into it, even though the
+  mechanism itself introduces no new category of stored data beyond
+  whatever the filer chooses to type.
 - **Legacy migration:** trivial, unlike 39-B's. A `.sav` file that predates
   this field simply has no `printAnnotations` — there is no prior state to
   infer a value from; an absent field means exactly what it says, no
@@ -311,27 +351,51 @@ correctly positioned, and confirm a deliberately drifted fixture
 (regenerated with different underlying content) triggers the discard-with-
 warning path instead of misplacing marks.
 
+**Spike results — all criteria above exercised, not just designed:**
+`AnnotationEditorUIManager` needed only `container`, `viewer` (the same
+element, both roles), `eventBus` (a ~40-line faithful port of pdf.js's own
+`EventBus`, since this app vendors only pdf.js's core build, not the web/
+viewer layer that normally supplies one — no other collaborator was
+needed); the extracted CSS subset rendered FreeText/Highlight correctly
+with no full-viewer-chrome leakage; the held `AnnotationSession`/
+`PDFDocumentProxy` is destroyed and rebuilt on every `mountPdfPreview()`
+call via a module-level reference, confirmed clean across repeated
+navigations in the e2e suite; `saveDocument()`'s output was independently
+re-parsed and its `FreeText` annotation confirmed real
+(`page.getAnnotations()`, not just "did not throw"); the existing PDF
+accessibility/WCAG suite (`pdf-accessibility-and-signatures.spec.ts`,
+`pdf-structure-tags.spec.ts`, `plan-pdf-wcag-compliance.spec.ts`) re-ran
+clean with the annotation layer mounted; and the persisted round trip
+confirmed the "Persistence design" section's baked-in-only outcome — see
+that section for what did and didn't work. Two real bugs were found and
+fixed during the build, both noted where relevant above: `PDFDocumentProxy`
+has no `.destroy()` (it lives on the loading task), and
+`getDocument({data})` transfers rather than copies its input buffer.
+
 ### Verification Plan (39-A)
 
 1. Focused e2e coverage for the new toolbar controls, including the
    persisted-annotation round trip (save, close, reopen, confirm reapply)
    and the drift-discard path (regenerate with different underlying
    content, confirm stored annotations are discarded with a warning, not
-   misapplied). No existing test file covers this area today (checked
-   `TEST-INDEX.md` directly) — candidate new file:
-   `tests/e2e/pdf-annotate.spec.ts`.
+   misapplied). Landed at `tests/e2e/pdf-annotate.spec.ts` — 5 tests,
+   passing.
 2. Unit tests for the `contentFingerprint` computation and drift-comparison
-   logic in isolation — new file, e.g.
-   `tests/unit/print-annotation-persistence.spec.js`.
-3. Confirm no regression to the existing PDF accessibility/WCAG suite
-   (`pdf-accessibility-and-signatures.spec.ts`, `pdf-structure-tags.spec.ts`).
-4. Add both new test files to `TEST-INDEX.md`.
-5. Run focused tests during implementation; request permission before a
-   full-suite run, per `AGENTS.md`'s test policy.
-6. `printAnnotations` is a real persisted data-shape change — update
-   `probate-guardian-data-model.csv` in the same commit per `AGENTS.md`'s
-   data-model rule (Section 3), and run `npm run verify:data-model` before
-   committing.
+   logic in isolation, plus the `MiniEventBus` shim. Landed at
+   `tests/unit/print-annotation-persistence.spec.js` — 8 tests, passing.
+3. Confirmed no regression to the existing PDF accessibility/WCAG suite
+   (`pdf-accessibility-and-signatures.spec.ts`, `pdf-structure-tags.spec.ts`,
+   `plan-pdf-wcag-compliance.spec.ts`) — all re-run clean.
+4. Both new test files added to `TEST-INDEX.md`.
+5. Full-suite regression run not yet requested/run (per `AGENTS.md`'s test
+   policy, focused runs only until authorized) — the pre-existing
+   `pdf-preview-viewer.spec.ts` regression suite was run directly and its
+   8 pre-existing "blocked preview override" failures were confirmed, via
+   `git stash`, to already fail identically on the unmodified baseline —
+   not a regression from this work.
+6. `printAnnotations` is a real persisted data-shape change —
+   `probate-guardian-data-model.csv` updated in the same pass (3 new rows
+   under `plan_simplified`), `npm run verify:data-model` passing (840 rows).
 
 ---
 
@@ -909,8 +973,11 @@ gate below is independent; clearing an earlier one is not a prerequisite
 for authorizing a later one where no dependency is stated in "Recommended
 Order and Dependencies."
 
-- **39-A** may be authorized now, for its development-only spike, once the
-  requester reviews 39-A's own Recommended Decisions.
+- **39-A**'s development-only spike is done and landed (see Status above).
+  A full rollout beyond the current toolbar/persistence mechanism — wider
+  filing-type coverage, editable-annotation rehydration if that's wanted,
+  the storage-size question flagged in "Persistence design" — needs its own
+  authorization; the spike itself does not imply that follow-on scope.
 - **39-B** may be authorized once the requester reviews its Recommended
   Decisions and the Scope Note above — no separate legal-review gate; this
   app's validation state is a filer convenience, not an adjudication of
