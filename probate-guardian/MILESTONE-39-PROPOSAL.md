@@ -15,11 +15,12 @@ or build change on its own — each sub-milestone below carries its own gate.
 
 Two related but separately-architected capabilities:
 
-1. **Ephemeral Print Preview annotation (39-A):** let a filer mark up the
-   rendered PDF — a text note, a highlight — without building a PDF editor
-   from scratch and without the marks silently diverging from the filing's
-   validated data. Deliberately not an ability to rewrite the PDF's original
-   form text.
+1. **Persisted Print Preview annotation (39-A):** let a filer mark up the
+   rendered PDF — a text note, a highlight — that survives across preview
+   sessions and app restarts, without building a PDF editor from scratch
+   and without the marks ever merging into or altering the filing's own
+   validated answers. Deliberately not an ability to rewrite the PDF's
+   original form text.
 2. **Persisted Visual Signature Capture (39-B through 39-E):** let a filer
    draw, type, or upload a signature mark — captured with a lightweight,
    standalone widget, not pdf.js (see 39-B) — as real, validated filing
@@ -60,7 +61,7 @@ can follow whenever convenient after it.
 
 ---
 
-## 39-A: Ephemeral Print Preview Annotation
+## 39-A: Persisted Print Preview Annotation
 
 ### Findings: Recommended Approach
 
@@ -160,9 +161,14 @@ can follow whenever convenient after it.
 ### Non-Goals / Out of Scope (39-A)
 
 1. Not a general-purpose PDF editor — only FreeText and Highlight.
-2. Not a change to the underlying filing data model. These annotations are
-   not synced back into `window.D` or any persisted answer; they exist only
-   on the current preview and its downloaded annotated-PDF derivative.
+2. Not a change to the underlying filing's *validated* data model.
+   Annotations persist in their own isolated field (`printAnnotations` —
+   see "Persistence design" below), never merged into, read by, or capable
+   of altering any validated form answer. A filing's readiness/validation
+   status, and its standard court-filing PDF output, are both entirely
+   unaffected by whether it has annotations — annotations render only in
+   the interactive Print Preview surface and the explicit "Save Annotated
+   PDF" derivative, never silently in the primary filing output.
 3. Not an all-filings rollout. The pilot is Simplified Annual Plan's Print
    Preview only.
 4. Not the DOCX export fidelity work — see "Related, Out-of-Scope Work."
@@ -179,11 +185,17 @@ can follow whenever convenient after it.
    rollout path: `pdf-preview.js` is the one module every filing type's
    preview already shares, so the annotation-editor mount point belongs
    behind an explicit per-type gate there, not a fork of the file.
-3. **Lifecycle:** annotations are output-specific and ephemeral. They never
-   enter `window.D`, saved cases, backups, or validation. They may remain
-   while the same preview is open; a form-data change that regenerates the
-   preview discards them only after a clear warning. Save Annotated PDF
-   preserves work.
+3. **Lifecycle:** annotations persist with the filing — stored in
+   `window.D`/the `.sav` file as their own isolated `printAnnotations`
+   field, surviving preview close, app restart, and reload — a deliberate
+   change from the originally-drafted ephemeral-only design; see
+   "Persistence design" below for the storage format, reapply mechanism,
+   and drift handling. They still never enter validation or merge into any
+   validated answer. A form-data change substantial enough to shift the
+   underlying page content discards the stored annotations on next
+   reapply, with a clear warning, rather than risk showing marks that no
+   longer line up with the regenerated PDF. Save Annotated PDF remains
+   available as a separate, explicit flattened-download derivative.
 4. **Accessibility:** the toolbar must be semantic, named, and keyboard
    operable; focus enters a newly added note; Escape exits the active tool;
    Clear/Delete are keyboard-reachable and confirmed; mode changes use the
@@ -194,6 +206,67 @@ can follow whenever convenient after it.
    size, color, and opacity parameters. The initial UI promises only size
    and color — this version has no FreeText underline editor parameter,
    though it can render existing underline annotations.
+
+### Persistence design (39-A)
+
+Confirmed directly against the vendored `6.3.289` build: `pdf.js` already
+has a native, serializable annotation-storage format —
+`AnnotationStorage.serializable` (a `{map, hash, transfer}` structure), and
+`page.render()` already accepts an `annotationStorage` parameter (used
+internally for the print-rendering intent — confirmed at
+`RenderingIntentFlag.PRINT` branch). This is the same structure
+`saveDocument()` already consumes. Storing and reapplying pdf.js's own
+native format is strongly preferred over inventing a bespoke annotation
+schema — it stays compatible with `saveDocument()`'s existing output path
+for free and needs no hand-serialization of each editor type's internal
+fields.
+
+- **New field:** `d.printAnnotations` — `{ storage: <pdf.js serializable
+  annotationStorage blob>, contentFingerprint: <string>, capturedAt: <iso
+  date> }`. Lives directly on the filing document itself, the same way
+  39-B's `signatureImage` does — not a separate case-file-wide collection.
+- **Drift detection — the real unresolved risk persistence introduces.**
+  The PDF is regenerated fresh from `window.D` on every render; nothing
+  guarantees a given page's layout is identical between two regenerations
+  of the same filing (a longer typed answer, an added co-guardian, or any
+  future content change can shift what lands on a given page).
+  `contentFingerprint` must capture enough about the source content at
+  capture time to detect that drift on reload — candidate: page count plus
+  a hash of each page's extracted text via `page.getTextContent()`. On a
+  mismatch, discard the stored annotations with a clear warning rather
+  than reapply potentially-misplaced marks — the same discard-with-warning
+  UX Decision #3 already commits to for a same-session data change,
+  extended to also run once at load time.
+- **Reapply mechanism — the spike must confirm which of two outcomes is
+  actually achievable, not assume the better one.** Feeding the stored
+  `serializable` blob into `page.render({..., annotationStorage})` is
+  confirmed to bake annotations into a rendered page (the existing
+  PRINT-intent code path does exactly this). Whether that same stored blob
+  can also rehydrate a live, still-editable `AnnotationEditorUIManager`
+  layer — so a filer can keep editing a previously-added note, not just
+  see it — is unconfirmed and depends on internals not yet read in detail.
+  Report which is actually achievable: editable rehydration is the better
+  outcome, but a baked-in-only reapply (existing marks effectively frozen
+  once the preview closes, new annotations still addable) is an acceptable
+  fallback if rehydration proves impractical.
+- **Data model:** new `probate-guardian-data-model.csv` row for
+  `printAnnotations` on the pilot filing type. Sensitivity: a FreeText note
+  is filer-typed free text, and nothing stops a filer from typing something
+  personal into it — classify conservatively as `personal`, not `none`,
+  even though the mechanism itself introduces no new category of stored
+  data beyond whatever the filer chooses to type.
+- **Legacy migration:** trivial, unlike 39-B's. A `.sav` file that predates
+  this field simply has no `printAnnotations` — there is no prior state to
+  infer a value from; an absent field means exactly what it says, no
+  annotations exist yet.
+- **Export/Import/Portability:** because `printAnnotations` lives directly
+  on the filing document (not in a separate party-level or cross-filing
+  record), every existing export path that already bundles the whole
+  filing document carries it automatically — including
+  `buildSingleWardExportBlob()`'s single-ward export. Unlike 39-D's
+  cross-record stamp reference, this needs no export-path code change;
+  confirmed by reading what that function actually bundles today (the
+  whole filing document, not a filtered subset of it).
 
 ### Implementation Plan (spike first)
 
@@ -210,8 +283,10 @@ can follow whenever convenient after it.
 4. Confirm the annotated PDF downloads, prints, and reopens correctly —
    including in an external viewer — to prove annotations are standard and
    portable, not an artifact of the integration.
-5. Confirm that form-data changes cause the explicit discard warning and
-   that annotations never reach saved filing data or validation.
+5. Confirm that a substantial form-data change causes the drift-discard
+   warning on next reapply rather than misplaced marks, and that
+   annotations — while now persisted in `window.D`/`.sav` — never reach
+   validation or merge into any validated answer.
 6. Run the defined accessibility checks, including keyboard-only annotation
    creation/removal and screen-reader labeling of the toolbar/layer.
 7. Report the spike's findings — actual effort, UI results, and surprises —
@@ -229,22 +304,34 @@ viewer chrome; the held `PDFDocumentProxy` reference being correctly torn
 down on every re-render (no leaked reference from a prior render, no error
 on rapid consecutive form-data changes); `saveDocument()`'s output
 verified byte-for-byte re-openable in an external viewer, not just "did not
-throw"; and the existing Print Preview's WCAG/keyboard coverage re-run
-clean with the annotation layer mounted, not skipped.
+throw"; the existing Print Preview's WCAG/keyboard coverage re-run clean with the
+annotation layer mounted, not skipped; and the persisted-annotation round
+trip — store, reload the preview fresh, confirm the same marks reappear
+correctly positioned, and confirm a deliberately drifted fixture
+(regenerated with different underlying content) triggers the discard-with-
+warning path instead of misplacing marks.
 
 ### Verification Plan (39-A)
 
-1. Focused e2e coverage for the new toolbar controls on whichever page(s)
-   the spike is expanded to. No existing test file covers this area today
-   (checked `TEST-INDEX.md` directly) — candidate new file:
+1. Focused e2e coverage for the new toolbar controls, including the
+   persisted-annotation round trip (save, close, reopen, confirm reapply)
+   and the drift-discard path (regenerate with different underlying
+   content, confirm stored annotations are discarded with a warning, not
+   misapplied). No existing test file covers this area today (checked
+   `TEST-INDEX.md` directly) — candidate new file:
    `tests/e2e/pdf-annotate.spec.ts`.
-2. Confirm no regression to the existing PDF accessibility/WCAG suite
+2. Unit tests for the `contentFingerprint` computation and drift-comparison
+   logic in isolation — new file, e.g.
+   `tests/unit/print-annotation-persistence.spec.js`.
+3. Confirm no regression to the existing PDF accessibility/WCAG suite
    (`pdf-accessibility-and-signatures.spec.ts`, `pdf-structure-tags.spec.ts`).
-3. Add `tests/e2e/pdf-annotate.spec.ts` to `TEST-INDEX.md`.
-4. Run focused tests during implementation; request permission before a
+4. Add both new test files to `TEST-INDEX.md`.
+5. Run focused tests during implementation; request permission before a
    full-suite run, per `AGENTS.md`'s test policy.
-5. Not a data-model change — no `probate-guardian-data-model.csv` update
-   needed for 39-A.
+6. `printAnnotations` is a real persisted data-shape change — update
+   `probate-guardian-data-model.csv` in the same commit per `AGENTS.md`'s
+   data-model rule (Section 3), and run `npm run verify:data-model` before
+   committing.
 
 ---
 
@@ -283,14 +370,19 @@ legal enforcement mechanism. The filer remains responsible for their own
 filing's compliance, exactly as they are with any other document-
 preparation tool.
 
-**Decision: signature capture is not part of 39-A's ephemeral annotation
-layer.** It is a persisted filing field. `pdf.js`'s drawing/typing/upload
-widget is used purely as the capture UI; its result is written into
-`window.D` and saved in the `.sav` file like every other required answer,
-and rendered on the page through this app's own `pdf-engine.js` (jsPDF), the
-same pipeline that renders the typed "/s/" signature today — not through
-pdf.js's `AnnotationEditorLayer`/`saveDocument()`. This is a deliberate,
-narrow exception to 39-A's Non-Goal #2, scoped to this one field type only.
+**Decision: signature capture is not part of 39-A's annotation-editor
+mechanism.** Both 39-A and 39-B are now persisted, but via entirely
+different paths (see 39-A's "Persistence design" for its own
+reapply/drift-detection approach, which 39-B has no equivalent of).
+`pdf.js`'s drawing/typing/upload widget is used purely as the capture UI;
+its result is written into `window.D` and saved in the `.sav` file like
+every other required answer, and rendered on the page through this app's
+own `pdf-engine.js` (jsPDF), the same pipeline that renders the typed "/s/"
+signature today — never through pdf.js's `AnnotationEditorLayer` or
+`saveDocument()`. Unlike `printAnnotations`, `signatureImage` **is** a
+validated answer (see "Validation" below) — a deliberate, narrow exception
+to 39-A's Non-Goal #2's "never merged into a validated answer" rule,
+scoped to this one field type only.
 
 ### UI: three-state control per signature card
 
@@ -334,11 +426,13 @@ filing's other answers in the same encrypted `.sav` payload. Because it
 renders through the ordinary `pdf-engine.js` path, any future regeneration —
 a reprint, a corrected filing, a new session next year — rebuilds the same
 signature from `window.D` exactly like every other field, instead of
-needing it redrawn. This also means the "Print silently drops it" risk
-raised for 39-A's ephemeral modes does not apply here: it was never a live
-pdf.js annotation to begin with. In 39-B, this image is stored directly on
-the filing (no reuse yet — see 39-D for the versioned, per-party stamp that
-supersedes a plain copy).
+needing it redrawn or reapplied. This is a simpler durability story than
+39-A's own persistence design (see 39-A's "Persistence design" section):
+39-B needs no `contentFingerprint`/drift-detection step at all, because the
+signature image is baked into the PDF at the same point every other field
+is, not layered on afterward and reapplied to a freshly-rendered page. In
+39-B, this image is stored directly on the filing (no reuse yet — see 39-D
+for the versioned, per-party stamp that supersedes a plain copy).
 
 ### Capture mechanism — a real, previously unexamined mounting risk
 
@@ -420,6 +514,19 @@ addressed:
   maximum width, with height capped proportionally to a natural signature
   aspect ratio (roughly 3:1 to 4:1, wide and short). A maximum file size in
   the tens of KB is more than sufficient for a compressed PNG at that size.
+- **Sensitivity, stated explicitly rather than left implicit.** `signatureImage`
+  is new stored data and `AGENTS.md` §8 requires its own classification, not
+  an inherited one: classify it `document-content` in
+  `probate-guardian-data-model.csv` — that value already exists in
+  `scripts/verify-data-model.mjs`'s enforced enum (confirmed directly), so
+  this needs no schema change, just using it. Threat model: it sits inside
+  the same encrypted `.sav` payload as every other filing answer, protected
+  by the same case-file password as a typed name — no new access-control
+  gap. What it does add relative to today's typed "/s/" is that a leaked or
+  misdirected file now exposes a reproducible image of the guardian's actual
+  signature mark, not just a name string; a real, if modest, escalation
+  worth surfacing to the requester rather than treating as equivalent to
+  the text it replaces.
 - **DOCX export's image-embedding gap is moot.** `docx-engine.js` has no
   image-embedding capability at all today (no image relationships, no
   drawing XML), and building one would have been substantial, separate
