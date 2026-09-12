@@ -111,12 +111,19 @@ export function buildPlanSimplifiedModel(D) {
   });
 
   // Page 3: Signatures
-  const hasSigData = (g) => !!(g && (g.name || g.signatureDate || g.email || g.phone || g.mailingAddress));
+  // Milestone 39-B: a co-guardian who only applied a signature choice (a
+  // real "/s/" or stamp, not the unsigned default) has real data too, even
+  // if every other field is blank.
+  const hasSigData = (g) => !!(g && (g.name || g.signatureDate || g.email || g.phone || g.mailingAddress
+    || (g.signatureState && g.signatureState !== 'none') || g.signatureImage));
   const makeSigBlock = (label, g) => ({
     type: 'signature-block',
     role: `${label} Signature`,
     signerName: g.name || '',
     signatureDate: fmtDate(g.signatureDate),
+    // Milestone 39-B pilot: only the Guardian role carries these yet.
+    signatureState: g.signatureState || '',
+    signatureImage: g.signatureImage || '',
     fields: [
       [{ label: 'Printed Name', value: g.name || '' }, { label: 'Email Address', value: g.email || '' }],
       [{ label: 'Phone Number', value: g.phone || '' }, { label: 'Mailing Address', value: g.mailingAddress || '' }],

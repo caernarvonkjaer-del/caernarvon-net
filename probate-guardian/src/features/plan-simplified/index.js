@@ -1,5 +1,7 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -31,6 +33,13 @@ const {
 let _printModule = null;
 let _printModulePromise = null;
 const eventControllers = new WeakMap();
+// Milestone 39-B: tracks the capture-widget handles mountSignatureStateControls()
+// returns, keyed the same way as eventControllers -- mount() can re-render
+// the same container without an intervening dispose() (e.g. the three-state
+// control's own data-form-route re-render on change), so stale handles from
+// the previous render must be torn down before mounting fresh ones, the same
+// safety bindEvents() already needs for its own listener controller.
+const signatureHandles = new WeakMap();
 
 function bindEvents(container) {
   eventControllers.get(container)?.abort();
@@ -78,12 +87,22 @@ export async function mount(container, page) {
   container.innerHTML = html;
   bindEvents(container);
   container.scrollTop = 0;
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
+  if (page === '/p3') {
+    signatureHandles.set(container, mountSignatureStateControls(container, {
+      setImage: (path, dataUrl) => window.setPath(window.D, `${path}.signatureImage`, dataUrl),
+      route: '/p3',
+    }));
+  }
   if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {
   eventControllers.get(container)?.abort();
   eventControllers.delete(container);
+  signatureHandles.get(container)?.forEach((h) => h.destroy());
+  signatureHandles.delete(container);
   container.replaceChildren();
 }
 
@@ -233,7 +252,8 @@ function pagePlanSSignatures(){
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-12"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
-          <div class="col-md-6"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${i===0?'<span class="req">*</span>':''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-md-6"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p3', signatureImage: p.signatureImage })}</div>
           <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-form-format="phone"></div>
           <div class="col-12"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email" data-field-path="planGuardians.${i}.email"></div>
           <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingAddress||''))}" data-form-path="planGuardians.${i}.mailingAddress" data-field-path="planGuardians.${i}.mailingAddress" data-form-format="address"></div>
@@ -323,7 +343,19 @@ export function validatePlanSimplified(){
   if(d.q9Remuneration==='Yes')req(d.q9RemunerationExplain,'The Plan — Question 9 explanation is required when payment was received');
   const g=(d.planGuardians||[])[0]||{};
   req(g.name,'Signatures — Guardian 1 printed name is required');
-  req(g.signatureDate,'Signatures — Guardian 1 date signed is required');
+  // Milestone 39-B: replaces the old unconditional req(g.signatureDate,...)
+  // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, per
+  // MILESTONE-39-PROPOSAL.md's 39-B "a confirmed, deliberate change to
+  // today's behavior." `name` is omitted from this call because g.name is
+  // already unconditionally required immediately above, regardless of
+  // signature state -- passing it here too would just duplicate that
+  // message for the same blank field.
+  errs.push(...checkSignatureState({
+    state: inferLegacySignatureState(g.signatureState, g.signatureDate),
+    date: g.signatureDate,
+    image: g.signatureImage,
+    sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
+  }));
   req(g.email,'Signatures — Guardian 1 email is required');
   req(g.phone,'Signatures — Guardian 1 phone is required');
   req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required');

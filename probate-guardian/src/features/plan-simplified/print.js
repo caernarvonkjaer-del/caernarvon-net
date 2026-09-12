@@ -24,6 +24,7 @@ import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -52,7 +53,20 @@ export function planReadinessChecksSimplified(){
   const auto=[
     {id:'cover.period',label:'Reporting period is stated',ok:has(d.periodFrom)&&has(d.periodTo)},
     {id:'cover.wardCaseCounty',label:'Ward name, case number, and county are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.county)},
-    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&has(g0.signatureDate)},
+    // Milestone 39-B: reuses checkSignatureState() directly (not a
+    // hand-derived boolean) so this readiness item can never drift from
+    // what validatePlanSimplified() actually blocks on -- AGENTS.md
+    // Section 4's Parity Invariant. Name stays its own separate,
+    // unconditional check (name !== undefined omitted from
+    // checkSignatureState's own args, since g0.name is already covered by
+    // the app's Non-Goal-scoped rule that printed name is untouched by
+    // signature state).
+    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&checkSignatureState({
+      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+      date: g0.signatureDate,
+      image: g0.signatureImage,
+      sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
+    }).length===0},
     {id:'signatures.guardian1.contact',label:'Guardian contact details provided (email, phone, mailing address)',ok:has(g0.email)&&has(g0.phone)&&has(g0.mailingAddress)},
     {id:'plan.q1',label:"Ward's residences for the year are listed",ok:has(d.q1Residences)},
     {id:'plan.q2',label:'Question 2 — reason this placement best suits the ward is stated',ok:has(d.q2BestPlacement)},

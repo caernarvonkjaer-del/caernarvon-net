@@ -26,6 +26,7 @@ import {
   resolveActiveDocPeriod,
 } from './supplemental-pdf.js';
 import { maskSSN } from './ssn-format.js';
+import { readPngDimensions, base64ToBytes } from '../images/png-dimensions.js';
 
 function sanitizeDisplayValue(label, value) {
   if (!value) return '';
@@ -472,6 +473,33 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.addImage(dataUrl, imageType || (dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG'), layout.x, layout.y, layout.width, layout.height);
     writeArtifactEnd(doc);
     curY = layout.y + layout.height + 12;
+  };
+
+  // Milestone 39-B: renders a captured/uploaded signature stamp in place of
+  // the typed "/s/ Name" text or the wet-ink blank line, at the same
+  // position either currently occupies. Sized to fit within `layout`'s
+  // maxWidth/maxHeight box, preserving the source PNG's real aspect ratio
+  // (read straight from its IHDR chunk, no async Image() decode needed) --
+  // falls back to the requested box unscaled if dimensions can't be read,
+  // rather than failing to render the signature at all.
+  const renderSignatureImage = (dataUrl, layout) => {
+    writeArtifactStart(doc, 'Layout');
+    const { x, y, maxWidth, maxHeight } = layout;
+    let width = maxWidth;
+    let height = maxHeight;
+    try {
+      const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+      const dims = readPngDimensions(base64ToBytes(base64));
+      if (dims && dims.width > 0 && dims.height > 0) {
+        const scale = Math.min(maxWidth / dims.width, maxHeight / dims.height);
+        width = dims.width * scale;
+        height = dims.height * scale;
+      }
+    } catch {
+      // Renders at the requested box, unscaled, rather than not at all.
+    }
+    doc.addImage(dataUrl, 'PNG', x, y, width, height);
+    writeArtifactEnd(doc);
   };
 
   const renderSupportingFileName = (fileName, sectionTitle, parentNode) => {
@@ -1320,6 +1348,13 @@ export async function generateCourtFormPdf(model, options = {}) {
         // `details` vertical stack, which lost the source HTML's grouping
         // and ordering by rendering Object.keys() in a single column).
         const isWetSignature = block.wetSignatureExplicit === true;
+        // Milestone 39-B: a Signature Stamp takes priority over both the
+        // wet-ink and electronic "/s/" renderings -- signatureState is only
+        // ever 'stamp' when the filer actually applied one (see
+        // src/core/validation/signature-state.js's checkSignatureState()),
+        // so this never silently overrides a typed signature that's
+        // actually in effect.
+        const hasStampImage = block.signatureState === 'stamp' && !!block.signatureImage;
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
         const FIELD_ROW_H = 28;
         const baseSigHeight = isWetSignature ? 58 : 64;
@@ -1369,7 +1404,24 @@ export async function generateCourtFormPdf(model, options = {}) {
         doc.line(margin + 2, curY + 36, margin + 250, curY + 36);
         writeArtifactEnd(doc);
 
-        if (isWetSignature) {
+        if (hasStampImage) {
+          // Signature Stamp: the captured/uploaded image sits above the
+          // line the same way a wet-ink signature physically would, sized
+          // to preserve its own aspect ratio within the line's own width.
+          renderSignatureImage(block.signatureImage, { x: margin + 2, y: curY + 6, maxWidth: 246, maxHeight: 28 });
+          const sigLabelNode = structureTree.addStructureElement({
+            tag: 'P',
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: sigPartNode,
+          });
+          writeMarkedContentStart(doc, 'P', sigLabelNode.mcid);
+          doc.setFont('PGSans', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(100, 110, 125);
+          doc.text(`Signature of ${block.signerName || ''}`.trim(), margin + 2, curY + 46);
+          writeMarkedContentEnd(doc);
+        } else if (isWetSignature) {
           // Wet-ink signature: the line above is left blank for a pen
           // signature rather than an electronic /s/ rendering, and there
           // is no electronic-signature legal notice, since none applies

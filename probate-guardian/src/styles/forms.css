@@ -172,6 +172,18 @@
 .plan-question{border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;background:var(--surface);}
 .plan-question-num{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);margin-bottom:.5rem;}
 .plan-conditional{margin-left:1.1rem;padding-left:.9rem;border-left:2px solid var(--line);}
+
+/* ── Milestone 39-B: Signature State Control & Capture Pad ────────── */
+.signature-state-control{border:0;padding:0;margin:0 0 .5rem;}
+.signature-stamp-preview{margin:.4rem 0;padding:.4rem;background:#fff;border:1px solid var(--line);border-radius:var(--r-xs);display:inline-block;}
+.signature-pad{border:1px solid var(--line);border-radius:var(--r-sm);padding:.75rem;margin-top:.4rem;background:var(--surface);}
+.signature-pad-tabs{display:flex;gap:.4rem;margin-bottom:.5rem;}
+.signature-pad-tabs [aria-selected="true"]{background:var(--brand);color:#fff;border-color:var(--brand);}
+.signature-pad-canvas{display:block;width:100%;max-width:400px;height:auto;aspect-ratio:600/180;background:#fff;border:1px dashed var(--line-2);border-radius:var(--r-xs);touch-action:none;cursor:crosshair;}
+.signature-pad-canvas-preview{cursor:default;margin-top:.5rem;}
+.signature-pad-actions{margin-top:.4rem;}
+.signature-pad-footer{display:flex;gap:.5rem;margin-top:.6rem;}
+.signature-pad-error{font-size:.82rem;margin:.4rem 0 0;}
 .plan-sig-block{border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;background:var(--surface);}
 .plan-sig-block h3{font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-4);margin:0 0 .75rem;}
 .plan-check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.1rem .9rem;}

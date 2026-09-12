@@ -2,19 +2,27 @@
 
 ## Status
 
-**39-A: spiked and landed** (`src/core/pdf/pdf-annotate.js`,
-`src/core/pdf/pdf-preview.js`, `src/styles/print.css`,
-`src/features/plan-simplified/print.js`; `tests/e2e/pdf-annotate.spec.ts`,
-`tests/unit/print-annotation-persistence.spec.js`) — see 39-A's own
-"Persistence design" and "Spike results" for what was built and what was
-learned building it. **39-B through 39-E remain a recommendation-recorded
-draft — do not implement yet.** What started as one research conversation
-(ephemeral PDF annotation for Print Preview) grew, over several rounds of
-review, into two architecturally distinct capabilities plus a substantial
-cross-filing-type rollout. It is now split into five lettered
-sub-milestones, the same discipline `MILESTONE-34-1-PROPOSAL.md` used for the
-same reason: each can be scoped, spiked, and authorized independently instead
-of as one omnibus decision. Beyond 39-A's own landed spike, this document
+**39-A and 39-B: spiked and landed.** 39-A —
+`src/core/pdf/pdf-annotate.js`, `src/core/pdf/pdf-preview.js`,
+`src/styles/print.css`, `src/features/plan-simplified/print.js`;
+`tests/e2e/pdf-annotate.spec.ts`, `tests/unit/print-annotation-persistence.spec.js`.
+39-B — `src/core/validation/signature-state.js`,
+`src/core/signature/signature-pad.js`,
+`src/core/signature/signature-state-control.js`,
+`src/core/images/png-dimensions.js`, plus the shared `signature-block`
+renderer in `src/core/pdf/pdf-engine.js` and Plan Simplified's own
+`index.js`/`print.js`/`pdf-model.js`; `tests/unit/signature-capture.spec.js`,
+`tests/e2e/signature-capture.contract.spec.ts`. See each sub-milestone's own
+"Persistence design"/"Implementation Plan" and "Spike results" sections for
+what was built and what was learned building it. **39-C through 39-E remain
+a recommendation-recorded draft — do not implement yet.** What started as
+one research conversation (ephemeral PDF annotation for Print Preview) grew,
+over several rounds of review, into two architecturally distinct
+capabilities plus a substantial cross-filing-type rollout. It is now split
+into five lettered sub-milestones, the same discipline
+`MILESTONE-34-1-PROPOSAL.md` used for the same reason: each can be scoped,
+spiked, and authorized independently instead of as one omnibus decision.
+Beyond 39-A/39-B's own landed spikes, this document
 authorizes no further runtime, dependency, or build change on its own — each
 remaining sub-milestone below carries its own gate.
 
@@ -652,37 +660,98 @@ whatever rule already governs them, untouched by signature state).
 filings, versioning, and the party-level store are 39-D's scope, built on
 top of this once it's proven.
 
-### Implementation Plan (39-B spike)
+### Implementation Plan (39-B spike) — done, built with 39-C's reuse in mind
 
-Independent of 39-A's spike — can run before, during, or after it.
+Independent of 39-A's spike — ran after it. Every piece below was built as
+a standalone, shape-agnostic module rather than inline in Plan Simplified's
+own files specifically so 39-C's rollout to other roles/filing types is
+wiring, not rebuilding:
 
-1. On Simplified Annual Plan, build the three-state Unsigned/"/s/"
-   Signed/Signature Stamp control on the Guardian's card, with the capture
-   widget mounting only in the Signature Stamp state.
-2. Store the result as `planGuardians[0].signatureState`/
-   `planGuardians[0].signatureImage`.
-3. Replace `validatePlanSimplified()`'s `req(g.signatureDate, ...)` with
-   the three-condition rule above; confirm a filing with Unsigned
-   explicitly chosen now validates as complete, and that "/s/" or Stamp
-   chosen but incomplete still blocks.
-4. Confirm correct rendering through the existing `pdf-engine.js` path for
-   all three states.
-5. Report findings to the requester before extending to 39-C/39-D.
+- `src/core/validation/signature-state.js` — `checkSignatureState()` and
+  `inferLegacySignatureState()` take raw `state`/`name`/`date`/`image`
+  values, not a record shape, so the same functions serve top-level scalar
+  fields, nested objects, and collection rows alike (39-C's three
+  confirmed shapes) without modification.
+- `src/core/signature/signature-pad.js` — the canvas capture widget
+  (Draw/Type/Upload) and `validateSignatureImage()`, mountable into any
+  card; nothing in it is Guardian- or Plan-Simplified-specific.
+- `src/core/signature/signature-state-control.js` — the three-state
+  radio control + capture-widget mount/unmount wiring, parameterized by a
+  `path` prefix; a future role only needs to pass its own path.
+- `src/core/images/png-dimensions.js` — shared PNG byte-header reader, used
+  by both the capture-time validator and the render-time sizing below.
+- `src/core/pdf/pdf-engine.js`'s `renderSignatureImage()` and the new
+  `hasStampImage` branch were added to the **shared, generic
+  `signature-block` renderer** every filing type's `pdf-model.js` already
+  funnels through (confirmed by reading it directly) — not a
+  plan-simplified-only code path. This is the single most consequential
+  finding for 39-C: rolling out to another role/filing type needs no
+  further `pdf-engine.js` change at all, only adding
+  `signatureState`/`signatureImage` to that type's own block-construction
+  call, the same one-line addition made to `plan-simplified/pdf-model.js`'s
+  `makeSigBlock()`.
+- `src/features/plan-simplified/index.js`/`print.js` are the only
+  Plan-Simplified-specific pieces: wiring the reusable control into the
+  Guardian card, and replacing `req(g.signatureDate, ...)` with
+  `checkSignatureState()` in both `validatePlanSimplified()` **and**
+  `planReadinessChecksSimplified()` — the latter wasn't in the original
+  plan, but AGENTS.md Section 4's Parity Invariant means both had to change
+  together or the readiness panel would show a false blocker for a
+  Guardian who explicitly chose Unsigned. The readiness item now calls
+  `checkSignatureState()` directly rather than re-deriving equivalent
+  boolean logic, so the two can't drift apart later either.
+- Confirmed a filing with Unsigned explicitly chosen validates as complete
+  (readiness and the real export path agree), and that "/s/" or Stamp
+  chosen but incomplete still blocks, each with its own distinct message.
+- Confirmed correct rendering through the existing `pdf-engine.js` path for
+  all three states — proved directly via pdf.js's own operator list
+  (`OPS.paintImageXObject` present on the Signatures page for the Stamp
+  case), not just "the page rendered with no error."
 
-### Verification Plan (39-B)
+### Verification Plan (39-B) — landed
 
 1. Unit tests for the canvas signature pad and the PNG capture/validation
-   logic (dimension/size/content checks, transparent background) — new
-   file, e.g. `tests/unit/signature-capture.spec.js`.
+   logic (dimension/size/content checks) plus `checkSignatureState()`/
+   `inferLegacySignatureState()` — landed at
+   `tests/unit/signature-capture.spec.js`, 17 tests, passing. (Transparent
+   background is structural, not a runtime check: Draw/Type canvases are
+   never filled before drawing, so nothing to test there; see "Data safety"
+   below for the one real, honest limitation this doesn't cover.)
 2. E2e coverage for all three states on the Guardian's card, including the
-   incomplete-"/s/" and incomplete-Stamp blocking cases, and the legacy-
-   migration inference rule — new file, e.g.
-   `tests/e2e/signature-capture.contract.spec.ts`.
-3. `planGuardians[N].signatureState`/`planGuardians[N].signatureImage` are a
-   real persisted data-shape change — update
-   `probate-guardian-data-model.csv` in the same commit per `AGENTS.md`'s
-   data-model rule, and run `npm run verify:data-model` before committing.
-4. Add both new test files to `TEST-INDEX.md`.
+   incomplete-"/s/" and incomplete-Stamp blocking cases, the legacy-
+   migration inference rule, and a real draw-and-apply interaction —
+   landed at `tests/e2e/signature-capture.contract.spec.ts`, 4 tests,
+   passing.
+3. `planGuardians[N].signatureState`/`planGuardians[N].signatureImage` —
+   `probate-guardian-data-model.csv` updated in the same pass (3 new rows:
+   `signatureState`, `signatureImage`, and a narrowed `signatureDate`
+   `required_when`), `npm run verify:data-model` passing (842 rows).
+4. Both new test files added to `TEST-INDEX.md`.
+5. Regression-checked, not assumed safe: the full unit suite (425 tests,
+   50 files) and the broader PDF/signature e2e suite spanning every filing
+   type (`pdf-accessibility-and-signatures.spec.ts`,
+   `pdf-structure-tags.spec.ts`, `plan-pdf-wcag-compliance.spec.ts`,
+   `pdf-form-specific.spec.ts`, `plan-simplified-mount.spec.ts` — 21 e2e
+   tests) all re-run clean after touching the shared `signature-block`
+   renderer. Full-suite `npm test` not run (per `AGENTS.md`'s test policy,
+   focused runs only until requested).
+
+### Real limitation found building this, not previously flagged
+
+Uploaded-image background transparency is unaddressed. The doc's "Data
+safety" section calls for "a transparent background rather than an opaque
+canvas fill" — Draw and Type modes satisfy this structurally (the canvas is
+never filled before drawing). An **uploaded** photo of a signature almost
+always has its own opaque background (e.g. white paper), and this spike
+does not attempt to remove it. Concretely: an uploaded stamp will likely
+render as a small opaque box sitting on the signature line rather than a
+mark that looks like it belongs there. Not blocking for this pilot — the
+mechanism itself (capture, validate, store, render) is proven regardless of
+which capture mode is used — but tracked as its own gate on 39-C, not left
+implicit: see 39-C's "Upload background-transparency gate" for the real
+options (a bounded luminance-threshold heuristic, a UI hint, or dropping
+Upload) and why rolling 39-C out unchanged would multiply this defect
+across every future role rather than fixing it once.
 
 ---
 
@@ -741,6 +810,50 @@ Certificate-of-Service cards above. Only once that full table has no
 mirrors the discipline already used elsewhere in this project (e.g. the
 Milestone 34-2 data-model audit) of treating "probably complete" as
 insufficient before real field-by-field verification.
+
+### Upload background-transparency gate — resolve before rollout, not after
+
+A second, real gate alongside the Inventory Gate above, found while building
+39-B, not anticipated when this document was first drafted: the capture
+mechanism's three modes (Draw, Type, Upload) do not all satisfy 39-B's own
+"Data safety" requirement of a transparent background. Draw and Type are
+transparent by construction — the canvas is never filled before drawing.
+Upload is not: it draws the uploaded photo's own pixels as-is, and a
+photographed signature on paper carries that paper's opaque background
+forward untouched. Confirmed, not hypothetical: an uploaded stamp currently
+renders as a small opaque box sitting on the signature line, not a mark
+that looks like it belongs there. Because 39-C's entire design is "reuse
+39-B's exact mechanism... rather than redesigning per type," rolling out
+unchanged would multiply this same defect across every future role's
+Upload option in all eight remaining filing types, rather than fixing it
+once. Resolve which of the following before 39-C proceeds — this document
+takes no position, since it's a real product trade-off between effort and
+Upload's visual quality, not a technical question with one right answer:
+
+1. **Luminance-threshold background removal, Upload only.** A correction to
+   this document's own earlier framing: true, general-purpose background
+   removal needs real image segmentation, but that overstates what this
+   specific case needs. A signature is normally ink on plain, light paper —
+   a straightforward, bounded pass over the uploaded image's own pixel data
+   (read `ImageData`, treat any pixel above a brightness threshold as
+   background, set its alpha to 0, keep darker "ink" pixels opaque) handles
+   the common case reasonably well, entirely client-side, no new
+   dependency. Real, honest limits: it degrades on shadows, colored or
+   textured paper, low-contrast ink, or uneven lighting — a heuristic, not
+   a guarantee, and would need its own empirical tuning/spike the same way
+   39-B's core mechanism did.
+2. **Ship Upload as-is, with a UI hint** ("for best results, use a plain
+   white background and even lighting"). Zero additional implementation;
+   the opaque-box artifact remains a real, known visual defect for anyone
+   who doesn't follow the hint.
+3. **Drop Upload, keep only Draw and Type** (both already fully correct).
+   Simplest and removes the defect entirely, at the cost of a capability
+   filers may reasonably expect (reusing an existing signature image rather
+   than redrawing one with a mouse/touchpad).
+
+No option is assumed here; whichever is chosen becomes part of 39-C's own
+scope (or a follow-up to it) rather than something 39-C silently inherits
+unresolved.
 
 ### Recommended sequencing
 
@@ -978,12 +1091,18 @@ Order and Dependencies."
   filing-type coverage, editable-annotation rehydration if that's wanted,
   the storage-size question flagged in "Persistence design" — needs its own
   authorization; the spike itself does not imply that follow-on scope.
-- **39-B** may be authorized once the requester reviews its Recommended
-  Decisions and the Scope Note above — no separate legal-review gate; this
-  app's validation state is a filer convenience, not an adjudication of
-  filing sufficiency.
-- **39-C** may not be authorized until its Inventory Gate (a complete,
-  confirmed table with no "not yet confirmed" cells) is finished.
+- **39-B**'s development-only spike is done and landed on Plan Simplified's
+  Guardian role (see Status above). The reusable modules it produced
+  (`signature-state.js`, `signature-pad.js`, `signature-state-control.js`)
+  are what 39-C will wire into every other role/filing type — that rollout,
+  and the real Upload-background-transparency question flagged in "Real
+  limitation found building this," each need their own authorization; the
+  spike does not imply either.
+- **39-C** may not be authorized until both of its gates clear: the
+  Inventory Gate (a complete, confirmed table with no "not yet confirmed"
+  cells) and the Upload background-transparency gate (the requester picks
+  one of that section's three options — resolve, hint-only, or drop
+  Upload).
 - **39-D** may not be authorized until the compound party+entry reference
   design, the single-ward export/import fix (confirmed necessary — see
   Design above), and the storage-growth question are resolved with the

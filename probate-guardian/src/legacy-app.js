@@ -7028,7 +7028,8 @@ function planGuardianBlank(type){
   if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''};
   if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:''};
   if(type==='planMinor')return window.emptyMinorGuardianSig();
-  return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:''};
+  // Milestone 39-B pilot: only planSimplified's guardian row carries these.
+  return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:'',signatureState:'',signatureImage:''};
 }
 function planGuardianHasAnyData(g){return !!(g&&Object.values(g).some(v=>v!==''&&v!==null&&v!==undefined&&v!==false));}
 function planGuardianMax(type){return type==='planInitial'?4:type==='planAnnual'?3:2;}

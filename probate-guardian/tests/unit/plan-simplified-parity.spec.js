@@ -116,7 +116,16 @@ const CASES = [
   { autoId: 'cover.wardCaseCounty', override: { caseNumber: '' }, message: 'Cover — Case Number is required' },
   { autoId: 'cover.wardCaseCounty', override: { county: '' }, message: 'Cover — County is required' },
   { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.name': '' }, message: 'Signatures — Guardian 1 printed name is required' },
-  { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.signatureDate': '' }, message: 'Signatures — Guardian 1 date signed is required' },
+  // Milestone 39-B: blanking signatureDate alone no longer blocks by
+  // itself -- with no explicit signatureState, inferLegacySignatureState()
+  // reads a blank date as Unsigned (a fully valid choice). Explicitly
+  // selecting "/s/" Signed is what makes a blank date a real blocker now;
+  // see the dedicated tri-state tests below for the Unsigned-passes case.
+  {
+    autoId: 'signatures.guardian1.core',
+    override: { 'planGuardians.0.signatureState': 'typed', 'planGuardians.0.signatureDate': '' },
+    message: 'Signatures — Guardian 1 date signed is required to apply "/s/" Signed',
+  },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.email': '' }, message: 'Signatures — Guardian 1 email is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.phone': '' }, message: 'Signatures — Guardian 1 phone is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.mailingAddress': '' }, message: 'Signatures — Guardian 1 mailing address is required' },
@@ -166,5 +175,51 @@ describe('Plan Simplified readiness/export parity', () => {
     const preflight = runPreflight(fixture);
     expect(preflight.messages).toEqual([message]);
     expect(preflight.canExport).toBe(false);
+  });
+});
+
+// Milestone 39-B: the three-state signature control's own dedicated parity
+// coverage -- readiness and the real export path must agree here too, the
+// same discipline as every other condition in this suite.
+describe('Plan Simplified: Milestone 39-B tri-state signature parity', () => {
+  test('Guardian explicitly Unsigned validates and exports cleanly, with no signature fields filled', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'none',
+      'planGuardians.0.signatureDate': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual([]);
+    expect(preflight.canExport).toBe(true);
+  });
+
+  test('Guardian with Signature Stamp selected but no image blocks with a distinct message', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'stamp',
+      'planGuardians.0.signatureDate': '',
+      'planGuardians.0.signatureImage': '',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(false);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual(['Signatures — Guardian 1 signature stamp image is required']);
+    expect(preflight.canExport).toBe(false);
+  });
+
+  test('Guardian with Signature Stamp applied (image present) validates and exports cleanly', () => {
+    const fixture = withOverrides(BASELINE, {
+      'planGuardians.0.signatureState': 'stamp',
+      'planGuardians.0.signatureDate': '',
+      'planGuardians.0.signatureImage': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual([]);
+    expect(preflight.canExport).toBe(true);
   });
 });
