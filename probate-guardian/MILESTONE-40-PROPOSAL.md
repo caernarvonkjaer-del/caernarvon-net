@@ -14,7 +14,7 @@ implementation of one does not authorize another.
 | 40C | Validated browser QA/UX remediation (county defaulting, Cover labeling, date-range entry, readiness/export parity, carryover, Plan Initial Q7 validation bug) | Ready to scope for implementation | `MILESTONE-40C-PROPOSAL.md` |
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | Ready to scope for implementation | `MILESTONE-40E-PROPOSAL.md` |
-| 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`) and its false "Last backup" indicator bugs | Ready to scope for implementation | `MILESTONE-40F-PROPOSAL.md` |
+| 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | Ready to scope for implementation | `MILESTONE-40F-PROPOSAL.md` |
 
 ## How These Ended Up Together
 

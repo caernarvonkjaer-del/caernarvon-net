@@ -10,9 +10,12 @@ not authorize this work.
 ## Goal
 
 Collapse the save/backup/export/autosave system down to exactly one real
-implementation, and remove the false "Last backup: just now" / "auto-save
+implementation, remove the false "Last backup: just now" / "auto-save
 needs one manual save to re-arm" claims that the current two-implementation
-split produces.
+split produces, and delete the inert Tauri-desktop scaffolding discovered
+during this review (there is no Tauri shell anywhere in this repo — no
+`src-tauri/`, no `@tauri-apps/*` dependency, no `tauri.conf.json` — so this
+code can never do anything in either shipped build).
 
 ## Background
 
@@ -104,6 +107,47 @@ indicator'`) imports `case-file.js` directly and tests
 never actually called by the live `saveData()`, so the test passes while
 the real bug remains invisible to it.
 
+### Inert Tauri scaffolding found during this review
+
+Confirmed there is no Tauri project in this repo at all: no `src-tauri/`
+directory, no `@tauri-apps/*` entry in `package.json`, no
+`tauri.conf.json`, no `capabilities/default.json` (despite a code comment
+referencing one). Both real build targets (`build:web`, `build:portable`)
+are plain Vite/browser builds. Two Tauri-shaped subsystems exist anyway,
+both gated on a `window.__TAURI__` global that can never be present, and
+both are exactly the same "declared twice, classic-script copy silently
+shadowed" pattern as the main save pipeline above:
+
+1. **Filesystem ward-backup ("FILESYSTEM AUTOSAVE").**
+   `legacy-app.js:4195-4294` — `AUTOSAVE_DIR`, `_autosaveDirPath`,
+   `autosaveWarn()`, `tauriFs()`, `tauriPath()`, `getAutosaveDirPath()`,
+   `ensureAutosaveDir()`, `autosaveWardToFile()`, `deleteAutosaveFile()`,
+   `restoreFromFileBackupIfEmpty()` — would back up each ward to
+   `Documents/ProbateGuardian/<wardId>.json` on a Tauri desktop build.
+   Referenced from `saveData()` (`:2811`), ward deletion (`:5102` and the
+   guarded `window.deleteAutosaveFile` call in
+   `ward-lifecycle.js:452-453`), and app boot (`restoreFromFileBackupIfEmpty()`
+   at `:9072`). None of it is duplicated elsewhere — it simply never runs.
+2. **OS keychain "remember this password" feature.** Duplicated exactly
+   like the main pipeline: a dead copy in `legacy-app.js:1946-1974`
+   (`tauriInvoke`, `hasKeychainSupport`, `keychainSave`, `keychainLoad`,
+   `keychainDelete` — comment references a `src-tauri/src/lib.rs` that
+   does not exist in this repo) and the live, shadowed copy in
+   `crypto.js:61-103` (same five functions, exported to `window` at
+   `:183-186`). Both always return falsy/no-op, because
+   `window.__TAURI__` is never present. This isn't just dead function
+   definitions — it drives real, always-inert UI: the "Remember this
+   password on this device (Windows Credential Manager)" checkbox
+   (`index.html:229-234`, `#unlock-remember-row`/`#unlock-remember-checkbox`)
+   is unconditionally hidden by `hasKeychainSupport() ? 'block' : 'none'`
+   in both `promptUnlock()` (`:2143-2145`) and `promptCreatePassword()`
+   (`:2203-2205`), so it can never be shown, checked, or acted on; the
+   silent-auto-unlock-via-keychain branch at boot (`:2089-2101`) can never
+   fire; and `submitUnlockForm()`'s `remember` branches (`:2256`, `:2298`)
+   always take the harmless-but-pointless `keychainDelete()` path. A
+   one-off `window.tauriInvoke('set_secure_permissions')` call at app boot
+   (`:9066`) is the same dead pattern in miniature.
+
 ## Decisions Required
 
 1. **DECISION (recommended default): `case-file.js` becomes the sole
@@ -131,6 +175,12 @@ the real bug remains invisible to it.
    periodic timer, and the manual "Save Backup Now" button all report a
    write failure identically (banner after N consecutive failures),
    instead of only the debounce path escalating today.
+4. **DECISION (per requester instruction): remove the Tauri scaffolding
+   entirely** — both subsystems above, not merely de-duplicated. This
+   includes deleting the "Remember this password" checkbox from the
+   unlock/create-password UI (`index.html:229-234`) rather than leaving a
+   permanently-hidden control in the markup, since it can never be shown
+   under either real build target.
 
 ## Implementation Steps
 
@@ -243,6 +293,44 @@ the real bug remains invisible to it.
      `#storage-usage-readout` says "auto-save is on" and a real elapsed
      time, not the old permanent defaults.
 
+### Tauri scaffolding removal
+
+9. **Delete the filesystem ward-backup subsystem** from `legacy-app.js`:
+   the whole `:4195-4294` block (`AUTOSAVE_DIR`, `_autosaveDirPath`,
+   `autosaveWarn`, `tauriFs`, `tauriPath`, `getAutosaveDirPath`,
+   `ensureAutosaveDir`, `autosaveWardToFile`, `deleteAutosaveFile`,
+   `restoreFromFileBackupIfEmpty`), plus its three call sites: the
+   `autosaveWardToFile(activeWard)` call in `saveData()` (already being
+   simplified in Step 3 — drop this line too), the `deleteAutosaveFile(wardId)`
+   call in the ward-deletion flow (`:5102`), the guarded
+   `window.deleteAutosaveFile` call in `ward-lifecycle.js:452-453`, and the
+   `restoreFromFileBackupIfEmpty()` call at app boot (`:9072`).
+10. **Delete the OS-keychain "remember password" feature** in full:
+    - `legacy-app.js:1946-1974`'s dead copy (`tauriInvoke`,
+      `hasKeychainSupport`, `keychainSave`, `keychainLoad`,
+      `keychainDelete`).
+    - `crypto.js:61-103`'s live copy of the same five functions, and their
+      `window.*` exports at `:183-186`.
+    - The silent-auto-unlock-via-keychain branch at boot
+      (`legacy-app.js:2089-2101`).
+    - The `keychainAvailable`/`hasSavedPw` setup and `rememberRow`
+      show/hide logic in `promptUnlock()` (`:2132-2145`) and
+      `promptCreatePassword()` (`:2203-2205`).
+    - The `remember`/`keychainSave`/`keychainDelete` handling in
+      `submitUnlockForm()` (`:2243`, `:2256`, `:2298`) — these branches
+      collapse to nothing once `remember` can no longer be read from a
+      checkbox that no longer exists.
+    - The `#unlock-remember-row`/`#unlock-remember-checkbox` markup
+      (`index.html:229-234`).
+    - The one-off `window.tauriInvoke('set_secure_permissions')` call and
+      its try/catch at app boot (`legacy-app.js:9066`).
+11. **Sweep comments and docs for stale Tauri claims**: the
+    `src-tauri/src/lib.rs` and `capabilities/default.json` references
+    inside the deleted code are removed along with it; check for any other
+    comment or doc (outside `MILESTONE-ARCHIVE.md`, which is a historical
+    record and stays as-is) that still describes Tauri support as present
+    or planned-and-scaffolded, and correct it.
+
 ## Acceptance Criteria
 
 | Scenario | Expected result |
@@ -256,6 +344,10 @@ the real bug remains invisible to it.
 | The periodic timer's write fails repeatedly | Same escalation to `#save-error-banner` as the 1s debounce path, not silently different |
 | grep across `src/legacy-app.js` for the deleted function/variable names | none found outside historical comments, if any are kept |
 | `npm run verify:data-model` | unaffected — no data-model shape changes in this milestone |
+| Unlock screen (create-password and unlock forms) | No "Remember this password" checkbox or row present |
+| Deleting a ward | No error/console warning about `deleteAutosaveFile`; ward deletion behaves identically to today (the file it targeted never existed in a browser build) |
+| grep for `__TAURI__`, `tauriInvoke`, `tauriFs`, `tauriPath`, `hasKeychainSupport`, `keychainSave`, `keychainLoad`, `keychainDelete`, `autosaveWardToFile`, `deleteAutosaveFile`, `restoreFromFileBackupIfEmpty` across `src/` | none found |
+| `capabilities/default.json` / `src-tauri/src/lib.rs` mentions in code comments | none remain |
 
 ## Verification
 
@@ -265,9 +357,15 @@ persistence e2e family (`case-file-roundtrip.spec.ts`,
 `backup-restore-sav.spec.ts`, `dashboard-backup.spec.ts`,
 `recovery-cache.spec.ts`, `persistence-recovery.contract.spec.ts`,
 `ward-lock.spec.ts`) and `routes.spec.ts` (its existing "Unsaved changes"
-assertion at `:198` must still pass unchanged). This is a deletion-shaped
-change touching the single most cross-cutting subsystem in the app —
-recommend the full `npm test` regression before commit/push, per
-`AGENTS.md`, the same recommendation 40A made for a similarly
-cross-cutting deletion. Update `TEST-INDEX.md` for the rewritten unit test
-and any new e2e assertions in the same commit.
+assertion at `:198` must still pass unchanged). Also run `tests/e2e/unlock.spec.ts`
+and `tests/e2e/startup.spec.ts` — the closest existing coverage of the
+create-password/unlock overlay the checkbox removal touches; neither
+currently references `unlock-remember-row`/`hasKeychainSupport` (confirmed
+by grep — no test anywhere in `tests/` touches any of the Tauri-scaffolding
+names), so no test changes are expected there, only confirmation nothing
+regresses. This is a deletion-shaped change touching the single most
+cross-cutting subsystem in the app plus the unlock flow — recommend the
+full `npm test` regression before commit/push, per `AGENTS.md`, the same
+recommendation 40A made for a similarly cross-cutting deletion. Update
+`TEST-INDEX.md` for the rewritten unit test and any new e2e assertions in
+the same commit.
