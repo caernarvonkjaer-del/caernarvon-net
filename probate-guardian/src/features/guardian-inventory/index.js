@@ -1140,9 +1140,14 @@ export function validateGuardian(){
   d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:''}));req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
   req(d.preparer.name,'D-2 Preparer — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:''}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
   req(d.attorney.name,'D-2 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:''}));if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
-  if (d.hasSafeDepositBox === null || d.hasSafeDepositBox === undefined) {
+  // "Unanswered" is any non-boolean value, not just null/undefined --
+  // emptyDataGuardian() defaults this field to '', which matched neither
+  // check here, so a brand-new filing silently passed this question
+  // without it ever being touched. pdf-model.js's own "Unanswered" rendering
+  // for this exact field already uses this same true/false-only test.
+  if (d.hasSafeDepositBox !== true && d.hasSafeDepositBox !== false) {
     errors.push('D-3 — Safe Deposit Box question must be answered (Yes or No).');
-  } else if (d.hasSafeDepositBox === true && (d.safeDepositBoxFiled === null || d.safeDepositBoxFiled === undefined)) {
+  } else if (d.hasSafeDepositBox === true && d.safeDepositBoxFiled !== true && d.safeDepositBoxFiled !== false) {
     errors.push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).');
   }
   req(d.bondAmount,'D-4 — Bond Amount');if(!d.bondPeriodFrom)errors.push('D-4 — Bond Period From is required.');if(!d.bondPeriodTo)errors.push('D-4 — Bond Period To is required.');req(d.bondingCompany,'D-4 — Bonding Company');

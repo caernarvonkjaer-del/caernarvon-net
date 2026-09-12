@@ -7,10 +7,24 @@ const legacyCode = fs.readFileSync(path.join(root, 'src/legacy-app.js'), 'utf8')
 const inventoryCode = fs.readFileSync(path.join(root, 'src/features/guardian-inventory/index.js'), 'utf8');
 
 describe('Milestone 38E Item 1: Guardian Inventory & Plan Benefits Radio Migration', () => {
-  test('emptyDataGuardian initializes tri-state strings for amendedForm and safe deposit flags', () => {
+  test('emptyDataGuardian initializes amendedForm as a tri-state string', () => {
     expect(legacyCode).toContain("amendedForm:''");
-    expect(legacyCode).toContain("hasSafeDepositBox:''");
-    expect(legacyCode).toContain("safeDepositBoxFiled:''");
+  });
+
+  // hasSafeDepositBox/safeDepositBoxFiled are a different tri-state shape
+  // from amendedForm above -- boolean (null/true/false), driven by raw
+  // radio markup (data-inventory-change="set-sdb"/"set-sdb-filed"), not
+  // yesNoRadioHTML()'s string convention ('Yes'/'No'/''). A stray '' default
+  // here meant a brand-new filing's D-3 answer displayed as "Unanswered" in
+  // the PDF (pdf-model.js already checks strictly for === true/=== false)
+  // while validateGuardian() silently treated the same '' as complete (it
+  // only checked === null/=== undefined) -- a real, if narrow, gap where an
+  // untouched question could export as done. null is what the field
+  // actually becomes once a filer clears it (see index.js's set-sdb
+  // handler), so the initial default should match that, not amendedForm's.
+  test('emptyDataGuardian initializes hasSafeDepositBox/safeDepositBoxFiled as unanswered (null)', () => {
+    expect(legacyCode).toContain('hasSafeDepositBox:null');
+    expect(legacyCode).toContain('safeDepositBoxFiled:null');
   });
 
   test('row factories initialize tri-state strings for schedule flags', () => {

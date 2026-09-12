@@ -6768,8 +6768,8 @@ async function showAddWardModalForType(type){
 function emptyDataGuardian(){
   return {
     wardName:'',caseNumber:'',gid:null,county:'Pinellas',guardianName:'',
-    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:'',
-    safeDepositBoxFiled:'',amendedForm:'',
+    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:null,
+    safeDepositBoxFiled:null,amendedForm:'',
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
     scheduleB4:[],scheduleC1:[],scheduleC2:[],scheduleC3:[],scheduleC4:[],scheduleC5:[],
     // Per-schedule "I verify there are no items of this type" checkbox --
