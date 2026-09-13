@@ -998,23 +998,23 @@ function pageD3(){
         <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></p>
         <div class="d-flex gap-4 mb-3">
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${D.hasSafeDepositBox===true?'checked':''} data-inventory-change="set-sdb">
+            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${sdbIsYes(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
             <label class="form-check-label" for="sdb-yes">Yes</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${D.hasSafeDepositBox===false?'checked':''} data-inventory-change="set-sdb">
+            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${sdbIsNo(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
             <label class="form-check-label" for="sdb-no">No</label>
           </div>
         </div>
-        <div id="sdb-filed-row" class="${D.hasSafeDepositBox===true?'':'d-none'}">
+        <div id="sdb-filed-row" class="${sdbIsYes(D.hasSafeDepositBox)?'':'d-none'}">
           <label class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></label>
           <div class="d-flex gap-4 mb-2">
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${D.safeDepositBoxFiled===true?'checked':''} data-inventory-change="set-sdb-filed">
+              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${sdbIsYes(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
               <label class="form-check-label" for="sdb-filed-yes">Yes</label>
             </div>
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${D.safeDepositBoxFiled===false?'checked':''} data-inventory-change="set-sdb-filed">
+              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${sdbIsNo(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
               <label class="form-check-label" for="sdb-filed-no">No</label>
             </div>
           </div>
@@ -1085,6 +1085,14 @@ function pageD5(){
 // ═══════════════════════════════════════════════════════
 // VALIDATION
 // ═══════════════════════════════════════════════════════
+// These two Yes/No fields exist in two shapes at once: the radios below write
+// booleans, and normalizeWardData() (legacy-app.js) migrates a loaded ward to
+// the canonical 'Yes'/'No' strings. Every reader must accept both, or a saved
+// answer reads as unanswered after a reopen.
+const sdbIsYes = (v) => v === true || v === 'Yes';
+const sdbIsNo = (v) => v === false || v === 'No';
+const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
+
 export function validateGuardian(){
   const errors=[];
   const d=window.D;
@@ -1140,14 +1148,16 @@ export function validateGuardian(){
   d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:''}));req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
   req(d.preparer.name,'D-2 Preparer — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:''}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
   req(d.attorney.name,'D-2 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:''}));if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
-  // "Unanswered" is any non-boolean value, not just null/undefined --
-  // emptyDataGuardian() defaults this field to '', which matched neither
-  // check here, so a brand-new filing silently passed this question
-  // without it ever being touched. pdf-model.js's own "Unanswered" rendering
-  // for this exact field already uses this same true/false-only test.
-  if (d.hasSafeDepositBox !== true && d.hasSafeDepositBox !== false) {
+  // "Unanswered" is anything that is neither Yes nor No: emptyDataGuardian()
+  // defaults these to null, which must stay unanswered so a brand-new filing
+  // cannot silently pass this question untouched. Both conventions count as
+  // answered -- the radios write booleans, but normalizeWardData() migrates a
+  // saved ward to the canonical 'Yes'/'No' strings, so after any
+  // save-and-reopen the value is a string. Testing booleans only meant export
+  // was blocked on a question the filer had actually answered.
+  if (!sdbAnswered(d.hasSafeDepositBox)) {
     errors.push('D-3 — Safe Deposit Box question must be answered (Yes or No).');
-  } else if (d.hasSafeDepositBox === true && d.safeDepositBoxFiled !== true && d.safeDepositBoxFiled !== false) {
+  } else if (sdbIsYes(d.hasSafeDepositBox) && !sdbAnswered(d.safeDepositBoxFiled)) {
     errors.push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).');
   }
   req(d.bondAmount,'D-4 — Bond Amount');if(!d.bondPeriodFrom)errors.push('D-4 — Bond Period From is required.');if(!d.bondPeriodTo)errors.push('D-4 — Bond Period To is required.');req(d.bondingCompany,'D-4 — Bonding Company');

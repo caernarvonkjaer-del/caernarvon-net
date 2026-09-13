@@ -107,6 +107,17 @@ export async function navigate(page, { updateHash = true } = {}) {
 }
 
 export async function renderPage(page) {
+  // Milestone 38C: entering the dashboard ends editing focus -- commit pending
+  // values, release the ward lock, clear activeWardId and window.D. navigate()
+  // above already does this, but legacy-app.js's handleHash() calls renderPage
+  // directly, so arriving by hash or by the browser Back button skipped it and
+  // left the ward lock held -- which can block another tab from opening that
+  // ward at all. Doing it here covers every route in. It early-returns when no
+  // ward is open and de-dupes concurrent calls, so navigate() is unaffected.
+  if (page === '/dashboard' && typeof window !== 'undefined' && typeof window.enterDashboardEditingFocus === 'function') {
+    if (!await window.enterDashboardEditingFocus()) return;
+  }
+
   if (_customRoutes.has(page)) {
     const handler = _customRoutes.get(page);
     return await handler(page);

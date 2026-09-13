@@ -39,6 +39,11 @@ test.describe('unlock', () => {
     await page.click('#unlock-submit-btn');
     await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
     await expect(page.locator('#sidebar')).toBeVisible();
-    await expect(page.locator('#ward-selector')).toHaveValue('Test Ward'); // case data survived the lock cycle
+    // Milestone 38C: unlocking reloads the case from its .sav but does not
+    // reopen an editor, so focus stays null. Switching explicitly is what
+    // proves the case data survived the lock cycle.
+    await expect(page.locator('#ward-selector')).toHaveValue('');
+    await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+    await expect(page.locator('#ward-selector')).toHaveValue('Test Ward');
   });
 });

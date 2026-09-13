@@ -89,7 +89,13 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
     }
   });
 
-  test('dashboard does NOT release lock; close ward action releases lock', async ({ browser }) => {
+  // Milestone 38C inverted the premise of this test's old title ("dashboard
+  // does NOT release lock"): entering the dashboard is now exactly what ends
+  // editing focus and releases the lock, so there is no separate close action
+  // to wait for. The cross-tab handoff it guards is unchanged and is still the
+  // point -- Tab 2 must be refused while Tab 1 is editing, and must succeed
+  // once Tab 1 leaves the editor.
+  test('cross-tab handoff: a ward is locked while edited and released by entering the dashboard', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const tab1 = await context.newPage();
@@ -100,22 +106,20 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
       const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
 
-      // Tab 1 navigates to dashboard (lock is retained)
-      await tab1.evaluate(() => window.location.hash = '#/dashboard');
-      await expect(tab1).toHaveURL(/#\/dashboard$/);
-
-      // Tab 2 opens
+      // Tab 2 opens while Tab 1 is still in Ward A's editor.
       const tab2 = await context.newPage();
       await gotoApp(tab2);
       await startNewCase(tab2);
       await chooseNoPassword(tab2);
 
-      // Tab 2 attempts to acquire Ward A while Tab 1 is on dashboard -> MUST FAIL (lock held)
+      // Tab 2 attempts to acquire Ward A while Tab 1 is editing it -> MUST FAIL.
       const tab2Acquired = await tab2.evaluate((id) => (window as any).acquireWardLock(id), wardAId);
       expect(tab2Acquired).toBe(false);
 
-      // Tab 1 closes the ward explicitly using Close action
-      await tab1.evaluate(() => (window as any).unloadWard());
+      // Tab 1 enters the dashboard, which ends editing focus and releases the
+      // lock -- no separate close action exists any more.
+      await tab1.evaluate(() => window.location.hash = '#/dashboard');
+      await expect(tab1).toHaveURL(/#\/dashboard$/);
       await tab1.waitForFunction(() => (window as any).caseFile.activeWardId === null);
 
       // Tab 2 can now acquire Ward A successfully
@@ -233,7 +237,13 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
     }
   });
 
-  test('UI affordance: sidebar close-ward-btn and dashboard close-ward release the lock', async ({ browser }) => {
+  // Milestone 38C removed both close-ward affordances. Milestone 36-1 had
+  // already moved Close out of the sidebar into the dashboard header; 38C then
+  // deleted that button too, because entering the dashboard IS what ends
+  // editing focus ("There is no Close Editor button on the dashboard"). The
+  // behaviour worth guarding is unchanged and is what this now asserts:
+  // arriving at the dashboard releases the ward lock and clears focus.
+  test('entering the dashboard releases the ward lock, with no close-ward affordance anywhere', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -244,26 +254,24 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
       const wardAId = await page.evaluate(() => (window as any).caseFile.activeWardId);
 
-      // Milestone 36-1 moved the filing controls out of the sidebar, so Close
-      // now exists only in the dashboard header, asserted below.
+      // Neither affordance exists any more: not in the sidebar (36-1) and not
+      // in the dashboard header (38C).
       await expect(page.locator('.sidebar #close-ward-btn')).toHaveCount(0);
+      await expect(page.locator('button.dashboard-close-ward')).toHaveCount(0);
 
-      // Go to dashboard -> active ward is still loaded and held
+      // The lock is held while the editor is open.
+      const heldWhileEditing = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
+      expect(heldWhileEditing).toContain(`pg-ward-${wardAId}`);
+
+      // Entering the dashboard is the close action.
       await page.evaluate(() => window.location.hash = '#/dashboard');
       await expect(page).toHaveURL(/#\/dashboard$/);
-
-      // Verify dashboard header close button is visible
-      const dashboardCloseBtn = page.locator('button.dashboard-close-ward');
-      await expect(dashboardCloseBtn).toBeVisible();
-
-      // Click dashboard close button
-      await dashboardCloseBtn.click();
       await page.waitForFunction(() => (window as any).caseFile.activeWardId === null);
-      await expect(page.locator('button.dashboard-close-ward')).toBeHidden();
 
-      // Lock should be released
+      // Lock released, and no editor state left behind.
       const heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(heldLocks).not.toContain(`pg-ward-${wardAId}`);
+      expect(await page.evaluate(() => Object.keys((window as any).D || {}).length)).toBe(0);
     } finally {
       await context.close();
     }

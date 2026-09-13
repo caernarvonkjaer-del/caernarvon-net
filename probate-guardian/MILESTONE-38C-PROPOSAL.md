@@ -2,8 +2,112 @@
 
 ## Status
 
-**Executable, independent delivery specification.** No runtime, persistence,
-or test change is included in this documentation pass.
+**Code landed 2026-09-11 (`b0321dd`). Remaining gaps closed 2026-09-13** —
+see the completion note below. The specification text itself is unchanged.
+
+### Completion note (2026-09-13)
+
+`b0321dd` landed this milestone's central change (`buildCaseFileBlob()` stopped
+writing `appState.activeWardId`) but **not the rest of the table**, and not the
+E2E-test row of its own delivery checklist. That left seven persistence/export
+specs red for two days, all asserting the pre-38C behavior this milestone
+deliberately removed, which is how the gap was eventually found — by
+investigating the failures rather than the code.
+
+Four code paths still violated the storage table and were fixed:
+
+1. **`loadCaseFileFromZip()`** set `caseFile.activeWardId = a.activeWardId || null`
+   from the archive, so any pre-38C `.sav` auto-opened its filing through
+   `initApp()`'s `getActiveWard()`. It now keeps focus `null` and consumes a
+   legacy value exactly once as recent history — prepending it to
+   `recentWards` if it names a ward the archive actually contains — which is
+   what the table's "legacy read behavior" column specifies.
+2. **The same function's `else` branch** fell back to
+   `caseFile.activeWardId = wards[0].wardId` whenever an archive had no
+   `appState` section at all, which is every single-ward export. That is
+   precisely the prohibited "fall back to the first ward solely because data
+   was imported." Focus is now forced `null` for every archive shape.
+3. **`importSavArchiveOrWard()`** called `switchWard(activeWardId)`, and
+   failing that `switchWard(wards[0].wardId)`, on completion. Both are gone;
+   import now closes any open editor through `unloadWard()` *before* replacing
+   ward data and lands on the neutral dashboard.
+4. **Only `navigate()` ended editing focus.** `router.js` called
+   `enterDashboardEditingFocus()` from `navigate()` alone, but
+   `legacy-app.js`'s `handleHash()` calls `renderPage()` directly — so reaching
+   the dashboard by hash or by the **browser Back button** released nothing:
+   the ward lock stayed held, `activeWardId` stayed set, and `window.D` stayed
+   populated. A held lock can stop another tab from opening that ward at all.
+   The call moved into `renderPage()`, which covers every route in; it
+   early-returns when no ward is open and de-dupes concurrent calls, so
+   `navigate()` is unaffected. This is the "direct hash/history" case 38C's own
+   E2E row named.
+
+Point 4 also exposed a live instance of the Milestone 40F/40G hazard: the first
+attempt at it was written into `legacy-app.js`'s `renderPage()`, which is
+**shadowed** — `router.js:259` publishes `window.renderPage`, so the legacy copy
+is dead code and the fix silently did nothing until a probe showed the lock
+still held. `renderPage` is therefore another duplicated pair of the same kind
+40F removed for the save pipeline, and is a candidate for the same treatment.
+
+Point 3 is worth reading if you touch this again: the obvious-looking fix —
+nulling `activeWardId` and then navigating — is wrong. `enterDashboardEditingFocus()`
+early-returns on `if (!caseFile.activeWardId)`, so clearing the flag first makes
+the dashboard skip committing pending values, clearing `window.D`, **and
+releasing the ward lock**. Going through `unloadWard()` keeps that sequence
+intact, and flushing before the data swap means the save writes the ward the
+user was actually editing rather than an imported replacement of it. A test
+caught this; the reasoning did not.
+
+Tests updated to the post-38C contract, preserving what each one actually
+protects rather than deleting the assertion: `case-file-roundtrip.spec.ts`
+(both paths), `recovery-cache.spec.ts`, `dashboard-backup.spec.ts` (plus a
+stale comment that documented the removed fallback), `unlock.spec.ts`, and
+`backup-restore-sav.spec.ts` (two tests, retitled — one now proves no stale
+`window.D` survives a restore, the other that cross-tab lock contention is
+reached by an explicit Edit instead of by the restore itself). The idiom used
+throughout — assert a neutral `#ward-selector`, switch explicitly, then assert
+the name — was already present in `persistence-recovery.contract.spec.ts`,
+which someone had partially updated.
+
+`TEST-INDEX.md`: no change required, recorded here per this milestone's
+Catalogue row. No test file was added, renamed, or repurposed, and no
+category or scope changed — each updated spec still covers the same subject,
+with corrected expectations. Two tests were retitled within their existing
+files, which the file-level index does not describe.
+
+### Three further failures, none of them 38C (2026-09-13)
+
+Chasing the same set turned up three unrelated defects. All three had the same
+shape — a test asserting something true before a *later* milestone changed it —
+but one was a real user-facing bug:
+
+- **`persistence-recovery.contract.spec.ts:30` — a real bug, and mine.** The
+  D-3 Safe Deposit Box validator added earlier (commit `26380a5`) tested
+  `!== true && !== false`. But `normalizeWardData()`
+  (`legacy-app.js:6950-6951`) migrates a loaded ward's `hasSafeDepositBox` /
+  `safeDepositBoxFiled` to the canonical `'Yes'`/`'No'` strings — the
+  Milestone 37-5 radio convention — while the radios themselves still write
+  booleans. So after any save-and-reopen the value is a string, and **three
+  readers disagreed about one field**: the validator reported the question
+  unanswered and blocked export, the radios (`=== true`/`=== false`) rendered
+  as if nothing had been chosen, and the dependent "inventory filed" row hid
+  itself. A filer who answered the question, saved, and reopened would be
+  blocked from exporting with the answer apparently blank. Fixed by accepting
+  both shapes in every reader via `sdbIsYes`/`sdbIsNo`/`sdbAnswered` in
+  `guardian-inventory/index.js`. Isolated by bisecting the round trip: the
+  archive holds `false` and load preserves it, but activation rewrites it.
+- **`case-file-protection.spec.ts:165`** counted one write where it expected
+  zero. Not an overwrite-protection failure: entering the dashboard commits
+  and saves the open filing (this milestone), and that legitimate case-file
+  save goes through the same stubbed handle. The counter is now reset
+  immediately before the click so it measures only the button's effect.
+- **`dashboard-backup.spec.ts:13`** compared ward JSON byte-for-byte across a
+  dashboard navigation; the only difference was `lastModified`, re-stamped by
+  that same save. The snapshot now excludes that one field, which cannot carry
+  a dashboard preference and is therefore irrelevant to what the test guards.
+
+Superseded note: an earlier revision of this section listed two of these as
+"not 38C-related and still open." All three are now closed.
 
 ## Goal
 

@@ -25,6 +25,11 @@ test.describe('recovery-cache (crash recovery)', () => {
 
     // Restore succeeds -> initApp() skips promptOpenOrStartAtLaunch() entirely.
     await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+    // Milestone 38C: a restored recovery cache sets activeWardId = null and
+    // never falls back to restoredWards[0], so the sidebar is neutral until
+    // the user picks a ward. The data is proven restored by switching to it.
+    await expect(page.locator('#ward-selector')).toHaveValue('');
+    await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
     await expect(page.locator('#ward-selector')).toHaveValue('Never Saved Ward');
   });
 

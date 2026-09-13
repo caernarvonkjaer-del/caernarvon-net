@@ -205,6 +205,13 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       const wardAId = await page.evaluate(() => (window as any).caseFile.wards.find((w: any) => w.wardName === 'Dash Ward A')?.wardId);
       const backupBtn = page.locator(`[data-dashboard-action="backup"][data-ward-id="${wardAId}"]`).first();
       await expect(backupBtn).toBeVisible();
+
+      // Count only writes caused by the button. Entering the dashboard commits
+      // and saves the open filing (Milestone 38C), and that legitimate
+      // case-file save goes through this same stubbed handle -- so the counter
+      // is already 1 by now, for a reason that has nothing to do with the
+      // overwrite protection under test.
+      await page.evaluate(() => { (window as any).__writeCallCount = 0; });
       await backupBtn.click();
 
       await expect.poll(() => page.evaluate(() => (window as any).__confirmCalled)).toBe(true);

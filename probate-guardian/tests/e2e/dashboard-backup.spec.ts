@@ -18,7 +18,18 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Preference Isolation Ward');
-      const wardBefore = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
+      // lastModified is excluded deliberately: entering the dashboard commits
+      // and saves the open filing (Milestone 38C), and saveData() re-stamps
+      // lastModified, so a byte-identical comparison would fail on a timestamp
+      // that a save is *supposed* to change. What this test guards is that no
+      // dashboard preference reaches ward data, which that field cannot carry.
+      const wardSnapshot = () => page.evaluate(() => JSON.stringify(
+        (window as any).getCaseFile().wards.map((w: any) => {
+          const { lastModified, ...rest } = w;
+          return rest;
+        })
+      ));
+      const wardBefore = await wardSnapshot();
 
       await page.evaluate(() => (window as any).navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
@@ -41,7 +52,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
         return entries;
       });
 
-      expect(await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards))).toBe(wardBefore);
+      expect(await wardSnapshot()).toBe(wardBefore);
       expect(archive.map((entry) => entry.name)).not.toContain('pg-dashboard-preferences-v1');
       const archiveText = archive.map((entry) => entry.text).join('\n');
       expect(archiveText).not.toContain('pg-dashboard-preferences-v1');
@@ -162,8 +173,9 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       expect(result.manifest.guardian).toBeTruthy();
       expect(result.hasWardEnc).toBe(true);
       expect(result.hasAuditLog).toBe(true);
-      // A single-ward export has no appState/templates section at all -- the
-      // reader (loadCaseFileFromZip) defaults activeWardId to this one ward.
+      // A single-ward export has no appState/templates section at all. Since
+      // Milestone 38C the reader does NOT adopt an active ward from that (or
+      // from any archive) -- opening one lands on the neutral dashboard.
       expect(result.manifest.appState).toBeUndefined();
       expect(result.manifest.templates).toEqual([]);
     } finally {
@@ -204,6 +216,12 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+      // Milestone 38C: opening a case file must NOT reopen an editor -- the
+      // archive no longer carries activeWardId and load keeps focus null, so
+      // the sidebar is neutral and the user chooses Edit. Switching
+      // explicitly is what proves the ward data round-tripped.
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Single Export Roundtrip Ward');
     } finally {
       await reopenContext.close();

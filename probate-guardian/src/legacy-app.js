@@ -3421,19 +3421,35 @@ async function loadCaseFileFromZip(zip,manifest,key){
   if(manifest.appState){
     try{
       const a=await decryptJSONWithKey(manifest.appState,key);
-      caseFile.activeWardId=a.activeWardId||null;
+      // Milestone 38C: a legacy archive's activeWardId is resume HISTORY, not
+      // an instruction to reopen an editor. Focus is forced null below, for
+      // every archive shape.
+      const legacyActiveWardId=a.activeWardId||null;
       _appState.theme=a.theme;
       _appState.walkthroughCompleted=a.walkthroughCompleted;
       _appState.firstLaunchSeen=a.firstLaunchSeen;
       _appState.continuePromptShown=a.continuePromptShown;
       _appState.recentWards=a.recentWards;
+      // Consume the legacy value exactly once, as recent history: prepend it
+      // if it names a ward this archive actually contains and is not already
+      // listed. It then shows up under Continue Editing, which the user opts
+      // into, instead of opening itself.
+      if(legacyActiveWardId){
+        const legacyWard=caseFile.wards.find(w=>w.wardId===legacyActiveWardId);
+        const already=loadRecentlyOpenedWards().some(r=>r&&r.wardId===legacyActiveWardId);
+        if(legacyWard&&!already)addToRecentlyOpened(legacyWard);
+      }
       _appState.unlockFailState=a.unlockFailState;
       _autoExportIntervalMinutes=(a.autoExportIntervalMinutes==null)?10:Number(a.autoExportIntervalMinutes);
       _lastExportAt=a.lastExportAt||null;
     }catch(e){console.warn('Could not read app preferences from .sav file',e);}
-  }else{
-    caseFile.activeWardId=(caseFile.wards[0]&&caseFile.wards[0].wardId)||null;
   }
+  // Milestone 38C, same rule as above and deliberately outside the appState
+  // branch: a single-ward export carries no appState section at all, and this
+  // used to fall back to opening wards[0] "solely because data was imported",
+  // which 38C's storage table prohibits. Focus stays null for every archive
+  // shape; the user chooses Edit from the dashboard.
+  caseFile.activeWardId=null;
   _templateCache={};
   for(const type of (Array.isArray(manifest.templates)?manifest.templates:[])){
     const f=zip.file(`templates/${type}.b64`);

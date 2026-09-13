@@ -290,7 +290,13 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
     }
   });
 
-  test('Open Backup replacing actively open ward rebinds window.D to the updated ward', async ({ browser }) => {
+  // Milestone 38C renamed the hazard rather than removing it. Restore no longer
+  // rebinds window.D to the restored ward, because it no longer opens any ward
+  // at all -- it clears focus and lands on the dashboard. What still must not
+  // happen is window.D retaining the pre-restore in-memory edit, so that is
+  // what this now asserts, followed by an explicit Edit to prove the restored
+  // data is what a subsequent open yields.
+  test('Open Backup replacing actively open ward leaves no stale window.D, and an explicit Edit yields the restored data', async ({ browser }) => {
     const context1 = await browser.newContext();
     let backupPath = '';
     try {
@@ -324,10 +330,13 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       page.on('dialog', async (d) => { await d.accept(); });
 
-      // First restore the backup to load the ward
+      // First restore the backup to load the ward. Restore does not open it,
+      // so reaching the data requires an explicit switch.
       await page.setInputFiles('#backup-import-input', backupPath);
-      await page.waitForFunction(() => (window as any).D?.caseNumber === 'CASE-SAVED-IN-BACKUP', { timeout: 10_000 });
+      await page.waitForFunction(() => ((window as any).caseFile?.wards || []).length === 1, { timeout: 10_000 });
+      expect(await page.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
 
+      await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       const caseNum1 = await page.evaluate(() => (window as any).D?.caseNumber);
       expect(caseNum1).toBe('CASE-SAVED-IN-BACKUP');
 
@@ -338,10 +347,21 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       const modifiedCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
       expect(modifiedCaseNum).toBe('CASE-BEFORE-RESTORE');
 
-      // Re-restore backup; switchWard must rebind window.D to the newly hydrated ward object
+      // Re-restore the backup. Focus is released and window.D cleared, so the
+      // stale 'CASE-BEFORE-RESTORE' edit must be gone rather than lingering on
+      // a detached ward object.
       await page.setInputFiles('#backup-import-input', backupPath);
-      await page.waitForFunction(() => (window as any).D?.caseNumber === 'CASE-SAVED-IN-BACKUP', { timeout: 10_000 });
+      // Wait on window.D actually being cleared, not on activeWardId: restore
+      // nulls focus synchronously but window.D is cleared by the dashboard
+      // entry it navigates to, so waiting on the flag races that navigation.
+      await page.waitForFunction(
+        () => Object.keys((window as any).D || {}).length === 0,
+        { timeout: 10_000 }
+      );
+      expect(await page.evaluate(() => (window as any).D?.caseNumber)).toBeUndefined();
 
+      // Opening it again yields the backup's data, not the discarded edit.
+      await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       const reboundCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
       expect(reboundCaseNum).toBe('CASE-SAVED-IN-BACKUP');
     } finally {
@@ -349,7 +369,11 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
     }
   });
 
-  test('Open Backup restores wards through switchWard/activateWard and respects cross-tab lock contention', async ({ browser }) => {
+  // Milestone 38C: restore itself no longer calls switchWard/activateWard, so
+  // contention is no longer reached by restoring -- it is reached when the user
+  // explicitly opens the ward afterwards. The lock behaviour under contention
+  // is the part worth covering and is unchanged.
+  test('after Open Backup, explicitly opening a ward respects cross-tab lock contention', async ({ browser }) => {
     // Same exclusion ward-lock.spec.ts's own describe-level guard already
     // documents: src/core/ward-lock.js explicitly bypasses the Web Locks API
     // on file:// origins, which is how the portable target is served.
@@ -386,8 +410,13 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       tab2.on('dialog', async (d) => { await d.accept(); });
 
-      // Restore the backup in Tab 2
+      // Restore the backup in Tab 2. This loads the ward but opens nothing.
       await tab2.setInputFiles('#backup-import-input', backupPath);
+      await tab2.waitForFunction(() => ((window as any).caseFile?.wards || []).length >= 1, { timeout: 10_000 });
+      expect(await tab2.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
+
+      // The user then chooses Edit, which is where contention now surfaces.
+      await tab2.evaluate((id) => (window as any).switchWard(id), targetWardId);
 
       // switchWard -> activateWard hit contention and triggered ward locked modal on Tab 2.
       // expect(...).toBeVisible() already auto-retries precisely on this element;

@@ -27,6 +27,12 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+      // Milestone 38C: opening a case file must NOT reopen an editor -- the
+      // archive no longer carries activeWardId and load keeps focus null, so
+      // the sidebar is neutral and the user chooses Edit. Switching
+      // explicitly is what proves the ward data round-tripped.
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Plain');
     } finally {
       await reopenContext.close();
@@ -70,6 +76,12 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       await reopenPage.fill('#unlock-password', password);
       await reopenPage.click('#unlock-submit-btn');
       await expect(reopenPage.locator('#unlock-overlay')).not.toHaveClass(/show/);
+      // Milestone 38C: opening a case file must NOT reopen an editor -- the
+      // archive no longer carries activeWardId and load keeps focus null, so
+      // the sidebar is neutral and the user chooses Edit. Switching
+      // explicitly is what proves the ward data round-tripped.
+      await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Encrypted');
     } finally {
       await reopenContext.close();

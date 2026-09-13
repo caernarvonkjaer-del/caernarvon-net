@@ -28,6 +28,7 @@ the same commit.
 | docx-engine.spec.js                  | Court-form DOCX generation from PDF models                                                                                |
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
+| feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
 | form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers                                                        |
 | field-kind-inference.spec.js         | Milestone 36-6: whole-word field-kind inference; no shipped path collides mid-word; no text formatter on checkbox/radio   |
 | form-fields.spec.js                  | inferFieldKind, renderFormField, renderSelectField, renderTextareaField                                                   |

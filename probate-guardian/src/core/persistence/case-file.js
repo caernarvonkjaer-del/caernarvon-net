@@ -748,7 +748,17 @@ export async function importSavArchiveOrWard(file, options = {}) {
       : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
     if (!confirm(promptText)) return false;
 
-    if (typeof window !== 'undefined' && typeof window.flushPendingSave === 'function') {
+    // Milestone 38C: close any open editor BEFORE replacing ward data, using
+    // the real unload path. unloadWard() flushes pending values, releases the
+    // ward lock, nulls focus, clears window.D and lands on the dashboard.
+    // Nulling activeWardId directly instead would make
+    // enterDashboardEditingFocus() early-return on its `if (!activeWardId)`
+    // guard and skip all of that -- leaking the ward lock. Flushing before the
+    // swap also means the save writes the ward the user was actually editing,
+    // not an imported replacement of it.
+    if (typeof window !== 'undefined' && caseFile.activeWardId && typeof window.unloadWard === 'function') {
+      await window.unloadWard();
+    } else if (typeof window !== 'undefined' && typeof window.flushPendingSave === 'function') {
       await window.flushPendingSave();
     }
 
@@ -787,14 +797,13 @@ export async function importSavArchiveOrWard(file, options = {}) {
       await window.saveData();
     }
 
-    if (typeof window !== 'undefined' && typeof window.switchWard === 'function') {
-      if (caseFile.activeWardId && caseFile.wards.some((w) => w.wardId === caseFile.activeWardId)) {
-        await window.switchWard(caseFile.activeWardId);
-      } else if (caseFile.wards.length) {
-        await window.switchWard(caseFile.wards[0].wardId);
-      } else if (typeof window.updateSidebar === 'function') {
-        window.updateSidebar();
-      }
+    // Milestone 38C: importing or restoring data must never open an editor by
+    // itself. This used to switchWard() to a legacy archive's activeWardId,
+    // and failing that to wards[0] "solely because data was imported" -- both
+    // of which 38C's storage table explicitly prohibits. Focus was already
+    // released by the unload above; just refresh the neutral sidebar.
+    if (typeof window !== 'undefined' && typeof window.updateSidebar === 'function') {
+      window.updateSidebar();
     }
 
     if (handle) {
@@ -816,6 +825,14 @@ export async function importSavArchiveOrWard(file, options = {}) {
       window.notifyProbateGuardianTabStateChanged();
     }
 
+    // Both flows land on the dashboard. Only the backup flow did before,
+    // because a plain import relied on the switchWard() call removed above to
+    // move the user somewhere; without it an import would silently leave them
+    // on whatever page they were editing.
+    if (typeof window !== 'undefined' && typeof window.navigate === 'function') {
+      await window.navigate('/dashboard');
+    }
+
     if (isBackupFlow) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
@@ -823,7 +840,6 @@ export async function importSavArchiveOrWard(file, options = {}) {
             detail: { fileName: file.name, count: imported.length },
           })
         );
-        if (typeof window.navigate === 'function') await window.navigate('/dashboard');
       }
       alert(`Backup restored: ${imported.length} ward(s) loaded.`);
     } else {
