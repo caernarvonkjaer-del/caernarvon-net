@@ -2,17 +2,67 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, data-model, test, or documentation change until the requester
-approves Milestone 40C specifically. Approval of another Milestone 40
-delivery does not authorize this work.
+**Draft only — split into two independently approvable deliveries
+(2026-09-12).** This proposal authorizes no runtime, data-model, test, or
+documentation change until the requester approves a named delivery below.
+Approving one does **not** authorize the other, and approval of any other
+Milestone 40 delivery authorizes neither.
+
+The original single-gate 40C bundled eight unrelated tasks behind one
+approval — the largest blast radius in Milestone 40 (a data-model
+expansion, seventeen fallback sites, nine filing types, twelve test files)
+sharing a gate with a one-predicate validation bug fixable in an
+afternoon. That defeated the "independently reviewable and approvable"
+premise that split Milestone 40 in the first place. The two deliveries
+below divide on a real fault line: whether the work touches persisted data.
+
+| Delivery | Tasks | Touches persisted data / CSV | Open decisions | Approve independently |
+| --- | --- | --- | --- | --- |
+| **40C-1 — County Establishment, Hydration, and Carryover** | 40C-A, 40C-F, 40C-G2 | **Yes** — new `caseFile.parties[].county`, `caseFile.parties[]` row expansion, `common,D,county` note rewrite, legacy migration rule | **One, unresolved** — the unknown-circuit representation (Task 40C-A item 7) | Yes |
+| **40C-2 — Form-Entry, Readiness, and Validation Corrections** | 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H | **No** — no field added, renamed, or reshaped; no `verify:data-model` run required | None | Yes |
+
+**40C-2 is ready to implement as soon as it's approved.** 40C-1 needs the
+item 7 decision answered first. Nothing in 40C-2 depends on 40C-1, so
+40C-2 can land first and independently; the only shared file between them
+is `tests/unit/content-corrections.spec.js` (Task 40C-G's two halves) and
+`tests/unit/plan-readiness-county.spec.js`, noted where relevant.
+
+## Verification of Claims (2026-09-12, pre-approval)
+
+Every load-bearing code claim in this proposal was re-checked directly
+against `master` before asking for approval, because most of them were
+written from a browser-QA session rather than from the source. Results:
+
+| Claim | Result |
+| --- | --- |
+| 40C-A item 3: seven `county: src.county \|\| 'Pinellas'` sites in `ward-lifecycle.js` at lines 84, 115, 132, 156, 201, 231, 256 | **Confirmed exactly**, all seven at the stated lines |
+| 40C-A item 3: eight in `legacy-app.js` at 4369, 4385, 4394, 4411, 4458, 4479, 4494, 4524 | **Confirmed exactly** |
+| 40C-A item 3: two `attorney_county` fallbacks at 6127, 6209 | **Confirmed exactly** |
+| 40C-A item 5: Pinellas fallbacks in both Excel importers | **Confirmed** — `simplified-accounting/excel.js:222`, `annual-accounting/excel.js:446` |
+| 40C-A item 6: shared engine fallbacks at `pdf-engine.js:166`, `docx-engine.js:350` | **Confirmed exactly** (identical `(metadata.county \|\| 'Pinellas').toUpperCase()` in both) |
+| 40C-A item 6: seven per-feature `pdf-model.js` sites | **Confirmed exactly**, all seven at the stated lines |
+| 40C-A item 7: three layered circuit fallbacks in `circuit-lookup.js` (`:58`/`:65`, `:75`, `:83`) | **Confirmed** — and this is why a partial fix still prints "SIXTH" |
+| 40C-A item 7: `circuit-lookup.spec.js:38-41` asserts the fallback being removed | **Confirmed** — test name is literally "falls back gracefully to Sixth Judicial Circuit for unknown or empty counties" |
+| 40C-C: `wireDateRangePair()` / `enforceDateRanges()` exist and are the mutating path | **Confirmed** — `legacy-app.js:9178` and `:9153`; called from `router.js:225`, `guardian-inventory/index.js:118`, `legacy-app.js:5743` |
+| 40C-E: an empty `q4Providers` is reachable | **Confirmed** — seeded with one row (`state.js:231`) but prunable to zero (`prune-cards.js:11`, `min: 0`) |
+| 40C-F item 2: carryover reads nonexistent flat attorney fields | **Confirmed, and narrowed to one function** — see the note under that item. Two sibling converters are already correct and must not be changed. |
+| 40C-G1: sidebar D4 label is the only stale one | **Confirmed** — `annual-accounting/index.js:357`; editor and Excel map already say "Intangible Assets." Two false-positive rename targets found; see that task. |
+| 40C-H: `validatePlanInitial()` uses a truthiness predicate on tri-state values | **Confirmed** — `plan-initial/index.js:581`. The editor (`:293`) and PDF model (`:206`) already use correct affirmative checks, so **three** predicates exist and only the validator is wrong. Defaults are legacy boolean `false` (`state.js:313`), confirming item 1's requirement to accept both `'No'` and `false`. |
+
+Two claims were **not** independently verified and are carried on the
+browser-QA session's authority: 40C-D's assertion that the Supporting
+Documents heading currently loses focus/state on period commit, and
+40C-B's audit of which root pages are presented as a Cover (the audit
+table above). Both are observational UI claims that a code read can't
+settle; confirm them in the browser at implementation time, and treat a
+mismatch as a scope change rather than proceeding.
 
 ## Goal
 
 Turn the September 2026 browser re-review into executable tasks: eight
 concrete, named fixes across county defaulting, Cover-page labeling, date
 entry, readiness/export parity, carryover, and one tri-state validation
-bug.
+bug — delivered as the two gates above rather than one.
 
 ## Resolved Product Decision: County Defaulting
 
@@ -49,6 +99,8 @@ field, change a court-form caption, or claim that a filing is legally
 sufficient.
 
 ## Task 40C-A — Establish County Once, Then Hydrate It From the Ward Party
+
+*Delivery 40C-1. Touches persisted data. Blocked on the item 7 decision below.*
 
 1. Change all seven blank-data factories (the Annual factory also serves
    Final and Trust Accounting) so `D.county` starts as `''`, not
@@ -224,6 +276,8 @@ fallback.
 
 ## Task 40C-B — Make Every Root Case-Information Page Visibly a Cover
 
+*Delivery 40C-2. No persisted-data change.*
+
 Relabel the shared Annual/Final/Trust sidebar entry, page heading, Summary
 entry, tour/help copy, and route metadata from "Part I - Case Info" (or
 "Part I - Required Information") to "Cover & Part I - Case Info." Keep the
@@ -232,6 +286,8 @@ the root route is visible, named as a Cover, contains the filing-level
 County control, and marks County required.
 
 ## Task 40C-C — Stop Date-Range Entry From Changing Another Field
+
+*Delivery 40C-2. No persisted-data change.*
 
 Remove `wireDateRangePair()` / `enforceDateRanges()` behavior that
 compares displayed `MM/DD/YYYY` strings and overwrites the opposite
@@ -243,6 +299,8 @@ both a genuinely reversed range and a valid cross-year range such as
 
 ## Task 40C-D — Keep Reporting-Period-Dependent Headings Live
 
+*Delivery 40C-2. No persisted-data change.*
+
 When `periodFrom` or `periodTo` commits, refresh the Supporting Documents
 heading/period label without losing focus, collapsing the section,
 clearing uploads/comments, or rerendering unrelated form state. Reuse the
@@ -250,6 +308,8 @@ existing schedule-document renderer and period-key resolution; do not
 create a second date-formatting rule.
 
 ## Task 40C-E — Enforce Sidebar/Readiness/Export Parity
+
+*Delivery 40C-2. No persisted-data change.*
 
 1. Annual Plan providers: an empty `q4Providers` collection must leave the
    applicable sidebar section incomplete, matching export validation's
@@ -264,6 +324,8 @@ create a second date-formatting rule.
 
 ## Task 40C-F — Repair Selected-Source Carryover and Ward-Party County Hydration
 
+*Delivery 40C-1. Touches persisted data (ward-Party linking and county hydration).*
+
 1. Preserve and resolve the user's selected source through Simplified
    Accounting's eligibility-modal redirect; do not fall back to a fresh
    blank filing while reporting that carryover occurred.
@@ -272,6 +334,33 @@ create a second date-formatting rule.
    shapes. In particular, map Initial Inventory's nested `attorney`
    object rather than reading nonexistent top-level attorney-contact
    fields.
+
+   **Verified and narrowed 2026-09-12 — the bug is in exactly one
+   function, not the carryover layer generally.** The offending reads are
+   `carryOverFieldsForAccounting()`, `src/legacy-app.js:4448-4452`:
+   `attyBar`/`attyPhone`/`attyEmail`/`attyStreet`/`attyCityStateZip` each
+   resolve only flat keys (`src.attorneyBar || src.attorney_bar`, and so
+   on). A Guardian Inventory source keeps that data nested at
+   `src.attorney.{barNumber,phone,streetAddress,cityStateZip}`
+   (`legacy-app.js:6782`), which none of those chains reach — so all five
+   silently carry over blank. Add the nested reads to each chain.
+
+   **A latent second defect in the same block, not previously named:**
+   `attyName` at `:4447` is
+   `src.attorneyName || src.attorney_name || src.attorneyForGuardian || src.attorney || ''`.
+   For a Guardian Inventory source whose `attorneyForGuardian` is blank,
+   the final `src.attorney` fallback resolves to the **nested object**,
+   which is then assigned into string fields (`attorneyForGuardian`,
+   `attorney`) on the destination. Read `src.attorney?.name` there rather
+   than `src.attorney`.
+
+   **Do not "fix" the two sibling converters — they are already correct.**
+   `convertGuardianExtrasToAnnual()` (`:6121-6126`) reads
+   `const a = src.attorney || {}` and then `a.barNumber`/`a.phone`/etc.
+   properly, and `convertSimplifiedToAnnual()` (`:6204-6207`) correctly
+   reads a Simplified source's genuinely flat `attorney_*` fields. An
+   earlier reading of this task as "carryover reads attorney wrong"
+   would have led to changing both of those unnecessarily.
 3. Link the destination to the same canonical ward Party where the user
    has selected that ward as the carryover source. Hydrate destination
    `county` from `party.county` when present; otherwise leave it blank
@@ -284,15 +373,43 @@ create a second date-formatting rule.
 5. Keep the operation non-destructive: source data is never changed, and
    hiding/canceling the eligibility flow creates no partial destination.
 
-## Task 40C-G — Correct Remaining Labels and Copy
+## Task 40C-G1 — Correct the Schedule D4 Label
 
-1. Change the Annual-family sidebar's Schedule D4 label from "Restricted
-   Assets" to "Intangible Assets," matching the editor and PDF model.
-2. Replace the eligibility modal's hardcoded "existing Simplified Annual
-   Plan" text with selected-source-aware wording, including the
-   conditional County behavior above.
+*Delivery 40C-2. No persisted-data change. Formerly 40C-G item 1 — split
+from 40C-G2 because that half depends on 40C-1's carryover behavior while
+this half is a standalone one-line copy fix.*
+
+Change the Annual-family sidebar's Schedule D4 label from "Restricted
+Assets" to "Intangible Assets," matching the editor and PDF model.
+
+**Verified 2026-09-12.** The sidebar is the only place that is wrong:
+`src/features/annual-accounting/index.js:357` renders
+`Sch D4 — Restricted Assets`, while the editor heading (`:1035`, `:1058`)
+and the Excel schedule map (`excel.js:44`) already read "Intangible
+Assets." Two cautions found while confirming it:
+
+- **Do not do this as a find-and-replace.**
+  `annual-accounting/index.js:1063` contains a legitimate subtotal row
+  labeled "Restricted Intangible Assets" — a real distinction within the
+  D-4 schedule, not a stale label. Renaming it would be a regression.
+- `src/legacy-app.js:367` has a help-section title "Restricted Assets."
+  Determine whether that help topic is about Schedule D-4 (rename it) or
+  about restricted assets/depository generally (leave it). This is a
+  judgment call about help content, not a mechanical rename.
+
+## Task 40C-G2 — Make the Eligibility Modal Copy Source- and County-Aware
+
+*Delivery 40C-1. Depends on 40C-F's carryover behavior — the copy
+describes whether County was restored from the ward record, which only
+exists once 40C-F lands. Formerly 40C-G item 2.*
+
+Replace the eligibility modal's hardcoded "existing Simplified Annual
+Plan" text with selected-source-aware wording, including the conditional
+County behavior above.
 
 ## Task 40C-H — Fix Plan Initial Q7 Explicit-No Validation
+
+*Delivery 40C-2. No persisted-data change (stated explicitly at the end of this task).*
 
 `validatePlanInitial()` currently uses
 `if (d.q7Trusts || d.q7PendingBenefits || d.q7Other)` to decide whether
@@ -339,11 +456,16 @@ delivery unless the value can be reproduced from a fresh profile.
 
 ## Data, Portability, Security, and Legal Scope
 
-- **Persisted model:** Task 40C-A changes the canonical default for
-  existing filing county fields and adds `caseFile.parties[].county`, so
-  the Party collection expansion and the two existing CSV rows named
-  above must land in the same commit. No other field is added, renamed,
-  or reshaped by Tasks 40C-B through 40C-G.
+- **Persisted model — 40C-1 only.** Task 40C-A changes the canonical
+  default for existing filing county fields and adds
+  `caseFile.parties[].county`, so the Party collection expansion and the
+  two existing CSV rows named above must land in the same commit. Task
+  40C-F adds no field of its own but writes to `party.county` and to the
+  ward-Party link. **Delivery 40C-2 (Tasks 40C-B, 40C-C, 40C-D, 40C-E,
+  40C-G1, 40C-H) adds, renames, or reshapes nothing** — that is the fault
+  line the two deliveries split on, and it is why 40C-2 carries no
+  `verify:data-model` obligation. Everything in the rest of this section
+  applies to 40C-1.
 - **Export/import/backup:** `.sav` and single-ward round trips preserve
   an explicitly selected filing county. Full-case export already carries
   Party records. Single-ward export does not, so import must seed the
@@ -368,6 +490,11 @@ delivery with no acceptance-criteria table, which made "done" a matter of
 reading eight task narratives and inferring the observable outcome. One
 row per task, stated as something a person or a test can check.
 
+**Read by delivery.** Rows for 40C-A, 40C-F, and 40C-G2 gate **40C-1**;
+rows for 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, and 40C-H gate **40C-2**.
+The final `verify:data-model` row belongs to 40C-1 only — 40C-2 makes no
+data-model change and must not run a CSV update as part of its commit.
+
 | Task | Scenario | Expected result |
 | --- | --- | --- |
 | 40C-A | A brand-new filing of each of the nine types, before any Cover entry | County is blank. No filing, PDF, Excel, or caption anywhere resolves to Pinellas/Sixth Circuit by default. |
@@ -381,7 +508,8 @@ row per task, stated as something a person or a test can check.
 | 40C-E | Annual Plan with an empty `q4Providers`; Minor Plan missing `ucn`/`ref` or amended-form completion | The sidebar section reads incomplete, matching export validation exactly. Every `auto` blocker has a matching navigation/Summary status; manual reminders stay nonblocking. |
 | 40C-F | Carryover through Simplified Accounting's eligibility-modal redirect | The user's selected source is preserved (never silently swapped for a blank filing); nested Initial-Inventory `attorney` fields map correctly; the destination links to the same ward Party; `county` hydrates from `party.county` or stays blank; `attorney_county` is never populated from it. |
 | 40C-F | Cancelling or hiding the eligibility flow | No partial destination filing exists and no source data changed. |
-| 40C-G | Annual-family sidebar, and the eligibility modal | Schedule D4 reads "Intangible Assets"; the modal names the actual selected source type and states whether County was restored or still needs selecting. |
+| 40C-G1 | Annual-family sidebar | Schedule D4 reads "Intangible Assets" — and the "Restricted Intangible Assets" subtotal row is untouched. |
+| 40C-G2 | The eligibility modal | Names the actual selected source type and states whether County was restored from the ward record or still needs selecting. |
 | 40C-H | Plan Initial Q7: both tri-states explicitly `'No'`, no explanation | Filing passes — this is the bug being fixed. |
 | 40C-H | Q7 Trusts `'Yes'` / Pending Benefits `'Yes'` / Other checked, each with no explanation | Each blocks export, and the blocker is visible in the readiness panel (1-to-1 with the export gate, not export-only). |
 | 40C-H | Q7 left unanswered | Stays unanswered — never silently stored or reported as `'No'`. |
@@ -389,6 +517,23 @@ row per task, stated as something a person or a test can check.
 | All | `npm run verify:data-model` | Clean, with the `common,D,county` note rewritten, `caseFile.parties[]` expanded into canonical rows, and `annual_accounting,D,attorney_county`'s blank initial value recorded. |
 
 ## Verification Plan and Named Test Changes
+
+**Split by delivery (2026-09-12).** Run only the items belonging to the
+delivery being implemented; running the other half's tests against
+unchanged code proves nothing and invites a false failure.
+
+- **40C-1 (county/carryover):** items 1, 2, 6, 9, 11, and the
+  `verify:data-model` run. Item 8's eligibility-copy half (40C-G2) also
+  belongs here.
+- **40C-2 (form-entry/readiness/validation):** items 3, 4, 5, 7, 10, and
+  item 8's D4-label half (40C-G1). No `verify:data-model` run.
+- **Item 12** is a cross-delivery conflict note and applies to whichever
+  lands alongside Milestone 40A.
+
+Item 8 is the one item that genuinely spans both deliveries, because
+`tests/unit/content-corrections.spec.js` covers both halves of the former
+40C-G. Whichever delivery lands second should extend that spec rather than
+rewrite it.
 
 1. Add `tests/unit/filing-county-defaults.spec.js`: all seven factories
    are blank; a first Cover choice establishes `party.county`;

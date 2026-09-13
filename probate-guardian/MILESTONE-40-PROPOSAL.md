@@ -3,15 +3,19 @@
 ## Status
 
 **Planning index only — no delivery is authorized.** The former single
-draft has been split into six independently reviewed and approved
-deliveries, the same pattern used for Milestone 38. Approval or
-implementation of one does not authorize another.
+draft has been split into independently reviewed and approved deliveries,
+the same pattern used for Milestone 38. Approval or implementation of one
+does not authorize another. 40C was itself split in two on 2026-09-12
+(both halves documented inside `MILESTONE-40C-PROPOSAL.md`) after a
+task-by-task review found it bundled a data-model expansion and a
+one-predicate validation bug behind a single gate.
 
 | Delivery | Scope | Status | Proposal |
 | --- | --- | --- | --- |
 | 40A | Deprecate and remove DOCX export, including its test surface | Ready to scope for implementation | `MILESTONE-40A-PROPOSAL.md` |
 | 40B | 4-digit PIN per party for signature stamps | **Withdrawn** — requester chose not to build it (deterrent-only value judged not worth it) | `MILESTONE-40B-PROPOSAL.md` |
-| 40C | Validated browser QA/UX remediation (county defaulting, Cover labeling, date-range entry, readiness/export parity, carryover, Plan Initial Q7 validation bug) | Ready to scope for implementation | `MILESTONE-40C-PROPOSAL.md` |
+| 40C-1 | County establishment, hydration, and carryover (Tasks 40C-A, 40C-F, 40C-G2) — the only delivery touching persisted data | **Blocked** — needs the unknown-circuit decision (40C-A item 7) answered before implementation | `MILESTONE-40C-PROPOSAL.md` |
+| 40C-2 | Form-entry, readiness, and validation corrections (Tasks 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H) — no persisted-data change | Ready to implement on approval; claims code-verified 2026-09-12 | `MILESTONE-40C-PROPOSAL.md` |
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | Ready to scope for implementation | `MILESTONE-40E-PROPOSAL.md` |
 | 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | Ready to scope for implementation | `MILESTONE-40F-PROPOSAL.md` |
