@@ -47,8 +47,10 @@
   --ease:cubic-bezier(.16,1,.3,1);
   color-scheme:light;
 }
-/* Dark palette. The pre-paint script starts with the OS preference;
-   applyTheme() restores the .sav file's setting after the file loads. */
+/* Dark palette. The pre-paint script (src/prepaint.js) resolves the theme before
+   first paint: the user's stored per-device choice if there is one, otherwise the
+   OS preference. Milestone 40D moved that choice out of the .sav file into
+   localStorage, so loading a case file no longer changes appearance. */
 :root[data-theme="dark"]{
   --brand-text:#e8879c;      /* 6.06:1 worst-case vs surface/brand-050/100 */
   --brand-050:#241620;--brand-100:#33202b;--brand-200:#5c3341;

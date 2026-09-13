@@ -56,8 +56,18 @@ function currentTheme(){
 }
 function applyTheme(theme,persist){
   document.documentElement.setAttribute('data-theme',theme);
+  // Milestone 40D: prepaint.js sets BOTH attributes before first paint, but this
+  // function only ever set data-theme -- so toggling left data-bs-theme on
+  // whatever was painted at load and Bootstrap's own components stayed on the
+  // old palette. Setting both here is part of making the two agree.
+  document.documentElement.setAttribute('data-bs-theme',theme);
   if(persist){
-    saveAppState('theme',theme); // lands in the .sav file's appState section on the next write
+    // Milestone 40D: theme is a per-device display preference in localStorage,
+    // not case data in the .sav. This used to call saveAppState('theme',theme),
+    // which landed in the file's appState section -- readable only after the
+    // .sav loaded (and after the password, for an encrypted file), which is what
+    // made the theme flash on every reload.
+    if(typeof window.writeStoredTheme==='function')window.writeStoredTheme(theme);
   }
   const btns=document.querySelectorAll('#theme-toggle-btn, .topnav-theme');
   btns.forEach(btn=>{
@@ -3363,7 +3373,17 @@ async function loadCaseFileAtLaunch(file){
     _appState.cryptoSalt=manifest.salt||null;
     _appState.cryptoVerifier=manifest.verifier||null;
     await loadCaseFileFromZip(zip,manifest,_cryptoKey);
-    if(_appState.theme)applyTheme(_appState.theme,false); // false: already the file's own saved choice, nothing new to persist
+    // Milestone 40D: this line used to be `if(_appState.theme)applyTheme(...)`,
+    // re-applying the FILE's theme once the .sav finished loading. That was the
+    // flash this delivery removes, and it also meant opening someone else's file
+    // changed your appearance. A loaded file no longer overrides what already
+    // painted; the one-time seed below (in loadCaseFileFromZip) is what carries
+    // an upgrading user's legacy choice across, exactly once.
+    //
+    // applyTheme() is still called, with the theme prepaint.js already painted,
+    // purely to bring the toggle button's icon/aria state into agreement -- not
+    // to change the theme.
+    applyTheme(currentTheme(),false);
     _launchStateResolved=true;
     _openedFileAtLaunch=true;
     markCaseOpenedBefore();
@@ -3437,7 +3457,20 @@ async function loadCaseFileFromZip(zip,manifest,key){
       // an instruction to reopen an editor. Focus is forced null below, for
       // every archive shape.
       const legacyActiveWardId=a.activeWardId||null;
+      // Milestone 40D: theme is no longer read back out of app state to drive
+      // appearance, but this is where a legacy value arrives from the file, so it
+      // is the natural hook for the one-time seed. seedStoredThemeFromLegacy()
+      // writes to localStorage ONLY when nothing is stored there yet -- so an
+      // upgrading user keeps the theme they had, and opening any later file can
+      // never overwrite the per-device choice they have since made.
       _appState.theme=a.theme;
+      if(typeof window.seedStoredThemeFromLegacy==='function'){
+        if(window.seedStoredThemeFromLegacy(a.theme)){
+          // Seeded: bring the live document in line, since nothing had painted
+          // this value yet.
+          applyTheme(a.theme,false);
+        }
+      }
       _appState.walkthroughCompleted=a.walkthroughCompleted;
       _appState.firstLaunchSeen=a.firstLaunchSeen;
       _appState.continuePromptShown=a.continuePromptShown;

@@ -2,10 +2,93 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, data-model, test, or documentation change until the requester
-approves Milestone 40D specifically. Approval of another Milestone 40
-delivery does not authorize this work.
+**Landed 2026-09-13.** Theme is now a per-device preference in `localStorage`,
+resolved synchronously before first paint.
+
+### What landed
+
+All of Decisions 1-5, and Decision 6's inventory. New
+`src/core/theme-preference.js` owns the key (`pg-theme-v1`, matching the app's
+existing `pg-…-v1` convention), the `['light','dark']` enum, the read/write
+guards, the one-time legacy seed, and the paint resolution.
+
+Every site from the enumerated checklist:
+
+- `applyTheme()` writes through `writeStoredTheme()` instead of
+  `saveAppState('theme', …)`; its trailing comment is corrected.
+- `prepaint.js` reads `localStorage` first and falls back to `matchMedia`.
+- The post-`.sav`-load `if(_appState.theme)applyTheme(...)` — **the flash
+  itself** — is gone. It now calls `applyTheme(currentTheme(), false)`, which
+  changes nothing and only syncs the toggle button's icon/aria state.
+- `loadCaseFileFromZip()` is where the one-time seed hooks, exactly as the
+  proposal predicted.
+- `case-file.js`'s `appStateBlob` no longer serializes `theme`. This was the
+  load-bearing one: removing `applyTheme()`'s write alone would not have stopped
+  it, because it re-read persisted app state directly.
+- `tokens.css`'s comment is updated.
+- `legacy-app.js`'s dead duplicate of `buildCaseFileBlob()` **no longer exists** —
+  Milestone 40F deleted it, so that site disappeared on its own as anticipated.
+
+### One fix beyond the checklist
+
+`prepaint.js` always set **both** `data-theme` and `data-bs-theme`, but
+`applyTheme()` only ever set `data-theme`. So toggling the theme left
+`data-bs-theme` on whatever was painted at load, and Bootstrap's own components
+stayed on the old palette until the next reload. `applyTheme()` now sets both.
+This is part of Decision 4's "reconcile these so the theme isn't computed twice
+by two different rules" — the two rules disagreed about which attributes the
+theme even consists of.
+
+### Decision 6 inventory — nothing else is migrated
+
+`_appState` holds: `theme`, `walkthroughCompleted`, `firstLaunchSeen`,
+`continuePromptShown`, `recentWards`, `autoExportIntervalMinutes`,
+`lastExportAt`, `unlockFailState`, `securityMode`, `cryptoSalt`,
+`cryptoVerifier`, `activeWardId`.
+
+Only theme is migrated. Of the rest:
+
+- **Case-coupled, must stay:** `recentWards` (references ward ids in *this* file),
+  `lastExportAt` (when this file was exported), `unlockFailState` (this file's
+  lockout state), `securityMode`/`cryptoSalt`/`cryptoVerifier` (this file's
+  crypto), `activeWardId` (runtime focus, already governed by Milestone 38C).
+- **Genuinely per-device candidates, deliberately NOT migrated:**
+  `walkthroughCompleted`, `firstLaunchSeen`, `continuePromptShown`. Each is
+  onboarding state, and moving it is a behavioural change of its own — a filer
+  creating a brand-new case on a device that has already seen the walkthrough
+  would stop being re-shown it. That may well be the better behaviour, but it is a
+  product decision about onboarding, not a mechanical consequence of the theme
+  fix, and this delivery's acceptance criteria cover theme only. Recorded here as
+  candidates rather than migrated silently.
+- `autoExportIntervalMinutes` is a save-pipeline setting, not UI-only.
+
+### Decision 5's behavioural change, stated plainly
+
+Theme moves from per-case to per-device. Opening a colleague's `.sav` no longer
+changes your appearance, and a `.sav` carried to another machine no longer brings
+its theme. A user who deliberately themed one case differently loses that. This
+is the intended improvement — theme is a display preference, not case data — and
+`theme-prepaint.spec.ts` asserts the machine-A/machine-B case deliberately rather
+than leaving it incidental.
+
+### How this was verified
+
+`tests/unit/theme-persistence.spec.js` (20 tests): the enum, storage round-trip,
+a corrupt stored value reading as unset, storage that *throws* (some privacy modes
+do) degrading rather than crashing, the seed firing exactly once and never
+overwriting an existing device choice, paint resolution in both directions, and
+source-level parity between `prepaint.js`'s duplicated literals and the module's
+constants — that duplication is unavoidable, since `prepaint.js` cannot import
+anything, so a test guards it from drifting. **5 fail against HEAD.**
+
+`tests/e2e/theme-prepaint.spec.ts` (5 tests) asserts first-paint behaviour. The
+discriminator is a reload with the OS preference set *opposite* to the stored
+choice and no case file open: the old code resolved theme from `.sav` app state,
+so with nothing loaded it painted the OS preference and stayed there. **4 fail
+against HEAD.**
+
+No `verify:data-model` change, re-confirmed: the CSV has no `theme` or `appState`
+row, and this migration does not change its scope.
 
 ## Goal
 

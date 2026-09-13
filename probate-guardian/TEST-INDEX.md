@@ -55,6 +55,7 @@ the same commit.
 | signature-capture.spec.js            | Milestone 39-B: signature-pad PNG validation/dimensions, checkSignatureState() tri-state rule, legacy-migration inference; Milestone 39-C: removeLightBackground() luminance-threshold Upload transparency fix, incl. documented degraded-case limits |
 | supplemental-pdf.spec.js             | Active supplemental doc period resolution; supplemental filing eligibility                                                |
 | tab-state.spec.js                    | Cross-tab peer-state normalization and risky-peer detection                                                               |
+| theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |
 | types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
 | ward-carryover.spec.js               | Carry-over field mapping between filing types; Milestone 40C-F nested Initial-Inventory attorney shape; county never taken from the source snapshot |
@@ -132,6 +133,7 @@ the same commit.
 | startup.spec.ts                          | App startup (`@origin-state`); Milestone 40G: reaching the dashboard mounts it with no uncaught exception                                                                                 |
 | supplemental-pdf-accounting.spec.ts      | Supplemental PDF inline rendering for Accounting forms (Annual, Trust, Final)                                                                                                            |
 | tab-and-update.spec.ts                   | Cross-tab detection/notice, incl. app-update flow                                                                                                                                        |
+| theme-prepaint.spec.ts                   | Milestone 40D: stored theme beats the OS preference before first paint, both theme attributes track the toggle, and no theme reaches app state                                           |
 | unlock.spec.ts                           | Unlock flow                                                                                                                                                                              |
 | verified-inventory-workflow.spec.ts      | Verified Initial Inventory workflow & usability improvements                                                                                                                             |
 | ward-lock.spec.ts                        | Ward-level tab locks (`@origin-state`)                                                                                                                                                   |

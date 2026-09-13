@@ -207,7 +207,14 @@ export async function buildCaseFileBlob() {
   }
 
   const appStateBlob = {
-    theme: await loadAppState('theme'),
+    // Milestone 40D: `theme` is deliberately NOT serialized here any more. It is
+    // a per-device display preference in localStorage (see
+    // core/theme-preference.js), not case data, so a .sav written from now on
+    // carries no theme at all and opening a file never changes appearance.
+    // Removing the write in applyTheme() alone would not have stopped this line:
+    // it re-read persisted app state directly. Old files may still carry the key;
+    // loadCaseFileFromZip() consumes it once as a migration seed and never as an
+    // appearance override.
     walkthroughCompleted: await loadAppState('walkthroughCompleted'),
     firstLaunchSeen: await loadAppState('firstLaunchSeen'),
     continuePromptShown: await loadAppState('continuePromptShown'),
