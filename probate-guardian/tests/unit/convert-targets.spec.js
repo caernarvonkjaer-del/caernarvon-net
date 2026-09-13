@@ -15,8 +15,10 @@ describe('convertTargetsFor()', () => {
     expect(convertTargetsFor('guardian')).toEqual(['planInitial', 'simplified', 'annual', 'finalAccounting', 'trustAccounting']);
     expect(convertTargetsFor('simplified')).toEqual(['planSimplified', 'annual', 'finalAccounting', 'trustAccounting']);
     expect(convertTargetsFor('annual')).toEqual(['planAnnual', 'simplified', 'finalAccounting', 'trustAccounting']);
-    expect(convertTargetsFor('finalAccounting')).toEqual(['planAnnual', 'simplified', 'annual', 'trustAccounting']);
-    expect(convertTargetsFor('trustAccounting')).toEqual(['planAnnual', 'simplified', 'annual', 'finalAccounting']);
+    // Only the plain Annual Accounting converts to the Annual Plan; Final and
+    // Trust are terminal/special accountings with no Plan counterpart.
+    expect(convertTargetsFor('finalAccounting')).toEqual(['simplified', 'annual', 'trustAccounting']);
+    expect(convertTargetsFor('trustAccounting')).toEqual(['simplified', 'annual', 'finalAccounting']);
   });
 
   it('pairs each Plan only with its own Accounting counterpart', () => {
