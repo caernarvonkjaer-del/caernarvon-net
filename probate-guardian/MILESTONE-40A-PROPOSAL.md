@@ -75,9 +75,13 @@ direct grep, the real surface is eleven files in four categories:
   removed in the same change, not afterward:
   `plan-annual-parity.spec.js:55`, `plan-initial-parity.spec.js:51`,
   `plan-minor-parity.spec.js:37`, `plan-simplified-parity.spec.js:39`,
-  and `plan-readiness-county.spec.js:25`. **Note:
-  `plan-readiness-county.spec.js` is also modified by Milestone 40C** —
-  see the dependency table in `MILESTONE-40-PROPOSAL.md`.
+  and `plan-readiness-county.spec.js:25`. **Correction 2026-09-12:** an
+  earlier version of this note claimed `plan-readiness-county.spec.js` is
+  also modified by Milestone 40C. It is not — that spec passes `county`
+  explicitly into every case (`:48-49`) and already asserts "a blank
+  county is treated as non-local, not defaulted to Sixth Circuit" (`:70`),
+  so 40C's county work leaves it alone. **40A is the only delivery that
+  edits this file**, and only to drop the mock.
 - **A whole e2e test to delete, not update:**
   `tests/e2e/guardian-inventory-mount.spec.ts:299-325`, "a fully completed
   filing exports a valid editable Word document (.docx)" — it downloads

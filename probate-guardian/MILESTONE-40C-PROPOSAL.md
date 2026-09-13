@@ -18,14 +18,16 @@ below divide on a real fault line: whether the work touches persisted data.
 
 | Delivery | Tasks | Touches persisted data / CSV | Open decisions | Approve independently |
 | --- | --- | --- | --- | --- |
-| **40C-1 — County Establishment, Hydration, and Carryover** | 40C-A, 40C-F, 40C-G2 | **Yes** — new `caseFile.parties[].county`, `caseFile.parties[]` row expansion, `common,D,county` note rewrite, legacy migration rule | **One, unresolved** — the unknown-circuit representation (Task 40C-A item 7) | Yes |
+| **40C-1 — County Establishment, Hydration, and Carryover** | 40C-A, 40C-F, 40C-G2 | **Yes** — new `caseFile.parties[].county`, `caseFile.parties[]` row expansion, `common,D,county` note rewrite, legacy migration rule | **None** — the unknown-circuit representation (Task 40C-A item 7) was resolved 2026-09-12: option (a), `null`/`''`/`null` | Yes |
 | **40C-2 — Form-Entry, Readiness, and Validation Corrections** | 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H | **No** — no field added, renamed, or reshaped; no `verify:data-model` run required | None | Yes |
 
-**40C-2 is ready to implement as soon as it's approved.** 40C-1 needs the
-item 7 decision answered first. Nothing in 40C-2 depends on 40C-1, so
-40C-2 can land first and independently; the only shared file between them
-is `tests/unit/content-corrections.spec.js` (Task 40C-G's two halves) and
-`tests/unit/plan-readiness-county.spec.js`, noted where relevant.
+**Both deliveries are implementable on approval.** Neither has an open
+decision. Nothing in 40C-2 depends on 40C-1, so either can land first.
+The only file both touch is `tests/unit/content-corrections.spec.js`
+(Task 40C-G's two halves) — whichever lands second extends it rather than
+rewriting it. Before implementing 40C-2, confirm 40C-B's and 40C-D's
+browser-observed premises (see "Verification of Claims" below); they are
+the only claims in this proposal a code read could not settle.
 
 ## Verification of Claims (2026-09-12, pre-approval)
 
@@ -100,7 +102,7 @@ sufficient.
 
 ## Task 40C-A — Establish County Once, Then Hydrate It From the Ward Party
 
-*Delivery 40C-1. Touches persisted data. Blocked on the item 7 decision below.*
+*Delivery 40C-1. Touches persisted data. Item 7's decision is resolved (option (a), 2026-09-12) — no open decisions remain.*
 
 1. Change all seven blank-data factories (the Annual factory also serves
    Final and Trust Accounting) so `D.county` starts as `''`, not
@@ -219,28 +221,35 @@ sufficient.
      `circuitForCounty()` precisely because of its fallback — read it
      before editing, it explains why the two must not be unified here.
 
-   **Open decision — what "unknown" returns (resolve before implementing
-   this item).** `circuitForCounty()` returns a number 1-20 today, so
-   "unknown" needs a representation every caller handles. The callers are
+   **RESOLVED 2026-09-12 (requester approved option (a)).**
+   `circuitForCounty()` returns **`null`** for blank or unrecognized,
+   `getCircuitOrdinal()` returns **`''`**, and
+   `getFloridaCircuitCourtCaption()` returns **`null`** rather than a
+   caption object. Each caller then decides explicitly what to draw with
+   no caption, which is the honest outcome: export is already blocked by
+   County validation (item 6), so the only path that reaches a
+   blank-county caption is a draft/preview override, and a draft should
+   show a visible gap, not a confident wrong court. Callers to update:
    `pdf-engine.js:22`, `docx-engine.js:9` (moot if 40A landed first), and
-   `legacy-app.js`'s duplicate. Options, in the order recommended:
+   `legacy-app.js`'s duplicate.
 
-   - **(a) Recommended — `null` from `circuitForCounty()`, `''` from
-     `getCircuitOrdinal()`, and `getFloridaCircuitCourtCaption()` returns
-     `null` rather than a caption object.** Each caller must then decide
-     explicitly what to draw with no caption, which is the honest
-     outcome: export is already blocked by County validation (item 6), so
-     the only path that reaches a blank-county caption is a draft/preview
-     override, and a draft should show a visible gap, not a confident
-     wrong court.
-   - **(b) Return a caption object with the county/ordinal slots blank or
-     a literal placeholder** (e.g. `IN AND FOR ______ COUNTY, FLORIDA`).
-     Less invasive for callers, and arguably better for a draft preview,
-     but risks a placeholder reaching a filed document if the validation
-     gate is ever bypassed.
-   - **(c) Throw on unknown.** Rejected — this is a rendering-path lookup;
-     an exception here would take down preview generation for a
-     recoverable data state.
+   Rejected alternatives, recorded so this isn't relitigated: **(b)** a
+   caption object with blank or placeholder slots (e.g.
+   `IN AND FOR ______ COUNTY, FLORIDA`) — less invasive for callers, but
+   risks a placeholder reaching a filed document if the validation gate is
+   ever bypassed; **(c)** throwing on unknown — this is a rendering-path
+   lookup, and an exception would take down preview generation for a
+   recoverable data state.
+
+   **This makes `circuit-lookup.js` consistent with a pattern the codebase
+   already proved works.** `src/core/filing/county-guidance.js` deliberately
+   does *not* derive from `circuitForCounty()` — precisely because of that
+   fallback — and `tests/unit/plan-readiness-county.spec.js:70` already
+   asserts "a blank county is treated as non-local, not defaulted to Sixth
+   Circuit," passing today. Option (a) brings the circuit lookup in line
+   with the guidance module rather than inventing a new convention; that
+   spec is a working reference for the behavior, and it needs no change
+   under this delivery.
 
    Whichever is chosen, `tests/unit/circuit-lookup.spec.js:38-41` —
    currently the test **"falls back gracefully to Sixth Judicial Circuit
@@ -610,15 +619,30 @@ rewrite it.
     tested. Also assert `getFloridaCircuitCourtCaption('Pinellas')` still
     produces the correct real caption — removing a fallback must not
     disturb the 67 genuine county mappings.
-12. **Cross-delivery note:** `tests/unit/plan-readiness-county.spec.js`
-    is edited by this delivery's readiness work **and** by Milestone 40A,
-    which must remove that file's `vi.mock('.../docx-engine.js')` line
-    (`:25`) when it deletes the DOCX engine. Whichever lands second
-    should expect a conflict in that file and reconcile rather than
-    overwrite. See the dependency table in `MILESTONE-40-PROPOSAL.md`.
+12. **Cross-delivery note, corrected 2026-09-12.** An earlier version of
+    this item claimed `tests/unit/plan-readiness-county.spec.js` is edited
+    by this proposal's readiness work as well as by Milestone 40A. It is
+    **not** edited here: it passes `county` explicitly into every case
+    (`:48-49`) and already asserts that a blank county is treated as
+    non-local rather than defaulted to Sixth Circuit (`:70`), which is the
+    behavior 40C-A item 7 now adopts elsewhere. Milestone 40A is the only
+    delivery that touches it, and only to drop its `vi.mock` of the
+    deleted DOCX engine (`:25`). **Leave this spec alone** — and treat its
+    continued passing as a regression check that item 7 didn't disturb
+    `county-guidance.js`'s Pinellas/Pasco gating.
 
-Run the targeted files above plus `npm run verify:data-model`. Because
-this delivery changes creation, carryover, import, navigation,
-validation, and all filing output captions, recommend the full `npm test`
-regression before commit/push and run it only with the requester's
-explicit approval, per `AGENTS.md`.
+    The genuine cross-delivery files are `docx-engine.js` (40A ↔ 40C-1),
+    `pdf-engine.js` (40E ↔ 40C-1), and
+    `tests/unit/content-corrections.spec.js` (40C-1 ↔ 40C-2). See the
+    dependency table in `MILESTONE-40-PROPOSAL.md`.
+
+**40C-1 only:** run its targeted files above plus
+`npm run verify:data-model`. Because 40C-1 changes creation, carryover,
+import, navigation, validation, and all filing output captions, recommend
+the full `npm test` regression before commit/push, run only with the
+requester's explicit approval, per `AGENTS.md`.
+
+**40C-2:** run its targeted files above. No `verify:data-model` run. Its
+scope is form-entry behavior, sidebar/readiness parity, copy, and one
+validator predicate — a targeted unit+e2e set is the appropriate gate, and
+a full regression is not warranted on its own.
