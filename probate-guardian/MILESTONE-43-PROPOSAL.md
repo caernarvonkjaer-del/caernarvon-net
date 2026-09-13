@@ -167,22 +167,21 @@ selected. `window.calc`'s on-screen totals (`legacy-app.js:6344-6347`) and
 data) — `pdf-model.js` now matches that pattern. New regression test
 confirmed failing against pre-fix code first.
 
-**A second, related instance was found but not fixed in this pass** — out
-of scope for 43A, flagged here rather than silently left for a future
-reader to rediscover: `legacy-app.js:4813-4829`'s
+**A second, related instance was found in this pass and fixed separately
+on explicit follow-up instruction (`f7cf565`):** `legacy-app.js:4813-4829`'s
 `convertGuardianSchedulesToAnnual()` (the Guardian Inventory → Annual
-Accounting "Convert Ward" carryover) reads `r.isRestricted` (`:4816,
-:4827`) and `r.isPersonalResidence`/`r.isIncomeProperty` (`:4820`) with no
+Accounting "Convert Ward" carryover) read `r.isRestricted` (`:4816, :4827`)
+and `r.isPersonalResidence`/`r.isIncomeProperty` (`:4820`) with no
 `restricted`/`residence`/`income` fallback at all — worse than
-`pdf-model.js`'s bug, since there isn't even a same-line OR. A conversion
-from a current-schema Guardian Inventory ward likely carries every
-Schedule D-1/D-2/D-4 row into the new Annual Accounting filing as
-"No"/blank for these fields regardless of the source data. Not verified
-end-to-end and not fixed here — this needs its own red/green test and its
-own commit, scoped separately since it touches the ward-conversion path
-`MILESTONE-40H-PROPOSAL.md` Task 40H-I and `MILESTONE-41B-PROPOSAL.md`
-already both touch, and deserves that same care rather than being bundled
-into a test-hygiene delivery.
+`pdf-model.js`'s bug, since there wasn't even a same-line OR. Confirmed via
+a new e2e test (`tests/e2e/convert-ward.spec.ts`, no prior coverage of this
+function existed — only `window.convertExistingWard()` reaches it, a
+classic-script function with no unit-test path) that every Schedule
+D-1/D-2/D-4 row converted from a current-schema Guardian Inventory ward
+carried over as "No" regardless of the source data, confirmed failing
+against pre-fix code first. Same fix as `pdf-model.js`: check the
+tri-state field first, fall back to the legacy boolean only for genuinely
+pre-migration data.
 
 ---
 
