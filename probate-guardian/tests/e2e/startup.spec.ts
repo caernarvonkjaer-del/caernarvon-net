@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/target';
+import { gotoApp, startNewCase, chooseNoPassword, createWard, freshStartNoPassword } from './support/target';
 import { currentTargetProfile, skipExpectedTargetExclusion, skipEnvironmentLimitation } from './support/target-profile';
 
 test.describe('startup', { tag: '@origin-state' }, () => {
@@ -142,5 +142,57 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     // reach before core/feature-bridge.js had evaluated.
     await expect(page.locator('#main-content')).not.toBeEmpty();
     expect(errors).toEqual([]);
+  });
+
+  // Milestone 40H-A: window.validateGuardian is assigned at the top level of
+  // guardian-inventory/index.js (module-evaluation time), not gated behind a
+  // lazy sub-import -- so createWard() alone doesn't reproduce this: addWard()
+  // navigates into the new ward's own Cover page immediately, which mounts
+  // the Guardian Inventory feature and loads the bundle before any dashboard
+  // render happens. The real-world trigger is a fresh page load landing on
+  // /dashboard before any Guardian Inventory route has been visited that
+  // session -- reload loses the in-memory case entirely under the "no
+  // password" quick-start path used here (confirmed: it falls back to the
+  // startup-choice overlay, not an automatic session restore), so that path
+  // isn't a reliable harness trigger. Deleting window.validateGuardian
+  // directly reproduces the exact precondition instead -- it is undefined
+  // for precisely this reason before the bundle loads, so this is the same
+  // state a real fresh load would be in, not an artificial one. This is the
+  // proposal's own suggested approach (MILESTONE-40H-PROPOSAL.md's
+  // Verification Plan: "with window.validateGuardian deliberately left
+  // undefined").
+  test('a guardian-type ward triggers no progress-calc warning or thrown result before its bundle loads', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Progress Calc Ward');
+
+    const warnings: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'warning' || msg.type() === 'error') warnings.push(msg.text());
+    });
+
+    const beforeGuard = await page.evaluate(() => {
+      const ward = (window as any).getActiveWard();
+      return (window as any).getWardProgress(ward);
+    });
+    // Today's actual (buggy) behavior: the bundle really is loaded already at
+    // this point (see comment above), so this call succeeds and returns a
+    // real result -- confirming the harness state is sane before simulating
+    // the pre-load race.
+    expect(beforeGuard).not.toBeNull();
+
+    const degraded = await page.evaluate(() => {
+      delete (window as any).validateGuardian;
+      const ward = (window as any).getActiveWard();
+      return (window as any).getWardProgress(ward);
+    });
+
+    expect(warnings.some((w) => w.includes('progress calc failed'))).toBe(false);
+    // Must not fabricate a false "fully validated" reading (all sidebar
+    // checks default to true when validate() finds zero errors) just because
+    // the guardian validator hasn't loaded yet -- that would show "Ready to
+    // file" on a ward nothing has actually checked. Degrading to the same
+    // null the try/catch already returned before this fix is what keeps that
+    // false-positive from happening while still killing the console warning.
+    expect(degraded).toBeNull();
   });
 });

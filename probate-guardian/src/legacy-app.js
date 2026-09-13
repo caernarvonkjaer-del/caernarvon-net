@@ -7236,6 +7236,21 @@ function bindForms(){
 // WITHOUT that ward being the active one — see getWardProgress().
 function computeNavChecks(){
   if(activeInventoryType==='guardian'){
+    // Milestone 40H-A: window.validateGuardian is assigned only once the
+    // Guardian Inventory feature bundle lazy-loads, so this branch can run
+    // before it exists -- on the very first dashboard paint of a session
+    // with a guardian-type ward and no prior guardian-feature navigation.
+    // validate() used to call window.validateGuardian() unguarded, throwing
+    // a TypeError getWardProgress()'s try/catch silently swallowed into a
+    // console.warn on every such render. Returning null here (rather than
+    // an empty error array) matters: an empty array would leave every
+    // trackedKeys entry at its initialized `true`, reporting 100% complete
+    // to a ward nothing has actually validated -- a false "Ready to file"
+    // reading, worse than the crash it would replace. null propagates
+    // through getWardProgress() exactly like the old caught exception did,
+    // so the dashboard's displayed progress keeps meaning "actually
+    // computed," never a fabricated pass.
+    if(typeof window.validateGuardian!=='function')return null;
     // Single source of truth: every section's ✓/− here comes from the SAME
     // errors validate() produces and Print Preview's export gate checks --
     // not a second, separately-maintained set of looser rules. That older
