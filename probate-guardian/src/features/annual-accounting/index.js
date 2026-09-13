@@ -1115,9 +1115,7 @@ function pageSchD5Annual(){
 
 // ── Schedule E — Bank Transfers ──────────────────────────
 function pageSchEAnnual(){
-  const d=window.D;
-  const totalIn=(d.schE||[]).reduce((s,r)=>s+n(r.transferInAmt),0);
-  const totalOut=(d.schE||[]).reduce((s,r)=>s+n(r.transferOutAmt),0);
+  const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schE && d.schE.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schE.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1139,8 +1137,8 @@ function pageSchEAnnual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schE" data-route="/sche">+ Add Transfer</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Total Transfers In</div><div class="td">${fmtAnnual(totalIn)}</div></div>
-    <div class="tr"><div class="td">Total Transfers Out</div><div class="td">${fmtAnnual(totalOut)}</div></div>
+    <div class="tr"><div class="td">Total Transfers In</div><div class="td" data-annual-total="schE_in">${fmtAnnual(t.schE_in)}</div></div>
+    <div class="tr"><div class="td">Total Transfers Out</div><div class="td" data-annual-total="schE_out">${fmtAnnual(t.schE_out)}</div></div>
   </div></div>
   ${renderScheduleDocsSection('schE')}
   ${pageNavAnnual('/schd5','/schf1')}
@@ -1149,8 +1147,7 @@ function pageSchEAnnual(){
 
 // ── Schedule F-1 — Sales of Real Property ────────────────
 function pageSchF1Annual(){
-  const d=window.D;
-  const total=(d.schF1||[]).reduce((s,r)=>s+n(r.salePrice),0);
+  const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schF1 && d.schF1.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schF1.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1171,7 +1168,7 @@ function pageSchF1Annual(){
   <div class="schedule-instructions">Attach a copy of the closing statement. Gains or losses from the sale should also be noted in Schedule C. Provide the court order date approving the sale.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schF1" data-route="/schf1">+ Add Sale</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-1 Total — Sales of Real Property</div><div class="td">${fmtAnnual(total)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-1 Total — Sales of Real Property</div><div class="td" data-annual-total="schF1">${fmtAnnual(t.schF1)}</div></div></div></div>
   ${renderScheduleDocsSection('schF1')}
   ${pageNavAnnual('/sche','/schf2')}
   </div>`;
@@ -1179,8 +1176,7 @@ function pageSchF1Annual(){
 
 // ── Schedule F-2 — Sales of Personal Property ────────────
 function pageSchF2Annual(){
-  const d=window.D;
-  const total=(d.schF2||[]).reduce((s,r)=>s+n(r.salePrice),0);
+  const d=window.D; const t=calcTotalsAnnual();
   let rows='';
   if(d.schF2 && d.schF2.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schF2.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1201,7 +1197,7 @@ function pageSchF2Annual(){
   <div class="schedule-instructions">Gains or losses from the sale of personal property should also be noted in Schedule C. Attach proof of proceeds deposited.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schF2" data-route="/schf2">+ Add Sale</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-2 Total — Sales of Personal Property</div><div class="td">${fmtAnnual(total)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-2 Total — Sales of Personal Property</div><div class="td" data-annual-total="schF2">${fmtAnnual(t.schF2)}</div></div></div></div>
   ${renderScheduleDocsSection('schF2')}
   ${pageNavAnnual('/schf1','/p67')}
   </div>`;

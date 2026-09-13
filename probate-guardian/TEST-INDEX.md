@@ -11,6 +11,7 @@ the same commit.
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
 | amended-form-line.spec.js            | "Amended Form?" prints the filer's actual answer; Annual-family identity and single-source footer subtitle                |
 | annual-accounting-pdf-model.spec.js  | Trust Accounting PDF-model table layout for percentage and currency columns                                               |
+| annual-accounting-totals.spec.js     | Milestone 40H-H: calcTotalsAnnual()'s schE_in/schE_out/schF1/schF2 keys, the three schedule totals that had none before   |
 | annual-accounting-pdf-model.spec.js  | Trust/Annual Accounting PDF-model table layout, Part VIII trust disclosure, and duplicate title suppression               |
 | boot-ordering.spec.js                | Milestone 40G: app startup is driven from main.js after module evaluation, not from legacy-app.js's classic-script top level |
 | bar-number.spec.js                   | Florida Bar-number normalization: eight digits preserved, shorter values left-padded, and non-digits removed               |

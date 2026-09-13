@@ -48,6 +48,20 @@ export function calcTotalsAnnual(customD) {
   else if (netAssetsFromD > 25000) auditFee = 85;
   else auditFee = 20;
 
+  // Milestone 40H-H: Schedule E/F-1/F-2 were the only three schedule totals
+  // in annual-accounting/index.js computed locally at render time instead of
+  // through this shared function -- so, unlike every other schedule total,
+  // they had no data-annual-total binding for refreshAnnualTotals() to
+  // update live, and stayed frozen at whatever they were when the page
+  // first rendered (often 0.00, since a freshly-added empty row starts with
+  // no amount entered). Same reduce() shape the local computations already
+  // used, just relocated here so the figure updates on every input/blur
+  // like the rest of this schedule's totals.
+  const schE_in = (d.schE || []).reduce((s, r) => s + n(r.transferInAmt), 0);
+  const schE_out = (d.schE || []).reduce((s, r) => s + n(r.transferOutAmt), 0);
+  const schF1 = (d.schF1 || []).reduce((s, r) => s + n(r.salePrice), 0);
+  const schF2 = (d.schF2 || []).reduce((s, r) => s + n(r.salePrice), 0);
+
   return {
     schA, schB1, schB2, schB3, schB4, totalDisb,
     schC_gains, schC_losses, schC_net, netAssets,
@@ -55,7 +69,8 @@ export function calcTotalsAnnual(customD) {
     schD2_carrying, schD2_ward,
     schD3_carrying, schD3_ward,
     schD4_restricted, schD4_carrying, schD4_ward,
-    schD5_total, netAssetsFromD, bondReq, auditFee
+    schD5_total, netAssetsFromD, bondReq, auditFee,
+    schE_in, schE_out, schF1, schF2,
   };
 }
 

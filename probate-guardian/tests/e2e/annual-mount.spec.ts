@@ -271,6 +271,28 @@ test.describe('annual-accounting feature module', () => {
     expect(await page.evaluate(() => (window as any).D.schC[0].description)).toBe("Sale of ward's homestead");
   });
 
+  // Milestone 40H-H: Schedule E/F-1/F-2 computed their totals locally at
+  // render time with no data-annual-total binding, so refreshAnnualTotals()
+  // (which every other schedule's total relies on to update live) had
+  // nothing to find -- the figure was only ever correct at the instant the
+  // page first rendered. Entering a value and blurring, with no navigation,
+  // is the exact case that stayed frozen at 0.00 before this fix.
+  test('Schedule F-1 total updates live after entering a sale price, with no navigation', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'F1 Live Total Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/schf1'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schF1"]').click();
+
+    const totalCell = page.locator('[data-annual-total="schF1"]');
+    await expect(totalCell).toHaveText('0.00');
+
+    const salePriceInput = page.locator('[data-annual-path="schF1.0.salePrice"]');
+    await salePriceInput.fill('402000');
+    await salePriceInput.blur();
+
+    await expect(totalCell).toHaveText('402,000.00');
+  });
+
   test('Final and Trust aliases use their own legal copy and PDF identity', async ({ page }) => {
     await freshStartNoPassword(page);
 
