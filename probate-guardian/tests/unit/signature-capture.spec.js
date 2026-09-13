@@ -3,6 +3,7 @@ import {
   validateSignatureImage, readPngDimensions,
   MAX_SIGNATURE_WIDTH_PX, MAX_SIGNATURE_FILE_SIZE_BYTES,
   removeLightBackground, DEFAULT_BACKGROUND_LUMINANCE_THRESHOLD,
+  hasVisibleContent,
 } from '../../src/core/signature/signature-pad.js';
 import { checkSignatureState, inferLegacySignatureState, SIGNATURE_STATES } from '../../src/core/validation/signature-state.js';
 
@@ -72,6 +73,42 @@ describe('signature-pad: validateSignatureImage', () => {
     const result = validateSignatureImage(`data:image/png;base64,${btoa(binary)}`);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/content check/i);
+  });
+});
+
+// A live-reproduction finding (2026-09-13): a blank canvas -- nothing
+// drawn, nothing typed, Clear was just pressed, or a real draw gesture that
+// produced zero strokes for any environmental reason -- still encodes to a
+// normal-looking, well-formed, multi-KB transparent PNG. validateSignatureImage()
+// above has no way to see that; format/size/width checks all pass a blank
+// image, so "Apply Signature" used to silently accept it, mark the
+// signature complete, unblock export, and paint an invisible image into the
+// generated PDF -- confirmed directly: clicking Apply with zero strokes
+// drawn produced no error and a stored, export-unblocking signatureImage.
+describe('signature-pad: hasVisibleContent (blank-signature guard)', () => {
+  function pixels(...rgba) {
+    return new Uint8ClampedArray(rgba.flat());
+  }
+
+  it('a fully transparent canvas has no visible content', () => {
+    const transparent = [0, 0, 0, 0];
+    expect(hasVisibleContent(pixels(transparent, transparent, transparent))).toBe(false);
+  });
+
+  it('a single opaque pixel among transparent ones counts as visible content', () => {
+    const transparent = [0, 0, 0, 0];
+    const ink = [10, 10, 10, 255];
+    expect(hasVisibleContent(pixels(transparent, transparent, ink, transparent))).toBe(true);
+  });
+
+  it('any non-zero alpha counts, not just fully opaque (anti-aliased stroke edges)', () => {
+    const transparent = [0, 0, 0, 0];
+    const antiAliasedEdge = [10, 10, 10, 1];
+    expect(hasVisibleContent(pixels(transparent, antiAliasedEdge))).toBe(true);
+  });
+
+  it('an empty pixel buffer has no visible content', () => {
+    expect(hasVisibleContent(new Uint8ClampedArray(0))).toBe(false);
   });
 });
 

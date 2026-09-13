@@ -20,6 +20,32 @@ export const MAX_SIGNATURE_FILE_SIZE_BYTES = 100 * 1024; // "tens of KB is more 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 /**
+ * A blank canvas (nothing drawn, nothing typed, Clear was pressed, or a
+ * genuine pointer-event failure produced zero strokes) still encodes to a
+ * normal-looking, well-formed, multi-KB transparent PNG -- format, size, and
+ * width checks (validateSignatureImage(), above) all pass it regardless.
+ * Pure and DOM-free like removeLightBackground() above, so it is
+ * unit-testable directly against plain arrays; canvasHasVisibleContent()
+ * below is the thin canvas-reading wrapper an apply handler actually calls.
+ * Returns true on the first non-transparent pixel found, so a large canvas
+ * with any real ink still exits fast.
+ */
+export function hasVisibleContent(pixels) {
+  for (let i = 3; i < pixels.length; i += 4) {
+    if (pixels[i] !== 0) return true;
+  }
+  return false;
+}
+
+/** Scans the live canvas's alpha channel directly, rather than re-decoding
+ * the exported PNG bytes, since the caller already holds the canvas at the
+ * moment "Apply" is clicked. */
+export function canvasHasVisibleContent(canvas) {
+  const ctx = canvas.getContext('2d');
+  return hasVisibleContent(ctx.getImageData(0, 0, canvas.width, canvas.height).data);
+}
+
+/**
  * Content validation for a captured/uploaded signature image (Milestone
  * 39-B "Data safety: image limits"): real PNG magic bytes, not just a
  * `.png` extension or a declared MIME type; a maximum pixel width; a
@@ -237,11 +263,23 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
   }, { signal });
 
   container.querySelector('[data-sig-action="apply"]').addEventListener('click', () => {
-    let dataUrl;
-    if (activeTab === 'draw') dataUrl = drawCanvas.toDataURL('image/png');
-    else if (activeTab === 'type') { renderTypedPreview(); dataUrl = typePreview.toDataURL('image/png'); }
-    else dataUrl = uploadedDataUrl;
+    let dataUrl, sourceCanvas;
+    if (activeTab === 'draw') { sourceCanvas = drawCanvas; dataUrl = drawCanvas.toDataURL('image/png'); }
+    else if (activeTab === 'type') { renderTypedPreview(); sourceCanvas = typePreview; dataUrl = typePreview.toDataURL('image/png'); }
+    else { sourceCanvas = uploadPreview; dataUrl = uploadedDataUrl; }
     if (!dataUrl) { showError('Add a signature before applying.'); return; }
+    // A blank canvas (nothing drawn/typed, or Clear was just pressed) still
+    // produces a valid, plausible-sized PNG -- validateSignatureImage()
+    // below has no way to see that it's empty. Check the pixels directly,
+    // before the format/size checks, so the filer gets one clear message
+    // rather than "successfully" signing with an invisible image.
+    if (sourceCanvas && !canvasHasVisibleContent(sourceCanvas)) {
+      const emptyMessage = activeTab === 'draw' ? 'Draw a signature before applying -- the canvas is blank.'
+        : activeTab === 'type' ? 'Type a name before applying -- nothing is visible yet.'
+        : 'The uploaded image appears blank.';
+      showError(emptyMessage);
+      return;
+    }
     const result = validateSignatureImage(dataUrl);
     if (!result.valid) { showError(result.error); return; }
     showError('');

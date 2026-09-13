@@ -58,7 +58,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | router.spec.js                       | Navigation router services (navigate, registerRoute, getCurrentPage)                                                      |
 | schedule-definitions.spec.js         | SCHEDULE_SCHEMAS and collection row helpers                                                                               |
 | section-status.spec.js               | Section completion status computation and local guidance text                                                             |
-| signature-capture.spec.js            | Milestone 39-B: signature-pad PNG validation/dimensions, checkSignatureState() tri-state rule, legacy-migration inference; Milestone 39-C: removeLightBackground() luminance-threshold Upload transparency fix, incl. documented degraded-case limits |
+| signature-capture.spec.js            | Milestone 39-B: signature-pad PNG validation/dimensions, checkSignatureState() tri-state rule, legacy-migration inference; Milestone 39-C: removeLightBackground() luminance-threshold Upload transparency fix, incl. documented degraded-case limits; hasVisibleContent() blank-signature-content guard (2026-09-13 bug fix) |
 | ssn-format.spec.js                   | maskSSN() for SSN/EIN/TIN inputs and its integration in every PDF model identifier output                                |
 | supplemental-pdf.spec.js             | Active supplemental doc period resolution; supplemental filing eligibility                                                |
 | tab-state.spec.js                    | Cross-tab peer-state normalization and risky-peer detection                                                               |

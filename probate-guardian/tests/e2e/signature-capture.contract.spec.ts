@@ -265,13 +265,23 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
     await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
-    const box = await canvas.boundingBox();
-    if (!box) throw new Error('signature canvas not visible');
-    await page.mouse.move(box.x + 20, box.y + 20);
-    await page.mouse.down();
-    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
-    await page.mouse.up();
+    await canvas.waitFor({ state: 'visible' });
+    // page.mouse drag events don't reliably reach this canvas's pointer
+    // listeners in this environment (confirmed: a full move/down/move/up
+    // sequence left every pixel untouched) -- draw via the canvas API
+    // directly instead, matching the same fix in the Guardian Inventory
+    // suite below.
+    await canvas.evaluate((c: HTMLCanvasElement) => {
+      const ctx = c.getContext('2d')!;
+      ctx.strokeStyle = '#0b1a33';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(20, 20);
+      ctx.lineTo(150, 60);
+      ctx.stroke();
+    });
     await page.locator('[data-signature-state-group="planGuardians.0"] [data-sig-action="apply"]').click();
+    await expect(page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-error')).toBeHidden();
     await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
 
     await page.evaluate(() => (window as any).navigate('/print'));
@@ -353,13 +363,23 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
     await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
-    const box = await canvas.boundingBox();
-    if (!box) throw new Error('signature canvas not visible');
-    await page.mouse.move(box.x + 20, box.y + 20);
-    await page.mouse.down();
-    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
-    await page.mouse.up();
+    await canvas.waitFor({ state: 'visible' });
+    // page.mouse drag events don't reliably reach this canvas's pointer
+    // listeners in this environment (confirmed: a full move/down/move/up
+    // sequence left every pixel untouched) -- draw via the canvas API
+    // directly instead, matching the same fix in the Guardian Inventory
+    // suite below.
+    await canvas.evaluate((c: HTMLCanvasElement) => {
+      const ctx = c.getContext('2d')!;
+      ctx.strokeStyle = '#0b1a33';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(20, 20);
+      ctx.lineTo(150, 60);
+      ctx.stroke();
+    });
     await page.locator('[data-signature-state-group="planGuardians.0"] [data-sig-action="apply"]').click();
+    await expect(page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-error')).toBeHidden();
     await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
 
     await page.evaluate(() => (window as any).navigate('/print'));
@@ -437,13 +457,23 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
     await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
-    const box = await canvas.boundingBox();
-    if (!box) throw new Error('signature canvas not visible');
-    await page.mouse.move(box.x + 20, box.y + 20);
-    await page.mouse.down();
-    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
-    await page.mouse.up();
+    await canvas.waitFor({ state: 'visible' });
+    // page.mouse drag events don't reliably reach this canvas's pointer
+    // listeners in this environment (confirmed: a full move/down/move/up
+    // sequence left every pixel untouched) -- draw via the canvas API
+    // directly instead, matching the same fix in the Guardian Inventory
+    // suite below.
+    await canvas.evaluate((c: HTMLCanvasElement) => {
+      const ctx = c.getContext('2d')!;
+      ctx.strokeStyle = '#0b1a33';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(20, 20);
+      ctx.lineTo(150, 60);
+      ctx.stroke();
+    });
     await page.locator('[data-signature-state-group="planGuardians.0"] [data-sig-action="apply"]').click();
+    await expect(page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-error')).toBeHidden();
     await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
 
     await page.evaluate(() => (window as any).navigate('/print'));
@@ -736,18 +766,60 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
     await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
-    const box = await canvas.boundingBox();
-    if (!box) throw new Error('signature canvas not visible');
-    await page.mouse.move(box.x + 20, box.y + 20);
-    await page.mouse.down();
-    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
-    await page.mouse.up();
+    await canvas.waitFor({ state: 'visible' });
+    // Milestone 42: page.mouse-driven drag events do not reliably reach this
+    // canvas's pointerdown/pointermove listeners in this environment --
+    // confirmed directly: a full move/down/move/up sequence left every pixel
+    // untouched (0 non-zero alpha bytes both before and after). This test
+    // originally used that sequence and still passed, because nothing in
+    // the app checked whether the applied image had any visible content --
+    // exactly the live bug this same commit fixes. Draw via the canvas API
+    // directly so this test verifies the Draw tab's own code path
+    // (Preparer/Attorney/D-5's sibling tests below all bypass the UI
+    // entirely via SAMPLE_PNG, so this is the only coverage of it) without
+    // depending on synthetic pointer-event delivery.
+    await canvas.evaluate((c: HTMLCanvasElement) => {
+      const ctx = c.getContext('2d')!;
+      ctx.strokeStyle = '#0b1a33';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(20, 20);
+      ctx.lineTo(150, 60);
+      ctx.lineTo(100, 90);
+      ctx.stroke();
+    });
     await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
+    await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-pad-error')).toBeHidden();
     await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+    await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-stamp-preview img')).toBeVisible();
 
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
+  });
+
+  test('Guardian (D-1) Signature Stamp: applying a blank canvas is rejected, not silently accepted', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Sig Blank Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await gotoPage(page, '/d1', 'guardians.0');
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    await page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas').waitFor({ state: 'visible' });
+
+    // Nothing drawn at all -- the exact live-reported bug (2026-09-13):
+    // clicking Apply here used to succeed silently, storing a valid-but-
+    // invisible signature and unblocking export with no warning.
+    await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
+    await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-pad-error')).toBeVisible();
+    await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-pad-error')).toContainText(/blank/i);
+    expect(await page.evaluate(() => (window as any).D.guardians[0].signatureImage)).toBeFalsy();
+    await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-stamp-preview')).toHaveCount(0);
+
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await expect(page.locator('body')).toContainText('signature stamp image is required', { timeout: 10000 });
+    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
 
   test('Preparer (D-2) Signature Stamp: incomplete blocks, then applying it unblocks and paints', async ({ page }) => {
