@@ -1002,29 +1002,33 @@ function pageD3(){
     <div class="col-12 col-lg-6">
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Safe Deposit Box</h2>
-        <p style="font-size:.83rem;margin:0 0 .5rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></p>
-        <div class="d-flex gap-4 mb-3">
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${sdbIsYes(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
-            <label class="form-check-label" for="sdb-yes">Yes</label>
+        <fieldset class="mb-3">
+          <legend class="form-label mb-1" style="font-size:.83rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></legend>
+          <div class="d-flex gap-4">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${sdbIsYes(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
+              <label class="form-check-label" for="sdb-yes">Yes</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${sdbIsNo(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
+              <label class="form-check-label" for="sdb-no">No</label>
+            </div>
           </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${sdbIsNo(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
-            <label class="form-check-label" for="sdb-no">No</label>
-          </div>
-        </div>
+        </fieldset>
         <div id="sdb-filed-row" class="${sdbIsYes(D.hasSafeDepositBox)?'':'d-none'}">
-          <label class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></label>
-          <div class="d-flex gap-4 mb-2">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${sdbIsYes(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
-              <label class="form-check-label" for="sdb-filed-yes">Yes</label>
+          <fieldset>
+            <legend class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></legend>
+            <div class="d-flex gap-4 mb-2">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${sdbIsYes(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
+                <label class="form-check-label" for="sdb-filed-yes">Yes</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${sdbIsNo(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
+                <label class="form-check-label" for="sdb-filed-no">No</label>
+              </div>
             </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${sdbIsNo(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
-              <label class="form-check-label" for="sdb-filed-no">No</label>
-            </div>
-          </div>
+          </fieldset>
         </div>
       </div>
     </div>

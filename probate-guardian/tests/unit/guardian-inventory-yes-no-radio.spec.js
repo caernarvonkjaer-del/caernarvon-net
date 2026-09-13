@@ -47,5 +47,30 @@ describe('Milestone 38E Item 1: Guardian Inventory & Plan Benefits Radio Migrati
     expect(inventoryCode).toContain("field === 'vehicleMake' || field === 'vehicleModel'");
     expect(inventoryCode).toContain("formatName(control.value)");
   });
+
+  // Milestone 40H-C: D-3's two Safe Deposit Box radio pairs (hasSafeDepositBox,
+  // safeDepositBoxFiled) are hand-rolled rather than built through
+  // yesNoRadioHTML(), which is why they were missed when the other four
+  // groups (checked above) were migrated -- confirmed by AGENTS.md Section 6
+  // ("Binary radio pairs ... must be wrapped in semantic <fieldset>/<legend>")
+  // and by `grep -c fieldset` on this file returning 0 before this fix.
+  test('D-3 Safe Deposit Box parent and child groups are wrapped in semantic fieldset/legend', () => {
+    expect(inventoryCode).toContain('<legend class="form-label mb-1" style="font-size:.83rem;">Does the ward have a safe deposit box');
+    expect(inventoryCode).toContain('<legend class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court?');
+
+    const parentFieldsetIndex = inventoryCode.indexOf('<fieldset class="mb-3">');
+    const parentLegendIndex = inventoryCode.indexOf('Does the ward have a safe deposit box');
+    const parentRadiosIndex = inventoryCode.indexOf('id="sdb-yes"');
+    expect(parentFieldsetIndex).toBeGreaterThan(-1);
+    expect(parentFieldsetIndex).toBeLessThan(parentLegendIndex);
+    expect(parentLegendIndex).toBeLessThan(parentRadiosIndex);
+
+    const childFieldsetIndex = inventoryCode.lastIndexOf('<fieldset>', inventoryCode.indexOf('id="sdb-filed-yes"'));
+    const childLegendIndex = inventoryCode.indexOf('Safe Deposit Box Inventory Filed with Court?');
+    const childRadiosIndex = inventoryCode.indexOf('id="sdb-filed-yes"');
+    expect(childFieldsetIndex).toBeGreaterThan(-1);
+    expect(childFieldsetIndex).toBeLessThan(childLegendIndex);
+    expect(childLegendIndex).toBeLessThan(childRadiosIndex);
+  });
 });
 
