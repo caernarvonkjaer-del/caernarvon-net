@@ -4,9 +4,17 @@
 
 **Draft only — do not implement yet.** This proposal outlines an architectural
 refactoring to unify form construction across the codebase into a 3-tier
-hierarchical system: **Field Primitives $\rightarrow$ Card Templates $\rightarrow$ Form Composition**.
-It authorizes no runtime, data-model, test, or documentation change beyond this
-proposal.
+hierarchical system: **Field Primitives → Card Templates → Form Composition**,
+the same target `AGENTS.md` §9 already names. It authorizes no runtime,
+data-model, test, or documentation change beyond this proposal.
+
+**Revision (2026-09-13):** every claim below was re-verified directly against
+current `master` (after Milestone 42's full A–H series landed) rather than
+carried over from the original draft. The verification changed the plan
+materially, not cosmetically — see "What changed in this revision" below.
+Where the original draft's framing was corrected rather than merely updated,
+that is called out in place, per this repository's convention for recording
+proposal-accuracy corrections rather than silently fixing them.
 
 ---
 
@@ -15,119 +23,418 @@ unrelated, much smaller task also queued under Milestone 41 — consolidating
 the sidebar's four save/backup buttons down to two now that Milestone 40F
 unified the underlying export/import pipeline. No shared files with the
 3-tier work below; it can be approved and implemented independently, in
-either order relative to this document, once Milestone 42 has landed.
+either order relative to this document.
+
+**Prerequisites — satisfied.** Milestone 42's four *Precedes 41* sub-deliveries
+have landed and gone green: 42B (green `npm test` baseline), 42C (the
+`window.*` bridge inventory and freeze), 42D (one form-write side-effect
+path for all nine filing types), 42F (validators emitting structured
+`{path, section, message}` issues). This milestone may now be approved.
+
+---
+
+## What changed in this revision
+
+The original draft's motivating claim — "atomic field rendering is
+*partially* centralized" — undersold how far centralization already went,
+in one specific and important way, and undersold how much work remains in
+another. Both change the execution plan:
+
+1. **`inpS()` (`legacy-app.js`) already delegates to `renderFormField()`
+   (Tier 1) at runtime, today, on every call.** Its body is:
+   ```js
+   function inpS(id,label,val,req=false,type='text'){
+     if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
+       return window.renderFormField({ path: id, label, value: val, type, required: req, id });
+     }
+     // ~40 lines of an inline duplicate implementation, below
+   ```
+   `main.js` imports `form-fields.js` eagerly and (since Milestone 40G) runs
+   before any page mounts, so `window.renderFormField` is always defined by
+   the time `inpS()` is ever called — the duplicate 40-line fallback below
+   the `if` is dead in the running app, a defensive branch that never fires,
+   not a live second implementation. This means **Tier 1 already renders
+   every one of `inpS()`'s ~90 call sites** across all four Plan types
+   (`plan-annual`, `plan-initial`, `plan-minor`, `plan-simplified`) and
+   `simplified-accounting`'s own `inpS`-wrapping helper — they just reach it
+   through a narrower, positional-argument call shape instead of
+   `renderFormField`'s object form. Migrating these is a call-site ergonomics
+   change, not a rendering-path risk: the fields are already Tier 1 output.
+   **`txtP()`, `radioP()`, and `chkP()` do not have this delegation** — each
+   is still a fully independent, hand-rolled implementation. This is the
+   real, proven template for Tier 1 completion: extend the same
+   `if (typeof window.renderX === 'function') return window.renderX(...)`
+   pattern to the other three, in each function's own body, with zero
+   call-site changes at first — exactly how `inpS()` already works.
+
+2. **Two of Tier 1's four primitives are built and have zero adoption.**
+   `renderSelectField()` and `renderTextareaField()` exist in
+   `form-fields.js`, are covered by `tests/unit/form-fields.spec.js`, and are
+   called by **nothing else in the app** — confirmed by a repo-wide search.
+   `txtP()` (~20 call sites across the four Plan types) duplicates
+   `renderTextareaField()` outright. No `<select>`-shaped primitive is
+   adopted anywhere either, despite existing.
+
+3. **Guardian Inventory (`src/features/guardian-inventory/index.js`, 1,209
+   lines, the largest and most structurally distinct filing type) has zero
+   Tier 1 adoption** — it calls neither `inpS()` nor `renderFormField()`
+   anywhere; every field is hand-rolled with its own `data-bind` markup.
+   This is the highest-effort, highest-risk migration target in the
+   milestone and should be scheduled last, not folded into a generic
+   "roll out to all nine types" step.
+
+4. **No tri-state radio or checkbox primitive exists in Tier 1 at all**, but
+   the fragmentation this milestone would close is large and precisely
+   countable, not the vague "partially centralized" of the original draft:
+
+   | Pattern | Where | Call sites | Fieldset/legend? |
+   | --- | --- | --- | --- |
+   | `yesNoRadioHTML()` (+ `yesNoRadioAnnualHTML()` thin wrapper) | `legacy-app.js` | 9 + 5 | Yes — already compliant |
+   | `radioP()` | `legacy-app.js`, called from 4 Plan types | 7 | **No** — `<label>`/`<div>` only, no `<fieldset>` |
+   | `chkP()` | `legacy-app.js`, called from all 4 Plan types | ~25 | N/A (checkbox, not radio) |
+   | `yesNoCheckboxS()` | `legacy-app.js` | ~25 | N/A (checkbox) |
+   | `yesNoCheckboxD()` | `legacy-app.js` | 4 | N/A (checkbox) |
+   | Guardian Inventory D-3 (hand-rolled, not via any shared helper) | `guardian-inventory/index.js` | 2 groups | Yes — fixed directly in Milestone 40H-C |
+
+   `AGENTS.md` §6's rule ("binary radio pairs write string `'Yes'`/`'No'`
+   and must be wrapped in semantic `<fieldset>`/`<legend>`") is **true for
+   `yesNoRadioHTML()` and the Guardian Inventory D-3 sites, false for
+   `radioP()`'s 7 call sites** — this milestone is where that rule stops
+   being aspirational for the one remaining exception.
+
+5. **SSN masking is duplicated six ways**, not centralized-with-stragglers:
+   `form-fields.js`'s own `renderFormField()` implementation, plus
+   independent hand-rolled `ssn-mask-wrap`/`ssn-reveal-btn` markup in
+   `guardian-inventory/index.js`, `plan-annual/index.js`,
+   `plan-initial/index.js`, `plan-minor/index.js`, and `legacy-app.js`'s own
+   `inpS()`-adjacent dead fallback branch (item 1 above).
+
+6. **Milestone 42 landed new infrastructure this plan should build on, not
+   duplicate**, all nonexistent when the original draft was written:
+   - `src/core/filing/filing-descriptor.js` exports `FILING_TYPE_KEYS`,
+     `FILING_ENGINE_IDS`, and `DESCRIPTORS` (42G) — Tier 3 composition and
+     any registry-driven iteration belongs here, not a new list.
+   - `src/core/form/form-contract.js`'s `runFieldWriteSideEffects(path,
+     control)` (42D) is the one shared post-write tail (county commit,
+     Party write-through, autosave, nav dots, ward card, name sync) already
+     unifying what happens *after* a field commits, across all three
+     existing binding conventions (`data-form-path`, `data-annual-path`,
+     `data-bind`). Tier 1 does not need to re-solve this; it needs to
+     converge every migrated field onto the one binding convention
+     (`data-form-path`) that already has the cleanest path to it, so
+     `data-annual-path` and `data-bind` can eventually retire (§1, Tier 1,
+     below).
+   - `src/core/validation/validation-issue.js` (42F) means every validator
+     issue already carries an exact `path` (e.g. `planGuardians.0.signatureDate`).
+     Tier 1 field primitives must emit `data-form-path` values that are
+     byte-identical to the paths validators already state, not a
+     independently-invented attribute scheme — this makes
+     `focusFieldByPath()`'s jump-to-field work automatically for any newly
+     migrated field, for free.
+   - `tests/e2e/validation-structured-paths.spec.ts` (42F) and
+     `tests/unit/window-bridge.spec.js` (42C) are the real names of the two
+     guards this milestone must keep green — the original draft cited
+     `tests/unit/validation-path-conversion-oracle.spec.js`, which was a
+     transitional file name from mid-migration and does not exist (that
+     file was rewritten into the `.spec.ts` name above once the migration
+     it was proving completed). `tests/unit/filing-type-enumeration-guard.spec.js`
+     (42G) is a third guard worth naming: Tier 3 composition must not
+     reintroduce a fourth place that lists all nine filing-type keys.
+
+---
 
 ## 1. Architectural Motivation & 3-Tier Hierarchy
 
-**Prerequisites (decided 2026-09-13, see `MILESTONE-42-PROPOSAL.md`):** this
-milestone does not begin implementation until Milestone 42's four
-*Precedes 41* sub-deliveries have landed and gone green — 42B (a green
-`npm test` baseline), 42C (the `window.*` bridge inventory and freeze), 42D
-(one form-write side-effect path for all nine filing types), and 42F
-(validators emitting structured `{path, section, message}` issues instead of
-prose the adapter regex-parses). Each is a seam this refactor moves code
-across; starting before they land means building Tier 1/2 on the exact
-fragility they replace. Milestone 42's other sub-deliveries are independent.
-
-Currently, atomic field rendering is partially centralized in
-`src/core/form/form-fields.js`, while page layouts and section cards are
-interpolated directly into template strings across feature modules (e.g.
-`src/features/plan-annual/index.js`, `src/legacy-app.js`).
-
-This milestone proposes establishing a formal 3-tier component architecture:
-
 ```mermaid
 flowchart TD
-    subgraph Tier1 [Tier 1: Central Field Primitives]
-        F1[renderFormField]
-        F2[Tri-State Radios]
-        F3[Masked SSN/EIN]
-        F4[Currency & Dates]
+    subgraph Tier1 [Tier 1: Field Primitives — src/core/form/form-fields.js]
+        F1[renderFormField — exists, adopted]
+        F2[renderSelectField / renderTextareaField — exist, UNADOPTED]
+        F3[Tri-state Yes/No radio — does not exist]
+        F4[Checkbox primitive — does not exist]
     end
 
-    subgraph Tier2 [Tier 2: Centrally Managed Card Templates]
-        C1[Case Caption Card]
-        C2[Ward Demographics Card]
-        C3[Guardian & Attorney Card]
-        C4[Residence Profile Card]
-        C5[Form-Specific Row Factories]
+    subgraph Tier2 [Tier 2: Card Templates — src/core/form/cards/, does not exist yet]
+        C1[Case Caption & Court Identity]
+        C2[Ward Demographics & Inception]
+        C3[Guardian & Attorney Details]
+        C4[Residence & Facility Profile]
+        C5[Form-Specific Row Factories — stay per-form, AGENTS.md section 3]
     end
 
-    subgraph Tier3 [Tier 3: Declarative Form Composition]
-        P1[Annual Plan]
-        P2[Initial Plan]
-        P3[Minor Plan]
-        P4[Annual Accounting]
-        P5[Guardian Inventory]
+    subgraph Tier3 [Tier 3: Declarative Composition — src/features/*/index.js]
+        P1[planSimplified — pilot]
+        P2[planMinor]
+        P3[planInitial]
+        P4[planAnnual]
+        P5[simplified]
+        P6[annual / finalAccounting / trustAccounting — one engine]
+        P7[guardian — last, zero current Tier 1 adoption]
     end
 
     Tier1 --> Tier2
     Tier2 --> Tier3
 ```
 
-### Tier 1: Centralized Field Types & Primitives (`src/core/form/form-fields.js`)
+All nine filing types are covered above via their seven distinct
+`engineId`s (`FILING_ENGINE_IDS` in `filing-descriptor.js`) — `annual`,
+`finalAccounting`, and `trustAccounting` share one engine and one
+`index.js`, so they migrate together as a single Tier 3 target, not three.
 
-- Standardized renderers for text, currency/money, dates, phone, masked SSN/EIN, bar number, and explicit `'Yes'`/`'No'` tri-state radios.
-- Unified input attributes: `data-form-path`, `data-field-kind`, `data-field-format-policy`, `aria-describedby`, and accessible labels.
-- Integration with formatting engines (`formatPhone`, `formatSSN`, `formatDisplayDate`).
+### Tier 1: Field Primitives (`src/core/form/form-fields.js`)
 
-### Tier 2: Globally Managed Card Templates (`src/core/form/cards/`)
+**Current state, verified:** `inferFieldKind`, `renderFormField` (text,
+date, money, percent, ssn with mask/reveal, phone, bar number, check
+number, account number, zip, address, name, case number — all present and
+adopted, directly or via `inpS()`'s delegation), `renderSelectField` and
+`renderTextareaField` (present, unadopted). Absent: tri-state Yes/No radio,
+checkbox.
 
-- Shared identity and profile cards reused across multiple filings:
-  - **Case Caption & Court Identity**: County picker, case number, circuit identification.
-  - **Ward Demographics & Inception**: Name, SSN, inception date, reporting period.
-  - **Guardian & Attorney Details**: Single/co-guardian identity, bar number, pro se detection.
-  - **Residence & Facility Profile**: Living arrangement radios, address, phone, facility type.
-- **Form-Specific Row Factories**: In accordance with `AGENTS.md` Section 3, collection grids (e.g. Schedule A assets, Plan Q1 residences) remain driven by form-specific row factories rather than shared generic cards to prevent cross-statute schema pollution.
+**Work**, in the order that reuses proven, low-risk building blocks first:
+
+1. Add a tri-state Yes/No radio primitive by **porting `yesNoRadioHTML()`**
+   (already fieldset/legend-compliant, already handles both the
+   `data-form-path` and `data-annual-path` binding conventions via its
+   existing `binding` parameter) into `form-fields.js`, rather than
+   designing one from scratch.
+2. Add a checkbox primitive. **Decision needed before implementation,
+   flagged here rather than assumed:** `chkP()`, `yesNoCheckboxS()`, and
+   `yesNoCheckboxD()` have never been compared for whether they are the same
+   semantic shape with different names, or three genuinely different
+   behaviors (their names suggest Simplified-specific and
+   Guardian-Inventory-D-schedule-specific variants). Audit their three
+   bodies before designing one primitive to replace three; do not assume
+   they collapse into one shape.
+3. Extend `txtP()`, `radioP()`, and `chkP()` with the exact delegation
+   pattern `inpS()` already uses: `if (typeof window.render<X> === 'function')
+   return window.render<X>({...})`, falling back to today's inline body
+   otherwise. This is a same-file, same-signature change with **zero
+   call-site edits** at first — the ~52 combined call sites across the four
+   Plan types keep calling `txtP(id, label, val, rows, req, hint)` exactly
+   as today; only what runs *inside* `txtP()` changes. `radioP()`'s
+   delegation to the new tri-state/generic-radio primitive closes its
+   fieldset/legend gap as a side effect, not a separate accessibility task.
+4. Every Tier 1 primitive's emitted `data-form-path` (or `data-field-path`)
+   value must equal the `path` the corresponding `validateX()` call already
+   states for that field (verified per field against the real validator,
+   not assumed from naming convention) — the design constraint from item 6
+   above, made concrete.
+
+### Tier 2: Card Templates (`src/core/form/cards/` — new)
+
+- Case Caption & Court Identity (county picker, case number, circuit).
+- Ward Demographics & Inception (name, SSN, inception date, reporting period).
+- Guardian & Attorney Details (single/co-guardian identity, bar number, pro
+  se detection).
+- Residence & Facility Profile (living arrangement radios, address, phone,
+  facility type).
+- **Collection Grid Boundary** (`AGENTS.md` §3, unchanged): Schedule A
+  assets, Plan Q1 residences, and every other collection grid stay on
+  form-specific row factories. Cards compose Tier 1 primitives for
+  identity/demographic fields only.
 
 ### Tier 3: Declarative Form Composition (`src/features/*/index.js`)
 
-- Pages assemble layouts by declaring sequences of card components rather than hand-writing inline HTML grids.
-- Clean separation between form lifecycle orchestration (mount/dispose/validation) and DOM markup generation.
+- Pages assemble layouts by declaring sequences of Tier 2 cards plus their
+  own form-specific row factories, rather than hand-writing inline HTML.
+- Lifecycle orchestration (mount/dispose/validation, already extracted per
+  feature module) stays exactly where it is; only markup generation moves.
+- Iterate filing types via `FILING_TYPE_KEYS`/`DESCRIPTORS` from
+  `filing-descriptor.js` wherever a registry-driven list is needed — never
+  a new hand-written list of nine (`tests/unit/filing-type-enumeration-guard.spec.js`
+  will fail on one).
 
 ---
 
-## 2. Cross-Cutting Ramifications (AGENTS.md Section 8 Compliance)
+## 2. Execution Plan
 
-### 2.1 Data Model
+Each phase is independently approvable, matching this repository's
+established sub-delivery convention (Milestone 40's A–I, Milestone 42's
+A–H). Phases 41-1 and 41-2/41-3 have different risk profiles and should be
+approved as such, even though they are numbered sequentially here.
 
-- **Persisted Keys**: No change to persisted data keys or paths. State object (`window.D`) remains identical.
-- **Schema Single Source of Truth**: All field definitions in Tier 1 must strictly validate against `probate-guardian-data-model.csv`.
+### 41-1: Tier 1 completion (low risk — proven delegation pattern, no call-site changes)
+
+**Risk:** Low. `inpS()`'s existing delegation already demonstrates this
+exact technique is safe in production.
+
+1. Audit `chkP()` / `yesNoCheckboxS()` / `yesNoCheckboxD()` for shape
+   equivalence (Decision, §1 Tier 1 item 2). Document the finding —
+   collapse to one primitive only if genuinely the same shape.
+2. Port `yesNoRadioHTML()` into `form-fields.js` as the tri-state radio
+   primitive; add the checkbox primitive per the audit's finding.
+3. Add the delegation branch to `txtP()`, `radioP()`, `chkP()` (or their
+   consolidated replacement), mirroring `inpS()`'s exact pattern.
+4. Verify with the *existing* test surface first, before writing anything
+   new: every `*-mount.spec.ts` (all nine filing types already have one),
+   `page-structure.spec.ts` (landmarks/heading structure, all forms),
+   `form-field-labels.spec.ts` (accessible names, all forms) must stay
+   green with **zero markup diff** for any already-passing assertion — these
+   three specs are the pre-existing regression net for exactly this kind of
+   change and should be run before any new test is written, not after.
+5. Extend `tests/unit/form-fields.spec.js` to cover the two new primitives
+   (mirroring its existing per-variant structure) and add
+   `tests/unit/form-fields-legacy-delegation.spec.js` (new) asserting each
+   of `inpS()`/`txtP()`/`radioP()`/`chkP()` produces markup structurally
+   identical to calling the Tier 1 primitive directly with equivalent
+   arguments — a permanent guard against the delegation silently drifting,
+   not a one-time migration check.
+6. Update `TEST-INDEX.md` in the same commit.
+
+No filing type's `index.js` file changes in this phase — the ~140 call
+sites across the four Plan types and Guardian Inventory's D-3 are untouched
+by design, and stay untouched until 41-2/41-3 converts them to Tier 2/3
+composition, if ever (see "What this milestone deliberately does not
+require," below).
+
+### 41-2: Tier 2 cards + pilot (new territory — build once, prove once)
+
+**Risk:** Medium — new markup surface, but scoped to one filing type before
+any wider rollout.
+
+1. Build the four Tier 2 cards, consuming Tier 1 primitives from 41-1.
+2. **Pilot on Plan Simplified** — the smallest filing type (already the
+   pilot for Milestone 42F's validator conversion, for the same reason:
+   smallest surface, fastest full-cycle verification, lowest blast radius
+   if something is wrong).
+3. Verification: `plan-simplified-mount.spec.ts`,
+   `signature-capture.contract.spec.ts`'s Plan Simplified section,
+   `plan-simplified-parity.spec.js`, `page-structure.spec.ts`, and
+   `form-field-labels.spec.ts` all green with no behavior change; a new,
+   explicit **text-content diff test** — extract `#main-content`'s visible
+   text (labels + values) before and after, for a fixture ward with every
+   field populated, and assert byte-for-byte equality. This operationalizes
+   the "0 visual diff" requirement the original draft asserted without a
+   concrete technique.
+4. `tests/unit/form-cards.spec.js` (new): each card binds correctly to
+   `data-form-path` and renders required elements, per the original draft's
+   own test plan — unchanged, since this test genuinely does not exist yet.
+
+### 41-3: Tier 3 rollout, ordered by verified risk (not alphabetical or arbitrary)
+
+Smallest and most self-contained first, Guardian Inventory last because it
+is the only filing type with zero current Tier 1 adoption and the largest
+file (1,209 lines):
+
+1. Plan Minor
+2. Plan Initial
+3. Plan Annual
+4. Simplified Accounting
+5. Annual Accounting (covers Final/Trust via the shared `annual` engine —
+   one migration, three filing types)
+6. Guardian Inventory
+
+Per type: convert to Tier 2/3 composition, then run that type's own
+`*-mount.spec.ts`, `page-structure.spec.ts`, `form-field-labels.spec.ts`,
+and (where one exists) `*-parity.spec.js`, plus the same text-content diff
+technique from 41-2 extended to that type's own maximally-filled fixture.
+Each type is its own commit and its own checkpoint — do not batch two
+filing types into one commit, per this repository's established discipline
+for exactly this shape of rollout (Milestone 39-C's per-role rollout,
+Milestone 42F's per-type validator conversion).
+
+### What this milestone deliberately does not require
+
+- **41-1 does not require 41-2/41-3.** Tier 1 completion (closing the
+  `radioP()` fieldset gap, retiring the four duplicate binary-answer
+  renderers, adopting `renderSelectField`/`renderTextareaField`) is real,
+  shippable value on its own and can be approved and landed independently
+  of whether Tier 2/3 ever happen.
+- **Retiring `data-annual-path` and `data-bind`** as binding conventions,
+  now that 42D's `runFieldWriteSideEffects()` makes them behaviorally
+  equivalent paths to the same tail, is the natural end state once every
+  filing type is on Tier 3 — but it is an explicit, separate follow-up
+  after 41-3 completes for all nine types, not bundled into the rollout
+  itself. Each type keeps its current binding convention through its own
+  41-3 step; only the markup generation moves to Tier 1/2.
+- **A tenth filing type is not anticipated by this plan** beyond already
+  being handled for free by `FILING_TYPE_KEYS`/`DESCRIPTORS`-driven
+  iteration (§1, Tier 3) — no new capability is being added here.
+
+---
+
+## 3. Cross-Cutting Ramifications (`AGENTS.md` §8 Compliance)
+
+### 3.1 Data Model
+
+- **Persisted Keys**: No change to persisted data keys or paths. `window.D`
+  remains identical.
+- **Schema Single Source of Truth**: All field definitions in Tier 1 must
+  strictly validate against `probate-guardian-data-model.csv`.
 - **Validation Script**: Must continue passing `npm run verify:data-model`.
 
-### 2.2 Legacy Data Migration
+### 3.2 Legacy Data Migration
 
-- **Backward Compatibility**: Fully compatible with existing `.sav` files and legacy global helpers (`inpS`, `txtP`, `radioP`).
-- **Bridge Strategy**: Existing legacy helpers will delegate directly to Tier 1 / Tier 2 renderers during the transition phase, ensuring no disruption to un-migrated forms.
-- **No Data Loss**: Non-destructive toggling and tri-state values (`''`, `'Yes'`, `'No'`) are enforced at the field primitive level.
+- **Backward Compatibility**: Fully compatible with existing `.sav` files.
+- **Bridge Strategy — already proven, not hypothetical**: `inpS()`'s live
+  delegation to `renderFormField()` is the working example; 41-1 extends
+  the identical pattern to `txtP()`/`radioP()`/`chkP()`, per §1 Tier 1 item 3.
+- **No Data Loss**: Non-destructive toggling and tri-state values (`''`,
+  `'Yes'`, `'No'`) are enforced at the field primitive level. The Safe
+  Deposit Box boolean-`null` tri-state (Milestone 38E's documented
+  exception to the string convention) is a distinct, narrower contract —
+  Tier 1's tri-state primitive must not silently coerce it to the string
+  convention; verify against `tests/unit/guardian-inventory-yes-no-radio.spec.js`
+  before Guardian Inventory's own 41-3 step.
 
-### 2.3 Test Coverage & Index Governance
+### 3.3 Test Coverage & Index Governance
 
 - **Unit Specs**:
-  - `tests/unit/form-fields.spec.js` (exists — `inferFieldKind`, `renderFormField`, `renderSelectField`, `renderTextareaField`): extend to cover every Tier 1 primitive variant, masking, accessibility attributes, and tri-state radio wrappers.
-  - `tests/unit/form-cards.spec.js` (new): shared card templates bind correctly to `data-form-path` and render required elements.
-- **Contract & Regression Specs**:
-  - `tests/e2e/filing-identity.contract.spec.ts` (exists, e2e not unit): extend to verify case caption and identity rendering consistency once Tier 2 cards own that markup.
-  - Milestone 42's `tests/unit/validation-path-conversion-oracle.spec.js` and `tests/unit/window-bridge.spec.js` must stay green throughout — they are the guards for the two seams this refactor moves across.
-- **Index Synchronization**: Update `TEST-INDEX.md` in the same commit to track new specs under the appropriate categories.
+  - `tests/unit/form-fields.spec.js` (exists): extend for the two new Tier 1
+    primitives.
+  - `tests/unit/form-fields-legacy-delegation.spec.js` (new, 41-1): pins the
+    `inpS`/`txtP`/`radioP`/`chkP` → Tier 1 delegation.
+  - `tests/unit/form-cards.spec.js` (new, 41-2): Tier 2 card binding.
+- **Contract & Regression Specs**: `tests/e2e/filing-identity.contract.spec.ts`
+  (exists, e2e), every `*-mount.spec.ts` (exist, all nine types),
+  `page-structure.spec.ts` and `form-field-labels.spec.ts` (exist, all
+  forms) — these three are the primary regression net for 41-1/41-3 and
+  should run *before* writing new tests, not only after.
+- **Guards this milestone must keep green throughout**: `tests/e2e/validation-structured-paths.spec.ts`
+  (42F — corrected name, was cited as a nonexistent `tests/unit/validation-path-conversion-oracle.spec.js`),
+  `tests/unit/window-bridge.spec.js` (42C), and
+  `tests/unit/filing-type-enumeration-guard.spec.js` (42G).
+- **Index Synchronization**: Update `TEST-INDEX.md` in the same commit as
+  each phase.
 
-### 2.4 Export, Import & Portability
+### 3.4 Export, Import & Portability
 
-- **Parity Invariant**: Field abstractions must not alter output payload structures. PDF and Excel export pipelines rely on direct `window.D` paths (`d.wardName`, `d.caseNumber`, `d.guardians[i]`), which remain untouched. (DOCX export was removed in Milestone 40A; there is no Word pipeline to preserve.)
-- **Single-Ward / Full-Case Portability**: JSON export and import routines remain 100% interoperable.
+- **Parity Invariant**: Field abstractions must not alter output payload
+  structures. PDF and Excel export pipelines rely on direct `window.D`
+  paths (`d.wardName`, `d.caseNumber`, `d.guardians[i]`), which remain
+  untouched. (DOCX export was removed in Milestone 40A; there is no Word
+  pipeline to preserve.)
+- **Single-Ward / Full-Case Portability**: JSON export and import routines
+  remain 100% interoperable.
 
-### 2.5 Security & Sensitivity
+### 3.5 Security & Sensitivity
 
-- **Masking & Reveal**: SSN, EIN, and sensitive account numbers use centralized mask/reveal components (`ssn-mask-wrap`, `ssn-reveal-btn`) with appropriate ARIA accessibility labels.
-- **Threat Model**: UI masking prevents accidental shoulder-surfing in shared environments; underlying encryption (`src/core/persistence/`) continues to protect data at rest.
+- **Masking & Reveal**: SSN/EIN use `ssn-mask-wrap`/`ssn-reveal-btn`
+  (confirmed current class names) with ARIA labels. Tier 1 consolidation
+  reduces this from six independent implementations (§ "What changed," item
+  5) to one.
+- **Threat Model**: UI masking prevents accidental shoulder-surfing;
+  underlying encryption (`src/core/persistence/`) continues to protect data
+  at rest — unchanged by this milestone.
 
-### 2.6 UI/UX & Accessibility Consistency
+### 3.6 UI/UX & Accessibility Consistency
 
-- **Semantic HTML**: All radio pairs rendered in `<fieldset>` with `<legend>` tags.
-- **Label Associations**: All inputs strictly tied to labels via `id` and `for` attributes.
-- **Design Consistency**: Reusable cards ensure uniform margins, grid column breakpoints (`col-12 col-md-6`), header typography, and action buttons across all 9 court filings.
+- **Semantic HTML**: Radio pairs in `<fieldset>`/`<legend>` — true today for
+  `yesNoRadioHTML()` and Guardian Inventory's D-3 (Milestone 40H-C); **false
+  today for `radioP()`'s 7 call sites**, corrected by 41-1's delegation.
+- **Label Associations**: All inputs tied to labels via `id`/`for`.
+- **Design Consistency**: Reusable cards ensure uniform margins, grid
+  breakpoints (`col-12 col-md-6`), header typography, and action buttons
+  across all 9 filing types.
 
-### 2.7 Legal & Compliance Framing
+### 3.7 Legal & Compliance Framing
 
-- **No Statewide Inference from Local Rules**: County-gated requirements (e.g. Sixth Judicial Circuit service rules) stay isolated in local guidance handlers and are not hardcoded into shared cards.
-- **Pro Se & Guardian Advocate Exemptions**: Shared Attorney cards must dynamically adjust requirements so unrepresented filings are never blocked.
+- **No Statewide Inference from Local Rules**: County-gated requirements
+  (e.g. Sixth Judicial Circuit service rules) stay isolated in
+  `county-guidance.js` handlers, not hardcoded into shared cards.
+- **Pro Se & Guardian Advocate Exemptions**: Shared Attorney cards must
+  dynamically adjust requirements so unrepresented filings are never
+  blocked — the existing per-validator conditional-requirement logic
+  (e.g. "attorney fields required only once the filer has started entering
+  one") moves with the field, not into card-level logic that could
+  override it.
