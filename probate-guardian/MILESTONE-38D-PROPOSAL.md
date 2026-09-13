@@ -2,11 +2,15 @@
 
 ## Status
 
-**Fully landed 2026-09-13 under Milestone 44B** (Phase 44B-1: registry completion,
+**Landed 2026-09-13 under Milestone 44B** (Phase 44B-1: registry completion,
 typed issue identities, non-bypassable supplemental issues; Phase 44B-2: shared Excel
 capacity module, capability-aware authorization migration across all 3 Excel exporters,
 7 PDF exporters, PDF preview, and browser print, and static inventory verification).
-The specification text below is otherwise unchanged.
+**Corrected 2026-09-13 (same day, follow-up review): 44B's own "Fully landed" claim
+overstated it** -- two real gaps against this document's own spec text were found and
+then fixed the same day, see "What was found incomplete, and fixed, after 44B's own
+'Fully landed' claim" below. The specification text elsewhere in this document is
+otherwise unchanged.
 
 ## Goal
 
@@ -345,3 +349,89 @@ content and filenames are retained and no marker is introduced.
 | E2E/artifacts | Extend focused Preview/export tests for accept/decline, five capabilities, nine identities, mutation invalidation, filing switch/reload, technical blocks, 38A conflict, and unchanged validation. Inspect generated PDF/DOCX/XLSX names and contents for absence of draft/watermark/metadata changes. |
 | `TEST-INDEX.md` | Add every new test file under the Milestone 38D behavior area and append 38D to existing test rows whose scope is extended. Do not create duplicate rows for existing files. |
 | Documentation | Update output help and accessibility copy; document that acknowledgement is temporary and artifacts are ordinary, without suggesting completion or court approval. |
+
+## What was found incomplete, and fixed, after 44B's own "Fully landed" claim
+
+A same-day follow-up review (2026-09-13, this session) verified 44B's landing
+directly against this document's own spec text rather than trusting its
+"Fully landed... specification text otherwise unchanged" status line. Most
+of it held up — the registry expansion, `supplemental-pdf.js`'s typed
+conversion, and the Excel/PDF/preview/print call-site migration to
+`authorizeFilingOutput()` were all confirmed correct by direct read. Two
+things did not, both now fixed in the same follow-up pass:
+
+1. **`markFilingRevisionChanged()` existed and was correctly unit-tested in
+   isolation, but was called from only 3 of the ~9 mutation boundaries this
+   document's own Implementation → Phase 2 list names** (a first grep
+   attempt claimed *zero* call sites and was itself wrong — it missed the
+   three already-wired `window.markFilingRevisionChanged?.()` optional-
+   chained calls in `schedule-definitions.js`'s add/duplicate/remove
+   functions; corrected before acting on it). Missing: field commits, date
+   drafts, party actions, 38A conflict resolution, Excel import, and
+   accounting filing-type change. Fixed by wiring the remaining boundaries
+   directly into the functions this document itself names:
+   `runFieldWriteSideEffects()` (`form-contract.js` — the one shared tail
+   for all three binding conventions, so this single hook covers every
+   committed field write at once), `recordDateDraft()`/`clearFieldDraft()`
+   (`commit-coordinator.js`), `setPartyIdForSlot()`/`dismissPartyPair()`/
+   `mergeParties()` (`party-resolver.js`), `resolveSimplifiedGuardianAddressConflict()`
+   (`guardian-compatibility.js`), `setAccountingFilingType()` (`legacy-app.js`),
+   and each of the three `excel.js` files' `importExcel()` success tail. Also
+   added a `pagehide` listener (`main.js`) clearing the acknowledgement as
+   defense-in-depth against bfcache restores, matching this document's own
+   "reload/session end... clearing the in-memory record" line. New
+   `tests/unit/output-revision-wiring.spec.js` proves each wired boundary
+   actually invalidates a standing acknowledgement (confirmed failing
+   against the pre-fix `runFieldWriteSideEffects()` by a direct revert/
+   restore check before trusting the test), plus a negative case (a
+   rejected no-op mutation must not spuriously invalidate). Not
+   independently unit-tested: the three `importExcel()` tails and
+   `setAccountingFilingType()` are wired but rely on browser-only
+   dependencies (`FileReader`, `window`-classic-script scope) that make a
+   fast unit test impractical — their existing e2e coverage is what backs
+   them, not a new dedicated test.
+2. **Preview-page buttons derived their disabled state from
+   `prepareFilingOutput().messages` (a capability-agnostic boolean), not
+   from `authorizeFilingOutput()` per capability**, contrary to this
+   document's own Phase 2 item 4 ("Preview-page buttons derive enabled
+   state from authorization per capability"). Confirmed in all 7
+   `pagePrint*()` functions. Not a live bug under today's registry (every
+   currently-registered non-bypassable code happens to be scoped to every
+   capability), but a real latent gap: a future capability-narrow
+   non-bypassable issue fed into one of these pages would have incorrectly
+   disabled every button, not just the one it actually affects. Fixed by
+   computing each Save-as-PDF button's disabled state from
+   `authorizeFilingOutput(window.D, baseIssues, {capability:'pdf'}).status`
+   instead of the raw error count, in all 7 files; the banner/issue-list
+   rendering deliberately stays on the capability-agnostic `prepareFilingOutput()`
+   result, since it's meant to show every outstanding requirement regardless
+   of format. Verified via the existing e2e regression suites that already
+   exercise these buttons' disabled state (`plan-readiness.contract.spec.ts`,
+   `navigation-status.contract.spec.ts`, `form-entry-ux.spec.ts` — 99 tests,
+   all still green) rather than a new dedicated test: no scenario exists
+   today where the old and new logic actually diverge (see caveat below), so
+   there is no way to write a test that would fail against the pre-fix code
+   without inventing an artificial registry entry for the purpose.
+   **Caveat, left open:** the analogous Save-as-Excel button in the three
+   accounting-family hosts (`simplified-accounting`/`guardian-inventory`/
+   `annual-accounting`) still derives its disabled state from the
+   *legacy*, untyped `checkExcelCapacity()` global (`legacy-app.js:6173`),
+   called directly from each feature's `index.js` — this was not part of
+   44B-2's migration and was not fixed in this pass; it is a separate,
+   narrower instance of the same category of gap, left for a future pass.
+   Also corrected: this session's own prior claim that "all three `excel.js`
+   files still destructure the now-dead `window.checkExcelCapacity` (zero
+   remaining callers anywhere)" was half right — the destructure inside the
+   three `excel.js` files really was dead (now removed) since Phase 2
+   already migrated their own `doSaveExcel()` call sites, but the underlying
+   `legacy-app.js` function is not globally dead; it is exactly the
+   still-live legacy caller described in this caveat.
+
+Net effect: `output-authorization.js`'s revision/acknowledgement contract
+now matches this document's own mutation-boundary list in substance (7 of
+9 named boundary categories wired directly, the remaining 2 backed by
+existing e2e coverage rather than a new unit test), and every Preview
+page's Save-as-PDF button is now capability-correct rather than
+coincidentally-correct. The Excel-button/legacy-`checkExcelCapacity()`
+gap is real, open, and intentionally not fixed here — flagged rather than
+silently left unmentioned.

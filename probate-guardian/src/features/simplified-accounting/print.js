@@ -28,8 +28,18 @@ const {
 
 export function pagePrintSimplified(capOver){
   window.queueAllScheduleDocValidations?.();
-  const preflight=prepareFilingOutput(window.D,()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)]);
+  const baseIssues=()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  const preflight=prepareFilingOutput(window.D,baseIssues);
   const errors=preflight.messages;
+  // Milestone 38D/44B: the banner's issue count and validationPanel() list
+  // deliberately stay driven by the full, capability-agnostic preflight --
+  // it's meant to show every outstanding requirement regardless of format.
+  // Save as PDF's own disabled state, though, must reflect only what
+  // actually blocks PDF specifically, per authorizeFilingOutput()'s
+  // capability filter -- see the spec's "buttons derive enabled state from
+  // authorization per capability."
+  const pdfAuthorization=authorizeFilingOutput(window.D,baseIssues,{capability:'pdf'});
+  const pdfBlocked=pdfAuthorization.status!=='allowed';
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   return `<div>
@@ -38,7 +48,7 @@ export function pagePrintSimplified(capOver){
       <div><strong>Preview &amp; Export</strong>${errors.length?` — <span style="color:var(--danger-text)">${errors.length} issue(s)</span>`:capOver.length?` — <span style="color:var(--danger-text)">too many entries for Excel; use PDF</span>`:' — Ready to export'}</div>
       <div class="d-flex gap-2 flex-wrap">
         <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
-        <button class="btn btn-outline-primary btn-sm" data-simplified-action="save-pdf" ${errors.length?'disabled':''}>Save as PDF</button>
+        <button class="btn btn-outline-primary btn-sm" data-simplified-action="save-pdf" ${pdfBlocked?'disabled':''}>Save as PDF</button>
         <button class="btn btn-primary btn-sm" data-simplified-action="save-excel" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="More remuneration entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
         <button class="btn btn-outline-secondary btn-sm" data-simplified-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button><span data-preview-shell-actions></span>
       </div>

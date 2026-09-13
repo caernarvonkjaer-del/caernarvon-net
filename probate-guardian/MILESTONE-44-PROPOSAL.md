@@ -299,6 +299,24 @@ per `AGENTS.md`'s cross-cutting-change rule.
 - Added `tests/unit/excel-capacity-issues.spec.js` (7 tests), `tests/unit/output-authorization.spec.js` (10 tests), and `tests/unit/output-gate-inventory.spec.js` (12 tests).
 - Synchronized `TEST-INDEX.md` and verified `test-index-guard.spec.js` and `verify:data-model` pass cleanly. All 67 targeted tests passing.
 
+**Follow-up correction, 2026-09-13 (same day, this session):** a direct
+re-verification against `MILESTONE-38D-PROPOSAL.md`'s own spec text found
+Phase 44B-2's "Fully landed" claim overstated it in two ways, both now
+fixed — see that document's own "What was found incomplete, and fixed,
+after 44B's own 'Fully landed' claim" section for the full account. In
+short: `markFilingRevisionChanged()` was wired at only 3 of ~9 named
+mutation boundaries (now 7 of 9, the remaining 2 backed by existing e2e
+coverage instead of a new unit test), and all 7 Preview pages' Save-as-PDF
+buttons derived their disabled state from a capability-agnostic boolean
+instead of `authorizeFilingOutput()` per capability (now fixed in all 7).
+New `tests/unit/output-revision-wiring.spec.js` (9 tests) proves the
+mutation-boundary fix with real red/green verification. One related gap
+found but deliberately left open: the Save-as-Excel button in the three
+accounting-family hosts still uses the legacy, untyped
+`checkExcelCapacity()` global rather than the typed `excel.capacity.*`
+issues 44B-2 itself introduced — flagged, not fixed, in the same
+follow-up note.
+
 ---
 
 ## 44C — Land 38B's Universal Readiness-Card Architecture

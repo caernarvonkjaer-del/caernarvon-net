@@ -256,6 +256,7 @@ export function getControlPolicy(control) {
  */
 export function runFieldWriteSideEffects(path, control = null) {
   if (!path) return;
+  window.markFilingRevisionChanged?.('field-write');
   window.maybeCommitCoverCounty?.(path);
   const identitySlot = window.identitySlotForPath?.(window.D, path);
   if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);

@@ -11,7 +11,7 @@ const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotals, guardianHasAnyData,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, capitalizeImportedFields, sanitizeObjectDataInPlace, autoSave,
-  getCurrentPage, checkExcelCapacity,
+  getCurrentPage,
 } = window;
 
 export const SIMPLIFIED_EXCEL_CAPS={
@@ -390,6 +390,7 @@ export async function importExcel(input){
       // in-place because window.D is the live object saveData() persists.
       sanitizeObjectDataInPlace(window.D);
       autoSave();
+      window.markFilingRevisionChanged?.('excel-import');
       if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
       setTimeout(()=>{if(prog)prog.textContent='';},3000);
       renderPage(getCurrentPage());

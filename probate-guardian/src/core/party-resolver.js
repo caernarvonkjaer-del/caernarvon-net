@@ -292,6 +292,7 @@ export function getPartyIdForSlot(filing, role, index = 0) {
 /** Points a filing's role/index slot at a party id (or clears it with null). */
 export function setPartyIdForSlot(filing, role, index, partyId) {
   if (!filing) return;
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-slot');
   if (role === 'ward') { filing.wardPartyId = partyId; return; }
   if (role === 'attorney') { filing.attorneyPartyId = partyId; return; }
   if (role === 'preparer') { filing.preparerPartyId = partyId; return; }
@@ -371,7 +372,10 @@ export function dismissPartyPair(idA, idB) {
   const caseFile = window.caseFile;
   if (!caseFile) return;
   if (!Array.isArray(caseFile.dismissedPartyPairs)) caseFile.dismissedPartyPairs = [];
-  if (!isPartyPairDismissed(idA, idB)) caseFile.dismissedPartyPairs.push([idA, idB].sort());
+  if (!isPartyPairDismissed(idA, idB)) {
+    caseFile.dismissedPartyPairs.push([idA, idB].sort());
+    window.markFilingRevisionChanged?.('party-dismiss');
+  }
 }
 
 /**
@@ -429,6 +433,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   const keep = resolveParty(keepId);
   const discard = resolveParty(discardId);
   if (!keep || !discard || keep === discard) return false;
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-merge');
 
   if (adoptBlankFields) {
     for (const field of PARTY_COMPARE_FIELDS) {

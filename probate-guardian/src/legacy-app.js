@@ -176,6 +176,7 @@ function formDisplayName(type){
 // legal filings. Keep their stored type and Part I selection atomic so every
 // later consumer resolves the same descriptor.
 function setAccountingFilingType(filingType){
+  window.markFilingRevisionChanged?.('filing-type-change');
   const result=window.applyAccountingFilingType
     ? window.applyAccountingFilingType(window.D,filingType)
     : null;

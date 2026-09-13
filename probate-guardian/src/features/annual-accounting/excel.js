@@ -20,7 +20,7 @@ const {
   annualReconcileState, guardianHasAnyData, formDisplayName,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, unwrapCellValue, capitalizeImportedFields,
-  sanitizeObjectDataInPlace, autoSave, getCurrentPage, checkExcelCapacity,
+  sanitizeObjectDataInPlace, autoSave, getCurrentPage,
   r2,
 } = window;
 
@@ -676,6 +676,7 @@ export async function importExcel(input){
       // that keyword list matches. In-place because D is window.D itself.
       sanitizeObjectDataInPlace(D);
       autoSave();
+      window.markFilingRevisionChanged?.('excel-import');
       if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
       setTimeout(()=>{if(prog)prog.textContent='';},3000);
       renderPage(getCurrentPage());

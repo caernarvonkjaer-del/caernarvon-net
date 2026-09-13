@@ -16,7 +16,7 @@ const {
   renderPage, ensureTemplate, sanitizeForExcel, saveData, navigate,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, unwrapCellValue, capitalizeImportedFields,
-  sanitizeObjectData, checkExcelCapacity, mk,
+  sanitizeObjectData, mk,
 } = window;
 
 // Each cap is the total row count across that schedule's template pages
@@ -425,6 +425,7 @@ export async function importExcel(input){
     const importedData=sanitizeObjectData(parseInitialInventoryWorkbook(workbook));
     Object.assign(window.D,importedData);
     saveData();
+    window.markFilingRevisionChanged?.('excel-import');
     if(prog)prog.textContent='✓ Import complete!';
     setTimeout(()=>{if(prog)prog.textContent='';},3000);
     navigate('/');

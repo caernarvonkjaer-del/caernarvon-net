@@ -40,7 +40,7 @@ import './pwa-ui.js';
 
 import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
 import { navigate } from './core/navigation/router.js';
-import { markFilingRevisionChanged, isOutputAcknowledgedFor } from './core/filing/output-authorization.js';
+import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
 if (typeof window !== 'undefined') {
@@ -66,6 +66,11 @@ if (typeof window !== 'undefined') {
   // third copy this file used to add was removed in Milestone 42E.
   window.markFilingRevisionChanged = markFilingRevisionChanged;
   window.isOutputAcknowledgedFor = isOutputAcknowledgedFor;
+  // Milestone 38D/44B: a fresh module load already starts with no
+  // acknowledgement (in-memory only, never persisted) -- this is defense in
+  // depth for bfcache restores, where the page can become visible again
+  // without a full re-evaluation of this module.
+  window.addEventListener('pagehide', () => clearOutputAcknowledgement());
 }
 
 console.log('Probate Guardian ESM bootstrap initialized.');

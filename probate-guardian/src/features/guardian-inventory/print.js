@@ -33,14 +33,19 @@ const {
 
 export function pagePrint(capOver){
   window.queueAllScheduleDocValidations?.();
-  const preflight=prepareFilingOutput(window.D,()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)]);
+  const baseIssues=()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
+  const preflight=prepareFilingOutput(window.D,baseIssues);
   const errors=preflight.messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
   const errPanel=(errors.length?validationPanel(errors):'') + filingReadinessCard(window.D, preflight.structuredIssues);
   const warnPanel=supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:'';
   const advisoryPanel=renderOutputAdvisories(preflight.advisories);
-  const canExport=errors.length===0;
+  // Milestone 38D/44B: Save as PDF's disabled state reflects only what
+  // actually blocks the pdf capability, via authorizeFilingOutput() --
+  // the banner/panel above stays driven by the full, capability-agnostic
+  // preflight so every outstanding requirement is still visible.
+  const canExport=authorizeFilingOutput(window.D,baseIssues,{capability:'pdf'}).status==='allowed';
   const canExportExcel=canExport&&capOver.length===0;
   return `<div>
   <h1 class="visually-hidden">Print Preview</h1>

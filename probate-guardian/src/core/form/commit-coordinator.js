@@ -18,6 +18,7 @@ export function recordDateDraft({ data, path, rawValue, label = '', section = ''
   store[path] = record;
   window._transientDrafts = window._transientDrafts || {};
   window._transientDrafts[path] = record.rawValue;
+  window.markFilingRevisionChanged?.('date-draft-recorded');
   return record;
 }
 
@@ -34,6 +35,7 @@ export function clearFieldDraft(path, data) {
   const target = activeData(data);
   if (target.__fieldDrafts) delete target.__fieldDrafts[path];
   if (window._transientDrafts) delete window._transientDrafts[path];
+  window.markFilingRevisionChanged?.('date-draft-cleared');
 }
 
 export function getFieldDraftIssues(data) {
