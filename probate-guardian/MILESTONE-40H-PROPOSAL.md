@@ -2,10 +2,26 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, test, or documentation change until the requester approves
-Milestone 40H specifically. Approval of another Milestone 40 delivery does
-not authorize this work.
+**Landed 2026-09-13** (`bb9cd8d`, `77f4f6f`, `2a1a923`, `c2d4d64`, `fd279d4`,
+`c1c8665`, `527758b`, `2d83275`, `3cf8ff6`, `d764e1e`) — all ten tasks,
+committed and pushed one at a time, each with its own test written and
+confirmed failing against the pre-fix code before the fix landed (git
+stash round-trip). Full regression run at the end: unit 579/579 green;
+e2e 416 passed, 6 skipped, 9 failed — all nine are the exact pre-existing
+baseline this proposal's own Open Items register already catalogued
+(`pdf-preview-viewer.spec.ts:114` × 7 filing types, `schedule-card-layout.spec.ts:177`,
+`security.spec.ts:53`), confirmed unrelated to any of the ten fixes here.
+
+One proposal correction, caught during implementation rather than shipped
+as written: Task 40H-A's Decision said to "degrade to an empty error
+array" when `window.validateGuardian` isn't ready. That would have
+fabricated a false "100% complete / Ready to file" dashboard reading for a
+ward nothing had actually validated — worse than the crash it would have
+replaced, since `workflowState()` derives `'ready-to-file'` once
+`progressPercent >= 100`. Implemented as `null` instead, matching what the
+caught exception already produced, so the fix removes the console warning
+without changing what the dashboard displays. See Task 40H-A below and its
+commit message for the full reasoning.
 
 ### Independent review against current `master` (2026-09-13, after 40A–40G landed)
 
