@@ -63,13 +63,42 @@ describe('guardian inventory PDF model', () => {
     expect(d3Table.items.find((item) => item.label === 'Does the ward have a safe deposit box?').value).toBe('No');
   });
 
+  // Schedule B-1's "Restricted?"/"Restricted Amt" columns and subtotal read
+  // r.isRestricted, a boolean field the current UI never writes -- it binds
+  // the tri-state radio to r.restricted ('Yes'/'No'/'') instead
+  // (src/features/guardian-inventory/index.js's schB1_rest_ radio). Every
+  // row entered through the current UI therefore always showed "No" and
+  // "—" here, and the restricted-cash subtotal was always $0.00, regardless
+  // of what the filer actually selected.
+  test('Schedule B-1 reads the current tri-state restricted field, not the dead isRestricted boolean', () => {
+    const model = buildVerifiedInventoryModel({
+      wardName: 'Harold Thomas Bennett',
+      caseNumber: '26-002487-GD',
+      county: 'Pasco',
+      scheduleA1: [], scheduleA2: [],
+      scheduleB1: [
+        { institutionName: 'Fifth Third Bank', fullAssetAmount: '1000', restricted: 'Yes' },
+        { institutionName: 'Regions Bank', fullAssetAmount: '2000', restricted: 'No' },
+      ],
+      scheduleB2: [], scheduleB3: [], scheduleB4: [],
+      scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    });
+
+    const b1Table = model.sections.find(section => section.id === 'b1').blocks[0];
+    expect(b1Table.rows[0][4]).toBe('Yes');
+    expect(b1Table.rows[0][5]).toBe('$1,000.00');
+    expect(b1Table.rows[1][4]).toBe('No');
+    expect(b1Table.rows[1][5]).toBe('—');
+    expect(b1Table.totals.values[1].value).toBe('$1,000.00');
+  });
+
   test('adds uploaded supporting documents to the matching schedule section', () => {
     const model = buildVerifiedInventoryModel({
       wardName: 'Harold Thomas Bennett',
       caseNumber: '26-002487-GD',
       county: 'Pasco',
       activeYearKey: 'initial',
-      scheduleB1: [{ institutionName: 'Fifth Third Bank', fullAssetAmount: '68500', isRestricted: true }],
+      scheduleB1: [{ institutionName: 'Fifth Third Bank', fullAssetAmount: '68500', restricted: 'Yes' }],
       scheduleDocs: {
         b1: {
           initial: {

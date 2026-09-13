@@ -278,18 +278,25 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ['left', 'left', 'left', 'right']
   );
 
-  // Schedule B-1. isRestricted/restricted-amount were previously dropped
+  // Schedule B-1. Restricted/restricted-amount were previously dropped
   // entirely (no column, no second total) -- the HTML preview shows a
   // per-row "Restricted Amt" column and a second numeric total alongside
   // "Schedule B-1 Total", which the vector PDF's totals shape had no way
   // to express before the engine's multi-value totals support.
-  const restrictedCash = (d.scheduleB1 || []).filter(r => r.isRestricted).reduce((s, r) => s + (parseFloat(r.fullAssetAmount) || 0), 0);
+  //
+  // Reads r.restricted (the tri-state 'Yes'/'No'/'' field the current UI's
+  // radio binds to, index.js's schB1_rest_ control) rather than the legacy
+  // r.isRestricted boolean, which normalizeWardData() migrates *from* but
+  // never clears -- so isRestricted stays undefined on every row entered
+  // through the current UI. Reading it here meant this column and subtotal
+  // always showed "No"/"$0.00" regardless of what the filer selected.
+  const restrictedCash = (d.scheduleB1 || []).filter(r => r.restricted === 'Yes').reduce((s, r) => s + (parseFloat(r.fullAssetAmount) || 0), 0);
   addScheduleSection(
     'b1',
     'Schedule B-1: Cash & Financial Accounts',
     'Schedule B-1: Cash & Financial Accounts',
     ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount', 'Restricted?', 'Restricted Amt'],
-    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), r.isRestricted ? 'Yes' : 'No', r.isRestricted ? fmt(r.fullAssetAmount) : '—']),
+    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), r.restricted === 'Yes' ? 'Yes' : 'No', r.restricted === 'Yes' ? fmt(r.fullAssetAmount) : '—']),
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
