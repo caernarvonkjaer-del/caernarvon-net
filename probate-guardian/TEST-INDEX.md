@@ -40,7 +40,9 @@ row here, has more than one, or a row names a file that no longer exists.
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |
 | guardian-inventory-yes-no-radio.spec.js | Milestone 38E: unanswered string defaults and shared fieldset-backed Guardian Inventory radio controls |
+| issue-registry.spec.js                | Milestone 44B: definitions for core validation, data integrity, supplemental (10 codes), capacity, and technical/security output issues; caller-override prevention; assertRegisteredIssues() assertion |
 | live-region.spec.js                  | ARIA live-region announcer helper                                                                                         |
+| output-preflight-typed.spec.js        | Milestone 44B: prepareFilingOutput() structured issue passthrough, bypassable vs non-bypassable status, acknowledgement clearing bypassable issues but never non-bypassable supplemental or identity issues |
 | plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 18 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |
@@ -60,7 +62,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | section-status.spec.js               | Section completion status computation and local guidance text                                                             |
 | signature-capture.spec.js            | Milestone 39-B: signature-pad PNG validation/dimensions, checkSignatureState() tri-state rule, legacy-migration inference; Milestone 39-C: removeLightBackground() luminance-threshold Upload transparency fix, incl. documented degraded-case limits; hasVisibleContent() blank-signature-content guard (2026-09-13 bug fix) |
 | ssn-format.spec.js                   | maskSSN() for SSN/EIN/TIN inputs and its integration in every PDF model identifier output                                |
-| supplemental-pdf.spec.js             | Active supplemental doc period resolution; supplemental filing eligibility                                                |
+| supplemental-pdf.spec.js             | Active supplemental doc period resolution; Milestone 44B: supplemental filing eligibility emitting typed non-bypassable issues (page-limit, total-bytes, etc.) |
 | tab-state.spec.js                    | Cross-tab peer-state normalization and risky-peer detection                                                               |
 | test-index-guard.spec.js             | Milestone 42A: every spec file has exactly one row in this file and every row names an existing file                     |
 | theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |

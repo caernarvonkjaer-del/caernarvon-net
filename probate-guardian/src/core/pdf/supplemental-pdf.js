@@ -1,4 +1,5 @@
 import { ensurePdfjs } from './pdfjs-loader.js';
+import { createIssue } from '../validation/issue-registry.js';
 
 export const SUPPLEMENTAL_PDF_LIMITS = Object.freeze({
   maxFileBytes: 15 * 1024 * 1024,
@@ -148,12 +149,40 @@ export function getSupplementalFilingIssues(sourceData, limits = SUPPLEMENTAL_PD
   const issues = [];
   for (const file of files) {
     const result = isFilingEligibleSupplement(file, limits);
-    if (!result.eligible) issues.push(result.message);
+    if (!result.eligible) {
+      const codeSuffix = result.code && result.code !== 'ineligible' ? result.code : 'blocked';
+      const issue = createIssue(`supplemental.${codeSuffix}`, {
+        message: result.message,
+        label: file?.name || 'Supporting document',
+        path: 'scheduleDocs',
+        section: 'Supporting documents',
+      });
+      Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
+      issues.push(issue);
+    }
   }
   const eligibleFiles = files.filter(file => isFilingEligibleSupplement(file, limits).eligible);
   const totals = summarizeSupplementTotals(eligibleFiles, limits);
-  if (totals.overBytes) issues.push('Supplemental PDFs exceed the total packet attachment size limit.');
-  if (totals.overPages) issues.push('Supplemental PDFs exceed the total packet page limit.');
+  if (totals.overBytes) {
+    const issue = createIssue('supplemental.total-bytes', {
+      message: 'Supplemental PDFs exceed the total packet attachment size limit.',
+      label: 'Supplemental PDFs total size',
+      path: 'scheduleDocs',
+      section: 'Supporting documents',
+    });
+    Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
+    issues.push(issue);
+  }
+  if (totals.overPages) {
+    const issue = createIssue('supplemental.total-pages', {
+      message: 'Supplemental PDFs exceed the total packet page limit.',
+      label: 'Supplemental PDFs total pages',
+      path: 'scheduleDocs',
+      section: 'Supporting documents',
+    });
+    Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
+    issues.push(issue);
+  }
   return issues;
 }
 

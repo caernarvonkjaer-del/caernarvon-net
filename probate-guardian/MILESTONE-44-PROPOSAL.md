@@ -35,7 +35,7 @@ confirmation. Of the six original findings:
 | Sub-delivery | Theme | Size | Status |
 | --- | --- | --- | --- |
 | 44A — Make 38A's Guardian-Address Conflict Actually Non-Bypassable | Data integrity, live bypass | Small | Landed 2026-09-13 |
-| 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Draft |
+| 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Phase 44B-1 Landed 2026-09-13 |
 | 44C — Land 38B's Universal Readiness-Card Architecture | Architecture, four Plan types | Medium-large | Draft |
 | 44D — Correct 37-6 Data-Model Catalogue Drift | Documentation-only | Small | Landed 2026-09-13 |
 | 44E — Milestone 39 Follow-On Scope Decision | Not a defect; decision only | N/A | Informational |
@@ -282,6 +282,15 @@ before its old ad hoc gate is removed; e2e coverage for accept/decline,
 all supported output actions, and the 38A conflict (now closed by 44A).
 Full `npm test` recommended before commit given the cross-cutting scope,
 per `AGENTS.md`'s cross-cutting-change rule.
+
+### What landed and what was corrected
+
+**Phase 44B-1 Landed 2026-09-13** (by Antigravity):
+- Corrected `MILESTONE-38D-PROPOSAL.md`'s status text per Decision 1.
+- Expanded `src/core/validation/issue-registry.js` with all specified families: `supplemental.*` (10 codes, `category: 'supplemental'`, `bypassable: false`, `capabilities: ['preview', 'print', 'pdf']`), `excel.capacity.*` (`category: 'capacity'`, `bypassable: false`, `capabilities: ['excel']`), and `output.*` technical and security codes (`output.template.missing`, `output.resource.unavailable`, `output.generation.failed`, `output.capability.unsupported`, `output.security.denied`).
+- Migrated `src/core/pdf/supplemental-pdf.js`: `getSupplementalFilingIssues()` now constructs typed `supplemental.*` issues with non-bypassable status and retains `.toString()` returning `.message` for backwards compatibility with existing consumers.
+- Added dedicated unit test suites: `tests/unit/issue-registry.spec.js` (12 tests) and `tests/unit/output-preflight-typed.spec.js` (5 tests), and updated `tests/unit/supplemental-pdf.spec.js` (10 tests). All 43 targeted tests passing.
+- Phase 44B-2 (Excel capacity checks and call-site authorization migration) remains open as the subsequent slice.
 
 ---
 

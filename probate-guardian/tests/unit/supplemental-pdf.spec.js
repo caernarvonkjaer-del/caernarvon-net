@@ -82,7 +82,7 @@ describe('supplemental PDF filing eligibility', () => {
     });
   });
 
-  test('reports aggregate active-period supplemental issues', () => {
+  test('reports aggregate active-period supplemental issues as typed non-bypassable issues', () => {
     const issues = getSupplementalFilingIssues({
       activeYearKey: 'initial',
       scheduleDocs: {
@@ -101,7 +101,39 @@ describe('supplemental PDF filing eligibility', () => {
       },
     });
 
-    expect(issues).toEqual(['huge.pdf has an invalid or over-limit page count.']);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      code: 'supplemental.page-limit',
+      category: 'supplemental',
+      bypassable: false,
+      capabilities: ['preview', 'print', 'pdf'],
+      message: 'huge.pdf has an invalid or over-limit page count.',
+    });
+    expect(String(issues[0])).toBe('huge.pdf has an invalid or over-limit page count.');
+    expect(issues.map(String)).toEqual(['huge.pdf has an invalid or over-limit page count.']);
+  });
+
+  test('reports aggregate over-bytes and over-pages issues', () => {
+    const issues = getSupplementalFilingIssues({
+      activeYearKey: 'initial',
+      scheduleDocs: {
+        b1: {
+          initial: {
+            files: [
+              eligibleFile({ id: 'file1', size: 14 * 1024 * 1024 }),
+              eligibleFile({ id: 'file2', size: 14 * 1024 * 1024 }),
+              eligibleFile({ id: 'file3', size: 14 * 1024 * 1024 }),
+            ],
+          },
+        },
+      },
+    });
+
+    const bytesIssue = issues.find(i => i.code === 'supplemental.total-bytes');
+    expect(bytesIssue).toBeDefined();
+    expect(bytesIssue.bypassable).toBe(false);
+    expect(bytesIssue.category).toBe('supplemental');
+    expect(bytesIssue.capabilities).toEqual(['preview', 'print', 'pdf']);
   });
 
   test('collects supplemental files keyed by accounting period for Annual/Trust accountings', () => {

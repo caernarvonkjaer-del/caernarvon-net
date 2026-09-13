@@ -2,11 +2,14 @@
 
 ## Status
 
-**Landed 2026-09-11 (`b0321dd`)**, together with 38A, 38B and 38C
-(`src/core/filing/output-authorization.js` and `issue-registry.js` first
-appear in that commit). Status line corrected 2026-09-13 under Milestone 42A;
-the specification text below is unchanged. Phase 1 (canonical issue identity)
-and Phase 2 (acknowledgement and unified authorization) both landed there.
+**Partially landed 2026-09-11 (`b0321dd`)** (`src/core/filing/output-authorization.js`
+and `issue-registry.js` first appeared in that commit). Status line corrected
+2026-09-13 under Milestone 44B: Phase 1 registry completion (`supplemental.*`,
+`excel.capacity.*`, `output.*`), non-bypassable supplemental PDF issues, and
+dedicated test suites (`issue-registry.spec.js`, `output-preflight-typed.spec.js`)
+landed under Milestone 44B-1; Phase 2 call-site authorization migration and Excel
+capacity refactor tracked under Milestone 44B-2. The specification text below is
+otherwise unchanged.
 
 ## Goal
 
