@@ -18,7 +18,8 @@ one-predicate validation bug behind a single gate.
 | 40C-2 | Form-entry, readiness, and validation corrections (Tasks 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H) — no persisted-data change | Ready to implement on approval; claims code-verified 2026-09-12 | `MILESTONE-40C-PROPOSAL.md` |
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | Ready to scope for implementation | `MILESTONE-40E-PROPOSAL.md` |
-| 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | Ready to scope for implementation | `MILESTONE-40F-PROPOSAL.md` |
+| 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | **Ready — priority raised 2026-09-13.** Browser verification found its core defect throwing an uncaught `ReferenceError` on every live page load, aborting `initApp` and silently disabling six startup steps including the unsaved-changes warning | `MILESTONE-40F-PROPOSAL.md` |
+| 40G | Fix the dashboard feature-bridge boot crash (`window.createFeatureBridge is not a function` on every load) | Ready to scope; step 1 is determining the real user-visible impact | `MILESTONE-40G-PROPOSAL.md` |
 
 ## How These Ended Up Together
 
@@ -32,6 +33,10 @@ independently while reviewing unrelated work (the portfolio UI starter
 kit, and a live PDF export bug report). 40F surfaced from a requested
 review of the autosave feature, which found two complete, independent
 implementations of the same save pipeline silently shadowing each other.
+40G surfaced on 2026-09-13 from a browser verification session that was
+only meant to confirm two UI claims for 40C, and instead found two
+uncaught exceptions firing on every production page load — one of them
+40F's own defect, crashing live.
 
 ## Implementation Order and Shared Files
 
@@ -60,7 +65,17 @@ Only two orderings actually save work: **40A before 40C-1** and **40F
 before 40D**. Both are satisfiable together, and the sequence below does
 so while still starting with the smallest, most isolated deliveries:
 
-**40E → 40C-2 → 40F → 40D → 40A → 40C-1.**
+**40F → 40G → 40E → 40C-2 → 40D → 40A → 40C-1.**
+
+**Revised 2026-09-13:** 40F moves to the front. It is no longer a
+cosmetic-indicator cleanup — its defect crashes on every production page
+load and takes the unsaved-changes warning down with it, so it outranks
+everything else here on severity regardless of size. 40G follows because
+it is the second half of the same boot-time failure and is cheapest to
+verify while the startup path is already under the microscope. If 40G
+takes option (a) (moving `initApp()` module-side), 40F must land first
+anyway — its deletions shrink what a startup-ordering change has to be
+regression-tested against.
 
 That supersedes the earlier `40E → 40D → 40A → 40C → 40F` suggestion,
 which violated both work-saving orderings (it put 40D before 40F and 40C

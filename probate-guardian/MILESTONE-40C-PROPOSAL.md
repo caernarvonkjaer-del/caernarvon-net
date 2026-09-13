@@ -51,13 +51,66 @@ written from a browser-QA session rather than from the source. Results:
 | 40C-G1: sidebar D4 label is the only stale one | **Confirmed** — `annual-accounting/index.js:357`; editor and Excel map already say "Intangible Assets." Two false-positive rename targets found; see that task. |
 | 40C-H: `validatePlanInitial()` uses a truthiness predicate on tri-state values | **Confirmed** — `plan-initial/index.js:581`. The editor (`:293`) and PDF model (`:206`) already use correct affirmative checks, so **three** predicates exist and only the validator is wrong. Defaults are legacy boolean `false` (`state.js:313`), confirming item 1's requirement to accept both `'No'` and `false`. |
 
-Two claims were **not** independently verified and are carried on the
-browser-QA session's authority: 40C-D's assertion that the Supporting
-Documents heading currently loses focus/state on period commit, and
-40C-B's audit of which root pages are presented as a Cover (the audit
-table above). Both are observational UI claims that a code read can't
-settle; confirm them in the browser at implementation time, and treat a
-mismatch as a scope change rather than proceeding.
+### Browser verification of the two non-code-verifiable claims (2026-09-13)
+
+The two remaining claims were checked in a real browser against the live
+deployment (`caernarvon.net/probate-guardian`, build `4834b61`, confirmed
+current via `deployment.json` and a hard reload past the service worker).
+Both came back with corrections, one of them a scope **reduction**.
+
+**40C-B — confirmed in substance, two string corrections.** All nine root
+pages exist and **all nine expose a County control** (clean yes, no
+exceptions). But the audit table above conflated two different strings,
+and both are wrong as quoted:
+
+- **The app uses an em dash, not an ASCII hyphen.** The real sidebar label
+  is `Part I — Case Info`. Every assertion, grep, and relabel target in
+  this delivery that spells it `Part I - Case Info` will silently fail to
+  match. Same applies to `Annual Plan — Minors`.
+- **Sidebar label ≠ page heading.** For Annual, Final, and Trust
+  Accounting the sidebar reads `Part I — Case Info` but the on-page
+  heading is `Part I — Required Information` — "Case Info" appears
+  nowhere in the heading. Task 40C-B must therefore change **two
+  different strings per filing type**, not one. Simplified Annual
+  Accounting is the same shape: sidebar `Cover & Part I`, heading
+  `Cover & Part I — Required Information`.
+- Observed headings, for reference: Initial Inventory
+  `Verified Initial Inventory — Case Information`; the four Plan types
+  `<Plan name> — Cover`.
+
+**40C-D — does NOT reproduce. Treat as a scope reduction.** Every one of
+the four failure modes this task was written to fix was tested on the live
+build and behaved correctly:
+
+| 40C-D's claimed failure | Observed |
+| --- | --- |
+| Heading goes stale on period commit | **Refreshes correctly** — `Supporting Documents — accounting period 01/01/2025 to 06/30/2025` updated immediately, no reload |
+| Section collapses / re-renders oddly | **No collapse, no odd re-render** |
+| Focus lost mid-edit | **Focus retained** in both From and To through full 10-character replacements |
+| Uploads/comments cleared | **Re-keyed, not destroyed** — a sentinel comment vanished on period change and **reappeared intact** when the period was set back |
+
+Scroll position also held, and unrelated form state was untouched
+(Schedule A's income line items were unaffected by the period change).
+The re-keying is correct by design: `scheduleDocs[scheduleKey][periodKey]`
+buckets per period, so a fresh period *should* present an empty slot.
+
+Per this proposal's own instruction to treat a mismatch as a scope change
+rather than proceeding: **40C-D should not be implemented as written.**
+Reduce it to adding regression coverage that locks in the behavior already
+working — particularly the re-key-and-return round trip, which nothing
+currently asserts and which a future refactor of the period key could
+easily break into real data loss. One caveat: only *comments* were
+round-tripped in the browser; uploaded PDFs share the same period-keyed
+slot so the same conclusion should hold, but that is inferred, not
+observed.
+
+**40C-C remains unverified.** The browser session set a period of
+01/01/2025 → 12/31/2025, which is ordered both chronologically *and*
+lexicographically, so it could not trip a string-comparison defect even if
+one exists. No cross-field interference was seen with that pair, which
+proves nothing either way. Re-test with the reversed and cross-year pairs
+this task already names (05/10/2026 → 05/09/2027) before implementing or
+dropping it.
 
 ## Goal
 
@@ -288,9 +341,19 @@ fallback.
 *Delivery 40C-2. No persisted-data change.*
 
 Relabel the shared Annual/Final/Trust sidebar entry, page heading, Summary
-entry, tour/help copy, and route metadata from "Part I - Case Info" (or
-"Part I - Required Information") to "Cover & Part I - Case Info." Keep the
-same `/` route and fields. Verify through all nine filing descriptors that
+entry, tour/help copy, and route metadata to "Cover & Part I — Case Info."
+Keep the same `/` route and fields.
+
+**Exact current strings, confirmed in the browser 2026-09-13 — note the em
+dashes and that the sidebar and heading differ:** the sidebar reads
+`Part I — Case Info` while the on-page heading reads
+`Part I — Required Information`. Both must change, and neither contains an
+ASCII hyphen, so match on the em-dash form (`—`, U+2014) or the relabel
+will find nothing. Simplified Annual Accounting has the same split
+(sidebar `Cover & Part I`, heading `Cover & Part I — Required
+Information`) and needs no change.
+
+Verify through all nine filing descriptors that
 the root route is visible, named as a Cover, contains the filing-level
 County control, and marks County required.
 
@@ -308,7 +371,17 @@ both a genuinely reversed range and a valid cross-year range such as
 
 ## Task 40C-D — Keep Reporting-Period-Dependent Headings Live
 
-*Delivery 40C-2. No persisted-data change.*
+*Delivery 40C-2. No persisted-data change.* **SUPERSEDED 2026-09-13 — the
+premise does not reproduce on the live build.** Browser verification found
+the heading refreshes correctly, the section does not collapse, focus is
+retained, scroll position holds, and period-keyed comments are re-keyed
+rather than destroyed (a sentinel comment reappeared when the period was
+restored). See "Browser verification" under Verification of Claims. Do not
+implement the text below as a fix. The remaining useful work is regression
+coverage for the behavior that already works — above all the
+change-period-and-change-back round trip, which nothing asserts today and
+which a future change to the period-key scheme could turn into genuine
+data loss. Scope 40C-D as test-only, or drop it.
 
 When `periodFrom` or `periodTo` commits, refresh the Supporting Documents
 heading/period label without losing focus, collapsing the section,

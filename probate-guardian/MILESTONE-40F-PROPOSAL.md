@@ -148,6 +148,74 @@ shadowed" pattern as the main save pipeline above:
    one-off `window.tauriInvoke('set_secure_permissions')` call at app boot
    (`:9066`) is the same dead pattern in miniature.
 
+### LIVE PRODUCTION CRASH CONFIRMED (2026-09-13) — this raises the severity
+
+Browser verification of the live deployment (build `4834b61`) found that
+this delivery's core defect is not merely producing a misleading indicator.
+**It throws an uncaught `ReferenceError` on every fresh page load and
+silently disables six startup steps, including the unsaved-changes guard.**
+
+Observed in the console on every load:
+
+```text
+ReferenceError: _lastAutoSavedAt is not defined
+    at updateLastSavedIndicator (src/legacy-app.js:3152:125)
+    at loadAutoExportPrefs (src/legacy-app.js:3383:3)
+    at async initApp (src/legacy-app.js:9086:3)
+```
+
+**Mechanism, confirmed by reading the code.** `legacy-app.js:3152` is
+`… ? window._lastAutoSavedAt : _lastAutoSavedAt`. At boot
+`window._lastAutoSavedAt` has never been set (nothing has called
+`saveData()` yet), so the ternary falls to the bare identifier — which
+`legacy-app.js` **never declares**. `case-file.js` does declare it
+(`:277`), which is why only the legacy copy throws.
+
+**This corrects an error in this proposal's own Background.** The Background
+states that `case-file.js`'s assignments "always win." That is true only for
+calls made *after* `main.js` evaluates. `initApp()` is invoked at
+`legacy-app.js:9259` — top level in the **classic** script — so it runs
+*before* any module loads. The app therefore runs a **time-dependent
+hybrid**: boot-path calls hit `legacy-app.js`'s implementations, everything
+afterward hits `case-file.js`'s. That is strictly worse than two
+implementations where one consistently wins, and it is the direct cause of
+this crash: the boot window is the only time the buggy copy is reachable.
+
+**Blast radius — the six statements after the throw never execute**
+(`legacy-app.js:9087-9092`), because the rejection aborts `initApp`:
+
+| Never runs | Consequence in production today |
+| --- | --- |
+| `setupAutoExportTimer()` | The 10-minute periodic save/retry sweep **is never installed at all**. Step 6 below debates renaming a timer that never starts. |
+| `setupLastSavedTicker()` | The 30-second refresher never installs, so the "X minutes ago" text cannot update even when it is correct. |
+| `setupFallbackSaveReminder()` | Firefox/Safari users — who cannot background-save at all — get **no save reminder ever**. |
+| `setupDragAndDropImport()` | Drag-and-drop `.sav` import is silently dead. |
+| `notifyProbateGuardianTabStateChanged()` | Initial tab-state notification never fires. |
+| `window.addEventListener('beforeunload', warnBeforeUnloadIfDirty)` | **The "you have unsaved changes" prompt never registers.** The top-level `beforeunload` → `flushPendingSave` listener at `:8966` still attaches, but this file's own comments concede that a `beforeunload` handler cannot reliably complete file or IndexedDB writes — the warning dialog *was* the actual safety net, and it is absent. |
+
+**No new work is required to fix this.** Step 3 already deletes the
+premature `_lastAutoSavedAt` write, Decision 2 already deletes the variable
+as a concept, and Step 4 already deletes `legacy-app.js`'s entire duplicate
+`updateLastSavedIndicator()`. Any one of those removes the crash. What
+changes is **priority and verification**, not scope:
+
+- This is no longer a cosmetic-indicator fix. It is a live boot crash
+  costing a data-loss guard, so 40F should be sequenced earlier than its
+  size suggests.
+- Add to Step 8's e2e coverage: **assert a clean console on first load** —
+  no uncaught exception during `initApp` — and assert that
+  `warnBeforeUnloadIfDirty` is actually registered and that the periodic
+  timer exists after boot. A test that only checks indicator text would
+  have missed all of this, which is exactly what happened.
+- When verifying, do not stop at "the indicator now reads correctly."
+  Confirm each of the six steps above actually runs post-fix.
+
+A second, unrelated boot exception was found in the same session
+(`window.createFeatureBridge is not a function`, from the dashboard mount
+path). It is **not** in this delivery's scope — same class of
+classic-vs-module ordering defect, different location and cause. See
+`MILESTONE-40G-PROPOSAL.md`.
+
 ## Decisions Required
 
 1. **DECISION (recommended default): `case-file.js` becomes the sole
