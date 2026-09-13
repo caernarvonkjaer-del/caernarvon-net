@@ -10,6 +10,13 @@ proposal.
 
 ---
 
+**Related, independent delivery:** `MILESTONE-41B-PROPOSAL.md` covers an
+unrelated, much smaller task also queued under Milestone 41 — consolidating
+the sidebar's four save/backup buttons down to two now that Milestone 40F
+unified the underlying export/import pipeline. No shared files with the
+3-tier work below; it can be approved and implemented independently, in
+either order relative to this document, once Milestone 42 has landed.
+
 ## 1. Architectural Motivation & 3-Tier Hierarchy
 
 **Prerequisites (decided 2026-09-13, see `MILESTONE-42-PROPOSAL.md`):** this
