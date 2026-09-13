@@ -75,11 +75,12 @@ why the starter kit uses it and why this migration should too.
    in `legacy-app.js`/`core/state.js`) that is genuinely UI-only, rather
    than assuming more exist — extend the same treatment only to what's
    actually found.
-6. **Data model:** `probate-guardian-data-model.csv` has no `theme`/
-   `appState` row today (checked directly). This migration does not
-   appear to require a CSV change, but confirm that at implementation
-   time rather than assume it — if `appState` fields turn out to be in
-   scope for the CSV, add the row instead of skipping it.
+6. **Data model: no CSV change needed.** Re-confirmed directly against
+   the current file — `probate-guardian-data-model.csv` has no `theme`
+   or `appState` row of any kind. The CSV tracks persisted case/filing
+   data, not app-level UI preferences, and this migration doesn't change
+   that scope. No `npm run verify:data-model` update is required as part
+   of this delivery.
 
 ## Acceptance Criteria
 

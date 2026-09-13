@@ -74,14 +74,26 @@ sufficient.
    county is blank, the new filing remains blank until its Cover supplies
    the first choice. Remove all Pinellas fallbacks from these flows and
    from both plan/accounting lifecycle implementations (`src/legacy-app.js`
-   and `src/core/navigation/ward-lifecycle.js`). Confirmed exactly seven
-   `county: src.county || 'Pinellas'` fallback sites in
-   `ward-lifecycle.js` alone (lines 84, 115, 132, 156, 201, 231, 256 as of
-   this writing, one per filing-type creation/conversion path) — treat
-   that as a minimum checklist, not a ceiling, since line numbers will
-   shift; verify every one is gone, not just however many a partial pass
-   happens to catch. Do not use an unrelated source filing's county when
-   its ward Party cannot be resolved.
+   and `src/core/navigation/ward-lifecycle.js`). Confirmed exhaustively
+   (as of this writing — treat as a minimum checklist, not a ceiling,
+   since line numbers will shift):
+   - `ward-lifecycle.js`, seven `county: src.county || 'Pinellas'` sites:
+     lines 84, 115, 132, 156, 201, 231, 256 (one per filing-type
+     creation/conversion path).
+   - `legacy-app.js`, eight matching `county:src.county||'Pinellas'`
+     sites: lines 4369, 4385, 4394, 4411, 4458, 4479, 4494, 4524 (the
+     legacy equivalents of the same creation/conversion paths).
+   - `legacy-app.js`, two separate `attorney_county` fallbacks not
+     currently named anywhere else in this task:
+     `dest.attorney_county=src.county||dest.attorney_county||'Pinellas';`
+     at lines 6127 and 6209. These silently inject Pinellas into
+     `attorney_county` — a distinct field from `county` — whenever both
+     the source and destination are blank; they must go the same way as
+     the `county` fallbacks even though the field name differs.
+
+   Verify every one of these seventeen confirmed sites is gone, not just
+   however many a partial pass happens to catch. Do not use an unrelated
+   source filing's county when its ward Party cannot be resolved.
 4. A later Cover edit changes that filing's snapshot and the ward Party's
    canonical county for filings created afterward. It must not silently
    rewrite already-existing sibling filings or already-generated output;
@@ -100,21 +112,49 @@ sufficient.
    fallback in `src/features/simplified-accounting/excel.js` and
    `src/features/annual-accounting/excel.js`.
 6. Remove output-only Pinellas substitution from every filing PDF model
-   and from shared PDF/DOCX caption helpers. A blank county must never
-   print a Pinellas/Sixth Circuit caption. Export remains blocked by the
-   existing per-form County validation until the user makes a valid
-   choice.
+   and from shared PDF/DOCX caption helpers. Confirmed exhaustively (as
+   of this writing):
+   - Shared engines, each with `const county = (metadata.county ||
+     'Pinellas').toUpperCase();` — `src/core/pdf/pdf-engine.js:166` and
+     `src/core/docx/docx-engine.js:350`. These run for every filing
+     type's output, so fixing only the per-feature `pdf-model.js` files
+     without these two leaves the shared fallback in place. (If
+     Milestone 40A has already removed `docx-engine.js` by the time this
+     is implemented, that half is moot — confirm which order actually
+     landed rather than assuming.)
+   - Seven per-feature `pdf-model.js` files, each with `const county =
+     d.county || 'Pinellas';`: `plan-annual/pdf-model.js:14`,
+     `annual-accounting/pdf-model.js:35`,
+     `guardian-inventory/pdf-model.js:15`,
+     `simplified-accounting/pdf-model.js:13`,
+     `plan-initial/pdf-model.js:16`, `plan-minor/pdf-model.js:15`,
+     `plan-simplified/pdf-model.js:15`.
+
+   A blank county must never print a Pinellas/Sixth Circuit caption.
+   Export remains blocked by the existing per-form County validation
+   until the user makes a valid choice.
 7. Make `src/core/pdf/circuit-lookup.js` and the legacy duplicate return
    an explicitly unknown/blank result for a blank or unrecognized county,
-   rather than Sixth Circuit. Confirmed: `circuitForCounty()`'s own doc
-   comment currently states "Defaults to 6 (Sixth Judicial Circuit /
-   Pinellas & Pasco) if empty or unrecognized" — this is a real,
-   documented default, not an incidental side effect, so removing it needs
-   an explicit decision about what an unknown/blank circuit result looks
-   like to every caller (a caption helper, a workslip lookup, etc.), not
-   just deleting the fallback line. Retain
-   `src/core/filing/county-guidance.js`'s existing exact Pinellas/Pasco
-   gating.
+   rather than Sixth Circuit. Two distinct fallbacks confirmed in
+   `circuit-lookup.js`, not one:
+   - `circuitForCounty()`'s own doc comment currently states "Defaults to
+     6 (Sixth Judicial Circuit / Pinellas & Pasco) if empty or
+     unrecognized" — this is a real, documented default, not an
+     incidental side effect, so removing it needs an explicit decision
+     about what an unknown/blank circuit result looks like to every
+     caller (a caption helper, a workslip lookup, etc.), not just
+     deleting the fallback line.
+   - A separate line defaults the *county name itself* before that
+     lookup even runs: `circuit-lookup.js:83` —
+     `const c = (county || 'Pinellas').trim() || 'Pinellas';`. Fixing
+     only the circuit-number default and missing this one still prints
+     a Pinellas-derived caption for a blank county.
+   - The "legacy duplicate" is `src/legacy-app.js:1432` — the same
+     `const c=(county||'Pinellas').trim()||'Pinellas';` pattern,
+     confirmed present there too.
+
+   Retain `src/core/filing/county-guidance.js`'s existing exact
+   Pinellas/Pasco gating.
 8. Update the shared `common,D,county` row in
    `probate-guardian-data-model.csv`: replace the note "Florida county;
    default Pinellas" with "Filing snapshot; first value selected on

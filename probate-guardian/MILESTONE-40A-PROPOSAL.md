@@ -47,9 +47,9 @@ shared with non-DOCX coverage:
    e2e coverage — not just the generation code.
 2. Delete `docx-engine.spec.js`.
 3. Keep `docx-extract.ts`. Extract whatever cross-cutting piece
-   `xlsx-extract.ts`, `output-semantics.artifact.spec.ts`, and
-   `filing-identity.contract.spec.ts` actually need from it, rather than
-   deleting the file wholesale and breaking three unrelated specs.
+   `output-semantics.artifact.spec.ts` and `filing-identity.contract.spec.ts`
+   actually need from it, rather than deleting the file wholesale and
+   breaking two unrelated specs.
 4. Split or rename the `docx-xlsx-export` `TEST-INDEX.md` category so
    Excel-export coverage isn't described as covering DOCX after DOCX no
    longer exists.
@@ -70,11 +70,11 @@ shared with non-DOCX coverage:
 ## Verification
 
 Run the full targeted set touched by removal (whatever remains of the
-`docx-xlsx-export` category, `xlsx-extract.ts`-dependent specs,
-`filing-identity.contract.spec.ts`, `output-semantics.artifact.spec.ts`)
-plus a repo-wide grep for `docx-engine` and "Save as Word" to confirm no
-dangling reference remains. Update `TEST-INDEX.md` in the same commit as
-the test-file changes. This is a deletion-shaped change with a real risk
-of breaking shared test helpers — recommend the full `npm test` regression
-before commit/push, per `AGENTS.md`, given `docx-extract.ts`'s three
-non-DOCX dependents.
+`docx-xlsx-export` category, `filing-identity.contract.spec.ts`,
+`output-semantics.artifact.spec.ts`) plus a repo-wide grep for
+`docx-engine` and "Save as Word" to confirm no dangling reference
+remains. Update `TEST-INDEX.md` in the same commit as the test-file
+changes. This is a deletion-shaped change with a real risk of breaking
+shared test helpers — recommend the full `npm test` regression before
+commit/push, per `AGENTS.md`, given `docx-extract.ts`'s two non-DOCX
+dependents.
