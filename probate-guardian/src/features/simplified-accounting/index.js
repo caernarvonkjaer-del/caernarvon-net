@@ -6,6 +6,7 @@ import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-
 import { createSimplifiedGuardian, getSimplifiedGuardianAddressConflicts, normalizeSimplifiedGuardianCompatibility, resolveSimplifiedGuardianAddressConflict } from './guardian-compatibility.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
+import { createIssue } from '../../core/validation/issue-registry.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
@@ -621,7 +622,15 @@ export function validateSimplified(){
   const errs=[];
   const T='simplified';
   const issue=issueFactory(T);
-  getSimplifiedGuardianAddressConflicts(d).forEach(conflict=>errs.push(issue(`Part IV — Guardian #${conflict.rowIndex+1} — resolve conflicting residence address before export`,`guardians.${conflict.rowIndex}.residenceStreet`)));
+  getSimplifiedGuardianAddressConflicts(d).forEach(conflict => {
+    errs.push(createIssue('simplified.guardian.address-conflict', {
+      section: 'Part IV',
+      label: `Guardian #${conflict.rowIndex + 1} address conflict`,
+      path: `guardians.${conflict.rowIndex}.residenceStreet`,
+      route: '/p4',
+      message: `Part IV — Guardian #${conflict.rowIndex + 1} — resolve conflicting residence address before export`
+    }));
+  });
   const req=(v,label,path)=>{if(v===''||v===null||v===undefined)errs.push(issue(label,path));};
   const reqYes=(v,label,path)=>{if(v!=='Yes')errs.push(issue(label,path));};
   reqYes(d.eligDepository,'Cover — Eligibility: all estate property must be held in a designated depository under § 69.031 — otherwise use the standard Annual Accounting','eligDepository');

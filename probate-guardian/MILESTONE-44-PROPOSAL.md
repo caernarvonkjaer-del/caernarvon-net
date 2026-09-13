@@ -34,7 +34,7 @@ confirmation. Of the six original findings:
 
 | Sub-delivery | Theme | Size | Status |
 | --- | --- | --- | --- |
-| 44A — Make 38A's Guardian-Address Conflict Actually Non-Bypassable | Data integrity, live bypass | Small | Draft |
+| 44A — Make 38A's Guardian-Address Conflict Actually Non-Bypassable | Data integrity, live bypass | Small | Landed 2026-09-13 |
 | 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Draft |
 | 44C — Land 38B's Universal Readiness-Card Architecture | Architecture, four Plan types | Medium-large | Draft |
 | 44D — Correct 37-6 Data-Model Catalogue Drift | Documentation-only | Small | Draft |

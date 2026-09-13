@@ -5,10 +5,12 @@ import { describe, it, expect } from 'vitest';
 // reason the parity specs import dynamically) -- give them one first.
 globalThis.window = globalThis.window || {};
 const { validationIssue, issueFactory, issueMessage, splitIssueMessage } = await import('../../src/core/validation/validation-issue.js');
+const { getIssueDefinition } = await import('../../src/core/validation/issue-registry.js');
 const { checkDateOrder } = await import('../../src/core/validation/date-rules.js');
 const { checkSignatureState } = await import('../../src/core/validation/signature-state.js');
 const { adaptValidationErrors } = await import('../../src/core/validation/validation-adapter.js');
 const { prepareFilingOutput } = await import('../../src/core/filing/output-preflight.js');
+const { validateSimplified } = await import('../../src/features/simplified-accounting/index.js');
 
 describe('validationIssue()', () => {
   it('splits the "Section — detail" convention into section/label and keeps the message', () => {
@@ -68,5 +70,32 @@ describe('shared helpers emit structured issues only when asked', () => {
     const stamp = checkSignatureState({ ...base, state: 'stamp', image: '' });
     expect(stamp.map((i) => i.path)).toEqual(['planGuardians.0.signatureImage']);
     expect(checkSignatureState({ sectionLabel: 'S', roleLabel: 'R', state: 'stamp', image: '' })).toEqual(['S — R signature stamp image is required']);
+  });
+
+  it('validateSimplified(): emits non-bypassable simplified.guardian.address-conflict code on conflict', () => {
+    globalThis.window = globalThis.window || {};
+    globalThis.window.D = {
+      guardians: [
+        {
+          name: 'Jane Doe',
+          residenceStreet: '100 Main St',
+          officeStreet: '200 Office Rd',
+          residenceCityStateZip: 'Tampa, FL 33601'
+        }
+      ]
+    };
+    const errs = validateSimplified();
+    const conflictIssue = errs.find(e => e.code === 'simplified.guardian.address-conflict');
+    expect(conflictIssue).toBeDefined();
+    expect(conflictIssue).toMatchObject({
+      code: 'simplified.guardian.address-conflict',
+      section: 'Part IV',
+      label: 'Guardian #1 address conflict',
+      path: 'guardians.0.residenceStreet',
+      route: '/p4',
+      category: 'data-integrity',
+      bypassable: false
+    });
+    expect(getIssueDefinition(conflictIssue.code)?.bypassable).toBe(false);
   });
 });
