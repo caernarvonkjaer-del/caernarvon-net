@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
@@ -290,7 +291,10 @@ function pagePlanISocialBenefits(){
         +yesNoCheckboxS('q7Trusts','Trusts (explain type and how it covers costs below)',d.q7Trusts)
         +yesNoCheckboxS('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)',d.q7PendingBenefits)
         +cb('q7Other','Other'),
-        'q7Explain',d.q7Explain,(d.q7Trusts==='Yes'||d.q7PendingBenefits==='Yes'||d.q7Other),
+        // Milestone 40C-H: same predicate as validatePlanInitial() and
+        // computeNavChecks() so all three agree. This one was already correct;
+        // it is the reference the other two were brought in line with.
+        'q7Explain',d.q7Explain,(isAffirmative(d.q7Trusts)||isAffirmative(d.q7PendingBenefits)||!!d.q7Other),
         'If Trusts or Pending Benefits is Yes, explain below.'))}
     ${renderScheduleDocsSection('planISocialBenefits')}
     ${pageNavS('/p3','/p5')}
@@ -578,7 +582,12 @@ export function validatePlanInitial(){
   const anySocial=d.q6CareFacility||d.q6NursesAides||d.q6FamilyFriends||d.q6DayProgram||d.q6WardDecides||d.q6Other;
   if(!anySocial)errs.push('6–7. Socialization & Benefits — At least one socialization/recreation option is required');
   if(d.q6Other)req(d.q6Explain,'6–7. Socialization & Benefits — Explanation for "Other" socialization is required');
-  if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)req(d.q7Explain,'6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other');
+  // Milestone 40C-H: was `if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)`.
+  // Those first two are tri-state ('', 'Yes', 'No'), so the non-empty string
+  // 'No' is truthy -- a filer who answered No to both was still required to
+  // explain, blocking an otherwise complete filing. Unanswered stays
+  // unanswered; this never treats a blank as No.
+  if(isAffirmative(d.q7Trusts)||isAffirmative(d.q7PendingBenefits)||d.q7Other)req(d.q7Explain,'6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other');
 
   const q9provs=(d.q9Providers||[]).filter(r=>r&&r.name);
   if(!q9provs.length)errs.push('9. Examining Providers — At least one provider must be listed');

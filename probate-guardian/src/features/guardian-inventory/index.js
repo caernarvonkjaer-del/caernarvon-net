@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
@@ -10,7 +11,7 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 // Annual features.
 const {
   esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
-  sanitizeNegativeAmounts, linkLabelsToInputs, enforceDateRanges, setupAmountFieldValidation,
+  sanitizeNegativeAmounts, linkLabelsToInputs, setupAmountFieldValidation,
   updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
   browserRecommendationNotice, toggleSsnReveal, renderScheduleDocsSection,
   formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
@@ -115,7 +116,7 @@ export async function mount(container, page) {
     }));
   }
   linkLabelsToInputs();
-  enforceDateRanges();
+  // Milestone 40C-C removed enforceDateRanges(); see legacy-app.js's note.
   setupAmountFieldValidation();
   updateNavDots();
   // The pv-pager needs the real .pdf-page elements in the DOM before it can
@@ -1161,6 +1162,18 @@ export function validateGuardian(){
     errors.push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).');
   }
   req(d.bondAmount,'D-4 — Bond Amount');if(!d.bondPeriodFrom)errors.push('D-4 — Bond Period From is required.');if(!d.bondPeriodTo)errors.push('D-4 — Bond Period To is required.');req(d.bondingCompany,'D-4 — Bonding Company');
+  // Milestone 40C-C. Guardian Inventory was deliberately excluded from
+  // Milestone 34-1A's date-ordering work because it has no accounting period,
+  // but it does have a bond period, and that pair had no order check at all --
+  // only the presence checks above. The removed enforceDateRanges() swap was
+  // the sole thing touching it, and it "handled" a reversed range by silently
+  // rewriting an endpoint rather than reporting it, so the filer never knew
+  // either way. checkDateOrder() is now the one reporter here too.
+  errors.push(...checkDateOrder(d.bondPeriodFrom,d.bondPeriodTo,{
+    sectionLabel:'D-4',
+    earlierLabel:'Bond Period From',
+    laterLabel:'Bond Period To',
+  }));
   d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`;req(r.name,`${p} — Name`);req(r.address,`${p} — Address`);req(r.cityStateZip,`${p} — City/State/Zip`);});
   if(!d.serviceDate)errors.push('D-5 — Service Date is required.');
   req(d.serviceAttorney.name,'D-5 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:''}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number');req(d.serviceAttorney.phone,'D-5 Attorney — Phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip');

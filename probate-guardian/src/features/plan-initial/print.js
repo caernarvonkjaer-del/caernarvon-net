@@ -25,6 +25,7 @@ import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { isAffirmative } from '../../core/form/form-contract.js';
 
 const {
   highlightErrors, validationPanel, planReadinessPanel,
@@ -71,6 +72,14 @@ export function planReadinessChecksInitial(){
     {id:'plan.q4',label:'Question 4 — mental health service provision selected',ok:has(d.q4Mental)},
     {id:'plan.q5',label:'Question 5 — personal care provision selected',ok:has(d.q5Personal)},
     {id:'plan.q6q7',label:'Question 6 — socialization/recreation option selected',ok:!!(d.q6CareFacility||d.q6NursesAides||d.q6FamilyFriends||d.q6DayProgram||d.q6WardDecides||d.q6Other)},
+    // Milestone 40C-H: validatePlanInitial() blocks export when Trusts,
+    // Pending Benefits, or Other is selected without an explanation, and that
+    // blocker had no readiness item at all -- plan.q6q7 above covers only
+    // Question 6's option selection despite its id. Its own condition, per
+    // AGENTS.md's Parity Invariant: every auto blocker must be visible here.
+    // Reads the same isAffirmative() predicate as the validator, so 'No'
+    // cannot be mistaken for a yes.
+    {id:'plan.q7explain',label:'Question 7 — explanation given for Trusts, Pending Benefits or Other when selected',ok:!(isAffirmative(d.q7Trusts)||isAffirmative(d.q7PendingBenefits)||d.q7Other)||has(d.q7Explain)},
     {id:'plan.q9providers',label:`Question 9 — examining providers listed (${provs.length})`,ok:provs.length>0},
     {id:'plan.q10a.adls',label:`Question 10A — all fifteen activities of daily living rated`,ok:INITIAL_ADLS.every(([k])=>has(adls[k]))},
     {id:'plan.q10bcd',label:'Question 10B–D — mental disabilities, physical disabilities, and assistive devices currently used are answered',ok:!!((d.mentalAlzheimers||d.mentalAutism||d.mentalClosedHeadInjury||d.mentalDementia||d.mentalDepression||d.mentalDevelopmental||d.mentalSubstance||d.mentalSchizophrenia||d.mentalOther)&&(d.physMobility||d.physBlindness||d.physDeafness||d.physDiabetic||d.physParkinsons||d.physArthritis||d.physOther)&&(d.usesDentures||d.usesHearingAid||d.usesWheelchair||d.usesWalker||d.usesCrutches||d.usesProsthetics||d.usesGlasses||d.usesNone||d.usesOther))},

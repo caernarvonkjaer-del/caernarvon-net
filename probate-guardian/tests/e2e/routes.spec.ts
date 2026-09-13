@@ -56,7 +56,8 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).addWard('Beta Dashboard Ward', 'annual'));
-    await expect(page.locator('#main-content').getByRole('heading', { name: 'Part I — Required Information' })).toBeVisible();
+    // Milestone 40C-B renamed this heading to say Cover as well as Part I.
+    await expect(page.locator('#main-content').getByRole('heading', { name: 'Cover & Part I — Required Information' })).toBeVisible();
     await page.evaluate(() => (window as any).navigate('/dashboard'));
 
     const main = page.locator('#main-content');
@@ -224,7 +225,8 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).addWard('Alpha Shell Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).addWard('Beta Shell Ward', 'annual'));
-    await expect(page.locator('#main-content').getByRole('heading', { name: 'Part I — Required Information' })).toBeVisible();
+    // Milestone 40C-B renamed this heading to say Cover as well as Part I.
+    await expect(page.locator('#main-content').getByRole('heading', { name: 'Cover & Part I — Required Information' })).toBeVisible();
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await page.locator('[data-dashboard-bound="true"]').waitFor();
 

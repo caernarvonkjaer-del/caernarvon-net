@@ -47,6 +47,20 @@ export function triStateText(value) {
   return yesNoText(value, '');
 }
 
+// Milestone 40C-H: "did the filer actually answer Yes?" -- the one predicate
+// for gating a conditional requirement on a Yes/No question.
+//
+// Needed because these values are not booleans. Tri-state questions store the
+// canonical strings 'Yes'/'No' (Milestone 37-5) while legacy wards still hold
+// real booleans, and a plain truthiness test on the non-empty string 'No' is
+// TRUE. That is exactly how Plan Initial's Question 7 came to demand an
+// explanation from a filer who had answered No to everything, blocking an
+// otherwise complete filing. Unanswered stays unanswered -- this never coerces
+// a blank to No.
+export function isAffirmative(value) {
+  return yesNoText(value, '') === 'Yes';
+}
+
 export function isTriStateAnswer(value) {
   return triStateText(value) !== '';
 }

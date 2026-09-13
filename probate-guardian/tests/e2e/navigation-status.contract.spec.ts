@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard } from './support/target';
 
 // Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
 // status pilot ... then migrate Guardian, Simplified, and Annual only after
@@ -823,5 +823,125 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
 
     await page.evaluate((p) => (window as any).focusFieldByPath('/p2', p), paths.q7);
     await expect(page.locator(`[data-form-path="${paths.q7}"]`)).toBeFocused();
+  });
+});
+
+// Milestone 40C-E. A sidebar section must not read complete while the export
+// validator blocks on that same section. Two cases where it did:
+//
+//  - Plan Annual Question 4: the check was `provs.every(r => filled(r.name))`,
+//    and .every() is TRUE for an empty array, so a filing with no providers at
+//    all looked complete while validatePlanAnnual() blocked with "at least one
+//    provider must be listed". The readiness panel already agreed with the
+//    validator, so the sidebar was the odd one out.
+//  - Plan Minor Cover: validatePlanMinor() requires case identity (ucn || ref)
+//    and an ANSWERED "Amended Form?", neither of which pm-cover tracked.
+test.describe('Milestone 40C-E: sidebar section status agrees with the export blocker', () => {
+  test('Plan Annual: no providers leaves Question 4 incomplete and blocks export', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Provider Parity Ward', 'planAnnual');
+
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        providerCount: (w.D.q4Providers || []).filter((r: any) => r && (r.name || r.providerType || r.visits)).length,
+        navComplete: w.computeNavChecks().checks['pa-p5'],
+        blocked: w.validatePlanAnnual().some((m: string) => m.includes('at least one provider must be listed')),
+      };
+    });
+    expect(state.providerCount).toBe(0);
+    expect(state.blocked, 'export must block on the empty provider table').toBe(true);
+    expect(state.navComplete, 'sidebar must not call Question 4 complete while export blocks on it').toBe(false);
+  });
+
+  test('Plan Annual: one named provider satisfies both the sidebar and the validator', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Provider Parity Filled Ward', 'planAnnual');
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.q4Providers = [{ name: 'Dr. Alice Nguyen', providerType: 'Primary Care Physician', visits: '4' }];
+    });
+
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        navComplete: w.computeNavChecks().checks['pa-p5'],
+        blocked: w.validatePlanAnnual().some((m: string) => m.includes('at least one provider must be listed')),
+      };
+    });
+    expect(state.blocked).toBe(false);
+    expect(state.navComplete).toBe(true);
+  });
+
+  test('Plan Minor: Cover tracks case identity and the Amended Form answer', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Minor Cover Parity Ward', 'planMinor');
+    await fillMinimalValidPlanMinorWard(page);
+
+    // Baseline: the fixture is a complete filing, so Cover agrees both ways.
+    const baseline = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        navComplete: w.computeNavChecks().checks['pm-cover'],
+        caseBlocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Case Number is required')),
+        amendedBlocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Amended Form? must be answered')),
+      };
+    });
+    expect(baseline).toEqual({ navComplete: true, caseBlocked: false, amendedBlocked: false });
+
+    // Case identity: ucn OR ref satisfies it, so both must be cleared.
+    const noCaseIdentity = await page.evaluate(() => {
+      const w = window as any;
+      w.D.ucn = ''; w.D.ref = '';
+      return {
+        navComplete: w.computeNavChecks().checks['pm-cover'],
+        blocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Case Number is required')),
+      };
+    });
+    expect(noCaseIdentity).toEqual({ navComplete: false, blocked: true });
+
+    // Either field on its own is enough, for the sidebar as for the validator.
+    const refOnly = await page.evaluate(() => {
+      const w = window as any;
+      w.D.ucn = ''; w.D.ref = '26-000123-GD';
+      return {
+        navComplete: w.computeNavChecks().checks['pm-cover'],
+        blocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Case Number is required')),
+      };
+    });
+    expect(refOnly).toEqual({ navComplete: true, blocked: false });
+
+    // "Amended Form?" must be answered; blank is unanswered, and an explicit
+    // 'No' is a real answer that must satisfy both.
+    const amendedBlank = await page.evaluate(() => {
+      const w = window as any;
+      w.D.amendedForm = '';
+      return {
+        navComplete: w.computeNavChecks().checks['pm-cover'],
+        blocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Amended Form? must be answered')),
+      };
+    });
+    expect(amendedBlank).toEqual({ navComplete: false, blocked: true });
+
+    const amendedNo = await page.evaluate(() => {
+      const w = window as any;
+      w.D.amendedForm = 'No';
+      return {
+        navComplete: w.computeNavChecks().checks['pm-cover'],
+        blocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Amended Form? must be answered')),
+      };
+    });
+    expect(amendedNo).toEqual({ navComplete: true, blocked: false });
+
+    // Amended Form 'Yes' additionally requires the version, in both places.
+    const amendedYesNoVersion = await page.evaluate(() => {
+      const w = window as any;
+      w.D.amendedForm = 'Yes'; w.D.amendedVersion = '';
+      return {
+        navComplete: w.computeNavChecks().checks['pm-cover'],
+        blocked: w.validatePlanMinor().some((m: string) => m.includes('Cover — Amended Form version is required')),
+      };
+    });
+    expect(amendedYesNoVersion).toEqual({ navComplete: false, blocked: true });
   });
 });

@@ -336,7 +336,7 @@ function buildNavAnnual(container){
   container.innerHTML=`
     <div class="nav-section">
       <div class="nav-section-label">${esc(formDisplayName(window.D.inventoryType))}</div>
-      <button class="nav-link-item" data-page="/" data-nav="a-p1" data-form-action="navigate" data-route="/">Part I — Case Info</button>
+      <button class="nav-link-item" data-page="/" data-nav="a-p1" data-form-action="navigate" data-route="/">Cover &amp; Part I — Case Info</button>
       <button class="nav-link-item" data-page="/summary" data-nav="a-summary" data-form-action="navigate" data-route="/summary">Summary</button>
       <button class="nav-link-item" data-page="/p2" data-nav="a-p2" data-form-action="navigate" data-route="/p2">Part II — Accounting</button>
       <button class="nav-link-item" data-page="/p3" data-nav="a-p3" data-form-action="navigate" data-route="/p3">Part III — Guardians</button>
@@ -354,7 +354,7 @@ function buildNavAnnual(container){
       <button class="nav-link-item" data-page="/schd1" data-nav="a-schd1" data-form-action="navigate" data-route="/schd1">Sch D1 — Assets</button>
       <button class="nav-link-item" data-page="/schd2" data-nav="a-schd2" data-form-action="navigate" data-route="/schd2">Sch D2 — Real Property</button>
       <button class="nav-link-item" data-page="/schd3" data-nav="a-schd3" data-form-action="navigate" data-route="/schd3">Sch D3 — Other Assets</button>
-      <button class="nav-link-item" data-page="/schd4" data-nav="a-schd4" data-form-action="navigate" data-route="/schd4">Sch D4 — Restricted Assets</button>
+      <button class="nav-link-item" data-page="/schd4" data-nav="a-schd4" data-form-action="navigate" data-route="/schd4">Sch D4 — Intangible Assets</button>
       <button class="nav-link-item" data-page="/schd5" data-nav="a-schd5" data-form-action="navigate" data-route="/schd5">Sch D5 — Liabilities</button>
       <button class="nav-link-item" data-page="/sche" data-nav="a-sche" data-form-action="navigate" data-route="/sche">Sch E — Transfers</button>
       <button class="nav-link-item" data-page="/schf1" data-nav="a-schf1" data-form-action="navigate" data-route="/schf1">Sch F1 — Sales</button>
@@ -456,7 +456,7 @@ function getSummaryConfigAnnual(){
       {
         heading:'Section Completion',
         lines:[
-          {label:'Part I — Case Info',route:'/',status:navStatus(nav,'a-p1')},
+          {label:'Cover &amp; Part I — Case Info',route:'/',status:navStatus(nav,'a-p1')},
           {label:'Part II — Accounting',route:'/p2',status:navStatus(nav,'a-p2')},
           {label:'Part III — Guardians',route:'/p3',status:navStatus(nav,'a-p3')},
           {label:'Part IV — Preparer',route:'/p4',status:navStatus(nav,'a-p4')},
@@ -497,7 +497,12 @@ const GUARDIAN_REL=['Professional Guardian','Family/Non-Professional Guardian','
 function pagePart1Annual(){
   const d=window.D; const t=calcTotalsAnnual();
   return `<div class="schedule-page">
-  <h1>Part I — Required Information</h1>
+  <!-- Milestone 40C-B: the root route is the filing's cover as well as Part I,
+       and it carries the filing-level County control, so its name has to say
+       so. Sidebar and Summary read "Cover & Part I — Case Info"; this heading
+       matches Simplified Accounting's already-shipped
+       "Cover & Part I — Required Information" so no two filing types disagree. -->
+  <h1>Cover &amp; Part I — Required Information</h1>
   <div class="instructions-import-row">
     <div class="accordion mb-0">
       <div class="accordion-item">

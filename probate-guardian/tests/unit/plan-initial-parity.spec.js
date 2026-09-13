@@ -109,6 +109,9 @@ const ALL_AUTO_IDS = [
   'signatures.guardian1.contact', 'cover.wardResidence', 'plan.q2', 'plan.q3', 'plan.q4', 'plan.q5',
   'plan.q6q7', 'plan.q9providers', 'plan.q10a.adls', 'plan.q10bcd', 'plan.q11needs',
   'plan.q11directives', 'plan.q10f.committee', 'signatures.certifications', 'signatures.attorney',
+  // Milestone 40C-H: the Question 7 conditional explanation was an export
+  // blocker with no readiness item, so 20 conditions now, not 19.
+  'plan.q7explain',
 ];
 
 describe('Plan Initial readiness baseline', () => {
@@ -130,6 +133,12 @@ const CASES = [
   { autoId: 'cover.dates', override: { inceptionDate: '' }, message: 'Cover — Guardianship Inception Date is required' },
   { autoId: 'cover.dates', override: { lettersSignedDate: '' }, message: 'Cover — Date Letters Were Signed is required' },
   { autoId: 'cover.guardianNames', override: { guardianNames: '' }, message: 'Cover — Guardian Name(s) is required' },
+  // Milestone 40C-H: the Question 7 conditional explanation, now a readiness
+  // condition in its own right rather than an export blocker with no visible
+  // counterpart. One case per affirmative trigger.
+  { autoId: 'plan.q7explain', override: { q7Trusts: 'Yes', q7Explain: '' }, message: '6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other' },
+  { autoId: 'plan.q7explain', override: { q7PendingBenefits: 'Yes', q7Explain: '' }, message: '6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other' },
+  { autoId: 'plan.q7explain', override: { q7Other: true, q7Explain: '' }, message: '6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other' },
   { autoId: 'signatures.guardian1.core', override: { 'planGuardians.0.name': '' }, message: 'Signatures — Guardian name is required' },
   // Milestone 39-C: blanking signatureDate alone no longer blocks by itself
   // -- see plan-annual-parity.spec.js's identical note.
@@ -253,5 +262,53 @@ describe('Plan Initial: Milestone 39-C tri-state signature parity', () => {
 
     const preflight = runPreflight(fixture);
     expect(preflight.canExport).toBe(true);
+  });
+});
+
+// Milestone 40C-H. validatePlanInitial() gated the Question 7 explanation on
+// `if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)`. Those first two are
+// tri-state ('', 'Yes', 'No'), so the non-empty string 'No' is truthy: a filer
+// who answered No to both was told to explain something they had declined, and
+// could not export. These are the cases that used to fail.
+describe('Plan Initial: Question 7 explicit-No no longer blocks export', () => {
+  const EXPLANATION_BLOCKER = '6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other';
+
+  test("both questions answered 'No' with no explanation exports cleanly", () => {
+    const fixture = withOverrides(BASELINE, { q7Trusts: 'No', q7PendingBenefits: 'No', q7Explain: '' });
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).not.toContain(EXPLANATION_BLOCKER);
+    expect(preflight.canExport).toBe(true);
+    const { auto } = readiness(fixture);
+    expect(auto.find((a) => a.id === 'plan.q7explain').ok).toBe(true);
+  });
+
+  test('legacy boolean false is also non-affirmative', () => {
+    const fixture = withOverrides(BASELINE, { q7Trusts: false, q7PendingBenefits: false, q7Explain: '' });
+    expect(runPreflight(fixture).messages).not.toContain(EXPLANATION_BLOCKER);
+  });
+
+  test('unanswered stays unanswered and is never treated as an affirmative', () => {
+    const fixture = withOverrides(BASELINE, { q7Trusts: '', q7PendingBenefits: '', q7Explain: '' });
+    expect(runPreflight(fixture).messages).not.toContain(EXPLANATION_BLOCKER);
+  });
+
+  test("an affirmative 'Yes' still requires the explanation", () => {
+    const fixture = withOverrides(BASELINE, { q7Trusts: 'Yes', q7PendingBenefits: 'No', q7Explain: '' });
+    expect(runPreflight(fixture).messages).toContain(EXPLANATION_BLOCKER);
+    expect(runPreflight(fixture).canExport).toBe(false);
+  });
+
+  test('legacy boolean true is affirmative and still requires the explanation', () => {
+    const fixture = withOverrides(BASELINE, { q7Trusts: true, q7PendingBenefits: false, q7Explain: '' });
+    expect(runPreflight(fixture).messages).toContain(EXPLANATION_BLOCKER);
+  });
+
+  test("an affirmative with an explanation supplied exports cleanly", () => {
+    const fixture = withOverrides(BASELINE, {
+      q7Trusts: 'Yes', q7PendingBenefits: 'No',
+      q7Explain: 'A special needs trust funds care costs; see attached schedule.',
+    });
+    expect(runPreflight(fixture).messages).not.toContain(EXPLANATION_BLOCKER);
+    expect(runPreflight(fixture).canExport).toBe(true);
   });
 });

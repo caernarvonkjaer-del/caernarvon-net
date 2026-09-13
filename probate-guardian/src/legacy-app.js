@@ -7216,9 +7216,14 @@ function computeNavChecks(){
       // Benefits is "check all that apply" — answered once any benefit row
       // is ticked, or the explicit None box is.
       'pa-p4':anyBenefit||!!D.q3BenefitsNone||!!D.q3BenefitsOther,
-      // The form allows a ward to have had no professional treatment at
-      // all, so an empty table is complete; only half-filled rows aren't.
-      'pa-p5':provs.every(r=>filled(r.name)),
+      // Milestone 40C-E: was `provs.every(...)` alone, which .every() makes
+      // TRUE for an empty table -- so the sidebar called this section complete
+      // while validatePlanAnnual() blocked export with "at least one provider
+      // must be listed" (plan-annual/index.js:676), and the readiness panel
+      // agreed with the validator. The comment here used to assert that an
+      // empty table was a valid answer, which contradicted both. All three now
+      // require at least one row, matching pi-p5's Initial Plan rule.
+      'pa-p5':provs.length>0&&provs.every(r=>filled(r.name)),
       'pa-p6':filled(D.q5SocialSkills)&&filled(D.q5Activities)
         &&PLAN_RIGHTS.every(([k])=>filled(rights[k])),
       'pa-p7':PLAN_ADLS.every(([k])=>filled(adls[k])),
@@ -7254,6 +7259,13 @@ function computeNavChecks(){
     const filled=v=>v!==''&&v!==null&&v!==undefined&&v!==false;
     const hasAny=(...vals)=>vals.some(v=>filled(v));
     const anyOf=(...vals)=>vals.some(v=>!!v);
+    // Milestone 40C-H: Q7's Trusts/Pending Benefits are tri-state ('', 'Yes',
+    // 'No') on new wards and legacy booleans on old ones, so a bare truthiness
+    // test counts the string 'No' as a yes. Mirrors window.isAffirmative from
+    // core/form/form-contract.js; kept local because this classic script has no
+    // module imports, and it must agree with validatePlanInitial() exactly or
+    // the sidebar and the export blocker disagree about the same question.
+    const isYes=v=>v===true||String(v??'').trim().toLowerCase()==='yes';
     const g0=(D.planGuardians||[])[0]||{};
     const provs=(D.q9Providers||[]).filter(r=>r&&(r.name||r.providerType||r.examDate));
     const adls=D.adls||{};
@@ -7274,7 +7286,11 @@ function computeNavChecks(){
         &&(anyOf(D.q7SocialSecurity,D.q7Ssdi,D.q7Hmo,D.q7Ssi,D.q7StateSupplement,D.q7InstitutionalCare,
                  D.q7SupplementalIns,D.q7Pension,D.q7Medicare,D.q7Medicaid,D.q7Va,D.q7Trusts,
                  D.q7PendingBenefits,D.q7Other)||filled(D.q7Explain))
-        &&(!D.q7Other||filled(D.q7Explain)),
+        // Milestone 40C-H: this used to require the explanation for q7Other
+        // only, while validatePlanInitial() required it for Trusts and Pending
+        // Benefits as well -- so export could block on a section the sidebar
+        // called complete. Both now read the same three conditions.
+        &&(!(isYes(D.q7Trusts)||isYes(D.q7PendingBenefits)||D.q7Other)||filled(D.q7Explain)),
       // Unlike pa-p5's Annual Plan (see its comment), the Initial Plan's
       // Examining Providers exists because an examination already happened
       // to establish the guardianship -- an empty table isn't a valid
@@ -7319,11 +7335,30 @@ function computeNavChecks(){
     const filled=v=>v!==''&&v!==null&&v!==undefined&&v!==false;
     const hasAny=(...vals)=>vals.some(v=>filled(v));
     const anyOf=(...vals)=>vals.some(v=>!!v);
+    // Milestone 40C-E: "answered" for a tri-state question means an explicit
+    // Yes or No -- blank is unanswered, and no value is ever coerced to No.
+    // Mirrors isTriStateAnswer() in core/form/form-contract.js.
+    const isAnswered=v=>{
+      if(v===true||v===false)return true;
+      const s=String(v??'').trim().toLowerCase();
+      return s==='yes'||s==='no';
+    };
     const g0=(D.planGuardians||[])[0]||{};
     const provs=(D.q3Providers||[]).filter(r=>r&&(r.first||r.last||r.providerType));
     const checks={
+      // Milestone 40C-E: two of validatePlanMinor()'s own Cover requirements
+      // were missing here, so the sidebar could call the Cover complete while
+      // export blocked on it. Case identity is `ucn || ref` (:423 -- either
+      // satisfies it, this form has both fields), and "Amended Form?" must be
+      // ANSWERED (:414), which means Yes or No, not merely non-blank; when it
+      // is Yes the version is required too (:427). isAnswered mirrors
+      // isTriStateAnswer() from core/form/form-contract.js, inlined because
+      // this classic script has no module imports.
       'pm-cover':filled(D.wardName)&&filled(D.county)&&filled(D.periodFrom)&&filled(D.periodTo)
-        &&filled(D.guardianName)&&filled(D.q1ResidenceName)&&filled(D.q1Street),
+        &&filled(D.guardianName)&&filled(D.q1ResidenceName)&&filled(D.q1Street)
+        &&(filled(D.ucn)||filled(D.ref))
+        &&isAnswered(D.amendedForm)
+        &&(String(D.amendedForm??'').trim().toLowerCase()!=='yes'||filled(D.amendedVersion)),
       'pm-p2':true,
       // Same fix as pi-p5 above: an empty table shouldn't read as complete
       // before any provider has actually been entered.
@@ -8309,49 +8344,27 @@ function linkLabelsToInputs(){
 // or To be before From. Pairs are detected by finding two date inputs that
 // share a .row container with labels containing the words "From" and "To"
 // (e.g. "Period From" / "Period To", "Bond Period – From" / "– To").
-function enforceDateRanges(){
-  const rows=new Set();
-  document.querySelectorAll('input[type="date"], [data-field-kind="date"]').forEach(inp=>{
-    const row=inp.closest('.row');
-    if(row)rows.add(row);
-  });
-  rows.forEach(row=>{
-    const dateInputs=[...row.querySelectorAll('input[type="date"], [data-field-kind="date"]')];
-    const labelText=inp=>{
-      const lbl=inp.id&&row.querySelector(`label[for="${inp.id}"]`);
-      return lbl?lbl.textContent:'';
-    };
-    const fromInp=dateInputs.find(i=>/\bfrom\b/i.test(labelText(i)));
-    const toInp=dateInputs.find(i=>/\bto\b/i.test(labelText(i)));
-    if(!fromInp||!toInp||fromInp===toInp)return;
-    wireDateRangePair(fromInp,toInp);
-  });
-}
-// Was also setting min/max attributes on each other (toInp.min =
-// fromInp.value, fromInp.max = toInp.value) to block out-of-order entry at
-// the browser level. Dropped: a native <input type="date"> with a min/max
-// set is the known cause of Chrome refusing straight digit-by-digit typing
-// into that field (reported against Part I's Period To, which is exactly
-// a paired field here) -- the swap-on-change below already keeps the pair
-// sane without ever touching the HTML attribute that was blocking typing.
-function wireDateRangePair(fromInp,toInp){
-  const fire=el=>{
-    el.dispatchEvent(new Event('input',{bubbles:true}));
-    el.dispatchEvent(new Event('change',{bubbles:true}));
-  };
-  fromInp.addEventListener('change',()=>{
-    if(fromInp.value&&toInp.value&&fromInp.value>toInp.value){
-      toInp.value=fromInp.value;
-      fire(toInp);
-    }
-  });
-  toInp.addEventListener('change',()=>{
-    if(fromInp.value&&toInp.value&&toInp.value<fromInp.value){
-      fromInp.value=toInp.value;
-      fire(fromInp);
-    }
-  });
-}
+// Milestone 40C-C: enforceDateRanges() and wireDateRangePair() were removed
+// from here, and nothing replaces them. Editing one endpoint of a date range
+// must never change the other; checkDateOrder() (src/core/validation/
+// date-rules.js), called from each filing type's validator, is now the single
+// place an end-before-start range is reported.
+//
+// They were actively destroying valid data. The pair swapped endpoints
+// whenever `fromInp.value > toInp.value`, but these are NOT native
+// <input type="date"> controls -- form-fields.js renders every date field as
+// `type="text"` holding the display form, so `.value` is MM/DD/YYYY, not
+// YYYY-MM-DD. Comparing those strings compares the MONTH first and the year
+// last, so an ordinary accounting period like 05/10/2026 -> 05/09/2027 read
+// as reversed ("05/1" > "05/0") and the To field was silently overwritten
+// with the From date. Any period not starting on January 1 could lose its end
+// date this way, which is why a 01/01/2025 -> 12/31/2025 spot check saw
+// nothing: a January start is the one shape the comparison gets right.
+//
+// An earlier revision of this code also set min/max on each input, which is
+// the known cause of Chrome refusing digit-by-digit typing into a date field
+// (reported against Part I's Period To). That is gone too and must not come
+// back; the validator, not the input, is where range order belongs.
 
 // Guards against a native <input type="date"> committing an implausible
 // year (e.g. "0002-05-10" left behind by a stray keystroke) -- HTML5 date

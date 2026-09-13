@@ -2,11 +2,114 @@
 
 ## Status
 
-**Draft only — split into two independently approvable deliveries
-(2026-09-12).** This proposal authorizes no runtime, data-model, test, or
-documentation change until the requester approves a named delivery below.
-Approving one does **not** authorize the other, and approval of any other
-Milestone 40 delivery authorizes neither.
+**40C-2 landed 2026-09-12. 40C-1 remains draft only** and authorizes no
+runtime, data-model, test, or documentation change until it is approved
+specifically; approval of 40C-2 did not authorize it.
+
+### 40C-2 — what landed
+
+All six tasks, with three decisions taken by the requester at approval:
+
+| Task | Outcome |
+| --- | --- |
+| **40C-B** | Sidebar, Summary entry and page heading relabelled. **Decision: match Simplified Accounting's shipped pattern** — sidebar/Summary read `Cover & Part I — Case Info`, the heading reads `Cover & Part I — Required Information`, which is byte-identical to Simplified's existing heading, so no two filing types disagree. The alternative (uniform "Case Info" in both places) would have made Annual's heading diverge from Simplified's unless Simplified changed too, which was out of scope. One change covers Annual, Final and Trust: they share `annual-accounting/index.js`. Em dashes throughout, as the browser check warned. |
+| **40C-C** | `enforceDateRanges()` and `wireDateRangePair()` deleted. **Decision: stop mutating, validate only** — `checkDateOrder()` is now the single reporter of range order. See "40C-C was a live data-corruption bug" below. |
+| **40C-D** | **Decision: test-only.** No fix, since none of its four claimed failures reproduce. New `tests/e2e/schedule-docs-period-key.spec.ts` locks in the re-key round trip, for uploads as well as comments — the browser check had round-tripped a comment only and inferred the rest. |
+| **40C-E** | Two real sidebar-vs-export disagreements closed; see below. |
+| **40C-G1** | `Sch D4 — Restricted Assets` → `Sch D4 — Intangible Assets` in the Annual sidebar only. The two cautions in the task were both respected: `index.js:1063`'s "Restricted Intangible Assets" subtotal is a real distinction and is untouched, and this was not done as a find-and-replace. **The `legacy-app.js` help-topic judgment call resolves to "leave it":** that string is an entry in `'field-help'` → "Common Field Definitions", a general glossary beside "Ward's %" and "Carrying Value", and it defines court-permission-restricted assets as a concept rather than naming Schedule D-4. Renaming it to "Intangible Assets" would have redefined the wrong term, and the D-4 subtotal still depends on the concept. |
+| **40C-H** | Q7 explicit-No validation fixed, plus the missing readiness condition and the removal of the test-only workaround; see below. |
+
+### 40C-C was a live data-corruption bug, and it is now confirmed
+
+This task's premise was right, and its severity was understated. It needed no
+browser session to settle — the mechanism is fully determined by the code:
+
+`form-fields.js:132` renders every date field as `type="text"`, not a native
+`<input type="date">`, holding the **MM/DD/YYYY display form**
+(`formatDisplayDate()`). `wireDateRangePair()` compared those `.value` strings
+with `>` / `<`, which compares the **month first and the year last**. So an
+ordinary accounting period of 05/10/2026 → 05/09/2027 read as reversed
+(`"05/1…" > "05/0…"`) and the opposite endpoint was silently overwritten.
+
+**Any period not starting on January 1 could lose an endpoint this way**,
+including a one-day range across the new year (12/31/2025 → 01/01/2026). That
+is exactly why the earlier browser spot check saw nothing: it used
+01/01/2025 → 12/31/2025, and a January start is the one shape the comparison
+gets right. The proposal already said as much; this confirms it.
+
+Reproduced end-to-end against the pre-fix code, then re-run after the removal:
+three distinct corruptions, each now asserted in
+`date-validation.contract.spec.ts` — From overwritten by To, To overwritten by
+From, and a genuinely reversed range having an endpoint rewritten so the state
+could not persist to be reported at all.
+
+**One addition the task did not name.** Guardian Inventory's D-4 bond period is
+also a From/To pair that `enforceDateRanges()` wired, and it had **no order
+check anywhere** — Milestone 34-1A had deliberately excluded Guardian Inventory
+because it has no accounting period. Removing the swap would have left that pair
+with nothing at all, so `checkDateOrder()` now covers it. This needed a
+priority-ordered branch in `validation-adapter.js` as well: the message names
+both endpoints, and the `d-4` branch matches on `includes()` with "bond period
+from" tested first, so the filer was sent to the field that was not the one to
+change.
+
+### 40C-E found both disagreements exactly as described
+
+- **Plan Annual Question 4** — the check was `provs.every(r => filled(r.name))`,
+  and `.every()` is `true` for an empty array, so a filing with no providers
+  read as complete in the sidebar while `validatePlanAnnual()` blocked export
+  with "at least one provider must be listed". The readiness panel already
+  agreed with the validator, so the sidebar was the lone dissenter. Its comment
+  asserted an empty table was a valid answer, which contradicted both.
+- **Plan Minor Cover** — `pm-cover` tracked neither case identity (`ucn || ref`)
+  nor the "Amended Form?" answer, both of which `validatePlanMinor()` requires.
+  Answered now means an explicit Yes or No; blank stays unanswered and nothing
+  is coerced to No. Amended Form = Yes additionally requires the version, in
+  both places.
+
+Item 3's "extend the parity contract" was satisfied by **tightening an existing
+allow-list rather than adding a new mechanism**: `checklist-export-parity.spec.js`
+already encodes validator-vs-sidebar field parity per filing type, and four of
+its accepted `planMinor` gaps (`ucn`, `ref`, `amendedForm`, `amendedVersion`)
+are no longer gaps and were removed from the list. That spec failing was how the
+fix was confirmed. `plan-fixture.ts`'s existing Summary/sidebar/computeNavChecks
+cross-check continues to pass unchanged.
+
+### 40C-H: one predicate, three readers, and a missing readiness item
+
+`validatePlanInitial()` gated Question 7's explanation on
+`if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)`. The first two are tri-state
+(`''`/`'Yes'`/`'No'`), so the non-empty string `'No'` is truthy: a filer who
+answered No to both was required to explain something they had declined, and
+could not export. New shared `isAffirmative()` in `core/form/form-contract.js`
+(built on the existing `yesNoText`) is now used by the validator, the editor's
+conditional, `computeNavChecks()` and the readiness panel.
+
+Note the default masks it: `state.js:313` initialises these to boolean `false`,
+so a *fresh* ward was fine. The bug appeared only once the filer actively
+answered No. Same shape as the D-3 Safe Deposit Box defect found during
+Milestone 38C.
+
+Item 2's readiness requirement was a genuine gap: the Q7 explanation was an
+export blocker with **no readiness item at all** — `plan.q6q7` covers only
+Question 6's option selection despite its id. New `plan.q7explain` condition,
+so Plan Initial now has 20 auto conditions rather than 19.
+
+Item 4 is done: `signature-capture.contract.spec.ts`'s
+`workaroundPreExistingQ7Bug()` helper and its four call sites are gone, and that
+suite's 32 tests pass with `fillMinimalValidPlanInitialWard()` going through the
+real export path with no test-only data manipulation. That helper's own comment
+had diagnosed this bug correctly and flagged it rather than fixing it; this is
+the fix it was waiting for.
+
+### Verification
+
+Unit 497 passed (up from 474: nine new in `date-range-no-mutation.spec.js`,
+nine added to `plan-initial-parity.spec.js`, plus the tightened parity
+allow-list). Every new assertion was checked against the pre-fix code rather
+than merely observed to pass — the three date-entry tests, the bond-period field
+mapping, the Q7 explicit-No case, and both 40C-E parity tests were each
+confirmed failing first.
 
 The original single-gate 40C bundled eight unrelated tasks behind one
 approval — the largest blast radius in Milestone 40 (a data-model
@@ -19,15 +122,19 @@ below divide on a real fault line: whether the work touches persisted data.
 | Delivery | Tasks | Touches persisted data / CSV | Open decisions | Approve independently |
 | --- | --- | --- | --- | --- |
 | **40C-1 — County Establishment, Hydration, and Carryover** | 40C-A, 40C-F, 40C-G2 | **Yes** — new `caseFile.parties[].county`, `caseFile.parties[]` row expansion, `common,D,county` note rewrite, legacy migration rule | **None** — the unknown-circuit representation (Task 40C-A item 7) was resolved 2026-09-12: option (a), `null`/`''`/`null` | Yes |
-| **40C-2 — Form-Entry, Readiness, and Validation Corrections** | 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H | **No** — no field added, renamed, or reshaped; no `verify:data-model` run required | None | Yes |
+| ~~**40C-2 — Form-Entry, Readiness, and Validation Corrections**~~ | 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H | **No** — no field added, renamed, or reshaped; no `verify:data-model` run required | Resolved at approval: 40C-C approach, 40C-D scope, 40C-B wording | **Landed 2026-09-12** |
 
-**Both deliveries are implementable on approval.** Neither has an open
-decision. Nothing in 40C-2 depends on 40C-1, so either can land first.
-The only file both touch is `tests/unit/content-corrections.spec.js`
-(Task 40C-G's two halves) — whichever lands second extends it rather than
-rewriting it. Before implementing 40C-2, confirm 40C-B's and 40C-D's
-browser-observed premises (see "Verification of Claims" below); they are
-the only claims in this proposal a code read could not settle.
+**40C-1 remains implementable on approval.** It never depended on 40C-2, and
+40C-2 landing changes nothing it relies on. The one file both were listed as
+touching is `tests/unit/content-corrections.spec.js` (Task 40C-G's two halves) —
+**40C-2 did not in fact touch it**, because 40C-G1 turned out to be a nav-label
+change with no assertion in that spec, so 40C-1 has it to itself.
+
+40C-B's and 40C-D's browser-observed premises were both settled before
+implementing (see "Verification of Claims" below). 40C-C's, which that section
+recorded as still unverified, was settled from the code instead — the mechanism
+is fully determined by `form-fields.js`'s `type="text"` date rendering, so no
+browser session was needed; see the Status section above.
 
 ## Verification of Claims (2026-09-12, pre-approval)
 
@@ -104,13 +211,21 @@ round-tripped in the browser; uploaded PDFs share the same period-keyed
 slot so the same conclusion should hold, but that is inferred, not
 observed.
 
-**40C-C remains unverified.** The browser session set a period of
+**40C-C was unverified here, and was settled from the code instead
+(2026-09-12) — confirmed real.** The browser session set a period of
 01/01/2025 → 12/31/2025, which is ordered both chronologically *and*
-lexicographically, so it could not trip a string-comparison defect even if
-one exists. No cross-field interference was seen with that pair, which
-proves nothing either way. Re-test with the reversed and cross-year pairs
-this task already names (05/10/2026 → 05/09/2027) before implementing or
-dropping it.
+lexicographically, so it could not trip a string-comparison defect even if one
+existed. No cross-field interference was seen with that pair, which proved
+nothing either way. That reasoning was correct, and it turned out to name the
+exact reason the bug hides: a **January start is the one shape the comparison
+gets right.**
+
+No re-test was needed in the end. The mechanism is fully determined statically:
+`form-fields.js:132` renders date fields as `type="text"` holding MM/DD/YYYY, so
+`wireDateRangePair()`'s string comparison compared month-before-year. The
+cross-year pair this task named (05/10/2026 → 05/09/2027) was then reproduced
+end-to-end against the pre-fix build, and it silently overwrote an endpoint, as
+did 12/31/2025 → 01/01/2026. See the Status section.
 
 ## Goal
 

@@ -313,31 +313,19 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await page.evaluate(() => (window as any).navigate('/p10'));
     await page.locator('[data-signature-state-group="attorney"]').waitFor({ state: 'visible' });
   }
-  // Pre-existing, unrelated bug found while writing this suite (confirmed via
-  // git-stash against the unmodified baseline, not introduced by 39-C):
-  // fillMinimalValidPlanInitialWard() never sets q7Trusts/q7PendingBenefits,
-  // which then default to the tri-state STRING "No" -- and
-  // validatePlanInitial()'s `if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)`
-  // (index.js:581) treats any non-blank string, including an explicit "No",
-  // as "needs an explanation," the exact class of bug form-contract.js's own
-  // yesNoText() doc comment warns about. This blocks the fixture from ever
-  // reaching a genuinely clean baseline. Worked around here (reset to '',
-  // which the validator correctly treats as not-yet-answered and therefore
-  // not requiring an explanation) rather than fixed, since fixing
-  // validatePlanInitial() itself is unrelated to Milestone 39-C's scope --
-  // flagged to the requester instead.
-  async function workaroundPreExistingQ7Bug(page: import('@playwright/test').Page) {
-    await page.evaluate(() => {
-      const d = (window as any).D;
-      d.q7Trusts = ''; d.q7PendingBenefits = '';
-    });
-  }
+  // Milestone 40C-H fixed the Question 7 explicit-No bug this suite used to
+  // work around here. fillMinimalValidPlanInitialWard() leaves
+  // q7Trusts/q7PendingBenefits as the tri-state string "No", and
+  // validatePlanInitial() treated any non-blank string -- "No" included -- as
+  // "needs an explanation", so the fixture could never reach a clean baseline.
+  // The workaround (blanking both fields) is gone: the fixture now passes the
+  // real export path with no test-only data manipulation, which was 40C-H's
+  // own item 4.
 
   test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'PI Sig Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page); // sets signatureDate, never signatureState
-    await workaroundPreExistingQ7Bug(page);
     await gotoGuardianPage(page);
 
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
@@ -360,7 +348,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await freshStartNoPassword(page);
     await createWard(page, 'PI Sig Stamp Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page);
-    await workaroundPreExistingQ7Bug(page);
     await gotoGuardianPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
@@ -384,7 +371,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await freshStartNoPassword(page);
     await createWard(page, 'PI Sig Attorney Blank Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page); // sets attorney_name/signatureDate by default
-    await workaroundPreExistingQ7Bug(page);
     await page.evaluate(() => {
       const d = (window as any).D;
       d.attorney_name = '';
@@ -399,7 +385,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await freshStartNoPassword(page);
     await createWard(page, 'PI Sig Attorney Stamp Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page);
-    await workaroundPreExistingQ7Bug(page);
     await page.evaluate((img) => {
       const d = (window as any).D;
       d.attorney_signatureState = 'stamp';

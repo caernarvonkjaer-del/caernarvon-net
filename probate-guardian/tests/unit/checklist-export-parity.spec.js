@@ -133,7 +133,13 @@ describe('checklist and export validator field parity', () => {
     // `d.attorney` field inside validatePlanAnnual()'s body.
     planAnnual: ['attorney', 'attorney_signatureDate', 'attorney_signatureImage', 'attorney_signatureState'],
     planSimplified: ['attorney_signatureDate', 'preparer_signatureDate'],
-    planMinor: ['amendedForm', 'amendedVersion', 'attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState', 'ref', 'ucn'],
+    // Milestone 40C-E closed four of this list's gaps: `ucn`/`ref` (the Cover's
+    // case identity, either one satisfying it), `amendedForm` (which must be
+    // ANSWERED, not merely non-blank) and `amendedVersion` (required when
+    // Amended Form is Yes) are now all in pm-cover's own sidebar rule, so they
+    // are no longer accepted omissions. The signature-field entries remain --
+    // they are the same pre-existing gap the comment above describes.
+    planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState'],
     planInitial: ['attorney_signatureImage', 'attorney_signatureState'],
     // Milestone 39-C: `attorney`/`attorney_signatureState`/`attorney_signatureImage`
     // are new here for the same reason as planAnnual's own `attorney` entry

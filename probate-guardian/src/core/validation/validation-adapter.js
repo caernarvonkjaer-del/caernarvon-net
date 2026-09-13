@@ -333,7 +333,14 @@ export function adaptValidationErrors(errors = [], formType = 'guardian') {
       if (dLower.includes('filed')) path = 'sdb-filed-yes';
       else path = 'sdb-yes';
     } else if (sLower === 'd-4') {
-      if (dLower.includes('bond amount')) path = 'bondAmount';
+      // Milestone 40C-C: checkDateOrder()'s message names BOTH endpoints
+      // ("Bond Period To must be on or after Bond Period From"), so it has to
+      // be matched before the bare includes() checks below -- they would
+      // otherwise resolve it to whichever label appears first in the string,
+      // sending the filer to the field that is not the one to change. Same
+      // priority ordering the accounting-period branches already use.
+      if (dLower.startsWith('bond period to must be on or after')) path = 'bondPeriodTo';
+      else if (dLower.includes('bond amount')) path = 'bondAmount';
       else if (dLower.includes('bond period from')) path = 'bondPeriodFrom';
       else if (dLower.includes('bond period to')) path = 'bondPeriodTo';
       else if (dLower.includes('bonding company')) path = 'bondingCompany';

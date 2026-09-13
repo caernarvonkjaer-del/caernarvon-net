@@ -239,7 +239,8 @@ export async function renderPage(page) {
         break;
     }
     if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
-    if (typeof window.enforceDateRanges === 'function') window.enforceDateRanges();
+    // Milestone 40C-C removed window.enforceDateRanges(); date-range order is
+    // reported by checkDateOrder() in each validator, not wired onto the inputs.
     if (typeof window.setupAmountFieldValidation === 'function') window.setupAmountFieldValidation();
     if (typeof window.updateNavDots === 'function') window.updateNavDots();
     if (typeof window.initPrintPager === 'function') window.initPrintPager();
