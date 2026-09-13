@@ -566,7 +566,7 @@ export async function loadAutoExportPrefs() {
     console.warn('Could not load auto-export preferences', e);
   }
   if (typeof document !== 'undefined') {
-    const sel = document.getElementById('auto-export-interval-select');
+    const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('auto-export-interval-select'));
     if (sel) sel.value = String(_autoExportIntervalMinutes);
   }
   updateLastSavedIndicator();
@@ -642,7 +642,7 @@ export async function triggerImportZip() {
     }
   }
   if (typeof document !== 'undefined') {
-    const inp = document.getElementById('zip-import-input');
+    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('zip-import-input'));
     if (inp) {
       inp.value = '';
       inp.click();
@@ -882,7 +882,7 @@ export async function triggerOpenBackupSav() {
     }
   }
   if (typeof document !== 'undefined') {
-    const inp = document.getElementById('backup-import-input');
+    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('backup-import-input'));
     if (inp) {
       inp.value = '';
       inp.click();

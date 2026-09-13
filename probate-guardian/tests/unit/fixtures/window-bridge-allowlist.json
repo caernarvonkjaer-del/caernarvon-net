@@ -1,0 +1,1222 @@
+{
+  "generatedBy": "node scripts/audit-window-bridge.mjs",
+  "assignments": [
+    {
+      "file": "src/core/case-resolver.js",
+      "name": "caseNumberOf"
+    },
+    {
+      "file": "src/core/case-resolver.js",
+      "name": "casesGroupingWards"
+    },
+    {
+      "file": "src/core/case-resolver.js",
+      "name": "countyOf"
+    },
+    {
+      "file": "src/core/case-resolver.js",
+      "name": "createCase"
+    },
+    {
+      "file": "src/core/case-resolver.js",
+      "name": "getOrCreateCaseForWard"
+    },
+    {
+      "file": "src/core/case-resolver.js",
+      "name": "resolveCase"
+    },
+    {
+      "file": "src/core/excel/excel-engine.js",
+      "name": "ExcelEngine"
+    },
+    {
+      "file": "src/core/excel/exceljs-loader.js",
+      "name": "getExcelJS"
+    },
+    {
+      "file": "src/core/feature-bridge.js",
+      "name": "createFeatureBridge"
+    },
+    {
+      "file": "src/core/feature-bridge.js",
+      "name": "disposeActiveFeature"
+    },
+    {
+      "file": "src/core/filing/filing-descriptor.js",
+      "name": "applyAccountingFilingType"
+    },
+    {
+      "file": "src/core/filing/filing-descriptor.js",
+      "name": "resolveDescriptorForInventoryType"
+    },
+    {
+      "file": "src/core/filing/filing-descriptor.js",
+      "name": "resolveFilingDescriptor"
+    },
+    {
+      "file": "src/core/filing/output-preflight.js",
+      "name": "prepareFilingOutput"
+    },
+    {
+      "file": "src/core/form/combobox-controller.js",
+      "name": "ComboboxController"
+    },
+    {
+      "file": "src/core/form/commit-coordinator.js",
+      "name": "_transientDrafts"
+    },
+    {
+      "file": "src/core/form/commit-coordinator.js",
+      "name": "commitStoredDateDrafts"
+    },
+    {
+      "file": "src/core/form/commit-coordinator.js",
+      "name": "formatDraftIssues"
+    },
+    {
+      "file": "src/core/form/commit-coordinator.js",
+      "name": "getFieldDraftDisplay"
+    },
+    {
+      "file": "src/core/form/commit-coordinator.js",
+      "name": "getFieldDraftIssues"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "_transientDrafts"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "commitPendingFieldValues"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "finalizeFieldValue"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "formatCityStateZip"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "formatSafeTitleCase"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "getFieldDraftIssueMessages"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "sanitizeStoredText"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
+      "name": "writeDraftValue"
+    },
+    {
+      "file": "src/core/form/form-fields.js",
+      "name": "renderFormField"
+    },
+    {
+      "file": "src/core/form/form-fields.js",
+      "name": "renderSelectField"
+    },
+    {
+      "file": "src/core/form/form-fields.js",
+      "name": "renderTextareaField"
+    },
+    {
+      "file": "src/core/form/prune-cards.js",
+      "name": "BLANK_CARD_COLLECTIONS"
+    },
+    {
+      "file": "src/core/form/prune-cards.js",
+      "name": "isBlankCard"
+    },
+    {
+      "file": "src/core/form/prune-cards.js",
+      "name": "isBlankScheduleEntry"
+    },
+    {
+      "file": "src/core/form/prune-cards.js",
+      "name": "pruneBlankCards"
+    },
+    {
+      "file": "src/core/form/schedule-definitions.js",
+      "name": "addCollectionRow"
+    },
+    {
+      "file": "src/core/form/schedule-definitions.js",
+      "name": "duplicateCollectionRow"
+    },
+    {
+      "file": "src/core/form/schedule-definitions.js",
+      "name": "removeCollectionRow"
+    },
+    {
+      "file": "src/core/form/schedule-definitions.js",
+      "name": "SCHEDULE_SCHEMAS"
+    },
+    {
+      "file": "src/core/modals/convert-ward-modal.js",
+      "name": "convertSourceItems"
+    },
+    {
+      "file": "src/core/modals/convert-ward-modal.js",
+      "name": "convertTargetsFor"
+    },
+    {
+      "file": "src/core/modals/convert-ward-modal.js",
+      "name": "showConvertWardModal"
+    },
+    {
+      "file": "src/core/modals/convert-ward-modal.js",
+      "name": "updateConvertTargetOptions"
+    },
+    {
+      "file": "src/core/modals/eligibility-modal.js",
+      "name": "checkSimplifiedEligibility"
+    },
+    {
+      "file": "src/core/modals/eligibility-modal.js",
+      "name": "showEligibilityModal"
+    },
+    {
+      "file": "src/core/modals/year-manager-modal.js",
+      "name": "getWardPriorYears"
+    },
+    {
+      "file": "src/core/modals/year-manager-modal.js",
+      "name": "saveCurrentYearToHistory"
+    },
+    {
+      "file": "src/core/modals/year-manager-modal.js",
+      "name": "showYearManagerModal"
+    },
+    {
+      "file": "src/core/navigation/router.js",
+      "name": "attachFormHeaderActions"
+    },
+    {
+      "file": "src/core/navigation/router.js",
+      "name": "closeMobileSidebar"
+    },
+    {
+      "file": "src/core/navigation/router.js",
+      "name": "currentPage"
+    },
+    {
+      "file": "src/core/navigation/router.js",
+      "name": "navigate"
+    },
+    {
+      "file": "src/core/navigation/router.js",
+      "name": "renderPage"
+    },
+    {
+      "file": "src/core/navigation/router.js",
+      "name": "toggleMobileSidebar"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "backfillWardPartyCounties"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "commitCoverCounty"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "ensureWardPartyForFiling"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "hydrateCountyFromWardParty"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "inferWardPartyCounty"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "linkDestinationToSourceWardParty"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "maybeCommitCoverCounty"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "normalizeCountyName"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "wardCountyMergeConflict"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "wardPartyCounty"
+    },
+    {
+      "file": "src/core/navigation/ward-county.js",
+      "name": "wardPartyForFiling"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "_dirtySinceExport"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "activateWard"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "activeInventoryType"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "activeInventoryType"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "addWard"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "carryOverFieldsForAccounting"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "carryOverFieldsForPlan"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "carrySourcesFor"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "carryWardsFor"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "createWardId"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "currentPage"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "deleteWard"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "enterDashboardEditingFocus"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "renameWard"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "switchWard"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "unloadWard"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "createParty"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "dehydrateIntoParty"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "dismissPartyPair"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "findDuplicateCandidates"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "getPartyIdForSlot"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "hydrateFromParty"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "identitySlotForPath"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "isPartyPairDismissed"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "mergeParties"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "readRoleFields"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "referenceCountForParty"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "resolveParty"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "setPartyIdForSlot"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "slotsReferencing"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "syncIdentityField"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "writeRoleFields"
+    },
+    {
+      "file": "src/core/pdf/html2pdf-loader.js",
+      "name": "getHtml2Pdf"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "_caseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "_dirtySinceExport"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "_lastExportAt"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "_saveTimer"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "backupAllWardsNow"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "beginRecordingExport"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "buildCaseFileBlob"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "buildSingleWardExportBlob"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "CASE_FILE_FORMAT_VERSION"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "exportCaseFileZip"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "exportGuardianDataZip"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "finishSingleWardExport"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "forgetCaseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "getLastExportAt"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "getWardFileName"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "getWardFileStem"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "handleBackupImportChange"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "hideAutoExportReminder"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "importGuardianDataZip"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "importSavArchiveOrWard"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "isAutoSaveArmed"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "loadAutoExportPrefs"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "loadCaseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "markDirtySinceExport"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "refreshAutoSaveArmedStatus"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "rememberCaseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "restoreBackupSavFile"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "saveAutoExportIntervalPref"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "saveBackupNow"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "saveBlobAs"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "setupAutoExportTimer"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "setupFallbackSaveReminder"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "setupLastSavedTicker"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "showAutoExportReminder"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "silentAutoExport"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "suggestedCaseFileName"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "triggerImportZip"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "triggerOpenBackupSav"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "updateLastSavedIndicator"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "validateWardBackupOverwrite"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "writeCaseToHandle"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "_b64FromBytes"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "_bytesFromB64"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "_cryptoKey"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "_securityMode"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "CRYPTO_VERIFIER_PLAINTEXT"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "decryptJSON"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "decryptJSONWithKey"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "deriveAndVerifyKey"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "deriveKeyFromPassword"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "encryptJSON"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "generateSaltB64"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "PBKDF2_ITERATIONS"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "PLAIN_MODE_PREFIX"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "forgetPersistedCaseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "handleRememberedFileFailure"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "hasOpenedCaseBefore"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "loadAppState"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "loadPersistedCaseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "markCaseOpenedBefore"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "readRememberedFile"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "runRememberedHandleOperation"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "saveAppState"
+    },
+    {
+      "file": "src/core/persistence/launch-preferences.js",
+      "name": "savePersistedCaseFileHandle"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "_dirtySinceExport"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "_launchStateResolved"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "_openedFileAtLaunch"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "checkSessionRestoreCacheAtLaunch"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "clearSessionRestoreCache"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "saveSessionRestoreCache"
+    },
+    {
+      "file": "src/core/persistence/templates.js",
+      "name": "EMBEDDED_TEMPLATES"
+    },
+    {
+      "file": "src/core/persistence/templates.js",
+      "name": "embeddedTemplate"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "caseFile"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "D"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "emptyDataAnnual"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "emptyDataPlanAnnual"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "emptyDataPlanInitial"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "emptyDataPlanMinor"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "emptyDataPlanSimplified"
+    },
+    {
+      "file": "src/core/state.js",
+      "name": "emptyDataSimplified"
+    },
+    {
+      "file": "src/core/status/live-region.js",
+      "name": "announceStatus"
+    },
+    {
+      "file": "src/core/status/section-status.js",
+      "name": "computeSectionStatus"
+    },
+    {
+      "file": "src/core/status/section-status.js",
+      "name": "renderLocalSectionGuidance"
+    },
+    {
+      "file": "src/core/theme-preference.js",
+      "name": "readStoredTheme"
+    },
+    {
+      "file": "src/core/theme-preference.js",
+      "name": "resolvePaintTheme"
+    },
+    {
+      "file": "src/core/theme-preference.js",
+      "name": "seedStoredThemeFromLegacy"
+    },
+    {
+      "file": "src/core/theme-preference.js",
+      "name": "THEME_STORAGE_KEY"
+    },
+    {
+      "file": "src/core/theme-preference.js",
+      "name": "writeStoredTheme"
+    },
+    {
+      "file": "src/core/validation/validation-adapter.js",
+      "name": "adaptValidationErrors"
+    },
+    {
+      "file": "src/core/validation/validation-adapter.js",
+      "name": "focusFieldByPath"
+    },
+    {
+      "file": "src/core/ward-lock.js",
+      "name": "acquireWardLock"
+    },
+    {
+      "file": "src/core/ward-lock.js",
+      "name": "getCurrentLockedWardId"
+    },
+    {
+      "file": "src/core/ward-lock.js",
+      "name": "releaseWardLock"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadAnnualFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadAnnualPdf"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadDashboardFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadGuardianFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadGuardianPdf"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanAnnualFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanAnnualPdf"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanInitialFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanInitialPdf"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanMinorFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanMinorPdf"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanSimplifiedFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadPlanSimplifiedPdf"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadSimplifiedFeature"
+    },
+    {
+      "file": "src/features-loader.js",
+      "name": "loadSimplifiedPdf"
+    },
+    {
+      "file": "src/features/annual-accounting/index.js",
+      "name": "duplicateAnnualRow"
+    },
+    {
+      "file": "src/features/annual-accounting/index.js",
+      "name": "validateAnnual"
+    },
+    {
+      "file": "src/features/annual-accounting/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/annual-accounting/totals.js",
+      "name": "annualReconcileState"
+    },
+    {
+      "file": "src/features/annual-accounting/totals.js",
+      "name": "calcTotalsAnnual"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "addEntry"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "addGuardian"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "addRecipient"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "addWitness"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "duplicateEntry"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "pageNav"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "removeEntry"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "removeGuardian"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "removeRecipient"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "removeWitness"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "setScheduleNoItems"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "syncB2VehicleDescription"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "toggleB2Vehicle"
+    },
+    {
+      "file": "src/features/guardian-inventory/index.js",
+      "name": "validateGuardian"
+    },
+    {
+      "file": "src/features/guardian-inventory/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/plan-annual/index.js",
+      "name": "doSavePdfPlanAnnual"
+    },
+    {
+      "file": "src/features/plan-annual/index.js",
+      "name": "planReadinessChecksAnnual"
+    },
+    {
+      "file": "src/features/plan-annual/index.js",
+      "name": "validatePlanAnnual"
+    },
+    {
+      "file": "src/features/plan-annual/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/plan-initial/index.js",
+      "name": "doSavePdfPlanInitial"
+    },
+    {
+      "file": "src/features/plan-initial/index.js",
+      "name": "planReadinessChecksInitial"
+    },
+    {
+      "file": "src/features/plan-initial/index.js",
+      "name": "validatePlanInitial"
+    },
+    {
+      "file": "src/features/plan-initial/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/plan-minor/index.js",
+      "name": "doSavePdfPlanMinor"
+    },
+    {
+      "file": "src/features/plan-minor/index.js",
+      "name": "planReadinessChecksMinor"
+    },
+    {
+      "file": "src/features/plan-minor/index.js",
+      "name": "validatePlanMinor"
+    },
+    {
+      "file": "src/features/plan-minor/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/plan-simplified/index.js",
+      "name": "planReadinessChecksSimplified"
+    },
+    {
+      "file": "src/features/plan-simplified/index.js",
+      "name": "validatePlanSimplified"
+    },
+    {
+      "file": "src/features/plan-simplified/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/simplified-accounting/index.js",
+      "name": "validateSimplified"
+    },
+    {
+      "file": "src/features/simplified-accounting/print.js",
+      "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/form-events.js",
+      "name": "PGSupplementalPdf"
+    },
+    {
+      "file": "src/fragment-loader.js",
+      "name": "loadFragment"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "activateWard"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "addPlanGuardian"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "auditLog"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "calc"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "caseFile"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "caseFile"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "closeWardLockedModal"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "collapseSaveControls"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "collapseWardControls"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "deleteWard"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "emptyRowAnnual"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "fmt"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "formatDisplayDate"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "getCaseFile"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "getProbateGuardianTabState"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "handleStartupOpenInputChange"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "hasOpenedCaseBefore"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INITIAL_ADL_RATINGS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INITIAL_ADLS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INVENTORY_TYPE_META"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INVENTORY_TYPES"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "isContinuePromptShown"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "isScheduleIncomplete"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "markCaseOpenedBefore"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "markContinuePromptShown"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "mk"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "normalizePlanGuardians"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "normalizeWardData"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "openCaseFileAtLaunch"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "openWardFileAtLaunch"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PAGES_GUARDIAN"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PG_APP_VERSION"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "pgHasUnsavedChanges"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_ADL_RATINGS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_ADLS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_BENEFITS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_RIGHT_STATES"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_RIGHTS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "pruneBlankCards"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "queueAllScheduleDocValidations"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "removePlanGuardian"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "SCHEDULE_NAV_KEYS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "setAccountingFilingType"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "showWardLockedModal"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "startNewCaseAtLaunch"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "startNewWardAtLaunch"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "unloadWard"
+    },
+    {
+      "file": "src/main.js",
+      "name": "activateWard"
+    },
+    {
+      "file": "src/main.js",
+      "name": "isOutputAcknowledgedFor"
+    },
+    {
+      "file": "src/main.js",
+      "name": "markFilingRevisionChanged"
+    },
+    {
+      "file": "src/main.js",
+      "name": "navigate"
+    },
+    {
+      "file": "src/main.js",
+      "name": "switchWard"
+    }
+  ],
+  "knownTripleDefinitions": [
+    "activateWard <- src/core/navigation/ward-lifecycle.js, src/main.js",
+    "switchWard <- src/core/navigation/ward-lifecycle.js, src/main.js"
+  ],
+  "note": "knownTripleDefinitions: legacy-app.js + ward-lifecycle.js + main.js all define these; Milestone 42E removes the redundant copies and this key with them."
+}

@@ -9,10 +9,14 @@
     "skipLibCheck": true,
     "maxNodeModuleJsDepth": 0,
     "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": false
   },
   "include": [
-    "src/core/types/**/*"
+    "src/core/types/**/*",
+    "src/core/persistence/**/*",
+    "src/core/navigation/**/*",
+    "tests/e2e/support/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -24,9 +24,7 @@ const target = currentTarget;
 // synthetic shortcut.
 export async function gotoApp(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    // @ts-expect-error - intentionally removing these for test automation
     delete window.showSaveFilePicker;
-    // @ts-expect-error - intentionally removing these for test automation
     delete window.showOpenFilePicker;
   });
   if (target === 'portable') {

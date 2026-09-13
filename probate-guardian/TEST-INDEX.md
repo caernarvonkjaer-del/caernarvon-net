@@ -64,6 +64,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |
 | types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
+| window-bridge.spec.js                | Milestone 42C: every window.X = site in src/ is in fixtures/window-bridge-allowlist.json (scripts/audit-window-bridge.mjs); window-bridge.d.ts in sync; no new triple definitions |
 | ward-carryover.spec.js               | Carry-over field mapping between filing types; Milestone 40C-F nested Initial-Inventory attorney shape; county never taken from the source snapshot; Milestone 40H-J: Plan/Accounting -> Guardian Inventory attorney block writes the nested shape, not dropped flat keys |
 | ward-lock.spec.js                    | Ward lock acquire/release/current-lock services                                                                           |
 | xlsx-extract.spec.js                 | Milestone 33 Phase 3.1: xlsx-extract helper (reads support/xlsx-extract.ts)                                               |
@@ -74,6 +75,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | File                      | Purpose                                                                            |
 | ------------------------- | ---------------------------------------------------------------------------------- |
 | plan-readiness-parity.js  | Milestone 37-3: withOverrides()/autoById() shared by each Plan-type parity spec    |
+| fixtures/window-bridge-allowlist.json | Milestone 42C: the declared `window.X =` surface; regenerate with `node scripts/audit-window-bridge.mjs --json` |
 
 ## tests/e2e (Playwright, `npm run test:e2e`)
 
@@ -155,6 +157,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | plan-fixture.ts   | `registerPlanMountTests` — shared mount/dispose/routing test suite factory for the four Plan-\* filing types                        |
 | target-profile.ts | Current run target detection + classified skip helpers (skipExpectedTargetExclusion / skipEnvironmentLimitation / skipTemporaryGap) |
 | target.ts         | Page-object-style helpers (gotoApp, freshStartNoPassword, createWard, fillMinimalValid\*Ward, etc.)                                 |
+| window-api.ts     | Milestone 42C: `PgWindow` type for the app globals specs reach through page.evaluate(), plus navigateTo/addFiling/activeFiling wrappers |
 | xlsx-extract.ts   | Extracts cell data from generated .xlsx for assertions                                                                              |
 
 ## Categories and scope
