@@ -404,6 +404,7 @@ interface Window {
   unloadWard: any;
   updateCarrySourcePicker: any;
   updateConvertNote: any;
+  updateConvertNotePreview: any;
   updateConvertTargetOptions: any;
   updateHelpContext: any;
   updateLastSavedIndicator: any;

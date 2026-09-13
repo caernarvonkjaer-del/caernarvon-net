@@ -1549,36 +1549,6 @@ function formatAddress(s){
   return formatName(s);
 }
 
-// Combined "City, State Zip" fields: capitalize city words, uppercase a
-// 2-letter state abbreviation, and leave the zip digits untouched.
-function formatCityStateZip(s){
-  if(window.formatCityStateZip && window.formatCityStateZip !== formatCityStateZip){
-    return window.formatCityStateZip(s);
-  }
-  const US_POSTAL_STATES = new Set([
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-    'DC', 'PR', 'VI', 'GU', 'AS', 'MP',
-  ]);
-  const TITLE_CASE_CITY_PREFIXES = new Set(['St', 'Mt', 'Ft']);
-  return String(s||'').split(/(\s+)/).map(w=>{
-    if(w.match(/\s/)||w==='')return w;
-    if(/^\d+(-\d+)?$/.test(w))return w;
-    const match = w.match(/^([a-zA-Z]+)([^a-zA-Z]*)$/);
-    if(match){
-      const [, alpha, punct] = match;
-      const upper = alpha.toUpperCase();
-      const title = alpha.charAt(0).toUpperCase() + alpha.slice(1).toLowerCase();
-      if(TITLE_CASE_CITY_PREFIXES.has(title)) return title + punct;
-      if(US_POSTAL_STATES.has(upper)) return upper + punct;
-      if(/^[a-z]+$/.test(alpha)) return title + punct;
-    }
-    return w;
-  }).join('');
-}
 
 // Excel imports can carry all-lowercase (or all-caps) text. Walk the parsed
 // data and apply the exact same per-field capitalization that manual typing
@@ -1946,35 +1916,9 @@ try {
   });
 } catch (_) {}
 
-function _b64FromBytes(bytes){
-  let bin='';
-  bytes.forEach(b=>{bin+=String.fromCharCode(b);});
-  return btoa(bin);
-}
-function _bytesFromB64(b64){
-  const bin=atob(b64);
-  const bytes=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return bytes;
-}
-
-function generateSaltB64(){
-  return _b64FromBytes(crypto.getRandomValues(new Uint8Array(16)));
-}
 
 
-async function deriveKeyFromPassword(password,saltB64){
-  const enc=new TextEncoder();
-  const salt=_bytesFromB64(saltB64);
-  const baseKey=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey(
-    {name:'PBKDF2',salt,iterations:PBKDF2_ITERATIONS,hash:'SHA-256'},
-    baseKey,
-    {name:'AES-GCM',length:256},
-    false,
-    ['encrypt','decrypt']
-  );
-}
+
 
 // Whether this install encrypts data at all — chosen once, at first setup,
 // via promptChooseSecurityMode(). 'encrypted' (default/recommended) uses
@@ -1992,29 +1936,7 @@ const PLAIN_MODE_PREFIX='PLAIN:'; // self-describing tag, never produced by the
 // iv:ciphertext base64 format below, so decrypt can tell the two apart
 // unambiguously even if an archive mixes entries from both modes.
 
-// Packs to a single transportable string: base64(iv) + ':' + base64(ciphertext).
-// A fresh random IV is generated per call — required for AES-GCM safety (an IV
-// must never be reused with the same key) — so identical plaintext encrypts
-// differently every time this runs.
-// In 'none' mode, skips encryption entirely and just tags the plain JSON —
-// see the module-level comment on _securityMode above for why.
-async function encryptJSON(value){
-  if(_securityMode==='none')return PLAIN_MODE_PREFIX+JSON.stringify(value);
-  if(!_cryptoKey)throw new Error('App is locked — no encryption key available');
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const plaintext=new TextEncoder().encode(JSON.stringify(value));
-  const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv},_cryptoKey,plaintext);
-  return `${_b64FromBytes(iv)}:${_b64FromBytes(new Uint8Array(ciphertext))}`;
-}
 
-async function decryptJSON(packed){
-  const s=String(packed);
-  if(s.startsWith(PLAIN_MODE_PREFIX))return JSON.parse(s.slice(PLAIN_MODE_PREFIX.length));
-  if(!_cryptoKey)throw new Error('App is locked — no encryption key available');
-  const [ivB64,ctB64]=s.split(':');
-  const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:_bytesFromB64(ivB64)},_cryptoKey,_bytesFromB64(ctB64));
-  return JSON.parse(new TextDecoder().decode(plaintext));
-}
 
 // Decides whether the user needs to create a master password (fresh install,
 // or an existing pre-encryption install with plaintext wards) or unlock with
@@ -2389,15 +2311,7 @@ async function deleteWardFromState(wardId){
   return true;
 }
 
-async function saveAppState(key,value){
-  _appState[key]=value;
-  autoSave();
-  return true;
-}
 
-async function loadAppState(key){
-  return (key in _appState)?_appState[key]:null;
-}
 
 async function saveTemplate(type,b64){
   _templateCache[type]=b64;
@@ -2871,16 +2785,6 @@ window.markContinuePromptShown=markContinuePromptShown;
 // loading corrupted data.
 // ═══════════════════════════════════════════════════════
 
-// decryptJSON() uses the in-memory key; this variant takes an explicit key so
-// an archive exported under a DIFFERENT install (different salt) can still be
-// opened by re-deriving its key from that archive's password + embedded salt.
-async function decryptJSONWithKey(packed,key){
-  const s=String(packed);
-  if(s.startsWith(PLAIN_MODE_PREFIX))return JSON.parse(s.slice(PLAIN_MODE_PREFIX.length));
-  const [ivB64,ctB64]=s.split(':');
-  const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:_bytesFromB64(ivB64)},key,_bytesFromB64(ctB64));
-  return JSON.parse(new TextDecoder().decode(plaintext));
-}
 
 // Save As dialog where supported (Chrome/Edge); plain Downloads-folder
 // download elsewhere (Firefox/Safari have no showSaveFilePicker).
@@ -3057,78 +2961,7 @@ async function _sessionCacheClear(){
   }catch(e){/* non-critical */}
 }
 
-// Snapshot the current case without ZIP wrapping. saveData() calls this only
-// for dirty state.
-async function saveSessionRestoreCache(){
-  if(_securityMode==='encrypted'&&!_cryptoKey)return;
-  if(!caseFile.wards.length)return; // nothing worth recovering yet
-  try{
-    const salt=await loadAppState('cryptoSalt');
-    const verifier=await loadAppState('cryptoVerifier');
-    const wards=[];
-    for(const ward of caseFile.wards)wards.push({wardId:ward.wardId,enc:await encryptJSON(ward)});
-    const guardian=await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail});
-    const parties=await encryptJSON(caseFile.parties||[]);
-    const cases=await encryptJSON(caseFile.cases||[]);
-    const partyDismissals=await encryptJSON(caseFile.dismissedPartyPairs||[]);
-    await _sessionCachePut({
-      savedAt:Date.now(),securityMode:_securityMode,salt:salt||null,verifier:verifier||null,
-      guardian,wards,parties,cases,partyDismissals,activeWardId:caseFile.activeWardId||null
-    });
-  }catch(e){console.warn('session-restore cache write failed',e);}
-}
-async function clearSessionRestoreCache(){await _sessionCacheClear();}
 
-// Check before Open/Start so unsaved work is not bypassed. Return true only
-// after a successful restore.
-async function checkSessionRestoreCacheAtLaunch(){
-  let cache;
-  try{cache=await _sessionCacheGet();}catch(e){return false;}
-  if(!cache||!Array.isArray(cache.wards)||!cache.wards.length)return false;
-  const proceed=confirm(
-    `This browser has unsaved work from a previous session (last changed ${formatRelativeTime(cache.savedAt)}) that was never saved to a .sav file — most likely because the tab was closed or crashed before a backup was made.\n\n`+
-    'Click OK to restore that work now, or Cancel to discard it and start fresh.'
-  );
-  if(!proceed){await clearSessionRestoreCache();return false;}
-  try{
-    let key=null;
-    if(cache.securityMode==='encrypted'){
-      const pw=prompt('Enter the master password to restore this session:');
-      if(!pw)return false; // leave the cache in place -- ask again next launch
-      key=await deriveAndVerifyKey(pw,{salt:cache.salt,verifier:cache.verifier,guardian:cache.guardian},null);
-    }
-    const restoredWards=[];
-    for(const w of cache.wards){
-      const ward=sanitizeObjectData(await decryptJSONWithKey(w.enc,key));
-      if(ward&&ward.wardId)restoredWards.push(ward);
-    }
-    if(!restoredWards.length)throw new Error('Archive contained no readable data.');
-    const g=await decryptJSONWithKey(cache.guardian,key);
-    caseFile.wards=restoredWards;
-    caseFile.guardianName=(g&&g.guardianName)||'';
-    caseFile.guardianEmail=(g&&g.guardianEmail)||'';
-    caseFile.parties=cache.parties?(await decryptJSONWithKey(cache.parties,key))||[]:[];
-    caseFile.cases=cache.cases?(await decryptJSONWithKey(cache.cases,key))||[]:[];
-    caseFile.dismissedPartyPairs=cache.partyDismissals?(await decryptJSONWithKey(cache.partyDismissals,key))||[]:[];
-    caseFile.activeWardId=null;
-    _securityMode=cache.securityMode;
-    _cryptoKey=key;
-    _appState.securityMode=cache.securityMode;
-    _appState.cryptoSalt=cache.salt;
-    _appState.cryptoVerifier=cache.verifier;
-    _launchStateResolved=true;
-    _openedFileAtLaunch=true;
-    _dirtySinceExport=true; // this state has never actually landed in a .sav file
-    updateLastSavedIndicator();
-    notifyProbateGuardianTabStateChanged();
-    alert(`Restored ${restoredWards.length} form(s) from your last unsaved session. Please save a backup file now.`);
-    return true;
-  }catch(e){
-    console.error('session restore failed',e);
-    alert('Could not restore the previous session (wrong password, or the cached data is corrupted). It has been left in place; you can try again next time the app opens.');
-    return false;
-  }
-}
 
 // ═══════════════════════════════════════════════════════
 // OPEN / START AT LAUNCH
@@ -3177,44 +3010,6 @@ async function _launchPrefDelete(key){
     tx.oncomplete=resolve;
     tx.onerror=resolve;
   });
-}
-async function hasOpenedCaseBefore(){
-  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_OPENED))===true;}
-  catch(e){return false;} // IndexedDB unavailable (private browsing, etc.) — fall back to the full choice screen
-}
-async function markCaseOpenedBefore(){
-  try{await _launchPrefPut(LAUNCH_PREF_KEY_OPENED,true);}catch(e){/* non-critical */}
-}
-async function savePersistedCaseFileHandle(handle){
-  if(!handle)return;
-  try{await _launchPrefPut(LAUNCH_PREF_KEY_HANDLE,handle);}catch(e){/* non-critical */}
-}
-async function loadPersistedCaseFileHandle(){
-  try{return (await _launchPrefGet(LAUNCH_PREF_KEY_HANDLE))||null;}catch(e){return null;}
-}
-async function forgetPersistedCaseFileHandle(){
-  try{await _launchPrefDelete(LAUNCH_PREF_KEY_HANDLE);}catch(e){/* non-critical */}
-}
-async function runRememberedHandleOperation(operation,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
-  let timeout;
-  try{
-    return await Promise.race([
-      Promise.resolve().then(operation),
-      new Promise((resolve,reject)=>{
-        timeout=setTimeout(()=>reject(new DOMException('The remembered case file did not respond.','TimeoutError')),timeoutMs);
-      }),
-    ]);
-  }finally{
-    clearTimeout(timeout);
-  }
-}
-function readRememberedFile(handle,timeoutMs=REMEMBERED_FILE_TIMEOUT_MS){
-  return runRememberedHandleOperation(()=>handle.getFile(),timeoutMs);
-}
-async function handleRememberedFileFailure(handle,error){
-  _rememberedFileUnavailable=true;
-  await forgetPersistedCaseFileHandle();
-  console.warn('Remembered case file is unavailable; it must be selected again',error);
 }
 
 // Case 1 above: a remembered handle whose read permission the browser
@@ -3535,26 +3330,6 @@ async function loadCaseFileFromZip(zip,manifest,key){
   }
 }
 
-// Derives a key from a candidate password and confirms it's the right one
-// for this manifest before returning it. A version-2+ file carries its own
-// verifier (the same PG_VERIFIER_V1 trick ensureUnlocked() uses); a
-// version-1 file has none, so the guardian-info blob — or, failing that,
-// the first ward — doubles as the check instead: GCM's auth tag fails
-// decryption for any wrong key, exactly what importGuardianDataZip() has
-// always relied on for the same reason.
-async function deriveAndVerifyKey(password,manifest,zip){
-  const key=await deriveKeyFromPassword(password,manifest.salt);
-  if(manifest.verifier){
-    const decoded=await decryptJSONWithKey(manifest.verifier,key);
-    if(decoded!==CRYPTO_VERIFIER_PLAINTEXT)throw new Error('Incorrect password.');
-  }else if(manifest.guardian){
-    await decryptJSONWithKey(manifest.guardian,key);
-  }else if(Array.isArray(manifest.wards)&&manifest.wards.length){
-    const f=zip.file(manifest.wards[0].file);
-    if(f)await decryptJSONWithKey(await f.async('string'),key);
-  }
-  return key;
-}
 
 // Lets a user drag a .zip data file straight onto the app window instead of
 // clicking through the file picker. dragCounter (rather than a boolean)
@@ -3617,9 +3392,6 @@ function clearAllData(){
 // ═══════════════════════════════════════════════════════
 // WARD MANAGEMENT
 // ═══════════════════════════════════════════════════════
-function createWardId(){
-  return 'w_'+Date.now()+'_'+Math.random().toString(36).slice(2,9);
-}
 
 // Pairs each Guardianship Plan type with the Accounting type a guardian
 // typically files alongside it for the same person — guardian<->planInitial,
@@ -3659,176 +3431,9 @@ const CARRY_SOURCE_TYPE={
   trustAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='trustAccounting'),'planInitial','planSimplified','planMinor']
 };
 
-// Source types allowed for a target type (always an array).
-function carrySourcesFor(type){return CARRY_SOURCE_TYPE[type]||[];}
 
-// Existing wards that could populate a new ward of `type`, ordered to match
-// carrySourcesFor() so the closest counterpart appears first.
-function carryWardsFor(type,excludeWardId){
-  const srcs=carrySourcesFor(type);
-  return srcs.flatMap(st=>caseFile.wards.filter(w=>w.inventoryType===st&&w.wardId!==excludeWardId));
-}
 
-// Builds a partial data object to merge onto a freshly-created Plan ward,
-// carrying over only shared identity/contact fields — never signature dates,
-// financial data, or anything specific to the Accounting filing itself.
-function carryOverFieldsForPlan(sourceWard,planType){
-  const src=sourceWard||{};
-  const caseNum=src.caseNumber||src.ucn||src.ref||'';
-  const gName=src.guardianName||src.guardianNames||src.guardian||(src.guardians&&src.guardians[0]?.name)||(src.planGuardians&&src.planGuardians[0]?.name)||'';
-  const attyName=src.attorneyForGuardian||src.attorney||src.attorney_name||src.attorneyName||'';
-  const attyBar=src.attorneyBar||src.attorney_bar||'';
-  const attyPhone=src.attorneyPhone||src.attorney_phone||'';
-  const attyEmail=src.attorneyEmail||src.attorney_email||'';
-  const attyStreet=src.attorneyAddress||src.attorney_street||'';
-  const attyCityStateZip=src.attorneyCityStateZip||src.attorney_cityStateZip||'';
-  const gs=(src.guardians&&src.guardians.length?src.guardians:src.planGuardians)||[];
 
-  if(planType==='planInitial'){
-    const g=gs[0]||{};
-    return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:'',
-      inceptionDate:src.gid||src.inceptionDate||'', guardianNames:gName,
-      attorneyName:attyName, attorney_name:attyName, attorney_bar:attyBar,
-      attorney_phone:attyPhone, attorney_email:attyEmail, attorney_street:attyStreet,
-      attorney_cityStateZip:attyCityStateZip,
-      planGuardians:[
-        {name:g.name||gName||'',ssn:g.ssn||g.ssnEin||g.tin||'',street:g.streetAddress||g.street||g.mailingStreet||'',phone:g.phone||'',cityStateZip:g.cityStateZip||g.mailingCityStateZip||'',signatureDate:'',relationship:g.relationship||''},
-        {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-        {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''},
-        {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:''}
-      ]
-    };
-  }
-  if(planType==='planSimplified'){
-    const mail=g=>[g.mailingStreet||g.streetAddress||g.street,g.mailingCityStateZip||g.cityStateZip].filter(Boolean).join(', ');
-    return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:'',
-      planGuardians:[0,1].map(i=>{
-        const g=gs[i]||(i===0?{name:gName}:{});
-        return {name:g.name||(i===0?gName:'')||'',signatureDate:'',email:g.email||'',phone:g.phone||'',mailingAddress:mail(g)};
-      })
-    };
-  }
-  if(planType==='planAnnual'){
-    return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:'',
-      gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
-      planGuardians:[0,1,2].map(i=>{
-        const g=gs[i]||(i===0?{name:gName}:{});
-        return {
-          name:g.name||(i===0?gName:'')||'',ssn:g.ssn||g.ssnEin||g.tin||'',phone:g.phone||'',email:g.email||'',signatureDate:'',
-          mailingStreet:g.mailingStreet||g.streetAddress||g.street||'',mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
-          officeStreet:g.officeStreet||'',officeCityStateZip:g.officeCityStateZip||'',relationship:g.relationship||''
-        };
-      })
-    };
-  }
-  if(planType==='planMinor'){
-    // A source ward may be an Initial Inventory (ssnEin/streetAddress/
-    // cityStateZip) or an accounting (ssn/mailingStreet/mailingCityStateZip),
-    // so each field falls back across both naming conventions.
-    return {
-      wardName:src.wardName||'', county:'',
-      ucn:src.caseNumber||'', // planMinor stores the case number as "ucn"
-      guardianName:src.guardianName||src.guardian||'',
-      attorney_name:src.attorneyForGuardian||src.attorney||'',
-      // planMinor stores the case number as "ucn"
-      ucn:caseNum, ref:src.ref||'',
-      guardianName:gName,
-      attorney_name:attyName,
-      attorney_bar:attyBar,
-      attorney_phone:attyPhone,
-      attorney_email:attyEmail,
-      attorney_street:attyStreet,
-      attorney_cityStateZip:attyCityStateZip,
-      planGuardians:[0,1].map(i=>{
-        const g=gs[i]||(i===0?{name:gName}:{});
-        return {
-          name:g.name||(i===0?gName:'')||'', tin:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'',
-          mailingStreet:g.mailingStreet||g.streetAddress||g.street||'',
-          mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
-          relationship:g.relationship||'', email:g.email||'', signatureDate:''
-        };
-      })
-    };
-  }
-  return {};
-}
-
-// The reverse direction: builds a partial data object to merge onto a
-// freshly-created (or existing) Accounting ward, carrying identity/contact
-// fields FROM its matching Plan ward. Mirrors carryOverFieldsForPlan's pairings.
-// fields FROM its matching Plan ward. Mirrors carryOverFieldsForPlan's
-// pairings, just with source and target swapped.
-function carryOverFieldsForAccounting(sourceWard,accountingType){
-  const src=sourceWard||{};
-  const caseNum=src.caseNumber||src.ucn||src.ref||'';
-  const gName=src.guardianNames||src.guardianName||src.guardian||(src.planGuardians&&src.planGuardians[0]?.name)||(src.guardians&&src.guardians[0]?.name)||'';
-  const attyName=src.attorneyName||src.attorney_name||src.attorneyForGuardian||src.attorney||'';
-  const attyBar=src.attorneyBar||src.attorney_bar||'';
-  const attyPhone=src.attorneyPhone||src.attorney_phone||'';
-  const attyEmail=src.attorneyEmail||src.attorney_email||'';
-  const attyStreet=src.attorneyAddress||src.attorney_street||'';
-  const attyCityStateZip=src.attorneyCityStateZip||src.attorney_cityStateZip||'';
-  const gs=src.planGuardians||src.guardians||[];
-
-  if(accountingType==='guardian'){
-    const g=gs[0]||{};
-    return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:'',
-      gid:src.inceptionDate||src.gid||'', guardianName:gName, attorneyForGuardian:attyName,
-      attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
-      attorneyAddress:attyStreet, attorneyCityStateZip:attyCityStateZip,
-      guardians:[{
-        name:g.name||gName||'', ssnEin:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'',
-        streetAddress:g.street||g.streetAddress||g.mailingStreet||'',
-        cityStateZip:g.cityStateZip||g.mailingCityStateZip||'', signatureDate:null
-      }]
-    };
-  }
-  if(accountingType==='simplified'){
-    // mailingAddress was joined as "street, cityStateZip" on the way out —
-    // split on the first comma to reverse it. Best-effort for addresses
-    // typed directly on the Plan rather than carried over originally.
-    const split=addr=>{
-      const s=String(addr||'');
-      const i=s.indexOf(', ');
-      return i===-1?{street:s,cityStateZip:''}:{street:s.slice(0,i),cityStateZip:s.slice(i+2)};
-    };
-    return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:'',
-      gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
-      guardians:[0,1,2].map(i=>{
-        const g=gs[i]||(i===0?{name:gName}:{});
-        const addr=g.mailingStreet?{street:g.mailingStreet,cityStateZip:g.mailingCityStateZip||''}:split(g.mailingAddress||g.streetAddress||g.street);
-        return {
-          name:g.name||(i===0?gName:'')||'', ssn:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'', email:g.email||'',
-          mailingStreet:addr.street||'', mailingCityStateZip:addr.cityStateZip||'',
-          residenceStreet:'', residenceCityStateZip:'', signatureDate:''
-        };
-      })
-    };
-  }
-  if(accountingType==='annual'){
-    return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:'',
-      gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
-      attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
-      guardians:[0,1,2].map(i=>{
-        const g=gs[i]||(i===0?{name:gName}:{});
-        return {
-          name:g.name||(i===0?gName:'')||'', ssn:g.ssn||g.ssnEin||g.tin||'', phone:g.phone||'', email:g.email||'',
-          mailingStreet:g.mailingStreet||g.streetAddress||g.street||'',
-          mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
-          officeStreet:g.officeStreet||'', officeCityStateZip:g.officeCityStateZip||'',
-          signatureDate:'', signatureDateLabel:''
-        };
-      })
-    };
-  }
-  return {};
-}
 
 // Accounting -> Accounting carry (e.g. Initial Inventory into a new Annual
 // Accounting, or last period's Annual into this one). Only identity and
@@ -4183,103 +3788,9 @@ function getRecentlyOpenedWards(){
 // ═══════════════════════════════════════════════════════
 // WARD ACTIVATION / UNLOAD (Single Chokepoint)
 // ═══════════════════════════════════════════════════════
-async function activateWard(ward, opts = {}) {
-  if (!ward || !ward.wardId) return false;
 
-  // 1. If ward is already active and lock held, refresh UI and return true
-  if (caseFile.activeWardId === ward.wardId && window.D === ward) {
-    if (window.acquireWardLock) {
-      const alreadyHeld = await window.acquireWardLock(ward.wardId);
-      if (alreadyHeld) {
-        updateSidebar();
-        await refreshAutoSaveArmedStatus();
-        return true;
-      }
-    } else {
-      updateSidebar();
-      await refreshAutoSaveArmedStatus();
-      return true;
-    }
-  }
 
-  // 2. Flush while outgoing ward's lock is still held
-  await flushPendingSave();
 
-  // 3. Acquire target ward lock (atomically acquires new lock before releasing previous)
-  let acquired = true;
-  if (window.acquireWardLock) {
-    acquired = await window.acquireWardLock(ward.wardId);
-  }
-
-  // 4. On contention: previous lock is still held untouched in module
-  if (!acquired) {
-    showWardLockedModal();
-    return false;
-  }
-
-  // 6. On success, set loaded state
-  caseFile.activeWardId = ward.wardId;
-  activeInventoryType = ward.inventoryType;
-  window.D = ward;
-  _visitedPages.clear();
-  addToRecentlyOpened(ward);
-
-  if (formEngine(activeInventoryType) === 'guardian') {
-    await ensureGuardianFeatureReady();
-  }
-
-  updateSidebar();
-  await refreshAutoSaveArmedStatus();
-  notifyProbateGuardianTabStateChanged();
-  return true;
-}
-
-async function unloadWard() {
-  await flushPendingSave();
-  if (window.releaseWardLock) {
-    await window.releaseWardLock();
-  }
-  caseFile.activeWardId = null;
-  window.D = {};
-  activeInventoryType = null;
-  updateSidebar();
-  await refreshAutoSaveArmedStatus();
-  notifyProbateGuardianTabStateChanged();
-  navigate('/dashboard');
-}
-
-window.activateWard = activateWard;
-window.unloadWard = unloadWard;
-window.hasOpenedCaseBefore = hasOpenedCaseBefore;
-window.markCaseOpenedBefore = markCaseOpenedBefore;
-
-async function addWard(wardName,inventoryType){
-  const wardId=createWardId();
-  const isFirstWardEver=caseFile.wards.length===0;
-
-  const newWard={
-    wardId,
-    inventoryType,
-    createdDate:new Date().toISOString().split('T')[0],
-    ...initializeEmptyData(inventoryType),
-    wardName:wardName||''
-  };
-  caseFile.wards.push(newWard);
-  await saveWardToState(newWard);
-
-  await activateWard(newWard);
-  _dirtySinceExport=true;
-  updateLastSavedIndicator();
-
-  if(isFirstWardEver){
-    _appState.firstLaunchSeen=false;
-  }
-  await navigate('/');
-  // Nudge a brand-new user to make their first backup right away, rather
-  // than waiting for the auto-export timer's next tick (up to N minutes).
-  if(isFirstWardEver&&!_lastExportAt)showAutoExportReminder(true);
-  return wardId;
-}
 
 // The sidebar's "Switch Ward" button acts on whatever the dropdown is
 // currently set to. If that's already the active ward, switchWard() would
@@ -4453,62 +3964,8 @@ async function showSwitchWardPickerModal(){
   showModal('switchWardPickerModal');
 }
 
-async function switchWard(wardId){
-  const ward=caseFile.wards.find(w=>w.wardId===wardId);
-  if(!ward)return false;
 
-  const ok=await activateWard(ward);
-  if(!ok)return false;
 
-  // Update UI in correct order
-  currentPage='/';
-  window.location.hash='';
-  const el=document.getElementById('main-content');
-  switch(formEngine(activeInventoryType)){
-    case 'guardian':
-      mountGuardianFeature('/');
-      updateHelpContext();
-      closeMobileSidebar();
-      return true;
-    case 'simplified': mountSimplifiedFeature('/');break;
-    case 'annual': mountAnnualFeature('/');break;
-    case 'planSimplified': mountPlanSimplifiedFeature('/');break;
-    case 'planAnnual': mountPlanAnnualFeature('/');break;
-    case 'planInitial': mountPlanInitialFeature('/');break;
-    case 'planMinor': mountPlanMinorFeature('/');break;
-  }
-  linkLabelsToInputs();
-  updateNavDots();
-  updateHelpContext();
-  closeMobileSidebar();
-  return true;
-}
-
-async function deleteWard(wardId){
-  const idx=caseFile.wards.findIndex(w=>w.wardId===wardId);
-  if(idx===-1)return;
-
-  if(caseFile.activeWardId===wardId){
-    await unloadWard();
-  }
-
-  caseFile.wards.splice(idx,1);
-  await deleteWardFromState(wardId);
-
-  updateSidebar();
-  notifyProbateGuardianTabStateChanged();
-  navigate('/dashboard');
-}
-window.deleteWard = deleteWard;
-
-async function renameWard(wardId,newName){
-  const ward=caseFile.wards.find(w=>w.wardId===wardId);
-  if(!ward)return;
-  ward.wardName=newName;
-  await saveWardToState(ward);
-  notifyProbateGuardianTabStateChanged();
-  updateSidebar();
-}
 
 // ═══════════════════════════════════════════════════════
 // INVENTORY TYPE MANAGEMENT
@@ -5254,15 +4711,6 @@ function updateSidebar(){
 // per-pair functions below for exactly what maps where and why.
 // ═══════════════════════════════════════════════════════
 
-// "Ward" combobox on this modal — same typeable + click-to-browse pattern as
-// the sidebar's Active Ward picker, applied here to picking a source ward.
-function convertSourceItems(){
-  return caseFile.wards.map(w=>({
-    wardId:w.wardId,
-    label:w.wardName||'(unnamed)',
-    sub:INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType
-  }));
-}
 function convertSourceShowDropdown(query){
   const input=document.getElementById('convert-source-ward');
   const dropdown=document.getElementById('convert-source-ward-dropdown');
@@ -5292,72 +4740,9 @@ document.addEventListener('click',e=>{
   if(wrap&&!wrap.contains(e.target))comboboxHide(document.getElementById('convert-source-ward-dropdown'));
 });
 
-async function showConvertWardModal(){
-  if(!caseFile.wards.length){
-    alert('You don\'t have any existing forms yet to convert. Create a form first using one of the options above, then come back here to convert it later if needed.');
-    return;
-  }
-  await ensureFragment('common-modals');
-  const first=caseFile.wards[0];
-  const input=document.getElementById('convert-source-ward');
-  input.value=first.wardName||'(unnamed)';
-  input.dataset.wardId=first.wardId;
-  updateConvertTargetOptions();
-  showModal('convertWardModal');
-}
 
-// The Accounting types (guardian/simplified/annual) can convert freely
-// among themselves — that has worked since before Plans existed. Plans only
-// support one additional, well-defined direction EACH WAY: an Accounting
-// type into its own matching Plan type, or that Plan type back into its
-// Accounting type (guardian<->planInitial, etc — the same pairing
-// CARRY_SOURCE_TYPE uses for the Add Ward picker, since it's symmetric).
-// Every other Plan-related pair (Plan->Plan, Accounting->non-matching Plan,
-// anything with planMinor, which has no Accounting counterpart) is left out
-// rather than shown with field mapping that doesn't actually apply.
-// Convert Ward is a heavier operation than seeding a new filing, and stays
-// restricted to the counterpart pairings it has always offered. It is kept
-// separate from CARRY_SOURCE_TYPE deliberately: widening what may be carried
-// must not widen what may be converted.
-const CONVERT_SOURCE_TYPE={
-  planInitial:['guardian'], planSimplified:['simplified'], planAnnual:['annual'],
-  planMinor:['guardian'],
-  guardian:['planInitial'],
-  simplified:['planSimplified',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='simplified')],
-  annual:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='annual')],
-  finalAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='finalAccounting')],
-  trustAccounting:['planAnnual',...PRIOR_ACCOUNTING_SOURCES.filter(t=>t!=='trustAccounting')]
-};
-function convertSourcesFor(type){return CONVERT_SOURCE_TYPE[type]||[];}
 
-function convertTargetsFor(srcType){
-  // Any target that names this source as a valid CONVERT source, minus the
-  // source's own type. Deliberately keyed to CONVERT_SOURCE_TYPE rather than
-  // CARRY_SOURCE_TYPE: Milestone 36-7 widened what may be carried at creation
-  // time, and that must not widen what may be converted.
-  // planMinor is excluded explicitly -- it is a valid carry TARGET
-  // (guardian -> planMinor, same as guardian -> planInitial), but it still has
-  // no Accounting counterpart to convert to or from.
-  return Object.keys(CONVERT_SOURCE_TYPE)
-    .filter(target=>target!==srcType&&target!=='planMinor'&&convertSourcesFor(target).includes(srcType));
-}
 
-function updateConvertTargetOptions(){
-  const wardId=document.getElementById('convert-source-ward').dataset.wardId||'';
-  const ward=caseFile.wards.find(w=>w.wardId===wardId);
-  const targetSel=document.getElementById('convert-target-type');
-  const noteEl=document.getElementById('convert-note');
-  if(!ward){targetSel.innerHTML='';noteEl.textContent='';return;}
-  const others=convertTargetsFor(ward.inventoryType);
-  if(!others.length){
-    targetSel.innerHTML='';
-    noteEl.textContent=`${INVENTORY_TYPES[ward.inventoryType].name} wards can't be converted to another type.`;
-    return;
-  }
-  targetSel.innerHTML=others.map(t=>`<option value="${t}">${esc(INVENTORY_TYPES[t].name)}</option>`).join('');
-  targetSel.onchange=()=>updateConvertNotePreview(ward.inventoryType,targetSel.value);
-  updateConvertNotePreview(ward.inventoryType,targetSel.value);
-}
 
 function updateConvertNotePreview(srcType,destType){
   const noteEl=document.getElementById('convert-note');
@@ -6923,89 +6308,8 @@ const BLANK_CARD_COLLECTIONS = {
   q3Providers:{min:0,types:['planMinor']},
 };
 
-// Untouched when every value the card holds is empty. `false` counts as
-// empty (an unticked checkbox) but 0 does not -- a typed zero is a real
-// answer, and treating it as blank would delete the user's own work.
-function isBlankCard(card){
-  if(!card||typeof card!=='object')return false;
-  const values=Object.values(card);
-  if(!values.length)return false;
-  return values.every(v=>v===null||v===undefined||v===''||v===false||(Array.isArray(v)&&!v.length));
-}
 
-// Deep-equals the schedule's own blank-entry template above -- not a
-// generic "is this value empty" guess, since several schedules default a
-// field to something other than '' (Guardian's wardPercent starts at 100,
-// several Annual Yes/No fields start at 'No') and a generic check would
-// never recognize those as untouched.
-function isBlankScheduleEntry(key,entry){
-  const template=BLANK_SCHEDULE_ENTRY[key];
-  if(!template||!entry||typeof entry!=='object')return false;
-  const blank=template();
-  for(const k of new Set([...Object.keys(blank),...Object.keys(entry)])){
-    if(entry[k]!==blank[k])return false;
-  }
-  return true;
-}
 
-// Drops every card the user left completely untouched, across both
-// registries above, for whatever form type is currently open. Without this,
-// clicking +Add and navigating away without typing left that row counted
-// against the schedule forever -- a false "started but incomplete" in the
-// sidebar, and an empty numbered line item in the PDF/Excel export -- and
-// the bulk-seeded party cards produced the same result without the user
-// having clicked anything at all.
-//
-// Called from navigate() only when actually leaving the current page, never
-// when a +Add button's own handler re-navigates to the SAME page to render
-// the row it just pushed (that row is blank by definition and would be
-// deleted before the user ever saw it).
-//
-// Returns the number of cards removed. Silent by design: a blank card holds
-// nothing, so there is nothing to report losing.
-function pruneBlankCards(){
-  if(!window.D)return 0;
-  const engine=formEngine(activeInventoryType);
-  let removed=0;
-
-  for(const key of Object.keys(BLANK_SCHEDULE_ENTRY)){
-    const arr=window.D[key];
-    if(!Array.isArray(arr)||!arr.length)continue;
-    const kept=arr.filter(e=>!isBlankScheduleEntry(key,e));
-    if(kept.length!==arr.length){
-      removed+=arr.length-kept.length;
-      window.D[key]=kept;
-    }
-  }
-
-  for(const key of Object.keys(BLANK_CARD_COLLECTIONS)){
-    const spec=BLANK_CARD_COLLECTIONS[key];
-    if(!spec.types.includes(engine))continue;
-    const arr=window.D[key];
-    if(!Array.isArray(arr)||!arr.length)continue;
-    const keep=[];
-    arr.forEach((card,i)=>{if(!isBlankCard(card))keep.push(i);});
-    // Backfill from the front until the group meets its floor. Anything
-    // kept this way is blank by definition, so nothing is lost.
-    for(let i=0;i<arr.length&&keep.length<spec.min;i++)if(!keep.includes(i))keep.push(i);
-    keep.sort((a,b)=>a-b);
-    if(keep.length===arr.length)continue;
-    removed+=arr.length-keep.length;
-    window.D[key]=keep.map(i=>arr[i]);
-    // guardianPartyIds is a parallel array indexed by guardian slot (see
-    // party-resolver.js's setPartyIdForSlot), so it has to be resequenced in
-    // lockstep -- otherwise every Link Person association after a removed
-    // card silently re-points at the wrong guardian.
-    if(key==='guardians'&&Array.isArray(window.D.guardianPartyIds)){
-      const ids=window.D.guardianPartyIds;
-      window.D.guardianPartyIds=keep.map(i=>ids[i]||null);
-    }
-  }
-
-  if(removed)autoSave();
-  return removed;
-}
-window.pruneBlankCards=pruneBlankCards;
 
 // ═══════════════════════════════════════════════════════
 // CALCULATIONS
@@ -7941,16 +7245,6 @@ function linkAccordions(idA,idB){
 function browserRecommendationNotice(style = 'margin-bottom:1rem;'){
   return `<div class="schedule-instructions" style="${style}">${ic('alert',15)} <strong>Chrome or Microsoft Edge is recommended</strong> for the best experience — only those browsers support automatically saving your work in the background as you go. Firefox and Safari work fine too, but you'll need to save a backup file (.sav) manually and more often.</div>`;
 }
-// Same idea for the Annual Accounting schedules, which store their rows in
-// D.schA / D.schB1 / … and are rendered inline rather than through
-// entryCard(). Takes the array name so one function serves all 14.
-function duplicateAnnualRow(arrName,idx,route){
-  const list=window.D&&window.D[arrName];
-  if(!list||!list[idx])return;
-  list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
-  autoSave();
-  navigate(route);
-}
 // ═══════════════════════════════════════════════════════
 // SCHEDULE SUPPORTING DOCUMENTS & COMMENTS
 // ═══════════════════════════════════════════════════════
@@ -8450,17 +7744,6 @@ async function fetchAndCacheTemplate(type,filename){
   }catch(e){console.warn(`Failed to auto-load ${type} template:`,e);return null;}
 }
 
-// Loads a template's base64 from the in-memory cache, falling back to
-// fetching the bundled .xlsx on demand (e.g. the app-init pre-warm in
-// autoLoadTemplates hasn't run yet, or previously failed for this type only).
-// Blank templates bundled with the app (see src/templates/*.js). Checked
-// before any network fetch so export works with nothing imported first, and
-// so it still works when the app is opened straight from disk, where
-// fetching a local file is blocked.
-function embeddedTemplate(type){
-  const t=(window.EMBEDDED_TEMPLATES||{})[type];
-  return (typeof t==='string'&&t.length)?t:null;
-}
 
 // Imported spreadsheets are parsed and discarded. Only bundled blank
 // templates enter the in-memory template cache and subsequent .sav writes.

@@ -40,7 +40,6 @@ import './pwa-ui.js';
 
 import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
 import { navigate } from './core/navigation/router.js';
-import { activateWard, switchWard } from './core/navigation/ward-lifecycle.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor } from './core/filing/output-authorization.js';
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
@@ -63,8 +62,8 @@ if (typeof window !== 'undefined') {
   }
 
   window.navigate = navigate;
-  window.activateWard = activateWard;
-  window.switchWard = switchWard;
+  // activateWard/switchWard are published by ward-lifecycle.js itself; the
+  // third copy this file used to add was removed in Milestone 42E.
   window.markFilingRevisionChanged = markFilingRevisionChanged;
   window.isOutputAcknowledgedFor = isOutputAcknowledgedFor;
 }

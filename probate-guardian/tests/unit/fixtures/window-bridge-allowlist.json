@@ -987,10 +987,6 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "activateWard"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "addPlanGuardian"
     },
     {
@@ -1047,10 +1043,6 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "deleteWard"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "emptyRowAnnual"
     },
     {
@@ -1075,10 +1067,6 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "hasOpenedCaseBefore"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "INITIAL_ADL_RATINGS"
     },
     {
@@ -1100,10 +1088,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "isScheduleIncomplete"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "markCaseOpenedBefore"
     },
     {
       "file": "src/legacy-app.js",
@@ -1163,10 +1147,6 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "pruneBlankCards"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "queueAllScheduleDocValidations"
     },
     {
@@ -1194,14 +1174,6 @@
       "name": "startNewWardAtLaunch"
     },
     {
-      "file": "src/legacy-app.js",
-      "name": "unloadWard"
-    },
-    {
-      "file": "src/main.js",
-      "name": "activateWard"
-    },
-    {
       "file": "src/main.js",
       "name": "isOutputAcknowledgedFor"
     },
@@ -1212,15 +1184,6 @@
     {
       "file": "src/main.js",
       "name": "navigate"
-    },
-    {
-      "file": "src/main.js",
-      "name": "switchWard"
     }
-  ],
-  "knownTripleDefinitions": [
-    "activateWard <- src/core/navigation/ward-lifecycle.js, src/main.js",
-    "switchWard <- src/core/navigation/ward-lifecycle.js, src/main.js"
-  ],
-  "note": "knownTripleDefinitions: legacy-app.js + ward-lifecycle.js + main.js all define these; Milestone 42E removes the redundant copies and this key with them."
+  ]
 }

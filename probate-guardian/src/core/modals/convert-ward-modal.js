@@ -1,10 +1,39 @@
 // Modal orchestration for converting an existing ward filing to another form type.
 import { getCaseFile } from '../state.js';
-import { CARRY_SOURCE_TYPE, carrySourcesFor } from '../navigation/ward-lifecycle.js';
+import { PRIOR_ACCOUNTING_SOURCES } from '../navigation/ward-lifecycle.js';
+
+// Which existing filing types may be CONVERTED into which. Deliberately
+// narrower than ward-lifecycle.js's CARRY_SOURCE_TYPE: Milestone 36-7 widened
+// what may seed a new filing at creation time (any type's identity block is a
+// valid source for any other), and that must not widen what may be converted.
+// The Accounting types convert freely among themselves; each Plan type
+// converts only to/from its own Accounting counterpart; planMinor has no
+// counterpart and is excluded below.
+//
+// Milestone 42E: this table and convertTargetsFor() lived in legacy-app.js,
+// but this module's window.convertTargetsFor had shadowed that copy (keyed,
+// wrongly, to CARRY_SOURCE_TYPE) since the modal was extracted -- so the
+// modal had been offering every carry target as a conversion target. Restored
+// here with the legacy copy deleted; tests/unit/convert-targets.spec.js pins it.
+export const CONVERT_SOURCE_TYPE = {
+  planInitial: ['guardian'],
+  planSimplified: ['simplified'],
+  planAnnual: ['annual'],
+  planMinor: ['guardian'],
+  guardian: ['planInitial'],
+  simplified: ['planSimplified', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'simplified')],
+  annual: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'annual')],
+  finalAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'finalAccounting')],
+  trustAccounting: ['planAnnual', ...PRIOR_ACCOUNTING_SOURCES.filter((t) => t !== 'trustAccounting')],
+};
+
+export function convertSourcesFor(type) {
+  return CONVERT_SOURCE_TYPE[type] || [];
+}
 
 export function convertTargetsFor(srcType) {
-  return Object.keys(CARRY_SOURCE_TYPE).filter(
-    (target) => target !== srcType && target !== 'planMinor' && carrySourcesFor(target).includes(srcType)
+  return Object.keys(CONVERT_SOURCE_TYPE).filter(
+    (target) => target !== srcType && target !== 'planMinor' && convertSourcesFor(target).includes(srcType)
   );
 }
 
@@ -63,12 +92,21 @@ export function updateConvertTargetOptions() {
   }
   const targets = convertTargetsFor(ward.inventoryType);
   const inventoryTypes = (typeof window !== 'undefined' && window.INVENTORY_TYPES) || {};
+  if (!targets.length) {
+    targetSel.innerHTML = '';
+    noteEl.textContent = `${inventoryTypes[ward.inventoryType]?.name || ward.inventoryType} wards can't be converted to another type.`;
+    return;
+  }
   targetSel.innerHTML = targets
     .map((t) => `<option value="${t}">${inventoryTypes[t]?.name || t}</option>`)
     .join('');
-  if (typeof window !== 'undefined' && typeof window.updateConvertNote === 'function') {
-    window.updateConvertNote();
-  }
+  // Milestone 42E: this used to call window.updateConvertNote(), which has
+  // never existed -- the note preview was dead and changing the target did
+  // nothing. legacy-app.js's updateConvertNotePreview()/describeConversion()
+  // are the real ones (the same text the post-conversion alert reuses).
+  const preview = () => window.updateConvertNotePreview?.(ward.inventoryType, targetSel.value);
+  targetSel.onchange = preview;
+  preview();
 }
 
 // Global bridge for legacy scripts and test harnesses

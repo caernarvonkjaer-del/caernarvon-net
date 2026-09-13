@@ -21,6 +21,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | circuit-lookup.spec.js               | FL county to judicial circuit lookup; Milestone 40C-A: blank/unknown yields null circuit, empty ordinal and no caption    |
 | combobox-controller.spec.js          | ComboboxController widget behavior                                                                                        |
 | content-corrections.spec.js          | Sub-milestone 36-5: content corrections (AO removal guard, Part VIII no-trust certification, date format, clerk guidance) |
+| convert-targets.spec.js              | Milestone 42E: Convert Ward target eligibility keyed to the narrow CONVERT_SOURCE_TYPE table (36-7 intent), not the creation-time carry table |
 | county-guidance.spec.js              | Milestone 37-1: hasSixthCircuitLocalGuidance() Pinellas/Pasco allow-list, case/whitespace, no blank-county default        |
 | dashboard-preferences.spec.js        | Dashboard preference load/save/reset                                                                                      |
 | dashboard-view-model.spec.js         | Dashboard priority ordering, filing contacts, ward deadline derivation                                                    |
