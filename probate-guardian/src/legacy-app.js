@@ -5187,7 +5187,20 @@ function updateSidebar(){
   if(activeInventoryType&&!_saveControlsUserToggled)_saveControlsCollapsed=true;
   applySaveControlsCollapsedState();
 
-  if(!activeInventoryType)return;
+  if(!activeInventoryType){
+    // No filing is open (e.g. back on the dashboard) -- the context strip and
+    // nav checklist below belong to whichever filing was last open and must
+    // not linger. Milestone 38C cleared activeWardId/window.D on dashboard
+    // entry and called updateSidebar() to reflect that, but this function
+    // never actually blanked these two elements for the no-active-filing
+    // case -- it only ever populated them, so they silently kept showing the
+    // previous filing's context and checklist.
+    const staleCtx=document.getElementById('sidebar-context');
+    if(staleCtx)staleCtx.style.display='none';
+    const staleNav=document.getElementById('nav-sections');
+    if(staleNav)staleNav.innerHTML='';
+    return;
+  }
   const typeConfig=INVENTORY_TYPES[activeInventoryType];
   // The header keeps the product name; the active form type gets its own
   // strip beneath it so the app is always identifiable.

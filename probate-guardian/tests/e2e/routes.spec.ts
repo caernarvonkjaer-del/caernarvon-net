@@ -51,6 +51,28 @@ test.describe('routes', () => {
     expect(errors).toEqual([]);
   });
 
+  // Milestone 38C cleared activeWardId/window.D on dashboard entry so the
+  // ward lock would release from every navigation path, not just the sidebar's
+  // own Close Ward button -- but updateSidebar() itself was never taught to
+  // blank the per-filing context strip and nav checklist for the no-active-
+  // filing case, so both silently kept showing whatever filing was open last.
+  test('returning to the dashboard clears the previous filing\'s sidebar context and nav checklist', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Stale Sidebar Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+
+    const ctx = page.locator('#sidebar-context');
+    const nav = page.locator('#nav-sections');
+    await expect(ctx).toBeVisible();
+    await expect(nav.locator('.nav-section')).not.toHaveCount(0);
+
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await expect(page).toHaveURL(/#\/dashboard/);
+
+    await expect(ctx).toBeHidden();
+    await expect(nav).toBeEmpty();
+  });
+
   test('dashboard controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));
