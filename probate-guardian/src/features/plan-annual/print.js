@@ -3,11 +3,6 @@
 // triggers PDF export -- same lazy boundary as the other two extracted
 // features.
 //
-// Print/PDF export for the Annual Guardianship Plan (Milestone 4, Phase B).
-// Dynamically imported from ./index.js only when the user reaches /print or
-// triggers PDF export -- same lazy boundary as the other two extracted
-// features.
-//
 // Statically imports validatePlanAnnual back from ./index.js -- safe
 // despite index.js dynamically importing this file, since neither side
 // touches the other's export during top-level module evaluation, only

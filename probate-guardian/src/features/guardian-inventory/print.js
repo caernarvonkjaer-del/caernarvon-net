@@ -3,11 +3,6 @@
 // that file's ensureLazyModules() comment for why (the Cover page's
 // Excel-import control must work immediately).
 //
-// Print/PDF export for Guardian Inventory (Milestone 8, Phase B). Dynamically
-// imported from ./index.js, together with excel.js, at first mount -- see
-// that file's ensureLazyModules() comment for why (the Cover page's
-// Excel-import control must work immediately).
-//
 // Statically imports validateGuardian/pageNav back from ./index.js -- safe
 // despite index.js dynamically importing this file, since neither side
 // touches the other's export during top-level module evaluation, only

@@ -12,6 +12,16 @@ proposal.
 
 ## 1. Architectural Motivation & 3-Tier Hierarchy
 
+**Prerequisites (decided 2026-09-13, see `MILESTONE-42-PROPOSAL.md`):** this
+milestone does not begin implementation until Milestone 42's four
+*Precedes 41* sub-deliveries have landed and gone green — 42B (a green
+`npm test` baseline), 42C (the `window.*` bridge inventory and freeze), 42D
+(one form-write side-effect path for all nine filing types), and 42F
+(validators emitting structured `{path, section, message}` issues instead of
+prose the adapter regex-parses). Each is a seam this refactor moves code
+across; starting before they land means building Tier 1/2 on the exact
+fragility they replace. Milestone 42's other sub-deliveries are independent.
+
 Currently, atomic field rendering is partially centralized in
 `src/core/form/form-fields.js`, while page layouts and section cards are
 interpolated directly into template strings across feature modules (e.g.
@@ -86,16 +96,17 @@ flowchart TD
 
 ### 2.3 Test Coverage & Index Governance
 
-- **New Unit Specs**:
-  - `tests/unit/form-fields.spec.js`: Unit tests for all field primitive variants, masking, accessibility attributes, and tri-state radio wrappers.
-  - `tests/unit/form-cards.spec.js`: Unit tests verifying that shared card templates bind correctly to `data-form-path` and render required elements.
+- **Unit Specs**:
+  - `tests/unit/form-fields.spec.js` (exists — `inferFieldKind`, `renderFormField`, `renderSelectField`, `renderTextareaField`): extend to cover every Tier 1 primitive variant, masking, accessibility attributes, and tri-state radio wrappers.
+  - `tests/unit/form-cards.spec.js` (new): shared card templates bind correctly to `data-form-path` and render required elements.
 - **Contract & Regression Specs**:
-  - `tests/unit/filing-identity.contract.spec.js`: Verify case caption and identity rendering consistency across all forms.
+  - `tests/e2e/filing-identity.contract.spec.ts` (exists, e2e not unit): extend to verify case caption and identity rendering consistency once Tier 2 cards own that markup.
+  - Milestone 42's `tests/unit/validation-path-conversion-oracle.spec.js` and `tests/unit/window-bridge.spec.js` must stay green throughout — they are the guards for the two seams this refactor moves across.
 - **Index Synchronization**: Update `TEST-INDEX.md` in the same commit to track new specs under the appropriate categories.
 
 ### 2.4 Export, Import & Portability
 
-- **Parity Invariant**: Field abstractions must not alter output payload structures. PDF, Word/DOCX, and Excel export pipelines rely on direct `window.D` paths (`d.wardName`, `d.caseNumber`, `d.guardians[i]`), which remain untouched.
+- **Parity Invariant**: Field abstractions must not alter output payload structures. PDF and Excel export pipelines rely on direct `window.D` paths (`d.wardName`, `d.caseNumber`, `d.guardians[i]`), which remain untouched. (DOCX export was removed in Milestone 40A; there is no Word pipeline to preserve.)
 - **Single-Ward / Full-Case Portability**: JSON export and import routines remain 100% interoperable.
 
 ### 2.5 Security & Sensitivity

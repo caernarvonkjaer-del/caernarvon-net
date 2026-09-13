@@ -1,16 +1,16 @@
 # Test Index
 
 One line per spec file: what it covers. Grouped by directory. Keep this in
-sync per the instruction in `CLAUDE.md` — any change that adds, removes,
-renames, or repurposes a test file should update the matching row here in
-the same commit.
+sync per `AGENTS.md` §7 — any change that adds, removes, renames, or
+repurposes a test file should update the matching row here in the same
+commit. `tests/unit/test-index-guard.spec.js` fails when a spec file has no
+row here, has more than one, or a row names a file that no longer exists.
 
 ## tests/unit (vitest, `npm run test:unit`)
 
 | File                                 | Covers                                                                                                                    |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
 | amended-form-line.spec.js            | "Amended Form?" prints the filer's actual answer; Annual-family identity and single-source footer subtitle                |
-| annual-accounting-pdf-model.spec.js  | Trust Accounting PDF-model table layout for percentage and currency columns                                               |
 | annual-accounting-totals.spec.js     | Milestone 40H-H: calcTotalsAnnual()'s schE_in/schE_out/schF1/schF2 keys, the three schedule totals that had none before   |
 | annual-accounting-pdf-model.spec.js  | Trust/Annual Accounting PDF-model table layout, Part VIII trust disclosure, and duplicate title suppression               |
 | boot-ordering.spec.js                | Milestone 40G: app startup is driven from main.js after module evaluation, not from legacy-app.js's classic-script top level |
@@ -36,7 +36,9 @@ the same commit.
 | form-fields.spec.js                  | inferFieldKind, renderFormField, renderSelectField, renderTextareaField                                                   |
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |
+| guardian-inventory-yes-no-radio.spec.js | Milestone 38E item 1: Guardian Inventory tri-state strings, D-3 Safe Deposit Box boolean-null pair, yesNoRadioHTML on Schedules A-1/B-1/B-2/B-3, D-3 fieldset/legend (40H-C) |
 | live-region.spec.js                  | ARIA live-region announcer helper                                                                                         |
+| milestone-38e.spec.js                | Milestone 38E: legacy boolean -> tri-state normalization for Guardian Inventory schedule flags and Plan benefits; restricted/unrestricted asset math with the enum |
 | plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 18 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |
@@ -55,8 +57,10 @@ the same commit.
 | schedule-definitions.spec.js         | SCHEDULE_SCHEMAS and collection row helpers                                                                               |
 | section-status.spec.js               | Section completion status computation and local guidance text                                                             |
 | signature-capture.spec.js            | Milestone 39-B: signature-pad PNG validation/dimensions, checkSignatureState() tri-state rule, legacy-migration inference; Milestone 39-C: removeLightBackground() luminance-threshold Upload transparency fix, incl. documented degraded-case limits |
+| ssn-format.spec.js                   | maskSSN() for SSN/EIN/TIN inputs and its integration in every PDF model identifier output                                |
 | supplemental-pdf.spec.js             | Active supplemental doc period resolution; supplemental filing eligibility                                                |
 | tab-state.spec.js                    | Cross-tab peer-state normalization and risky-peer detection                                                               |
+| test-index-guard.spec.js             | Milestone 42A: every spec file has exactly one row in this file and every row names an existing file                     |
 | theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |
 | types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
@@ -83,6 +87,7 @@ the same commit.
 | case-file-protection.spec.ts             | preWriteValidator, multi-ward isolation, auto-save                                                                                                                                       |
 | case-file-roundtrip.spec.ts              | .sav round-trip: unencrypted, encrypted, corrupted paths                                                                                                                                 |
 | case-resolver.spec.ts                    | case-resolver behavior                                                                                                                                                                   |
+| carryover-workflow.spec.ts               | Milestone 40C-F/G2: the real Initial Inventory → Simplified Accounting carry-over through the eligibility modal (and its Annual redirect); nested attorney fields, selected-source copy, ward-Party county hydration |
 | case-write-through.spec.ts               | Milestone 6: case write-through                                                                                                                                                          |
 | convert-ward.spec.ts                     | Milestone 40H-I: Convert Ward ("New Filing from Existing") ward-selector default, same-family accounting-to-accounting starting-balance/cert-recipient carryover, and the confirmation message |
 | cover-county.spec.ts                     | Milestone 40C-A: the real Cover county combobox establishes the ward Party county, hydrates later filings, and never prints a Sixth Circuit caption when blank                           |

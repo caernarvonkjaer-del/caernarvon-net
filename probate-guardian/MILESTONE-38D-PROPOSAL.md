@@ -2,10 +2,11 @@
 
 ## Status
 
-**Executable, independently deliverable specification.** Phase 1 establishes
-canonical issue identity and must land before 38B. Phase 2 adds acknowledgement
-and unified authorization after 38B. No further discovery or design approval is
-required.
+**Landed 2026-09-11 (`b0321dd`)**, together with 38A, 38B and 38C
+(`src/core/filing/output-authorization.js` and `issue-registry.js` first
+appear in that commit). Status line corrected 2026-09-13 under Milestone 42A;
+the specification text below is unchanged. Phase 1 (canonical issue identity)
+and Phase 2 (acknowledgement and unified authorization) both landed there.
 
 ## Goal
 

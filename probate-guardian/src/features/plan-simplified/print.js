@@ -3,11 +3,6 @@
 // triggers PDF export -- same lazy boundary as
 // src/features/simplified-accounting/print.js.
 //
-// Print/PDF export for the Simplified Annual Plan (Milestone 3, Phase C).
-// Dynamically imported from ./index.js only when the user reaches /print or
-// triggers PDF export -- same lazy boundary as
-// src/features/simplified-accounting/print.js.
-//
 // Statically imports validatePlanSimplified back from ./index.js -- safe
 // despite index.js dynamically importing this file, since neither side
 // touches the other's export during top-level module evaluation, only

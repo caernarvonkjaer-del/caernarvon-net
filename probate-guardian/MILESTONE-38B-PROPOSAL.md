@@ -2,9 +2,11 @@
 
 ## Status
 
-**Executable, independent delivery specification.** 38D Phase 1 is its named
-code prerequisite. No runtime or test change is included in this documentation
-pass.
+**Landed 2026-09-11 (`b0321dd`)**, together with 38A, 38C and 38D
+(`src/core/filing/readiness-card.js` first appears in that commit). Status
+line corrected 2026-09-13 under Milestone 42A; the specification text below is
+unchanged. 38D Phase 1 was its named code prerequisite and landed in the same
+commit.
 
 ## Goal
 

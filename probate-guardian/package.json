@@ -27,16 +27,14 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "subset-font": "^2.7.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vite-plugin-singlefile": "^2.3.3",
     "vite-plugin-static-copy": "^4.1.1",
     "vitest": "^4.1.11"
-  },
-  "dependencies": {
-    "jszip": "^3.10.1",
-    "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^6.3.289"
   }
 }

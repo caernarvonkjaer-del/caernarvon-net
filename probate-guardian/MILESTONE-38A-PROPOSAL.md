@@ -2,8 +2,11 @@
 
 ## Status
 
-**Executable, independent delivery specification.** No runtime, data-model, or
-test change is included in this documentation pass.
+**Landed 2026-09-11 (`b0321dd`)**, together with 38B, 38C and 38D — the same
+commit that split the original Milestone 38 proposal into these four files
+also implemented them (`guardian-compatibility.js` and the
+`schedule-definitions.js` changes first appear there). Status line corrected
+2026-09-13 under Milestone 42A; the specification text below is unchanged.
 
 ## Goal
 

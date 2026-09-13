@@ -131,9 +131,12 @@ export async function loadPlanSimplifiedPdf() {
   return { ...model, ...engine };
 }
 
-// Temporary: see src/fragment-loader.js's window.loadFragment comment for
-// why legacy-app.js needs this bridged onto window rather than importing
-// it directly. Remove once a real src/main.js bootstrap exists.
+// legacy-app.js is a classic (non-module) script and cannot import this
+// module, so the loaders are published on window for it (see
+// src/fragment-loader.js's window.loadFragment comment for the same
+// pattern). src/main.js has been the real bootstrap since Milestone 40G;
+// that does not change this -- these stay on window until legacy-app.js
+// itself becomes a module.
 window.loadSimplifiedFeature = loadSimplifiedFeature;
 window.loadPlanSimplifiedFeature = loadPlanSimplifiedFeature;
 window.loadPlanAnnualFeature = loadPlanAnnualFeature;

@@ -1,9 +1,6 @@
 // Print/PDF export for Annual Plan — Minors (Milestone 6, Phase B).
 // Dynamically imported from ./index.js only when the user reaches /print or
 // triggers PDF export -- same lazy boundary as the other three extracted
-// Print/PDF export for Annual Plan — Minors (Milestone 6, Phase B).
-// Dynamically imported from ./index.js only when the user reaches /print or
-// triggers PDF export -- same lazy boundary as the other three extracted
 // Plan features.
 //
 // Statically imports validatePlanMinor back from ./index.js -- safe despite

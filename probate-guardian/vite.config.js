@@ -3,19 +3,21 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { createHash } from 'node:crypto';
 
-// Milestone 1 (see INDEX-SPLIT-PLAN.md): index.html is still the untouched
-// monolith. This config exists to prove the dual-output build pipeline
-// itself works before any application code moves into src/. Two targets
-// from one source tree:
+// Two build targets from one source tree:
 //   - dist/web      chunked build served over HTTPS/localhost (Cloudflare Pages)
 //   - dist/portable  self-contained folder for the file:// double-click workflow
 //
-// index.html loads several files (lib/*, templates/*, src/legacy-app.js) as
-// classic (non-module) <script src> tags. Vite's HTML pipeline refuses to
-// bundle those at all -- "can't be bundled without type='module' attribute"
-// -- it neither inlines nor copies them, which silently produced a build
-// missing JSZip/ExcelJS/html2pdf/Bootstrap/the print templates until this
-// was caught. They're copied here as static passthrough assets instead.
+// Most application code now lives in ES modules under src/core/ and
+// src/features/ (Milestones 2-40), which Vite bundles normally through
+// src/main.js. What remains classic is index.html's <script src> tags for
+// lib/* and src/legacy-app.js (Milestone 1's recorded decision, still in
+// force). Vite's HTML pipeline refuses to bundle those at all -- "can't be
+// bundled without type='module' attribute" -- it neither inlines nor copies
+// them, which silently produced a build missing JSZip/Bootstrap/legacy-app.js
+// until this was caught. They're copied here as static passthrough assets
+// instead. (templates/*.js are imported as modules by
+// src/core/persistence/templates.js and no longer need copying; the copy
+// target below is retained only until Milestone 42H removes it.)
 // That also means dist/portable is not yet a literal single .html file:
 // it's index.html plus a copied lib/templates/icons/src folder, functionally
 // identical to today's existing file:// distribution. True single-file

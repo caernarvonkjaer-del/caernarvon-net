@@ -2,9 +2,19 @@
 
 ## Status
 
-**Draft only — do not implement yet.** This is an omnibus, planned milestone;
-it authorizes no runtime, data-model, test, or documentation change beyond this
-proposal. Its seven tracked components are county-aware local guidance, the
+**Landed.** Status line corrected 2026-09-13 under Milestone 42A (it still
+read "Draft only" after every component had shipped). Landing commits:
+37-1/37-2/37-3 `10d90dd`, 37-4 `f8d95d3`, 37-5 `c032b3b` (later extended
+app-wide by Milestone 38E), 37-6 and 37-7 `4d0afd5` ("refine signature cards
+and preview controls" — the signature-card and Preview/Export shell-control
+work, per that commit's title and touched files). The per-component
+"Status: Complete" headings below were written at the time; the text of each
+component is otherwise unchanged.
+
+Original status, for the record: *Draft only — do not implement yet.* This is
+an omnibus, planned milestone; it authorized no runtime, data-model, test, or
+documentation change beyond this proposal. Its seven tracked components are
+county-aware local guidance, the
 Milestone 34 verification closeout, Milestone 35-4 invariant reconciliation,
 advance-directive lifecycle, explicit Yes/No radio migration, guardian-signature
 card lifecycle, and Preview/Export shell-control placement.

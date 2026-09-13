@@ -1,7 +1,5 @@
 // Print/PDF for Simplified Accounting. Dynamically imported once, alongside
 // excel.js, by index.js's ensureLazyModules() on first mount -- see that
-// Print/PDF for Simplified Accounting. Dynamically imported once, alongside
-// excel.js, by index.js's ensureLazyModules() on first mount -- see that
 // file's header for why both load together rather than only on /print
 // specifically. Statically imports back from index.js, which is safe: this
 // module's exports are only ever called from a function body, well after
