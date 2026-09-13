@@ -40,7 +40,6 @@ interface Window {
   announceStatus: any;
   annualReconcileState: any;
   applyAccountingFilingType: any;
-  applyZipLimit: any;
   attachFormHeaderActions: any;
   auditLog: any;
   autoSave: any;
@@ -338,6 +337,7 @@ interface Window {
   resolvePaintTheme: any;
   resolveParty: any;
   restoreBackupSavFile: any;
+  runFieldWriteSideEffects: any;
   runRememberedHandleOperation: any;
   sanitizeForExcel: any;
   sanitizeNegativeAmounts: any;

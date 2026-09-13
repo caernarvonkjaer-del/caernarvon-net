@@ -107,6 +107,10 @@
     },
     {
       "file": "src/core/form/form-contract.js",
+      "name": "runFieldWriteSideEffects"
+    },
+    {
+      "file": "src/core/form/form-contract.js",
       "name": "sanitizeStoredText"
     },
     {

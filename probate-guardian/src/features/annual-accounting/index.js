@@ -4,6 +4,7 @@ import { renderLocalSectionGuidance } from '../../core/status/section-status.js'
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
+import { runFieldWriteSideEffects } from '../../core/form/form-contract.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -214,24 +215,12 @@ function persistAnnualControl(control, applyFormat = true) {
     control.value = value;
   }
   window.setPath(window.D, path, value);
-  // Milestone 40C-A item 2/4: Annual/Final/Trust bind their inputs via
-  // data-annual-path and so never reach form-contract.js's persistFormControl(),
-  // where the other six filing types establish the ward county. Without this
-  // call the whole Annual family could select a Cover county that never reached
-  // the canonical ward Party.
-  window.maybeCommitCoverCounty?.(path);
-  autoSave();
-  updateNavDots();
-  window.refreshWardInfoCard?.();
-  if (control.dataset.syncWardName) syncActiveWardNameDisplay();
-  if (control.dataset.syncGuardianName) syncGuardianNameDisplay();
+  // Annual/Final/Trust bind via data-annual-path and never reach
+  // form-contract.js's writeDraftValue()/finalizeFieldValue(), so the shared
+  // post-write tail (county commit, Party write-through, autosave, nav dots,
+  // ward card, name sync -- Milestone 42D) is called here explicitly.
+  runFieldWriteSideEffects(path, control);
   refreshAnnualTotals();
-  // Party write-through (persistence-rewrite Milestone 4) -- see the matching
-  // comment in src/form-events.js's persistFormControl(). Annual Accounting
-  // binds its own inputs via data-annual-path instead of data-form-path, so
-  // it needs this same hook wired in separately.
-  const identitySlot = window.identitySlotForPath?.(window.D, path);
-  if (identitySlot) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
 }
 
 function bindEvents(container) {

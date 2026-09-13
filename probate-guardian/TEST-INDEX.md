@@ -34,6 +34,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers                                                        |
 | field-kind-inference.spec.js         | Milestone 36-6: whole-word field-kind inference; no shipped path collides mid-word; no text formatter on checkbox/radio   |
 | form-fields.spec.js                  | inferFieldKind, renderFormField, renderSelectField, renderTextareaField                                                   |
+| form-write-side-effects.spec.js      | Milestone 42D: runFieldWriteSideEffects() is the one post-write tail (county commit, Party write-through, autosave, nav dots, ward card, name sync) and all three binding paths call it |
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |
 | guardian-inventory-yes-no-radio.spec.js | Milestone 38E item 1: Guardian Inventory tri-state strings, D-3 Safe Deposit Box boolean-null pair, yesNoRadioHTML on Schedules A-1/B-1/B-2/B-3, D-3 fieldset/legend (40H-C) |

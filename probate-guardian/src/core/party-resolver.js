@@ -323,8 +323,9 @@ export function slotsReferencing(filing, partyId) {
  * attached yet -- the filing's own copy stays authoritative until one is.
  *
  * Deliberately does not call autoSave() itself: the edit that triggered
- * this already goes through the normal persistFormControl()/bindForms()
- * write path, which calls autoSave() on its own. markDirtySinceExport() is
+ * this already goes through form-contract.js's runFieldWriteSideEffects()
+ * (the shared post-write tail), which calls autoSave() right after this
+ * returns. markDirtySinceExport() is
  * still called directly so the flag is set even if some future caller
  * doesn't happen to go through that path.
  */

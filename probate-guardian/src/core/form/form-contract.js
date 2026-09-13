@@ -235,6 +235,39 @@ export function getControlPolicy(control) {
 }
 
 /**
+ * Milestone 42D: the one post-write tail for every filing type.
+ *
+ * Three binding conventions write field values -- data-form-path here
+ * (Simplified Accounting and the four Plans), data-annual-path in
+ * annual-accounting/index.js's persistAnnualControl() (Annual/Final/Trust),
+ * and data-bind via legacy-app.js's bindForms()/afterChange() (Guardian
+ * Inventory). Their value-formatting differs and stays where it is; what
+ * they had in common was this exact list of side effects, copied three times
+ * and drifting (40C-A had to add maybeCommitCoverCounty() to each one
+ * separately). Every path now calls this instead, so a new post-write hook
+ * is added once.
+ *
+ * Order: the ward-county and Party write-throughs mutate the model, so they
+ * run before autoSave() queues the snapshot; the display refreshes follow.
+ * County goes through commitCoverCounty(), never syncIdentityField()'s
+ * fan-out -- that would rewrite sibling filings correctly filed elsewhere.
+ * Name sync honours the control's data-sync-* flags (form-fields.js) and,
+ * for the flag-less legacy data-bind path, the path itself.
+ */
+export function runFieldWriteSideEffects(path, control = null) {
+  if (!path) return;
+  window.maybeCommitCoverCounty?.(path);
+  const identitySlot = window.identitySlotForPath?.(window.D, path);
+  if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
+  window.autoSave?.();
+  window.updateNavDots?.();
+  window.refreshWardInfoCard?.();
+  const dataset = control?.dataset || {};
+  if (dataset.syncWardName || path === 'wardName') window.syncActiveWardNameDisplay?.();
+  if (dataset.syncGuardianName || path === 'guardianName' || path === 'guardians.0.name') window.syncGuardianNameDisplay?.();
+}
+
+/**
  * Phase 1: writeDraftValue (runs on input and compositionend).
  * Writes raw user input to the model for non-date fields without destructive reformats or moving the caret.
  * For date fields, keeps unparsed text in transient draft only so invalid/partial dates never leak into model/export.
@@ -278,30 +311,7 @@ export function writeDraftValue(control, options = {}) {
   const currentVal = window.getPath ? window.getPath(window.D, path) : undefined;
   if (currentVal !== rawValue) {
     if (window.setPath) window.setPath(window.D, path, rawValue);
-    if (window.autoSave) window.autoSave();
-    if (window.updateNavDots) window.updateNavDots();
-    if (window.refreshWardInfoCard) window.refreshWardInfoCard();
-    if (control.dataset.syncWardName && window.syncActiveWardNameDisplay) window.syncActiveWardNameDisplay();
-    if (control.dataset.syncGuardianName && window.syncGuardianNameDisplay) window.syncGuardianNameDisplay();
-
-    // Party write-through
-    const identitySlot = window.identitySlotForPath?.(window.D, path);
-    if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
-
-    // Milestone 40C-A item 2/4: the filing-level County control is the one place
-    // a ward's canonical county is established. Routed through
-    // commitCoverCounty() (core/navigation/ward-county.js) rather than through
-    // syncIdentityField()'s fan-out above -- that propagates an edit to every
-    // slot referencing the same Party, which for county would rewrite sibling
-    // filings that were correctly filed under a different county. County is a
-    // per-filing snapshot plus one forward-looking canonical value.
-    //
-    // Scoped to the exact top-level `county` path: `attorney_county` is a
-    // separate field and must never establish the ward's county. Note that
-    // Annual/Final/Trust bind via data-annual-path and never reach this
-    // function, so annual-accounting/index.js's persistAnnualControl() and
-    // legacy-app.js's afterChange() call the same helper.
-    window.maybeCommitCoverCounty?.(path);
+    runFieldWriteSideEffects(path, control);
   }
 }
 
@@ -390,12 +400,7 @@ export function finalizeFieldValue(control, options = {}) {
     if (window.setPath) window.setPath(window.D, path, formatted);
   }
 
-  if (window.autoSave) window.autoSave();
-  if (window.updateNavDots) window.updateNavDots();
-  if (window.refreshWardInfoCard) window.refreshWardInfoCard();
-
-  const identitySlot = window.identitySlotForPath?.(window.D, path);
-  if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
+  runFieldWriteSideEffects(path, control);
 }
 
 /**
@@ -426,6 +431,7 @@ if (typeof window !== 'undefined') {
   window.formatCityStateZip = formatCityStateZip;
   window.writeDraftValue = writeDraftValue;
   window.finalizeFieldValue = finalizeFieldValue;
+  window.runFieldWriteSideEffects = runFieldWriteSideEffects;
   window.commitPendingFieldValues = commitPendingFieldValues;
   window.getFieldDraftIssueMessages = getFieldDraftIssueMessages;
 }

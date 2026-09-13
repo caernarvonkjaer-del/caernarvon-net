@@ -1,5 +1,5 @@
 import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
-import { writeDraftValue, finalizeFieldValue, getControlPath } from './core/form/form-contract.js';
+import { writeDraftValue, finalizeFieldValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
@@ -9,28 +9,10 @@ import './core/form/schedule-definitions.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 
-const formatters = {
-  address: window.formatAddress,
-  'bar-number': window.formatBarNumber,
-  'case-number': window.formatCaseNumber,
-  'city-state-zip': (value, input) => { window.applyZipLimit(input); return window.formatCityStateZip(input.value); },
-  decimal: window.sanitizeNonNegativeDecimal,
-  name: window.formatName,
-  phone: window.formatPhone,
-  security: (value, input) => window.sanitizeStoredText ? window.sanitizeStoredText(value) : value,
-  ssn: window.formatSSN,
-};
-
-function persistFormControl(control, applyFormat = true) {
-  const path = getControlPath(control);
-  if (!path) return;
-  if (applyFormat) {
-    writeDraftValue(control);
-    finalizeFieldValue(control);
-  } else {
-    writeDraftValue(control);
-  }
-}
+// The data-form-path write path is writeDraftValue() on input/compositionend
+// and finalizeFieldValue() on blur/change, wired by the listeners below.
+// (A persistFormControl() wrapper and a formatters table used to sit here
+// with no callers; removed in Milestone 42D.)
 
 document.addEventListener('click', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;

@@ -131,12 +131,13 @@ export function commitCoverCounty(filing, rawCounty) {
  * filing-level `county` field, so callers can hand it every committed path
  * without repeating the check.
  *
- * There are three independent form write paths in this app -- form-contract.js's
- * shared persistFormControl(), annual-accounting's own persistAnnualControl()
- * (Annual/Final/Trust bind via data-annual-path and never reach the shared one),
- * and legacy-app.js's bindForms() listeners, which funnel through afterChange().
- * All three call this, because hooking only one silently covered six filing
- * types and missed three.
+ * Called from form-contract.js's runFieldWriteSideEffects() (Milestone 42D),
+ * the one post-write tail all three binding conventions share -- data-form-path
+ * via writeDraftValue()/finalizeFieldValue(), data-annual-path via
+ * annual-accounting's persistAnnualControl(), and legacy-app.js's
+ * bindForms()/afterChange() for Guardian Inventory. Before 42D each of those
+ * three called this separately, and hooking only one had silently covered six
+ * filing types and missed three.
  *
  * `attorney_county` deliberately does not match: it is a separate field and must
  * never establish the ward's county.

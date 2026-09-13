@@ -7859,24 +7859,15 @@ function getCurrentPageKey(){
 }
 
 function afterChange(path){
-  autoSave();
+  // Guardian Inventory binds via bindForms()/data-bind rather than
+  // data-form-path, so it never reaches form-contract.js's own write
+  // functions; this is its single choke point and it calls the same shared
+  // post-write tail the other eight filing types use (Milestone 42D:
+  // county commit, Party write-through, autosave, nav dots, ward card, name
+  // sync). Not optional-chained on purpose -- a missing bridge here would
+  // silently stop autosaving, and should fail loudly instead.
   updateCalcFields();
-  updateNavDots();
-  refreshWardInfoCard();
-  if(path==='wardName')syncActiveWardNameDisplay();
-  if(path==='guardianName'||path==='guardians.0.name')syncGuardianNameDisplay();
-  // Party write-through (persistence-rewrite Milestone 5) -- same hook as
-  // persistFormControl()/persistAnnualControl(), see src/form-events.js.
-  // guardian-inventory is the one type using bindForms()/data-bind instead
-  // of data-form-path, so afterChange() is its equivalent single choke point.
-  const identitySlot=window.identitySlotForPath?.(window.D,path);
-  if(identitySlot)window.syncIdentityField(window.D,identitySlot.role,identitySlot.index);
-  // Milestone 40C-A item 2/4: the third of the three form write paths, and the
-  // one Guardian Inventory uses (bindForms()/data-bind). Deliberately NOT routed
-  // through syncIdentityField() above -- that fan-out rewrites every slot
-  // referencing the same Party, which for county would overwrite sibling filings
-  // that were correctly filed under a different county.
-  window.maybeCommitCoverCounty?.(path);
+  window.runFieldWriteSideEffects(path);
   // Update live summary displays
   const els={
     'totalA1':calc.totalA1(),'totalA2':calc.totalA2(),'netA':calc.netA(),
