@@ -194,12 +194,26 @@ shadowed" pattern as the main save pipeline above:
    `buildCaseFileBlob`), while the sole writer (`beginRecordingExport`,
    `:323-341`) never follows that same dual-sync pattern — that read/write
    asymmetry is the direct cause of bug 2 above.
-   - New: `getLastExportAt()` / `setLastExportAt(ts)`, and
-     `getAutoSaveArmed()` (read-only — `refreshAutoSaveArmedStatus()`
-     stays the sole writer of `_autoSaveArmed`).
+   - New: `getLastExportAt()` / `setLastExportAt(ts)` (mirrors
+     `setCaseFileHandle()`'s plain-property write — sets both the private
+     variable and `window._lastExportAt` directly, not just a same-named
+     getter function, since `ward-lifecycle.js:387` reads
+     `window._lastExportAt` as a bare property, not a function call; fixing
+     it this way requires no change to `ward-lifecycle.js` itself), and
+     `getAutoSaveArmed()` (read-only — `refreshAutoSaveArmedStatus()` stays
+     the sole writer of `_autoSaveArmed`).
    - Update `beginRecordingExport()`, `updateLastSavedIndicator()`,
      `buildCaseFileBlob()`, and `loadAutoExportPrefs()` to use the new
      helpers instead of the bare module variable everywhere.
+   - Drop `beginRecordingExport()`'s separate `window._appState.lastExportAt
+     = _lastExportAt` write (`case-file.js:329`, and its rollback
+     counterpart at `:337`) — confirmed nothing anywhere in `src/` ever
+     reads `_appState.lastExportAt`/`window._appState.lastExportAt` back
+     (`buildCaseFileBlob()`'s own `lastExportAt` field is populated from
+     `window._lastExportAt` directly, `:195`, not from `_appState`). It's a
+     write with no reader, predating this fix; keeping it alongside the new
+     `setLastExportAt()` helper would just be a second, redundant place the
+     same value is written.
    - Add `window.getLastExportAt`, `window.isAutoSaveArmed` to the
      existing export block (`case-file.js:834-871`).
 2. **Move failure-escalation into `writeCaseToHandle()`** (`case-file.js:
