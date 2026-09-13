@@ -155,7 +155,7 @@ Tier 3: Declarative Form Composition (pages assemble sequences of cards)
 
 ## 10. UI Styling & Design System Governance
 
-- **Authoritative Styles**: `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is the authoritative source of truth for this repository's design system. The `templates/ui-starter/` directory serves as reference starter boilerplate for greenfield projects.
+- **Authoritative Styles**: `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is the authoritative source of truth for this repository's design system. (The `templates/ui-starter/` greenfield-starter kit this line used to point to was removed in Milestone 42H -- it had no runtime reference and was shipping in every build for no reason. Reach for another portfolio project's starter kit directly if one is needed again.)
 - **Design Tokens**: Standardize UI colors on semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`). Avoid arbitrary hardcoded hex values in component stylesheets.
   - *Allowed Exceptions*: Token definitions themselves, vendor styles, print/court-document output styles (which remain intentionally hardcoded for print fidelity), embedded SVG assets, and high-contrast accessibility overrides.
 - **Dark/Light Theme Engine**: Support both Light and Dark modes using `tokens.css`. Use a synchronous `<head>` pre-paint script (`src/prepaint.js`) to avoid theme flash (FOUC) on startup.

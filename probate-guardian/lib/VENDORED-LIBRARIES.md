@@ -50,13 +50,12 @@ anything.
   quarterly-or-CVE cadence more than any of the other four.
 - **Last checked**: 2026-09-04 (this milestone).
 
-## tesseract.js (retired)
+## tesseract.js (removed)
 
-- **Version**: 7.0.0
-- **Source**: [npmjs.com/package/tesseract.js](https://www.npmjs.com/package/tesseract.js) and [npmjs.com/package/@tesseract.js-data/eng](https://www.npmjs.com/package/@tesseract.js-data/eng)
-- **How it gets here**: These are legacy vendored files from the retired OCR pipeline. `tesseract.js` and the English language-data package are no longer npm dependencies after Milestone 23.
-- **Used for**: Retired in Milestone 23. Supplemental-document filing is now PDF-only and user-attested; Probate Guardian no longer OCRs or remediates uploaded documents during packet generation. The vendored files may remain until the next vendored-asset cleanup, but no product code should import them.
-- **Last checked**: 2026-09-06.
+- **Version was**: 7.0.0
+- **Source was**: [npmjs.com/package/tesseract.js](https://www.npmjs.com/package/tesseract.js) and [npmjs.com/package/@tesseract.js-data/eng](https://www.npmjs.com/package/@tesseract.js-data/eng)
+- **History**: Legacy vendored files from the retired OCR pipeline; `tesseract.js` and the English language-data package stopped being npm dependencies after Milestone 23. Supplemental-document filing is PDF-only and user-attested; Probate Guardian no longer OCRs or remediates uploaded documents during packet generation. Flagged for removal at "the next vendored-asset cleanup" since Milestone 23 -- that cleanup is Milestone 42H.
+- **Removed**: Milestone 42H (`lib/tesseract/`, 9.5 MB, deleted outright -- `git log` has the bytes if ever needed again). It had no product-code importer and was still being copied into every `dist/web`/`dist/portable` build and service-worker-precached.
 
 ## pdf-lib
 

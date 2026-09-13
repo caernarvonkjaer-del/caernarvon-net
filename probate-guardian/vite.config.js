@@ -15,13 +15,16 @@ import { createHash } from 'node:crypto';
 // bundled without type='module' attribute" -- it neither inlines nor copies
 // them, which silently produced a build missing JSZip/Bootstrap/legacy-app.js
 // until this was caught. They're copied here as static passthrough assets
-// instead. (templates/*.js are imported as modules by
-// src/core/persistence/templates.js and no longer need copying; the copy
-// target below is retained only until Milestone 42H removes it.)
+// instead. (templates/*.js -- the embedded court Excel templates -- are
+// real ES-module imports of src/core/persistence/templates.js and need no
+// separate copy target: Vite's bundler already inlines their content into
+// the built JS. Milestone 42H removed the redundant `templates` copy
+// target along with templates/ui-starter/, a greenfield starter kit that
+// had been shipping in every build for no runtime reason.)
 // That also means dist/portable is not yet a literal single .html file:
-// it's index.html plus a copied lib/templates/icons/src folder, functionally
+// it's index.html plus a copied lib/icons/src folder, functionally
 // identical to today's existing file:// distribution. True single-file
-// inlining of those needs them to become real ES modules first, which is
+// inlining of lib/* needs it to become real ES modules first, which is
 // step 6 of INDEX-SPLIT-PLAN.md's migration sequence (later milestone), not
 // something to force here by changing untouched application code.
 //
@@ -31,7 +34,6 @@ import { createHash } from 'node:crypto';
 // code-split), not bypass as an opaque static file.
 const STATIC_COPY_TARGETS = [
   { src: 'lib', dest: '.' },
-  { src: 'templates', dest: '.' },
   { src: 'icons', dest: '.' },
   { src: 'manifest.json', dest: '.' },
   // build:web runs scripts/generate-service-worker.mjs after Vite copies
