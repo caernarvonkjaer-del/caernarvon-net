@@ -198,7 +198,38 @@ test('multi-column labels retain their required marker and natural height', asyn
     };
   });
   expect(layout.markerTop).toBeLessThanOrEqual(layout.lastTextBottom + 1);
-  expect(layout.minHeight).toBe('0px');
+  // Milestone 40I: 'auto', not '0px' -- an element with no min-height rule
+  // applying to it at all computes to the CSS spec's initial value ('auto'),
+  // confirmed by actually running this against the deleted rule rather than
+  // assumed. '0px' would only be correct if something explicitly zeroed it.
+  expect(layout.minHeight).toBe('auto');
+});
+
+// Milestone 40I: the reported bug, pinned directly. Schedule B-4's Category
+// field (a hand-rolled <select>, no wrapper div) sat lower than its
+// inpD()-built row-mates (Check #, Date Paid, Payee, Amount, each wrapped in
+// an extra <div class="mb-2"> by renderFormField()) -- forms.css's deleted
+// rule matched the hand-rolled label as a direct column child but missed the
+// wrapped ones one level deeper, forcing min-height onto only one side of
+// the row. This is one of 13 confirmed sites across five files (see
+// MILESTONE-40I-PROPOSAL.md's blast-radius audit); this test pins the one
+// from the live screenshot that started the proposal.
+test('Schedule B-4 Category aligns with its primitive-built row-mates (reported bug)', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'B4 Alignment Ward', 'annual');
+  await page.evaluate(() => {
+    (window as any).D.schB4 = [{}];
+    (window as any).navigate('/schb4');
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  const row = page.locator('.entry-card-body .row.g-2').first();
+  const categoryInputTop = await row.locator('select[data-annual-path="schB4.0.category"]').evaluate(el => Math.round(el.getBoundingClientRect().top));
+  const payeeInputTop = await row.locator('[data-annual-path="schB4.0.payee"]').evaluate(el => Math.round(el.getBoundingClientRect().top));
+
+  // Within a couple of pixels, not pixel-perfect -- rounding/border-width
+  // differences between an <input> and a <select> account for the rest.
+  expect(Math.abs(categoryInputTop - payeeInputTop)).toBeLessThanOrEqual(3);
 
   await createWard(page, 'Inventory Affix Ward', 'guardian');
   await page.evaluate(() => {

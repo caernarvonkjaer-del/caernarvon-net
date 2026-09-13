@@ -216,20 +216,6 @@
   margin-bottom: 0.35rem;
 }
 
-/* For multi-column rows in cards/schedules, ensure 1-line and 2-line labels align vertically
-   at the bottom of the label zone so adjacent input fields start at the exact same vertical baseline. */
-.schedule-entry-grid .row > [class*="col-"] > .form-label,
-.entry-card-body .row > [class*="col-"] > .form-label,
-.card-grid-2col .row > [class*="col-"] > .form-label,
-.schedule-entry-grid .row > [class*="col-"] > legend,
-.entry-card-body .row > [class*="col-"] > legend,
-.card-grid-2col .row > [class*="col-"] > legend {
-  min-height: 2.1rem;
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
 .form-text {
   margin-top: 0.25rem;
   margin-bottom: 0;
