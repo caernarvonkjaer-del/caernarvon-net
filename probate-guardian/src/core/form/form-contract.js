@@ -76,22 +76,39 @@ export function sanitizeStoredText(value) {
     .trim();
 }
 
+// Milestone 40H-G: standard title-case convention -- these stay lowercase
+// mid-phrase (but still capitalize as the first word, since a sentence/name
+// never opens on a connective). Without this list, formatSafeTitleCase()
+// capitalized every purely-lowercase word with no exception, turning
+// "Sunrise Assisted Living of Clearwater" into "...Living Of Clearwater" --
+// contradicting this function's own docstring promise to leave names
+// untouched, which it kept for surnames but never extended to connecting
+// words in longer phrases.
+const TITLE_CASE_STOP_WORDS = new Set(['of', 'and', 'the', 'a', 'an', 'for', 'in', 'on', 'at', 'to', 'by']);
+
 /**
  * Safe title-casing formatter for Names and Street Addresses.
  * Converts only purely lowercase words to title-case.
  * Leaves all-caps acronyms (e.g. "SSI", "USAA", "LLC") and mixed-case names (e.g. "McLeod", "O'Connor") 100% untouched.
  * Does NOT uppercase 2-letter words (e.g. "Dr." stays "Dr.", "St." stays "St.", "Ed" stays "Ed").
+ * Minor connecting words (of/and/the/...) stay lowercase mid-phrase, standard title-case style, but still
+ * capitalize as the first word.
  */
 export function formatSafeTitleCase(s) {
   if (!s) return '';
   const cleaned = sanitizeStoredText(s);
+  let sawFirstWord = false;
   return cleaned.split(/(\s+)/).map((word) => {
     if (word.match(/\s/) || word === '') return word;
+    const isFirstWord = !sawFirstWord;
+    sawFirstWord = true;
     const match = word.match(/^([a-zA-Z]+)([^a-zA-Z]*)$/);
     if (match) {
       const [, alpha, trailingPunct] = match;
-      // Purely lowercase word capitalizes
+      // Purely lowercase word capitalizes, unless it's a minor connecting
+      // word appearing after the first word.
       if (/^[a-z]+$/.test(alpha)) {
+        if (!isFirstWord && TITLE_CASE_STOP_WORDS.has(alpha)) return word;
         return alpha.charAt(0).toUpperCase() + alpha.slice(1) + trailingPunct;
       }
     }

@@ -90,6 +90,18 @@ describe('form-contract', () => {
       expect(formatSafeTitleCase("Jane O'Connor")).toBe("Jane O'Connor");
       expect(formatSafeTitleCase('Robert McLeod')).toBe('Robert McLeod');
     });
+
+    // Milestone 40H-G: standard title-case convention -- minor connecting
+    // words stay lowercase mid-phrase. Before this, every purely-lowercase
+    // word capitalized unconditionally, turning "Sunrise Assisted Living of
+    // Clearwater" into "...Living Of Clearwater".
+    it('keeps minor connecting words lowercase mid-phrase, but capitalizes one as the first word', () => {
+      expect(formatSafeTitleCase('sunrise assisted living of clearwater')).toBe('Sunrise Assisted Living of Clearwater');
+      expect(formatSafeTitleCase('sale of ward\'s homestead')).toBe('Sale of ward\'s Homestead');
+      expect(formatSafeTitleCase('bank of america')).toBe('Bank of America');
+      expect(formatSafeTitleCase('of counsel')).toBe('Of Counsel');
+      expect(formatSafeTitleCase('the guardian and the ward')).toBe('The Guardian and the Ward');
+    });
   });
 
   describe('formatCityStateZip', () => {

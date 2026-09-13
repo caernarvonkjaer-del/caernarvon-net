@@ -1106,10 +1106,15 @@ function detectPathTraversal(s){
 }
 
 // Sanitize input: remove dangerous characters but preserve legitimate data
+// Milestone 40H-G: dropped the straight apostrophe from the stripped set --
+// it turned "ward's" into "wards" in ordinary narrative text. Only the
+// actual HTML/script-injection vectors stay stripped (<, >, ", and `);
+// detectXSSPayload()/detectSQLInjection() above match on keywords and tag
+// syntax, not quote characters, so narrowing this doesn't reopen either check.
 function sanitizeInput(s){
   if(!s)return s;
   let cleaned=String(s);
-  cleaned=cleaned.replace(/[<>\"'`]/g,'');
+  cleaned=cleaned.replace(/[<>"`]/g,'');
   cleaned=cleaned.replace(/javascript:/gi,'');
   cleaned=cleaned.replace(/on\w+=/gi,'');
   return cleaned;

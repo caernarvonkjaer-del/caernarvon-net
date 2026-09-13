@@ -251,6 +251,26 @@ test.describe('annual-accounting feature module', () => {
     });
   });
 
+  // Milestone 40H-G: Schedule C's "Full Description and Identification" is a
+  // plain kind:'text' field, so it goes through the generic
+  // data-annual-format="security" blur handler (validateSecurityInput() ->
+  // sanitizeInput()) every other free-text field in this app shares.
+  // sanitizeInput() used to strip a straight apostrophe entirely with no
+  // replacement, turning "ward's" into "wards".
+  test('Schedule C description preserves an apostrophe through the security-format blur handler', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Apostrophe Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/schc'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
+
+    const descInput = page.locator('[data-annual-path="schC.0.description"]');
+    await descInput.fill("Sale of ward's homestead");
+    await descInput.blur();
+
+    expect(await descInput.inputValue()).toBe("Sale of ward's homestead");
+    expect(await page.evaluate(() => (window as any).D.schC[0].description)).toBe("Sale of ward's homestead");
+  });
+
   test('Final and Trust aliases use their own legal copy and PDF identity', async ({ page }) => {
     await freshStartNoPassword(page);
 
