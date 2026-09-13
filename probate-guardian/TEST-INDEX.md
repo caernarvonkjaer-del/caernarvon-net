@@ -41,7 +41,6 @@ row here, has more than one, or a row names a file that no longer exists.
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |
 | guardian-inventory-yes-no-radio.spec.js | Milestone 38E item 1: Guardian Inventory tri-state strings, D-3 Safe Deposit Box boolean-null pair, yesNoRadioHTML on Schedules A-1/B-1/B-2/B-3, D-3 fieldset/legend (40H-C) |
 | live-region.spec.js                  | ARIA live-region announcer helper                                                                                         |
-| milestone-38e.spec.js                | Milestone 38E: legacy boolean -> tri-state normalization for Guardian Inventory schedule flags and Plan benefits; restricted/unrestricted asset math with the enum |
 | plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 18 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |

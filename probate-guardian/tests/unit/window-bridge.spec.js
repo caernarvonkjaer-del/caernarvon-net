@@ -10,7 +10,7 @@
 //
 // Same shape as tests/e2e/skip-classification-audit.spec.ts: a generated
 // list, policed by a test, updated in the same commit as the change.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,17 +23,22 @@ const key = (a) => `${a.file}::${a.name}`;
 describe('window.* bridge inventory', () => {
   const audit = auditWindowBridge(root);
 
+  // Diagnostic only, not a test: a removed global should never fail this
+  // spec ("no window.X = assignment outside the allow-list" already covers
+  // the direction that matters), so there is no assertion to make here --
+  // just a console hint so someone eventually prunes the stale entry. Living
+  // outside any it() means it can't masquerade as a passing assertion that
+  // verifies nothing.
+  beforeAll(() => {
+    const live = new Set(audit.assignments.map(key));
+    const stale = allowlist.assignments.filter((a) => !live.has(key(a))).map(key);
+    if (stale.length) console.info(`window-bridge allow-list has ${stale.length} stale entries (globals since removed):\n  ${stale.join('\n  ')}`);
+  });
+
   it('has no window.X = assignment outside the allow-list', () => {
     const allowed = new Set(allowlist.assignments.map(key));
     const undeclared = audit.assignments.filter((a) => !allowed.has(key(a))).map(key);
     expect(undeclared, 'new window.* assignments -- add them to tests/unit/fixtures/window-bridge-allowlist.json deliberately').toEqual([]);
-  });
-
-  it('reports stale allow-list entries as a hint, never a failure', () => {
-    const live = new Set(audit.assignments.map(key));
-    const stale = allowlist.assignments.filter((a) => !live.has(key(a))).map(key);
-    if (stale.length) console.info(`window-bridge allow-list has ${stale.length} stale entries (globals since removed):\n  ${stale.join('\n  ')}`);
-    expect(true).toBe(true);
   });
 
   it('keeps src/core/types/window-bridge.d.ts in sync with the source', () => {
