@@ -19,7 +19,7 @@ one-predicate validation bug behind a single gate.
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | Ready to scope for implementation | `MILESTONE-40E-PROPOSAL.md` |
 | 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | **Part 1 landed 2026-09-13** (`9ac92dd`, `4ad99c1`): boot `ReferenceError` fixed, one save clock, failure escalation centralized, Tauri scaffolding removed. **Steps 4 and 6 remain, blocked on 40G** — `initApp()` calls four of the functions Step 4 deletes, before modules evaluate | `MILESTONE-40F-PROPOSAL.md` |
-| 40G | Fix the dashboard feature-bridge boot crash (`window.createFeatureBridge is not a function` on every load) | Ready to scope; step 1 is determining the real user-visible impact | `MILESTONE-40G-PROPOSAL.md` |
+| 40G | Fix the dashboard feature-bridge boot crash (`window.createFeatureBridge is not a function` on every load) | **Landed 2026-09-13** (`c05e4ad`) via option (a): `initApp()` now runs from `main.js` after module evaluation. This also unblocks 40F Steps 4 and 6 | `MILESTONE-40G-PROPOSAL.md` |
 
 ## How These Ended Up Together
 
