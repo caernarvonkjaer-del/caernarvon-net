@@ -2,7 +2,7 @@
 
 ## Status
 
-**Executable, independently deliverable specification.**
+**Landed 2026-09-13.**
 
 ## Goal
 

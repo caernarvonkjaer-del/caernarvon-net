@@ -3,6 +3,7 @@ import { migratePlanTriState, PLAN_TRISTATE_SCHEMA_VERSION } from '../../src/cor
 import { buildPlanSimplifiedModel } from '../../src/features/plan-simplified/pdf-model.js';
 import { buildPlanMinorModel } from '../../src/features/plan-minor/pdf-model.js';
 import { buildPlanInitialModel } from '../../src/features/plan-initial/pdf-model.js';
+import { buildPlanAnnualModel } from '../../src/features/plan-annual/pdf-model.js';
 
 function gridValues(model) {
   return model.sections.flatMap((section) => section.blocks || [])
@@ -78,5 +79,46 @@ describe('Plan tri-state PDF output', () => {
       expect.objectContaining({ label: 'No', checked: true }),
       expect.objectContaining({ label: 'Yes', checked: false }),
     ]));
+  });
+
+  test('prints Initial Plan Q7 as Yes, No, or unanswered rather than a Yes-only checklist', () => {
+    const model = buildPlanInitialModel({
+      q7SocialSecurity: 'Yes',
+      q7Ssdi: false,
+      q7Trusts: 'No',
+      q7PendingBenefits: '',
+    });
+    const q7 = model.sections.flatMap(section => section.blocks || [])
+      .find(block => block.type === 'table' && block.title === '7. Insurance / Governmental Benefits');
+
+    expect(q7.rows).toContainEqual(['Social Security', 'Yes']);
+    expect(q7.rows).toContainEqual(['Social Security Disability Income (SSDI)', 'No']);
+    expect(q7.rows).toContainEqual(['Trusts', 'No']);
+    expect(q7.rows).toContainEqual(['Pending Benefits', '—']);
+  });
+
+  test('prints Annual Plan eligibility and application answers from the tri-state model', () => {
+    const previousWindow = globalThis.window;
+    globalThis.window = {
+      PLAN_BENEFITS: [['socialSecurity', 'Social Security'], ['other', 'Other']],
+    };
+    try {
+      const model = buildPlanAnnualModel({
+        benefits: {
+          socialSecurity: { eligible: 'Yes', appliedFor: 'No' },
+          other: { eligible: '', appliedFor: 'Yes' },
+        },
+      });
+      const benefits = model.sections.find(section => section.id === 'q3g')
+        .blocks.find(block => block.type === 'table');
+
+      expect(benefits.rows).toEqual([
+        ['Social Security', 'Yes', 'No'],
+        ['Other', '—', 'Yes'],
+      ]);
+    } finally {
+      if (previousWindow === undefined) delete globalThis.window;
+      else globalThis.window = previousWindow;
+    }
   });
 });

@@ -82,10 +82,9 @@ export async function doSaveExcel(){
       setCell(si,'D23',inv.guardianName||'');
       setCell(si,'D24',inv.attorneyForGuardian||'');
       setCell(si,'D25',inv.typeOfGuardianship||'');
-      const yesNoTristate = v => v === true ? 'Yes' : v === false ? 'No' : '';
-      setCell(si,'D26',yesNoTristate(inv.hasSafeDepositBox));
-      setCell(si,'H26',yesNoTristate(inv.safeDepositBoxFiled));
-      setCell(si,'I8',yesNo(inv.isAmended));
+      setCell(si,'D26',yesNo(inv.hasSafeDepositBox));
+      setCell(si,'H26',yesNo(inv.safeDepositBoxFiled));
+      setCell(si,'I8',yesNo(inv.amendedForm!=null&&inv.amendedForm!==''?inv.amendedForm:inv.isAmended));
     }
 
     const fillScheduleA1=(entries)=>{
@@ -103,8 +102,8 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+1}`,e.streetAddress||'');
         setCell(pg,`C${r+2}`,e.cityStateZip||'');
         setCell(pg,`C${r+3}`,e.notes||'');
-        setCell(pg,`E${r}`,yesNo(e.isPersonalResidence));
-        setCell(pg,`F${r}`,yesNo(e.isIncomeProperty));
+        setCell(pg,`E${r}`,yesNo(e.residence!=null&&e.residence!==''?e.residence:e.isPersonalResidence));
+        setCell(pg,`F${r}`,yesNo(e.income!=null&&e.income!==''?e.income:e.isIncomeProperty));
         setCell(pg,`G${r}`,e.fullAssetValue||'');
         setCell(pg,`H${r}`,e.wardPercent||'');
         idx++;
@@ -144,7 +143,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+1}`,e.accountNumber||'');
         setCell(pg,`C${r+2}`,e.streetAddress||'');
         setCell(pg,`C${r+3}`,e.cityStateZip||'');
-        setCell(pg,`E${r}`,yesNo(e.restricted!=null?e.restricted:e.isRestricted));
+        setCell(pg,`E${r}`,yesNo(e.restricted!=null&&e.restricted!==''?e.restricted:e.isRestricted));
         setCell(pg,`F${r}`,e.accountType||'');
         setCell(pg,`G${r}`,e.fullAssetAmount||'');
         setCell(pg,`H${r}`,e.wardPercent||'');
@@ -184,7 +183,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r}`,e.description||'');
         setCell(pg,`C${r+1}`,e.streetAddress||'');
         setCell(pg,`C${r+2}`,e.cityStateZip||'');
-        setCell(pg,`E${r}`,yesNo(e.restricted!=null?e.restricted:e.isRestricted));
+        setCell(pg,`E${r}`,yesNo(e.restricted!=null&&e.restricted!==''?e.restricted:e.isRestricted));
         setCell(pg,`F${r}`,e.fullAssetValue||'');
         setCell(pg,`G${r}`,e.wardPercent||'');
         setCell(pg,`J${r}`,yesNo(e.inSafeDepositBox));
@@ -441,19 +440,19 @@ function parseInitialInventoryWorkbook(wb){
   const num=(s,a)=>Number(rawv(s,a))||0;
   const dt=(s,a)=>{const v=rawv(s,a);if(!v)return null;if(v instanceof Date)return v.toISOString().substring(0,10);if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}return typeof v==='string'?v.substring(0,10):null;};
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
-  const tristateBool=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return true;if(t==='no')return false;return null;};
+  const triState=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return 'Yes';if(t==='no')return 'No';return '';};
   const pct=(s,a)=>Math.round(num(s,a)*100*1e6)/1e6;
   const readRows=(pages,reader)=>{const out=[];for(const{sheet:name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
   const si=ws('SUMMARY I ');
   const inv={
     wardName:txt(si,'C7'),caseNumber:txt(si,'H7'),gid:dt(si,'F7'),county:txt(si,'G3'),
     guardianName:txt(si,'D23'),attorneyForGuardian:txt(si,'D24'),typeOfGuardianship:txt(si,'D25'),
-    hasSafeDepositBox:tristateBool(si,'D26'),safeDepositBoxFiled:tristateBool(si,'H26'),isAmended:bool(si,'I8'),
-    scheduleA1:readRows([{sheet:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),isPersonalResidence:bool(s,`E${r}`),isIncomeProperty:bool(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
+    hasSafeDepositBox:triState(si,'D26'),safeDepositBoxFiled:triState(si,'H26'),amendedForm:triState(si,'I8'),
+    scheduleA1:readRows([{sheet:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),residence:triState(s,`E${r}`),income:triState(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
     scheduleA2:readRows([{sheet:'A-2-REAL ESTATE MTG pg 1 ',rows:[30,35,40,45,50]},{sheet:'A-2-REAL ESTATE MTG pg 2',rows:[7,12,17,22,27,32,37,42,47]},{sheet:'A-2-REAL ESTATE MTG pg 3',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`F${r}`);if(!name&&!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),lenderCityStateZip:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),notes:'',liabilityType:txt(s,`E${r}`)||'Mortgage',fullDebtBalance:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleB1:readRows([{sheet:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{sheet:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),isRestricted:bool(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
-    scheduleB2:readRows([{sheet:'B-2 PER PROP pg 1',rows:[33,38,43,48,53,58]},{sheet:'B-2 PER PROP pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]},{sheet:'B-2 PER PROP pg 3',rows:[7,12,17,22,27,32,37,42,47,52,57]},{sheet:'B-2 PER PROP pg 4',rows:[7,12,17,22,27,32,37,42,47,52,57]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:bool(s,`H${r}`),amountInSDB:0}}),
-    scheduleB3:readRows([{sheet:'B-3 INTANGIBLE pg 1;',rows:[22,27,32,37,42,47,52,57,62]},{sheet:'B-3 INTANGIBLE pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),isRestricted:bool(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:bool(s,`J${r}`),amountInSDB:0}}),
+    scheduleB1:readRows([{sheet:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{sheet:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),restricted:triState(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
+    scheduleB2:readRows([{sheet:'B-2 PER PROP pg 1',rows:[33,38,43,48,53,58]},{sheet:'B-2 PER PROP pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]},{sheet:'B-2 PER PROP pg 3',rows:[7,12,17,22,27,32,37,42,47,52,57]},{sheet:'B-2 PER PROP pg 4',rows:[7,12,17,22,27,32,37,42,47,52,57]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`),amountInSDB:0}}),
+    scheduleB3:readRows([{sheet:'B-3 INTANGIBLE pg 1;',rows:[22,27,32,37,42,47,52,57,62]},{sheet:'B-3 INTANGIBLE pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`),amountInSDB:0}}),
     scheduleB4:readRows([{sheet:'B-4 PERS PROP LIAB pg 1',rows:[23,28,33,38,43,48]},{sheet:'B-4 PERS PROP LIAB pg 2',rows:[8,13,18,23,28,33,38,43,48]},{sheet:'B-4 PERS PROP LIAB pg 3',rows:[8,13,18,23,28,33,38,43,48]},{sheet:'B-4 PERS PROP LIAB pg 4',rows:[8,13,18,23,28,33,38,43,48]}],(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleC1:readRows([{sheet:'C-1 INCOME pg 1',rows:[29,34,39,44,49]},{sheet:'C-1 INCOME pg 2',rows:[7,12,17,22,27,32,37,42,47]},{sheet:'C-1 INCOME pg 3',rows:[7,12,17,22,27,32,37,42,47]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
     scheduleC2:readRows([{sheet:'C-2 LAWSUIT AGAINST 1',rows:[19,24,29,34,39,44]},{sheet:'C-2 LAWSUIT AGAINST pg 2',rows:[7,12,17,22,27,32,37]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),

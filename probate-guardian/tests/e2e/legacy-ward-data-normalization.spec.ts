@@ -86,4 +86,72 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
       unrestrictedIntang: 900,
     });
   });
+
+  test('explicit canonical answers win over stale aliases and unanswered values remain blank', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Canonical Data Ward', 'guardian');
+
+    const normalized = await page.evaluate(() => {
+      const d = (window as any).D;
+      Object.assign(d, {
+        scheduleA1: [{ residence: 'No', isPersonalResidence: true, income: '', isIncomeProperty: null }],
+        scheduleB1: [{ restricted: 'No', isRestricted: true }],
+        scheduleB2: [{ inSafeDepositBox: '' }, { inSafeDepositBox: null }, {}],
+        scheduleB3: [{ restricted: '', isRestricted: null, inSafeDepositBox: 'No' }],
+        hasSafeDepositBox: 'No',
+        safeDepositBoxFiled: '',
+        amendedForm: 'No',
+        isAmended: true,
+        q7SocialSecurity: 'No',
+        q7Ssdi: '',
+        q7Hmo: true,
+        q7Ssi: false,
+        q7Medicare: null,
+        benefits: {
+          socialSecurity: { eligible: 'No', appliedFor: '' },
+          pension: { eligible: true, appliedFor: false },
+          ssi: {},
+        },
+      });
+      (window as any).normalizeWardData(d);
+      return {
+        scheduleA1: d.scheduleA1[0],
+        scheduleB1: d.scheduleB1[0],
+        scheduleB2: d.scheduleB2[0],
+        scheduleB2Null: d.scheduleB2[1].inSafeDepositBox,
+        scheduleB2Missing: d.scheduleB2[2].inSafeDepositBox,
+        scheduleB3: d.scheduleB3[0],
+        hasSafeDepositBox: d.hasSafeDepositBox,
+        safeDepositBoxFiled: d.safeDepositBoxFiled,
+        amendedForm: d.amendedForm,
+        hasLegacyAmendedFlag: Object.hasOwn(d, 'isAmended'),
+        benefits: d.benefits.socialSecurity,
+        pension: d.benefits.pension,
+        ssi: d.benefits.ssi,
+        q7: [d.q7SocialSecurity, d.q7Ssdi, d.q7Hmo, d.q7Ssi, d.q7Medicare],
+      };
+    });
+
+    expect(normalized.scheduleA1.residence).toBe('No');
+    expect(normalized.scheduleA1.income).toBe('');
+    expect(normalized.scheduleA1).not.toHaveProperty('isPersonalResidence');
+    expect(normalized.scheduleA1).not.toHaveProperty('isIncomeProperty');
+    expect(normalized.scheduleB1.restricted).toBe('No');
+    expect(normalized.scheduleB1).not.toHaveProperty('isRestricted');
+    expect(normalized.scheduleB2.inSafeDepositBox).toBe('');
+    expect(normalized.scheduleB2Null).toBe('');
+    expect(normalized.scheduleB2Missing).toBe('');
+    expect(normalized.scheduleB3).toMatchObject({ restricted: '', inSafeDepositBox: 'No' });
+    expect(normalized.scheduleB3).not.toHaveProperty('isRestricted');
+    expect(normalized).toMatchObject({
+      hasSafeDepositBox: 'No',
+      safeDepositBoxFiled: '',
+      amendedForm: 'No',
+      hasLegacyAmendedFlag: false,
+      benefits: { eligible: 'No', appliedFor: '' },
+      pension: { eligible: 'Yes', appliedFor: 'No' },
+      ssi: { eligible: '', appliedFor: '' },
+      q7: ['No', '', 'Yes', 'No', ''],
+    });
+  });
 });

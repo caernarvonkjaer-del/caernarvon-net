@@ -23,7 +23,7 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 // Milestone 4 plan's "Confirmed facts" and "Design decisions").
 const {
   esc, ic, inpS, countyInputS, radioP, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
+  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
   formatName, formatPhone, formatSSN, formatAddress, toggleSsnReveal,
   formatDisplayDate,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
@@ -317,24 +317,10 @@ function pagePlanABenefits(){
   const b=d.benefits||{};
   const rows=PLAN_BENEFITS.map(([k,label])=>{
     const v=b[k]||{};
-    const eligVal=v.eligible===true?'Yes':(v.eligible===false?'No':(v.eligible||''));
-    const appVal=v.appliedFor===true?'Yes':(v.appliedFor===false?'No':(v.appliedFor||''));
     return `<tr>
-      <td>${label}</td>
-      <td class="text-center">
-        <select class="form-select form-select-sm" data-form-path="benefits.${k}.eligible" aria-label="${esc(label)} — eligible">
-          <option value="" ${!eligVal?'selected':''}>—</option>
-          <option value="Yes" ${eligVal==='Yes'?'selected':''}>Yes</option>
-          <option value="No" ${eligVal==='No'?'selected':''}>No</option>
-        </select>
-      </td>
-      <td class="text-center">
-        <select class="form-select form-select-sm" data-form-path="benefits.${k}.appliedFor" aria-label="${esc(label)} — applied for">
-          <option value="" ${!appVal?'selected':''}>—</option>
-          <option value="Yes" ${appVal==='Yes'?'selected':''}>Yes</option>
-          <option value="No" ${appVal==='No'?'selected':''}>No</option>
-        </select>
-      </td>
+      <th scope="row">${label}</th>
+      <td>${yesNoRadioHTML(`annual-benefit-${k}-eligible`,'Eligible?',v.eligible,`benefits.${k}.eligible`)}</td>
+      <td>${yesNoRadioHTML(`annual-benefit-${k}-applied`,'Applied for?',v.appliedFor,`benefits.${k}.appliedFor`)}</td>
     </tr>`;
   }).join('');
   return `<div class="schedule-page">

@@ -92,6 +92,26 @@ describe('guardian inventory PDF model', () => {
     expect(b1Table.totals.values[1].value).toBe('$1,000.00');
   });
 
+  test('Schedules A-1, B-2, and B-3 print explicit answers and preserve unanswered status', () => {
+    const model = buildVerifiedInventoryModel({
+      wardName: 'Harold Thomas Bennett',
+      caseNumber: '26-002487-GD',
+      county: 'Pasco',
+      scheduleA1: [{ propertyDescription: 'Home', residence: 'No', income: 'Yes', fullAssetValue: '100000', wardPercent: '100' }],
+      scheduleA2: [],
+      scheduleB1: [{ institutionName: 'Bank', fullAssetAmount: '1000', restricted: '' }],
+      scheduleB2: [{ description: 'Furniture', inSafeDepositBox: 'No', fullAssetValue: '1200', wardPercent: '100' }],
+      scheduleB3: [{ description: 'Brokerage', restricted: 'Yes', inSafeDepositBox: 'No', fullAssetValue: '500', wardPercent: '100' }],
+      scheduleB4: [], scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    });
+
+    const row = id => model.sections.find(section => section.id === id).blocks[0].rows[0];
+    expect(row('a1').slice(6)).toEqual(['No', 'Yes']);
+    expect(row('b1')[4]).toBe('—');
+    expect(row('b2')[6]).toBe('No');
+    expect(row('b3').slice(5)).toEqual(['Yes', 'No']);
+  });
+
   test('adds uploaded supporting documents to the matching schedule section', () => {
     const model = buildVerifiedInventoryModel({
       wardName: 'Harold Thomas Bennett',

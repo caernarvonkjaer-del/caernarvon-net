@@ -169,26 +169,6 @@ function bindEvents(container) {
     if (control.dataset.inventoryChange === 'import-excel') _excelModule.importExcel(control);
     if (control.dataset.inventoryChange === 'schedule-no-items') setScheduleNoItems(control.dataset.schedule, control.checked);
     if (control.dataset.inventoryChange === 'toggle-vehicle') toggleB2Vehicle(Number.parseInt(control.dataset.index, 10), control.checked);
-    if (control.dataset.inventoryChange === 'set-sdb') {
-      // Milestone 40H-B: no longer wipe the child answer when the parent
-      // toggles to No. The row is already hidden purely by CSS class while
-      // the parent is No (#sdb-filed-row's d-none, keyed off
-      // sdbIsYes(D.hasSafeDepositBox)), and Schedule D-3's PDF/export model
-      // already gates the child out of the document whenever the parent
-      // isn't true -- see pdf-model.js's `...(d.hasSafeDepositBox === true
-      // ? [...] : [])`. So a preserved child value sitting in state while
-      // hidden is never read, exported, or shown; nothing here needs to be
-      // destroyed for the toggle to work correctly.
-      D.hasSafeDepositBox = control.value === 'true';
-      autoSave();
-      updateNavDots();
-      window.navigate('/d3');
-    }
-    if (control.dataset.inventoryChange === 'set-sdb-filed') {
-      D.safeDepositBoxFiled = control.value === 'true';
-      autoSave();
-      updateNavDots();
-    }
     if (control.dataset.inventoryInput === 'vehicle') {
       const field = control.dataset.field;
       if (field === 'vehicleMake' || field === 'vehicleModel') {
@@ -349,12 +329,9 @@ function selectInput(bind,opts,currentVal){
   const options=list.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('');
   return `<select class="custom-select form-select" data-bind="${bind}">${options}</select>`;
 }
-// Checkbox counterpart to selectInput() for a true/false field -- the
-// Guardian form's own schedule flags (isPersonalResidence, isRestricted,
-// inSafeDepositBox, etc.) already store a real JS boolean, never a 'Yes'/
-// 'No' string, so bindForms()'s existing native checkbox handling
-// (el.type==='checkbox' -> setPath(...,e.target.checked)) is already the
-// exact right fit -- this only needed the HTML, not a new bindForms branch.
+// Checkbox counterpart to selectInput() for fields that are genuinely
+// check-all-that-apply booleans. Explicit Yes/No questions use the shared
+// yesNoRadioHTML() renderer and keep '' distinct from an explicit No.
 // Every call site already has its own reqLabel()/optLabel() heading right
 // above it (the Guardian form's grid puts a label over every field, checkbox
 // or not), so this renders a bare checkbox -- `label` becomes an aria-label
@@ -1004,33 +981,9 @@ function pageD3(){
     <div class="col-12 col-lg-6">
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Safe Deposit Box</h2>
-        <fieldset class="mb-3">
-          <legend class="form-label mb-1" style="font-size:.83rem;">Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another's name? (FS 744.365(4)) <span class="req">*</span></legend>
-          <div class="d-flex gap-4">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-yes" value="true" ${sdbIsYes(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
-              <label class="form-check-label" for="sdb-yes">Yes</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="hasSafeDepositBox" id="sdb-no" value="false" ${sdbIsNo(D.hasSafeDepositBox)?'checked':''} data-inventory-change="set-sdb">
-              <label class="form-check-label" for="sdb-no">No</label>
-            </div>
-          </div>
-        </fieldset>
+        ${yesNoRadioHTML('hasSafeDepositBox','Does the ward have a safe deposit box or the right to enter a box registered in joint names or in another\'s name? (FS 744.365(4))',sdbValue(D.hasSafeDepositBox),'hasSafeDepositBox',true,'/d3')}
         <div id="sdb-filed-row" class="${sdbIsYes(D.hasSafeDepositBox)?'':'d-none'}">
-          <fieldset>
-            <legend class="form-label d-block mb-1">Safe Deposit Box Inventory Filed with Court? <span class="req">*</span></legend>
-            <div class="d-flex gap-4 mb-2">
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-yes" value="true" ${sdbIsYes(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
-                <label class="form-check-label" for="sdb-filed-yes">Yes</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="safeDepositBoxFiled" id="sdb-filed-no" value="false" ${sdbIsNo(D.safeDepositBoxFiled)?'checked':''} data-inventory-change="set-sdb-filed">
-                <label class="form-check-label" for="sdb-filed-no">No</label>
-              </div>
-            </div>
-          </fieldset>
+          ${yesNoRadioHTML('safeDepositBoxFiled','Safe Deposit Box Inventory Filed with Court?',sdbValue(D.safeDepositBoxFiled),'safeDepositBoxFiled',true)}
         </div>
       </div>
     </div>
@@ -1098,10 +1051,10 @@ function pageD5(){
 // ═══════════════════════════════════════════════════════
 // VALIDATION
 // ═══════════════════════════════════════════════════════
-// These two Yes/No fields exist in two shapes at once: the radios below write
-// booleans, and normalizeWardData() (legacy-app.js) migrates a loaded ward to
-// the canonical 'Yes'/'No' strings. Every reader must accept both, or a saved
-// answer reads as unanswered after a reopen.
+// D-3 uses the same string tri-state as the schedule radios. Accept booleans
+// only as a defensive read-side fallback for a legacy object before setD()
+// normalizes it.
+const sdbValue = (v) => v === true ? 'Yes' : (v === false ? 'No' : (v || ''));
 const sdbIsYes = (v) => v === true || v === 'Yes';
 const sdbIsNo = (v) => v === false || v === 'No';
 const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
@@ -1171,19 +1124,13 @@ export function validateGuardian(){
   d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
   req(d.preparer.name,'D-2 Preparer — Name','preparer.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:'',filingType:T,datePath:'preparer.signatureDate',imagePath:'preparer.signatureImage'}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN','preparer.ssnEin');req(d.preparer.phone,'D-2 Preparer — Phone','preparer.phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address','preparer.streetAddress');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip','preparer.cityStateZip');
   req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');
-  // "Unanswered" is anything that is neither Yes nor No: emptyDataGuardian()
-  // defaults these to null, which must stay unanswered so a brand-new filing
-  // cannot silently pass this question untouched. Both conventions count as
-  // answered -- the radios write booleans, but normalizeWardData() migrates a
-  // saved ward to the canonical 'Yes'/'No' strings, so after any
-  // save-and-reopen the value is a string. Testing booleans only meant export
-  // was blocked on a question the filer had actually answered.
-  // D-3's radios have no data-bind matching the state field; the focusable
-  // targets are the radio inputs' own element ids.
+  // "Unanswered" is anything other than Yes or No. New filings start with
+  // '', and both explicit strings satisfy the parent answer; the filed
+  // question is required only when the parent is Yes.
   if (!sdbAnswered(d.hasSafeDepositBox)) {
-    push('D-3 — Safe Deposit Box question must be answered (Yes or No).','sdb-yes');
+    push('D-3 — Safe Deposit Box question must be answered (Yes or No).','hasSafeDepositBox');
   } else if (sdbIsYes(d.hasSafeDepositBox) && !sdbAnswered(d.safeDepositBoxFiled)) {
-    push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).','sdb-filed-yes');
+    push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).','safeDepositBoxFiled');
   }
   req(d.bondAmount,'D-4 — Bond Amount','bondAmount');if(!d.bondPeriodFrom)push('D-4 — Bond Period From is required.','bondPeriodFrom');if(!d.bondPeriodTo)push('D-4 — Bond Period To is required.','bondPeriodTo');req(d.bondingCompany,'D-4 — Bonding Company','bondingCompany');
   // Milestone 40C-C. Guardian Inventory was deliberately excluded from

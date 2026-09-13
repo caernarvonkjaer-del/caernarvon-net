@@ -2,7 +2,7 @@
 // Single source of truth for section hierarchy, bookmark outlines, table structures,
 // metadata, reading order, and electronic signature formatting.
 
-import { yesNoText } from '../../core/form/form-contract.js';
+import { yesNoText, triStateText } from '../../core/form/form-contract.js';
 import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddress } from '../../core/pdf/address-format.js';
@@ -26,6 +26,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     const n = parseFloat(v) || 0;
     return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+  const triText = (value, legacyValue) => triStateText(value) || triStateText(legacyValue) || '—';
+  const triIsYes = (value, legacyValue) => triText(value, legacyValue) === 'Yes';
 
   const fmtDate = (iso) => {
     if (!iso) return '';
@@ -142,7 +144,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
           { label: 'Attorney for Guardian', value: d.attorneyForGuardian || '' },
           { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
-          { label: 'Amended Form?', value: yesNoText(d.isAmended) },
+          { label: 'Amended Form?', value: triText(d.amendedForm, d.isAmended) },
         ],
       },
       ...(d.witnesses && d.witnesses.length ? [{
@@ -253,13 +255,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'a1',
     'Schedule A-1: Real Property Assets',
     'Schedule A-1: Real Property',
-    ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value"],
-    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddress(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent))]),
+    ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?'],
+    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddress(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
-    [22, 22, 16, 14, 12, 14],
-    ['left', 'left', 'left', 'right', 'right', 'right'],
+    [17, 17, 12, 11, 8, 8, 13, 14],
+    ['left', 'left', 'left', 'right', 'right', 'right', 'center', 'center'],
     null,
     false
   );
@@ -284,19 +286,16 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // "Schedule B-1 Total", which the vector PDF's totals shape had no way
   // to express before the engine's multi-value totals support.
   //
-  // Reads r.restricted (the tri-state 'Yes'/'No'/'' field the current UI's
-  // radio binds to, index.js's schB1_rest_ control) rather than the legacy
-  // r.isRestricted boolean, which normalizeWardData() migrates *from* but
-  // never clears -- so isRestricted stays undefined on every row entered
-  // through the current UI. Reading it here meant this column and subtotal
-  // always showed "No"/"$0.00" regardless of what the filer selected.
-  const restrictedCash = (d.scheduleB1 || []).filter(r => r.restricted === 'Yes').reduce((s, r) => s + (parseFloat(r.fullAssetAmount) || 0), 0);
+  // Read the canonical tri-state field written by the current radio control,
+  // falling back to the legacy boolean only for direct callers that bypass
+  // setD() normalization.
+  const restrictedCash = (d.scheduleB1 || []).filter(r => triIsYes(r.restricted, r.isRestricted)).reduce((s, r) => s + (parseFloat(r.fullAssetAmount) || 0), 0);
   addScheduleSection(
     'b1',
     'Schedule B-1: Cash & Financial Accounts',
     'Schedule B-1: Cash & Financial Accounts',
     ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount', 'Restricted?', 'Restricted Amt'],
-    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), r.restricted === 'Yes' ? 'Yes' : 'No', r.restricted === 'Yes' ? fmt(r.fullAssetAmount) : '—']),
+    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), triText(r.restricted, r.isRestricted), triIsYes(r.restricted, r.isRestricted) ? fmt(r.fullAssetAmount) : '—']),
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
@@ -310,13 +309,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'b2',
     'Schedule B-2: Personal Property Assets',
     'Schedule B-2: Personal Property',
-    ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value"],
-    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddress(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent))]),
+    ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'In Safe Deposit Box?'],
+    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddress(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.inSafeDepositBox)]),
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
-    [24, 24, 16, 13, 9, 14],
-    ['left', 'left', 'left', 'right', 'right', 'right']
+    [21, 21, 15, 12, 8, 8, 15],
+    ['left', 'left', 'left', 'right', 'right', 'right', 'center']
   );
 
   // Schedule B-3
@@ -324,13 +323,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'b3',
     'Schedule B-3: Intangible & Other Personal Property',
     'Schedule B-3: Intangible & Other Personal Property',
-    ['Description', 'Custodian / Address', 'Full Value', "Ward's %", "Ward's Value"],
-    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent))]),
+    ['Description', 'Custodian / Address', 'Full Value', "Ward's %", "Ward's Value", 'Restricted?', 'In Safe Deposit Box?'],
+    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox)]),
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
     'intangible personal property assets',
-    [33, 25, 16, 12, 14],
-    ['left', 'left', 'right', 'right', 'right']
+    [26, 20, 14, 9, 15, 8, 8],
+    ['left', 'left', 'right', 'right', 'right', 'center', 'center']
   );
 
   // Schedule B-4
@@ -540,9 +539,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'Table',
         title: 'Schedule D-3: Safe Deposit Box & Audit Fee',
         items: [
-          { label: 'Does the ward have a safe deposit box?', value: d.hasSafeDepositBox === true ? 'Yes' : d.hasSafeDepositBox === false ? 'No' : 'Unanswered' },
-          ...(d.hasSafeDepositBox === true ? [
-            { label: 'Initial inventory of safe deposit box filed?', value: d.safeDepositBoxFiled === true ? 'Yes' : d.safeDepositBoxFiled === false ? 'No' : 'Unanswered' },
+          { label: 'Does the ward have a safe deposit box?', value: triText(d.hasSafeDepositBox) },
+          ...(triIsYes(d.hasSafeDepositBox) ? [
+            { label: 'Initial inventory of safe deposit box filed?', value: triText(d.safeDepositBoxFiled) },
           ] : []),
           { label: 'Audit Fee Determination', value: totalRealPersonal <= 25000 ? '$0.00 (Estate <= $25k)' : totalRealPersonal <= 100000 ? '$85.00 ($25k-$100k)' : totalRealPersonal <= 500000 ? '$170.00 ($100k-$500k)' : '$250.00 (> $500k)' },
         ],

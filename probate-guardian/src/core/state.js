@@ -208,7 +208,7 @@ export function emptyDataPlanSimplified() {
 export function emptyDataPlanAnnual() {
   const rights = {}; window.PLAN_RIGHTS.forEach(([k]) => rights[k] = '');
   const adls = {}; window.PLAN_ADLS.forEach(([k]) => adls[k] = '');
-  const benefits = {}; window.PLAN_BENEFITS.forEach(([k]) => benefits[k] = { eligible: false, appliedFor: false });
+  const benefits = {}; window.PLAN_BENEFITS.forEach(([k]) => benefits[k] = { eligible: '', appliedFor: '' });
   return {
     planTriStateSchemaVersion:2,
     // Cover
@@ -318,10 +318,10 @@ export function emptyDataPlanInitial() {
     q6CareFacility:false, q6NursesAides:false, q6FamilyFriends:false, q6DayProgram:false,
     q6WardDecides:false, q6Other:false, q6Explain:'',
     // Q7 — insurance / benefits
-    q7SocialSecurity:false, q7Ssdi:false, q7Hmo:false, q7Ssi:false,
-    q7StateSupplement:false, q7InstitutionalCare:false, q7SupplementalIns:false,
-    q7Pension:false, q7Medicare:false, q7Medicaid:false, q7Va:false,
-    q7Trusts:false, q7PendingBenefits:false, q7Other:false, q7Explain:'',
+    q7SocialSecurity:'', q7Ssdi:'', q7Hmo:'', q7Ssi:'',
+    q7StateSupplement:'', q7InstitutionalCare:'', q7SupplementalIns:'',
+    q7Pension:'', q7Medicare:'', q7Medicaid:'', q7Va:'',
+    q7Trusts:'', q7PendingBenefits:'', q7Other:false, q7Explain:'',
     // Q9 — examining physicians/providers
     q9Providers:[window.emptyInitialProvider()],
     // Q10A — activities of daily living

@@ -419,7 +419,7 @@ plan_initial,D,q7Va,VA benefit status,enum,,optional,,Yes; No,none,persisted,inp
 plan_initial,D,q7Trusts,Trust benefit status,enum,,optional,,Yes; No,none,persisted,input,,,,,src/core/state.js,emptyDataPlanInitial(),,Tri-state string; legacy booleans migrate true to Yes and false to No
 plan_initial,D,q7PendingBenefits,Pending benefits indicator,enum,,optional,,Yes; No,none,persisted,input,,,,,src/core/state.js,emptyDataPlanInitial(),,Tri-state string; legacy booleans migrate true to Yes and false to No
 plan_initial,D,q7Other,Other benefit/insurance status,boolean,,optional,,,none,persisted,input,,,,,src/core/state.js,emptyDataPlanInitial(),,Checkbox answer
-plan_initial,D,q7Explain,Benefits and insurance explanation,string,,conditional,q7Other is true,,none,persisted,input,,,,,src/core/state.js,emptyDataPlanInitial(),,Required when q7Other is true
+plan_initial,D,q7Explain,Benefits and insurance explanation,string,,conditional,q7Other is true or q7Trusts or q7PendingBenefits is 'Yes',,none,persisted,input,,,,,src/core/state.js,emptyDataPlanInitial(),,Required when Other is checked or Trusts/Pending Benefits is Yes
 plan_initial,D,q9Providers[].name,Examining provider name,string,,conditional,populated row,,none,persisted,input,0,unbounded,1,,src/legacy-app.js,"emptyInitialProvider() / addPlanRow('q9Providers',...)",,Repeatable row field
 plan_initial,D,q9Providers[].providerType,Examining provider type,string,,optional,,,none,persisted,input,0,unbounded,1,,src/legacy-app.js,"emptyInitialProvider() / addPlanRow('q9Providers',...)",,Repeatable row field
 plan_initial,D,q9Providers[].examDate,Exam date,date,iso-date,optional,,,none,persisted,input,0,unbounded,1,,src/legacy-app.js,"emptyInitialProvider() / addPlanRow('q9Providers',...)",,ISO date

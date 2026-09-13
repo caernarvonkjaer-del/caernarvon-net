@@ -4043,7 +4043,7 @@ const PLAN_BENEFITS=[
   ['hmo','Health Maintenance Organization (HMO)'],['ssi','Supplemental Security Income (SSI)'],
   ['stateSupplement','Optional State Supplement'],['institutionalCare','Institutional Care Program'],
   ['supplementalIns','Supplemental Insurance'],['pension','Pension'],
-  ['medicare','Medicare'],['medicaid','Medicaid'],['trusts','Trusts'],
+  ['medicare','Medicare'],['medicaid','Medicaid'],['trusts','Trusts'],['other','Other'],
 ];
 
 // Explicit window assignments: these are bare top-level `const`s, which
@@ -4811,14 +4811,9 @@ function mapConvertedHeaderFields(src,srcType,dest,destType){
 // year's actual income/activity is left for the user to confirm rather than
 // silently assumed from the inventory's projected figures.
 function convertGuardianSchedulesToAnnual(src,dest){
-  // r.restricted/residence/income are the tri-state fields the current
-  // Guardian Inventory UI actually writes; r.isRestricted/isPersonalResidence/
-  // isIncomeProperty are the legacy booleans normalizeWardData() migrates
-  // FROM but never clears, so they stay undefined on every row entered
-  // through the current UI. Checking the tri-state field first, falling back
-  // to the legacy boolean only for genuinely pre-migration data, matches the
-  // pattern already used correctly by window.calc's on-screen totals
-  // (restrictedCash()/unrestrictedCash()/etc., above) and excel.js's export.
+  // Canonical tri-state fields are preferred, with a fallback for callers
+  // holding pre-normalization legacy booleans. Normal setD() loading migrates
+  // those aliases to canonical values and clears the old keys first.
   dest.schD1=(src.scheduleB1||[]).map(r=>({
     description:[r.institutionName,r.accountType].filter(Boolean).join(' — '),
     accountNo:r.accountNumber||'', restricted:(r.restricted==='Yes'||r.isRestricted===true)?'Yes':'No', type:r.accountType||'',
@@ -5080,7 +5075,8 @@ function resetYearlyFieldsForNewYear(data,type){
     clearDate(data.preparer);
     if(data.attorney){data.attorney.signatureDate=null;data.attorney.filingDate=null;}
     data.serviceDate=null;
-    data.isAmended=false;
+    data.amendedForm='';
+    delete data.isAmended;
   }else if(type==='simplified'){
     data.attorney_signatureDate='';
     data.certServiceDate='';
@@ -5127,6 +5123,9 @@ function resetYearlyFieldsForNewYear(data,type){
     // last year's forward would defeat the purpose of the annual review.
     if(data.rights)Object.keys(data.rights).forEach(k=>data.rights[k]='');
     if(data.adls)Object.keys(data.adls).forEach(k=>data.adls[k]='');
+    if(data.benefits)Object.values(data.benefits).forEach(benefit=>{
+      if(benefit){benefit.eligible='';benefit.appliedFor='';}
+    });
     // Milestone 37-4: empty, not pre-seeded -- see state.js's identical note.
     data.q10Directives=[];
     data.q11NoRemuneration=false;data.q11NoRemunerationName='';
@@ -5157,10 +5156,10 @@ function resetYearlyFieldsForNewYear(data,type){
     data.q5Personal='';data.q5Explain='';
     data.q6CareFacility=false;data.q6NursesAides=false;data.q6FamilyFriends=false;
     data.q6DayProgram=false;data.q6WardDecides=false;data.q6Other=false;data.q6Explain='';
-    data.q7SocialSecurity=false;data.q7Ssdi=false;data.q7Hmo=false;data.q7Ssi=false;
-    data.q7StateSupplement=false;data.q7InstitutionalCare=false;data.q7SupplementalIns=false;
-    data.q7Pension=false;data.q7Medicare=false;data.q7Medicaid=false;data.q7Va=false;
-    data.q7Trusts=false;data.q7PendingBenefits=false;data.q7Other=false;data.q7Explain='';
+    data.q7SocialSecurity='';data.q7Ssdi='';data.q7Hmo='';data.q7Ssi='';
+    data.q7StateSupplement='';data.q7InstitutionalCare='';data.q7SupplementalIns='';
+    data.q7Pension='';data.q7Medicare='';data.q7Medicaid='';data.q7Va='';
+    data.q7Trusts='';data.q7PendingBenefits='';data.q7Other=false;data.q7Explain='';
     data.q9Providers=[emptyInitialProvider()];
     if(data.adls)Object.keys(data.adls).forEach(k=>data.adls[k]='');
     data.mentalAlzheimers=false;data.mentalAutism=false;data.mentalClosedHeadInjury=false;
@@ -5517,8 +5516,8 @@ async function showAddWardModalForType(type){
 function emptyDataGuardian(){
   return {
     wardName:'',caseNumber:'',gid:null,county:'',guardianName:'',
-    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:null,
-    safeDepositBoxFiled:null,amendedForm:'',
+    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:'',
+    safeDepositBoxFiled:'',amendedForm:'',
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
     scheduleB4:[],scheduleC1:[],scheduleC2:[],scheduleC3:[],scheduleC4:[],scheduleC5:[],
     // Per-schedule "I verify there are no items of this type" checkbox --
@@ -6234,11 +6233,11 @@ const mk = {
   preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
   attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}),
   recipient:()=>({name:'',address:'',cityStateZip:''}),
-  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',isPersonalResidence:false,isIncomeProperty:false,fullAssetValue:0,wardPercent:100}),
+  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',fullAssetValue:0,wardPercent:100}),
   a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
-  b1:()=>({institutionName:'',restricted:'',isRestricted:false,accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
+  b1:()=>({institutionName:'',restricted:'',accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
   b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
-  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',isRestricted:false,fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0}),
+  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0}),
   b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
   c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
   c2:()=>({claimantName:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
@@ -6349,45 +6348,59 @@ const calc={
   totalC3:()=>r2(D.scheduleC3.reduce((s,e)=>s+calc.wardC3(e),0)),
   totalC4:()=>r2(D.scheduleC4.reduce((s,e)=>s+calc.wardC4(e),0)),
   totalC5:()=>r2(D.scheduleC5.reduce((s,e)=>s+calc.wardC5(e),0)),
-  restrictedCash:()=>r2(D.scheduleB1.filter(e=>e.restricted==='Yes'||e.isRestricted===true).reduce((s,e)=>s+calc.wardAmt(e),0)),
-  unrestrictedCash:()=>r2(D.scheduleB1.filter(e=>e.restricted!=='Yes'&&!e.isRestricted).reduce((s,e)=>s+calc.wardAmt(e),0)),
-  restrictedIntang:()=>r2(D.scheduleB3.filter(e=>e.restricted==='Yes'||e.isRestricted===true).reduce((s,e)=>s+calc.wardB3(e),0)),
-  unrestrictedIntang:()=>r2(D.scheduleB3.filter(e=>e.restricted!=='Yes'&&!e.isRestricted).reduce((s,e)=>s+calc.wardB3(e),0)),
+  restrictedCash:()=>r2(D.scheduleB1.filter(e=>isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardAmt(e),0)),
+  unrestrictedCash:()=>r2(D.scheduleB1.filter(e=>!isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardAmt(e),0)),
+  restrictedIntang:()=>r2(D.scheduleB3.filter(e=>isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardB3(e),0)),
+  unrestrictedIntang:()=>r2(D.scheduleB3.filter(e=>!isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardB3(e),0)),
   bondRequired:()=>calc.unrestrictedCash()+calc.totalB2()+calc.unrestrictedIntang(),
   auditFee:()=>calc.total()>25000?85:0,
 };
 window.calc=calc;
 
+function isRestrictedAnswer(entry){
+  // A current explicit string always wins; use the boolean alias only while
+  // loading an older save that has not yet passed through normalization.
+  return entry?.restricted==='Yes'||(entry?.restricted!=='No'&&entry?.isRestricted===true);
+}
+
 function normalizeWardData(d){
   if(!d||typeof d!=='object')return d;
+  const migrateBoolean=(obj,field,legacyField=null)=>{
+    if(!obj||typeof obj!=='object')return;
+    const current=obj[field];
+    if(current===true)obj[field]='Yes';
+    else if(current===false)obj[field]='No';
+    else if(current==null||current===''){
+      if(legacyField&&obj[legacyField]===true)obj[field]='Yes';
+      else if(legacyField&&obj[legacyField]===false)obj[field]='No';
+      else obj[field]='';
+    }
+    if(legacyField)delete obj[legacyField];
+  };
   (d.scheduleA1||[]).forEach(r=>{
-    if(r.residence==null||r.residence===''){if(r.isPersonalResidence===true)r.residence='Yes';else if(r.isPersonalResidence===false)r.residence='No';}
-    if(r.income==null||r.income===''){if(r.isIncomeProperty===true)r.income='Yes';else if(r.isIncomeProperty===false)r.income='No';}
+    migrateBoolean(r,'residence','isPersonalResidence');
+    migrateBoolean(r,'income','isIncomeProperty');
   });
-  (d.scheduleB1||[]).forEach(r=>{
-    if(r.restricted==null||r.restricted===''){if(r.isRestricted===true)r.restricted='Yes';else if(r.isRestricted===false)r.restricted='No';}
-  });
-  (d.scheduleB2||[]).forEach(r=>{
-    if(r.inSafeDepositBox===true)r.inSafeDepositBox='Yes';else if(r.inSafeDepositBox===false)r.inSafeDepositBox='No';
-  });
+  (d.scheduleB1||[]).forEach(r=>migrateBoolean(r,'restricted','isRestricted'));
+  (d.scheduleB2||[]).forEach(r=>migrateBoolean(r,'inSafeDepositBox'));
   (d.scheduleB3||[]).forEach(r=>{
-    if(r.restricted==null||r.restricted===''){if(r.isRestricted===true)r.restricted='Yes';else if(r.isRestricted===false)r.restricted='No';}
-    if(r.inSafeDepositBox===true)r.inSafeDepositBox='Yes';else if(r.inSafeDepositBox===false)r.inSafeDepositBox='No';
+    migrateBoolean(r,'restricted','isRestricted');
+    migrateBoolean(r,'inSafeDepositBox');
   });
-  if(d.hasSafeDepositBox===true)d.hasSafeDepositBox='Yes';else if(d.hasSafeDepositBox===false)d.hasSafeDepositBox='No';
-  if(d.safeDepositBoxFiled===true)d.safeDepositBoxFiled='Yes';else if(d.safeDepositBoxFiled===false)d.safeDepositBoxFiled='No';
-  if(d.amendedForm==null||d.amendedForm===''){if(d.isAmended===true)d.amendedForm='Yes';else if(d.isAmended===false)d.amendedForm='No';}
+  migrateBoolean(d,'hasSafeDepositBox');
+  migrateBoolean(d,'safeDepositBoxFiled');
+  migrateBoolean(d,'amendedForm','isAmended');
   if(d.benefits&&typeof d.benefits==='object'){
     Object.keys(d.benefits).forEach(k=>{
       const b=d.benefits[k];
       if(b&&typeof b==='object'){
-        if(b.eligible===true)b.eligible='Yes';else if(b.eligible===false)b.eligible='No';
-        if(b.appliedFor===true)b.appliedFor='Yes';else if(b.appliedFor===false)b.appliedFor='No';
+        migrateBoolean(b,'eligible');
+        migrateBoolean(b,'appliedFor');
       }
     });
   }
   const q7Keys=['q7SocialSecurity','q7Ssdi','q7Hmo','q7Ssi','q7StateSupplement','q7InstitutionalCare','q7SupplementalIns','q7Pension','q7Medicare','q7Medicaid','q7Va','q7Trusts','q7PendingBenefits'];
-  q7Keys.forEach(k=>{if(d[k]===true)d[k]='Yes';else if(d[k]===false)d[k]='No';});
+  q7Keys.forEach(k=>migrateBoolean(d,k));
   return d;
 }
 window.normalizeWardData=normalizeWardData;
@@ -7200,7 +7213,7 @@ function afterChange(path){
   }
   // Conditional SDB field
   const sdbContainer=document.getElementById('sdb-filed-row');
-  if(sdbContainer)sdbContainer.style.display=D.hasSafeDepositBox?'':'none';
+  if(sdbContainer)sdbContainer.style.display=(D.hasSafeDepositBox==='Yes'||D.hasSafeDepositBox===true)?'':'none';
 }
 
 function updateCalcFields(){
