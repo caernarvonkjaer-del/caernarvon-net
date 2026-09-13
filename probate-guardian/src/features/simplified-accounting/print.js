@@ -13,6 +13,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { filingReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 
@@ -77,8 +78,13 @@ export async function mountPreview(){
 }
 
 export async function doSavePdf(){
-  const errors=prepareFilingOutput(window.D,()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)]).messages;
-  if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
+  const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
+  const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
+  if (authorization.status !== 'allowed') {
+    renderPage('/print');
+    alert(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
+    return;
+  }
   const ward=(window.D.wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
   const filename=`${ward}_SimplifiedAccounting.pdf`;
 

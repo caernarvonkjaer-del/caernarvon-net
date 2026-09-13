@@ -412,11 +412,11 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
 // since the new tab never contains any app chrome to begin with.
 export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
   try {
-    const preflight = prepareFilingOutput(D, baseIssues);
-    if (!preflight.canExport) {
+    const authorization = authorizeFilingOutput(D, baseIssues, { capability: 'print' });
+    if (authorization.status !== 'allowed') {
       // The full list belongs on the Print Preview panel, which groups it and
       // can be read at leisure. An alert box holding fifty sentences cannot.
-      const count = preflight.messages.length;
+      const count = authorization.issues.length;
       alert(`Cannot print: ${count} required item${count === 1 ? '' : 's'} still missing. Open Print Preview to see what they are.`);
       return;
     }

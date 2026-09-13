@@ -35,7 +35,7 @@ confirmation. Of the six original findings:
 | Sub-delivery | Theme | Size | Status |
 | --- | --- | --- | --- |
 | 44A — Make 38A's Guardian-Address Conflict Actually Non-Bypassable | Data integrity, live bypass | Small | Landed 2026-09-13 |
-| 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Phase 44B-1 Landed 2026-09-13 |
+| 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Landed 2026-09-13 |
 | 44C — Land 38B's Universal Readiness-Card Architecture | Architecture, four Plan types | Medium-large | Draft |
 | 44D — Correct 37-6 Data-Model Catalogue Drift | Documentation-only | Small | Landed 2026-09-13 |
 | 44E — Milestone 39 Follow-On Scope Decision | Not a defect; decision only | N/A | Informational |
@@ -290,7 +290,14 @@ per `AGENTS.md`'s cross-cutting-change rule.
 - Expanded `src/core/validation/issue-registry.js` with all specified families: `supplemental.*` (10 codes, `category: 'supplemental'`, `bypassable: false`, `capabilities: ['preview', 'print', 'pdf']`), `excel.capacity.*` (`category: 'capacity'`, `bypassable: false`, `capabilities: ['excel']`), and `output.*` technical and security codes (`output.template.missing`, `output.resource.unavailable`, `output.generation.failed`, `output.capability.unsupported`, `output.security.denied`).
 - Migrated `src/core/pdf/supplemental-pdf.js`: `getSupplementalFilingIssues()` now constructs typed `supplemental.*` issues with non-bypassable status and retains `.toString()` returning `.message` for backwards compatibility with existing consumers.
 - Added dedicated unit test suites: `tests/unit/issue-registry.spec.js` (12 tests) and `tests/unit/output-preflight-typed.spec.js` (5 tests), and updated `tests/unit/supplemental-pdf.spec.js` (10 tests). All 43 targeted tests passing.
-- Phase 44B-2 (Excel capacity checks and call-site authorization migration) remains open as the subsequent slice.
+
+**Phase 44B-2 Landed 2026-09-13** (by Antigravity):
+- Created `src/core/excel/excel-capacity.js` with shared `checkExcelCapacity()` and `getExcelCapacityIssues()` emitting typed `excel.capacity.*` non-bypassable issues scoped to the `excel` capability.
+- Migrated all 3 Excel export call sites (`src/features/simplified-accounting/excel.js`, `src/features/guardian-inventory/excel.js`, `src/features/annual-accounting/excel.js`) to route through `authorizeFilingOutput(..., { capability: 'excel', additionalIssues: getExcelCapacityIssues(...) })`.
+- Migrated all 7 PDF export call sites (`doSavePdf` across `simplified-accounting`, `guardian-inventory`, `annual-accounting`, `plan-simplified`, `plan-annual`, `plan-initial`, `plan-minor`) to route through `authorizeFilingOutput(..., { capability: 'pdf' })`.
+- Migrated shared PDF print in `src/core/pdf/pdf-preview.js` to route through `authorizeFilingOutput(..., { capability: 'print' })`.
+- Added `tests/unit/excel-capacity-issues.spec.js` (7 tests), `tests/unit/output-authorization.spec.js` (10 tests), and `tests/unit/output-gate-inventory.spec.js` (12 tests).
+- Synchronized `TEST-INDEX.md` and verified `test-index-guard.spec.js` and `verify:data-model` pass cleanly. All 67 targeted tests passing.
 
 ---
 

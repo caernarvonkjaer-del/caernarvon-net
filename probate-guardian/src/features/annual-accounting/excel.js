@@ -10,7 +10,9 @@
 // loaded (see src/features/simplified-accounting/excel.js's comment on the
 // same pattern).
 import { validateAnnual } from './index.js';
-import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
+import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
 
 const {
@@ -49,16 +51,23 @@ export const ANNUAL_EXCEL_CAPS={
   remuneration:{cap:25,label:'Part XI — Remuneration',route:'/p11'},
 };
 export async function doSaveExcel(){
-  const preflight=prepareFilingOutput(window.D,()=>validateAnnual());
-  const errors=preflight.messages; if(errors.length){renderPage('/print');return;}
-  // Backstop for the disabled Save-as-Excel button: silently dropping
-  // entries from a court filing is bad enough that it's worth refusing
-  // here too, in case this is ever reached by another path.
-  const capOver=checkExcelCapacity(ANNUAL_EXCEL_CAPS);
-  if(capOver.length){
-    alert('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
-      +capOver.map(o=>`• ${o.label}: ${o.count} entries (template holds ${o.cap})`).join('\n')
-      +'\n\nSave as PDF instead — the PDF includes every entry.');
+  const type = resolveFilingDescriptor(window.D).descriptor?.inventoryType || 'annual';
+  const capacityIssues = getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS);
+  const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
+    capability: 'excel',
+    additionalIssues: capacityIssues,
+  });
+  if (authorization.status !== 'allowed') {
+    if (authorization.status === 'blocked') {
+      const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
+      if (capIssues.length) {
+        alert('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
+          + capIssues.map(o => `• ${o.message}`).join('\n')
+          + '\n\nSave as PDF instead — the PDF includes every entry.');
+      } else {
+        alert(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
+      }
+    }
     renderPage('/print');
     return;
   }

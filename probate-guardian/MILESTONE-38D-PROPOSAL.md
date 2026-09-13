@@ -2,14 +2,11 @@
 
 ## Status
 
-**Partially landed 2026-09-11 (`b0321dd`)** (`src/core/filing/output-authorization.js`
-and `issue-registry.js` first appeared in that commit). Status line corrected
-2026-09-13 under Milestone 44B: Phase 1 registry completion (`supplemental.*`,
-`excel.capacity.*`, `output.*`), non-bypassable supplemental PDF issues, and
-dedicated test suites (`issue-registry.spec.js`, `output-preflight-typed.spec.js`)
-landed under Milestone 44B-1; Phase 2 call-site authorization migration and Excel
-capacity refactor tracked under Milestone 44B-2. The specification text below is
-otherwise unchanged.
+**Fully landed 2026-09-13 under Milestone 44B** (Phase 44B-1: registry completion,
+typed issue identities, non-bypassable supplemental issues; Phase 44B-2: shared Excel
+capacity module, capability-aware authorization migration across all 3 Excel exporters,
+7 PDF exporters, PDF preview, and browser print, and static inventory verification).
+The specification text below is otherwise unchanged.
 
 ## Goal
 

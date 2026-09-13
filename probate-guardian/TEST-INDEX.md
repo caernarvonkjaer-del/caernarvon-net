@@ -28,6 +28,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | date-parser.spec.js                  | Flexible date parsing, display formatting, leap-year/days-in-month helpers                                                |
 | date-rules.spec.js                   | Milestone 34-1A: checkDateOrder() shared date-ordering validation rule                                                    |
 | date-range-no-mutation.spec.js       | Milestone 40C-C: date ranges are validated by checkDateOrder(), never rewritten; D-4 bond-period order + field mapping    |
+| excel-capacity-issues.spec.js         | Milestone 44B: checkExcelCapacity and getExcelCapacityIssues emit typed excel.capacity.* issues across Simplified, Guardian, and Annual/Final/Trust templates |
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
 | filing-type-enumeration-guard.spec.js | Milestone 42G: no file outside filing-descriptor.js (plus documented exceptions) lists 4+ distinct filing-type keys |
@@ -42,6 +43,8 @@ row here, has more than one, or a row names a file that no longer exists.
 | guardian-inventory-yes-no-radio.spec.js | Milestone 38E: unanswered string defaults and shared fieldset-backed Guardian Inventory radio controls |
 | issue-registry.spec.js                | Milestone 44B: definitions for core validation, data integrity, supplemental (10 codes), capacity, and technical/security output issues; caller-override prevention; assertRegisteredIssues() assertion |
 | live-region.spec.js                  | ARIA live-region announcer helper                                                                                         |
+| output-authorization.spec.js         | Milestone 44B: authorizeFilingOutput() revision-bound acknowledgements, capability filtering, mutation invalidation, and non-bypassable enforcement |
+| output-gate-inventory.spec.js        | Milestone 44B: static inventory verifying all 3 Excel exporters, 7 PDF exporters, PDF preview, and browser print route through authorizeFilingOutput() |
 | output-preflight-typed.spec.js        | Milestone 44B: prepareFilingOutput() structured issue passthrough, bypassable vs non-bypassable status, acknowledgement clearing bypassable issues but never non-bypassable supplemental or identity issues |
 | plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 18 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |

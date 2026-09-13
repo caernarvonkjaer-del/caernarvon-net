@@ -3,7 +3,8 @@
 // header. Statically imports back from index.js; see print.js's header for
 // why that circularity is safe.
 import { validateSimplified } from './index.js';
-import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
 
 const {
@@ -28,13 +29,22 @@ function guardianSlotsFromWorkbook(sheet) {
 }
 
 export async function doSaveExcel(){
-  const errors=prepareFilingOutput(window.D,()=>validateSimplified()).messages;
-  if(errors.length){renderPage('/print');return;}
-  const capOver=checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS);
-  if(capOver.length){
-    alert('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
-      +capOver.map(o=>`• ${o.label}: ${o.count} entries (template holds ${o.cap})`).join('\n')
-      +'\n\nSave as PDF instead — the PDF includes every entry.');
+  const capacityIssues = getExcelCapacityIssues('simplified', window.D, SIMPLIFIED_EXCEL_CAPS);
+  const authorization = authorizeFilingOutput(window.D, () => validateSimplified(), {
+    capability: 'excel',
+    additionalIssues: capacityIssues,
+  });
+  if (authorization.status !== 'allowed') {
+    if (authorization.status === 'blocked') {
+      const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
+      if (capIssues.length) {
+        alert('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
+          + capIssues.map(o => `• ${o.message}`).join('\n')
+          + '\n\nSave as PDF instead — the PDF includes every entry.');
+      } else {
+        alert(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
+      }
+    }
     renderPage('/print');
     return;
   }
