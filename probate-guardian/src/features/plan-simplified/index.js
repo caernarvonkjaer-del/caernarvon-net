@@ -266,6 +266,7 @@ function pagePlanSSignatures(){
   };
   return `<div class="schedule-page">
     <h1>Signatures</h1>
+    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <div class="attestation-text mb-3">Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.</div>
     <div class="schedule-instructions mb-3">The form provides space for two guardians or guardian advocates. Fill in the second block only if there is a co-guardian.</div>
     <div class="row g-3 card-grid-2col mb-4">

@@ -349,6 +349,7 @@ function pagePlanMSignatures(){
       +cb('certProvidesCare',"The plan provides for the Ward's medical care and mental health treatment.")
       +cb('certPhysicianAttached',"The physician's statement of an examination of the Ward no more than 90 days before the beginning of the plan period is attached."),
       null,null,false)}
+    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     <div class="row g-3 card-grid-2col mb-4">
       ${window.normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}

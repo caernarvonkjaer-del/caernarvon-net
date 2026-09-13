@@ -934,6 +934,7 @@ function pageD1(){
   const addCoBtn=D.guardians.length<3?`<button class="btn btn-outline-secondary btn-sm mb-3 no-print" data-inventory-action="add-guardian">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
   <h1>Part III: Guardian(s) Attestation</h1>
+  <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
   <div class="schedule-instructions">
     UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.
   </div>

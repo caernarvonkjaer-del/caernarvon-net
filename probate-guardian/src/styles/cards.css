@@ -133,3 +133,9 @@
 .prior-year-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .7rem;border:1px solid var(--line);border-radius:6px;margin-bottom:.4rem;font-size:.85rem;}
 .prior-year-current{color:var(--ink-3);font-style:italic;background:var(--surface-2);}
 .attestation-text{font-size:.76rem;font-style:italic;margin-bottom:.75rem;}
+
+/* Milestone 40H-E: distinct from .attestation-text on purpose -- this is an
+   app-level instruction to whoever is operating the app, not part of the
+   sworn statement it sits above, so it must not read as more of the same
+   italic legal text. */
+.preparer-note{font-size:.76rem;color:var(--ink-3);background:var(--accent-050);border-left:3px solid var(--accent);border-radius:4px;padding:.5rem .75rem;margin-bottom:.75rem;}

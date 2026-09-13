@@ -646,6 +646,7 @@ function pagePart3Annual(){
   const addCoBtn=d.guardians.length<3?`<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-annual-action="add-row" data-collection="guardians" data-route="/p3">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
+  <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
   <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
   ${addCoBtn}

@@ -450,6 +450,7 @@ function pagePart3(){
   const d=window.D;
   return `<div class="schedule-page">
     <h1>Part III — Guardian(s) Declaration</h1>
+    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.</div>
     <div class="schedule-instructions">These dates should match the accounting period on the Cover page. They will appear in the printed Part III declaration.</div>
     <div class="row g-3">

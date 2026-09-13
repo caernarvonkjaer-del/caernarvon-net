@@ -604,6 +604,7 @@ function pagePlanASignatures(){
       ${cb('certRecognizeRights','In exercising their powers, the guardian recognizes any rights retained by the ward (F.S. 744.363(6))')}
     </div>
     ${txtP('certRightsChangedExplain','If rights have changed and no petition is being filed, explain why',d.certRightsChangedExplain,3)}
+    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <div class="attestation-text mb-3">Under penalties of perjury, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.</div>
     <div class="row g-3 card-grid-2col mb-4">
       ${g.map((_,i)=>block(i,i?'Co-Guardian':'Guardian')).join('')}

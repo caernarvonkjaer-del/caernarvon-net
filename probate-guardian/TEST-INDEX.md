@@ -45,6 +45,7 @@ the same commit.
 | plan-readiness-county.spec.js        | Milestone 37-1: all four Plans certificate-of-service readiness wording gated on Pinellas/Pasco vs. other counties        |
 | plan-simplified-parity.spec.js       | Milestone 37-3 pilot: readiness-checklist/export-validator parity proof for all 13 auto conditions, incl. 4 newly mapped  |
 | plan-tristate.spec.js                | Schema-aware legacy Plan Yes/No migration and tri-state PDF rendering                                                     |
+| preparer-note.spec.js                | Milestone 40H-E: .preparer-note precedes the sworn statement on all 7 signing pages; absent from every pdf-model.js output |
 | pdf-address-format.spec.js           | Canonical PDF address composition and punctuation/whitespace cleanup                                                      |
 | pdf-cert-service-address.spec.js     | Milestone 40E: certificate-of-service address cells are discrete lines; Simplified's dropped line4 restored               |
 | print-annotation-persistence.spec.js | Milestone 39-A: content-fingerprint drift detection and the MiniEventBus pdf.js collaborator shim                         |
