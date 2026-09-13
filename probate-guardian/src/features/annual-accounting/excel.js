@@ -51,7 +51,8 @@ export const ANNUAL_EXCEL_CAPS={
   remuneration:{cap:25,label:'Part XI — Remuneration',route:'/p11'},
 };
 export async function doSaveExcel(){
-  const type = resolveFilingDescriptor(window.D).descriptor?.inventoryType || 'annual';
+  const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
+  const type = filingDescriptor?.inventoryType || 'annual';
   const capacityIssues = getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS);
   const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
     capability: 'excel',
@@ -96,7 +97,7 @@ export async function doSaveExcel(){
       setCell(p1,'E18',fD(inv.periodFrom)); setCell(p1,'H18',fD(inv.periodTo));
       setCell(p1,'D20',inv.guardian); setCell(p1,'D21',inv.attorney);
       setCell(p1,'D22',inv.typeOfGuardianship);
-      setCell(p1,'J6',inv.amendedForm); setCell(p1,'H4',preflight.descriptor?.filingTypeValue||inv.filingType);
+      setCell(p1,'J6',inv.amendedForm); setCell(p1,'H4',filingDescriptor?.filingTypeValue||inv.filingType);
       setCell(p1,'I12',inv.relatedCaseNumbers);
       setCell(p1,'D23',inv.county||'');
     }

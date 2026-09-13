@@ -61,3 +61,53 @@ Single checkboxes conflate an explicit **"No"** (user verified an item is negati
 #### D. Schema & Verification Integrity
 - Update `probate-guardian-data-model.csv` rows for `guardian_inventory`, `plan_annual`, and `plan_initial` to reflect `enum ('Yes; No')` data types for migrated fields.
 - Add unit test coverage in `tests/unit/` verifying radio rendering, model persistence, calculation formulas, and backward-compatible import handling.
+
+## What was found broken, and fixed, in follow-up test-suite regression checks
+
+A same-day follow-up review (2026-09-13, separate session, while troubleshooting
+an unrelated Milestone 44B timeout) ran the full unit and several e2e suites
+against this landing and found three pre-existing test failures this migration
+introduced but did not itself catch, since `npm test` was not run as part of
+this milestone's own landing verification. All three were confirmed via
+`git stash`/re-run to be absent on the commit before this migration and
+present after, then fixed:
+
+1. **`tests/unit/amended-form-line.spec.js`** — Guardian Inventory's "Amended
+   Form?" test still expected an unset filing to print "No" (the pre-migration
+   boolean-coercion default). This migration correctly changed
+   `emptyDataGuardian()` to seed `amendedForm:''` (unanswered) rather than a
+   boolean, and `pdf-model.js`'s `triText()` correctly renders that as blank
+   ("—") — consistent with this very file's own Annual/Simplified cases,
+   which already expect blank for an unanswered filing. The code was right;
+   only the test's stale expectation was wrong. Fixed by updating the test to
+   expect "—" for a genuinely untouched filing, while adding explicit
+   coverage for both the current tri-state string and the legacy boolean
+   fallback answering Yes/No correctly.
+2. **`tests/e2e/navigation-status.contract.spec.ts`**'s D-3 field-path test
+   still expected the validator's reported path to resolve to a DOM element
+   with `id="sdb-yes"` — the pre-migration hand-rolled radio's own id. This
+   migration correctly moved D-3 onto the shared `yesNoRadioHTML()` component,
+   whose Yes/No inputs share one `data-form-path` value (the real field name,
+   `hasSafeDepositBox`) rather than each having a distinct element id derived
+   from that name. Fixed by updating the expected path and switching the
+   focus-target assertion from an `#id` selector to a `[data-form-path="..."]`
+   selector, matching how `focusFieldByPath()` itself resolves the two
+   binding conventions differently.
+3. **`tests/e2e/guardian-inventory-mount.spec.ts`**'s D-3 lifecycle test
+   still asserted `null` for an unanswered `hasSafeDepositBox`/
+   `safeDepositBoxFiled` (matching the pre-migration factory default) and
+   `true`/`false` booleans after answering (matching the pre-migration write
+   path), and still queried the pre-migration `#sdb-yes`/`#sdb-no`/
+   `#sdb-filed-yes` element ids. Fixed by updating every assertion to the
+   current tri-state string contract (`''`/`'Yes'`/`'No'`) and every
+   locator to the shared component's actual rendered ids
+   (`#yesno_hasSafeDepositBox_yes`, etc.) — `#sdb-filed-row`'s own wrapper
+   id was unchanged and needed no update.
+
+None of these were product-code defects — the migration's actual runtime
+behavior was correct in each case; only the tests describing the pre-
+migration contract were stale. All three now pass and correctly describe the
+current, intentional tri-state behavior. This is recorded here as a reminder
+that landing a milestone without running its own full regression suite
+(`npm test`) leaves exactly this kind of drift for the next session to find
+by accident rather than by design.

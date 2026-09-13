@@ -7,9 +7,10 @@ import { buildVerifiedInventoryModel } from '../../src/features/guardian-invento
 // Simplified Accounting PDF print "Amended Form? Yes" -- including on a filing
 // nobody had touched. The stored value is the STRING 'No', which is truthy, so
 // the old `d.amendedForm ? 'Yes' : 'No'` was wrong in all three states. All
-// three renderers now go through yesNoText(); these cases pin that down on the
-// finished model rather than on the helper, so a future edit that reintroduces
-// an inline ternary at a call site fails here. Milestone 37-5 keeps an
+// three renderers now go through yesNoText()/triStateText(); these cases pin
+// that down on the finished model rather than on the helper, so a future edit
+// that reintroduces an inline ternary at a call site fails here. Milestone
+// 37-5 (and Guardian Inventory's own Milestone 38E migration) keeps an
 // unanswered value blank rather than silently treating it as No.
 
 function amendedLine(model) {
@@ -59,11 +60,20 @@ describe('"Amended Form?" prints the filer\'s actual answer', () => {
     });
   }
 
-  describe('Guardian Inventory (stores a real boolean)', () => {
-    test('prints No when unset and Yes when set', () => {
+  describe('Guardian Inventory (amendedForm tri-state string, isAmended legacy boolean fallback)', () => {
+    test('prints No/Yes for both the current tri-state field and a legacy boolean', () => {
+      expect(amendedLine(buildVerifiedInventoryModel({ ...inventoryBase, amendedForm: 'No' }))).toBe('No');
       expect(amendedLine(buildVerifiedInventoryModel({ ...inventoryBase, isAmended: false }))).toBe('No');
-      expect(amendedLine(buildVerifiedInventoryModel({ ...inventoryBase }))).toBe('No');
+      expect(amendedLine(buildVerifiedInventoryModel({ ...inventoryBase, amendedForm: 'Yes' }))).toBe('Yes');
       expect(amendedLine(buildVerifiedInventoryModel({ ...inventoryBase, isAmended: true }))).toBe('Yes');
+    });
+
+    // Milestone 38E: emptyDataGuardian() seeds amendedForm:'' (unanswered),
+    // no isAmended at all, for every new filing -- matching Annual/
+    // Simplified's own "leaves an unanswered filing blank" case above,
+    // not the pre-38E boolean-coercion default of "No".
+    test('leaves a brand-new, untouched filing blank rather than inventing No', () => {
+      expect(amendedLine(buildVerifiedInventoryModel({ ...inventoryBase }))).toBe('—');
     });
   });
 });

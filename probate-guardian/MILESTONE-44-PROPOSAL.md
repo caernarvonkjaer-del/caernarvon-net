@@ -317,6 +317,39 @@ accounting-family hosts still uses the legacy, untyped
 issues 44B-2 itself introduced — flagged, not fixed, in the same
 follow-up note.
 
+**Second follow-up, same day: a real bug, not just a gap.** Troubleshooting
+why `tests/e2e/annual-mount.spec.ts`'s Excel round-trip test timed out
+waiting for a download event found that 44B-2's own rename from
+`prepareFilingOutput()`/`preflight` to `authorizeFilingOutput()`/
+`authorization` in `annual-accounting/excel.js`'s `doSaveExcel()` missed one
+usage: `setCell(p1,'H4',preflight.descriptor?.filingTypeValue||inv.filingType)`
+still referenced the deleted `preflight` variable, throwing
+`ReferenceError: preflight is not defined` inside the function's own `try`
+block on every real Excel export — silently swallowed by the surrounding
+`catch(err){alert('Excel export failed: '+err.message)}`, so the failure
+was an alert dialog, not a crash, and easy to miss without exercising the
+actual button. Fixed by capturing `resolveFilingDescriptor(window.D).descriptor`
+once at the top of the function and reusing it for both the capacity-issue
+lookup and the cell write. Confirmed the e2e test passes after the fix (it
+was timing out before, on unmodified 44B-2 code, confirmed via
+`git stash`). This was Annual Accounting's Excel export specifically —
+Simplified and Guardian Inventory's equivalent functions were checked and
+have no analogous leftover reference.
+
+While investigating this, also ran the full unit suite and several
+adjacent e2e suites and found three unrelated, pre-existing failures from
+the Milestone 38E landing (not 44B) that had never been caught because
+that milestone's own landing didn't run `npm test` first — a stale test
+expectation in `amended-form-line.spec.js`, and two stale element-id/tri-
+state-value assumptions in `navigation-status.contract.spec.ts` and
+`guardian-inventory-mount.spec.ts`'s D-3 coverage. All three were confirmed
+via `git stash` to predate this session's own changes, then fixed; see
+`MILESTONE-38E-PROPOSAL.md`'s own "What was found broken, and fixed, in
+follow-up test-suite regression checks" section for the full account. In
+every one of these four cases the underlying product code was already
+correct (except the `preflight` ReferenceError, which was a real bug) —
+the tests were describing stale, pre-migration behavior.
+
 ---
 
 ## 44C — Land 38B's Universal Readiness-Card Architecture

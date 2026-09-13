@@ -239,14 +239,16 @@ test.describe('guardian-inventory feature module', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'D3 TriState Ward', 'guardian');
 
-    // On a fresh ward, D.hasSafeDepositBox is null and D-3 nav check is false
+    // Milestone 38E: D-3 stores the tri-state STRING 'Yes'/'No', same as
+    // every other yesNoRadioHTML() field -- a fresh ward's unanswered
+    // question is '' (unanswered), not the pre-38E null-vs-boolean pair.
     const initialD3 = await page.evaluate(() => ({
       hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
       safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
       navChecks: (window as any).computeNavChecks(),
     }));
-    expect(initialD3.hasSafeDepositBox).toBeNull();
-    expect(initialD3.safeDepositBoxFiled).toBeNull();
+    expect(initialD3.hasSafeDepositBox).toBe('');
+    expect(initialD3.safeDepositBoxFiled).toBe('');
     expect(initialD3.navChecks.checks.d3).toBe(false);
 
     // Summary page shows D-3 as incomplete / not completed
@@ -254,11 +256,16 @@ test.describe('guardian-inventory feature module', () => {
     const d3SummaryLine = page.locator('.summary-line', { hasText: 'D-3' });
     await expect(d3SummaryLine).toContainText('Incomplete');
 
-    // Navigate to /d3
+    // Navigate to /d3. Milestone 38E replaced the hand-rolled #sdb-yes/
+    // #sdb-no radios with the shared yesNoRadioHTML() component, whose
+    // element ids are derived from the field's data path
+    // (yesno_<path>_yes/_no) -- #sdb-filed-row's own wrapper id is
+    // unchanged.
     await page.evaluate(() => (window as any).navigate('/d3'));
-    const sdbYes = page.locator('#sdb-yes');
-    const sdbNo = page.locator('#sdb-no');
+    const sdbYes = page.locator('#yesno_hasSafeDepositBox_yes');
+    const sdbNo = page.locator('#yesno_hasSafeDepositBox_no');
     const sdbFiledRow = page.locator('#sdb-filed-row');
+    const sdbFiledYes = page.locator('#yesno_safeDepositBoxFiled_yes');
 
     await expect(sdbYes).not.toBeChecked();
     await expect(sdbNo).not.toBeChecked();
@@ -271,7 +278,7 @@ test.describe('guardian-inventory feature module', () => {
       hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
       navChecks: (window as any).computeNavChecks(),
     }));
-    expect(noState.hasSafeDepositBox).toBe(false);
+    expect(noState.hasSafeDepositBox).toBe('No');
     expect(noState.navChecks.checks.d3).toBe(true);
 
     // Selecting "Yes" displays the Filed question and marks D-3 incomplete until filed is answered
@@ -281,18 +288,18 @@ test.describe('guardian-inventory feature module', () => {
       hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
       navChecks: (window as any).computeNavChecks(),
     }));
-    expect(yesUnfiledState.hasSafeDepositBox).toBe(true);
+    expect(yesUnfiledState.hasSafeDepositBox).toBe('Yes');
     expect(yesUnfiledState.navChecks.checks.d3).toBe(false);
 
     // Answering Filed: Yes completes D-3
-    await page.locator('#sdb-filed-yes').check();
+    await sdbFiledYes.check();
     const yesFiledState = await page.evaluate(() => ({
       hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
       safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
       navChecks: (window as any).computeNavChecks(),
     }));
-    expect(yesFiledState.hasSafeDepositBox).toBe(true);
-    expect(yesFiledState.safeDepositBoxFiled).toBe(true);
+    expect(yesFiledState.hasSafeDepositBox).toBe('Yes');
+    expect(yesFiledState.safeDepositBoxFiled).toBe('Yes');
     expect(yesFiledState.navChecks.checks.d3).toBe(true);
 
     // Milestone 40H-B: toggling the parent off then back on must not lose the
@@ -306,8 +313,8 @@ test.describe('guardian-inventory feature module', () => {
       hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
       safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
     }));
-    expect(parentOffState.hasSafeDepositBox).toBe(false);
-    expect(parentOffState.safeDepositBoxFiled).toBe(true); // preserved, not wiped to null
+    expect(parentOffState.hasSafeDepositBox).toBe('No');
+    expect(parentOffState.safeDepositBoxFiled).toBe('Yes'); // preserved, not wiped to ''
 
     await sdbYes.check();
     await expect(sdbFiledRow).toBeVisible();
@@ -315,9 +322,9 @@ test.describe('guardian-inventory feature module', () => {
       hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
       safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
     }));
-    expect(restoredState.hasSafeDepositBox).toBe(true);
-    expect(restoredState.safeDepositBoxFiled).toBe(true);
+    expect(restoredState.hasSafeDepositBox).toBe('Yes');
+    expect(restoredState.safeDepositBoxFiled).toBe('Yes');
     // The child radios must reflect the restored value, not render blank.
-    await expect(page.locator('#sdb-filed-yes')).toBeChecked();
+    await expect(sdbFiledYes).toBeChecked();
   });
 });

@@ -431,9 +431,15 @@ test.describe('Guardian Inventory navigation/status contract', () => {
       const structured = (window as any).adaptValidationErrors(raw, 'guardian');
       return structured.find((e: any) => e.section === 'D-3')?.path;
     });
-    expect(sdbPath).toBe('sdb-yes');
+    // Milestone 38E migrated D-3 off its hand-rolled sdb-yes/sdb-no radio ids
+    // onto the shared yesNoRadioHTML() component, keyed by the real data
+    // path -- both the Yes and No inputs now share data-form-path
+    // "hasSafeDepositBox" rather than each having their own element id, so
+    // focusFieldByPath() (which queries by data-form-path/data-bind/id, not
+    // id alone) lands on whichever renders first in the DOM (Yes).
+    expect(sdbPath).toBe('hasSafeDepositBox');
     await page.evaluate((p) => (window as any).focusFieldByPath('/d3', p), sdbPath);
-    await expect(page.locator(`#${sdbPath}`)).toBeFocused();
+    await expect(page.locator(`[data-form-path="${sdbPath}"]`).first()).toBeFocused();
 
     await page.evaluate(() => (window as any).navigate('/d4'));
     const bondPaths = await page.evaluate(() => {
