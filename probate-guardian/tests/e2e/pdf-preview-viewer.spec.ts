@@ -125,9 +125,29 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
       await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
 
       // The override renders the draft and says so; it does not lift the gate.
+      // Milestone 38D (b0321dd) made the override an affirmative act: it asks
+      // via window.confirm() first, and a dismissed dialog renders nothing.
+      // Playwright dismisses dialogs by default, which is exactly what left
+      // this test red for every filing type until Milestone 42B -- accept it,
+      // and assert it was asked, since the confirm IS the guarantee.
+      const confirmAsked = page.waitForEvent('dialog').then(async (dialog) => {
+        expect(dialog.type()).toBe('confirm');
+        expect(dialog.message()).toContain('Requirements remain outstanding');
+        await dialog.accept();
+      });
       await blocked.locator('[data-preview-action="override"]').click();
+      await confirmAsked;
       await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
-      await expect(page.locator('#print-doc-container .pdf-preview-draft-notice')).toBeVisible();
+      // 38D's replacement guarantee (AGENTS.md section 4): after an affirmative
+      // override the output renders faithfully -- no draft watermark, which
+      // is why the old .pdf-preview-draft-notice assertion here could never
+      // pass again -- and the validation issues stay visible in the UI. The
+      // print page's own banner is that UI; it must survive the override.
+      // Plan print pages also render planReadinessPanel(), which reuses the
+      // .validation-title class -- filter to the export-blocker banner itself.
+      const banner = page.locator('#main-content .validation-panel .validation-title').filter({ hasText: /required field/ }).first();
+      await expect(banner).toBeVisible();
+      await expect(page.locator('#print-doc-container .pdf-preview-blocked')).toHaveCount(0);
     });
   }
 
@@ -188,5 +208,30 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     // both paths are reading the same D, not two independently-drifted
     // reconstructions.
     expect(previewText).toContain('Sig Style Parity Ward');
+  });
+
+  // Milestone 42B: the stale-deployment error panel's "Reload Page" button
+  // was an inline onclick= inside an innerHTML string, which index.html's
+  // CSP (script-src 'self', no 'unsafe-inline') silently blocks -- the one
+  // error state where Reload most needs to work was the one where it never
+  // fired. Aborting the pdf.js module fetch is the real chunk-load failure
+  // that branch exists for. Confirmed red against the inline-onclick code.
+  test('stale-deployment error panel has a Reload Page button that actually reloads', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Reload Button Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await page.route('**/lib/pdfjs/pdf.mjs', (route) => route.abort());
+    await page.evaluate(() => (window as any).navigate('/print'));
+
+    const panel = page.locator('#print-doc-container .pdf-preview-error');
+    await expect(panel).toBeVisible({ timeout: 15000 });
+    await expect(panel).toContainText('reload the page');
+    const reload = panel.locator('[data-preview-action="reload"]');
+    await expect(reload).toHaveText('Reload Page');
+
+    await page.unroute('**/lib/pdfjs/pdf.mjs');
+    const reloaded = page.waitForEvent('load', { timeout: 10000 });
+    await reload.click();
+    await reloaded;
   });
 });

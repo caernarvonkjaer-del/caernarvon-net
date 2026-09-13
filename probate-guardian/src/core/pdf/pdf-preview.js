@@ -339,12 +339,29 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
     const isChunkError = /dynamically imported module|Failed to fetch|central directory/i.test(e?.message || '');
     const userMsg = isChunkError
       ? 'A new version of Probate Guardian was deployed. Please reload the page to load updated assets.'
-      : `Preview failed to render: ${escapeHtml(e.message)}`;
-    const actionBtn = isChunkError
-      ? `<br/><button type="button" class="btn btn-sm btn-primary mt-3" onclick="window.location.reload()">Reload Page</button>`
-      : '';
+      : `Preview failed to render: ${e.message}`;
     announceStatus(userMsg, { priority: 'assertive', containerId: 'print-preview-status' });
-    container.innerHTML = `<div class="pdf-preview-error no-print" style="padding:2rem;text-align:center;color:var(--danger-text);"><p>${userMsg}</p>${actionBtn}</div>`;
+    // Built as nodes, not an innerHTML string: index.html's CSP is
+    // `script-src 'self'` with no 'unsafe-inline', so an inline onclick=
+    // attribute here is silently inert -- the one error state where the
+    // user most needs Reload to work is the one where it never fired.
+    // Same construction feature-bridge.js's showLoadFailure() uses.
+    const panel = document.createElement('div');
+    panel.className = 'pdf-preview-error no-print';
+    panel.style.cssText = 'padding:2rem;text-align:center;color:var(--danger-text);';
+    const message = document.createElement('p');
+    message.textContent = userMsg;
+    panel.append(message);
+    if (isChunkError) {
+      const reload = document.createElement('button');
+      reload.type = 'button';
+      reload.className = 'btn btn-sm btn-primary mt-3';
+      reload.dataset.previewAction = 'reload';
+      reload.textContent = 'Reload Page';
+      reload.addEventListener('click', () => window.location.reload(), { once: true });
+      panel.append(reload);
+    }
+    container.replaceChildren(panel);
   }
 }
 

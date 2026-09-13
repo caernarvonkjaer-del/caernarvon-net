@@ -49,7 +49,23 @@ function withoutJsComments(source: string): string {
   return result;
 }
 
+// An inline event handler is an on<event>= attribute INSIDE a tag: a tag
+// name, then attributes containing no angle brackets, then the attribute.
+// The previous /\son[a-z]+\s*=/i matched any identifier starting with "on"
+// that was assigned to -- `const onAbort = () => ...` in pdf-annotate.js
+// tripped it -- so a real violation (pdf-preview.js's onclick=) and a false
+// positive were indistinguishable for weeks. Milestone 42B.
+const EVENT_ATTRIBUTE_PATTERN = /<[a-z][a-z0-9-]*(?:\s[^<>]*)?\son[a-z]+\s*=/i;
+
 test.describe('Milestone 11 security boundaries', () => {
+  test('event-attribute detector matches tags, not identifiers', () => {
+    expect(EVENT_ATTRIBUTE_PATTERN.test('`<button type="button" onclick="window.location.reload()">Reload</button>`')).toBe(true);
+    expect(EVENT_ATTRIBUTE_PATTERN.test('<div\n  class="x"\n  onmouseover=alert(1)>')).toBe(true);
+    expect(EVENT_ATTRIBUTE_PATTERN.test('const onAbort = () => this.off(eventName, listener);')).toBe(false);
+    expect(EVENT_ATTRIBUTE_PATTERN.test('let onePage = 1; const only = a < b;')).toBe(false);
+    expect(EVENT_ATTRIBUTE_PATTERN.test('<button type="button" class="btn">on = off</button>')).toBe(false);
+  });
+
   test('source markup has no executable event attributes or inline scripts', () => {
     const files = sourceSurfaces.flatMap(sourceFiles);
     const eventAttributes: string[] = [];
@@ -57,7 +73,7 @@ test.describe('Milestone 11 security boundaries', () => {
     for (const file of files) {
       const source = fs.readFileSync(file, 'utf8');
       const executableSource = file.endsWith('.js') ? withoutJsComments(source) : source;
-      if (/\son[a-z]+\s*=/i.test(executableSource)) eventAttributes.push(path.relative(projectRoot, file));
+      if (EVENT_ATTRIBUTE_PATTERN.test(executableSource)) eventAttributes.push(path.relative(projectRoot, file));
       if (file.endsWith('.html') && /<script(?![^>]*\bsrc=)[^>]*>/i.test(source)) {
         inlineScripts.push(path.relative(projectRoot, file));
       }
