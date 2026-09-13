@@ -146,12 +146,17 @@ Accounting, not Guardian Inventory) calculation. Since this suite runs in
 Node with no jsdom, there is no unit-test path to these functions at all —
 real coverage would require e2e (a real browser/`window`). **Deleted
 anyway**, since the guards genuinely never execute today regardless of
-whether replacement coverage exists — but the coverage gap for
-`normalizeWardData()`/`window.calc`'s four asset-math functions is real
-and open, not closed by this deletion. Worth a small follow-up: an e2e
-test creating a Guardian Inventory ward with legacy boolean-shaped
-schedule data (`isRestricted: true` etc.) and confirming both the
-on-screen totals and `normalizeWardData`'s conversion behave correctly.
+whether replacement coverage exists. The gap was real but is now closed:
+`tests/e2e/legacy-ward-data-normalization.spec.ts` (new, on explicit
+follow-up instruction) covers both behaviors in a real browser —
+`normalizeWardData()`'s full legacy-boolean-to-tri-state migration
+(residence/income, restricted, both `inSafeDepositBox` sites,
+`hasSafeDepositBox`, `safeDepositBoxFiled`, `amendedForm`) and
+`window.calc`'s `restrictedCash`/`unrestrictedCash`/`restrictedIntang`/
+`unrestrictedIntang` against the resulting data. Both new tests pass
+against current code (this was a coverage gap, not a bug — `calc`'s four
+functions already had correct `isRestricted` fallback logic built in,
+confirmed by reading them directly).
 
 **Tracing why led to a live, unrelated bug, fixed separately
 (`7794180`):** `src/features/guardian-inventory/pdf-model.js`'s Schedule
