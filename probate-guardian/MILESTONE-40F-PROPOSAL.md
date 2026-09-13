@@ -30,6 +30,31 @@ proposal identified:
   `window.getLastExportAt()`/`window.isAutoSaveArmed()`.
 - The dead `window._appState.lastExportAt` write is gone.
 
+Steps 9, 10, and 11 also landed — the Tauri scaffolding is gone. This was
+safe to do independently of 40G because every definition *and* every call
+site lived in `legacy-app.js`, so nothing was left depending on a module
+that had not evaluated. Removed: the whole `FILESYSTEM AUTOSAVE` block
+(`AUTOSAVE_DIR`, `_autosaveDirPath`, `autosaveWarn`, `tauriFs`, `tauriPath`,
+`getAutosaveDirPath`, `ensureAutosaveDir`, `autosaveWardToFile`,
+`deleteAutosaveFile`, `restoreFromFileBackupIfEmpty`) and its four call
+sites; the keychain functions in both `legacy-app.js` and `crypto.js` plus
+`crypto.js`'s four `window.*` exports; the silent auto-unlock branch; the
+`#unlock-remember-row` markup, its `modals.css` rule, and every reference
+to it across `promptUnlock`, `promptPasswordForFile`,
+`promptCreatePassword`, and `submitUnlockForm`; the one-off
+`set_secure_permissions` call; and the stale `src-tauri/src/lib.rs` and
+`capabilities/default.json` comments.
+
+**A third Tauri subsystem the proposal never enumerated** turned up during
+removal and is also gone: `auditLog()` tried a Tauri `audit_log` command
+before falling back to the local in-memory log. Only the local path could
+ever run, so the branch was deleted and the local recording kept. Two
+consequential tidies fell out of the keychain removal: `ensureUnlocked()`'s
+`skipAutoUnlock` parameter existed solely to suppress the keychain
+auto-unlock on a manual Lock, so it and the `ensureUnlocked(true)` call site
+are gone; and the encryption-at-rest header comment no longer describes an
+OS-credential-store recovery path that does not exist.
+
 ### Why Steps 4 and 6 are deferred — a dependency this proposal had wrong
 
 This document states that 40F and 40G "can be implemented in either

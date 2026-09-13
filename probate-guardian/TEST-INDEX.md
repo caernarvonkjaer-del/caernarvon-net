@@ -13,7 +13,7 @@ the same commit.
 | annual-accounting-pdf-model.spec.js  | Trust Accounting PDF-model table layout for percentage and currency columns                                               |
 | annual-accounting-pdf-model.spec.js  | Trust/Annual Accounting PDF-model table layout, Part VIII trust disclosure, and duplicate title suppression               |
 | bar-number.spec.js                   | Florida Bar-number normalization: eight digits preserved, shorter values left-padded, and non-digits removed               |
-| case-file.spec.js                    | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers; Milestone 40F single save-clock invariant | 
+| case-file.spec.js                    | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers; Milestone 40F single save-clock invariant and legacy-app.js parse guard | 
 | case-county-drift.spec.js            | Case-authoritative county mismatch advisory detection                                                                     |
 | checklist-export-parity.spec.js      | Milestone 36-6: section checklist vs export validation rule parity; Milestone 39-C's new signatureState/Image fields (Plan family + Annual Accounting) added to the known-gaps allow-list |
 | circuit-lookup.spec.js               | FL county → judicial circuit lookup helpers                                                                               |

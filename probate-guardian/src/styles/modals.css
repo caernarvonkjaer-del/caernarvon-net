@@ -31,7 +31,7 @@
 
 .unlock-subtitle{font-size:.85rem;color:var(--ink-3);margin-bottom:1rem;}
 #startup-newcase-link{display:none;padding-left:0;}
-#unlock-confirm-row,#unlock-remember-row{display:none;}
+#unlock-confirm-row{display:none;}
 #unlock-error{display:none;color:var(--danger-text);font-size:.83rem;margin-bottom:.75rem;}
 #startup-file-status{display:none;font-size:.82rem;}
 

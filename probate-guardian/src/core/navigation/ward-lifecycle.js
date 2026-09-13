@@ -449,9 +449,6 @@ export async function deleteWard(wardId) {
     if (typeof window.deleteWardFromState === 'function') {
       await window.deleteWardFromState(wardId);
     }
-    if (typeof window.deleteAutosaveFile === 'function') {
-      window.deleteAutosaveFile(wardId);
-    }
     if (typeof window.updateSidebar === 'function') window.updateSidebar();
     if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
     if (typeof window.navigate === 'function') window.navigate('/dashboard');

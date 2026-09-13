@@ -58,50 +58,6 @@ export function generateSaltB64() {
   return _b64FromBytes(c.getRandomValues(new Uint8Array(16)));
 }
 
-// OS keychain integration (Tauri desktop)
-export function tauriInvoke() {
-  return (typeof window !== 'undefined' && window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) || null;
-}
-
-export function hasKeychainSupport() {
-  return !!tauriInvoke();
-}
-
-export async function keychainSave(password) {
-  const invoke = tauriInvoke();
-  if (!invoke) return false;
-  try {
-    await invoke('keychain_save', { password });
-    return true;
-  } catch (e) {
-    console.warn('keychain_save failed', e);
-    return false;
-  }
-}
-
-export async function keychainLoad() {
-  const invoke = tauriInvoke();
-  if (!invoke) return null;
-  try {
-    return await invoke('keychain_load');
-  } catch (e) {
-    console.warn('keychain_load failed', e);
-    return null;
-  }
-}
-
-export async function keychainDelete() {
-  const invoke = tauriInvoke();
-  if (!invoke) return false;
-  try {
-    await invoke('keychain_delete');
-    return true;
-  } catch (e) {
-    console.warn('keychain_delete failed', e);
-    return false;
-  }
-}
-
 export async function deriveKeyFromPassword(password, saltB64) {
   const c = (typeof crypto !== 'undefined' && crypto) || (typeof window !== 'undefined' && window.crypto);
   if (!c || !c.subtle) {
@@ -180,8 +136,4 @@ if (typeof window !== 'undefined') {
   window.decryptJSON = decryptJSON;
   window.decryptJSONWithKey = decryptJSONWithKey;
   window.deriveAndVerifyKey = deriveAndVerifyKey;
-  window.hasKeychainSupport = hasKeychainSupport;
-  window.keychainSave = keychainSave;
-  window.keychainLoad = keychainLoad;
-  window.keychainDelete = keychainDelete;
 }

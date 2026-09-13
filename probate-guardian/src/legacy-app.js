@@ -1877,16 +1877,9 @@ function setupAmountFieldValidation() {
 // ═══════════════════════════════════════════════════════
 
 async function auditLog(eventType, details, success = true, wardId = null) {
-  const invoke = tauriInvoke();
-  if (invoke) {
-    try {
-      await invoke('audit_log', {event_type: eventType, details, success, ward_id: wardId});
-    } catch (e) {
-      console.warn('Tauri audit_log failed, falling back to local log:', e);
-    }
-  }
-  // Record locally in all environments so in-memory _auditLogEntries (used for
-  // .sav packaging and in-app activity viewer) is always up-to-date.
+  // Recorded in the in-memory _auditLogEntries used for .sav packaging and the
+  // in-app activity viewer. This used to try a Tauri `audit_log` command first
+  // and fall back to here; that branch could never run in either shipped build.
   try {
     const entry = {timestamp: new Date().toISOString(), eventType, details, success};
     if (wardId) entry.wardId = wardId;
@@ -1903,19 +1896,14 @@ window.auditLog = auditLog;
 // ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)
 // ═══════════════════════════════════════════════════════
 // Every ward, and the guardian's own name/email, are encrypted before they
-// touch disk — the .sav file and the Tauri filesystem autosave backup both
-// only ever see ciphertext. The AES key is derived from a user-chosen master
+// touch disk — the .sav file only ever sees ciphertext. The AES key is derived from a user-chosen master
 // password via PBKDF2 and lives ONLY in memory for the session (`_cryptoKey`
 // below); it is never written anywhere by default. Closing the app or
 // clicking "Lock" forgets it, so the password must be re-entered next time.
 //
-// Optional recovery (desktop app only): the user may opt in to having the
-// master password saved in the OS-level credential store (Windows Credential
-// Manager, via the `keyring` Rust crate exposed as Tauri commands). That
-// store is already gated by the OS login, so this doesn't introduce a new
-// secret to protect — it ties recovery to the same security boundary that
-// already protects the machine. If the user opts out, there is no recovery
-// path if the password is lost — that's the deliberate fallback.
+// There is no recovery path if the password is lost — that is the deliberate
+// design. (An opt-in OS-credential-store escape hatch existed here for a
+// Tauri desktop build that was never part of this repo; it is gone.)
 const PBKDF2_ITERATIONS=210000;
 const CRYPTO_VERIFIER_PLAINTEXT='PG_VERIFIER_V1';
 let _cryptoKey=null; // CryptoKey, set after unlock/create, cleared on lock
@@ -1943,35 +1931,6 @@ function generateSaltB64(){
   return _b64FromBytes(crypto.getRandomValues(new Uint8Array(16)));
 }
 
-// ── OS keychain (Tauri desktop only) ─────────────────────────────────────
-// Wraps the `keychain_save` / `keychain_load` / `keychain_delete` Tauri
-// commands (src-tauri/src/lib.rs), which store/retrieve the master password
-// via the `keyring` crate — Windows Credential Manager on Windows, Keychain
-// on macOS, Secret Service on Linux. Not available in the browser build.
-function tauriInvoke(){
-  return (window.__TAURI__&&window.__TAURI__.core&&window.__TAURI__.core.invoke)||null;
-}
-function hasKeychainSupport(){
-  return !!tauriInvoke();
-}
-async function keychainSave(password){
-  const invoke=tauriInvoke();
-  if(!invoke)return false;
-  try{await invoke('keychain_save',{password});return true;}
-  catch(e){console.warn('keychain_save failed',e);return false;}
-}
-async function keychainLoad(){
-  const invoke=tauriInvoke();
-  if(!invoke)return null;
-  try{return await invoke('keychain_load');}
-  catch(e){console.warn('keychain_load failed',e);return null;}
-}
-async function keychainDelete(){
-  const invoke=tauriInvoke();
-  if(!invoke)return false;
-  try{await invoke('keychain_delete');return true;}
-  catch(e){console.warn('keychain_delete failed',e);return false;}
-}
 
 async function deriveKeyFromPassword(password,saltB64){
   const enc=new TextEncoder();
@@ -2029,13 +1988,7 @@ async function decryptJSON(packed){
 // Decides whether the user needs to create a master password (fresh install,
 // or an existing pre-encryption install with plaintext wards) or unlock with
 // one that's already set up, then blocks until a valid key is in memory.
-// On the desktop build, if the password was previously saved to the OS
-// keychain, this tries a silent auto-unlock before showing any UI at all —
-// but only on app launch. A manual Lock click passes skipAutoUnlock=true so
-// that locking always re-shows the prompt; otherwise, with "remember this
-// password" on, Lock would silently re-unlock itself and appear to do
-// nothing, defeating the point of a manual lock.
-async function ensureUnlocked(skipAutoUnlock){
+async function ensureUnlocked(){
   if(!window.crypto||!window.crypto.subtle){
     document.getElementById('main-content').innerHTML=
       '<div style="max-width:520px;margin:3rem auto;text-align:center;color:var(--danger-text);">'
@@ -2087,18 +2040,9 @@ async function ensureUnlocked(skipAutoUnlock){
   if(_securityMode==='none')return; // no password gate at all
 
   if(salt&&verifier){
-    if(!skipAutoUnlock&&hasKeychainSupport()){
-      const savedPw=await keychainLoad();
-      if(savedPw){
-        try{
-          const key=await deriveKeyFromPassword(savedPw,salt);
-          _cryptoKey=key;
-          const decoded=await decryptJSON(verifier);
-          if(decoded===CRYPTO_VERIFIER_PLAINTEXT){resetAutoLockTimer();return;} // silent auto-unlock succeeded
-        }catch(e){/* fall through to manual prompt */}
-        _cryptoKey=null;
-      }
-    }
+    // A silent auto-unlock path used to sit here, reading the master password
+    // back from the OS credential store through Tauri. No Tauri shell exists
+    // in this repo, so it could never fire; the password is always entered.
     await promptUnlock(salt,verifier);
     return;
   }
@@ -2129,8 +2073,6 @@ let _unlockResolve=null;
 let _unlockMode=null; // 'create' | 'unlock'
 
 async function promptUnlock(saltB64,verifierPacked){
-  const keychainAvailable=hasKeychainSupport();
-  const hasSavedPw=keychainAvailable&&!!(await keychainLoad());
   return new Promise((resolve)=>{
     _unlockMode='unlock';
     _unlockResolve=resolve;
@@ -2140,9 +2082,6 @@ async function promptUnlock(saltB64,verifierPacked){
     document.getElementById('unlock-confirm-row').style.display='none';
     document.getElementById('unlock-password').value='';
     document.getElementById('unlock-error').style.display='none';
-    const rememberRow=document.getElementById('unlock-remember-row');
-    rememberRow.style.display=keychainAvailable?'block':'none';
-    document.getElementById('unlock-remember-checkbox').checked=hasSavedPw;
     overlay.dataset.salt=saltB64;
     overlay.dataset.verifier=verifierPacked;
     overlay.classList.add('show');
@@ -2155,9 +2094,8 @@ async function promptUnlock(saltB64,verifierPacked){
 // promptUnlock() rather than reusing its verifier-equality check, because a
 // version-1 .sav file has no dedicated verifier field to compare
 // against — see deriveAndVerifyKey(), which this delegates the actual
-// check to via the 'openFile' branch of submitUnlockForm(). remember-me/
-// keychain is hidden: this password belongs to the file, not necessarily
-// to this device's own install.
+// check to via the 'openFile' branch of submitUnlockForm(): this password
+// belongs to the file, not necessarily to this device's own install.
 let _pendingOpenManifest=null,_pendingOpenZip=null;
 function promptPasswordForFile(manifest,zip){
   return new Promise((resolve)=>{
@@ -2180,7 +2118,6 @@ function promptPasswordForFile(manifest,zip){
     document.getElementById('unlock-confirm-row').style.display='none';
     document.getElementById('unlock-password').value='';
     document.getElementById('unlock-error').style.display='none';
-    document.getElementById('unlock-remember-row').style.display='none';
     overlay.dataset.salt=manifest.salt||'';
     overlay.classList.add('show');
     document.getElementById('unlock-password').focus();
@@ -2200,9 +2137,6 @@ function promptCreatePassword(hasExistingData){
     document.getElementById('unlock-password').value='';
     document.getElementById('unlock-password-confirm').value='';
     document.getElementById('unlock-error').style.display='none';
-    const rememberRow=document.getElementById('unlock-remember-row');
-    rememberRow.style.display=hasKeychainSupport()?'block':'none';
-    document.getElementById('unlock-remember-checkbox').checked=false;
     overlay.classList.add('show');
     document.getElementById('unlock-password').focus();
   });
@@ -2240,7 +2174,6 @@ function formatLockoutRemaining(ms){
 async function submitUnlockForm(){
   const btn=document.getElementById('unlock-submit-btn');
   const pw=document.getElementById('unlock-password').value;
-  const remember=document.getElementById('unlock-remember-checkbox').checked;
   btn.disabled=true;
   try{
     if(_unlockMode==='create'){
@@ -2253,7 +2186,6 @@ async function submitUnlockForm(){
       await saveAppState('cryptoSalt',saltB64);
       await saveAppState('cryptoVerifier',verifier);
       await auditLog('PASSWORD_CREATED', 'Master password created', true);
-      if(remember){await keychainSave(pw);}else{await keychainDelete();}
       resetAutoLockTimer();
       document.getElementById('unlock-overlay').classList.remove('show');
       const resolve=_unlockResolve;_unlockResolve=null;
@@ -2295,7 +2227,6 @@ async function submitUnlockForm(){
 
       await saveUnlockFailState({count:0,lockoutUntil:0});
       await auditLog('UNLOCK_SUCCESS', 'User successfully unlocked the application', true);
-      if(remember){await keychainSave(pw);}else{await keychainDelete();}
       resetAutoLockTimer();
       document.getElementById('unlock-overlay').classList.remove('show');
       const resolve=_unlockResolve;_unlockResolve=null;
@@ -2343,7 +2274,7 @@ async function lockApp(){
   activeInventoryType=null;
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
-  await ensureUnlocked(true);
+  await ensureUnlocked();
   if(handleToReload){
     // Rebuild memory from the open .sav file now that the key is available.
     try{
@@ -2817,7 +2748,6 @@ async function saveData(){
   if(activeWard){
     window.commitStoredDateDrafts?.(activeWard,window.setPath);
     activeWard.lastModified=new Date().toISOString();
-    autosaveWardToFile(activeWard); // Tauri-only best-effort backup; no-op in the browser build
   }
   // Best-effort recovery snapshot for dirty data; successful .sav writes
   // clear it. See SESSION-RESTORE CACHE. Awaited so callers that depend on
@@ -4211,107 +4141,6 @@ function clearAllData(){
 }
 
 // ═══════════════════════════════════════════════════════
-// FILESYSTEM AUTOSAVE (Tauri desktop only — no-op when run in a plain browser)
-// ═══════════════════════════════════════════════════════
-// Backs up each ward to its own JSON file at Documents/ProbateGuardian/<wardId>.json,
-// alongside the .sav file, so a case survives even between .sav saves on the
-// desktop build specifically. The .sav file remains the single source of
-// truth for everything the UI reads and edits — this is a best-effort backup
-// only. Every function here fails soft: errors are logged to the console,
-// never surfaced as a blocking alert, and never prevent the real save from
-// completing. See capabilities/default.json for the (deliberately narrow) fs scope.
-const AUTOSAVE_DIR='ProbateGuardian';
-let _autosaveDirPath=null;
-
-function autosaveWarn(context,err){console.warn('autosave:',context,err);}
-
-function tauriFs(){return (window.__TAURI__&&window.__TAURI__.fs)||null;}
-function tauriPath(){return (window.__TAURI__&&window.__TAURI__.path)||null;}
-
-async function getAutosaveDirPath(){
-  if(_autosaveDirPath)return _autosaveDirPath;
-  const path=tauriPath();
-  if(!path)return null;
-  _autosaveDirPath=await path.join(await path.documentDir(),AUTOSAVE_DIR);
-  return _autosaveDirPath;
-}
-
-async function ensureAutosaveDir(){
-  const fs=tauriFs();
-  const dir=await getAutosaveDirPath();
-  if(!fs){autosaveWarn('ensureAutosaveDir: window.__TAURI__.fs is missing',new Error('fs module not found on window.__TAURI__'));return false;}
-  if(!dir){autosaveWarn('ensureAutosaveDir: could not resolve dir (path module missing?)',new Error('path.documentDir/join unavailable'));return false;}
-  try{
-    if(!(await fs.exists(dir))){
-      await fs.mkdir(dir,{recursive:true});
-    }
-    return true;
-  }catch(e){autosaveWarn('ensureAutosaveDir failed',e);return false;}
-}
-
-async function autosaveWardToFile(ward){
-  const fs=tauriFs();
-  if(!fs||!ward)return;
-  try{
-    if(!(await ensureAutosaveDir()))return;
-    const path=tauriPath();
-    const filePath=await path.join(await getAutosaveDirPath(),`${ward.wardId}.json`);
-    // Same AES-256-GCM encryption as the .sav file — this file sits as a
-    // plain visible .json in the user's Documents folder, so it's actually the
-    // more exposed of the two at-rest copies if left in plaintext.
-    await fs.writeTextFile(filePath,await encryptJSON(ward));
-  }catch(e){autosaveWarn('autosaveWardToFile failed (the .sav save was not affected)',e);}
-}
-
-async function deleteAutosaveFile(wardId){
-  const fs=tauriFs();
-  if(!fs)return;
-  try{
-    const dir=await getAutosaveDirPath();
-    if(!dir)return;
-    const path=tauriPath();
-    const filePath=await path.join(dir,`${wardId}.json`);
-    if(await fs.exists(filePath)){
-      await fs.remove(filePath);
-    }
-  }catch(e){autosaveWarn('failed to remove backup file for deleted ward',e);}
-}
-
-// Only runs when the current session has no wards at all (a brand-new case,
-// or the desktop app's data directory was cleared) — recovers whatever
-// backup files are on disk. Never overwrites wards already in memory, so it
-// can't clobber a case already in progress or one just loaded from a .sav file.
-async function restoreFromFileBackupIfEmpty(){
-  if(caseFile.wards.length>0)return;
-  const fs=tauriFs();
-  const dir=await getAutosaveDirPath();
-  if(!fs||!dir)return;
-  try{
-    if(!(await fs.exists(dir)))return;
-    const entries=await fs.readDir(dir);
-    const path=tauriPath();
-    for(const entry of entries){
-      if(!entry.name||!entry.name.endsWith('.json'))continue;
-      try{
-        const filePath=await path.join(dir,entry.name);
-        const raw=await fs.readTextFile(filePath);
-        let ward;
-        try{ward=await decryptJSON(raw);}
-        catch{ward=JSON.parse(raw);} // legacy plaintext backup from before encryption existed
-        if(ward&&ward.wardId&&ward.inventoryType){
-          caseFile.wards.push(ward);
-          await saveWardToState(ward); // re-saves it encrypted going forward
-        }
-      }catch(e){console.warn('skipping unreadable backup file',entry.name,e);}
-    }
-    if(caseFile.wards.length>0){
-      caseFile.activeWardId=null;
-      console.info(`Restored ${caseFile.wards.length} ward(s) from on-disk backup.`);
-    }
-  }catch(e){console.warn('restore-from-backup failed',e);}
-}
-
-// ═══════════════════════════════════════════════════════
 // WARD MANAGEMENT
 // ═══════════════════════════════════════════════════════
 function createWardId(){
@@ -5117,7 +4946,6 @@ async function deleteWard(wardId){
 
   caseFile.wards.splice(idx,1);
   await deleteWardFromState(wardId);
-  deleteAutosaveFile(wardId);
 
   updateSidebar();
   notifyProbateGuardianTabStateChanged();
@@ -9081,13 +8909,11 @@ async function autoLoadTemplates(){
 
 async function initApp(){
   // Resolve recovery or file selection before the unlock flow.
-  try { await window.tauriInvoke('set_secure_permissions'); } catch (e) { console.warn('Could not set secure permissions:', e); }
   // Offer any unsaved recovery snapshot before the normal Open/Start choice.
   const restoredFromSessionCache=await checkSessionRestoreCacheAtLaunch();
   if(!restoredFromSessionCache)await promptOpenOrStartAtLaunch();
   await ensureUnlocked(); // blocks until a valid master-password key is in memory
   await loadGuardianData();
-  await restoreFromFileBackupIfEmpty();
   await autoLoadTemplates();
 
   const activeWard=getActiveWard();

@@ -225,6 +225,18 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     }
   });
 
+  // legacy-app.js is a classic script: no unit spec imports it and tsc does
+  // not type-check it, so a syntax error in it passes both `npm run test:unit`
+  // and `npm run check:types` and only surfaces when a browser loads the app.
+  // A stray brace left by a block deletion during this milestone did exactly
+  // that. Parsing it here keeps the fast checks honest.
+  test('legacy-app.js parses as a script', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const { default: vm } = await import('node:vm');
+    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
+    expect(() => new vm.Script(source, { filename: 'legacy-app.js' })).not.toThrow();
+  });
+
   test('beginRecordingExport advances the clock and its rollback restores it', async () => {
     const { beginRecordingExport, setLastExportAt, getLastExportAt } =
       await import('../../src/core/persistence/case-file.js');
