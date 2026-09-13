@@ -194,7 +194,7 @@ pre-migration data.
 
 ## 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests
 
-**Status: Landed 2026-09-13** (`<pending>`). See "What landed and what was
+**Status: Landed 2026-09-13** (`937d11f`). See "What landed and what was
 corrected" below — the achievable scope turned out to be much smaller than
 this section originally proposed, for the same reason Decision 1 in 43A
 was wrong: most of the "proxy" functions named below have no ES-module
