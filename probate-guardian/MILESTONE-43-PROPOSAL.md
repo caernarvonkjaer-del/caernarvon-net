@@ -2,12 +2,15 @@
 
 ## Status
 
-**Draft only — index of independently approvable sub-deliveries.** This
-document authorizes no runtime, test, or documentation change. Each
-sub-delivery (43A–43H) requires separate, explicit approval by name, per
-`AGENTS.md` §2 — approving one does not authorize the others. All eight are
-marked **Independent** below: none blocks another, and none blocks
-Milestone 41 or anything else in flight.
+**Index of independently approvable sub-deliveries.** Approving or landing
+one does not authorize another — each still requires its own explicit
+approval by name, per `AGENTS.md` §2, before implementation. All eight are
+marked **Independent**: none blocks another, and none blocks Milestone 41
+or anything else in flight.
+
+**43A landed 2026-09-13** (`514d0c5`); a real bug found while verifying its
+premise landed separately (`7794180`) — see 43A's own "What landed and
+what was corrected" section. **43B–43H remain Draft**, not yet approved.
 
 **Source:** two read-only test-suite audits run this session (2026-09-13),
 via parallel read-only research passes (no edits made in either): the
@@ -39,16 +42,16 @@ Sizing and format deliberately mirror `MILESTONE-42-PROPOSAL.md`'s index
 structure, since this is the same kind of work — independently-landable
 hygiene, not a single all-or-nothing delivery.
 
-| Sub-delivery | Theme | Size |
-| --- | --- | --- |
-| 43A — Delete or Fix Vacuous/Dead Tests | Correctness of the tests themselves | Small |
-| 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests | Correctness of the tests themselves | Medium |
-| 43C — De-duplicate Redundant Cross-File Coverage | Redundancy | Small–medium |
-| 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium |
-| 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large |
-| 43F — Close Real Coverage Gaps | Missing coverage | Medium |
-| 43G — Test-Overhead & Granularity Fixes | Test performance/isolation | Small–medium |
-| 43H — Adopt or Retire `window-api.ts` | Dead infrastructure from 42C | Small, decision-required |
+| Sub-delivery | Theme | Size | Status |
+| --- | --- | --- | --- |
+| 43A — Delete or Fix Vacuous/Dead Tests | Correctness of the tests themselves | Small | **Landed** |
+| 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests | Correctness of the tests themselves | Medium | Draft |
+| 43C — De-duplicate Redundant Cross-File Coverage | Redundancy | Small–medium | Draft |
+| 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium | Draft |
+| 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large | Draft |
+| 43F — Close Real Coverage Gaps | Missing coverage | Medium | Draft |
+| 43G — Test-Overhead & Granularity Fixes | Test performance/isolation | Small–medium | Draft |
+| 43H — Adopt or Retire `window-api.ts` | Dead infrastructure from 42C | Small, decision-required | Draft |
 
 **Sequencing:** none required. Every sub-delivery names its own file set;
 the only overlap between any two is 43E and 43F both touching
@@ -61,6 +64,10 @@ checks four times and collapsing them when/if 43E lands later.
 ---
 
 ## 43A — Delete or Fix Vacuous/Dead Tests
+
+**Status: Landed 2026-09-13** (`514d0c5`, plus a real bug fix found while
+verifying this section's own premise, `7794180`). See "What landed and
+what was corrected" below.
 
 **Relation:** Independent. **Risk:** Low — deletes or rewords tests that
 verify nothing today; no behavior change to `src/`.
@@ -121,6 +128,61 @@ discarding the copy — do not touch the real fixture). Full unit suite
 green after `milestone-38e.spec.js`'s removal (nothing else imports it —
 confirm via `grep -rn "milestone-38e" tests/` returning only
 `TEST-INDEX.md`'s own row before this step, nothing after).
+
+### What landed and what was corrected
+
+Both decisions landed as written. **Decision 1's stated justification was
+wrong, and was not silently fixed** — recorded here per this repo's
+convention: the claim that tri-state normalization and restricted/
+unrestricted asset math are "already exercised for real elsewhere" does
+not hold. Direct grep before deleting found `normalizeWardData` and
+`calc.restrictedCash`/`unrestrictedCash`/`restrictedIntang`/
+`unrestrictedIntang` are defined *only* in `legacy-app.js` as classic-script
+`window.*` functions (`:6353`, `:6318`) with no ES-module counterpart and
+no other test file referencing them by name — `guardian-inventory-yes-no-radio.spec.js`
+and `plan-tristate.spec.js` don't call `normalizeWardData`;
+`annual-accounting-totals.spec.js` tests a wholly different (Annual
+Accounting, not Guardian Inventory) calculation. Since this suite runs in
+Node with no jsdom, there is no unit-test path to these functions at all —
+real coverage would require e2e (a real browser/`window`). **Deleted
+anyway**, since the guards genuinely never execute today regardless of
+whether replacement coverage exists — but the coverage gap for
+`normalizeWardData()`/`window.calc`'s four asset-math functions is real
+and open, not closed by this deletion. Worth a small follow-up: an e2e
+test creating a Guardian Inventory ward with legacy boolean-shaped
+schedule data (`isRestricted: true` etc.) and confirming both the
+on-screen totals and `normalizeWardData`'s conversion behave correctly.
+
+**Tracing why led to a live, unrelated bug, fixed separately
+(`7794180`):** `src/features/guardian-inventory/pdf-model.js`'s Schedule
+B-1 "Restricted?"/"Restricted Amt" PDF columns and subtotal read
+`r.isRestricted` — the same legacy boolean field `normalizeWardData()`
+migrates *from* but never clears. Since the current UI's radio writes only
+`r.restricted` ('Yes'/'No'/''), `isRestricted` is `undefined` on every row
+entered through the current UI, so this column and subtotal always showed
+"No"/"—"/$0.00 in the actual exported PDF regardless of what the filer
+selected. `window.calc`'s on-screen totals (`legacy-app.js:6344-6347`) and
+`excel.js`'s export (`:147, :187`) already read `restricted` correctly
+(with a same-line `isRestricted` fallback for genuinely pre-migration
+data) — `pdf-model.js` now matches that pattern. New regression test
+confirmed failing against pre-fix code first.
+
+**A second, related instance was found but not fixed in this pass** — out
+of scope for 43A, flagged here rather than silently left for a future
+reader to rediscover: `legacy-app.js:4813-4829`'s
+`convertGuardianSchedulesToAnnual()` (the Guardian Inventory → Annual
+Accounting "Convert Ward" carryover) reads `r.isRestricted` (`:4816,
+:4827`) and `r.isPersonalResidence`/`r.isIncomeProperty` (`:4820`) with no
+`restricted`/`residence`/`income` fallback at all — worse than
+`pdf-model.js`'s bug, since there isn't even a same-line OR. A conversion
+from a current-schema Guardian Inventory ward likely carries every
+Schedule D-1/D-2/D-4 row into the new Annual Accounting filing as
+"No"/blank for these fields regardless of the source data. Not verified
+end-to-end and not fixed here — this needs its own red/green test and its
+own commit, scoped separately since it touches the ward-conversion path
+`MILESTONE-40H-PROPOSAL.md` Task 40H-I and `MILESTONE-41B-PROPOSAL.md`
+already both touch, and deserves that same care rather than being bundled
+into a test-hygiene delivery.
 
 ---
 
