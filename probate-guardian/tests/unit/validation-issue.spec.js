@@ -98,4 +98,36 @@ describe('shared helpers emit structured issues only when asked', () => {
     });
     expect(getIssueDefinition(conflictIssue.code)?.bypassable).toBe(false);
   });
+
+  it('prepareFilingOutput(): acknowledgement clears bypassable issues but never the address-conflict', () => {
+    globalThis.window = globalThis.window || {};
+    window.D = {
+      inventoryType: 'simplified',
+      guardians: [
+        {
+          name: 'Jane Doe',
+          residenceStreet: '100 Main St',
+          officeStreet: '200 Office Rd',
+          residenceCityStateZip: 'Tampa, FL 33601'
+        }
+      ]
+    };
+    const errs = validateSimplified();
+    // The 44A fix's whole point: an affirmative "Continue despite outstanding
+    // requirements" acknowledgement (mocked here exactly as pdf-preview.js's
+    // override button drives it) must still leave this filing blocked while
+    // the guardian address conflict is unresolved -- unlike the many ordinary
+    // bypassable .required issues validateSimplified() also returns for this
+    // near-empty fixture, which acknowledgement is allowed to clear.
+    window.isOutputAcknowledgedFor = () => true;
+    try {
+      const preflight = prepareFilingOutput(window.D, errs);
+      const conflictIssue = preflight.structuredIssues.find((i) => i.code === 'simplified.guardian.address-conflict');
+      expect(conflictIssue?.bypassable).toBe(false);
+      expect(preflight.messages.length).toBeGreaterThan(0);
+      expect(preflight.canExport).toBe(false);
+    } finally {
+      delete window.isOutputAcknowledgedFor;
+    }
+  });
 });

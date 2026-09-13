@@ -134,6 +134,41 @@ requirements**, and assert Preview/Print/Save PDF/Save Excel remain blocked
 with the conflict message still shown — not silently allowed through. Then
 apply the fix and confirm both go green.
 
+### What landed and what was corrected
+
+**Landed 2026-09-13** (`2219d6d`, by Antigravity). Steps 1-3 landed exactly
+as written: `createIssue('simplified.guardian.address-conflict', {...})`
+replaces the generic `issueFactory(T)` call at the conflict site, and a new
+`tests/unit/validation-issue.spec.js` test confirms the emitted issue's
+code, section, label, path, route, category, and `bypassable: false` on a
+real conflicting-guardian fixture run through `validateSimplified()` —
+confirmed by this session to fail against the pre-fix call site (reverted
+the one line, watched the assertion fail, restored it) and pass against
+the fix.
+
+**The Verification section's second half — the e2e acknowledgement check —
+did not land, and was closed differently than specified, not silently
+dropped.** No file changed `isOutputAcknowledgedFor`/
+`acknowledgeOutstandingRequirements`, and grep confirmed neither is
+referenced anywhere in the test suite, before or after this fix — the
+acknowledgement-override mechanism itself has no test coverage of any
+kind, for any issue, not just this one. Rather than add a full e2e
+click-through (which would be the first test of that mechanism at all, a
+larger undertaking than this fix's own scope), this session added a
+narrower unit test to the same file
+(`tests/unit/validation-issue.spec.js`, "acknowledgement clears bypassable
+issues but never the address-conflict") that runs the real
+`validateSimplified()` conflict output through `prepareFilingOutput()`
+with `window.isOutputAcknowledgedFor` mocked to return `true`, and asserts
+`canExport` stays `false` — proving the actual composition the fix
+depends on (a non-bypassable issue survives acknowledgement) rather than
+only the issue object's shape in isolation. Confirmed this test also fails
+against the pre-fix call site (same revert/restore check) and passes
+against the fix. A full e2e click-through of the **Continue despite
+outstanding requirements** button remains open and is more properly
+44B/44C's concern, since `authorizeFilingOutput()`'s UI-level wiring has
+no coverage today for any issue type.
+
 ---
 
 ## 44B — Resume 38D's Typed, Non-Bypassable Output Boundary
