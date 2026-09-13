@@ -46,7 +46,7 @@ describe('checklist vs export validator parity', () => {
         committeeIncorporated: '',
       };
       const errors = validatePlanInitial();
-      expect(errors.some(e => e.includes('Whether examining-committee recommendations are incorporated is required'))).toBe(true);
+      expect(errors.some(e => String(e).includes('Whether examining-committee recommendations are incorporated is required'))).toBe(true);
     });
 
     it('requires committeeExplain in validatePlanInitial when committeeIncorporated is No', () => {
@@ -60,7 +60,7 @@ describe('checklist vs export validator parity', () => {
         committeeExplain: '',
       };
       const errors = validatePlanInitial();
-      expect(errors.some(e => e.includes('Explanation is required when recommendations are not incorporated'))).toBe(true);
+      expect(errors.some(e => String(e).includes('Explanation is required when recommendations are not incorporated'))).toBe(true);
     });
 
     it('passes Question 10F in validatePlanInitial when committeeIncorporated is Yes', () => {
@@ -73,8 +73,8 @@ describe('checklist vs export validator parity', () => {
         committeeIncorporated: 'Yes',
       };
       const errors = validatePlanInitial();
-      expect(errors.some(e => e.includes('recommendations are incorporated'))).toBe(false);
-      expect(errors.some(e => e.includes('Explanation is required'))).toBe(false);
+      expect(errors.some(e => String(e).includes('recommendations are incorporated'))).toBe(false);
+      expect(errors.some(e => String(e).includes('Explanation is required'))).toBe(false);
     });
 
     it('passes Question 10F in validatePlanInitial when committeeIncorporated is No with explanation', () => {
@@ -88,8 +88,8 @@ describe('checklist vs export validator parity', () => {
         committeeExplain: 'Recommendations reviewed and deferred pending specialist report',
       };
       const errors = validatePlanInitial();
-      expect(errors.some(e => e.includes('recommendations are incorporated'))).toBe(false);
-      expect(errors.some(e => e.includes('Explanation is required'))).toBe(false);
+      expect(errors.some(e => String(e).includes('recommendations are incorporated'))).toBe(false);
+      expect(errors.some(e => String(e).includes('Explanation is required'))).toBe(false);
     });
   });
 

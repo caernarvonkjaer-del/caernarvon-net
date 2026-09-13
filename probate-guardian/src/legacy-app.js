@@ -1633,7 +1633,8 @@ function validationPanel(errors,opts){
   opts=opts||{};
   const groups=new Map();
   errors.forEach(e=>{
-    const str=String(e);
+    // Milestone 42F: issues may be objects with .message; see validation-issue.js.
+    const str=e&&typeof e==='object'?String(e.message??e):String(e);
     const i=str.indexOf(' — ');
     const section=i>-1?str.slice(0,i).trim():'Other';
     let field=i>-1?str.slice(i+3).trim():str;
@@ -6615,7 +6616,9 @@ function computeNavChecks(){
     const checks={};
     trackedKeys.forEach(k=>checks[k]=true);
     validate().forEach(e=>{
-      const str=String(e);
+      // Milestone 42F: issues are objects with .message (and a toString()
+      // that returns it); read the message explicitly rather than rely on it.
+      const str=e&&typeof e==='object'?String(e.message??e):String(e);
       const i=str.indexOf(' — ');
       const section=i>-1?str.slice(0,i).trim():'';
       const route=errorRoute(section);

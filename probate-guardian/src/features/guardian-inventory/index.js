@@ -3,6 +3,7 @@ import { renderLocalSectionGuidance } from '../../core/status/section-status.js'
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
@@ -1105,17 +1106,24 @@ const sdbIsYes = (v) => v === true || v === 'Yes';
 const sdbIsNo = (v) => v === false || v === 'No';
 const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
 
+// Milestone 42F: every issue states its own field path (validation-issue.js).
+// The pre-42F adapter had no Guardian Inventory Cover branch, so every Cover
+// message containing "guardian" (GID, Attorney for Guardian, Type of
+// Guardianship, Guardian Name(s)) fell through to guardians.0.name.
 export function validateGuardian(){
   const errors=[];
   const d=window.D;
-  function req(v,label){if(!v||!String(v).trim())errors.push(label);}
-  req(d.wardName,'Cover — Name of Ward is required.');
-  req(d.caseNumber,'Cover — Case Number is required.');
-  if(!d.gid)errors.push('Cover — Guardianship Inception Date (GID) is required.');
-  req(d.county,'Cover — County is required.');
-  req(d.guardianName,'Cover — Guardian Name(s) is required.');
-  req(d.attorneyForGuardian,'Cover — Attorney for Guardian is required.');
-  req(d.typeOfGuardianship,'Cover — Type of Guardianship is required.');
+  const issue=issueFactory('guardian');
+  const T='guardian';
+  function req(v,label,path){if(!v||!String(v).trim())errors.push(issue(label,path));}
+  const push=(label,path)=>errors.push(issue(label,path));
+  req(d.wardName,'Cover — Name of Ward is required.','wardName');
+  req(d.caseNumber,'Cover — Case Number is required.','caseNumber');
+  if(!d.gid)push('Cover — Guardianship Inception Date (GID) is required.','gid');
+  req(d.county,'Cover — County is required.','county');
+  req(d.guardianName,'Cover — Guardian Name(s) is required.','guardianName');
+  req(d.attorneyForGuardian,'Cover — Attorney for Guardian is required.','attorneyForGuardian');
+  req(d.typeOfGuardianship,'Cover — Type of Guardianship is required.','typeOfGuardianship');
   // A schedule left totally untouched -- no rows, and the "I verify there
   // are no X to report" checkbox (scheduleEmptyHTML()/setScheduleNoItems())
   // never checked -- produced NO validate() errors before this, since every
@@ -1130,26 +1138,29 @@ export function validateGuardian(){
     const dataKey='schedule'+key[0].toUpperCase()+key.slice(1);
     if((d[dataKey]||[]).length===0&&!(d.scheduleNoItems&&d.scheduleNoItems[key])){
       const route=key[0].toUpperCase()+'-'+key.slice(1);
-      errors.push(`${route} — Add at least one entry, or check the box verifying there are none, before this schedule counts as complete.`);
+      push(`${route} — Add at least one entry, or check the box verifying there are none, before this schedule counts as complete.`,`scheduleNoItems.${key}`);
     }
   });
-  d.scheduleA1.forEach((e,i)=>{const p=`A-1 row ${i+1}`;req(e.propertyDescription,`${p} — Property Description`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);if(e.wardPercent<=0)errors.push(`${p} — Ward's % must be > 0.`);});
-  d.scheduleA2.forEach((e,i)=>{const p=`A-2 row ${i+1}`;req(e.lenderName,`${p} — Lender Name`);req(e.lenderAddress,`${p} — Lender Address`);req(e.lenderCityStateZip,`${p} — Lender City/State/Zip`);if(e.fullDebtBalance<=0)errors.push(`${p} — Full Debt Balance must be > 0.`);});
-  d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`;req(e.institutionName,`${p} — Institution Name`);req(e.accountType,`${p} — Account Type`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetAmount<=0)errors.push(`${p} — Full Asset Amount must be > 0.`);});
-  d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`;
+  // Row paths: `<collection>.<index>.<field>`. Schedule B-2's vehicle
+  // sub-fields are raw inputs with no data-bind -- their only focusable
+  // selector is the literal element id (see renderB2Fields()).
+  d.scheduleA1.forEach((e,i)=>{const p=`A-1 row ${i+1}`,k=`scheduleA1.${i}`;req(e.propertyDescription,`${p} — Property Description`,`${k}.propertyDescription`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);if(e.wardPercent<=0)push(`${p} — Ward's % must be > 0.`,`${k}.wardPercent`);});
+  d.scheduleA2.forEach((e,i)=>{const p=`A-2 row ${i+1}`,k=`scheduleA2.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);req(e.lenderCityStateZip,`${p} — Lender City/State/Zip`,`${k}.lenderCityStateZip`);if(e.fullDebtBalance<=0)push(`${p} — Full Debt Balance must be > 0.`,`${k}.fullDebtBalance`);});
+  d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`,k=`scheduleB1.${i}`;req(e.institutionName,`${p} — Institution Name`,`${k}.institutionName`);req(e.accountType,`${p} — Account Type`,`${k}.accountType`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetAmount<=0)push(`${p} — Full Asset Amount must be > 0.`,`${k}.fullAssetAmount`);});
+  d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`,k=`scheduleB2.${i}`;
     if(e.isVehicle){
-      req(e.vehicleYear,`${p} — Year`);req(e.vehicleMake,`${p} — Make`);req(e.vehicleModel,`${p} — Model`);req(e.vehicleVin,`${p} — VIN`);req(e.odometerMileage,`${p} — Odometer Mileage`);
+      req(e.vehicleYear,`${p} — Year`,`b2-vehicle-year-${i}`);req(e.vehicleMake,`${p} — Make`,`b2-vehicle-make-${i}`);req(e.vehicleModel,`${p} — Model`,`b2-vehicle-model-${i}`);req(e.vehicleVin,`${p} — VIN`,`b2-vehicle-vin-${i}`);req(e.odometerMileage,`${p} — Odometer Mileage`,`b2-vehicle-mileage-${i}`);
     }else{
-      req(e.description,`${p} — Description`);
+      req(e.description,`${p} — Description`,`${k}.description`);
     }
-    req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);req(e.valuationMethod,`${p} — Valuation Method`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);});
-  d.scheduleB3.forEach((e,i)=>{const p=`B-3 row ${i+1}`;req(e.description,`${p} — Description`);req(e.streetAddress,`${p} — Street Address`);req(e.cityStateZip,`${p} — City/State/Zip`);if(e.fullAssetValue<=0)errors.push(`${p} — Full Asset Value must be > 0.`);});
-  d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`;req(e.lenderName,`${p} — Lender Name`);req(e.relatedProperty,`${p} — Related Property`);req(e.lenderAddress,`${p} — Lender Address`);if(e.fullLiabilityBalance<=0)errors.push(`${p} — Full Liability Balance must be > 0.`);});
-  d.scheduleC1.forEach((e,i)=>{const p=`C-1 row ${i+1}`;req(e.payerName,`${p} — Payer Name`);req(e.typeOfIncome,`${p} — Type of Income`);req(e.payerAddress,`${p} — Payer Address`);req(e.paymentBasis,`${p} — Basis for Payment`);if(e.annualIncomeAmount<=0)errors.push(`${p} — Annual Income Amount must be > 0.`);});
-  d.scheduleC2.forEach((e,i)=>{const p=`C-2 row ${i+1}`;req(e.claimantName,`${p} — Claimant Name`);req(e.lawsuitDescription,`${p} — Lawsuit Description`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`);req(e.caseNumber,`${p} — Case Number`);if(!e.dateFiled)errors.push(`${p} — Date Filed is required.`);if(e.amountOfClaim<=0)errors.push(`${p} — Amount of Claim must be > 0.`);});
-  d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`;req(e.defendantName,`${p} — Defendant Name`);req(e.actionDescription,`${p} — Action Description`);req(e.status,`${p} — Status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`);if(!e.actionDate)errors.push(`${p} — Action Date is required.`);if(e.estimatedSettlement<=0)errors.push(`${p} — Estimated Settlement must be > 0.`);});
-  d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`;req(e.trustName,`${p} — Trust Name`);req(e.trusteeName,`${p} — Trustee Name`);req(e.trusteeAddress,`${p} — Trustee Address`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`);if(!e.dateCreated)errors.push(`${p} — Date Created is required.`);if(e.trustAmount<=0)errors.push(`${p} — Trust Amount must be > 0.`);});
-  d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`;req(e.assetDescription,`${p} — Asset Description`);req(e.ownerName,`${p} — Owner Name`);req(e.ownerAddress,`${p} — Owner Address`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`);req(e.relationshipToWard,`${p} — Relationship to Ward`);if(e.totalAssetValue<=0)errors.push(`${p} — Total Asset Value must be > 0.`);});
+    req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);req(e.valuationMethod,`${p} — Valuation Method`,`${k}.valuationMethod`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
+  d.scheduleB3.forEach((e,i)=>{const p=`B-3 row ${i+1}`,k=`scheduleB3.${i}`;req(e.description,`${p} — Description`,`${k}.description`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
+  d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`,k=`scheduleB4.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.relatedProperty,`${p} — Related Property`,`${k}.relatedProperty`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);if(e.fullLiabilityBalance<=0)push(`${p} — Full Liability Balance must be > 0.`,`${k}.fullLiabilityBalance`);});
+  d.scheduleC1.forEach((e,i)=>{const p=`C-1 row ${i+1}`,k=`scheduleC1.${i}`;req(e.payerName,`${p} — Payer Name`,`${k}.payerName`);req(e.typeOfIncome,`${p} — Type of Income`,`${k}.typeOfIncome`);req(e.payerAddress,`${p} — Payer Address`,`${k}.payerAddress`);req(e.paymentBasis,`${p} — Basis for Payment`,`${k}.paymentBasis`);if(e.annualIncomeAmount<=0)push(`${p} — Annual Income Amount must be > 0.`,`${k}.annualIncomeAmount`);});
+  d.scheduleC2.forEach((e,i)=>{const p=`C-2 row ${i+1}`,k=`scheduleC2.${i}`;req(e.claimantName,`${p} — Claimant Name`,`${k}.claimantName`);req(e.lawsuitDescription,`${p} — Lawsuit Description`,`${k}.lawsuitDescription`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);req(e.caseNumber,`${p} — Case Number`,`${k}.caseNumber`);if(!e.dateFiled)push(`${p} — Date Filed is required.`,`${k}.dateFiled`);if(e.amountOfClaim<=0)push(`${p} — Amount of Claim must be > 0.`,`${k}.amountOfClaim`);});
+  d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`,k=`scheduleC3.${i}`;req(e.defendantName,`${p} — Defendant Name`,`${k}.defendantName`);req(e.actionDescription,`${p} — Action Description`,`${k}.actionDescription`);req(e.status,`${p} — Status`,`${k}.status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);if(!e.actionDate)push(`${p} — Action Date is required.`,`${k}.actionDate`);if(e.estimatedSettlement<=0)push(`${p} — Estimated Settlement must be > 0.`,`${k}.estimatedSettlement`);});
+  d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`,k=`scheduleC4.${i}`;req(e.trustName,`${p} — Trust Name`,`${k}.trustName`);req(e.trusteeName,`${p} — Trustee Name`,`${k}.trusteeName`);req(e.trusteeAddress,`${p} — Trustee Address`,`${k}.trusteeAddress`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`,`${k}.trusteeCityStateZip`);if(!e.dateCreated)push(`${p} — Date Created is required.`,`${k}.dateCreated`);if(e.trustAmount<=0)push(`${p} — Trust Amount must be > 0.`,`${k}.trustAmount`);});
+  d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`,k=`scheduleC5.${i}`;req(e.assetDescription,`${p} — Asset Description`,`${k}.assetDescription`);req(e.ownerName,`${p} — Owner Name`,`${k}.ownerName`);req(e.ownerAddress,`${p} — Owner Address`,`${k}.ownerAddress`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`,`${k}.ownerCityStateZip`);req(e.relationshipToWard,`${p} — Relationship to Ward`,`${k}.relationshipToWard`);if(e.totalAssetValue<=0)push(`${p} — Total Asset Value must be > 0.`,`${k}.totalAssetValue`);});
   // Guardian #1 (index 0) is required and always validated, matching
   // pageD1()'s own always-show-index-0 rule -- only co-guardians (index>0)
   // are optional and skipped when entirely blank. Using the ORIGINAL index
@@ -1157,9 +1168,9 @@ export function validateGuardian(){
   // mislabeling bug this filter/forEach split previously had: a co-guardian
   // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
   // was still blank.
-  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`;req(g.name,`${p} — Name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:''}));req(g.ssnEin,`${p} — SSN/EIN`);req(g.phone,`${p} — Phone`);req(g.streetAddress,`${p} — Street Address`);req(g.cityStateZip,`${p} — City/State/Zip`);});
-  req(d.preparer.name,'D-2 Preparer — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:''}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN');req(d.preparer.phone,'D-2 Preparer — Phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip');
-  req(d.attorney.name,'D-2 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:''}));if(!d.attorney.filingDate)errors.push('D-2 Attorney — Filing Date is required.');req(d.attorney.barNumber,'D-2 Attorney — Bar Number');req(d.attorney.phone,'D-2 Attorney — Phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip');
+  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  req(d.preparer.name,'D-2 Preparer — Name','preparer.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:'',filingType:T,datePath:'preparer.signatureDate',imagePath:'preparer.signatureImage'}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN','preparer.ssnEin');req(d.preparer.phone,'D-2 Preparer — Phone','preparer.phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address','preparer.streetAddress');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip','preparer.cityStateZip');
+  req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');
   // "Unanswered" is anything that is neither Yes nor No: emptyDataGuardian()
   // defaults these to null, which must stay unanswered so a brand-new filing
   // cannot silently pass this question untouched. Both conventions count as
@@ -1167,12 +1178,14 @@ export function validateGuardian(){
   // saved ward to the canonical 'Yes'/'No' strings, so after any
   // save-and-reopen the value is a string. Testing booleans only meant export
   // was blocked on a question the filer had actually answered.
+  // D-3's radios have no data-bind matching the state field; the focusable
+  // targets are the radio inputs' own element ids.
   if (!sdbAnswered(d.hasSafeDepositBox)) {
-    errors.push('D-3 — Safe Deposit Box question must be answered (Yes or No).');
+    push('D-3 — Safe Deposit Box question must be answered (Yes or No).','sdb-yes');
   } else if (sdbIsYes(d.hasSafeDepositBox) && !sdbAnswered(d.safeDepositBoxFiled)) {
-    errors.push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).');
+    push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).','sdb-filed-yes');
   }
-  req(d.bondAmount,'D-4 — Bond Amount');if(!d.bondPeriodFrom)errors.push('D-4 — Bond Period From is required.');if(!d.bondPeriodTo)errors.push('D-4 — Bond Period To is required.');req(d.bondingCompany,'D-4 — Bonding Company');
+  req(d.bondAmount,'D-4 — Bond Amount','bondAmount');if(!d.bondPeriodFrom)push('D-4 — Bond Period From is required.','bondPeriodFrom');if(!d.bondPeriodTo)push('D-4 — Bond Period To is required.','bondPeriodTo');req(d.bondingCompany,'D-4 — Bonding Company','bondingCompany');
   // Milestone 40C-C. Guardian Inventory was deliberately excluded from
   // Milestone 34-1A's date-ordering work because it has no accounting period,
   // but it does have a bond period, and that pair had no order check at all --
@@ -1184,10 +1197,11 @@ export function validateGuardian(){
     sectionLabel:'D-4',
     earlierLabel:'Bond Period From',
     laterLabel:'Bond Period To',
+    filingType:T,laterPath:'bondPeriodTo',
   }));
-  d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`;req(r.name,`${p} — Name`);req(r.address,`${p} — Address`);req(r.cityStateZip,`${p} — City/State/Zip`);});
-  if(!d.serviceDate)errors.push('D-5 — Service Date is required.');
-  req(d.serviceAttorney.name,'D-5 Attorney — Name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:''}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number');req(d.serviceAttorney.phone,'D-5 Attorney — Phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip');
+  d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`,k=`serviceRecipients.${i}`;req(r.name,`${p} — Name`,`${k}.name`);req(r.address,`${p} — Address`,`${k}.address`);req(r.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  if(!d.serviceDate)push('D-5 — Service Date is required.','serviceDate');
+  req(d.serviceAttorney.name,'D-5 Attorney — Name','serviceAttorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number','serviceAttorney.barNumber');req(d.serviceAttorney.phone,'D-5 Attorney — Phone','serviceAttorney.phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address','serviceAttorney.streetAddress');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip','serviceAttorney.cityStateZip');
   return errors;
 }
 

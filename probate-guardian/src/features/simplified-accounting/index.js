@@ -5,6 +5,7 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { createSimplifiedGuardian, getSimplifiedGuardianAddressConflicts, normalizeSimplifiedGuardianCompatibility, resolveSimplifiedGuardianAddressConflict } from './guardian-compatibility.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
@@ -614,41 +615,47 @@ function pagePart7(){
   </div>`;
 }
 
+// Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validateSimplified(){
   const d=window.D;
   const errs=[];
-  getSimplifiedGuardianAddressConflicts(d).forEach(conflict=>errs.push(`Part IV — Guardian #${conflict.rowIndex+1} — resolve conflicting residence address before export`));
-  const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
-  const reqYes=(v,label)=>{if(v!=='Yes')errs.push(label);};
-  reqYes(d.eligDepository,'Cover — Eligibility: all estate property must be held in a designated depository under § 69.031 — otherwise use the standard Annual Accounting');
-  reqYes(d.eligOnlyTransactions,'Cover — Eligibility: only interest accrual, settlement deposits, and financial institution service charges may occur in the account — otherwise use the standard Annual Accounting');
-  req(d.wardName,'Cover — Name of Ward');
-  req(d.caseNumber,'Cover — Case Number');
-  req(d.ssn,'Cover — Social Security Number');
-  req(d.gid,'Cover — Guardianship Inception Date (GID)');
-  req(d.periodFrom,'Cover — Accounting Period From');
-  req(d.periodTo,'Cover — Accounting Period To');
-  req(d.guardian,'Cover — Guardian');
-  req(d.attorney,'Cover — Attorney for Guardian');
-  req(d.typeOfGuardianship,'Cover — Type of Guardianship');
-  req(d.county,'Cover — County');
-  req(d.amendedForm,'Cover — Amended Form?');
+  const T='simplified';
+  const issue=issueFactory(T);
+  getSimplifiedGuardianAddressConflicts(d).forEach(conflict=>errs.push(issue(`Part IV — Guardian #${conflict.rowIndex+1} — resolve conflicting residence address before export`,`guardians.${conflict.rowIndex}.residenceStreet`)));
+  const req=(v,label,path)=>{if(v===''||v===null||v===undefined)errs.push(issue(label,path));};
+  const reqYes=(v,label,path)=>{if(v!=='Yes')errs.push(issue(label,path));};
+  reqYes(d.eligDepository,'Cover — Eligibility: all estate property must be held in a designated depository under § 69.031 — otherwise use the standard Annual Accounting','eligDepository');
+  reqYes(d.eligOnlyTransactions,'Cover — Eligibility: only interest accrual, settlement deposits, and financial institution service charges may occur in the account — otherwise use the standard Annual Accounting','eligOnlyTransactions');
+  req(d.wardName,'Cover — Name of Ward','wardName');
+  req(d.caseNumber,'Cover — Case Number','caseNumber');
+  req(d.ssn,'Cover — Social Security Number','ssn');
+  req(d.gid,'Cover — Guardianship Inception Date (GID)','gid');
+  req(d.periodFrom,'Cover — Accounting Period From','periodFrom');
+  req(d.periodTo,'Cover — Accounting Period To','periodTo');
+  req(d.guardian,'Cover — Guardian','guardian');
+  req(d.attorney,'Cover — Attorney for Guardian','attorney');
+  req(d.typeOfGuardianship,'Cover — Type of Guardianship','typeOfGuardianship');
+  req(d.county,'Cover — County','county');
+  req(d.amendedForm,'Cover — Amended Form?','amendedForm');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Cover',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
+    filingType:T,laterPath:'periodTo',
   }));
   errs.push(...checkDateOrder(d.gid,d.periodFrom,{
     sectionLabel:'Cover',earlierLabel:'Guardianship Inception Date (GID)',laterLabel:'Accounting Period From',allowSameDay:true,
+    filingType:T,laterPath:'periodFrom',
   }));
-  req(d.startingBalance,'Part II — Starting Balance (Line 1)');
-  req(d.interestIncome,'Part II — Interest Income (Line 2)');
-  req(d.depositsSettlement,'Part II — Deposits Pursuant to Settlement (Line 3)');
-  req(d.serviceCharges,'Part II — Financial Institution Service Charges (Line 5)');
-  req(d.federalIncomeTax,'Part II — Federal Income Tax (Line 6)');
+  req(d.startingBalance,'Part II — Starting Balance (Line 1)','startingBalance');
+  req(d.interestIncome,'Part II — Interest Income (Line 2)','interestIncome');
+  req(d.depositsSettlement,'Part II — Deposits Pursuant to Settlement (Line 3)','depositsSettlement');
+  req(d.serviceCharges,'Part II — Financial Institution Service Charges (Line 5)','serviceCharges');
+  req(d.federalIncomeTax,'Part II — Federal Income Tax (Line 6)','federalIncomeTax');
   const gLabel=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   d.guardians.forEach((g,i)=>{
     if(i>0&&!guardianHasAnyData(g))return;
     const p=gLabel[i];
-    req(g.name,`Part IV — ${p} — Name`);
+    const gp=`guardians.${i}`;
+    req(g.name,`Part IV — ${p} — Name`,`${gp}.name`);
     // Milestone 39-C: replaces the old unconditional req(g.signatureDate,...)
     // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
     // rule as 39-B's Guardian pilot. name omitted: g.name is already
@@ -658,24 +665,27 @@ export function validateSimplified(){
       date: g.signatureDate,
       image: g.signatureImage,
       sectionLabel: 'Part IV', roleLabel: p,
+      filingType:T, datePath:`${gp}.signatureDate`, imagePath:`${gp}.signatureImage`,
     }));
-    req(g.ssn,`Part IV — ${p} — SSN/EIN`);
-    req(g.phone,`Part IV — ${p} — Phone Number`);
-    req(g.email,`Part IV — ${p} — Email Address`);
-    req(g.mailingStreet,`Part IV — ${p} — Mailing Street Address`);
-    req(g.mailingCityStateZip,`Part IV — ${p} — Mailing City/State/Zip`);
-    req(g.residenceStreet,`Part IV — ${p} — Residence Street Address`);
-    req(g.residenceCityStateZip,`Part IV — ${p} — Residence City/State/Zip`);
+    req(g.ssn,`Part IV — ${p} — SSN/EIN`,`${gp}.ssn`);
+    req(g.phone,`Part IV — ${p} — Phone Number`,`${gp}.phone`);
+    req(g.email,`Part IV — ${p} — Email Address`,`${gp}.email`);
+    req(g.mailingStreet,`Part IV — ${p} — Mailing Street Address`,`${gp}.mailingStreet`);
+    req(g.mailingCityStateZip,`Part IV — ${p} — Mailing City/State/Zip`,`${gp}.mailingCityStateZip`);
+    req(g.residenceStreet,`Part IV — ${p} — Residence Street Address`,`${gp}.residenceStreet`);
+    req(g.residenceCityStateZip,`Part IV — ${p} — Residence City/State/Zip`,`${gp}.residenceCityStateZip`);
     errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
       sectionLabel:`Part IV — ${p}`,earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
+      filingType:T,laterPath:`${gp}.signatureDate`,
     }));
   });
-  req(d.attorney_barNumber,'Part V — Attorney Bar Number');
-  req(d.attorney_phone,'Part V — Attorney Phone Number');
-  req(d.attorney_street,'Part V — Attorney Street Address');
-  req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
+  req(d.attorney_barNumber,'Part V — Attorney Bar Number','attorney_barNumber');
+  req(d.attorney_phone,'Part V — Attorney Phone Number','attorney_phone');
+  req(d.attorney_street,'Part V — Attorney Street Address','attorney_street');
+  req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip','attorney_cityStateZip');
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
+    filingType:T,laterPath:'attorney_signatureDate',
   }));
   // Milestone 39-C: attorney_name (d.attorney) is already independently,
   // unconditionally required at Cover ("Cover — Attorney for Guardian"
@@ -686,13 +696,15 @@ export function validateSimplified(){
     date: d.attorney_signatureDate,
     image: d.attorney_signatureImage,
     sectionLabel: 'Part V', roleLabel: 'Attorney',
+    filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
-  req(d.certServiceDate,'Part VI — Date of Service');
+  req(d.certServiceDate,'Part VI — Date of Service','certServiceDate');
   errs.push(...checkDateOrder(d.periodTo,d.certServiceDate,{
     sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Date of Service',allowSameDay:true,
+    filingType:T,laterPath:'certServiceDate',
   }));
-  req(d.certIndicator,'Part VI — "Indicate if"');
-  req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address');
+  req(d.certIndicator,'Part VI — "Indicate if"','certIndicator');
+  req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address','certRecipients.0.name');
   // Milestone 39-C: certAttySignDate had no requiredness of any kind before
   // this -- not even order-check-only (confirmed during the 39-C inventory
   // audit). The attorney name here is the same shared `d.attorney` field
@@ -703,6 +715,7 @@ export function validateSimplified(){
     date: d.certAttySignDate,
     image: d.certAttySignatureImage,
     sectionLabel: 'Part VI', roleLabel: 'Attorney',
+    filingType:T, datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
   return errs;
 }

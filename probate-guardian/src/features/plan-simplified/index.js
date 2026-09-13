@@ -1,6 +1,7 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
@@ -314,39 +315,44 @@ function pagePlanSSignatures(){
   </div>`;
 }
 
+// Milestone 42F: every issue states its own field path (validation-issue.js)
+// -- the adapter no longer has to recover it from the message text.
 export function validatePlanSimplified(){
   const d=window.D;
   const errs=[];
-  const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
-  req(d.wardName,'Cover — Name of Ward is required');
-  req(d.caseNumber,'Cover — Case Number is required');
-  req(d.county,'Cover — County is required');
-  req(d.periodFrom,'Cover — Reporting Period From is required');
-  req(d.periodTo,'Cover — Reporting Period To is required');
+  const T='planSimplified';
+  const issue=issueFactory(T);
+  const req=(v,label,path)=>{if(v===''||v===null||v===undefined)errs.push(issue(label,path));};
+  req(d.wardName,'Cover — Name of Ward is required','wardName');
+  req(d.caseNumber,'Cover — Case Number is required','caseNumber');
+  req(d.county,'Cover — County is required','county');
+  req(d.periodFrom,'Cover — Reporting Period From is required','periodFrom');
+  req(d.periodTo,'Cover — Reporting Period To is required','periodTo');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+    filingType:T,laterPath:'periodTo',
   }));
-  req(d.q1Residences,'The Plan — Question 1 (places resided) is required');
-  req(d.q2BestPlacement,'The Plan — Question 2 (why this placement) is required');
-  req(d.q3MedicalTreatment,'The Plan — Question 3 (medical treatment) is required');
-  req(d.q4Diagnosis,'The Plan — Question 4 (diagnosis and conditions) is required');
-  req(d.q5SocialServices,'The Plan — Question 5 (personal and social services) is required');
-  req(d.q6Interaction,'The Plan — Question 6 (interaction with others) is required');
-  req(d.q7RestoreRights,'The Plan — Question 7 (restore rights) must be answered');
-  if(d.q7RestoreRights==='Yes')req(d.q7RestoreExplain,'The Plan — Question 7 explanation is required when rights should be restored');
+  req(d.q1Residences,'The Plan — Question 1 (places resided) is required','q1Residences');
+  req(d.q2BestPlacement,'The Plan — Question 2 (why this placement) is required','q2BestPlacement');
+  req(d.q3MedicalTreatment,'The Plan — Question 3 (medical treatment) is required','q3MedicalTreatment');
+  req(d.q4Diagnosis,'The Plan — Question 4 (diagnosis and conditions) is required','q4Diagnosis');
+  req(d.q5SocialServices,'The Plan — Question 5 (personal and social services) is required','q5SocialServices');
+  req(d.q6Interaction,'The Plan — Question 6 (interaction with others) is required','q6Interaction');
+  req(d.q7RestoreRights,'The Plan — Question 7 (restore rights) must be answered','q7RestoreRights');
+  if(d.q7RestoreRights==='Yes')req(d.q7RestoreExplain,'The Plan — Question 7 explanation is required when rights should be restored','q7RestoreExplain');
   // Q8 is a "check all that apply" list, but leaving every box blank means the
   // question was skipped rather than answered "none" — NONE is its own box.
   if(!(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other||d.q8None)){
-    errs.push('The Plan — Question 8 (advance directives) must have at least one box checked, or NONE');
+    errs.push(issue('The Plan — Question 8 (advance directives) must have at least one box checked, or NONE','q8DNR'));
   }
-  if(d.q8Other)req(d.q8OtherText,'The Plan — Question 8 requires a description when "Other Advance Directive" is checked');
+  if(d.q8Other)req(d.q8OtherText,'The Plan — Question 8 requires a description when "Other Advance Directive" is checked','q8OtherText');
   if(d.q8None&&(d.q8DNR||d.q8LivingWill||d.q8Surrogate||d.q8POA||d.q8Other)){
-    errs.push('The Plan — Question 8 cannot be NONE and also list directives');
+    errs.push(issue('The Plan — Question 8 cannot be NONE and also list directives','q8None'));
   }
-  req(d.q9Remuneration,'The Plan — Question 9 (remuneration) must be answered');
-  if(d.q9Remuneration==='Yes')req(d.q9RemunerationExplain,'The Plan — Question 9 explanation is required when payment was received');
+  req(d.q9Remuneration,'The Plan — Question 9 (remuneration) must be answered','q9Remuneration');
+  if(d.q9Remuneration==='Yes')req(d.q9RemunerationExplain,'The Plan — Question 9 explanation is required when payment was received','q9RemunerationExplain');
   const g=(d.planGuardians||[])[0]||{};
-  req(g.name,'Signatures — Guardian 1 printed name is required');
+  req(g.name,'Signatures — Guardian 1 printed name is required','planGuardians.0.name');
   // Milestone 39-B: replaces the old unconditional req(g.signatureDate,...)
   // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, per
   // MILESTONE-39-PROPOSAL.md's 39-B "a confirmed, deliberate change to
@@ -359,18 +365,22 @@ export function validatePlanSimplified(){
     date: g.signatureDate,
     image: g.signatureImage,
     sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
+    filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
   }));
-  req(g.email,'Signatures — Guardian 1 email is required');
-  req(g.phone,'Signatures — Guardian 1 phone is required');
-  req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required');
+  req(g.email,'Signatures — Guardian 1 email is required','planGuardians.0.email');
+  req(g.phone,'Signatures — Guardian 1 phone is required','planGuardians.0.phone');
+  req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required','planGuardians.0.mailingAddress');
   errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
     sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian 1 date signed',allowSameDay:true,
+    filingType:T,laterPath:'planGuardians.0.signatureDate',
   }));
   errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
     sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Preparer date signed',allowSameDay:true,
+    filingType:T,laterPath:'preparer_signatureDate',
   }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
+    filingType:T,laterPath:'attorney_signatureDate',
   }));
   return errs;
 }

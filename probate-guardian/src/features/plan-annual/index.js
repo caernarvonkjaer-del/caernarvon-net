@@ -1,6 +1,7 @@
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
@@ -637,85 +638,93 @@ function pagePlanASignatures(){
   </div>`;
 }
 
+// Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanAnnual(){
   const d=window.D;
   const errs=[];
-  const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
-  req(d.wardName,'Cover — Name of Ward is required');
-  req(d.caseNumber,'Cover — Case Number is required');
-  req(d.county,'Cover — County is required');
-  req(d.gid,'Cover — Guardianship Inception Date is required');
-  req(d.periodFrom,'Cover — Reporting Period From is required');
-  req(d.periodTo,'Cover — Reporting Period To is required');
+  const T='planAnnual';
+  const issue=issueFactory(T);
+  const req=(v,label,path)=>{if(v===''||v===null||v===undefined)errs.push(issue(label,path));};
+  req(d.wardName,'Cover — Name of Ward is required','wardName');
+  req(d.caseNumber,'Cover — Case Number is required','caseNumber');
+  req(d.county,'Cover — County is required','county');
+  req(d.gid,'Cover — Guardianship Inception Date is required','gid');
+  req(d.periodFrom,'Cover — Reporting Period From is required','periodFrom');
+  req(d.periodTo,'Cover — Reporting Period To is required','periodTo');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+    filingType:T,laterPath:'periodTo',
   }));
   errs.push(...checkDateOrder(d.gid,d.periodFrom,{
     sectionLabel:'Cover',earlierLabel:'Guardianship Inception Date',laterLabel:'Reporting Period From',allowSameDay:true,
+    filingType:T,laterPath:'periodFrom',
   }));
-  req(d.guardian,'Cover — Guardian Name(s) is required');
-  req(d.wardLiving,'Cover — where the ward is living must be answered');
-  req(d.residenceAddress,'Cover — address where the ward resides is required');
-  req(d.residenceCityStateZip,'Cover — city/state/ZIP where the ward resides is required');
+  req(d.guardian,'Cover — Guardian Name(s) is required','guardian');
+  req(d.wardLiving,'Cover — where the ward is living must be answered','wardLiving');
+  req(d.residenceAddress,'Cover — address where the ward resides is required','residenceAddress');
+  req(d.residenceCityStateZip,'Cover — city/state/ZIP where the ward resides is required','residenceCityStateZip');
 
+  // Row numbers index the filtered (non-blank) rows, as they always have --
+  // a pre-existing modeling gap noted in the adapter; the path uses the
+  // same index so the two stay consistent with each other.
   const res=(d.q1Residences||[]).filter(r=>r&&(r.name||r.street||r.cityStateZip));
-  if(!res.length)errs.push('1. Residences — at least one residence must be listed');
-  res.forEach((r,i)=>{if(!r.name)errs.push(`1. Residences — row ${i+1} needs a facility or owner name`);});
+  if(!res.length)errs.push(issue('1. Residences — at least one residence must be listed','q1Residences.0.name'));
+  res.forEach((r,i)=>{if(!r.name)errs.push(issue(`1. Residences — row ${i+1} needs a facility or owner name`,`q1Residences.${i}.name`));});
 
   if(!(d.q2NoMove||d.q2WithinCounty||d.q2WithinCircuit||d.q2OutsideApproved||d.q2OutsideVenuePetition)){
-    errs.push('2–3. Residence & Care — question 2 (address change) must have at least one box checked');
+    errs.push(issue('2–3. Residence & Care — question 2 (address change) must have at least one box checked','q2NoMove'));
   }
   if(!(d.q3SettingALF||d.q3SettingGroupHome||d.q3SettingIntermediate||d.q3SettingPrivate
      ||d.q3SettingSkilled||d.q3SettingSpecialized||d.q3SettingStateHospital||d.q3SettingOther)){
-    errs.push('2–3. Residence & Care — a best-suited residential setting must be selected');
+    errs.push(issue('2–3. Residence & Care — a best-suited residential setting must be selected','q3SettingALF'));
   }
-  if(d.q3SettingOther)req(d.q3SettingExplain,'2–3. Residence & Care — explain the "Other" residential setting');
-  if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Residence & Care — area of specialty is required');
+  if(d.q3SettingOther)req(d.q3SettingExplain,'2–3. Residence & Care — explain the "Other" residential setting','q3SettingExplain');
+  if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Residence & Care — area of specialty is required','q3MedSpecialistArea');
 
   const provs=(d.q4Providers||[]).filter(r=>r&&(r.name||r.providerType||r.visits));
-  if(!provs.length)errs.push('4. Medical Treatment — at least one provider must be listed');
-  provs.forEach((r,i)=>{if(!r.name)errs.push(`4. Medical Treatment — row ${i+1} needs a provider name`);});
+  if(!provs.length)errs.push(issue('4. Medical Treatment — at least one provider must be listed','q4Providers.0.name'));
+  provs.forEach((r,i)=>{if(!r.name)errs.push(issue(`4. Medical Treatment — row ${i+1} needs a provider name`,`q4Providers.${i}.name`));});
 
-  req(d.q5SocialSkills,'5–7. Skills & Rights — question 5 (social skills) is required');
-  req(d.q5Activities,'5–7. Skills & Rights — question 5 (capacity-building activities) is required');
+  req(d.q5SocialSkills,'5–7. Skills & Rights — question 5 (social skills) is required','q5SocialSkills');
+  req(d.q5Activities,'5–7. Skills & Rights — question 5 (capacity-building activities) is required','q5Activities');
   const rights=d.rights||{};
   const unanswered=PLAN_RIGHTS.filter(([k])=>!rights[k]);
   if(unanswered.length){
-    errs.push(`5–7. Skills & Rights — ${unanswered.length} right${unanswered.length===1?'':'s'} still unanswered in question 6`);
+    errs.push(issue(`5–7. Skills & Rights — ${unanswered.length} right${unanswered.length===1?'':'s'} still unanswered in question 6`,`rights.${unanswered[0][0]}`));
   }
   const adls=d.adls||{};
   const unrated=PLAN_ADLS.filter(([k])=>!adls[k]);
   if(unrated.length){
-    errs.push(`8. Daily Living — ${unrated.length} activit${unrated.length===1?'y is':'ies are'} still unrated`);
+    errs.push(issue(`8. Daily Living — ${unrated.length} activit${unrated.length===1?'y is':'ies are'} still unrated`,`adls.${unrated[0][0]}`));
   }
 
   if(!(d.q9MentalNone||d.q9MentalDementia||d.q9MentalAlzheimers||d.q9MentalAutism||d.q9MentalHeadInjury
      ||d.q9MentalDevelopmental||d.q9MentalIntellectual||d.q9MentalSchizophrenia||d.q9MentalDepression
      ||d.q9MentalSubstance||d.q9MentalOther)){
-    errs.push('9. Disabilities & Devices — mental disabilities must be answered, or "no mental disabilities" checked');
+    errs.push(issue('9. Disabilities & Devices — mental disabilities must be answered, or "no mental disabilities" checked','q9MentalNone'));
   }
   if(!(d.q9PhysNone||d.q9PhysMobility||d.q9PhysBlindness||d.q9PhysDeafness||d.q9PhysDiabetic
      ||d.q9PhysParkinsons||d.q9PhysArthritis||d.q9PhysOther)){
-    errs.push('9. Disabilities & Devices — physical disabilities must be answered, or "no physical disabilities" checked');
+    errs.push(issue('9. Disabilities & Devices — physical disabilities must be answered, or "no physical disabilities" checked','q9PhysNone'));
   }
-  if(d.q9MentalOther)req(d.q9MentalExplain,'9. Disabilities & Devices — explain the "Other" mental disability');
-  if(d.q9PhysOther)req(d.q9PhysExplain,'9. Disabilities & Devices — explain the "Other" physical disability');
+  if(d.q9MentalOther)req(d.q9MentalExplain,'9. Disabilities & Devices — explain the "Other" mental disability','q9MentalExplain');
+  if(d.q9PhysOther)req(d.q9PhysExplain,'9. Disabilities & Devices — explain the "Other" physical disability','q9PhysExplain');
 
   if(!(d.q10NoDirectives||d.q10Executed)){
-    errs.push('10. Advance Directives — answer whether directives exist');
+    errs.push(issue('10. Advance Directives — answer whether directives exist','q10NoDirectives'));
   }
   if(d.q10NoDirectives&&d.q10Executed){
-    errs.push('10. Advance Directives — cannot both have no directives and list executed directives');
+    errs.push(issue('10. Advance Directives — cannot both have no directives and list executed directives','q10NoDirectives'));
   }
-  if(d.q10ExecOther)req(d.q10ExecOtherText,'10. Advance Directives — describe the "Other" directive');
+  if(d.q10ExecOther)req(d.q10ExecOtherText,'10. Advance Directives — describe the "Other" directive','q10ExecOtherText');
 
-  if(d.q11NoRemuneration)req(d.q11NoRemunerationName,"11. Remuneration — declaring guardian's name is required");
+  if(d.q11NoRemuneration)req(d.q11NoRemunerationName,"11. Remuneration — declaring guardian's name is required",'q11NoRemunerationName');
   else if(!(d.q11ReceivedName||d.q11Amount||d.q11From)){
-    errs.push('11. Remuneration — either declare no remuneration, or record what was received');
+    errs.push(issue('11. Remuneration — either declare no remuneration, or record what was received','q11NoRemuneration'));
   }
 
   const g0=(d.planGuardians||[])[0]||{};
-  req(g0.name,'Signatures — Guardian printed name is required');
+  req(g0.name,'Signatures — Guardian printed name is required','planGuardians.0.name');
   // Milestone 39-C: replaces the old unconditional req(g0.signatureDate,...)
   // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
   // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
@@ -725,27 +734,33 @@ export function validatePlanAnnual(){
     date: g0.signatureDate,
     image: g0.signatureImage,
     sectionLabel: 'Signatures', roleLabel: 'Guardian',
+    filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
   }));
-  req(g0.mailingStreet,'Signatures — Guardian mailing street address is required');
-  req(g0.phone,'Signatures — Guardian phone number is required');
-  req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
+  req(g0.mailingStreet,'Signatures — Guardian mailing street address is required','planGuardians.0.mailingStreet');
+  req(g0.phone,'Signatures — Guardian phone number is required','planGuardians.0.phone');
+  req(g0.ssn,'Signatures — Guardian SSN/EIN is required','planGuardians.0.ssn');
   errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
     sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian date signed',allowSameDay:true,
+    filingType:T,laterPath:'planGuardians.0.signatureDate',
   }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
+    filingType:T,laterPath:'attorney_signatureDate',
   }));
   // Milestone 39-C: the attorney card has never had any requiredness of its
   // own ("Leave blank if no attorney is involved") -- name is passed here
   // (unlike Guardian's omission above) because nothing else in this
   // validator makes attorney name required, so an explicit "/s/"/Stamp
   // choice with no typed name would otherwise pass silently.
+  // Milestone 42F: namePath is the bare `attorney` scalar; the pre-42F
+  // adapter sent this message to the guardian's name field.
   errs.push(...checkSignatureState({
     state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
     name: d.attorney,
     date: d.attorney_signatureDate,
     image: d.attorney_signatureImage,
     sectionLabel: 'Signatures', roleLabel: 'Attorney',
+    filingType:T, namePath:'attorney', datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
   return errs;
 }

@@ -66,6 +66,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |
 | types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
+| validation-issue.spec.js             | Milestone 42F: validationIssue()/issueFactory() build registry-backed issues from the "Section — detail" convention; toString() is the message                |
 | window-bridge.spec.js                | Milestone 42C: every window.X = site in src/ is in fixtures/window-bridge-allowlist.json (scripts/audit-window-bridge.mjs); window-bridge.d.ts in sync; no new triple definitions |
 | ward-carryover.spec.js               | Carry-over field mapping between filing types; Milestone 40C-F nested Initial-Inventory attorney shape; county never taken from the source snapshot; Milestone 40H-J: Plan/Accounting -> Guardian Inventory attorney block writes the nested shape, not dropped flat keys |
 | ward-lock.spec.js                    | Ward lock acquire/release/current-lock services                                                                           |
@@ -147,6 +148,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | tab-and-update.spec.ts                   | Cross-tab detection/notice, incl. app-update flow                                                                                                                                        |
 | theme-prepaint.spec.ts                   | Milestone 40D: stored theme beats the OS preference before first paint, both theme attributes track the toggle, and no theme reaches app state                                           |
 | unlock.spec.ts                           | Unlock flow                                                                                                                                                                              |
+| validation-structured-paths.spec.ts      | Milestone 42F oracle: for every filing type, each validator issue is an object whose explicit path agrees with the pre-42F text-matched derivation; no bare strings remain |
 | verified-inventory-workflow.spec.ts      | Verified Initial Inventory workflow & usability improvements                                                                                                                             |
 | ward-lock.spec.ts                        | Ward-level tab locks (`@origin-state`)                                                                                                                                                   |
 

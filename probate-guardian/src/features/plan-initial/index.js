@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
@@ -553,74 +554,77 @@ function pagePlanIAttorney(){
   </div>`;
 }
 
+// Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanInitial(){
   const d=window.D;
   const errs=[];
-  const req=(v,label)=>{if(v===''||v===null||v===undefined)errs.push(label);};
-  req(d.wardName,'Cover — Name of Ward is required');
-  req(d.caseNumber,'Cover — Case Number is required');
-  req(d.county,'Cover — County is required');
-  req(d.inceptionDate,'Cover — Guardianship Inception Date is required');
-  req(d.lettersSignedDate,'Cover — Date Letters Were Signed is required');
-  req(d.guardianNames,'Cover — Guardian Name(s) is required');
-  req(d.wardLiving,'Cover — Where the ward is living is required');
-  req(d.residenceAddress,'Cover — Address where ward resides is required');
-  req(d.residenceCityStateZip,'Cover — City/State/ZIP is required');
+  const T='planInitial';
+  const issue=issueFactory(T);
+  const req=(v,label,path)=>{if(v===''||v===null||v===undefined)errs.push(issue(label,path));};
+  req(d.wardName,'Cover — Name of Ward is required','wardName');
+  req(d.caseNumber,'Cover — Case Number is required','caseNumber');
+  req(d.county,'Cover — County is required','county');
+  req(d.inceptionDate,'Cover — Guardianship Inception Date is required','inceptionDate');
+  req(d.lettersSignedDate,'Cover — Date Letters Were Signed is required','lettersSignedDate');
+  req(d.guardianNames,'Cover — Guardian Name(s) is required','guardianNames');
+  req(d.wardLiving,'Cover — Where the ward is living is required','wardLiving');
+  req(d.residenceAddress,'Cover — Address where ward resides is required','residenceAddress');
+  req(d.residenceCityStateZip,'Cover — City/State/ZIP is required','residenceCityStateZip');
 
-  req(d.q2Setting,'2–3. Setting & Medical Care — Best-suited residential setting is required');
-  if(d.q2Setting==='Other')req(d.q2Explain,'2–3. Setting & Medical Care — Explanation for "Other" residential setting is required');
+  req(d.q2Setting,'2–3. Setting & Medical Care — Best-suited residential setting is required','q2Setting');
+  if(d.q2Setting==='Other')req(d.q2Explain,'2–3. Setting & Medical Care — Explanation for "Other" residential setting is required','q2Explain');
   const anyMed=d.q3MedPrimary||d.q3MedDentist||d.q3MedOphthalmologist||d.q3MedSpecialist||d.q3MedPT||d.q3MedST||d.q3MedOT||d.q3MedWardDecides||d.q3MedOther;
-  if(!anyMed)errs.push('2–3. Setting & Medical Care — At least one medical service option is required');
-  if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Setting & Medical Care — Specialist area of specialty is required');
-  if(d.q3MedOther)req(d.q3MedExplain,'2–3. Setting & Medical Care — Explanation for "Other" medical service is required');
+  if(!anyMed)errs.push(issue('2–3. Setting & Medical Care — At least one medical service option is required','q3MedPrimary'));
+  if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Setting & Medical Care — Specialist area of specialty is required','q3MedSpecialistArea');
+  if(d.q3MedOther)req(d.q3MedExplain,'2–3. Setting & Medical Care — Explanation for "Other" medical service is required','q3MedExplain');
 
-  req(d.q4Mental,'4–5. Mental Health & Personal Care — Mental health service provision is required');
-  if(d.q4Mental==='Other'||d.q4Mental==='None')req(d.q4Explain,'4–5. Mental Health & Personal Care — Explanation is required');
-  req(d.q5Personal,'4–5. Mental Health & Personal Care — Personal care provision is required');
-  if(d.q5Personal==='Other')req(d.q5Explain,'4–5. Mental Health & Personal Care — Explanation for "Other" personal care is required');
+  req(d.q4Mental,'4–5. Mental Health & Personal Care — Mental health service provision is required','q4Mental');
+  if(d.q4Mental==='Other'||d.q4Mental==='None')req(d.q4Explain,'4–5. Mental Health & Personal Care — Explanation is required','q4Explain');
+  req(d.q5Personal,'4–5. Mental Health & Personal Care — Personal care provision is required','q5Personal');
+  if(d.q5Personal==='Other')req(d.q5Explain,'4–5. Mental Health & Personal Care — Explanation for "Other" personal care is required','q5Explain');
 
   const anySocial=d.q6CareFacility||d.q6NursesAides||d.q6FamilyFriends||d.q6DayProgram||d.q6WardDecides||d.q6Other;
-  if(!anySocial)errs.push('6–7. Socialization & Benefits — At least one socialization/recreation option is required');
-  if(d.q6Other)req(d.q6Explain,'6–7. Socialization & Benefits — Explanation for "Other" socialization is required');
+  if(!anySocial)errs.push(issue('6–7. Socialization & Benefits — At least one socialization/recreation option is required','q6CareFacility'));
+  if(d.q6Other)req(d.q6Explain,'6–7. Socialization & Benefits — Explanation for "Other" socialization is required','q6Explain');
   // Milestone 40C-H: was `if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)`.
   // Those first two are tri-state ('', 'Yes', 'No'), so the non-empty string
   // 'No' is truthy -- a filer who answered No to both was still required to
   // explain, blocking an otherwise complete filing. Unanswered stays
   // unanswered; this never treats a blank as No.
-  if(isAffirmative(d.q7Trusts)||isAffirmative(d.q7PendingBenefits)||d.q7Other)req(d.q7Explain,'6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other');
+  if(isAffirmative(d.q7Trusts)||isAffirmative(d.q7PendingBenefits)||d.q7Other)req(d.q7Explain,'6–7. Socialization & Benefits — Explanation is required for Trusts, Pending Benefits, or Other','q7Explain');
 
   const q9provs=(d.q9Providers||[]).filter(r=>r&&r.name);
-  if(!q9provs.length)errs.push('9. Examining Providers — At least one provider must be listed');
+  if(!q9provs.length)errs.push(issue('9. Examining Providers — At least one provider must be listed','q9Providers.0.name'));
   (d.q9Providers||[]).forEach((r,i)=>{
     if(r&&(r.providerType||r.examDate||r.street||r.cityStateZip||r.phone)&&!r.name)
-      errs.push(`9. Examining Providers — Row ${i+1}: Provider name is required`);
+      errs.push(issue(`9. Examining Providers — Row ${i+1}: Provider name is required`,`q9Providers.${i}.name`));
   });
 
-  const missingAdls=INITIAL_ADLS.filter(([k])=>!d.adls||!d.adls[k]).length;
-  if(missingAdls>0)errs.push(`10A. Daily Living — ${missingAdls} of ${INITIAL_ADLS.length} activities not yet rated`);
+  const missingAdlKeys=INITIAL_ADLS.filter(([k])=>!d.adls||!d.adls[k]).map(([k])=>k);
+  if(missingAdlKeys.length>0)errs.push(issue(`10A. Daily Living — ${missingAdlKeys.length} of ${INITIAL_ADLS.length} activities not yet rated`,`adls.${missingAdlKeys[0]}`));
 
   const anyMental=d.mentalAlzheimers||d.mentalAutism||d.mentalClosedHeadInjury||d.mentalDementia||d.mentalDepression||d.mentalDevelopmental||d.mentalSubstance||d.mentalSchizophrenia||d.mentalOther;
-  if(!anyMental)errs.push('10B–D. Disabilities & Devices — At least one mental disability option is required (or note none apply)');
-  if(d.mentalOther)req(d.mentalExplain,'10B–D. Disabilities & Devices — Explanation for "Other" mental disability is required');
+  if(!anyMental)errs.push(issue('10B–D. Disabilities & Devices — At least one mental disability option is required (or note none apply)','mentalAlzheimers'));
+  if(d.mentalOther)req(d.mentalExplain,'10B–D. Disabilities & Devices — Explanation for "Other" mental disability is required','mentalExplain');
   const anyPhys=d.physMobility||d.physBlindness||d.physDeafness||d.physDiabetic||d.physParkinsons||d.physArthritis||d.physOther;
-  if(!anyPhys)errs.push('10B–D. Disabilities & Devices — At least one physical disability option is required (or note none apply)');
-  if(d.physOther)req(d.physExplain,'10B–D. Disabilities & Devices — Explanation for "Other" physical disability is required');
+  if(!anyPhys)errs.push(issue('10B–D. Disabilities & Devices — At least one physical disability option is required (or note none apply)','physMobility'));
+  if(d.physOther)req(d.physExplain,'10B–D. Disabilities & Devices — Explanation for "Other" physical disability is required','physExplain');
   const anyUses=d.usesDentures||d.usesHearingAid||d.usesWheelchair||d.usesWalker||d.usesCrutches||d.usesProsthetics||d.usesGlasses||d.usesNone||d.usesOther;
-  if(!anyUses)errs.push('10B–D. Disabilities & Devices — Assistive devices currently used is required (or select None)');
-  if(d.usesOther)req(d.usesExplain,'10B–D. Disabilities & Devices — Explanation for "Other" device currently used is required');
+  if(!anyUses)errs.push(issue('10B–D. Disabilities & Devices — Assistive devices currently used is required (or select None)','usesDentures'));
+  if(d.usesOther)req(d.usesExplain,'10B–D. Disabilities & Devices — Explanation for "Other" device currently used is required','usesExplain');
 
-  if(!!d.q11NoDirectives===!!d.q11Executed)errs.push('11. Advance Directives — Select exactly one: no pre-existing directives, or directives were executed');
-  if(d.q11ExecOther)req(d.q11ExecOtherText,'11. Advance Directives — Description of "Other" advance directive is required');
+  if(!!d.q11NoDirectives===!!d.q11Executed)errs.push(issue('11. Advance Directives — Select exactly one: no pre-existing directives, or directives were executed','q11NoDirectives'));
+  if(d.q11ExecOther)req(d.q11ExecOtherText,'11. Advance Directives — Description of "Other" advance directive is required','q11ExecOtherText');
   const anyNeeds=d.needsDentures||d.needsHearingAid||d.needsWheelchair||d.needsWalker||d.needsCrutches||d.needsProsthetics||d.needsGlasses||d.needsNone||d.needsOther;
-  if(!anyNeeds)errs.push('11. Advance Directives — Assistive devices needed is required (or select None)');
-  if(d.needsOther)req(d.needsExplain,'11. Advance Directives — Explanation for "Other" device needed is required');
-  req(d.committeeIncorporated,'11. Advance Directives — Whether examining-committee recommendations are incorporated is required');
-  if(d.committeeIncorporated==='No')req(d.committeeExplain,'11. Advance Directives — Explanation is required when recommendations are not incorporated');
+  if(!anyNeeds)errs.push(issue('11. Advance Directives — Assistive devices needed is required (or select None)','needsDentures'));
+  if(d.needsOther)req(d.needsExplain,'11. Advance Directives — Explanation for "Other" device needed is required','needsExplain');
+  req(d.committeeIncorporated,'11. Advance Directives — Whether examining-committee recommendations are incorporated is required','committeeIncorporated');
+  if(d.committeeIncorporated==='No')req(d.committeeExplain,'11. Advance Directives — Explanation is required when recommendations are not incorporated','committeeExplain');
 
   const anyCert=d.certIncapacitatedNoCopy||d.certMinorNoCopy||d.certConsulted||d.certRecognizeRights||d.certNoRestriction||d.certProvidesCare;
-  if(!anyCert)errs.push('Signatures — At least one certification statement must be checked');
+  if(!anyCert)errs.push(issue('Signatures — At least one certification statement must be checked','certIncapacitatedNoCopy'));
   const g0=(d.planGuardians||[])[0]||{};
-  req(g0.name,'Signatures — Guardian name is required');
+  req(g0.name,'Signatures — Guardian name is required','planGuardians.0.name');
   // Milestone 39-C: replaces the old unconditional req(g0.signatureDate,...)
   // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
   // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
@@ -630,10 +634,11 @@ export function validatePlanInitial(){
     date: g0.signatureDate,
     image: g0.signatureImage,
     sectionLabel: 'Signatures', roleLabel: 'Guardian',
+    filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
   }));
-  req(g0.street,'Signatures — Guardian street address is required');
-  req(g0.phone,'Signatures — Guardian phone is required');
-  req(g0.ssn,'Signatures — Guardian SSN/EIN is required');
+  req(g0.street,'Signatures — Guardian street address is required','planGuardians.0.street');
+  req(g0.phone,'Signatures — Guardian phone is required','planGuardians.0.phone');
+  req(g0.ssn,'Signatures — Guardian SSN/EIN is required','planGuardians.0.ssn');
 
   // Milestone 35-3: pro se filers and Guardian Advocates (Ch. 393, exempt from
   // attorney representation under Fla. Prob. R. 5.030) must be able to export
@@ -646,12 +651,13 @@ export function validatePlanInitial(){
   // default Unsigned choice does not, by itself, count as "started" --
   // preserving the pro se exemption.
   if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
-    req(d.attorney_name,'Attorney Certification — Attorney name is required');
+    req(d.attorney_name,'Attorney Certification — Attorney name is required','attorney_name');
     errs.push(...checkSignatureState({
       state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
       date: d.attorney_signatureDate,
       image: d.attorney_signatureImage,
       sectionLabel: 'Attorney Certification', roleLabel: 'Attorney',
+      filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
     }));
   }
 

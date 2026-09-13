@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { isTriStateAnswer } from '../../core/form/form-contract.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
@@ -408,47 +409,51 @@ function pagePlanMPreparerAttorney(){
   </div>`;
 }
 
+// Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanMinor(){
   const d=window.D;
   const errs=[];
-  if(!isTriStateAnswer(d.amendedForm)) errs.push('Cover — Amended Form? must be answered');
-  const req=(v,label)=>{if(v===''||v===null||v===undefined||v===false)errs.push(label);};
-  req(d.wardName,"Cover — Minor's Name is required");
-  req(d.county,'Cover — County is required');
-  req(d.periodFrom,'Cover — Reporting Period From is required');
-  req(d.periodTo,'Cover — Reporting Period To is required');
+  const T='planMinor';
+  const issue=issueFactory(T);
+  if(!isTriStateAnswer(d.amendedForm)) errs.push(issue('Cover — Amended Form? must be answered','amendedForm'));
+  const req=(v,label,path)=>{if(v===''||v===null||v===undefined||v===false)errs.push(issue(label,path));};
+  req(d.wardName,"Cover — Minor's Name is required",'wardName');
+  req(d.county,'Cover — County is required','county');
+  req(d.periodFrom,'Cover — Reporting Period From is required','periodFrom');
+  req(d.periodTo,'Cover — Reporting Period To is required','periodTo');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+    filingType:T,laterPath:'periodTo',
   }));
-  req(d.ucn||d.ref,'Cover — Case Number is required');
-  req(d.guardianName,'Cover — Guardian Name(s) is required');
-  req(d.q1ResidenceName,'Cover — Current Residence Name is required');
-  req(d.q1Street,'Cover — Current Residence Street Address is required');
-  if(d.amendedForm==='Yes')req(d.amendedVersion,'Cover — Amended Form version is required');
+  req(d.ucn||d.ref,'Cover — Case Number is required','ucn');
+  req(d.guardianName,'Cover — Guardian Name(s) is required','guardianName');
+  req(d.q1ResidenceName,'Cover — Current Residence Name is required','q1ResidenceName');
+  req(d.q1Street,'Cover — Current Residence Street Address is required','q1Street');
+  if(d.amendedForm==='Yes')req(d.amendedVersion,'Cover — Amended Form version is required','amendedVersion');
 
   const q3provs=(d.q3Providers||[]).filter(r=>r&&r.last);
-  if(!q3provs.length)errs.push('3. Treatment Providers — At least one provider must be listed');
+  if(!q3provs.length)errs.push(issue('3. Treatment Providers — At least one provider must be listed','q3Providers.0.last'));
   (d.q3Providers||[]).forEach((r,i)=>{
     if(r&&(r.first||r.providerType||r.street||r.city||r.phone)&&!r.last)
-      errs.push(`3. Treatment Providers — Row ${i+1}: Provider last name is required`);
+      errs.push(issue(`3. Treatment Providers — Row ${i+1}: Provider last name is required`,`q3Providers.${i}.last`));
   });
 
   const anyMed=d.q4Primary||d.q4Dentist||d.q4Specialist||d.q4PT||d.q4ST||d.q4OT||d.q4MinorDecides||d.q4Other;
-  if(!anyMed)errs.push('4. Medical Services — At least one medical service option is required');
-  if(d.q4Other)req(d.q4Explain,'4. Medical Services — Explanation for "Other" is required');
+  if(!anyMed)errs.push(issue('4. Medical Services — At least one medical service option is required','q4Primary'));
+  if(d.q4Other)req(d.q4Explain,'4. Medical Services — Explanation for "Other" is required','q4Explain');
 
-  req(d.q5SchoolProgress,"5. Education & Social Development — School progress summary is required");
-  req(d.q5SocialDevelopment,"5. Education & Social Development — Social development description is required");
-  req(d.q5Communicates,"5. Education & Social Development — Communication statement is required");
-  req(d.q5Interpersonal,"5. Education & Social Development — Interpersonal relationships statement is required");
+  req(d.q5SchoolProgress,"5. Education & Social Development — School progress summary is required",'q5SchoolProgress');
+  req(d.q5SocialDevelopment,"5. Education & Social Development — Social development description is required",'q5SocialDevelopment');
+  req(d.q5Communicates,"5. Education & Social Development — Communication statement is required",'q5Communicates');
+  req(d.q5Interpersonal,"5. Education & Social Development — Interpersonal relationships statement is required",'q5Interpersonal');
   const anyUnmet=d.q5NoUnmetNeeds||d.q5DoesNotCareToSocialize||d.q5UnmetNeeds||d.q5Other;
-  if(!anyUnmet)errs.push('5. Education & Social Development — Unmet social needs option is required');
-  if(d.q5Other)req(d.q5Explain,'5. Education & Social Development — Explanation for "Other" unmet needs is required');
+  if(!anyUnmet)errs.push(issue('5. Education & Social Development — Unmet social needs option is required','q5NoUnmetNeeds'));
+  if(d.q5Other)req(d.q5Explain,'5. Education & Social Development — Explanation for "Other" unmet needs is required','q5Explain');
 
   const anyCert=d.certIncapacitated||d.certMinor||d.certConsulted||d.certNoRestriction||d.certProvidesCare||d.certPhysicianAttached;
-  if(!anyCert)errs.push('Guardian Signatures — At least one certification statement must be checked');
+  if(!anyCert)errs.push(issue('Guardian Signatures — At least one certification statement must be checked','certIncapacitated'));
   const g0=(d.planGuardians||[])[0]||{};
-  req(g0.name,'Guardian Signatures — Guardian name is required');
+  req(g0.name,'Guardian Signatures — Guardian name is required','planGuardians.0.name');
   // Milestone 39-C: replaces the old unconditional req(g0.signatureDate,...)
   // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
   // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
@@ -458,12 +463,14 @@ export function validatePlanMinor(){
     date: g0.signatureDate,
     image: g0.signatureImage,
     sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
+    filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
   }));
-  req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required');
-  req(g0.phone,'Guardian Signatures — Guardian phone is required');
-  req(g0.tin,'Guardian Signatures — Guardian taxpayer ID is required');
+  req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required','planGuardians.0.mailingStreet');
+  req(g0.phone,'Guardian Signatures — Guardian phone is required','planGuardians.0.phone');
+  req(g0.tin,'Guardian Signatures — Guardian taxpayer ID is required','planGuardians.0.tin');
   errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
     sectionLabel:'Guardian Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian signature date',allowSameDay:true,
+    filingType:T,laterPath:'planGuardians.0.signatureDate',
   }));
 
   // Milestone 35-3: preparer and attorney are optional roles (pro se filers
@@ -473,28 +480,32 @@ export function validatePlanMinor(){
   // (see Plan Initial's identical comment); an explicit or default Unsigned
   // choice does not, preserving the pro se exemption.
   if(d.preparer_name||d.preparer_signatureDate||(d.preparer_signatureState&&d.preparer_signatureState!=='none')){
-    req(d.preparer_name,'Preparer & Attorney — Preparer name is required');
+    req(d.preparer_name,'Preparer & Attorney — Preparer name is required','preparer_name');
     errs.push(...checkSignatureState({
       state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate),
       date: d.preparer_signatureDate,
       image: d.preparer_signatureImage,
       sectionLabel: 'Preparer & Attorney', roleLabel: 'Preparer',
+      filingType:T, datePath:'preparer_signatureDate', imagePath:'preparer_signatureImage',
     }));
   }
   if(d.attorney_name||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
-    req(d.attorney_name,'Preparer & Attorney — Attorney name is required');
+    req(d.attorney_name,'Preparer & Attorney — Attorney name is required','attorney_name');
     errs.push(...checkSignatureState({
       state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
       date: d.attorney_signatureDate,
       image: d.attorney_signatureImage,
       sectionLabel: 'Preparer & Attorney', roleLabel: 'Attorney',
+      filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
     }));
   }
   errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
     sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Preparer signature date',allowSameDay:true,
+    filingType:T,laterPath:'preparer_signatureDate',
   }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Attorney signature date',allowSameDay:true,
+    filingType:T,laterPath:'attorney_signatureDate',
   }));
 
   return errs;

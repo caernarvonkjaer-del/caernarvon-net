@@ -18,6 +18,7 @@ interface Window {
   _lastAutoSavedAt: any;
   _lastExportAt: any;
   _launchStateResolved: any;
+  _legacyDerivePath: any;
   _openedFileAtLaunch: any;
   _saveTimer: any;
   _securityMode: any;
@@ -220,6 +221,7 @@ interface Window {
   isOutputAcknowledgedFor: any;
   isPartyPairDismissed: any;
   isScheduleIncomplete: any;
+  issueMessage: any;
   linkDestinationToSourceWardParty: any;
   linkLabelsToInputs: any;
   loadAndRenderActivityLog: any;
@@ -421,6 +423,7 @@ interface Window {
   validatePlanSimplified: any;
   validateSimplified: any;
   validateWardBackupOverwrite: any;
+  validationIssue: any;
   wardCountyMergeConflict: any;
   wardPartyCounty: any;
   wardPartyForFiling: any;

@@ -5,6 +5,7 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { runFieldWriteSideEffects } from '../../core/form/form-contract.js';
+import { issueFactory } from '../../core/validation/validation-issue.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -1404,29 +1405,37 @@ function pagePart11Annual(){
   ${pageNavAnnual('/p10','/print')}
   </div>`;
 }
+// Milestone 42F: every issue states its own field path (validation-issue.js).
+// The filing type is the ward's own (annual/finalAccounting/trustAccounting
+// share this validator), so the issue codes name the actual filing.
 export function validateAnnual(){
   const d=window.D; const errs=[];
-  const req=(v,label)=>{if(!v||!String(v).trim())errs.push(label);};
-  req(d.wardName,'Part I — Ward Name');
-  req(d.caseNumber,'Part I — Case Number');
-  req(d.guardian,'Part I — Guardian');
-  req(d.periodFrom,'Part I — Accounting Period From');
-  req(d.periodTo,'Part I — Accounting Period To');
-  req(d.gid,'Part I — Guardianship Inception Date (GID)');
-  req(d.county,'Part I — County');
-  req(d.filingType,'Part I — Filing Type');
-  req(d.amendedForm,'Part I — Amended Form?');
-  req(d.startingBalance,'Part II — Starting Balance');
+  const T=annualDescriptor(d).inventoryType||'annual';
+  const issue=issueFactory(T);
+  const req=(v,label,path)=>{if(!v||!String(v).trim())errs.push(issue(label,path));};
+  req(d.wardName,'Part I — Ward Name','wardName');
+  req(d.caseNumber,'Part I — Case Number','caseNumber');
+  req(d.guardian,'Part I — Guardian','guardian');
+  req(d.periodFrom,'Part I — Accounting Period From','periodFrom');
+  req(d.periodTo,'Part I — Accounting Period To','periodTo');
+  req(d.gid,'Part I — Guardianship Inception Date (GID)','gid');
+  req(d.county,'Part I — County','county');
+  req(d.filingType,'Part I — Filing Type','filingType');
+  req(d.amendedForm,'Part I — Amended Form?','amendedForm');
+  req(d.startingBalance,'Part II — Starting Balance','startingBalance');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Part I',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
+    filingType:T,laterPath:'periodTo',
   }));
   errs.push(...checkDateOrder(d.gid,d.periodFrom,{
     sectionLabel:'Part I',earlierLabel:'Guardianship Inception Date (GID)',laterLabel:'Accounting Period From',allowSameDay:true,
+    filingType:T,laterPath:'periodFrom',
   }));
   d.guardians.forEach((g,i)=>{
     if(i>0&&!guardianHasAnyData(g))return;
     const p=`Part III — Guardian #${i+1}`;
-    req(g.name,`${p} — Name`);
+    const k=`guardians.${i}`;
+    req(g.name,`${p} — Name`,`${k}.name`);
     // Milestone 39-C: replaces the old unconditional req(g.signatureDate,...)
     // -- Unsigned, "/s/" Signed, and Signature Stamp all now validate, same
     // rule as 39-B's Guardian pilot. name omitted: g.name is already
@@ -1436,16 +1445,18 @@ export function validateAnnual(){
       date: g.signatureDate,
       image: g.signatureImage,
       sectionLabel: 'Part III', roleLabel: `Guardian #${i+1}`,
+      filingType:T, datePath:`${k}.signatureDate`, imagePath:`${k}.signatureImage`,
     }));
-    req(g.ssn,`${p} — SSN/EIN`);
-    req(g.phone,`${p} — Phone`);
-    req(g.mailingStreet,`${p} — Mailing Street`);
-    req(g.mailingCityStateZip,`${p} — Mailing City/State/Zip`);
+    req(g.ssn,`${p} — SSN/EIN`,`${k}.ssn`);
+    req(g.phone,`${p} — Phone`,`${k}.phone`);
+    req(g.mailingStreet,`${p} — Mailing Street`,`${k}.mailingStreet`);
+    req(g.mailingCityStateZip,`${p} — Mailing City/State/Zip`,`${k}.mailingCityStateZip`);
     errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
       sectionLabel:p,earlierLabel:'Accounting Period To',laterLabel:'Signature Date',allowSameDay:true,
+      filingType:T,laterPath:`${k}.signatureDate`,
     }));
   });
-  req(d.preparer.name,'Part IV — Preparer Name');
+  req(d.preparer.name,'Part IV — Preparer Name','preparer.name');
   // Milestone 39-C: replaces the old unconditional
   // req(d.preparer.signatureDate,...) -- name omitted: d.preparer.name is
   // already unconditionally required immediately above.
@@ -1454,18 +1465,20 @@ export function validateAnnual(){
     date: d.preparer.signatureDate,
     image: d.preparer.signatureImage,
     sectionLabel: 'Part IV', roleLabel: 'Preparer',
+    filingType:T, datePath:'preparer.signatureDate', imagePath:'preparer.signatureImage',
   }));
-  req(d.preparer.ssn,'Part IV — Preparer SSN/EIN');
-  req(d.preparer.phone,'Part IV — Preparer Phone');
-  req(d.preparer.street,'Part IV — Preparer Street');
-  req(d.preparer.cityStateZip,'Part IV — Preparer City/State/Zip');
+  req(d.preparer.ssn,'Part IV — Preparer SSN/EIN','preparer.ssn');
+  req(d.preparer.phone,'Part IV — Preparer Phone','preparer.phone');
+  req(d.preparer.street,'Part IV — Preparer Street','preparer.street');
+  req(d.preparer.cityStateZip,'Part IV — Preparer City/State/Zip','preparer.cityStateZip');
   errs.push(...checkDateOrder(d.periodTo,d.preparer.signatureDate,{
     sectionLabel:'Part IV',earlierLabel:'Accounting Period To',laterLabel:'Preparer Signature Date',allowSameDay:true,
+    filingType:T,laterPath:'preparer.signatureDate',
   }));
-  req(d.attorney_bar,'Part V — Attorney Bar Number');
-  req(d.attorney_phone,'Part V — Attorney Phone');
-  req(d.attorney_street,'Part V — Attorney Street');
-  req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip');
+  req(d.attorney_bar,'Part V — Attorney Bar Number','attorney_bar');
+  req(d.attorney_phone,'Part V — Attorney Phone','attorney_phone');
+  req(d.attorney_street,'Part V — Attorney Street','attorney_street');
+  req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip','attorney_cityStateZip');
   // Milestone 39-C: replaces the old unconditional
   // req(d.attorney_signatureDate,...). Unlike Preparer/Guardian above,
   // d.attorney (the attorney's own name) is never required anywhere in this
@@ -1477,17 +1490,20 @@ export function validateAnnual(){
     date: d.attorney_signatureDate,
     image: d.attorney_signatureImage,
     sectionLabel: 'Part V', roleLabel: 'Attorney',
+    filingType:T, namePath:'attorney', datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Attorney Signature Date',allowSameDay:true,
+    filingType:T,laterPath:'attorney_signatureDate',
   }));
-  req(d.bondAmount,'Part IX — Bond Amount');
-  req(d.bondingCompany,'Part IX — Bonding Company');
-  req(d.certDate,'Part X — Certificate of Service Date');
+  req(d.bondAmount,'Part IX — Bond Amount','bondAmount');
+  req(d.bondingCompany,'Part IX — Bonding Company','bondingCompany');
+  req(d.certDate,'Part X — Certificate of Service Date','certDate');
   errs.push(...checkDateOrder(d.periodTo,d.certDate,{
     sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Certificate of Service Date',allowSameDay:true,
+    filingType:T,laterPath:'certDate',
   }));
-  req(d.certRecipients?.[0]?.name,'Part X — Recipient 1 Name');
+  req(d.certRecipients?.[0]?.name,'Part X — Recipient 1 Name','certRecipients.0.name');
   // Milestone 39-C: certAttySignDate had no requiredness of any kind before
   // this -- not even order-check-only (confirmed during the 39-C inventory
   // audit). name is passed for the same reason as Part V above -- this
@@ -1499,45 +1515,48 @@ export function validateAnnual(){
     date: d.certAttySignDate,
     image: d.certAttySignatureImage,
     sectionLabel: 'Part X', roleLabel: 'Attorney',
+    filingType:T, namePath:'attorney', datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
 
   const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
-  const checkRows=(rows,fields,schedLabel)=>{
+  const checkRows=(rows,fields,schedLabel,collection)=>{
     (rows||[]).forEach((r,i)=>{
       if(!rowHasAnyData(r))return;
       fields.forEach(([key,label])=>{
-        if(r[key]===''||r[key]==null)errs.push(`${schedLabel} — Line ${i+1} — ${label} is required`);
+        if(r[key]===''||r[key]==null)errs.push(issue(`${schedLabel} — Line ${i+1} — ${label} is required`,`${collection}.${i}.${key}`));
       });
     });
   };
-  checkRows(d.schA,[['payer','Income Source / Payer'],['description','Description'],['bank','Bank Name'],['accountNo','Account #'],['amount','Amount']],'Schedule A');
-  checkRows(d.schB1,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-1');
-  checkRows(d.schB2,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-2');
-  checkRows(d.schB3,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-3');
-  checkRows(d.schB4,[['checkNo','Check #'],['datePaid','Date Paid'],['category','Category'],['payee','Payee'],['amount','Amount']],'Schedule B-4');
-  checkRows(d.schC,[['description','Description'],['date','Date of Adjustment']],'Schedule C');
+  checkRows(d.schA,[['payer','Income Source / Payer'],['description','Description'],['bank','Bank Name'],['accountNo','Account #'],['amount','Amount']],'Schedule A','schA');
+  checkRows(d.schB1,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-1','schB1');
+  checkRows(d.schB2,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-2','schB2');
+  checkRows(d.schB3,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-3','schB3');
+  checkRows(d.schB4,[['checkNo','Check #'],['datePaid','Date Paid'],['category','Category'],['payee','Payee'],['amount','Amount']],'Schedule B-4','schB4');
+  checkRows(d.schC,[['description','Description'],['date','Date of Adjustment']],'Schedule C','schC');
   (d.schC||[]).forEach((r,i)=>{
     if(!rowHasAnyData(r))return;
-    if((r.gain===''||r.gain==null)&&(r.loss===''||r.loss==null))errs.push(`Schedule C — Line ${i+1} — Gain or Loss amount is required`);
+    // Either field satisfies this; route to the first of the pair.
+    if((r.gain===''||r.gain==null)&&(r.loss===''||r.loss==null))errs.push(issue(`Schedule C — Line ${i+1} — Gain or Loss amount is required`,`schC.${i}.gain`));
   });
-  checkRows(d.schD1,[['description','Description'],['accountNo','Account #'],['restricted','Restricted?'],['type','Type'],['fullAmount','Full Asset Amount'],['wardPct',"Ward's %"]],'Schedule D-1');
-  checkRows(d.schD2,[['description','Description'],['residence','Personal Residence?'],['income','Income Property?'],['fullValue','Full Value'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-2');
-  checkRows(d.schD3,[['description','Description'],['fullAmount','Full Amount'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-3');
-  checkRows(d.schD4,[['description','Description'],['restricted','Restricted?'],['fullAmount','Full Amount'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-4');
-  checkRows(d.schD5,[['description','Description'],['loanNo','Loan #'],['loanType','Loan Type'],['fullDebt','Full Debt'],['wardPct',"Ward's %"]],'Schedule D-5');
-  checkRows(d.schE,[['bankName','Bank Name']],'Schedule E');
+  checkRows(d.schD1,[['description','Description'],['accountNo','Account #'],['restricted','Restricted?'],['type','Type'],['fullAmount','Full Asset Amount'],['wardPct',"Ward's %"]],'Schedule D-1','schD1');
+  checkRows(d.schD2,[['description','Description'],['residence','Personal Residence?'],['income','Income Property?'],['fullValue','Full Value'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-2','schD2');
+  checkRows(d.schD3,[['description','Description'],['fullAmount','Full Amount'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-3','schD3');
+  checkRows(d.schD4,[['description','Description'],['restricted','Restricted?'],['fullAmount','Full Amount'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-4','schD4');
+  checkRows(d.schD5,[['description','Description'],['loanNo','Loan #'],['loanType','Loan Type'],['fullDebt','Full Debt'],['wardPct',"Ward's %"]],'Schedule D-5','schD5');
+  checkRows(d.schE,[['bankName','Bank Name']],'Schedule E','schE');
   (d.schE||[]).forEach((r,i)=>{
     if(!rowHasAnyData(r))return;
     const hasIn=r.transferInDate!==''&&r.transferInDate!=null&&r.transferInAmt!==''&&r.transferInAmt!=null;
     const hasOut=r.transferOutDate!==''&&r.transferOutDate!=null&&r.transferOutAmt!==''&&r.transferOutAmt!=null;
-    if(!hasIn&&!hasOut)errs.push(`Schedule E — Line ${i+1} — Transfer In (date+amount) or Transfer Out (date+amount) is required`);
+    // Spans two field pairs; route to the first of them.
+    if(!hasIn&&!hasOut)errs.push(issue(`Schedule E — Line ${i+1} — Transfer In (date+amount) or Transfer Out (date+amount) is required`,`schE.${i}.transferInDate`));
   });
-  checkRows(d.schF1,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-1');
-  checkRows(d.schF2,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-2');
-  req(d.trusts?.[0]?.hasTrust,'Part VIII — Does the Ward have one or more Trusts?');
+  checkRows(d.schF1,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-1','schF1');
+  checkRows(d.schF2,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-2','schF2');
+  req(d.trusts?.[0]?.hasTrust,'Part VIII — Does the Ward have one or more Trusts?','trusts.0.hasTrust');
   if(d.trusts?.[0]?.hasTrust==='Yes'){
     (d.trusts||[]).filter(t=>Object.entries(t||{}).some(([key,value])=>key!=='hasTrust'&&value!==''&&value!=null)).forEach((t,i)=>{
-      req(t.createdAfterGID,`Part VIII — Trust ${i+1} — Was created after the GID?`);
+      req(t.createdAfterGID,`Part VIII — Trust ${i+1} — Was created after the GID?`,`trusts.${i}.createdAfterGID`);
     });
   }
 
@@ -1556,8 +1575,8 @@ export function validateAnnual(){
   // Parts VI & VII page itself shows the full detail.
   const _rec=annualReconcileState();
   if(_rec.outOfBalance&&!_rec.explained){
-    errs.push('Parts VI & VII — Net Assets from Changes and Net Assets from Balances don\'t match (off by '
-      +fmtAnnual(_rec.diff)+'): correct the schedules or explain the difference');
+    errs.push(issue('Parts VI & VII — Net Assets from Changes and Net Assets from Balances don\'t match (off by '
+      +fmtAnnual(_rec.diff)+'): correct the schedules or explain the difference','reconcileExplanation'));
   }
 
   return errs;

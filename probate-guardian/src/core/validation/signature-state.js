@@ -5,6 +5,8 @@
 // collection row) and hands the raw values here rather than this module
 // knowing anything about any one filing type's data layout.
 
+import { validationIssue } from './validation-issue.js';
+
 export const SIGNATURE_STATES = Object.freeze({ NONE: 'none', TYPED: 'typed', STAMP: 'stamp' });
 
 const has = (v) => v !== '' && v !== null && v !== undefined;
@@ -26,9 +28,15 @@ const has = (v) => v !== '' && v !== null && v !== undefined;
  *   for the same blank field).
  * - Signature Stamp (`state === 'stamp'`): passes only once an image is
  *   present.
+ *
+ * Milestone 42F: pass `filingType` plus `namePath`/`datePath`/`imagePath`
+ * (and `statePath` for the invalid-selection case) to get structured issues
+ * with explicit field paths; without `filingType` the pre-42F bare strings
+ * are returned unchanged.
  */
-export function checkSignatureState({ state, name, date, image, sectionLabel, roleLabel }) {
+export function checkSignatureState({ state, name, date, image, sectionLabel, roleLabel, filingType, namePath = '', datePath = '', imagePath = '', statePath = '' }) {
   const errs = [];
+  const issue = (message, path) => (filingType ? validationIssue(filingType, message, path) : message);
   // Guardian Inventory's own convention already embeds the role/ordinal in
   // sectionLabel itself ("D-1 Guardian #2", "D-2 Preparer") rather than
   // this shared function's usual sectionLabel/roleLabel split ("Part III"/
@@ -38,17 +46,17 @@ export function checkSignatureState({ state, name, date, image, sectionLabel, ro
   const normalized = has(state) ? state : SIGNATURE_STATES.NONE;
   if (normalized === SIGNATURE_STATES.NONE) return errs;
   if (normalized === SIGNATURE_STATES.TYPED) {
-    if (name !== undefined && !has(name)) errs.push(`${sectionLabel} — ${rolePrefix}printed name is required to apply "/s/" Signed`);
-    if (!has(date)) errs.push(`${sectionLabel} — ${rolePrefix}date signed is required to apply "/s/" Signed`);
+    if (name !== undefined && !has(name)) errs.push(issue(`${sectionLabel} — ${rolePrefix}printed name is required to apply "/s/" Signed`, namePath));
+    if (!has(date)) errs.push(issue(`${sectionLabel} — ${rolePrefix}date signed is required to apply "/s/" Signed`, datePath));
     return errs;
   }
   if (normalized === SIGNATURE_STATES.STAMP) {
-    if (!has(image)) errs.push(`${sectionLabel} — ${rolePrefix}signature stamp image is required`);
+    if (!has(image)) errs.push(issue(`${sectionLabel} — ${rolePrefix}signature stamp image is required`, imagePath));
     return errs;
   }
   // An unrecognized value (corrupt data, a future state this code doesn't
   // know about yet) is treated as incomplete, never a silent pass.
-  errs.push(`${sectionLabel} — ${rolePrefix}signature selection is invalid`);
+  errs.push(issue(`${sectionLabel} — ${rolePrefix}signature selection is invalid`, statePath || datePath));
   return errs;
 }
 

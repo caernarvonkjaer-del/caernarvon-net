@@ -398,7 +398,7 @@ test.describe('Guardian Inventory bond-period date-order validation', () => {
 
     const found = await page.evaluate(() => {
       const w = window as any;
-      return w.validateGuardian().find((m: string) => m.includes('Bond Period To must be on or after'));
+      return w.validateGuardian().find((m: any) => String(m).includes('Bond Period To must be on or after'));
     });
     expect(found).toBeUndefined();
   });

@@ -751,11 +751,23 @@
     },
     {
       "file": "src/core/validation/validation-adapter.js",
+      "name": "_legacyDerivePath"
+    },
+    {
+      "file": "src/core/validation/validation-adapter.js",
       "name": "adaptValidationErrors"
     },
     {
       "file": "src/core/validation/validation-adapter.js",
       "name": "focusFieldByPath"
+    },
+    {
+      "file": "src/core/validation/validation-issue.js",
+      "name": "issueMessage"
+    },
+    {
+      "file": "src/core/validation/validation-issue.js",
+      "name": "validationIssue"
     },
     {
       "file": "src/core/ward-lock.js",
