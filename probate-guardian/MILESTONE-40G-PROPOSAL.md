@@ -2,10 +2,52 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, test, or documentation change until the requester approves
-Milestone 40G specifically. Approval of another Milestone 40 delivery does
-not authorize this work.
+**Landed 2026-09-13 via option (a).** The requester chose option (a) from
+Decision 2: `initApp()` is now called from `src/main.js` as its last
+statement, after every import has evaluated, instead of from
+`legacy-app.js`'s classic-script top level. This also unblocks Milestone
+40F's Steps 4 and 6, which were the reason option (a) was preferred over
+the two narrower fixes.
+
+### Step 1 findings — what was actually lost
+
+Answered before choosing a fix, as this proposal required. The dashboard
+**did** recover, and nothing was permanently lost:
+
+`initApp()` sets the hash to `/dashboard` (`legacy-app.js:9084`) and then
+calls `handleHash()` (`:9085`), which calls `renderPage()` **without
+awaiting it** — so the bridge failure surfaced as a floating unhandled
+rejection rather than aborting startup. Assigning the hash queues a
+`hashchange` event that fires after the current task, by which point the
+deferred modules have evaluated, so `_dashboardFeatureBridge ??=` succeeds
+on that second pass. That is the multi-second "Loading…" stall the browser
+session reported: one failed mount, then a silent retry.
+
+Two caveats that made the fix worth doing properly rather than narrowly:
+
+- **The retry is not guaranteed.** If the hash is *already* `#/dashboard` —
+  a reload while on the dashboard, which is the common case for a returning
+  user — assigning the same value fires no `hashchange`, so there is no
+  second pass to recover on.
+- **It is effectively unreproducible in e2e.** Every path that reaches the
+  failing code first awaits a prompt (session-restore, open-or-start,
+  unlock), and that await gives deferred modules far more time than they
+  need, so the race always resolves harmlessly under test. The live site hit
+  it because it auto-opens a remembered case with no prompt at all. This is
+  why `startup.spec.ts`'s long-standing clean-console assertion never caught
+  either exception: it only covers the fresh-install path, which stops at the
+  startup-choice overlay and never mounts a feature.
+
+### Verification
+
+Because the defect cannot be reliably reproduced behaviourally, the
+regression guard is structural: `tests/unit/boot-ordering.spec.js` asserts
+that `legacy-app.js` does not call `initApp()` at top level, that `main.js`
+does and does so after its last import, and that the module publishing
+`window.createFeatureBridge` is still imported and still publishes it.
+Verified to fail when the self-start is reinstated. `startup.spec.ts` gains
+the behavioural half it was missing — a clean-console assertion on a path
+that actually mounts the dashboard.
 
 ## Goal
 
@@ -116,7 +158,7 @@ implementation step, not an assumption baked into the fix.
 | Every launch flow — fresh start, opened `.sav`, session-restore, locked/encrypted unlock | Unchanged behavior; this is the risk surface if option (a) is chosen |
 | `getSimplifiedFeatureBridge()` and other lazy bridges | Still work; the fix must not regress the features that were already correct |
 
-## Verification
+## Verification Plan (as originally scoped)
 
 Add an e2e assertion that **first load produces a clean console** — no
 uncaught exception during startup. This single check would have caught both

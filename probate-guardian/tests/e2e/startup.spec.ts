@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, startNewCase, chooseNoPassword } from './support/target';
+import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/target';
 import { currentTargetProfile, skipExpectedTargetExclusion, skipEnvironmentLimitation } from './support/target-profile';
 
 test.describe('startup', { tag: '@origin-state' }, () => {
@@ -118,5 +118,29 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     });
     expect(result.name).toBe('TimeoutError');
     expect(result.elapsed).toBeLessThan(1000);
+  });
+
+  // Milestone 40G: the clean-console assertion at the top of this file only
+  // covers the fresh-install path, which stops at the startup-choice overlay
+  // and never mounts a feature. Two exceptions therefore shipped unnoticed --
+  // one from the dashboard feature bridge, one from the save pipeline -- both
+  // of which only fire once startup gets far enough to render a real page.
+  // This covers the path that actually mounts the dashboard.
+  test('reaching the dashboard mounts it with no uncaught exception', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(`${e.name}: ${e.message}`));
+
+    await gotoApp(page);
+    await startNewCase(page);
+    await chooseNoPassword(page);
+    await createWard(page, 'Boot Order Ward');
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+
+    // The dashboard is a lazily imported feature module mounted through
+    // window.createFeatureBridge(), which legacy-app.js could previously
+    // reach before core/feature-bridge.js had evaluated.
+    await expect(page.locator('#main-content')).not.toBeEmpty();
+    expect(errors).toEqual([]);
   });
 });

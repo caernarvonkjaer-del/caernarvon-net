@@ -6687,10 +6687,20 @@ window.PAGES_GUARDIAN=PAGES_GUARDIAN;
 // execute until after the whole document has finished parsing -- strictly
 // AFTER this file's top-level code runs, even though they appear earlier in
 // index.html. window.createFeatureBridge is not yet a function at that
-// point. Constructing the bridge lazily, on first actual call (which only
-// happens later, in response to user navigation, long after the deferred
-// module scripts have run), sidesteps this ordering entirely -- the same
-// safe pattern window.loadFragment/window.emptyDataSimplified already use.
+// point. Constructing the bridge lazily, on first actual call, sidesteps
+// that -- the same safe pattern window.loadFragment/window.emptyDataSimplified
+// already use.
+//
+// Milestone 40G correction: this comment used to claim the first call
+// "only happens later, in response to user navigation, long after the
+// deferred module scripts have run." That was false for any feature mounted
+// during startup. The dashboard is the landing page, so its bridge was
+// constructed inside initApp()'s first renderPage() and threw
+// "window.createFeatureBridge is not a function" on every load. Laziness
+// cannot help a feature that is mounted immediately. Startup is now driven
+// from src/main.js after module evaluation, which is what actually
+// guarantees the ordering -- do not reintroduce a top-level initApp() call
+// here, and do not assume a lazy bridge is safe merely because it is lazy.
 let _simplifiedFeatureBridge=null;
 function getSimplifiedFeatureBridge(){
   return _simplifiedFeatureBridge??=window.createFeatureBridge(()=>window.loadSimplifiedFeature());
@@ -9100,4 +9110,11 @@ window.closeWardLockedModal = function() {
 setTimeout(()=>{
   linkLabelsToInputs();
 },0);
-initApp();
+// initApp() is NOT called here. This file is a classic, parser-blocking
+// script, so it runs before any `<script type="module">` has evaluated --
+// which meant startup reached code depending on module-provided globals
+// (window.createFeatureBridge, and the case-file.js persistence functions)
+// before those globals existed. src/main.js calls window.initApp() as its
+// last statement instead, after every module import has evaluated, so the
+// whole boot path has one explicit ordering guarantee rather than racing
+// deferred module evaluation. See MILESTONE-40G-PROPOSAL.md.

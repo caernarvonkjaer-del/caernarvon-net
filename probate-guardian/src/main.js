@@ -68,3 +68,26 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('Probate Guardian ESM bootstrap initialized.');
+
+// Milestone 40G: start the app HERE, not at the end of legacy-app.js.
+//
+// legacy-app.js is a classic, parser-blocking script, so it finishes running
+// before any module script has evaluated. Calling initApp() from there meant
+// startup ran against a half-built global surface: window.createFeatureBridge
+// (core/feature-bridge.js) did not exist yet when the dashboard mounted, and
+// the persistence functions legacy-app.js shares names with (case-file.js)
+// had not yet replaced their legacy counterparts. Both produced uncaught
+// exceptions on every load once a case existed.
+//
+// Every import above has evaluated by the time this line runs, so the boot
+// path now has one explicit ordering guarantee instead of racing deferred
+// module evaluation. Anything startup needs from a module is present.
+if (typeof window !== 'undefined') {
+  if (typeof window.initApp !== 'function') {
+    // Loud rather than silent: a missing initApp means legacy-app.js did not
+    // load or did not parse, and the app cannot start. Swallowing that would
+    // leave a blank page with no explanation.
+    throw new Error('window.initApp is not available — legacy-app.js must load before main.js');
+  }
+  window.initApp();
+}
