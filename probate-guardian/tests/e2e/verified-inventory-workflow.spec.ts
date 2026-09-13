@@ -143,8 +143,9 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await page.evaluate(() => (window as any).navigate('/d3'));
 
     // Safe Deposit Box Yes/No Radios
-    const sdbYes = page.locator('#sdb-yes');
-    const sdbNo = page.locator('#sdb-no');
+    const sdbGroup = page.locator('fieldset[data-yes-no-group="hasSafeDepositBox"]');
+    const sdbYes = sdbGroup.locator('input[type="radio"][value="Yes"]');
+    const sdbNo = sdbGroup.locator('input[type="radio"][value="No"]');
     const sdbFiledRow = page.locator('#sdb-filed-row');
 
     await expect(sdbYes).toBeVisible();
@@ -158,7 +159,7 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await sdbYes.check();
     await expect(sdbFiledRow).toBeVisible();
 
-    const sdbFiledYes = page.locator('#sdb-filed-yes');
+    const sdbFiledYes = page.locator('fieldset[data-yes-no-group="safeDepositBoxFiled"] input[type="radio"][value="Yes"]');
     await expect(sdbFiledYes).toBeVisible();
     await sdbFiledYes.check();
 

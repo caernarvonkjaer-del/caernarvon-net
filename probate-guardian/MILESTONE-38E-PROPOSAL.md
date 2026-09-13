@@ -104,9 +104,17 @@ present after, then fixed:
    (`#yesno_hasSafeDepositBox_yes`, etc.) — `#sdb-filed-row`'s own wrapper
    id was unchanged and needed no update.
 
+4. **`tests/e2e/verified-inventory-workflow.spec.ts`**'s D-3 tri-state-flow
+   test queried the same pre-migration `#sdb-yes`/`#sdb-no`/`#sdb-filed-yes`
+   element ids as item 3 above. Fixed by locating via the shared
+   component's `data-yes-no-group` fieldset attribute plus
+   `input[value="Yes"|"No"]` instead of an id — a slightly more robust
+   pattern than the id-based locators used in item 3's fix, since it needs
+   no knowledge of `yesNoRadioHTML()`'s internal id-sanitization scheme.
+
 None of these were product-code defects — the migration's actual runtime
 behavior was correct in each case; only the tests describing the pre-
-migration contract were stale. All three now pass and correctly describe the
+migration contract were stale. All four now pass and correctly describe the
 current, intentional tri-state behavior. This is recorded here as a reminder
 that landing a milestone without running its own full regression suite
 (`npm test`) leaves exactly this kind of drift for the next session to find
