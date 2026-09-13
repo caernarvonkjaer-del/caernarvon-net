@@ -2,9 +2,107 @@
 
 ## Status
 
-**40C-2 landed 2026-09-12. 40C-1 remains draft only** and authorizes no
-runtime, data-model, test, or documentation change until it is approved
-specifically; approval of 40C-2 did not authorize it.
+**Both deliveries have landed. 40C-2 on 2026-09-12; 40C-1 on 2026-09-13.**
+
+### 40C-1 — what landed
+
+All eight items of Task 40C-A, plus 40C-F and 40C-G2.
+
+- **Every Pinellas default is gone.** All 17 enumerated sites, plus the seven
+  blank-data factories, the two Excel importers, the seven per-feature
+  `pdf-model.js` files, `pdf-engine.js`, and all three layered `circuit-lookup.js`
+  fallbacks with their `legacy-app.js` duplicate. `docx-engine.js`'s half was
+  moot: Milestone 40A landed first and deleted the file, exactly as item 6
+  anticipated.
+- **New `src/core/navigation/ward-county.js`** holds the whole lifecycle —
+  normalize, establish from a Cover, hydrate a new filing, link a carryover
+  destination, the legacy unanimity backfill, and the merge-conflict guard. It is
+  deliberately not part of `syncIdentityField()`'s fan-out, per item 2: that
+  propagates an edit to every slot referencing the same Party, which for county
+  would rewrite sibling filings that were correctly filed under a different
+  county.
+- **`circuit-lookup.js` returns `null` / `''` / `null`** (the approved option
+  (a)). Callers draw an explicit `COUNTY NOT SELECTED — COURT CAPTION INCOMPLETE`
+  marker. That wording is deliberate: option (b)'s fill-in-the-blank caption was
+  rejected because it could pass for a real caption, so the marker is phrased so
+  it never could.
+- **`verify:data-model` clean at 897 rows** (was 880): `caseFile.parties[]`
+  expanded into 17 canonical rows, `common,D,county`'s note rewritten, and
+  `annual_accounting,D,attorney_county`'s blank initial value recorded.
+
+### Three corrections to this proposal, all found by implementing it
+
+**1. The carryover attorney defect is in THREE functions, not one.** This
+proposal states it was "verified and narrowed — the bug is in exactly one
+function, not the carryover layer generally," naming
+`carryOverFieldsForAccounting`. It is also in:
+
+- `carryOverFieldsForPlan` (same file), whose `attyName` chain put bare
+  `src.attorney` **second**, so a Guardian Inventory source reached the nested
+  object immediately whenever `attorneyForGuardian` was blank. Guardian Inventory
+  is a declared carry source for every Plan type, so Guardian → Plan dropped all
+  five attorney details too.
+- `carryOverAccountingToAccounting` in `legacy-app.js`, which is the **live**
+  path for Guardian → Annual/Simplified. It leaked the nested object into the
+  destination's flat `attorney` string field, and separately carried the attorney
+  NAME ONLY — bar number, phone, email and address were dropped on every
+  accounting-to-accounting carryover regardless of source type, which item 2's
+  "attorney identity/contact details" requires. Destination field names differ
+  per engine (`attorney_bar` for annual, `attorney_barNumber` for simplified,
+  nested for Guardian), so each branch maps them under its own names.
+
+This one was only caught because the new e2e spec drove the real modal; the
+unit-level fixtures all used the flat shape, which is why it had gone unnoticed.
+
+**2. Hooking the Cover county in one place covered only six of nine filing
+types.** Item 2 says the first nonblank County committed on a Cover must resolve
+the ward Party. There are **three independent form write paths**:
+`form-contract.js`'s `persistFormControl()`, `annual-accounting/index.js`'s own
+`persistAnnualControl()` (Annual/Final/Trust bind via `data-annual-path` and
+never reach the shared one), and `legacy-app.js`'s `bindForms()` listeners via
+`afterChange()` (Guardian Inventory). Hooking only the first meant the entire
+Annual family could select a Cover county that never reached the canonical ward
+Party. All three now call one guarded `maybeCommitCoverCounty()`. Caught by the
+new Cover e2e test, not by reading.
+
+**3. The 17-site enumeration was accurate; its attribution was not.** Of the
+eight `legacy-app.js` `county:src.county||'Pinellas'` sites, seven sit in
+`carryOverFieldsForPlan`/`carryOverFieldsForAccounting`, which are **shadowed**
+by `ward-lifecycle.js`'s module versions and therefore dead — the same
+classic-script/module hazard Milestone 40F catalogued. Only
+`carryOverAccountingToAccounting`'s was live. All were removed either way, but
+"eight legacy equivalents of the same creation paths" overstated what was
+running. Note also that the proposal's line numbers had already drifted; they
+must be re-derived, not trusted.
+
+### Verification
+
+Unit **536 passed** (was 492): new `filing-county-defaults.spec.js` (31),
+`ward-carryover.spec.js` extended for the nested shape, `circuit-lookup.spec.js`
+inverted with each layered fallback asserted separately, and
+`case-county-drift.spec.js` extended for the revised copy. `check:types` clean.
+`verify:data-model` clean.
+
+E2E: new `cover-county.spec.ts` (6) drives the real county combobox — closing the
+gap this proposal identified, where every `fillMinimalValid*Ward()` helper
+injects county straight onto `window.D` so no test had ever exercised the actual
+entry point. New `carryover-workflow.spec.ts` (5) drives the real
+eligibility-modal redirect. **9 of those 11 fail against HEAD's source**, checked
+by reverting `src/` and re-running. A 14-spec caption/mount/party regression
+sweep passed 170.
+
+**Not run: the full `npm test` regression** this plan recommends for 40C-1. It
+needs the requester's explicit approval per `AGENTS.md`, and is worth noting that
+`master` already carries 9 pre-existing full-suite e2e failures unrelated to any
+Milestone 40 delivery (recorded in `MILESTONE-40A-PROPOSAL.md`).
+
+**Still open from the verification plan:** item 9's `party-resolver.spec.ts` and
+`.sav` round-trip additions for Party-merge conflict handling and single-ward
+import reconstruction. The behaviour is implemented and unit-tested
+(`wardCountyMergeConflict`, `backfillWardPartyCounties`); what is missing is the
+e2e layer for those two paths.
+
+### 40C-2 — what landed
 
 ### 40C-2 — what landed
 

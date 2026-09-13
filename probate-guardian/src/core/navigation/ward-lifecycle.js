@@ -1,4 +1,15 @@
 // Ward lifecycle management: creation, activation, exclusive locking, switching, and deletion.
+//
+// Milestone 40C-A item 3: every carry-over/conversion builder below emits
+// `county: ''`. Each used to read `src.county || 'Pinellas'`, which was wrong
+// twice over -- it injected Pinellas when the source had no county, and it took
+// the county from an arbitrary SOURCE FILING even when that filing was an older
+// one filed in a county the ward has since left. County is now supplied from the
+// canonical ward Party after the destination is linked to it (see
+// core/navigation/ward-county.js's linkDestinationToSourceWardParty(), which
+// legacy-app.js's carryOverFields() calls as the single entry point for every
+// carry-over surface). When the Party has no county the destination stays blank
+// and the Cover asks -- which is the point of the decision.
 import { getCaseFile, getD, setD } from '../state.js';
 
 export function createWardId() {
@@ -68,12 +79,25 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
   const src = sourceWard || {};
   const caseNum = src.caseNumber || src.ucn || src.ref || '';
   const gName = src.guardianName || src.guardianNames || src.guardian || (src.guardians && src.guardians[0]?.name) || (src.planGuardians && src.planGuardians[0]?.name) || '';
-  const attyName = src.attorneyForGuardian || src.attorney || src.attorney_name || src.attorneyName || '';
-  const attyBar = src.attorneyBar || src.attorney_bar || '';
-  const attyPhone = src.attorneyPhone || src.attorney_phone || '';
-  const attyEmail = src.attorneyEmail || src.attorney_email || '';
-  const attyStreet = src.attorneyAddress || src.attorney_street || '';
-  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || '';
+  // Milestone 40C-F item 2, same defect as carryOverFieldsForAccounting below
+  // and NOT limited to that one function as the proposal assumed: this
+  // Plan-direction builder reads the same flat-only chains, and Guardian
+  // Inventory is a declared carry source for every Plan type
+  // (CARRY_SOURCE_TYPE), so a Guardian -> Plan carryover dropped all five
+  // attorney details too.
+  //
+  // Worse here than there: bare `src.attorney` sat SECOND in attyName's chain,
+  // so a Guardian source reached the nested OBJECT immediately whenever
+  // attorneyForGuardian was blank, and that object was assigned into the
+  // destination's string attorney fields.
+  const atty = (src.attorney && typeof src.attorney === 'object') ? src.attorney : {};
+  const attyFlat = typeof src.attorney === 'string' ? src.attorney : '';
+  const attyName = src.attorneyForGuardian || attyFlat || src.attorney_name || src.attorneyName || atty.name || '';
+  const attyBar = src.attorneyBar || src.attorney_bar || atty.barNumber || '';
+  const attyPhone = src.attorneyPhone || src.attorney_phone || atty.phone || '';
+  const attyEmail = src.attorneyEmail || src.attorney_email || atty.email || '';
+  const attyStreet = src.attorneyAddress || src.attorney_street || atty.streetAddress || '';
+  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || atty.cityStateZip || '';
   const gs = (src.guardians && src.guardians.length ? src.guardians : src.planGuardians) || [];
 
   if (planType === 'planInitial') {
@@ -81,7 +105,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
-      county: src.county || 'Pinellas',
+      county: '',
       inceptionDate: src.gid || src.inceptionDate || '',
       guardianNames: gName,
       attorneyName: attyName,
@@ -112,7 +136,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
-      county: src.county || 'Pinellas',
+      county: '',
       planGuardians: [0, 1].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
@@ -129,7 +153,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
-      county: src.county || 'Pinellas',
+      county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
       attorney: attyName,
@@ -153,7 +177,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
   if (planType === 'planMinor') {
     return {
       wardName: src.wardName || '',
-      county: src.county || 'Pinellas',
+      county: '',
       ucn: caseNum,
       ref: src.ref || '',
       guardianName: gName,
@@ -185,12 +209,25 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
   const src = sourceWard || {};
   const caseNum = src.caseNumber || src.ucn || src.ref || '';
   const gName = src.guardianNames || src.guardianName || src.guardian || (src.planGuardians && src.planGuardians[0]?.name) || (src.guardians && src.guardians[0]?.name) || '';
-  const attyName = src.attorneyName || src.attorney_name || src.attorneyForGuardian || src.attorney || '';
-  const attyBar = src.attorneyBar || src.attorney_bar || '';
-  const attyPhone = src.attorneyPhone || src.attorney_phone || '';
-  const attyEmail = src.attorneyEmail || src.attorney_email || '';
-  const attyStreet = src.attorneyAddress || src.attorney_street || '';
-  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || '';
+  // Milestone 40C-F item 2. A Guardian Inventory source keeps attorney details
+  // NESTED at src.attorney.{name,barNumber,phone,streetAddress,cityStateZip}
+  // (see emptyDataGuardian()); every other source type stores them flat. These
+  // chains previously read flat keys only, so all five silently carried over
+  // BLANK from an Initial Inventory -- the most common carryover source there
+  // is. The nested reads are added to each chain.
+  //
+  // attyName had a second, worse defect: its last fallback was bare
+  // `src.attorney`, which for a Guardian source with a blank attorneyForGuardian
+  // resolved to the nested OBJECT and was then assigned into string fields on
+  // the destination. It reads src.attorney?.name instead.
+  const atty = (src.attorney && typeof src.attorney === 'object') ? src.attorney : {};
+  const attyFlat = typeof src.attorney === 'string' ? src.attorney : '';
+  const attyName = src.attorneyName || src.attorney_name || src.attorneyForGuardian || atty.name || attyFlat || '';
+  const attyBar = src.attorneyBar || src.attorney_bar || atty.barNumber || '';
+  const attyPhone = src.attorneyPhone || src.attorney_phone || atty.phone || '';
+  const attyEmail = src.attorneyEmail || src.attorney_email || atty.email || '';
+  const attyStreet = src.attorneyAddress || src.attorney_street || atty.streetAddress || '';
+  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || atty.cityStateZip || '';
   const gs = src.planGuardians || src.guardians || [];
 
   if (accountingType === 'guardian') {
@@ -198,7 +235,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
-      county: src.county || 'Pinellas',
+      county: '',
       gid: src.inceptionDate || src.gid || '',
       guardianName: gName,
       attorneyForGuardian: attyName,
@@ -228,7 +265,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
-      county: src.county || 'Pinellas',
+      county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
       attorney: attyName,
@@ -253,7 +290,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
-      county: src.county || 'Pinellas',
+      county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
       attorney: attyName,

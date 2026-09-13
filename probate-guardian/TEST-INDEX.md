@@ -15,9 +15,9 @@ the same commit.
 | boot-ordering.spec.js                | Milestone 40G: app startup is driven from main.js after module evaluation, not from legacy-app.js's classic-script top level |
 | bar-number.spec.js                   | Florida Bar-number normalization: eight digits preserved, shorter values left-padded, and non-digits removed               |
 | case-file.spec.js                    | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers; Milestone 40F single save-clock invariant and legacy-app.js parse guard | 
-| case-county-drift.spec.js            | Case-authoritative county mismatch advisory detection                                                                     |
+| case-county-drift.spec.js            | Case-vs-filing county mismatch advisory; Milestone 40C-A wording no longer claims the case registry is authoritative      |
 | checklist-export-parity.spec.js      | Milestone 36-6: section checklist vs export validation rule parity; Milestone 39-C's new signatureState/Image fields (Plan family + Annual Accounting) added to the known-gaps allow-list |
-| circuit-lookup.spec.js               | FL county → judicial circuit lookup helpers                                                                               |
+| circuit-lookup.spec.js               | FL county to judicial circuit lookup; Milestone 40C-A: blank/unknown yields null circuit, empty ordinal and no caption    |
 | combobox-controller.spec.js          | ComboboxController widget behavior                                                                                        |
 | content-corrections.spec.js          | Sub-milestone 36-5: content corrections (AO removal guard, Part VIII no-trust certification, date format, clerk guidance) |
 | county-guidance.spec.js              | Milestone 37-1: hasSixthCircuitLocalGuidance() Pinellas/Pasco allow-list, case/whitespace, no blank-county default        |
@@ -28,6 +28,7 @@ the same commit.
 | date-range-no-mutation.spec.js       | Milestone 40C-C: date ranges are validated by checkDateOrder(), never rewritten; D-4 bond-period order + field mapping    |
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
+| filing-county-defaults.spec.js       | Milestone 40C-A: no filing defaults to a county; ward-Party establish/hydrate, legacy unanimity backfill, merge conflict  |
 | feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
 | form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers                                                        |
 | field-kind-inference.spec.js         | Milestone 36-6: whole-word field-kind inference; no shipped path collides mid-word; no text formatter on checkbox/radio   |
@@ -56,7 +57,7 @@ the same commit.
 | tab-state.spec.js                    | Cross-tab peer-state normalization and risky-peer detection                                                               |
 | types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
-| ward-carryover.spec.js               | Milestone 36-7: Ward carryover sources and multi-plan mapping fidelity                                                    |
+| ward-carryover.spec.js               | Carry-over field mapping between filing types; Milestone 40C-F nested Initial-Inventory attorney shape; county never taken from the source snapshot |
 | ward-lock.spec.js                    | Ward lock acquire/release/current-lock services                                                                           |
 | xlsx-extract.spec.js                 | Milestone 33 Phase 3.1: xlsx-extract helper (reads support/xlsx-extract.ts)                                               |
 | yes-no-radio-migration.spec.js      | Milestone 37-5: shared explicit Yes/No radio renderer and bespoke checkbox/select migration guards                       |
@@ -80,6 +81,7 @@ the same commit.
 | case-file-roundtrip.spec.ts              | .sav round-trip: unencrypted, encrypted, corrupted paths                                                                                                                                 |
 | case-resolver.spec.ts                    | case-resolver behavior                                                                                                                                                                   |
 | case-write-through.spec.ts               | Milestone 6: case write-through                                                                                                                                                          |
+| cover-county.spec.ts                     | Milestone 40C-A: the real Cover county combobox establishes the ward Party county, hydrates later filings, and never prints a Sixth Circuit caption when blank                           |
 | dashboard-backup.spec.ts                 | Dashboard preference isolation and single-ward backup/export                                                                                                                             |
 | dashboard-visual.spec.ts                 | Milestone 15: dashboard coherence across viewports/themes                                                                                                                                |
 | date-validation.contract.spec.ts         | Milestone 34-1A date-order validation across filing types; Milestone 40C-C no-mutation on entry and the D-4 bond period                                                                  |

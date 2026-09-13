@@ -12,7 +12,10 @@ export function buildPlanMinorModel(D) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = `${d.ucn || ''} ${d.ref || ''}`.trim();
-  const county = d.county || 'Pinellas';
+  // Milestone 40C-A item 6: output must never invent a county. A blank one
+  // yields no court caption at all (see core/pdf/circuit-lookup.js); export is
+  // already blocked by this form's County validation.
+  const county = d.county || '';
   const descriptor = resolveDescriptorForInventoryType('planMinor');
 
   const fmtDate = (iso) => {

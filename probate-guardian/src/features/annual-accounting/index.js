@@ -214,6 +214,12 @@ function persistAnnualControl(control, applyFormat = true) {
     control.value = value;
   }
   window.setPath(window.D, path, value);
+  // Milestone 40C-A item 2/4: Annual/Final/Trust bind their inputs via
+  // data-annual-path and so never reach form-contract.js's persistFormControl(),
+  // where the other six filing types establish the ward county. Without this
+  // call the whole Annual family could select a Cover county that never reached
+  // the canonical ward Party.
+  window.maybeCommitCoverCounty?.(path);
   autoSave();
   updateNavDots();
   window.refreshWardInfoCard?.();

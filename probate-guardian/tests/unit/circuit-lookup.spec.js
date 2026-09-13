@@ -35,10 +35,63 @@ describe('circuit-lookup helpers', () => {
     expect(circuitForCounty('Sarasota')).toBe(12);
   });
 
-  test('falls back gracefully to Sixth Judicial Circuit for unknown or empty counties', () => {
-    expect(circuitForCounty('')).toBe(6);
-    expect(circuitForCounty(null)).toBe(6);
-    expect(circuitForCounty('Atlantis')).toBe(6);
+  // Milestone 40C-A item 7 inverted this. It used to assert that a blank or
+  // unrecognized county "falls back gracefully to Sixth Judicial Circuit" --
+  // which is exactly the behaviour that made a filing with no county print a
+  // confident Pinellas caption on a real court document.
+  //
+  // The three fallbacks were LAYERED, so each is asserted separately: removing
+  // any one or two of them still produced a Sixth Circuit caption through
+  // whichever remained, and a future partial revert must fail here rather than
+  // quietly restoring the default through the untested one.
+  describe('an unresolvable county yields an explicitly unknown result, never Sixth Circuit', () => {
+    test('circuitForCounty() returns null for blank, nullish and unrecognized', () => {
+      expect(circuitForCounty('')).toBeNull();
+      expect(circuitForCounty('   ')).toBeNull();
+      expect(circuitForCounty(null)).toBeNull();
+      expect(circuitForCounty(undefined)).toBeNull();
+      expect(circuitForCounty('Atlantis')).toBeNull();
+    });
+
+    test('getCircuitOrdinal() returns empty string, not "SIXTH"', () => {
+      expect(getCircuitOrdinal('')).toBe('');
+      expect(getCircuitOrdinal(null)).toBe('');
+      expect(getCircuitOrdinal('Atlantis')).toBe('');
+      // Also for a circuit NUMBER that resolves to nothing -- getCircuitOrdinal
+      // accepts either a number or a county name, and the numeric path had its
+      // own `|| 'Sixth'`.
+      expect(getCircuitOrdinal(0)).toBe('');
+      expect(getCircuitOrdinal(99)).toBe('');
+      expect(getCircuitOrdinal(null)).toBe('');
+    });
+
+    test('getFloridaCircuitCourtCaption() returns null rather than a caption object', () => {
+      expect(getFloridaCircuitCourtCaption('')).toBeNull();
+      expect(getFloridaCircuitCourtCaption('   ')).toBeNull();
+      expect(getFloridaCircuitCourtCaption(null)).toBeNull();
+      expect(getFloridaCircuitCourtCaption(undefined)).toBeNull();
+      expect(getFloridaCircuitCourtCaption('Atlantis')).toBeNull();
+    });
+
+    test('no unresolvable input produces any Pinellas or Sixth text anywhere', () => {
+      for (const bad of ['', '   ', null, undefined, 'Atlantis', 'Nowhere County']) {
+        const caption = getFloridaCircuitCourtCaption(bad);
+        expect(caption, `caption for ${JSON.stringify(bad)}`).toBeNull();
+        expect(getCircuitOrdinal(bad)).not.toMatch(/SIXTH/i);
+        expect(String(circuitForCounty(bad))).not.toBe('6');
+      }
+    });
+  });
+
+  // Removing a fallback must not disturb the 67 genuine mappings.
+  test('the real Sixth Circuit counties still resolve normally', () => {
+    expect(circuitForCounty('Pinellas')).toBe(6);
+    expect(circuitForCounty('Pasco')).toBe(6);
+    expect(getCircuitOrdinal('Pinellas')).toBe('SIXTH');
+    const caption = getFloridaCircuitCourtCaption('Pinellas');
+    expect(caption).not.toBeNull();
+    expect(caption.line1).toBe('IN THE CIRCUIT COURT OF THE SIXTH JUDICIAL CIRCUIT');
+    expect(caption.line2).toBe('IN AND FOR PINELLAS COUNTY, FLORIDA');
   });
 
   test('generates formal court caption headers correctly', () => {

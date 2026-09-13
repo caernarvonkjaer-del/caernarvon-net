@@ -38,6 +38,13 @@ export function createParty(role) {
     secondaryEmail: null,
     address: { street: '', cityStateZip: '' },
     officeAddress: null,
+    // Milestone 40C-A item 2: meaningful only for a Party with the 'ward' role.
+    // Null until the user selects County on that ward's first filing Cover;
+    // thereafter it is the canonical value later filings hydrate from. It is
+    // deliberately NOT part of the general identity hydration fan-out --
+    // syncIdentityField() updates every linked slot, which would rewrite
+    // historical sibling filings. See core/navigation/ward-county.js.
+    county: null,
     notes: null,
     createdAt: now,
     updatedAt: now,

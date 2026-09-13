@@ -14,12 +14,13 @@ one-predicate validation bug behind a single gate.
 | --- | --- | --- | --- |
 | 40A | Deprecate and remove DOCX export, including its test surface | **Landed 2026-09-13**: engine deleted, all seven feature entry points across three dispatch conventions removed, plus a capability layer the proposal had not enumerated (`filing-descriptor` `capabilities.docx` on all nine descriptors, the `FilingCapabilities` typedef, and `'docx'` in `issue-registry`'s channel list). Two proposal corrections: `docx-extract.ts` is deleted rather than kept (both its importers used it only for their own DOCX assertion blocks), and Milestone 40E's DOCX fix is deleted along with the engine | `MILESTONE-40A-PROPOSAL.md` |
 | 40B | 4-digit PIN per party for signature stamps | **Withdrawn** — requester chose not to build it (deterrent-only value judged not worth it) | `MILESTONE-40B-PROPOSAL.md` |
-| 40C-1 | County establishment, hydration, and carryover (Tasks 40C-A, 40C-F, 40C-G2) — the only delivery touching persisted data | Ready to implement on approval; the unknown-circuit decision was resolved 2026-09-12 (option (a)) | `MILESTONE-40C-PROPOSAL.md` |
+| 40C-1 | County establishment, hydration, and carryover (Tasks 40C-A, 40C-F, 40C-G2) — the only delivery touching persisted data | **Landed 2026-09-13**: all 8 items of 40C-A plus 40C-F and 40C-G2, using the unknown-circuit option (a) resolved 2026-09-12. Every Pinellas default removed (the 17 enumerated sites plus 7 factories, 2 Excel importers, 7 pdf-models, `pdf-engine.js` and all 3 layered `circuit-lookup.js` fallbacks); new `core/navigation/ward-county.js` holds the lifecycle; `verify:data-model` clean at 897 rows with `caseFile.parties[]` expanded. Three proposal corrections: the carryover attorney defect is in **three** functions not one, the Cover hook needed **all three** form write paths (hooking one covered only six of nine filing types), and seven of the eight legacy Pinellas sites were shadowed dead code | `MILESTONE-40C-PROPOSAL.md` |
 | 40C-2 | Form-entry, readiness, and validation corrections (Tasks 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H) — no persisted-data change | **Landed 2026-09-12**: all six tasks. 40C-C was a live data-corruption bug — date fields are `type="text"` holding MM/DD/YYYY, so the From/To pairing compared month-before-year and silently overwrote an endpoint on any period not starting January 1; the pairing is deleted and `checkDateOrder()` is the single reporter, now covering Guardian's D-4 bond period too. 40C-D reduced to test-only (premise does not reproduce). 40C-E closed two sidebar-vs-export disagreements; 40C-H one predicate plus a missing readiness condition | `MILESTONE-40C-PROPOSAL.md` |
 | 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | Ready to scope for implementation | `MILESTONE-40D-PROPOSAL.md` |
 | 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | **Landed 2026-09-12**: `measureCell()` array branch plus both certificate-of-service call sites. Two additions the proposal had not anticipated — `docx-engine.js` reads the same model and would have rendered the array bare-comma-joined, and Simplified Accounting dropped `line4` in its recipient *filter* as well as its join | `MILESTONE-40E-PROPOSAL.md` |
 | 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | **Landed in full 2026-09-13** (`9ac92dd`, `4ad99c1`, `619cfd8`, `c0165c5`): boot `ReferenceError` fixed, one save clock, failure escalation centralized, Tauri scaffolding removed, and the legacy duplicates deleted (net −640 lines) once 40G unblocked Step 4. `c0165c5` applied the same treatment to the router's shadowed pair (−111 lines), which had silently killed the sidebar accordion's reset-on-navigate; 45 further shadowed pairs are catalogued there as a follow-up task | `MILESTONE-40F-PROPOSAL.md` |
 | 40G | Fix the dashboard feature-bridge boot crash (`window.createFeatureBridge is not a function` on every load) | **Landed 2026-09-13** (`c05e4ad`) via option (a): `initApp()` now runs from `main.js` after module evaluation. This also unblocks 40F Steps 4 and 6 | `MILESTONE-40G-PROPOSAL.md` |
+| 40H | Dashboard guardian-validation crash guard, Safe Deposit Box conditional data loss, D-3 `fieldset`/`legend` accessibility gap | Draft, ready for approval; no file overlap with 40C-1 | `MILESTONE-40H-PROPOSAL.md` |
 
 ## How These Ended Up Together
 
@@ -36,7 +37,12 @@ implementations of the same save pipeline silently shadowing each other.
 40G surfaced on 2026-09-13 from a browser verification session that was
 only meant to confirm two UI claims for 40C, and instead found two
 uncaught exceptions firing on every production page load — one of them
-40F's own defect, crashing live.
+40F's own defect, crashing live. 40H surfaced from a separate, broader
+exploratory QA pass run the same night — most of its findings turned out
+to already be fixed (the two boot errors, re-confirmed against
+`deployment.json` to have fired on the prior deployed commit) or out of
+scope for a mechanical fix (recorded as open decisions instead), leaving
+three confirmed defects worth bundling on their own.
 
 ## Implementation Order and Shared Files
 

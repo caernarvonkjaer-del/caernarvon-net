@@ -1419,11 +1419,14 @@ const FL_COUNTY_CIRCUIT={
   Charlotte:20,Collier:20,Glades:20,Hendry:20,Lee:20
 };
 const CIRCUIT_ORDINALS=['','First','Second','Third','Fourth','Fifth','Sixth','Seventh','Eighth','Ninth','Tenth','Eleventh','Twelfth','Thirteenth','Fourteenth','Fifteenth','Sixteenth','Seventeenth','Eighteenth','Nineteenth','Twentieth'];
-// Falls back to Sixth (Pinellas/Pasco) for a blank or unrecognized county --
-// this app's original two-county scope -- so an unfinished Cover page still
-// prints a real circuit name rather than an empty one.
+// Milestone 40C-A item 7: returns null for a blank or unrecognized county.
+// This used to fall back to Sixth (Pinellas/Pasco), this app's original
+// two-county scope, so an unfinished Cover still printed a real circuit name --
+// which meant a filing with no county named a court confidently and wrongly.
+// Mirrors src/core/pdf/circuit-lookup.js's circuitForCounty(); this classic
+// script cannot import that ES module, which is why the duplicate exists.
 function circuitForCounty(county){
-  return FL_COUNTY_CIRCUIT[(county||'').trim()]||6;
+  return FL_COUNTY_CIRCUIT[(county||'').trim()]||null;
 }
 // The shared court-caption line every doc-header function below prints,
 // e.g. "IN THE CIRCUIT COURT OF THE NINTH JUDICIAL CIRCUIT<br>IN AND FOR
@@ -1432,17 +1435,26 @@ function circuitForCounty(county){
 // upper-cased (matching every other literal caption string in this file)
 // rather than relying on .court-title's CSS text-transform, since this
 // same markup is also rasterized by html2canvas for PDF export.
+// Milestone 40C-A item 7: both of this function's own Pinellas/Sixth fallbacks
+// are gone -- it defaulted the county NAME before the lookup ran, and then the
+// ORDINAL after it, so removing either alone still printed a Pinellas caption.
+// A filing with no county now renders a visible gap. Only an unfinished draft
+// reaches this, since County validation blocks export.
+const MISSING_COUNTY_CAPTION_HTML='COUNTY NOT SELECTED — COURT CAPTION INCOMPLETE';
 function circuitCourtCaption(county,probateDivision){
-  const c=(county||'Pinellas').trim()||'Pinellas';
-  const ord=(CIRCUIT_ORDINALS[circuitForCounty(c)]||'Sixth').toUpperCase();
+  const c=(county||'').trim();
+  const ord=c?(CIRCUIT_ORDINALS[circuitForCounty(c)]||'').toUpperCase():'';
+  if(!c||!ord)return MISSING_COUNTY_CAPTION_HTML;
   return `IN THE CIRCUIT COURT OF THE ${ord} JUDICIAL CIRCUIT<br>IN AND FOR ${esc(c.toUpperCase())} COUNTY, FLORIDA${probateDivision?', PROBATE DIVISION':''}`;
 }
 // Local duplicate of core/filing/county-guidance.js's hasSixthCircuitLocalGuidance()
 // -- this classic script can't import that ES module (same reason
 // circuitForCounty above duplicates circuit-lookup.js rather than importing
-// it). Deliberately NOT circuitForCounty()===6: that lookup's fallback for a
-// blank/unrecognized county is Sixth Circuit, which would wrongly show a
-// Pinellas/Pasco-only local requirement on an unfinished or invalid filing.
+// it). Deliberately NOT circuitForCounty()===6, and still deliberate after
+// Milestone 40C-A item 7 removed that lookup's Sixth-Circuit fallback: this is
+// an exact Pinellas/Pasco gate on the county name, not a circuit-number test,
+// so a future change to the circuit map cannot widen a two-county local
+// requirement. 40C-A explicitly retains this gating as-is.
 function hasSixthCircuitLocalGuidance(county){
   const normalized=(county||'').trim().toLowerCase();
   return normalized==='pinellas'||normalized==='pasco';
@@ -3450,6 +3462,22 @@ async function loadCaseFileFromZip(zip,manifest,key){
   // which 38C's storage table prohibits. Focus stays null for every archive
   // shape; the user chooses Edit from the dashboard.
   caseFile.activeWardId=null;
+  // Milestone 40C-A legacy migration rule. Existing nonblank filing and attorney
+  // counties are left exactly as stored. For a ward Party with no county, infer
+  // one only when every linked filing that HAS a county agrees on the same
+  // normalized Florida county, and persist that unanimous value. Conflicting or
+  // absent counties leave it blank for the user to resolve on a Cover -- picking
+  // silently between two real counties would mis-caption a filing. Never
+  // inferred from attorney county, another ward's filing, or the old Pinellas
+  // fallback. Runs here so an opened .sav is migrated before anything reads it.
+  //
+  // Also covers single-ward import, which carries no Party records: the
+  // reconstructed ward Party is seeded from that exported filing's own explicit
+  // county by the same unanimity rule (a single filing is trivially unanimous).
+  if(typeof window.backfillWardPartyCounties==='function'){
+    try{window.backfillWardPartyCounties();}
+    catch(e){console.warn('Could not backfill ward-party counties',e);}
+  }
   _templateCache={};
   for(const type of (Array.isArray(manifest.templates)?manifest.templates:[])){
     const f=zip.file(`templates/${type}.b64`);
@@ -3621,7 +3649,7 @@ function carryOverFieldsForPlan(sourceWard,planType){
   if(planType==='planInitial'){
     const g=gs[0]||{};
     return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:'',
       inceptionDate:src.gid||src.inceptionDate||'', guardianNames:gName,
       attorneyName:attyName, attorney_name:attyName, attorney_bar:attyBar,
       attorney_phone:attyPhone, attorney_email:attyEmail, attorney_street:attyStreet,
@@ -3637,7 +3665,7 @@ function carryOverFieldsForPlan(sourceWard,planType){
   if(planType==='planSimplified'){
     const mail=g=>[g.mailingStreet||g.streetAddress||g.street,g.mailingCityStateZip||g.cityStateZip].filter(Boolean).join(', ');
     return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:'',
       planGuardians:[0,1].map(i=>{
         const g=gs[i]||(i===0?{name:gName}:{});
         return {name:g.name||(i===0?gName:'')||'',signatureDate:'',email:g.email||'',phone:g.phone||'',mailingAddress:mail(g)};
@@ -3646,7 +3674,7 @@ function carryOverFieldsForPlan(sourceWard,planType){
   }
   if(planType==='planAnnual'){
     return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:'',
       gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
       planGuardians:[0,1,2].map(i=>{
         const g=gs[i]||(i===0?{name:gName}:{});
@@ -3663,7 +3691,7 @@ function carryOverFieldsForPlan(sourceWard,planType){
     // cityStateZip) or an accounting (ssn/mailingStreet/mailingCityStateZip),
     // so each field falls back across both naming conventions.
     return {
-      wardName:src.wardName||'', county:src.county||'Pinellas',
+      wardName:src.wardName||'', county:'',
       ucn:src.caseNumber||'', // planMinor stores the case number as "ucn"
       guardianName:src.guardianName||src.guardian||'',
       attorney_name:src.attorneyForGuardian||src.attorney||'',
@@ -3710,7 +3738,7 @@ function carryOverFieldsForAccounting(sourceWard,accountingType){
   if(accountingType==='guardian'){
     const g=gs[0]||{};
     return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:'',
       gid:src.inceptionDate||src.gid||'', guardianName:gName, attorneyForGuardian:attyName,
       attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
       attorneyAddress:attyStreet, attorneyCityStateZip:attyCityStateZip,
@@ -3731,7 +3759,7 @@ function carryOverFieldsForAccounting(sourceWard,accountingType){
       return i===-1?{street:s,cityStateZip:''}:{street:s.slice(0,i),cityStateZip:s.slice(i+2)};
     };
     return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:'',
       gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
       guardians:[0,1,2].map(i=>{
         const g=gs[i]||(i===0?{name:gName}:{});
@@ -3746,7 +3774,7 @@ function carryOverFieldsForAccounting(sourceWard,accountingType){
   }
   if(accountingType==='annual'){
     return {
-      wardName:src.wardName||'', caseNumber:caseNum, county:src.county||'Pinellas',
+      wardName:src.wardName||'', caseNumber:caseNum, county:'',
       gid:src.gid||src.inceptionDate||'', guardian:gName, attorney:attyName,
       attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
       guardians:[0,1,2].map(i=>{
@@ -3776,16 +3804,50 @@ function carryOverAccountingToAccounting(src,targetType){
   const base={
     wardName:src.wardName||'',
     caseNumber:src.caseNumber||'',
-    county:src.county||'Pinellas',
+    // Milestone 40C-A item 3: blank here; carryOverFields() below supplies it
+    // from the canonical ward Party. Unlike the two builders above this one,
+    // THIS function is live (the others are shadowed by
+    // core/navigation/ward-lifecycle.js's module versions), so this is the
+    // legacy site that actually mattered.
+    county:'',
     typeOfGuardianship:src.typeOfGuardianship||''
   };
   // Whoever the guardian/attorney are is stored under different keys on the
   // Initial Inventory than on the accountings.
   const guardianName=src.guardianName||src.guardian||'';
-  const attorneyName=src.attorneyForGuardian||src.attorney||'';
+  // Milestone 40C-F item 2, third instance of the same defect. A Guardian
+  // Inventory keeps attorney details NESTED at src.attorney.{name,...}, and
+  // Guardian Inventory is in ACCOUNTING_FORM_TYPES, so this accounting-to-
+  // accounting path handles guardian -> annual/simplified and hit the object
+  // directly: `src.attorneyForGuardian||src.attorney` assigned the whole nested
+  // OBJECT into the destination's flat `attorney` string field whenever
+  // attorneyForGuardian was blank. Caught by carryover-workflow.spec.ts.
+  //
+  // The proposal identified this defect in one function; it is in three --
+  // carryOverFieldsForPlan, carryOverFieldsForAccounting (both in
+  // core/navigation/ward-lifecycle.js) and this one.
+  const srcAtty=(src.attorney&&typeof src.attorney==='object')?src.attorney:{};
+  const srcAttyFlat=typeof src.attorney==='string'?src.attorney:'';
+  const attorneyName=src.attorneyForGuardian||srcAttyFlat||srcAtty.name||'';
+  // Milestone 40C-F item 2 also requires attorney identity AND CONTACT details
+  // to reach the destination shape. This function carried the name only, for
+  // every accounting-to-accounting carryover regardless of source type, so bar
+  // number, phone, email and address were silently dropped. Destination field
+  // names genuinely differ per engine -- annual uses attorney_bar, simplified
+  // uses attorney_barNumber, and Guardian Inventory keeps the whole thing nested
+  // -- so each branch maps them under its own names rather than one shared set.
+  const attyBar=src.attorneyBar||src.attorney_bar||src.attorney_barNumber||srcAtty.barNumber||'';
+  const attyPhone=src.attorneyPhone||src.attorney_phone||srcAtty.phone||'';
+  const attyEmail=src.attorneyEmail||src.attorney_email||srcAtty.email||'';
+  const attyStreet=src.attorneyAddress||src.attorney_street||srcAtty.streetAddress||'';
+  const attyCityStateZip=src.attorneyCityStateZip||src.attorney_cityStateZip||srcAtty.cityStateZip||'';
 
   if(engine==='guardian'){
     return {...base, gid:src.gid||'', guardianName, attorneyForGuardian:attorneyName,
+      // Guardian Inventory's own shape is nested (see emptyDataGuardian()).
+      attorney:{name:attorneyName,barNumber:attyBar,phone:attyPhone,
+        streetAddress:attyStreet,cityStateZip:attyCityStateZip,
+        signatureDate:null,filingDate:null,signatureState:'',signatureImage:''},
       guardians:gs.slice(0,1).map(g=>({
         name:g.name||'', ssnEin:g.ssnEin||g.ssn||'', phone:g.phone||'',
         streetAddress:g.streetAddress||g.mailingStreet||'',
@@ -3794,6 +3856,8 @@ function carryOverAccountingToAccounting(src,targetType){
   }
   if(engine==='simplified'){
     return {...base, gid:src.gid||'', guardian:guardianName, attorney:attorneyName,
+      attorney_barNumber:attyBar, attorney_phone:attyPhone,
+      attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
       guardians:[0,1,2].map(i=>{
         const g=gs[i]||{};
         return {name:g.name||'', ssn:g.ssn||g.ssnEin||'', phone:g.phone||'', email:g.email||'',
@@ -3804,6 +3868,8 @@ function carryOverAccountingToAccounting(src,targetType){
   }
   // annual family (annual / finalAccounting / trustAccounting)
   return {...base, gid:src.gid||'', guardian:guardianName, attorney:attorneyName,
+    attorney_bar:attyBar, attorney_phone:attyPhone,
+    attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
     guardians:[0,1,2].map(i=>{
       const g=gs[i]||{};
       return {name:g.name||'', ssn:g.ssn||g.ssnEin||'', phone:g.phone||'', email:g.email||'',
@@ -3821,12 +3887,33 @@ function carryOverAccountingToAccounting(src,targetType){
 function carryOverFields(sourceWard,targetType){
   const srcIsAccounting=ACCOUNTING_FORM_TYPES.includes(sourceWard.inventoryType);
   const targetIsAccounting=ACCOUNTING_FORM_TYPES.includes(targetType);
-  if(targetIsAccounting){
-    return srcIsAccounting
-      ? carryOverAccountingToAccounting(sourceWard,targetType)
-      : carryOverFieldsForAccounting(sourceWard,formEngine(targetType));
+  const fields=targetIsAccounting
+    ? (srcIsAccounting
+        ? carryOverAccountingToAccounting(sourceWard,targetType)
+        : carryOverFieldsForAccounting(sourceWard,formEngine(targetType)))
+    : carryOverFieldsForPlan(sourceWard,targetType);
+  // Milestone 40C-A item 3 / 40C-F item 3. Every builder above now leaves
+  // `county` blank; this is the one place that fills it, and it takes the value
+  // from the source's canonical ward PARTY rather than from the source filing's
+  // own snapshot. The distinction matters: a source filing is a historical
+  // record that may name a county the ward has since moved away from, and the
+  // decision forbids obtaining county from an arbitrary source filing.
+  //
+  // Linking the destination to the same ward Party is what makes this ward's
+  // later filings hydrate without re-asking. `wardPartyId` rides along in the
+  // returned fields, so it lands on the destination wherever the caller merges
+  // them (Add Ward, Convert Ward, and in-place Load Ward Info all route here).
+  const wardPartyId=sourceWard&&sourceWard.wardPartyId;
+  fields.county='';
+  if(wardPartyId){
+    fields.wardPartyId=wardPartyId;
+    const party=typeof window.resolveParty==='function'?window.resolveParty(wardPartyId):null;
+    const canonical=typeof window.normalizeCountyName==='function'
+      ?window.normalizeCountyName(party&&party.county)
+      :'';
+    if(canonical)fields.county=canonical;
   }
-  return carryOverFieldsForPlan(sourceWard,targetType);
+  return fields;
 }
 
 // Populates the "Load Ward Info From" picker in the Add Ward modal based on
@@ -4716,6 +4803,26 @@ async function showSimplifiedEligibilityModal(name,carrySourceId){
   document.getElementById('elig-ward-name').focus();
 }
 
+// Milestone 40C-F item 4 / 40C-G2: describes what carryover actually did,
+// naming the real selected source type instead of the hardcoded "existing
+// Simplified Annual Plan" this modal used to claim regardless of what the user
+// picked -- an Initial Inventory or a prior Annual are both valid sources here.
+//
+// It also states plainly whether County came back from the ward record or still
+// has to be chosen, because under Milestone 40C-A a new filing legitimately
+// starts blank and a filer who isn't told that will assume it carried over.
+function carryOverSummaryNote(src,dest){
+  if(!src)return '';
+  const srcLabel=formDisplayName(src.inventoryType);
+  const county=(typeof window.normalizeCountyName==='function')
+    ?window.normalizeCountyName(dest&&dest.county)
+    :String((dest&&dest.county)||'').trim();
+  const countySentence=county
+    ? `County (${county}) was restored from this ward's record.`
+    : 'County still needs to be selected on this filing’s Cover — this ward has no county on record yet.';
+  return `Details were carried over from the selected ${srcLabel}. ${countySentence}`;
+}
+
 async function doConfirmSimplifiedEligibility(){
   const name=document.getElementById('elig-ward-name').value.trim();
   const dep=document.getElementById('elig-depository').value;
@@ -4729,20 +4836,28 @@ async function doConfirmSimplifiedEligibility(){
       const wardId=await addWard(name,'simplified');
       window.D.eligDepository='Yes';
       window.D.eligOnlyTransactions='Yes';
+      let carryNote='';
       if(carrySourceId){
         const src=caseFile.wards.find(w=>w.wardId===carrySourceId);
         if(src){
           Object.assign(window.D,carryOverFields(src,'simplified'));
           if(window.D.wardName!==name)window.D.wardName=name;
           window.D.caseId=window.getOrCreateCaseForWard(src).id;
+          carryNote=carryOverSummaryNote(src,window.D);
+        }else{
+          // Milestone 40C-F item 1: the selected source could not be resolved,
+          // so say so rather than reporting a carryover that did not happen.
+          alert('The selected source filing could not be found, so nothing was carried over. The new filing was created blank.');
         }
       }
       await saveWardToState(window.D);
+      if(carryNote)alert(carryNote);
     }else{
       await addWard(name,'annual');
       // Carry over to the Annual too — the guardian picked a source ward
       // before answering the eligibility questions, and that choice still
       // applies to the form they actually end up with.
+      let carryNote='';
       if(carrySourceId){
         const src=caseFile.wards.find(w=>w.wardId===carrySourceId);
         if(src){
@@ -4750,9 +4865,14 @@ async function doConfirmSimplifiedEligibility(){
           if(window.D.wardName!==name)window.D.wardName=name;
           window.D.caseId=window.getOrCreateCaseForWard(src).id;
           await saveWardToState(window.D);
+          carryNote=carryOverSummaryNote(src,window.D);
         }
       }
-      alert('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.');
+      // Milestone 40C-F item 4: one message, and it names what actually
+      // happened to the carryover and the county rather than leaving the filer
+      // to guess after the redirect.
+      alert('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.'
+        +(carryNote?`\n\n${carryNote}`:''));
     }
     closeModal('simplifiedEligibilityModal');
   }catch(e){
@@ -5265,7 +5385,11 @@ function convertGuardianExtrasToAnnual(src,dest){
   dest.attorney_phone=a.phone||'';
   dest.attorney_street=a.streetAddress||'';
   dest.attorney_cityStateZip=a.cityStateZip||'';
-  dest.attorney_county=src.county||dest.attorney_county||'Pinellas';
+  // Milestone 40C-A item 3: attorney_county is a SEPARATE field from the
+  // filing's county and must never be populated from the ward's county, nor
+  // silently defaulted to Pinellas. It carries over only an existing
+  // attorney_county, and otherwise stays blank for the filer to supply.
+  dest.attorney_county=dest.attorney_county||src.attorney_county||'';
   // Initial Inventory recipients are name / address / cityStateZip; the
   // Annual form gives each recipient four lines, so they map straight over
   // with the fourth left free.
@@ -5347,7 +5471,11 @@ function convertSimplifiedToAnnual(src,dest){
   dest.attorney_street=src.attorney_street||'';
   dest.attorney_cityStateZip=src.attorney_cityStateZip||'';
   dest.attorney_signatureDate=src.attorney_signatureDate||'';
-  dest.attorney_county=src.county||dest.attorney_county||'Pinellas';
+  // Milestone 40C-A item 3: attorney_county is a SEPARATE field from the
+  // filing's county and must never be populated from the ward's county, nor
+  // silently defaulted to Pinellas. It carries over only an existing
+  // attorney_county, and otherwise stays blank for the filer to supply.
+  dest.attorney_county=dest.attorney_county||src.attorney_county||'';
   dest.certDate=src.certServiceDate||'';
   dest.certIndicator=src.certIndicator||'';
   dest.certAttySignDate=src.certAttySignDate||'';
@@ -5686,6 +5814,12 @@ async function startNewWardYear(wardId){
     seed.startingBalance=String(priorTotal);
   }
   applyYearData(ward,seed);
+  // Milestone 40C-A item 3: a new year is a new filing for the same ward, so it
+  // hydrates from the canonical ward Party. The same-ward snapshot carry above
+  // usually already supplies it; this fills the case where the prior year had no
+  // county but the ward Party does. It never overwrites a county the year
+  // already carries -- prior years stay auditable.
+  if(typeof window.hydrateCountyFromWardParty==='function')window.hydrateCountyFromWardParty(ward);
   ward.yearCounter=(ward.yearCounter||1)+1;
   ward.activeYearKey='Year '+ward.yearCounter;
   await saveWardToState(ward);
@@ -5908,7 +6042,7 @@ async function showAddWardModalForType(type){
 
 function emptyDataGuardian(){
   return {
-    wardName:'',caseNumber:'',gid:null,county:'Pinellas',guardianName:'',
+    wardName:'',caseNumber:'',gid:null,county:'',guardianName:'',
     attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:null,
     safeDepositBoxFiled:null,amendedForm:'',
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
@@ -7632,6 +7766,12 @@ function afterChange(path){
   // of data-form-path, so afterChange() is its equivalent single choke point.
   const identitySlot=window.identitySlotForPath?.(window.D,path);
   if(identitySlot)window.syncIdentityField(window.D,identitySlot.role,identitySlot.index);
+  // Milestone 40C-A item 2/4: the third of the three form write paths, and the
+  // one Guardian Inventory uses (bindForms()/data-bind). Deliberately NOT routed
+  // through syncIdentityField() above -- that fan-out rewrites every slot
+  // referencing the same Party, which for county would overwrite sibling filings
+  // that were correctly filed under a different county.
+  window.maybeCommitCoverCounty?.(path);
   // Update live summary displays
   const els={
     'totalA1':calc.totalA1(),'totalA2':calc.totalA2(),'netA':calc.netA(),

@@ -443,7 +443,10 @@ export async function importExcel(input){
         D.amendedForm=gcStr(p1,'J6');
         D.filingType=gcStr(p1,'H4')||'Annual';
         window.setAccountingFilingType?.(D.filingType);
-        D.county=gcStr(p1,'D23')||'Pinellas';
+        // Milestone 40C-A item 5: an imported workbook with no county leaves the
+        // filing blank rather than acquiring Pinellas. An explicit workbook
+        // county is preserved exactly.
+        D.county=gcStr(p1,'D23')||'';
         D.relatedCaseNumbers=gcStr(p1,'I12');
       }
 

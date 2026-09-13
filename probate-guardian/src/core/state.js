@@ -120,6 +120,17 @@ export function getActiveInventoryType() {
   return d && d.inventoryType ? d.inventoryType : null;
 }
 
+// Milestone 40C-A item 1 — applies to EVERY blank-data factory in this file, and
+// to emptyDataGuardian() in legacy-app.js: `county` starts blank, never
+// 'Pinellas'. A ward has no default county until the user selects one on that
+// ward's first filing Cover; that first explicit choice is then stored on the
+// canonical ward Party and hydrates later filings (see
+// core/navigation/ward-county.js). `attorney_county` starts blank for the same
+// reason and is a separate field -- it is never populated from the ward county.
+// Do not reintroduce a default here: a filing that silently claims Pinellas
+// names the wrong court on a real filed document, and County validation already
+// blocks export until the filer chooses.
+//
 // Blank-ward data factory for the Simplified Accounting feature (Milestone 2,
 // Phase D). This is pure data -- no DOM, no calls to any other function --
 // moved here rather than into the lazily-imported features/simplified-
@@ -131,7 +142,7 @@ export function getActiveInventoryType() {
 export function emptyDataSimplified() {
   return {
     wardName:'', ssn:'', caseNumber:'', periodFrom:'', periodTo:'',
-    attorney:'', guardian:'', typeOfGuardianship:'', county:'Pinellas',
+    attorney:'', guardian:'', typeOfGuardianship:'', county:'',
     amendedForm:'', gid:'',
     eligDepository:'', eligOnlyTransactions:'',
     startingBalance:'',
@@ -171,7 +182,7 @@ export function emptyDataSimplified() {
 export function emptyDataPlanSimplified() {
   return {
     planTriStateSchemaVersion:2,
-    wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'Pinellas',
+    wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'',
     q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
     q5SocialServices:'', q6Interaction:'',
     q7RestoreRights:'', q7RestoreExplain:'',
@@ -201,7 +212,7 @@ export function emptyDataPlanAnnual() {
   return {
     planTriStateSchemaVersion:2,
     // Cover
-    wardName:'', caseNumber:'', ssn:'', county:'Pinellas',
+    wardName:'', caseNumber:'', ssn:'', county:'',
     periodFrom:'', periodTo:'', gid:'', guardian:'', attorney:'',
     wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
     mailingAddress:'', mailingCityStateZip:'',
@@ -287,7 +298,7 @@ export function emptyDataPlanInitial() {
   return {
     planTriStateSchemaVersion:2,
     // Cover
-    wardName:'', caseNumber:'', county:'Pinellas', periodFrom:'', periodTo:'',
+    wardName:'', caseNumber:'', county:'', periodFrom:'', periodTo:'',
     inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
     guardianNames:'', attorneyName:'',
     wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
@@ -363,7 +374,7 @@ export function emptyDataPlanMinor() {
   return {
     planTriStateSchemaVersion:2,
     // Cover
-    wardName:'', county:'Pinellas', ucn:'', ref:'', periodFrom:'', periodTo:'',
+    wardName:'', county:'', ucn:'', ref:'', periodFrom:'', periodTo:'',
     amendedForm:'', amendedVersion:'', professionalGuardian:'', publicGuardian:'',
     guardianName:'',
     // Q1 — current residence
@@ -409,7 +420,7 @@ export function emptyDataAnnual() {
   return {
     // Part I
     wardName:'', caseNumber:'', gid:'', periodFrom:'', periodTo:'',
-    guardian:'', attorney:'', typeOfGuardianship:'', county:'Pinellas',
+    guardian:'', attorney:'', typeOfGuardianship:'', county:'',
     amendedForm:'', filingType:'Annual', relatedCaseNumbers:'',
     // Part II
     startingBalance:'',
@@ -419,7 +430,7 @@ export function emptyDataAnnual() {
     preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
     // Part V – attorney
     attorney_bar:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
-    attorney_county:'Pinellas', attorney_signatureDate:'',
+    attorney_county:'', attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:'',
     // Schedules

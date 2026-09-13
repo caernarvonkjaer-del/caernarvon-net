@@ -49,39 +49,58 @@ export const CIRCUIT_ORDINALS = [
   'Twentieth',
 ];
 
+// Milestone 40C-A item 7: these three functions used to be LAYERED fallbacks to
+// the Sixth Circuit / Pinellas, so removing any one or two of them still printed
+// a confident Pinellas caption for a filing with no county:
+//   1. circuitForCounty() returned 6 for blank AND for unrecognized;
+//   2. getCircuitOrdinal() fell back to 'Sixth' for an unresolved number;
+//   3. getFloridaCircuitCourtCaption() defaulted the county NAME to 'Pinellas'
+//      before the lookup even ran.
+// They now return an explicitly unknown result (null / '' / null). Each caller
+// decides what to draw with no caption. Export is already blocked by per-form
+// County validation, so the only path that reaches a blank-county caption is a
+// draft preview -- and a draft should show a visible gap, not the wrong court.
+// This matches src/core/filing/county-guidance.js, which already declines to
+// derive from circuitForCounty() for exactly this reason.
+
 /**
  * Resolves the Florida Judicial Circuit number (1-20) for a given county name.
- * Defaults to 6 (Sixth Judicial Circuit / Pinellas & Pasco) if empty or unrecognized.
+ * Returns null for a blank or unrecognized county -- there is no default circuit.
  */
 export function circuitForCounty(county) {
   const trimmed = (county || '').trim();
-  if (!trimmed) return 6;
+  if (!trimmed) return null;
   // Case-insensitive match against FL_COUNTY_CIRCUIT keys
   for (const [k, v] of Object.entries(FL_COUNTY_CIRCUIT)) {
     if (k.toLowerCase() === trimmed.toLowerCase()) {
       return v;
     }
   }
-  return 6;
+  return null;
 }
 
 /**
- * Returns the uppercase ordinal string (e.g. "SIXTH", "THIRTEENTH") for a circuit number or county.
+ * Returns the uppercase ordinal string (e.g. "SIXTH", "THIRTEENTH") for a circuit
+ * number or county. Returns '' when the circuit cannot be resolved.
  */
 export function getCircuitOrdinal(circuitOrCounty) {
   const circuitNum = typeof circuitOrCounty === 'number'
     ? circuitOrCounty
     : circuitForCounty(circuitOrCounty);
-  const ord = CIRCUIT_ORDINALS[circuitNum] || 'Sixth';
+  const ord = (circuitNum && CIRCUIT_ORDINALS[circuitNum]) || '';
   return ord.toUpperCase();
 }
 
 /**
- * Generates the standardized 2-line Florida Circuit Court title.
+ * Generates the standardized 2-line Florida Circuit Court title, or null when
+ * the county is blank or unrecognized. Callers must handle null explicitly
+ * rather than receiving a caption for a court the filing has not named.
  */
 export function getFloridaCircuitCourtCaption(county) {
-  const c = (county || 'Pinellas').trim() || 'Pinellas';
+  const c = (county || '').trim();
+  if (!c) return null;
   const ord = getCircuitOrdinal(c);
+  if (!ord) return null;
   return {
     line1: `IN THE CIRCUIT COURT OF THE ${ord} JUDICIAL CIRCUIT`,
     line2: `IN AND FOR ${c.toUpperCase()} COUNTY, FLORIDA`,

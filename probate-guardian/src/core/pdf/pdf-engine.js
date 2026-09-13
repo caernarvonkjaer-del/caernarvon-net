@@ -28,6 +28,12 @@ import {
 import { maskSSN } from './ssn-format.js';
 import { readPngDimensions, base64ToBytes } from '../images/png-dimensions.js';
 
+// Milestone 40C-A item 7: drawn in place of the court caption when the filing
+// has no county. Deliberately not a fill-in-the-blank caption ("IN AND FOR
+// ______ COUNTY") -- that shape was considered and rejected because it could
+// pass for a real caption if it ever escaped the draft path.
+const MISSING_COUNTY_CAPTION = 'COUNTY NOT SELECTED — COURT CAPTION INCOMPLETE';
+
 function sanitizeDisplayValue(label, value) {
   if (!value) return '';
   const l = String(label || '').toLowerCase();
@@ -163,7 +169,9 @@ export async function generateCourtFormPdf(model, options = {}) {
   const sourceData = options.sourceData || (typeof window !== 'undefined' ? window.D : null);
   const wardName = metadata.wardName || 'Ward';
   const caseNumber = metadata.caseNumber || '';
-  const county = (metadata.county || 'Pinellas').toUpperCase();
+  // Milestone 40C-A item 6: no Pinellas substitution. A filing with no county
+  // gets no county here, and the caption helper returns null for it (item 7).
+  const county = (metadata.county || '').toUpperCase();
 
   const scheduleSectionAliases = {
     'ANNUAL GUARDIANSHIP PLAN': {
@@ -285,11 +293,19 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'bold');
     doc.setFontSize(10.5);
     doc.setTextColor(0, 0, 0);
-    doc.text(caption.line1, pageWidth / 2, 80, { align: 'center' });
-    doc.text(caption.line2, pageWidth / 2, 94, { align: 'center' });
+    if (caption) {
+      doc.text(caption.line1, pageWidth / 2, 80, { align: 'center' });
+      doc.text(caption.line2, pageWidth / 2, 94, { align: 'center' });
+    } else {
+      // Milestone 40C-A item 7: no county, so no caption. Draw the gap rather
+      // than a court this filing never named. Only a draft preview can reach
+      // here -- County validation blocks export -- and the marker is worded so
+      // it could never be mistaken for a real caption if one ever leaked out.
+      doc.text(MISSING_COUNTY_CAPTION, pageWidth / 2, 87, { align: 'center' });
+    }
 
     doc.setFontSize(10);
-    doc.text(caption.division, pageWidth / 2, 108, { align: 'center' });
+    doc.text(caption ? caption.division : 'PROBATE DIVISION', pageWidth / 2, 108, { align: 'center' });
     doc.text(`CASE #: ${caseNumber || 'Pending'}`, pageWidth / 2, 122, { align: 'center' });
 
     const caseCaption = getCaseCaptionTitle(wardName, metadata.wardType);
@@ -314,7 +330,10 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(26, 45, 74); // Court Navy (#1a2d4a)
-    doc.text(`${caption.line1} ${caption.line2}`, pageWidth / 2, headerTop + 10, { align: 'center' });
+    doc.text(
+      caption ? `${caption.line1} ${caption.line2}` : MISSING_COUNTY_CAPTION,
+      pageWidth / 2, headerTop + 10, { align: 'center' }
+    );
 
     doc.setFontSize(9);
     const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();

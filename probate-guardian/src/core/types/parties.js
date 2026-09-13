@@ -23,6 +23,10 @@
  * @property {string | null} [secondaryEmail] - Secondary email address.
  * @property {PartyAddress} address - Mailing/residence address.
  * @property {PartyAddress | null} [officeAddress] - Professional office address.
+ * @property {string | null} [county] - Milestone 40C-A: canonical Florida county
+ *   for a Party with the 'ward' role; null until the first explicit Cover
+ *   selection. Later filings for this ward hydrate from it. Meaningless for
+ *   non-ward roles, and never derived from an attorney county.
  * @property {string | null} [notes] - Internal notes.
  * @property {string} createdAt - ISO creation timestamp.
  * @property {string} updatedAt - ISO modification timestamp.

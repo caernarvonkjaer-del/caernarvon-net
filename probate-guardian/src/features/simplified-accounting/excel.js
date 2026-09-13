@@ -219,7 +219,9 @@ export async function importExcel(input){
         window.D.guardian=gc('D17');
         window.D.typeOfGuardianship=gc('D18');
         window.D.gid=gc('F4').substring(0,10);
-        window.D.county=gc('G2')||'Pinellas';
+        // Milestone 40C-A item 5: see annual-accounting/excel.js -- an imported
+        // workbook with no county leaves the filing blank.
+        window.D.county=gc('G2')||'';
         window.D.amendedForm=gc('I5');
         window.D.startingBalance=gc('H20');
         window.D.interestIncome=gc('G23');

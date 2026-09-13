@@ -12,7 +12,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
-  const county = d.county || 'Pinellas';
+  // Milestone 40C-A item 6: output must never invent a county. A blank one
+  // yields no court caption at all (see core/pdf/circuit-lookup.js); export is
+  // already blocked by this form's County validation.
+  const county = d.county || '';
   const gid = d.gid || '';
   const printDate = options.printDate || new Date().toISOString().slice(0, 10);
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';

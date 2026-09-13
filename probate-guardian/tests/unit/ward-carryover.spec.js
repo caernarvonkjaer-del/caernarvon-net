@@ -53,7 +53,11 @@ describe('ward-carryover', () => {
       const result = carryOverFieldsForPlan(src, 'planInitial');
       expect(result.wardName).toBe('Jane Doe');
       expect(result.caseNumber).toBe('2024-GA-001');
-      expect(result.county).toBe('Hillsborough');
+      // Milestone 40C-A item 3: county is NOT taken from the source filing's own
+      // snapshot, even when the source has one. The builder leaves it blank and
+      // legacy-app.js's carryOverFields() fills it from the canonical ward
+      // Party -- a source filing may name a county the ward has since left.
+      expect(result.county).toBe('');
       expect(result.inceptionDate).toBe('2024-01-15');
       expect(result.guardianNames).toBe('John Guardian');
       expect(result.attorneyName).toBe('Alice Attorney');
@@ -96,6 +100,79 @@ describe('ward-carryover', () => {
       expect(result.attorney_phone).toBe('555-999-8888');
       expect(result.planGuardians[0].name).toBe('Mary Guardian');
       expect(result.planGuardians[0].tin).toBe('987-65-4321');
+    });
+  });
+
+  // Milestone 40C-F item 2. A Guardian Inventory keeps attorney details NESTED
+  // at src.attorney.{name,barNumber,phone,streetAddress,cityStateZip} (see
+  // emptyDataGuardian()); every other source type stores them flat. Both
+  // carryover builders read flat keys only, so all five silently carried over
+  // blank from the most common source type there is. The existing fixtures above
+  // use the FLAT shape, which is why this went unnoticed -- these use the real
+  // nested one.
+  //
+  // The proposal identified this in carryOverFieldsForAccounting only; it is in
+  // carryOverFieldsForPlan too, and Guardian Inventory is a declared carry
+  // source for every Plan type, so both directions are covered here.
+  describe('nested Initial Inventory attorney shape (Milestone 40C-F)', () => {
+    const nestedInventorySource = () => ({
+      inventoryType: 'guardian',
+      wardName: 'Nested Ward',
+      caseNumber: '2026-GA-777',
+      county: 'Orange',
+      gid: '2026-02-01',
+      guardianName: 'Gale Guardian',
+      // attorneyForGuardian deliberately blank: that is what used to make
+      // attyName fall through to the bare `src.attorney` OBJECT.
+      attorneyForGuardian: '',
+      attorney: {
+        name: 'Nina Nested, Esq.',
+        barNumber: '0456789',
+        phone: '727-555-0142',
+        streetAddress: '400 Cleveland St',
+        cityStateZip: 'Clearwater, FL 33755',
+      },
+      guardians: [{ name: 'Gale Guardian', ssnEin: '11-2233445', phone: '727-555-0100' }],
+    });
+
+    it('maps every nested attorney field into a Plan destination', () => {
+      const result = carryOverFieldsForPlan(nestedInventorySource(), 'planInitial');
+      expect(result.attorney_name).toBe('Nina Nested, Esq.');
+      expect(result.attorney_bar).toBe('0456789');
+      expect(result.attorney_phone).toBe('727-555-0142');
+      expect(result.attorney_street).toBe('400 Cleveland St');
+      expect(result.attorney_cityStateZip).toBe('Clearwater, FL 33755');
+    });
+
+    it('maps every nested attorney field into an accounting destination', () => {
+      const result = carryOverFieldsForAccounting(nestedInventorySource(), 'annual');
+      expect(result.attorney).toBe('Nina Nested, Esq.');
+      expect(result.attorneyBar).toBe('0456789');
+      expect(result.attorneyPhone).toBe('727-555-0142');
+    });
+
+    it('never assigns the nested attorney OBJECT into a string field', () => {
+      for (const result of [
+        carryOverFieldsForPlan(nestedInventorySource(), 'planInitial'),
+        carryOverFieldsForAccounting(nestedInventorySource(), 'annual'),
+      ]) {
+        for (const [key, value] of Object.entries(result)) {
+          if (!/attorney/i.test(key)) continue;
+          expect(typeof value, `${key} must not be an object`).not.toBe('object');
+        }
+      }
+    });
+
+    it('still prefers an explicit flat attorney name over the nested one', () => {
+      const src = nestedInventorySource();
+      src.attorneyForGuardian = 'Flat Wins, Esq.';
+      expect(carryOverFieldsForPlan(src, 'planInitial').attorney_name).toBe('Flat Wins, Esq.');
+      expect(carryOverFieldsForAccounting(src, 'annual').attorney).toBe('Flat Wins, Esq.');
+    });
+
+    it('leaves county blank in both directions regardless of the source county', () => {
+      expect(carryOverFieldsForPlan(nestedInventorySource(), 'planInitial').county).toBe('');
+      expect(carryOverFieldsForAccounting(nestedInventorySource(), 'annual').county).toBe('');
     });
   });
 

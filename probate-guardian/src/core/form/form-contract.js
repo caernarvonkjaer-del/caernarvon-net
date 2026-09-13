@@ -270,6 +270,21 @@ export function writeDraftValue(control, options = {}) {
     // Party write-through
     const identitySlot = window.identitySlotForPath?.(window.D, path);
     if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
+
+    // Milestone 40C-A item 2/4: the filing-level County control is the one place
+    // a ward's canonical county is established. Routed through
+    // commitCoverCounty() (core/navigation/ward-county.js) rather than through
+    // syncIdentityField()'s fan-out above -- that propagates an edit to every
+    // slot referencing the same Party, which for county would rewrite sibling
+    // filings that were correctly filed under a different county. County is a
+    // per-filing snapshot plus one forward-looking canonical value.
+    //
+    // Scoped to the exact top-level `county` path: `attorney_county` is a
+    // separate field and must never establish the ward's county. Note that
+    // Annual/Final/Trust bind via data-annual-path and never reach this
+    // function, so annual-accounting/index.js's persistAnnualControl() and
+    // legacy-app.js's afterChange() call the same helper.
+    window.maybeCommitCoverCounty?.(path);
   }
 }
 
