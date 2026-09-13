@@ -6578,10 +6578,20 @@ function planReadinessChecks(){
   // respective feature modules' print.js (Milestones 3, 4, 5 and 6), reached
   // via window since this dispatcher is shared across all four Plan types
   // and can't import any of them directly.
-  return activeInventoryType==='planAnnual'  ? window.planReadinessChecksAnnual()
-    : activeInventoryType==='planInitial'    ? window.planReadinessChecksInitial()
-    : activeInventoryType==='planMinor'      ? window.planReadinessChecksMinor()
-    : window.planReadinessChecksSimplified();
+  //
+  // Milestone 40H-F: each is a real window property only once its own
+  // print.js has lazy-loaded (ensurePrintModule()'s .then() callback in
+  // that Plan type's index.js) -- normal /print navigation always awaits
+  // that load first, but calling this dispatcher any other way (directly,
+  // before that ward's Print Preview has been opened this session) throws
+  // "planReadinessChecksX is not a function." Guarded the same way
+  // validateGuardian's dashboard call is (:7629), returning the same empty
+  // shape planReadinessPanel() already destructures instead of throwing.
+  const fn=activeInventoryType==='planAnnual'  ? window.planReadinessChecksAnnual
+    : activeInventoryType==='planInitial'    ? window.planReadinessChecksInitial
+    : activeInventoryType==='planMinor'      ? window.planReadinessChecksMinor
+    : window.planReadinessChecksSimplified;
+  return typeof fn==='function' ? fn() : {auto:[],manual:[]};
 }
 
 function planReadinessPanel(){

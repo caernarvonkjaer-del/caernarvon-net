@@ -130,6 +130,35 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       expect(tags.self).toBe('DETAILS');
       expect(tags.firstElementChild).toBe('SUMMARY');
     });
+
+    // Milestone 40H-F: window.planReadinessChecksX is a real window property
+    // only once that Plan type's own print.js has lazy-loaded, which normal
+    // /print navigation always awaits first -- so this can't be reproduced
+    // by navigating there normally (the fill()/navigate('/print') above,
+    // like every other test in this file, always finds it defined). The
+    // real-world trigger is calling the shared planReadinessChecks()
+    // dispatcher before that load has happened, which is what deleting the
+    // global directly simulates -- the same technique startup.spec.ts's
+    // Milestone 40H-A test uses for the identical dangling-global shape on
+    // window.validateGuardian.
+    test('planReadinessChecks() degrades to an empty result rather than throwing before its module loads', async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, `${featureName} Readiness Guard Ward`, filingType);
+      await fill(page);
+      await page.evaluate(() => (window as any).navigate('/print'));
+      // Bundle really is loaded already at this point -- confirm the harness
+      // state is sane before simulating the pre-load race.
+      const beforeGuard = await page.evaluate(() => (window as any).planReadinessChecks());
+      expect(beforeGuard.auto.length).toBeGreaterThan(0);
+
+      const globalName = filingType.replace('plan', 'planReadinessChecks');
+      const degraded = await page.evaluate((name) => {
+        delete (window as any)[name];
+        return (window as any).planReadinessChecks();
+      }, globalName);
+
+      expect(degraded).toEqual({ auto: [], manual: [] });
+    });
   });
 }
 
