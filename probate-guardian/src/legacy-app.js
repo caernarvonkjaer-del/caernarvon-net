@@ -3905,9 +3905,27 @@ function carryOverAccountingToAccounting(src,targetType){
       })};
   }
   // annual family (annual / finalAccounting / trustAccounting)
+  //
+  // Milestone 40H-I: guardian->annual and simplified->annual sources already
+  // get startingBalance/certRecipients from their own dedicated financial
+  // mappers (convertGuardianSchedulesToAnnual()/convertSimplifiedToAnnual(),
+  // which run after this identity carry and would just overwrite anything
+  // set here). The gap was specifically an annual-family source (e.g. Annual
+  // -> Final/Trust) converting to another annual-family target: no financial
+  // mapper exists for that pair at all, so neither field ever carried --
+  // starting balance should equal the prior filing's ending net assets (the
+  // actual statutory continuity), and certificate-of-service recipients are
+  // typically the same interested parties across a ward's filings. Guarded
+  // to that one source/target combination so it can't shadow or race the
+  // two dedicated mappers' own values for the other two paths.
+  const carryingFinancials = formEngine(src.inventoryType)==='annual';
   return {...base, gid:src.gid||'', guardian:guardianName, attorney:attorneyName,
     attorney_bar:attyBar, attorney_phone:attyPhone,
     attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
+    ...(carryingFinancials ? {
+      startingBalance:String(calcTotalsAnnual(src).netAssetsFromD),
+      certRecipients:(src.certRecipients||[]).map(r=>({...r})),
+    } : {}),
     guardians:[0,1,2].map(i=>{
       const g=gs[i]||{};
       return {name:g.name||'', ssn:g.ssn||g.ssnEin||'', phone:g.phone||'', email:g.email||'',
@@ -5362,6 +5380,17 @@ function describeConversion(srcType,destType){
   }
   if(srcType==='simplified'&&formEngine(destType)==='annual'){
     return 'The Simplified Accounting\'s Ending Balance becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too. Since Simplified Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
+  }
+  // Milestone 40H-I: same-family accounting-to-accounting (e.g. Annual ->
+  // Final/Trust) -- checked ahead of the generic fallback below, which would
+  // otherwise claim county carries "exactly as entered" (it's restored from
+  // the ward's Party record, which can in principle differ from this
+  // filing's own snapshot) and that "everything specific to this new filing
+  // ... starts blank," which stopped being true for starting balance and
+  // cert recipients once carryOverAccountingToAccounting() started carrying
+  // them for this exact pair.
+  if(formEngine(srcType)==='annual'&&formEngine(destType)==='annual'&&srcType!==destType){
+    return `The ward's name, case number, guardian, and attorney details are carried over. Starting Balance is set to this filing's ending net assets, and certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
   }
   if(carrySourcesFor(destType).includes(srcType)){
     return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, and guardian contact details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;

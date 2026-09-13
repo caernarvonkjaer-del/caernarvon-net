@@ -29,11 +29,17 @@ export async function showConvertWardModal() {
   if (typeof window !== 'undefined' && typeof window.ensureFragment === 'function') {
     await window.ensureFragment('common-modals');
   }
-  const first = caseFile.wards[0];
+  // Milestone 40H-I: defaulted to the first ward ever created in the case
+  // file, never the one actually open -- easy to convert the wrong ward
+  // without noticing. Default to the active ward; fall back to the first
+  // ward only when nothing is active (e.g. opened straight from the
+  // dashboard with no filing selected).
+  const activeWard = (typeof window !== 'undefined' && typeof window.getActiveWard === 'function') ? window.getActiveWard() : null;
+  const defaultWard = activeWard || caseFile.wards[0];
   const input = document.getElementById('convert-source-ward');
   if (input) {
-    input.value = first.wardName || '(unnamed)';
-    input.dataset.wardId = first.wardId;
+    input.value = defaultWard.wardName || '(unnamed)';
+    input.dataset.wardId = defaultWard.wardId;
   }
   updateConvertTargetOptions();
   if (typeof window !== 'undefined' && typeof window.showModal === 'function') {
