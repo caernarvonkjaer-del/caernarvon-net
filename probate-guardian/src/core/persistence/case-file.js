@@ -61,6 +61,27 @@ export function setDirtySinceExport(dirty) {
   }
 }
 
+// The single "last successful save" clock. Every read and write goes through
+// this pair, mirroring getCaseFileHandle/setCaseFileHandle above -- the
+// previous code read window._lastExportAt in two places but wrote only the
+// module-private variable, so the window value never advanced once set and
+// every consumer of it (the Activity Log readout, the first-backup reminder
+// in ward-lifecycle.js, which reads it as a bare property) saw a frozen
+// value no matter how many real saves had succeeded.
+export function getLastExportAt() {
+  if (typeof window !== 'undefined' && window._lastExportAt !== undefined) {
+    return window._lastExportAt;
+  }
+  return _lastExportAt;
+}
+
+export function setLastExportAt(ts) {
+  _lastExportAt = ts;
+  if (typeof window !== 'undefined') {
+    window._lastExportAt = ts;
+  }
+}
+
 export async function saveBlobAs(blob, suggestedName, preWriteValidator) {
   if (typeof window !== 'undefined' && window.showSaveFilePicker) {
     try {
@@ -192,7 +213,7 @@ export async function buildCaseFileBlob() {
     continuePromptShown: await loadAppState('continuePromptShown'),
     recentWards: await loadAppState('recentWards'),
     autoExportIntervalMinutes: (typeof window !== 'undefined' && window._autoExportIntervalMinutes !== undefined) ? window._autoExportIntervalMinutes : _autoExportIntervalMinutes,
-    lastExportAt: (typeof window !== 'undefined' && window._lastExportAt !== undefined) ? window._lastExportAt : _lastExportAt,
+    lastExportAt: getLastExportAt(),
     unlockFailState: await loadAppState('unlockFailState'),
   };
 
@@ -274,14 +295,6 @@ export async function buildSingleWardExportBlob(wardId) {
   return blob;
 }
 
-let _lastAutoSavedAt = null;
-
-export function recordAutoSaveTimestamp(ts = Date.now()) {
-  _lastAutoSavedAt = ts;
-  if (typeof window !== 'undefined') window._lastAutoSavedAt = ts;
-  updateLastSavedIndicator();
-}
-
 function formatRelativeTime(ts) {
   const diffMin = Math.floor((Date.now() - ts) / 60000);
   if (diffMin < 1) return 'just now';
@@ -299,14 +312,18 @@ export function markDirtySinceExport() {
   }
 }
 
+// Reads one clock, not two. The old second clock (_lastAutoSavedAt) was set
+// by saveData() before it had even checked for a writable handle, so this
+// indicator could report "Last backup: just now" in a browser that cannot
+// background-save at all -- directly contradicting the armed-status line
+// beside it. A save is now reported only once writeCaseToHandle() has
+// actually written.
 export function updateLastSavedIndicator() {
   if (typeof document === 'undefined') return;
   const el = document.getElementById('last-saved-indicator');
   if (!el) return;
   const dirty = isDirtySinceExport();
-  const lastExport = (typeof window !== 'undefined' && window._lastExportAt !== undefined) ? window._lastExportAt : _lastExportAt;
-  const lastAutoSave = (typeof window !== 'undefined' && window._lastAutoSavedAt !== undefined) ? window._lastAutoSavedAt : _lastAutoSavedAt;
-  const lastSave = Math.max(lastExport || 0, lastAutoSave || 0);
+  const lastSave = getLastExportAt() || 0;
 
   if (dirty && !lastSave) {
     el.textContent = '● Unsaved changes';
@@ -321,21 +338,17 @@ export function updateLastSavedIndicator() {
 }
 
 export async function beginRecordingExport(message, wardId = null) {
-  const previousLastExportAt = _lastExportAt;
+  const previousLastExportAt = getLastExportAt();
   const auditEntries = (typeof window !== 'undefined' && window._auditLogEntries) || [];
   const auditLenBefore = auditEntries.length;
-  _lastExportAt = Date.now();
-  if (typeof window !== 'undefined') {
-    if (window._appState) window._appState.lastExportAt = _lastExportAt;
-    if (typeof window.auditLog === 'function') {
-      await window.auditLog('DATA_EXPORT', message, true, wardId);
-    }
+  setLastExportAt(Date.now());
+  if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
+    await window.auditLog('DATA_EXPORT', message, true, wardId);
   }
   return function rollback() {
-    _lastExportAt = previousLastExportAt;
-    if (typeof window !== 'undefined') {
-      if (window._appState) window._appState.lastExportAt = previousLastExportAt;
-      if (window._auditLogEntries) window._auditLogEntries.length = auditLenBefore;
+    setLastExportAt(previousLastExportAt);
+    if (typeof window !== 'undefined' && window._auditLogEntries) {
+      window._auditLogEntries.length = auditLenBefore;
     }
   };
 }
@@ -384,6 +397,15 @@ export async function exportCaseFileZip() {
   }
 }
 
+// Consecutive-failure tracking lives here rather than in one caller, so the
+// 1s autosave debounce, the periodic sweep, and the manual Save Backup
+// button all escalate a write failure the same way. Previously only
+// saveData() counted failures, so an identical disk/permission error
+// surfaced as a persistent error banner or as nothing at all depending
+// purely on which path happened to trigger the write.
+let _consecutiveSaveFailures = 0;
+const SAVE_FAILURE_THRESHOLD = 2;
+
 export async function writeCaseToHandle(handle, viaTimer) {
   const caseFile = getCaseFile();
   const count = (caseFile.wards || []).length;
@@ -398,7 +420,16 @@ export async function writeCaseToHandle(handle, viaTimer) {
     await writable.close();
   } catch (e) {
     rollback();
+    _consecutiveSaveFailures += 1;
+    if (_consecutiveSaveFailures >= SAVE_FAILURE_THRESHOLD
+      && typeof window !== 'undefined' && typeof window.showSaveError === 'function') {
+      window.showSaveError();
+    }
     throw e;
+  }
+  _consecutiveSaveFailures = 0;
+  if (typeof window !== 'undefined' && typeof window.hideSaveError === 'function') {
+    window.hideSaveError();
   }
   setDirtySinceExport(false);
   clearSessionRestoreCache();
@@ -523,7 +554,7 @@ export async function loadAutoExportPrefs() {
     const savedMinutes = await loadAppState('autoExportIntervalMinutes');
     _autoExportIntervalMinutes = savedMinutes === null || savedMinutes === undefined ? 10 : Number(savedMinutes);
     const savedLast = await loadAppState('lastExportAt');
-    _lastExportAt = savedLast ? Number(savedLast) : null;
+    setLastExportAt(savedLast ? Number(savedLast) : null);
   } catch (e) {
     console.warn('Could not load auto-export preferences', e);
   }
@@ -868,4 +899,6 @@ if (typeof window !== 'undefined') {
   window.updateLastSavedIndicator = updateLastSavedIndicator;
   window.markDirtySinceExport = markDirtySinceExport;
   window.beginRecordingExport = beginRecordingExport;
+  window.getLastExportAt = getLastExportAt;
+  window.isAutoSaveArmed = isAutoSaveArmed;
 }

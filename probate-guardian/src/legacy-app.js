@@ -2518,10 +2518,18 @@ async function renderStorageReadout(){
     return;
   }
   const fileName=handle.name||'your case file';
-  const savedNote=_lastExportAt
-    ? `last saved ${formatRelativeTime(_lastExportAt)}`
+  // Read the live values, not this file's own private copies. Those are only
+  // written by this file's shadowed duplicates of beginRecordingExport()/
+  // refreshAutoSaveArmedStatus(), which the module versions replace at
+  // runtime -- so they stayed frozen at their initial null/false and this
+  // readout claimed "not saved yet this session" and "needs one manual save
+  // to re-arm" indefinitely, even while auto-save was working.
+  const lastExportAt=typeof window.getLastExportAt==='function'?window.getLastExportAt():window._lastExportAt;
+  const armed=typeof window.isAutoSaveArmed==='function'?window.isAutoSaveArmed():false;
+  const savedNote=lastExportAt
+    ? `last saved ${formatRelativeTime(lastExportAt)}`
     : 'not saved yet this session';
-  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> (case file) — ${_autoSaveArmed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
+  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> (case file) — ${armed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
 }
 
 function activityLogFiltered(){
@@ -2784,10 +2792,11 @@ function hideSaveError(){
   if(el)el.style.display='none';
 }
 
-// Show the error banner only after consecutive failures; a single file or
-// permission error may be transient.
-let _consecutiveSaveFailures=0;
-const SAVE_FAILURE_THRESHOLD=2;
+// The consecutive-failure counter that gated the banner above now lives in
+// case-file.js's writeCaseToHandle(), which is the one place every write
+// passes through; these two functions stay here because they are pure DOM
+// toggles and case-file.js calls them via window, the same way it already
+// calls window.auditLog.
 
 // Captures dirty state in the temporary recovery cache, then rewrites the
 // complete case file when a writable handle is available. No open handle
@@ -2815,8 +2824,12 @@ async function saveData(){
   // it having landed before acting further (lockApp() wiping memory,
   // beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport)await saveSessionRestoreCache();
-  window._lastAutoSavedAt = Date.now();
-  updateLastSavedIndicator();
+  // No "last saved" stamp here: the session-restore cache is explicitly not a
+  // backup (checkSessionRestoreCacheAtLaunch() re-marks restored state dirty
+  // because "this state has never actually landed in a .sav file"), and at
+  // this point no handle has been checked, no permission verified, and no
+  // write attempted. writeCaseToHandle() records the save once it has
+  // actually written one.
   const handle=await loadCaseFileHandle();
   if(!handle)return;
   try{
@@ -2825,13 +2838,11 @@ async function saveData(){
       await refreshAutoSaveArmedStatus();
       return;
     }
+    // Failure counting and the error banner live in writeCaseToHandle() so
+    // every caller reports a failed write identically.
     await writeCaseToHandle(handle,true);
-    _consecutiveSaveFailures=0;
-    hideSaveError();
   }catch(e){
     console.error('save failed',e);
-    _consecutiveSaveFailures++;
-    if(_consecutiveSaveFailures>=SAVE_FAILURE_THRESHOLD)showSaveError();
   }
 }
 
@@ -3145,12 +3156,19 @@ function formatRelativeTime(ts){
   return `${diffDay} day${diffDay===1?'':'s'} ago`;
 }
 
+// _lastAutoSavedAt used to be consulted here as a second "last saved" clock.
+// It was never declared in this file, so the fallback arm of that ternary
+// threw a ReferenceError on every page load -- window._lastAutoSavedAt is
+// undefined until the first saveData(), which made the guard evaluate the
+// bare identifier. The throw aborted initApp() partway, silently skipping
+// the periodic save timer, the last-saved ticker, the fallback save
+// reminder, drag-and-drop import, and the beforeunload unsaved-changes
+// warning. One clock (_lastExportAt), written only on a confirmed save.
 function updateLastSavedIndicator(){
   const el=document.getElementById('last-saved-indicator');
   if(!el)return;
   const lastExport = (typeof window !== 'undefined' && window._lastExportAt !== undefined) ? window._lastExportAt : _lastExportAt;
-  const lastAutoSave = (typeof window !== 'undefined' && window._lastAutoSavedAt !== undefined) ? window._lastAutoSavedAt : _lastAutoSavedAt;
-  const lastSave = Math.max(lastExport || 0, lastAutoSave || 0);
+  const lastSave = lastExport || 0;
 
   if(_dirtySinceExport && !lastSave){
     el.textContent='● Unsaved changes';

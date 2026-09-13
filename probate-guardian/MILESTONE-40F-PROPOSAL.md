@@ -2,10 +2,57 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, test, or documentation change until the requester approves
-Milestone 40F specifically. Approval of another Milestone 40 delivery does
-not authorize this work.
+**Part 1 landed 2026-09-13. Part 2 (Steps 4 and 6) is blocked on Milestone
+40G — see below.** The correctness work and the crash fix are implemented,
+tested, and pushed. The dead-code deletion is not, for a reason discovered
+at implementation time.
+
+### What landed
+
+Steps 1, 2, 3, and 5, plus Decision 2 — every user-visible bug this
+proposal identified:
+
+- The boot `ReferenceError` is gone. `_lastAutoSavedAt` no longer exists in
+  executable code in either implementation, so the undeclared-fallback
+  throw cannot happen, and `initApp()` now runs to completion — restoring
+  the periodic save timer, the last-saved ticker, the fallback save
+  reminder, drag-and-drop import, and the `beforeunload` unsaved-changes
+  warning.
+- One save clock, written only by a confirmed write:
+  `getLastExportAt()`/`setLastExportAt()` in `case-file.js` now sync
+  `window._lastExportAt` on every write, so the Activity Log readout and
+  `ward-lifecycle.js`'s first-backup check see live values instead of a
+  frozen one.
+- Failure escalation moved into `writeCaseToHandle()`, so the debounce, the
+  periodic sweep, and the manual button all report a failed write
+  identically.
+- `renderStorageReadout()` reads the live values via
+  `window.getLastExportAt()`/`window.isAutoSaveArmed()`.
+- The dead `window._appState.lastExportAt` write is gone.
+
+### Why Steps 4 and 6 are deferred — a dependency this proposal had wrong
+
+This document states that 40F and 40G "can be implemented in either
+order." **That is false for Step 4.** `initApp()` calls four of the
+functions Step 4 deletes — `loadAutoExportPrefs()`,
+`setupAutoExportTimer()`, `setupLastSavedTicker()`,
+`setupFallbackSaveReminder()` (`legacy-app.js:9086-9089`) — and the live
+stack trace proves modules have not evaluated at that point, since it was
+`legacy-app.js`'s own copy that threw. Deleting the legacy copies while
+`initApp()` still runs from the classic script would simply convert the
+`ReferenceError` into `TypeError: loadAutoExportPrefs is not a function`:
+the same crash, the same abort point, a different message.
+
+Decision 1's premise — that everything `legacy-app.js` needs can be reached
+"through `window.*`, an already-established bridge pattern" — holds only
+for calls made after module evaluation. It does not hold for the boot path,
+which is the exact trap `legacy-app.js:6837-6847` documents. **Step 4 must
+follow 40G's boot-ordering fix.** Step 6 (renaming) is deferred with it:
+it is cosmetic, and renaming functions the boot path still calls adds risk
+for no benefit while the ordering is unfixed.
+
+Everything Step 4 would delete remains dead code — that analysis is
+unchanged and still correct. It is simply not yet safe to remove.
 
 ## Goal
 

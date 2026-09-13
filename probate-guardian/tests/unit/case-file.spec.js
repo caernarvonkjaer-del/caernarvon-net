@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeAll } from 'vitest';
+import { describe, expect, test, beforeAll, beforeEach, afterEach } from 'vitest';
 import JSZip from 'jszip';
 import {
   deriveKeyFromPassword,
@@ -149,21 +149,93 @@ describe('case file packaging and filename helpers', () => {
   });
 });
 
-describe('incremental save timestamp indicator', () => {
-  test('recordAutoSaveTimestamp updates _lastAutoSavedAt and updates indicator', async () => {
-    const { recordAutoSaveTimestamp, updateLastSavedIndicator } = await import('../../src/core/persistence/case-file.js');
+// Milestone 40F: there is one "last successful save" clock, not two. The
+// former second clock (_lastAutoSavedAt, set via recordAutoSaveTimestamp)
+// was written before any handle/permission/write had been checked, so the
+// indicator could claim a backup that never happened -- and the undeclared
+// fallback reference to it in legacy-app.js threw on every page load.
+describe('save timestamp indicator: one clock, only advanced by a real save', () => {
+  // These unit specs run in node, not jsdom (see vitest.config.js), so the
+  // indicator element is stubbed the same way other specs here stub globals.
+  let indicatorEl;
+  let priorDocument;
+
+  beforeEach(() => {
+    indicatorEl = { id: 'last-saved-indicator', textContent: '', style: {} };
+    priorDocument = global.document;
+    global.document = { getElementById: (id) => (id === 'last-saved-indicator' ? indicatorEl : null) };
+  });
+
+  afterEach(() => {
+    if (priorDocument === undefined) delete global.document;
+    else global.document = priorDocument;
+    delete window._lastExportAt;
+    delete window._dirtySinceExport;
+  });
+
+  test('the removed second clock is gone from the module surface', async () => {
+    const mod = await import('../../src/core/persistence/case-file.js');
+    expect(mod.recordAutoSaveTimestamp).toBeUndefined();
+    expect(typeof mod.getLastExportAt).toBe('function');
+    expect(typeof mod.setLastExportAt).toBe('function');
+  });
+
+  test('setLastExportAt writes through to window so bare-property readers see it', async () => {
+    const { setLastExportAt, getLastExportAt } = await import('../../src/core/persistence/case-file.js');
     const now = Date.now();
-    recordAutoSaveTimestamp(now);
-    expect(window._lastAutoSavedAt).toBe(now);
+    setLastExportAt(now);
+    // ward-lifecycle.js reads window._lastExportAt as a plain property, not
+    // via the getter, so the write must land there too.
+    expect(window._lastExportAt).toBe(now);
+    expect(getLastExportAt()).toBe(now);
+  });
 
-    if (typeof document !== 'undefined') {
-      const indicatorEl = document.createElement('div');
-      indicatorEl.id = 'last-saved-indicator';
-      document.body.appendChild(indicatorEl);
+  test('a recorded save renders as a backup; dirty-with-no-save does not', async () => {
+    const { setLastExportAt, setDirtySinceExport, updateLastSavedIndicator } =
+      await import('../../src/core/persistence/case-file.js');
 
-      updateLastSavedIndicator();
-      expect(indicatorEl.textContent).toContain('Last backup:');
-      document.body.removeChild(indicatorEl);
+    setLastExportAt(null);
+    setDirtySinceExport(true);
+    updateLastSavedIndicator();
+    expect(indicatorEl.textContent).toContain('Unsaved changes');
+    expect(indicatorEl.textContent).not.toContain('Last backup:');
+
+    setLastExportAt(Date.now());
+    updateLastSavedIndicator();
+    expect(indicatorEl.textContent).toContain('Last backup:');
+  });
+
+  // Source-level guard, because this one cannot be reached by name from e2e:
+  // legacy-app.js keeps its own copy of updateLastSavedIndicator(), and that
+  // copy is what runs during initApp() -- before main.js's modules evaluate
+  // and replace window.updateLastSavedIndicator. Its undeclared
+  // _lastAutoSavedAt reference threw a ReferenceError on every load once a
+  // case existed, aborting the rest of initApp(). The existing clean-console
+  // e2e test never caught it because a fresh install blocks at the
+  // startup-choice overlay and never reaches that line.
+  test('no executable reference to the removed second clock survives in either implementation', async () => {
+    const { readFile } = await import('node:fs/promises');
+    for (const file of ['src/legacy-app.js', 'src/core/persistence/case-file.js']) {
+      const source = await readFile(new URL(`../../${file}`, import.meta.url), 'utf8');
+      const offending = source
+        .split('\n')
+        .map((line, i) => ({ line: line.trim(), no: i + 1 }))
+        .filter(({ line }) => line.includes('_lastAutoSavedAt') && !line.startsWith('//'));
+      expect(offending, `${file} still references _lastAutoSavedAt in executable code`).toEqual([]);
     }
+  });
+
+  test('beginRecordingExport advances the clock and its rollback restores it', async () => {
+    const { beginRecordingExport, setLastExportAt, getLastExportAt } =
+      await import('../../src/core/persistence/case-file.js');
+
+    setLastExportAt(null);
+    const rollback = await beginRecordingExport('unit-test write');
+    expect(getLastExportAt()).toBeGreaterThan(0);
+
+    // A failed write must not leave a save recorded that never happened.
+    rollback();
+    expect(getLastExportAt()).toBeNull();
+    expect(window._lastExportAt).toBeNull();
   });
 });
