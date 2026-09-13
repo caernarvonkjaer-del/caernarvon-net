@@ -48,13 +48,11 @@ function ensurePrintModule() {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
       // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanAnnual) or from legacy-app.js's shared
-      // planReadinessChecks() dispatcher (planReadinessChecksAnnual, still
-      // called for the two not-yet-extracted Plan types too) -- both only
-      // ever resolve against the global scope, never a module's own scope,
-      // so both must be real `window` properties.
+      // (doSavePdfPlanAnnual), which only ever resolve against the global
+      // scope, never a module's own scope, so it must be a real `window`
+      // property. (The planReadinessChecksAnnual bridge went with Milestone
+      // 44C's shared readiness card.)
       window.doSavePdfPlanAnnual = () => _printModule.doSavePdf();
-      window.planReadinessChecksAnnual = () => _printModule.planReadinessChecksAnnual();
     });
   }
   return _printModulePromise;

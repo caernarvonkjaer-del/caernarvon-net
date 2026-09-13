@@ -17,7 +17,7 @@ import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.j
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
-import { filingReadinessCard } from '../../core/filing/readiness-card.js';
+import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 
 function buildModelForPreview(D){
@@ -38,7 +38,7 @@ export function pagePrint(capOver){
   const errors=preflight.messages;
   const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
   highlightErrors(errors);
-  const errPanel=(errors.length?validationPanel(errors):'') + filingReadinessCard(window.D, preflight.structuredIssues);
+  const errPanel=(errors.length?validationPanel(errors):'') + renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues });
   const warnPanel=supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:'';
   const advisoryPanel=renderOutputAdvisories(preflight.advisories);
   // Milestone 38D/44B: Save as PDF's disabled state reflects only what

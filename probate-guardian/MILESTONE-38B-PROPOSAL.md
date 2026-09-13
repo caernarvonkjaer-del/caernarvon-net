@@ -2,11 +2,17 @@
 
 ## Status
 
-**Landed 2026-09-11 (`b0321dd`)**, together with 38A, 38C and 38D
-(`src/core/filing/readiness-card.js` first appears in that commit). Status
-line corrected 2026-09-13 under Milestone 42A; the specification text below is
-unchanged. 38D Phase 1 was its named code prerequisite and landed in the same
-commit.
+**Landed 2026-09-13 under Milestone 44C.** The earlier "Landed 2026-09-11
+(`b0321dd`)" status overstated it: that commit added only a small
+`filingReadinessCard(data, issues)` renderer used by three filing types,
+while `readiness-config.js`, `getReadinessJurisdiction()`, the four Plan
+migrations, the legacy dispatcher removal, and both named unit specs did not
+exist — found by the 2026-09-13 cross-milestone review, tracked and closed
+as `MILESTONE-44-PROPOSAL.md` 44C, whose "What landed" section records the
+delivered shape and one documented design point (a Plan validator's own
+issues are represented by the preserved predicate rows while any predicate
+is pending, and listed themselves once all predicates pass). The
+specification text below is unchanged.
 
 ## Goal
 

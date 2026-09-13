@@ -923,10 +923,6 @@
     },
     {
       "file": "src/features/plan-annual/index.js",
-      "name": "planReadinessChecksAnnual"
-    },
-    {
-      "file": "src/features/plan-annual/index.js",
       "name": "validatePlanAnnual"
     },
     {
@@ -936,10 +932,6 @@
     {
       "file": "src/features/plan-initial/index.js",
       "name": "doSavePdfPlanInitial"
-    },
-    {
-      "file": "src/features/plan-initial/index.js",
-      "name": "planReadinessChecksInitial"
     },
     {
       "file": "src/features/plan-initial/index.js",
@@ -955,19 +947,11 @@
     },
     {
       "file": "src/features/plan-minor/index.js",
-      "name": "planReadinessChecksMinor"
-    },
-    {
-      "file": "src/features/plan-minor/index.js",
       "name": "validatePlanMinor"
     },
     {
       "file": "src/features/plan-minor/print.js",
       "name": "printCurrentFilingPdf"
-    },
-    {
-      "file": "src/features/plan-simplified/index.js",
-      "name": "planReadinessChecksSimplified"
     },
     {
       "file": "src/features/plan-simplified/index.js",

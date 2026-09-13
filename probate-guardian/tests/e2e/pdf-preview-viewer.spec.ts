@@ -143,8 +143,8 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
       // is why the old .pdf-preview-draft-notice assertion here could never
       // pass again -- and the validation issues stay visible in the UI. The
       // print page's own banner is that UI; it must survive the override.
-      // Plan print pages also render planReadinessPanel(), which reuses the
-      // .validation-title class -- filter to the export-blocker banner itself.
+      // Every print page also renders the shared readiness card, which reuses
+      // the .validation-title class -- filter to the export-blocker banner itself.
       const banner = page.locator('#main-content .validation-panel .validation-title').filter({ hasText: /required field/ }).first();
       await expect(banner).toBeVisible();
       await expect(page.locator('#print-doc-container .pdf-preview-blocked')).toHaveCount(0);

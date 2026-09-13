@@ -55,7 +55,10 @@ vi.mock('../../src/core/pdf/pdf-finalizer.js', () => ({ finalizeCourtFormPdf: vi
 vi.mock('../../src/core/pdf/pdf-preview.js', () => ({ mountPdfPreview: vi.fn(), printGeneratedPdf: vi.fn() }));
 vi.mock('../../src/core/filing/output-advisories.js', () => ({ renderOutputAdvisories: vi.fn(() => '') }));
 
-const { planReadinessChecksAnnual } = await import('../../src/features/plan-annual/print.js');
+// Milestone 44C: the readiness predicates moved from plan-annual/print.js's
+// planReadinessChecksAnnual() into the shared readiness configuration; the
+// parity proof is unchanged, only its source module.
+const { getFilingReadiness } = await import('../../src/core/filing/readiness-config.js');
 const { validatePlanAnnual } = await import('../../src/features/plan-annual/index.js');
 const { prepareFilingOutput } = await import('../../src/core/filing/output-preflight.js');
 const { getSupplementalFilingIssues } = await import('../../src/core/pdf/supplemental-pdf.js');
@@ -67,7 +70,7 @@ function runPreflight(d) {
 
 function readiness(d) {
   window.D = d;
-  return planReadinessChecksAnnual();
+  return { auto: getFilingReadiness('planAnnual', d).automatic };
 }
 
 const RIGHT_KEYS = ['marry', 'vote', 'govBenefits', 'driver', 'travel', 'employment', 'contract', 'sue', 'property', 'residence', 'medical', 'social'];

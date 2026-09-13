@@ -17,77 +17,16 @@ import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
-import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
-import { isTriStateAnswer } from '../../core/form/form-contract.js';
-import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 
 const {
-  highlightErrors, validationPanel, planReadinessPanel,
+  highlightErrors, validationPanel,
   renderPage,
 } = window;
 
-export function planReadinessChecksMinor(){
-  const d=window.D;
-  const has=v=>!!(v!==''&&v!==null&&v!==undefined);
-  const g0=(d.planGuardians||[])[0]||{};
-  const provs=(d.q3Providers||[]).filter(r=>r&&r.last);
-  // Milestone 37-3: stable `id` on every item (never rendered --
-  // planReadinessPanel() only reads .label/.ok), same pattern as Plan
-  // Simplified's pilot. cover.amendedForm, cover.guardianName, and
-  // signatures.certifications are new: none had a readiness item before this
-  // milestone despite being required by validatePlanMinor() below. See
-  // tests/unit/plan-minor-parity.spec.js.
-  const auto=[
-    {id:'cover.amendedForm',label:'Amended Form? is answered',ok:isTriStateAnswer(d.amendedForm)},
-    {id:'cover.wardCountyPeriod',label:"Minor's name, county, and reporting period are on the plan",ok:has(d.wardName)&&has(d.county)&&has(d.periodFrom)&&has(d.periodTo)},
-    {id:'cover.caseNumber',label:'Case number (UCN or Case #) is on the plan',ok:has(d.ucn)||has(d.ref)},
-    {id:'cover.guardianName',label:'Guardian Name is on the plan',ok:has(d.guardianName)},
-    {id:'cover.residence',label:'Current residence and address stated',ok:has(d.q1ResidenceName)&&has(d.q1Street)},
-    // Milestone 39-C: reuses checkSignatureState() directly (not a
-    // hand-derived boolean) so these readiness items can never drift from
-    // what validatePlanMinor() actually blocks on -- AGENTS.md Section 4's
-    // Parity Invariant, same as Plan Simplified's 39-B pilot.
-    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&checkSignatureState({
-      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
-      date: g0.signatureDate,
-      image: g0.signatureImage,
-      sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
-    }).length===0},
-    {id:'signatures.guardian1.contact',label:'Guardian address, phone and taxpayer ID provided',ok:has(g0.mailingStreet)&&has(g0.phone)&&has(g0.tin)},
-    {id:'signatures.certifications',label:'At least one certification statement is checked',ok:!!(d.certIncapacitated||d.certMinor||d.certConsulted||d.certNoRestriction||d.certProvidesCare||d.certPhysicianAttached)},
-    {id:'plan.q4',label:'Question 4 — provision of medical services selected',ok:!!(d.q4Primary||d.q4Dentist||d.q4Specialist||d.q4PT||d.q4ST||d.q4OT||d.q4MinorDecides||d.q4Other)},
-    {id:'plan.q5',label:"Question 5 — school progress, social development, communication, and interpersonal statements completed",ok:has(d.q5SchoolProgress)&&has(d.q5SocialDevelopment)&&has(d.q5Communicates)&&has(d.q5Interpersonal)},
-    {id:'plan.q5e',label:'Question 5E — unmet social needs answered',ok:!!(d.q5NoUnmetNeeds||d.q5DoesNotCareToSocialize||d.q5UnmetNeeds||d.q5Other)},
-    {id:'signatures.preparer',label:'Preparer certification completed (if a preparer is named)',ok:!(d.preparer_name||d.preparer_signatureDate||(d.preparer_signatureState&&d.preparer_signatureState!=='none'))||(has(d.preparer_name)&&checkSignatureState({
-      state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate),
-      date: d.preparer_signatureDate,
-      image: d.preparer_signatureImage,
-      sectionLabel: 'Preparer & Attorney', roleLabel: 'Preparer',
-    }).length===0)},
-    {id:'signatures.attorney',label:'Attorney certification signed and dated (if represented)',ok:!(d.attorney_name||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none'))||(has(d.attorney_name)&&checkSignatureState({
-      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
-      date: d.attorney_signatureDate,
-      image: d.attorney_signatureImage,
-      sectionLabel: 'Preparer & Attorney', roleLabel: 'Attorney',
-    }).length===0)},
-    {id:'plan.q3providers',label:`Treatment providers listed (${provs.length})`,ok:provs.length>0},
-  ];
-  const manual=[
-    "File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367).",
-    "Attach the physician's statement of an examination of the ward no more than 180 days before the beginning of the plan period (F.S. 744.3675), if the certification box for it is checked.",
-    hasSixthCircuitLocalGuidance(d.county)
-      ? 'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).'
-      : 'Serve a copy on all interested persons, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).',
-    "If the minor reaches 18 years of age (sui juris) during the reporting period, prepare for final discharge under F.S. 744.527.",
-    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
-    "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the minor's assets.",
-    'Confirm the guardian address on file with the Clerk matches the address on this plan.',
-    'If you are a professional or public guardian, confirm the corresponding registration is current.',
-    'This general checklist is not derived from an official Clerk\'s Review form for this document — confirm current local filing requirements before submitting.',
-  ];
-  return {auto,manual};
-}
-
+// Milestone 44C: this Plan's readiness predicates live in
+// src/core/filing/readiness-config.js (getFilingReadiness('planMinor')),
+// rendered by the shared readiness card below.
 export function pagePrintPlanMinor(){
   window.queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validatePlanMinor(), ...getSupplementalFilingIssues(window.D)];
@@ -114,7 +53,7 @@ export function pagePrintPlanMinor(){
     ${errors.length?validationPanel(errors):''}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
-    ${planReadinessPanel()}
+    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues })}
     <div id="print-doc-container"></div>
   </div>`;
 }

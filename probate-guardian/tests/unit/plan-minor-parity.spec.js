@@ -37,7 +37,10 @@ vi.mock('../../src/core/pdf/pdf-finalizer.js', () => ({ finalizeCourtFormPdf: vi
 vi.mock('../../src/core/pdf/pdf-preview.js', () => ({ mountPdfPreview: vi.fn(), printGeneratedPdf: vi.fn() }));
 vi.mock('../../src/core/filing/output-advisories.js', () => ({ renderOutputAdvisories: vi.fn(() => '') }));
 
-const { planReadinessChecksMinor } = await import('../../src/features/plan-minor/print.js');
+// Milestone 44C: the readiness predicates moved from plan-minor/print.js's
+// planReadinessChecksMinor() into the shared readiness configuration; the
+// parity proof is unchanged, only its source module.
+const { getFilingReadiness } = await import('../../src/core/filing/readiness-config.js');
 const { validatePlanMinor } = await import('../../src/features/plan-minor/index.js');
 const { prepareFilingOutput } = await import('../../src/core/filing/output-preflight.js');
 const { getSupplementalFilingIssues } = await import('../../src/core/pdf/supplemental-pdf.js');
@@ -49,7 +52,7 @@ function runPreflight(d) {
 
 function readiness(d) {
   window.D = d;
-  return planReadinessChecksMinor();
+  return { auto: getFilingReadiness('planMinor', d).automatic };
 }
 
 const BASELINE = Object.freeze({

@@ -2623,8 +2623,12 @@ function renderPartyDirectoryRows(){
 async function doPartyMergeKeep(keepId,discardId){
   const keep=window.resolveParty(keepId),discard=window.resolveParty(discardId);
   if(!keep||!discard)return;
+  const conflict=typeof window.wardCountyMergeConflict==='function'?window.wardCountyMergeConflict(keepId,discardId):null;
   const adoptable=PARTY_FIELD_ROWS.filter(([path])=>!partyFieldValue(keep,path)&&partyFieldValue(discard,path));
   let message=`Merge "${discard.name}" into "${keep.name}"?\n\nEvery filing and case referencing "${discard.name}" will be updated to reference "${keep.name}" instead. This cannot be undone from within the app.`;
+  if(conflict){
+    message+=`\n\nWarning: Conflicting ward counties detected ("${conflict.keepCounty}" vs "${conflict.discardCounty}"). Merging will retain "${conflict.keepCounty}" on "${keep.name}".`;
+  }
   if(adoptable.length){
     message+=`\n\nAlso fill in these currently-blank fields on "${keep.name}" from "${discard.name}":\n`+adoptable.map(([path,label])=>`• ${label}: ${partyFieldValue(discard,path)}`).join('\n');
   }
@@ -5991,75 +5995,19 @@ function duplicatePlanRow(arrName,idx,route){
 // src/features/plan-simplified/print.js (Milestone 3, Phase C).
 
 // ── Pre-filing readiness check ───────────────────────────
-// Derived from the Clerk of Court's own review checklists (the
-// "Clerk's Review of Annual Guardianship Plan" forms). Deliberately split
-// in two: items the app can actually verify from the ward's data, and
-// items that depend on the clerk's internal systems or on steps taken
-// outside the app. The second group is shown as reminders, never as
-// pass/fail, so the app never implies it has checked something it hasn't.
-// Dispatches to the right checklist for the plan type being previewed.
-// Each plan has its own Clerk's Review form with its own required items,
-// so the lists genuinely differ rather than being one shared set.
-function planReadinessChecks(){
-  // planReadinessChecksSimplified()/planReadinessChecksAnnual()/
-  // planReadinessChecksInitial()/planReadinessChecksMinor() moved to their
-  // respective feature modules' print.js (Milestones 3, 4, 5 and 6), reached
-  // via window since this dispatcher is shared across all four Plan types
-  // and can't import any of them directly.
-  //
-  // Milestone 40H-F: each is a real window property only once its own
-  // print.js has lazy-loaded (ensurePrintModule()'s .then() callback in
-  // that Plan type's index.js) -- normal /print navigation always awaits
-  // that load first, but calling this dispatcher any other way (directly,
-  // before that ward's Print Preview has been opened this session) throws
-  // "planReadinessChecksX is not a function." Guarded the same way
-  // validateGuardian's dashboard call is (:7629), returning the same empty
-  // shape planReadinessPanel() already destructures instead of throwing.
-  const fn=activeInventoryType==='planAnnual'  ? window.planReadinessChecksAnnual
-    : activeInventoryType==='planInitial'    ? window.planReadinessChecksInitial
-    : activeInventoryType==='planMinor'      ? window.planReadinessChecksMinor
-    : window.planReadinessChecksSimplified;
-  return typeof fn==='function' ? fn() : {auto:[],manual:[]};
-}
-
-function planReadinessPanel(){
-  const {auto,manual}=planReadinessChecks();
-  const pending=auto.filter(a=>!a.ok).length;
-  const local=['pinellas','pasco'].includes(String(window.D?.county||'').trim().toLowerCase());
-  const title=local?"Clerk's Review Readiness":'Filing Readiness';
-  const rows=auto.map(a=>`<div class="readiness-row">
-      <span class="readiness-mark ${a.ok?'ok':'pending'}">${a.ok?'✓':'⚠'}</span>
-      <span>${esc(a.label)}</span>
-    </div>`).join('');
-  return `<details class="validation-panel readiness-panel no-print"${pending?' open':''}>
-    <summary class="validation-head">
-      ${ic('shield',17)}
-      <div>
-        <div class="validation-title">${title}${pending?` — ${pending} item${pending===1?'':'s'} outstanding`:' — Automated checks passed; manual review remains'}</div>
-        <div class="validation-sub">Mirrors what the Clerk of Court looks for when reviewing a plan. Passing every check does not guarantee approval.</div>
-      </div>
-    </summary>
-    <div class="validation-group">
-      <div class="validation-group-head"><span class="validation-group-name">Checked from your plan</span></div>
-      <div class="readiness-list">${rows}</div>
-    </div>
-    <div class="validation-group">
-      <div class="validation-group-head"><span class="validation-group-name">Before you file — the app can't verify these</span></div>
-      <div class="readiness-list">${manual.map(m=>`<div class="readiness-row"><span class="readiness-mark manual">•</span><span>${esc(m)}</span></div>`).join('')}</div>
-    </div>
-  </details>`;
-}
+// planReadinessChecks()/planReadinessPanel() -- the four Plan types' hand-
+// maintained checklist dispatcher and always-expanded panel -- were replaced
+// by the shared readiness card in Milestone 44C: predicates live in
+// src/core/filing/readiness-config.js, rendering in readiness-card.js.
 
 // pagePrintPlanSimplified()/doSavePdfPlanSimplified() moved to
 // src/features/plan-simplified/print.js (Milestone 3, Phase C).
 
-// planReadinessChecksAnnual()/docHeaderPlanAnnual()/buildPrintHTMLPlanAnnual()/
-// pagePrintPlanAnnual()/doSavePdfPlanAnnual() moved to
-// src/features/plan-annual/print.js (Milestone 4, Phase B). The lazy
-// module bridge in that feature's index.js exposes doSavePdfPlanAnnual and
-// planReadinessChecksAnnual on window so legacy-app.js's shared
-// planReadinessChecks() dispatcher and the print page's
-// onclick="doSavePdfPlanAnnual()" still resolve.
+// docHeaderPlanAnnual()/buildPrintHTMLPlanAnnual()/pagePrintPlanAnnual()/
+// doSavePdfPlanAnnual() moved to src/features/plan-annual/print.js
+// (Milestone 4, Phase B). The lazy module bridge in that feature's index.js
+// exposes doSavePdfPlanAnnual on window so the print page's
+// onclick="doSavePdfPlanAnnual()" still resolves.
 
 // ═══════════════════════════════════════════════════════
 // Initial Guardianship Plan is extracted into src/features/plan-initial/

@@ -18,93 +18,16 @@ import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
-import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
-import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 
 const {
-  highlightErrors, validationPanel, planReadinessPanel,
+  highlightErrors, validationPanel,
   renderPage,
-  PLAN_RIGHTS, PLAN_ADLS,
 } = window;
 
-// planReadinessChecks() -- the shared dispatcher across all four Plan types
-// -- stays in legacy-app.js (Problem 3: planInitial/planMinor haven't been
-// extracted, so it must keep calling their still-legacy checklist functions
-// too) and reaches this export via window.
-export function planReadinessChecksAnnual(){
-  const d=window.D;
-  const has=v=>!!(v!==''&&v!==null&&v!==undefined);
-  const g0=(d.planGuardians||[])[0]||{};
-  const res=(d.q1Residences||[]).filter(r=>r&&r.name);
-  const provs=(d.q4Providers||[]).filter(r=>r&&r.name);
-  const rights=d.rights||{}, adls=d.adls||{};
-  // Milestone 37-3: stable `id` on every item (never rendered --
-  // planReadinessPanel() only reads .label/.ok), same pattern as Plan
-  // Simplified's pilot. cover.county and cover.guardianName are new: neither
-  // had a readiness item before this milestone despite being required by
-  // validatePlanAnnual() below. cover.wardResidence's predicate was
-  // incomplete (missing residenceCityStateZip) -- extended in place, since
-  // it is the validator's own combined Cover-residence check. See
-  // tests/unit/plan-annual-parity.spec.js.
-  const auto=[
-    {id:'cover.period',label:'Reporting period is stated',ok:has(d.periodFrom)&&has(d.periodTo)},
-    {id:'cover.wardCaseGid',label:'Ward name, case number and inception date are on the plan',ok:has(d.wardName)&&has(d.caseNumber)&&has(d.gid)},
-    {id:'cover.county',label:'County is on the plan',ok:has(d.county)},
-    {id:'cover.guardianName',label:'Guardian Name(s) is on the plan',ok:has(d.guardian)},
-    // Milestone 39-C: reuses checkSignatureState() directly (not a
-    // hand-derived boolean) so these readiness items can never drift from
-    // what validatePlanAnnual() actually blocks on -- AGENTS.md Section 4's
-    // Parity Invariant, same as Plan Simplified's 39-B pilot.
-    {id:'signatures.guardian1.core',label:'Signed and dated by a guardian',ok:has(g0.name)&&checkSignatureState({
-      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
-      date: g0.signatureDate,
-      image: g0.signatureImage,
-      sectionLabel: 'Signatures', roleLabel: 'Guardian',
-    }).length===0},
-    {id:'signatures.guardian1.contact',label:'Guardian address, phone and SSN/EIN provided',ok:has(g0.mailingStreet)&&has(g0.phone)&&has(g0.ssn)},
-    {id:'signatures.attorney',label:'Attorney certification signature complete (if attorney included)',ok:checkSignatureState({
-      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
-      name: d.attorney,
-      date: d.attorney_signatureDate,
-      image: d.attorney_signatureImage,
-      sectionLabel: 'Signatures', roleLabel: 'Attorney',
-    }).length===0},
-    {id:'cover.wardResidence',label:"Ward's current residence and living arrangement, including city/state/ZIP, stated",ok:has(d.wardLiving)&&has(d.residenceAddress)&&has(d.residenceCityStateZip)},
-    {id:'plan.q1residences',label:`Residences for the year listed (${res.length})`,ok:res.length>0},
-    {id:'plan.q2',label:'Question 2 — address change addressed',ok:!!(d.q2NoMove||d.q2WithinCounty||d.q2WithinCircuit||d.q2OutsideApproved||d.q2OutsideVenuePetition)},
-    {id:'plan.q3',label:'Question 3 — residential setting and care provisions selected',ok:!!(d.q3SettingALF||d.q3SettingGroupHome||d.q3SettingIntermediate||d.q3SettingPrivate||d.q3SettingSkilled||d.q3SettingSpecialized||d.q3SettingStateHospital||d.q3SettingOther)},
-    {id:'plan.q4providers',label:`Question 4 — professional medical treatment listed (${provs.length})`,ok:provs.length>0},
-    {id:'plan.q5',label:'Question 5 — social skills and capacity-building activities described',ok:has(d.q5SocialSkills)&&has(d.q5Activities)},
-    {id:'plan.q6rights',label:'Question 6 — all twelve rights assessed',ok:PLAN_RIGHTS.every(([k])=>has(rights[k]))},
-    {id:'plan.q8adls',label:'Question 8 — all sixteen activities of daily living rated',ok:PLAN_ADLS.every(([k])=>has(adls[k]))},
-    {id:'plan.q9',label:'Question 9 — mental and physical disabilities answered',ok:!!((d.q9MentalNone||d.q9MentalDementia||d.q9MentalAlzheimers||d.q9MentalAutism||d.q9MentalHeadInjury||d.q9MentalDevelopmental||d.q9MentalIntellectual||d.q9MentalSchizophrenia||d.q9MentalDepression||d.q9MentalSubstance||d.q9MentalOther)&&(d.q9PhysNone||d.q9PhysMobility||d.q9PhysBlindness||d.q9PhysDeafness||d.q9PhysDiabetic||d.q9PhysParkinsons||d.q9PhysArthritis||d.q9PhysOther))},
-    {id:'plan.q10directives',label:'Question 10 — advance directives answered',ok:!!d.q10NoDirectives!==!!d.q10Executed},
-    {id:'plan.q11remuneration',label:'Question 11 — remuneration declared',ok:d.q11NoRemuneration?has(d.q11NoRemunerationName):!!(d.q11ReceivedName||d.q11Amount||d.q11From)},
-  ];
-  const manual=[
-    // Milestone 34-1A, Item 1: this depends on an external, unverifiable-
-    // by-software fact (whether the physician's statement is actually
-    // attached), same reasoning Plan Minor already applies to its own
-    // physician's-statement reminder -- moved out of `auto` so the
-    // readiness panel can't imply this is a machine-checked, export-
-    // blocking requirement when it never has been.
-    "Confirm the physician's statement of an examination within 90 days before the plan period is attached, and check the certification box for it.",
-    "File the physician's report separately, at the same time as this plan. The app does not produce it.",
-    'File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367).',
-    hasSixthCircuitLocalGuidance(d.county)
-      ? 'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service.'
-      : 'Serve a copy on all interested persons.',
-    'If you marked any right as capable of restoration, file the separate petition to restore it — this plan does not restore rights.',
-    "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1)).",
-    'Attach copies of any advance directives listed in Question 10 unless already filed with the court -- advance directives need only be filed once.',
-    'If ward is an APD client with a Developmental Services Habilitation Plan (DSHP / Chapter 393), attach the current support plan (F.S. 393.0651).',
-    "The $27.50 background investigation fee must be paid by the guardian individually and cannot be paid from the ward's assets.",
-    'If you are a professional guardian, confirm your OPPG registration is current.',
-    'Confirm the guardian address on file with the Clerk matches the address on this plan.',
-  ];
-  return {auto,manual};
-}
-
+// Milestone 44C: this Plan's readiness predicates live in
+// src/core/filing/readiness-config.js (getFilingReadiness('planAnnual')),
+// rendered by the shared readiness card below.
 export function pagePrintPlanAnnual(){
   window.queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)];
@@ -131,7 +54,7 @@ export function pagePrintPlanAnnual(){
     ${errors.length?validationPanel(errors):''}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
-    ${planReadinessPanel()}
+    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues })}
     <div id="print-doc-container"></div>
   </div>`;
 }

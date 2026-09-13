@@ -1,102 +1,79 @@
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
+import { getFilingReadiness } from '../../src/core/filing/readiness-config.js';
 
 // Milestone 37-1: the "serve interested persons / file certificate of
 // service" manual reminder in every Plan's readiness checklist must show the
 // Sixth Judicial Circuit local filing-and-file wording only for a Pinellas or
 // Pasco filing, and the statewide statutory wording for every other county.
-// These four print.js modules statically import the PDF generation
-// pipeline (canvas-backed at runtime), which has no place in a node-only
-// unit test, so every side dependency except county-guidance.js itself is
-// stubbed out -- planReadinessChecksXxx() is the only real code under test.
+// Milestone 44C moved those reminders out of the four print.js modules into
+// src/core/filing/readiness-config.js, which has no PDF-pipeline imports --
+// so nothing needs stubbing any more; getFilingReadiness() runs for real.
 
-global.window = {
-  highlightErrors: () => {},
-  validationPanel: () => '',
-  planReadinessPanel: () => '',
-  renderPage: () => {},
-  INITIAL_ADLS: [],
-  PLAN_RIGHTS: [],
-  PLAN_ADLS: [],
-  ...(global.window || {}),
-};
-
-vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));
-vi.mock('../../src/core/pdf/pdf-finalizer.js', () => ({ finalizeCourtFormPdf: vi.fn(), saveFinalizedPdf: vi.fn() }));
-vi.mock('../../src/core/pdf/pdf-preview.js', () => ({ mountPdfPreview: vi.fn(), printGeneratedPdf: vi.fn() }));
-vi.mock('../../src/core/pdf/supplemental-pdf.js', () => ({
-  getSupplementalAccessibilityWarning: vi.fn(() => ''),
-  getSupplementalFilingIssues: vi.fn(() => []),
-}));
-vi.mock('../../src/core/filing/output-preflight.js', () => ({ prepareFilingOutput: vi.fn() }));
-vi.mock('../../src/core/filing/output-advisories.js', () => ({ renderOutputAdvisories: vi.fn(() => '') }));
-
-vi.mock('../../src/features/plan-simplified/index.js', () => ({ validatePlanSimplified: vi.fn(() => []) }));
-vi.mock('../../src/features/plan-simplified/pdf-model.js', () => ({ buildPlanSimplifiedModel: vi.fn() }));
-vi.mock('../../src/features/plan-initial/index.js', () => ({ validatePlanInitial: vi.fn(() => []) }));
-vi.mock('../../src/features/plan-initial/pdf-model.js', () => ({ buildPlanInitialModel: vi.fn() }));
-vi.mock('../../src/features/plan-annual/index.js', () => ({ validatePlanAnnual: vi.fn(() => []) }));
-vi.mock('../../src/features/plan-annual/pdf-model.js', () => ({ buildPlanAnnualModel: vi.fn() }));
-vi.mock('../../src/features/plan-minor/index.js', () => ({ validatePlanMinor: vi.fn(() => []) }));
-vi.mock('../../src/features/plan-minor/pdf-model.js', () => ({ buildPlanMinorModel: vi.fn() }));
-
-const { planReadinessChecksSimplified } = await import('../../src/features/plan-simplified/print.js');
-const { planReadinessChecksInitial } = await import('../../src/features/plan-initial/print.js');
-const { planReadinessChecksAnnual } = await import('../../src/features/plan-annual/print.js');
-const { planReadinessChecksMinor } = await import('../../src/features/plan-minor/print.js');
-
-function manualTextFor(checkFn, county) {
-  window.D = { county, planGuardians: [{}] };
-  return checkFn().manual.join('\n');
+function manualTextFor(inventoryType, county) {
+  return getFilingReadiness(inventoryType, { county, planGuardians: [{}] }).manual.map((row) => row.label).join('\n');
 }
 
 describe('Simplified Plan readiness -- county-gated certificate-of-service wording', () => {
   test('Pinellas renders the local Sixth Circuit required-manual filing item', () => {
-    const manual = manualTextFor(planReadinessChecksSimplified, 'Pinellas');
+    const manual = manualTextFor('planSimplified', 'Pinellas');
     expect(manual).toContain('Local Sixth Judicial Circuit requirement: serve a copy on all interested persons, and file the certificate of service.');
   });
 
   test('Pasco renders the same local requirement as Pinellas', () => {
-    const manual = manualTextFor(planReadinessChecksSimplified, 'Pasco');
+    const manual = manualTextFor('planSimplified', 'Pasco');
     expect(manual).toContain('Local Sixth Judicial Circuit requirement: serve a copy on all interested persons, and file the certificate of service.');
   });
 
   test('a non-Sixth-Circuit county renders the statutory instruction, with no certificate-of-service filing and no Pinellas/Pasco/Sixth Circuit text', () => {
-    const manual = manualTextFor(planReadinessChecksSimplified, 'Orange');
+    const manual = manualTextFor('planSimplified', 'Orange');
     expect(manual).toContain("Serve a copy of this plan on the ward -- unless the ward is a minor or was declared totally incapacitated -- and on the ward's attorney, if any. Provide additional copies to anyone else the court directs (F.S. 744.367(3)(b)).");
     expect(manual).not.toMatch(/Pinellas|Pasco|Sixth (Judicial )?Circuit|certificate of service/i);
   });
 
   test('a blank county is treated as non-local, not defaulted to Sixth Circuit', () => {
-    const manual = manualTextFor(planReadinessChecksSimplified, '');
+    const manual = manualTextFor('planSimplified', '');
     expect(manual).not.toMatch(/Pinellas|Pasco|Sixth (Judicial )?Circuit|certificate of service/i);
   });
 });
 
 describe('Initial, Annual, and Minor Plan readiness -- same county gate, existing exception wording preserved', () => {
   test('Initial Plan', () => {
-    expect(manualTextFor(planReadinessChecksInitial, 'Pinellas')).toContain(
+    expect(manualTextFor('planInitial', 'Pinellas')).toContain(
       'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).'
     );
-    const other = manualTextFor(planReadinessChecksInitial, 'Duval');
+    const other = manualTextFor('planInitial', 'Duval');
     expect(other).toContain('Serve a copy on all interested persons, unless the ward was declared totally incapacitated or is a minor under 14 (see the certification checkboxes).');
     expect(other).not.toMatch(/Pinellas|Pasco|Sixth (Judicial )?Circuit|certificate of service/i);
   });
 
   test('Annual Plan', () => {
-    expect(manualTextFor(planReadinessChecksAnnual, 'Pasco')).toContain(
+    expect(manualTextFor('planAnnual', 'Pasco')).toContain(
       'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service.'
     );
-    const other = manualTextFor(planReadinessChecksAnnual, 'Leon');
+    const other = manualTextFor('planAnnual', 'Leon');
     expect(other).toContain('Serve a copy on all interested persons.');
     expect(other).not.toMatch(/Pinellas|Pasco|Sixth (Judicial )?Circuit|certificate of service/i);
   });
 
   test('Minor Plan', () => {
-    expect(manualTextFor(planReadinessChecksMinor, 'Pinellas')).toContain(
+    expect(manualTextFor('planMinor', 'Pinellas')).toContain(
       'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).'
     );
-    const other = manualTextFor(planReadinessChecksMinor, 'Broward');
+    const other = manualTextFor('planMinor', 'Broward');
     expect(other).toContain('Serve a copy on all interested persons, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).');
     expect(other).not.toMatch(/Pinellas|Pasco|Sixth (Judicial )?Circuit|certificate of service/i);
   });
+});
+
+// Milestone 38B / 44C: the five accounting/inventory filings never carried
+// county-gated wording, and their source-inventory reminders must stay free
+// of any local-practice claim regardless of county.
+describe('accounting and inventory filings -- no local-practice text for any county', () => {
+  for (const type of ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting']) {
+    test(type, () => {
+      for (const county of ['Pinellas', 'Pasco', 'Orange', '']) {
+        expect(manualTextFor(type, county)).not.toMatch(/Pinellas|Pasco|Sixth (Judicial )?Circuit/i);
+      }
+    });
+  }
 });

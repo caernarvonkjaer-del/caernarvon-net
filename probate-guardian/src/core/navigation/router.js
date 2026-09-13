@@ -1,6 +1,7 @@
 // Application navigation, URL hash router, and feature mounting.
 import { getCaseFile } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
+import { resetReadinessCardState } from '../filing/readiness-card.js';
 
 let _currentPage = '/dashboard';
 const _routeHooks = {
@@ -76,6 +77,10 @@ export async function navigate(page, { updateHash = true } = {}) {
       // assignment silently replaced.
       window.resetNavSectionExpanded?.();
       window.commitPendingFieldValues?.();
+      // Milestone 44C: leaving Preview forgets the readiness card's hand
+      // toggle, so the next entry recomputes its default; a same-route
+      // rerender (renderPage('/print') after a blocked export) keeps it.
+      if (page !== '/print') resetReadinessCardState();
       if (typeof window.pruneBlankCards === 'function') {
         window.pruneBlankCards();
       }

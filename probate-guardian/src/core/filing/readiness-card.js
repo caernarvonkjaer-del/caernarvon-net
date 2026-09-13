@@ -1,26 +1,107 @@
-import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
+// Milestone 38B / 44C: the one readiness card every Preview & Export page
+// renders. Configuration comes from readiness-config.js; the title from
+// county-guidance.js. Escapes all text, renders no inline handlers, and is
+// never called from a PDF/Excel/print builder -- the card is `.no-print`.
+//
+// Disclosure state: pending automatic checks open the card; otherwise a
+// fresh render is collapsed. A user's own toggle is remembered in module
+// memory for rerenders of the same wardId + filingType only, and
+// resetReadinessCardState() forgets it on filing/ward switch and on fresh
+// Preview entry (the router calls it whenever navigation leaves /print).
 
-const manual = {
-  guardian: 'Confirm required statements, appraisals, supporting records, filing timing, and service are complete.',
-  simplified: 'Confirm statements, receipts, filing deadline, service, fees, and any separate case requirements are complete.',
-  annual: 'Confirm required statements, service, approvals, fee petitions, and other case-specific filing steps are complete.',
-  finalAccounting: 'Confirm discharge papers, notice/service, distributions, receipts or releases, and approvals are complete.',
-  trustAccounting: 'Confirm the trust instrument, supporting records, service, compensation approval, and court-directed steps are complete.',
-  planSimplified: 'Confirm required attachments and service are complete.',
-  planAnnual: 'Confirm required attachments, physician material, and service are complete.',
-  planInitial: 'Confirm required attachments, service, education proof, and original signatures are complete.',
-  planMinor: 'Confirm required physician material, service, deadlines, and majority/discharge planning are complete.',
-};
+import { getFilingReadiness } from './readiness-config.js';
+import { getReadinessJurisdiction } from './county-guidance.js';
 
-function escapeHtml(value) { const el = document.createElement('span'); el.textContent = value; return el.innerHTML; }
+export const READINESS_CARD_ID = 'filing-readiness-card';
+export const MANUAL_REVIEW_SUMMARY = 'Automated checks passed; manual review remains.';
+export const ALL_CHECKS_PASS_SUMMARY = 'All configured checks pass.';
 
-export function filingReadinessCard(data, issues = []) {
-  const local = hasSixthCircuitLocalGuidance(data?.county);
-  const title = local ? "Clerk's Review Readiness" : 'Filing Readiness';
-  const automatic = issues.filter(issue => issue?.showInReadiness !== false);
-  const failed = automatic.length;
-  const reminder = manual[data?.inventoryType] || 'Confirm any required filing steps outside this application are complete.';
-  const summary = failed ? `${failed} automated check${failed === 1 ? '' : 's'} needs attention` : 'Automated checks passed; manual review remains';
-  const rows = automatic.map(issue => `<li>${escapeHtml(issue.message || String(issue))}</li>`).join('') || '<li>No automated issues found.</li>';
-  return `<details class="validation-panel readiness-panel no-print"${failed ? ' open' : ''}><summary><strong>${title}</strong> — ${summary}</summary><div class="validation-group"><div class="validation-group-head"><span class="validation-group-name">Checked from this filing</span></div><ul class="readiness-list">${rows}</ul></div><div class="validation-group"><div class="validation-group-head"><span class="validation-group-name">Manual review</span></div><p>${escapeHtml(reminder)}</p></div></details>`;
+let remembered = null; // { key, open }
+const boundContainers = new WeakSet();
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const SHIELD_ICON = '<svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.2 20 6v6.1c0 4.6-3.3 7.5-8 8.7-4.7-1.2-8-4.1-8-8.7V6Z"/></svg>';
+
+function stateKey(data, filingType) {
+  return `${data?.wardId ?? ''}:${filingType ?? ''}`;
+}
+
+function jumpLink(row) {
+  if (!row.route && !row.path) return '';
+  return `<button type="button" class="validation-go" data-form-action="jump-to-field" data-route="${escapeHtml(row.route)}" data-jump-path="${escapeHtml(row.path)}">Go to field</button>`;
+}
+
+function automaticRow(row) {
+  const ok = row.ok === true;
+  return `<div class="readiness-row" data-readiness-id="${escapeHtml(row.id)}" data-readiness-class="automatic">
+      <span class="readiness-mark ${ok ? 'ok' : 'pending'}" aria-hidden="true">${ok ? '✓' : '⚠'}</span>
+      <span><span class="visually-hidden">${ok ? 'Passed: ' : 'Outstanding: '}</span>${escapeHtml(row.label)}${row.blocking === false ? ' <em>(does not block export)</em>' : ''}</span>
+      ${jumpLink(row)}
+    </div>`;
+}
+
+function manualRow(row) {
+  return `<div class="readiness-row" data-readiness-id="${escapeHtml(row.id)}" data-readiness-class="manual"><span class="readiness-mark manual" aria-hidden="true">•</span><span>${escapeHtml(row.label)}</span></div>`;
+}
+
+export function resetReadinessCardState() {
+  remembered = null;
+}
+
+export function renderReadinessCard({ filingType, data, validationIssues = [], expanded } = {}) {
+  const d = data || {};
+  const type = filingType || d.inventoryType;
+  const readiness = getFilingReadiness(type, d, validationIssues);
+  const { title } = getReadinessJurisdiction(d.county);
+  const pending = readiness.automatic.filter(row => row.ok !== true).length;
+  const remaining = readiness.manual.length + readiness.unsupportedCount;
+  const key = stateKey(d, type);
+
+  let open;
+  if (typeof expanded === 'boolean') open = expanded;
+  else if (remembered && remembered.key === key) open = remembered.open;
+  else open = pending > 0;
+
+  const summary = pending
+    ? `${pending} item${pending === 1 ? '' : 's'} outstanding`
+    : (remaining ? MANUAL_REVIEW_SUMMARY : ALL_CHECKS_PASS_SUMMARY);
+
+  const automaticRows = readiness.automatic.map(automaticRow).join('')
+    || '<div class="readiness-row"><span class="readiness-mark ok" aria-hidden="true">✓</span><span>No automated issues found.</span></div>';
+
+  return `<details id="${READINESS_CARD_ID}" class="validation-panel readiness-panel no-print" data-readiness-key="${escapeHtml(key)}" data-readiness-filing="${escapeHtml(type)}"${open ? ' open' : ''}>
+    <summary class="validation-head">
+      ${SHIELD_ICON}
+      <div>
+        <div class="validation-title">${escapeHtml(title)} — ${escapeHtml(summary)}</div>
+        <div class="validation-sub">Mirrors what a reviewer looks for before this filing is accepted. Passing every check does not guarantee approval.</div>
+      </div>
+    </summary>
+    <div class="validation-group">
+      <div class="validation-group-head"><span class="validation-group-name">Checked from this filing</span></div>
+      <div class="readiness-list">${automaticRows}</div>
+    </div>
+    ${readiness.manual.length ? `<div class="validation-group">
+      <div class="validation-group-head"><span class="validation-group-name">Before you file — the app can't verify these</span></div>
+      <div class="readiness-list">${readiness.manual.map(manualRow).join('')}</div>
+    </div>` : ''}
+  </details>`;
+}
+
+// `toggle` does not bubble, so the listener is registered in the capture
+// phase on the container (document, by default) and fires for any card the
+// page later renders into it. Bound once per container.
+export function bindReadinessCard(container = (typeof document !== 'undefined' ? document : null)) {
+  if (!container || typeof container.addEventListener !== 'function' || boundContainers.has(container)) return;
+  boundContainers.add(container);
+  container.addEventListener('toggle', (event) => {
+    const el = event.target;
+    if (!el || el.id !== READINESS_CARD_ID) return;
+    remembered = { key: el.dataset?.readinessKey ?? '', open: !!el.open };
+  }, true);
 }

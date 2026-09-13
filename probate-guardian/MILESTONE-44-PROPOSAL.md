@@ -36,7 +36,7 @@ confirmation. Of the six original findings:
 | --- | --- | --- | --- |
 | 44A — Make 38A's Guardian-Address Conflict Actually Non-Bypassable | Data integrity, live bypass | Small | Landed 2026-09-13 |
 | 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Landed 2026-09-13 |
-| 44C — Land 38B's Universal Readiness-Card Architecture | Architecture, four Plan types | Medium-large | Draft |
+| 44C — Land 38B's Universal Readiness-Card Architecture | Architecture, four Plan types | Medium-large | Landed 2026-09-13 |
 | 44D — Correct 37-6 Data-Model Catalogue Drift | Documentation-only | Small | Landed 2026-09-13 |
 | 44E — Milestone 39 Follow-On Scope Decision | Not a defect; decision only | N/A | Informational |
 
@@ -434,6 +434,84 @@ own spec requires "Only the proven predicates and export behavior remain
 unchanged." New e2e coverage confirming Pinellas/Pasco title logic and the
 accordion collapse/expand behavior work identically across all nine
 filing types, not just the three already migrated.
+
+### What landed (2026-09-13)
+
+- **`src/core/filing/readiness-config.js` (new)** — `getFilingReadiness(inventoryType, data, validationIssues)`
+  returning `{ key, automatic, manual, unsupportedCount }`, every row with a
+  stable `id`, `label`, `route`, `classification`, `blocking`. The key list
+  is `FILING_TYPE_KEYS` from the filing registry (Milestone 42G's
+  enumeration guard rejected a hand-listed copy). Automatic blocking rows are
+  taken from typed issues with category `validation`/`data-integrity` and
+  `showInReadiness: true` — never recomputed. The four Plan predicate tables
+  moved here **verbatim** (only `window.D` became the `data` argument);
+  all four parity suites pass through the new module unchanged, which is
+  the "same predicates, same pass/fail per fixture" diff the Verification
+  section asked for. Manual rows for all nine filings come from
+  `MILESTONE-38B-SOURCE-INVENTORY.md`'s tables word-for-word; each
+  filing's unsupported family is counted, never rendered.
+- **One documented design point, not in 38B's text:** 38B assumed 38D
+  Phase 1 would map each Plan predicate onto a canonical issue id; it did
+  not (Plan validators now emit typed `planX.<path>.required` issues, but
+  nothing links them to predicate ids), so a Plan's predicate row and its
+  typed twin would both render. The rule landed: while any predicate is
+  pending, the filing's own validator issues (typed `planX.*` or plain
+  strings) are represented by the predicate rows, which the parity suites
+  prove cover them; once every predicate passes, any validator issue still
+  outstanding — the conditional "explanation required when…" rules the
+  parity suites record as `autoStaysTrue` — is listed itself, routed via the
+  Print Preview resolver, so the card can never report "Automated checks
+  passed" while export is blocked (the old panel could). Typed date-draft
+  and data-integrity issues add rows on every filing regardless. Issue rows
+  that carry a path but no route get theirs from `resolveRouteFromSection()`,
+  the same resolver the Preview jump links use.
+- **`src/core/filing/readiness-card.js` (rewritten)** — `renderReadinessCard({ filingType, data, validationIssues, expanded })`,
+  `bindReadinessCard(container)`, `resetReadinessCardState()`. One native
+  `<details id="filing-readiness-card">` with one `<summary>`; escapes all
+  text; no inline handlers; pending automatic checks open it, otherwise a
+  fresh render is collapsed; a hand toggle is remembered per
+  `wardId + filingType` for same-route rerenders (the `toggle` listener is
+  capture-phase on `document`, bound once from `main.js`; note the event is
+  dispatched on a later task, so an e2e test that rerenders in the same
+  tick as the click must first await the `toggle` — the new contract spec
+  does, after a parallel-worker run showed the race); the router calls
+  `resetReadinessCardState()` whenever navigation leaves `/print`. Summary
+  wording when automatic checks pass and manual/unsupported items remain
+  is exactly **Automated checks passed; manual review remains.** Issue rows
+  with a route delegate to the existing `jump-to-field` handler;
+  readiness-only rows render no link. `filingReadinessCard()` (the old
+  `(data, issues)` renderer) is gone; the three already-migrated hosts now
+  call `renderReadinessCard()` like the four Plans.
+- **`county-guidance.js`** — `getReadinessJurisdiction(county)` per spec.
+- **Removed:** `planReadinessChecks()`/`planReadinessPanel()` from
+  `legacy-app.js`, the four `planReadinessChecksX()` functions from
+  `plan-*/print.js`, and their four `window.*` bridges from `plan-*/index.js`
+  (allow-list and `window-bridge.d.ts` regenerated). The Plan hosts no
+  longer import `county-guidance.js`, `signature-state.js`, or the
+  `PLAN_RIGHTS`/`PLAN_ADLS`/`INITIAL_ADLS` globals — `readiness-config.js`
+  reads those three legacy globals lazily at call time.
+- **Tests:** new `tests/unit/readiness-card.spec.js` (15) and
+  `tests/unit/readiness-source-map.spec.js` (the inventory's five-point
+  completeness contract, 49); `plan-*-parity.spec.js` ×4 and
+  `plan-readiness-county.spec.js` re-pointed at `readiness-config.js`
+  (the county spec lost all its PDF-pipeline stubs, and gained a
+  no-local-text check for the five accounting/inventory filings); new
+  `tests/e2e/readiness-card.contract.spec.ts` covering all nine filing keys
+  (one card, Pinellas/Pasco vs. other title, collapsed manual-review
+  default, keyboard toggle retained across rerender and reset on fresh
+  entry, jump routing on Guardian Inventory, unlinked predicate rows on
+  Plan Annual, card absent from the generated PDF);
+  `plan-readiness.contract.spec.ts`'s 40H-F dangling-global test replaced
+  by a "dispatcher and bridges are gone; exactly one card" test.
+  Full unit suite 738/738. `TEST-INDEX.md` updated (and Plan Initial's
+  stale "19 auto conditions" corrected to 20, which 40C-H had made true).
+- **Persistence:** no data-model catalogue update required — expanded
+  state is runtime-only.
+- **Documentation:** no user help describes the old always-expanded Plan
+  panel, so no additional documentation change.
+- **Deliberately not done:** no predicate was rewritten to a typed issue
+  (that is 38D Phase 2's migration of the Plan validators, not 38B's), and
+  no visual redesign beyond what the shared card already renders.
 
 ---
 

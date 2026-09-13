@@ -35,3 +35,13 @@ export function hasSixthCircuitLocalGuidance(county) {
   const normalized = (county || '').trim().toLowerCase();
   return SIXTH_CIRCUIT_LOCAL_COUNTIES.has(normalized);
 }
+
+// Milestone 38B / 44C: the readiness card's title policy. Same closed
+// allow-list as above -- a blank or unknown county is never inferred to be
+// a Sixth Circuit filing, so it gets the generic title and no local text.
+export function getReadinessJurisdiction(county) {
+  const local = hasSixthCircuitLocalGuidance(county);
+  return local
+    ? { local: true, title: "Clerk's Review Readiness" }
+    : { local: false, title: 'Filing Readiness' };
+}

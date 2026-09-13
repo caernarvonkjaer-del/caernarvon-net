@@ -286,10 +286,6 @@ interface Window {
   PLAN_BENEFITS: any;
   PLAN_RIGHT_STATES: any;
   PLAN_RIGHTS: any;
-  planReadinessChecksAnnual: any;
-  planReadinessChecksInitial: any;
-  planReadinessChecksMinor: any;
-  planReadinessChecksSimplified: any;
   prepareFilingOutput: any;
   printCurrentFilingPdf: any;
   pruneBlankCards: any;

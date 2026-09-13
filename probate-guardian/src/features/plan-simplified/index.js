@@ -61,8 +61,6 @@ function ensurePrintModule() {
   if (!_printModulePromise) {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
-      // The shared legacy readiness dispatcher still resolves this by name.
-      window.planReadinessChecksSimplified = () => _printModule.planReadinessChecksSimplified();
     });
   }
   return _printModulePromise;

@@ -108,15 +108,12 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await expect(row.locator('.readiness-mark')).toHaveClass(/pending/);
     });
 
-    // Milestone 40H-D: planReadinessPanel() opened its head as a plain
-    // <div class="validation-head"> but closed it with </summary> -- an
-    // orphan closing tag with nothing to match, which the browser silently
-    // drops. The <details> element therefore never got a real <summary>
-    // child, losing native disclosure semantics (toggle marker, implicit
-    // button role, keyboard activation) that filingReadinessCard()'s panel
-    // (the other five filing types) gets for free. Checked structurally --
-    // tag names, not text content -- since the parser dropping the orphan
-    // tag doesn't throw or change visible text, only the DOM shape.
+    // Milestone 40H-D: the old planReadinessPanel() opened its head as a
+    // plain <div class="validation-head"> but closed it with </summary> --
+    // an orphan closing tag the browser silently dropped, so the <details>
+    // never got a real <summary> child and lost native disclosure semantics.
+    // Milestone 44C replaced that panel with the shared readiness card; this
+    // keeps the structural guarantee (tag names, not text) for the Plan types.
     test('readiness panel uses a real <summary> as its first child for native disclosure semantics', async ({ page }) => {
       await freshStartNoPassword(page);
       await createWard(page, `${featureName} Readiness Summary Ward`, filingType);
@@ -131,33 +128,26 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       expect(tags.firstElementChild).toBe('SUMMARY');
     });
 
-    // Milestone 40H-F: window.planReadinessChecksX is a real window property
-    // only once that Plan type's own print.js has lazy-loaded, which normal
-    // /print navigation always awaits first -- so this can't be reproduced
-    // by navigating there normally (the fill()/navigate('/print') above,
-    // like every other test in this file, always finds it defined). The
-    // real-world trigger is calling the shared planReadinessChecks()
-    // dispatcher before that load has happened, which is what deleting the
-    // global directly simulates -- the same technique startup.spec.ts's
-    // Milestone 40H-A test uses for the identical dangling-global shape on
-    // window.validateGuardian.
-    test('planReadinessChecks() degrades to an empty result rather than throwing before its module loads', async ({ page }) => {
+    // Milestone 40H-F guarded the legacy planReadinessChecks() dispatcher
+    // against its per-type window bridge not having loaded yet. Milestone 44C
+    // deleted both the dispatcher and the four bridges (the card reads
+    // readiness-config.js directly), so the dangling-global shape can no
+    // longer exist -- proven here by their absence, plus exactly one card.
+    test('the legacy readiness dispatcher and its window bridge are gone; exactly one shared card renders', async ({ page }) => {
       await freshStartNoPassword(page);
       await createWard(page, `${featureName} Readiness Guard Ward`, filingType);
       await fill(page);
       await page.evaluate(() => (window as any).navigate('/print'));
-      // Bundle really is loaded already at this point -- confirm the harness
-      // state is sane before simulating the pre-load race.
-      const beforeGuard = await page.evaluate(() => (window as any).planReadinessChecks());
-      expect(beforeGuard.auto.length).toBeGreaterThan(0);
 
       const globalName = filingType.replace('plan', 'planReadinessChecks');
-      const degraded = await page.evaluate((name) => {
-        delete (window as any)[name];
-        return (window as any).planReadinessChecks();
-      }, globalName);
-
-      expect(degraded).toEqual({ auto: [], manual: [] });
+      const globals = await page.evaluate((name) => ({
+        dispatcher: typeof (window as any).planReadinessChecks,
+        panel: typeof (window as any).planReadinessPanel,
+        bridge: typeof (window as any)[name],
+      }), globalName);
+      expect(globals).toEqual({ dispatcher: 'undefined', panel: 'undefined', bridge: 'undefined' });
+      await expect(page.locator('#filing-readiness-card')).toHaveCount(1);
+      await expect(page.locator('#filing-readiness-card')).toHaveAttribute('data-readiness-filing', filingType);
     });
   });
 }

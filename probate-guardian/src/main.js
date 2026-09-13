@@ -41,6 +41,7 @@ import './pwa-ui.js';
 import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
 import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
+import { bindReadinessCard } from './core/filing/readiness-card.js';
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
 if (typeof window !== 'undefined') {
@@ -71,6 +72,9 @@ if (typeof window !== 'undefined') {
   // depth for bfcache restores, where the page can become visible again
   // without a full re-evaluation of this module.
   window.addEventListener('pagehide', () => clearOutputAcknowledgement());
+  // Milestone 44C: remembers the readiness card's hand toggle for same-route
+  // rerenders (toggle doesn't bubble; the binding is capture-phase on document).
+  bindReadinessCard(document);
 }
 
 console.log('Probate Guardian ESM bootstrap initialized.');
