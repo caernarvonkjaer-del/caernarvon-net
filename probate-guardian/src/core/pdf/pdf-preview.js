@@ -252,10 +252,10 @@ function jumpLinkHTML(item) {
   return `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start pdf-preview-blocked-jump" data-form-action="jump-to-field" data-route="${escapeHtml(item.route || '')}" data-jump-path="${escapeHtml(item.path || '')}">${escapeHtml(item.text)}</button>`;
 }
 
-function blockedPanelHTML(messages, filingType) {
-  const structured = adaptValidationErrors(messages, filingType);
+function blockedPanelHTML(issues, filingType) {
+  const structured = adaptValidationErrors(issues, filingType);
   const groups = groupStructuredIssues(structured);
-  const total = messages.length;
+  const total = issues.length;
   // A section with one item reads better on the section's own line than as a
   // one-entry nested list -- and most of a blank filing's sections are exactly
   // that, one schedule needing an entry or the verified-empty box.
@@ -378,7 +378,13 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     // Announce the count, not the list -- an assertive region reading fifty
     // items aloud is worse than useless. The list is on the page to be read.
     announceStatus(`Preview is blocked. ${authorization.issues.length} required items are still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
-    container.innerHTML = blockedPanelHTML(authorization.issues.map(issue => issue.message), D.inventoryType);
+    // Milestone 42F: pass the structured issues through -- each already
+    // carries the field path its own validator stated. Mapping to
+    // issue.message here used to discard that and rely on
+    // adaptValidationErrors()'s now-deleted text-matching fallback to
+    // re-derive it, which silently broke every jump-to-field link in this
+    // panel once that fallback was gone.
+    container.innerHTML = blockedPanelHTML(authorization.issues, D.inventoryType);
     container.querySelector('[data-preview-action="override"]')
       ?.addEventListener('click', () => {
         if (authorization.status === 'blocked') return;

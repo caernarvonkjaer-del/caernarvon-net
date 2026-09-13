@@ -751,10 +751,6 @@
     },
     {
       "file": "src/core/validation/validation-adapter.js",
-      "name": "_legacyDerivePath"
-    },
-    {
-      "file": "src/core/validation/validation-adapter.js",
       "name": "adaptValidationErrors"
     },
     {

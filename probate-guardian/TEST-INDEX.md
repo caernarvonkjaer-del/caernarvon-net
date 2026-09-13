@@ -148,7 +148,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | tab-and-update.spec.ts                   | Cross-tab detection/notice, incl. app-update flow                                                                                                                                        |
 | theme-prepaint.spec.ts                   | Milestone 40D: stored theme beats the OS preference before first paint, both theme attributes track the toggle, and no theme reaches app state                                           |
 | unlock.spec.ts                           | Unlock flow                                                                                                                                                                              |
-| validation-structured-paths.spec.ts      | Milestone 42F oracle: for every filing type, each validator issue is an object whose explicit path agrees with the pre-42F text-matched derivation; no bare strings remain |
+| validation-structured-paths.spec.ts      | Milestone 42F: for every filing type, every validator issue is a structured object with a section and (for field issues) an explicit path; no bare strings; was the migration oracle against the deleted text-matching chain |
 | verified-inventory-workflow.spec.ts      | Verified Initial Inventory workflow & usability improvements                                                                                                                             |
 | ward-lock.spec.ts                        | Ward-level tab locks (`@origin-state`)                                                                                                                                                   |
 

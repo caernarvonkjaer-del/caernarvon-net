@@ -18,7 +18,6 @@ interface Window {
   _lastAutoSavedAt: any;
   _lastExportAt: any;
   _launchStateResolved: any;
-  _legacyDerivePath: any;
   _openedFileAtLaunch: any;
   _saveTimer: any;
   _securityMode: any;

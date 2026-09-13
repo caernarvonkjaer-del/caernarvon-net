@@ -50,7 +50,12 @@ describe('validation-adapter', () => {
     expect(resolveRouteFromSection('Signatures')).toBe('/d1');
   });
 
-  it('adapts legacy string errors into structured validation objects', () => {
+  it('adapts a bare string into a structured object with a section and route but no field path', () => {
+    // Milestone 42F: validators state their own paths (validation-issue.js);
+    // the text-matching derivation that used to guess `caseNumber` from
+    // "Case Number is required" is gone. A bare string is now only ever a
+    // non-field issue (supplemental-PDF limits, etc.), so it routes to its
+    // section and carries no path.
     const raw = [
       'Cover — Case Number is required',
       'Cover — Period From date is required',
@@ -63,7 +68,7 @@ describe('validation-adapter', () => {
     expect(adapted[0]).toEqual({
       code: 'validation.cover',
       section: 'Cover',
-      path: 'caseNumber',
+      path: '',
       label: 'Case Number is required',
       route: '/',
       severity: 'required',
@@ -73,7 +78,7 @@ describe('validation-adapter', () => {
     expect(adapted[2]).toEqual({
       code: 'validation.d_1_guardians',
       section: 'D-1 Guardians',
-      path: 'guardians.0.signatureDate',
+      path: '',
       label: 'Guardian #1 signature date is required',
       route: '/d1',
       severity: 'required',
