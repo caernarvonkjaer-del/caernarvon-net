@@ -107,6 +107,29 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await expect(row).toBeVisible();
       await expect(row.locator('.readiness-mark')).toHaveClass(/pending/);
     });
+
+    // Milestone 40H-D: planReadinessPanel() opened its head as a plain
+    // <div class="validation-head"> but closed it with </summary> -- an
+    // orphan closing tag with nothing to match, which the browser silently
+    // drops. The <details> element therefore never got a real <summary>
+    // child, losing native disclosure semantics (toggle marker, implicit
+    // button role, keyboard activation) that filingReadinessCard()'s panel
+    // (the other five filing types) gets for free. Checked structurally --
+    // tag names, not text content -- since the parser dropping the orphan
+    // tag doesn't throw or change visible text, only the DOM shape.
+    test('readiness panel uses a real <summary> as its first child for native disclosure semantics', async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, `${featureName} Readiness Summary Ward`, filingType);
+      await fill(page);
+      await page.evaluate(() => (window as any).navigate('/print'));
+
+      const tags = await page.locator('.readiness-panel').evaluate((el) => ({
+        self: el.tagName,
+        firstElementChild: el.firstElementChild?.tagName,
+      }));
+      expect(tags.self).toBe('DETAILS');
+      expect(tags.firstElementChild).toBe('SUMMARY');
+    });
   });
 }
 

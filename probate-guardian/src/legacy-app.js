@@ -6594,7 +6594,7 @@ function planReadinessPanel(){
       <span>${esc(a.label)}</span>
     </div>`).join('');
   return `<details class="validation-panel readiness-panel no-print"${pending?' open':''}>
-    <div class="validation-head">
+    <summary class="validation-head">
       ${ic('shield',17)}
       <div>
         <div class="validation-title">${title}${pending?` — ${pending} item${pending===1?'':'s'} outstanding`:' — Automated checks passed; manual review remains'}</div>
