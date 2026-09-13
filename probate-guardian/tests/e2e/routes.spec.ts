@@ -260,6 +260,39 @@ test.describe('routes', () => {
     await expect(page.locator('#sidebar')).not.toHaveClass(/mobile-open/);
   });
 
+  // The sidebar accordion remembers at most one section the user opened by
+  // hand; while that memory is set it wins over "expand whichever section holds
+  // the current page." Navigating is what clears it. That reset lived inside
+  // legacy-app.js's own navigate(), which stopped running the moment
+  // router.js published window.navigate over its global binding -- so a
+  // hand-opened section stayed stuck open and the current page's section stayed
+  // collapsed, for every navigation after the first click. router.js now calls
+  // window.resetNavSectionExpanded() and this pins the behaviour down.
+  test('navigating forgets a hand-opened sidebar section so the current page\'s section expands', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Nav Accordion Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+
+    const section = (i: number) => page.locator('#nav-sections .nav-section').nth(i);
+    const label = (i: number) => section(i).locator('.nav-section-label');
+
+    // Case Info (index 0) holds the landing route '/', so it starts expanded.
+    await expect(label(0)).toHaveAttribute('aria-expanded', 'true');
+
+    // Open Schedule B (index 2) by hand: it expands, and Case Info gives way.
+    await label(2).click();
+    await expect(label(2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(label(0)).toHaveAttribute('aria-expanded', 'false');
+
+    // Now go to a page in Schedule A (index 1). The hand-opened section must be
+    // forgotten, so the section holding the new current page expands itself.
+    await page.evaluate(() => (window as any).navigate('/a1'));
+    await expect(label(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(label(2)).toHaveAttribute('aria-expanded', 'false');
+    await expect(section(1)).not.toHaveClass(/collapsed/);
+    await expect(section(2)).toHaveClass(/collapsed/);
+  });
+
   test('ward management modals work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));

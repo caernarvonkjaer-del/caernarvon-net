@@ -4821,44 +4821,14 @@ async function doGuardianSetup(){
 }
 
 // ═══════════════════════════════════════════════════════
-// ROUTER
+// ROUTER — see src/core/navigation/router.js
 // ═══════════════════════════════════════════════════════
-async function navigate(page){
-  // Only when actually leaving the page, not when a +Add button's own
-  // onclick calls navigate() back to the SAME page to render the row it
-  // just pushed — see pruneBlankCards().
-  if(page!==currentPage){
-    _navSectionExpandedKey=null;
-    window.commitPendingFieldValues?.();
-    pruneBlankCards();
-  }
-  currentPage=page;
-  window.location.hash=page;
-  await renderPage(page);
-  closeMobileSidebar(); // no-op on desktop widths — the drawer only opens on mobile/tablet
-}
-
-// Off-canvas sidebar drawer, used only below the responsive breakpoint (see
-// the max-width:900px rules). On wider screens the sidebar is always
-// visible and these are harmless no-ops.
-function toggleMobileSidebar(){
-  const sidebar=document.getElementById('sidebar');
-  if(!sidebar)return;
-  const open=!sidebar.classList.contains('mobile-open');
-  sidebar.classList.toggle('mobile-open',open);
-  const backdrop=document.getElementById('sidebar-backdrop');
-  if(backdrop)backdrop.classList.toggle('active',open);
-  const btn=document.getElementById('mobile-menu-btn');
-  if(btn)btn.setAttribute('aria-expanded',String(open));
-}
-function closeMobileSidebar(){
-  const sidebar=document.getElementById('sidebar');
-  if(sidebar)sidebar.classList.remove('mobile-open');
-  const backdrop=document.getElementById('sidebar-backdrop');
-  if(backdrop)backdrop.classList.remove('active');
-  const btn=document.getElementById('mobile-menu-btn');
-  if(btn)btn.setAttribute('aria-expanded','false');
-}
+// navigate(), renderPage() and the off-canvas sidebar drawer pair
+// (toggleMobileSidebar/closeMobileSidebar) used to be declared here. They now
+// live in src/core/navigation/router.js, which publishes all four on window.
+// Bare calls to them elsewhere in this file resolve to those, because a
+// top-level `function` here only ever created the same global property that
+// router.js then assigned over.
 
 // Computes each ward's headline "total" using its own inventory type's
 // existing, already-correct totals logic — by briefly pointing window.D at
@@ -4915,86 +4885,6 @@ function formatDashboardCurrency(v){
   const abs=Math.abs(v);
   const str=abs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   return v<0?`($${str})`:`$${str}`;
-}
-
-async function renderPage(page){
-  const el=document.getElementById('main-content');
-  window.disposeActiveFeature?.(el);
-
-  if(page==='/dashboard'){
-    updateHelpContext('default');
-    // Redirect to inventory selector if no wards exist
-    if(caseFile.wards.length===0){
-      currentPage='/inventory-select';
-      window.location.hash='/inventory-select';
-      updateHelpContext('inventory-select');
-      el.innerHTML=pageInventorySelector();
-      linkLabelsToInputs();
-      return;
-    }
-    await mountDashboardFeature(page);
-    return;
-  }
-
-  if(page==='/inventory-select'){
-    updateHelpContext('inventory-select');
-    el.innerHTML=pageInventorySelector();
-    linkLabelsToInputs();
-    return;
-  }
-
-  if(page==='/activity-log'){
-    updateHelpContext('default');
-    el.innerHTML=pageActivityLog();
-    loadAndRenderActivityLog();
-    return;
-  }
-
-  if(page==='/party-management'){
-    updateHelpContext('default');
-    el.innerHTML=pagePartyManagement();
-    renderPartyManagementBody();
-    return;
-  }
-
-  if(!activeInventoryType){
-    currentPage='/inventory-select';
-    window.location.hash='/inventory-select';
-    updateHelpContext('inventory-select');
-    el.innerHTML=pageInventorySelector();
-    linkLabelsToInputs();
-    return;
-  }
-
-  // Update help context based on inventory type. updateHelpContext() takes
-  // no arguments and re-derives the context from activeInventoryType
-  // itself (see its definition) -- every branch below was passing it a
-  // string it silently ignored, a duplicate of logic that already lives in
-  // that one function. Found while extracting Plan Simplified (Milestone 3,
-  // Phase B); fixed for all types, not just that one, since the same
-  // ignored-argument pattern applied to every branch here.
-  updateHelpContext();
-
-  // Track this page as visited
-  const pageKey=getCurrentPageKey();
-  if(pageKey)_visitedPages.add(pageKey);
-
-  switch(formEngine(activeInventoryType)){
-    case 'guardian':
-      await mountGuardianFeature(page);
-      return;
-    case 'simplified': await mountSimplifiedFeature(page);break;
-    case 'annual': await mountAnnualFeature(page);break;
-    case 'planSimplified': await mountPlanSimplifiedFeature(page);break;
-    case 'planAnnual': await mountPlanAnnualFeature(page);break;
-    case 'planInitial': await mountPlanInitialFeature(page);break;
-    case 'planMinor': await mountPlanMinorFeature(page);break;
-  }
-  linkLabelsToInputs();
-  enforceDateRanges();
-  setupAmountFieldValidation();
-  updateNavDots();
-  initPrintPager(); // no-ops unless the rendered page is a print preview
 }
 
 // Populates the sidebar's active-ward info card (icon, type, live headline
@@ -7576,6 +7466,16 @@ function toggleNavSection(key){
   _navSectionExpandedKey=_navSectionExpandedKey===key?null:key;
   updateNavDots();
 }
+// Leaving a page must forget a manually-opened section, so the section
+// containing the new page expands itself again (see the comment above).
+// This has to be a function declaration rather than the bare `let` above,
+// because only a real window property is reachable from the module that owns
+// navigate() now -- src/core/navigation/router.js. The reset used to sit
+// inline in this file's own navigate(), but router.js publishing
+// window.navigate overwrote that function's global binding, so the reset
+// silently stopped running and a manually-opened section stayed stuck open
+// across navigations.
+function resetNavSectionExpanded(){_navSectionExpandedKey=null;}
 // Turns sidebar nav sections into a single global accordion: opening one
 // section collapses every other section. Reads DOM structure only (no
 // hardcoded per-form-type section map) -- works for every buildNav*()

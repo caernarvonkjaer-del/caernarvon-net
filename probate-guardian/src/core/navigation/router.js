@@ -68,6 +68,12 @@ export async function navigate(page, { updateHash = true } = {}) {
   const previousPage = getCurrentPage();
   if (page !== previousPage) {
     if (typeof window !== 'undefined') {
+      // Leaving a page forgets a hand-opened sidebar nav section, so the
+      // section holding the new page expands itself. The reset lives in
+      // legacy-app.js because it owns the `let` behind it; it used to run from
+      // that file's own navigate(), which this function's window.navigate
+      // assignment silently replaced.
+      window.resetNavSectionExpanded?.();
       window.commitPendingFieldValues?.();
       if (typeof window.pruneBlankCards === 'function') {
         window.pruneBlankCards();

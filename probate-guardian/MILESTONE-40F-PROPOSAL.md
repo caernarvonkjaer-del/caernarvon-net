@@ -4,7 +4,10 @@
 
 **Landed in full, 2026-09-13.** Part 1 (the crash fix and correctness work,
 plus the Tauri removal) shipped first; Steps 4 and 6 followed once Milestone
-40G removed the boot-ordering obstacle that Part 1 discovered.
+40G removed the boot-ordering obstacle that Part 1 discovered. The same
+treatment was then applied to the router's duplicate pair, which turned up a
+silently-lost sidebar behaviour and a further 45 shadowed pairs — see "The
+router duplicate pair" below.
 
 ### What landed
 
@@ -93,6 +96,59 @@ accessor — so the private copy was effectively always false. The periodic
 sweep therefore never retried a save, and the 15-minute fallback modal never
 appeared for the browsers that need it most (no File System Access API means
 no background save at all). Both now use the accessor.
+
+### The router duplicate pair, removed by the same treatment (2026-09-12)
+
+The save pipeline was not the only place a classic-script declaration was
+being shadowed by a module. `src/core/navigation/router.js` publishes
+`navigate`, `renderPage`, `toggleMobileSidebar` and `closeMobileSidebar` on
+`window`, and `legacy-app.js` declared all four as top-level functions. A
+top-level `function` in a classic script *is* the global property, so
+router.js's `window.navigate = navigate` overwrote the same slot — legacy's
+four were already unreachable, including from the bare calls inside
+`legacy-app.js` itself, which resolve through the global object. **111 lines
+deleted.**
+
+Confirmed before deleting that router.js's versions are a strict superset:
+they add custom routes, `attachFormHeaderActions`, the 38C dashboard-focus
+call, and they fix legacy `renderPage`'s `case 'guardian': return;`, which
+skipped `linkLabelsToInputs`, `enforceDateRanges`,
+`setupAmountFieldValidation`, `updateNavDots` and `initPrintPager` for every
+Guardian filing. The shared `currentPage` state was already safe: legacy's
+bare `let currentPage` is bridged by an `Object.defineProperty` accessor that
+router.js's `setCurrentPage()` writes through, so both files read one value.
+
+**One real behaviour had already been lost this way, silently.** Legacy's
+`navigate()` reset `_navSectionExpandedKey` on every page change, and
+router.js's has no equivalent. That variable is the sidebar accordion's
+memory of the single section the user opened by hand; while it is set, it
+beats "expand whichever section holds the current page." So once a user
+clicked a section header, that section stayed stuck open and the current
+page's section stayed collapsed, for the rest of the session. It is a bare
+`let`, unreachable from a module, so the fix is a `resetNavSectionExpanded()`
+function declaration in `legacy-app.js` that router.js's `navigate()` calls
+through `window`. Covered by `routes.spec.ts`'s
+"navigating forgets a hand-opened sidebar section" test, verified to fail
+without the call.
+
+This is the lesson of the milestone restated: the duplicate is not the bug,
+it is the *hiding place*. Deleting one is how the divergence it was
+concealing becomes visible.
+
+**45 further shadowed pairs remain** (detected by matching `^function X` in
+`legacy-app.js` against `window.X = X` in every other module) across
+`ward-lifecycle.js` (11), `launch-preferences.js` (10), `crypto.js` (8),
+`convert-ward-modal.js` (4), `recovery-cache.js` (3), `prune-cards.js` (3),
+`form-contract.js`, `templates.js`, `annual-accounting/index.js`, and
+`main.js`'s two re-exports. These are dead weight rather than live bugs —
+every one of those modules is imported eagerly by `main.js`, so the module
+version wins from boot, and the one lazily-loaded case
+(`duplicateAnnualRow`, whose legacy version splices raw JSON where the
+module delegates to `duplicateCollectionRow()`) is only reachable from UI
+that the module's own mount creates. They are worth removing as their own
+task, one pair at a time with the same superset check applied here, because
+each is a place where a future reader can edit a function that has not run
+in years and see nothing happen.
 
 ### Why Steps 4 and 6 were originally deferred — a dependency this proposal had wrong
 
