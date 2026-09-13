@@ -1,4 +1,7 @@
-const ALL = ['preview', 'print', 'pdf', 'docx', 'excel'];
+// Milestone 40A removed 'docx' from this list along with the export format
+// itself. Nothing passed 'docx' as a capability once doSaveDocx() was gone, so
+// this is the channel list shrinking to the outputs that still exist.
+const ALL = ['preview', 'print', 'pdf', 'excel'];
 const definitions = Object.freeze({
   'validation.legacy-unmapped': { category: 'validation', bypassable: true, capabilities: ALL, showInReadiness: true },
   'field.date.invalid': { category: 'validation', bypassable: true, capabilities: ALL, showInReadiness: true },

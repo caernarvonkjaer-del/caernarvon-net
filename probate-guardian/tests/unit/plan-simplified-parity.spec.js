@@ -8,7 +8,7 @@ import { withOverrides, autoById } from './support/plan-readiness-parity.js';
 // an isolated validator call. Pilot for the four-Plan-type reconciliation;
 // Initial/Annual/Minor follow the same pattern once this one is reviewed.
 //
-// Only the PDF/DOCX generation and preview modules are stubbed -- they are
+// Only the PDF generation and preview modules are stubbed -- they are
 // never invoked by planReadinessChecksSimplified() or the validation path
 // under test. validatePlanSimplified(), prepareFilingOutput(),
 // getSupplementalFilingIssues(), and county-guidance.js all run for real.
@@ -36,7 +36,6 @@ global.window = {
 vi.mock('../../src/features/plan-simplified/pdf-model.js', () => ({ buildPlanSimplifiedModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-finalizer.js', () => ({ finalizeCourtFormPdf: vi.fn(), saveFinalizedPdf: vi.fn() }));
-vi.mock('../../src/core/docx/docx-engine.js', () => ({ generateCourtFormDocx: vi.fn(), saveFinalizedDocx: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-preview.js', () => ({ mountPdfPreview: vi.fn(), printGeneratedPdf: vi.fn() }));
 vi.mock('../../src/core/filing/output-advisories.js', () => ({ renderOutputAdvisories: vi.fn(() => '') }));
 

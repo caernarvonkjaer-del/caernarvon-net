@@ -15,7 +15,6 @@
 /**
  * @typedef {Object} FilingCapabilities
  * @property {boolean} pdf - Whether the filing can generate PDF output.
- * @property {boolean} docx - Whether the filing can generate Word DOCX output.
  * @property {boolean} excel - Whether the filing can generate Excel XLSX output.
  */
 

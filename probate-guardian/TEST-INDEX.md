@@ -26,7 +26,6 @@ the same commit.
 | date-parser.spec.js                  | Flexible date parsing, display formatting, leap-year/days-in-month helpers                                                |
 | date-rules.spec.js                   | Milestone 34-1A: checkDateOrder() shared date-ordering validation rule                                                    |
 | date-range-no-mutation.spec.js       | Milestone 40C-C: date ranges are validated by checkDateOrder(), never rewritten; D-4 bond-period order + field mapping    |
-| docx-engine.spec.js                  | Court-form DOCX generation from PDF models; Milestone 40E array address cells as one paragraph each                       |
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
 | feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
@@ -39,7 +38,7 @@ the same commit.
 | plan-annual-parity.spec.js           | Milestone 37-3: readiness-checklist/export-validator parity proof for all 18 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-annual-pdf-model.spec.js        | Plan Annual PDF model output (incl. attorney email fields)                                                                |
 | plan-co-guardian-pdf.spec.js         | All four Plan PDF models omit blank optional co-guardian signatures and retain populated co-guardians                     |
-| plan-directive-cards.spec.js         | Milestone 37-4: directive-collection factory defaults and PDF/Word model gating on q10Executed/q11Executed                |
+| plan-directive-cards.spec.js         | Milestone 37-4: directive-collection factory defaults and PDF model gating on q10Executed/q11Executed                |
 | plan-initial-parity.spec.js          | Milestone 37-3: readiness-checklist/export-validator parity proof for all 19 auto conditions, incl. 6 newly mapped; Milestone 39-C's Guardian/Attorney tri-state signature parity |
 | plan-minor-parity.spec.js            | Milestone 37-3: readiness-checklist/export-validator parity proof for all 14 auto conditions, incl. 3 newly mapped; Milestone 39-C's Guardian/Preparer/Attorney tri-state signature parity |
 | plan-readiness-county.spec.js        | Milestone 37-1: all four Plans certificate-of-service readiness wording gated on Pinellas/Pasco vs. other counties        |
@@ -139,7 +138,6 @@ the same commit.
 
 | File              | Purpose                                                                                                                             |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| docx-extract.ts   | Extracts text/structure from generated .docx for assertions                                                                         |
 | filing-matrix.ts  | Shared filing-type capability matrix data used by matrix/contract specs                                                             |
 | pdf-extract.ts    | Extracts text/structure/tags from generated PDFs for assertions                                                                     |
 | plan-fixture.ts   | `registerPlanMountTests` — shared mount/dispose/routing test suite factory for the four Plan-\* filing types                        |
@@ -166,7 +164,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | form-data        | Field entry, formatting, validation, field-to-model mapping                              |
 | navigation       | Routing, tab/section status, guided tour, page structure/landmarks                       |
 | pdf-export       | Generated PDF content, tagging, fonts, accessibility, WCAG                               |
-| docx-xlsx-export | Generated .docx / .xlsx content                                                          |
+| xlsx-export      | Generated .xlsx content                                                                  |
 | persistence      | .sav save/load, encryption, backup/restore, crash recovery, ward locks                   |
 | data-model       | Party/case resolvers, write-through, de-dupe — the in-memory data layer                  |
 | app-shell        | Cross-cutting shell behavior: security, offline/PWA, cross-tab, startup, feature loading |
@@ -179,7 +177,7 @@ Filing types: `guardian` (Verified Guardian Inventory), `simplified`,
 | persistence         | case-file.spec.js, ward-lock.spec.js, boot-ordering.spec.js                                                                                                                                                                                                                                             |
 | form-data           | form-contract.spec.js, form-fields.spec.js, guardianship-options.spec.js, validation-adapter.spec.js, date-parser.spec.js, date-rules.spec.js, combobox-controller.spec.js, prune-cards.spec.js, section-status.spec.js, schedule-definitions.spec.js, amended-form-line.spec.js, plan-simplified-parity.spec.js (planSimplified), plan-initial-parity.spec.js (planInitial), plan-annual-parity.spec.js (planAnnual), plan-minor-parity.spec.js (planMinor), signature-capture.spec.js (planSimplified, Milestone 39-B) |
 | pdf-export (models) | guardian-inventory-pdf-model.spec.js (guardian), plan-annual-pdf-model.spec.js (planAnnual), supplemental-pdf.spec.js (annual/finalAccounting/trustAccounting), print-annotation-persistence.spec.js (planSimplified, Milestone 39-A)                                            |
-| docx-xlsx-export    | docx-engine.spec.js, excel-engine.spec.js, xlsx-extract.spec.js                                                                                                                                                                                                                  |
+| xlsx-export         | excel-engine.spec.js, xlsx-extract.spec.js                                                                                                                                                                                                                                       |
 | navigation          | router.spec.js, tab-state.spec.js                                                                                                                                                                                                                                                |
 | app-shell / misc    | dashboard-view-model.spec.js, dashboard-preferences.spec.js, circuit-lookup.spec.js, live-region.spec.js, filing-descriptor.spec.js, types-contract.spec.js                                                                                                                      |
 | app-shell / misc    | dashboard-view-model.spec.js, dashboard-preferences.spec.js, circuit-lookup.spec.js, live-region.spec.js, filing-descriptor.spec.js, types-contract.spec.js, field-kind-inference.spec.js, bar-number.spec.js                                                                                                                      |

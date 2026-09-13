@@ -756,7 +756,8 @@ export async function generateCourtFormPdf(model, options = {}) {
       else if (block.type === 'key-value-grid') {
         const items = block.items || [];
         // Suppress only the duplicate draw. block.title still feeds the
-        // accessibility structure below, matching docx-engine.js:447.
+        // accessibility structure below. (This used to note that the DOCX
+        // writer did the same; Milestone 40A removed that format.)
         const shouldRenderKvTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
         if (shouldRenderKvTitle) {
           checkPageSpace(20, sec.title);

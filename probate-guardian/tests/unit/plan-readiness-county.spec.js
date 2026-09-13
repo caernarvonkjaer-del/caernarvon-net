@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from 'vitest';
 // service" manual reminder in every Plan's readiness checklist must show the
 // Sixth Judicial Circuit local filing-and-file wording only for a Pinellas or
 // Pasco filing, and the statewide statutory wording for every other county.
-// These four print.js modules statically import the PDF/DOCX generation
+// These four print.js modules statically import the PDF generation
 // pipeline (canvas-backed at runtime), which has no place in a node-only
 // unit test, so every side dependency except county-guidance.js itself is
 // stubbed out -- planReadinessChecksXxx() is the only real code under test.
@@ -22,7 +22,6 @@ global.window = {
 
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-finalizer.js', () => ({ finalizeCourtFormPdf: vi.fn(), saveFinalizedPdf: vi.fn() }));
-vi.mock('../../src/core/docx/docx-engine.js', () => ({ generateCourtFormDocx: vi.fn(), saveFinalizedDocx: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-preview.js', () => ({ mountPdfPreview: vi.fn(), printGeneratedPdf: vi.fn() }));
 vi.mock('../../src/core/pdf/supplemental-pdf.js', () => ({
   getSupplementalAccessibilityWarning: vi.fn(() => ''),

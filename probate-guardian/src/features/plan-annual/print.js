@@ -18,7 +18,6 @@ import { validatePlanAnnual } from './index.js';
 import { buildPlanAnnualModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
-import { generateCourtFormDocx, saveFinalizedDocx } from '../../core/docx/docx-engine.js';
 import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
@@ -122,7 +121,6 @@ export function pagePrintPlanAnnual(){
       <div><strong>Preview &amp; Export</strong> ${errors.length?`<span style="color:var(--danger-text)"> — ${errors.length} issue(s)</span>`:' — Ready to export'}</div>
       <div class="d-flex gap-2 flex-wrap">
         <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
-        <button class="btn btn-outline-primary btn-sm" data-form-action="save-word-plan-annual" ${errors.length?'disabled':''} title="Save editable Word copy (.docx)"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M8.8 11.5h6.4M8.8 14.5h6.4M8.8 17.5h4"/></svg> Save as Word</button>
         <button class="btn btn-primary btn-sm" data-form-action="save-pdf-plan-annual" ${errors.length?'disabled':''}>Save as PDF</button>
         <button class="btn btn-outline-secondary btn-sm" data-form-action="print">Print</button>
         <button class="btn btn-outline-secondary btn-sm" data-form-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button><span data-preview-shell-actions></span>
@@ -156,20 +154,3 @@ export async function doSavePdf(){
   }
 }
 
-export async function doSaveDocx(){
-  const errors=prepareFilingOutput(window.D,()=>[...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)]).messages;
-  if(errors.length){renderPage('/print');alert(`Cannot export — ${errors.length} required field${errors.length===1?'':'s'} missing. See the list on this page.`);return;}
-  const stat=document.getElementById('export-status');
-  if(stat)stat.textContent='Generating Word document…';
-  const ward=(window.D.wardName||'AnnualGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
-  try{
-    const model = buildPlanAnnualModel(window.D);
-    const docxBlob = await generateCourtFormDocx(model);
-    saveFinalizedDocx(docxBlob, `${ward}_AnnualGuardianshipPlan.docx`);
-  }catch(e){
-    console.error('Word export failed',e);
-    alert('Word export failed: '+e.message);
-  }finally{
-    if(stat)stat.textContent='';
-  }
-}

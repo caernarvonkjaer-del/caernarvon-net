@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 
 // Milestone 33, Phase 3.1: Lightweight XLSX inspector using jszip (already an
-// installed devDependency), mirroring tests/e2e/support/docx-extract.ts.
+// installed devDependency), the same approach the former docx-extract.ts used
 // DOCX and XLSX are both zip archives of XML parts (Open Packaging Conventions).
 // This inspects xl/workbook.xml, xl/sharedStrings.xml, xl/worksheets/sheet*.xml,
 // and docProps/core.xml directly to extract structured observations without

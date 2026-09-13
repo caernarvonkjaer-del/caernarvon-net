@@ -65,11 +65,8 @@ document.addEventListener('click', (event) => {
     case 'print': window.printCurrentFilingPdf(); break;
     case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
-    case 'save-word-plan-annual': window.doSaveWordPlanAnnual(); break;
     case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
-    case 'save-word-plan-initial': window.doSaveWordPlanInitial(); break;
     case 'save-pdf-plan-minor': window.doSavePdfPlanMinor(); break;
-    case 'save-word-plan-minor': window.doSaveWordPlanMinor(); break;
     case 'preview-step': window.pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
     case 'remove-schedule-doc': window.removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
     case 'toggle-ssn': window.toggleSsnReveal(actionElement); break;

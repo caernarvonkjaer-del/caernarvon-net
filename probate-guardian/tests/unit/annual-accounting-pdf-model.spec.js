@@ -44,7 +44,7 @@ describe('Trust Accounting PDF model', () => {
     expect(tableBlock).toBeDefined();
     expect(tableBlock.title).toBe('Schedule A: Income Received During Period');
 
-    // Verification of the duplicate suppression predicate ported from DOCX to PDF engine
+    // Verification of the PDF engine's duplicate-title suppression predicate
     const isDuplicateTitle = (blockTitle, secTitle) => {
       return !!(blockTitle && (blockTitle.trim().toLowerCase() === (secTitle || '').trim().toLowerCase()));
     };

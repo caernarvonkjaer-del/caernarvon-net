@@ -299,7 +299,6 @@ function bindEvents(container) {
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-row': removeAnnualRow(collection, index, control.dataset.route); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
-      case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, options);

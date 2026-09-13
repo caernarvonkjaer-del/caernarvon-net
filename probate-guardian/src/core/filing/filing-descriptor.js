@@ -7,49 +7,49 @@ const DESCRIPTORS = {
     inventoryType: 'guardian', displayName: 'Initial Inventory',
     outputName: 'Verified Initial Inventory',
     documentTitle: 'VERIFIED INITIAL INVENTORY', filenameStem: 'Initial-Inventory',
-    capabilities: { pdf: true, docx: true, excel: true },
+    capabilities: { pdf: true, excel: true },
   },
   simplified: {
     id: 'simplified-annual-accounting', family: 'accounting', engineId: 'simplified',
     inventoryType: 'simplified', displayName: 'Simplified Annual Accounting',
     documentTitle: 'SIMPLIFIED ANNUAL ACCOUNTING', filenameStem: 'Simplified-Annual-Accounting',
-    capabilities: { pdf: true, docx: true, excel: true },
+    capabilities: { pdf: true, excel: true },
   },
   annual: {
     id: 'annual-accounting', family: 'accounting', engineId: 'annual',
     inventoryType: 'annual', filingTypeValue: 'Annual', displayName: 'Annual Accounting',
     documentTitle: 'ANNUAL GUARDIANSHIP ACCOUNTING', filenameStem: 'Annual-Accounting',
-    capabilities: { pdf: true, docx: true, excel: true },
+    capabilities: { pdf: true, excel: true },
   },
   finalAccounting: {
     id: 'final-accounting', family: 'accounting', engineId: 'annual',
     inventoryType: 'finalAccounting', filingTypeValue: 'Final', displayName: 'Final Accounting',
     documentTitle: 'FINAL GUARDIANSHIP ACCOUNTING', filenameStem: 'Final-Accounting',
-    capabilities: { pdf: true, docx: true, excel: true },
+    capabilities: { pdf: true, excel: true },
   },
   trustAccounting: {
     id: 'trust-accounting', family: 'accounting', engineId: 'annual',
     inventoryType: 'trustAccounting', filingTypeValue: 'Trust', displayName: 'Trust Accounting',
     documentTitle: 'TRUST GUARDIANSHIP ACCOUNTING', filenameStem: 'Trust-Accounting',
-    capabilities: { pdf: true, docx: true, excel: true },
+    capabilities: { pdf: true, excel: true },
   },
   planSimplified: {
     id: 'simplified-annual-plan', family: 'plan', engineId: 'planSimplified',
     inventoryType: 'planSimplified', displayName: 'Simplified Annual Plan',
     documentTitle: 'SIMPLIFIED ANNUAL PLAN', filenameStem: 'Simplified-Annual-Plan',
-    capabilities: { pdf: true, docx: true, excel: false },
+    capabilities: { pdf: true, excel: false },
   },
   planAnnual: {
     id: 'annual-guardianship-plan', family: 'plan', engineId: 'planAnnual',
     inventoryType: 'planAnnual', displayName: 'Annual Guardianship Plan',
     documentTitle: 'ANNUAL GUARDIANSHIP PLAN', filenameStem: 'Annual-Guardianship-Plan',
-    capabilities: { pdf: true, docx: true, excel: false },
+    capabilities: { pdf: true, excel: false },
   },
   planInitial: {
     id: 'initial-guardianship-plan', family: 'plan', engineId: 'planInitial',
     inventoryType: 'planInitial', displayName: 'Initial Guardianship Plan',
     documentTitle: 'INITIAL GUARDIANSHIP PLAN', filenameStem: 'Initial-Guardianship-Plan',
-    capabilities: { pdf: true, docx: true, excel: false },
+    capabilities: { pdf: true, excel: false },
   },
   planMinor: {
     id: 'annual-plan-minor', family: 'plan', engineId: 'planMinor',
@@ -58,14 +58,14 @@ const DESCRIPTORS = {
     // hardcoded live-UI strings in src/features/plan-minor/index.js
     // (sidebar section label, Summary formTitle, Cover page <h1> -- all
     // "Annual Plan — Minors") -- confirmed directly. This descriptor's
-    // displayName is what pdf-model.js writes into the real generated PDF/
-    // DOCX metadata.subject, so the two disagreed on this filing type's own
+    // displayName is what pdf-model.js writes into the real generated PDF's
+    // metadata.subject, so the two disagreed on this filing type's own
     // name across UI vs. exported artifact until now. Found by Milestone
     // 33's filing-identity contract, the first test to compare this field
     // against a real generated artifact for this type.
     displayName: 'Annual Plan — Minors',
     documentTitle: 'ANNUAL GUARDIANSHIP PLAN - MINOR', filenameStem: 'Annual-Plan-Minor',
-    capabilities: { pdf: true, docx: true, excel: false },
+    capabilities: { pdf: true, excel: false },
   },
 };
 

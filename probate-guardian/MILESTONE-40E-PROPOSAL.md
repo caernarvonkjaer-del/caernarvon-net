@@ -17,6 +17,16 @@ The audit in step 3 confirmed the proposal's claim that these are the only
 two such call sites — no third table cell anywhere builds an address from
 multiple discrete fields.
 
+**Superseded note (2026-09-13): Addition 1 below was deleted by Milestone 40A**,
+which removed DOCX export entirely one commit later, taking `docx-engine.js` and
+the two unit tests covering this fix with it. The fix was correct when made and
+the reasoning still explains why a model change has to be checked against every
+consumer — but it should not have been needed. `MILESTONE-40-PROPOSAL.md`'s
+shared-file table listed `docx-engine.js` under 40A and 40C-1 only, giving no
+signal that the file was about to be deleted; that row is now corrected. The PDF
+half of this milestone is what actually fixed the reported overflow and stands
+unchanged.
+
 **Addition 1: `docx-engine.js` consumes the same model and had to be fixed
 too.** This proposal only considered the PDF renderer, but
 `docx-engine.js:710` reads the identical `block.rows` and its cell branch

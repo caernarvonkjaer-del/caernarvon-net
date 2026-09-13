@@ -6,14 +6,14 @@ import {
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
 } from './support/target';
 import { inspectPdf, extractPdfText } from './support/pdf-extract';
-import { extractDocx } from './support/docx-extract';
 import { extractXlsx } from './support/xlsx-extract';
 import {
   filingCapabilities, expectedPdfMetadataTitle, expectedLegalCopy, type FilingType,
 } from './support/filing-matrix';
 
 // Milestone 33, Phase 3: Semantic Artifact Assertions (*.artifact.spec.ts per Phase 4.2).
-// Proves generated outputs (PDF, DOCX, XLSX) across all 9 filing types satisfy
+// Proves generated outputs (PDF, XLSX) across all 9 filing types satisfy
+// (DOCX was covered here too until Milestone 40A removed that format)
 // the four capability layers defined in Phase 3.2:
 // 1. Transport: download event, correct extension, nonempty bytes, file signature/magic bytes.
 // 2. Identity: authoritative document title, metadata title/subject, filename stem.
@@ -27,7 +27,6 @@ type ArtifactConfig = {
   createFiling: (page: Page, name: string) => Promise<void>;
   exportActionAttr: string;
   savePdfValue: string;
-  saveWordValue: string;
   saveExcelValue: string | null;
   filenameStem: string;
   expectedCaseNumber: string;
@@ -47,55 +46,55 @@ const CONFIGS: ArtifactConfig[] = [
   {
     filingType: 'annual',
     createFiling: async (page, name) => { await createWard(page, name, 'annual'); await setAnnualFamilyIdentity(page, 'annual'); },
-    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word', saveExcelValue: 'save-excel',
+    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveExcelValue: 'save-excel',
     filenameStem: 'AnnualAccounting', expectedCaseNumber: '2026-CP-000789',
   },
   {
     filingType: 'finalAccounting',
     createFiling: async (page, name) => { await createWard(page, name, 'finalAccounting'); await setAnnualFamilyIdentity(page, 'finalAccounting'); },
-    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word', saveExcelValue: 'save-excel',
+    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveExcelValue: 'save-excel',
     filenameStem: 'FinalAccounting', expectedCaseNumber: '2026-CP-000789',
   },
   {
     filingType: 'trustAccounting',
     createFiling: async (page, name) => { await createWard(page, name, 'trustAccounting'); await setAnnualFamilyIdentity(page, 'trustAccounting'); },
-    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word', saveExcelValue: 'save-excel',
+    exportActionAttr: 'data-annual-action', savePdfValue: 'save-pdf', saveExcelValue: 'save-excel',
     filenameStem: 'TrustAccounting', expectedCaseNumber: '2026-CP-000789',
   },
   {
     filingType: 'guardian',
     createFiling: async (page, name) => { await createWard(page, name, 'guardian'); await fillMinimalValidGuardianWard(page); },
-    exportActionAttr: 'data-inventory-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word', saveExcelValue: 'save-excel',
+    exportActionAttr: 'data-inventory-action', savePdfValue: 'save-pdf', saveExcelValue: 'save-excel',
     filenameStem: 'InitialInventory', expectedCaseNumber: '2026-CP-000123',
   },
   {
     filingType: 'simplified',
     createFiling: async (page, name) => { await createSimplifiedWard(page, name); await fillMinimalValidSimplifiedWard(page); },
-    exportActionAttr: 'data-simplified-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word', saveExcelValue: 'save-excel',
+    exportActionAttr: 'data-simplified-action', savePdfValue: 'save-pdf', saveExcelValue: 'save-excel',
     filenameStem: 'SimplifiedAccounting', expectedCaseNumber: '2026-CP-000456',
   },
   {
     filingType: 'planAnnual',
     createFiling: async (page, name) => { await createWard(page, name, 'planAnnual'); await fillMinimalValidPlanAnnualWard(page); },
-    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-annual', saveWordValue: 'save-word-plan-annual', saveExcelValue: null,
+    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-annual', saveExcelValue: null,
     filenameStem: 'AnnualGuardianshipPlan', expectedCaseNumber: '2026-CP-000321',
   },
   {
     filingType: 'planInitial',
     createFiling: async (page, name) => { await createWard(page, name, 'planInitial'); await fillMinimalValidPlanInitialWard(page); },
-    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-initial', saveWordValue: 'save-word-plan-initial', saveExcelValue: null,
+    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-initial', saveExcelValue: null,
     filenameStem: 'InitialGuardianshipPlan', expectedCaseNumber: '2026-CP-000654',
   },
   {
     filingType: 'planMinor',
     createFiling: async (page, name) => { await createWard(page, name, 'planMinor'); await fillMinimalValidPlanMinorWard(page); },
-    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-minor', saveWordValue: 'save-word-plan-minor', saveExcelValue: null,
+    exportActionAttr: 'data-form-action', savePdfValue: 'save-pdf-plan-minor', saveExcelValue: null,
     filenameStem: 'AnnualPlanMinors', expectedCaseNumber: '2026-CP-000987',
   },
   {
     filingType: 'planSimplified',
     createFiling: async (page, name) => { await createWard(page, name, 'planSimplified'); await fillMinimalValidPlanSimplifiedWard(page); },
-    exportActionAttr: 'data-plan-simplified-action', savePdfValue: 'save-pdf', saveWordValue: 'save-word', saveExcelValue: null,
+    exportActionAttr: 'data-plan-simplified-action', savePdfValue: 'save-pdf', saveExcelValue: null,
     filenameStem: 'SimplifiedAnnualPlan', expectedCaseNumber: '2026-CP-000789',
   },
 ];
@@ -114,14 +113,13 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
   for (const config of CONFIGS) {
     const {
       filingType: id, createFiling, exportActionAttr, savePdfValue,
-      saveWordValue, saveExcelValue, filenameStem, expectedCaseNumber,
+      saveExcelValue, filenameStem, expectedCaseNumber,
     } = config;
     const expected = filingCapabilities(id);
     const legal = expectedLegalCopy(id);
     const pdfActionSelector = `[${exportActionAttr}="${savePdfValue}"]`;
-    const wordActionSelector = `[${exportActionAttr}="${saveWordValue}"]`;
 
-    test(`${id}: PDF, DOCX, and XLSX satisfy transport, identity, and semantic meaning`, async ({ page }) => {
+    test(`${id}: PDF and XLSX satisfy transport, identity, and semantic meaning`, async ({ page }) => {
       await freshStartNoPassword(page);
       const wardName = `${expected.displayName} Artifact Ward`;
       await createFiling(page, wardName);
@@ -163,40 +161,6 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
       expect(pdf.text, `${id} PDF text must contain ward name`).toContain(wardName);
       expect(pdf.text, `${id} PDF text must contain case number`).toContain(expectedCaseNumber);
       expect(pdf.text, `${id} PDF text must contain guardian name`).toContain('Sample Guardian');
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // 2. DOCX Semantic Assertions
-      // ─────────────────────────────────────────────────────────────────────────
-      const docxDownloadPromise = page.waitForEvent('download', { timeout: 25_000 });
-      await page.locator(wordActionSelector).click();
-      const docxDownload = await docxDownloadPromise;
-
-      // Layer 1: Transport
-      expect(docxDownload.suggestedFilename()).toMatch(new RegExp(`_${filenameStem}\\.docx$`));
-      const docxBytes = await readAll(await docxDownload.createReadStream());
-      expect(docxBytes.length, 'DOCX artifact must not be empty').toBeGreaterThan(2000);
-      expect(isZipMagic(docxBytes), 'DOCX must carry PK zip magic bytes').toBe(true);
-
-      // Layer 2: Identity
-      const docx = await extractDocx(docxBytes);
-      expect(docx.title).toContain(expected.displayName);
-      expect(docx.visibleText).toContain(expected.documentTitle);
-
-      // Layer 3: Meaning (headings, legal attestations, case values)
-      for (const heading of legal.requiredHeadings) {
-        expect(docx.visibleText, `${id} DOCX must contain required section heading "${heading}"`).toContain(heading);
-      }
-      for (const statement of legal.requiredStatements) {
-        expect(docx.visibleText, `${id} DOCX must contain required legal attestation copy`).toContain(statement);
-      }
-      if (legal.prohibitedStatements) {
-        for (const prohibited of legal.prohibitedStatements) {
-          expect(docx.visibleText, `${id} DOCX must not contain aliased type legal copy`).not.toContain(prohibited);
-        }
-      }
-      expect(docx.visibleText.toUpperCase(), `${id} DOCX visible text must contain ward name`).toContain(wardName.toUpperCase());
-      expect(docx.visibleText, `${id} DOCX visible text must contain case number`).toContain(expectedCaseNumber);
-      expect(docx.visibleText, `${id} DOCX visible text must contain guardian name`).toContain('Sample Guardian');
 
       // ─────────────────────────────────────────────────────────────────────────
       // 3. XLSX Semantic Assertions (or declared absence)

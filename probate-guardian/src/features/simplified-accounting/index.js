@@ -106,7 +106,6 @@ function bindEvents(container) {
         break;
       }
       case 'save-excel': _excelModule.doSaveExcel(); break;
-      case 'save-word': _printModule.doSaveDocx(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
       case 'resolve-guardian-address-conflict': {
         if (resolveSimplifiedGuardianAddressConflict(window.D, index, actionElement.dataset.field, actionElement.dataset.choice)) {

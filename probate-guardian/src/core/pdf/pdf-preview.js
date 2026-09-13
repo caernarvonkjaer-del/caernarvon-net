@@ -199,7 +199,7 @@ function refreshPreviewPager() {
 // MILESTONE-19-3-PROPOSAL.md called out).
 //
 // baseIssues must be the same validateX()+getSupplementalFilingIssues()
-// combination each feature's own doSavePdf()/doSaveDocx() already passes to
+// combination each feature's own doSavePdf() already passes to
 // prepareFilingOutput() (Milestone 34-1A, Item 1) -- omitting it here used
 // to mean the embedded preview could render a filing clean while the print
 // page's own banner blocked export for the exact same missing fields, since

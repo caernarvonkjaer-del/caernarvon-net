@@ -4,7 +4,7 @@
 // told apart from an intentionally unsupported capability. Every field below
 // was verified directly against the current codebase (route lists from each
 // feature module's own page switch statement; export capabilities from
-// which modules actually have excel.js / wire up doSaveDocx*), not assumed.
+// which modules actually have excel.js), not assumed.
 export type FilingType =
   | 'guardian'
   | 'simplified'
@@ -25,7 +25,7 @@ export type FilingCapabilities = {
    * The authoritative document title this filing type's output should
    * carry -- verified byte-for-byte against
    * src/core/filing/filing-descriptor.js's DESCRIPTORS[id].documentTitle
-   * (the actual PDF/DOCX metadata.title/formName source), not derived from
+   * (the actual PDF metadata.title/formName source), not derived from
    * displayName. Milestone 25 (commit 32626d3, landed before this matrix
    * was corrected) is what makes finalAccounting/trustAccounting emit their
    * own distinct title instead of Annual's; Milestone 33's filing-identity
@@ -35,7 +35,12 @@ export type FilingCapabilities = {
   /** Every route this filing type's feature module mounts, verified against
    * its page switch statement, in the order declared there. */
   routeSet: readonly string[];
-  exports: { pdf: boolean; docx: boolean; xlsx: boolean };
+  // Milestone 40A removed DOCX export, so the `docx` key is gone rather than
+  // pinned to false: a permanently-false flag would imply the format is merely
+  // disabled, when the app no longer has the concept at all. No consumer read
+  // it, and filing-capability-matrix.spec.ts iterates Object.entries(exports)
+  // generically, so it adapts to the smaller shape on its own.
+  exports: { pdf: boolean; xlsx: boolean };
   preview: boolean;
   supplementalDocuments: boolean;
   /** True only for filing types that share Annual's form code but require
@@ -66,8 +71,8 @@ const PLAN_ANNUAL_ROUTES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', 
 const PLAN_INITIAL_ROUTES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/p8', '/p9', '/p10', '/print'] as const;
 const PLAN_MINOR_ROUTES = ['/', '/summary', '/p2', '/p3', '/p4', '/p5', '/p6', '/p7', '/print'] as const;
 
-// PDF and DOCX are wired for all nine (docx via the shared
-// src/core/docx/docx-engine.js, present in every feature's index.js). XLSX
+// PDF is wired for all nine. (DOCX was too, via a shared docx-engine.js, until
+// Milestone 40A removed the format entirely.) XLSX
 // (excel.js) exists only for guardian/annual/simplified -- Final and Trust
 // inherit it from annual-accounting's shared module since they run the same
 // code; the four Plan types have no excel.js at all. Supplemental-document
@@ -77,55 +82,55 @@ export const FILING_MATRIX: readonly FilingCapabilities[] = [
   {
     id: 'guardian', family: 'inventory',
     displayName: 'Verified Initial Inventory', documentTitle: 'VERIFIED INITIAL INVENTORY',
-    routeSet: GUARDIAN_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
+    routeSet: GUARDIAN_ROUTES, exports: { pdf: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'simplified', family: 'accounting',
     displayName: 'Simplified Annual Accounting', documentTitle: 'SIMPLIFIED ANNUAL ACCOUNTING',
-    routeSet: SIMPLIFIED_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
+    routeSet: SIMPLIFIED_ROUTES, exports: { pdf: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'annual', family: 'accounting',
     displayName: 'Annual Accounting', documentTitle: 'ANNUAL GUARDIANSHIP ACCOUNTING',
-    routeSet: ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
+    routeSet: ANNUAL_ROUTES, exports: { pdf: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'finalAccounting', family: 'accounting',
     displayName: 'Final Accounting', documentTitle: 'FINAL GUARDIANSHIP ACCOUNTING',
-    routeSet: ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
+    routeSet: ANNUAL_ROUTES, exports: { pdf: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: true,
   },
   {
     id: 'trustAccounting', family: 'accounting',
     displayName: 'Trust Accounting', documentTitle: 'TRUST GUARDIANSHIP ACCOUNTING',
-    routeSet: ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: true },
+    routeSet: ANNUAL_ROUTES, exports: { pdf: true, xlsx: true },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: true,
   },
   {
     id: 'planSimplified', family: 'plan',
     displayName: 'Simplified Annual Plan', documentTitle: 'SIMPLIFIED ANNUAL PLAN',
-    routeSet: PLAN_SIMPLIFIED_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
+    routeSet: PLAN_SIMPLIFIED_ROUTES, exports: { pdf: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'planAnnual', family: 'plan',
     displayName: 'Annual Guardianship Plan', documentTitle: 'ANNUAL GUARDIANSHIP PLAN',
-    routeSet: PLAN_ANNUAL_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
+    routeSet: PLAN_ANNUAL_ROUTES, exports: { pdf: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'planInitial', family: 'plan',
     displayName: 'Initial Guardianship Plan', documentTitle: 'INITIAL GUARDIANSHIP PLAN',
-    routeSet: PLAN_INITIAL_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
+    routeSet: PLAN_INITIAL_ROUTES, exports: { pdf: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
   {
     id: 'planMinor', family: 'plan',
     displayName: 'Annual Plan — Minors', documentTitle: 'ANNUAL GUARDIANSHIP PLAN - MINOR',
-    routeSet: PLAN_MINOR_ROUTES, exports: { pdf: true, docx: true, xlsx: false },
+    routeSet: PLAN_MINOR_ROUTES, exports: { pdf: true, xlsx: false },
     preview: true, supplementalDocuments: true, needsDistinctLegalCopy: false,
   },
 ];
@@ -163,7 +168,8 @@ export type ExpectedLegalCopy = {
 
 /**
  * Milestone 33, Phase 3.2: Authoritative legal attestation and heading expectations
- * asserting document meaning across PDF and DOCX outputs.
+ * asserting document meaning in the generated PDF. (It covered DOCX too until
+ * Milestone 40A removed that format.)
  */
 export function expectedLegalCopy(id: FilingType): ExpectedLegalCopy {
   switch (id) {

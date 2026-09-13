@@ -1,4 +1,4 @@
-// Shared export boundary. Preview, PDF, DOCX, and Excel all use this instead
+// Shared export boundary. Preview, PDF and Excel all use this instead
 // of independently deciding whether a filing has a safe identity or pending
 // date input.
 

@@ -295,33 +295,4 @@ test.describe('guardian-inventory feature module', () => {
     expect(yesFiledState.safeDepositBoxFiled).toBe(true);
     expect(yesFiledState.navChecks.checks.d3).toBe(true);
   });
-
-  test('a fully completed filing exports a valid editable Word document (.docx)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Complete Guardian Word Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
-
-    await expect(page.locator('[data-inventory-action="save-word"]')).toBeVisible();
-    await expect(page.locator('[data-inventory-action="save-word"]')).toBeEnabled();
-
-    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.locator('[data-inventory-action="save-word"]').click();
-    const download = await downloadPromise;
-
-    expect(download.suggestedFilename()).toMatch(/\.docx$/i);
-    const stream = await download.createReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk as Buffer);
-    const bytes = Buffer.concat(chunks);
-    expect(bytes.length).toBeGreaterThan(1000);
-    expect(bytes.subarray(0, 4).toString('latin1')).toBe('PK\x03\x04');
-
-    const zip = await JSZip.loadAsync(bytes);
-    expect(zip.file('[Content_Types].xml')).not.toBeNull();
-    expect(zip.file('word/document.xml')).not.toBeNull();
-    const docXml = await zip.file('word/document.xml')!.async('string');
-    expect(docXml).toContain('IN THE CIRCUIT COURT');
-    expect(docXml).toContain('Complete Guardian Word Ward');
-  });
 });
