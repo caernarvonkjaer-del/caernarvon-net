@@ -60,7 +60,7 @@ the same commit.
 | theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |
 | types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
-| ward-carryover.spec.js               | Carry-over field mapping between filing types; Milestone 40C-F nested Initial-Inventory attorney shape; county never taken from the source snapshot |
+| ward-carryover.spec.js               | Carry-over field mapping between filing types; Milestone 40C-F nested Initial-Inventory attorney shape; county never taken from the source snapshot; Milestone 40H-J: Plan/Accounting -> Guardian Inventory attorney block writes the nested shape, not dropped flat keys |
 | ward-lock.spec.js                    | Ward lock acquire/release/current-lock services                                                                           |
 | xlsx-extract.spec.js                 | Milestone 33 Phase 3.1: xlsx-extract helper (reads support/xlsx-extract.ts)                                               |
 | yes-no-radio-migration.spec.js      | Milestone 37-5: shared explicit Yes/No radio renderer and bespoke checkbox/select migration guards                       |

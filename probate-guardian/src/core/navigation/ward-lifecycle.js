@@ -239,11 +239,29 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
       gid: src.inceptionDate || src.gid || '',
       guardianName: gName,
       attorneyForGuardian: attyName,
-      attorneyBar: attyBar,
-      attorneyPhone: attyPhone,
-      attorneyEmail: attyEmail,
-      attorneyAddress: attyStreet,
-      attorneyCityStateZip: attyCityStateZip,
+      // Milestone 40H-J: emptyDataGuardian() has no flat attorneyBar/
+      // attorneyPhone/attorneyAddress/attorneyCityStateZip keys at all --
+      // only attorneyForGuardian (flat name) and a nested attorney{...}
+      // object, which is what validateGuardian()/pdf-model.js actually
+      // read. Writing the flat keys here computed the values correctly and
+      // then silently dropped them onto a shape the destination's editor,
+      // validator, and PDF model never look at -- the symmetric defect to
+      // 40C-F item 2 (which fixed the read side), on the write side. Mirrors
+      // the nested shape legacy-app.js's carryOverAccountingToAccounting()
+      // guardian branch already emits. No email field: Guardian Inventory's
+      // attorney block has none, nested or flat -- attyEmail is correctly
+      // computed above and correctly has nowhere to go.
+      attorney: {
+        name: attyName,
+        barNumber: attyBar,
+        phone: attyPhone,
+        streetAddress: attyStreet,
+        cityStateZip: attyCityStateZip,
+        signatureDate: null,
+        filingDate: null,
+        signatureState: '',
+        signatureImage: '',
+      },
       guardians: [
         {
           name: g.name || gName || '',

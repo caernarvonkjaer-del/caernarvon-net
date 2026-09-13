@@ -207,6 +207,51 @@ describe('ward-carryover', () => {
       expect(result.guardians[0].name).toBe('Guardian Parent');
       expect(result.guardians[0].ssn).toBe('123-45-6789');
     });
+
+    // Milestone 40H-J: the symmetric defect to the nested-attorney-shape
+    // block above, on the write side instead of the read side. A
+    // Plan/Accounting source's attorney details are computed correctly
+    // here (attyBar/attyPhone/attyStreet/attyCityStateZip all read
+    // successfully from the source's flat keys) but used to be written
+    // back out as flat attorneyBar/attorneyPhone/attorneyAddress/
+    // attorneyCityStateZip -- keys emptyDataGuardian() doesn't have at
+    // all. validateGuardian()/pdf-model.js only ever read the nested
+    // attorney object, so the values were silently dropped on every
+    // Plan/Accounting -> Guardian Inventory carryover.
+    it('writes the attorney block into a Guardian Inventory destination as a nested object, not flat keys', () => {
+      const src = {
+        wardName: 'Annual Source Ward',
+        caseNumber: '2026-GA-999',
+        guardianName: 'Gale Guardian',
+        attorney_name: 'Nina Nested, Esq.',
+        attorney_bar: '0456789',
+        attorney_phone: '727-555-0142',
+        attorney_street: '400 Cleveland St',
+        attorney_cityStateZip: 'Clearwater, FL 33755',
+        guardians: [{ name: 'Gale Guardian', ssn: '11-2233445', phone: '727-555-0100' }],
+      };
+
+      const result = carryOverFieldsForAccounting(src, 'guardian');
+
+      expect(result.attorney).toEqual({
+        name: 'Nina Nested, Esq.',
+        barNumber: '0456789',
+        phone: '727-555-0142',
+        streetAddress: '400 Cleveland St',
+        cityStateZip: 'Clearwater, FL 33755',
+        signatureDate: null,
+        filingDate: null,
+        signatureState: '',
+        signatureImage: '',
+      });
+      expect(result).not.toHaveProperty('attorneyBar');
+      expect(result).not.toHaveProperty('attorneyPhone');
+      expect(result).not.toHaveProperty('attorneyAddress');
+      expect(result).not.toHaveProperty('attorneyCityStateZip');
+      // attorneyForGuardian (the flat name) is a real field on
+      // emptyDataGuardian() and must still carry.
+      expect(result.attorneyForGuardian).toBe('Nina Nested, Esq.');
+    });
   });
 });
 
