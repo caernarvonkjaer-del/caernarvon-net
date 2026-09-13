@@ -2,10 +2,45 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, test, or documentation change until the requester approves
-Milestone 40I specifically. Approval of another Milestone 40 delivery does
-not authorize this work.
+**Landed 2026-09-13** (`0ea392b`). The reported bug is confirmed fixed:
+Schedule B-4's Category now aligns with its primitive-built row-mates
+(2px apart, down from 33.6px), spot-checked at two more of the 13
+confirmed sites across two more filing types. Full e2e regression clean
+beyond the pre-existing, already-catalogued baseline.
+
+Three corrections, all caught by actually running the fix rather than
+shipping the proposal's assumptions as written:
+
+1. **The pre-existing regression test's own assertion was wrong.**
+   `schedule-card-layout.spec.ts:177` (added for archived item 19)
+   expected `getComputedStyle().minHeight` to read `'0px'` once the rule
+   was deleted. A genuinely absent `min-height` computes to the CSS
+   spec's initial value, `'auto'` — not `'0px'`. Corrected to match
+   measured reality.
+2. **Decision 2's planned test subject doesn't wrap to two lines where
+   assumed.** Plan Initial Q11's "Relationship of Agent(s)/Surrogate(s)
+   to the Ward" renders as one line at the 800px viewport this spec file
+   uses elsewhere — confirmed by measuring it directly. Replaced with a
+   direct pin on the actual reported bug site (Schedule B-4) instead.
+3. **A genuine, narrower residual was found and deliberately not
+   solved here.** Deleting the rule correctly fixes every confirmed
+   primitive-vs-hand-rolled mismatch, but also removes an
+   incidental side effect the same rule was providing: a row where
+   *both* fields are hand-rolled (so neither was ever mismatched by the
+   reported bug) can still misalign by up to ~17px, confirmed by
+   measurement, in a roughly 500–620px viewport band, if one field's
+   label happens to be long enough to wrap to two lines while its
+   sibling's doesn't (e.g. Plan Initial Q11's Relationship/"Name of
+   person who signed" pair — confirmed overlapping post-fix:
+   `nameInputTop 1048 < relLabelBottom 1059`). Both fields already used
+   identical markup, so this isn't the bug this delivery was scoped to
+   fix; recorded as follow-up scope rather than expanded into, the same
+   way Decision 3 already deferred markup migration. Extending the
+   selector to also cover primitive-wrapped labels was reconsidered
+   given this finding and rejected again, for the reason already on
+   record: it would reintroduce forced padding on today's correct
+   single-line primitive fields, which the corrected pre-existing test
+   (point 1 above) now explicitly pins against.
 
 ## Goal
 
