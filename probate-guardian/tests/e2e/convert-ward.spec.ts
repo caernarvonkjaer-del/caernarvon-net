@@ -64,6 +64,37 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     expect(newWard.schD1).toEqual([]);
   });
 
+  // Found 2026-09-13 while implementing Milestone 43A: convertGuardianSchedulesToAnnual()
+  // read the legacy isRestricted/isPersonalResidence/isIncomeProperty booleans
+  // with no fallback to the tri-state restricted/residence/income fields the
+  // current Guardian Inventory UI actually writes -- every converted row
+  // carried over as "No" regardless of what the filer selected.
+  test('Guardian Inventory -> Annual Accounting carries restricted/residence/income from the tri-state fields, not the dead legacy booleans', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian Source Ward', 'guardian');
+
+    const sourceWardId = await page.evaluate(() => {
+      const d = (window as any).D;
+      Object.assign(d, {
+        scheduleB1: [{ institutionName: 'Fifth Third Bank', accountType: 'Checking', fullAssetAmount: '5000', wardPercent: '100', restricted: 'Yes' }],
+        scheduleA1: [{ propertyDescription: 'Homestead', fullAssetValue: '200000', wardPercent: '100', residence: 'Yes', income: 'No' }],
+        scheduleB3: [{ description: 'Brokerage Account', fullAssetValue: '3000', wardPercent: '100', restricted: 'Yes' }],
+      });
+      return d.wardId;
+    });
+
+    const newWard = await page.evaluate(async (srcId) => {
+      await (window as any).convertExistingWard(srcId, 'annual');
+      return (window as any).getActiveWard();
+    }, sourceWardId);
+
+    expect(newWard.inventoryType).toBe('annual');
+    expect(newWard.schD1[0].restricted).toBe('Yes');
+    expect(newWard.schD2[0].residence).toBe('Yes');
+    expect(newWard.schD2[0].income).toBe('No');
+    expect(newWard.schD4[0].restricted).toBe('Yes');
+  });
+
   test('confirmation message for an Annual -> Trust conversion describes what actually carried', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Trust Source Ward', 'annual');

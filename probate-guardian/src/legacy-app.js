@@ -4811,20 +4811,28 @@ function mapConvertedHeaderFields(src,srcType,dest,destType){
 // year's actual income/activity is left for the user to confirm rather than
 // silently assumed from the inventory's projected figures.
 function convertGuardianSchedulesToAnnual(src,dest){
+  // r.restricted/residence/income are the tri-state fields the current
+  // Guardian Inventory UI actually writes; r.isRestricted/isPersonalResidence/
+  // isIncomeProperty are the legacy booleans normalizeWardData() migrates
+  // FROM but never clears, so they stay undefined on every row entered
+  // through the current UI. Checking the tri-state field first, falling back
+  // to the legacy boolean only for genuinely pre-migration data, matches the
+  // pattern already used correctly by window.calc's on-screen totals
+  // (restrictedCash()/unrestrictedCash()/etc., above) and excel.js's export.
   dest.schD1=(src.scheduleB1||[]).map(r=>({
     description:[r.institutionName,r.accountType].filter(Boolean).join(' — '),
-    accountNo:r.accountNumber||'', restricted:r.isRestricted?'Yes':'No', type:r.accountType||'',
+    accountNo:r.accountNumber||'', restricted:(r.restricted==='Yes'||r.isRestricted===true)?'Yes':'No', type:r.accountType||'',
     fullAmount:r.fullAssetAmount||'', wardPct:r.wardPercent||'', restrictedAmt:''
   }));
   dest.schD2=(src.scheduleA1||[]).map(r=>({
-    description:r.propertyDescription||'', residence:r.isPersonalResidence?'Yes':'No', income:r.isIncomeProperty?'Yes':'No',
+    description:r.propertyDescription||'', residence:(r.residence==='Yes'||r.isPersonalResidence===true)?'Yes':'No', income:(r.income==='Yes'||r.isIncomeProperty===true)?'Yes':'No',
     fullValue:r.fullAssetValue||'', wardPct:r.wardPercent||'', carryingValue:r.fullAssetValue||'', wardValue:''
   }));
   dest.schD3=(src.scheduleB2||[]).map(r=>({
     description:r.description||'', fullAmount:r.fullAssetValue||'', wardPct:r.wardPercent||'', carryingValue:r.fullAssetValue||'', wardAmount:''
   }));
   dest.schD4=(src.scheduleB3||[]).map(r=>({
-    description:r.description||'', restricted:r.isRestricted?'Yes':'No', fullAmount:r.fullAssetValue||'',
+    description:r.description||'', restricted:(r.restricted==='Yes'||r.isRestricted===true)?'Yes':'No', fullAmount:r.fullAssetValue||'',
     wardPct:r.wardPercent||'', carryingValue:r.fullAssetValue||'', wardValue:'', restrictedAmt:''
   }));
   dest.schD5=[
