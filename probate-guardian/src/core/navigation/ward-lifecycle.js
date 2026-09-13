@@ -11,6 +11,7 @@
 // carry-over surface). When the Party has no county the destination stays blank
 // and the Cover asks -- which is the point of the decision.
 import { getCaseFile, getD, setD } from '../state.js';
+import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
@@ -457,29 +458,10 @@ export async function switchWard(wardId) {
   if (typeof window !== 'undefined') {
     window.currentPage = '/';
     window.location.hash = '';
-    const formEngine = typeof window.formEngine === 'function' ? window.formEngine(ward.inventoryType) : null;
-    switch (formEngine) {
-      case 'guardian':
-        if (typeof window.mountGuardianFeature === 'function') await window.mountGuardianFeature('/');
-        break;
-      case 'simplified':
-        if (typeof window.mountSimplifiedFeature === 'function') await window.mountSimplifiedFeature('/');
-        break;
-      case 'annual':
-        if (typeof window.mountAnnualFeature === 'function') await window.mountAnnualFeature('/');
-        break;
-      case 'planSimplified':
-        if (typeof window.mountPlanSimplifiedFeature === 'function') await window.mountPlanSimplifiedFeature('/');
-        break;
-      case 'planAnnual':
-        if (typeof window.mountPlanAnnualFeature === 'function') await window.mountPlanAnnualFeature('/');
-        break;
-      case 'planInitial':
-        if (typeof window.mountPlanInitialFeature === 'function') await window.mountPlanInitialFeature('/');
-        break;
-      case 'planMinor':
-        if (typeof window.mountPlanMinorFeature === 'function') await window.mountPlanMinorFeature('/');
-        break;
+    const engine = typeof window.formEngine === 'function' ? window.formEngine(ward.inventoryType) : null;
+    if (FILING_ENGINE_IDS.includes(engine)) {
+      const mount = window[mountFeatureFnName(engine)];
+      if (typeof mount === 'function') await mount('/');
     }
     if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
     if (typeof window.updateNavDots === 'function') window.updateNavDots();

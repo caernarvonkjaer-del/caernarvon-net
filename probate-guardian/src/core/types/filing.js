@@ -1,7 +1,12 @@
 // Type definitions for Ward, FilingDescriptor, and FilingType.
+//
+// Milestone 42G: FilingType/FilingEngineId derive from filing-descriptor.js's
+// own DESCRIPTORS keys/engineIds (via FILING_TYPE_KEYS/FILING_ENGINE_IDS)
+// rather than repeating all nine (or seven) as a second, hand-maintained
+// literal union -- a tenth filing type needs only a new DESCRIPTORS entry.
 
 /**
- * @typedef {'guardian' | 'simplified' | 'annual' | 'finalAccounting' | 'trustAccounting' | 'planSimplified' | 'planAnnual' | 'planInitial' | 'planMinor'} FilingType
+ * @typedef {typeof import('../filing/filing-descriptor.js').FILING_TYPE_KEYS[number]} FilingType
  */
 
 /**
@@ -9,7 +14,7 @@
  */
 
 /**
- * @typedef {'guardian' | 'simplified' | 'annual' | 'planSimplified' | 'planAnnual' | 'planInitial' | 'planMinor'} FilingEngineId
+ * @typedef {typeof import('../filing/filing-descriptor.js').FILING_ENGINE_IDS[number]} FilingEngineId
  */
 
 /**

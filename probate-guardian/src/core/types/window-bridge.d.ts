@@ -252,14 +252,7 @@ interface Window {
   maybeCommitCoverCounty: any;
   mergeParties: any;
   mk: any;
-  mountAnnualFeature: any;
   mountDashboardFeature: any;
-  mountGuardianFeature: any;
-  mountPlanAnnualFeature: any;
-  mountPlanInitialFeature: any;
-  mountPlanMinorFeature: any;
-  mountPlanSimplifiedFeature: any;
-  mountSimplifiedFeature: any;
   moveTo: any;
   navigate: any;
   nextWalkthroughStep: any;

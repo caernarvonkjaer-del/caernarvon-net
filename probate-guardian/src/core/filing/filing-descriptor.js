@@ -75,6 +75,53 @@ const ACCOUNTING_TYPE_BY_VALUE = new Map([
   ['trust', 'trustAccounting'], ['trust accounting', 'trustAccounting'],
 ]);
 
+// Milestone 42G: the registry other modules derive from, instead of each
+// re-listing all nine filing-type keys (or the seven distinct engine IDs)
+// on its own. A tenth filing type only needs a DESCRIPTORS entry here plus
+// its own mount/load functions -- everything below follows automatically.
+export const FILING_TYPE_KEYS = Object.freeze(Object.keys(DESCRIPTORS));
+export const FILING_ENGINE_IDS = Object.freeze([...new Set(Object.values(DESCRIPTORS).map((d) => d.engineId))]);
+
+// The one naming convention every engine's global mount function follows:
+// `mount<Engine>Feature` with only the first letter capitalized
+// ('planAnnual' -> mountPlanAnnualFeature). router.js's renderPage() and
+// ward-lifecycle.js's switchWard() both used to hand-write the same 7-case
+// switch dispatching to these names; both now call this instead.
+export function mountFeatureFnName(engineId) {
+  return `mount${engineId.charAt(0).toUpperCase()}${engineId.slice(1)}Feature`;
+}
+
+// Which existing filings may be a CONVERSION target for `srcType` -- e.g.
+// annual <-> planAnnual, but never planMinor (no Accounting counterpart) or
+// a cross-family pair (guardian -> planAnnual). Deliberately narrower than
+// ward-lifecycle.js's CARRY_SOURCE_TYPE, which Milestone 36-7 widened to let
+// ANY filing seed a new one's identity/contact block at creation time --
+// that widening must not also widen what CONVERTS an existing filing in
+// place. Lived in core/modals/convert-ward-modal.js from Milestone 42E
+// (which found the modal wrongly keyed to CARRY_SOURCE_TYPE) until this
+// registry existed to hold it instead.
+const CONVERT_SOURCE_TYPE = {
+  planInitial: ['guardian'],
+  planSimplified: ['simplified'],
+  planAnnual: ['annual'],
+  planMinor: ['guardian'],
+  guardian: ['planInitial'],
+  simplified: ['planSimplified', 'guardian', 'annual', 'finalAccounting', 'trustAccounting'],
+  annual: ['planAnnual', 'guardian', 'simplified', 'finalAccounting', 'trustAccounting'],
+  finalAccounting: ['planAnnual', 'guardian', 'simplified', 'annual', 'trustAccounting'],
+  trustAccounting: ['planAnnual', 'guardian', 'simplified', 'annual', 'finalAccounting'],
+};
+
+export function convertSourcesFor(type) {
+  return CONVERT_SOURCE_TYPE[type] || [];
+}
+
+export function convertTargetsFor(srcType) {
+  return Object.keys(CONVERT_SOURCE_TYPE).filter(
+    (target) => target !== srcType && target !== 'planMinor' && convertSourcesFor(target).includes(srcType),
+  );
+}
+
 function descriptorForType(type) {
   return DESCRIPTORS[type] || null;
 }

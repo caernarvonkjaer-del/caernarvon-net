@@ -30,6 +30,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | date-range-no-mutation.spec.js       | Milestone 40C-C: date ranges are validated by checkDateOrder(), never rewritten; D-4 bond-period order + field mapping    |
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
+| filing-type-enumeration-guard.spec.js | Milestone 42G: no file outside filing-descriptor.js (plus documented exceptions) lists 4+ distinct filing-type keys |
 | filing-county-defaults.spec.js       | Milestone 40C-A: no filing defaults to a county; ward-Party establish/hydrate, legacy unanimity backfill, merge conflict  |
 | feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
 | form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers                                                        |

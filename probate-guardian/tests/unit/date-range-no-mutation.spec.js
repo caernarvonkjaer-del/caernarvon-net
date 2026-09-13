@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { checkDateOrder } from '../../src/core/validation/date-rules.js';
-import { adaptValidationErrors } from '../../src/core/validation/validation-adapter.js';
+import { issueFactory } from '../../src/core/validation/validation-issue.js';
 
 // Milestone 40C-C. Editing one endpoint of a date range must never change the
 // other. legacy-app.js used to wire every From/To pair so that a "reversed"
@@ -63,23 +63,27 @@ describe('Milestone 40C-C: date ranges are validated, never rewritten', () => {
       })).toEqual([]);
     });
 
-    // The message names BOTH endpoints, and the adapter's D-4 branch matches on
-    // includes(), checking "bond period from" first -- so without an explicit
-    // earlier branch this error sends the filer to the field that is not the
-    // one to change.
+    // The message names BOTH endpoints ("Bond Period To must be on or after
+    // Bond Period From"). Milestone 42F: checkDateOrder() now states the
+    // path itself (validateGuardian() passes filingType/laterPath at this
+    // exact call site) rather than leaving the adapter to guess which
+    // endpoint from message text -- this is that real call shape, not a
+    // simulated one.
     test('the ordering error focuses Bond Period To, not Bond Period From', () => {
-      const [adapted] = adaptValidationErrors(
-        ['D-4 — Bond Period To must be on or after Bond Period From'],
-        'guardian'
-      );
-      expect(adapted.path).toBe('bondPeriodTo');
+      const [issue] = checkDateOrder('2026-12-31', '2026-01-01', {
+        sectionLabel: 'D-4', earlierLabel: 'Bond Period From', laterLabel: 'Bond Period To',
+        filingType: 'guardian', laterPath: 'bondPeriodTo',
+      });
+      expect(issue.path).toBe('bondPeriodTo');
+      expect(issue.message).toBe('D-4 — Bond Period To must be on or after Bond Period From');
     });
 
     test('the plain required-field errors still map to their own endpoints', () => {
-      const [fromErr] = adaptValidationErrors(['D-4 — Bond Period From is required.'], 'guardian');
-      const [toErr] = adaptValidationErrors(['D-4 — Bond Period To is required.'], 'guardian');
-      expect(fromErr.path).toBe('bondPeriodFrom');
-      expect(toErr.path).toBe('bondPeriodTo');
+      // validateGuardian()'s own req()/push() shape: issueFactory('guardian')
+      // called with the message and the exact path that field's check names.
+      const issue = issueFactory('guardian');
+      expect(issue('D-4 — Bond Period From is required.', 'bondPeriodFrom').path).toBe('bondPeriodFrom');
+      expect(issue('D-4 — Bond Period To is required.', 'bondPeriodTo').path).toBe('bondPeriodTo');
     });
   });
 

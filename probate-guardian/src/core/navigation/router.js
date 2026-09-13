@@ -1,5 +1,6 @@
 // Application navigation, URL hash router, and feature mounting.
 import { getCaseFile } from '../state.js';
+import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 
 let _currentPage = '/dashboard';
 const _routeHooks = {
@@ -215,28 +216,9 @@ export async function renderPage(page) {
     if (pageKey && window._visitedPages) window._visitedPages.add(pageKey);
 
     const engine = typeof window.formEngine === 'function' ? window.formEngine(activeType) : activeType;
-    switch (engine) {
-      case 'guardian':
-        if (typeof window.mountGuardianFeature === 'function') await window.mountGuardianFeature(page);
-        break;
-      case 'simplified':
-        if (typeof window.mountSimplifiedFeature === 'function') await window.mountSimplifiedFeature(page);
-        break;
-      case 'annual':
-        if (typeof window.mountAnnualFeature === 'function') await window.mountAnnualFeature(page);
-        break;
-      case 'planSimplified':
-        if (typeof window.mountPlanSimplifiedFeature === 'function') await window.mountPlanSimplifiedFeature(page);
-        break;
-      case 'planAnnual':
-        if (typeof window.mountPlanAnnualFeature === 'function') await window.mountPlanAnnualFeature(page);
-        break;
-      case 'planInitial':
-        if (typeof window.mountPlanInitialFeature === 'function') await window.mountPlanInitialFeature(page);
-        break;
-      case 'planMinor':
-        if (typeof window.mountPlanMinorFeature === 'function') await window.mountPlanMinorFeature(page);
-        break;
+    if (FILING_ENGINE_IDS.includes(engine)) {
+      const mount = window[mountFeatureFnName(engine)];
+      if (typeof mount === 'function') await mount(page);
     }
     if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
     // Milestone 40C-C removed window.enforceDateRanges(); date-range order is

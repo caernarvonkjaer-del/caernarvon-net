@@ -3,9 +3,13 @@
 // CONVERT_SOURCE_TYPE (what may be CONVERTED): the Accounting types among
 // themselves, and each Plan only to/from its own Accounting counterpart.
 // The legacy-app.js copy that had it right was dead, shadowed by the module.
+// Milestone 42G moved the table itself from convert-ward-modal.js (where
+// 42E had put it) into filing-descriptor.js, the shared filing-identity
+// registry -- convert-ward-modal.js now just re-exports convertTargetsFor.
 import { describe, it, expect } from 'vitest';
-import { convertTargetsFor, convertSourcesFor, CONVERT_SOURCE_TYPE } from '../../src/core/modals/convert-ward-modal.js';
+import { convertTargetsFor, convertSourcesFor, FILING_TYPE_KEYS } from '../../src/core/filing/filing-descriptor.js';
 import { CARRY_SOURCE_TYPE } from '../../src/core/navigation/ward-lifecycle.js';
+import { convertTargetsFor as reExported } from '../../src/core/modals/convert-ward-modal.js';
 
 describe('convertTargetsFor()', () => {
   it('offers exactly the table-defined targets per source (in table order)', () => {
@@ -33,17 +37,21 @@ describe('convertTargetsFor()', () => {
   });
 
   it('never offers planMinor as a target and offers it no targets', () => {
-    for (const src of Object.keys(CONVERT_SOURCE_TYPE)) expect(convertTargetsFor(src)).not.toContain('planMinor');
+    for (const src of FILING_TYPE_KEYS) expect(convertTargetsFor(src)).not.toContain('planMinor');
     expect(convertTargetsFor('planMinor')).toEqual([]);
   });
 
   it('is strictly narrower than the creation-time carry table (the bug this pins)', () => {
     const carryTargets = (src) => Object.keys(CARRY_SOURCE_TYPE).filter((t) => t !== src && t !== 'planMinor' && (CARRY_SOURCE_TYPE[t] || []).includes(src));
-    for (const src of Object.keys(CONVERT_SOURCE_TYPE)) {
+    for (const src of FILING_TYPE_KEYS) {
       const convert = new Set(convertTargetsFor(src));
       for (const t of convert) expect(carryTargets(src), `${src} -> ${t} must also be a carry target`).toContain(t);
     }
     expect(carryTargets('annual').length).toBeGreaterThan(convertTargetsFor('annual').length);
     expect(convertSourcesFor('nope')).toEqual([]);
+  });
+
+  it('the modal module re-exports the same function', () => {
+    expect(reExported).toBe(convertTargetsFor);
   });
 });
