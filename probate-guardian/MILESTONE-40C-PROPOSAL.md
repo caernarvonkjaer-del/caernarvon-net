@@ -135,8 +135,10 @@ sufficient.
    until the user makes a valid choice.
 7. Make `src/core/pdf/circuit-lookup.js` and the legacy duplicate return
    an explicitly unknown/blank result for a blank or unrecognized county,
-   rather than Sixth Circuit. Two distinct fallbacks confirmed in
-   `circuit-lookup.js`, not one:
+   rather than Sixth Circuit. **Three** distinct fallbacks confirmed in
+   `circuit-lookup.js` (review pass 2026-09-12 — an earlier version of
+   this task named two), and they are *layered*, so removing one or two
+   still yields a Pinellas/Sixth caption:
    - `circuitForCounty()`'s own doc comment currently states "Defaults to
      6 (Sixth Judicial Circuit / Pinellas & Pasco) if empty or
      unrecognized" — this is a real, documented default, not an
@@ -149,9 +151,52 @@ sufficient.
      `const c = (county || 'Pinellas').trim() || 'Pinellas';`. Fixing
      only the circuit-number default and missing this one still prints
      a Pinellas-derived caption for a blank county.
-   - The "legacy duplicate" is `src/legacy-app.js:1432` — the same
-     `const c=(county||'Pinellas').trim()||'Pinellas';` pattern,
-     confirmed present there too.
+   - **A third, previously unnamed fallback:** `getCircuitOrdinal()` at
+     `circuit-lookup.js:75` — `const ord = CIRCUIT_ORDINALS[circuitNum] || 'Sixth';`.
+     Even with both defaults above removed, an unresolved circuit number
+     still renders the word "SIXTH" in the caption's first line through
+     this one.
+   - The "legacy duplicate" is `src/legacy-app.js:1421-1433`: its own
+     `circuitForCounty()` (`:1421`) **plus** the same two patterns at
+     `:1432-1433` —
+     `const c=(county||'Pinellas').trim()||'Pinellas';` and
+     `const ord=(CIRCUIT_ORDINALS[circuitForCounty(c)]||'Sixth').toUpperCase();`.
+     All of it must change together. Note the comment at `:1438-1439`
+     already warns that this duplicate exists *and* that
+     `county-guidance.js` deliberately avoids depending on
+     `circuitForCounty()` precisely because of its fallback — read it
+     before editing, it explains why the two must not be unified here.
+
+   **Open decision — what "unknown" returns (resolve before implementing
+   this item).** `circuitForCounty()` returns a number 1-20 today, so
+   "unknown" needs a representation every caller handles. The callers are
+   `pdf-engine.js:22`, `docx-engine.js:9` (moot if 40A landed first), and
+   `legacy-app.js`'s duplicate. Options, in the order recommended:
+
+   - **(a) Recommended — `null` from `circuitForCounty()`, `''` from
+     `getCircuitOrdinal()`, and `getFloridaCircuitCourtCaption()` returns
+     `null` rather than a caption object.** Each caller must then decide
+     explicitly what to draw with no caption, which is the honest
+     outcome: export is already blocked by County validation (item 6), so
+     the only path that reaches a blank-county caption is a draft/preview
+     override, and a draft should show a visible gap, not a confident
+     wrong court.
+   - **(b) Return a caption object with the county/ordinal slots blank or
+     a literal placeholder** (e.g. `IN AND FOR ______ COUNTY, FLORIDA`).
+     Less invasive for callers, and arguably better for a draft preview,
+     but risks a placeholder reaching a filed document if the validation
+     gate is ever bypassed.
+   - **(c) Throw on unknown.** Rejected — this is a rendering-path lookup;
+     an exception here would take down preview generation for a
+     recoverable data state.
+
+   Whichever is chosen, `tests/unit/circuit-lookup.spec.js:38-41` —
+   currently the test **"falls back gracefully to Sixth Judicial Circuit
+   for unknown or empty counties,"** asserting `circuitForCounty('')`,
+   `circuitForCounty(null)`, and `circuitForCounty('Atlantis')` all return
+   `6` — encodes exactly the behavior being removed and must be inverted
+   in the same change. This spec is not currently named in the
+   verification plan below; add it.
 
    Retain `src/core/filing/county-guidance.js`'s existing exact
    Pinellas/Pasco gating.
@@ -316,6 +361,33 @@ delivery unless the value can be reproduced from a fresh profile.
   validation does not determine venue or legal sufficiency; the filer is
   responsible for selecting the correct county.
 
+## Acceptance Criteria
+
+Added in the review pass of 2026-09-12: this was the only Milestone 40
+delivery with no acceptance-criteria table, which made "done" a matter of
+reading eight task narratives and inferring the observable outcome. One
+row per task, stated as something a person or a test can check.
+
+| Task | Scenario | Expected result |
+| --- | --- | --- |
+| 40C-A | A brand-new filing of each of the nine types, before any Cover entry | County is blank. No filing, PDF, Excel, or caption anywhere resolves to Pinellas/Sixth Circuit by default. |
+| 40C-A | First county selected on a Cover | It lands on both the filing snapshot and the linked ward Party; a later new filing for that ward hydrates from the Party without re-asking. |
+| 40C-A | A later Cover edit to an existing filing | Changes that filing and the Party's canonical value for *future* filings only; existing sibling filings and already-generated output are untouched. |
+| 40C-A | Legacy `.sav` whose linked filings disagree on county | `party.county` stays blank and the user is asked; no value is inferred from attorney county or another ward's filing. |
+| 40C-A | Blank county reaching a draft preview | Renders per the resolved option in item 7 — never a Pinellas or Sixth Circuit caption. Export stays blocked by existing County validation. |
+| 40C-B | Root page of all nine filing types | Sidebar entry, page heading, Summary entry, and help copy all identify it as a Cover; the route itself is unchanged. |
+| 40C-C | Editing either endpoint of a date range, valid or reversed (incl. 05/10/2026–05/09/2027) | The opposite endpoint's stored and displayed value never changes. A genuinely reversed range is *reported* by `checkDateOrder()`, not silently repaired. |
+| 40C-D | Committing `periodFrom`/`periodTo` with Supporting Documents open | Heading/period label refreshes in place; focus is kept, the section stays expanded, and uploads/comments survive. |
+| 40C-E | Annual Plan with an empty `q4Providers`; Minor Plan missing `ucn`/`ref` or amended-form completion | The sidebar section reads incomplete, matching export validation exactly. Every `auto` blocker has a matching navigation/Summary status; manual reminders stay nonblocking. |
+| 40C-F | Carryover through Simplified Accounting's eligibility-modal redirect | The user's selected source is preserved (never silently swapped for a blank filing); nested Initial-Inventory `attorney` fields map correctly; the destination links to the same ward Party; `county` hydrates from `party.county` or stays blank; `attorney_county` is never populated from it. |
+| 40C-F | Cancelling or hiding the eligibility flow | No partial destination filing exists and no source data changed. |
+| 40C-G | Annual-family sidebar, and the eligibility modal | Schedule D4 reads "Intangible Assets"; the modal names the actual selected source type and states whether County was restored or still needs selecting. |
+| 40C-H | Plan Initial Q7: both tri-states explicitly `'No'`, no explanation | Filing passes — this is the bug being fixed. |
+| 40C-H | Q7 Trusts `'Yes'` / Pending Benefits `'Yes'` / Other checked, each with no explanation | Each blocks export, and the blocker is visible in the readiness panel (1-to-1 with the export gate, not export-only). |
+| 40C-H | Q7 left unanswered | Stays unanswered — never silently stored or reported as `'No'`. |
+| 40C-H | `tests/e2e/signature-capture.contract.spec.ts` | The temporary Q7 blanking workaround is gone and `fillMinimalValidPlanInitialWard()` passes the real export path unmodified. |
+| All | `npm run verify:data-model` | Clean, with the `common,D,county` note rewritten, `caseFile.parties[]` expanded into canonical rows, and `annual_accounting,D,attorney_county`'s blank initial value recorded. |
+
 ## Verification Plan and Named Test Changes
 
 1. Add `tests/unit/filing-county-defaults.spec.js`: all seven factories
@@ -379,6 +451,26 @@ delivery unless the value can be reproduced from a fresh profile.
     signature coverage in `tests/e2e/signature-capture.contract.spec.ts`.
     Update the descriptions of all four rescoped files in
     `TEST-INDEX.md`.
+11. **Invert `tests/unit/circuit-lookup.spec.js:38-41`** (added in the
+    review pass of 2026-09-12 — this spec was missing from the plan
+    entirely). Its test "falls back gracefully to Sixth Judicial Circuit
+    for unknown or empty counties" asserts `circuitForCounty('')`,
+    `circuitForCounty(null)`, and `circuitForCounty('Atlantis')` all
+    return `6`; that is the exact behavior Task 40C-A item 7 removes, so
+    the spec fails the moment the fix lands. Rewrite it to assert the
+    unknown-result representation chosen in item 7, and add coverage for
+    all three layered fallbacks (`circuitForCounty`, `getCircuitOrdinal`,
+    `getFloridaCircuitCourtCaption`) so a future partial revert can't
+    reintroduce a Sixth Circuit default through whichever one wasn't
+    tested. Also assert `getFloridaCircuitCourtCaption('Pinellas')` still
+    produces the correct real caption — removing a fallback must not
+    disturb the 67 genuine county mappings.
+12. **Cross-delivery note:** `tests/unit/plan-readiness-county.spec.js`
+    is edited by this delivery's readiness work **and** by Milestone 40A,
+    which must remove that file's `vi.mock('.../docx-engine.js')` line
+    (`:25`) when it deletes the DOCX engine. Whichever lands second
+    should expect a conflict in that file and reconcile rather than
+    overwrite. See the dependency table in `MILESTONE-40-PROPOSAL.md`.
 
 Run the targeted files above plus `npm run verify:data-model`. Because
 this delivery changes creation, carryover, import, navigation,

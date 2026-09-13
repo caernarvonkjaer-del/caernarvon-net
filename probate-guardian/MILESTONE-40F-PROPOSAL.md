@@ -216,6 +216,16 @@ shadowed" pattern as the main save pipeline above:
      same value is written.
    - Add `window.getLastExportAt`, `window.isAutoSaveArmed` to the
      existing export block (`case-file.js:834-871`).
+   - **Cross-delivery conflict (review pass 2026-09-12):**
+     `buildCaseFileBlob()`'s `appStateBlob` literal is also edited by
+     Milestone 40D, which must stop `theme` (`case-file.js:189`) from
+     being serialized into new `.sav` files — two lines apart from this
+     delivery's `lastExportAt` change (`:195`) in the same object. Expect
+     a conflict in that literal if both land independently. Relatedly,
+     Step 4 here deletes `legacy-app.js`'s dead duplicate
+     `buildCaseFileBlob()` (which carries its own `theme` line at
+     `:3066`), so **landing 40F first removes one of 40D's sites for
+     free**. See the dependency table in `MILESTONE-40-PROPOSAL.md`.
 2. **Move failure-escalation into `writeCaseToHandle()`** (`case-file.js:
    387-419`): add `_consecutiveSaveFailures`/`SAVE_FAILURE_THRESHOLD` as
    module state here, and call through `window.showSaveError`/
@@ -276,14 +286,34 @@ shadowed" pattern as the main save pipeline above:
    `window.isAutoSaveArmed()` instead of the (now-deleted) private
    `_lastExportAt`/`_autoSaveArmed`.
 6. **Rename the periodic 10-minute mechanism's naming, not its behavior**,
-   so it no longer reads as a second "autosave": update its internal
-   identifiers/comments (`_autoExportTimer`, `setupAutoExportTimer`, the
-   "Auto-Export" reminder copy) to describe it as the fallback/retry sweep
-   it actually is (first-save nudge, or permission-revoked recovery) —
-   distinct from the always-on 1-second `autoSave()` debounce that does
-   the continuous real work. No functional change requested here per
-   Decision 1's scope; flag during review if the redundant write itself
-   should be removed rather than just reworded.
+   so it no longer reads as a second "autosave": it should describe the
+   fallback/retry sweep it actually is (first-save nudge, or
+   permission-revoked recovery), distinct from the always-on 1-second
+   `autoSave()` debounce that does the continuous real work. No functional
+   change requested here per Decision 1's scope; flag during review if the
+   redundant write itself should be removed rather than just reworded.
+
+   "Update its identifiers/comments" was too vague to execute against, so
+   the intended split is spelled out (review pass 2026-09-12). **Rename**
+   the internals: `_autoExportTimer`, `setupAutoExportTimer()`,
+   `silentAutoExport()`, `_autoExportIntervalMinutes`,
+   `saveAutoExportIntervalPref()`, `loadAutoExportPrefs()`. **Do not
+   rename** anything that is a persisted key, a DOM id, or a public
+   contract, because each has a compatibility cost that outweighs the
+   clarity gain:
+   - `loadAppState('autoExportIntervalMinutes')` / the `.sav`
+     `appState.autoExportIntervalMinutes` field — renaming this key
+     silently discards every existing user's saved interval preference.
+     Keep the stored key; rename only the variable that holds it.
+   - `#auto-export-reminder`, `#auto-export-reminder-title`,
+     `#auto-export-reminder-text`, `#auto-export-interval-select`, and
+     `data-shell-action="hide-auto-export-reminder"` — referenced from
+     `index.html` and asserted by `tests/e2e/party-dedupe.spec.ts:44` and
+     `tests/e2e/dashboard-visual.spec.ts:43`. Renaming these buys nothing
+     and breaks two unrelated specs.
+   - The user-visible toast copy ("Unsaved Changes" / "Save Your First
+     Backup") is already accurate about what it's telling the filer;
+     leave it alone. The confusing name was only ever internal.
 7. **Rewrite `tests/unit/case-file.spec.js:152-166`** (`'incremental save
    timestamp indicator'`) to drop `recordAutoSaveTimestamp` (deleted per
    Decision 2) and instead assert that a successful `writeCaseToHandle()`

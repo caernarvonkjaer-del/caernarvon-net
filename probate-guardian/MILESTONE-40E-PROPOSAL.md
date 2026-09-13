@@ -154,3 +154,32 @@ lines fully inside the column, for both Annual and Simplified Accounting,
 and that Simplified no longer drops `line4`. This is a narrow,
 self-contained rendering fix; it does not need a full-regression
 recommendation on its own.
+
+**Existing fixtures and coverage gap (review pass 2026-09-12).** Checked
+the current specs directly rather than assuming what's there:
+
+- **Annual already has usable fixtures.**
+  `tests/e2e/pdf-form-specific.spec.ts:245` supplies
+  `{ name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756', line4: 'Room 100' }`
+  — all four fields populated, which is exactly the shape this fix
+  changes. `:467` supplies a `DRIFT_GUARD_*` sentinel row with
+  `line4: ''`. Both assert per-field sentinels rather than a joined
+  string, so **they should keep passing unchanged** — confirm that early,
+  because if either one *does* break, it means something asserts the
+  comma-joined form and the blast radius is wider than this proposal
+  assumes.
+- **Simplified has no equivalent fixture at all**, which is why the
+  dropped `line4` went unnoticed. The data-loss half of this fix is
+  therefore **completely unasserted today**, and adding the array branch
+  alone would not prove it fixed. Add a Simplified Certificate of Service
+  fixture with all of `line2`/`line3`/`line4` populated and assert
+  `line4`'s text is present in the extracted output. Treat that assertion,
+  not the wrapping one, as the regression guard for the data-loss bug —
+  wrapping is visually obvious on inspection, a silently missing address
+  line is not.
+- **Assert absence-of-overflow structurally, not visually.** "Fully inside
+  the column" is not directly observable from extracted text. Either
+  assert the expected line count for the cell (three text runs where one
+  used to be), or assert each component string appears as its own
+  extracted line — not merely that the characters exist somewhere on the
+  page, which was already true when it was overflowing.

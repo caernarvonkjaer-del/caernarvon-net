@@ -28,8 +28,32 @@ independently while reviewing unrelated work (the portfolio UI starter
 kit, and a live PDF export bug report). 40F surfaced from a requested
 review of the autosave feature, which found two complete, independent
 implementations of the same save pipeline silently shadowing each other.
-None of the six depends on any other; there is no required implementation
-order between them.
+
+## Implementation Order and Shared Files
+
+**Correction (review pass 2026-09-12):** this section previously stated
+"None of the six depends on any other; there is no required
+implementation order between them." That is wrong — a task-by-task review
+found four places where two deliveries edit the same file, and in three of
+them the order changes how much work the second one is. No delivery
+*blocks* another, so any of them can still be approved and implemented
+alone; but whoever implements second needs to expect these.
+
+| Shared file | Deliveries | Interaction | Recommended order |
+| --- | --- | --- | --- |
+| `src/core/docx/docx-engine.js` | 40A, 40C | 40C Task 40C-A item 6 removes the Pinellas caption fallback at `docx-engine.js:350`; 40A **deletes the whole file**. | **40A first** — then 40C's docx half is moot, and 40C should confirm which order actually landed rather than assume (it already says so). |
+| `tests/unit/plan-readiness-county.spec.js` | 40A, 40C | 40A must remove this spec's `vi.mock('.../docx-engine.js')` at `:25`; 40C rewrites its readiness assertions. | Either, but expect a conflict in this file and reconcile rather than overwrite. |
+| `buildCaseFileBlob()`'s `appStateBlob` — `src/core/persistence/case-file.js:188-197` | 40D, 40F | 40D stops serializing `theme` (`:189`); 40F changes the `lastExportAt` read (`:195`). Two lines apart in one object literal. Separately, 40F deletes `legacy-app.js`'s dead duplicate `buildCaseFileBlob()` (`:3066`), which carries its own `theme` line. | **40F first** — it removes one of 40D's seven theme sites for free. Otherwise 40D must edit both copies to avoid leaving one migrated and one not. |
+| `src/core/pdf/pdf-engine.js` | 40C, 40E | 40C edits the county caption fallback (`:166`); 40E adds an array branch to `measureCell()` (`:1143`). Different functions, ~1000 lines apart. | Either. Lowest-risk pairing in the set — noted only so a merge conflict in this file isn't mistaken for a scope collision. |
+
+One ordering consequence worth stating plainly: **40A before 40C, and 40F
+before 40D**, is the sequence that minimizes total work. The
+risk-ascending sequence recommended for a single continuous
+implementation pass — 40E → 40D → 40A → 40C → 40F — does *not* satisfy
+either of those. Pick one objective or the other deliberately rather than
+discovering the tension mid-pass; if the deliveries are implemented one at
+a time over separate sessions (the likelier case), the shared-file column
+above is what matters and the global sequence does not.
 
 ## Approval
 
