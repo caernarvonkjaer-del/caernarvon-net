@@ -2,10 +2,9 @@
 
 ## Status
 
-**Part 1 landed 2026-09-13. Part 2 (Steps 4 and 6) is blocked on Milestone
-40G — see below.** The correctness work and the crash fix are implemented,
-tested, and pushed. The dead-code deletion is not, for a reason discovered
-at implementation time.
+**Landed in full, 2026-09-13.** Part 1 (the crash fix and correctness work,
+plus the Tauri removal) shipped first; Steps 4 and 6 followed once Milestone
+40G removed the boot-ordering obstacle that Part 1 discovered.
 
 ### What landed
 
@@ -55,7 +54,47 @@ auto-unlock on a manual Lock, so it and the `ensureUnlocked(true)` call site
 are gone; and the encryption-at-rest header comment no longer describes an
 OS-credential-store recovery path that does not exist.
 
-### Why Steps 4 and 6 are deferred — a dependency this proposal had wrong
+### Steps 4 and 6 landed after Milestone 40G (2026-09-13)
+
+With startup driven from `main.js`, every boot-path call resolves to
+`case-file.js`, so the legacy duplicates were finally safe to remove.
+**32 duplicate functions, 18 orphaned `window.*` re-exports, and 7 dead
+private declarations deleted from `legacy-app.js` — net −640 lines.**
+Bare calls in surviving legacy code (e.g. `saveData()`'s
+`loadCaseFileHandle()`/`writeCaseToHandle()`) now resolve through the global
+object to `case-file.js`'s versions, which is the intended bridge and is
+what Decision 1 described.
+
+Two state declarations were **deliberately kept**, and are not leftovers:
+`_lastExportAt` and `_autoExportIntervalMinutes`, with their
+`Object.defineProperty` accessors. They are the window-backed shared store
+that `case-file.js` reads and writes through, and `loadCaseFileFromZip()`
+still writes them when a `.sav` is opened. Deleting them would silently
+change which value reaches the `.sav` manifest. The comment there now says
+so, so a later reader does not "finish the job" by mistake.
+
+**Step 6 turned out to be mostly undoable as written, and turned up another
+bug.** The functions it proposed renaming — `setupAutoExportTimer`,
+`silentAutoExport`, `loadAutoExportPrefs`, `saveAutoExportIntervalPref` —
+are all reached through `window` by `initApp()` or by
+`shell-events.js:61`, which Step 6's own constraint (do not rename public
+contracts, DOM ids, or persisted keys) rules out. What was safely renameable
+was one private variable (`_autoExportTimer` → `_saveRetrySweepTimer`), so
+the clarity work is now carried by comments stating plainly that this is a
+sparse retry-and-nudge sweep, not a second autosave engine.
+
+While renaming it, found that **both of these timers were no-ops even once
+40G let them be installed** — the same defect class this whole milestone is
+about. `setupAutoExportTimer`'s callback and `setupFallbackSaveReminder`'s
+both read the module-private `_dirtySinceExport` rather than
+`isDirtySinceExport()`. `legacy-app.js` never updates that private copy — it
+assigns its own variable, which this module sees only through the window
+accessor — so the private copy was effectively always false. The periodic
+sweep therefore never retried a save, and the 15-minute fallback modal never
+appeared for the browsers that need it most (no File System Access API means
+no background save at all). Both now use the accessor.
+
+### Why Steps 4 and 6 were originally deferred — a dependency this proposal had wrong
 
 This document states that 40F and 40G "can be implemented in either
 order." **That is false for Step 4.** `initApp()` calls four of the

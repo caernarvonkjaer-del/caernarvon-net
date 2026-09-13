@@ -24,7 +24,7 @@ let _caseFileHandle = null;
 let _autoSaveArmed = false;
 let _autoExportIntervalMinutes = 10;
 let _lastExportAt = null;
-let _autoExportTimer = null;
+let _saveRetrySweepTimer = null;
 let _lastSavedTickTimer = null;
 let _fallbackReminderTimer = null;
 let _dirtySinceExport = false;
@@ -576,14 +576,27 @@ export async function saveAutoExportIntervalPref(minutes) {
   setupAutoExportTimer();
 }
 
+// Despite the name, this is NOT a second autosave engine. The real autosave
+// is legacy-app.js's 1-second debounce, which writes after every edit. This is
+// a sparse retry-and-nudge sweep: it only does anything when the debounce
+// could NOT write -- no handle established yet, or write permission revoked --
+// in which case it retries once and otherwise raises the reminder toast. The
+// exported name is kept because initApp() and the interval <select> both
+// reach it through window; only the internals are renamed.
+//
+// It read the module-private _dirtySinceExport here, which legacy-app.js never
+// updates (it assigns its own variable, which this module sees only through
+// the window accessor), so the private copy was effectively always false and
+// this callback returned early every time -- the sweep never retried anything.
+// isDirtySinceExport() reads the shared value.
 export function setupAutoExportTimer() {
-  if (_autoExportTimer) {
-    clearInterval(_autoExportTimer);
-    _autoExportTimer = null;
+  if (_saveRetrySweepTimer) {
+    clearInterval(_saveRetrySweepTimer);
+    _saveRetrySweepTimer = null;
   }
   if (!_autoExportIntervalMinutes) return;
-  _autoExportTimer = setInterval(async () => {
-    if (!_dirtySinceExport) return;
+  _saveRetrySweepTimer = setInterval(async () => {
+    if (!isDirtySinceExport()) return;
     const savedSilently = await silentAutoExport();
     if (!savedSilently) showAutoExportReminder();
   }, _autoExportIntervalMinutes * 60 * 1000);
@@ -598,7 +611,10 @@ export function setupFallbackSaveReminder() {
   if (typeof window !== 'undefined' && window.showSaveFilePicker) return;
   if (_fallbackReminderTimer) clearInterval(_fallbackReminderTimer);
   _fallbackReminderTimer = setInterval(() => {
-    if (_dirtySinceExport && typeof window.showModal === 'function') {
+    // Same fix as the sweep above: the private copy is never updated by
+    // legacy-app.js, so this modal never appeared for the browsers that need
+    // it most (no File System Access API means no background save at all).
+    if (isDirtySinceExport() && typeof window.showModal === 'function') {
       window.showModal('fallbackSaveModal');
     }
   }, 15 * 60 * 1000);

@@ -966,8 +966,12 @@ try {
 function getCurrentPage(){return currentPage;}
 let _visitedPages = new Set(); // Track which pages user has visited
 let _dirtySinceExport = false; // true once data changes after the last .sav export
-let _autoExportTimer = null;
-let _lastSavedTickTimer = null;
+// These two are NOT leftover duplicates of case-file.js's module state: they
+// are the window-backed shared store that case-file.js reads and writes
+// through (window._autoExportIntervalMinutes, window._lastExportAt, via the
+// accessors below), and loadCaseFileFromZip() below still writes them when a
+// .sav is opened. The timers that used to live here alongside them are gone
+// with the duplicate implementations that owned them.
 let _autoExportIntervalMinutes = 10; // 0 means Off; loaded from/saved to appState
 let _lastExportAt = null; // ms epoch of last successful export, or null if never
 try {
@@ -2826,8 +2830,7 @@ function markContinuePromptShown(){
 }
 window.markContinuePromptShown=markContinuePromptShown;
 
-function markDirtySinceExport(){ _dirtySinceExport=true; notifyProbateGuardianTabStateChanged(); }
-window.markDirtySinceExport=markDirtySinceExport;
+
 
 // ═══════════════════════════════════════════════════════
 // EXPORT / IMPORT — guardianshipwarddata.sav
@@ -2857,223 +2860,21 @@ async function decryptJSONWithKey(packed,key){
 // Returns the FileSystemFileHandle used (so it can be remembered for silent
 // re-writes later), or null when falling back to a plain Downloads-folder
 // download (no handle exists in that path).
-async function saveBlobAs(blob,suggestedName,preWriteValidator){
-  if(window.showSaveFilePicker){
-    try{
-      const handle=await showSaveFilePicker({
-        suggestedName,
-        types:[{description:'Probate Guardian data file',accept:{'application/octet-stream':['.sav']}}]
-      });
-      if(typeof preWriteValidator==='function'){
-        const proceed=await preWriteValidator(handle);
-        if(!proceed){
-          const abortErr=new Error('The user aborted a request.');
-          abortErr.name='AbortError';
-          throw abortErr;
-        }
-      }
-      const writable=await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return handle;
-    }catch(e){
-      if(e&&e.name==='AbortError')throw e; // user cancelled Save As or refused preWriteValidator
-      // Some embedded/webview browser contexts (e.g. VS Code's Simple Browser)
-      // let showSaveFilePicker resolve but then refuse createWritable's actual
-      // write permission. Fall back to a plain Downloads-folder download
-      // instead of failing the export outright.
-      console.warn('showSaveFilePicker/createWritable unavailable in this context, falling back to download link',e);
-    }
-  }
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=suggestedName;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),4000);
-  return null;
-}
 
-// The one active handle for the whole case file lives in memory and is
-// persisted to IndexedDB (pg-launch-pref). There is exactly one handle now --
-// no more per-ward-vs-archive distinction, so there is nothing that can end
-// up "split" across two files the way a per-ward handle used to.
-let _caseFileHandle=null;
-try {
-  Object.defineProperty(window, '_caseFileHandle', {
-    get: () => _caseFileHandle,
-    set: (v) => { _caseFileHandle = v; },
-    configurable: true
-  });
-} catch (_) {}
 
-async function rememberCaseFileHandle(handle){
-  if(!handle)return;
-  // Record the file's actual on-disk name so a later Save-As (handle lost,
-  // permission revoked, or no File System Access API support at all) can
-  // default back to THIS name instead of a generic one.
-  if(handle.name)caseFile.lastSavedFileName=handle.name;
-  _caseFileHandle=handle;
-  await savePersistedCaseFileHandle(handle);
-  await refreshAutoSaveArmedStatus();
-}
+// The case-file handle, the armed-status flag and the format version all
+// moved to src/core/persistence/case-file.js with the functions that owned
+// them. case-file.js keeps window._caseFileHandle in sync itself, so nothing
+// here needs a local copy.
 
-// The name to default a Save-As dialog (or the auto-save status readout) to.
-// Prefers the name this case was ACTUALLY last saved under over a generic
-// default, which only ever applies the very first time this case is saved.
-function suggestedCaseFileName(){
-  return (caseFile&&caseFile.lastSavedFileName)||'guardianshipwarddata.sav';
-}
-window.suggestedCaseFileName=suggestedCaseFileName;
 
-async function loadCaseFileHandle(){
-  if(_caseFileHandle)return _caseFileHandle;
-  const handle=await loadPersistedCaseFileHandle();
-  if(handle){
-    _caseFileHandle=handle;
-    return handle;
-  }
-  return null;
-}
-
-async function forgetCaseFileHandle(){
-  _caseFileHandle=null;
-  await forgetPersistedCaseFileHandle();
-  await refreshAutoSaveArmedStatus();
-}
-
-// True when a background write can happen with no user interaction: a file
-// handle is known AND the browser still grants write permission on it.
-let _autoSaveArmed=false;
-async function refreshAutoSaveArmedStatus(){
-  let armed=false;
-  let handle=null;
-  try{
-    handle=await loadCaseFileHandle();
-    if(handle&&handle.queryPermission){
-      armed=(await handle.queryPermission({mode:'readwrite'}))==='granted';
-    }
-  }catch(e){/* treat as not armed */}
-  _autoSaveArmed=armed;
-  const el=document.getElementById('auto-save-armed-indicator');
-  if(el){
-    const fileName=handle&&handle.name;
-    if(armed){
-      el.textContent=fileName?`Auto-save: ready ✓ (${fileName})`:'Auto-save: ready ✓';
-      el.style.color='var(--ok-text)';
-    }else if(handle){
-      el.textContent=`Auto-save: click Save Backup once to re-enable (${fileName})`;
-      el.style.color='var(--warn-text)';
-    }else if(window.showSaveFilePicker){
-      el.textContent=`Auto-save: needs manual save (${suggestedCaseFileName()})`;
-      el.style.color='var(--ink-3)';
-    }else{
-      // Firefox/Safari: there is no writable handle this browser can grant at
-      // all, ever — say so plainly instead of implying one manual save away.
-      el.textContent='Auto-save: not available in this browser — use Save/Export before closing this tab';
-      el.style.color='var(--warn-text)';
-    }
-  }
-}
-
-// Version 1 of the unified case-file format: one .sav file for the whole
-// case (all wards, guardian info, app state, templates, and audit log).
-// Replaces the old three-way archive/ward/backup split entirely -- there is
-// exactly one shape now, so readers don't need to infer or branch on a
-// "kind" field the way the old versions did.
-const CASE_FILE_FORMAT_VERSION=1;
-
-async function buildCaseFileBlob(){
-  // Cancel (not flush) any pending debounce: caseFile/_appState/etc. are
-  // already the live, current, in-memory state by the time this runs —
-  // there is nothing separate to flush INTO memory. flushPendingSave()
-  // would call saveData(), which calls writeCaseToHandle(), which calls
-  // back into this very function — an infinite loop. Clearing the timer
-  // directly just avoids a redundant follow-up write a moment later.
-  if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;}
-  // The salt is embedded so the file is portable to a fresh install: it's
-  // needed (along with the password) to re-derive the key there. A salt is
-  // not a secret — 'none'-mode installs never generate one, hence the null.
-  const salt=(await loadAppState('cryptoSalt'))||null;
-  const verifier=(await loadAppState('cryptoVerifier'))||null;
-  const zip=new JSZip();
-  const wardIndex=[];
-  for(const ward of caseFile.wards){
-    const file=`wards/${ward.wardId}.enc`;
-    zip.file(file,await encryptJSON(ward));
-    wardIndex.push({wardId:ward.wardId,wardName:ward.wardName||'',file});
-  }
-  const appStateBlob={
-    activeWardId:caseFile.activeWardId,
-    theme:await loadAppState('theme'),
-    walkthroughCompleted:await loadAppState('walkthroughCompleted'),
-    firstLaunchSeen:await loadAppState('firstLaunchSeen'),
-    continuePromptShown:await loadAppState('continuePromptShown'),
-    recentWards:await loadAppState('recentWards'),
-    autoExportIntervalMinutes:_autoExportIntervalMinutes,
-    lastExportAt:_lastExportAt,
-    unlockFailState:await loadAppState('unlockFailState')
-  };
-  const templateTypes=Object.keys(_templateCache).filter(t=>_templateCache[t]);
-  for(const type of templateTypes){
-    zip.file(`templates/${type}.b64`,_templateCache[type]);
-  }
-  // Encrypted here even though it's kept plain in memory (see
-  // appendAuditLogEntry()'s comment) — this app actively encourages emailing
-  // and copying the .sav file around, and entries can carry a ward's real
-  // name. A key is always available by the time a real save reaches this
-  // point (or securityMode is 'none', in which case encryptJSON's PLAIN:
-  // prefix applies here exactly as it does to every other field).
-  zip.file('auditLog.enc',await encryptJSON(_auditLogEntries));
-  zip.file('parties.enc',await encryptJSON(caseFile.parties||[]));
-  zip.file('cases.enc',await encryptJSON(caseFile.cases||[]));
-  zip.file('partyDismissals.enc',await encryptJSON(caseFile.dismissedPartyPairs||[]));
-  zip.file('manifest.json',JSON.stringify({
-    format:'probate-guardian-case',
-    version:CASE_FILE_FORMAT_VERSION,
-    exportedAt:new Date().toISOString(),
-    securityMode:_securityMode,
-    salt,
-    verifier,
-    guardian:await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail}),
-    appState:await encryptJSON(appStateBlob),
-    templates:templateTypes,
-    wards:wardIndex
-  },null,2));
-  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
-  return {blob,count:wardIndex.length};
-}
 
 // Builds a small standalone case-file-shaped ZIP containing just one ward --
 // for sharing a copy with a co-guardian or attorney without exposing the
 // rest of the case. Shaped exactly like buildCaseFileBlob()'s output (same
 // manifest format/version), just filtered to one ward, so it imports the
 // same way any case file does -- there's no separate "single ward" format.
-async function buildSingleWardExportBlob(wardId){
-  const ward=caseFile.wards.find(w=>w.wardId===wardId);
-  if(!ward)throw new Error(`buildSingleWardExportBlob: ward "${wardId}" not found`);
-  const salt=(await loadAppState('cryptoSalt'))||null;
-  const verifier=(await loadAppState('cryptoVerifier'))||null;
-  const zip=new JSZip();
-  zip.file(`wards/${ward.wardId}.enc`,await encryptJSON(ward));
-  // Only include audit entries tagged with this ward's id -- a single-ward
-  // export is a copy for someone else, not a complete provenance record.
-  const wardAuditEntries=_auditLogEntries.filter(e=>e&&e.wardId===wardId);
-  zip.file('auditLog.enc',await encryptJSON(wardAuditEntries));
-  zip.file('manifest.json',JSON.stringify({
-    format:'probate-guardian-case',
-    version:CASE_FILE_FORMAT_VERSION,
-    exportedAt:new Date().toISOString(),
-    securityMode:_securityMode,
-    salt,
-    verifier,
-    guardian:await encryptJSON({guardianName:caseFile.guardianName,guardianEmail:caseFile.guardianEmail}),
-    templates:[],
-    wards:[{wardId:ward.wardId,wardName:ward.wardName||'',file:`wards/${ward.wardId}.enc`}]
-  },null,2));
-  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
-  return blob;
-}
-window.buildSingleWardExportBlob = buildSingleWardExportBlob;
+
 
 // "3 minutes ago" / "2 hours ago" / "5 days ago" style relative timestamp.
 function formatRelativeTime(ts){
@@ -3094,23 +2895,7 @@ function formatRelativeTime(ts){
 // the periodic save timer, the last-saved ticker, the fallback save
 // reminder, drag-and-drop import, and the beforeunload unsaved-changes
 // warning. One clock (_lastExportAt), written only on a confirmed save.
-function updateLastSavedIndicator(){
-  const el=document.getElementById('last-saved-indicator');
-  if(!el)return;
-  const lastExport = (typeof window !== 'undefined' && window._lastExportAt !== undefined) ? window._lastExportAt : _lastExportAt;
-  const lastSave = lastExport || 0;
 
-  if(_dirtySinceExport && !lastSave){
-    el.textContent='● Unsaved changes';
-    el.style.color='var(--warn-text)';
-  }else if(lastSave){
-    el.textContent=`✓ Last backup: ${formatRelativeTime(lastSave)}`;
-    el.style.color='var(--ok-text)';
-  }else{
-    el.textContent='No backup saved yet';
-    el.style.color='var(--ink-3)';
-  }
-}
 
 // Records this save's timestamp and audit entry BEFORE the save itself
 // happens, so the file this save produces contains its own record of
@@ -3120,476 +2905,83 @@ function updateLastSavedIndicator(){
 // written a moment earlier never got it, and there was no session left to
 // write it in a later save. Returns a rollback closure, used if the write
 // that follows fails, so a failed save is never recorded as having succeeded.
-async function beginRecordingExport(message, wardId = null){
-  const previousLastExportAt=_lastExportAt;
-  const auditLenBefore=_auditLogEntries.length;
-  _lastExportAt=Date.now();
-  _appState.lastExportAt=_lastExportAt;
-  await auditLog('DATA_EXPORT',message,true,wardId);
-  return function rollback(){
-    _lastExportAt=previousLastExportAt;
-    _appState.lastExportAt=previousLastExportAt;
-    _auditLogEntries.length=auditLenBefore; // no-op if auditLog() went to Tauri instead of the local array
-  };
-}
-window.beginRecordingExport = beginRecordingExport;
+
 
 // Manual "Save Backup Now" / "Export All" action: builds the whole case file
 // and writes it via Save-As, remembering the resulting handle so future
 // changes can auto-save to it silently. One case, one file, one handle --
 // there is no longer a separate "single ward" vs "whole archive" choice to
 // make here the way there used to be.
-async function exportCaseFileZip(){
-  if(!caseFile.wards||caseFile.wards.length===0){
-    alert('No wards to back up. Please add or open a ward first.');
-    return;
-  }
-  if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot export.');return;}
-  const count=caseFile.wards.length;
-  let rollback=null;
-  try{
-    rollback=await beginRecordingExport(`Exported ${count} form(s) to backup file`);
-    const {blob}=await buildCaseFileBlob();
-    const suggestedName=suggestedCaseFileName();
-    const handle=await saveBlobAs(blob,suggestedName);
-    if(handle){
-      await rememberCaseFileHandle(handle);
-      clearSessionRestoreCache(); // only discard cache when file landing is verified via handle
-      // A real handle exists to reconnect to next launch -- the fast-path
-      // Open screen only makes sense once that's true. A browser with no
-      // File System Access API (Firefox/Safari) falls back to a plain
-      // download with no handle at all, so there's nothing to fast-path to.
-      markCaseOpenedBefore();
-    }
-    _dirtySinceExport=false;
-    hideAutoExportReminder();
-    updateLastSavedIndicator();
-    notifyProbateGuardianTabStateChanged();
-    const savedName=handle?handle.name:suggestedName;
-    window.dispatchEvent(new CustomEvent('pg:backup-saved', { detail: { fileName: savedName, count } }));
-    alert(`Backup complete: ${count} form(s) saved to ${savedName}`);
-  }catch(e){
-    if(rollback)rollback();
-    if(e&&e.name==='AbortError')return; // user cancelled the Save As dialog
-    console.error('export failed',e);
-    auditLog('DATA_EXPORT',String(e&&e.message||e),false);
-    alert('Export failed: '+(e&&e.message||e));
-  }
-}
-window.exportCaseFileZip = exportCaseFileZip;
+
 // exportGuardianDataZip/backupAllWardsNow used to be two different exports
 // (a "wards + guardian" archive vs a "full case" backup); under the unified
 // model they're the same operation. Kept as aliases so existing UI markup
 // and fragments calling either name keep working unchanged.
-window.exportGuardianDataZip = exportCaseFileZip;
-window.backupAllWardsNow = exportCaseFileZip;
 
 // Writes the whole case to an already-authorized handle. Used by auto-save,
 // the periodic background timer, and the Save Backup button.
-async function writeCaseToHandle(handle,viaTimer){
-  const count=caseFile.wards.length;
-  const message=viaTimer?`Auto-saved ${count} form(s) in the background`:`Saved ${count} form(s) to existing backup file`;
-  const rollback=await beginRecordingExport(message);
-  try{
-    const {blob}=await buildCaseFileBlob();
-    const writable=await handle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-  }catch(e){
-    rollback();
-    throw e;
-  }
-  _dirtySinceExport=false;
-  clearSessionRestoreCache(); // this state is now safely in a .sav file
-  hideAutoExportReminder();
-  await refreshAutoSaveArmedStatus();
-  updateLastSavedIndicator();
-  notifyProbateGuardianTabStateChanged();
-  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-    detail: { fileName: handle.name, count, viaTimer: !!viaTimer }
-  }));
-  return count;
-}
+
 
 // Tries to silently re-write the remembered case-file handle — no dialog,
 // no user gesture needed, as long as the browser still grants write
 // permission.
-async function silentAutoExport(){
-  try{
-    if(typeof JSZip==='undefined')return false;
-    const handle=await loadCaseFileHandle();
-    if(!handle)return false;
-    const perm=await handle.queryPermission({mode:'readwrite'});
-    if(perm!=='granted'){await refreshAutoSaveArmedStatus();return false;}
-    await writeCaseToHandle(handle,true);
-    return true;
-  }catch(e){
-    console.warn('Silent auto-export failed, will show reminder instead',e);
-    await refreshAutoSaveArmedStatus();
-    return false;
-  }
-}
+
 
 // Filename helpers retained for the single-ward "share a copy" export below
 // (dashboard's exportSingleWardZip) -- the primary save file no longer has
 // a per-ward name to compute, but a one-off exported copy of just one ward
 // still benefits from a name derived from that ward rather than a generic one.
-function getWardFileStem(ward){
-  const namePart=(ward&&ward.wardName||'Ward').trim().replace(/[\s_]+/g,'-').replace(/[^a-zA-Z0-9-]/g,'')||'Ward';
-  const casePart=(ward&&ward.caseNumber||'').trim().replace(/[\s_]+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
-  return casePart ? `${namePart}-${casePart}-guardianshipwarddata` : `${namePart}-guardianshipwarddata`;
-}
-function getWardFileName(ward){
-  return `${getWardFileStem(ward)}.sav`;
-}
-window.getWardFileStem = getWardFileStem;
-window.getWardFileName = getWardFileName;
+
+
 
 // Guards a single-ward "share a copy" export from accidentally overwriting
 // the real multi-ward case file -- a single-ward export is shaped exactly
 // like a (one-ward) case file now, so picking the same location as the
 // real case file and confirming the browser's native overwrite prompt would
 // otherwise silently drop every other ward.
-async function validateWardBackupOverwrite(pickedHandle){
-  const caseHandle=await loadCaseFileHandle();
-  if(caseHandle&&typeof pickedHandle.isSameEntry==='function'){
-    try{
-      if(await pickedHandle.isSameEntry(caseHandle)&&caseFile.wards.length>1){
-        return confirm('Warning: You selected your main case file, which holds multiple wards. Overwriting it with just this one ward will replace the other wards on disk. Are you sure you want to overwrite?');
-      }
-    }catch(e){/* non-critical */}
-  }
-  return true;
-}
-window.validateWardBackupOverwrite = validateWardBackupOverwrite;
+
 
 // Finishes a single-ward "share a copy" export. Deliberately does NOT touch
 // the case file's own handle/dirty state -- exporting a copy of one ward
 // for someone else has nothing to do with where THIS app instance's own
 // autosave writes to, unlike the old per-ward-file model where the two were
 // the same thing.
-function finishSingleWardExport(handle, ward){
-  window.dispatchEvent(new CustomEvent('pg:backup-saved', {
-    detail: {
-      fileName: handle ? handle.name : (ward ? getWardFileName(ward) : 'ward.sav'),
-      wardId: ward && ward.wardId,
-      kind: 'ward-export'
-    }
-  }));
-}
-window.finishSingleWardExport = finishSingleWardExport;
+
 
 // The banner's Save Backup Now button. Runs inside a click, so a user
 // gesture is available: re-authorizes the case file's handle with one small
 // prompt, or falls back to a full Save As.
-async function saveBackupNow(){
-  try{
-    const handle=await loadCaseFileHandle();
-    if(handle&&handle.requestPermission){
-      const perm=await handle.requestPermission({mode:'readwrite'});
-      if(perm==='granted'){
-        await writeCaseToHandle(handle,false);
-        alert('Backup saved.');
-        return;
-      }
-    }
-  }catch(e){
-    console.warn('Reusing remembered case file failed',e);
-  }
-  await exportCaseFileZip();
-}
 
-function showAutoExportReminder(firstTime){
-  const el=document.getElementById('auto-export-reminder');
-  const titleEl=document.getElementById('auto-export-reminder-title');
-  const textEl=document.getElementById('auto-export-reminder-text');
-  if(titleEl&&textEl){
-    if(firstTime){
-      titleEl.textContent='Save Your First Backup';
-      textEl.textContent="It only takes a moment, and protects your case's data if something happens to this browser.";
-    }else{
-      titleEl.textContent='Unsaved Changes';
-      textEl.textContent='You have changes since your last backup file.';
-    }
-  }
-  if(el)el.style.display='flex';
-}
-function hideAutoExportReminder(){
-  const el=document.getElementById('auto-export-reminder');
-  if(el)el.style.display='none';
-}
 
-async function loadAutoExportPrefs(){
-  try{
-    const savedMinutes=await loadAppState('autoExportIntervalMinutes');
-    _autoExportIntervalMinutes=(savedMinutes===null||savedMinutes===undefined)?10:Number(savedMinutes);
-    const savedLast=await loadAppState('lastExportAt');
-    _lastExportAt=savedLast?Number(savedLast):null;
-  }catch(e){console.warn('Could not load auto-export preferences',e);}
-  const sel=document.getElementById('auto-export-interval-select');
-  if(sel)sel.value=String(_autoExportIntervalMinutes);
-  updateLastSavedIndicator();
-  refreshAutoSaveArmedStatus();
-}
 
-async function saveAutoExportIntervalPref(minutes){
-  _autoExportIntervalMinutes=minutes;
-  try{await saveAppState('autoExportIntervalMinutes',minutes);}catch(e){/* non-critical */}
-  setupAutoExportTimer();
-}
 
-function setupAutoExportTimer(){
-  if(_autoExportTimer){clearInterval(_autoExportTimer);_autoExportTimer=null;}
-  if(!_autoExportIntervalMinutes)return; // 0 = user turned auto-save off
-  _autoExportTimer=setInterval(async()=>{
-    if(!_dirtySinceExport)return;
-    const savedSilently=await silentAutoExport();
-    if(!savedSilently)showAutoExportReminder();
-  },_autoExportIntervalMinutes*60*1000);
-}
 
-function setupLastSavedTicker(){
-  if(_lastSavedTickTimer)clearInterval(_lastSavedTickTimer);
-  _lastSavedTickTimer=setInterval(updateLastSavedIndicator,30*1000);
-}
 
-// Browsers without writable file handles cannot background-save a .sav file,
-// so show a stronger reminder every 15 minutes while changes are dirty.
-let _fallbackReminderTimer=null;
-function showFallbackSaveModal(){showModal('fallbackSaveModal');}
-function setupFallbackSaveReminder(){
-  if(window.showSaveFilePicker)return; // Chrome/Edge — real autosave covers this
-  if(_fallbackReminderTimer)clearInterval(_fallbackReminderTimer);
-  _fallbackReminderTimer=setInterval(()=>{
-    if(_dirtySinceExport)showFallbackSaveModal();
-  },15*60*1000);
-}
+
+
+
+
+
+
+
+
 
 // Tries showOpenFilePicker() first so opening a case file this way arms a
 // writable save handle (same as triggerOpenBackupSav()) -- without this,
 // autoSave() has nothing to write to, and the first edit after opening
 // forces an unexpected manual "Save As" with a freshly-generated filename
 // instead of the file that was actually opened.
-async function triggerImportZip(){
-  if(window.showOpenFilePicker){
-    try{
-      const [handle]=await window.showOpenFilePicker({
-        types:[{description:'Probate Guardian case file (.sav)',accept:{'application/octet-stream':['.sav','.zip']}}]
-      });
-      const file=await handle.getFile();
-      await importSavArchiveOrWard(file,{handle,isBackupFlow:false});
-      return;
-    }catch(e){
-      if(e&&e.name==='AbortError')return;
-      console.warn('showOpenFilePicker failed or cancelled, falling back to input',e);
-    }
-  }
-  const inp=document.getElementById('zip-import-input');
-  if(inp){inp.value='';inp.click();}
-}
 
-async function importSavArchiveOrWard(file, options = {}){
-  const { handle = null, isBackupFlow = false } = options;
-  try{
-    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot import.');return false;}
-    const check=await validateImportFile(file,'sav');
-    if(!check.ok){alert(check.message);return false;}
-    if(_securityMode==='encrypted'&&!_cryptoKey){alert('Please unlock the app before importing a data file.');return false;}
-    const zip=await JSZip.loadAsync(file);
-    const manifestEntry=zip.file('manifest.json');
-    if(!manifestEntry)throw new Error('Not a Probate Guardian data file (no manifest.json inside).');
-    const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-case')throw new Error('Not a Probate Guardian data file.');
 
-    // Same install (same salt) → current key works. Different install →
-    // ask for the password the file was exported under and re-derive.
-    const currentSalt=await loadAppState('cryptoSalt');
-    let key=_cryptoKey;
-    if(manifest.securityMode!=='none'&&manifest.salt!==currentSalt){
-      const pw=prompt('This file came from a different installation.\nEnter the master password that was in use when it was exported:');
-      if(!pw)return false;
-      key=await deriveKeyFromPassword(pw,manifest.salt);
-    }
 
-    let guardianInfo=null;
-    if(manifest.guardian){
-      try{
-        guardianInfo=await decryptJSONWithKey(manifest.guardian,key);
-      }catch(e){
-        throw new Error('Wrong password for this file, or the file has been modified/corrupted.');
-      }
-    }
 
-    // One shape now regardless of whether the file holds one ward (e.g. a
-    // single-ward export) or many -- wards[] just has one entry in that case.
-    const imported=[];
-    for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
-      const f=zip.file(entry.file);
-      if(!f){console.warn('Case file entry missing:',entry.file);continue;}
-      let ward;
-      try{
-        ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
-      }catch(err){
-        throw new Error(`The file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
-      }
-      if(ward&&ward.wardId)imported.push(ward);
-    }
-    // Parties/cases the imported wards' FKs point at -- absent from a
-    // single-ward export (which never includes them, see
-    // buildSingleWardExportBlob), present on a full backup (buildCaseFileBlob).
-    // Merged by id (fresh crypto.randomUUID()s, so an id collision across
-    // independently-created installs is not a real risk) so the imported
-    // wards' wardPartyId/attorneyPartyId/caseId etc. keep resolving.
-    let importedParties=[],importedCases=[];
-    const importedPartiesFile=zip.file('parties.enc');
-    if(importedPartiesFile){
-      try{
-        const p=await decryptJSONWithKey(await importedPartiesFile.async('string'),key);
-        if(Array.isArray(p))importedParties=p;
-      }catch(e){console.warn('Could not read parties from imported file',e);}
-    }
-    const importedCasesFile=zip.file('cases.enc');
-    if(importedCasesFile){
-      try{
-        const c=await decryptJSONWithKey(await importedCasesFile.async('string'),key);
-        if(Array.isArray(c))importedCases=c;
-      }catch(e){console.warn('Could not read cases from imported file',e);}
-    }
-    let importedPartyDismissals=[];
-    const importedPartyDismissalsFile=zip.file('partyDismissals.enc');
-    if(importedPartyDismissalsFile){
-      try{
-        const d=await decryptJSONWithKey(await importedPartyDismissalsFile.async('string'),key);
-        if(Array.isArray(d))importedPartyDismissals=d;
-      }catch(e){console.warn('Could not read party dismissals from imported file',e);}
-    }
-    if(!imported.length&&!guardianInfo)throw new Error('File contained no readable data.');
 
-    const replacing=imported.filter(w=>caseFile.wards.some(x=>x.wardId===w.wardId)).length;
-    const adding=imported.length-replacing;
-    const promptText = isBackupFlow
-      ? (caseFile.wards.length===0
-          ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
-          : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`)
-      : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
-    if(!confirm(promptText))return false;
 
-    // Flush BEFORE swapping array entries so in-progress edits save under the
-    // old objects and can't overwrite freshly imported data afterwards.
-    await flushPendingSave();
 
-    // Stage updates into a new array atomically before assigning
-    const nextWards=[...caseFile.wards];
-    for(const ward of imported){
-      const idx=nextWards.findIndex(x=>x.wardId===ward.wardId);
-      if(idx>=0)nextWards[idx]=ward;else nextWards.push(ward);
-    }
-    caseFile.wards=nextWards;
 
-    if(!Array.isArray(caseFile.parties))caseFile.parties=[];
-    for(const party of importedParties){
-      if(party&&party.id&&!caseFile.parties.some(p=>p.id===party.id))caseFile.parties.push(party);
-    }
-    if(!Array.isArray(caseFile.cases))caseFile.cases=[];
-    for(const c of importedCases){
-      if(c&&c.id&&!caseFile.cases.some(x=>x.id===c.id))caseFile.cases.push(c);
-    }
-    if(!Array.isArray(caseFile.dismissedPartyPairs))caseFile.dismissedPartyPairs=[];
-    for(const pair of importedPartyDismissals){
-      if(Array.isArray(pair)&&!caseFile.dismissedPartyPairs.some(p=>p[0]===pair[0]&&p[1]===pair[1]))caseFile.dismissedPartyPairs.push(pair);
-    }
 
-    for(const ward of imported){
-      await saveWardToState(ward);
-    }
-    if(guardianInfo&&guardianInfo.guardianName)caseFile.guardianName=guardianInfo.guardianName;
-    if(guardianInfo&&guardianInfo.guardianEmail)caseFile.guardianEmail=guardianInfo.guardianEmail;
-    await saveData();
 
-    // window.D references an object in caseFile.wards; rebind via switchWard
-    // so open forms stay synchronized to the newly imported object and the
-    // cross-tab exclusive lock (activateWard / Web Locks API) is acquired properly.
-    if(caseFile.activeWardId&&caseFile.wards.some(w=>w.wardId===caseFile.activeWardId)){
-      await switchWard(caseFile.activeWardId);
-    }else if(caseFile.wards.length){
-      await switchWard(caseFile.wards[0].wardId);
-    }else{
-      updateSidebar();
-    }
 
-    // handle is only ever set for the "Restore Backup"/"Open Data File"
-    // flow (showOpenFilePicker) -- plain Import (drag-and-drop or the file
-    // input) never has one. One case, one handle: opening/restoring a file
-    // this way makes it the case's ongoing save target going forward.
-    if(handle){
-      await rememberCaseFileHandle(handle);
-    }
-
-    const auditMsg=isBackupFlow
-      ? `Restored backup containing ${imported.length} ward(s) from "${file.name}"`
-      : `Imported ${imported.length} form(s) from "${file.name}"`;
-    await auditLog('DATA_IMPORT',auditMsg,true);
-
-    _dirtySinceExport=false;
-    clearSessionRestoreCache();
-    hideAutoExportReminder();
-    updateLastSavedIndicator();
-    notifyProbateGuardianTabStateChanged();
-
-    if(isBackupFlow){
-      window.dispatchEvent(new CustomEvent('pg:backup-restored', {
-        detail: { fileName: file.name, count: imported.length }
-      }));
-      if(typeof navigate==='function')await navigate('/dashboard');
-      alert(`Backup restored: ${imported.length} ward(s) loaded.`);
-    }else{
-      alert(`Import complete: ${imported.length} form(s) loaded.`);
-    }
-    return true;
-  }catch(e){
-    console.error('Import failed',e);
-    auditLog('DATA_IMPORT',String(e&&e.message||e),false);
-    alert((isBackupFlow?'Could not open backup file: ':'Import failed: ')+(e&&e.message||e));
-    return false;
-  }
-}
-
-async function importGuardianDataZip(file){
-  return importSavArchiveOrWard(file, { isBackupFlow: false });
-}
-window.importGuardianDataZip = importGuardianDataZip;
-
-async function triggerOpenBackupSav(){
-  if(window.showOpenFilePicker){
-    try{
-      const [handle]=await window.showOpenFilePicker({
-        types:[{description:'Probate Guardian backup file (.sav)',accept:{'application/octet-stream':['.sav','.zip']}}]
-      });
-      const file=await handle.getFile();
-      await restoreBackupSavFile(file,handle);
-      return;
-    }catch(e){
-      if(e&&e.name==='AbortError')return;
-      console.warn('showOpenFilePicker failed or cancelled, falling back to input',e);
-    }
-  }
-  const inp=document.getElementById('backup-import-input');
-  if(inp){inp.value='';inp.click();}
-}
-window.triggerOpenBackupSav = triggerOpenBackupSav;
-
-async function handleBackupImportChange(input){
-  const file=input.files?.[0];
-  input.value='';
-  if(!file)return;
-  await restoreBackupSavFile(file,null);
-}
-window.handleBackupImportChange = handleBackupImportChange;
-
-async function restoreBackupSavFile(file, handle){
-  return importSavArchiveOrWard(file, { handle, isBackupFlow: true });
-}
-window.restoreBackupSavFile = restoreBackupSavFile;
 
 // ═══════════════════════════════════════════════════════
 // SESSION-RESTORE CACHE (crash recovery)
@@ -4699,9 +4091,6 @@ async function unloadWard() {
 
 window.activateWard = activateWard;
 window.unloadWard = unloadWard;
-window.rememberCaseFileHandle = rememberCaseFileHandle;
-window.loadCaseFileHandle = loadCaseFileHandle;
-window.forgetCaseFileHandle = forgetCaseFileHandle;
 window.hasOpenedCaseBefore = hasOpenedCaseBefore;
 window.markCaseOpenedBefore = markCaseOpenedBefore;
 
