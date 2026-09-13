@@ -169,9 +169,16 @@ function bindEvents(container) {
     if (control.dataset.inventoryChange === 'schedule-no-items') setScheduleNoItems(control.dataset.schedule, control.checked);
     if (control.dataset.inventoryChange === 'toggle-vehicle') toggleB2Vehicle(Number.parseInt(control.dataset.index, 10), control.checked);
     if (control.dataset.inventoryChange === 'set-sdb') {
-      const val = control.value === 'true';
-      D.hasSafeDepositBox = val;
-      if (!val) D.safeDepositBoxFiled = null;
+      // Milestone 40H-B: no longer wipe the child answer when the parent
+      // toggles to No. The row is already hidden purely by CSS class while
+      // the parent is No (#sdb-filed-row's d-none, keyed off
+      // sdbIsYes(D.hasSafeDepositBox)), and Schedule D-3's PDF/export model
+      // already gates the child out of the document whenever the parent
+      // isn't true -- see pdf-model.js's `...(d.hasSafeDepositBox === true
+      // ? [...] : [])`. So a preserved child value sitting in state while
+      // hidden is never read, exported, or shown; nothing here needs to be
+      // destroyed for the toggle to work correctly.
+      D.hasSafeDepositBox = control.value === 'true';
       autoSave();
       updateNavDots();
       window.navigate('/d3');

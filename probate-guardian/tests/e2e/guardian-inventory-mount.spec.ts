@@ -294,5 +294,30 @@ test.describe('guardian-inventory feature module', () => {
     expect(yesFiledState.hasSafeDepositBox).toBe(true);
     expect(yesFiledState.safeDepositBoxFiled).toBe(true);
     expect(yesFiledState.navChecks.checks.d3).toBe(true);
+
+    // Milestone 40H-B: toggling the parent off then back on must not lose the
+    // child answer entered above. The row is already hidden purely by CSS
+    // while the parent is No (#sdb-filed-row keeps class d-none), independent
+    // of the child's stored value, so nothing needs to be destroyed for the
+    // hide/show itself -- data loss here was solely the toggle handler
+    // deleting the stored answer on every parent-off transition.
+    await sdbNo.check();
+    const parentOffState = await page.evaluate(() => ({
+      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
+      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
+    }));
+    expect(parentOffState.hasSafeDepositBox).toBe(false);
+    expect(parentOffState.safeDepositBoxFiled).toBe(true); // preserved, not wiped to null
+
+    await sdbYes.check();
+    await expect(sdbFiledRow).toBeVisible();
+    const restoredState = await page.evaluate(() => ({
+      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
+      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
+    }));
+    expect(restoredState.hasSafeDepositBox).toBe(true);
+    expect(restoredState.safeDepositBoxFiled).toBe(true);
+    // The child radios must reflect the restored value, not render blank.
+    await expect(page.locator('#sdb-filed-yes')).toBeChecked();
   });
 });

@@ -39,6 +39,30 @@ describe('guardian inventory PDF model', () => {
     });
   });
 
+  // Milestone 40H-B: hasSafeDepositBox=false gates the child item out of the
+  // Schedule D-3 table entirely, regardless of what safeDepositBoxFiled
+  // holds in state -- so a stale/preserved child value while the parent is
+  // No is never read, exported, or shown. Confirmed explicitly rather than
+  // assumed, since Task 40H-B stops wiping that child value on parent
+  // toggle-off and this is the guarantee that makes doing so safe.
+  test('Schedule D-3 never emits the safe-deposit-box-filed answer while the parent is No, even if state holds a stale value', () => {
+    const model = buildVerifiedInventoryModel({
+      wardName: 'Harold Thomas Bennett',
+      caseNumber: '26-002487-GD',
+      county: 'Pasco',
+      hasSafeDepositBox: false,
+      safeDepositBoxFiled: true, // stale/preserved answer from before the parent was set to No
+      scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+      scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    });
+
+    const d3Section = model.sections.find((section) => section.id === 'd3_d4');
+    const d3Table = d3Section.blocks.find((block) => block.title === 'Schedule D-3: Safe Deposit Box & Audit Fee');
+
+    expect(d3Table.items.some((item) => item.label === 'Initial inventory of safe deposit box filed?')).toBe(false);
+    expect(d3Table.items.find((item) => item.label === 'Does the ward have a safe deposit box?').value).toBe('No');
+  });
+
   test('adds uploaded supporting documents to the matching schedule section', () => {
     const model = buildVerifiedInventoryModel({
       wardName: 'Harold Thomas Bennett',
