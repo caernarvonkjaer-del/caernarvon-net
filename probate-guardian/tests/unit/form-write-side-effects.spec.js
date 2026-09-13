@@ -85,12 +85,38 @@ describe('all three binding paths call the shared tail', () => {
     return source.slice(start, end);
   };
 
-  it('finalizeFieldValue and writeDraftValue (data-form-path)', () => {
-    const src = read('src/core/form/form-contract.js');
-    expect(bodyOf(src, 'writeDraftValue')).toContain('runFieldWriteSideEffects(path, control)');
-    expect(bodyOf(src, 'finalizeFieldValue')).toContain('runFieldWriteSideEffects(path, control)');
+  // Milestone 43B: writeDraftValue/finalizeFieldValue are exported from
+  // form-contract.js, so this path can invoke the real functions -- reusing
+  // the same window mock as the describe block above -- instead of grepping
+  // their source text for the call. A source-text check would pass even if
+  // the call were unreachable (e.g. behind a condition that's always false);
+  // invoking for real and asserting the mock actually ran cannot.
+  it('finalizeFieldValue and writeDraftValue (data-form-path) actually invoke the shared tail', async () => {
+    const w = freshWindow();
+    globalThis.window = w;
+    globalThis.document = globalThis.document || { querySelectorAll: () => [] };
+    vi.resetModules();
+    const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
+
+    // window.getPath is undefined in this mock, so writeDraftValue's
+    // `currentVal !== rawValue` guard (comparing against undefined) is
+    // satisfied by any non-undefined value -- reaching its real call site
+    // rather than being skipped as a no-op write.
+    writeDraftValue({ dataset: { formPath: 'someTextField', fieldKind: 'text' }, type: 'text', value: 'New Value' });
+    expect(w.calls).toContain('autoSave');
+
+    w.calls.length = 0;
+    finalizeFieldValue({ dataset: { formPath: 'someTextField', fieldKind: 'text' }, type: 'text', value: 'Some Value' });
+    expect(w.calls).toContain('autoSave');
   });
 
+  // persistAnnualControl (annual-accounting/index.js) and afterChange
+  // (legacy-app.js) are module-private -- neither is exported, so there is
+  // no way to import and invoke them directly the way writeDraftValue/
+  // finalizeFieldValue are above. Source-text confirmation of the call site
+  // is the best available check in this Node-only suite; a real invocation
+  // would need e2e (a real browser/window), same reachability gap Milestone
+  // 43A found for normalizeWardData()/window.calc.
   it('persistAnnualControl (data-annual-path)', () => {
     const body = bodyOf(read('src/features/annual-accounting/index.js'), 'persistAnnualControl');
     expect(body).toContain('runFieldWriteSideEffects(path, control)');
@@ -105,6 +131,9 @@ describe('all three binding paths call the shared tail', () => {
     expect(body).not.toContain('maybeCommitCoverCounty');
   });
 
+  // A negative existence check ("this pattern appears nowhere") is
+  // legitimately best done via source scan, not a proxy for behavior --
+  // there is no function to invoke to prove an absence.
   it('persistFormControl no longer exists anywhere', () => {
     for (const rel of ['src/form-events.js', 'src/core/form/form-contract.js', 'src/legacy-app.js']) {
       expect(read(rel)).not.toMatch(/function persistFormControl/);

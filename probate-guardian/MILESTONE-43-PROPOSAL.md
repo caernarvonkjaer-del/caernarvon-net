@@ -10,7 +10,9 @@ or anything else in flight.
 
 **43A landed 2026-09-13** (`514d0c5`); a real bug found while verifying its
 premise landed separately (`7794180`) — see 43A's own "What landed and
-what was corrected" section. **43B–43H remain Draft**, not yet approved.
+what was corrected" section. **43B also landed 2026-09-13**, in a smaller
+form than originally proposed — see its own "What landed and what was
+corrected" section. **43C–43H remain Draft**, not yet approved.
 
 **Source:** two read-only test-suite audits run this session (2026-09-13),
 via parallel read-only research passes (no edits made in either): the
@@ -45,7 +47,7 @@ hygiene, not a single all-or-nothing delivery.
 | Sub-delivery | Theme | Size | Status |
 | --- | --- | --- | --- |
 | 43A — Delete or Fix Vacuous/Dead Tests | Correctness of the tests themselves | Small | **Landed** |
-| 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests | Correctness of the tests themselves | Medium | Draft |
+| 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests | Correctness of the tests themselves | Medium | **Landed** |
 | 43C — De-duplicate Redundant Cross-File Coverage | Redundancy | Small–medium | Draft |
 | 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium | Draft |
 | 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large | Draft |
@@ -192,6 +194,13 @@ pre-migration data.
 
 ## 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests
 
+**Status: Landed 2026-09-13** (`<pending>`). See "What landed and what was
+corrected" below — the achievable scope turned out to be much smaller than
+this section originally proposed, for the same reason Decision 1 in 43A
+was wrong: most of the "proxy" functions named below have no ES-module
+export, so there is no real alternative to a source-text check for them in
+this Node-only suite. Where a real fix genuinely existed, it landed.
+
 **Relation:** Independent. **Risk:** Low-medium — rewrites test bodies
 only; no `src/` change. The risk is entirely in getting the *replacement*
 assertions right, not in touching production code.
@@ -266,6 +275,65 @@ flip a `checked` attribute, break the fieldset nesting, remove one
 `runFieldWriteSideEffects` call site) and confirm the new test fails, then
 `git stash pop` — this repo's standard red/green discipline, not
 optional for a "these tests were lying" fix.
+
+### What landed and what was corrected
+
+**Steps 1 and 3 do not hold as written — verified by direct read before
+touching either file.** `yesNoRadioHTML()` (`legacy-app.js:5771`),
+`emptyDataGuardian()` (`:5517`), and every function
+`yes-no-radio-migration.spec.js` checks (`yesNoRadioAnnualHTML`,
+`yesNoCheckboxS`, `persistAnnualControl`) are classic-script functions with
+no ES-module export — the same reachability gap 43A found for
+`normalizeWardData()`/`window.calc`. There is no way to "import from its
+real module and call it directly" for any of them in this Node-only suite;
+a source-text check is the best available verification, not a shortcut
+past a better one. **Step 1's own two targets split differently on closer
+read:** `guardian-inventory-yes-no-radio.spec.js:10-34`'s three tests check
+`emptyDataGuardian()`'s defaults (genuinely no better path, left as-is with
+an explanatory comment) — but `:36-44`'s test checks something different:
+whether `pageScheduleA1()`/`B1()`/`B2()`/`B3()` (also unexported) correctly
+*wire* seven specific fields to `yesNoRadioHTML()`. That claim was real,
+valuable, and had **zero** coverage anywhere else — worth closing for real
+rather than leaving as a weak proxy. New
+`tests/e2e/guardian-inventory-tri-state-radios.spec.ts` renders each page
+in a real browser, clicks each of the seven radios, and confirms the state
+write lands at the declared `data-form-path` — replacing the unit test's
+`toContain()` check, which would have passed even if the field were
+missing, mislabeled, or wired to the wrong path entirely. **Step 3
+(`yes-no-radio-migration.spec.js`) has no equivalent fix available** — none
+of its three tests name a function with an ES-module export, and two of
+its three assertions are legitimate negative-existence checks ("no legacy
+checkbox pattern remains anywhere," "this literal never appears") that
+source-scanning is the *correct* tool for, not a workaround. Left
+unchanged; documented in place rather than silently left unexplained.
+
+**Step 2 landed as written**, converting the D-3 fieldset/legend ordering
+check into a real stack-based tag-depth parser
+(`findMatchingFieldsetClose()`) that finds each fieldset's true matching
+close tag and confirms the legend and target radio both fall strictly
+inside it — verified to catch a real defect (temporarily removed the child
+`<fieldset>` tag, confirmed the new test fails, reverted).
+
+**Step 4 landed for the one binding convention that's actually reachable.**
+`writeDraftValue`/`finalizeFieldValue` (`data-form-path`) are exported from
+`form-contract.js` — converted to real invocation using the same window
+mock the file's first describe block already established, verified to
+catch a real defect (temporarily removed the `runFieldWriteSideEffects`
+call from `writeDraftValue`, confirmed the new test fails, reverted).
+`persistAnnualControl` (`data-annual-path`, `annual-accounting/index.js`)
+and `afterChange` (`data-bind`, `legacy-app.js`) are both module-private —
+same reachability gap as Steps 1 and 3 — left as source-text checks with a
+comment explaining why. The fourth test in that describe block
+(`persistFormControl no longer exists anywhere`) was already a legitimate
+negative-existence check, not a proxy; left untouched.
+
+**Net result:** 2 of the 4 originally-cited fixes were achievable and
+landed for real (D-3 nesting, the `data-form-path` binding path); 1 was
+achievable in a different, more valuable form than proposed (a new e2e
+test replacing a proxy that was checking the wrong layer entirely); the
+rest were confirmed to have no better verification path available in this
+suite and were left as-is with that reasoning recorded in place, not
+silently dropped.
 
 ---
 
