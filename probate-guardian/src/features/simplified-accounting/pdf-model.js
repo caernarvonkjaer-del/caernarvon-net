@@ -232,7 +232,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   });
 
   // 6. Part VI: Certificate of Service
-  const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3));
+  // line4 belongs in this test as much as the others. Omitting it dropped a
+  // recipient whose only populated field was line4 out of the certificate of
+  // service entirely -- no row at all, rather than a truncated address.
+  // Annual Accounting's equivalent filter already included it.
+  const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3 || r.line4));
   const serviceDateText = fmtDate(d.certServiceDate) || 'the date indicated below';
   const indicatorNote = d.certIndicator ? ` | Indicate if: ${d.certIndicator}` : '';
 
@@ -258,7 +262,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           rows: certRecipients.map((r, i) => [
             String(i + 1),
             r.name || '',
-            `${r.line2 || ''} ${r.line3 || ''}`.trim(),
+            // Discrete lines, not a joined string -- see the Annual Accounting
+            // model's matching comment. This also restores line4, which the
+            // old space-join omitted outright: any recipient needing a fourth
+            // address line had it silently missing from the filed document.
+            [r.line2, r.line3, r.line4].filter(Boolean),
           ]),
           colWidths: [10, 45, 45],
         }

@@ -36,6 +36,38 @@ export async function extractPdfText(pdfData: Uint8Array | string): Promise<stri
   return fullText;
 }
 
+/**
+ * Milestone 40E: the individual text runs, per page, instead of one
+ * space-joined string per page.
+ *
+ * extractPdfText() above flattens every run on a page into a single string, so
+ * it cannot tell "three lines inside the column" from "one long line running
+ * off the page" -- both contain the same characters. That distinction is the
+ * whole point of the table-cell address fix, so it needs the runs kept apart.
+ */
+export async function extractPdfTextItems(pdfData: Uint8Array | string): Promise<string[][]> {
+  let data: Uint8Array;
+  if (typeof pdfData === 'string') {
+    if (pdfData.startsWith('data:application/pdf;base64,')) {
+      const b64 = pdfData.slice('data:application/pdf;base64,'.length);
+      data = new Uint8Array(Buffer.from(b64, 'base64'));
+    } else {
+      data = new Uint8Array(Buffer.from(pdfData, 'latin1'));
+    }
+  } else {
+    data = new Uint8Array(pdfData);
+  }
+  const loadingTask = pdfjsLib.getDocument({ data, verbosity: 0 });
+  const pdf = await loadingTask.promise;
+  const pages: string[][] = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((item: any) => String(item.str)));
+  }
+  return pages;
+}
+
 export type PdfInfoMetadata = {
   title: string;
   subject: string;

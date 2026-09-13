@@ -961,7 +961,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
       rows: certRecipients.map((r, i) => [
         String(i + 1),
         r.name || '',
-        [r.line2, r.line3, r.line4].filter(Boolean).join(', '),
+        // Pass the address components as discrete lines, not a comma-joined
+        // string: the table cell forces one line each and wraps each to the
+        // column. Joining them gave the renderer a single run with no known
+        // break points, which overflowed into the right margin.
+        [r.line2, r.line3, r.line4].filter(Boolean),
       ]),
       colWidths: [6, 44, 50],
       colAlign: ['center', 'left', 'left'],

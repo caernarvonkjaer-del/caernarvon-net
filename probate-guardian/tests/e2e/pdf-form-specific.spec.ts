@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
-import { extractPdfText } from './support/pdf-extract';
+import { extractPdfText, extractPdfTextItems } from './support/pdf-extract';
 
 test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverage', () => {
   test('Slice 19C: Shared accessible PDF generator produces tagged, non-raster PDF 1.7 for Simplified Accounting', async ({ page }) => {
@@ -838,5 +838,112 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     // Continuation headers on page 2+ across documents
     expect(numPages1).toBeGreaterThan(1);
     expect(rawPdf1).toContain('/Artifact << /Type /Pagination /Subtype /Header >> BDC');
+  });
+
+  // Milestone 40E. Reported against a live Annual Accounting export: the
+  // Certificate of Service "Address Details" column ran off the right edge of
+  // the page instead of breaking between the address components. The cell was
+  // a comma-joined string, so the table renderer had no idea where the real
+  // line breaks were and word-wrapped the whole run generically.
+  //
+  // Extracted text alone cannot tell "three lines inside the column" from "one
+  // long line off the page" -- the characters are identical either way -- so
+  // these assertions use extractPdfTextItems() and check the individual runs.
+  test('Milestone 40E: certificate-of-service addresses break per component instead of overflowing', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    // The exact address from the live report, long enough to overflow the
+    // ~50%-width column it renders in.
+    const RECIPIENT = {
+      name: 'Marcus Sterling, Esq. — Attorney for the Guardian',
+      line2: '100 2nd Ave S',
+      line3: 'Suite 400',
+      line4: 'St. Petersburg, FL 33701',
+    };
+
+    const output = await page.evaluate(async (recipient) => {
+      const annual = await (window as any).loadAnnualPdf();
+      const simplified = await (window as any).loadSimplifiedPdf();
+
+      const annualModel = annual.buildAnnualAccountingModel({
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        inventoryType: 'annual',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        certRecipients: [recipient],
+        certDate: '2026-03-01',
+      }, { signatureStyle: 'typed', printDate: '2026-09-12' });
+
+      const simplifiedModel = simplified.buildSimplifiedAccountingModel({
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        inventoryType: 'simplified',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        certRecipients: [recipient],
+        certServiceDate: '2026-03-01',
+      }, { signatureStyle: 'typed', printDate: '2026-09-12' });
+
+      const annualDoc = await annual.generateCourtFormPdf(annualModel);
+      const simplifiedDoc = await simplified.generateCourtFormPdf(simplifiedModel);
+      return { annual: annualDoc.output(), simplified: simplifiedDoc.output() };
+    }, RECIPIENT);
+
+    for (const [form, raw] of [['Annual', output.annual], ['Simplified', output.simplified]] as const) {
+      const runs = (await extractPdfTextItems(raw)).flat().map((s) => s.trim());
+
+      // Each component stands alone as its own text run -- that is what proves
+      // the forced break happened, rather than the characters merely being
+      // present somewhere on the page (which was already true when it
+      // overflowed).
+      expect(runs, `${form}: street line should be its own run`).toContain('100 2nd Ave S');
+      expect(runs, `${form}: suite line should be its own run`).toContain('Suite 400');
+      expect(runs, `${form}: city/state/zip should be its own run`).toContain('St. Petersburg, FL 33701');
+
+      // And no run is the old joined form. Annual used ', ' and Simplified used
+      // a space; an un-fixed array would reach the renderer via String() and
+      // join with bare commas. None of the three may reappear.
+      for (const joined of [
+        '100 2nd Ave S, Suite 400, St. Petersburg, FL 33701',
+        '100 2nd Ave S Suite 400',
+        '100 2nd Ave S,Suite 400,St. Petersburg, FL 33701',
+      ]) {
+        expect(runs, `${form}: must not re-join the address into one run`).not.toContain(joined);
+      }
+    }
+  });
+
+  // The data-loss half of Milestone 40E, kept separate because it is the one
+  // that is invisible on inspection. Simplified Accounting omitted line4 from
+  // both its recipient filter and its address join, so a recipient needing a
+  // fourth address line had it silently missing from the filed document.
+  test('Milestone 40E: Simplified Accounting no longer drops the fourth address line', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const raw = await page.evaluate(async () => {
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const model = buildSimplifiedAccountingModel({
+        wardName: 'Harold Thomas Bennett',
+        caseNumber: '26-002487-GD',
+        county: 'Pinellas',
+        inventoryType: 'simplified',
+        certRecipients: [
+          { name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756', line4: 'Room 100' },
+          // A recipient carrying nothing but line4 used to be filtered out
+          // entirely, producing no row at all.
+          { line4: 'Care of the Probate Division' },
+        ],
+        certServiceDate: '2026-03-01',
+      }, { signatureStyle: 'typed', printDate: '2026-09-12' });
+      const doc = await generateCourtFormPdf(model);
+      return doc.output();
+    });
+
+    const runs = (await extractPdfTextItems(raw)).flat().map((s) => s.trim());
+    expect(runs).toContain('Room 100');
+    expect(runs).toContain('Care of the Probate Division');
   });
 });

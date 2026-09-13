@@ -134,6 +134,61 @@ describe('docx-engine generator', () => {
     expect(planDocXml).toContain('Heart of Gold Ship');
   });
 
+  // Milestone 40E. The DOCX writer reads the same model the PDF engine does, so
+  // making a table cell an array of address lines changed this output too. Its
+  // cell branch fell through to xmlEscape(cell), whose String() joins an array
+  // with bare commas and no spaces -- worse than the ', ' join it replaced. The
+  // cell now emits one <w:p> per component, mirroring the PDF.
+  test('a multi-line address cell becomes one paragraph per component, not a comma-joined run', async () => {
+    const model = buildAnnualAccountingModel({
+      wardName: 'Arthur Dent',
+      caseNumber: '2026-CP-001234',
+      county: 'Pinellas',
+      inventoryType: 'annual',
+      certRecipients: [
+        { name: 'Marcus Sterling, Esq.', line2: '100 2nd Ave S', line3: 'Suite 400', line4: 'St. Petersburg, FL 33701' },
+      ],
+    }, { printDate: '2026-09-12' });
+
+    const docx = await generateCourtFormDocx(model, { type: 'uint8array' });
+    const zip = await JSZip.loadAsync(docx);
+    const xml = await zip.file('word/document.xml').async('text');
+
+    // Each component present as its own run...
+    expect(xml).toContain('<w:t>100 2nd Ave S</w:t>');
+    expect(xml).toContain('<w:t>Suite 400</w:t>');
+    expect(xml).toContain('<w:t>St. Petersburg, FL 33701</w:t>');
+    // ...and never re-joined into one, by either the old separator or the bare
+    // commas an unhandled array would have produced.
+    expect(xml).not.toContain('100 2nd Ave S, Suite 400');
+    expect(xml).not.toContain('100 2nd Ave S,Suite 400');
+  });
+
+  test('an empty address cell still emits a paragraph, keeping the table cell valid OOXML', async () => {
+    const model = buildAnnualAccountingModel({
+      wardName: 'Arthur Dent',
+      caseNumber: '2026-CP-001234',
+      county: 'Pinellas',
+      inventoryType: 'annual',
+      // Named recipient with no address at all: the cell is an empty array.
+      certRecipients: [{ name: 'Recipient With No Address' }],
+    }, { printDate: '2026-09-12' });
+
+    const docx = await generateCourtFormDocx(model, { type: 'uint8array' });
+    const zip = await JSZip.loadAsync(docx);
+    const xml = await zip.file('word/document.xml').async('text');
+
+    expect(xml).toContain('<w:t>Recipient With No Address</w:t>');
+    // Every <w:tc> must contain at least one <w:p>; an empty one would make the
+    // document unopenable in Word rather than merely look wrong. There are at
+    // least as many paragraphs as cells, and no cell closes without one.
+    const cellCount = (xml.match(/<w:tc>/g) || []).length;
+    const paraCount = (xml.match(/<w:p>/g) || []).length;
+    expect(cellCount).toBeGreaterThan(0);
+    expect(paraCount).toBeGreaterThanOrEqual(cellCount);
+    expect(xml).not.toMatch(/<w:tc>(?:(?!<w:p>)[\s\S])*?<\/w:tc>/);
+  });
+
   test('handles supplemental documents with clear appendix reference and non-raster notice', async () => {
     const mockAnnualD = {
       wardName: 'Tricia McMillan',

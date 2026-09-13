@@ -25,7 +25,7 @@ the same commit.
 | dashboard-view-model.spec.js         | Dashboard priority ordering, filing contacts, ward deadline derivation                                                    |
 | date-parser.spec.js                  | Flexible date parsing, display formatting, leap-year/days-in-month helpers                                                |
 | date-rules.spec.js                   | Milestone 34-1A: checkDateOrder() shared date-ordering validation rule                                                    |
-| docx-engine.spec.js                  | Court-form DOCX generation from PDF models                                                                                |
+| docx-engine.spec.js                  | Court-form DOCX generation from PDF models; Milestone 40E array address cells as one paragraph each                       |
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
 | feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
@@ -45,6 +45,7 @@ the same commit.
 | plan-simplified-parity.spec.js       | Milestone 37-3 pilot: readiness-checklist/export-validator parity proof for all 13 auto conditions, incl. 4 newly mapped  |
 | plan-tristate.spec.js                | Schema-aware legacy Plan Yes/No migration and tri-state PDF rendering                                                     |
 | pdf-address-format.spec.js           | Canonical PDF address composition and punctuation/whitespace cleanup                                                      |
+| pdf-cert-service-address.spec.js     | Milestone 40E: certificate-of-service address cells are discrete lines; Simplified's dropped line4 restored               |
 | print-annotation-persistence.spec.js | Milestone 39-A: content-fingerprint drift detection and the MiniEventBus pdf.js collaborator shim                         |
 | prune-cards.spec.js                  | Blank-card/blank-schedule-entry detection for pruning                                                                     |
 | router.spec.js                       | Navigation router services (navigate, registerRoute, getCurrentPage)                                                      |
@@ -102,7 +103,7 @@ the same commit.
 | pdf-annotate.spec.ts                     | Milestone 39-A spike: pdf.js AnnotationEditorLayer toolbar (FreeText/Highlight/Undo/Clear), pilot-gated to Plan Simplified; persisted-annotation save/reopen round trip                  |
 | pdf-fonts-and-xmp.spec.ts                | Embedded fonts & PDF/UA-1 XMP metadata                                                                                                                                                   |
 | pdf-evidence-lab.spec.ts                 | Milestone 34-1D source/PDF.js/canvas/final-packet and Trust preview evidence capture                                                                                                     |
-| pdf-form-specific.spec.ts                | PDF accessibility: accounting & inventory filing-specific coverage                                                                                                                       |
+| pdf-form-specific.spec.ts                | PDF accessibility: accounting & inventory filing-specific coverage; Milestone 40E certificate-of-service address line breaks                                                             |
 | pdf-preview-viewer.spec.ts               | Shared PDF preview/print viewer; M34-1A export-gating parity across all 7 features; M34-1B finalized-PDF pager refresh                                                                   |
 | pdf-structure-tags.spec.ts               | Tagged structure, StructTreeRoot & marked content                                                                                                                                        |
 | pdf-table-semantics.spec.ts              | Table semantics, colspan & multi-page continuation                                                                                                                                       |

@@ -2,10 +2,74 @@
 
 ## Status
 
-**Draft only — independently approved delivery.** This proposal authorizes
-no runtime, data-model, test, or documentation change until the requester
-approves Milestone 40E specifically. Approval of another Milestone 40
-delivery does not authorize this work.
+**Landed 2026-09-12.** Approved and implemented as specified, with two
+additions the implementation pass found and the proposal had not
+anticipated — both documented under "What landed" below.
+
+### What landed
+
+The fix itself is as designed: an array branch in `measureCell()`
+(`pdf-engine.js`), and both certificate-of-service call sites passing
+`[r.line2, r.line3, r.line4].filter(Boolean)` instead of a joined string.
+`drawCell()` needed no change, as predicted.
+
+The audit in step 3 confirmed the proposal's claim that these are the only
+two such call sites — no third table cell anywhere builds an address from
+multiple discrete fields.
+
+**Addition 1: `docx-engine.js` consumes the same model and had to be fixed
+too.** This proposal only considered the PDF renderer, but
+`docx-engine.js:710` reads the identical `block.rows` and its cell branch
+ended in `xmlEscape(cell)`. `xmlEscape()` calls `String()`, and
+`Array.prototype.toString` joins with **bare commas and no spaces** — so
+array-ifying the cell would have silently made Word output *worse* than the
+`', '` join it replaced (`100 2nd Ave S,Suite 400,St. Petersburg, FL 33701`).
+The cell now emits one `<w:p>` per component, mirroring the PDF, with an
+empty cell still emitting a single paragraph because a `<w:tc>` containing
+no `<w:p>` is invalid OOXML and would make the file unopenable in Word
+rather than merely look wrong. A grep confirmed `pdf-engine.js` and
+`docx-engine.js` are the only two consumers of `block.rows`.
+
+**Addition 2: Simplified Accounting dropped `line4` in two places, not
+one.** This proposal identified the join at
+`simplified-accounting/pdf-model.js:261`. The recipient *filter* at `:235`
+omitted `line4` as well, so a recipient whose only populated field was
+`line4` was dropped from the certificate of service **entirely** — no row at
+all, rather than a truncated address. Annual's equivalent filter already
+counted it. Both are fixed. Practical reach is narrow, since a recipient
+almost always has a name and so survives the filter, but this is a court
+filing's certification of who was served, so both halves are worth
+correcting.
+
+### How this was verified
+
+`tests/unit/pdf-cert-service-address.spec.js` (9 tests) covers the model
+side for both forms: the array shape, a one-line address, blank-component
+filtering, `line4`'s presence, the only-`line4` recipient surviving the
+filter, and the two models agreeing on cell shape for identical input.
+Verified to fail 9/9 against the pre-fix models.
+
+`tests/unit/docx-engine.spec.js` gains two tests for the array cell and the
+empty-cell OOXML floor; the multi-line one was verified to fail with the
+DOCX fix reverted.
+
+`tests/e2e/pdf-form-specific.spec.ts` gains two tests asserting the rendered
+PDF, using a new `extractPdfTextItems()` helper in
+`tests/e2e/support/pdf-extract.ts`. That helper exists because
+`extractPdfText()` space-joins every run on a page, so it **cannot
+distinguish three lines inside the column from one line off the page** — the
+characters are identical either way, which is exactly what the proposal's
+own "assert structurally, not visually" note warned about. The new tests
+assert each component is its own text run and that none of the three
+possible joined forms reappears. Both verified to fail with the
+`measureCell()` branch removed.
+
+Existing fixtures behaved as the proposal predicted: `pdf-form-specific`'s
+`:245` and `:467` rows assert per-field sentinels, not joined strings, and
+kept passing unchanged. Confirmed `Room 100` (a `line4` value) was asserted
+nowhere before this work — the coverage gap that let the data loss through.
+
+Full unit suite 474 passed; PDF/DOCX e2e sweep of 8 specs green.
 
 ## Goal
 

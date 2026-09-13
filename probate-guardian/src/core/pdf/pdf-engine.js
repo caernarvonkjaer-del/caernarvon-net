@@ -1159,6 +1159,20 @@ export async function generateCourtFormPdf(model, options = {}) {
           }
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
+          // A cell may be an array of pre-split lines -- a multi-part mailing
+          // address whose components are already discrete fields, so there is
+          // no comma-string for formatMailingAddress() to reverse-engineer.
+          // Each element is forced onto its own line and still word-wrapped to
+          // the column, the same flatMap-over-known-lines shape the
+          // signature-block renderer already uses. Without this, the caller's
+          // only option was to join the parts into one string, which got a
+          // single generic wrap pass and overflowed the right margin.
+          if (Array.isArray(cellData)) {
+            const arrLines = cellData
+              .filter((line) => line !== null && line !== undefined && String(line) !== '')
+              .flatMap((line) => doc.splitTextToSize(String(line), usableW));
+            return { isMixed: false, lines: arrLines, heightPt: Math.max(1, arrLines.length) * 10 };
+          }
           const lines = doc.splitTextToSize(String(cellData || ''), usableW);
           return { isMixed: false, lines, heightPt: lines.length * 10 };
         };

@@ -700,6 +700,19 @@ function renderTableBlock(block, subHTag = 'pgHeading3', secTitle = '') {
             <w:tcW w:w="${widths[cIdx]}" w:type="dxa"/>
             ${isAlt ? '<w:shd w:val="clear" w:color="auto" w:fill="F9FAFC"/>' : ''}
           </w:tcPr>
+          ${(() => {
+            // A cell may be an array of pre-split lines (a multi-part mailing
+            // address kept as discrete fields -- see pdf-engine.js's matching
+            // branch in measureCell). Each element becomes its own paragraph,
+            // mirroring the PDF's one-line-per-component rendering. Without
+            // this the array fell through to xmlEscape(cell), whose String()
+            // joins with bare commas and no spaces. A <w:tc> must contain at
+            // least one <w:p>, so an empty cell still emits one.
+            const primary = typeof cell === 'object' && cell !== null && 'main' in cell ? cell.main : cell;
+            const lines = Array.isArray(primary)
+              ? primary.filter((l) => l !== null && l !== undefined && String(l) !== '')
+              : [primary];
+            return (lines.length ? lines : ['']).map((line) => `
           <w:p>
             <w:pPr>
               <w:jc w:val="${jcVal}"/>
@@ -707,9 +720,10 @@ function renderTableBlock(block, subHTag = 'pgHeading3', secTitle = '') {
             </w:pPr>
             <w:r>
               <w:rPr><w:sz w:val="14"/><w:color w:val="111827"/></w:rPr>
-              <w:t>${xmlEscape(typeof cell === 'object' && cell !== null && 'main' in cell ? cell.main : cell)}</w:t>
+              <w:t>${xmlEscape(line)}</w:t>
             </w:r>
-          </w:p>
+          </w:p>`).join('');
+          })()}
           ${typeof cell === 'object' && cell !== null && Array.isArray(cell.sub) ? cell.sub.map(s => `
           <w:p>
             <w:pPr>
