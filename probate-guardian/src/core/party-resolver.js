@@ -46,12 +46,76 @@ export function createParty(role) {
     // historical sibling filings. See core/navigation/ward-county.js.
     county: null,
     notes: null,
+    // Milestone 46A: append-only history of this party's reusable signature
+    // stamps. See addSignatureImage() below for the two invariants that
+    // govern it. Starts empty; a party that never captures a stamp keeps an
+    // empty array rather than null, so callers never branch on absence.
+    signatureImages: [],
     createdAt: now,
     updatedAt: now,
     mergedInto: null,
   };
   if (caseFile && Array.isArray(caseFile.parties)) caseFile.parties.push(party);
   return party;
+}
+
+// ── Milestone 46A: reusable, versioned per-party signature stamps ──────────
+//
+// Two invariants, enforced here rather than left to callers:
+//
+//   1. **Append-only.** An entry is never deleted or mutated once created.
+//      This is load-bearing, not tidiness: a filing signed with an old stamp
+//      holds a reference to that exact entry (46B's compound
+//      { partyId, imageId }) and must keep rendering that same mark forever,
+//      even after the party's active stamp changes. Trimming the array to
+//      reclaim space would break already-signed filings, which is why 46's
+//      storage answer is per-image size limits (39-B's existing caps) rather
+//      than any cap on this array's length or total bytes.
+//   2. **At most one active entry per party.** Setting a new active stamp
+//      clears the previous entry's `active` flag -- the flag is the only
+//      thing that ever moves.
+//
+// Ids are a permanent incrementing counter scoped to *this party*, so
+// ownership is unambiguous by construction (the entry lives inside that
+// party's own record). That is exactly why a filing's reference must name
+// both the party and the entry: `id: 3` is only unique within one party's
+// array, and two different signers each having a third stamp is ordinary.
+
+export function listSignatureImages(party) {
+  return (party && Array.isArray(party.signatureImages)) ? party.signatureImages : [];
+}
+
+export function getActiveSignatureImage(party) {
+  return listSignatureImages(party).find((entry) => entry && entry.active) || null;
+}
+
+export function getSignatureImageById(party, imageId) {
+  return listSignatureImages(party).find((entry) => entry && entry.id === imageId) || null;
+}
+
+/**
+ * Appends a new stamp and makes it the active one. Returns the new entry.
+ * Never deletes, never rewrites an existing entry's imageData.
+ */
+export function addSignatureImage(party, imageData, { capturedAt = null } = {}) {
+  if (!party) throw new Error('addSignatureImage: a party is required');
+  if (!imageData) throw new Error('addSignatureImage: imageData is required');
+  if (!Array.isArray(party.signatureImages)) party.signatureImages = [];
+  const entries = party.signatureImages;
+  // Per-party counter that never reuses a number, even though nothing is
+  // ever removed -- derived from the max existing id rather than the array
+  // length, so it stays correct against any legacy or imported record.
+  const nextId = entries.reduce((max, entry) => Math.max(max, Number(entry && entry.id) || 0), 0) + 1;
+  entries.forEach((entry) => { if (entry) entry.active = false; });
+  const created = {
+    id: nextId,
+    imageData,
+    capturedAt: capturedAt || new Date().toISOString(),
+    active: true,
+  };
+  entries.push(created);
+  party.updatedAt = new Date().toISOString();
+  return created;
 }
 
 // ── Per-type, per-role field correspondence ────────────────────────────────
