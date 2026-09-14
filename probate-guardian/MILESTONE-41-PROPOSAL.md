@@ -10,12 +10,12 @@ cards" and "What landed next: Signatures page card — 41-2 complete." The
 milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
 against; see that section's closing note. **41-3 is in progress**: Plan
-Minor, Plan Initial, and Plan Annual (3 of 6) are landed — see their own
-"What landed" sections under §2's "41-3: Tier 3 rollout" plan. All four of
-the milestone's named Tier 2 cards now exist; the fourth (Residence &
-Facility Profile) landed with the Plan Annual step, once a second real
-usage justified extracting it. Remaining: Simplified Accounting, Annual
-Accounting (covers Final/Trust), Guardian Inventory.
+Minor, Plan Initial, Plan Annual, and Simplified Accounting (4 of 6) are
+landed — see their own "What landed" sections under §2's "41-3: Tier 3
+rollout" plan. All four of the milestone's named Tier 2 cards now exist; the
+fourth (Residence & Facility Profile) landed with the Plan Annual step, once
+a second real usage justified extracting it. Remaining: Annual Accounting
+(covers Final/Trust), Guardian Inventory.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -707,6 +707,40 @@ not be treated as proven.
 `page-structure.spec.ts` and `form-field-labels.spec.ts`. Two new
 byte-identical snapshot pins for Plan Annual. Full unit suite: 778/778 (was
 774; +4 for the new card).
+
+### What landed (2026-09-13): Simplified Accounting
+
+**A deliberately small step, and the reasons are structural, not effort.**
+Read against the real markup rather than assumed, only one of the four Tier
+2 cards applies to this filing type — but it applies *twice*:
+`renderReportingPeriodFields()` covers both the Cover page's "Accounting
+Period From/To" pair and the Part III Declaration's "Period From/To" pair,
+each with its own label wording. That brings this card to **six call sites
+across five filing types**, the strongest generalization evidence in the
+rollout.
+
+Why the others genuinely don't fit here, each confirmed by direct read:
+`wardName` has no column wrapper at all (it sits directly inside the
+`summary-box`, not in a `col-*` div, so `renderWardIdentityFields()`'s
+`col-12` wrapper would change the layout); `caseNumber` uses the tooltip
+variant `inpSWithTooltip()` rather than plain `inpS()`; and `county` lives
+in a different box entirely, paired `col-md-8`/`col-md-4` with the attorney
+field — so `caseNumber` and `county` are never adjacent on this page, which
+is `renderCaseCaptionFields()`'s whole premise. This type has no residence
+fields and no guardian block shaped like the Plan types'.
+
+**Its remaining hand-rolled fields were checked and are correctly out of
+scope:** `certRecipients` and `remuneration` rows are collection grids,
+which the milestone's own Collection Grid Boundary (§1 Tier 2,
+`AGENTS.md` §3) explicitly keeps on per-form row factories rather than
+cards. Nothing was forced.
+
+**Verification:** both pages byte-identical via `git stash` before/after.
+Two new permanent snapshot pins in `simplified-mount.spec.ts` (8 tests
+total, all green), plus `page-structure.spec.ts`,
+`form-field-labels.spec.ts`, and `carryover-workflow.spec.ts` (which
+exercises this type's Cover page through the eligibility-redirect flow).
+Full unit suite: 778/778, unchanged — this step added no new card code.
 
 ### What this milestone deliberately does not require
 

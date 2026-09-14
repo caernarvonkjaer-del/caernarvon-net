@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot } from './support/target';
 
 // Simplified Accounting is the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md) -- these specs go beyond routes.spec.ts's single
@@ -183,4 +183,30 @@ test.describe('simplified-accounting feature module', () => {
       expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
     }
   });
+});
+
+// Milestone 41-3: Simplified Accounting's only applicable Tier 2 card is
+// renderReportingPeriodFields(), used twice here (Cover's "Accounting
+// Period" pair and Part III's "Period" pair, each with its own label
+// wording) -- bringing that card to six call sites across five filing
+// types, the strongest generalization evidence in the rollout. Both pages
+// came back byte-identical, verified via git-stash before/after; see
+// index.js's header comment for why the other cards genuinely don't apply
+// to this type.
+test('Cover page renders byte-identical visible text and control values through the reporting-period card', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createSimplifiedWard(page, 'Simp Diff Ward');
+  await fillMinimalValidSimplifiedWard(page);
+  await page.evaluate(() => (window as any).navigate('/'));
+  const snapshot = await extractFormContentSnapshot(page);
+  expect(snapshot).toBe("Cover & Part I — Required Information\nAll Filings\n?\nGeneral Instructions\nImport Excel File (existing simplified accounting template)\nELIGIBILITY — FLA. STAT. § 744.3679\nThe simplified form may only be used when all property of the estate is held in a designated depository under § 69.031, and the only transactions in that account are interest accrual, deposits from a settlement, or financial institution service charges. If either answer below is \"No,\" use the standard Annual Accounting instead.\nAll estate property is held in a designated depository under § 69.031\n*\nYes\nNo\nThe only account transactions are interest accrual, settlement deposits, and/or service charges\n*\nYes\nNo\nREQUIRED INFORMATION\nName of Ward\n*\nCase Number\n?\n*\nSocial Security Number\n*\nGuardianship Inception Date (GID)\n*\nUse MM/DD/YYYY\nAmended Form?\n*\nYes\nNo\nAccounting Period From\n*\nUse MM/DD/YYYY\nAccounting Period To\n*\nUse MM/DD/YYYY\nGUARDIAN & ATTORNEY\nGuardian\n*\nAttorney for Guardian\n*\nCounty\n*\nType of Guardianship\n*\n— select —\nPlenary\nLimited\nGuardian Advocate\nVoluntary\nMinor - Person\nMinor - Property\nMinor - Person - Property\nPART II — ACCOUNTING SUMMARY\nStarting Balance (Line 1)\n$1,000.00\nInterest Income (Line 2)\n$10.00\nDeposits from Settlement (Line 3)\n$0.00\nTotal Income (Line 4)\n$10.00\nService Charges (Line 5)\n$5.00\nFederal Income Tax (Line 6)\n$0.00\nTotal Disbursements (Line 7)\n$5.00\nRemaining Assets On Hand (Line 8)\n$1,005.00\nNext →\n---CONTROL VALUES---\n[input:]\n[radio:yesno_eligDepository=checked]\n[radio:yesno_eligDepository=unchecked]\n[radio:yesno_eligOnlyTransactions=checked]\n[radio:yesno_eligOnlyTransactions=unchecked]\n[input:Simp Diff Ward]\n[input:26-000456]\n[input:123-45-6789]\n[input:01/01/2026]\n[radio:yesno_amendedForm=unchecked]\n[radio:yesno_amendedForm=checked]\n[input:01/01/2026]\n[input:12/31/2026]\n[input:Sample Guardian]\n[input:Sample Attorney]\n[input:Pinellas]\n[select:Plenary]");
+});
+
+test('Part III Declaration renders byte-identical visible text and control values through the reporting-period card', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createSimplifiedWard(page, 'Simp Diff Ward');
+  await fillMinimalValidSimplifiedWard(page);
+  await page.evaluate(() => (window as any).navigate('/p3'));
+  const snapshot = await extractFormContentSnapshot(page);
+  expect(snapshot).toBe("Part III — Guardian(s) Declaration\nAll Filings\n?\nPreparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.\nUnder penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.\nThese dates should match the accounting period on the Cover page. They will appear in the printed Part III declaration.\nPeriod From\n*\nUse MM/DD/YYYY\nPeriod To\n*\nUse MM/DD/YYYY\nSupporting Documents — accounting period 01/01/2026 to 12/31/2026\n\nUpload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.\n\n+ Upload PDF(s)\nNo supporting documents uploaded for this period.\nComments\n← Back\nNext →\n---CONTROL VALUES---\n[input:01/01/2026]\n[input:12/31/2026]\n[input:]\n[textarea:]");
 });

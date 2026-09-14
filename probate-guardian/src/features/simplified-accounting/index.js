@@ -8,6 +8,21 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+// Milestone 41-3: only renderReportingPeriodFields() fits this filing type,
+// and it fits twice (the Cover page's "Accounting Period" pair and the Part
+// III Declaration's "Period" pair, each with its own label wording). The
+// other Tier 2 cards genuinely don't apply here, confirmed by reading the
+// real markup rather than assumed: wardName has no column wrapper at all
+// (it sits directly in the summary-box), caseNumber uses the tooltip
+// variant inpSWithTooltip() rather than plain inpS(), and county lives in a
+// different box entirely (paired col-md-8/col-md-4 with the attorney field),
+// so caseNumber and county are never adjacent -- which is
+// renderCaseCaptionFields()'s whole premise. This type has no residence
+// fields and no guardian block shaped like the Plan types'. Its remaining
+// hand-rolled fields are all collection rows (certRecipients, remuneration),
+// which the milestone's own Collection Grid Boundary (AGENTS.md section 3)
+// explicitly keeps on per-form row factories, not cards.
+import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -338,8 +353,7 @@ function pageCover(){
             <div class="col-md-6">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true)}</div>
           </div>
           <div class="row g-2">
-            <div class="col-md-6">${inpS('periodFrom','Accounting Period From',d.periodFrom,true,'date')}</div>
-            <div class="col-md-6">${inpS('periodTo','Accounting Period To',d.periodTo,true,'date')}</div>
+            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Accounting Period From', toLabel: 'Accounting Period To' })}
           </div>
         </div>
       </div>
@@ -456,8 +470,7 @@ function pagePart3(){
     <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.</div>
     <div class="schedule-instructions">These dates should match the accounting period on the Cover page. They will appear in the printed Part III declaration.</div>
     <div class="row g-3">
-      <div class="col-md-6">${inpS('periodFrom','Period From',d.periodFrom,true,'date')}</div>
-      <div class="col-md-6">${inpS('periodTo','Period To',d.periodTo,true,'date')}</div>
+      ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Period From', toLabel: 'Period To' })}
     </div>
     ${renderScheduleDocsSection('p3')}
     ${pageNavS('/p2','/p4')}
