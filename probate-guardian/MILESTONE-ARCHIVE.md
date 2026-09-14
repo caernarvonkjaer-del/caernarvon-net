@@ -1,6 +1,6 @@
 # Milestone Archive
 
-This archive consolidates the historic Index Split Plan and completed Milestone proposals 14 through 35.
+This archive consolidates the historic Index Split Plan and completed Milestone proposals 14 through 40I.
 
 ## Table of Contents
 
@@ -35,6 +35,26 @@ This archive consolidates the historic Index Split Plan and completed Milestone 
 - [MILESTONE-34-1-PROPOSAL.md](#milestone-34-1-proposal-md)
 - [MILESTONE-34-2-PROPOSAL.md](#milestone-34-2-proposal-md)
 - [MILESTONE-35-PROPOSAL.md](#milestone-35-proposal-md)
+- [MILESTONE-36-PROPOSAL.md](#milestone-36-proposal-md)
+- [MILESTONE-37-PROPOSAL.md](#milestone-37-proposal-md)
+- [MILESTONE-38-PROPOSAL.md](#milestone-38-proposal-md)
+- [MILESTONE-38A-PROPOSAL.md](#milestone-38a-proposal-md)
+- [MILESTONE-38B-PROPOSAL.md](#milestone-38b-proposal-md)
+- [MILESTONE-38B-SOURCE-INVENTORY.md](#milestone-38b-source-inventory-md)
+- [MILESTONE-38C-PROPOSAL.md](#milestone-38c-proposal-md)
+- [MILESTONE-38D-PROPOSAL.md](#milestone-38d-proposal-md)
+- [MILESTONE-38E-PROPOSAL.md](#milestone-38e-proposal-md)
+- [MILESTONE-39-PROPOSAL.md](#milestone-39-proposal-md)
+- [MILESTONE-40-PROPOSAL.md](#milestone-40-proposal-md)
+- [MILESTONE-40A-PROPOSAL.md](#milestone-40a-proposal-md)
+- [MILESTONE-40B-PROPOSAL.md](#milestone-40b-proposal-md)
+- [MILESTONE-40C-PROPOSAL.md](#milestone-40c-proposal-md)
+- [MILESTONE-40D-PROPOSAL.md](#milestone-40d-proposal-md)
+- [MILESTONE-40E-PROPOSAL.md](#milestone-40e-proposal-md)
+- [MILESTONE-40F-PROPOSAL.md](#milestone-40f-proposal-md)
+- [MILESTONE-40G-PROPOSAL.md](#milestone-40g-proposal-md)
+- [MILESTONE-40H-PROPOSAL.md](#milestone-40h-proposal-md)
+- [MILESTONE-40I-PROPOSAL.md](#milestone-40i-proposal-md)
 
 
 ---
@@ -8424,3 +8444,9176 @@ surrogate status:
   before running the full `npm test` suite.
 
 ---
+
+---
+
+<a id="milestone-36-proposal-md"></a>
+
+# Archive: MILESTONE-36-PROPOSAL.md
+
+# Milestone 36: Dashboard Consolidation, Responsive Form Alignment, and Output Corrections
+
+## Status
+
+**Implemented on `master`; this is now a historical implementation record.** The
+original proposal was researched against `78ee85a`. The implementation and its
+follow-up work are present through `bcfd939` (`feat(milestone-36): condense the
+blocked Print Preview banner and add a draft override`). As a result, the original
+file/line citations and future-tense task language below describe the planning
+baseline, not the current source tree.
+
+Do not use the task lists below as instructions for new changes without first
+re-checking current code. The completion map identifies the commits that supersede
+that baseline; the current source and tests are authoritative.
+
+Two scope questions were resolved with the requester before drafting:
+
+- **"Align the top and bottom buttons in the list"** means the **per-row action
+  buttons inside the triage list** (Open / Backup / PDF / New year / Prior years /
+  Archive / Delete), not the page-header or archived-section buttons.
+- **Filing controls move entirely.** The sidebar's Ward Picker control block is
+  removed, not duplicated. The sidebar keeps the active-filing name and the schedule
+  list, which gains the vertical room.
+
+---
+
+## Completion Map
+
+| Scope | Current condition | Primary implementation commits |
+|---|---|---|
+| 36-1 Dashboard shell consolidation | Shipped, then refined for row actions, responsive layout, and closed filings. | `e5fb9cf`, `1d32f79`, `38f328b`, `4913206` |
+| 36-2 Sortable columns and judge propagation | Shipped. Header sorting is directional; explicit case-linked filings update together and matching unlinked case numbers require confirmation. | `e5fb9cf` |
+| 36-3 Schedule form-field alignment | Shipped with wider container-query coverage and layout tests. | `e5fb9cf` |
+| 36-4 PDF margins and duplicate titles | Shipped. Supporting-document images are bounded to the one-inch content area; duplicate visible block titles are suppressed without losing structural metadata. | `e5fb9cf` |
+| 36-5 Content corrections | Shipped, including generalized clerk guidance, the no-trusts certification, and date-display correction. | `e5fb9cf` |
+| 36-6 Data-entry correctness defects | Shipped, including the Initial Plan tri-state/accessibility repair, classifier guard, Annual typing behavior, bar-number cap, and parity coverage. | `e5fb9cf` |
+| 36-7 Navigation and creation defects | Shipped, including direct combobox switching, carry-source coverage, and the minor-plan soft warning. The blocked-preview usability item was completed as a follow-up. | `e5fb9cf`, `bcfd939` |
+
+The test files listed in the original verification plan were added or updated in
+the same implementation series. This document does not certify a fresh test run at
+the current `HEAD`; use the repository test workflow before any subsequent code
+change.
+
+---
+
+## Original Requested Change Inventory
+
+| # | Request | Sub-milestone |
+|---|---|---|
+| 1 | Dashboard column names sortable like Excel | 36-2 |
+| 2 | Auto-fill judge name for filings sharing a case number | 36-2 |
+| 3 | Dashboard: professional view only | 36-1 |
+| 4 | Move Close Active Filing out of the header into the right-hand button group | 36-1 |
+| 5 | Align per-row action buttons; make them responsive | 36-1 |
+| 6 | Move filing controls onto the dashboard | 36-1 |
+| 7 | Fix schedule form-field alignment at all screen sizes; tablet and small especially | 36-3 |
+| 8 | PDF margins always 1 inch | 36-4 |
+| 9 | Remove duplicated header titles from PDF output | 36-4 |
+| 10 | Remove Pinellas-County-specific standards from descriptions | 36-5 |
+| 11 | Part VIII "Required to continue" must read "I certify there are no trusts" | 36-5 |
+
+Items 10 and 11 arrived after the initial list and are folded into 36-5.
+
+Seven further defects came from an external QA pass and were independently
+reproduced before acceptance:
+
+| # | Defect | Sub-milestone |
+|---|---|---|
+| 12 | Initial Plan question F never persists and has no accessible name | 36-6 |
+| 13 | Section checklist and export validator enforce different rules | 36-6 |
+| 14 | Spaces stripped mid-typing in Annual/Final/Trust Accounting name fields | 36-6 |
+| 15 | Bar number silently truncated to six digits | 36-6 |
+| 16 | Sidebar Active Filing switcher never switches filings | 36-7 |
+| 17 | Carryover picker offers only one source filing out of several | 36-7 |
+| 18 | No warning when a minor-only form is created for an adult ward | 36-7 |
+
+Four further QA claims were rejected or left unverified; the appendix records
+each with its evidence.
+
+---
+
+## Milestone 36-1: Dashboard Shell Consolidation
+
+### Problem Statement
+
+The dashboard currently ships three mutually exclusive layouts behind a role
+preference, and the filing controls live in a fourth place entirely.
+
+- **Three roles, two renderers.** `preferences.js:4` defines
+  `DASHBOARD_ROLES = new Set(['family', 'professional', 'assistant'])` with `family`
+  as the persisted default (`DEFAULT_PREFERENCES.role`). `index.js:59`'s
+  `isTriageRole()` routes `professional` and `assistant` to `renderTriageQueue()`
+  and everything else to `renderFamilyDashboard()` (`index.js:553`). The two roles
+  that share the triage renderer still differ: `triageControlsHTML()`
+  (`index.js:97`) shows an Assignment filter for `professional` only, while
+  `dashboardHeaderHTML()` (`index.js:150`) shows a "Working on behalf of"
+  supervisor filter for `assistant` only. `renderDashboardWorklist()` hides the
+  deadlines/recent panel entirely for both triage roles, so the family role is the
+  only consumer of a whole rendering path.
+- **The role chooser is unavoidable on first run.** `onboardingHTML()`
+  (`index.js:176`) renders a three-button "Choose your dashboard view" banner until
+  dismissed, and `roleControlHTML()` (`index.js:75`) renders a persistent `View`
+  select in the page header.
+- **Close Active Filing is grouped with page-level actions, not filing actions.**
+  `index.js:158` builds `closeLoadedWardBtn` and `index.js:167` emits it as the
+  first child of `.dashboard-header-actions`, ahead of Export All Filings, the View
+  select, and New Filing from Existing. It is a filing control sitting in a row of
+  dashboard controls.
+- **Filing controls live in the sidebar.** `index.html:54-73` holds the Ward Picker
+  section: the combobox, a `Hide filing controls` toggle, `Switch Filing`,
+  `+ New Form`, and a `.ward-picker-actions` row of Close / Rename / Delete. Every
+  one of these acts on a filing, and every one of them is invisible from the
+  dashboard, which is where filings are chosen.
+- **Row action buttons do not align column-to-column.** `triageActionButtons()`
+  (`index.js:476`) emits a flat button list in which `Prior years` is conditional on
+  `row.sourceWard.years?.length`. Two adjacent rows therefore carry six and seven
+  buttons, and because `.dashboard-triage-actions` is a plain flex row, every button
+  after the insertion point shifts horizontally relative to the row above it. At
+  `@container triage-queue (max-width:1040px)` the grid collapses to two columns
+  (`dashboard.css:236`) and the action cell inherits whatever width remains.
+
+### Implementation Tasks
+
+1. **Collapse to a single professional layout.** Delete `renderFamilyDashboard()`,
+   `roleControlHTML()`, `onboardingHTML()`, and `isTriageRole()`; call
+   `renderTriageQueue()` unconditionally from `renderDashboardGrid()`. Keep the
+   archived/closed section, which both branches shared.
+2. **Retire the role preference with a migration, not a deletion.**
+   `validateDashboardPreferences()` must keep accepting the old key so an existing
+   `pg-dashboard-preferences-v1` payload does not throw, and must normalize any
+   stored `family`/`assistant` value to the single supported layout. Drop
+   `onboardingDismissed`. Preserve `supervisingProfessionalFilter`, which is real
+   filter state rather than layout state.
+3. **Decide the two role-conditional filters.** With `assistant` gone, the
+   "Working on behalf of" supervisor filter (`dashboardHeaderHTML()`) has no role
+   that shows it. Keep the Assignment filter from `triageControlsHTML()` and remove
+   the supervisor variant, or merge them into one control — this is a product call
+   and should be settled before coding, not during.
+4. **Move filing controls onto the dashboard.** Relocate Switch Filing, New Form,
+   Close, Rename, and Delete from `index.html`'s Ward Picker section into one
+   right-aligned filing-controls cluster in the dashboard header, and delete the
+   `Hide filing controls` toggle along with the `.ward-collapsible` machinery that
+   only existed to reclaim sidebar space. Close Active Filing (item 4) is one of
+   these controls and joins the same cluster, which resolves items 4 and 6 as a
+   single layout change rather than two competing ones.
+5. **Audit every consumer of the removed sidebar markup before deleting it.**
+   `applyWardControlsCollapsedState()` and the `toggle-ward-controls` shell action
+   become dead code; `#close-ward-btn`, `#rename-ward-btn`, and `#delete-ward-btn`
+   are referenced by id elsewhere in `legacy-app.js` and by the guided walkthrough.
+   Grep for each id and each `data-shell-action` value and update or remove the
+   handler — do not leave orphaned listeners.
+6. **Make the action cell a grid, not a flex row.** Give
+   `.dashboard-triage-actions` a fixed column template so each action lands in the
+   same column on every row, and render `Prior years` as an always-present cell that
+   is empty (not absent) when the filing has no prior years. This is what makes the
+   buttons line up; hiding the button without reserving its cell does not.
+7. **Give the action cell its own responsive rules.** Add container-query
+   breakpoints under the existing `triage-queue` container so the action grid drops
+   from one row to two rows to a single column as the queue narrows, rather than
+   inheriting the two-column row collapse.
+
+### Blast Radius
+
+Removing the role select breaks four E2E specs that drive `#dashboard-role`
+directly: `dashboard-visual.spec.ts:43,96`, `dashboard-backup.spec.ts:25,93`,
+`routes.spec.ts:119-185`, and `case-file-protection.spec.ts:204`. `routes.spec.ts`
+additionally asserts `.dashboard-family-row` counts and priority attributes, which
+disappear with the family renderer. `tests/unit/dashboard-preferences.spec.js`
+covers role validation and must be rewritten around the migration rather than
+deleted. Every one of these is an intentional contract change, and each should be
+updated in the same commit as the code so the suite never sits red.
+
+---
+
+## Milestone 36-2: Sortable Columns and Judge Auto-Fill
+
+### Problem Statement
+
+- **The header row is inert text.** `renderTriageQueue()` (`index.js:548`) emits
+  `<div class="dashboard-triage-header"><span>Ward</span>…</div>` — eight plain
+  spans with no controls, no `aria-sort`, and no click target. Sorting is available
+  only through the separate `Sort` select in `triageControlsHTML()`
+  (`index.js:118`), which offers four of the eight columns (Priority, Deadline, Last
+  modified, Ward name) and is keyed to module state `_dashboardTriageSort`
+  (`index.js:32`). `getTriageRows()` (`index.js:490`) applies it.
+- **Judge is free text with no propagation.** The Judge column renders
+  `assignmentControl()` (`index.js:472`), a bare text input bound to
+  `data-dashboard-change="assignee"`. `updateDashboardWorkflow()` (`index.js:658`)
+  writes the value to that one ward's `dashboardWorkflow.assigneeName` and stops.
+  Three filings on the same case number therefore require the judge's name to be
+  typed three times, with three chances to spell it differently — and the
+  Assignment filter keys off `normalizeFilterKey(assigneeName)`, so a single typo
+  silently splits one judge into two filter entries.
+
+### Implementation Tasks
+
+1. **Make each sortable header a button.** Replace the spans with
+   `<button type="button" data-dashboard-sort="<key>">`, carrying `aria-sort` of
+   `ascending`, `descending`, or `none`, and a visible direction indicator. Ward,
+   Form Type, Case #, Status, Deadline, and Judge sort; Actions does not. Contacts
+   is a multi-valued cell — either sort on the first contact's name and say so in
+   the column's `title`, or leave it unsortable. Pick one deliberately.
+2. **Extend the sort state to carry a direction.** `_dashboardTriageSort` is
+   currently a bare key with hardcoded directions inside `getTriageRows()`.
+   Replace it with `{ key, direction }` and make each comparator direction-aware.
+   Clicking the active column flips direction; clicking a new column selects it at
+   that column's natural default (name ascending, deadline ascending, last-modified
+   descending).
+3. **Keep the Sort select and the headers in sync, or remove the select.** Two
+   independent controls writing one piece of state is a defect generator. The
+   cleaner outcome is to delete the `Sort` select once every one of its options is
+   reachable from a header, keeping only `Priority` — which is not a column — as a
+   named default. Decide before coding.
+4. **Preserve Priority as the default ordering.** `compareDashboardPriority()`
+   (`view-model.js:181`) is the current default and encodes real triage semantics.
+   An explicit column sort replaces it for that render only; it must not become
+   unreachable.
+5. **Propagate the judge across a case, on commit, with an undo path.** On
+   `assignee` commit, find sibling filings by case number and offer to apply the
+   same judge to them. Use `caseNumberOf()` from `core/case-resolver.js:32`, not
+   `row.caseNumber` — the projected field (`view-model.js:161`) collapses
+   `caseNumber || ucn || ref`, and only `caseNumberOf()` implements the documented
+   planMinor `ucn || ref` precedence.
+6. **Do not infer silently.** `case-resolver.js`'s header comment states the rule
+   this codebase already committed to: *"Case linking is always an explicit user
+   action … never inferred automatically from two filings happening to share typed
+   text."* Auto-filling a judge across every filing with a matching case number on
+   keystroke would violate that rule. Two designs respect it: fill only filings
+   already linked to the same `caseId` (strongest, and free of the string-matching
+   fragility the Case entity exists to fix), or prompt with an explicit
+   "Also set this judge on N other filings for case X?" confirmation. **The
+   caseId-linked design is recommended**; if case-number matching is chosen anyway,
+   it must be confirmed rather than automatic.
+7. **Write through the existing path.** Each affected sibling must go through
+   `saveWardToState()` plus `markDirtySinceExport()`, exactly as
+   `updateDashboardWorkflow()` does now, so a multi-filing update cannot leave the
+   case file half-saved.
+
+---
+
+## Milestone 36-3: Schedule Form-Field Alignment Across Screen Sizes
+
+### Problem Statement
+
+Commit `056be3c` fixed this class of bug for `col-md-*` by making each field row an
+inline-size container, and measured the result: columns narrower than 118px went
+from 666 to 0, and labels wrapping to three or more lines went from 76 to 1. The fix
+was scoped to one Bootstrap tier, and the remaining tier still has the original bug.
+
+- **The container only exists on rows that contain a `col-md-*` child.**
+  `cards.css:20` selects `.schedule-page .row:has(>[class*="col-md-"])`. A row built
+  entirely from `col-lg-*` never becomes a container at all, so none of the
+  container queries below it can ever match.
+- **The rules inside only reset `col-md-*` widths.** `cards.css:25-38` lists
+  `col-md-1` through `col-md-11` explicitly. Even inside a row that *is* a
+  container, a `col-lg-*` sibling keeps its viewport-keyed Bootstrap width and
+  falls out of alignment with the `col-md-*` columns beside it.
+- **53 `col-lg-*` usages remain**, against 312 `col-md-*`, spread across all seven
+  filing features. These are exactly the columns that still reason about the
+  viewport rather than the card, which is the defect `056be3c` set out to fix.
+- **Tablet is the worst case and is untested.** No E2E spec asserts field-row
+  layout at tablet width; `dashboard-visual.spec.ts` covers a viewport matrix for
+  the dashboard only. The 768–991px band is where `col-lg-*` sits at full desktop
+  proportions inside a card that has already dropped to full width.
+
+### Implementation Tasks
+
+1. **Widen the container selector** to any `.schedule-page .row` carrying Bootstrap
+   column children, not only `col-md-*`.
+2. **Extend the container-query rules to `col-lg-*`** at the same three breakpoints
+   (820px, 520px, 340px), matching each `col-lg-N` to the behavior its `col-md-N`
+   counterpart already has.
+3. **Re-measure, do not eyeball.** Reuse `056be3c`'s own harness — 16 viewport
+   widths across the schedule pages — and report the same two numbers it reported:
+   columns under 118px, and labels wrapping to three or more lines. A fix that does
+   not move those numbers is not a fix.
+4. **Add a tablet-band assertion to `schedule-card-layout.spec.ts`.** At minimum
+   768×1024 and 1024×768, assert no field row scrolls horizontally
+   (`scrollWidth <= clientWidth + 1`) and no column renders narrower than the 118px
+   floor `056be3c` established.
+5. **Check the known 360px exception.** `056be3c` left one label wrapping to three
+   lines at 360px. Confirm whether the `col-lg-*` work resolves it or whether it
+   needs the `340px` breakpoint tightened.
+
+---
+
+## Milestone 36-4: PDF Margin and Duplicate-Title Corrections
+
+### Problem Statement
+
+**Margins.** The body layout is already correct: `pdf-engine.js:255-260` sets
+`margin = 72` with an explicit Rule 2.520 citation, and the DOCX engine matches at
+1440 twips (`docx-engine.js:47-51`). One path escapes it.
+`getSupportingDocumentImageLayout()` (`pdf-engine.js:441`) computes
+`maxWidth = fullPage ? pageWidth : contentWidth` and
+`maxHeight = fullPage ? pageHeight : pageBottom - curY`, then centers the image at
+`(pageWidth - width) / 2`. In full-page mode the bounds are the **paper**
+(612 × 792), not the content box (468 × 648), so a scanned exhibit scales edge to
+edge with a zero-inch margin on all four sides. `startNewAttachmentPage()`
+(`pdf-engine.js:377`) reinforces this by setting `curY = 0`.
+
+**Duplicate titles.** A section's `title` renders as an H1 or H2 at
+`pdf-engine.js:663-667`, then the first block's `title` renders again as a
+sub-heading 16pt below — at `:728` for tables, `:897` for checklists, and the
+equivalent site for key-value grids. When the two strings match, the same heading
+prints twice on consecutive lines. **15 exact adjacent duplicates exist** across the
+shared PDF models:
+
+| Model | Count |
+|---|---|
+| `annual-accounting/pdf-model.js` | 9 |
+| `plan-annual/pdf-model.js` | 2 |
+| `plan-minor/pdf-model.js` | 2 |
+| `plan-initial/pdf-model.js` | 1 |
+| `plan-simplified/pdf-model.js` | 1 |
+
+The clearest example is `annual-accounting/pdf-model.js:341` and `:350` — section
+`'SCHEDULE A: Income Received During Period'` immediately followed by table block
+`'Schedule A: Income Received During Period'`.
+
+**The fix already exists in the sibling engine.** `docx-engine.js:447-448` computes
+`shouldRenderTitle` as the block title differing case-insensitively from the section
+title, and suppresses the duplicate; `:573-574` repeats it for checklists. The DOCX
+output is already clean. Only the PDF engine lacks the guard.
+
+### Implementation Tasks
+
+1. **Bound full-page attachments to the content box.** Change
+   `getSupportingDocumentImageLayout()`'s full-page branch to `contentWidth` and
+   `pageHeight - (margin * 2)`, and center within the content box rather than the
+   page. Exhibits shrink slightly; that is the requested behavior and the rule's
+   requirement.
+2. **Confirm every other page-relative coordinate.** `startNewPage()`
+   (`pdf-engine.js:370`) sets `curY = 140` on continuation pages, which is header
+   clearance rather than a margin violation, and the footer draws at
+   `pageHeight - margin - 4` (`:365`), inside the bottom margin where page numbers
+   are permitted. Verify rather than assume, and record the finding either way.
+3. **Port the DOCX guard into the PDF engine** at all three block-title draw sites,
+   using the same case-insensitive trimmed comparison so the two engines stay
+   behaviorally identical.
+4. **Suppress the draw, never the data.** `block.title` also feeds the accessibility
+   structure tree: `pdf-engine.js:735-737` uses it for the table element's `title`
+   and builds its `summary` from the same string, falling back to
+   `'Case Information Summary Table'` when absent. Clearing `block.title` in the
+   models would silently degrade every tagged table's summary to that generic
+   string. The guard must gate only the `doc.text(...)` call.
+5. **Guard the regression with the existing suites.**
+   `tests/e2e/pdf-structure-tags.spec.ts` and `pdf-table-semantics.spec.ts` already
+   assert tag structure and table semantics; extend them to assert that a section
+   title and its first block title never both appear as visible headings, and that
+   the table `summary` still resolves from `block.title`.
+
+---
+
+## Milestone 36-5: Content Corrections
+
+### 10. Remove circuit-specific standards from descriptions
+
+Three distinct classes of Sixth-Circuit-specific content are presented as if they
+were statewide requirements:
+
+- **`Administrative Order 2024-025` — 7 occurrences** in `plan-annual/print.js:73`,
+  `plan-initial/index.js:163`, `plan-initial/print.js:59`, `plan-minor/print.js:52`,
+  `plan-simplified/print.js`, and `legacy-app.js`. This is a Sixth Judicial Circuit
+  administrative order governing Disaster Plan filing. It is stated unconditionally,
+  including in on-screen guidance at `plan-initial/index.js:163`, so a Broward or
+  Orange County filer is told to comply with an order that does not bind them.
+- **Hardcoded clerk addresses** at `plan-simplified/pdf-model.js:182`: Pinellas at
+  315 Court Street Room 106 Clearwater, and Pasco at P.O. Box 338 New Port Richey,
+  printed into the PDF regardless of the filing's actual county.
+- **A Sixth-Circuit placeholder** at `guardian-inventory/index.js:805`:
+  `'e.g., 6th Judicial / Pinellas'` on the Schedule C-2 Court / Jurisdiction field.
+
+This matters because the county field is already statewide.
+`legacy-app.js:1376` lists all 67 Florida counties, `circuit-lookup.js` maps every
+one to its circuit, and `legacy-app.js:1367`'s own comment records that the field
+was widened from a Pinellas/Pasco pair specifically to support any county. The
+descriptions were never updated to match.
+
+**Tasks.** Remove the Administrative Order sentence from all seven sites. Replace
+the hardcoded clerk block with either county-conditional text driven by the existing
+`county` field or generic "file with the Clerk of the Circuit Court in the county of
+jurisdiction" guidance — generic is recommended, since maintaining 67 clerk
+addresses is a liability the app should not take on. Generalize the C-2 placeholder
+to a form-shaped example without a county name. **No test asserts any of these
+strings**, so the removal is low-risk; add a guard test asserting no circuit-specific
+administrative order number appears in shipped copy.
+
+### 11. Part VIII must accept a no-trusts certification
+
+**Root cause.** `legacy-app.js:7831` defines the Annual Accounting Part VIII
+completeness check as `'a-p8': D.trusts.some(t => t.name)`. Part VIII is therefore
+completable **only** by naming at least one trust. A ward with no trusts leaves the
+section permanently incomplete, its sidebar marker permanently un-green, and the
+"Required to continue:" block (`core/status/section-status.js:43`) permanently on
+screen. The page itself already knows the answer — `annual-accounting/index.js:1222`
+asks "#1. Does the Ward have one or more Trusts?" and defaults it to `No` — but
+`index.js:1224` renders the resulting empty state as inert prose:
+`"No trusts indicated. Check the box above if the ward has one or more trusts."`
+
+**The pattern to follow already exists.** `legacy-app.js:7819` defines
+`verifiedEmpty` over `D.scheduleNoItems`, and five other Annual checks already use
+it: `a-p11`, `a-schc`, `a-sche`, and every `rowsComplete()` caller. Its UI is
+`scheduleEmptyHTMLAnnual()` (`annual-accounting/index.js:659`), which renders a
+checkbox reading *"I verify there are no {noun} to report for this schedule."*
+Part VIII is the outlier that never adopted it.
+
+**Tasks.** Replace `index.js:1224`'s prose empty state with a certification checkbox
+reading **"I certify there are no trusts"** — the requested wording, which
+deliberately differs from the shared helper's "I verify there are no … to report for
+this schedule" phrasing. Either parameterize `scheduleEmptyHTMLAnnual()` to accept
+custom text or render a bespoke control writing the same `D.scheduleNoItems` key;
+parameterizing is preferred so one handler keeps persisting the value. Then extend
+`legacy-app.js:7831` so a checked certification satisfies the check alongside the
+existing named-trust condition. Confirm the certification flows into
+`annual-accounting/pdf-model.js:839-847`, which already computes `hasAnyTrust`, so
+the printed answer and the certification agree. Add a unit test asserting Part VIII
+reports complete with zero trusts and the box checked, and incomplete with zero
+trusts and the box clear.
+
+### 11b. Supporting Documents heading prints raw ISO dates
+
+Found while checking a QA claim, not requested. The heading built at
+`legacy-app.js:8605` splits `scheduleDocPeriodKey()` (`:6567`) and renders both ends
+verbatim, producing "Supporting Documents — accounting period 2027-01-01 to
+2027-12-31". Every other date surface uses MM/DD/YYYY, a convention Milestone 34-1E
+item 18 set deliberately. Run both ends through the existing display formatter. The
+heading is on nearly every schedule page, so the inconsistency is visible constantly.
+
+---
+
+## Milestone 36-6: Data-Entry Correctness Defects
+
+These four were reproduced against a running build. Each corrupts or discards data
+the user actually typed, so they outrank every layout item in this milestone.
+
+### 12. Initial Plan question F silently discards its own answer
+
+**Reproduced.** On Initial Guardianship Plan route `/p8` ("11. Advance Directives"),
+question F is `#committeeIncorporated`. Clicking it visibly checks the box, but
+`D.committeeIncorporated` stays `""` — before the click, after the click, and after
+an explicitly dispatched change event. Writing the same path with `setPath()`
+directly works, which rules out the path and the model.
+
+**Root cause — a substring collision in field-kind inference.**
+`getControlKind()` (`core/form/form-contract.js:141`) classifies a control by
+searching its lowercased path for a list of needles. One of them is `'ein'`, meant
+to catch a taxpayer EIN field. The path `committeeIncorporated` lowercases to
+`committeeincorporated`, which contains `ein` at "committ**ein**corporated". The
+checkbox is therefore classified as kind `ssn`. `finalizeFieldValue()`
+(`form-contract.js:257`) then runs its SSN branch, `formatSSN('Yes')` strips every
+non-digit, and the empty string is written to the model — erasing the answer on the
+same event that recorded it.
+
+**Second, independent defect on the same control.**
+`plan-initial/index.js:438` calls `yesNoCheckboxS('committeeIncorporated','',…)`
+with an empty label. `yesNoCheckboxHTML()` (`legacy-app.js:6966`) renders
+`<label for=…></label>` with nothing inside, so the checkbox has **no accessible
+name at all** — confirmed: `labelText: ""`, `aria-label: null`. A screen reader
+announces an unnamed checkbox, and there is no visible text beside it either.
+
+**Scope is exactly one field.** A static scan of all 210 literal control paths in
+`src/` for accidental mid-word matches against the full needle list returned two
+hits: `committeeIncorporated` (this defect) and `guardianNames` matching `name`,
+which is the intended classification. No other field is affected today.
+
+**Tasks.** Give question F its real label text. Then fix the classifier, not just
+this one path: substring matching over a bare path string will keep producing this
+failure as fields are added. Two options — require word or camelCase boundaries in
+`getControlKind()`'s needle matching, or make `renderFormField`-style explicit
+`data-field-kind` mandatory for every control that any formatter can rewrite. The
+boundary fix is smaller; the explicit-kind fix is the one that ends the class. Also
+add a guard so `finalizeFieldValue()` never applies a text formatter to a checkbox
+or radio, whatever kind was inferred — a yes/no control has no text to format.
+Extend `tests/unit/form-contract.spec.js` with the boundary cases and
+`tests/unit/plan-tristate.spec.js` with a question F round-trip.
+
+### 13. The section checklist and the export validator enforce different rules
+
+**Reproduced on Initial Plan.** `legacy-app.js:7994` defines
+`'pi-p8': (!!D.q11NoDirectives !== !!D.q11Executed)` — the section turns green on
+the two directive checkboxes alone and never consults `committeeIncorporated`.
+`plan-initial/print.js:54` nonetheless requires
+`has(d.committeeIncorporated)` before export. A filer can therefore satisfy the
+sidebar completely and still be refused at Print Preview, with no indication on the
+page of what is missing.
+
+**This is a general class, not one field.** `computeNavChecks()` in `legacy-app.js`
+and each feature's `print.js` readiness list are two hand-maintained rule sets over
+the same data, with no mechanism keeping them in agreement. Milestone 35-4 was
+scoped to reconcile exactly these invariants and was never started.
+
+**Tasks.** Treat this as 35-4's unfinished work rather than a new investigation.
+Derive both surfaces from one declaration per section, or, if that is too large a
+change for this milestone, add a test that asserts for every filing type and every
+section that the export validator requires nothing the section check ignores. That
+test is the deliverable even if the reconciliation itself lands later — it converts
+an invisible class of bug into a visible list.
+
+**Note on the "answered vs. blank" pattern.** Several of these fields are yes/no
+checkboxes whose model value starts as `''` and only becomes `'No'` once the user
+checks and unchecks them. Any readiness rule written as `has(field)` therefore
+treats "the user means No" and "the user never looked" as the same state, and can
+only be satisfied by a check-then-uncheck gesture no one would guess. Fix the
+representation — an explicit tri-state, or a default of `'No'` written at ward
+creation — rather than the individual rules.
+
+### 14. Spaces stripped mid-typing in Annual, Final, and Trust Accounting
+
+**Reproduced.** Typing `Morgan Reyes` character by character into the Annual
+Accounting preparer name field yields `MorganReyes`, both on screen and in the
+model. The same typing into Initial Inventory's `guardianName` and Initial Plan's
+`guardianNames` yields the correct `Morgan Reyes`.
+
+**Root cause.** `persistAnnualControl()` (`annual-accounting/index.js:154`) is bound
+to the container's `input` event (`:205`) and applies its formatter map on every
+keystroke, writing the result back with `control.value = value` (`:181`). For a
+name or address field the formatter is `formatName` → `formatSafeTitleCase` →
+`sanitizeStoredText`, which calls `.trim()`. The trailing space is removed the
+instant it is typed, and the next character lands flush against the previous word.
+Assigning `control.value` also moves the caret to the end, which is why text can
+only be entered reliably in reverse word order.
+
+**The rest of the app already fixed this.** `bindForms()` in `legacy-app.js:7741`
+carries the comment "formatName()/formatAddress() title-case a complete value and
+trim it, which … eats a just-typed trailing space" and made name and address
+finalize-only. Commit `d115205` did the same for City/State/Zip. The Annual
+Accounting feature binds its own inputs via `data-annual-path` and was never
+brought along.
+
+**Tasks.** Make `persistAnnualControl` finalize-only for every formatter that
+rewrites what was typed — `name`, `address`, `zip`, and `security` — moving them to
+the existing `focusout` listener (`:222`) beside the case-number finalizer. Leave
+`decimal`, `signed-decimal`, and digit-count limiting live, since those behave like
+`maxlength` rather than rewriting words. **Audit existing saved data**: values
+already stored with their spaces eaten are still wrong after the code is fixed, and
+the dashboard Contacts column is where they surface.
+
+### 15. Bar number truncated to six digits
+
+**Reproduced.** Typing `0089214` into the attorney bar number field stores
+`008921`. `formatBarNumber()` (`legacy-app.js:1478`) is
+`String(s||'').replace(/\D/g,'').slice(0,6)`. Florida Bar numbers run up to seven
+digits, so any seven-digit number loses its last digit with no warning, no length
+indicator, and no validation error. The truncated value then prints onto filed
+documents as a different attorney's number.
+
+**Tasks.** Raise the cap to seven digits. Decide whether to keep silent truncation
+at the new cap or surface a validation error on over-length input; an error is
+better, since a silently altered bar number is worse than a rejected one. Add a unit
+test for six- and seven-digit values.
+
+---
+
+## Milestone 36-7: Filing Navigation and Creation Defects
+
+### 16. The sidebar Active Filing switcher never switches filings
+
+**Reproduced, both input paths.** With two filings open, typing into `#ward-selector`
+filters the dropdown correctly and shows the right entry. Clicking that entry leaves
+`caseFile.activeWardId` unchanged. Selecting it with ArrowDown then Enter also
+leaves it unchanged.
+
+**Root cause.** The `onPick` callback passed to `comboboxRenderDropdown()`
+(`legacy-app.js:4882-4888`) does four things: set the input's text, stash
+`input.dataset.wardId`, clear the active-descendant state, and hide the dropdown. It
+never calls `handleSwitchWardClick()` or `switchWard()`. Picking an item only
+*stages* a choice that the separate "Switch Filing" button later consumes. The
+keyboard path is the same code — Enter on a highlighted option dispatches
+`mousedown` into that identical callback (`:4941`). Enter with **no** option
+highlighted does call `handleSwitchWardClick()` (`:4944`), which is why the control
+appears to work intermittently.
+
+**Tasks.** Call the switch directly from `onPick`. Note the interaction with 36-1:
+that sub-milestone removes the sidebar's filing controls, including the "Switch
+Filing" button this combobox currently depends on. Decide together whether the
+combobox moves to the dashboard, stays in the sidebar as a self-contained switcher,
+or is replaced by the dashboard's Open action. Whatever survives must switch on
+selection, with no second confirming click.
+
+### 17. The carryover picker offers only one source filing
+
+**Reproduced.** With three filings for the same ward — Initial Inventory, Annual
+Accounting, and Initial Guardianship Plan — opening Add New Form for Annual Plan
+(Minors) offered exactly two options: "Start Blank" and "Carry Ward (Initial
+Inventory)". The other two existing filings were not listed.
+
+**Tasks.** Find the eligibility rule behind `#carry-source-ward` and establish
+whether the restriction is deliberate (some source/target type pairs genuinely
+cannot carry) or accidental. If deliberate, say so in the picker rather than
+silently omitting rows. Separately, verify what actually gets copied: the QA pass
+reported case number and guardian names arriving blank on Annual Plan (Minors), and
+attorney certification fields never carrying over on Initial Plan, against a
+description promising ward name, case number, county, and guardian contact details.
+Both claims are plausible and specific but were not independently reproduced here —
+confirm each before writing code.
+
+### 18. No warning when a minor-only form is created for an adult ward
+
+**Reproduced.** An Annual Plan (Minors) filing was created and accepted for a ward
+carrying an adult guardianship inception date and an existing adult-type filing. No
+dialog, no prompt, no blocked field. This is an absent guard rather than a broken
+one, which makes it an enhancement, not a defect — but the form's own copy describes
+itself as "used when the ward is a minor," so the software contradicts itself.
+
+**Tasks.** Add a soft, dismissible warning at form-creation time when a
+minor-specific type is chosen for a ward whose existing data indicates an adult.
+Soft is the right strength: the app cannot know the ward's age directly, only infer
+it, and a hard block on an inference would be worse than the current silence.
+
+### 19. The blocked Print Preview banner is an unreadable wall of text
+
+**Reproduced on Initial Inventory.** A filing with nothing filled in yields 47
+preflight messages, and `pdf-preview.js` joined all of them with a space into a
+single paragraph: "Preview is blocked: Cover — Case Number is required. Cover —
+Guardianship Inception Date (GID) is required. ..." for roughly forty lines. The
+same list went into an `alert()` on Print. Fourteen of those messages are the
+identical sentence about verifying a schedule has no entries, repeated once per
+schedule. Nothing about the presentation helps a filer decide what to do next, and
+the assertive live region read the whole thing aloud.
+
+**There is also no way past it.** The gate is all or nothing, so a filer cannot see
+the document taking shape while filling it in, which is exactly when looking at it
+is most useful. Every message is shaped `<section> — <detail>`, so the data needed
+to group and count it is already there and merely discarded.
+
+**Tasks.** Replace the paragraph with a count, a grouped and collapsed breakdown,
+and an override. Group by the leading token of the section prefix so "D-2 Preparer"
+and "D-2 Attorney" collapse onto the one schedule the filer would navigate to.
+Announce the count rather than the list. Add a "Preview anyway" button that renders
+the draft with a persistent notice explaining what it is.
+
+**Scope the override to the screen.** It unblocks the embedded preview only. Save
+and Print stay gated, because an incomplete court form that has left the app is a
+different kind of mistake from one displayed on the filer's own monitor, and the
+draft notice cannot follow the file. The Print alert is shortened to a count and a
+pointer to the preview rather than carrying the list itself.
+
+---
+
+## Original Verification and Acceptance Plan
+
+The following was the implementation-time test plan. The associated tests landed
+with the implementation commits listed above. It remains useful as a coverage index,
+but it is not evidence of a fresh run against the current `HEAD`.
+
+### Unit tests
+
+- `dashboard-preferences.spec.js` — rewritten for the single-layout migration:
+  a stored `family` or `assistant` value normalizes without throwing, and
+  `supervisingProfessionalFilter` survives.
+- `dashboard-view-model.spec.js` — direction-aware comparators for every sortable
+  column; `compareDashboardPriority()` unchanged as the default.
+- New coverage for judge propagation: siblings resolved by `caseNumberOf()`, the
+  planMinor `ucn || ref` precedence honored, and no write to unlinked filings.
+- New coverage for Part VIII completeness in both certification states.
+- `annual-accounting-pdf-model.spec.js` and the plan model specs — assert no section
+  title equals its own first block title, case-insensitively.
+
+### E2E tests
+
+- Update the four specs that drive `#dashboard-role`; delete the
+  `.dashboard-family-row` assertions in `routes.spec.ts` and replace them with
+  triage-row equivalents.
+- New: clicking each sortable header reorders rows and sets `aria-sort` correctly,
+  and a second click reverses it.
+- New: per-row action buttons occupy identical columns across rows whose
+  `Prior years` presence differs.
+- `schedule-card-layout.spec.ts` — tablet-band assertions per 36-3.
+- `pdf-structure-tags.spec.ts` and `pdf-table-semantics.spec.ts` — extended per
+  36-4, plus a full-page attachment assertion that the image bounds sit inside the
+  1-inch content box.
+- New: no shipped copy contains a circuit-specific administrative order number.
+- New (36-6): typing a two-word name into an Annual Accounting name field keeps its
+  space, asserted per keystroke rather than only after blur.
+- New (36-6): Initial Plan question F round-trips through check, uncheck, save, and
+  reload, and carries a non-empty accessible name.
+- New (36-6): a seven-digit bar number survives entry and export intact.
+- New (36-7): selecting a filing in the sidebar combobox switches the active filing,
+  by mouse and by keyboard, with no second click.
+
+### Cross-cutting guard tests
+
+Two of 36-6's defects are instances of classes rather than one-offs, and each
+deserves a test that fails on the next instance, not just this one:
+
+- **Field-kind inference** — assert that no control path in any filing type infers a
+  kind by an accidental mid-word substring match, and that no text formatter is ever
+  applied to a checkbox or radio.
+- **Checklist versus export validator** — assert for every filing type and section
+  that the export validator requires nothing the section completeness check ignores.
+  Expect this to fail on more than the one field found here; that list is the
+  finding.
+
+### Historical sequencing note
+
+**36-6 lands first, ahead of every layout item.** Its four defects corrupt or discard
+data the user typed; a misaligned column does not. 36-1 lands next: it deletes a
+rendering path and moves markup that later work builds on, and every other
+sub-milestone touching the dashboard would otherwise be written twice. 36-2 depends
+on 36-1's consolidated header. 36-7's switcher fix must be sequenced with 36-1,
+which removes the button that switcher currently depends on. 36-3, 36-4, and 36-5
+are independent of each other and of the dashboard work, and may proceed in parallel.
+
+No sub-milestone is complete while its own tests are red. Where a change is an
+intentional contract break — the role select, the family renderer, the sidebar
+filing controls — the spec update ships in the same commit as the code.
+
+---
+
+## Decisions Recorded by the Implementation
+
+The decisions below are no longer open for MS 36. They describe current behavior
+and should be changed only through a new, explicitly scoped milestone.
+
+1. The dashboard has one professional triage layout; the role-specific toolbar
+   filters and the family renderer were removed.
+2. Contacts remains unsortable. Ward, Form Type, Case #, Status, Deadline, and
+   Judge are sortable from their column headers.
+3. The separate Sort select was removed. Header sorting owns the session-only sort
+   state; the active header cycles ascending, descending, then back to Priority.
+4. Judge changes propagate automatically across explicitly `caseId`-linked filings.
+   Matching unlinked case numbers receive a confirmation prompt before propagation.
+5. Clerk guidance was generalized rather than maintained as county-specific address
+   or Sixth-Circuit administrative-order copy.
+6. Field-kind inference now avoids accidental mid-word matches, and value formatting
+   is guarded so checkbox and radio controls are never text-formatted.
+7. Checklist/export parity coverage landed as a guard; broader reconciliation remains
+   a separate data-model and product-policy concern rather than an active MS 36 task.
+8. Florida Bar numbers normalize to eight digits: shorter numeric values are
+   left-padded with zeroes, and eight-digit values are retained. Input beyond eight
+   digits is currently truncated; a visible over-length validation error remains a
+   possible future enhancement.
+9. The sidebar combobox remains and switches the active filing directly on selection;
+   the removed separate Switch Filing button is no longer required.
+
+## Follow-up Boundaries
+
+- Existing names previously saved without spaces cannot be repaired reliably by an
+  automatic migration; the typing fix prevents new corruption but does not infer the
+  intended spacing of historical values.
+- Any change to the eight-digit bar-number truncation policy, checklist/export policy,
+  or dashboard sorting cycle requires a separately approved follow-up.
+
+---
+
+## Appendix: QA Findings Triage
+
+An external QA pass submitted 15 findings. Each was checked against the code and,
+where behavior was in question, reproduced against a running build with Playwright
+driving real UI events. Verdicts below.
+
+### Confirmed — accepted into this milestone
+
+| QA § | Finding | Evidence |
+|---|---|---|
+| 2.2 | Initial Plan question F cannot be satisfied; checkbox has no accessible name | Reproduced. Model stays `""` through check and uncheck. Root cause is narrower and different from the report's: an `'ein'` substring match inside `committeeIncorporated`. See 36-6 item 12 |
+| 3.1 | Checklist and export validator enforce different rules | Confirmed structurally on Initial Plan. See 36-6 item 13 |
+| 3.2 | Text fields strip spaces while typing | Reproduced, producing the report's own `MorganReyes` string. **Scope is narrower than claimed** — see below. 36-6 item 14 |
+| 4.1 | Carryover picker offers too few sources | Reproduced. Three sibling filings existed; one was offered |
+| 4.4 | No minor/adult mismatch warning | Reproduced. No warning of any kind |
+| 4.6 | Sidebar switcher does not switch filings | Reproduced on both mouse and keyboard paths |
+| 5 | Bar number truncates to six digits | Reproduced. `0089214` stored as `008921` |
+
+**Correction to 3.2's scope.** The report describes the space bug as affecting "most
+text fields" app-wide and "any name, address, or note typed the normal way." It does
+not. The same typing into Initial Inventory and Initial Guardianship Plan name
+fields produced correct text. The bug is confined to the Annual Accounting feature
+module, which also serves Final Accounting and Trust Accounting — three of nine
+filing types. The rest of the app was fixed earlier and carries comments explaining
+the fix. The report's dashboard evidence is still genuine: a preparer name saved
+from one of those three forms is exactly how `MorganReyes` reaches the Contacts
+column.
+
+### Not reproduced
+
+**2.1 — "Period From / Period To silently mirror each other."** This is the report's
+headline finding, called "the most consequential bug found" and the sole basis for
+its conclusion that only two of nine filings can be exported. **It did not
+reproduce.** Typing `01/01/2027` into Period From and `12/31/2027` into Period To on
+Annual Accounting, then blurring, left the model holding two distinct dates. Editing
+From last did not pull To along; the dates stayed independent in both directions.
+The date pipeline contains no mirroring mechanism: input keeps a per-path draft
+(`commit-coordinator.js`), blur canonicalizes that one path, and the two fields
+resolve to distinct paths through `setterPath()`. The same-day validation the report
+cites is real and correct — it just was not triggered here.
+
+Because the report's summary table marks seven of nine filings "Blocked — Period sync
+bug only," and that bug did not reproduce, **the claim that only two filings are
+exportable is unsupported.** Something did happen in that session; a data-entry
+sequence, a carryover path, or a specific form not covered here could still produce
+it. It needs a reproduction before any code is written, and no fix should be
+scheduled against it as stated.
+
+**4.2 — "Escape in Add New Form silently changes the Inventory Type dropdown."** Not
+reproduced. Typing a ward name and pressing Escape closed the modal. The type
+dropdown held its value and the name field was not cleared. Neither half of the
+claim held.
+
+### Incorrect
+
+**3.4 — "Trust Accounting Net Assets didn't reconcile until the trust's cash was
+itemized."** Working as designed, and the design is right. `calcTotalsAnnual()`
+computes `netAssets` from the transaction ledger (starting balance plus income minus
+disbursements plus capital adjustments) and `netAssetsFromD` from the asset-schedule
+itemization. Declaring a $25,000 starting balance while marking every asset schedule
+"none" asserts that $25,000 both exists and does not exist. `annualReconcileState()`
+flags the difference and requires either an itemization or a written explanation.
+The reporter's resolution — itemizing the $25,000 as a Schedule D-1 cash asset — is
+precisely what the form was asking for. The two panels are not "supposed to agree
+regardless"; the whole point of the pair is to catch the case where they don't.
+
+There is a fair UX complaint buried in it: nothing on screen explains *why* the
+panels disagree or that an explanation is an accepted alternative. Worth a sentence
+of inline guidance, not a code change to the arithmetic.
+
+**4.5 — "Supporting Documents header shows the end date in both positions."** Not
+reproduced. With a period of 2027-01-01 to 2027-12-31 the heading rendered
+"Supporting Documents — accounting period 2027-01-01 to 2027-12-31", the true range.
+The heading reads both ends from `scheduleDocPeriodKey()` (`legacy-app.js:6567`),
+which is a straightforward `from__to` join. A heading showing the same date twice
+means the two stored dates *were* the same — a symptom of whatever produced the 2.1
+observation, not an independent display bug.
+
+**A real defect is adjacent to it, and the report missed it.** That heading prints
+raw ISO dates (`2027-01-01`) while every other date surface in the app uses
+MM/DD/YYYY, a convention Milestone 34-1E item 18 standardized deliberately. Worth
+fixing as a one-line change; folded into 36-5 rather than given its own item.
+
+### Unverified — insufficient information
+
+- **3.3, court document text clipped in Print Preview.** Not reproduced, and the
+  mechanism argues against it: the PDF key-value grid measures both label and value
+  with `splitTextToSize` and grows the row to fit (`pdf-engine.js:747-760`), with a
+  comment recording that fixed-offset drawing was removed for this exact reason.
+  Text should wrap, not clip. Needs the screenshot and the filing that produced it.
+- **4.3, transient "This section could not be loaded."** A one-off with no
+  reproduction steps. The banner is a real, intentional surface for a failed dynamic
+  import (`tests/e2e/feature-load-failure.spec.ts` covers it). The reported blank
+  interim state on reload is plausible during startup and worth a look, but there is
+  nothing actionable without a trigger.
+- **5, inconsistent SSN/EIN masking.** Too vague to act on. Needs specific fields.
+- **5, the four "flagged earlier, not re-verified" items** — audit-fee
+  recalculation, a Schedule D-4 label mismatch, Next skipping a schedule section,
+  and subtotal sums. The report itself declines to stand behind these. One note:
+  `calcTotalsAnnual()` recomputes the audit fee from `netAssetsFromD` on every call,
+  so a stale fee would be a render-timing issue rather than a calculation error.
+
+### Assessment of the report as a whole
+
+Roughly half the findings are real, and the strongest of them — the space-stripping
+bug and the dead question F checkbox — are worth having. The testing method was
+sound: real UI events only, every form pushed to completion, Print Preview opened
+rather than trusting the checklist.
+
+Two cautions for the next pass. First, the headline finding did not reproduce, and
+because the report's bottom-line conclusion rests entirely on it, that conclusion
+should not be quoted onward. Second, several findings generalize from one form to
+the whole application without checking a second one; 3.2 was real but three times
+narrower than stated, and a fix scoped to the report's description would have
+touched code that was already correct.
+
+---
+
+<a id="milestone-37-proposal-md"></a>
+
+# Archive: MILESTONE-37-PROPOSAL.md
+
+# Milestone 37: County Guidance, Form Lifecycle, and Output-UI Reconciliation
+
+## Status
+
+**Landed.** Status line corrected 2026-09-13 under Milestone 42A (it still
+read "Draft only" after every component had shipped). Landing commits:
+37-1/37-2/37-3 `10d90dd`, 37-4 `f8d95d3`, 37-5 `c032b3b` (later extended
+app-wide by Milestone 38E), 37-6 and 37-7 `4d0afd5` ("refine signature cards
+and preview controls" — the signature-card and Preview/Export shell-control
+work, per that commit's title and touched files). The per-component
+"Status: Complete" headings below were written at the time; the text of each
+component is otherwise unchanged.
+
+Original status, for the record: *Draft only — do not implement yet.* This is
+an omnibus, planned milestone; it authorized no runtime, data-model, test, or
+documentation change beyond this proposal. Its seven tracked components are
+county-aware local guidance, the
+Milestone 34 verification closeout, Milestone 35-4 invariant reconciliation,
+advance-directive lifecycle, explicit Yes/No radio migration, guardian-signature
+card lifecycle, and Preview/Export shell-control placement.
+
+The components will be implemented **serially**, with focused verification and
+an explicit review checkpoint after each component. In particular, 37-5 remains
+in this milestone but is a self-contained migration phase: it must begin only
+after the preceding authorized work is stable, and its shared-control,
+data-model, compatibility, accessibility, and output changes must be completed
+and verified together before work moves to 37-6. No component may be folded
+into another component's implementation or regression evidence.
+
+## Milestone 37-1: County-Aware Local Filing Requirements
+
+### Decision Recorded
+
+The local Simplified Plan certificate-of-service instruction applies when the
+county selected for the filing is **Pinellas** or **Pasco**:
+
+- Show it as a required manual filing obligation: serve the required persons and
+  file the certificate of service.
+- For every other selected county, do not apply that Sixth Judicial Circuit local
+  overlay. Show only the applicable statewide/statutory service instruction.
+
+Likewise, user-visible text that states a Pinellas, Pasco, Sixth Judicial Circuit,
+or other Sixth-Circuit-specific *requirement* must be absent unless the selected
+county is Pinellas or Pasco.
+
+This is intentionally about local requirements, not court identity. A correct
+caption such as “Sixth Judicial Circuit” for a Pinellas or Pasco filing remains
+necessary, and the statewide county picker must continue to list all counties.
+
+### Legal/Operational Boundary
+
+Florida Statutes section 744.367(3)(b) supplies the statewide annual-report
+service baseline: service on the ward except in the listed circumstances, service
+on the ward's attorney if any, and further copies as the court directs. It does
+not itself state a general certificate-of-service filing requirement. The final
+implementation must use the then-current official text as its source for
+statewide wording and must not characterize a local clerk workslip as a statute.
+
+The Pinellas/Pasco overlay is a local operational requirement selected by the
+product owner for this milestone. It must be labeled as local court guidance, not
+as a statewide legal rule. Before implementation, retain the local primary source
+(order, clerk instruction, or current workslip) in the source map with its date
+and issuing authority.
+
+The application cannot observe whether a copy was served or a certificate was
+filed with the court. Therefore “required” means a clearly identified **manual
+filing requirement** in the readiness guidance, not an auto-pass and not a
+hard export error based on an unobservable act. No new checkbox, attestation, or
+persisted certificate-of-service data is authorized by this proposal.
+
+### Current Condition
+
+| Area | Current behavior | Required milestone direction |
+|---|---|---|
+| Simplified Plan readiness | `src/features/plan-simplified/print.js` always says to serve interested persons and file a certificate of service. | Split into a Pinellas/Pasco local required-manual item and a statutory baseline for all other counties. |
+| Simplified Plan export validation | `validatePlanSimplified()` has no certificate-of-service field or filing-event check. | Keep it that way unless a separately approved, observable form field is introduced; do not fabricate validation for external service. |
+| Initial Plan help | `src/legacy-app.js` displays a generic “local administrative order” Disaster Plan instruction regardless of county. | Render the local requirement only for Pinellas/Pasco; no local-requirement text for other counties. |
+| Dashboard About copy | `src/legacy-app.js` describes the product as serving Pinellas and Pasco cases for every user. | Generalize the baseline description; optionally append local-guidance scope only when the active filing is Pinellas/Pasco. |
+| Plan readiness text | The four Plan print modules contain statewide service, relocation, and deadline reminders. | Preserve statewide statutory reminders for every county. Gate only local/Sixth-Circuit overlays. |
+| County/circuit infrastructure | County defaults and circuit lookup mention Pinellas/Pasco/Sixth in source and comments; captions derive the correct circuit from the selected county. | Do not hide county options, defaults, code comments, or an accurate filing caption. Do not use the circuit-caption fallback as a local-rule test. |
+
+### Scope and Non-Scope
+
+#### In scope
+
+1. The Simplified Plan's certificate-of-service readiness instruction.
+2. Every user-visible requirement/help/reminder in the application that names
+   Pinellas, Pasco, the Sixth Judicial Circuit, a local administrative order, or
+   an equivalent local operational requirement.
+3. User-visible PDF/Word output, Print Preview, onboarding/help, and dashboard
+   descriptive text produced from the selected filing.
+4. A central, conservative county policy used by all such renderers.
+
+#### Out of scope
+
+1. Altering statewide statutory requirements, deadlines, service exceptions, or
+   court-caption behavior.
+2. Removing Pinellas/Pasco from the Florida county list, changing stored county
+   defaults, or hiding accurate case-caption information.
+3. Rewriting historical milestone documents, release notes, source comments, or
+   offline clerk-workslip source material merely because they mention the Sixth
+   Circuit.
+4. Adding a certificate-of-service page, attestation, form field, or export block
+   to the Simplified Plan. Those would be separate product and data-model work.
+
+### Implementation Plan
+
+#### A. Establish one explicit local-guidance policy
+
+1. Add a small pure core module (for example,
+   `src/core/filing/county-guidance.js`) with a normalized, exact allow-list:
+   `Pinellas` and `Pasco` only.
+2. Export a predicate such as `hasSixthCircuitLocalGuidance(county)`. It must trim
+   whitespace and compare case-insensitively, returning `false` for blank,
+   unrecognized, or non-Sixth-Circuit county values.
+3. Do **not** derive the predicate from `circuitForCounty()`: its documented
+   blank/unrecognized fallback is Sixth Circuit and would wrongly expose local
+   requirements on an unfinished or invalid filing.
+4. Keep legal wording and source metadata adjacent to the policy or in a compact
+   source-mapping table. Use an explicit rule key and county allow-list (rather
+   than hard-coded caller branches) so a future verified local rule can be added
+   without refactoring every renderer. The policy answers *where* an overlay
+   applies; it must not become an unreviewed source of statewide legal assertions.
+
+#### B. Apply the Simplified Plan service rule accurately
+
+1. Refactor `planReadinessChecksSimplified()` in
+   `src/features/plan-simplified/print.js` to select its service guidance from
+   the county policy.
+2. For Pinellas/Pasco, render an unambiguous manual-required item that instructs
+   the filer to serve the applicable persons and file the certificate of service,
+   identifying it as Sixth Judicial Circuit local guidance where that is useful.
+3. For every other county, render the reviewed statutory service instruction
+   without the local certificate-of-service requirement. Use the statutory
+   recipients/exceptions rather than the current overbroad “all interested
+   persons” shorthand if the official source review confirms that distinction.
+4. Do not put either external act in `auto`, `validatePlanSimplified()`,
+   `prepareFilingOutput()`, or export blocking unless a later approved form field
+   gives the application something truthful to validate.
+5. Preserve the existing readiness/export contract: every `auto: false` item must
+   still correspond to an export validation issue, while manual reminders remain
+   non-blocking.
+
+#### C. Gate all local requirement copy at its rendering point
+
+1. Audit the rendered output from `src/features/plan-initial/print.js`,
+   `plan-annual/print.js`, `plan-minor/print.js`, and
+   `plan-simplified/print.js`; gate any local overlay through the shared policy.
+   Statutory relocation, deadline, education, and statewide service reminders
+   stay visible in every county.
+2. Update the Initial Plan help content in `src/legacy-app.js` so its Disaster
+   Plan/local-administrative-order instruction is rendered only when the active
+   filing county is Pinellas or Pasco. Do not make a county-specific legal claim
+   when no county has been selected.
+3. Update the Dashboard About copy in `src/legacy-app.js` to be statewide by
+   default. If it describes Sixth-Circuit-specific assistance, append that only
+   for an active Pinellas/Pasco filing.
+4. Search all runtime-rendered strings, PDF/Word model notices, print checklists,
+   and help/onboarding markup for `Pinellas`, `Pasco`, `Sixth Judicial`, `6th
+   Judicial`, `Administrative Order`, `local administrative`, and `Disaster Plan`.
+   Classify each hit before changing it: local requirement (gate), statewide
+   content (retain), court identity (retain when accurate), or non-runtime source
+   material (out of scope).
+5. Re-run the same search after implementation. Every remaining runtime,
+   user-visible local-requirement hit must be inside an explicit county-policy
+   branch or be a dynamically correct court caption.
+
+#### D. Preserve filing lifecycle behavior
+
+1. County is already persisted on each filing; this milestone adds no field and
+   no migration. It must read the county of the **active filing**, not a global
+   preference or another ward's filing.
+2. Ensure changing the county, switching filings, importing a filing, or carrying
+   data into a new filing recomputes local guidance on the next render. A blank
+   county is non-local until a valid Pinellas or Pasco selection is made.
+3. Do not change `probate-guardian-data-model.csv` unless implementation expands
+   the persisted data shape. If a future iteration adds an acknowledgement or
+   certificate field, update the corresponding schema rows and run
+   `npm run verify:data-model` in that future change.
+
+### Acceptance Criteria
+
+| Scenario | Expected result |
+|---|---|
+| Simplified Plan, Pinellas | Readiness guidance presents certificate of service as a required manual local filing obligation. It does not claim the app verified service or block export for an unobservable filing act. |
+| Simplified Plan, Pasco | Same behavior as Pinellas. |
+| Simplified Plan, Orange (or any other valid county) | No Pinellas/Pasco/Sixth-Circuit requirement appears; service guidance follows the reviewed statewide statute rather than the local overlay. |
+| Blank or unrecognized county | No local requirement is shown. The normal required-county validation still prevents a completed filing from exporting. |
+| Any Plan/help/PDF/Word view, non-Pinellas/Pasco county | No local requirement text mentioning Pinellas, Pasco, Sixth Judicial Circuit, a local administrative order, or a local Disaster Plan is emitted. |
+| Accurate court caption | A Pinellas/Pasco filing may correctly show the Sixth Judicial Circuit caption; another county shows its correct circuit. This is not suppressed as local guidance. |
+| County change in an existing filing | Switching between Pinellas/Pasco and another county changes local-only copy immediately on the relevant next render, without changing persisted form answers. |
+
+### Verification Plan (for the later implementation)
+
+1. Add unit coverage for the county-policy helper: Pinellas and Pasco (including
+   casing/whitespace variants) are true; Orange, blank, and unknown input are
+   false.
+2. Add focused Simplified Plan readiness tests for both policy paths. Assert the
+   local required-manual wording for Pinellas/Pasco and the statutory wording,
+   without a certificate requirement, for another county.
+3. Add UI/E2E coverage that changes a filing county from Pinellas/Pasco to a
+   non-local county and back, then verifies Print Preview and help content update.
+4. Exercise each Plan type plus PDF and Word output with a non-local county;
+   assert local requirement copy is absent while the correct court caption remains.
+5. Add or update `TEST-INDEX.md` entries for every new or materially repurposed
+   test file. Run the focused tests during implementation; request permission
+   before the full `npm test` suite under the repository workflow.
+
+## Milestone 37-2: Milestone 34 Verification Closeout
+
+### Status: Complete (2026-09-10), on a reduced verification bar accepted by the requester
+
+Milestone 34's implementation was present, but its distribution-target
+verification had never been recorded as complete. This item originally called
+for the following against the then-current integrated source:
+
+1. A fresh `web` E2E run against the distribution target -- i.e. the full
+   `npm run test:e2e:web` (the entire `HOSTED_PARITY_SPECS` set).
+2. A full `source` regression run -- i.e. the full `npm run test:e2e:source`
+   (the entire unscoped `tests/e2e/` suite, ~55 spec files).
+
+**What was actually run instead:** only the one spec file Milestone 34 added
+to, `tests/e2e/feature-load-failure.spec.ts`, executed against both targets:
+
+- `npm run build:web`, then `PG_TARGET=web PG_BROWSER=chromium npx playwright
+  test tests/e2e/feature-load-failure.spec.ts` -- the new `web`-mode
+  chunk-load-failure test ran and passed against a freshly built `dist/web`;
+  the existing `source`-only test correctly skipped.
+- `PG_TARGET=source PG_BROWSER=chromium npx playwright test
+  tests/e2e/feature-load-failure.spec.ts` -- the existing `source`-only test
+  ran and passed unchanged; the new `web`-mode test correctly skipped.
+
+This confirms Milestone 34's added test is genuine and its existing test is
+untouched (see `MILESTONE-34-PROPOSAL.md`'s Status section for the same
+record). It does **not** exercise the other six specs in
+`HOSTED_PARITY_SPECS`, nor the ~54 other specs in the full `source` suite --
+neither `npm run test:e2e:web` nor `npm run test:e2e:source` was run in full.
+
+The requester was offered the full-suite run twice and explicitly chose this
+narrower, single-spec-file verification as sufficient to close this item out
+(2026-09-10), rather than leaving it open pending the full run. Recorded here
+rather than left implicit, since this item's original wording ("a full
+`source` regression run") is not what was actually executed.
+
+These are verification-only obligations: they do not reopen Milestone 34's
+implemented scope or authorize changing its behavior. Request permission before
+running the full regression suite under the repository workflow.
+
+## Milestone 37-3: Milestone 35-4 Exact Invariant Reconciliation
+
+### Status: Complete for all four Plan types (2026-09-10)
+
+Milestone 35-4 requires a full, fixture-based proof that each
+machine-verifiable Plan readiness/checklist condition agrees with the
+corresponding export validation behavior. It is a completion gate for this
+milestone, not a claim that existing spot checks establish parity.
+
+The inventory step (cross-referencing every `auto` readiness condition
+against its export validator, for all four Plan types) surfaced something
+the original wording of this item didn't anticipate: every Plan type has
+validator-required fields with **no corresponding readiness condition at
+all** -- not an auto-vs-validator disagreement, but fields the on-screen
+checklist never mentions. Counted directly from each validator:
+
+| Plan | Validator-required fields with zero readiness coverage (before this item) |
+| --- | --- |
+| Simplified | County, Q2 (best placement), Q5 (social services), Q6 (interaction) -- 4 |
+| Initial | Guardian Name(s), residence City/State/ZIP, Q6-7 socialization, assistive devices used, assistive devices needed, signature certifications -- 6 |
+| Annual | County, Guardian Name(s), residence City/State/ZIP -- 3 |
+| Minor | Amended Form answer, Guardian Name, signature certifications -- 3 |
+
+Reconciling this correctly (per this item's own instruction: "correct the
+readiness predicate... do not suppress a failed assertion or loosen the
+invariant") requires *adding* the missing readiness conditions, not just
+writing tests around the gap -- real, user-visible checklist changes to four
+different forms, not test-only work. The requester was informed of this
+scope change and approved doing Simplified Plan first as a pilot before
+repeating the pattern three more times.
+
+**Simplified Plan (complete):** `planReadinessChecksSimplified()`
+(`src/features/plan-simplified/print.js`) now carries a stable `id` on every
+`auto` item (never rendered -- `planReadinessPanel()` only reads
+`.label`/`.ok`) and gained the four missing conditions above as new checklist
+rows (`cover.wardCaseCounty` absorbed County; `plan.q2`/`plan.q5`/`plan.q6`
+are new rows). `tests/unit/plan-simplified-parity.spec.js` (24 tests, all
+passing) proves, through the real `prepareFilingOutput()` +
+`validatePlanSimplified()` path `pagePrintPlanSimplified()` itself uses --
+not an isolated validator call -- that: the fully-valid baseline has all 13
+auto conditions true and zero blocking export issues; blanking any single
+constituent field flips exactly its mapped auto id false and produces
+exactly its mapped validator message, with every other auto condition still
+true; and four conditional sub-field cases (Q7/Q8/Q9 explanation
+requirements, Q8's None+directive conflict) correctly block export while
+their primary auto condition correctly stays true, per this item's own
+contract point 3. Shared fixture-cloning/lookup helpers live in
+`tests/unit/support/plan-readiness-parity.js` for reuse by the next three
+Plan types. `TEST-INDEX.md` updated for both new files.
+
+**Initial Plan (complete):** `planReadinessChecksInitial()`
+(`src/features/plan-initial/print.js`) gained the six missing conditions
+above: `cover.guardianNames`, `plan.q6q7` (Socialization & Benefits), and
+`signatures.certifications` are new rows; `cover.wardResidence` and
+`plan.q10bcd` (relabeled 10B/C -> 10B-D) had their predicates extended in
+place to add `residenceCityStateZip` and "assistive devices currently used"
+respectively, since each is already the validator's own combined section.
+`tests/unit/plan-initial-parity.spec.js` (30 tests, all passing) proves the
+same baseline/per-field-failure contract across all 19 auto conditions
+through the real export-blocking path.
+
+**Annual Plan (complete):** `planReadinessChecksAnnual()`
+(`src/features/plan-annual/print.js`) gained `cover.county` and
+`cover.guardianName` as new rows; `cover.wardResidence` had its predicate
+extended to add `residenceCityStateZip`. `tests/unit/plan-annual-parity.spec.js`
+(28 tests, all passing) proves the same contract across all 17 auto
+conditions.
+
+**Minor Plan (complete):** `planReadinessChecksMinor()`
+(`src/features/plan-minor/print.js`) gained `cover.amendedForm` (using the
+same `isTriStateAnswer()` predicate as its validator, imported from
+`core/form/form-contract.js`), `cover.guardianName`, and
+`signatures.certifications` as new rows. `tests/unit/plan-minor-parity.spec.js`
+(25 tests, all passing) proves the same contract across all 14 auto
+conditions.
+
+**Scope note applying to all three:** each of these three suites covers
+every mapped condition's primary required-field failure -- the contract's
+core (`auto.ok===false` iff its mapped validator predicate fails) -- but,
+unlike the Simplified pilot, does not additionally cover secondary
+"explain when Other/Yes/No" conditional sub-cases; the pilot already
+demonstrated that pattern works (four such fixtures), and repeating it for
+every conditional field across three more Plan types (each already 14-19
+conditions) was judged to add bulk without adding new proof. 107 tests total
+across the four suites (24 + 30 + 28 + 25), all passing, all exercising the
+real `prepareFilingOutput()` + `validatePlanXxx()` path each Plan's own
+Print Preview page uses -- not an isolated validator call.
+
+### Contract to prove
+
+For each of the four Plan types — Initial, Annual, Minor, and Simplified — and
+for every condition shown in its readiness/checklist `auto` collection:
+
+1. A false auto condition must yield one or more export-validation issues that
+   identify the missing or invalid underlying data.
+2. A true auto condition must not, by itself, yield an export-validation issue
+   for that same condition.
+3. A manual-only reminder must remain non-blocking. It may describe a real filing
+   obligation, but it cannot be represented as automatically verified or be used
+   as evidence of readiness.
+4. The rule must hold through the same preflight path used by PDF and Word export,
+   including supplemental filing issues where that path includes them.
+
+The intended compact form is: for every auto condition, `auto.ok === false` if
+and only if its mapped export-validation predicate fails. The test must compare
+semantic condition identifiers or stable mappings, not fragile counts or exact
+English error strings.
+
+### Implementation Plan
+
+1. **Inventory the condition set.** Build a source-of-truth mapping for every
+   `auto` item returned by `planReadinessChecksInitial`,
+   `planReadinessChecksAnnual`, `planReadinessChecksMinor`, and
+   `planReadinessChecksSimplified`. For each item, record the Plan type, stable
+   condition id, readiness predicate, validator/preflight predicate, expected
+   error category, and whether it is `auto` or `manual`.
+2. **Assign stable identifiers before testing.** Where a readiness item currently
+   has only a display label, add an internal id (for example,
+   `cover.caseNumber` or `signatures.guardian1.date`) without changing the
+   user-facing wording. Extend validation output with an adapter/mapping only as
+   necessary to compare ids; do not make tests parse prose labels.
+3. **Build valid baseline fixtures.** Create one fully valid minimal fixture per
+   Plan type, using the actual persisted shapes (including Plan Minor's documented
+   `ucn`/`ref` case-number behavior). Establish that each baseline has every auto
+   condition true and produces no mapped export validation issue.
+4. **Generate one failure fixture per mapped condition.** Starting from each valid
+   baseline, remove or invalidate only the data required by one condition. Assert
+   that the intended auto id is false and its mapped validation id is present,
+   while unrelated mapped conditions retain their expected state. Include
+   conditional rules such as attorney representation, advance-directive choices,
+   date ordering, and minor/adult exceptions as separate fixtures rather than
+   treating them as one generic required-field case.
+5. **Test the actual export path.** Exercise the validation callback supplied to
+   `prepareFilingOutput()` for PDF and Word export rather than calling isolated
+   validators only. Cover `getSupplementalFilingIssues()` where a Plan's export
+   path includes it, so readiness cannot pass while output preflight blocks for an
+   unmapped condition.
+6. **Reconcile mismatches deliberately.** For every failure, choose exactly one
+   resolution: correct the readiness predicate, correct/add the export validator,
+   reclassify the item as manual, or split an over-broad display item into mapped
+   conditions. Record the decision and source location; do not suppress a failed
+   assertion or loosen the invariant.
+7. **Keep the suite maintainable.** Put shared fixture builders and the parity
+   assertion harness in test support rather than copying four near-identical test
+   files. Add the new or repurposed test files to `TEST-INDEX.md` with their Plan
+   coverage and fixture purpose.
+
+### Acceptance Criteria
+
+| Area | Required proof |
+|---|---|
+| Initial Plan | Every auto readiness id has a valid baseline and an isolated failing fixture mapped to export preflight. |
+| Annual Plan | Same proof, including all conditional attorney and date-order rules. |
+| Minor Plan | Same proof, including `ucn`/`ref` synchronization and minor-specific conditions/exceptions. |
+| Simplified Plan | Same proof, including conditional attorney, directive, remuneration, and date-order rules. |
+| Manual reminders | Fixtures demonstrate that manual-only items neither produce auto passes nor independently block export. |
+| Output modes | The mapped results agree for both PDF and Word preflight routes wherever both are available. |
+| Regression record | Focused fixture suite passes, is entered in `TEST-INDEX.md`, and the later authorized full regression result is recorded. |
+
+No implementation or test execution is authorized until the requester explicitly
+starts Milestone 37 work. Before a full suite run, request permission under the
+repository workflow.
+
+## Milestone 37-4: Advance-Directive Card Creation and Visibility
+
+### Status: Complete (2026-09-10)
+
+`q10Directives`/`q11Directives` no longer pre-seed blank cards (state.js
+factories and legacy-app.js's new-year reset paths both changed to `[]`).
+Initial Plan gained the real +Add/Remove affordance it never had (only
+Annual Plan did before this item); both plans' entire directive section --
+type checkboxes, cards, Add Directive -- is now gated on
+`q11Executed`/`q10Executed`, matching the Decision Recorded above. Checking
+the box now also force-re-renders the page and creates exactly one blank
+card if the collection is empty (a `data-form-change="ensure-directive-row"`
+hook in `src/form-events.js`, since the plain `chkP()` checkbox this app
+uses elsewhere has no `data-form-route` and so does not otherwise trigger a
+live re-render) -- preserving the pre-37-4 UX of a card appearing
+immediately on check, now without the pre-seeding bug. Unchecking hides
+without deleting; rechecking restores the same records; a second check
+after data already exists does not append a duplicate blank card.
+
+PDF/Word output (`buildPlanInitialModel`/`buildPlanAnnualModel`, shared by
+both formats) now gates the detail-card section on the executed flag, not
+just on populated rows -- legacy/imported data that has records while
+execution is unchecked no longer leaks into generated output.
+
+Found and fixed one real regression while verifying: `schedule-card-layout.
+spec.ts`'s Initial Plan fixture set `q11Directives` directly without ever
+setting `q11Executed`, which only worked because cards rendered
+unconditionally before this milestone -- exactly the bug being fixed. Fixed
+by adding the flag to the fixture, matching the Annual Plan fixture beside
+it that already had it.
+
+Also found while implementing: the `BLANK_CARD_COLLECTIONS` config and
+`pruneBlankCards()` in `src/legacy-app.js` are dead code, silently shadowed
+at runtime by `src/core/form/prune-cards.js`'s module version (`window.
+BLANK_CARD_COLLECTIONS = ...` / `window.pruneBlankCards = ...` on module
+load overwrites the classic-script globals). `q11Directives` was added to
+the real (module) config; the legacy-app.js copy was left alone with a note
+explaining the shadowing, not edited, since editing it would have been
+inert.
+
+Verification: `tests/unit/plan-directive-cards.spec.js` (factory defaults +
+PDF model gating, 7 tests), two new cases in `tests/unit/prune-cards.spec.js`,
+`tests/e2e/plan-directive-cards.spec.ts` (2 tests, live checkbox/Add/Remove
+interaction for both plans) -- all new, all passing. Regression: 164 unit
+tests and 27 e2e tests (including both Plan types' full mount/export-PDF
+suites, the readiness/export-gating contract, and schedule-card-layout.spec.ts
+after its fixture fix), all passing. `npm run verify:data-model` passing
+after updating `q10Directives`/`q11Directives`'s collection_min/max/
+initial_item_count rows.
+
+### Decision Recorded
+
+On every form that uses repeatable advance-directive detail cards, those cards
+must be created and displayed only after the filer checks **“The ward executed
+advance directives (complete below)”** (or the form's semantically identical
+executed-directives control). An unchecked execution control must not present a
+wall of empty directive-detail cards.
+
+This applies to the card-based controls currently identified in:
+
+| Form | Execution control | Detail collection | Current condition |
+|---|---|---|---|
+| Initial Plan, Question 11B | `q11Executed` | `q11Directives` | Two blank cards are seeded and rendered even when the control is unchecked. |
+| Annual Plan, Question 10 | `q10Executed` | `q10Directives` | Detail UI is already conditionally rendered, but a blank directive is seeded in state; retain and test the rule. |
+
+The Simplified Plan's Question 8 is a set of directive-type checkboxes, not a
+repeatable directive-card form, and is not changed by this item. Plan Minor has
+no corresponding directive-card collection in the current implementation.
+
+### Data-Preservation Rule
+
+Unchecking the execution control hides the directive type controls, detail cards,
+and Add Directive action; it does **not** silently delete already-entered
+directive records. Rechecking restores those records. Deleting a populated
+record remains an explicit per-card action with its normal affordance.
+
+For a new or reset filing with the execution control unchecked, the directive
+collection must be empty rather than pre-seeded. The first blank card is created
+only when the user checks the execution control (or presses Add Directive while
+that conditional section is visible). This changes the persisted collection's
+default/minimum shape, so implementation must update the matching
+`probate-guardian-data-model.csv` rows and run `npm run verify:data-model`.
+
+### Implementation Plan
+
+1. **Inventory and centralize the activation rule.** Use the executed-directives
+   boolean as the sole gate for the corresponding repeatable card collection.
+   Keep it independent of directive-type choices (DNR, healthcare, power of
+   attorney, Other): selecting a type must not create or reveal cards before the
+   executed control is true.
+2. **Correct Initial Plan rendering.** In
+   `src/features/plan-initial/index.js` `pagePlanIDirectives()`, conditionally
+   render the Q11B type controls, `q11Directives` cards, and any card-creation
+   control within `q11Executed`. Preserve the no-directives verification branch
+   and all unrelated Questions 11E/11F behavior.
+3. **Harden Annual Plan parity.** Retain the existing `q10Executed` conditional
+   block in `src/features/plan-annual/index.js` and verify it controls every
+   card-related element (heading, cards, remove controls, and Add Directive
+   button). Align its empty-collection behavior with Initial Plan.
+4. **Change factories and reset paths.** Replace the pre-seeded
+   `q10Directives`/`q11Directives` blank cards in `src/core/state.js` and the
+   relevant new-year/reset logic in `src/legacy-app.js` with empty collections.
+   When the executed control transitions false → true, create exactly one
+   `emptyPlanDirective()` record if the collection is empty, then re-render and
+   persist through the normal form-event path. Do not append another blank card
+   when records already exist.
+5. **Review lifecycle boundaries.** Confirm imports, carryovers, prior-year
+   creation, direct navigation, and pruning preserve populated directive records.
+   `pruneBlankCards()` may remove untouched cards on navigation; that is correct
+   only if the activated section continues to offer Add Directive and can create
+   a new blank card without turning the execution checkbox off. The page renderer
+   itself must handle `executed === true` with an empty collection: render the Add
+   Directive affordance immediately, and create one blank row only when the user
+   invokes it. Do not depend solely on the prior checkbox-change event.
+6. **Maintain validation/output semantics.** Existing validations still require
+   a coherent answer to the no-directives/executed-directives question. Do not
+   require a card merely because the execution control is checked unless that
+   requirement is separately verified and intentionally added. PDF/Word models
+   must omit detail-card output when execution is unchecked, even if legacy data
+   contains hidden records, and must restore it when execution is rechecked.
+7. **Update the data-model contract.** Document the zero-card default and the
+   conditional creation predicate for both collections in
+   `probate-guardian-data-model.csv`, following the canonical schema contract.
+
+### Acceptance Criteria
+
+| Scenario | Expected result |
+|---|---|
+| New Initial Plan | With `q11Executed` unchecked, no Advance Directive cards, card fields, or card action are in the DOM. |
+| New Annual Plan | With `q10Executed` unchecked, no Directive cards, card fields, or Add Directive action are in the DOM. |
+| Check execution control | The relevant type controls and exactly one blank directive card appear for an empty collection. |
+| Add directive | Adds a card only while the execution section is active. |
+| Uncheck after entering data | Cards are hidden without loss; rechecking restores the same directive records. |
+| Legacy/imported populated collection while unchecked | No detail card is displayed or emitted to PDF/Word until the execution control is checked. |
+| Navigation/reset/carryover | No untouched directive cards are reintroduced before execution is selected; populated records are preserved according to the data-preservation rule. |
+| Validation and export | The existing answer-required rule remains correct; hiding an inactive collection creates no unrelated validation error or export mismatch. |
+
+### Verification Plan (for the later implementation)
+
+1. Add focused unit tests for Initial and Annual default factories and yearly-reset
+   paths: directive collections begin empty when execution is false.
+2. Add UI/E2E tests for both forms covering false → true creation, true → false
+   hiding with preservation, recheck restoration, and Add Directive behavior.
+3. Add PDF/Word model tests for unchecked legacy populated data and checked
+   populated data, verifying the detail section's presence is controlled by the
+   execution predicate rather than collection contents alone.
+4. Extend the existing card/pruning coverage for an activated-but-untouched
+   directive card, then update `TEST-INDEX.md` for every added or repurposed test
+   file.
+5. Run `npm run verify:data-model` and focused tests during the later
+   implementation; request permission before the full `npm test` run.
+
+## Milestone 37-5: Explicit Yes/No Radio-Pair Migration
+
+### Execution Boundary
+
+This is the broadest implementation phase in Milestone 37. It deliberately
+remains here, rather than being deferred to a new milestone, but must be
+executed as one carefully bounded serial phase. Do not combine it with county
+guidance, directive-card, signature-card, or Preview/Export UI changes in the
+same implementation batch. Complete its shared renderer, all 18 migrations,
+data-model reconciliation, save/import compatibility, and focused verification
+before proceeding to the next component.
+
+### Decision Recorded
+
+Replace each identified single-checkbox or select implementation of an explicit
+binary answer with an accessible **Yes / No radio pair** whose initial state is
+unselected. The persisted representation remains `'' | 'Yes' | 'No'`:
+
+- `''` means not yet answered;
+- `'Yes'` and `'No'` are deliberate answers;
+- existing saved `'Yes'`/`'No'` values select the matching radio on reopen.
+
+This is a control and default-state migration, not an inference rule. It must
+never turn an unselected answer into `No`, and it does not apply to independent
+attestations, check-all-that-apply lists, directive-type lists, or other genuine
+boolean flags.
+
+### Candidate Inventory and Scope
+
+The following 18 rendered controls are in scope. The canonical data model has
+13 `Yes; No` rows; `common.amendedForm` is rendered in three filing contexts,
+and three runtime fields require data-model correction described below.
+
+| Filing / area | Field or control | Count |
+|---|---|---:|
+| Annual Accounting | `amendedForm`; `trusts[].hasTrust`; `trusts[].createdAfterGID`; `schD1[].restricted`; `schD2[].residence`; `schD2[].income`; `schD4[].restricted` | 7 |
+| Simplified Accounting | `amendedForm`; `eligDepository`; `eligOnlyTransactions` | 3 |
+| Simplified Plan | `q7RestoreRights`; `q9Remuneration` | 2 |
+| Initial Plan | `committeeIncorporated`; `q11Directives[].courtRevoked` | 2 |
+| Annual Plan | `q10Directives[].courtRevoked` | 1 |
+| Minor Plan | `amendedForm`; `professionalGuardian`; `publicGuardian` | 3 |
+
+`q10Directives[].courtRevoked` already uses a blank/Yes/No select; migrate it
+to an initially-unselected radio pair for consistency. The Initial Plan version
+is currently a single checkbox and must gain an explicit `No` answer.
+
+The following are deliberately outside this 18-control migration:
+
+1. The Initial and Annual Plan “no directives” versus “directives executed”
+   checkbox pairs. They are semantically binary but currently use two booleans;
+   converting them safely requires a separate boolean-pair-to-enum data-model
+   migration and product wording decision.
+2. Guardian Inventory's real booleans (`isAmended`, restricted/residence/income
+   flags, and safe-deposit flags). These have boolean storage and optional,
+   independent-flag semantics; converting them would be a separate schema change.
+3. Certifications, directive types, `Other` flags, benefits, diagnosis/device
+   lists, and every other multi-select or attestation checkbox.
+
+### Required Cross-System Changes
+
+1. **Shared rendering and accessibility.** Replace the legacy
+   `yesNoCheckboxHTML()` path in `src/legacy-app.js` with a shared radio-pair
+   renderer or a compatible successor. Each pair must use one shared `name`,
+   visible Yes and No labels, an accessible group label (`fieldset`/`legend` or
+   equivalent), stable ids, and the existing `data-form-path` event contract.
+   Preserve the existing string values rather than introducing booleans. Update
+   delegated input/change handling so radio controls write `event.target.value`
+   (`'Yes'` or `'No'`), never checkbox-style `event.target.checked`.
+2. **Feature migration.** Move every helper-based control in the inventory to
+   that renderer. Replace the four bespoke Annual Accounting schedule controls
+   in `src/features/annual-accounting/index.js` and both directive-record
+   controls in the Plan feature modules so they use the same behavior and are
+   not left as one-off checkbox/select implementations.
+3. **Default and lifecycle reconciliation.** New factories, row factories, and
+   add-row paths must initialize the 18 fields to `''`, not `'No'`. Remove
+   display fallbacks that manufacture `No` (including trust and PDF/Excel
+   consumers) when the model is unanswered. Existing save files with explicit
+   `'No'` retain that answer; no save-file rewrite or schema-version migration is
+   needed solely to preserve values already stored as strings.
+4. **Validation and output audit.** Required binary fields must block output when
+   `''` and accept either explicit answer. Optional fields may remain blank. Audit
+   validators, readiness checks, PDF/Word models, Excel import/export, carryover,
+   and output advisories so `''`, `'Yes'`, and `'No'` are never conflated by a
+   truthiness test or an `|| 'No'` fallback.
+5. **Plan tri-state compatibility.** Retain and extend the existing
+   `plan-tristate` migration only where a Plan field can still arrive as legacy
+   boolean `true`/`false`. It must keep converting those values to the matching
+   strings while leaving omitted values unselected.
+6. **Data-model corrections.** Update `probate-guardian-data-model.csv` in the
+   same implementation:
+   - add the missing `Yes; No` enum domain and tri-state/default notes for
+     `plan_simplified.q9Remuneration`;
+   - change `plan_initial.q11Directives[].courtRevoked` and
+     `plan_annual.q10Directives[].courtRevoked` from unconstrained strings to
+     the documented nullable Yes/No enum, with their conditional court-order
+     details recorded accurately;
+   - revise every affected `required_when`, default, and source-reference note.
+   Run `npm run verify:data-model` after the CSV update.
+7. **Save/import compatibility.** Add fixtures for current `.sav` archives,
+   legacy Plan booleans, Excel Yes/No cells, blank values, and newly created
+   records. Import must preserve a deliberate legacy `No`; a missing value must
+   remain unanswered rather than becoming `No` during deserialization or export.
+
+### Acceptance Criteria
+
+| Scenario | Expected result |
+|---|---|
+| New in-scope field | Neither radio is selected; model value is `''`. |
+| User selects Yes or No | Exactly one radio is selected and the model stores the matching string. |
+| Required binary field left blank | The established validator/readiness/export path reports it as unanswered. |
+| Existing saved Yes/No value | Reopens with the matching radio selected and preserves the same output. |
+| Existing omitted value | Reopens with neither radio selected; it is never silently shown/exported as No. |
+| Optional binary field | May remain unselected without creating a false validation failure. |
+| PDF, Word, and Excel | Each emits the actual answer; it never invents No for an unanswered field. |
+
+### Verification Plan (for the later implementation)
+
+1. Add shared-renderer and event-contract unit tests for blank, Yes, No,
+   keyboard operation, and accessible group naming.
+2. Add one focused UI/E2E test for every inventory group, including the four
+   bespoke Annual Accounting schedule fields and both directive-record controls.
+3. Test factory defaults, row-add defaults, existing `.sav`/Excel import values,
+   and generated PDF/Word/Excel output for blank, Yes, and No.
+4. Update `TEST-INDEX.md` for every added or materially repurposed test and run
+   `npm run verify:data-model`; request permission before full `npm test`.
+
+## Milestone 37-6: Guardian and Co-Guardian Signature Cards
+
+### Decision Recorded
+
+Every filing's guardian-signature collection has exactly one primary Guardian
+card by default. A co-guardian card appears only after the user explicitly
+chooses **Add Co-Guardian**. Every card beyond index 0 has a visible **Remove**
+action; the primary card cannot be removed.
+
+Removing a blank co-guardian is immediate. Removing a populated co-guardian
+requires a confirmation that identifies the guardian, because it deletes
+persisted filing and linked-party data. Existing populated co-guardian records
+from saves, imports, or an intentional carryover remain visible and are never
+silently discarded just because they exceed the new one-card default. Entirely
+blank, non-primary legacy padding is normalized away under an explicit
+blank-row predicate, so reopening an old filing does not perpetuate unused
+signature cards.
+
+### Current Coverage
+
+| Filing | Current initial guardian cards | Add/remove behavior | Required change |
+|---|---:|---|---|
+| Guardian Inventory | 1 | Add and non-primary Remove already available. | Retain; regression-test as the reference behavior. |
+| Simplified Accounting | 3 | Add and non-primary Remove exist. | Change default to 1; retain actions. |
+| Annual / Final / Trust Accounting | 3 | Add and non-primary Remove exist. | Change default to 1; retain actions. |
+| Simplified Plan | 2 | Both cards always render; no add/remove. | Default/render 1; add explicit add/remove. |
+| Annual Plan | 3 | All cards always render; no add/remove. | Default/render 1; add explicit add/remove. |
+| Initial Plan | 4 | All cards always render; no add/remove. | Default/render 1; add explicit add/remove. |
+| Minor Plan | 2 | Both cards always render; no add/remove. | Default/render 1; add explicit add/remove. |
+
+### Implementation Plan
+
+1. **Set the collection contract.** Keep `collection_min = 1` and each form's
+   current maximum (Inventory/Accounting and Annual Plan: 3; Simplified Plan:
+   2; Initial Plan: 4; Minor Plan: 2) unless a later court-form review changes a
+   maximum. Change `initial_item_count` to 1 for every signature collection.
+2. **Correct all factories and creation paths.** Update the factories in
+   `src/core/state.js`, `emptyDataGuardian()` in `src/legacy-app.js`, and every
+   carryover/conversion/new-year path that currently pads guardian or
+   `planGuardians` arrays to two, three, or four blank rows. Carry forward an
+   actually populated co-guardian; do not create blank padding to a maximum.
+   On load, import, or the next safe lifecycle boundary, prune only wholly blank
+   non-primary legacy padding with the same row-shape-aware definition used by
+   the collection contract; never prune a partially entered record.
+3. **Use shape-correct factories.** Do not reuse the generic
+   `SCHEDULE_SCHEMAS.planGuardians` factory for every Plan: Initial, Annual,
+   Minor, and Simplified Plan guardian rows have different stored shapes. Add a
+   small per-filing guardian-row factory/operation layer that preserves each
+   type's fields, max, party-id synchronization, save behavior, and route
+   rerendering.
+4. **Render from the collection, not fixed indexes.** Replace fixed
+   `block(0)…block(n)` / `g(0)…g(n)` signature markup in all four Plan features
+   with collection iteration. Render the primary card first, Add Co-Guardian
+   beneath the collection while under its maximum, and a Remove button in every
+   non-primary card header alongside Link Person.
+5. **Align existing Accounting and Inventory behavior.** Retain their current
+   explicit Add Co-Guardian and non-primary Remove controls, but route all
+   removal through one floor-aware operation and add populated-card confirmation.
+   Ensure party IDs remain lockstep with their guardian row when a card is
+   removed. After removal is confirmed, fully rerender the signature-card list
+   before accepting another field edit; array indices shift, so no retained DOM
+   control may keep a stale `guardians.2.*` or `planGuardians.2.*` path.
+6. **Preserve output and validation rules.** Guardian 1 stays required; an added
+   co-guardian becomes conditionally required only when it has meaningful data.
+   PDF/Word/Excel output must include every populated guardian and suppress only
+   genuinely empty optional cards. The existing `guardianHasAnyData()` behavior
+   is the minimum preservation threshold, not a reason to erase partial rows.
+7. **Update data and save-file documentation.** Update every affected guardian
+   and `planGuardians[]` collection row in `probate-guardian-data-model.csv` with
+   `collection_min=1`, `initial_item_count=1`, actual maximum, correct row
+   factory, and party-ID synchronization. Record that older files may contain
+   additional blank rows, which are safely normalized out only when wholly
+   blank; no populated guardian data may be destructively migrated. Run
+   `npm run verify:data-model`.
+
+### Acceptance Criteria
+
+| Scenario | Expected result |
+|---|---|
+| New filing, all seven filing types | Exactly one guardian signature card appears. |
+| Add Co-Guardian | Adds one blank, type-correct card; no more than the form maximum. |
+| Remove blank co-guardian | Removes it and returns to the preceding collection size; primary remains. |
+| Remove populated co-guardian | Requires confirmation, then removes its row and matching party-id entry only after confirmation. |
+| Existing populated co-guardian | Displays after reopening/import/carryover and appears in output. |
+| Existing blank pre-seeded card | Is normalized out under the blank-row predicate and is not displayed as a new co-guardian decision. |
+| Primary guardian | Cannot be removed and continues to satisfy the existing required signature validation. |
+| New-year/carryover conversion | Carries actual guardian data without manufacturing blank co-guardian cards. |
+
+### Verification Plan (for the later implementation)
+
+1. Add factory and collection-operation unit tests for every signature-row shape,
+   min/max enforcement, party-id lockstep, and populated-card confirmation.
+2. Add E2E coverage for all seven signature pages: one default card, add,
+   remove, cancel removal, confirm removal, reopen, and output preservation.
+3. Add conversion/carryover/new-year fixtures containing zero, one, and multiple
+   populated guardians plus legacy blank padding.
+4. Update `TEST-INDEX.md`, run `npm run verify:data-model` and focused tests,
+   then request permission before the full suite.
+
+## Milestone 37-7: Preview and Export Shell-Control Placement
+
+### Decision Recorded
+
+On every Print Preview / Preview & Export page, move the **All Filings (home)**,
+**theme**, and **help** controls out of the `Viewing` pager bar and into the
+`Preview & Export` banner. They must appear on the export-controls line,
+immediately after the final export action — normally **Save as Word**, **Save as
+PDF**, **Print**, and **Florida E-Filing Portal** (and after **Save as Excel** on
+filings that offer it).
+
+The controls remain non-printing shell controls and retain their current actions,
+labels, keyboard behavior, theme state, and help-panel `aria-expanded` state.
+Only their placement changes.
+
+### Current Condition
+
+`initPrintPager()` in `src/legacy-app.js` creates `#pv-bar` and appends
+`.pv-shell-actions` to it, placing home/theme/help alongside the `Viewing` page
+selector and pager navigation. Each of the seven print modules independently
+renders a `.print-preview-banner` with its own export-button row. The two groups
+are therefore structurally separate today.
+
+### Implementation Plan
+
+1. Add one explicit, non-printing shell-action destination to each of the seven
+   print banners: Guardian Inventory, Simplified Accounting, Annual/Final/Trust
+   Accounting, Simplified Plan, Annual Plan, Initial Plan, and Minor Plan. Use a
+   shared marker/class rather than selecting a generic flex container by position.
+2. In `initPrintPager()`, continue to obtain the existing header actions
+   when available (or create the same fallback home/theme/help controls), but
+   append them to that destination rather than to `#pv-bar`. Remove the pager-bar
+   fallback placement once every print surface provides the destination.
+3. Preserve visual ordering: the export status and Save/Print/Portal buttons stay
+   in their present order; shell actions follow the last action on the same
+   wrapping flex row. On narrow screens, they may wrap as a group beneath the
+   export buttons, never back into the Viewing row.
+4. Keep `#pv-bar` focused only on preview selection, page count, and Prev/Next.
+   It must not render an empty shell-action spacer after the move.
+5. Update responsive CSS for the banner action row and `.pv-shell-actions` so
+   icon-only theme/help controls and the labeled home control retain adequate
+   target size, spacing, focus outlines, and an unambiguous reading/tab order.
+6. Preserve the pager's current sticky/docked navigation behavior while moving
+   only shell controls. Verify the banner remains discoverable without making
+   page selection or Prev/Next less convenient during long-document review.
+7. Do not change print/PDF/Word/Excel output or persistent data. This is a DOM
+   and CSS-only layout change; no data-model or save-file update is needed.
+
+### Acceptance Criteria
+
+| Scenario | Expected result |
+|---|---|
+| Any print preview | Home, theme, and help are absent from the `Viewing` pager bar. |
+| Export banner | The same controls immediately follow the final available export action on the Preview & Export action line. |
+| Accounting with Excel | Shell controls follow Florida E-Filing Portal, which follows the Excel action where available. |
+| Plan-only PDF/Word output | Shell controls follow Florida E-Filing Portal after Word, PDF, and Print. |
+| Responsive layout | At narrow widths the controls wrap cleanly with export controls and do not obscure pager selection/navigation. |
+| Long-document navigation | The pager remains docked/sticky as before; moving shell controls does not make page selection or Prev/Next less convenient. |
+| Interaction/accessibility | Home still returns to All Filings; theme changes persist; help opens/closes with correct ARIA state; keyboard order follows visible order. |
+| Print | None of the moved shell controls appear in printed or exported court output. |
+
+### Verification Plan (for the later implementation)
+
+1. Add focused DOM/E2E assertions across all seven print surfaces for the action
+   container, ordering, absence from `#pv-bar`, and no duplicate ids.
+2. Exercise home, theme, and help from the new location, including a rerender,
+   page selection change, and filing switch.
+3. Add desktop and narrow-width layout checks for wrapping, focus visibility, and
+   pager usability; update `TEST-INDEX.md` for added or repurposed tests.
+4. Run focused tests during implementation and request permission before the full
+   `npm test` suite.
+
+## Implementation Gate
+
+Do not start 37-1 through 37-7 until the requester finishes adding Milestone 37
+items and explicitly authorizes execution. At that time, confirm the exact local
+source and current statutory text before finalizing user-facing legal wording.
+
+---
+
+<a id="milestone-38-proposal-md"></a>
+
+# Archive: MILESTONE-38-PROPOSAL.md
+
+# Milestone 38: Executable Delivery Index
+
+## Status
+
+**Executable plans; runtime unchanged by this documentation pass.** The former
+omnibus proposal has been split into four independent deliveries. Each fixes
+its code owners, migration behavior, test outcomes, and completion evidence.
+
+| Delivery | Scope | Proposal |
+| --- | --- | --- |
+| 38A | Simplified guardian schema repair, legacy conflict resolution, party-ID integrity, and Excel capacity/import behavior | `MILESTONE-38A-PROPOSAL.md` |
+| 38B | Universal Filing / Clerk Review Readiness cards for all nine filing types | `MILESTONE-38B-PROPOSAL.md` |
+| 38C | Neutral dashboard editing focus and unambiguous lifecycle terminology | `MILESTONE-38C-PROPOSAL.md` |
+| 38D | Affirmative override of bypassable output-validation blocks | `MILESTONE-38D-PROPOSAL.md` |
+
+## Decisions Corrected During Review
+
+### Output override and the former draft marker
+
+The old 38-8 text proposed an on-screen **Draft — requirements outstanding**
+notice and a print-visible draft notice or watermark. That was the “draft
+marker” identified during review. It was a proposal requirement, not an
+existing mark on saved or printed court output. The current Preview-only
+override does display an on-screen `Draft preview` notice, but currently keeps
+Print and Save blocked.
+
+That direction is superseded. Milestone 38D now requires an explicit
+affirmative acknowledgement to bypass ordinary user-correctable validation
+blocks. After acknowledgement, the filing retains its normal Preview, Print,
+Save as PDF, Save as Word, and Save as Excel functionality wherever the output
+can be generated faithfully. Generated documents receive no draft wording,
+watermark, filename change, metadata marker, or reduced-output treatment.
+Validation remains failed and visible; acknowledgement does not claim filing
+readiness. Technical failures and format-capacity omissions remain
+non-bypassable for the affected format.
+
+38D therefore records the settled product decision that an incomplete but
+technically faithful court document may leave the application without an
+artifact-level draft marker. That risk is not an incidental result of the
+typed-preflight implementation; it is the specified behavior.
+
+### Dashboard final state
+
+The old 38-6 requirement for a dashboard **Close Editor** button contradicted
+old 38-7's requirement that dashboard entry clear editing focus and show no
+such action. Milestone 38C adopts the latter as the final state: dashboard
+entry ends editing focus after a safe flush and lock release. Dashboard row
+terminology is **Edit**, **Mark Closed**, and **Mark Open**; there is no Close
+Editor button on the neutral dashboard.
+
+### Legacy guardian conflicts
+
+Milestone 38A preserves both canonical and legacy address values when they
+conflict, blocks export, and requires the user to choose which value becomes
+canonical. It does not silently overwrite or discard either value. Legacy-only
+values are recovered into blank canonical fields; redundant legacy keys are
+removed only after successful persistence.
+
+### Excel populated-row capacity
+
+Milestone 38A extends the capacity contract with a per-entry populated-row
+predicate rather than adding a raw `guardians` count to the existing helper.
+This prevents blank compatibility rows from producing a false capacity block.
+Excel import replaces its three official slots after confirmation while
+preserving any legacy overflow rows and their party-ID positions.
+
+### Editing-focus persistence
+
+Milestone 38C defines `activeWardId` as runtime/session editing focus, not
+persisted case state. New archives and recovery records do not use it to reopen
+an editor. Existing `recentWards` drives explicit Continue Editing history, and
+peer-tab state reports an active case only while a filing is actually selected
+for editing.
+
+### Readiness pass language
+
+Milestone 38B uses **Automated checks passed; manual review remains** whenever
+automatic checks pass but manual or unsupported items remain. New cards follow
+the same distinction as the current Plan cards and never turn manual review
+into an automatic pass or export block.
+
+### Shared validation identity
+
+Milestones 38B and 38D must use one canonical registry of stable issue IDs for
+checks that represent the same validator failure. A blocking automatic
+readiness condition references that canonical validation ID; 38D preserves the
+same ID through preflight and acknowledgement. Neither delivery may create a
+second independently maintained ID namespace for the same underlying check.
+Readiness-only manual, unsupported, or non-blocking conditions may retain their
+own condition IDs because they have no validation issue counterpart.
+
+## Delivery Order
+
+Execute the independent deliveries in this dependency order: 38A, 38C, 38D
+Phase 1, 38B, then 38D Phase 2.
+
+1. 38A closes an existing data-loss boundary and is otherwise isolated.
+2. 38C changes editing-session state and should stabilize before 38D binds
+   acknowledgement lifetime to filing switches and session transitions.
+3. 38D Phase 1 owns the canonical typed validation registry and migrates all
+   issue producers. This closes validation-ID ownership; 38B consumes the
+   registry and may not define a parallel namespace.
+4. 38B adds readiness cards from its completed source inventory and references
+   the Phase 1 IDs for automatic blocking conditions.
+5. 38D Phase 2 adds revision-bound acknowledgement and unifies output gates
+   after readiness mappings can be parity-tested against the typed registry.
+
+38B begins only after 38D Phase 1 exists. This is an explicit code dependency,
+not an unresolved design question; it does not couple 38B to 38D Phase 2.
+
+## Execution Status
+
+The discovery and design gates are closed by the executable maps in each
+proposal and by `MILESTONE-38B-SOURCE-INVENTORY.md`. Implementation must
+re-check named symbols against current `master`; ordinary line movement or a
+renamed private helper does not reopen planning. Stop and return for scope
+scope review only if a named owner no longer controls the behavior, a listed
+invariant cannot be preserved, or a newly found output gate can omit or corrupt
+filed data.
+
+| Delivery | Readiness | Closed execution artifact |
+| --- | --- | --- |
+| 38A | Executable | Exact factory, compatibility-normalization, conflict, persistence, party-ID, and Excel slot map in 38A. |
+| 38B | Executable after 38D Phase 1 | Nine-filing condition dispositions and DSHP decision in `MILESTONE-38B-SOURCE-INVENTORY.md`; renderer/host map in 38B. |
+| 38C | Executable | Ordered dashboard transition, failure semantics, legacy-read migration, and owner map in 38C. |
+| 38D | Executable in two phases | Phase 1 issue registry/producer map and Phase 2 output-gate/revision-state map in 38D. |
+
+## Outcome and Catalogue Contract
+
+Every acceptance criterion must close four outcomes in the delivery report:
+
+1. **Code:** name the changed owner and observable behavior.
+2. **Persistence:** state the persisted-shape/migration result, or explicitly
+   record `No persisted data-model change`.
+3. **Tests:** name the focused tests proving the behavior. Add or modify tests
+   only for changed observable behavior or contracts.
+4. **Documentation:** update user/developer documentation affected by the
+   behavior, or explicitly record `No documentation update required`.
+
+Update `TEST-INDEX.md` only when a test file is added, removed, renamed,
+materially repurposed, or changes category/filing scope. Update
+`probate-guardian-data-model.csv` whenever persisted shape, meaning, bounds,
+defaults, or migration behavior changes, and run `npm run verify:data-model`.
+Do not churn either catalogue merely because implementation touched a nearby
+module. Each delivery report records the positive update or the explicit
+no-update disposition.
+
+Each proposal contains its own acceptance criteria, fixed implementation map,
+and focused verification plan. At implementation start, confirm the dependency
+order above, re-check named owners against current `master`, select tests
+through `TEST-INDEX.md`, and follow `AGENTS.md`'s commit and regression policy.
+
+---
+
+<a id="milestone-38a-proposal-md"></a>
+
+# Archive: MILESTONE-38A-PROPOSAL.md
+
+# Milestone 38A: Simplified Guardian Data Integrity and Excel Capacity
+
+## Status
+
+**Landed 2026-09-11 (`b0321dd`)**, together with 38B, 38C and 38D — the same
+commit that split the original Milestone 38 proposal into these four files
+also implemented them (`guardian-compatibility.js` and the
+`schedule-definitions.js` changes first appear there). Status line corrected
+2026-09-13 under Milestone 42A; the specification text below is unchanged.
+
+## Goal
+
+Repair Simplified Accounting's guardian-row schema without losing legacy data,
+keep guardian-party links aligned, and prevent the official three-slot Excel
+template from silently omitting a populated guardian.
+
+## Decisions
+
+### Canonical row shape
+
+Simplified Accounting guardians use `mailingStreet`,
+`mailingCityStateZip`, `residenceStreet`, and
+`residenceCityStateZip`. Annual/Final/Trust Accounting guardians continue to
+use their existing `officeStreet` and `officeCityStateZip` fields.
+
+Create a Simplified-specific guardian factory and route only Simplified's Add
+Co-Guardian action through the existing collection engine. Extend
+`addCollectionRow()` with the fixed per-call `factoryOverride` argument below,
+while leaving maximum enforcement, array mutation, and
+`syncPartyIds: 'guardianPartyIds'` inside that shared engine. Do not hand-roll
+a Simplified-only push or duplicate its party-ID synchronization. Preserve the
+current one-row initial state, `1..3` UI limit, autosave, and rerender behavior.
+
+### Legacy normalization and conflicts
+
+Normalization is scoped to Simplified Accounting and is idempotent:
+
+1. If a canonical residence field is blank and its legacy office field is
+   populated, copy the legacy value into the canonical field. Retain the legacy
+   key until the normalized row has been successfully persisted.
+2. If canonical and legacy values match, the redundant legacy key may be
+   removed after successful persistence.
+3. If both values are populated and differ, preserve both values and use
+   neither normalization nor export to choose silently. Show a routed,
+   export-blocking Part IV conflict notice displaying both values. The user
+   must explicitly choose **Keep residence value** or **Use recovered legacy
+   value**. Apply that choice to the canonical field, remove the resolved
+   legacy key, persist, and clear the conflict.
+4. Never create, remove, reorder, or merge guardian rows during normalization.
+   Preserve all other fields and `guardianPartyIds` indexes.
+5. An unresolved conflict is non-bypassable under Milestone 38D for every
+   generated output. Until the user chooses the canonical value, output cannot
+   faithfully select an address without making the prohibited silent choice.
+
+This uses the already-present legacy `office*` keys as temporary compatibility
+storage; it does not invent a second hidden copy or require an archive-format
+version bump. The data-model CSV must document the compatibility behavior.
+
+### Excel capacity and import
+
+Add a guardians capacity of three to `SIMPLIFIED_EXCEL_CAPS`. Extend the shared
+capacity contract to support a per-entry `isPopulated` predicate (or equivalent
+count function) and use the same `guardianHasAnyData()` semantics as rendering
+and export. Existing capacity entries retain their current counting behavior.
+
+Excel import owns template slots 1–3 only. After an explicit import
+confirmation, those three slots are replaced from the workbook, including
+blank slots. Any pre-existing rows beyond slot 3 and their corresponding
+`guardianPartyIds` are preserved unchanged. The UI must then report that the
+official workbook cannot represent those overflow rows; a later Excel export
+remains blocked until no more than three populated guardians remain.
+
+## Implementation
+
+1. Add the Simplified guardian factory and pass it through the shared
+   `addCollectionRow()` override/resolver contract; keep limits, mutation, and
+   party-ID synchronization in the existing engine.
+2. Add load/import and pre-render/export normalization, plus the explicit
+   conflict-resolution UI and routed validation issue.
+3. Extend the capacity helper with populated-row semantics and add the
+   three-guardian Excel cap before workbook loading or mutation.
+4. Make Excel import's slot replacement and overflow preservation explicit,
+   including `guardianPartyIds` lockstep.
+5. Update `probate-guardian-data-model.csv`, the Milestone 35 backlog entry,
+   and `TEST-INDEX.md`.
+
+## Executable Code Map
+
+The former readiness gate is closed by this map. These names and behaviors are
+the implementation contract; do not choose a different factory API,
+normalization time, conflict identity, or import-link policy while coding.
+
+### Factory and shared collection engine
+
+Add `createSimplifiedGuardian()` in
+`src/features/simplified-accounting/guardian-compatibility.js`. It returns only
+the nine canonical Simplified fields listed above, all initialized to `''`.
+
+Change the shared signature in
+`src/core/form/schedule-definitions.js` to:
+
+```js
+addCollectionRow(collectionKey, data = window.D, factoryOverride = null)
+```
+
+The function selects `factoryOverride || schema.factory`, verifies it is a
+function, and pushes its result. Maximum enforcement, list initialization, and
+`syncPartyIds` remain exactly where they are. Existing callers pass no third
+argument and therefore retain their current factories. The only new caller is
+Simplified's `add-guardian` action in
+`src/features/simplified-accounting/index.js`, which passes
+`createSimplifiedGuardian`. Do not change
+`SCHEDULE_SCHEMAS.guardians`, `removeCollectionRow()`, or
+`duplicateCollectionRow()` for this delivery.
+
+### Compatibility helper and invocation boundaries
+
+The same new module exports:
+
+```js
+normalizeSimplifiedGuardianCompatibility(data, { persistedSource = false } = {})
+getSimplifiedGuardianAddressConflicts(data)
+resolveSimplifiedGuardianAddressConflict(data, rowIndex, field, choice)
+```
+
+`normalizeSimplifiedGuardianCompatibility()` is the only mutating normalizer.
+It visits existing rows without changing length/order. For each
+`officeStreet`/`residenceStreet` and
+`officeCityStateZip`/`residenceCityStateZip` pair it applies this fixed rule:
+
+- canonical blank + legacy populated: copy to canonical and retain legacy;
+- values already equal when the call began and `persistedSource` is true:
+   delete the redundant legacy key;
+- conflicting populated values: retain both and report no implicit choice;
+- every other field and `guardianPartyIds` remain untouched.
+
+The “already equal when the call began” condition prevents a legacy-only value
+from being copied and deleted in one pass. A later save/reopen proves the
+canonical copy was persisted; the next persisted-source pass may clean it.
+The helper returns `{ changed, conflicts }` and is idempotent.
+
+Invoke it with `persistedSource: true` immediately after a Simplified ward is
+decoded/sanitized and before it becomes `window.D` in both active persistence
+paths:
+
+- `.sav` import/load in `src/core/persistence/case-file.js` and its classic
+   bootstrap counterpart in `src/legacy-app.js`;
+- session recovery in `src/core/persistence/recovery-cache.js` and the classic
+   bootstrap counterpart in `src/legacy-app.js`.
+
+Invoke it with `persistedSource: false` after any legacy object-to-Simplified
+conversion and after Excel import. New empty data already has the correct
+shape and needs no normalization. Do not mutate from validators, PDF/DOCX
+model builders, the readiness renderer, or `prepareFilingOutput()`.
+
+`getSimplifiedGuardianAddressConflicts()` is pure and is called by Part IV and
+the Simplified issue producer before Preview/PDF/DOCX/Excel. Each conflict is
+`simplified.guardian.address-conflict`, route `/p4`, category `data-integrity`,
+`bypassable: false`, with the row index and field pair in issue detail.
+Part IV displays both escaped values and exactly two controls: **Keep residence
+value** and **Use recovered legacy value**.
+
+`resolveSimplifiedGuardianAddressConflict()` accepts only field
+`residenceStreet` or `residenceCityStateZip` and choice `canonical` or
+`legacy`. It writes the selected value to canonical, deletes that pair's
+legacy key, calls the existing party write-through for that guardian row,
+calls `autoSave()`, and rerenders `/p4`. An invalid row/field/choice is a no-op
+returning `false`; a successful resolution returns `true`. Explicit user
+choice authorizes removal of the unselected value, so this path does not wait
+for a second reopen.
+
+`pruneBlankCards()` and `party-resolver.js` require no algorithm change: their
+current kept-index and positional-link behavior remains the invariant. Add
+regression assertions rather than a second synchronization path.
+
+### Excel capacity and import algorithm
+
+Extend each capacity entry accepted by `checkExcelCapacity(caps)` with optional
+`isPopulated(row)`. Count with that callback when supplied, retain the special
+remuneration behavior for existing callers, and otherwise retain raw
+`list.length`. Add:
+
+```js
+guardians: {
+   cap: 3,
+   label: 'Part IV — Guardians',
+   route: '/p4',
+   isPopulated: guardianHasAnyData,
+}
+```
+
+to `SIMPLIFIED_EXCEL_CAPS`. The existing print-page panel, button-disable path,
+and `doSaveExcel()` backstop all consume this one result.
+
+In `importExcel()`, parse all three workbook slots into three fresh
+`createSimplifiedGuardian()` rows before mutating live state. Prompt once after
+successful parse and before assignment. On confirmation:
+
+```text
+overflowRows = old guardians.slice(3)
+overflowPartyIds = old guardianPartyIds.slice(3)
+guardians = [slot1, slot2, slot3, ...overflowRows]
+guardianPartyIds = [null, null, null, ...overflowPartyIds]
+```
+
+All three official slots are replaced, including blank slots. Their links are
+cleared because workbook identities cannot prove they are the previously
+linked parties. Indexes 3+ remain byte-for-byte/order-for-order unchanged. On
+cancel or parse failure, neither array changes. Sanitize, normalize with
+`persistedSource: false`, autosave, and rerender only after assignment.
+
+### Files and outcomes
+
+| Outcome | Required files/result |
+| --- | --- |
+| Code | New `guardian-compatibility.js`; update `schedule-definitions.js`, Simplified `index.js`, `excel.js`, Part IV validation/output integration, and the active modular/classic load and recovery boundaries named above. |
+| Persistence | Update `probate-guardian-data-model.csv` for canonical Simplified row fields, temporary legacy keys, conflict behavior, and unchanged `guardianPartyIds` positional semantics; run `npm run verify:data-model`. No archive version bump. |
+| Tests | Extend `schedule-definitions.spec.js`, `prune-cards.spec.js`, `party-resolver.spec.ts`, `simplified-mount.spec.ts`, `case-file-roundtrip.spec.ts`, `recovery-cache.spec.ts`, and output/Excel coverage. Add a focused compatibility unit spec only if those files cannot express the pure helper cases. |
+| Catalogue | Update `TEST-INDEX.md` only for a new/renamed/repurposed test file or changed scope. Record the actual disposition in the delivery report. |
+| Documentation | Update the Milestone 35 backlog entry to point to the completed 38A behavior; no user help text is required unless conflict controls need explanation beyond their labels. |
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Remove and re-add a Simplified co-guardian | The new row has the canonical `residence*` shape and no Annual `office*` shape. |
+| Annual/Final/Trust add-row behavior | Existing `office*` factories and limits are unchanged. |
+| Legacy office-only value | It is copied to the blank canonical field without losing any row or party-link data. |
+| Matching legacy and canonical values | The canonical value remains and redundant compatibility data is safely removed after persistence. |
+| Conflicting values | Both remain intact until the user chooses one; all generated output is non-bypassably blocked and routed to the visible Part IV resolution control. |
+| Repeated normalization | No duplicate rows, repeated prompts after resolution, reorder, or party-link drift occurs. |
+| One to three populated guardians | PDF, Word, and Excel preserve every populated guardian. |
+| Four or more populated legacy guardians | PDF and Word retain them; Excel is blocked before workbook mutation with a three-slot explanation. |
+| Blank compatibility padding | It does not cause a false Excel-capacity failure. |
+| Excel import into a filing with overflow rows | Slots 1–3 follow the confirmed workbook import; rows 4+ and matching party IDs remain unchanged and visible. |
+
+## Verification
+
+Add focused unit tests for factory shape, normalization, explicit conflict
+resolution, idempotence, populated-row counting, and party-ID synchronization.
+Add Simplified Accounting E2E coverage for add/remove, save/reopen, conflict
+routing, one-to-three guardian Excel output, blocked four-guardian output, and
+three-slot import with preserved overflow. Run `npm run verify:data-model` and
+the smallest unit/E2E set selected through `TEST-INDEX.md`.
+
+---
+
+<a id="milestone-38b-proposal-md"></a>
+
+# Archive: MILESTONE-38B-PROPOSAL.md
+
+# Milestone 38B: Universal Filing and Clerk Review Readiness Cards
+
+## Status
+
+**Landed 2026-09-13 under Milestone 44C.** The earlier "Landed 2026-09-11
+(`b0321dd`)" status overstated it: that commit added only a small
+`filingReadinessCard(data, issues)` renderer used by three filing types,
+while `readiness-config.js`, `getReadinessJurisdiction()`, the four Plan
+migrations, the legacy dispatcher removal, and both named unit specs did not
+exist — found by the 2026-09-13 cross-milestone review, tracked and closed
+as `MILESTONE-44-PROPOSAL.md` 44C, whose "What landed" section records the
+delivered shape and one documented design point (a Plan validator's own
+issues are represented by the preserved predicate rows while any predicate
+is pending, and listed themselves once all predicates pass). The
+specification text below is unchanged.
+
+## Goal
+
+Give every one of the nine filing types exactly one accessible readiness card
+on Preview & Export, using filing-specific, source-mapped automatic checks and
+manual or unsupported review items.
+
+## Decisions
+
+- Pinellas and Pasco cards are titled **Clerk's Review Readiness** and may show
+  mapped Sixth Judicial Circuit workslip context.
+- Every other county uses **Filing Readiness** and omits Pinellas, Pasco, Sixth
+  Circuit, and local-clerk requirement claims.
+- Automatic failures open the card by default. When automatic checks pass, the
+  collapsed summary says **Automated checks passed; manual review remains**
+  whenever manual or unsupported items exist. It must not say or imply that
+  the filing as a whole passed.
+- Manual and unsupported items never become automatic passes or export gates.
+- Readiness guidance remains outside PDF, Word, Excel, and printed court-form
+  content.
+- Migrating the four existing Plan panels is a visible UI change for current
+  users: today's always-expanded, county-agnostic **Clerk's review readiness**
+  panel becomes an accordion, and outside Pinellas/Pasco its title becomes
+  **Filing Readiness**. Only the proven predicates and export behavior remain
+  unchanged.
+
+## Completed Source Inventory
+
+`MILESTONE-38B-SOURCE-INVENTORY.md` is the completed implementation artifact
+for these sources:
+
+| Filing | Local workslip |
+| --- | --- |
+| Guardian Inventory | `GD INIT Work Slip Inventory.docx` |
+| Simplified Accounting | `GD ANN Work slip Simplified 02272020.docx` |
+| Annual Accounting | `GD ANN WORK SLIP AUDIT.docx` |
+| Final/Discharge Accounting | `GD DISC Work Slip 02272020.docx` |
+| Trust Accounting | `GD ANN Work Slip TRUST.docx` |
+| Simplified Plan | `GD ANN Work Slip Review Simplified Plan.docx` |
+| Annual Plan | `GD ANN Work Slip Review.docx` |
+| Initial Plan | `GD INIT WORK SLIP REVIEW.docx` |
+| Minor Plan | `GD ANN Work Slip Minor Review.docx` |
+
+Conditions are grouped by source section rather than by repeated auditor
+Yes/No/comment cells. Automatic conditions are limited to facts represented in
+filing state; manual and unsupported clerk/court facts stay distinct.
+
+`GD ANN Work Slip Review DSHP.docx` is resolved as an unsupported Annual Plan
+developmental-services/guardian-advocate overlay, not a tenth filing type. The
+app has no reliable DSHP discriminator. Create no DSHP runtime configuration;
+retain only Annual Plan's existing conditional manual reminder. This decision
+does not block any of the nine ordinary filing configurations.
+
+For every blocking automatic check, the source map must reference the canonical
+validator issue ID shared with Milestone 38D. Do not create separate readiness
+and preflight IDs for the same failure. A readiness-only condition may use its
+own ID when it has no validator counterpart.
+
+## Executable Code Map
+
+38D Phase 1 is the only implementation prerequisite. It supplies canonical
+typed issues; 38B consumes them and does not create validation identities.
+
+Create `src/core/filing/readiness-config.js` with:
+
+```js
+getFilingReadiness(inventoryType, data, validationIssues)
+```
+
+It is the single configuration source for the nine descriptor `inventoryType`
+keys. It returns
+`{ automatic, manual, unsupportedCount }` where every row has stable `id`,
+`label`, `route`, `classification`, and `blocking`. Automatic blocking rows
+are selected directly from `validationIssues` when their registry category is
+`validation` or `data-integrity` and their issue definition has
+`showInReadiness: true`; do not recompute those predicates. Move the four Plan
+arrays and their current predicates from `src/features/plan-*/print.js` into
+this module for readiness-only automatic rows, preserving every existing ID,
+label, and predicate. Add grouped manual rows exactly as specified in the
+source inventory.
+
+Create `src/core/filing/readiness-card.js` with:
+
+```js
+renderReadinessCard({ filingType, data, validationIssues, expanded })
+bindReadinessCard(container)
+resetReadinessCardState()
+```
+
+The renderer uses one native `<details id="filing-readiness-card">` with one
+`<summary>`. It escapes all text and renders no inline handlers. Pending
+automatic checks set `open`; otherwise a fresh render is collapsed. A user's
+toggle is retained in module memory only for rerenders of the same
+`wardId + filingType`; `resetReadinessCardState()` runs on filing/ward switch
+and fresh Preview entry. When no automatic item is pending and a manual or
+unsupported item remains, summary text is exactly **Automated checks passed;
+manual review remains.** Manual and unsupported rows never receive pass marks.
+
+Extend `src/core/filing/county-guidance.js` with:
+
+```js
+getReadinessJurisdiction(county)
+```
+
+It returns `{ local: true, title: "Clerk's Review Readiness" }` only for the
+existing normalized Pinellas/Pasco allow-list and `{ local: false, title:
+"Filing Readiness" }` otherwise. Workslip-derived local-practice text is
+filtered out for all non-local results. Do not infer a circuit from blank or
+unknown county.
+
+### Preview hosts
+
+In each host, call `prepareFilingOutput()` first, then render exactly one card
+from `preflight.issues` before court-output markup:
+
+- `src/features/guardian-inventory/print.js` for `guardianInventory`;
+- `src/features/simplified-accounting/print.js` for `simplifiedAccounting`;
+- `src/features/annual-accounting/print.js` for `annualAccounting`,
+  `finalAccounting`, and `trustAccounting` selected by the active filing type;
+- `src/features/plan-simplified/print.js`;
+- `src/features/plan-annual/print.js`;
+- `src/features/plan-initial/print.js`;
+- `src/features/plan-minor/print.js`.
+
+Delete the classic `planReadinessChecks()` and `planReadinessPanel()` from
+`src/legacy-app.js` after all four Plan hosts import the shared modules. Remove
+their `window.planReadinessChecks*` bridges from the Plan feature indexes.
+Keep `.no-print` on the card and never call the renderer from `pdf-model.js`,
+DOCX builders, Excel modules, `buildPrintHTML*()`, or generated-PDF builders.
+Card routing delegates to the existing validation jump-link handler using the
+canonical issue route; readiness-only rows without a route render no link.
+
+## Implementation
+
+1. Create one shared readiness-card renderer/controller with stable IDs and
+   native `details`/`summary` semantics or an equivalent accessible control.
+2. Migrate the four existing Plan panels, explicitly applying the new
+  county-sensitive title and accordion behavior without changing their proven
+  predicates or export behavior.
+3. Add configurations for Guardian Inventory, Simplified Accounting, Annual,
+   Final/Discharge, and Trust Accounting.
+4. Use the county-guidance policy for title, provenance, and local text.
+5. Preserve a user's expanded/collapsed choice during the current preview
+   render; recompute the default on a fresh render or filing switch.
+6. Keep preflight authoritative. Every blocking validator issue must either map
+   to an automatic readiness condition or carry an explicit documented reason
+   why it is outside card scope. Every automatic blocking condition must map
+   back to its validation issue. Non-blocking automatic items must be labeled
+   as such.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Any of nine filing previews | Exactly one card uses the correct filing configuration. |
+| Pinellas/Pasco | Clerk title and only verified local context are shown. |
+| Other or blank county | Filing title is used and no Sixth Circuit local requirement appears. |
+| Automatic failure | Card opens by default, identifies the item, and provides normal routing/remediation. |
+| Automatic checks pass; manual/unsupported items remain | Card collapses by default and says “Automated checks passed; manual review remains.” |
+| No remaining item of any class | Summary may state that all configured checks pass without claiming court approval. |
+| Manual/unsupported item | It is visually and semantically distinct, non-blocking, and never displayed as an automatic pass. |
+| Rerender or filing switch | No duplicate cards or IDs; state follows the documented reset rule. |
+| Court outputs | Card content is absent from PDF, Word, Excel, and print. |
+
+## Verification
+
+Add source-map completeness tests for all nine filings, bidirectional mapping
+tests for blocking automatic conditions, explicit exceptions for out-of-card
+preflight rules, county-policy tests, and component/E2E coverage for accordion
+defaults, manual-only wording, keyboard operation, focus, rerender, and filing
+switching. Extend the existing Plan parity fixtures rather than replacing them.
+
+## Files and Outcomes
+
+| Outcome | Required files/result |
+| --- | --- |
+| Code | Add the two shared filing modules; update county guidance, the seven preview host files, four Plan feature bridges, and remove the classic renderer/dispatcher. |
+| Persistence | No persisted data-model change. Expanded state is runtime-only and is reset by ward/filing/preview identity. Record `No data-model catalogue update required`. |
+| Tests | Add `tests/unit/readiness-source-map.spec.js` and `tests/unit/readiness-card.spec.js`; extend all four existing Plan parity specs and focused Preview E2E coverage for nine keys, county title/filtering, keyboard/toggle/reset, routing, and output exclusion. |
+| Catalogue | Add the two new unit files and any new E2E file to `TEST-INDEX.md`; do not edit the catalogue if existing E2E files are only extended within their present scope. |
+| Documentation | Keep the completed inventory with the proposal. Update user help only if it currently describes the old always-expanded Plan panel; otherwise record no additional documentation change. |
+
+---
+
+<a id="milestone-38b-source-inventory-md"></a>
+
+# Archive: MILESTONE-38B-SOURCE-INVENTORY.md
+
+# Milestone 38B Source and Condition Inventory
+
+## Status and Reading Rule
+
+This is the completed source-classification artifact for Milestone 38B. It is
+an implementation input, not legal advice. The ten DOCX files are operational
+Sixth Judicial Circuit/Pinellas clerk workslips. They show clerk audit practice;
+they do not independently establish statewide law or authorize the app to
+claim court approval.
+
+Use these classifications:
+
+- `automatic`: the condition is determinable from current filing state and is
+  represented by a canonical typed issue or a named readiness predicate.
+- `manual`: the filer can act or confirm the fact, but the app cannot prove it.
+- `unsupported`: the fact belongs to clerk/court systems, another filing, or a
+  case classification not represented in current state. Do not render it as a
+  pass/fail row. Render only the concise filer-facing reminder named below when
+  one exists.
+
+For automatic blocking rows, the canonical issue ID produced by 38D Phase 1 is
+the readiness ID. The configuration must not duplicate its predicate or text.
+Existing Plan readiness-only IDs listed below remain stable. Repetitive
+Yes/No/comment/auditor-action rows are intentionally grouped by source section;
+they are not separate app conditions.
+
+## Shared Disposition Rules
+
+Apply these rules to every filing:
+
+| Source condition family | Disposition |
+| --- | --- |
+| Current form identity, period, required selections, populated required fields, row completeness, arithmetic/reconciliation, and signatures represented in app state | `automatic`; consume canonical validation issues and routes. |
+| Attachment existence, original signatures, service, notice, filing deadline, payment, professional registration, address on clerk file, prior court approval, separate petition/report, and facts outside the generated filing | `manual`; display a concise action/confirmation reminder. |
+| Audit level, docket/event history, letters/rights removed, case flags, clerk task notes, estate-value/audit-tab entries, judicial review instructions, bond/fee approval, objections, sanctions, and other clerk-only records/actions | `unsupported`; omit unless a concise filer action is expressly listed below. |
+| Statute/rule citation found only in a workslip | label as local-practice context without a legal citation. Retain a citation only when the repository already records its authoritative verification. |
+
+## Filing Inventories
+
+### Guardian Inventory
+
+Source: `GD INIT Work Slip Inventory.docx`, grouped as case/letters review,
+verified-inventory form review, schedules/assets/liabilities/income, guardian
+and attorney/signature review, support documentation, and clerk audit actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| `guardian.*` | Caption, filing identity, reporting/as-of date, guardian/preparer/attorney signatures, and Schedules A-F field/row completeness | `automatic` | Canonical `validateGuardian()` issues from `src/features/guardian-inventory/index.js`; use issue message and route. |
+| `guardian.readiness.supporting-records` | Statements, appraisals, proof of ownership/value, restricted-account evidence, and other supporting documents | `manual` | “Confirm required statements, appraisals, and supporting records are filed or retained as directed by the court.” |
+| `guardian.readiness.service-and-deadline` | Filing timing, notice/service, and separate court requirements | `manual` | “Confirm the inventory was filed on time and that any required notice or service is complete.” |
+| `guardian.unsupported.case-record` | Letters, removed rights, docket history, case flags, audit level, prior filings, bond/fee/court actions | `unsupported` | No card row; the app has no authoritative case-system state. |
+
+### Simplified Accounting
+
+Source: `GD ANN Work slip Simplified 02272020.docx`, grouped as case/letters
+review, reporting period, simplified-account form and schedules, guardians and
+signatures, transactions/supporting records, and clerk audit actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| `simplified.*` | Caption, period, Part I-III values/reconciliation, Part IV guardians/signatures, preparer and attorney data | `automatic` | Canonical `validateSimplified()` issues from `src/features/simplified-accounting/index.js`; use issue message and route. |
+| `simplified.readiness.supporting-records` | Statements, receipts, explanations, and other transaction support | `manual` | “Confirm statements, receipts, and explanations required for this accounting are available or filed.” |
+| `simplified.readiness.filing-steps` | Deadline, service, fees, and separate plan/financial-statement obligations | `manual` | “Confirm filing deadline, service, fees, and any separate plan or financial statement required for this case.” |
+| `simplified.unsupported.case-record` | SSN on file, letters/rights, waiver status, case flags, audit level/tab, clerk notes and review actions | `unsupported` | No card row. |
+
+### Annual Accounting
+
+Source: `GD ANN WORK SLIP AUDIT.docx`, grouped as case authority and audit
+scope, opening/closing balances, receipts/disbursements, Schedules A-E and F,
+reconciliation, supporting records, guardian/signature/fee review, and clerk or
+judicial audit actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| `annual.*` | Caption, period, certification/signatures, opening and closing balances, schedule values/rows, totals, and reconciliation represented on the form | `automatic` | Canonical `validateAnnual()` issues from `src/features/annual-accounting/index.js`; Final and Trust use scoped aliases below rather than this filing ID. |
+| `annual.readiness.supporting-records` | Bank/custodian statements, receipts, invoices, appraisals, tax records, and transaction explanations | `manual` | “Confirm required statements and supporting records reconcile to the accounting and are filed or retained as directed.” |
+| `annual.readiness.external-approvals` | Filing/service timing, guardian/attorney/accountant fees, restricted accounts, sales, investments, court approval, and objections | `manual` | “Confirm required service, approvals, fee petitions, and other case-specific filing steps are complete.” |
+| `annual.unsupported.audit-record` | Rights/letters, docket comparison, prior balances from court records, audit level, flags, sanctions, objections, audit-tab/task-note/judicial actions | `unsupported` | No card row. |
+
+### Final/Discharge Accounting
+
+Source: `GD DISC Work Slip 02272020.docx`, grouped as petition for discharge,
+notice and objections, final accounting, distribution/receipts, fees/costs,
+closing documents, and clerk/court discharge actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| `finalAccounting.*` | Final-accounting caption, period, schedules, values, reconciliation, certifications, and signatures represented in app state | `automatic` | `validateAnnual()` with `finalAccounting` registry scope; use canonical issue message and route. |
+| `finalAccounting.readiness.petition-notice` | Petition reason/statements, notice language/service, objection period, and separate closing papers | `manual` | “Confirm the petition for discharge, required notice/service, objection period, and closing papers are complete.” |
+| `finalAccounting.readiness.distribution` | Final distributions, receipts/releases, unpaid or anticipated fees/costs, and court approval | `manual` | “Confirm final distributions, receipts or releases, and any fee/cost approvals required by the court.” |
+| `finalAccounting.unsupported.case-record` | Docketed notice/proof, objections, event expiration, clerk notes, audit tab, and discharge-order actions | `unsupported` | No card row. |
+
+### Trust Accounting
+
+Source: `GD ANN Work Slip TRUST.docx`, grouped as case/trust authority, trust
+account form and schedules, opening/closing balances, transactions,
+reconciliation, supporting records, signatures/fees, and clerk audit actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| `trustAccounting.*` | Trust-accounting caption, period, schedules, values, reconciliation, certifications, and signatures represented in app state | `automatic` | `validateAnnual()` with `trustAccounting` registry scope; use canonical issue message and route. |
+| `trustAccounting.readiness.trust-records` | Trust instrument, statements, receipts/invoices, asset support, and transaction explanations | `manual` | “Confirm the trust instrument and required statements and transaction support are available or filed.” |
+| `trustAccounting.readiness.external-approvals` | Filing/service timing, compensation/fees, distributions, investment or sale approval, and other court-directed steps | `manual` | “Confirm required service, compensation or fee approval, distributions, and other court-directed steps.” |
+| `trustAccounting.unsupported.audit-record` | Letters/rights, docket and prior-audit facts, case flags, audit level/tab, clerk notes, and judicial actions | `unsupported` | No card row. |
+
+### Simplified Plan
+
+Source: `GD ANN Work Slip Review Simplified Plan.docx`, grouped as case status
+and financial statement, plan cover/questions, guardian contact/signatures,
+advance directives and attachments, service/filing steps, and clerk actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| Existing `cover.*`, `plan.*`, and `signatures.*` IDs | Cover, Questions 1-9, guardian contact/signature | `automatic` | Preserve predicates and labels in `planReadinessChecksSimplified()`; map matching blockers to canonical `planSimplified.*` issue IDs during 38D Phase 1. |
+| `planSimplified.readiness.attachments-and-service` | Advance directives, financial statement, physician report, service, relocation, fee, registration, and address-on-file facts | `manual` | Preserve the current concise manual reminders, subject to county policy. |
+| `planSimplified.unsupported.case-record` | Incapacity/advocacy status, case flags, letters, audit tab, task notes, and clerk comparisons | `unsupported` | No card row. |
+
+### Annual Plan
+
+Source: `GD ANN Work Slip Review.docx`, grouped as case/letters and financial
+statement, plan cover/Questions 1-11, guardian contact/signatures, physician
+statement/report and directives, service/filing steps, and clerk actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| Existing `cover.*`, `plan.*`, and `signatures.*` IDs | Cover, Questions 1-11, guardian contact/signature | `automatic` | Preserve predicates and labels in `planReadinessChecksAnnual()`; map matching blockers to canonical `planAnnual.*` issue IDs during 38D Phase 1. |
+| `planAnnual.readiness.attachments-and-service` | Physician statement/report, directives, financial statement, service, relocation, fee, registration, and address-on-file facts | `manual` | Preserve current concise manual reminders, subject to county policy. |
+| `planAnnual.unsupported.case-record` | Incapacity/type, rights/letters, flags, audit tab, prior-plan comparison, task notes, and clerk review | `unsupported` | No card row. |
+
+### Initial Plan
+
+Source: `GD INIT WORK SLIP REVIEW.docx`, grouped as case authority/letters,
+initial-plan cover and Questions 1-11, guardian/attorney certifications and
+signatures, directives and external education/service/filing steps, and clerk
+actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| Existing `cover.*`, `plan.*`, and `signatures.*` IDs | Cover, Questions 1-11, guardian/preparer/attorney certifications and signatures | `automatic` | Preserve predicates and labels in `planReadinessChecksInitial()`; map matching blockers to canonical `planInitial.*` issue IDs during 38D Phase 1. |
+| `planInitial.readiness.external-steps` | Directives, service, relocation, education proof, fee, registration, original signatures, address-on-file, and locally verified disaster-plan reminder | `manual` | Preserve current concise reminders; show local items only through county policy. |
+| `planInitial.unsupported.case-record` | Ward-death/case status, rights/letters, flags, estate audit value, docket/task notes, and clerk review | `unsupported` | No card row. |
+
+### Minor Plan
+
+Source: `GD ANN Work Slip Minor Review.docx`, grouped as case/letters and
+reporting period, annual-minor-plan cover/questions, guardian/preparer/attorney
+signatures, physician statement, service/filing/age-of-majority steps, and
+clerk actions.
+
+| ID family | Source group | Class | Card content/owner |
+| --- | --- | --- | --- |
+| Existing `cover.*`, `plan.*`, and `signatures.*` IDs | Cover, residence/providers, Questions 4-5, guardian/preparer/attorney certifications and signatures | `automatic` | Preserve predicates and labels in `planReadinessChecksMinor()`; map matching blockers to canonical `planMinor.*` issue IDs during 38D Phase 1. |
+| `planMinor.readiness.external-steps` | Physician statement, service, relocation, deadline, majority/discharge planning, fee, registration, and address-on-file | `manual` | Preserve current concise reminders, subject to county policy. |
+| `planMinor.unsupported.case-record` | SSN, person-only status, rights/letters, transfer/history, audit values, flags, task notes, and clerk review | `unsupported` | No card row. |
+
+## DSHP Disposition
+
+Source: `GD ANN Work Slip Review DSHP.docx`. Its title is **Clerk's Review of
+Annual Guardianship Plan [DSHP]**, it cites Chapter 393 context, and its body
+contains advocate-case/incapacity and developmental-services review prompts.
+It is therefore an Annual Plan overlay for developmental-services/guardian-
+advocate cases, not a tenth filing.
+
+The current state model has no verified discriminator proving that a ward is a
+DSHP/Chapter 393 or guardian-advocate case. Classify the entire overlay as
+`unsupported` for Milestone 38B and create no runtime configuration or hidden
+predicate. Keep Annual Plan's existing manual reminder to attach a current
+support plan when the filer knows it applies. A future data-model proposal may
+add an explicit case classification and then scope this overlay; that future
+work is not a 38B prerequisite and does not block the nine configurations.
+
+## Completeness Test Contract
+
+A source-map fixture must enumerate exactly these nine filing keys and assert:
+
+1. each has at least one automatic family and a manual or unsupported
+   disposition;
+2. every rendered automatic blocking row references a canonical registry ID;
+3. every bypassable validation issue for that filing appears exactly once in
+   the automatic card or in an explicit `outOfCard` allow-list limited to
+   technical/security/output-capability categories;
+4. no `unsupported` group is rendered as checked/passed;
+5. the DSHP overlay creates no tenth filing key and no automatic row.
+
+---
+
+<a id="milestone-38c-proposal-md"></a>
+
+# Archive: MILESTONE-38C-PROPOSAL.md
+
+# Milestone 38C: Dashboard Editing Focus and Lifecycle Terminology
+
+## Status
+
+**Code landed 2026-09-11 (`b0321dd`). Remaining gaps closed 2026-09-13** —
+see the completion note below. The specification text itself is unchanged.
+
+### Completion note (2026-09-13)
+
+`b0321dd` landed this milestone's central change (`buildCaseFileBlob()` stopped
+writing `appState.activeWardId`) but **not the rest of the table**, and not the
+E2E-test row of its own delivery checklist. That left seven persistence/export
+specs red for two days, all asserting the pre-38C behavior this milestone
+deliberately removed, which is how the gap was eventually found — by
+investigating the failures rather than the code.
+
+Four code paths still violated the storage table and were fixed:
+
+1. **`loadCaseFileFromZip()`** set `caseFile.activeWardId = a.activeWardId || null`
+   from the archive, so any pre-38C `.sav` auto-opened its filing through
+   `initApp()`'s `getActiveWard()`. It now keeps focus `null` and consumes a
+   legacy value exactly once as recent history — prepending it to
+   `recentWards` if it names a ward the archive actually contains — which is
+   what the table's "legacy read behavior" column specifies.
+2. **The same function's `else` branch** fell back to
+   `caseFile.activeWardId = wards[0].wardId` whenever an archive had no
+   `appState` section at all, which is every single-ward export. That is
+   precisely the prohibited "fall back to the first ward solely because data
+   was imported." Focus is now forced `null` for every archive shape.
+3. **`importSavArchiveOrWard()`** called `switchWard(activeWardId)`, and
+   failing that `switchWard(wards[0].wardId)`, on completion. Both are gone;
+   import now closes any open editor through `unloadWard()` *before* replacing
+   ward data and lands on the neutral dashboard.
+4. **Only `navigate()` ended editing focus.** `router.js` called
+   `enterDashboardEditingFocus()` from `navigate()` alone, but
+   `legacy-app.js`'s `handleHash()` calls `renderPage()` directly — so reaching
+   the dashboard by hash or by the **browser Back button** released nothing:
+   the ward lock stayed held, `activeWardId` stayed set, and `window.D` stayed
+   populated. A held lock can stop another tab from opening that ward at all.
+   The call moved into `renderPage()`, which covers every route in; it
+   early-returns when no ward is open and de-dupes concurrent calls, so
+   `navigate()` is unaffected. This is the "direct hash/history" case 38C's own
+   E2E row named.
+
+Point 4 also exposed a live instance of the Milestone 40F/40G hazard: the first
+attempt at it was written into `legacy-app.js`'s `renderPage()`, which is
+**shadowed** — `router.js:259` publishes `window.renderPage`, so the legacy copy
+is dead code and the fix silently did nothing until a probe showed the lock
+still held. `renderPage` is therefore another duplicated pair of the same kind
+40F removed for the save pipeline, and is a candidate for the same treatment.
+
+Point 3 is worth reading if you touch this again: the obvious-looking fix —
+nulling `activeWardId` and then navigating — is wrong. `enterDashboardEditingFocus()`
+early-returns on `if (!caseFile.activeWardId)`, so clearing the flag first makes
+the dashboard skip committing pending values, clearing `window.D`, **and
+releasing the ward lock**. Going through `unloadWard()` keeps that sequence
+intact, and flushing before the data swap means the save writes the ward the
+user was actually editing rather than an imported replacement of it. A test
+caught this; the reasoning did not.
+
+Tests updated to the post-38C contract, preserving what each one actually
+protects rather than deleting the assertion: `case-file-roundtrip.spec.ts`
+(both paths), `recovery-cache.spec.ts`, `dashboard-backup.spec.ts` (plus a
+stale comment that documented the removed fallback), `unlock.spec.ts`, and
+`backup-restore-sav.spec.ts` (two tests, retitled — one now proves no stale
+`window.D` survives a restore, the other that cross-tab lock contention is
+reached by an explicit Edit instead of by the restore itself). The idiom used
+throughout — assert a neutral `#ward-selector`, switch explicitly, then assert
+the name — was already present in `persistence-recovery.contract.spec.ts`,
+which someone had partially updated.
+
+`TEST-INDEX.md`: no change required, recorded here per this milestone's
+Catalogue row. No test file was added, renamed, or repurposed, and no
+category or scope changed — each updated spec still covers the same subject,
+with corrected expectations. Two tests were retitled within their existing
+files, which the file-level index does not describe.
+
+### Three further failures, none of them 38C (2026-09-13)
+
+Chasing the same set turned up three unrelated defects. All three had the same
+shape — a test asserting something true before a *later* milestone changed it —
+but one was a real user-facing bug:
+
+- **`persistence-recovery.contract.spec.ts:30` — a real bug, and mine.** The
+  D-3 Safe Deposit Box validator added earlier (commit `26380a5`) tested
+  `!== true && !== false`. But `normalizeWardData()`
+  (`legacy-app.js:6950-6951`) migrates a loaded ward's `hasSafeDepositBox` /
+  `safeDepositBoxFiled` to the canonical `'Yes'`/`'No'` strings — the
+  Milestone 37-5 radio convention — while the radios themselves still write
+  booleans. So after any save-and-reopen the value is a string, and **three
+  readers disagreed about one field**: the validator reported the question
+  unanswered and blocked export, the radios (`=== true`/`=== false`) rendered
+  as if nothing had been chosen, and the dependent "inventory filed" row hid
+  itself. A filer who answered the question, saved, and reopened would be
+  blocked from exporting with the answer apparently blank. Fixed by accepting
+  both shapes in every reader via `sdbIsYes`/`sdbIsNo`/`sdbAnswered` in
+  `guardian-inventory/index.js`. Isolated by bisecting the round trip: the
+  archive holds `false` and load preserves it, but activation rewrites it.
+- **`case-file-protection.spec.ts:165`** counted one write where it expected
+  zero. Not an overwrite-protection failure: entering the dashboard commits
+  and saves the open filing (this milestone), and that legitimate case-file
+  save goes through the same stubbed handle. The counter is now reset
+  immediately before the click so it measures only the button's effect.
+- **`dashboard-backup.spec.ts:13`** compared ward JSON byte-for-byte across a
+  dashboard navigation; the only difference was `lastModified`, re-stamped by
+  that same save. The snapshot now excludes that one field, which cannot carry
+  a dashboard preference and is therefore irrelevant to what the test guards.
+
+Superseded note: an earlier revision of this section listed two of these as
+"not 38C-related and still open." All three are now closed.
+
+## Goal
+
+Make the All Filings Dashboard a neutral work-selection screen and separate
+editing focus from the filing's open/closed lifecycle without losing pending
+work or leaving stale locks.
+
+## Final Terminology
+
+| Current label | New label | Meaning |
+| --- | --- | --- |
+| `Open` | **Edit** | Select the filing and enter its editor. |
+| `Mark Closed` | **Mark Closed** | Move the filing to Closed Filings. |
+| `Reopen` | **Mark Open** | Return the filing to Active Filings. |
+
+There is no **Close Editor** button on the dashboard. Entering the dashboard
+itself ends editing focus after pending values are committed and saved. This
+resolves the former contradiction between a dashboard-only Close Editor action
+and the requirement that the dashboard never retain an active editor.
+
+## State Decision
+
+`activeWardId` becomes runtime/session editing focus only:
+
+1. Entering `/dashboard` flushes pending field values and autosave, releases
+   the ward lock, clears `activeWardId`, clears `window.D` and active filing
+   type, publishes no active editing target to peer tabs, and renders the
+   neutral sidebar.
+2. New `.sav` archives and recovery-cache records do not persist
+   `activeWardId` as an instruction to reopen an editor. Existing archives may
+   contain it; load treats it as legacy resume history and does not auto-open
+   the filing.
+3. Existing persisted `recentWards` is the source for an explicit **Continue
+   Editing** prompt. No new competing last-edited field is introduced.
+4. Tab state reports `hasActiveCase` only when a ward is actively selected for
+   editing, not merely because the case file contains one or more wards.
+5. `archived` remains the independent persisted lifecycle flag. Dashboard
+   workflow status remains independent from both editing focus and `archived`.
+
+## Implementation
+
+1. Add one idempotent dashboard-entry transition and route every dashboard
+   entry through it, including direct, browser-history, startup, and shell
+   navigation paths.
+2. Render a neutral sidebar with no ward, guardian, filing type, progress,
+   filing navigation, output actions, or editing-session action. Keep only
+   dashboard-wide controls that make sense without an editor.
+3. Rename dashboard and Continue Editing row actions to **Edit**, and lifecycle
+   `Reopen` actions to **Mark Open**. Update accessible names and descriptions.
+4. Make every row action resolve its target from its own `wardId`. An action
+   that intentionally enters filing context, such as Edit or PDF preview, may
+   establish editing focus only after its target is resolved and its lock is
+   acquired.
+5. Stop serializing active editing focus in new archive/recovery output and
+   migrate old resume metadata conservatively to existing recent history.
+6. Correct tab-state semantics and audit autosave, lock release, dirty state,
+   startup recovery, focus placement, and browser navigation.
+7. Update the `caseFile.activeWardId` row in
+   `probate-guardian-data-model.csv` to describe its new runtime/session status,
+   legacy-read behavior, and `recentWards` resume-history boundary. Treat this
+   as a persistence-contract migration even though old archives remain
+   readable.
+
+## Executable Transition and Code Map
+
+The former design gate is closed by this contract.
+
+### Single transition owner
+
+Add `enterDashboardEditingFocus()` to
+`src/core/navigation/ward-lifecycle.js`. It is the sole owner of ending editing
+focus. It keeps one module-level in-flight promise so concurrent dashboard
+requests await the same transition. With no active ward and no held ward lock,
+it is an idempotent success and republishes nothing.
+
+For an active editor it performs exactly this sequence:
+
+1. Call `commitPendingFieldValues()` and `pruneBlankCards()` while the editor
+   DOM and ward lock still exist.
+2. Call `flushPendingSave({ requireRecovery: true })` while the lock is held.
+   Success means either no dirty data existed or the current encrypted recovery
+   snapshot completed; an available writable `.sav` handle is also updated by
+   the existing path. No file handle is a normal state and does not block the
+   dashboard when recovery succeeded.
+3. If the flush returns failure or throws, show the existing save-error surface,
+   return `false`, and retain the current route, lock, `activeWardId`,
+   `window.D`, and filing type.
+4. Ensure the current ward is present at the head of `recentWards` using the
+   existing bounded helper. This does not mark the ward `archived` or change
+   dashboard workflow state.
+5. Await `releaseWardLock()`. If it throws, return `false` and retain editing
+   focus. The current lock implementation is idempotent and absorbs Web Locks
+   completion errors; the catch is a contract backstop.
+6. Set `caseFile.activeWardId = null`, `window.D = {}`, and
+   `window.activeInventoryType = null` through the existing property bridge in
+   `src/legacy-app.js`; clear visited-page/session editor state that is keyed
+   to the former filing. Do not add a second active-type variable or setter.
+7. Call `updateSidebar()`, `refreshAutoSaveArmedStatus()`, and
+   `notifyProbateGuardianTabStateChanged()` in that order.
+8. Return `true`; only then may the router dispose the editor and mount the
+   dashboard.
+
+Do not use a timeout, sleep, fire-and-forget save, or route recursion.
+`unloadWard()` becomes a compatibility wrapper that awaits this transition and
+then calls `navigate('/dashboard')` only on success. It must not clear state or
+release a lock independently.
+
+### Router and browser-history owner
+
+Extend the ESM router signature to
+`navigate(page, { updateHash = true } = {})`. When `page === '/dashboard'`, it
+awaits `enterDashboardEditingFocus()` before `setCurrentPage()`, hash mutation,
+feature disposal, or route rendering; `false` aborts navigation.
+
+The classic `handleHash()` in `src/legacy-app.js` currently calls its lexical
+`renderPage()` directly and therefore bypasses ESM `navigate()`. Change only
+its special `/dashboard` branch to await
+`window.navigate('/dashboard', { updateHash: false })`; use the same route for
+startup and browser back/forward. Programmatic shell navigation continues to
+call `window.navigate('/dashboard')`. Guard same-page dashboard requests with
+the idempotent transition rather than bypassing it. `renderPage()` remains a
+renderer and does not own save/lock mutation.
+
+### Flush result contract
+
+Update the classic persistence functions and the thin
+`src/core/persistence.js` adapter so
+`flushPendingSave(options)` returns `{ ok, recoverySaved, archiveSaved,
+error }`. Update `saveSessionRestoreCache()` in both the active classic
+bootstrap and `src/core/persistence/recovery-cache.js` to return `true` on a
+completed write, `false` on a caught failure, and `true` when there is nothing
+dirty to recover. Preserve existing debounce and writable-handle behavior.
+Callers that omit options retain best-effort behavior; dashboard entry alone
+sets `requireRecovery: true`.
+
+### Persistence disposition
+
+Apply all rows in this table; there is no remaining choice about
+`activeWardId` storage.
+
+| Store/path | New write behavior | Legacy read behavior |
+| --- | --- | --- |
+| In-memory `caseFile.activeWardId` | Retain as runtime editing focus. | Set only after explicit `activateWard()`/`switchWard()` succeeds. |
+| App-state `saveAppState('activeWardId', ...)` | Remove writes from activation and unload in modular and classic paths. | Ignore for focus. If it names an imported ward, merge that ward once into existing `recentWards`; do not auto-open it. |
+| `.sav` `appState.activeWardId` in `buildCaseFileBlob()` and classic counterpart | Omit from new archives; no format-version bump. | Consume only for the one-time recent-history merge above, then keep runtime focus `null`. |
+| Recovery-cache `activeWardId` | Omit from new cache records. | On restore, merge a valid value into `recentWards`, set `activeWardId = null`, and never fall back to `restoredWards[0].wardId`. |
+| Import/open completion | Never call `switchWard(activeWardId)` or fall back to the first ward solely because data was imported/restored. | Land on neutral dashboard; the user chooses Edit/Continue Editing. |
+| `recentWards` | Continue existing bounded persistence and live-record rehydration. | Drop IDs not present in restored wards; preserve valid timestamp order and prepend a valid legacy active ID without duplication. |
+
+Update `src/core/types/case-file.js` to describe runtime-only focus. Update the
+`caseFile.activeWardId` CSV row from `persisted,input` to runtime/session state
+and document legacy-read-to-`recentWards`. Existing archives stay readable.
+
+### Dashboard, sidebar, and tab state
+
+In `src/features/dashboard/index.js`:
+
+- remove active-filing Rename/Close controls from the dashboard header/rows;
+- label every `open-ward` action **Edit** and every archived queue action
+  **Mark Open**;
+- require `data-ward-id` for Edit, Backup, PDF, New year, Prior years, Mark
+  Closed/Open, and Delete; missing/unknown IDs return without acting;
+- Continue Editing reads only `recentWards`, labels its action **Edit**, and
+  opens nothing until clicked;
+- PDF calls `switchWard(rowWardId)` and proceeds only when it returns true;
+  Backup remains context-free and never activates a ward.
+
+In `updateSidebar()`'s no-active-focus branch, keep the application shell and
+dashboard-wide controls visible but clear/hide the ward selector value and ID,
+ward information card, filing context strip, filing navigation, progress,
+output/save controls, and editor actions. Return before form-engine dispatch.
+
+Change `getProbateGuardianTabState()` to
+`hasActiveCase: Boolean(activeWard)` and `activeCase: null` otherwise.
+`src/tab-state.js` keeps its normalization behavior; add regression coverage
+that a supplied false/no activeCase stays false even when wards exist. Dirty
+state remains independent and may still make a peer tab risky.
+
+### Files and outcomes
+
+| Outcome | Required files/result |
+| --- | --- |
+| Code | Update ESM router/lifecycle, classic hash/persistence/sidebar/tab publisher, dashboard feature, modular recovery/case-file/type owners, and thin persistence adapter exactly as above. |
+| Persistence | Update `probate-guardian-data-model.csv`; run `npm run verify:data-model`; prove old `.sav` and cache records are readable but cannot auto-open. |
+| Unit tests | Extend `router.spec.js`, `ward-lock.spec.js`, `tab-state.spec.js`, `case-file.spec.js`, and `dashboard-view-model.spec.js`; add/extend recovery helper coverage for the explicit migration table. |
+| E2E tests | Extend `ward-lock.spec.ts`, `recovery-cache.spec.ts`, `case-file-roundtrip.spec.ts`, `backup-restore-sav.spec.ts`, `dashboard-backup.spec.ts`, and `persistence-recovery.contract.spec.ts` for transaction failure, direct hash/history, neutral sidebar, and explicit Edit. |
+| Catalogue | Update `TEST-INDEX.md` only if a test file is added/renamed/repurposed or its category/scope changes; record the actual disposition. |
+| Documentation | Update dashboard/help text that says Open/Reopen/Close; otherwise record `No additional documentation update required`. |
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Enter dashboard from editor | Pending input is retained, lock is released, and no editing focus remains. |
+| Dashboard sidebar | Neutral state; no filing identity, progress, navigation, output, or Close Editor action. |
+| Dashboard row Edit | Acquires the selected filing and restores its editor/sidebar without changing `archived`. |
+| Mark Closed/Mark Open | Changes only lifecycle queue state, not editing history or workflow status. |
+| Edit a closed filing | It remains lifecycle-closed until Mark Open is chosen. |
+| Row action with no active editor | Uses its own `wardId`; no stale prior filing is targeted. |
+| Continue Editing | Uses `recentWards` and opens nothing until explicitly selected. |
+| Save/recovery/startup | Dashboard navigation is not serialized as a destructive case-data change and no editor auto-opens from legacy `activeWardId`. |
+| Peer tabs | Dashboard reports no active editing case; dirty state still reflects actual unsaved case changes. |
+
+## Verification
+
+Add router/state tests for repeated dashboard entry, pending drafts, archive and
+recovery compatibility, recent-history behavior, and tab-state semantics. Add
+E2E coverage for neutral sidebar, Edit restoration, row actions without active
+focus, closed filings, lock handoff, browser history, startup, accessibility
+focus, and no data loss. Run `npm run verify:data-model` and focused archive,
+import, recovery, and save/reopen compatibility tests selected through
+`TEST-INDEX.md`.
+
+---
+
+<a id="milestone-38d-proposal-md"></a>
+
+# Archive: MILESTONE-38D-PROPOSAL.md
+
+# Milestone 38D: Affirmative Output-Validation Override
+
+## Status
+
+**Landed 2026-09-13 under Milestone 44B** (Phase 44B-1: registry completion,
+typed issue identities, non-bypassable supplemental issues; Phase 44B-2: shared Excel
+capacity module, capability-aware authorization migration across all 3 Excel exporters,
+7 PDF exporters, PDF preview, and browser print, and static inventory verification).
+**Corrected 2026-09-13 (same day, follow-up review): 44B's own "Fully landed" claim
+overstated it** -- two real gaps against this document's own spec text were found and
+then fixed the same day, see "What was found incomplete, and fixed, after 44B's own
+'Fully landed' claim" below. The specification text elsewhere in this document is
+otherwise unchanged.
+
+## Goal
+
+Let a user explicitly bypass ordinary, user-correctable validation blocks and
+use the filing's normal Preview, Print, Save as PDF, Save as Word, and Save as
+Excel capabilities. The override does not change validation results or claim
+that the filing is complete.
+
+## Product Decision
+
+After an affirmative acknowledgement, there is **no reduced output mode**:
+
+- Preview, browser/OS Print, Save as PDF, Save as Word, and Save as Excel are
+  available wherever that filing normally supports them.
+- Generated output is the ordinary output. Do not add `DRAFT` text, a
+  watermark, altered filename, PDF metadata flag, page decoration, or other
+  draft marker.
+- Do not describe the generated or printed document as a draft. The on-screen
+  acknowledgement may state that validation requirements remain outstanding,
+  but generated documents remain unmodified.
+- The override does not mark checks passed, mutate filing data, persist an
+  approval flag, or imply readiness for filing.
+- The Florida e-filing portal link remains ordinary navigation and is not
+  treated as an output generator or an endorsement of readiness.
+
+This specification explicitly accepts that a user may save, print, or
+distribute an incomplete but technically faithful court document with no
+artifact-level indication that validation was bypassed. The application
+warning and renewed acknowledgement reduce accidental use, but cannot travel
+with an unmodified artifact after it leaves the application.
+
+## Typed Preflight Boundary
+
+Replace the current flat-message decision with structured issues carrying a
+stable ID, message, route, category, and `bypassable` status.
+
+Create one canonical validation-issue registry and shared issue constructors.
+Migrate all nine filing validators, shared date and identity checks, field-draft
+adapters, and readiness mappings that contribute blocking issues. Do not infer
+identity from display strings. A blocking automatic readiness condition from
+38B and its validator failure use the same canonical issue ID.
+
+Bypassable issues are ordinary user-correctable filing/content validation
+failures, including missing or invalid form answers and unresolved automatic
+readiness requirements that already map to validation.
+
+Non-bypassable issues are failures where faithful output cannot be produced or
+would necessarily omit/corrupt data: generation errors, missing templates or
+resources, corrupt/encrypted/unreadable supplemental files, unsupported browser
+capabilities, security/permission failures, and format capacity overflow such
+as too many populated rows for the official Excel template. A format-specific
+technical issue blocks only that affected format when other formats remain
+faithful.
+
+The unresolved legacy/canonical guardian-address conflict introduced by 38A is
+non-bypassable for every generated format. Producing output before the user
+chooses the canonical value would require the application to select an
+unconfirmed address and would violate 38A's no-silent-choice contract.
+
+## Scope and Integration Boundary
+
+This is a cross-cutting validator migration, not a narrow change to
+`prepareFilingOutput()`. Existing validators commonly return bare strings from
+local `req()` helpers, so every issue-producing path used by the nine filing
+types must be inventoried and moved to the canonical typed contract or an
+explicit typed adapter. The inventory is an implementation prerequisite and
+part of the delivery estimate.
+
+Excel capacity is currently checked independently inside feature export paths.
+Keep feature-specific capacity calculations, but expose their results as typed,
+format-specific preflight issues and route Excel through the same authorization
+decision as Preview, Print, PDF, and Word. Remove the duplicate ad hoc Excel
+gate only after parity tests prove that no capacity block was lost.
+
+## Canonical Issue Contract
+
+### Phase 1 registry
+
+Create `src/core/validation/issue-registry.js`. It owns frozen definitions and
+is the only place that assigns authorization semantics:
+
+```js
+getIssueDefinition(code)
+createIssue(code, detail)
+createRequiredIssue({ filingType, path, section, label, route, message })
+assertRegisteredIssues(issues)
+```
+
+Every issue returned to preflight has this exact shape:
+
+```js
+{
+   code, message, section, label, path, route,
+   category, bypassable, capabilities, showInReadiness
+}
+```
+
+`capabilities` is a non-empty subset of `preview`, `print`, `pdf`, `docx`, and
+`excel`; unsupported descriptor capabilities are filtered later. Definitions
+set defaults, while `detail` may supply message/location data but may not
+override `category`, `bypassable`, or `capabilities`.
+
+Use these fixed registry families:
+
+| ID/family | Category | Bypassable | Capabilities | Readiness |
+| --- | --- | --- | --- | --- |
+| `<filingType>.<path>.required`, `.invalid`, `.incomplete`, `.mismatch` | `validation` | yes | all supported | yes |
+| `<filingType>.<condition>` for form-wide arithmetic/date-order/certification checks | `validation` | yes | all supported | yes |
+| `field.date.invalid` | `validation` | yes | all supported | yes |
+| `filing.identity.unknown`, `filing.identity.conflict` | `data-integrity` | no | all supported | no |
+| `simplified.guardian.address-conflict` | `data-integrity` | no | all supported | yes |
+| `supplemental.missing-data`, `.decode-failed`, `.not-pdf`, `.too-large`, `.checking`, `.not-ready`, `.page-limit`, `.blocked`, `.total-bytes`, `.total-pages` | `supplemental` | no | preview, print, pdf | no |
+| `excel.capacity.guardian.<schedule>`, `excel.capacity.simplified.remuneration`, `excel.capacity.annual.<schedule>` | `capacity` | no | excel | no |
+| `output.template.missing`, `output.resource.unavailable`, `output.generation.failed` | `technical` | no | capability supplied by caller | no |
+| `output.capability.unsupported`, `output.security.denied` | `technical`/`security` | no | capability supplied by caller | no |
+
+For required/invalid/incomplete/mismatch issues, `createRequiredIssue()` forms
+the code from the explicit filing type and canonical state path. Array indexes
+remain in `path` and are replaced with `[]` in `code`, so row insertion cannot
+change issue identity. Non-field conditions use explicit registry constants;
+never derive codes from display messages or hashes.
+
+During Phase 1, change `adaptValidationErrors()` to reject unregistered strings
+in tests. Runtime may retain a temporary `validation.legacy-unmapped` typed
+issue only behind a development assertion; the Phase 1 completeness test must
+prove no live validator emits it before 38B starts.
+
+### Completed producer inventory
+
+| Filing identity | Producer | Namespace and route owner |
+| --- | --- | --- |
+| `guardian` | `validateGuardian()` in `src/features/guardian-inventory/index.js` | `guardian.*`; preserve current section/path mapping in `validation-adapter.js`. |
+| `simplified` | `validateSimplified()` in `src/features/simplified-accounting/index.js` | `simplified.*`; preserve current Part routes. |
+| `annual` | `validateAnnual()` in `src/features/annual-accounting/index.js` | `annual.*`; preserve current Part/Schedule routes. |
+| `finalAccounting` | Same `validateAnnual()` | `finalAccounting.*`; pass descriptor inventory type into constructors rather than emitting `annual.*`. |
+| `trustAccounting` | Same `validateAnnual()` | `trustAccounting.*`; same rule. |
+| `planSimplified` | `validatePlanSimplified()` | `planSimplified.*`; use its scoped route map. |
+| `planAnnual` | `validatePlanAnnual()` | `planAnnual.*`; use its scoped route map. |
+| `planInitial` | `validatePlanInitial()` | `planInitial.*`; use its scoped route map. |
+| `planMinor` | `validatePlanMinor()` | `planMinor.*`; use its scoped route map. |
+
+This is seven validator functions covering nine filing identities. Convert each
+validator's local `req()`/row/date helper at its source so it pushes typed
+issues; do not maintain a second message-to-code lookup. `commit-coordinator.js`
+already owns `field.date.invalid`; construct it through the registry.
+`filing-descriptor.js` retains its two existing stable identity codes through
+the same constructor. `supplemental-pdf.js` maps its existing internal status
+codes to the fixed `supplemental.*` IDs and returns issues, not strings.
+
+38B consumes these IDs. Its readiness-only predicates keep their explicit IDs;
+where a predicate represents a validator failure, replace the predicate with
+the canonical issue rather than publishing two rows.
+
+## Completed Output-Gate Inventory
+
+There are **26 live `prepareFilingOutput()` calls in 11 files**:
+
+| Owners | Calls | Current decisions to replace |
+| --- | ---: | --- |
+| `src/core/pdf/pdf-preview.js` | 2 | Preview mount and browser/OS Print recheck. |
+| Seven `src/features/*/print.js` hosts | 21 (3 each) | Preview-page button state, Save PDF guard, and Save Word guard. Annual's host covers Annual, Final, and Trust. |
+| Guardian, Simplified, and Annual `excel.js` | 3 (1 each) | Save Excel guard; Annual covers Final and Trust. |
+
+Comments and the function declaration are not calls. Add a static inventory
+test that counts these call sites before migration. After migration it must
+find zero feature-level direct authorization decisions and exactly one shared
+`authorizeFilingOutput()` call per action path.
+
+The separate gates are fully assigned:
+
+| Gate | Current owner | Required adapter/result |
+| --- | --- | --- |
+| Date drafts | `commit-coordinator.js` | Registered `field.date.invalid`; bypassable for all supported output. |
+| Filing identity | `filing-descriptor.js` | Existing two IDs; non-bypassable for all supported output. |
+| Supplemental PDF eligibility/totals | `supplemental-pdf.js` and `pdf-finalizer.js` | Fixed `supplemental.*` issues; non-bypassable for Preview, Print, and PDF only. Finalizer assertions remain as defensive backstops. |
+| Guardian Excel capacity | `GUARDIAN_EXCEL_CAPS` (11 schedules) | `excel.capacity.guardian.<schedule>` issues, Excel only. |
+| Simplified Excel capacity | `SIMPLIFIED_EXCEL_CAPS` (remuneration) | `excel.capacity.simplified.remuneration`, Excel only. |
+| Annual/Final/Trust Excel capacity | `ANNUAL_EXCEL_CAPS` (15 sections) | `excel.capacity.<inventoryType>.<schedule>`, Excel only. |
+| Missing Excel template | Three `excel.js` exporters/`ensureTemplate()` | `output.template.missing`, Excel only; do not acknowledge. |
+| PDF/DOCX/Excel generation or loader failure | Existing action `try/catch` blocks, PDF engine/finalizer, DOCX builders, ExcelJS/template loaders | Convert to `output.resource.unavailable` or `output.generation.failed` for that action; retain caught error in console, show neutral user remedy. |
+| Browser/API/security denial | Blob/window/save APIs, crypto/resource access | `output.capability.unsupported` or `output.security.denied` for the affected action; never acknowledge. |
+| 38A guardian address conflict | Simplified compatibility module | `simplified.guardian.address-conflict`, every supported output capability. |
+
+`checkExcelCapacity()` remains the one calculation helper. Add
+`getExcelCapacityIssues(inventoryType, data, caps)` beside it (or move both to
+`src/core/excel/excel-capacity.js`) and use the same result for panel rendering,
+button state, and action authorization. Remove exporter-local alert gates only
+after parity tests cover every cap key and exact count boundary.
+
+## Shared Revision and Authorization Owner
+
+Create `src/core/filing/output-authorization.js` and import it eagerly from
+`src/main.js`. It owns a process-monotonic integer and at most one in-memory
+acknowledgement record:
+
+```js
+{ wardId, inventoryType, revision }
+```
+
+Expose:
+
+```js
+getOutputRevision()
+markFilingRevisionChanged(reason)
+beginFreshPreview()
+acknowledgeOutstandingRequirements(data)
+clearOutputAcknowledgement()
+authorizeFilingOutput(data, baseIssues, { capability, additionalIssues = [] })
+```
+
+`baseIssues` is the validator function or typed issue array currently supplied
+to preflight; `additionalIssues` carries capability checks such as Excel
+capacity. `markFilingRevisionChanged()` increments the integer and clears the record.
+The integer never comes from a hash, timestamp, persisted state, or filing
+contents. `acknowledgeOutstandingRequirements()` records the current ward ID,
+descriptor inventory type, and revision only when all issues affecting at
+least one supported output are bypassable. `authorizeFilingOutput()` reruns
+`prepareFilingOutput()`, filters issues to the requested capability, and
+returns one of:
+
+```js
+{ status: 'allowed', issues, advisories }
+{ status: 'acknowledgement-required', issues, advisories }
+{ status: 'blocked', issues, advisories }
+```
+
+An acknowledgement matches only all three record fields. It changes
+authorization, never `issues`, `canExport`, readiness state, or filing data.
+Manual/unsupported 38B reminders are not passed to authorization.
+
+Call `markFilingRevisionChanged()` at the successful mutation boundaries:
+
+- `finalizeFieldValue()` after a committed value changes, including checkbox,
+   radio, select, text, and valid date commits;
+- `recordDateDraft()` and `clearFieldDraft()` when the stored draft changes;
+- successful add, duplicate, and remove in `schedule-definitions.js`, plus the
+   existing Plan row/guardian wrappers that mutate arrays directly;
+- `setPartyIdForSlot()`, party hydrate/dehydrate propagation, merge, and
+   dismiss/link actions in `party-resolver.js` and their modal handlers;
+- each successful Excel/backup import immediately after replacement state is
+   installed;
+- every 38A normalization or explicit conflict-resolution mutation;
+- accounting filing-type change and ward/filing activation in
+   `ward-lifecycle.js`/the canonical active-type bridge;
+- `beginFreshPreview()` once when a new Preview route mount begins;
+- reload/session end by module initialization and `pagehide` clearing the
+   in-memory record.
+
+Do not increment for render, autosave, validation, preflight, readiness-card
+toggle, navigation within the same filing, or failed/no-op mutations.
+
+## Interaction Contract
+
+1. When only bypassable issues block an output, show their grouped count and
+   routes plus an explicit action such as **Continue despite outstanding
+   requirements**. There is no automatic fallback.
+2. One acknowledgement applies to the current filing revision and enables all
+   otherwise technically available output actions. Each action reruns preflight
+   before generation.
+3. Any committed field change, import, filing switch, fresh preview render,
+   reload, or session end invalidates acknowledgement. If the same filing is
+   still incomplete, another acknowledgement is required.
+4. A new non-bypassable issue remains blocked even after acknowledgement and
+   names the affected capability and remedy.
+5. The UI continues to display outstanding requirements and must not change
+   readiness labels to passed. It uses neutral language such as
+   **Requirements remain outstanding** rather than draft terminology.
+
+## Implementation
+
+### Phase 1: issue identity
+
+1. Add the registry and constructors, then migrate shared date, identity, and
+   supplemental producers.
+2. Migrate the seven validators in the producer table, passing the resolved
+   inventory type into Annual's shared validator path.
+3. Update `prepareFilingOutput()` to return typed `issues`, while retaining a
+   derived `messages` array only for temporary UI compatibility. `canExport`
+   remains `issues.length === 0`; acknowledgement is not part of preflight.
+4. Land registry completeness, validator parity, and route tests. This closes
+   the dependency needed by 38B.
+
+### Phase 2: authorization and acknowledgement
+
+1. Add the revision/authorization owner and mutation hooks above.
+2. Adapt all three Excel capacity families and all 26 live preflight call
+   sites to capability-aware authorization.
+3. In `pdf-preview.js`, replace **Preview anyway** and all draft wording with
+   one grouped panel titled **Requirements remain outstanding** and the button
+   **Continue despite outstanding requirements**. The button invokes the
+   shared acknowledgement API and reruns Preview authorization.
+4. Preview-page buttons derive enabled state from authorization per capability.
+   Clicking any action reruns authorization; `acknowledgement-required` focuses
+   the shared panel, while `blocked` lists only non-bypassable issues affecting
+   that capability and its remedy.
+5. Keep current PDF, DOCX, Excel, and browser Print generation functions and
+   ordinary filename builders unchanged. Remove `draft` parameters/notices and
+   independent boolean decisions after E2E parity passes.
+6. Update help, live regions, and accessible descriptions using neutral
+   outstanding-requirements language.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Ordinary unmet validation requirements | Grouped issues and routes are shown; no output proceeds without affirmative acknowledgement. |
+| User declines | Preview and output remain blocked; filing state is unchanged. |
+| User acknowledges | Normal Preview, Print, PDF, Word, and Excel actions are enabled wherever technically supported. |
+| Generated or printed output after acknowledgement | Uses the normal document content and filename with no draft text, watermark, metadata marker, or reduced functionality. |
+| Readiness/validation state | Outstanding checks remain outstanding and visible; acknowledgement does not create a pass. |
+| Format-specific capacity failure | Only the unfaithful format remains blocked; faithful supported formats remain available after any required acknowledgement. |
+| Unresolved 38A guardian-address conflict | Every generated format remains blocked until the user explicitly chooses the canonical value. |
+| Technical generation/resource/security failure | Affected output remains non-bypassable and explains why. |
+| Filing data changes, refreshes, switches, or reloads | Prior acknowledgement is invalid; preflight reruns before the next output. |
+| Manual/unsupported readiness reminder alone | Requires no override because it is not an export-validation failure. |
+
+## Verification
+
+Add registry-completeness and typed-preflight tests across all nine filing
+validators for bypassable, non-bypassable, and format-specific issues. Add
+parity tests proving each migrated Excel capacity gate still blocks the same
+overflow before the old ad hoc gate is removed. Add E2E coverage for
+accept/decline, all supported output actions, revision invalidation, filing
+switching, unchanged readiness results, the 38A conflict, and technical
+failures. Inspect generated PDF, DOCX, and XLSX artifacts to prove ordinary
+content and filenames are retained and no marker is introduced.
+
+## Files and Catalogue Outcomes
+
+| Outcome | Required files/result |
+| --- | --- |
+| Phase 1 code | Add `issue-registry.js`; update seven validators, validation adapter, commit coordinator, filing descriptor, supplemental PDF, output preflight, and their existing consumers/types. |
+| Phase 2 code | Add `output-authorization.js`; update `main.js`, mutation owners listed above, three Excel modules/capacity helper, seven print hosts, and `pdf-preview.js`. |
+| Persistence | Acknowledgement and revision are memory-only. Add no persisted field and record `No data-model catalogue update required`; `npm run verify:data-model` must remain clean because existing runtime state shapes still change in 38A/38C, not here. |
+| Unit tests | Add `issue-registry.spec.js`, `output-preflight-typed.spec.js`, `output-gate-inventory.spec.js`, `output-authorization.spec.js`, and `excel-capacity-issues.spec.js`; extend all seven validator specs and supplemental/identity/date tests. |
+| E2E/artifacts | Extend focused Preview/export tests for accept/decline, five capabilities, nine identities, mutation invalidation, filing switch/reload, technical blocks, 38A conflict, and unchanged validation. Inspect generated PDF/DOCX/XLSX names and contents for absence of draft/watermark/metadata changes. |
+| `TEST-INDEX.md` | Add every new test file under the Milestone 38D behavior area and append 38D to existing test rows whose scope is extended. Do not create duplicate rows for existing files. |
+| Documentation | Update output help and accessibility copy; document that acknowledgement is temporary and artifacts are ordinary, without suggesting completion or court approval. |
+
+## What was found incomplete, and fixed, after 44B's own "Fully landed" claim
+
+A same-day follow-up review (2026-09-13, this session) verified 44B's landing
+directly against this document's own spec text rather than trusting its
+"Fully landed... specification text otherwise unchanged" status line. Most
+of it held up — the registry expansion, `supplemental-pdf.js`'s typed
+conversion, and the Excel/PDF/preview/print call-site migration to
+`authorizeFilingOutput()` were all confirmed correct by direct read. Two
+things did not, both now fixed in the same follow-up pass:
+
+1. **`markFilingRevisionChanged()` existed and was correctly unit-tested in
+   isolation, but was called from only 3 of the ~9 mutation boundaries this
+   document's own Implementation → Phase 2 list names** (a first grep
+   attempt claimed *zero* call sites and was itself wrong — it missed the
+   three already-wired `window.markFilingRevisionChanged?.()` optional-
+   chained calls in `schedule-definitions.js`'s add/duplicate/remove
+   functions; corrected before acting on it). Missing: field commits, date
+   drafts, party actions, 38A conflict resolution, Excel import, and
+   accounting filing-type change. Fixed by wiring the remaining boundaries
+   directly into the functions this document itself names:
+   `runFieldWriteSideEffects()` (`form-contract.js` — the one shared tail
+   for all three binding conventions, so this single hook covers every
+   committed field write at once), `recordDateDraft()`/`clearFieldDraft()`
+   (`commit-coordinator.js`), `setPartyIdForSlot()`/`dismissPartyPair()`/
+   `mergeParties()` (`party-resolver.js`), `resolveSimplifiedGuardianAddressConflict()`
+   (`guardian-compatibility.js`), `setAccountingFilingType()` (`legacy-app.js`),
+   and each of the three `excel.js` files' `importExcel()` success tail. Also
+   added a `pagehide` listener (`main.js`) clearing the acknowledgement as
+   defense-in-depth against bfcache restores, matching this document's own
+   "reload/session end... clearing the in-memory record" line. New
+   `tests/unit/output-revision-wiring.spec.js` proves each wired boundary
+   actually invalidates a standing acknowledgement (confirmed failing
+   against the pre-fix `runFieldWriteSideEffects()` by a direct revert/
+   restore check before trusting the test), plus a negative case (a
+   rejected no-op mutation must not spuriously invalidate). Not
+   independently unit-tested: the three `importExcel()` tails and
+   `setAccountingFilingType()` are wired but rely on browser-only
+   dependencies (`FileReader`, `window`-classic-script scope) that make a
+   fast unit test impractical — their existing e2e coverage is what backs
+   them, not a new dedicated test.
+2. **Preview-page buttons derived their disabled state from
+   `prepareFilingOutput().messages` (a capability-agnostic boolean), not
+   from `authorizeFilingOutput()` per capability**, contrary to this
+   document's own Phase 2 item 4 ("Preview-page buttons derive enabled
+   state from authorization per capability"). Confirmed in all 7
+   `pagePrint*()` functions. Not a live bug under today's registry (every
+   currently-registered non-bypassable code happens to be scoped to every
+   capability), but a real latent gap: a future capability-narrow
+   non-bypassable issue fed into one of these pages would have incorrectly
+   disabled every button, not just the one it actually affects. Fixed by
+   computing each Save-as-PDF button's disabled state from
+   `authorizeFilingOutput(window.D, baseIssues, {capability:'pdf'}).status`
+   instead of the raw error count, in all 7 files; the banner/issue-list
+   rendering deliberately stays on the capability-agnostic `prepareFilingOutput()`
+   result, since it's meant to show every outstanding requirement regardless
+   of format. Verified via the existing e2e regression suites that already
+   exercise these buttons' disabled state (`plan-readiness.contract.spec.ts`,
+   `navigation-status.contract.spec.ts`, `form-entry-ux.spec.ts` — 99 tests,
+   all still green) rather than a new dedicated test: no scenario exists
+   today where the old and new logic actually diverge (see caveat below), so
+   there is no way to write a test that would fail against the pre-fix code
+   without inventing an artificial registry entry for the purpose.
+   **Caveat, left open:** the analogous Save-as-Excel button in the three
+   accounting-family hosts (`simplified-accounting`/`guardian-inventory`/
+   `annual-accounting`) still derives its disabled state from the
+   *legacy*, untyped `checkExcelCapacity()` global (`legacy-app.js:6173`),
+   called directly from each feature's `index.js` — this was not part of
+   44B-2's migration and was not fixed in this pass; it is a separate,
+   narrower instance of the same category of gap, left for a future pass.
+   Also corrected: this session's own prior claim that "all three `excel.js`
+   files still destructure the now-dead `window.checkExcelCapacity` (zero
+   remaining callers anywhere)" was half right — the destructure inside the
+   three `excel.js` files really was dead (now removed) since Phase 2
+   already migrated their own `doSaveExcel()` call sites, but the underlying
+   `legacy-app.js` function is not globally dead; it is exactly the
+   still-live legacy caller described in this caveat.
+
+Net effect: `output-authorization.js`'s revision/acknowledgement contract
+now matches this document's own mutation-boundary list in substance (7 of
+9 named boundary categories wired directly, the remaining 2 backed by
+existing e2e coverage rather than a new unit test), and every Preview
+page's Save-as-PDF button is now capability-correct rather than
+coincidentally-correct. The Excel-button/legacy-`checkExcelCapacity()`
+gap is real, open, and intentionally not fixed here — flagged rather than
+silently left unmentioned.
+
+---
+
+<a id="milestone-38e-proposal-md"></a>
+
+# Archive: MILESTONE-38E-PROPOSAL.md
+
+# Milestone 38E: Global Explicit Yes/No Radio-Pair Migration
+
+## Status
+
+**Landed 2026-09-13.**
+
+## Goal
+
+Eliminate single-checkbox `Yes / Unanswered` ambiguity across remaining binary questions in the application, specifically within **Guardian Inventory** schedule/filing flags and **Plan Benefits Tables**. 
+
+Single checkboxes conflate an explicit **"No"** (user verified an item is negative/unrestricted/not receiving) with **"Unanswered / Skipped"** (unreviewed field). This migration establishes explicit tri-state controls (`'' | 'Yes' | 'No'`) starting in an unselected state across all binary fields.
+
+---
+
+## Item 1: Guardian Inventory & Plan Benefits Yes/No Explicit Choice Migration
+
+### 1. Scope of Fields to Migrate
+
+#### A. Guardian Inventory Schedule Row Flags
+- **Schedules B-1 & B-3:** `scheduleB1[].isRestricted` & `scheduleB3[].isRestricted` (`Restricted?`)
+  - Migrate storage key / schema from boolean `isRestricted` to tri-state enum `restricted` (`'' | 'Yes' | 'No'`).
+  - Render as accessible inline **Yes / No** radio pair starting unanswered (`''`).
+- **Schedule A-1:** `scheduleA1[].isPersonalResidence` (`Personal Residence?`) & `scheduleA1[].isIncomeProperty` (`Income Property?`)
+  - Migrate storage keys to tri-state enums `residence` and `income` (`'' | 'Yes' | 'No'`).
+  - Render as accessible inline **Yes / No** radio pairs.
+- **Schedules B-2 & B-3:** `scheduleB2[].inSafeDepositBox` & `scheduleB3[].inSafeDepositBox` (`In Safe Deposit Box?`)
+  - Migrate storage keys to tri-state enums `inSafeDepositBox` (`'' | 'Yes' | 'No'`).
+  - Render as accessible inline **Yes / No** radio pairs.
+
+#### B. Guardian Inventory Cover & Filing Flags
+- **Safe Deposit Box Cover Flags:** `hasSafeDepositBox` ("Safe deposit box exists?") and `safeDepositBoxFiled` ("Safe deposit box inventory filed?")
+  - Migrate storage keys from nullable boolean to tri-state enum (`'' | 'Yes' | 'No'`).
+- **Amended Inventory Flag:** `isAmended` ("Amended Inventory?")
+  - Reconcile `guardian-inventory` with the canonical `amendedForm` (`'' | 'Yes' | 'No'`) enum used by all other filing types.
+
+#### C. Plan Benefits Tables
+- **Annual Plan (Question 8 Benefits Table):** `benefits.<key>.eligible` & `benefits.<key>.appliedFor`
+  - Migrate 12 benefit rows (Social Security, SSDI, SSI, Medicare, Medicaid, HMO, Pension, Supplemental Ins, Institutional Care, State Supplement, Trusts, Other) from single checkboxes to explicit **Yes / No** radio choices (`'' | 'Yes' | 'No'`).
+- **Initial Plan (Question 7 Benefits Table):** `q7SocialSecurity`, `q7Ssdi`, `q7Hmo`, `q7Ssi`, `q7StateSupplement`, `q7InstitutionalCare`, `q7SupplementalIns`, `q7Pension`, `q7Medicare`, `q7Medicaid`, `q7Va`, `q7Trusts`, `q7PendingBenefits`
+  - Migrate from single boolean checkboxes to explicit **Yes / No** radio pairs (`'' | 'Yes' | 'No'`).
+
+---
+
+### 2. Implementation & Integration Specifications
+
+#### A. Shared UI Renderer & Controls
+- Use the shared radio-pair renderer `yesNoRadioHTML()` / `yesNoRadioAnnualHTML()` in `src/legacy-app.js`.
+- Ensure each radio pair uses an accessible `<fieldset>` with legend, distinct input IDs, visible "Yes" and "No" labels, and data-bind wiring that updates model state to `'Yes'` or `'No'`.
+
+#### B. Calculation Engine & Data Model Reconciliation
+- **Restricted Asset Calculations:** Update calculation helpers (`restrictedCash`, `unrestrictedCash`, `restrictedIntang`, `unrestrictedIntang` in `src/legacy-app.js`) to evaluate `r.restricted === 'Yes'` (or legacy `r.isRestricted === true`).
+- **Backward Compatibility for Saved Files (.sav):** Implement a normalization step in save file import / data loading:
+  - `true` maps to `'Yes'`
+  - `false` maps to `'No'`
+  - `null` / `undefined` / `''` remains `''` (Unanswered).
+
+#### C. PDF & Excel Output Parity
+- **PDF Generation:** Update `pdf-model.js` for Guardian Inventory (Schedules A-1, B-1, B-2, B-3) and Plan print modules to output `'Yes'`, `'No'`, or `'—'` (unanswered) based on the tri-state model.
+- **Excel Export/Import:** Update `src/features/guardian-inventory/excel.js` cell writers and sheet readers to handle tri-state `'Yes'` / `'No'` / `''`.
+
+#### D. Schema & Verification Integrity
+- Update `probate-guardian-data-model.csv` rows for `guardian_inventory`, `plan_annual`, and `plan_initial` to reflect `enum ('Yes; No')` data types for migrated fields.
+- Add unit test coverage in `tests/unit/` verifying radio rendering, model persistence, calculation formulas, and backward-compatible import handling.
+
+## What was found broken, and fixed, in follow-up test-suite regression checks
+
+A same-day follow-up review (2026-09-13, separate session, while troubleshooting
+an unrelated Milestone 44B timeout) ran the full unit and several e2e suites
+against this landing and found three pre-existing test failures this migration
+introduced but did not itself catch, since `npm test` was not run as part of
+this milestone's own landing verification. All three were confirmed via
+`git stash`/re-run to be absent on the commit before this migration and
+present after, then fixed:
+
+1. **`tests/unit/amended-form-line.spec.js`** — Guardian Inventory's "Amended
+   Form?" test still expected an unset filing to print "No" (the pre-migration
+   boolean-coercion default). This migration correctly changed
+   `emptyDataGuardian()` to seed `amendedForm:''` (unanswered) rather than a
+   boolean, and `pdf-model.js`'s `triText()` correctly renders that as blank
+   ("—") — consistent with this very file's own Annual/Simplified cases,
+   which already expect blank for an unanswered filing. The code was right;
+   only the test's stale expectation was wrong. Fixed by updating the test to
+   expect "—" for a genuinely untouched filing, while adding explicit
+   coverage for both the current tri-state string and the legacy boolean
+   fallback answering Yes/No correctly.
+2. **`tests/e2e/navigation-status.contract.spec.ts`**'s D-3 field-path test
+   still expected the validator's reported path to resolve to a DOM element
+   with `id="sdb-yes"` — the pre-migration hand-rolled radio's own id. This
+   migration correctly moved D-3 onto the shared `yesNoRadioHTML()` component,
+   whose Yes/No inputs share one `data-form-path` value (the real field name,
+   `hasSafeDepositBox`) rather than each having a distinct element id derived
+   from that name. Fixed by updating the expected path and switching the
+   focus-target assertion from an `#id` selector to a `[data-form-path="..."]`
+   selector, matching how `focusFieldByPath()` itself resolves the two
+   binding conventions differently.
+3. **`tests/e2e/guardian-inventory-mount.spec.ts`**'s D-3 lifecycle test
+   still asserted `null` for an unanswered `hasSafeDepositBox`/
+   `safeDepositBoxFiled` (matching the pre-migration factory default) and
+   `true`/`false` booleans after answering (matching the pre-migration write
+   path), and still queried the pre-migration `#sdb-yes`/`#sdb-no`/
+   `#sdb-filed-yes` element ids. Fixed by updating every assertion to the
+   current tri-state string contract (`''`/`'Yes'`/`'No'`) and every
+   locator to the shared component's actual rendered ids
+   (`#yesno_hasSafeDepositBox_yes`, etc.) — `#sdb-filed-row`'s own wrapper
+   id was unchanged and needed no update.
+
+4. **`tests/e2e/verified-inventory-workflow.spec.ts`**'s D-3 tri-state-flow
+   test queried the same pre-migration `#sdb-yes`/`#sdb-no`/`#sdb-filed-yes`
+   element ids as item 3 above. Fixed by locating via the shared
+   component's `data-yes-no-group` fieldset attribute plus
+   `input[value="Yes"|"No"]` instead of an id — a slightly more robust
+   pattern than the id-based locators used in item 3's fix, since it needs
+   no knowledge of `yesNoRadioHTML()`'s internal id-sanitization scheme.
+
+None of these were product-code defects — the migration's actual runtime
+behavior was correct in each case; only the tests describing the pre-
+migration contract were stale. All four now pass and correctly describe the
+current, intentional tri-state behavior. This is recorded here as a reminder
+that landing a milestone without running its own full regression suite
+(`npm test`) leaves exactly this kind of drift for the next session to find
+by accident rather than by design.
+
+---
+
+<a id="milestone-39-proposal-md"></a>
+
+# Archive: MILESTONE-39-PROPOSAL.md
+
+# Milestone 39: Print Preview Annotation and Persisted Signature Capture
+
+## Status
+
+**39-A and 39-B: spiked and landed.** 39-A —
+`src/core/pdf/pdf-annotate.js`, `src/core/pdf/pdf-preview.js`,
+`src/styles/print.css`, `src/features/plan-simplified/print.js`;
+`tests/e2e/pdf-annotate.spec.ts`, `tests/unit/print-annotation-persistence.spec.js`.
+39-B — `src/core/validation/signature-state.js`,
+`src/core/signature/signature-pad.js`,
+`src/core/signature/signature-state-control.js`,
+`src/core/images/png-dimensions.js`, plus the shared `signature-block`
+renderer in `src/core/pdf/pdf-engine.js` and Plan Simplified's own
+`index.js`/`print.js`/`pdf-model.js`; `tests/unit/signature-capture.spec.js`,
+`tests/e2e/signature-capture.contract.spec.ts`. See each sub-milestone's own
+"Persistence design"/"Implementation Plan" and "Spike results" sections for
+what was built and what was learned building it. **39-C: both authorization
+gates cleared, and the rollout is landed for Plan Annual, Plan Initial, Plan
+Minor, Simplified Accounting, and Annual/Final/Trust Accounting; the Upload
+background-transparency luminance-threshold fix itself is also landed** (see
+"39-C: Multi-Role, Multi-Filing-Type Rollout" below for what changed and
+its own "Verification Plan" for what was run). **The rollout is now also
+landed for Guardian Inventory, the last and most card-heavy filing type** —
+39-C's own rollout is now complete across every filing type in the
+inventory table. **39-E: landed and verified** — Print Preview's blocked
+panel now resolves a working jump-to-field link for every filing type,
+reusing `validation-adapter.js`'s existing resolver (see "39-E: Print
+Preview Missing-Signature Navigation" below for what changed, including a
+real cross-route jump-link bug found and fixed along the way). 39-D remains
+a recommendation-recorded draft — do not implement yet.** What started as
+one research conversation (ephemeral PDF annotation for Print Preview) grew,
+over several rounds of review, into two architecturally distinct
+capabilities plus a substantial cross-filing-type rollout. It is now split
+into five lettered sub-milestones, the same discipline
+`MILESTONE-34-1-PROPOSAL.md` used for the same reason: each can be scoped,
+spiked, and authorized independently instead of as one omnibus decision.
+Beyond 39-A/39-B's own landed spikes, this document
+authorizes no further runtime, dependency, or build change on its own — each
+remaining sub-milestone below carries its own gate.
+
+## Goal
+
+Two related but separately-architected capabilities:
+
+1. **Persisted Print Preview annotation (39-A):** let a filer mark up the
+   rendered PDF — a text note, a highlight — that survives across preview
+   sessions and app restarts, without building a PDF editor from scratch
+   and without the marks ever merging into or altering the filing's own
+   validated answers. Deliberately not an ability to rewrite the PDF's
+   original form text.
+2. **Persisted Visual Signature Capture (39-B through 39-E):** let a filer
+   draw, type, or upload a signature mark — captured with a lightweight,
+   standalone widget, not pdf.js (see 39-B) — as real, validated filing
+   data, not an annotation, with a reusable, versioned signature stamp per
+   party.
+
+## Background
+
+Raised as: could Print Preview support light editing before printing, the
+way Adobe Acrobat Pro does? Two alternatives were considered and set aside
+first:
+
+1. **Point filers at the existing DOCX export and a real word processor.**
+   Rejected by the requester: the current Word export's formatting quality
+   is poor and doesn't come close to the PDF engine's output, so it isn't a
+   credible substitute today. (Improving DOCX fidelity is a separate,
+   legitimate piece of work — see "Related, Out-of-Scope Work" below — but
+   doesn't by itself deliver in-app editing.)
+2. **Point filers at an external PDF editor (Acrobat, Preview, etc.) on the
+   already-exported PDF.** Zero engineering cost, since the PDF output is
+   already good, but requires leaving the app. Still a valid fallback if this
+   milestone doesn't move forward, but the requester wants the in-app
+   experience checked first.
+
+The requester was explicit: **do not build a PDF editor** — the ask was to
+find an existing open-source component instead. That component,
+`pdf.js`'s `AnnotationEditorLayer`, turned out to also expose a `SIGNATURE`
+editor type, which is where the second capability came from — see 39-B.
+
+## Recommended Order and Dependencies
+
+39-A is fully independent and can ship on its own. 39-B must land before
+39-C, 39-D, or 39-E — it proves the core mechanism (one role, one filing
+type) that the others extend. 39-C (multi-role/multi-type rollout) and 39-E
+(print-time jump-to-signature) can proceed in either order once 39-B lands.
+39-D (reusable versioned stamp) builds on top of 39-B's basic capture and
+can follow whenever convenient after it.
+
+---
+
+## 39-A: Persisted Print Preview Annotation
+
+### Findings: Recommended Approach
+
+**`pdf.js`'s built-in `AnnotationEditorLayer`** is the strongest fit.
+
+- Already a dependency: this app vendors `pdfjs-dist` (`package.json`:
+  `^6.3.289`) and uses it in `src/core/pdf/pdf-preview.js` /
+  `src/core/pdf/pdfjs-loader.js` to render Print Preview's PDF to canvas.
+  The annotation editor has shipped in `pdf.js` since v3.x and is Mozilla-
+  maintained, Apache-2.0 licensed, and actively developed — well above the
+  vendored 6.3.289's floor.
+- Supports **FreeText** (click-to-add/edit text, with font size and color
+  controls), **Highlight**, **Ink** (freehand draw), and **Stamp** (image)
+  editing modes.
+- Edits are written as **real PDF annotation objects** — not rasterized into
+  the page. The resulting file stays a standard, portable PDF: any other PDF
+  tool, including Acrobat itself, can open it and keep editing those same
+  annotations.
+- This also bounds the main architectural risk of in-app editing: because
+  edits live as annotations layered on the rendered PDF rather than as
+  changes fed back into the form data, they can't silently make the exported
+  document say something the stored, validated filing answers don't. They
+  are additive and visually distinct from the underlying content, not a
+  rewrite of it.
+
+### Technical gaps the spike must resolve
+
+- **The app currently initializes none of the annotation-editor lifecycle.**
+  Confirmed directly against the vendored `lib/pdfjs/pdf.mjs` (matches
+  `package.json`'s pinned `6.3.289`): its export list does include
+  `AnnotationEditorLayer`, `AnnotationEditorUIManager`,
+  `AnnotationEditorType`, and `AnnotationEditorParamsType`, and
+  `PDFDocumentProxy.saveDocument()` is a real, present method — the
+  "already a dependency" premise holds. But `AnnotationEditorUIManager` is a
+  large class with many internal collaborators (alt-text manager, comment
+  manager, floating toolbar, filter factory, highlight-color service, and
+  more) that this app has no equivalent of; the spike should expect to pass
+  `null`/stub several optional constructor dependencies, not just
+  "instantiate and dispose" a single object. This is a scoped addition, not
+  a rewrite, but budget it as more than a one-line integration.
+- **No annotation-editor CSS is vendored anywhere in this repo today.**
+  `lib/pdfjs/` holds only `pdf.mjs` and the worker — no stylesheet.
+  `AnnotationEditorLayer`'s real CSS lives in `pdfjs-dist`'s own
+  `web/pdf_viewer.css` (present in `node_modules/pdfjs-dist/web/`, ~6,400
+  lines total, but only ~38 rules are annotation-editor-related — the rest
+  targets pdf.js's own default full-page viewer chrome, which this app does
+  not use). The spike must extract just the `.annotationEditorLayer`/
+  `.freeTextEditor`/`.highlightEditor`-family rules, not vendor the whole
+  stylesheet, and reconcile them with this app's own preview chrome.
+- **The current preview flow throws away its `PDFDocumentProxy` on every
+  render.** `pdf-preview.js`'s `renderPagesInto()` holds `pdf`/`page` as
+  function-local variables that go out of scope once rendering finishes —
+  by design, since today's preview is write-only (render once, discard).
+  Both the editor manager and `saveDocument()` need that same live document
+  handle to still exist later, when the user clicks Undo or Save Annotated
+  PDF. The spike must add a place to hold that reference for the preview's
+  lifetime and clear it on every re-render.
+- **The app owns the toolbar.** No suitable pre-built toolbar is mounted. The
+  spike must wire the approved controls to the editor API, including Undo,
+  Clear Annotations, and Save Annotated PDF, without breaking the existing
+  output-authorization flow. Confirm as part of this work that the
+  annotation toolbar simply doesn't render while `mountPdfPreview()` is in
+  its "blocked" (outstanding-requirements) state, the same way the rest of
+  the preview already doesn't — this should fall out of construction rather
+  than needing a separate check, but the spike should verify it rather than
+  assume it.
+- **Annotated output is a proof point, not an assumption.** The spike must
+  prove that `pdfDocument.saveDocument()` produces a downloadable PDF that
+  retains annotations when opened and printed by an external PDF viewer.
+- **Considered and set aside:**
+  - `pdf-lib` — programmatic PDF creation/modification only (draw text at
+    given coordinates, embed fonts). No interactive editing UI of its own;
+    using it would mean building the click-to-edit experience ourselves,
+    which is the effort this milestone is trying to avoid.
+  - `pdfjs-annotation-extension` (GitHub, third-party) — extends `pdf.js`'s
+    viewer with additional annotation/comment features. Kept as a fallback
+    idea only: single-maintainer project, much smaller community than
+    Mozilla's own `pdf.js`, so it carries more maintenance risk as a
+    dependency.
+  - `pdf.js`'s own `COMMENT` editor type (confirmed present in the vendored
+    `6.3.289` build). Not proposed here: `COMMENT` is a threaded reply/note
+    attached to another annotation, gated behind an app-supplied
+    `commentManager` collaborator this app has no equivalent of — it implies
+    a multi-party review workflow, and every annotation in this milestone is
+    single-user and never leaves the local browser, so there is no second
+    party to comment back.
+  - `pdf.js`'s own `SIGNATURE` editor type — investigated for 39-B, and now
+    also set aside there. It's tied to pdf.js's rendered-page/viewport
+    machinery; 39-B mounts its capture UI inside plain form cards with no
+    rendered PDF page nearby, and a plain HTML5 canvas signature pad
+    produces the same base64 PNG output without that dependency or its
+    mounting risk. See 39-B's own "Capture mechanism" section. Not
+    permanently ruled out — 39-A's own spike may still find it mountable
+    standalone, in which case it's available as an alternative, but nothing
+    in this design depends on that outcome.
+
+### Non-Goals / Out of Scope (39-A)
+
+1. Not a general-purpose PDF editor — only FreeText and Highlight.
+2. Not a change to the underlying filing's *validated* data model.
+   Annotations persist in their own isolated field (`printAnnotations` —
+   see "Persistence design" below), never merged into, read by, or capable
+   of altering any validated form answer. A filing's readiness/validation
+   status, and its standard court-filing PDF output, are both entirely
+   unaffected by whether it has annotations — annotations render only in
+   the interactive Print Preview surface and the explicit "Save Annotated
+   PDF" derivative, never silently in the primary filing output.
+3. Not an all-filings rollout. The pilot is Simplified Annual Plan's Print
+   Preview only.
+4. Not the DOCX export fidelity work — see "Related, Out-of-Scope Work."
+
+### Recommended Decisions for Authorization (39-A)
+
+1. **Modes and language:** named **Annotate PDF**, not "Edit," because it
+   cannot alter original PDF content. Limited to Add Note (FreeText) and
+   Highlight, with Undo, Clear Annotations, and Save Annotated PDF on its
+   toolbar. Ink and Stamp are deferred.
+2. **Pilot:** Simplified Annual Plan Print Preview — the smallest filing
+   type by page count, bounding the surface area of the first integration
+   attempt. The shared integration must retain a deliberate, per-filing-type
+   rollout path: `pdf-preview.js` is the one module every filing type's
+   preview already shares, so the annotation-editor mount point belongs
+   behind an explicit per-type gate there, not a fork of the file.
+3. **Lifecycle:** annotations persist with the filing — stored in
+   `window.D`/the `.sav` file as their own isolated `printAnnotations`
+   field, surviving preview close, app restart, and reload — a deliberate
+   change from the originally-drafted ephemeral-only design; see
+   "Persistence design" below for the storage format, reapply mechanism,
+   and drift handling. They still never enter validation or merge into any
+   validated answer. A form-data change substantial enough to shift the
+   underlying page content discards the stored annotations on next
+   reapply, with a clear warning, rather than risk showing marks that no
+   longer line up with the regenerated PDF. Save Annotated PDF remains
+   available as a separate, explicit flattened-download derivative.
+4. **Accessibility:** the toolbar must be semantic, named, and keyboard
+   operable; focus enters a newly added note; Escape exits the active tool;
+   Clear/Delete are keyboard-reachable and confirmed; mode changes use the
+   existing live region. Color cannot be the sole carrier of meaning.
+   Release requires keyboard, zoom, high-contrast, and existing
+   PDF-accessibility coverage.
+5. **FreeText controls:** the vendored `pdf.js` 6.3.289 source confirms
+   size, color, and opacity parameters. The initial UI promises only size
+   and color — this version has no FreeText underline editor parameter,
+   though it can render existing underline annotations.
+
+### Persistence design (39-A) — built and tested, not just planned
+
+**Status: this section describes what was actually implemented and
+empirically verified via `tests/e2e/pdf-annotate.spec.ts`
+(`src/core/pdf/pdf-annotate.js`, `src/core/pdf/pdf-preview.js`), not a
+forward-looking design.** The mechanism below corrects the version
+originally drafted here, which assumed storing pdf.js's raw
+`AnnotationStorage.serializable` map and reapplying it directly — building
+the real thing surfaced that this doesn't work the way that draft assumed
+(see "Reapply mechanism," below), and the actual shipped design instead
+persists the *full annotated PDF bytes*.
+
+- **New field:** `d.printAnnotations` — `{ pdfBytes: <base64-encoded
+  saveDocument() output>, contentFingerprint: <string>, capturedAt: <iso
+  date> }`. Lives directly on the filing document itself, the same way
+  39-B's `signatureImage` does — not a separate case-file-wide collection.
+  Storing the *whole annotated PDF*, not a bare annotation-storage diff, is
+  a real, measurable cost: this roughly doubles what a Print Preview save
+  adds to the `.sav` file relative to storing just the annotation data —
+  acceptable for a single-filing-type spike, but worth a size/compression
+  pass before any wider rollout (39-A doesn't extend to other filing types,
+  so this doesn't block the pilot; flag it if 39-A itself is ever
+  broadened beyond one type).
+- **Drift detection, as designed and now confirmed working.** The PDF is
+  regenerated fresh from `window.D` on every render; nothing guarantees a
+  given page's layout is identical between two regenerations of the same
+  filing (a longer typed answer, an added co-guardian, or any future
+  content change can shift what lands on a given page).
+  `computeContentFingerprint()` hashes page count plus each page's
+  extracted text (`page.getTextContent()`) against the fresh, *unannotated*
+  regeneration — computed via a lightweight throwaway parse (no canvas
+  render), kept deliberately separate from the real page-render pass so a
+  mismatch never costs a second full render. On a mismatch, the stored
+  annotations are discarded with an assertive announcement rather than
+  reapplied. One real bug found and fixed building this: `pdfjsLib.
+  getDocument({data})` transfers (detaches) the source buffer to the
+  worker rather than copying it, so the fingerprint pre-parse must run
+  against a **copy** of the bytes (`finalizedBytes.slice()`) — parsing the
+  same buffer twice throws `postMessage: ArrayBuffer ... already detached`.
+- **Reapply mechanism — resolved empirically, not assumed.** Two things
+  were tested directly, and they diverge from what the original draft
+  hoped for:
+  1. **The annotation itself genuinely survives as real, portable PDF
+     data.** Re-parsing the stored `pdfBytes` independently and calling
+     `page.getAnnotations({intent: 'display'})` on them returns a real
+     `{subtype: 'FreeText', ...}` annotation object — confirmed in the
+     e2e spec. This is exactly what a plain PDF annotation looks like to
+     any tool, this app included; the save/reopen round trip is not lossy
+     at the file level.
+  2. **It does not come back as a live, editable `AnnotationEditorLayer`
+     editor on its own.** Reopening a preview whose fingerprint matches a
+     stored, previously-annotated file swaps in the stored bytes for
+     display, but zero `.freeTextEditor` DOM nodes exist until the filer
+     interacts again — confirmed by counting them immediately after
+     reopen with no user action. So this milestone's own predicted
+     fallback is the actual, confirmed outcome: **baked-in-only reapply**.
+     A previously-added note is preserved and visible (baked into the
+     canvas render the same way any other PDF content is), but it is not
+     re-editable as an annotation-layer object without redrawing it. A
+     genuinely live-editable round trip would need a materially different
+     mechanism than "swap in saved bytes" — likely reconstructing editor
+     instances from `page.getAnnotations()`'s output at mount time, which
+     is real, separate follow-on work if editable persistence turns out to
+     matter, not a small extension of what's built here.
+  3. One further, smaller finding: the annotation's plain-text `Contents`
+     field on the (re-parsed, e2e-checked) FreeText object came back
+     empty even though real text was typed into it — pdf.js's own FreeText
+     serialization apparently carries the visible text elsewhere (its
+     appearance stream / rich-text representation), not the classic PDF
+     `/Contents` string. Worth confirming visually in an external viewer
+     (Implementation Plan step 4) before relying on `/Contents` for
+     anything; not chased further in this spike since it doesn't change
+     the baked-in-only conclusion above.
+- **Data model:** `probate-guardian-data-model.csv` has real rows now —
+  `printAnnotations.pdfBytes`, `.contentFingerprint`, `.capturedAt`, scoped
+  to `plan_simplified` — added in the same commit as this implementation,
+  `npm run verify:data-model` passing. Sensitivity: classified `personal`
+  (not `none`): a FreeText note is filer-typed free text, and nothing
+  stops a filer from typing something personal into it, even though the
+  mechanism itself introduces no new category of stored data beyond
+  whatever the filer chooses to type.
+- **Legacy migration:** trivial, unlike 39-B's. A `.sav` file that predates
+  this field simply has no `printAnnotations` — there is no prior state to
+  infer a value from; an absent field means exactly what it says, no
+  annotations exist yet.
+- **Export/Import/Portability:** because `printAnnotations` lives directly
+  on the filing document (not in a separate party-level or cross-filing
+  record), every existing export path that already bundles the whole
+  filing document carries it automatically — including
+  `buildSingleWardExportBlob()`'s single-ward export. Unlike 39-D's
+  cross-record stamp reference, this needs no export-path code change;
+  confirmed by reading what that function actually bundles today (the
+  whole filing document, not a filtered subset of it).
+
+### Implementation Plan (spike first)
+
+1. **Spike, one Preview page only.** On a development-only Simplified Annual
+   Plan Preview, mount the exported `AnnotationEditorLayer` and its manager
+   alongside the existing canvas/text layers, with the necessary editor CSS.
+   Make no change to the shipped experience.
+2. Build the approved minimal toolbar: Annotate PDF, Add Note, Highlight,
+   Undo, Clear Annotations, and Save Annotated PDF. Do not add Ink, Stamp,
+   or an "Edit original text" claim.
+3. Verify FreeText size, color, and opacity empirically. Do not implement
+   or advertise underline without a separate supported and portable
+   approach.
+4. Confirm the annotated PDF downloads, prints, and reopens correctly —
+   including in an external viewer — to prove annotations are standard and
+   portable, not an artifact of the integration.
+5. Confirm that a substantial form-data change causes the drift-discard
+   warning on next reapply rather than misplaced marks, and that
+   annotations — while now persisted in `window.D`/`.sav` — never reach
+   validation or merge into any validated answer.
+6. Run the defined accessibility checks, including keyboard-only annotation
+   creation/removal and screen-reader labeling of the toolbar/layer.
+7. Report the spike's findings — actual effort, UI results, and surprises —
+   to the requester before any full rollout decision.
+
+### Spike acceptance criteria
+
+Exporting `AnnotationEditorLayer` from the vendored build proves the class
+exists; it doesn't prove the integration is done. The spike is complete
+only once it demonstrates, concretely, each of: the minimal set of
+`AnnotationEditorUIManager` constructor dependencies actually needed (vs.
+stubbed) and the `eventBus`/mode-switch events actually used; the extracted
+editor CSS rendering correctly without pulling in pdf.js's default full-
+viewer chrome; the held `PDFDocumentProxy` reference being correctly torn
+down on every re-render (no leaked reference from a prior render, no error
+on rapid consecutive form-data changes); `saveDocument()`'s output
+verified byte-for-byte re-openable in an external viewer, not just "did not
+throw"; the existing Print Preview's WCAG/keyboard coverage re-run clean with the
+annotation layer mounted, not skipped; and the persisted-annotation round
+trip — store, reload the preview fresh, confirm the same marks reappear
+correctly positioned, and confirm a deliberately drifted fixture
+(regenerated with different underlying content) triggers the discard-with-
+warning path instead of misplacing marks.
+
+**Spike results — all criteria above exercised, not just designed:**
+`AnnotationEditorUIManager` needed only `container`, `viewer` (the same
+element, both roles), `eventBus` (a ~40-line faithful port of pdf.js's own
+`EventBus`, since this app vendors only pdf.js's core build, not the web/
+viewer layer that normally supplies one — no other collaborator was
+needed); the extracted CSS subset rendered FreeText/Highlight correctly
+with no full-viewer-chrome leakage; the held `AnnotationSession`/
+`PDFDocumentProxy` is destroyed and rebuilt on every `mountPdfPreview()`
+call via a module-level reference, confirmed clean across repeated
+navigations in the e2e suite; `saveDocument()`'s output was independently
+re-parsed and its `FreeText` annotation confirmed real
+(`page.getAnnotations()`, not just "did not throw"); the existing PDF
+accessibility/WCAG suite (`pdf-accessibility-and-signatures.spec.ts`,
+`pdf-structure-tags.spec.ts`, `plan-pdf-wcag-compliance.spec.ts`) re-ran
+clean with the annotation layer mounted; and the persisted round trip
+confirmed the "Persistence design" section's baked-in-only outcome — see
+that section for what did and didn't work. Two real bugs were found and
+fixed during the build, both noted where relevant above: `PDFDocumentProxy`
+has no `.destroy()` (it lives on the loading task), and
+`getDocument({data})` transfers rather than copies its input buffer.
+
+### Verification Plan (39-A)
+
+1. Focused e2e coverage for the new toolbar controls, including the
+   persisted-annotation round trip (save, close, reopen, confirm reapply)
+   and the drift-discard path (regenerate with different underlying
+   content, confirm stored annotations are discarded with a warning, not
+   misapplied). Landed at `tests/e2e/pdf-annotate.spec.ts` — 5 tests,
+   passing.
+2. Unit tests for the `contentFingerprint` computation and drift-comparison
+   logic in isolation, plus the `MiniEventBus` shim. Landed at
+   `tests/unit/print-annotation-persistence.spec.js` — 8 tests, passing.
+3. Confirmed no regression to the existing PDF accessibility/WCAG suite
+   (`pdf-accessibility-and-signatures.spec.ts`, `pdf-structure-tags.spec.ts`,
+   `plan-pdf-wcag-compliance.spec.ts`) — all re-run clean.
+4. Both new test files added to `TEST-INDEX.md`.
+5. Full-suite regression run not yet requested/run (per `AGENTS.md`'s test
+   policy, focused runs only until authorized) — the pre-existing
+   `pdf-preview-viewer.spec.ts` regression suite was run directly and its
+   8 pre-existing "blocked preview override" failures were confirmed, via
+   `git stash`, to already fail identically on the unmodified baseline —
+   not a regression from this work.
+6. `printAnnotations` is a real persisted data-shape change —
+   `probate-guardian-data-model.csv` updated in the same pass (3 new rows
+   under `plan_simplified`), `npm run verify:data-model` passing (840 rows).
+
+---
+
+## 39-B: Visual Signature Capture — Core Mechanism (one role, pilot type)
+
+This capability originated from `pdf.js`'s `AnnotationEditorType.SIGNATURE`
+(confirmed present in the vendored `6.3.289` build via
+`SignatureEditor`/`SignatureExtractor`), which lets a filer draw a
+signature, type their name and have it converted to a signature-style
+outline, or upload and vectorize an image of one — the capability, draw/
+type/upload a signature mark, is the goal; pdf.js's own implementation of
+it is not the mechanism 39-B actually uses (see "Capture mechanism" below).
+The idea was initially set aside on the theory that it would compete with
+this app's "real" signature mechanism, and a later draft over-corrected by
+asserting a legal-sufficiency claim ("no signature method is more legally
+real than another") this document has no standing to make either way.
+
+### Scope note: this app is a filer convenience, not a legal-sufficiency gate
+
+Both framings above share the same mistaken premise — that this app's
+signature-state field adjudicates whether a filing is legally signed. It
+never has. `signatureState` records what the filer told the app about
+*their own filing*, the same way every other optional or conditional field
+in this app already does; it does not, and was never meant to, determine
+whether the resulting document satisfies Florida's signature requirements.
+A filer who chooses Unsigned in-app can print the resulting document, sign
+it by hand, and file it entirely outside this app's involvement — that path
+exists today regardless of what any validator says, because this app has
+no authority over what happens to a printed page after it leaves the
+screen. Blocking print on a blank signature field never actually prevented
+an improperly-signed filing; it only ever blocked the app's own
+convenience workflow for filers who intended to sign in-app. Letting
+Unsigned validate and print doesn't create a new legal risk — it just stops
+the app from pretending its own internal completeness check was ever a
+legal enforcement mechanism. The filer remains responsible for their own
+filing's compliance, exactly as they are with any other document-
+preparation tool.
+
+**Decision: signature capture is not part of 39-A's annotation-editor
+mechanism.** Both 39-A and 39-B are now persisted, but via entirely
+different paths (see 39-A's "Persistence design" for its own
+reapply/drift-detection approach, which 39-B has no equivalent of).
+`pdf.js`'s drawing/typing/upload widget is used purely as the capture UI;
+its result is written into `window.D` and saved in the `.sav` file like
+every other required answer, and rendered on the page through this app's
+own `pdf-engine.js` (jsPDF), the same pipeline that renders the typed "/s/"
+signature today — never through pdf.js's `AnnotationEditorLayer` or
+`saveDocument()`. Unlike `printAnnotations`, `signatureImage` **is** a
+validated answer (see "Validation" below) — a deliberate, narrow exception
+to 39-A's Non-Goal #2's "never merged into a validated answer" rule,
+scoped to this one field type only.
+
+### UI: three-state control per signature card
+
+This app already renders each signer's certification as its own card —
+confirmed in `plan-simplified/index.js`: "Certification and Signature of
+Preparer" and "Certification and Signature of Guardian's Attorney" are two
+separate `entry-card` blocks, not one shared section. Each such card gets
+one segmented control/slider cycling **Unsigned → "/s/" Signed → Signature
+Stamp** (driving that card's own `signatureState` field). The stamp capture
+UI — the draw/type/upload widget, or "Use my saved stamp" once 39-D exists —
+renders only once that specific card's control is switched to Signature
+Stamp; it must not be visible, mounted, or take up layout space in the other
+two states. This keeps the common case (typed "/s/") exactly as simple as
+it is today, with the stamp machinery appearing only for the signer who
+opts into it, per card. Capture UI lives directly inside that role's
+existing Certification and Signature card, next to its typed name/date
+inputs — not a separate annotate-the-rendered-PDF surface.
+
+### Field shape varies by role — confirmed, not assumed
+
+Verified directly against the pilot filing type's own validator
+(`validatePlanSimplified()`): Attorney's and Preparer's signature dates are
+top-level scalars (`d.attorney_signatureDate`, `d.preparer_signatureDate`),
+so `attorney_signatureState`/`attorney_signatureImage` and the Preparer
+equivalents fit directly. The Guardian's signature does not: it lives at
+`d.planGuardians[N].signatureDate`, a row inside a collection that can hold
+a second co-guardian. That role's new fields are
+`planGuardians[N].signatureState`/`planGuardians[N].signatureImage` — a
+per-row addition to the collection schema, not a top-level field — and each
+guardian row gets its own independent card and control, consistent with the
+co-guardian handling already established in Milestone 34-1C. **39-B targets
+the Guardian role specifically** because it is the one role the pilot
+type's own validator already makes unconditionally required, giving the new
+validation rule (below) a real existing requirement to attach to; 39-C
+extends the mechanism to the scalar-field roles and every other filing type.
+
+### `signatureImage`: base64-encoded PNG
+
+Present only when `signatureState === 'stamp'`, persisted alongside the
+filing's other answers in the same encrypted `.sav` payload. Because it
+renders through the ordinary `pdf-engine.js` path, any future regeneration —
+a reprint, a corrected filing, a new session next year — rebuilds the same
+signature from `window.D` exactly like every other field, instead of
+needing it redrawn or reapplied. This is a simpler durability story than
+39-A's own persistence design (see 39-A's "Persistence design" section):
+39-B needs no `contentFingerprint`/drift-detection step at all, because the
+signature image is baked into the PDF at the same point every other field
+is, not layered on afterward and reapplied to a freshly-rendered page. In
+39-B, this image is stored directly on the filing (no reuse yet — see 39-D
+for the versioned, per-party stamp that supersedes a plain copy).
+
+### Capture mechanism — a real, previously unexamined mounting risk
+
+This document assumed pdf.js's `SignatureEditor` widget would be the
+capture UI wherever it's needed, including inside a plain form card (e.g.,
+inside "Certification and Signature of Preparer" on `plan-simplified/index.js`'s
+own page) — nowhere near an actual rendered PDF page or canvas viewport.
+That assumption was never verified and is now a real, open risk:
+`AnnotationEditorLayer`/`SignatureEditor` are built as part of pdf.js's
+page-rendering machinery — tied to a rendered page's viewport/coordinate-
+transform matrices and `AnnotationEditorUIManager`'s much larger internal
+state (confirmed earlier in this document: many collaborators, several
+this app has no equivalent for). Mounting that machinery somewhere with no
+underlying rendered PDF page at all may require substantial stubbing of
+viewer internals it was never designed to run without.
+
+**Recommended default: a plain HTML5 `<canvas>` signature pad, not pdf.js,
+for capture inside form cards.** A simple canvas-based widget — draw with
+mouse/touch, render typed text in a script/cursive web font onto the
+canvas, or draw a cropped/resized uploaded image onto it — produces the
+exact same base64 PNG output this design already depends on
+(`canvas.toDataURL('image/png')`), with none of pdf.js's page-coordinate
+dependencies, no `AnnotationEditorUIManager` stubbing, and no code shared
+with (or risked by) 39-A's actual PDF-page annotation work. This makes
+39-B fully independent of 39-A's pdf.js integration risk, not just
+architecturally distinct from it. pdf.js's own `SignatureEditor` is
+demoted to "considered and set aside" for this purpose — see below — kept
+only as something 39-A's spike may separately explore if mounting it
+standalone turns out to be unexpectedly simple, but 39-B's design does not
+depend on that outcome.
+
+### Rendering to PDF: the actual mechanism, not just the two endpoints
+
+The concrete path, using pieces that already exist rather than inventing
+new ones:
+
+1. The canvas signature pad's committed drawing/typed-text/cropped-image
+   is read directly off the canvas via `canvas.toDataURL('image/png')` —
+   no vector-contour extraction step is needed once pdf.js's editor is out
+   of the capture path.
+2. That data URL becomes `signatureImage`, after the size/dimension/content
+   validation below.
+3. `pdf-engine.js` needs a new `renderSignatureImage(dataUrl, layout)`
+   helper. It does not need to be built from nothing: `pdf-engine.js`
+   already has `renderSupportingDocumentImage(dataUrl, layout, imageType)`
+   (used for scanned-exhibit images), which calls jsPDF's
+   `doc.addImage(dataUrl, 'PNG', x, y, width, height)` — the new helper
+   should follow that exact pattern, sized to a signature block's layout
+   instead of a full exhibit page.
+4. Whichever `pdf-model.js` builds that role's signature block calls the
+   new helper in place of the typed "/s/ Name" text when
+   `signatureState === 'stamp'`, at the same position that text currently
+   occupies.
+
+The spike's job is to prove steps 1 and 3 concretely (a rendered signature
+block that looks right, at a reasonable size, in the actual PDF output),
+not to re-derive that this is possible.
+
+### Data safety: image limits and legacy migration
+
+Two things a stamp/upload feature cannot ship without, neither previously
+addressed:
+
+- **Image constraints**, enforced at capture time: a maximum pixel
+  width/height, a maximum file size, a transparent background rather than
+  an opaque canvas fill (an opaque signature image would paint a visible
+  box over the printed form line instead of sitting on it), and validation
+  of the actual file content (magic bytes), not just a `.png` extension or
+  a declared MIME type a browser reports. An uploaded image should also
+  have its metadata stripped before it's stored — not for the date-reading
+  concern below, but because an uploaded photo (someone photographing a
+  signed physical page, for example) can carry EXIF fields like GPS
+  coordinates that have nothing to do with the signature itself and should
+  not be retained. **Maximum width, measured, not guessed:** `pdf-engine.js`'s
+  actual signature line is drawn `margin + 2` to `margin + 250` (jsPDF
+  configured with `unit: 'pt'` here) — a real width of 248pt, i.e. 3.44
+  inches. At 300 DPI (a reasonable print-quality target for an embedded
+  image), that's ~1,030px; round to **1024px** as the capture widget's
+  maximum width, with height capped proportionally to a natural signature
+  aspect ratio (roughly 3:1 to 4:1, wide and short). A maximum file size in
+  the tens of KB is more than sufficient for a compressed PNG at that size.
+- **Sensitivity, stated explicitly rather than left implicit.** `signatureImage`
+  is new stored data and `AGENTS.md` §8 requires its own classification, not
+  an inherited one: classify it `document-content` in
+  `probate-guardian-data-model.csv` — that value already exists in
+  `scripts/verify-data-model.mjs`'s enforced enum (confirmed directly), so
+  this needs no schema change, just using it. Threat model: it sits inside
+  the same encrypted `.sav` payload as every other filing answer, protected
+  by the same case-file password as a typed name — no new access-control
+  gap. What it does add relative to today's typed "/s/" is that a leaked or
+  misdirected file now exposes a reproducible image of the guardian's actual
+  signature mark, not just a name string; a real, if modest, escalation
+  worth surfacing to the requester rather than treating as equivalent to
+  the text it replaces.
+- **DOCX export's image-embedding gap is moot.** `docx-engine.js` has no
+  image-embedding capability at all today (no image relationships, no
+  drawing XML), and building one would have been substantial, separate
+  work — but per `MILESTONE-40-PROPOSAL.md`, DOCX export itself is
+  deprecated and its code is slated for removal, not for enhancement. Until
+  that removal lands, `signatureState === 'stamp'` should render as text
+  (the typed name and date, the same way "/s/" already renders) rather than
+  silently omitting the signature or throwing on a missing image path — a
+  temporary bridge for whatever window remains before DOCX export is
+  removed, not a feature worth building out further.
+- **Legacy filings have no `signatureState` at all.** Every existing `.sav`
+  file predates this field. Treating "field is missing" as equivalent to
+  `signatureState: 'none'` would be wrong: a legacy filing that already has
+  a real `signatureDate` (signed under today's plain mechanism, before this
+  feature existed) would suddenly read as Unsigned, silently granting a
+  pass that filing never actually needed because it was already complete.
+  The correct migration rule: if `signatureState` is missing and a
+  `signatureDate` is already present, infer `signatureState: 'typed'` (this
+  filing was already signed the old way) — never `'none'`. Only a filing
+  with neither field present, which was already incomplete under today's
+  hard requirement, resolves to `'none'`.
+
+### Validation: a confirmed, deliberate change to today's behavior
+
+**Decided: all three states pass validation, for every role, including the
+Guardian's.** Today, `validatePlanSimplified()` unconditionally requires
+`g.signatureDate` to be non-blank; going forward, a filer can explicitly
+choose Unsigned for the Guardian's own card and still have the filing
+validate as complete and printable. Per the Scope Note above, this is not
+a loosening of a legal requirement — the app was never enforcing one, only
+its own internal completeness convention — it's making the app's own model
+honest about a filer's real options (in-app "/s/", in-app stamp, or sign by
+hand after printing) instead of forcing a choice among only the first two.
+Whoever implements or reviews this later should know it's deliberate, not
+a bug.
+
+The new rule, replacing the plain `req(g.signatureDate, ...)` call for each
+signature card:
+
+- **a. Unsigned** — passes. `signatureState === 'none'`; no date, no image
+  required. This is also simply the control's default/rest state — there is
+  no separate "never touched" failure mode distinct from an explicit
+  Unsigned choice, since Unsigned is itself always a fully valid answer.
+- **b. "/s/" Signed** — passes only once actually applied: `signatureState
+  === 'typed'` **and** the underlying typed name and signature date are
+  both non-blank. Selecting the state alone, with nothing filled in, does
+  not pass.
+- **c. Signature Stamp** — passes only once actually applied: `signatureState
+  === 'stamp'` **and** `signatureImage` is non-blank.
+
+This check governs `signatureState`/`signatureDate`/`signatureImage` only.
+It does not relax any other independent requirement on that same card (for
+example, a guardian's printed name, address, or SSN/EIN stay required by
+whatever rule already governs them, untouched by signature state).
+
+### Reusable stamp — deferred to 39-D
+
+39-B stores the captured image directly on the filing. Reuse across
+filings, versioning, and the party-level store are 39-D's scope, built on
+top of this once it's proven.
+
+### Implementation Plan (39-B spike) — done, built with 39-C's reuse in mind
+
+Independent of 39-A's spike — ran after it. Every piece below was built as
+a standalone, shape-agnostic module rather than inline in Plan Simplified's
+own files specifically so 39-C's rollout to other roles/filing types is
+wiring, not rebuilding:
+
+- `src/core/validation/signature-state.js` — `checkSignatureState()` and
+  `inferLegacySignatureState()` take raw `state`/`name`/`date`/`image`
+  values, not a record shape, so the same functions serve top-level scalar
+  fields, nested objects, and collection rows alike (39-C's three
+  confirmed shapes) without modification.
+- `src/core/signature/signature-pad.js` — the canvas capture widget
+  (Draw/Type/Upload) and `validateSignatureImage()`, mountable into any
+  card; nothing in it is Guardian- or Plan-Simplified-specific.
+- `src/core/signature/signature-state-control.js` — the three-state
+  radio control + capture-widget mount/unmount wiring, parameterized by a
+  `path` prefix; a future role only needs to pass its own path.
+- `src/core/images/png-dimensions.js` — shared PNG byte-header reader, used
+  by both the capture-time validator and the render-time sizing below.
+- `src/core/pdf/pdf-engine.js`'s `renderSignatureImage()` and the new
+  `hasStampImage` branch were added to the **shared, generic
+  `signature-block` renderer** every filing type's `pdf-model.js` already
+  funnels through (confirmed by reading it directly) — not a
+  plan-simplified-only code path. This is the single most consequential
+  finding for 39-C: rolling out to another role/filing type needs no
+  further `pdf-engine.js` change at all, only adding
+  `signatureState`/`signatureImage` to that type's own block-construction
+  call, the same one-line addition made to `plan-simplified/pdf-model.js`'s
+  `makeSigBlock()`.
+- `src/features/plan-simplified/index.js`/`print.js` are the only
+  Plan-Simplified-specific pieces: wiring the reusable control into the
+  Guardian card, and replacing `req(g.signatureDate, ...)` with
+  `checkSignatureState()` in both `validatePlanSimplified()` **and**
+  `planReadinessChecksSimplified()` — the latter wasn't in the original
+  plan, but AGENTS.md Section 4's Parity Invariant means both had to change
+  together or the readiness panel would show a false blocker for a
+  Guardian who explicitly chose Unsigned. The readiness item now calls
+  `checkSignatureState()` directly rather than re-deriving equivalent
+  boolean logic, so the two can't drift apart later either.
+- Confirmed a filing with Unsigned explicitly chosen validates as complete
+  (readiness and the real export path agree), and that "/s/" or Stamp
+  chosen but incomplete still blocks, each with its own distinct message.
+- Confirmed correct rendering through the existing `pdf-engine.js` path for
+  all three states — proved directly via pdf.js's own operator list
+  (`OPS.paintImageXObject` present on the Signatures page for the Stamp
+  case), not just "the page rendered with no error."
+
+### Verification Plan (39-B) — landed
+
+1. Unit tests for the canvas signature pad and the PNG capture/validation
+   logic (dimension/size/content checks) plus `checkSignatureState()`/
+   `inferLegacySignatureState()` — landed at
+   `tests/unit/signature-capture.spec.js`, 17 tests, passing. (Transparent
+   background is structural, not a runtime check: Draw/Type canvases are
+   never filled before drawing, so nothing to test there; see "Data safety"
+   below for the one real, honest limitation this doesn't cover.)
+2. E2e coverage for all three states on the Guardian's card, including the
+   incomplete-"/s/" and incomplete-Stamp blocking cases, the legacy-
+   migration inference rule, and a real draw-and-apply interaction —
+   landed at `tests/e2e/signature-capture.contract.spec.ts`, 4 tests,
+   passing.
+3. `planGuardians[N].signatureState`/`planGuardians[N].signatureImage` —
+   `probate-guardian-data-model.csv` updated in the same pass (3 new rows:
+   `signatureState`, `signatureImage`, and a narrowed `signatureDate`
+   `required_when`), `npm run verify:data-model` passing (842 rows).
+4. Both new test files added to `TEST-INDEX.md`.
+5. Regression-checked, not assumed safe: the full unit suite (425 tests,
+   50 files) and the broader PDF/signature e2e suite spanning every filing
+   type (`pdf-accessibility-and-signatures.spec.ts`,
+   `pdf-structure-tags.spec.ts`, `plan-pdf-wcag-compliance.spec.ts`,
+   `pdf-form-specific.spec.ts`, `plan-simplified-mount.spec.ts` — 21 e2e
+   tests) all re-run clean after touching the shared `signature-block`
+   renderer. Full-suite `npm test` not run (per `AGENTS.md`'s test policy,
+   focused runs only until requested).
+
+### Real limitation found building this, not previously flagged
+
+Uploaded-image background transparency is unaddressed. The doc's "Data
+safety" section calls for "a transparent background rather than an opaque
+canvas fill" — Draw and Type modes satisfy this structurally (the canvas is
+never filled before drawing). An **uploaded** photo of a signature almost
+always has its own opaque background (e.g. white paper), and this spike
+does not attempt to remove it. Concretely: an uploaded stamp will likely
+render as a small opaque box sitting on the signature line rather than a
+mark that looks like it belongs there. Not blocking for this pilot — the
+mechanism itself (capture, validate, store, render) is proven regardless of
+which capture mode is used — but tracked as its own gate on 39-C, not left
+implicit: see 39-C's "Upload background-transparency gate" for the real
+options (a bounded luminance-threshold heuristic, a UI hint, or dropping
+Upload) and why rolling 39-C out unchanged would multiply this defect
+across every future role rather than fixing it once.
+
+---
+
+## 39-C: Multi-Role, Multi-Filing-Type Rollout
+
+Extends 39-B's proven mechanism to every other signature-bearing card.
+**Both gates below are now cleared** — the inventory is complete (audited
+directly against every listed file, zero "not yet confirmed" cells remain)
+and the Upload background-transparency question has a decision. Clearing
+these gates authorizes design/estimation work, per this document's own
+"Implementation Gate" section; actual multi-file implementation still
+starts only on the requester's explicit go-ahead, the same discipline
+39-A and 39-B were each individually authorized under.
+
+| Filing type | Role / card | Field | Shape | Validator predicate | Requiredness |
+| --- | --- | --- | --- | --- | --- |
+| Plan Simplified | Guardian | `planGuardians[0].signatureDate` | collection row | Hard `req()` (39-B's target — done) | Hard required |
+| Plan Simplified | Preparer / Attorney | `d.preparer_signatureDate` / `d.attorney_signatureDate` | scalar | Order-check only | Not required |
+| Plan Annual | Guardian | `d.planGuardians[0].signatureDate` | collection row | Hard `req()`, `plan-annual/index.js:698-699` | Hard required |
+| Plan Annual | Guardian's Attorney | `d.attorney_signatureDate` | scalar | Order-check only, `plan-annual/index.js:706-708` | Not required |
+| Plan Initial | Guardian | `d.planGuardians[0].signatureDate` | collection row | Hard `req()`, `plan-initial/index.js:597-601` | Hard required |
+| Plan Initial | Guardian's Attorney | `d.attorney_signatureDate` | scalar | Conditional-once-started, `plan-initial/index.js:608-611` | Conditional (Milestone 35-3 pro se/Guardian Advocate exemption) |
+| Plan Minor | Guardian | `d.planGuardians[0].signatureDate` | collection row | Hard `req()`, `plan-minor/index.js:432-437` | Hard required |
+| Plan Minor | Preparer | `d.preparer_signatureDate` (flat scalar, despite the name) | scalar | Conditional-once-started, `plan-minor/index.js:445-448` | Conditional, same once-started rule |
+| Plan Minor | Guardian's Attorney | `d.attorney_signatureDate` | scalar | Conditional-once-started, `plan-minor/index.js:449-452` | Conditional, same once-started rule |
+| Annual/Final/Trust Accounting | Guardian(s) (Part III) | `d.guardians[i].signatureDate` | collection row | Hard per row (row 0 unconditional, extras conditional on populated data), `annual-accounting/index.js:1412-1424` | Hard required per populated row |
+| Annual/Final/Trust Accounting | Preparer (Part IV) | `d.preparer.signatureDate` | nested object | Hard `req()`, `annual-accounting/index.js:1425-1430` | Hard required |
+| Annual/Final/Trust Accounting | Attorney (Part V) | `d.attorney_signatureDate` | scalar | Hard `req()`, `annual-accounting/index.js:1438` | Hard required |
+| Annual/Final/Trust Accounting | Attorney, Certificate of Service (Part X) | `d.certAttySignDate` | scalar | **Resolved: unvalidated.** No `req()`, no `checkDateOrder()` — confirmed absent from `validateAnnual()` entirely | Not enforced at all today — weaker than every other card in this table |
+| Simplified Accounting | Guardian(s) (Part IV) | `d.guardians[i].signatureDate` | collection row | Hard per row, `simplified-accounting/index.js:630-646` | Hard required per populated row |
+| Simplified Accounting | Attorney (Part V) | `d.attorney_signatureDate` | scalar | Order-check only, `simplified-accounting/index.js:651-653` | Not required |
+| Simplified Accounting | Attorney, Certificate of Service (Part VI) — **not in the original draft table, found during the audit** | `d.certAttySignDate` | scalar | **Unvalidated**, confirmed absent from `validateSimplified()` entirely | Not enforced at all today — same gap as Annual/Final/Trust's Part X card |
+| Guardian Inventory | Guardian(s) (D-1) | `d.guardians[i].signatureDate` | collection row | Hard, `guardian-inventory/index.js:1119` | Hard required per row |
+| Guardian Inventory | Preparer (D-2) | `d.preparer.signatureDate` | nested object | Hard, `guardian-inventory/index.js:1120` | Hard required (confirmed — matched the original draft's guess) |
+| Guardian Inventory | Attorney (D-2, Attestation) | `d.attorney.signatureDate` | nested object | Hard, `guardian-inventory/index.js:1121` | Hard required |
+| Guardian Inventory | Attorney, Certificate of Service (D-5) | `d.serviceAttorney.signatureDate` | nested object | Hard, `guardian-inventory/index.js:1130` | Hard required (confirmed — matched the original draft's guess) |
+
+**Three distinct field shapes exist, confirmed across all 6 remaining
+filing types, and 39-C's design must handle all of them:** top-level scalar
+(`d.attorney_signatureDate`), nested object (`d.preparer.signatureDate`),
+and collection row (`d.guardians[i].signatureDate`). A single filing type
+can also have more than one card for nominally the same role (Guardian
+Inventory's D-2 and D-5 are both "the attorney," Annual/Final/Trust
+Accounting and Simplified Accounting each have a primary Attorney card plus
+a separate Certificate-of-Service Attorney card) — each such card gets its
+own independent `signatureState`/`signatureImage`, never a role-wide shared
+one. Also confirmed during the audit: all 6 remaining filing types already
+render their signature blocks through the same shared, generic
+`signature-block` type in `src/core/pdf/pdf-engine.js` that Plan
+Simplified does (Guardian Inventory routes through it via a re-exported
+alias, `guardian-inventory/pdf-engine.js` → `generateVerifiedInventoryPdf`
+→ `generateCourtFormPdf`) — 39-B's own finding that "39-C needs no further
+`pdf-engine.js` change" is now confirmed for every remaining type, not just
+assumed to extend.
+
+### Inventory gate — cleared
+
+Audited directly against every filing type's own validator and
+`pdf-model.js` (file:line citations in the table above); the table has zero
+remaining "not yet confirmed" cells. Two things surfaced during the audit
+that the original draft didn't anticipate:
+
+1. **A fourth validator-predicate category: unvalidated entirely.**
+   Annual/Final/Trust Accounting's Part X and Simplified Accounting's Part
+   VI Certificate-of-Service Attorney cards have no requiredness rule of
+   any kind today — not hard-required, not conditional, not even
+   order-check-only. This needs no new product decision: 39-B's existing
+   rule already applies uniformly regardless of a card's prior
+   requiredness (Unsigned always passes; "/s/" or Stamp must be completed
+   once chosen). For these two cards specifically, adopting the tri-state
+   control is a pure improvement with no loosening to weigh — Unsigned
+   trivially passes, exactly matching today's actual (zero) enforcement,
+   and choosing "/s/"/Stamp adds a real completeness check where none
+   exists today.
+2. **A card the original draft table omitted entirely:** Simplified
+   Accounting's Part VI Certificate-of-Service Attorney card
+   (`d.certAttySignDate`) — structurally identical to Annual/Final/Trust
+   Accounting's Part X card, and missed for the same reason (it's a second,
+   easy-to-overlook attorney card distinct from the primary Part V
+   Attorney). Added to the table above.
+
+### Upload background-transparency gate — resolved: luminance-threshold fix
+
+**Decision: option 1, luminance-threshold background removal, Upload only.**
+The requester chose this over shipping a UI hint or dropping Upload
+entirely. A bounded, client-side pass over the uploaded image's own pixel
+data (read `ImageData`, treat any pixel above a brightness threshold as
+background and set its alpha to 0, keep darker "ink" pixels opaque) —
+entirely within `src/core/signature/signature-pad.js`'s existing Upload
+tab, no new dependency, and shared automatically by every role/filing type
+39-C touches since the fix lives in the one shared capture widget, not per
+role. This is real, honest, and scoped as its own small spike within 39-C's
+implementation, not assumed solved by this decision alone: it needs its own
+empirical threshold-tuning pass (the doc's own framing above already flags
+degraded results on shadows, colored/textured paper, low-contrast ink, and
+uneven lighting) before it ships, the same way 39-B's core mechanism was
+spiked and verified rather than assumed. Verification for this specific
+piece: unit tests for the threshold pass against a range of synthetic
+sample images (plain white background/dark ink; off-white/gray background;
+low-contrast ink; a background with a shadow gradient), documenting where
+the heuristic holds and where it visibly degrades — the same "know its real
+limits" bar 39-B's own image-safety work was held to.
+
+### Recommended sequencing
+
+Roll out filing type by filing type, reusing 39-B's exact mechanism
+(three-state control, same validation rule shape adapted to each role's
+existing requiredness) rather than redesigning per type. Suggested order:
+the remaining Plan types first (closest to the pilot's own shape), then
+Simplified/Annual Accounting (collection-row guardians, nested preparer),
+then Guardian Inventory last (the most cards, including the two
+Certificate-of-Service outliers). Each filing type's own rollout should be
+verified independently before moving to the next, matching this project's
+established per-sub-milestone verification discipline.
+
+**Plan Annual, Plan Initial, and Plan Minor: done, verified.** Every card
+identified in the inventory table above for these three types now has the
+tri-state control — Plan Annual's Guardian and Attorney; Plan Initial's
+Guardian and Attorney; Plan Minor's Guardian, Preparer, and Attorney.
+Simplified/Annual Accounting's own rollout follows below, and Guardian
+Inventory's after that.
+
+- **The scalar field shape needed a real generalization to
+  `signature-state-control.js`, not just wiring.** The module's own
+  original design (39-B) assumed `${path}.signatureState` as a dot-path,
+  which is correct for the nested-object and collection-row shapes but
+  cannot address a flat, underscore-prefixed scalar like
+  `attorney_signatureState` — `window.setPath`/`getPath` split strictly on
+  ".", so `"attorney" + ".signatureState"` resolves to a new nested
+  `d.attorney.signatureState`, not the real field. Fixed by adding optional
+  `statePath`/`imagePath` overrides to `renderSignatureStateControl()`/
+  `mountSignatureStateControls()` (`path` now only needs to be a stable,
+  unique card identifier for grouping/mounting when an override is given);
+  the nested-object and collection-row call sites needed no change, since
+  their default-computed paths were already correct. This also required
+  correcting `mountSignatureStateControls()`'s `setImage(path, dataUrl)`
+  callback contract to receive the already-resolved image path rather than
+  a bare card id, updating Plan Simplified's own 39-B call site
+  (`plan-simplified/index.js`) to match — a real, if narrow, behavior
+  change to already-shipped code, re-verified against 39-B's own e2e suite
+  (all 4 tests re-ran clean).
+- **A fourth validator-predicate category surfaced during the inventory
+  audit and needed a decision, resolved without a new product question**
+  (see the Inventory Gate section above): two cards (both
+  Certificate-of-Service Attorney cards, out of scope for this pass — see
+  Simplified/Annual Accounting below) had no requiredness of any kind
+  today. 39-B's own rule already covers this for free (Unsigned trivially
+  passes, matching today's actual zero enforcement).
+- **The "conditional-once-started" pro se/Guardian Advocate exemption
+  (Milestone 35-3, Plan Initial's and Plan Minor's Attorney/Preparer cards)
+  needed its own "started" trigger extended, not just a completeness
+  check.** An explicit "/s/"/Stamp choice with every other field still
+  blank now also counts as "started" (previously only a typed name/bar/date
+  did); an explicit or default Unsigned choice still does not, preserving
+  the exemption. Verified directly: a fully blank attorney/preparer card
+  still exports cleanly; selecting Signature Stamp with nothing else filled
+  in now correctly blocks on both the name and the image.
+- **A real, pre-existing, unrelated bug found while writing this rollout's
+  e2e coverage, not introduced by it — confirmed via `git stash` against the
+  unmodified baseline.** `tests/e2e/support/target.ts`'s
+  `fillMinimalValidPlanInitialWard()` never sets `q7Trusts`/
+  `q7PendingBenefits`, which default to the tri-state *string* `"No"` —
+  and `validatePlanInitial()`'s `if(d.q7Trusts||d.q7PendingBenefits||
+  d.q7Other)` (index.js:581) treats any non-blank string, including an
+  explicit "No", as needing an explanation. This is the exact class of bug
+  `form-contract.js`'s own `yesNoText()` doc comment warns about
+  ("'No' is a non-empty string and therefore truthy"). It currently blocks
+  `plan-readiness.contract.spec.ts`'s own "a fully completed plan ... is
+  not blocked from export" test for Plan Initial, and one
+  `plan-initial-mount.spec.ts` PDF-export test, on master today,
+  independent of this milestone. Worked around in this rollout's own new
+  tests (reset the two fields to `''` before asserting) rather than fixed,
+  since fixing `validatePlanInitial()` is outside 39-C's scope — flagged
+  here for the requester to prioritize separately.
+
+**Simplified Accounting and Annual/Final/Trust Accounting: done, verified.**
+Every card in the inventory table above for these two feature families now
+has the tri-state control — Simplified Accounting's Guardian, Attorney, and
+Attorney Certificate of Service; Annual/Final/Trust Accounting's Guardian,
+Preparer, Attorney, and Attorney Certificate of Service.
+
+- **Neither feature family has a `planReadinessChecksX()`-style readiness
+  panel at all — checked directly.** Milestone 37-3's readiness/export
+  parity mechanism (`auto`/`manual` arrays, the drift this milestone's own
+  Plan-family rollout had to keep in sync) was built specifically for the
+  four Plan types; Simplified and Annual/Final/Trust Accounting rely solely
+  on `computeNavChecks()`'s legacy sidebar checklist, with no separate
+  structured readiness object to drift from. This rollout therefore touched
+  only each type's validator, `pdf-model.js`, and data model — no
+  readiness-panel changes were needed or possible.
+- **A second real, pre-existing gap surfaced, this one caused by this
+  rollout's own change, not independent of it — found and fixed, not just
+  flagged.** `tests/e2e/support/target.ts`'s `fillMinimalValidAnnualWard()`
+  sets `attorney_signatureDate` but never `d.attorney` (the attorney's
+  printed name). This was harmless before 39-C, since `attorney_signatureDate`
+  had no completeness check of any kind; `validateAnnual()`'s new
+  `checkSignatureState()` call correctly infers the existing date as legacy
+  `signatureState: 'typed'` and then requires a name to go with it (`d.attorney`
+  has no independent requirement anywhere in `validateAnnual()`, confirmed
+  directly) — surfacing a real, if narrow, latent gap: a signed attorney
+  date with no attorney name was previously accepted as a "complete" filing.
+  Fixed by adding `attorney: 'Sample Attorney'` to the fixture (matching
+  what a real minimal-valid filing should already have looked like);
+  re-verified the 5 other e2e specs sharing this fixture
+  (`annual-field-formatting`, `annual-mount`, `filing-identity.contract`,
+  `output-semantics.artifact`, `pdf-evidence-lab`, `pdf-preview-viewer`) all
+  still pass.
+- **The two Certificate-of-Service Attorney cards found during the
+  Inventory Gate audit needed real CSV work, not a clean addition.**
+  Simplified Accounting's Part VI `certAttySignDate` row already existed
+  (as `optional`, matching its prior zero-enforcement state) and only
+  needed narrowing to `conditional`. Annual/Final/Trust Accounting's Part X
+  `certAttySignDate` also already had a row this pass initially missed on
+  first pass -- inserting a duplicate was caught immediately by
+  `verify-data-model`'s own duplicate-key check, corrected by updating the
+  existing row in place instead.
+
+**Guardian Inventory: done, verified — the rollout's last filing type.**
+Every card in the inventory table above now has the tri-state control —
+Guardian (D-1, collection row), Preparer (D-2, nested object), Attorney
+(D-2 attestation, nested object), and Attorney, Certificate of Service
+(D-5, nested object). Both of Guardian Inventory's nested-object attorney
+cards needed no further generalization to `signature-state-control.js` —
+the nested-object default path resolution already handled them correctly,
+same as Annual Accounting's Preparer card before it.
+
+- **A real, if narrow, data-loss risk found and fixed, unique to this
+  filing type.** Guardian Inventory is the only rolled-out type with an
+  active "prune this row if it's empty" mechanism
+  (`normalizeGuardians()`/`guardianHasData()`, used by its own
+  "+ Add Co-Guardian" flow) — no other filing type auto-prunes a collection
+  row this way. Before this fix, a co-guardian who drew and applied a
+  signature stamp image before typing a name would have that image silently
+  discarded the next time the page re-rendered, since `guardianHasData()`
+  never checked `signatureImage`. Fixed by adding it to that check (and to
+  `pageD1()`'s own duplicate copy of the same field list) — confirmed via
+  the CSV notes and a comment at the fix site, not just inferred.
+- **checkSignatureState()'s shared `sectionLabel`/`roleLabel` split needed a
+  real accommodation for a card family with its own, different,
+  pre-existing section-naming convention, not just a wiring choice.**
+  Annual/Simplified Accounting's own rollout (and Plan-family's) put the
+  role/ordinal in `roleLabel` ("Part III"/"Guardian #N"), which becomes part
+  of the message's DETAIL half after the `" — "` split. Guardian Inventory's
+  own pre-existing `req()` messages instead put the role/ordinal directly in
+  the SECTION half ("D-1 Guardian #2", "D-2 Preparer") — matching this
+  existing convention, not inventing a new one, was the correct call, but
+  `checkSignatureState()` had no way to produce a message with an empty
+  role suffix without a stray double space. Fixed by teaching
+  `checkSignatureState()` to treat a falsy `roleLabel` as "already folded
+  into `sectionLabel`" (no behavior change for every existing caller, which
+  all pass a real role string); Guardian Inventory's own four call sites
+  pass `sectionLabel: 'D-1 Guardian #${i+1}'`/`'D-2 Preparer'`/
+  `'D-2 Attorney'`/`'D-5 Attorney'` with `roleLabel: ''`, needing zero new
+  ordinal/role-extraction logic in `validation-adapter.js` beyond the same
+  keyword additions every other type needed (below).
+- **A real, live regression found in already-shipped work from this same
+  milestone — not introduced by this pass, but only surfaced by it, and
+  fixed here rather than left for a future one.**
+  `src/core/validation/validation-adapter.js` (Milestone 24's structured
+  jump-link resolver) was never updated for `checkSignatureState()`'s own
+  message vocabulary ("date signed", "printed name", "signature stamp
+  image") for every card this milestone converted to it, in every earlier
+  landed pass, plan-family included — only Plan Annual's and Plan
+  Simplified's own `'signatures'` branches happened to get partial
+  `"date signed"`/`"printed name"` recognition when they were written; nine
+  other branches across Guardian Inventory, Annual Accounting, Simplified
+  Accounting, and Plan Initial/Minor did not, and none had `"signature
+  stamp image"` recognition at all. In the live product this meant clicking
+  a validation panel's jump link for a blocked "/s/ Signed, no date" or
+  "Signature Stamp, no image" state silently failed to move focus, for
+  every one of those cards. Found by actually running
+  `tests/e2e/navigation-status.contract.spec.ts` for the first time against
+  this rollout's own changes (a file none of the four earlier 39-C passes
+  had re-run) — 5 of its tests failed, 4 as a direct result of this gap.
+  Fixed comprehensively rather than only for Guardian Inventory: every
+  `sectionLabel`/`roleLabel` pair used by any `checkSignatureState()` call
+  site in the codebase (verified by direct grep, not sampling) now has
+  matching keyword recognition in `validation-adapter.js`, including the
+  previously entirely-unhandled "signature stamp image" case everywhere it
+  can occur. The 4 fixed tests' own fixtures also needed updating, for a
+  related reason: a blank signature date with no explicit `signatureState`
+  now correctly infers "Unsigned" (a real pass, not a bug) rather than the
+  old unconditional "date is required" error these tests were built
+  against — each now sets `signatureState: 'typed'` explicitly to exercise
+  a genuine, findable completeness error, the same pattern this rollout's
+  own e2e specs already use throughout. The remaining, 5th failure (D-3
+  Safe Deposit Box radios) is unrelated to signatures entirely and confirmed
+  pre-existing via `git stash` against the unmodified baseline.
+
+### Verification Plan (39-C)
+
+Per filing type landed: extend 39-B's `tests/e2e/signature-capture.contract.spec.ts`
+with that type's own cards and field shapes (scalar, nested object,
+collection row) rather than one new file per filing type, since it's the
+same mechanism under test each time — a `probate-guardian-data-model.csv`
+update for every new field (per `AGENTS.md`), and a `TEST-INDEX.md`
+description update reflecting the file's growing scope as each type lands.
+
+**Plan Annual/Initial/Minor — landed and run:**
+
+1. `tests/e2e/signature-capture.contract.spec.ts` extended with 13 new
+   tests (legacy-migration/Unsigned/incomplete-"/s/"/Stamp-draw-and-apply
+   per type's Guardian card, plus blank-passes/Stamp-paints coverage per
+   scalar Attorney/Preparer card), each Stamp test confirming the image is
+   actually painted via pdf.js's own operator list on that type's own
+   finalized PDF, not just "didn't throw." All 17 tests in the file
+   (4 pilot + 13 new) pass.
+2. `tests/unit/plan-annual-parity.spec.js`, `plan-initial-parity.spec.js`,
+   `plan-minor-parity.spec.js` each extended with dedicated tri-state
+   parity coverage (Unsigned-passes, Stamp-incomplete-blocks, and for the
+   scalar cards, blank-card-passes/Stamp-applied-passes), plus the
+   pre-existing blank-signature-date cases corrected to explicit
+   `signatureState: 'typed'` fixtures (blanking a date alone is no longer a
+   blocker by itself, same correction 39-B made for the pilot). All three
+   files pass, plus `tests/unit/checklist-export-parity.spec.js`'s
+   known-gaps allow-list extended for the new fields.
+3. Full unit suite (440 tests, 50 files) and the broader PDF/signature e2e
+   regression (`pdf-accessibility-and-signatures.spec.ts`,
+   `pdf-structure-tags.spec.ts`, `plan-pdf-wcag-compliance.spec.ts`,
+   `pdf-form-specific.spec.ts` — 16 e2e tests) re-run clean after touching
+   the shared `signature-state-control.js` module and all three
+   `pdf-model.js` files. `plan-annual-mount.spec.ts`/`plan-initial-mount.spec.ts`/
+   `plan-minor-mount.spec.ts` and `plan-readiness.contract.spec.ts` re-run
+   clean except the two pre-existing Plan Initial failures noted above
+   (confirmed unrelated via `git stash`).
+4. `probate-guardian-data-model.csv` updated (14 new rows: signatureState/
+   signatureImage for Plan Annual's/Initial's/Minor's Guardian rows and
+   Attorney scalars, plus Minor's Preparer scalar; existing signatureDate/
+   requiredness rows narrowed to reference the new field where applicable),
+   `npm run verify:data-model` passing (856 rows). `TEST-INDEX.md` updated.
+
+**Simplified Accounting and Annual/Final/Trust Accounting — landed and run:**
+
+1. `tests/e2e/signature-capture.contract.spec.ts` extended with 9 more new
+   tests (26 total in the file): a Guardian legacy-migration/Unsigned/
+   incomplete-"/s/" cycle and a Stamp-draw-and-apply-paint test per feature
+   family, plus blank-passes/Stamp-paints coverage for Simplified
+   Accounting's Attorney and Attorney-Certificate-of-Service cards and
+   Annual/Final/Trust Accounting's Preparer, Attorney, and Attorney-
+   Certificate-of-Service cards. All 26 tests pass.
+2. No unit-test parity suite exists for these two feature families (see
+   the "no `planReadinessChecksX()`-style readiness panel" finding above) —
+   verification for validator-level correctness runs through the e2e suite
+   above instead, which exercises the real `validateSimplified()`/
+   `validateAnnual()` export-blocking path end to end. `tests/unit/checklist-export-parity.spec.js`'s
+   known-gaps allow-list extended for `validateAnnual()`'s new field
+   references (`attorney`, `attorney_signatureState/Image`,
+   `certAttySignDate`, `certAttySignatureState/Image`).
+3. Full unit suite (440 tests, 50 files), the broader PDF/signature e2e
+   regression (same 4 files as above, 16 e2e tests), and
+   `simplified-mount.spec.ts`/`annual-mount.spec.ts` (28 e2e tests total)
+   re-run clean after touching the shared `signature-state-control.js`
+   module and both `pdf-model.js` files.
+4. `probate-guardian-data-model.csv` updated (14 new rows across both
+   feature families: signatureState/signatureImage for each type's Guardian
+   row and Attorney scalar, Annual's Preparer nested object, and both
+   types' newly-documented Certificate-of-Service Attorney scalar; existing
+   signatureDate/requiredness rows narrowed to reference the new field
+   where applicable), `npm run verify:data-model` passing (870 rows).
+   `TEST-INDEX.md` updated.
+
+**Guardian Inventory — landed and run, completing the 39-C rollout:**
+
+1. `tests/e2e/signature-capture.contract.spec.ts` extended with 5 more new
+   tests (32 total in the file): a Guardian legacy-migration/Unsigned/
+   incomplete-"/s/" cycle and a Stamp-draw-and-apply-paint test for D-1,
+   plus Stamp-paint coverage for the Preparer (D-2), Attorney (D-2
+   attestation), and Attorney Certificate of Service (D-5) cards. All 32
+   tests pass.
+2. `tests/e2e/navigation-status.contract.spec.ts` run in full for the first
+   time against this rollout (not just this pass's own new work) — found
+   and fixed the pre-existing `validation-adapter.js` jump-link gap
+   described above, affecting 4 tests across Guardian Inventory, Annual
+   Accounting, and Plan Minor. 56 of 57 tests pass; the 1 remaining failure
+   (D-3 Safe Deposit Box radios) is unrelated to signatures and confirmed
+   pre-existing via `git stash` against the unmodified baseline.
+3. No unit-test parity suite exists for this feature family either (same
+   "no `planReadinessChecksX()`-style readiness panel" finding as
+   Simplified/Annual Accounting above) — verification runs through the e2e
+   suite above, exercising the real `validateGuardian()` export-blocking
+   path end to end.
+4. Full unit suite (446 tests, 50 files) re-run clean after touching the
+   shared `signature-state.js`/`validation-adapter.js` modules.
+   `guardian-inventory-mount.spec.ts` (11 tests) re-run clean except its one
+   pre-existing D-3 Audit Fee failure (confirmed via `git stash`,
+   independent of this milestone). A broader 14-file e2e sweep spanning
+   every filing type's own mount/contract/identity/output-semantics/preview
+   suites (97 tests) re-run clean except the already-documented "blocked
+   preview override" pre-existing flake and the already-documented
+   Plan-Initial `q7Trusts` bug, both noted above and confirmed unrelated.
+5. `probate-guardian-data-model.csv` updated (10 new rows: signatureState/
+   signatureImage for the Guardian collection row, Preparer, Attorney, and
+   Attorney/Certificate-of-Service Attorney nested objects; two
+   pre-existing, previously-undocumented `signatureDate` rows added for
+   Preparer and Certificate-of-Service Attorney, found missing during this
+   pass; existing `signatureDate`/requiredness rows narrowed to reference
+   the new field where applicable), `npm run verify:data-model` passing
+   (880 rows). `TEST-INDEX.md` updated.
+
+**Upload background-transparency gate (luminance-threshold fix) — landed and run:**
+
+Implemented entirely within `src/core/signature/signature-pad.js`, as scoped
+above: a new pure `removeLightBackground(pixels, threshold)` (default
+threshold 200, ITU-R BT.601 luminance weights) mutates a canvas
+`ImageData.data` array in place, dropping any pixel at or above the
+threshold to alpha 0; `drawToCanvas()` takes a `stripBackground` option and
+runs this pass only for the Upload tab's `img.onload` path (Draw/Type stay
+untouched — already transparent by construction). No new dependency, no
+per-role wiring — every role/filing type gets this automatically since it
+lives in the one shared capture widget.
+
+1. `tests/unit/signature-capture.spec.js` extended with 6 new tests against
+   the exact scenarios this section's own verification plan called for:
+   plain white background/dark ink (fully separated), off-white/gray
+   background (still stripped at the default threshold), an exact
+   threshold-boundary case (just-below kept, at-or-above stripped), and two
+   tests that deliberately document where the heuristic degrades rather
+   than hiding it — low-contrast ink landing close enough to the
+   background's own luminance to be misclassified, and a shadow gradient
+   where the bright paper is correctly removed but the shadow band is
+   incorrectly kept opaque (a "halo" around the signature). All pass; the
+   two "known limit" tests assert the degraded behavior itself, so a future
+   retune that changes it is a visible, deliberate diff, not a silent
+   regression.
+2. `tests/e2e/signature-capture.contract.spec.ts` extended with a new
+   `Milestone 39-C: Upload background-transparency` test (27 total in the
+   file) that exercises the real Upload tab end to end: builds a genuine
+   PNG in the browser (white background, black ink square), uploads it via
+   `page.setInputFiles()` (a real file input, not an injected data URL),
+   applies it, then decodes the resulting stored `signatureImage` back
+   through a fresh canvas and asserts alpha 0 at a background sample pixel
+   and alpha 255 at an ink sample pixel. Proves the fix once, through the
+   shared widget, rather than per role/filing type. All 27 tests in the
+   file pass.
+3. Full unit suite (446 tests, 50 files) re-run clean.
+
+---
+
+## 39-D: Reusable, Versioned Per-Party Signature Stamp
+
+A party who appears on multiple filings — an attorney or preparer across
+several matters, a guardian across recurring annual filings — should not
+have to redraw their signature every time. But a stamp can change over
+time (a new drawn signature replaces an old one), and a filing signed with
+an old stamp must keep rendering that same old mark forever, even after the
+party's active stamp changes.
+
+### Design
+
+- **`party.signatureImages`: an array of objects, one per party, each with
+  its own permanent incrementing id** (e.g., `{ id: 1, imageData: '<base64
+  PNG>', capturedAt: '<iso date>', active: true }`). The counter is scoped
+  to each party independently — each party's own images are numbered 1, 2,
+  3... — so ownership is unambiguous by construction (the entry lives
+  inside that party's own record) without a separate cross-reference field.
+  This lives on the party record via `party-resolver.js`'s existing
+  convention for per-party data (`name`, `phone`, `email`, `address`), not
+  a flat, case-file-wide collection.
+- **The canonical data-model CSV's `caseFile.parties[]` was never fully
+  expanded to begin with — checked directly.** Every filing type's own
+  collections (`guardians[]`, `planGuardians[]`, etc.) got the full
+  per-field expansion Milestone 34-2 requires; `caseFile.parties` did not —
+  it has exactly one summary row (`array<object>`, no sub-fields), not rows
+  for `name`, `phone`, `email`, `address`, or `identifiers.barNumber`/
+  `taxId`. 39-D is adding `signatureImages` onto a collection that isn't
+  properly documented yet, not a clean addition to a finished one. Expand
+  `caseFile.parties[]`'s existing fields to real rows in the same pass that
+  adds `signatureImages`, rather than compounding the gap.
+- **Exactly one entry per party may have `active: true`** at a time. Setting
+  a new active stamp does not delete or overwrite any prior entry — the
+  array is append-only. This is what "older signatures must be maintained"
+  (the requester's own requirement) means concretely: a `signatureImages`
+  entry is never deleted or mutated once created, only added to, and the
+  active flag is the only thing that ever moves.
+- **A filing's own reference to a stamp must name both the party and the
+  entry — a bare entry number is not enough.** Because `signatureImages`
+  IDs are scoped per party (confirmed as the chosen design), `id: 3` is
+  only unique *within one party's own array* — two different parties each
+  have their own entry 3. A filing's reference must be a compound value,
+  e.g. `signatureImageRef: { partyId: 'party-abc123', imageId: 3 }`, not a
+  bare number. This corrects an underspecified part of the original design
+  that would otherwise have been ambiguous the first time two different
+  signers each had a third stamp. Because history entries are never
+  deleted, a filing holding this reference keeps rendering that exact entry
+  forever, regardless of what the party's currently-active entry becomes —
+  applying a stamp to a new filing records this reference, not a copy, so a
+  later change to the party's active stamp never retroactively alters an
+  already-signed filing.
+- **A reference-based design breaks this app's existing single-ward
+  export/import — confirmed, not hypothetical.** Read `buildSingleWardExportBlob()`
+  directly: it packages only `wards/${wardId}.enc` (that one filing) plus
+  its own audit entries — no party data at all. A filing holding
+  `signatureImageRef: { partyId, imageId }` and exported this way (or
+  imported into a different case file) would carry a permanently dangling
+  reference on arrival, since the receiving case has no record of that
+  partyId at all. The fix must live in the export/import path itself, not
+  in the reference design: when a filing is packaged for standalone
+  export, resolve its `signatureImageRef` (and any co-guardian rows'
+  refs) and embed a snapshot of the referenced image bytes directly in the
+  export payload — matching this same function's own existing pattern of
+  selectively bundling decoupled data (it already filters audit entries
+  down to just this ward's own, rather than including the whole case's
+  log). On import into a new case, that snapshot becomes the seed for a
+  new `party.signatureImages` entry if no matching party exists yet.
+- **The signing date is always a per-document field, never inherited from
+  the image.** `<role>_signatureDate` (or the collection-row equivalent)
+  reflects when *this filing* was signed and is entered fresh every time,
+  whether the mark is freshly drawn or a reused stamp — reuse must never
+  carry forward the date a stamp entry was originally captured. In
+  practice this is largely moot: 39-B's metadata-stripping step already
+  removes embedded file metadata (including any date) before an image is
+  ever stored, so there is normally nothing to accidentally read back. The
+  rule stands regardless, in case a future capture path ever bypasses that
+  stripping step.
+- **Sensitivity.** A reusable signature image is a materially more
+  sensitive artifact than a one-off capture — it is a portable mark anyone
+  with access to it could apply to a document its owner never saw, unlike a
+  single dated capture that only speaks to the one document it was drawn
+  on. Classify it accordingly in `probate-guardian-data-model.csv`
+  (`sensitive` = `document-content` at minimum), and require an explicit
+  confirmation ("Apply your saved signature to this filing?") every time a
+  stored stamp is applied to a new filing — no silent one-click reuse.
+- **Changing the active stamp** (the requester's item 7): a party can
+  capture a new signature image at any time, which becomes the new
+  `active: true` entry; the previous active entry's `active` flag clears
+  but the entry itself is retained permanently. Filings already signed with
+  it are unaffected, per the reference-based design above.
+
+### Storage growth
+
+`party.signatureImages` is append-only and, in principle, unbounded —
+`probate-guardian-data-model.csv`'s row-count conventions
+(`collection_min`/`collection_max`/`initial_item_count`) assume a bounded
+or at least well-understood shape, which this collection doesn't have by
+default. Growth in practice is naturally slow (a person's signature changes
+rarely), but the per-image size limits from 39-B (capped dimensions, capped
+file size) are what actually bound this, not a count limit on the array
+itself — capping the array length would risk deleting an entry an old
+filing still references, which the "never delete" requirement forbids.
+Confirm with the requester whether that's sufficient, or whether a hard cap
+on total per-party storage (not entry count) is wanted as a backstop.
+
+### Verification Plan (39-D)
+
+1. Unit tests — new file, e.g. `tests/unit/signature-stamp-history.spec.js`:
+   adding a new active stamp preserves old entries; a filing referencing an
+   old entry renders correctly after the party's active stamp changes
+   twice more; deleting is never exercised because there is no delete
+   path.
+2. A dedicated e2e test for the export/import fix — new file, e.g.
+   `tests/e2e/signature-stamp-portability.spec.ts`: a filing with a stamp
+   reference, run through `buildSingleWardExportBlob()` and re-imported
+   into a fresh case file, must still render its signature correctly —
+   this is the regression the reference-based design would otherwise
+   introduce.
+3. `probate-guardian-data-model.csv` update for `caseFile.parties[]`'s full
+   expansion (per the Design section above), `party.signatureImages` and
+   its sub-fields (`id`, `imageData`, `capturedAt`, `active` each need
+   their own row, not one blanket collection row, per this project's
+   existing no-wildcard-fields rule), and each filing's new
+   `signatureImageRef` compound field.
+4. Add both new test files to `TEST-INDEX.md`.
+
+---
+
+## 39-E: Print Preview Missing-Signature Navigation
+
+If a signature card is left incomplete (an applied-but-incomplete "/s/" or
+Stamp choice — see 39-B's validation rule), Print Preview's blocked panel
+must tell the filer where to fix it, with a working jump-to-card link, not
+just prose.
+
+**The resolution mechanism already exists; the wiring into Print Preview
+does not.** Checked directly against `output-preflight.js`: its
+`structuredIssues` do *not* carry route/field-path for ordinary validator
+messages — a plain string from `validatePlanX()` normalizes to a generic
+`'validation.legacy-unmapped'` code with no navigation target at all. The
+real resolution happens in a separate module,
+`validation-adapter.js`'s `adaptValidationErrors(rawErrors, filingType)`,
+which parses each message string into `{route, path, section, label}` via
+the same priority-ordered matching this project already uses for every
+filing type's field-level guidance (`section-status.js`'s
+`renderLocalSectionGuidance()` calls it this way today, rendering a
+`data-form-action="jump-to-field"` button per resolved issue, wired to
+`focusFieldByPath(route, fieldPath)` for cross-route navigate-then-focus).
+`pdf-preview.js`'s `blockedPanelHTML()`, by contrast, currently receives
+only flat message strings (already stripped of anything structured by an
+upstream `.map(issue => issue.message)`) and does its own separate,
+simpler prefix-split grouping — it never calls `adaptValidationErrors()` at
+all today. Rearchitecting the whole preflight pipeline to carry structured
+issues end-to-end would be a much larger, unrelated change touching every
+filing type's validator; the proportionate fix is to call the existing
+resolver from the existing panel, not replace the resolver.
+
+### Implementation Plan (39-E)
+
+1. Pass the filing type (and the original message strings, not
+   pre-extracted ones) into `blockedPanelHTML()`, and call
+   `adaptValidationErrors(messages, filingType)` there — the same call
+   `renderLocalSectionGuidance()` already makes — instead of the current
+   ad hoc prefix-split grouping.
+2. Add new routing branches to `validation-adapter.js` for 39-B's new
+   signature-state error messages (e.g., an incomplete "/s/" or incomplete
+   Stamp choice) — these are new message text with no existing branch, not
+   something the resolver already handles for free.
+3. Render each resolved issue as a `data-form-action="jump-to-field"`
+   button carrying its `route`/`path`, matching
+   `renderLocalSectionGuidance()`'s existing markup.
+4. Confirm the existing global `data-form-action` click delegation (already
+   used throughout the app) picks these up with no new listener needed.
+5. Verify cross-route navigation works from Print Preview specifically
+   (Print Preview is its own route; confirm `focusFieldByPath` correctly
+   navigates away from it and back to the form).
+
+### Verification Plan (39-E)
+
+E2e test — new file, e.g. `tests/e2e/print-preview-signature-jump.spec.ts`:
+block a filing on an incomplete signature card, open Print Preview, click
+its jump-to link, confirm the app navigates to the correct form route and
+focuses the correct field. Not a data-model change — no
+`probate-guardian-data-model.csv` update needed for 39-E. Add the new test
+file to `TEST-INDEX.md`.
+
+### Status: landed and verified
+
+Implemented as scoped: `pdf-preview.js`'s `blockedPanelHTML()` now calls
+`adaptValidationErrors(messages, D.inventoryType)` instead of its own ad hoc
+prefix-split grouping, keeping the exact same visual grouping/heading
+behavior (same "first token of section" key, same collapsed single-item
+vs. nested-list layout) but with each item now carrying the resolver's own
+`route`/`path`. Item 2 of the plan (new `validation-adapter.js` routing
+branches for 39-B's tri-state messages) turned out to already be done —
+the 39-C completion pass fixed exactly this gap across every
+`checkSignatureState()` call site in the codebase (see 39-C's own findings
+above). `D.inventoryType` (already set on every ward at creation) was
+enough to supply the filing type — no signature change to `mountPdfPreview()`
+itself was needed, since `D` was already passed in.
+
+- **A real, cross-route-specific bug found and fixed, not present in the
+  reused mechanism's original single-route use.** `renderLocalSectionGuidance()`'s
+  existing jump button and `focusFieldByPath()`'s own `findTarget()` both
+  use the attribute name `data-field-path` — the button carries the
+  target's path under that name, and `findTarget()` also checks
+  `[data-field-path=...]` as one way to locate the real field. This never
+  misfired for `renderLocalSectionGuidance()` only because that guidance is
+  always local to the very page the field is already on, so
+  `querySelector` finds the real field first in DOM order. Print Preview's
+  jump links are inherently cross-route (the field is never in the current
+  DOM), so the button became the *only* match and got mistaken for its own
+  target — confirmed live: clicking it focused the button itself and never
+  navigated anywhere. Fixed by giving Print Preview's own button a
+  non-colliding attribute, `data-jump-path`, and teaching the one shared
+  `jump-to-field` click handler (`form-events.js`) to prefer it, falling
+  back to `data-field-path` for `renderLocalSectionGuidance()`'s unchanged,
+  already-tested button — zero behavior change to the existing mechanism,
+  confirmed via the existing `form-entry-ux.spec.ts`/`navigation-status.contract.spec.ts`
+  tests that depend on its exact current attribute shape.
+- Two new e2e tests in `tests/e2e/print-preview-signature-jump.spec.ts`:
+  Plan Simplified's Guardian card (the 39-B pilot's own scalar/collection-row
+  shape) and Guardian Inventory's Preparer card (proving the different
+  section-embedded `roleLabel: ''` message shape 39-C's Guardian Inventory
+  rollout introduced resolves correctly too). Both pass. Full unit suite
+  (447 tests) and the broader `pdf-preview-viewer.spec.ts`/
+  `form-entry-ux.spec.ts`/`navigation-status.contract.spec.ts`/
+  `signature-capture.contract.spec.ts` regression re-run clean.
+
+---
+
+## Related, Out-of-Scope Work
+
+- DOCX export formatting fidelity (`src/core/docx/docx-engine.js`) came up
+  in this same conversation as a known weak point relative to the PDF
+  engine's output — since superseded by an actual decision to deprecate
+  and remove DOCX export entirely, per `MILESTONE-40-PROPOSAL.md`. No
+  fidelity work is needed for a feature being removed.
+- **4-digit party PIN gating signature-stamp creation/use** was raised
+  during this same conversation but is deliberately not part of this
+  document — it is a general party-record security control, not specific to
+  PDF annotation or signature capture. Split out to
+  `MILESTONE-40-PROPOSAL.md`.
+
+## Implementation Gate
+
+This is a coordination document across five sub-milestones, not one
+executable unit — authorizing it does not authorize all five at once. Each
+gate below is independent; clearing an earlier one is not a prerequisite
+for authorizing a later one where no dependency is stated in "Recommended
+Order and Dependencies."
+
+- **39-A**'s development-only spike is done and landed (see Status above).
+  A full rollout beyond the current toolbar/persistence mechanism — wider
+  filing-type coverage, editable-annotation rehydration if that's wanted,
+  the storage-size question flagged in "Persistence design" — needs its own
+  authorization; the spike itself does not imply that follow-on scope.
+- **39-B**'s development-only spike is done and landed on Plan Simplified's
+  Guardian role (see Status above). The reusable modules it produced
+  (`signature-state.js`, `signature-pad.js`, `signature-state-control.js`)
+  are what 39-C will wire into every other role/filing type — that rollout,
+  and the real Upload-background-transparency question flagged in "Real
+  limitation found building this," each need their own authorization; the
+  spike does not imply either.
+- **39-C**: both authorization gates cleared — the Inventory Gate
+  (complete, confirmed table, zero "not yet confirmed" cells, plus one
+  previously-missed card found and added) and the Upload
+  background-transparency gate (resolved: luminance-threshold background
+  removal). **Rollout complete and verified for every filing type in the
+  inventory table — Plan Annual, Plan Initial, Plan Minor, Simplified
+  Accounting, Annual/Final/Trust Accounting, and Guardian Inventory; the
+  Upload luminance-threshold fix itself is also landed and verified** (see
+  "Recommended sequencing" and "Verification Plan (39-C)" above). 39-C has
+  no remaining scope.
+- **39-D** may not be authorized until the compound party+entry reference
+  design, the single-ward export/import fix (confirmed necessary — see
+  Design above), and the storage-growth question are resolved with the
+  requester.
+- **39-E**: landed and verified — depended on 39-B's signature-state error
+  messages and 39-C's `validation-adapter.js` routing branches, both of
+  which now exist for every filing type (see "39-E: Print Preview
+  Missing-Signature Navigation" above and its own "Status" for what
+  landed). 39-E has no remaining scope.
+
+---
+
+<a id="milestone-40-proposal-md"></a>
+
+# Archive: MILESTONE-40-PROPOSAL.md
+
+# Milestone 40: Delivery Index
+
+## Status
+
+**Planning index only — no delivery is authorized.** The former single
+draft has been split into independently reviewed and approved deliveries,
+the same pattern used for Milestone 38. Approval or implementation of one
+does not authorize another. 40C was itself split in two on 2026-09-12
+(both halves documented inside `MILESTONE-40C-PROPOSAL.md`) after a
+task-by-task review found it bundled a data-model expansion and a
+one-predicate validation bug behind a single gate.
+
+| Delivery | Scope | Status | Proposal |
+| --- | --- | --- | --- |
+| 40A | Deprecate and remove DOCX export, including its test surface | **Landed 2026-09-13**: engine deleted, all seven feature entry points across three dispatch conventions removed, plus a capability layer the proposal had not enumerated (`filing-descriptor` `capabilities.docx` on all nine descriptors, the `FilingCapabilities` typedef, and `'docx'` in `issue-registry`'s channel list). Two proposal corrections: `docx-extract.ts` is deleted rather than kept (both its importers used it only for their own DOCX assertion blocks), and Milestone 40E's DOCX fix is deleted along with the engine | `MILESTONE-40A-PROPOSAL.md` |
+| 40B | 4-digit PIN per party for signature stamps | **Withdrawn** — requester chose not to build it (deterrent-only value judged not worth it) | `MILESTONE-40B-PROPOSAL.md` |
+| 40C-1 | County establishment, hydration, and carryover (Tasks 40C-A, 40C-F, 40C-G2) — the only delivery touching persisted data | **Landed 2026-09-13**: all 8 items of 40C-A plus 40C-F and 40C-G2, using the unknown-circuit option (a) resolved 2026-09-12. Every Pinellas default removed (the 17 enumerated sites plus 7 factories, 2 Excel importers, 7 pdf-models, `pdf-engine.js` and all 3 layered `circuit-lookup.js` fallbacks); new `core/navigation/ward-county.js` holds the lifecycle; `verify:data-model` clean at 897 rows with `caseFile.parties[]` expanded. Three proposal corrections: the carryover attorney defect is in **three** functions not one, the Cover hook needed **all three** form write paths (hooking one covered only six of nine filing types), and seven of the eight legacy Pinellas sites were shadowed dead code | `MILESTONE-40C-PROPOSAL.md` |
+| 40C-2 | Form-entry, readiness, and validation corrections (Tasks 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H) — no persisted-data change | **Landed 2026-09-12**: all six tasks. 40C-C was a live data-corruption bug — date fields are `type="text"` holding MM/DD/YYYY, so the From/To pairing compared month-before-year and silently overwrote an endpoint on any period not starting January 1; the pairing is deleted and `checkDateOrder()` is the single reporter, now covering Guardian's D-4 bond period too. 40C-D reduced to test-only (premise does not reproduce). 40C-E closed two sidebar-vs-export disagreements; 40C-H one predicate plus a missing readiness condition | `MILESTONE-40C-PROPOSAL.md` |
+| 40D | Move theme/UI-only preferences from `.sav` app state to `localStorage` | **Landed 2026-09-13**: new `core/theme-preference.js` owns the key/enum/seed; `prepaint.js` reads `localStorage` before `matchMedia`; the post-`.sav`-load re-apply that *was* the flash is gone; `case-file.js` no longer serializes `theme`. One fix beyond the checklist — `applyTheme()` set only `data-theme` while `prepaint.js` set both, so toggling left Bootstrap's `data-bs-theme` on the load-time palette. Decision 6's inventory found three further per-device candidates (`walkthroughCompleted`, `firstLaunchSeen`, `continuePromptShown`) and deliberately did **not** migrate them: each changes onboarding behaviour and needs its own decision | `MILESTONE-40D-PROPOSAL.md` |
+| 40E | Fix PDF table cells overflowing instead of wrapping multi-line addresses | **Landed 2026-09-12**: `measureCell()` array branch plus both certificate-of-service call sites. Two additions the proposal had not anticipated — `docx-engine.js` reads the same model and would have rendered the array bare-comma-joined, and Simplified Accounting dropped `line4` in its recipient *filter* as well as its join | `MILESTONE-40E-PROPOSAL.md` |
+| 40F | Unify the duplicate save/autosave/export pipeline (`legacy-app.js` vs. `case-file.js`), fix its false "Last backup" indicator bugs, and remove the inert Tauri desktop scaffolding (filesystem ward-backup, OS-keychain "remember password") | **Landed in full 2026-09-13** (`9ac92dd`, `4ad99c1`, `619cfd8`, `c0165c5`): boot `ReferenceError` fixed, one save clock, failure escalation centralized, Tauri scaffolding removed, and the legacy duplicates deleted (net −640 lines) once 40G unblocked Step 4. `c0165c5` applied the same treatment to the router's shadowed pair (−111 lines), which had silently killed the sidebar accordion's reset-on-navigate; 45 further shadowed pairs are catalogued there as a follow-up task | `MILESTONE-40F-PROPOSAL.md` |
+| 40G | Fix the dashboard feature-bridge boot crash (`window.createFeatureBridge is not a function` on every load) | **Landed 2026-09-13** (`c05e4ad`) via option (a): `initApp()` now runs from `main.js` after module evaluation. This also unblocks 40F Steps 4 and 6 | `MILESTONE-40G-PROPOSAL.md` |
+| 40H | Ten independent post-deploy fixes: dashboard guardian-validation crash guard, Safe Deposit Box conditional data loss, D-3 `fieldset`/`legend` accessibility gap, a malformed `<summary>` on the four Plan types' Print Preview readiness panel, a preparer-authorization note above every signature-page perjury statement, the same dangling-global crash pattern in all four Plan types' readiness routine, two free-text sanitization bugs (title-casing "of"/"and"/"the", apostrophe stripping), three schedule totals (Annual Accounting's E/F-1/F-2) that go stale after first render, a "New Filing from Existing" ward-selector default plus same-family carryover gap (starting balance, cert recipients, and a corrected confirmation message), and a second, symmetric carryover gap dropping the attorney's bar number/phone/address on Plan/Accounting → Guardian Inventory conversions | **Landed 2026-09-13**: all ten tasks, one commit each, every fix's test confirmed failing against the pre-fix code first. Full regression clean beyond the pre-existing, already-catalogued 9-failure baseline (`pdf-preview-viewer.spec.ts`, `schedule-card-layout.spec.ts`, `security.spec.ts`) — none of the ten touched. One proposal correction: Task 40H-A shipped as `null` rather than the proposal's literal "empty error array," which would have fabricated a false "Ready to file" dashboard reading instead of just fixing the console warning. Still carries the **open-items register** for all of Milestone 40: 6 items, including 9 pre-existing full-suite e2e failures and 45 catalogued shadowed function pairs | `MILESTONE-40H-PROPOSAL.md` |
+| 40I | Fix multi-column card-row label misalignment (a hand-rolled field's label sits lower than its primitive-built row-mates) — a single `forms.css` rule deletion, pinned by a new regression assertion | **Landed 2026-09-13**: reported bug (Schedule B-4 Category) confirmed fixed, spot-checked at two more of the 13 sites across two more filing types. Resurrects `MILESTONE-34-1E`'s archived item 19. Three corrections found by running the fix rather than shipping assumptions: the pre-existing pinned test's own `'0px'` expectation was wrong (a truly-absent `min-height` computes to `'auto'`); the planned Decision 2 test subject doesn't actually wrap to two lines at the spec's viewport (replaced with a direct pin on the real bug site); and a narrower, different-shaped residual was found and deliberately left as follow-up scope — a row where both fields are hand-rolled (never mismatched by this bug) can still misalign ~17px in a ~500–620px viewport band if one label wraps to two lines and its sibling doesn't, which the deleted rule incidentally also covered as a side effect | `MILESTONE-40I-PROPOSAL.md` |
+
+## How These Ended Up Together
+
+40A and 40B surfaced during `MILESTONE-39-PROPOSAL.md`'s scoping
+conversation but belong to neither that milestone's scope nor each
+other's: DOCX removal is a deprecation decision, not a PDF/signature
+feature, and the party PIN is a general security control, not a
+PDF/signature feature either. 40C records the validated browser QA/UX
+findings reviewed after Milestone 37. 40D and 40E each surfaced
+independently while reviewing unrelated work (the portfolio UI starter
+kit, and a live PDF export bug report). 40F surfaced from a requested
+review of the autosave feature, which found two complete, independent
+implementations of the same save pipeline silently shadowing each other.
+40G surfaced on 2026-09-13 from a browser verification session that was
+only meant to confirm two UI claims for 40C, and instead found two
+uncaught exceptions firing on every production page load — one of them
+40F's own defect, crashing live. 40H surfaced from a separate, broader
+exploratory QA pass run the same night — most of its findings turned out
+to already be fixed (the two boot errors, re-confirmed against
+`deployment.json` to have fired on the prior deployed commit) or out of
+scope for a mechanical fix (recorded as open decisions instead), leaving
+three confirmed defects worth bundling on their own. A same-day test-data
+generation pass — completing one filing of every type end to end with
+realistic data — then surfaced four more independent findings (Tasks 40H-F
+through 40H-I), each re-verified against the code rather than taken on the
+report's word before being folded into 40H rather than opened as a
+separate delivery, since they share 40H's exact character: small,
+independent, non-persisted-data fixes. 40I surfaced from a
+live screenshot flagged directly during this session — a card field's
+label rendering lower than its row-mates — which traced back through the
+current `forms.css` to a mechanism distinct from, but in the same
+territory as, an already-archived and partially-addressed item
+(`MILESTONE-34-1E` item 19). Kept as its own delivery rather than folded
+into 40H because its fix and blast radius are unrelated to any of 40H's
+four tasks.
+
+## Implementation Order and Shared Files
+
+**Correction (review pass 2026-09-12):** this section previously stated
+"None of the six depends on any other; there is no required
+implementation order between them." That is wrong — a task-by-task review
+found four places where two deliveries edit the same file, and in two of
+them the order changes how much work the second one is. No delivery
+*blocks* another, so any of them can still be approved and implemented
+alone; but whoever implements second needs to expect these.
+
+A fifth entry was listed here in error and has been removed:
+`tests/unit/plan-readiness-county.spec.js` is edited by **40A only** (to
+drop its `vi.mock` of the deleted DOCX engine). It passes `county`
+explicitly into every case and already asserts that a blank county is
+treated as non-local, so 40C's county work does not touch it.
+
+| Shared file | Deliveries | Interaction | Recommended order |
+| --- | --- | --- | --- |
+| ~~`src/core/docx/docx-engine.js`~~ | 40A, **40C-1**, and — unlisted at the time — 40E | 40C Task 40C-A item 6 removed the Pinellas caption fallback at `docx-engine.js:350`, and item 7 its `circuit-lookup` import at `:9`; 40A **deleted the whole file**. | **Resolved — 40A landed 2026-09-13 and deleted the file**, so 40C-1's docx half is moot. **This row was incomplete and cost work:** it named only 40A and 40C-1, so 40E — which had to fix this engine's table-cell rendering because it consumes the same `block.rows` model as the PDF engine — had no signal the file was slated for deletion, and that fix landed one commit before being deleted. Any future row here should list *every* delivery that touches the file, not only those whose own proposal text mentions it. |
+| `buildCaseFileBlob()`'s `appStateBlob` — `src/core/persistence/case-file.js:188-197` | 40D, 40F | 40D stops serializing `theme` (`:189`); 40F changes the `lastExportAt` read (`:195`). Two lines apart in one object literal. Separately, 40F deletes `legacy-app.js`'s dead duplicate `buildCaseFileBlob()` (`:3066`), which carries its own `theme` line. | **40F first** — it removes one of 40D's seven theme sites for free. Otherwise 40D must edit both copies to avoid leaving one migrated and one not. |
+| `src/core/pdf/pdf-engine.js` | **40C-1**, ~~40E~~ | 40C-1 edits the county caption fallback (`:166`); 40E added an array branch to `measureCell()` (`:1143`). Different functions, ~1000 lines apart. | **Resolved — 40E landed 2026-09-12.** 40C-1 now has this file to itself. Its `measureCell()` change sits well below the caption fallback, so the line numbers around `:166` are unmoved. |
+| `tests/unit/content-corrections.spec.js` | **40C-1**, ~~40C-2~~ | The two halves of the former Task 40C-G: the D4 label (40C-2) and the eligibility-modal copy (40C-1). | **Resolved — 40C-2 landed 2026-09-12 without touching this file.** 40C-G1 was a sidebar nav label with no assertion here, so 40C-1 has the spec to itself. |
+
+Only two orderings actually save work: **40A before 40C-1** and **40F
+before 40D**. Both are satisfiable together, and the sequence below does
+so while still starting with the smallest, most isolated deliveries:
+
+**40F → 40G → 40E → 40C-2 → 40D → 40A → 40C-1.**
+
+**Revised 2026-09-13:** 40F moves to the front. It is no longer a
+cosmetic-indicator cleanup — its defect crashes on every production page
+load and takes the unsaved-changes warning down with it, so it outranks
+everything else here on severity regardless of size. 40G follows because
+it is the second half of the same boot-time failure and is cheapest to
+verify while the startup path is already under the microscope. If 40G
+takes option (a) (moving `initApp()` module-side), 40F must land first
+anyway — its deletions shrink what a startup-ordering change has to be
+regression-tested against.
+
+That supersedes the earlier `40E → 40D → 40A → 40C → 40F` suggestion,
+which violated both work-saving orderings (it put 40D before 40F and 40C
+before 40A) and predates the 40C split. 40C-2 sits early because it is
+self-contained, touches no persisted data, and shares only one test file
+with anything else; 40C-1 sits last because it is the largest delivery and
+benefits from 40A having already removed the DOCX engine it would
+otherwise have to edit.
+
+If the deliveries are implemented one at a time across separate sessions —
+the likelier case — the shared-file table above is what matters and this
+global sequence does not.
+
+## Approval
+
+Each proposal is self-contained: its own Status, Goal, Background,
+concrete implementation steps, Acceptance Criteria, and Verification
+plan. Before implementing any one, obtain explicit approval naming that
+delivery, re-check its assumptions against current `master` (several
+reference exact file/line locations that may have moved), select tests
+through `TEST-INDEX.md`, and follow `AGENTS.md`'s commit and regression
+policy. 40B is withdrawn and will not be scoped further.
+
+---
+
+<a id="milestone-40a-proposal-md"></a>
+
+# Archive: MILESTONE-40A-PROPOSAL.md
+
+# Milestone 40A: Deprecate and Remove DOCX Export
+
+## Status
+
+**Landed 2026-09-13.** DOCX export is gone: the engine, all seven feature
+entry points across three dispatch conventions, the capability declarations,
+and the test surface. Two decisions and three corrections to this proposal are
+recorded below.
+
+### Decisions taken
+
+**Item 6 — `filing-matrix.ts`'s `exports.docx`: dropped the key** rather than
+pinning it false. No consumer read it (checked all five importers:
+`filing-capability-matrix.spec.ts` reads `exports.xlsx` and otherwise iterates
+`Object.entries(entry.exports)` generically, so it adapts to the smaller shape
+on its own; `output-semantics.artifact.spec.ts` reads only `exports.xlsx`; the
+other three never touch `exports`). A permanently-false flag would imply the
+format is merely disabled when the app no longer has the concept.
+
+**Item 7 — the `docx-xlsx-export` TEST-INDEX category is renamed
+`xlsx-export`, not split.** Nothing remains on the DOCX side to split off.
+
+### Correction 1: the runtime surface was larger than enumerated — a whole capability layer
+
+The seven-`print.js` enumeration was accurate and complete for the *export
+path*. But DOCX was also declared as a **product capability** in four places
+this proposal did not list, none reachable from a "Save as Word" grep:
+
+- `src/core/filing/filing-descriptor.js` — `capabilities: { pdf, docx, excel }`
+  on **all nine descriptors**.
+- `src/core/types/filing.js` — the `FilingCapabilities` typedef's `docx`
+  property.
+- `src/core/validation/issue-registry.js` — `'docx'` in the `ALL` channel list
+  every issue's `capabilities` array is built from.
+- `src/core/filing/output-preflight.js` and `src/core/pdf/pdf-preview.js` —
+  comments describing DOCX as a live consumer of the shared export boundary.
+
+Confirmed safe to remove rather than merely inert: **nothing reads
+`capabilities.docx`**, and no caller ever passes `capability: 'docx'` to
+`authorizeFilingOutput()` (the only literal in use is `'preview'`). So these
+were declarations advertising a format, not logic gating one — but leaving them
+would have left the app claiming a capability it no longer has.
+
+### Correction 2: item 3 inverts — `docx-extract.ts` is deleted, not kept
+
+This proposal says to keep `tests/e2e/support/docx-extract.ts` because
+`output-semantics.artifact.spec.ts` and `filing-identity.contract.spec.ts`
+import it and are "neither DOCX-specific."
+
+Those two specs are not DOCX-specific *as wholes*, but the thing they import
+`extractDocx` **for** is: each has a dedicated DOCX assertion block
+(output-semantics' "2. DOCX Semantic Assertions" section, filing-identity's
+"Surface 5"). Both blocks download a `.docx`, unzip it and assert on
+`word/document.xml` and `docProps/core.xml` — there is nothing left for them to
+extract once the format is gone. Those blocks are removed, along with each
+spec's `saveWordValue` config field (nine entries each), `wordActionSelector`,
+and the DOCX half of the Final/Trust "must not be emitted as an Annual
+Accounting" check. `extractDocx` then has no importer, so the helper is deleted.
+`xlsx-extract.ts`'s comment referencing it was updated — the proposal was right
+that it only mentions the file rather than importing it.
+
+### Correction 3: Milestone 40E's DOCX fix is deleted by this milestone
+
+Milestone 40E (landed 2026-09-12, one commit earlier) fixed `docx-engine.js` to
+render a multi-line address cell as one paragraph per component, because it
+consumed the same `block.rows` model the PDF engine does. That fix, and the two
+unit tests covering it, are removed here along with the engine.
+
+That was avoidable and worth recording: this proposal's own shared-file table in
+`MILESTONE-40-PROPOSAL.md` lists `docx-engine.js` under **40A and 40C-1 only**,
+so a 40E implementer following the table had no signal that the file was slated
+for deletion. The table is now corrected. The PDF half of 40E stands unchanged
+and is what actually fixed the reported overflow.
+
+## Goal
+
+Remove the "Save as Word" DOCX export path entirely — code, UI entry
+points, and its real test surface — rather than keep it as a maintained
+fallback format.
+
+## Background
+
+`src/core/docx/docx-engine.js` and its "Save as Word" export path are
+deprecated by requester decision. This supersedes the DOCX-related notes in
+`MILESTONE-39-PROPOSAL.md` (39-B's signature-image-in-DOCX fallback, and
+the "Related, Out-of-Scope Work" DOCX-fidelity item): once this milestone
+removes the feature, there's nothing left to design a fallback for. Until
+this lands, DOCX export keeps working exactly as it does today, including
+39-B's interim text-only fallback for signature stamps.
+
+### Runtime surface, enumerated (review pass 2026-09-12)
+
+"Every 'Save as Word' UI entry point across all nine filing types" was too
+loose to execute against — the real surface is **seven** feature modules
+(not nine: `annual-accounting` serves annual, final, and trust) reached
+through **three different dispatch conventions**. Confirmed exhaustively;
+treat as a minimum checklist, since line numbers will shift:
+
+- **Seven `print.js` importers**, each
+  `import { generateCourtFormDocx, saveFinalizedDocx } from '.../docx-engine.js'`
+  plus that module's own `doSaveDocx()` implementation:
+  `annual-accounting/print.js:17`, `guardian-inventory/print.js:21`,
+  `plan-annual/print.js:21`, `plan-initial/print.js:21`,
+  `plan-minor/print.js:18`, `plan-simplified/print.js:21`,
+  `simplified-accounting/print.js:15`.
+- **Seven "Save as Word" buttons**, in those same `print.js` files:
+  `annual-accounting:46`, `guardian-inventory:56`, `plan-annual:125`,
+  `plan-initial:116`, `plan-minor:106`, `plan-simplified:109`,
+  `simplified-accounting:43`.
+- **Dispatch convention 1 — feature-local action names**, four
+  `case 'save-word': _printModule.doSaveDocx(); break;` handlers:
+  `annual-accounting/index.js:302`, `guardian-inventory/index.js:160`,
+  `plan-simplified/index.js:54`, `simplified-accounting/index.js:109`
+  (buttons use `data-annual-action` / `data-inventory-action` /
+  `data-plan-simplified-action` / `data-simplified-action`).
+- **Dispatch convention 2 — global `data-form-action`**, three cases in
+  `src/form-events.js:68,70,72` (`save-word-plan-annual`,
+  `save-word-plan-initial`, `save-word-plan-minor`).
+- **Dispatch convention 3 — `window.doSaveWordPlanX` globals** installed
+  for convention 2 to call: `plan-annual/index.js:56`,
+  `plan-initial/index.js:54`, `plan-minor/index.js:53`, each with an
+  adjacent explanatory comment (`:50`, `:48`, `:48`) that also needs
+  updating, not just the assignment deleted.
+- **User-facing prose, not just a control:**
+  `guardian-inventory/print.js:53` reads "use **Save as Word** (editable
+  copy), **Save as PDF**, **Save as Excel**, or **Print**." That sentence
+  must be rewritten, not have a button removed from it. Check the other
+  six `print.js` headers for the same pattern before assuming this is the
+  only one.
+
+### Test surface, corrected (review pass 2026-09-12)
+
+The earlier three-item list was substantially incomplete. Confirmed by
+direct grep, the real surface is eleven files in four categories:
+
+- **Delete outright (DOCX-specific):** `tests/unit/docx-engine.spec.js`.
+- **Breaks at load time if `docx-engine.js` is deleted — five unit specs
+  that `vi.mock` the module path.** Vitest fails to resolve a mocked
+  module that no longer exists, so each of these must have its mock
+  removed in the same change, not afterward:
+  `plan-annual-parity.spec.js:55`, `plan-initial-parity.spec.js:51`,
+  `plan-minor-parity.spec.js:37`, `plan-simplified-parity.spec.js:39`,
+  and `plan-readiness-county.spec.js:25`. **Correction 2026-09-12:** an
+  earlier version of this note claimed `plan-readiness-county.spec.js` is
+  also modified by Milestone 40C. It is not — that spec passes `county`
+  explicitly into every case (`:48-49`) and already asserts "a blank
+  county is treated as non-local, not defaulted to Sixth Circuit" (`:70`),
+  so 40C's county work leaves it alone. **40A is the only delivery that
+  edits this file**, and only to drop the mock.
+- **A whole e2e test to delete, not update:**
+  `tests/e2e/guardian-inventory-mount.spec.ts:299-325`, "a fully completed
+  filing exports a valid editable Word document (.docx)" — it downloads
+  the file, unzips it, and asserts on `word/document.xml`. There is
+  nothing left for it to assert once the feature is gone.
+- **Shared capability matrix:** `tests/e2e/support/filing-matrix.ts`
+  declares `exports: { pdf: boolean; docx: boolean; xlsx: boolean }`
+  (`:38`) with `docx: true` on all nine filing-type entries (`:80-128`),
+  plus explanatory comments at `:7`, `:28`, `:69-70`, and `:166`. Decide
+  deliberately whether to drop the `docx` key from the type and every
+  entry, or keep the key and set it false — dropping it is cleaner but
+  touches every consumer of the matrix, so check those first.
+- **Keep, don't delete:** `tests/e2e/support/docx-extract.ts` is imported
+  by `output-semantics.artifact.spec.ts` and
+  `filing-identity.contract.spec.ts` (`import { extractDocx } from
+  './support/docx-extract'`), neither of which is DOCX-specific. Extract
+  whatever cross-cutting piece those two actually need.
+  (`xlsx-extract.ts` only *mentions* it in a comment — "mirroring
+  tests/e2e/support/docx-extract.ts" — it does not import it; an earlier
+  version of this proposal listed it as a third importer in error.)
+- **`TEST-INDEX.md` category:** `docx-xlsx-export` currently bundles DOCX
+  and Excel export coverage together.
+
+## Decisions / Implementation
+
+1. Delete `src/core/docx/docx-engine.js` and every "Save as Word" UI entry
+   point (buttons, menu items) across all nine filing types, plus their
+   e2e coverage — not just the generation code.
+2. Delete `docx-engine.spec.js`.
+3. Keep `docx-extract.ts`. Extract whatever cross-cutting piece
+   `output-semantics.artifact.spec.ts` and `filing-identity.contract.spec.ts`
+   actually need from it, rather than deleting the file wholesale and
+   breaking two unrelated specs.
+4. **Remove the `vi.mock('.../docx-engine.js', ...)` line from all five
+   unit specs listed above in the same commit as the deletion** — not as
+   follow-up cleanup. A `vi.mock` pointing at a deleted path fails at
+   module resolution, so leaving these until "after" means the unit suite
+   is red in between. Confirm each spec still passes on its own merits
+   once the mock is gone (they mock it only to keep DOCX out of a
+   readiness/parity assertion, so removing the mock should be inert — but
+   verify rather than assume, especially `plan-readiness-county.spec.js`,
+   which Milestone 40C also edits).
+5. Delete `tests/e2e/guardian-inventory-mount.spec.ts:299-325` (the
+   `.docx` export test) outright.
+6. Resolve `tests/e2e/support/filing-matrix.ts`'s `exports.docx`
+   capability field — drop the key from the type and all nine entries, or
+   set it false — and update its four explanatory comments. Check every
+   consumer of the matrix before choosing, since dropping the key changes
+   the shape they destructure.
+7. Split or rename the `docx-xlsx-export` `TEST-INDEX.md` category so
+   Excel-export coverage isn't described as covering DOCX after DOCX no
+   longer exists.
+8. Sweep for any other reference to `docx-engine.js` or "Save as Word"
+   (help text, onboarding copy, README-style docs) and remove or correct
+   it — don't leave a dangling mention of a feature that no longer exists.
+   `pdf-engine.js:759`'s comment ("matching docx-engine.js:447") is one
+   confirmed instance: a code comment cross-referencing a file that will
+   no longer exist.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Any filing type's Preview & Export page | No "Save as Word" button or menu entry remains. |
+| `docx-engine.js` import anywhere in `src/` | None found. |
+| Each of the seven feature `print.js` files | No `generateCourtFormDocx`/`saveFinalizedDocx` import and no `doSaveDocx()` implementation remains. |
+| All three dispatch conventions | No `case 'save-word'`, no `save-word-plan-*` `data-form-action` case, and no `window.doSaveWordPlanX` global remains. |
+| `guardian-inventory/print.js`'s preview header sentence | Reads naturally without "Save as Word" — not a sentence with a gap or dangling comma. |
+| `npm run test:unit` immediately after the deletion commit | Green. Specifically, none of the five former `vi.mock` specs fails at module resolution. |
+| `tests/e2e/support/filing-matrix.ts` | No entry advertises a DOCX export capability that no longer exists; every consumer still type-checks (`npm run check:types`). |
+| `output-semantics.artifact.spec.ts`, `filing-identity.contract.spec.ts` | Still pass, unaffected by the `docx-extract.ts` change. |
+| `TEST-INDEX.md` | No row describes DOCX-specific coverage as still active; the `docx-xlsx-export` category (or its replacement) accurately scopes to Excel only. |
+| Full grep for "Word" / "docx" in user-facing copy | No stale reference to a removed export option. |
+
+## Verification
+
+Run `npm run test:unit` first and in full — the five `vi.mock` specs make
+the unit suite the most likely thing to break, and it's fast enough to
+gate on. Then run the e2e set touched by removal (whatever remains of the
+`docx-xlsx-export` category, `filing-identity.contract.spec.ts`,
+`output-semantics.artifact.spec.ts`, `guardian-inventory-mount.spec.ts`)
+plus `npm run check:types` for the `filing-matrix.ts` shape change, and a
+repo-wide grep for `docx-engine` and "Save as Word" to confirm no dangling
+reference remains. Update `TEST-INDEX.md` in the same commit as the
+test-file changes. This is a deletion-shaped change that touches eleven
+test files including two shared support helpers — recommend the full
+`npm test` regression before commit/push, per `AGENTS.md`.
+
+### What was actually run (2026-09-13)
+
+Followed as written, and the recommended full regression was run rather than
+skipped:
+
+- `npm run test:unit` first, as the gate: **492 passed**, down five with
+  `docx-engine.spec.js` deleted. None of the five former `vi.mock` specs failed
+  at module resolution, which was this milestone's most likely breakage.
+- `npm run check:types` clean, covering the `filing-matrix.ts` shape change
+  (`exports` losing a key) across all five of its importers.
+- A fail-fast e2e sweep of the six most-affected specs — `output-semantics`,
+  `filing-identity`, `filing-capability-matrix`, `guardian-inventory-mount`,
+  `pdf-structure-tags`, `pdf-accessibility-and-signatures`: **48 passed**.
+- Then the full e2e suite (all 62 specs), per the recommendation above:
+  **385 passed, 6 skipped, 9 failed — and all 9 failures were confirmed
+  pre-existing on `master`**, not caused by this milestone. Verified by
+  stashing the entire 40A change set, re-running those three spec files
+  against untouched HEAD, and getting the identical nine failures; the work
+  was then restored and the diffstat compared line-for-line
+  (40 files, 200 insertions, 1818 deletions) to prove the round trip lost
+  nothing. The failures are `pdf-preview-viewer.spec.ts:114` (the same
+  "incomplete filing's embedded preview is blocked" test across seven filing
+  types), `schedule-card-layout.spec.ts:177`, and `security.spec.ts:53`.
+  They are recorded here because the full-suite recommendation is what
+  surfaced them, but they belong to no Milestone 40 delivery and are
+  **unfixed**.
+- Acceptance greps all clean: no `docx-engine` reference in `src/`, no
+  `generateCourtFormDocx`/`saveFinalizedDocx`/`doSaveDocx`, no `case
+  'save-word'`, no `save-word-plan-*`, no `window.doSaveWordPlanX`, and no
+  "Save as Word" anywhere in `src/`.
+
+Two intentional keeps, both checked rather than assumed:
+
+- **`AGENTS.md`'s `GD*.docx`** stays. That names the Clerk of Court's own
+  published Word audit guidelines — an external document set in the authority
+  hierarchy, not this app's export. The same file's review-checklist mention of
+  "DOCX/Excel export" *was* ours and is now "PDF/Excel export".
+- **`jszip` stays a devDependency.** `docx-extract.ts` was not its only
+  consumer: `xlsx-extract.ts`, `case-file.spec.js`, `xlsx-extract.spec.js`,
+  `backup-restore-sav.spec.ts` and `guardian-inventory-mount.spec.ts` all still
+  import it.
+
+`verify:data-model` was not required: no persisted field changed.
+`filing-descriptor.capabilities` is runtime-declarative and never serialized
+into a `.sav`.
+
+---
+
+<a id="milestone-40b-proposal-md"></a>
+
+# Archive: MILESTONE-40B-PROPOSAL.md
+
+# Milestone 40B: Party PIN for Signature Stamps
+
+## Status
+
+**Withdrawn — will not be implemented.** Presented as an explicit choice
+against dropping the feature entirely; the requester chose to drop it. The
+realistic threat model (a shared-session deterrent, not a real security
+boundary, since the file is already encrypted behind a master password —
+see below) was judged not worth building for. This delivery is closed; no
+further scoping or implementation should occur under 40B unless a future
+request reopens it with a materially different shape (e.g. a real
+second-factor control rather than a party attribute).
+
+## Goal
+
+Raised alongside `MILESTONE-39-PROPOSAL.md`'s 39-D (reusable, versioned
+per-party signature stamp): require a 4-digit PIN per party before a
+signature stamp can be created or reused.
+
+## Proposed Mechanic (pending the decisions below)
+
+- **Creating** a signature image for a party is mandatory-gated on that
+  party having a PIN. If the party has none yet, capturing their first
+  signature image (39-D's `party.signatureImages`) must also set one at
+  the same time — a party cannot end up with a stored signature image and
+  no PIN.
+- **Applying** a stored stamp to a new filing requires the PIN to be
+  entered at that moment, every time — not only at initial creation.
+
+## Why This Can't Be Scoped Further Yet: What the PIN Actually Protects Against
+
+This app already encrypts the whole case file behind a master password
+(`encryptJSON`, per `src/core/persistence/`). A 4-digit PIN (10,000
+possible values) stored anywhere inside that same encrypted payload adds
+essentially no protection against anyone who can already decrypt the
+file — they could read or patch the stored data directly regardless of the
+PIN check. The realistic threat model is narrower: a deterrent within an
+already-unlocked, shared session (for example, a firm's office where
+several staff share one unlocked device or browser tab), not a
+cryptographic control against a determined attacker with file access.
+
+If that deterrent-only purpose is correct, the PIN can be stored as a
+simple hash (not plaintext) for basic accident-resistance, and the UI copy
+must not imply a stronger guarantee than that. If a stronger guarantee is
+actually wanted, this is a materially different and larger feature than "a
+4-digit PIN" — likely a second authentication factor, not a party
+attribute — and should be scoped as such rather than retrofitted onto this
+shape.
+
+## Decision (Resolved)
+
+Presented to the requester as an explicit choice among: (1) build it as a
+shared-session deterrent only, hashed, with UI copy that makes no stronger
+claim; (2) scope a materially larger real authentication control instead;
+or (3) drop the feature. The requester chose to drop it — along with the
+three dependent implementation questions (PIN entry location, forgotten-PIN
+recovery, rate-limiting), which are now moot.
+
+## Next Step
+
+None. This delivery is closed.
+
+---
+
+<a id="milestone-40c-proposal-md"></a>
+
+# Archive: MILESTONE-40C-PROPOSAL.md
+
+# Milestone 40C: Validated Browser QA/UX Remediation
+
+## Status
+
+**Both deliveries have landed. 40C-2 on 2026-09-12; 40C-1 on 2026-09-13.**
+
+### 40C-1 — what landed
+
+All eight items of Task 40C-A, plus 40C-F and 40C-G2.
+
+- **Every Pinellas default is gone.** All 17 enumerated sites, plus the seven
+  blank-data factories, the two Excel importers, the seven per-feature
+  `pdf-model.js` files, `pdf-engine.js`, and all three layered `circuit-lookup.js`
+  fallbacks with their `legacy-app.js` duplicate. `docx-engine.js`'s half was
+  moot: Milestone 40A landed first and deleted the file, exactly as item 6
+  anticipated.
+- **New `src/core/navigation/ward-county.js`** holds the whole lifecycle —
+  normalize, establish from a Cover, hydrate a new filing, link a carryover
+  destination, the legacy unanimity backfill, and the merge-conflict guard. It is
+  deliberately not part of `syncIdentityField()`'s fan-out, per item 2: that
+  propagates an edit to every slot referencing the same Party, which for county
+  would rewrite sibling filings that were correctly filed under a different
+  county.
+- **`circuit-lookup.js` returns `null` / `''` / `null`** (the approved option
+  (a)). Callers draw an explicit `COUNTY NOT SELECTED — COURT CAPTION INCOMPLETE`
+  marker. That wording is deliberate: option (b)'s fill-in-the-blank caption was
+  rejected because it could pass for a real caption, so the marker is phrased so
+  it never could.
+- **`verify:data-model` clean at 897 rows** (was 880): `caseFile.parties[]`
+  expanded into 17 canonical rows, `common,D,county`'s note rewritten, and
+  `annual_accounting,D,attorney_county`'s blank initial value recorded.
+
+### Three corrections to this proposal, all found by implementing it
+
+**1. The carryover attorney defect is in THREE functions, not one.** This
+proposal states it was "verified and narrowed — the bug is in exactly one
+function, not the carryover layer generally," naming
+`carryOverFieldsForAccounting`. It is also in:
+
+- `carryOverFieldsForPlan` (same file), whose `attyName` chain put bare
+  `src.attorney` **second**, so a Guardian Inventory source reached the nested
+  object immediately whenever `attorneyForGuardian` was blank. Guardian Inventory
+  is a declared carry source for every Plan type, so Guardian → Plan dropped all
+  five attorney details too.
+- `carryOverAccountingToAccounting` in `legacy-app.js`, which is the **live**
+  path for Guardian → Annual/Simplified. It leaked the nested object into the
+  destination's flat `attorney` string field, and separately carried the attorney
+  NAME ONLY — bar number, phone, email and address were dropped on every
+  accounting-to-accounting carryover regardless of source type, which item 2's
+  "attorney identity/contact details" requires. Destination field names differ
+  per engine (`attorney_bar` for annual, `attorney_barNumber` for simplified,
+  nested for Guardian), so each branch maps them under its own names.
+
+This one was only caught because the new e2e spec drove the real modal; the
+unit-level fixtures all used the flat shape, which is why it had gone unnoticed.
+
+**2. Hooking the Cover county in one place covered only six of nine filing
+types.** Item 2 says the first nonblank County committed on a Cover must resolve
+the ward Party. There are **three independent form write paths**:
+`form-contract.js`'s `persistFormControl()`, `annual-accounting/index.js`'s own
+`persistAnnualControl()` (Annual/Final/Trust bind via `data-annual-path` and
+never reach the shared one), and `legacy-app.js`'s `bindForms()` listeners via
+`afterChange()` (Guardian Inventory). Hooking only the first meant the entire
+Annual family could select a Cover county that never reached the canonical ward
+Party. All three now call one guarded `maybeCommitCoverCounty()`. Caught by the
+new Cover e2e test, not by reading.
+
+**3. The 17-site enumeration was accurate; its attribution was not.** Of the
+eight `legacy-app.js` `county:src.county||'Pinellas'` sites, seven sit in
+`carryOverFieldsForPlan`/`carryOverFieldsForAccounting`, which are **shadowed**
+by `ward-lifecycle.js`'s module versions and therefore dead — the same
+classic-script/module hazard Milestone 40F catalogued. Only
+`carryOverAccountingToAccounting`'s was live. All were removed either way, but
+"eight legacy equivalents of the same creation paths" overstated what was
+running. Note also that the proposal's line numbers had already drifted; they
+must be re-derived, not trusted.
+
+### Verification
+
+Unit **536 passed** (was 492): new `filing-county-defaults.spec.js` (31),
+`ward-carryover.spec.js` extended for the nested shape, `circuit-lookup.spec.js`
+inverted with each layered fallback asserted separately, and
+`case-county-drift.spec.js` extended for the revised copy. `check:types` clean.
+`verify:data-model` clean.
+
+E2E: new `cover-county.spec.ts` (6) drives the real county combobox — closing the
+gap this proposal identified, where every `fillMinimalValid*Ward()` helper
+injects county straight onto `window.D` so no test had ever exercised the actual
+entry point. New `carryover-workflow.spec.ts` (5) drives the real
+eligibility-modal redirect. **9 of those 11 fail against HEAD's source**, checked
+by reverting `src/` and re-running. A 14-spec caption/mount/party regression
+sweep passed 170.
+
+**Not run: the full `npm test` regression** this plan recommends for 40C-1. It
+needs the requester's explicit approval per `AGENTS.md`, and is worth noting that
+`master` already carries 9 pre-existing full-suite e2e failures unrelated to any
+Milestone 40 delivery (recorded in `MILESTONE-40A-PROPOSAL.md`).
+
+**Still open from the verification plan:** item 9's `party-resolver.spec.ts` and
+`.sav` round-trip additions for Party-merge conflict handling and single-ward
+import reconstruction. The behaviour is implemented and unit-tested
+(`wardCountyMergeConflict`, `backfillWardPartyCounties`); what is missing is the
+e2e layer for those two paths.
+
+### 40C-2 — what landed
+
+### 40C-2 — what landed
+
+All six tasks, with three decisions taken by the requester at approval:
+
+| Task | Outcome |
+| --- | --- |
+| **40C-B** | Sidebar, Summary entry and page heading relabelled. **Decision: match Simplified Accounting's shipped pattern** — sidebar/Summary read `Cover & Part I — Case Info`, the heading reads `Cover & Part I — Required Information`, which is byte-identical to Simplified's existing heading, so no two filing types disagree. The alternative (uniform "Case Info" in both places) would have made Annual's heading diverge from Simplified's unless Simplified changed too, which was out of scope. One change covers Annual, Final and Trust: they share `annual-accounting/index.js`. Em dashes throughout, as the browser check warned. |
+| **40C-C** | `enforceDateRanges()` and `wireDateRangePair()` deleted. **Decision: stop mutating, validate only** — `checkDateOrder()` is now the single reporter of range order. See "40C-C was a live data-corruption bug" below. |
+| **40C-D** | **Decision: test-only.** No fix, since none of its four claimed failures reproduce. New `tests/e2e/schedule-docs-period-key.spec.ts` locks in the re-key round trip, for uploads as well as comments — the browser check had round-tripped a comment only and inferred the rest. |
+| **40C-E** | Two real sidebar-vs-export disagreements closed; see below. |
+| **40C-G1** | `Sch D4 — Restricted Assets` → `Sch D4 — Intangible Assets` in the Annual sidebar only. The two cautions in the task were both respected: `index.js:1063`'s "Restricted Intangible Assets" subtotal is a real distinction and is untouched, and this was not done as a find-and-replace. **The `legacy-app.js` help-topic judgment call resolves to "leave it":** that string is an entry in `'field-help'` → "Common Field Definitions", a general glossary beside "Ward's %" and "Carrying Value", and it defines court-permission-restricted assets as a concept rather than naming Schedule D-4. Renaming it to "Intangible Assets" would have redefined the wrong term, and the D-4 subtotal still depends on the concept. |
+| **40C-H** | Q7 explicit-No validation fixed, plus the missing readiness condition and the removal of the test-only workaround; see below. |
+
+### 40C-C was a live data-corruption bug, and it is now confirmed
+
+This task's premise was right, and its severity was understated. It needed no
+browser session to settle — the mechanism is fully determined by the code:
+
+`form-fields.js:132` renders every date field as `type="text"`, not a native
+`<input type="date">`, holding the **MM/DD/YYYY display form**
+(`formatDisplayDate()`). `wireDateRangePair()` compared those `.value` strings
+with `>` / `<`, which compares the **month first and the year last**. So an
+ordinary accounting period of 05/10/2026 → 05/09/2027 read as reversed
+(`"05/1…" > "05/0…"`) and the opposite endpoint was silently overwritten.
+
+**Any period not starting on January 1 could lose an endpoint this way**,
+including a one-day range across the new year (12/31/2025 → 01/01/2026). That
+is exactly why the earlier browser spot check saw nothing: it used
+01/01/2025 → 12/31/2025, and a January start is the one shape the comparison
+gets right. The proposal already said as much; this confirms it.
+
+Reproduced end-to-end against the pre-fix code, then re-run after the removal:
+three distinct corruptions, each now asserted in
+`date-validation.contract.spec.ts` — From overwritten by To, To overwritten by
+From, and a genuinely reversed range having an endpoint rewritten so the state
+could not persist to be reported at all.
+
+**One addition the task did not name.** Guardian Inventory's D-4 bond period is
+also a From/To pair that `enforceDateRanges()` wired, and it had **no order
+check anywhere** — Milestone 34-1A had deliberately excluded Guardian Inventory
+because it has no accounting period. Removing the swap would have left that pair
+with nothing at all, so `checkDateOrder()` now covers it. This needed a
+priority-ordered branch in `validation-adapter.js` as well: the message names
+both endpoints, and the `d-4` branch matches on `includes()` with "bond period
+from" tested first, so the filer was sent to the field that was not the one to
+change.
+
+### 40C-E found both disagreements exactly as described
+
+- **Plan Annual Question 4** — the check was `provs.every(r => filled(r.name))`,
+  and `.every()` is `true` for an empty array, so a filing with no providers
+  read as complete in the sidebar while `validatePlanAnnual()` blocked export
+  with "at least one provider must be listed". The readiness panel already
+  agreed with the validator, so the sidebar was the lone dissenter. Its comment
+  asserted an empty table was a valid answer, which contradicted both.
+- **Plan Minor Cover** — `pm-cover` tracked neither case identity (`ucn || ref`)
+  nor the "Amended Form?" answer, both of which `validatePlanMinor()` requires.
+  Answered now means an explicit Yes or No; blank stays unanswered and nothing
+  is coerced to No. Amended Form = Yes additionally requires the version, in
+  both places.
+
+Item 3's "extend the parity contract" was satisfied by **tightening an existing
+allow-list rather than adding a new mechanism**: `checklist-export-parity.spec.js`
+already encodes validator-vs-sidebar field parity per filing type, and four of
+its accepted `planMinor` gaps (`ucn`, `ref`, `amendedForm`, `amendedVersion`)
+are no longer gaps and were removed from the list. That spec failing was how the
+fix was confirmed. `plan-fixture.ts`'s existing Summary/sidebar/computeNavChecks
+cross-check continues to pass unchanged.
+
+### 40C-H: one predicate, three readers, and a missing readiness item
+
+`validatePlanInitial()` gated Question 7's explanation on
+`if(d.q7Trusts||d.q7PendingBenefits||d.q7Other)`. The first two are tri-state
+(`''`/`'Yes'`/`'No'`), so the non-empty string `'No'` is truthy: a filer who
+answered No to both was required to explain something they had declined, and
+could not export. New shared `isAffirmative()` in `core/form/form-contract.js`
+(built on the existing `yesNoText`) is now used by the validator, the editor's
+conditional, `computeNavChecks()` and the readiness panel.
+
+Note the default masks it: `state.js:313` initialises these to boolean `false`,
+so a *fresh* ward was fine. The bug appeared only once the filer actively
+answered No. Same shape as the D-3 Safe Deposit Box defect found during
+Milestone 38C.
+
+Item 2's readiness requirement was a genuine gap: the Q7 explanation was an
+export blocker with **no readiness item at all** — `plan.q6q7` covers only
+Question 6's option selection despite its id. New `plan.q7explain` condition,
+so Plan Initial now has 20 auto conditions rather than 19.
+
+Item 4 is done: `signature-capture.contract.spec.ts`'s
+`workaroundPreExistingQ7Bug()` helper and its four call sites are gone, and that
+suite's 32 tests pass with `fillMinimalValidPlanInitialWard()` going through the
+real export path with no test-only data manipulation. That helper's own comment
+had diagnosed this bug correctly and flagged it rather than fixing it; this is
+the fix it was waiting for.
+
+### Verification
+
+Unit 497 passed (up from 474: nine new in `date-range-no-mutation.spec.js`,
+nine added to `plan-initial-parity.spec.js`, plus the tightened parity
+allow-list). Every new assertion was checked against the pre-fix code rather
+than merely observed to pass — the three date-entry tests, the bond-period field
+mapping, the Q7 explicit-No case, and both 40C-E parity tests were each
+confirmed failing first.
+
+The original single-gate 40C bundled eight unrelated tasks behind one
+approval — the largest blast radius in Milestone 40 (a data-model
+expansion, seventeen fallback sites, nine filing types, twelve test files)
+sharing a gate with a one-predicate validation bug fixable in an
+afternoon. That defeated the "independently reviewable and approvable"
+premise that split Milestone 40 in the first place. The two deliveries
+below divide on a real fault line: whether the work touches persisted data.
+
+| Delivery | Tasks | Touches persisted data / CSV | Open decisions | Approve independently |
+| --- | --- | --- | --- | --- |
+| **40C-1 — County Establishment, Hydration, and Carryover** | 40C-A, 40C-F, 40C-G2 | **Yes** — new `caseFile.parties[].county`, `caseFile.parties[]` row expansion, `common,D,county` note rewrite, legacy migration rule | **None** — the unknown-circuit representation (Task 40C-A item 7) was resolved 2026-09-12: option (a), `null`/`''`/`null` | Yes |
+| ~~**40C-2 — Form-Entry, Readiness, and Validation Corrections**~~ | 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, 40C-H | **No** — no field added, renamed, or reshaped; no `verify:data-model` run required | Resolved at approval: 40C-C approach, 40C-D scope, 40C-B wording | **Landed 2026-09-12** |
+
+**40C-1 remains implementable on approval.** It never depended on 40C-2, and
+40C-2 landing changes nothing it relies on. The one file both were listed as
+touching is `tests/unit/content-corrections.spec.js` (Task 40C-G's two halves) —
+**40C-2 did not in fact touch it**, because 40C-G1 turned out to be a nav-label
+change with no assertion in that spec, so 40C-1 has it to itself.
+
+40C-B's and 40C-D's browser-observed premises were both settled before
+implementing (see "Verification of Claims" below). 40C-C's, which that section
+recorded as still unverified, was settled from the code instead — the mechanism
+is fully determined by `form-fields.js`'s `type="text"` date rendering, so no
+browser session was needed; see the Status section above.
+
+## Verification of Claims (2026-09-12, pre-approval)
+
+Every load-bearing code claim in this proposal was re-checked directly
+against `master` before asking for approval, because most of them were
+written from a browser-QA session rather than from the source. Results:
+
+| Claim | Result |
+| --- | --- |
+| 40C-A item 3: seven `county: src.county \|\| 'Pinellas'` sites in `ward-lifecycle.js` at lines 84, 115, 132, 156, 201, 231, 256 | **Confirmed exactly**, all seven at the stated lines |
+| 40C-A item 3: eight in `legacy-app.js` at 4369, 4385, 4394, 4411, 4458, 4479, 4494, 4524 | **Confirmed exactly** |
+| 40C-A item 3: two `attorney_county` fallbacks at 6127, 6209 | **Confirmed exactly** |
+| 40C-A item 5: Pinellas fallbacks in both Excel importers | **Confirmed** — `simplified-accounting/excel.js:222`, `annual-accounting/excel.js:446` |
+| 40C-A item 6: shared engine fallbacks at `pdf-engine.js:166`, `docx-engine.js:350` | **Confirmed exactly** (identical `(metadata.county \|\| 'Pinellas').toUpperCase()` in both) |
+| 40C-A item 6: seven per-feature `pdf-model.js` sites | **Confirmed exactly**, all seven at the stated lines |
+| 40C-A item 7: three layered circuit fallbacks in `circuit-lookup.js` (`:58`/`:65`, `:75`, `:83`) | **Confirmed** — and this is why a partial fix still prints "SIXTH" |
+| 40C-A item 7: `circuit-lookup.spec.js:38-41` asserts the fallback being removed | **Confirmed** — test name is literally "falls back gracefully to Sixth Judicial Circuit for unknown or empty counties" |
+| 40C-C: `wireDateRangePair()` / `enforceDateRanges()` exist and are the mutating path | **Confirmed** — `legacy-app.js:9178` and `:9153`; called from `router.js:225`, `guardian-inventory/index.js:118`, `legacy-app.js:5743` |
+| 40C-E: an empty `q4Providers` is reachable | **Confirmed** — seeded with one row (`state.js:231`) but prunable to zero (`prune-cards.js:11`, `min: 0`) |
+| 40C-F item 2: carryover reads nonexistent flat attorney fields | **Confirmed, and narrowed to one function** — see the note under that item. Two sibling converters are already correct and must not be changed. |
+| 40C-G1: sidebar D4 label is the only stale one | **Confirmed** — `annual-accounting/index.js:357`; editor and Excel map already say "Intangible Assets." Two false-positive rename targets found; see that task. |
+| 40C-H: `validatePlanInitial()` uses a truthiness predicate on tri-state values | **Confirmed** — `plan-initial/index.js:581`. The editor (`:293`) and PDF model (`:206`) already use correct affirmative checks, so **three** predicates exist and only the validator is wrong. Defaults are legacy boolean `false` (`state.js:313`), confirming item 1's requirement to accept both `'No'` and `false`. |
+
+### Browser verification of the two non-code-verifiable claims (2026-09-13)
+
+The two remaining claims were checked in a real browser against the live
+deployment (`caernarvon.net/probate-guardian`, build `4834b61`, confirmed
+current via `deployment.json` and a hard reload past the service worker).
+Both came back with corrections, one of them a scope **reduction**.
+
+**40C-B — confirmed in substance, two string corrections.** All nine root
+pages exist and **all nine expose a County control** (clean yes, no
+exceptions). But the audit table above conflated two different strings,
+and both are wrong as quoted:
+
+- **The app uses an em dash, not an ASCII hyphen.** The real sidebar label
+  is `Part I — Case Info`. Every assertion, grep, and relabel target in
+  this delivery that spells it `Part I - Case Info` will silently fail to
+  match. Same applies to `Annual Plan — Minors`.
+- **Sidebar label ≠ page heading.** For Annual, Final, and Trust
+  Accounting the sidebar reads `Part I — Case Info` but the on-page
+  heading is `Part I — Required Information` — "Case Info" appears
+  nowhere in the heading. Task 40C-B must therefore change **two
+  different strings per filing type**, not one. Simplified Annual
+  Accounting is the same shape: sidebar `Cover & Part I`, heading
+  `Cover & Part I — Required Information`.
+- Observed headings, for reference: Initial Inventory
+  `Verified Initial Inventory — Case Information`; the four Plan types
+  `<Plan name> — Cover`.
+
+**40C-D — does NOT reproduce. Treat as a scope reduction.** Every one of
+the four failure modes this task was written to fix was tested on the live
+build and behaved correctly:
+
+| 40C-D's claimed failure | Observed |
+| --- | --- |
+| Heading goes stale on period commit | **Refreshes correctly** — `Supporting Documents — accounting period 01/01/2025 to 06/30/2025` updated immediately, no reload |
+| Section collapses / re-renders oddly | **No collapse, no odd re-render** |
+| Focus lost mid-edit | **Focus retained** in both From and To through full 10-character replacements |
+| Uploads/comments cleared | **Re-keyed, not destroyed** — a sentinel comment vanished on period change and **reappeared intact** when the period was set back |
+
+Scroll position also held, and unrelated form state was untouched
+(Schedule A's income line items were unaffected by the period change).
+The re-keying is correct by design: `scheduleDocs[scheduleKey][periodKey]`
+buckets per period, so a fresh period *should* present an empty slot.
+
+Per this proposal's own instruction to treat a mismatch as a scope change
+rather than proceeding: **40C-D should not be implemented as written.**
+Reduce it to adding regression coverage that locks in the behavior already
+working — particularly the re-key-and-return round trip, which nothing
+currently asserts and which a future refactor of the period key could
+easily break into real data loss. One caveat: only *comments* were
+round-tripped in the browser; uploaded PDFs share the same period-keyed
+slot so the same conclusion should hold, but that is inferred, not
+observed.
+
+**40C-C was unverified here, and was settled from the code instead
+(2026-09-12) — confirmed real.** The browser session set a period of
+01/01/2025 → 12/31/2025, which is ordered both chronologically *and*
+lexicographically, so it could not trip a string-comparison defect even if one
+existed. No cross-field interference was seen with that pair, which proved
+nothing either way. That reasoning was correct, and it turned out to name the
+exact reason the bug hides: a **January start is the one shape the comparison
+gets right.**
+
+No re-test was needed in the end. The mechanism is fully determined statically:
+`form-fields.js:132` renders date fields as `type="text"` holding MM/DD/YYYY, so
+`wireDateRangePair()`'s string comparison compared month-before-year. The
+cross-year pair this task named (05/10/2026 → 05/09/2027) was then reproduced
+end-to-end against the pre-fix build, and it silently overwrote an endpoint, as
+did 12/31/2025 → 01/01/2026. See the Status section.
+
+## Goal
+
+Turn the September 2026 browser re-review into executable tasks: eight
+concrete, named fixes across county defaulting, Cover-page labeling, date
+entry, readiness/export parity, carryover, and one tri-state validation
+bug — delivered as the two gates above rather than one.
+
+## Resolved Product Decision: County Defaulting
+
+**A ward has no default county until the user selects County on that
+ward's first filing Cover.** That first explicit selection is then stored
+as `county` on the canonical ward Party record. Later filings linked to
+the same ward Party start with that persisted county, while still exposing
+it on their own Cover. No global, form-type, Pinellas, case-registry, or
+unrelated-source default may precede the first explicit choice. This
+decision governs Tasks 40C-A and 40C-F below.
+
+## Cover-Section Audit (All Nine Filing Types)
+
+All nine filing types have a root case-information page and all nine
+expose the filing-level `D.county` control there. Six are explicitly
+presented as a Cover today; the three full-accounting variants share a
+functionally equivalent Part I page that is not currently named Cover.
+
+| Filing type | Current root label | County on root page | Disposition |
+| --- | --- | --- | --- |
+| Verified Initial Inventory | Cover | Yes | Keep |
+| Simplified Annual Accounting | Cover & Part I | Yes | Keep |
+| Annual Accounting | Part I - Case Info | Yes | Relabel to **Cover & Part I - Case Info** |
+| Final Accounting | Part I - Case Info | Yes, shared Annual engine | Relabel to **Cover & Part I - Case Info** |
+| Trust Accounting | Part I - Case Info | Yes, shared Annual engine | Relabel to **Cover & Part I - Case Info** |
+| Simplified Annual Plan | Cover | Yes | Keep |
+| Annual Guardianship Plan | Cover | Yes | Keep |
+| Initial Guardianship Plan | Cover | Yes | Keep |
+| Annual Plan - Minors | Cover | Yes | Keep |
+
+The relabeling is UI navigation and heading copy only. It retains the
+underlying form's Part I designation and does not rename a persisted
+field, change a court-form caption, or claim that a filing is legally
+sufficient.
+
+## Task 40C-A — Establish County Once, Then Hydrate It From the Ward Party
+
+*Delivery 40C-1. Touches persisted data. Item 7's decision is resolved (option (a), 2026-09-12) — no open decisions remain.*
+
+1. Change all seven blank-data factories (the Annual factory also serves
+   Final and Trust Accounting) so `D.county` starts as `''`, not
+   `Pinellas`: `emptyDataGuardian()` in `src/legacy-app.js`, plus
+   `emptyDataSimplified()`, `emptyDataPlanSimplified()`,
+   `emptyDataPlanAnnual()`, `emptyDataPlanInitial()`,
+   `emptyDataPlanMinor()`, and `emptyDataAnnual()` in `src/core/state.js`.
+   Remove the separate `attorney_county: 'Pinellas'` default as well; no
+   county field may silently acquire Pinellas.
+2. Add nullable `county` to the canonical Party shape in
+   `src/core/party-resolver.js` and `src/core/types/parties.js`. It has
+   meaning only for a Party with the `ward` role. The first nonblank
+   County committed on a filing Cover must resolve (or create and link)
+   that filing's ward Party without name-based guessing, write the same
+   value to `party.county`, and retain the filing's own `D.county`
+   snapshot. Implement this through dedicated ward-county lifecycle
+   helpers, not by adding County to the general identity hydration
+   fan-out: the existing `syncIdentityField()` updates every linked slot,
+   which would improperly rewrite historical sibling filings.
+3. Later filing creation, conversion, yearly creation, and
+   eligibility-modal completion must hydrate `D.county` from the linked
+   ward Party when that Party already has a nonblank county. If the Party
+   county is blank, the new filing remains blank until its Cover supplies
+   the first choice. Remove all Pinellas fallbacks from these flows and
+   from both plan/accounting lifecycle implementations (`src/legacy-app.js`
+   and `src/core/navigation/ward-lifecycle.js`). Confirmed exhaustively
+   (as of this writing — treat as a minimum checklist, not a ceiling,
+   since line numbers will shift):
+   - `ward-lifecycle.js`, seven `county: src.county || 'Pinellas'` sites:
+     lines 84, 115, 132, 156, 201, 231, 256 (one per filing-type
+     creation/conversion path).
+   - `legacy-app.js`, eight matching `county:src.county||'Pinellas'`
+     sites: lines 4369, 4385, 4394, 4411, 4458, 4479, 4494, 4524 (the
+     legacy equivalents of the same creation/conversion paths).
+   - `legacy-app.js`, two separate `attorney_county` fallbacks not
+     currently named anywhere else in this task:
+     `dest.attorney_county=src.county||dest.attorney_county||'Pinellas';`
+     at lines 6127 and 6209. These silently inject Pinellas into
+     `attorney_county` — a distinct field from `county` — whenever both
+     the source and destination are blank; they must go the same way as
+     the `county` fallbacks even though the field name differs.
+
+   Verify every one of these seventeen confirmed sites is gone, not just
+   however many a partial pass happens to catch. Do not use an unrelated
+   source filing's county when its ward Party cannot be resolved.
+4. A later Cover edit changes that filing's snapshot and the ward Party's
+   canonical county for filings created afterward. It must not silently
+   rewrite already-existing sibling filings or already-generated output;
+   those remain auditable snapshots and may surface the existing
+   county-drift advisory. Party merge must never silently choose between
+   two different nonblank ward counties: require explicit conflict
+   resolution. Keep a linked `caseFile.cases[].county` synchronized when
+   the user edits the Cover for that same case, but do not treat a stale
+   case record as a stronger default than an explicitly stored ward-Party
+   county. Update `src/core/case-county-drift.js` copy/rules so it
+   describes the actual snapshot mismatch without claiming the case
+   registry is unconditionally authoritative.
+5. Preserve an explicitly stored county when loading an existing `.sav`,
+   importing an Excel workbook, or restoring a filing. If imported data
+   has no county, leave it blank; specifically remove the Pinellas
+   fallback in `src/features/simplified-accounting/excel.js` and
+   `src/features/annual-accounting/excel.js`.
+6. Remove output-only Pinellas substitution from every filing PDF model
+   and from shared PDF/DOCX caption helpers. Confirmed exhaustively (as
+   of this writing):
+   - Shared engines, each with `const county = (metadata.county ||
+     'Pinellas').toUpperCase();` — `src/core/pdf/pdf-engine.js:166` and
+     `src/core/docx/docx-engine.js:350`. These run for every filing
+     type's output, so fixing only the per-feature `pdf-model.js` files
+     without these two leaves the shared fallback in place. (If
+     Milestone 40A has already removed `docx-engine.js` by the time this
+     is implemented, that half is moot — confirm which order actually
+     landed rather than assuming.)
+   - Seven per-feature `pdf-model.js` files, each with `const county =
+     d.county || 'Pinellas';`: `plan-annual/pdf-model.js:14`,
+     `annual-accounting/pdf-model.js:35`,
+     `guardian-inventory/pdf-model.js:15`,
+     `simplified-accounting/pdf-model.js:13`,
+     `plan-initial/pdf-model.js:16`, `plan-minor/pdf-model.js:15`,
+     `plan-simplified/pdf-model.js:15`.
+
+   A blank county must never print a Pinellas/Sixth Circuit caption.
+   Export remains blocked by the existing per-form County validation
+   until the user makes a valid choice.
+7. Make `src/core/pdf/circuit-lookup.js` and the legacy duplicate return
+   an explicitly unknown/blank result for a blank or unrecognized county,
+   rather than Sixth Circuit. **Three** distinct fallbacks confirmed in
+   `circuit-lookup.js` (review pass 2026-09-12 — an earlier version of
+   this task named two), and they are *layered*, so removing one or two
+   still yields a Pinellas/Sixth caption:
+   - `circuitForCounty()`'s own doc comment currently states "Defaults to
+     6 (Sixth Judicial Circuit / Pinellas & Pasco) if empty or
+     unrecognized" — this is a real, documented default, not an
+     incidental side effect, so removing it needs an explicit decision
+     about what an unknown/blank circuit result looks like to every
+     caller (a caption helper, a workslip lookup, etc.), not just
+     deleting the fallback line.
+   - A separate line defaults the *county name itself* before that
+     lookup even runs: `circuit-lookup.js:83` —
+     `const c = (county || 'Pinellas').trim() || 'Pinellas';`. Fixing
+     only the circuit-number default and missing this one still prints
+     a Pinellas-derived caption for a blank county.
+   - **A third, previously unnamed fallback:** `getCircuitOrdinal()` at
+     `circuit-lookup.js:75` — `const ord = CIRCUIT_ORDINALS[circuitNum] || 'Sixth';`.
+     Even with both defaults above removed, an unresolved circuit number
+     still renders the word "SIXTH" in the caption's first line through
+     this one.
+   - The "legacy duplicate" is `src/legacy-app.js:1421-1433`: its own
+     `circuitForCounty()` (`:1421`) **plus** the same two patterns at
+     `:1432-1433` —
+     `const c=(county||'Pinellas').trim()||'Pinellas';` and
+     `const ord=(CIRCUIT_ORDINALS[circuitForCounty(c)]||'Sixth').toUpperCase();`.
+     All of it must change together. Note the comment at `:1438-1439`
+     already warns that this duplicate exists *and* that
+     `county-guidance.js` deliberately avoids depending on
+     `circuitForCounty()` precisely because of its fallback — read it
+     before editing, it explains why the two must not be unified here.
+
+   **RESOLVED 2026-09-12 (requester approved option (a)).**
+   `circuitForCounty()` returns **`null`** for blank or unrecognized,
+   `getCircuitOrdinal()` returns **`''`**, and
+   `getFloridaCircuitCourtCaption()` returns **`null`** rather than a
+   caption object. Each caller then decides explicitly what to draw with
+   no caption, which is the honest outcome: export is already blocked by
+   County validation (item 6), so the only path that reaches a
+   blank-county caption is a draft/preview override, and a draft should
+   show a visible gap, not a confident wrong court. Callers to update:
+   `pdf-engine.js:22`, `docx-engine.js:9` (moot if 40A landed first), and
+   `legacy-app.js`'s duplicate.
+
+   Rejected alternatives, recorded so this isn't relitigated: **(b)** a
+   caption object with blank or placeholder slots (e.g.
+   `IN AND FOR ______ COUNTY, FLORIDA`) — less invasive for callers, but
+   risks a placeholder reaching a filed document if the validation gate is
+   ever bypassed; **(c)** throwing on unknown — this is a rendering-path
+   lookup, and an exception would take down preview generation for a
+   recoverable data state.
+
+   **This makes `circuit-lookup.js` consistent with a pattern the codebase
+   already proved works.** `src/core/filing/county-guidance.js` deliberately
+   does *not* derive from `circuitForCounty()` — precisely because of that
+   fallback — and `tests/unit/plan-readiness-county.spec.js:70` already
+   asserts "a blank county is treated as non-local, not defaulted to Sixth
+   Circuit," passing today. Option (a) brings the circuit lookup in line
+   with the guidance module rather than inventing a new convention; that
+   spec is a working reference for the behavior, and it needs no change
+   under this delivery.
+
+   Whichever is chosen, `tests/unit/circuit-lookup.spec.js:38-41` —
+   currently the test **"falls back gracefully to Sixth Judicial Circuit
+   for unknown or empty counties,"** asserting `circuitForCounty('')`,
+   `circuitForCounty(null)`, and `circuitForCounty('Atlantis')` all return
+   `6` — encodes exactly the behavior being removed and must be inverted
+   in the same change. This spec is not currently named in the
+   verification plan below; add it.
+
+   Retain `src/core/filing/county-guidance.js`'s existing exact
+   Pinellas/Pasco gating.
+8. Update the shared `common,D,county` row in
+   `probate-guardian-data-model.csv`: replace the note "Florida county;
+   default Pinellas" with "Filing snapshot; first value selected on
+   Cover; later new filings hydrate from the linked ward Party." Add the
+   exact `caseFile.parties[].county` row as a nullable Florida-county
+   enum, applicable to the ward role. Because `caseFile.parties[]`
+   currently has only a summary row, this same delivery must expand its
+   existing fields (`id`, `roles`, `name`, identifier fields,
+   contact/address fields, timestamps, notes, and merge pointer) into
+   canonical rows rather than adding another wildcard-only field. Review
+   the `annual_accounting,D,attorney_county` row in the same change and
+   record its blank initial value. Run `npm run verify:data-model`.
+
+**Legacy migration rule:** existing nonblank filing and attorney counties
+remain exactly as stored. For a ward Party with no `county`, infer it only
+when all linked filings with a nonblank county agree on one normalized
+Florida county; persist that unanimous value. If linked filings conflict,
+or none has a county, leave `party.county` blank and require the user to
+resolve/select it on a Cover. Never infer it from attorney county, a
+filing belonging to another ward Party, or the historical Pinellas
+fallback.
+
+## Task 40C-B — Make Every Root Case-Information Page Visibly a Cover
+
+*Delivery 40C-2. No persisted-data change.*
+
+Relabel the shared Annual/Final/Trust sidebar entry, page heading, Summary
+entry, tour/help copy, and route metadata to "Cover & Part I — Case Info."
+Keep the same `/` route and fields.
+
+**Exact current strings, confirmed in the browser 2026-09-13 — note the em
+dashes and that the sidebar and heading differ:** the sidebar reads
+`Part I — Case Info` while the on-page heading reads
+`Part I — Required Information`. Both must change, and neither contains an
+ASCII hyphen, so match on the em-dash form (`—`, U+2014) or the relabel
+will find nothing. Simplified Annual Accounting has the same split
+(sidebar `Cover & Part I`, heading `Cover & Part I — Required
+Information`) and needs no change.
+
+Verify through all nine filing descriptors that
+the root route is visible, named as a Cover, contains the filing-level
+County control, and marks County required.
+
+## Task 40C-C — Stop Date-Range Entry From Changing Another Field
+
+*Delivery 40C-2. No persisted-data change.*
+
+Remove `wireDateRangePair()` / `enforceDateRanges()` behavior that
+compares displayed `MM/DD/YYYY` strings and overwrites the opposite
+endpoint. A user editing From or To must never mutate the other stored or
+displayed value. Keep the shared `checkDateOrder()` export/readiness
+validation as the one place that reports an end-before-start error. Cover
+both a genuinely reversed range and a valid cross-year range such as
+05/10/2026 through 05/09/2027.
+
+## Task 40C-D — Keep Reporting-Period-Dependent Headings Live
+
+*Delivery 40C-2. No persisted-data change.* **SUPERSEDED 2026-09-13 — the
+premise does not reproduce on the live build.** Browser verification found
+the heading refreshes correctly, the section does not collapse, focus is
+retained, scroll position holds, and period-keyed comments are re-keyed
+rather than destroyed (a sentinel comment reappeared when the period was
+restored). See "Browser verification" under Verification of Claims. Do not
+implement the text below as a fix. The remaining useful work is regression
+coverage for the behavior that already works — above all the
+change-period-and-change-back round trip, which nothing asserts today and
+which a future change to the period-key scheme could turn into genuine
+data loss. Scope 40C-D as test-only, or drop it.
+
+When `periodFrom` or `periodTo` commits, refresh the Supporting Documents
+heading/period label without losing focus, collapsing the section,
+clearing uploads/comments, or rerendering unrelated form state. Reuse the
+existing schedule-document renderer and period-key resolution; do not
+create a second date-formatting rule.
+
+## Task 40C-E — Enforce Sidebar/Readiness/Export Parity
+
+*Delivery 40C-2. No persisted-data change.*
+
+1. Annual Plan providers: an empty `q4Providers` collection must leave the
+   applicable sidebar section incomplete, matching export validation's
+   requirement for at least one complete provider.
+2. Minor Plan Cover: include case identity (`ucn || ref`) and
+   amended-form completion in the sidebar rule exactly when the export
+   validator requires them.
+3. Extend the parity contract so every `auto` readiness/export blocker is
+   represented in the matching navigation/Summary status. Manual
+   procedural reminders remain nonblocking under the repository
+   invariant.
+
+## Task 40C-F — Repair Selected-Source Carryover and Ward-Party County Hydration
+
+*Delivery 40C-1. Touches persisted data (ward-Party linking and county hydration).*
+
+1. Preserve and resolve the user's selected source through Simplified
+   Accounting's eligibility-modal redirect; do not fall back to a fresh
+   blank filing while reporting that carryover occurred.
+2. Carry the source ward name, case identity, guardian identity/contact
+   details, and attorney identity/contact details into their destination
+   shapes. In particular, map Initial Inventory's nested `attorney`
+   object rather than reading nonexistent top-level attorney-contact
+   fields.
+
+   **Verified and narrowed 2026-09-12 — the bug is in exactly one
+   function, not the carryover layer generally.** The offending reads are
+   `carryOverFieldsForAccounting()`, `src/legacy-app.js:4448-4452`:
+   `attyBar`/`attyPhone`/`attyEmail`/`attyStreet`/`attyCityStateZip` each
+   resolve only flat keys (`src.attorneyBar || src.attorney_bar`, and so
+   on). A Guardian Inventory source keeps that data nested at
+   `src.attorney.{barNumber,phone,streetAddress,cityStateZip}`
+   (`legacy-app.js:6782`), which none of those chains reach — so all five
+   silently carry over blank. Add the nested reads to each chain.
+
+   **A latent second defect in the same block, not previously named:**
+   `attyName` at `:4447` is
+   `src.attorneyName || src.attorney_name || src.attorneyForGuardian || src.attorney || ''`.
+   For a Guardian Inventory source whose `attorneyForGuardian` is blank,
+   the final `src.attorney` fallback resolves to the **nested object**,
+   which is then assigned into string fields (`attorneyForGuardian`,
+   `attorney`) on the destination. Read `src.attorney?.name` there rather
+   than `src.attorney`.
+
+   **Do not "fix" the two sibling converters — they are already correct.**
+   `convertGuardianExtrasToAnnual()` (`:6121-6126`) reads
+   `const a = src.attorney || {}` and then `a.barNumber`/`a.phone`/etc.
+   properly, and `convertSimplifiedToAnnual()` (`:6204-6207`) correctly
+   reads a Simplified source's genuinely flat `attorney_*` fields. An
+   earlier reading of this task as "carryover reads attorney wrong"
+   would have led to changing both of those unnecessarily.
+3. Link the destination to the same canonical ward Party where the user
+   has selected that ward as the carryover source. Hydrate destination
+   `county` from `party.county` when present; otherwise leave it blank
+   for the first explicit Cover selection. Never obtain the county merely
+   from an arbitrary source filing. `attorney_county` remains a separate
+   field and must not be populated from the ward's county.
+4. Update confirmation/helper copy so it accurately names the selected
+   source type and explains whether County was restored from the ward
+   record or still needs to be selected on the new filing's Cover.
+5. Keep the operation non-destructive: source data is never changed, and
+   hiding/canceling the eligibility flow creates no partial destination.
+
+## Task 40C-G1 — Correct the Schedule D4 Label
+
+*Delivery 40C-2. No persisted-data change. Formerly 40C-G item 1 — split
+from 40C-G2 because that half depends on 40C-1's carryover behavior while
+this half is a standalone one-line copy fix.*
+
+Change the Annual-family sidebar's Schedule D4 label from "Restricted
+Assets" to "Intangible Assets," matching the editor and PDF model.
+
+**Verified 2026-09-12.** The sidebar is the only place that is wrong:
+`src/features/annual-accounting/index.js:357` renders
+`Sch D4 — Restricted Assets`, while the editor heading (`:1035`, `:1058`)
+and the Excel schedule map (`excel.js:44`) already read "Intangible
+Assets." Two cautions found while confirming it:
+
+- **Do not do this as a find-and-replace.**
+  `annual-accounting/index.js:1063` contains a legitimate subtotal row
+  labeled "Restricted Intangible Assets" — a real distinction within the
+  D-4 schedule, not a stale label. Renaming it would be a regression.
+- `src/legacy-app.js:367` has a help-section title "Restricted Assets."
+  Determine whether that help topic is about Schedule D-4 (rename it) or
+  about restricted assets/depository generally (leave it). This is a
+  judgment call about help content, not a mechanical rename.
+
+## Task 40C-G2 — Make the Eligibility Modal Copy Source- and County-Aware
+
+*Delivery 40C-1. Depends on 40C-F's carryover behavior — the copy
+describes whether County was restored from the ward record, which only
+exists once 40C-F lands. Formerly 40C-G item 2.*
+
+Replace the eligibility modal's hardcoded "existing Simplified Annual
+Plan" text with selected-source-aware wording, including the conditional
+County behavior above.
+
+## Task 40C-H — Fix Plan Initial Q7 Explicit-No Validation
+
+*Delivery 40C-2. No persisted-data change (stated explicitly at the end of this task).*
+
+`validatePlanInitial()` currently uses
+`if (d.q7Trusts || d.q7PendingBenefits || d.q7Other)` to decide whether
+the Question 7 explanation is required. `q7Trusts` and `q7PendingBenefits`
+are tri-state values (`''`, `'Yes'`, or `'No'`), so the non-empty string
+`'No'` is truthy and incorrectly blocks an otherwise complete filing. The
+edit UI already expresses the intended condition correctly: show/require
+the explanation only when Trusts is explicitly Yes, Pending Benefits is
+explicitly Yes, or the boolean Other option is selected.
+
+1. Replace the truthiness predicate with an explicit affirmative check
+   that accepts canonical `'Yes'` and legacy boolean `true`, while
+   treating canonical `'No'`, legacy boolean `false`, blank, null, and
+   missing values as non-affirmative. Do not coerce unanswered values to
+   No.
+2. Use the same predicate for the editor's conditional explanation,
+   `validatePlanInitial()`, `computeNavChecks()`, and Plan Initial
+   readiness. Add a distinct automatic readiness condition for the
+   conditional Q7 explanation (or otherwise provide a demonstrable
+   1-to-1 mapping) so an export blocker cannot be absent from the
+   readiness panel.
+3. Confirm these cases independently: both fields No with no explanation
+   passes; Trusts Yes with no explanation blocks; Pending Benefits Yes
+   with no explanation blocks; Other checked with no explanation blocks;
+   each affirmative case passes once an explanation is supplied;
+   unanswered remains unanswered and is never silently stored as No.
+4. Remove the temporary Q7 blanking workaround from
+   `tests/e2e/signature-capture.contract.spec.ts`; the ordinary
+   `fillMinimalValidPlanInitialWard()` fixture must again pass the real
+   export path without test-only data manipulation.
+
+This is a validation/readiness correction only. It adds no persisted
+field, changes no enum domain, and requires no data migration or
+`probate-guardian-data-model.csv` edit. Existing `'Yes'`/`'No'`/blank and
+legacy boolean values remain stored exactly as they are. It also makes no
+legal determination about what an adequate explanation contains; the app
+only enforces that some text is present when the filer selects an option
+whose existing form copy calls for an explanation.
+
+Browser-only rows such as a Pasco test filing containing "Pinellas County
+Clerk" are persisted QA data, not shipped repository seed data. Cleaning a
+test browser profile is therefore not an implementation task in this
+delivery unless the value can be reproduced from a fresh profile.
+
+## Data, Portability, Security, and Legal Scope
+
+- **Persisted model — 40C-1 only.** Task 40C-A changes the canonical
+  default for existing filing county fields and adds
+  `caseFile.parties[].county`, so the Party collection expansion and the
+  two existing CSV rows named above must land in the same commit. Task
+  40C-F adds no field of its own but writes to `party.county` and to the
+  ward-Party link. **Delivery 40C-2 (Tasks 40C-B, 40C-C, 40C-D, 40C-E,
+  40C-G1, 40C-H) adds, renames, or reshapes nothing** — that is the fault
+  line the two deliveries split on, and it is why 40C-2 carries no
+  `verify:data-model` obligation. Everything in the rest of this section
+  applies to 40C-1.
+- **Export/import/backup:** `.sav` and single-ward round trips preserve
+  an explicitly selected filing county. Full-case export already carries
+  Party records. Single-ward export does not, so import must seed the
+  reconstructed ward Party's county from that exported filing's explicit
+  `D.county`; it must not create a dangling dependency. Excel imports
+  preserve an explicit workbook county and, after resolving the ward
+  Party, establish its county only under the same first-value/conflict
+  rules. PDF/DOCX generation must never invent a county.
+- **Sensitivity/threat model:** this adds one persisted county value to a
+  ward Party but no new external data flow. Classify it consistently
+  with the existing filing/case county fields. It improves consistency,
+  not access control, confidentiality, or proof of venue.
+- **Legal/compliance framing:** County remains machine-required because
+  it controls the court caption and local guidance. This app-level
+  validation does not determine venue or legal sufficiency; the filer is
+  responsible for selecting the correct county.
+
+## Acceptance Criteria
+
+Added in the review pass of 2026-09-12: this was the only Milestone 40
+delivery with no acceptance-criteria table, which made "done" a matter of
+reading eight task narratives and inferring the observable outcome. One
+row per task, stated as something a person or a test can check.
+
+**Read by delivery.** Rows for 40C-A, 40C-F, and 40C-G2 gate **40C-1**;
+rows for 40C-B, 40C-C, 40C-D, 40C-E, 40C-G1, and 40C-H gate **40C-2**.
+The final `verify:data-model` row belongs to 40C-1 only — 40C-2 makes no
+data-model change and must not run a CSV update as part of its commit.
+
+| Task | Scenario | Expected result |
+| --- | --- | --- |
+| 40C-A | A brand-new filing of each of the nine types, before any Cover entry | County is blank. No filing, PDF, Excel, or caption anywhere resolves to Pinellas/Sixth Circuit by default. |
+| 40C-A | First county selected on a Cover | It lands on both the filing snapshot and the linked ward Party; a later new filing for that ward hydrates from the Party without re-asking. |
+| 40C-A | A later Cover edit to an existing filing | Changes that filing and the Party's canonical value for *future* filings only; existing sibling filings and already-generated output are untouched. |
+| 40C-A | Legacy `.sav` whose linked filings disagree on county | `party.county` stays blank and the user is asked; no value is inferred from attorney county or another ward's filing. |
+| 40C-A | Blank county reaching a draft preview | Renders per the resolved option in item 7 — never a Pinellas or Sixth Circuit caption. Export stays blocked by existing County validation. |
+| 40C-B | Root page of all nine filing types | Sidebar entry, page heading, Summary entry, and help copy all identify it as a Cover; the route itself is unchanged. |
+| 40C-C | Editing either endpoint of a date range, valid or reversed (incl. 05/10/2026–05/09/2027) | The opposite endpoint's stored and displayed value never changes. A genuinely reversed range is *reported* by `checkDateOrder()`, not silently repaired. |
+| 40C-D | Committing `periodFrom`/`periodTo` with Supporting Documents open | Heading/period label refreshes in place; focus is kept, the section stays expanded, and uploads/comments survive. |
+| 40C-E | Annual Plan with an empty `q4Providers`; Minor Plan missing `ucn`/`ref` or amended-form completion | The sidebar section reads incomplete, matching export validation exactly. Every `auto` blocker has a matching navigation/Summary status; manual reminders stay nonblocking. |
+| 40C-F | Carryover through Simplified Accounting's eligibility-modal redirect | The user's selected source is preserved (never silently swapped for a blank filing); nested Initial-Inventory `attorney` fields map correctly; the destination links to the same ward Party; `county` hydrates from `party.county` or stays blank; `attorney_county` is never populated from it. |
+| 40C-F | Cancelling or hiding the eligibility flow | No partial destination filing exists and no source data changed. |
+| 40C-G1 | Annual-family sidebar | Schedule D4 reads "Intangible Assets" — and the "Restricted Intangible Assets" subtotal row is untouched. |
+| 40C-G2 | The eligibility modal | Names the actual selected source type and states whether County was restored from the ward record or still needs selecting. |
+| 40C-H | Plan Initial Q7: both tri-states explicitly `'No'`, no explanation | Filing passes — this is the bug being fixed. |
+| 40C-H | Q7 Trusts `'Yes'` / Pending Benefits `'Yes'` / Other checked, each with no explanation | Each blocks export, and the blocker is visible in the readiness panel (1-to-1 with the export gate, not export-only). |
+| 40C-H | Q7 left unanswered | Stays unanswered — never silently stored or reported as `'No'`. |
+| 40C-H | `tests/e2e/signature-capture.contract.spec.ts` | The temporary Q7 blanking workaround is gone and `fillMinimalValidPlanInitialWard()` passes the real export path unmodified. |
+| All | `npm run verify:data-model` | Clean, with the `common,D,county` note rewritten, `caseFile.parties[]` expanded into canonical rows, and `annual_accounting,D,attorney_county`'s blank initial value recorded. |
+
+## Verification Plan and Named Test Changes
+
+**Split by delivery (2026-09-12).** Run only the items belonging to the
+delivery being implemented; running the other half's tests against
+unchanged code proves nothing and invites a false failure.
+
+- **40C-1 (county/carryover):** items 1, 2, 6, 9, 11, and the
+  `verify:data-model` run. Item 8's eligibility-copy half (40C-G2) also
+  belongs here.
+- **40C-2 (form-entry/readiness/validation):** items 3, 4, 5, 7, 10, and
+  item 8's D4-label half (40C-G1). No `verify:data-model` run.
+- **Item 12** is a cross-delivery conflict note and applies to whichever
+  lands alongside Milestone 40A.
+
+Item 8 is the one item that genuinely spans both deliveries, because
+`tests/unit/content-corrections.spec.js` covers both halves of the former
+40C-G. Whichever delivery lands second should extend that spec rather than
+rewrite it.
+
+1. Add `tests/unit/filing-county-defaults.spec.js`: all seven factories
+   are blank; a first Cover choice establishes `party.county`;
+   subsequent filing creation hydrates it; an unresolved ward stays
+   blank; blank circuit/caption helpers do not resolve to Pinellas or
+   Sixth Circuit; all nine validators continue to reject blank county.
+   **Coverage gap to close, confirmed by reading it directly:**
+   `tests/e2e/support/target.ts`'s `fillMinimalValid*Ward()` helpers
+   (used across most of the e2e suite) inject a complete, valid ward —
+   including `county: 'Pinellas'` — directly onto `window.D` via
+   `page.evaluate()`, bypassing the Cover page entirely. That means no
+   existing e2e test actually exercises "select County on the Cover, then
+   it lands on the ward Party" through the real UI; it's only ever
+   asserted at the unit level or via the new carryover spec below. Add at
+   least one e2e test that drives the real Cover county selector for a
+   fresh ward (not the `evaluate()` shortcut) and confirms the resulting
+   ward Party carries it, so the feature's actual entry point has direct
+   coverage.
+2. Update `tests/unit/ward-carryover.spec.js`: use the real nested
+   Initial Inventory attorney shape, prove selected-source field
+   fidelity and ward-Party linking, assert the canonical ward county
+   hydrates the destination, and assert a ward Party without county
+   leaves it blank.
+3. Update `tests/unit/checklist-export-parity.spec.js` and the four Plan
+   parity specs so empty provider collections and Minor case/amended
+   fields preserve the readiness/export/navigation invariant.
+4. Update `tests/e2e/form-entry-ux.spec.ts`: valid cross-year and
+   reversed date entry never changes the opposite field, while invalid
+   ordering is reported rather than repaired destructively.
+5. Update `tests/e2e/supplemental-pdf-accounting.spec.ts`: changing
+   either reporting-period endpoint updates the visible Supporting
+   Documents period and preserves already entered document state.
+6. Add `tests/e2e/carryover-workflow.spec.ts`: exercise the real
+   Initial-Inventory-to-Simplified-Accounting eligibility-modal path,
+   including nested attorney fields, selected-source copy, linked
+   ward-Party county hydration, first-filing blank behavior, accurate
+   helper copy, and cancellation atomicity.
+7. Update `tests/e2e/filing-identity.contract.spec.ts`: all nine filing
+   types expose a root Cover label and required County control; Annual,
+   Final, and Trust retain their distinct filing identities while
+   sharing "Cover & Part I" UI.
+8. Update `tests/unit/content-corrections.spec.js` for the D4 and
+   eligibility copy corrections. Update every changed/new test
+   description and add both new files in `TEST-INDEX.md` in the same
+   commit.
+9. Update `tests/e2e/party-resolver.spec.ts` and the relevant `.sav`
+   round-trip specs: unanimous legacy backfill, conflicting linked
+   counties, Party merge conflict handling, future-filing hydration
+   without retroactively rewriting sibling filings, and single-ward
+   import reconstruction. Update `tests/unit/case-county-drift.spec.js`
+   for the ward-Party/case/filing snapshot semantics and revised
+   advisory copy.
+10. Update `tests/unit/plan-initial-parity.spec.js` with the complete Q7
+    affirmative/negative/blank matrix and its readiness-to-export
+    mapping. Update `tests/e2e/plan-readiness.contract.spec.ts` and
+    `tests/e2e/plan-initial-mount.spec.ts` so the normal fully completed
+    Plan Initial fixture reaches Ready to export and PDF generation
+    without a Q7 explanation when Trusts and Pending Benefits are
+    explicitly No. Remove the workaround and retain Plan Initial
+    signature coverage in `tests/e2e/signature-capture.contract.spec.ts`.
+    Update the descriptions of all four rescoped files in
+    `TEST-INDEX.md`.
+11. **Invert `tests/unit/circuit-lookup.spec.js:38-41`** (added in the
+    review pass of 2026-09-12 — this spec was missing from the plan
+    entirely). Its test "falls back gracefully to Sixth Judicial Circuit
+    for unknown or empty counties" asserts `circuitForCounty('')`,
+    `circuitForCounty(null)`, and `circuitForCounty('Atlantis')` all
+    return `6`; that is the exact behavior Task 40C-A item 7 removes, so
+    the spec fails the moment the fix lands. Rewrite it to assert the
+    unknown-result representation chosen in item 7, and add coverage for
+    all three layered fallbacks (`circuitForCounty`, `getCircuitOrdinal`,
+    `getFloridaCircuitCourtCaption`) so a future partial revert can't
+    reintroduce a Sixth Circuit default through whichever one wasn't
+    tested. Also assert `getFloridaCircuitCourtCaption('Pinellas')` still
+    produces the correct real caption — removing a fallback must not
+    disturb the 67 genuine county mappings.
+12. **Cross-delivery note, corrected 2026-09-12.** An earlier version of
+    this item claimed `tests/unit/plan-readiness-county.spec.js` is edited
+    by this proposal's readiness work as well as by Milestone 40A. It is
+    **not** edited here: it passes `county` explicitly into every case
+    (`:48-49`) and already asserts that a blank county is treated as
+    non-local rather than defaulted to Sixth Circuit (`:70`), which is the
+    behavior 40C-A item 7 now adopts elsewhere. Milestone 40A is the only
+    delivery that touches it, and only to drop its `vi.mock` of the
+    deleted DOCX engine (`:25`). **Leave this spec alone** — and treat its
+    continued passing as a regression check that item 7 didn't disturb
+    `county-guidance.js`'s Pinellas/Pasco gating.
+
+    The genuine cross-delivery files are `docx-engine.js` (40A ↔ 40C-1),
+    `pdf-engine.js` (40E ↔ 40C-1), and
+    `tests/unit/content-corrections.spec.js` (40C-1 ↔ 40C-2). See the
+    dependency table in `MILESTONE-40-PROPOSAL.md`.
+
+**40C-1 only:** run its targeted files above plus
+`npm run verify:data-model`. Because 40C-1 changes creation, carryover,
+import, navigation, validation, and all filing output captions, recommend
+the full `npm test` regression before commit/push, run only with the
+requester's explicit approval, per `AGENTS.md`.
+
+**40C-2:** run its targeted files above. No `verify:data-model` run. Its
+scope is form-entry behavior, sidebar/readiness parity, copy, and one
+validator predicate — a targeted unit+e2e set is the appropriate gate, and
+a full regression is not warranted on its own.
+
+---
+
+<a id="milestone-40d-proposal-md"></a>
+
+# Archive: MILESTONE-40D-PROPOSAL.md
+
+# Milestone 40D: Move Theme/UI-Only Preferences to `localStorage`
+
+## Status
+
+**Landed 2026-09-13.** Theme is now a per-device preference in `localStorage`,
+resolved synchronously before first paint.
+
+### What landed
+
+All of Decisions 1-5, and Decision 6's inventory. New
+`src/core/theme-preference.js` owns the key (`pg-theme-v1`, matching the app's
+existing `pg-…-v1` convention), the `['light','dark']` enum, the read/write
+guards, the one-time legacy seed, and the paint resolution.
+
+Every site from the enumerated checklist:
+
+- `applyTheme()` writes through `writeStoredTheme()` instead of
+  `saveAppState('theme', …)`; its trailing comment is corrected.
+- `prepaint.js` reads `localStorage` first and falls back to `matchMedia`.
+- The post-`.sav`-load `if(_appState.theme)applyTheme(...)` — **the flash
+  itself** — is gone. It now calls `applyTheme(currentTheme(), false)`, which
+  changes nothing and only syncs the toggle button's icon/aria state.
+- `loadCaseFileFromZip()` is where the one-time seed hooks, exactly as the
+  proposal predicted.
+- `case-file.js`'s `appStateBlob` no longer serializes `theme`. This was the
+  load-bearing one: removing `applyTheme()`'s write alone would not have stopped
+  it, because it re-read persisted app state directly.
+- `tokens.css`'s comment is updated.
+- `legacy-app.js`'s dead duplicate of `buildCaseFileBlob()` **no longer exists** —
+  Milestone 40F deleted it, so that site disappeared on its own as anticipated.
+
+### One fix beyond the checklist
+
+`prepaint.js` always set **both** `data-theme` and `data-bs-theme`, but
+`applyTheme()` only ever set `data-theme`. So toggling the theme left
+`data-bs-theme` on whatever was painted at load, and Bootstrap's own components
+stayed on the old palette until the next reload. `applyTheme()` now sets both.
+This is part of Decision 4's "reconcile these so the theme isn't computed twice
+by two different rules" — the two rules disagreed about which attributes the
+theme even consists of.
+
+### Decision 6 inventory — nothing else is migrated
+
+`_appState` holds: `theme`, `walkthroughCompleted`, `firstLaunchSeen`,
+`continuePromptShown`, `recentWards`, `autoExportIntervalMinutes`,
+`lastExportAt`, `unlockFailState`, `securityMode`, `cryptoSalt`,
+`cryptoVerifier`, `activeWardId`.
+
+Only theme is migrated. Of the rest:
+
+- **Case-coupled, must stay:** `recentWards` (references ward ids in *this* file),
+  `lastExportAt` (when this file was exported), `unlockFailState` (this file's
+  lockout state), `securityMode`/`cryptoSalt`/`cryptoVerifier` (this file's
+  crypto), `activeWardId` (runtime focus, already governed by Milestone 38C).
+- **Genuinely per-device candidates, deliberately NOT migrated:**
+  `walkthroughCompleted`, `firstLaunchSeen`, `continuePromptShown`. Each is
+  onboarding state, and moving it is a behavioural change of its own — a filer
+  creating a brand-new case on a device that has already seen the walkthrough
+  would stop being re-shown it. That may well be the better behaviour, but it is a
+  product decision about onboarding, not a mechanical consequence of the theme
+  fix, and this delivery's acceptance criteria cover theme only. Recorded here as
+  candidates rather than migrated silently.
+- `autoExportIntervalMinutes` is a save-pipeline setting, not UI-only.
+
+### Decision 5's behavioural change, stated plainly
+
+Theme moves from per-case to per-device. Opening a colleague's `.sav` no longer
+changes your appearance, and a `.sav` carried to another machine no longer brings
+its theme. A user who deliberately themed one case differently loses that. This
+is the intended improvement — theme is a display preference, not case data — and
+`theme-prepaint.spec.ts` asserts the machine-A/machine-B case deliberately rather
+than leaving it incidental.
+
+### How this was verified
+
+`tests/unit/theme-persistence.spec.js` (20 tests): the enum, storage round-trip,
+a corrupt stored value reading as unset, storage that *throws* (some privacy modes
+do) degrading rather than crashing, the seed firing exactly once and never
+overwriting an existing device choice, paint resolution in both directions, and
+source-level parity between `prepaint.js`'s duplicated literals and the module's
+constants — that duplication is unavoidable, since `prepaint.js` cannot import
+anything, so a test guards it from drifting. **5 fail against HEAD.**
+
+`tests/e2e/theme-prepaint.spec.ts` (5 tests) asserts first-paint behaviour. The
+discriminator is a reload with the OS preference set *opposite* to the stored
+choice and no case file open: the old code resolved theme from `.sav` app state,
+so with nothing loaded it painted the OS preference and stayed there. **4 fail
+against HEAD.**
+
+No `verify:data-model` change, re-confirmed: the CSV has no `theme` or `appState`
+row, and this migration does not change its scope.
+
+## Goal
+
+Eliminate the theme-flash gap on reload, and stop coupling a trivial UI
+preference to case-data persistence, by storing theme (and any other
+confirmed pure UI-only display preference) in `localStorage` instead of
+the `.sav` file's app state.
+
+## Background
+
+Surfaced while reviewing the portfolio `templates/ui-starter/` kit against
+this app's own code. That kit's `theme.js`/`prepaint.snippet.js` already
+do this correctly — `localStorage` is synchronously readable before first
+paint and needs no decryption. This app's actual `src/prepaint.js` cannot
+do the same today because `legacy-app.js`'s `applyTheme()` persists the
+chosen theme into `.sav` app state via `saveAppState('theme', theme)`
+(`legacy-app.js:60`), which is only readable after the `.sav` file
+loads — for an encrypted save, only after the master password is entered.
+
+Confirmed call sites:
+
+- `legacy-app.js:57-69` — `applyTheme(theme, persist)`: writes to `.sav`
+  app state when `persist` is true.
+- `legacy-app.js:4014` — `if(_appState.theme) applyTheme(_appState.theme,
+  false);`: restores the saved theme only after `.sav` load completes —
+  the actual, current cause of the flash.
+- `legacy-app.js:4085` — `_appState.theme = a.theme;`: theme restore
+  inside a full-state import/restore path; needs an equivalent under the
+  new mechanism.
+- `legacy-app.js:3066` — `theme: await loadAppState('theme')`: theme read
+  into a bundled/exported state object.
+- `src/prepaint.js`: currently samples only `prefers-color-scheme`; needs
+  the `localStorage`-first, `matchMedia`-fallback logic already proven in
+  `templates/ui-starter/prepaint.snippet.js`.
+
+There's existing precedent for keeping state outside `.sav`:
+`src/core/persistence/launch-preferences.js` already stores pre-case
+"launch preferences" (e.g. `hasOpenedCaseBefore`, a remembered file
+handle) in a separate IndexedDB store (`pg-launch-pref`). That's the right
+category for theme conceptually, but the wrong mechanism for this specific
+need — IndexedDB access is asynchronous, so it can't be read inside a
+synchronous inline `<head>` script any more than `.sav` can. `localStorage`
+is the only browser storage synchronously readable at that point, which is
+why the starter kit uses it and why this migration should too.
+
+## Decisions / Implementation
+
+1. `applyTheme()` writes to `localStorage` (a fixed key, value validated
+   against an explicit `['light','dark']` enum) instead of calling
+   `saveAppState('theme', theme)`.
+2. `src/prepaint.js` gains the same `localStorage`-first /
+   `matchMedia`-fallback logic as
+   `templates/ui-starter/prepaint.snippet.js`, so the correct theme
+   paints immediately, before `.sav` ever loads.
+3. **One-time migration, not a silent reset:** on first load after this
+   ships, if `localStorage` has no stored theme yet but the loaded
+   `.sav`'s app state still has `_appState.theme`, seed `localStorage`
+   from that value once. Existing users must not see their theme
+   silently revert to OS-default.
+4. Stop writing new theme values into `.sav` app state going forward.
+   Whether to actively delete the old `_appState.theme` key or leave it
+   inert is an implementation choice; either is fine as long as it's
+   never read again.
+
+   **Every theme-persistence site, enumerated (review pass 2026-09-12).**
+   Steps 1-2 named only `applyTheme()` and `prepaint.js`; there are five
+   more, and missing any one leaves theme half-migrated. Confirmed
+   exhaustively (minimum checklist — line numbers will shift):
+   - `legacy-app.js:57-60` — `applyTheme(theme, persist)`, whose
+     `saveAppState('theme', theme)` call is the write this delivery
+     redirects. Its trailing comment ("lands in the .sav file's appState
+     section on the next write") becomes wrong and must be updated.
+   - `legacy-app.js:71` — the toggle (`applyTheme(..., true)`), the only
+     caller that passes `persist: true`.
+   - `legacy-app.js:78` — `applyTheme(currentTheme(), false)` at script
+     load. Reconcile this against the new `prepaint.js` logic so the theme
+     isn't computed twice by two different rules; whichever one wins must
+     agree with what already painted.
+   - `legacy-app.js:4014` — `if(_appState.theme)applyTheme(_appState.theme,false);`
+     after a `.sav` loads. **This is the flash this delivery is meant to
+     eliminate** and the exact point where a file's stored theme could
+     still override the user's device choice. Deciding what happens here
+     is the substance of step 3's migration rule, not an afterthought.
+   - `legacy-app.js:4085` — `_appState.theme=a.theme;` inside
+     `loadCaseFileFromZip()`, which is where the legacy value arrives from
+     the file and therefore where the one-time seed in step 3 is most
+     naturally hooked.
+   - `case-file.js:189` — `theme: await loadAppState('theme')` inside
+     `buildCaseFileBlob()`'s `appStateBlob`: the live serializer that puts
+     theme *into* every new `.sav`. Removing the write in `applyTheme()`
+     alone does not stop this — it re-reads persisted app state directly.
+     **This function is also edited by Milestone 40F**; see the dependency
+     table in `MILESTONE-40-PROPOSAL.md`.
+   - `legacy-app.js:3066` — the same `theme:await loadAppState('theme')`
+     line in `legacy-app.js`'s own dead duplicate of `buildCaseFileBlob()`.
+     Milestone 40F deletes that entire function, so **if 40F lands first
+     this site disappears on its own**; if this delivery lands first, edit
+     it anyway rather than leaving one copy migrated and one not.
+   - `src/styles/tokens.css:51` — a comment stating "applyTheme() restores
+     the .sav file's setting after the file loads." Documentation of the
+     behavior being removed; update it.
+5. **State the behavioral change explicitly, because it is a real one:**
+   theme moves from *per-case* (travels inside the `.sav`, so opening a
+   colleague's file could change your appearance) to *per-device*
+   (`localStorage`, so it follows the browser and is identical across
+   every case opened on it). That is the intended improvement, but it
+   means a user who deliberately themed one case differently loses that,
+   and a `.sav` moved to a new machine no longer carries its theme. Both
+   are acceptable — theme is a display preference, not case data — but say
+   so in the delivery notes rather than letting a filer discover it.
+6. **Scope of "UI choices" beyond theme:** theme is the concrete,
+   confirmed case. Before broadening the change to other settings,
+   inventory what else currently lives in `.sav` app state (`_appState`
+   in `legacy-app.js`/`core/state.js`) that is genuinely UI-only, rather
+   than assuming more exist — extend the same treatment only to what's
+   actually found.
+7. **Data model: no CSV change needed.** Re-confirmed directly against
+   the current file — `probate-guardian-data-model.csv` has no `theme`
+   or `appState` row of any kind. The CSV tracks persisted case/filing
+   data, not app-level UI preferences, and this migration doesn't change
+   that scope. No `npm run verify:data-model` update is required as part
+   of this delivery.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| First page load, no prior theme choice | Paints OS `prefers-color-scheme` immediately, no flash. |
+| First page load, prior explicit theme choice | Paints the stored `localStorage` theme immediately, before `.sav` loads. |
+| Existing user upgrading from a `.sav` with a legacy `_appState.theme` | `localStorage` is seeded once from that value; the visible theme does not change on upgrade. |
+| Theme toggled in-app | Writes to `localStorage`, not `.sav`; no `.sav`-file change is required to persist the choice. |
+| `.sav` full-state import/restore | Theme restore still works via the new mechanism; no dangling reference to the old `_appState.theme` path remains uncorrected. |
+| A case file finishes loading mid-session | No visible theme change and no flash at that moment — the `legacy-app.js:4014` post-load apply no longer overrides what already painted. |
+| A `.sav` written after this lands, inspected directly | Its appState section carries no new `theme` value (`buildCaseFileBlob()` no longer serializes one). |
+| A `.sav` themed dark on machine A, opened on machine B whose stored choice is light | Machine B stays light — the file's contents never change appearance. This is the intended per-device behavior from Decision 5, and the test should assert it deliberately rather than treating it as incidental. |
+
+## Verification
+
+Add `tests/unit/theme-persistence.spec.js` covering: theme write goes to
+`localStorage`, not `.sav`; loading a `.sav` with a legacy
+`_appState.theme` seeds `localStorage` exactly once and never overwrites
+an existing `localStorage` value; `src/prepaint.js` prefers a stored
+`localStorage` value over `matchMedia` and falls back correctly when none
+is stored. Add or extend an e2e spec that reloads after an explicit theme
+choice and asserts the correct theme on first paint, not just after JS
+settles. Update `TEST-INDEX.md` for any new/changed file. This is a
+narrow, self-contained change; it does not need a full-regression
+recommendation on its own.
+
+---
+
+<a id="milestone-40e-proposal-md"></a>
+
+# Archive: MILESTONE-40E-PROPOSAL.md
+
+# Milestone 40E: Fix PDF Table Address Wrapping
+
+## Status
+
+**Landed 2026-09-12.** Approved and implemented as specified, with two
+additions the implementation pass found and the proposal had not
+anticipated — both documented under "What landed" below.
+
+### What landed
+
+The fix itself is as designed: an array branch in `measureCell()`
+(`pdf-engine.js`), and both certificate-of-service call sites passing
+`[r.line2, r.line3, r.line4].filter(Boolean)` instead of a joined string.
+`drawCell()` needed no change, as predicted.
+
+The audit in step 3 confirmed the proposal's claim that these are the only
+two such call sites — no third table cell anywhere builds an address from
+multiple discrete fields.
+
+**Superseded note (2026-09-13): Addition 1 below was deleted by Milestone 40A**,
+which removed DOCX export entirely one commit later, taking `docx-engine.js` and
+the two unit tests covering this fix with it. The fix was correct when made and
+the reasoning still explains why a model change has to be checked against every
+consumer — but it should not have been needed. `MILESTONE-40-PROPOSAL.md`'s
+shared-file table listed `docx-engine.js` under 40A and 40C-1 only, giving no
+signal that the file was about to be deleted; that row is now corrected. The PDF
+half of this milestone is what actually fixed the reported overflow and stands
+unchanged.
+
+**Addition 1: `docx-engine.js` consumes the same model and had to be fixed
+too.** This proposal only considered the PDF renderer, but
+`docx-engine.js:710` reads the identical `block.rows` and its cell branch
+ended in `xmlEscape(cell)`. `xmlEscape()` calls `String()`, and
+`Array.prototype.toString` joins with **bare commas and no spaces** — so
+array-ifying the cell would have silently made Word output *worse* than the
+`', '` join it replaced (`100 2nd Ave S,Suite 400,St. Petersburg, FL 33701`).
+The cell now emits one `<w:p>` per component, mirroring the PDF, with an
+empty cell still emitting a single paragraph because a `<w:tc>` containing
+no `<w:p>` is invalid OOXML and would make the file unopenable in Word
+rather than merely look wrong. A grep confirmed `pdf-engine.js` and
+`docx-engine.js` are the only two consumers of `block.rows`.
+
+**Addition 2: Simplified Accounting dropped `line4` in two places, not
+one.** This proposal identified the join at
+`simplified-accounting/pdf-model.js:261`. The recipient *filter* at `:235`
+omitted `line4` as well, so a recipient whose only populated field was
+`line4` was dropped from the certificate of service **entirely** — no row at
+all, rather than a truncated address. Annual's equivalent filter already
+counted it. Both are fixed. Practical reach is narrow, since a recipient
+almost always has a name and so survives the filter, but this is a court
+filing's certification of who was served, so both halves are worth
+correcting.
+
+### How this was verified
+
+`tests/unit/pdf-cert-service-address.spec.js` (9 tests) covers the model
+side for both forms: the array shape, a one-line address, blank-component
+filtering, `line4`'s presence, the only-`line4` recipient surviving the
+filter, and the two models agreeing on cell shape for identical input.
+Verified to fail 9/9 against the pre-fix models.
+
+`tests/unit/docx-engine.spec.js` gains two tests for the array cell and the
+empty-cell OOXML floor; the multi-line one was verified to fail with the
+DOCX fix reverted.
+
+`tests/e2e/pdf-form-specific.spec.ts` gains two tests asserting the rendered
+PDF, using a new `extractPdfTextItems()` helper in
+`tests/e2e/support/pdf-extract.ts`. That helper exists because
+`extractPdfText()` space-joins every run on a page, so it **cannot
+distinguish three lines inside the column from one line off the page** — the
+characters are identical either way, which is exactly what the proposal's
+own "assert structurally, not visually" note warned about. The new tests
+assert each component is its own text run and that none of the three
+possible joined forms reappears. Both verified to fail with the
+`measureCell()` branch removed.
+
+Existing fixtures behaved as the proposal predicted: `pdf-form-specific`'s
+`:245` and `:467` rows assert per-field sentinels, not joined strings, and
+kept passing unchanged. Confirmed `Room 100` (a `line4` value) was asserted
+nowhere before this work — the coverage gap that let the data loss through.
+
+Full unit suite 474 passed; PDF/DOCX e2e sweep of 8 specs green.
+
+## Goal
+
+Stop Certificate of Service recipient addresses (and any other multi-part
+address rendered inside a PDF table cell) from overflowing into the page
+margin. Each address component should fall on its own line inside the
+cell, not spill past the column boundary.
+
+## Background
+
+Reported directly against a live Annual Accounting export (Part X —
+Guardian Attorney Certificate of Service): the "Address Details" column
+renders `100 2nd Ave S, Suite 400, St. Petersburg, FL 33701` as one
+unwrapped line that runs off the right edge of the page, instead of three
+separate lines (`100 2nd Ave S,` / `Suite 400,` / `St. Petersburg, FL
+33701`) each fully inside the cell.
+
+**This exact problem already has a working, shipped solution elsewhere in
+the same file — the bug is that table cells never got it.** In
+`src/core/pdf/pdf-engine.js`:
+
+- `formatMailingAddress()` (line 437) takes a comma-joined address string
+  and heuristically splits it back into sensible display lines (street
+  [, suite], city, "state zip" — grouping the last two comma-segments
+  together). It exists specifically to fix this class of overflow: the
+  code comment right above its call site says so outright — "Wrap value
+  text within the column so long addresses... don't overflow into the
+  right margin."
+- It's wired into the **signature-block field renderer** (line
+  1503-1506): any `{label, value}` field whose label contains "address"
+  gets `formatMailingAddress(value).flatMap(line =>
+  doc.splitTextToSize(line, fieldMaxW))` instead of a single
+  `splitTextToSize` call on the whole string. That's what correctly wraps
+  the Attorney/Preparer/Guardian "Address:" line shown in the corrected
+  example — this path is not the bug.
+- **Table cells never received the equivalent treatment.** The table-cell
+  measurer, `measureCell()` (line 1143), has no array/multi-line branch
+  at all for a plain cell — its only two branches are `isMixedCell()`
+  (an object with `main`/`sub`, used for a different two-tier text style)
+  and a single-string fallback: `doc.splitTextToSize(String(cellData),
+  usableW)` (line 1162). A cell value built by joining several address
+  lines into one string, then handed to that single-string branch, gets
+  exactly one pass of generic word-wrap — which is what's producing the
+  overflow, not a width-calculation bug. (`colWidths` are percentages of
+  content width, `pdf-engine.js:1016` — the renderer isn't starved for
+  width; it's just never told where the real line breaks are.)
+
+Two independently-implemented, inconsistent joins currently feed that
+single-string branch:
+
+- `src/features/annual-accounting/pdf-model.js:964` —
+  `[r.line2, r.line3, r.line4].filter(Boolean).join(', ')`: comma-joins
+  all three optional address lines into one string.
+- `src/features/simplified-accounting/pdf-model.js:261` —
+  `` `${r.line2 || ''} ${r.line3 || ''}`.trim() ``: space-joins only two
+  of the three lines and **silently drops `line4` entirely** — a
+  data-loss bug in the rendered output, separate from and worse than the
+  wrapping bug, for any Simplified Accounting recipient whose address
+  actually needs a fourth line.
+
+Unlike the signature-block case, the certificate-of-service rows already
+have their address in **discrete fields** (`r.line2`, `r.line3`,
+`r.line4`) — there's no comma-string to reverse-engineer. That makes the
+table-cell fix simpler than `formatMailingAddress()`'s own heuristic, not
+harder: pass the already-known lines straight through as an array, and let
+the renderer wrap each one to the column width, the same way
+`formatMailingAddress()`'s output already does.
+
+`drawCell()` (line 1166) needs no change to support this: its non-mixed
+branch already does `doc.text(measured.lines, textX, yTop + 11, {
+align })`, and jsPDF's `doc.text()` natively renders an array of strings
+as one line each. Only `measureCell()`'s plain-cell branch needs to learn
+that a cell value can be an array of pre-split lines, not only a single
+string.
+
+## Decisions / Implementation
+
+1. In `pdf-engine.js`'s `measureCell()` (line ~1160-1163), add an array
+   branch alongside the existing `isMixedCell()` and plain-string cases:
+   when `Array.isArray(cellData)`, treat each element as one address
+   line and compute `lines = cellData.flatMap(line =>
+   doc.splitTextToSize(String(line), usableW))` — the same
+   flatMap-over-pre-split-lines pattern `formatMailingAddress()`'s caller
+   already uses, just inside the table-cell path instead of the
+   signature-block path. No change needed to `drawCell()`.
+2. Change both call sites to pass an array instead of a joined string:
+   - `annual-accounting/pdf-model.js:964` →
+     `[r.line2, r.line3, r.line4].filter(Boolean)` (drop the
+     `.join(', ')`).
+   - `simplified-accounting/pdf-model.js:261` →
+     `[r.line2, r.line3, r.line4].filter(Boolean)` (drop the
+     template-string join **and** add the currently-missing `r.line4`
+     at the same time — this fixes the data-loss bug and the wrapping
+     bug in one change).
+   No new shared helper (e.g. a `composePdfAddressLines()` in
+   `address-format.js`) is needed for this — these are already-discrete
+   fields, and `.filter(Boolean)` is the entire transformation. Don't add
+   one just for symmetry with `composePdfAddress()`; that function solves
+   a different problem (reconstructing lines from an already-joined
+   string) that doesn't apply here.
+3. **Audit, don't assume, the rest of the surface.** Search every
+   `pdf-model.js` for a `type: 'table'` cell built from more than one
+   address-like field. Two categories to distinguish:
+   - A cell already built from discrete fields, comma/space-joined into
+     one string (this milestone's exact bug shape) — fix the same way:
+     pass the array, drop the join.
+   - A cell built from a single already-combined address string with no
+     discrete fields available — that's `formatMailingAddress()`'s
+     situation, not this one; if such a cell exists inside a table (not
+     a signature-block field), it needs `formatMailingAddress(value)`
+     applied before array-ifying, not a plain `.filter(Boolean)`.
+   Confirm each one found is already correct or gets the matching fix.
+   Do not declare this done after the two confirmed call sites above
+   without checking the rest.
+4. Confirm the fix at more than one column width and content length —
+   including a recipient name/address long enough to need wrapping in
+   the *other* columns of the same table, and a case with only one
+   address line (no regression to the common, short-address case).
+5. Confirm no other caller of `measureCell()`/the table renderer ever
+   passes an array today expecting it to be stringified — grep for
+   existing `type: 'table'` `rows` construction across every
+   `pdf-model.js` before assuming the array branch is purely additive.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Annual Accounting Certificate of Service, 3-line recipient address | Renders as three separate lines, fully inside the column, no overflow into the margin. |
+| Simplified Accounting Certificate of Service, 3-line recipient address | Same — and `line4` is no longer silently dropped. |
+| Recipient with only one address line | Renders on one line, unchanged from today's short-address behavior. |
+| A table cell elsewhere still passed as a plain string | Renders exactly as before — the array branch is additive, not a behavior change for existing string cells. |
+| Any other `pdf-model.js` table cell built from multiple address-like fields (found during the audit) | Either already correct, or fixed the same way — not left inconsistent. |
+| Long recipient name in the adjacent column, same row | Still wraps correctly; the address-line fix doesn't regress other columns. |
+
+## Verification
+
+Add or extend a unit test around `measureCell()`'s new array branch (or
+the smallest testable seam around it) covering: an array of 1-3
+non-blank lines wraps as expected; an existing plain-string cell is
+unaffected; a line still too long for the column word-wraps within
+itself via `splitTextToSize`, on top of the forced per-component break.
+Add or extend PDF-output coverage (existing
+`tests/e2e/pdf-structure-tags.spec.ts` / `pdf-form-specific.spec.ts`
+style) asserting a multi-line recipient address renders as separate
+lines fully inside the column, for both Annual and Simplified Accounting,
+and that Simplified no longer drops `line4`. This is a narrow,
+self-contained rendering fix; it does not need a full-regression
+recommendation on its own.
+
+**Existing fixtures and coverage gap (review pass 2026-09-12).** Checked
+the current specs directly rather than assuming what's there:
+
+- **Annual already has usable fixtures.**
+  `tests/e2e/pdf-form-specific.spec.ts:245` supplies
+  `{ name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756', line4: 'Room 100' }`
+  — all four fields populated, which is exactly the shape this fix
+  changes. `:467` supplies a `DRIFT_GUARD_*` sentinel row with
+  `line4: ''`. Both assert per-field sentinels rather than a joined
+  string, so **they should keep passing unchanged** — confirm that early,
+  because if either one *does* break, it means something asserts the
+  comma-joined form and the blast radius is wider than this proposal
+  assumes.
+- **Simplified has no equivalent fixture at all**, which is why the
+  dropped `line4` went unnoticed. The data-loss half of this fix is
+  therefore **completely unasserted today**, and adding the array branch
+  alone would not prove it fixed. Add a Simplified Certificate of Service
+  fixture with all of `line2`/`line3`/`line4` populated and assert
+  `line4`'s text is present in the extracted output. Treat that assertion,
+  not the wrapping one, as the regression guard for the data-loss bug —
+  wrapping is visually obvious on inspection, a silently missing address
+  line is not.
+- **Assert absence-of-overflow structurally, not visually.** "Fully inside
+  the column" is not directly observable from extracted text. Either
+  assert the expected line count for the cell (three text runs where one
+  used to be), or assert each component string appears as its own
+  extracted line — not merely that the characters exist somewhere on the
+  page, which was already true when it was overflowing.
+
+---
+
+<a id="milestone-40f-proposal-md"></a>
+
+# Archive: MILESTONE-40F-PROPOSAL.md
+
+# Milestone 40F: Unify the Duplicate Save/Autosave/Export Pipeline
+
+## Status
+
+**Landed in full, 2026-09-13.** Part 1 (the crash fix and correctness work,
+plus the Tauri removal) shipped first; Steps 4 and 6 followed once Milestone
+40G removed the boot-ordering obstacle that Part 1 discovered. The same
+treatment was then applied to the router's duplicate pair, which turned up a
+silently-lost sidebar behaviour and a further 45 shadowed pairs — see "The
+router duplicate pair" below.
+
+### What landed
+
+Steps 1, 2, 3, and 5, plus Decision 2 — every user-visible bug this
+proposal identified:
+
+- The boot `ReferenceError` is gone. `_lastAutoSavedAt` no longer exists in
+  executable code in either implementation, so the undeclared-fallback
+  throw cannot happen, and `initApp()` now runs to completion — restoring
+  the periodic save timer, the last-saved ticker, the fallback save
+  reminder, drag-and-drop import, and the `beforeunload` unsaved-changes
+  warning.
+- One save clock, written only by a confirmed write:
+  `getLastExportAt()`/`setLastExportAt()` in `case-file.js` now sync
+  `window._lastExportAt` on every write, so the Activity Log readout and
+  `ward-lifecycle.js`'s first-backup check see live values instead of a
+  frozen one.
+- Failure escalation moved into `writeCaseToHandle()`, so the debounce, the
+  periodic sweep, and the manual button all report a failed write
+  identically.
+- `renderStorageReadout()` reads the live values via
+  `window.getLastExportAt()`/`window.isAutoSaveArmed()`.
+- The dead `window._appState.lastExportAt` write is gone.
+
+Steps 9, 10, and 11 also landed — the Tauri scaffolding is gone. This was
+safe to do independently of 40G because every definition *and* every call
+site lived in `legacy-app.js`, so nothing was left depending on a module
+that had not evaluated. Removed: the whole `FILESYSTEM AUTOSAVE` block
+(`AUTOSAVE_DIR`, `_autosaveDirPath`, `autosaveWarn`, `tauriFs`, `tauriPath`,
+`getAutosaveDirPath`, `ensureAutosaveDir`, `autosaveWardToFile`,
+`deleteAutosaveFile`, `restoreFromFileBackupIfEmpty`) and its four call
+sites; the keychain functions in both `legacy-app.js` and `crypto.js` plus
+`crypto.js`'s four `window.*` exports; the silent auto-unlock branch; the
+`#unlock-remember-row` markup, its `modals.css` rule, and every reference
+to it across `promptUnlock`, `promptPasswordForFile`,
+`promptCreatePassword`, and `submitUnlockForm`; the one-off
+`set_secure_permissions` call; and the stale `src-tauri/src/lib.rs` and
+`capabilities/default.json` comments.
+
+**A third Tauri subsystem the proposal never enumerated** turned up during
+removal and is also gone: `auditLog()` tried a Tauri `audit_log` command
+before falling back to the local in-memory log. Only the local path could
+ever run, so the branch was deleted and the local recording kept. Two
+consequential tidies fell out of the keychain removal: `ensureUnlocked()`'s
+`skipAutoUnlock` parameter existed solely to suppress the keychain
+auto-unlock on a manual Lock, so it and the `ensureUnlocked(true)` call site
+are gone; and the encryption-at-rest header comment no longer describes an
+OS-credential-store recovery path that does not exist.
+
+### Steps 4 and 6 landed after Milestone 40G (2026-09-13)
+
+With startup driven from `main.js`, every boot-path call resolves to
+`case-file.js`, so the legacy duplicates were finally safe to remove.
+**32 duplicate functions, 18 orphaned `window.*` re-exports, and 7 dead
+private declarations deleted from `legacy-app.js` — net −640 lines.**
+Bare calls in surviving legacy code (e.g. `saveData()`'s
+`loadCaseFileHandle()`/`writeCaseToHandle()`) now resolve through the global
+object to `case-file.js`'s versions, which is the intended bridge and is
+what Decision 1 described.
+
+Two state declarations were **deliberately kept**, and are not leftovers:
+`_lastExportAt` and `_autoExportIntervalMinutes`, with their
+`Object.defineProperty` accessors. They are the window-backed shared store
+that `case-file.js` reads and writes through, and `loadCaseFileFromZip()`
+still writes them when a `.sav` is opened. Deleting them would silently
+change which value reaches the `.sav` manifest. The comment there now says
+so, so a later reader does not "finish the job" by mistake.
+
+**Step 6 turned out to be mostly undoable as written, and turned up another
+bug.** The functions it proposed renaming — `setupAutoExportTimer`,
+`silentAutoExport`, `loadAutoExportPrefs`, `saveAutoExportIntervalPref` —
+are all reached through `window` by `initApp()` or by
+`shell-events.js:61`, which Step 6's own constraint (do not rename public
+contracts, DOM ids, or persisted keys) rules out. What was safely renameable
+was one private variable (`_autoExportTimer` → `_saveRetrySweepTimer`), so
+the clarity work is now carried by comments stating plainly that this is a
+sparse retry-and-nudge sweep, not a second autosave engine.
+
+While renaming it, found that **both of these timers were no-ops even once
+40G let them be installed** — the same defect class this whole milestone is
+about. `setupAutoExportTimer`'s callback and `setupFallbackSaveReminder`'s
+both read the module-private `_dirtySinceExport` rather than
+`isDirtySinceExport()`. `legacy-app.js` never updates that private copy — it
+assigns its own variable, which this module sees only through the window
+accessor — so the private copy was effectively always false. The periodic
+sweep therefore never retried a save, and the 15-minute fallback modal never
+appeared for the browsers that need it most (no File System Access API means
+no background save at all). Both now use the accessor.
+
+### The router duplicate pair, removed by the same treatment (2026-09-12)
+
+The save pipeline was not the only place a classic-script declaration was
+being shadowed by a module. `src/core/navigation/router.js` publishes
+`navigate`, `renderPage`, `toggleMobileSidebar` and `closeMobileSidebar` on
+`window`, and `legacy-app.js` declared all four as top-level functions. A
+top-level `function` in a classic script *is* the global property, so
+router.js's `window.navigate = navigate` overwrote the same slot — legacy's
+four were already unreachable, including from the bare calls inside
+`legacy-app.js` itself, which resolve through the global object. **111 lines
+deleted.**
+
+Confirmed before deleting that router.js's versions are a strict superset:
+they add custom routes, `attachFormHeaderActions`, the 38C dashboard-focus
+call, and they fix legacy `renderPage`'s `case 'guardian': return;`, which
+skipped `linkLabelsToInputs`, `enforceDateRanges`,
+`setupAmountFieldValidation`, `updateNavDots` and `initPrintPager` for every
+Guardian filing. The shared `currentPage` state was already safe: legacy's
+bare `let currentPage` is bridged by an `Object.defineProperty` accessor that
+router.js's `setCurrentPage()` writes through, so both files read one value.
+
+**One real behaviour had already been lost this way, silently.** Legacy's
+`navigate()` reset `_navSectionExpandedKey` on every page change, and
+router.js's has no equivalent. That variable is the sidebar accordion's
+memory of the single section the user opened by hand; while it is set, it
+beats "expand whichever section holds the current page." So once a user
+clicked a section header, that section stayed stuck open and the current
+page's section stayed collapsed, for the rest of the session. It is a bare
+`let`, unreachable from a module, so the fix is a `resetNavSectionExpanded()`
+function declaration in `legacy-app.js` that router.js's `navigate()` calls
+through `window`. Covered by `routes.spec.ts`'s
+"navigating forgets a hand-opened sidebar section" test, verified to fail
+without the call.
+
+This is the lesson of the milestone restated: the duplicate is not the bug,
+it is the *hiding place*. Deleting one is how the divergence it was
+concealing becomes visible.
+
+**45 further shadowed pairs remain** (detected by matching `^function X` in
+`legacy-app.js` against `window.X = X` in every other module) across
+`ward-lifecycle.js` (11), `launch-preferences.js` (10), `crypto.js` (8),
+`convert-ward-modal.js` (4), `recovery-cache.js` (3), `prune-cards.js` (3),
+`form-contract.js`, `templates.js`, `annual-accounting/index.js`, and
+`main.js`'s two re-exports. These are dead weight rather than live bugs —
+every one of those modules is imported eagerly by `main.js`, so the module
+version wins from boot, and the one lazily-loaded case
+(`duplicateAnnualRow`, whose legacy version splices raw JSON where the
+module delegates to `duplicateCollectionRow()`) is only reachable from UI
+that the module's own mount creates. They are worth removing as their own
+task, one pair at a time with the same superset check applied here, because
+each is a place where a future reader can edit a function that has not run
+in years and see nothing happen.
+
+### Why Steps 4 and 6 were originally deferred — a dependency this proposal had wrong
+
+This document states that 40F and 40G "can be implemented in either
+order." **That is false for Step 4.** `initApp()` calls four of the
+functions Step 4 deletes — `loadAutoExportPrefs()`,
+`setupAutoExportTimer()`, `setupLastSavedTicker()`,
+`setupFallbackSaveReminder()` (`legacy-app.js:9086-9089`) — and the live
+stack trace proves modules have not evaluated at that point, since it was
+`legacy-app.js`'s own copy that threw. Deleting the legacy copies while
+`initApp()` still runs from the classic script would simply convert the
+`ReferenceError` into `TypeError: loadAutoExportPrefs is not a function`:
+the same crash, the same abort point, a different message.
+
+Decision 1's premise — that everything `legacy-app.js` needs can be reached
+"through `window.*`, an already-established bridge pattern" — holds only
+for calls made after module evaluation. It does not hold for the boot path,
+which is the exact trap `legacy-app.js:6837-6847` documents. **Step 4 must
+follow 40G's boot-ordering fix.** Step 6 (renaming) is deferred with it:
+it is cosmetic, and renaming functions the boot path still calls adds risk
+for no benefit while the ordering is unfixed.
+
+Everything Step 4 would delete remains dead code — that analysis is
+unchanged and still correct. It is simply not yet safe to remove.
+
+## Goal
+
+Collapse the save/backup/export/autosave system down to exactly one real
+implementation, remove the false "Last backup: just now" / "auto-save
+needs one manual save to re-arm" claims that the current two-implementation
+split produces, and delete the inert Tauri-desktop scaffolding discovered
+during this review (there is no Tauri shell anywhere in this repo — no
+`src-tauri/`, no `@tauri-apps/*` dependency, no `tauri.conf.json` — so this
+code can never do anything in either shipped build).
+
+## Background
+
+`src/legacy-app.js` and `src/core/persistence/case-file.js` each contain a
+**complete, independent implementation** of the same save/export/autosave
+pipeline — `loadCaseFileHandle`, `writeCaseToHandle`, `buildCaseFileBlob`,
+`refreshAutoSaveArmedStatus`, `updateLastSavedIndicator`,
+`beginRecordingExport`, `exportCaseFileZip` (+ `exportGuardianDataZip`/
+`backupAllWardsNow` aliases), `silentAutoExport`, `saveBackupNow`,
+`getWardFileStem`/`getWardFileName`, `validateWardBackupOverwrite`,
+`finishSingleWardExport`, `showAutoExportReminder`/`hideAutoExportReminder`,
+`loadAutoExportPrefs`, `saveAutoExportIntervalPref`,
+`setupAutoExportTimer`/`setupLastSavedTicker`/`setupFallbackSaveReminder`,
+`markDirtySinceExport`, `saveBlobAs`, `suggestedCaseFileName`,
+`buildSingleWardExportBlob`, and the whole
+`triggerImportZip`/`importSavArchiveOrWard`/`importGuardianDataZip`/
+`triggerOpenBackupSav`/`handleBackupImportChange`/`restoreBackupSavFile`
+import family — same names, same jobs, defined twice
+(`legacy-app.js:2757-3670`ish vs. `case-file.js` in full).
+
+`index.html` loads `legacy-app.js` as a classic script (`:252`) before
+`main.js` as `type="module"` (`:253`), and `main.js` unconditionally
+imports `case-file.js` (`main.js:20`). Classic scripts run first; module
+scripts always run after. `case-file.js`'s own top-level
+`if (typeof window !== 'undefined') {...}` block (`case-file.js:834-871`)
+assigns `window.loadCaseFileHandle = loadCaseFileHandle;` and ~30 more of
+the exact names `legacy-app.js` already declared as plain top-level
+functions (which, in a classic script, are themselves just `window`
+properties). Because `case-file.js`'s assignments run second, **they win**
+— every one of those ~30 names in `legacy-app.js` is dead code, unreachable
+even from `legacy-app.js`'s own surviving functions that call them by bare
+identifier (e.g. `saveData()`).
+
+This is not cosmetic. Because the two implementations keep separate
+private state (`_lastExportAt`, `_autoSaveArmed`, `_caseFileHandle`,
+`_autoExportIntervalMinutes`), and only some of it round-trips through
+shared `window.*` properties, three concrete bugs are live in production
+today:
+
+1. **"Last backup" can claim success that never happened.**
+   `saveData()` (`legacy-app.js:2801-2836`, not shadowed — this one really
+   runs) sets `window._lastAutoSavedAt = Date.now()` and refreshes the
+   indicator (`:2818-2819`) *before* it even checks whether a file handle
+   exists, has permission, or the write succeeds. `#last-saved-indicator`
+   and `#auto-save-armed-indicator` sit side by side in the sidebar
+   (`index.html:66-67`), so a Firefox/Safari user — structurally incapable
+   of a background file write — can see "✓ Last backup: just now" directly
+   next to "Auto-save: not available in this browser." The same false
+   "just now" persists even when the real write throws and the
+   `#save-error-banner` appears.
+2. **`window._lastExportAt` never advances during a session.** It's backed
+   by a real accessor in `legacy-app.js` (`Object.defineProperty`,
+   `:979-983`), but the live (shadowed) `beginRecordingExport()` in
+   `case-file.js` only updates its own private `_lastExportAt` and
+   `window._appState.lastExportAt` (`case-file.js:323-341`) — never the
+   `window._lastExportAt` accessor. It gets set once, correctly, when a
+   `.sav` is opened at launch (`legacy-app.js`'s still-live
+   `loadCaseFileFromZip`, `:4034` on, sets the bare `_lastExportAt`
+   variable the accessor is bound to), then never again for the rest of
+   the session no matter how many real saves happen.
+3. **Two more surfaces read the dead copies directly.**
+   `renderStorageReadout()` (Activity Log page, still `legacy-app.js`'s
+   own, unshadowed — `:2512-2525`) reads `legacy-app.js`'s private
+   `_lastExportAt`/`_autoSaveArmed`, which are effectively frozen for the
+   reasons above, so it can permanently show "auto-save needs one manual
+   save to re-arm" and "not saved yet this session" even mid-session after
+   real saves have succeeded. `ward-lifecycle.js:387`'s
+   `isFirstWardEver && !window._lastExportAt` first-backup-reminder check
+   reads the same frozen value directly, so it can't reliably distinguish
+   a genuinely new user from a returning one.
+
+Separately (smaller, not incorrect, just confusing): three independent
+timers all react to `_dirtySinceExport` — the 1s `autoSave()` debounce
+(real, continuous work), a 10-minute `_autoExportTimer`/
+`silentAutoExport()` ("Auto-Export," almost always a no-op once the 1s
+debounce has already cleared `dirty`, useful only for first-save/
+permission-revoked recovery), and a 15-minute fallback-reminder timer
+(browsers with no File System Access API only). And
+`silentAutoExport()`/`saveBackupNow()`/`exportCaseFileZip()` never touch
+`_consecutiveSaveFailures`/`showSaveError()` — that escalation-to-banner
+logic exists only inside `saveData()` — so the identical underlying write
+failure is reported to the user differently depending on which of the two
+redundant timers happened to trigger it.
+
+No existing test catches any of this: the one relevant unit test
+(`tests/unit/case-file.spec.js:152-166`, `'incremental save timestamp
+indicator'`) imports `case-file.js` directly and tests
+`recordAutoSaveTimestamp()` in isolation — a function that is itself
+never actually called by the live `saveData()`, so the test passes while
+the real bug remains invisible to it.
+
+### Inert Tauri scaffolding found during this review
+
+Confirmed there is no Tauri project in this repo at all: no `src-tauri/`
+directory, no `@tauri-apps/*` entry in `package.json`, no
+`tauri.conf.json`, no `capabilities/default.json` (despite a code comment
+referencing one). Both real build targets (`build:web`, `build:portable`)
+are plain Vite/browser builds. Two Tauri-shaped subsystems exist anyway,
+both gated on a `window.__TAURI__` global that can never be present, and
+both are exactly the same "declared twice, classic-script copy silently
+shadowed" pattern as the main save pipeline above:
+
+1. **Filesystem ward-backup ("FILESYSTEM AUTOSAVE").**
+   `legacy-app.js:4195-4294` — `AUTOSAVE_DIR`, `_autosaveDirPath`,
+   `autosaveWarn()`, `tauriFs()`, `tauriPath()`, `getAutosaveDirPath()`,
+   `ensureAutosaveDir()`, `autosaveWardToFile()`, `deleteAutosaveFile()`,
+   `restoreFromFileBackupIfEmpty()` — would back up each ward to
+   `Documents/ProbateGuardian/<wardId>.json` on a Tauri desktop build.
+   Referenced from `saveData()` (`:2811`), ward deletion (`:5102` and the
+   guarded `window.deleteAutosaveFile` call in
+   `ward-lifecycle.js:452-453`), and app boot (`restoreFromFileBackupIfEmpty()`
+   at `:9072`). None of it is duplicated elsewhere — it simply never runs.
+2. **OS keychain "remember this password" feature.** Duplicated exactly
+   like the main pipeline: a dead copy in `legacy-app.js:1946-1974`
+   (`tauriInvoke`, `hasKeychainSupport`, `keychainSave`, `keychainLoad`,
+   `keychainDelete` — comment references a `src-tauri/src/lib.rs` that
+   does not exist in this repo) and the live, shadowed copy in
+   `crypto.js:61-103` (same five functions, exported to `window` at
+   `:183-186`). Both always return falsy/no-op, because
+   `window.__TAURI__` is never present. This isn't just dead function
+   definitions — it drives real, always-inert UI: the "Remember this
+   password on this device (Windows Credential Manager)" checkbox
+   (`index.html:229-234`, `#unlock-remember-row`/`#unlock-remember-checkbox`)
+   is unconditionally hidden by `hasKeychainSupport() ? 'block' : 'none'`
+   in both `promptUnlock()` (`:2143-2145`) and `promptCreatePassword()`
+   (`:2203-2205`), so it can never be shown, checked, or acted on; the
+   silent-auto-unlock-via-keychain branch at boot (`:2089-2101`) can never
+   fire; and `submitUnlockForm()`'s `remember` branches (`:2256`, `:2298`)
+   always take the harmless-but-pointless `keychainDelete()` path. A
+   one-off `window.tauriInvoke('set_secure_permissions')` call at app boot
+   (`:9066`) is the same dead pattern in miniature.
+
+### LIVE PRODUCTION CRASH CONFIRMED (2026-09-13) — this raises the severity
+
+Browser verification of the live deployment (build `4834b61`) found that
+this delivery's core defect is not merely producing a misleading indicator.
+**It throws an uncaught `ReferenceError` on every fresh page load and
+silently disables six startup steps, including the unsaved-changes guard.**
+
+Observed in the console on every load:
+
+```text
+ReferenceError: _lastAutoSavedAt is not defined
+    at updateLastSavedIndicator (src/legacy-app.js:3152:125)
+    at loadAutoExportPrefs (src/legacy-app.js:3383:3)
+    at async initApp (src/legacy-app.js:9086:3)
+```
+
+**Mechanism, confirmed by reading the code.** `legacy-app.js:3152` is
+`… ? window._lastAutoSavedAt : _lastAutoSavedAt`. At boot
+`window._lastAutoSavedAt` has never been set (nothing has called
+`saveData()` yet), so the ternary falls to the bare identifier — which
+`legacy-app.js` **never declares**. `case-file.js` does declare it
+(`:277`), which is why only the legacy copy throws.
+
+**This corrects an error in this proposal's own Background.** The Background
+states that `case-file.js`'s assignments "always win." That is true only for
+calls made *after* `main.js` evaluates. `initApp()` is invoked at
+`legacy-app.js:9259` — top level in the **classic** script — so it runs
+*before* any module loads. The app therefore runs a **time-dependent
+hybrid**: boot-path calls hit `legacy-app.js`'s implementations, everything
+afterward hits `case-file.js`'s. That is strictly worse than two
+implementations where one consistently wins, and it is the direct cause of
+this crash: the boot window is the only time the buggy copy is reachable.
+
+**Blast radius — the six statements after the throw never execute**
+(`legacy-app.js:9087-9092`), because the rejection aborts `initApp`:
+
+| Never runs | Consequence in production today |
+| --- | --- |
+| `setupAutoExportTimer()` | The 10-minute periodic save/retry sweep **is never installed at all**. Step 6 below debates renaming a timer that never starts. |
+| `setupLastSavedTicker()` | The 30-second refresher never installs, so the "X minutes ago" text cannot update even when it is correct. |
+| `setupFallbackSaveReminder()` | Firefox/Safari users — who cannot background-save at all — get **no save reminder ever**. |
+| `setupDragAndDropImport()` | Drag-and-drop `.sav` import is silently dead. |
+| `notifyProbateGuardianTabStateChanged()` | Initial tab-state notification never fires. |
+| `window.addEventListener('beforeunload', warnBeforeUnloadIfDirty)` | **The "you have unsaved changes" prompt never registers.** The top-level `beforeunload` → `flushPendingSave` listener at `:8966` still attaches, but this file's own comments concede that a `beforeunload` handler cannot reliably complete file or IndexedDB writes — the warning dialog *was* the actual safety net, and it is absent. |
+
+**No new work is required to fix this.** Step 3 already deletes the
+premature `_lastAutoSavedAt` write, Decision 2 already deletes the variable
+as a concept, and Step 4 already deletes `legacy-app.js`'s entire duplicate
+`updateLastSavedIndicator()`. Any one of those removes the crash. What
+changes is **priority and verification**, not scope:
+
+- This is no longer a cosmetic-indicator fix. It is a live boot crash
+  costing a data-loss guard, so 40F should be sequenced earlier than its
+  size suggests.
+- Add to Step 8's e2e coverage: **assert a clean console on first load** —
+  no uncaught exception during `initApp` — and assert that
+  `warnBeforeUnloadIfDirty` is actually registered and that the periodic
+  timer exists after boot. A test that only checks indicator text would
+  have missed all of this, which is exactly what happened.
+- When verifying, do not stop at "the indicator now reads correctly."
+  Confirm each of the six steps above actually runs post-fix.
+
+A second, unrelated boot exception was found in the same session
+(`window.createFeatureBridge is not a function`, from the dashboard mount
+path). It is **not** in this delivery's scope — same class of
+classic-vs-module ordering defect, different location and cause. See
+`MILESTONE-40G-PROPOSAL.md`.
+
+## Decisions Required
+
+1. **DECISION (recommended default): `case-file.js` becomes the sole
+   canonical implementation**, since it already wins the shadow race at
+   runtime and matches this repo's stated direction of moving persistence
+   logic into ES modules (`AGENTS.md` Section 0). `legacy-app.js` keeps
+   only what genuinely has no ES-module counterpart today: `autoSave()`'s
+   1s debounce orchestration, `flushPendingSave()`, `getActiveWard()`,
+   `autosaveWardToFile()` (Tauri-only backup), the session-restore-cache
+   functions, `_consecutiveSaveFailures`/`showSaveError`/`hideSaveError`,
+   and the distinct "open a `.sav` at launch" parser (`loadCaseFileFromZip`
+   — not a duplicate of `importSavArchiveOrWard`, keep as-is). Everything
+   `legacy-app.js` still needs from `case-file.js` is reached the same way
+   dozens of other call sites in this codebase already reach ES-module
+   globals from classic-script code: through `window.*`, which is a real,
+   already-established bridge pattern here, not a new one being
+   introduced for this fix.
+2. **DECISION (recommended default): one "last successful save" clock, not
+   two.** Delete `_lastAutoSavedAt` entirely. Keep `_lastExportAt`
+   (`case-file.js`'s), fixed per Step 1 below so it's always accurate.
+   There is no genuine second event worth tracking separately here — two
+   clocks exist only because two implementations happened to exist.
+3. **DECISION (recommended default): centralize failure-escalation in
+   `writeCaseToHandle()` itself**, so the 1s debounce, the 10-minute
+   periodic timer, and the manual "Save Backup Now" button all report a
+   write failure identically (banner after N consecutive failures),
+   instead of only the debounce path escalating today.
+4. **DECISION (per requester instruction): remove the Tauri scaffolding
+   entirely** — both subsystems above, not merely de-duplicated. This
+   includes deleting the "Remember this password" checkbox from the
+   unlock/create-password UI (`index.html:229-234`) rather than leaving a
+   permanently-hidden control in the markup, since it can never be shown
+   under either real build target.
+
+## Implementation Steps
+
+1. **Add real accessor helpers for `_lastExportAt` and `_autoSaveArmed` in
+   `case-file.js`**, mirroring the `getCaseFileHandle()`/
+   `setCaseFileHandle()` and `isDirtySinceExport()`/`setDirtySinceExport()`
+   pattern already established in the same file (`:32-62`) — every read
+   today is an ad hoc inline `(typeof window !== 'undefined' &&
+   window._lastExportAt !== undefined) ? window._lastExportAt :
+   _lastExportAt` duplicated in three places (`:195`, `:307`, and
+   `buildCaseFileBlob`), while the sole writer (`beginRecordingExport`,
+   `:323-341`) never follows that same dual-sync pattern — that read/write
+   asymmetry is the direct cause of bug 2 above.
+   - New: `getLastExportAt()` / `setLastExportAt(ts)` (mirrors
+     `setCaseFileHandle()`'s plain-property write — sets both the private
+     variable and `window._lastExportAt` directly, not just a same-named
+     getter function, since `ward-lifecycle.js:387` reads
+     `window._lastExportAt` as a bare property, not a function call; fixing
+     it this way requires no change to `ward-lifecycle.js` itself), and
+     `getAutoSaveArmed()` (read-only — `refreshAutoSaveArmedStatus()` stays
+     the sole writer of `_autoSaveArmed`).
+   - Update `beginRecordingExport()`, `updateLastSavedIndicator()`,
+     `buildCaseFileBlob()`, and `loadAutoExportPrefs()` to use the new
+     helpers instead of the bare module variable everywhere.
+   - Drop `beginRecordingExport()`'s separate `window._appState.lastExportAt
+     = _lastExportAt` write (`case-file.js:329`, and its rollback
+     counterpart at `:337`) — confirmed nothing anywhere in `src/` ever
+     reads `_appState.lastExportAt`/`window._appState.lastExportAt` back
+     (`buildCaseFileBlob()`'s own `lastExportAt` field is populated from
+     `window._lastExportAt` directly, `:195`, not from `_appState`). It's a
+     write with no reader, predating this fix; keeping it alongside the new
+     `setLastExportAt()` helper would just be a second, redundant place the
+     same value is written.
+   - Add `window.getLastExportAt`, `window.isAutoSaveArmed` to the
+     existing export block (`case-file.js:834-871`).
+   - **Cross-delivery conflict (review pass 2026-09-12):**
+     `buildCaseFileBlob()`'s `appStateBlob` literal is also edited by
+     Milestone 40D, which must stop `theme` (`case-file.js:189`) from
+     being serialized into new `.sav` files — two lines apart from this
+     delivery's `lastExportAt` change (`:195`) in the same object. Expect
+     a conflict in that literal if both land independently. Relatedly,
+     Step 4 here deletes `legacy-app.js`'s dead duplicate
+     `buildCaseFileBlob()` (which carries its own `theme` line at
+     `:3066`), so **landing 40F first removes one of 40D's sites for
+     free**. See the dependency table in `MILESTONE-40-PROPOSAL.md`.
+2. **Move failure-escalation into `writeCaseToHandle()`** (`case-file.js:
+   387-419`): add `_consecutiveSaveFailures`/`SAVE_FAILURE_THRESHOLD` as
+   module state here, and call through `window.showSaveError`/
+   `window.hideSaveError` (kept in `legacy-app.js`, since they're pure DOM
+   banner toggles with no state worth moving) on the same success/failure
+   edges the try/catch already has — matching how this same file already
+   reaches back into `legacy-app.js` globals elsewhere (`window.auditLog`,
+   `window.notifyProbateGuardianTabStateChanged`). This makes
+   `silentAutoExport()`, `saveBackupNow()`, and `exportCaseFileZip()` share
+   identical failure reporting with the debounce path for the first time.
+3. **Simplify `saveData()`** (`legacy-app.js:2801-2836`):
+   - Delete the premature `window._lastAutoSavedAt = Date.now();
+     updateLastSavedIndicator();` (`:2818-2819`) — `writeCaseToHandle()`
+     already calls the real `updateLastSavedIndicator()` truthfully right
+     after a confirmed successful write (`case-file.js:407`).
+   - Delete the local `_consecutiveSaveFailures`/`SAVE_FAILURE_THRESHOLD`
+     and the try/catch's failure-counting (now centralized per Step 2);
+     `saveData()`'s try/catch around the handle-write becomes a thin call
+     into the shared write path.
+   - Keep unchanged: the `_securityMode`/`_cryptoKey` early-return guard,
+     `getActiveWard()`, the `activeWard.lastModified` stamp,
+     `autosaveWardToFile()` (Tauri), and the `saveSessionRestoreCache()`
+     call — none of this exists in `case-file.js` and all of it is still
+     needed exactly as-is.
+4. **Delete the ~30 now-fully-dead duplicate functions and their backing
+   private state from `legacy-app.js`**, confirmed unreachable per the
+   load-order analysis above:
+   - Functions: `loadCaseFileHandle`, `rememberCaseFileHandle`,
+     `forgetCaseFileHandle`, `refreshAutoSaveArmedStatus`,
+     `buildCaseFileBlob`, `buildSingleWardExportBlob` (`:3110`),
+     `suggestedCaseFileName`, `writeCaseToHandle`, `silentAutoExport`,
+     `saveBackupNow`, `exportCaseFileZip` (+ `exportGuardianDataZip`/
+     `backupAllWardsNow` aliases), `getWardFileStem`, `getWardFileName`,
+     `validateWardBackupOverwrite`, `finishSingleWardExport`,
+     `showAutoExportReminder`, `hideAutoExportReminder`,
+     `loadAutoExportPrefs`, `saveAutoExportIntervalPref`,
+     `setupAutoExportTimer`, `setupLastSavedTicker`,
+     `setupFallbackSaveReminder`, `beginRecordingExport`,
+     `markDirtySinceExport`, `saveBlobAs` (`:2919`), `triggerImportZip`
+     (`:3425`), `importSavArchiveOrWard` (`:3443`),
+     `importGuardianDataZip` (`:3609`), `triggerOpenBackupSav` (`:3614`),
+     `handleBackupImportChange` (`:3633`), `restoreBackupSavFile`
+     (`:3641`).
+   - Private state: `_caseFileHandle`, `_lastExportAt` (+ its
+     `Object.defineProperty(window, ...)` accessor, `:979-983`),
+     `_autoSaveArmed`, `_autoExportTimer`, `_autoExportIntervalMinutes`,
+     `_fallbackReminderTimer`, `_lastSavedTickTimer`.
+   - Keep `_dirtySinceExport`'s accessor exactly as-is — `case-file.js`'s
+     `setDirtySinceExport()`/`isDirtySinceExport()` already correctly
+     round-trips through it both ways; it's the one piece of shared state
+     that was never actually broken.
+   - Sweep for any call site inside the surviving `legacy-app.js` code
+     that referenced a deleted name and repoint it at the `window.`
+     global explicitly (most already do so implicitly via bare-identifier
+     resolution and need no code change, only the dead definition removed).
+5. **Fix `renderStorageReadout()`** (`legacy-app.js:2512-2525`) to read
+   `window._lastExportAt` (now genuinely live, via Step 1) and call
+   `window.isAutoSaveArmed()` instead of the (now-deleted) private
+   `_lastExportAt`/`_autoSaveArmed`.
+6. **Rename the periodic 10-minute mechanism's naming, not its behavior**,
+   so it no longer reads as a second "autosave": it should describe the
+   fallback/retry sweep it actually is (first-save nudge, or
+   permission-revoked recovery), distinct from the always-on 1-second
+   `autoSave()` debounce that does the continuous real work. No functional
+   change requested here per Decision 1's scope; flag during review if the
+   redundant write itself should be removed rather than just reworded.
+
+   "Update its identifiers/comments" was too vague to execute against, so
+   the intended split is spelled out (review pass 2026-09-12). **Rename**
+   the internals: `_autoExportTimer`, `setupAutoExportTimer()`,
+   `silentAutoExport()`, `_autoExportIntervalMinutes`,
+   `saveAutoExportIntervalPref()`, `loadAutoExportPrefs()`. **Do not
+   rename** anything that is a persisted key, a DOM id, or a public
+   contract, because each has a compatibility cost that outweighs the
+   clarity gain:
+   - `loadAppState('autoExportIntervalMinutes')` / the `.sav`
+     `appState.autoExportIntervalMinutes` field — renaming this key
+     silently discards every existing user's saved interval preference.
+     Keep the stored key; rename only the variable that holds it.
+   - `#auto-export-reminder`, `#auto-export-reminder-title`,
+     `#auto-export-reminder-text`, `#auto-export-interval-select`, and
+     `data-shell-action="hide-auto-export-reminder"` — referenced from
+     `index.html` and asserted by `tests/e2e/party-dedupe.spec.ts:44` and
+     `tests/e2e/dashboard-visual.spec.ts:43`. Renaming these buys nothing
+     and breaks two unrelated specs.
+   - The user-visible toast copy ("Unsaved Changes" / "Save Your First
+     Backup") is already accurate about what it's telling the filer;
+     leave it alone. The confusing name was only ever internal.
+7. **Rewrite `tests/unit/case-file.spec.js:152-166`** (`'incremental save
+   timestamp indicator'`) to drop `recordAutoSaveTimestamp` (deleted per
+   Decision 2) and instead assert that a successful `writeCaseToHandle()`
+   updates `window._lastExportAt` and the indicator text via the new
+   `getLastExportAt()`/`setLastExportAt()` helpers.
+8. **Extend `tests/e2e/case-file-protection.spec.ts`** (already covers
+   auto-save) with assertions covering the three confirmed bugs directly:
+   - No handle yet, an edit is made and the 1s debounce fires →
+     `#last-saved-indicator` stays "Unsaved changes," never flips to
+     "Last backup: ...".
+   - Handle + permission granted, an edit is made → within ~1s,
+     `#last-saved-indicator` shows "✓ Last backup: just now" **and** the
+     underlying file write is confirmed to have actually happened (not
+     merely that the timer fired).
+   - Permission revoked mid-session → the indicator does not claim
+     success; `#auto-save-armed-indicator` reflects the revoked state.
+   - A forced write failure (twice) → `#save-error-banner` appears and
+     `#last-saved-indicator` is not simultaneously claiming a fresh
+     success.
+   - On the Activity Log page, after a real successful save →
+     `#storage-usage-readout` says "auto-save is on" and a real elapsed
+     time, not the old permanent defaults.
+
+### Tauri scaffolding removal
+
+9. **Delete the filesystem ward-backup subsystem** from `legacy-app.js`:
+   the whole `:4195-4294` block (`AUTOSAVE_DIR`, `_autosaveDirPath`,
+   `autosaveWarn`, `tauriFs`, `tauriPath`, `getAutosaveDirPath`,
+   `ensureAutosaveDir`, `autosaveWardToFile`, `deleteAutosaveFile`,
+   `restoreFromFileBackupIfEmpty`), plus its three call sites: the
+   `autosaveWardToFile(activeWard)` call in `saveData()` (already being
+   simplified in Step 3 — drop this line too), the `deleteAutosaveFile(wardId)`
+   call in the ward-deletion flow (`:5102`), the guarded
+   `window.deleteAutosaveFile` call in `ward-lifecycle.js:452-453`, and the
+   `restoreFromFileBackupIfEmpty()` call at app boot (`:9072`).
+10. **Delete the OS-keychain "remember password" feature** in full:
+    - `legacy-app.js:1946-1974`'s dead copy (`tauriInvoke`,
+      `hasKeychainSupport`, `keychainSave`, `keychainLoad`,
+      `keychainDelete`).
+    - `crypto.js:61-103`'s live copy of the same five functions, and their
+      `window.*` exports at `:183-186`.
+    - The silent-auto-unlock-via-keychain branch at boot
+      (`legacy-app.js:2089-2101`).
+    - The `keychainAvailable`/`hasSavedPw` setup and `rememberRow`
+      show/hide logic in `promptUnlock()` (`:2132-2145`) and
+      `promptCreatePassword()` (`:2203-2205`).
+    - The `remember`/`keychainSave`/`keychainDelete` handling in
+      `submitUnlockForm()` (`:2243`, `:2256`, `:2298`) — these branches
+      collapse to nothing once `remember` can no longer be read from a
+      checkbox that no longer exists.
+    - The `#unlock-remember-row`/`#unlock-remember-checkbox` markup
+      (`index.html:229-234`).
+    - The one-off `window.tauriInvoke('set_secure_permissions')` call and
+      its try/catch at app boot (`legacy-app.js:9066`).
+11. **Sweep comments and docs for stale Tauri claims**: the
+    `src-tauri/src/lib.rs` and `capabilities/default.json` references
+    inside the deleted code are removed along with it; check for any other
+    comment or doc (outside `MILESTONE-ARCHIVE.md`, which is a historical
+    record and stays as-is) that still describes Tauri support as present
+    or planned-and-scaffolded, and correct it.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| No case-file handle yet; an edit is made and the 1s debounce fires | `#last-saved-indicator` shows "● Unsaved changes," never "Last backup: ..." |
+| Handle exists, permission granted, an edit is made | Within ~1s, `#last-saved-indicator` shows "✓ Last backup: just now" tied to a real, confirmed write |
+| Handle exists, permission revoked mid-session | Indicator does not claim success; `#auto-save-armed-indicator` shows the revoked state |
+| A real write throws twice in a row | `#save-error-banner` appears; the indicator is not simultaneously showing a fresh success claim |
+| Activity Log page, after any real successful save | `#storage-usage-readout` says "auto-save is on" and a real elapsed time, not the old permanent defaults |
+| A first ward is created in a new session, after a prior session already saved | "Save Your First Backup" reminder does not incorrectly fire |
+| The periodic timer's write fails repeatedly | Same escalation to `#save-error-banner` as the 1s debounce path, not silently different |
+| grep across `src/legacy-app.js` for the deleted function/variable names | none found outside historical comments, if any are kept |
+| `npm run verify:data-model` | unaffected — no data-model shape changes in this milestone |
+| Unlock screen (create-password and unlock forms) | No "Remember this password" checkbox or row present |
+| Deleting a ward | No error/console warning about `deleteAutosaveFile`; ward deletion behaves identically to today (the file it targeted never existed in a browser build) |
+| grep for `__TAURI__`, `tauriInvoke`, `tauriFs`, `tauriPath`, `hasKeychainSupport`, `keychainSave`, `keychainLoad`, `keychainDelete`, `autosaveWardToFile`, `deleteAutosaveFile`, `restoreFromFileBackupIfEmpty` across `src/` | none found |
+| `capabilities/default.json` / `src-tauri/src/lib.rs` mentions in code comments | none remain |
+
+## Verification
+
+Run `tests/unit/case-file.spec.js` (updated) and the extended
+`tests/e2e/case-file-protection.spec.ts`, plus the full existing
+persistence e2e family (`case-file-roundtrip.spec.ts`,
+`backup-restore-sav.spec.ts`, `dashboard-backup.spec.ts`,
+`recovery-cache.spec.ts`, `persistence-recovery.contract.spec.ts`,
+`ward-lock.spec.ts`) and `routes.spec.ts` (its existing "Unsaved changes"
+assertion at `:198` must still pass unchanged). Also run `tests/e2e/unlock.spec.ts`
+and `tests/e2e/startup.spec.ts` — the closest existing coverage of the
+create-password/unlock overlay the checkbox removal touches; neither
+currently references `unlock-remember-row`/`hasKeychainSupport` (confirmed
+by grep — no test anywhere in `tests/` touches any of the Tauri-scaffolding
+names), so no test changes are expected there, only confirmation nothing
+regresses. This is a deletion-shaped change touching the single most
+cross-cutting subsystem in the app plus the unlock flow — recommend the
+full `npm test` regression before commit/push, per `AGENTS.md`, the same
+recommendation 40A made for a similarly cross-cutting deletion. Update
+`TEST-INDEX.md` for the rewritten unit test and any new e2e assertions in
+the same commit.
+
+---
+
+<a id="milestone-40g-proposal-md"></a>
+
+# Archive: MILESTONE-40G-PROPOSAL.md
+
+# Milestone 40G: Fix the Dashboard Feature-Bridge Boot Crash
+
+## Status
+
+**Landed 2026-09-13 via option (a).** The requester chose option (a) from
+Decision 2: `initApp()` is now called from `src/main.js` as its last
+statement, after every import has evaluated, instead of from
+`legacy-app.js`'s classic-script top level. This also unblocks Milestone
+40F's Steps 4 and 6, which were the reason option (a) was preferred over
+the two narrower fixes.
+
+### Step 1 findings — what was actually lost
+
+Answered before choosing a fix, as this proposal required. The dashboard
+**did** recover, and nothing was permanently lost:
+
+`initApp()` sets the hash to `/dashboard` (`legacy-app.js:9084`) and then
+calls `handleHash()` (`:9085`), which calls `renderPage()` **without
+awaiting it** — so the bridge failure surfaced as a floating unhandled
+rejection rather than aborting startup. Assigning the hash queues a
+`hashchange` event that fires after the current task, by which point the
+deferred modules have evaluated, so `_dashboardFeatureBridge ??=` succeeds
+on that second pass. That is the multi-second "Loading…" stall the browser
+session reported: one failed mount, then a silent retry.
+
+Two caveats that made the fix worth doing properly rather than narrowly:
+
+- **The retry is not guaranteed.** If the hash is *already* `#/dashboard` —
+  a reload while on the dashboard, which is the common case for a returning
+  user — assigning the same value fires no `hashchange`, so there is no
+  second pass to recover on.
+- **It is effectively unreproducible in e2e.** Every path that reaches the
+  failing code first awaits a prompt (session-restore, open-or-start,
+  unlock), and that await gives deferred modules far more time than they
+  need, so the race always resolves harmlessly under test. The live site hit
+  it because it auto-opens a remembered case with no prompt at all. This is
+  why `startup.spec.ts`'s long-standing clean-console assertion never caught
+  either exception: it only covers the fresh-install path, which stops at the
+  startup-choice overlay and never mounts a feature.
+
+### Verification
+
+Because the defect cannot be reliably reproduced behaviourally, the
+regression guard is structural: `tests/unit/boot-ordering.spec.js` asserts
+that `legacy-app.js` does not call `initApp()` at top level, that `main.js`
+does and does so after its last import, and that the module publishing
+`window.createFeatureBridge` is still imported and still publishes it.
+Verified to fail when the self-start is reinstated. `startup.spec.ts` gains
+the behavioural half it was missing — a clean-console assertion on a path
+that actually mounts the dashboard.
+
+## Goal
+
+Stop `window.createFeatureBridge is not a function` from throwing on every
+fresh page load, so the dashboard feature mounts on first paint instead of
+after a multi-second "Loading…" stall.
+
+## Background
+
+Found by browser verification of the live deployment (`caernarvon.net/
+probate-guardian`, build `4834b61`, 2026-09-13). **Two** uncaught
+exceptions fire on every fresh load. The other one belongs to Milestone
+40F; this proposal covers only this one:
+
+```text
+TypeError: window.createFeatureBridge is not a function
+    at getDashboardFeatureBridge (src/legacy-app.js:6919:43)
+    at mountDashboardFeature (src/legacy-app.js:6922:9)
+    at renderPage (src/legacy-app.js:5684:11)
+    at handleHash (src/legacy-app.js:8949:5)
+    at initApp (src/legacy-app.js:9085:3)
+```
+
+**Root cause — a hazard this codebase already documents, applied
+inconsistently.** `createFeatureBridge` is defined in
+`src/core/feature-bridge.js:22` and published at `:82` — an ES module.
+`initApp()` is invoked at `legacy-app.js:9259`, top level in the
+**classic** script, which runs before any `type="module"` script
+evaluates. So `window.createFeatureBridge` genuinely does not exist yet
+when `initApp` runs.
+
+`legacy-app.js:6837-6847` explains this precisely and prescribes the
+workaround — construct the bridge lazily so that "first actual call …
+only happens later, in response to user navigation, long after the
+deferred module scripts have run." `getSimplifiedFeatureBridge()`
+(`:6849-6851`) follows it and is fine.
+
+`getDashboardFeatureBridge()` (`:6918-6920`) uses the **same lazy `??=`
+pattern** — and still crashes, because the comment's load-bearing
+assumption is false for the dashboard specifically: **the dashboard is the
+landing page.** `initApp` forces `window.location.hash='/dashboard'`
+(`:9084`) whenever an existing case is opened, then calls `handleHash()`
+(`:9085`) → `renderPage()` (`:5684`) → `mountDashboardFeature()`. The
+dashboard's "first actual call" is therefore during boot, not later in
+response to user navigation. Laziness cannot help a feature that is
+mounted immediately.
+
+**Blast radius is narrower than Milestone 40F's.** `handleHash()` is
+called without `await` at `:9085`, so this rejection floats and does not
+abort `initApp`; the next statement still runs (and then throws 40F's
+error, which does abort it). The dashboard does eventually render — the
+browser session reported several seconds stuck on "Loading…" before it
+appeared — so something later re-drives the mount successfully. **What is
+actually lost on that first attempt has not been determined**: the browser
+session could not tell from the UI which widget or panel failed to attach,
+and this proposal should not guess. Establishing that is the first
+implementation step, not an assumption baked into the fix.
+
+## Decisions / Implementation
+
+1. **Determine the real user-visible impact before choosing a fix.** Load
+   the app with the console open, note what the dashboard looks like
+   during the "Loading…" stall versus after it resolves, and identify what
+   re-drives the successful mount (a later `renderPage`, a navigation, a
+   re-render triggered elsewhere). If nothing is actually lost and the only
+   symptom is the delay, the fix is smaller and the priority is lower than
+   if a panel silently never attaches. Do not proceed on the assumption
+   that the dashboard is fully healthy just because it eventually paints.
+2. **DECISION — how to order boot against module readiness.** Four shapes,
+   recommendation first:
+   - **(a) Recommended: drive `initApp()` from the module side.** Move the
+     `initApp()` call out of `legacy-app.js:9259` and invoke it from
+     `src/main.js` after its imports have evaluated. Modules are
+     guaranteed to have run by then, so every `window.*` the classic
+     script needs is present, and this fixes the *entire class* of
+     ordering bug rather than this one instance. Highest value, but it
+     changes app startup ordering — the riskiest single line in the app —
+     so it needs its own careful regression pass across launch flows
+     (fresh start, opened `.sav`, session-restore, locked/encrypted).
+   - **(b) Gate only the dashboard mount** on a module-ready promise that
+     `feature-bridge.js` resolves, leaving `initApp`'s position alone.
+     Narrower and safer, but leaves the underlying trap in place for the
+     next feature that gets mounted at boot.
+   - **(c) Defer the initial `handleHash()`** to a microtask/`DOMContentLoaded`
+     so it runs after module evaluation. Cheapest, but timing-dependent
+     and easy to regress silently — it would fix the symptom without
+     making the ordering guarantee explicit anywhere.
+   - **(d) Duplicate `createFeatureBridge` into `legacy-app.js`.**
+     Rejected — this repo already has one duplicated-implementation
+     problem (Milestone 40F) that took a browser session to surface.
+3. **Do not simply wrap the call in a `typeof` guard.** Making
+   `getDashboardFeatureBridge()` silently no-op when
+   `window.createFeatureBridge` is missing converts a loud crash into a
+   quiet missing dashboard. The current exception is the only reason this
+   was ever found.
+4. Update the comment at `legacy-app.js:6837-6847` once the fix lands. It
+   currently states an assumption ("first actual call only happens later,
+   in response to user navigation") that is false for any boot-mounted
+   feature, and a future author following it will land in the same trap.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Fresh load of the app with an existing case | No `createFeatureBridge` exception in the console — no uncaught exception at all during `initApp` |
+| Fresh load, dashboard route | The dashboard feature mounts on first attempt; no multi-second "Loading…" stall attributable to a failed mount and retry |
+| Whatever was found missing in step 1 | Present on first paint, not only after the stall resolves |
+| Every launch flow — fresh start, opened `.sav`, session-restore, locked/encrypted unlock | Unchanged behavior; this is the risk surface if option (a) is chosen |
+| `getSimplifiedFeatureBridge()` and other lazy bridges | Still work; the fix must not regress the features that were already correct |
+
+## Verification Plan (as originally scoped)
+
+Add an e2e assertion that **first load produces a clean console** — no
+uncaught exception during startup. This single check would have caught both
+this bug and Milestone 40F's, and its absence is why two exceptions shipped
+unnoticed; it is the highest-value test in either delivery. Then run the
+launch-flow suite (`tests/e2e/startup.spec.ts`, `routes.spec.ts`,
+`case-file-roundtrip.spec.ts`, `unlock.spec.ts`, `recovery-cache.spec.ts`)
+plus the dashboard specs. If option (a) is chosen, this is a startup-ordering
+change touching every launch path — recommend the full `npm test` regression
+before commit/push, per `AGENTS.md`.
+
+## Relationship to Milestone 40F
+
+Same class of defect (classic-script code depending on ES-module state that
+has not evaluated yet), different location and different cause, and neither
+fix resolves the other:
+
+- **40F's** crash is an undeclared variable in `legacy-app.js`'s duplicate
+  `updateLastSavedIndicator()`, reachable only during boot because that is
+  the one window where the legacy copy still wins.
+- **40G's** crash is a genuinely absent module export at boot time.
+
+Both fire on every load, and 40F's aborts the remainder of `initApp` while
+40G's does not. They can be implemented in either order. If option (a)
+above is chosen, do 40F first — its deletions shrink the surface that a
+startup-ordering change has to be regression-tested against.
+
+---
+
+<a id="milestone-40h-proposal-md"></a>
+
+# Archive: MILESTONE-40H-PROPOSAL.md
+
+# Milestone 40H: Post-Deploy Browser QA and Test-Data-Generation Fixes (Boot/Readiness Crashes, Data-Loss and Carryover Gaps, Accessibility, Text and Totals Fidelity)
+
+## Status
+
+**Landed 2026-09-13** (`bb9cd8d`, `77f4f6f`, `2a1a923`, `c2d4d64`, `fd279d4`,
+`c1c8665`, `527758b`, `2d83275`, `3cf8ff6`, `d764e1e`) — all ten tasks,
+committed and pushed one at a time, each with its own test written and
+confirmed failing against the pre-fix code before the fix landed (git
+stash round-trip). Full regression run at the end: unit 579/579 green;
+e2e 416 passed, 6 skipped, 9 failed — all nine are the exact pre-existing
+baseline this proposal's own Open Items register already catalogued
+(`pdf-preview-viewer.spec.ts:114` × 7 filing types, `schedule-card-layout.spec.ts:177`,
+`security.spec.ts:53`), confirmed unrelated to any of the ten fixes here.
+
+One proposal correction, caught during implementation rather than shipped
+as written: Task 40H-A's Decision said to "degrade to an empty error
+array" when `window.validateGuardian` isn't ready. That would have
+fabricated a false "100% complete / Ready to file" dashboard reading for a
+ward nothing had actually validated — worse than the crash it would have
+replaced, since `workflowState()` derives `'ready-to-file'` once
+`progressPercent >= 100`. Implemented as `null` instead, matching what the
+caught exception already produced, so the fix removes the console warning
+without changing what the dashboard displays. See Task 40H-A below and its
+commit message for the full reasoning.
+
+### Independent review against current `master` (2026-09-13, after 40A–40G landed)
+
+All four tasks re-verified directly. **Every one is still real and still
+unfixed**; nothing in this proposal was resolved by the seven deliveries that
+landed in the meantime. Three corrections, none of them to the substance:
+
+- **Line numbers have all drifted** — 40F/40A/40C-1 deleted roughly 800 lines
+  from `legacy-app.js` between them. Current locations: 40H-A's unguarded
+  `return window.validateGuardian();` is at **`:8156`** (proposal says 7982-7984)
+  and its guard precedent at **`:7616`** (says 7449); 40H-D's
+  `planReadinessPanel()` is at **`:6574`** with the orphan `</summary>` at
+  **`:6584-6590`** (says 6541-6567). 40H-B's `if (!val) D.safeDepositBoxFiled =
+  null;` is at **`guardian-inventory/index.js:174`**. Re-derive rather than trust
+  any line number here.
+- **40H-C confirmed by absence:** `grep -c fieldset
+  src/features/guardian-inventory/index.js` returns **0** — the whole file has no
+  `fieldset` element, so both D-3 groups are unwrapped exactly as described.
+  Note 40C-2 edited these same lines (the `sdbIsYes`/`sdbIsNo` predicates at
+  `:1001`, `:1005`, `:1009`) without touching the markup structure, so the two
+  changes are compatible.
+- **40H-D: there is a second `<div class="validation-head">`, and it is
+  correct.** `excelCapacityPanel()` (`legacy-app.js:6753`) uses the same class,
+  but its wrapper is a plain `<div class="validation-panel excel-cap-panel">`,
+  not a `<details>` — so `<div>` is right there and it has no orphan
+  `</summary>`. Recorded so a later reader grepping for `validation-head`
+  doesn't "fix" a second site that isn't broken. The bug is `planReadinessPanel()`
+  only.
+
+### Second pass (2026-09-13, later same day): the first pass's own citations had drifted too
+
+Re-verified every line number in the task bodies below directly against
+current `master`, not just the four this addendum originally corrected.
+Three more were stale — the first pass fixed the *task-triggering* call
+sites but not every citation around them:
+
+- `computeNavChecks()`'s actual unguarded call to `validate()` is at
+  **`:7241`** (`computeNavChecks()` itself starts `:7224`) — the body below
+  said `:7086`, which today is unrelated code.
+- `getWardProgress()`'s try/catch is at **`:7635-7643`** — the body said
+  `:7468-7476`.
+- `validationPanel()` is at **`:1657-1696`** — the body said `:1647-1686`,
+  which today is a Roman-numeral route-matcher, not this function.
+
+All citations in the task bodies and the File/Delivery Overlap Check below
+have been corrected in place to match; they no longer need the "re-derive
+rather than trust" caveat above. Recorded here rather than silently fixed,
+per this repository's own convention for proposal-accuracy corrections.
+
+### Third pass (2026-09-13, review for executability): one more commit, one more drift
+
+A third-party commit landed after the second pass —
+`3b8dadf` ("fix(sidebar): clear stale filing context/nav when returning to
+dashboard"), unrelated to any Milestone 40 delivery — and added 13 net
+lines to `legacy-app.js` starting at its original line 5187, shifting every
+`legacy-app.js` citation below that point by the same +13. Re-verified
+every function anchor directly rather than applying that offset by
+arithmetic (the second pass already showed drift isn't always uniform):
+`showConvertWardModal`'s dead legacy twin `:5272-5284` (was `:5259-5271`),
+`convertExistingWard()`'s closing `alert()` at `:5586` (was `:5573`),
+`doConvertWard()` at `:5589` (was `:5576`), `planReadinessChecks()`
+`:6575-6585` (was `:6562-6572`), `planReadinessPanel()` `:6587-6613` with
+its `<div class="validation-head">`/orphan `</summary>` at `:6596-6603`
+(was `:6574-6600`/`:6583-6590`), `excelCapacityPanel()`'s validation-head at
+`:6766` (was `:6753`), `computeNavChecks()` `:7237` with its `validate()`
+call at `:7254` (was `:7224`/`:7241`), the guard precedent at `:7629` (was
+`:7616`), `getWardProgress()` `:7644` with its try/catch at `:7648-7656`
+(was `:7631`/`:7635-7643`), and `validate()` itself at `:8168-8170` (was
+`:8155-8157`). `describeConversion()` (`:5348-5365`), `validationPanel()`
+(`:1657-1696`), `sanitizeInput()`/`validateSecurityInput()`
+(`:1109-1158`), `formatName()` (`:1538-1545`), and both
+`carryOverAccountingToAccounting()`/`carryOverFields()` (`:3834-3950`) sit
+above the insertion point and are unchanged. Every other cited file
+(`guardian-inventory/index.js`, `form-contract.js`,
+`features/annual-accounting/totals.js`, `core/modals/convert-ward-modal.js`,
+`core/navigation/ward-lifecycle.js`, all seven `index.js` files Task 40H-E
+touches) has no commit since the second pass (`git log` per-path,
+confirmed) and needs no correction. All body citations below are now
+updated to match.
+
+One section is now **moot rather than wrong**: the "File/Delivery Overlap Check"
+reasons about sequencing against Milestone 40C-1, which has since landed (along
+with 40C-2). Its conclusion held — 40C-1 did not touch
+`guardian-inventory/index.js` — but there is no longer an ordering question. Note
+that **40C-2** did touch that file (the D-3 predicates above, and a new D-4
+bond-period order check), so the overlap statement should not be read as "no
+Milestone 40 delivery touched this file."
+
+## Goal
+
+*(Scope note added 2026-09-13: this proposal also now carries a record of six
+open items found while implementing the rest of Milestone 40 — see "Open Items
+Carried Forward" at the foot of this file. Those are **not** tasks in this
+delivery; 40H remains the ten fixes below.)*
+
+Fix ten defects: three surfaced by an exploratory browser QA pass against
+production (2026-09-13, `Probate_Guardian_Exploratory_QA_BugReport.md`), one
+surfaced by a follow-up audit of Print Preview rendering across all nine
+filing types, one — Task 40H-E — added directly by the requester (2026-09-13,
+later the same day), and five more (Tasks 40H-F through 40H-J) surfaced by a
+same-day test-data-generation pass that completed one filing of every type
+end to end (`Probate_Guardian_TestData_Findings.md`), one of which (40H-J)
+was promoted from this proposal's own open-items register per requester
+choice rather than sourced from that pass directly: a console exception
+that fires on every dashboard render for every Guardian Inventory ward, a
+Guardian Inventory conditional field that silently destroys data with no
+restore path, two Yes/No radio groups missing the semantic markup this
+repository's own `AGENTS.md` requires, a malformed `<details>`/`<summary>`
+element on every Plan-type filing's Print Preview readiness panel, a missing
+preparer-facing authorization note on every filing type's signature page, the
+identical dangling-global crash pattern as the dashboard bug but in the four
+Plan types' readiness routine, two free-text sanitization bugs that corrupt
+stored data, three schedule totals that go stale after the first render, a
+ward-selector default plus a filing-carryover gap in "New Filing from
+Existing," and a second, symmetric carryover gap that drops the attorney's
+bar number/phone/address on Plan/Accounting → Guardian Inventory conversions.
+None of the ten touches persisted data shape in a way that changes the data
+model, and none overlaps any file Milestone 40C-1 is editing. The Print
+Preview audit also surfaced a larger architectural
+inconsistency worth recording — two non-unified readiness-panel
+implementations split across filing-type families — recommended as future
+work, not scoped into this delivery (see "Recommended Standard" below).
+
+## Background
+
+The originating QA pass reported six items total; three were re-verified
+directly against the code (not just the browser session) before writing
+this proposal, and three others were separately resolved:
+
+- **Two "dangling global" boot errors the report also flagged
+  (`window.createFeatureBridge is not a function`,
+  `_lastAutoSavedAt is not defined`) are NOT part of this delivery.**
+  They were confirmed, via a same-day re-test with `deployment.json`
+  checked before and after, to have fired against the previous deployed
+  commit (`4834b61`) and to no longer reproduce on the current one
+  (`ab8d2d16`, fixed by Milestone 40F/40G). No action needed.
+- **The PDF table address-overflow audit Milestone 40E's own Decision 3
+  called for was spot-checked and appears complete** — both
+  `annual-accounting/pdf-model.js:971` and
+  `simplified-accounting/pdf-model.js:272` already use the
+  `[r.line2, r.line3, r.line4].filter(Boolean)` array form, and
+  `plan-simplified/pdf-model.js:146,159`'s address fields are
+  `type: 'signature-block'` fields whose label contains "address" — already
+  covered by the pre-existing `formatMailingAddress()` path, not the
+  table-cell bug 40E fixed. No gap found; not a task here.
+- Three items from the report are recorded below as **open decisions**
+  rather than tasks, because they need the requester's judgment, not a
+  mechanical fix (see "Open Decisions" section).
+
+### Task 40H-A — Dashboard throws `window.validateGuardian is not a function` on every render
+
+`legacy-app.js:8168-8170`:
+
+```js
+function validate(){
+  return window.validateGuardian();
+}
+```
+
+This is called unguarded from `computeNavChecks()` at `legacy-app.js:7254`
+(`activeInventoryType==='guardian'` branch), which `getWardProgress()`
+wraps in a try/catch at `:7648-7656` — the exact source of the console
+warning `progress calc failed for ward <id> TypeError: window.validateGuardian
+is not a function`. The exception is swallowed, so the guardian dimension of
+that ward's dashboard progress/readiness is silently computed from an
+incomplete validation (`getWardProgress()` returns `null` for that ward
+instead of a real `{complete,total,pct}`).
+
+`window.validateGuardian` is assigned only once the Guardian Inventory
+feature bundle lazy-loads (`guardian-inventory/index.js:1197`). The
+dashboard computes progress for every ward on render, before that bundle is
+guaranteed to have loaded this session — so any guardian-type ward shows
+degraded progress on the dashboard until *something* has triggered the
+guardian bundle to load. This is deterministic, not intermittent: it will
+reproduce on the first dashboard paint of a session with a guardian-type
+ward and no prior guardian-feature navigation.
+
+The fix pattern already exists two call sites away, guarding the identical
+call: `legacy-app.js:7629` —
+`if(type==='guardian'&&typeof window.validateGuardian==='function')rawErrors=window.validateGuardian(window.D);`.
+Line 8169 never received the same guard.
+
+**Decision:** Guard the call in `validate()` the same way line 7449 does,
+and have it degrade to an empty error array (not a thrown exception) when
+`window.validateGuardian` is not yet a function, so `computeNavChecks()`
+returns a real (if temporarily guardian-blind) result instead of `null`.
+Confirm this doesn't mask the *real* underlying gap silently forever:
+`getWardProgress()`'s dashboard consumer should still surface a way to
+tell "this ward's guardian validation hasn't loaded yet" apart from "this
+ward is 0% complete," if such a distinction is user-visible today — check
+`dashboard-view-model.js`'s actual rendering of a `null` vs. degraded
+result before deciding whether any UI text needs to change, since this is
+a data-fidelity concern (per `AGENTS.md` Section 4's parity invariant: the
+dashboard's displayed progress must reflect a complete validation, not a
+partial one, once the guardian bundle *has* loaded).
+
+### Task 40H-B — Safe Deposit Box parent toggle destroys the child answer with no restore
+
+`guardian-inventory/index.js:171-178`:
+
+```js
+if (control.dataset.inventoryChange === 'set-sdb') {
+  const val = control.value === 'true';
+  D.hasSafeDepositBox = val;
+  if (!val) D.safeDepositBoxFiled = null;
+  autoSave();
+  updateNavDots();
+  window.navigate('/d3');
+}
+```
+
+Setting the parent (`hasSafeDepositBox`) to `Yes`, then the child
+(`safeDepositBoxFiled`) to `Yes`, then the parent back to `No` wipes the
+child to `null` — and setting the parent back to `Yes` does **not** restore
+it; the child radios render blank. This is exactly the anti-pattern
+`AGENTS.md` Section 3 names explicitly: "Hiding a section or unchecking a
+toggle... must never delete entered data — re-checking must restore it.
+Deletions require an explicit user action." No explicit user action deletes
+the child here — a plain parent-toggle round trip does.
+
+The row is already conditionally hidden purely by CSS class at render time,
+independent of the child's stored value —
+`guardian-inventory/index.js:1009`:
+`<div id="sdb-filed-row" class="${sdbIsYes(D.hasSafeDepositBox)?'':'d-none'}">`.
+Export/readiness validation and the PDF model already gate on the parent
+before reading the child (`index.js:1158-1160`;
+`pdf-model.js:534`'s `...(d.hasSafeDepositBox === true ? [...] : [])`), so
+a stale child value sitting in state while the parent is `No` is never
+read, exported, or shown — it is already inert by construction.
+
+**Note the tri-state shape here is boolean `null`/`true`/`false`, not the
+`''`/`'Yes'`/`'No'` string convention `yesNoRadioHTML()` uses elsewhere in
+this same file** — `tests/unit/guardian-inventory-yes-no-radio.spec.js:14-28`
+documents why: Milestone 38E deliberately made `null` (not `''`) the
+initial default for this exact field pair, after finding a narrow gap where
+`pdf-model.js`'s strict `=== true`/`=== false` check and
+`validateGuardian()`'s looser `=== null`/`=== undefined` check disagreed on
+what `''` meant. Any fix here must preserve that boolean shape — do not
+migrate these two fields to `yesNoRadioHTML`'s string convention as part of
+this task; that would silently reintroduce the class of bug 38E already
+closed.
+
+**Decision:** Delete the `if (!val) D.safeDepositBoxFiled = null;` line.
+The child's stored value persists while hidden (harmless, per the gating
+above) and correctly reappears if the parent is set back to `Yes` — no
+stash/restore mechanism is needed because nothing needs to be destroyed in
+the first place. Confirm export of a filing where the parent is currently
+`No` still never emits the child's stale value (already true structurally,
+per `pdf-model.js:534` above, but assert it explicitly rather than assume).
+
+### Task 40H-C — Inventory D-3 Yes/No radio pairs need semantic `fieldset`/`legend`
+
+`guardian-inventory/index.js:999-1019`: both the `hasSafeDepositBox` group
+(`:999-1008`, a bare `<p>` + `<div class="d-flex gap-4">`) and the
+`safeDepositBoxFiled` group (`:1009-1019`, a `<label class="form-label">` +
+`<div class="d-flex gap-4">`) are only *visually* paired — no `<fieldset>`,
+no `<legend>`. This violates `AGENTS.md` Section 6: "Binary radio pairs
+write string `'Yes'`/`'No'` and must be wrapped in semantic
+`<fieldset>`/`<legend>`."
+
+This is inconsistent with the rest of the same file: Schedule A-1, B-1,
+B-2, and B-3's binary questions already go through `yesNoRadioHTML()`
+(`legacy-app.js:6264-6277`), which emits
+`<fieldset class="plan-yes-no mb-2" data-yes-no-group="...">` +
+`<legend class="form-label mb-1">...</legend>` correctly —
+`tests/unit/guardian-inventory-yes-no-radio.spec.js:36-44` already asserts
+this for those four groups. The D-3 SDB pair is hand-rolled markup instead,
+which is why it was missed.
+
+**Decision:** Wrap each of the two existing radio groups in
+`<fieldset>`/`<legend>`, keeping their current `data-inventory-change`
+wiring, `id`s, and boolean `value="true"/"false"` attributes exactly as
+they are — this is a markup-structure fix only, not a rewrite onto
+`yesNoRadioHTML()` (which would force the string `'Yes'`/`'No'` convention
+Task 40H-B's note above warns against reintroducing). Use the legend text
+already present as plain text today (the `<p>` question text for the
+parent group, the `<label>` text for the child group).
+
+## Print Preview Warning/Error/Readiness Rendering — Audited Across All Nine Filing Types
+
+Prompted by a live screenshot of Guardian Inventory's Print Preview page
+showing three stacked panels with visibly different styling. Read all
+seven `print.js` files plus their three shared dependencies
+(`legacy-app.js`'s `validationPanel()`, `core/filing/readiness-card.js`'s
+`filingReadinessCard()`, `legacy-app.js`'s `planReadinessPanel()`/
+`planReadinessChecks()`) directly rather than inferring from the one
+screenshot. The picture is bigger than wording: **two entirely separate,
+non-unified readiness-panel architectures coexist**, split cleanly along
+family lines.
+
+### What's actually consistent
+
+- **The top "missing fields" banner** (`validationPanel()`,
+  `legacy-app.js:1657-1696` — "N required fields still missing / Across N
+  sections... Go to section ↗") is a single shared function, called
+  identically by all seven `print.js` files. No divergence here.
+- **The "Preview blocked" override banner** (`blockedPanelHTML()` /
+  `mountPdfPreview()`, `core/pdf/pdf-preview.js`) is likewise one shared
+  implementation used by every filing type via `mountPreview()`. No
+  divergence.
+
+### What's not: two readiness-card implementations, split 5 vs. 4
+
+| | **`filingReadinessCard()`** (`readiness-card.js`) | **`planReadinessPanel()`** (`legacy-app.js:6587-6613`) |
+| --- | --- | --- |
+| Used by | Guardian Inventory, Simplified Accounting, Annual/Final/Trust Accounting (5 filing types) | Plan Simplified, Plan Annual, Plan Initial, Plan Minor (4 filing types) |
+| Source of the checklist | `preflight.structuredIssues` — the exact same structured issues `validateX()` uses to block export | A hand-maintained `{auto,manual}` array per filing type (`planReadinessChecksX()`, one per Plan type, each with its own hand-written `ok:` predicates) |
+| Parity guarantee | **By construction** — an issue the validator raises automatically becomes a readiness-card row; cannot drift | **None** — a separate predicate must be kept in sync with the validator by hand. This is the exact architecture that produced the two real parity bugs Milestone 40C-E had to find and fix one at a time (Plan Annual's empty-provider gap, Plan Minor's missing case-identity/amended-form items) |
+| Local-guidance title logic | `hasSixthCircuitLocalGuidance(data?.county)` — calls the shared helper | `['pinellas','pasco'].includes(String(window.D?.county\|\|'').trim().toLowerCase())` — **reimplements the same check inline** instead of calling `hasSixthCircuitLocalGuidance()`, a second place that must be kept in sync if the county list ever changes |
+| "Checked from…" section label | "Checked from this filing" | "Checked from your plan" |
+| Manual-review content | One fixed sentence per filing type, from a lookup object | A bulleted list of multiple items per filing type (Plan Simplified: 9 items; Plan Annual: 11), each citing the specific statute/requirement |
+| Disclaimer subtitle | None | "Mirrors what the Clerk of Court looks for when reviewing a plan. Passing every check does not guarantee approval." |
+| Icon | None | Shield icon (`ic('shield',17)`) |
+| `<details>`/`<summary>` markup | Correct — `<summary>` wraps the head, closed with a matching `</summary>` | **Broken** — see Task 40H-D below |
+
+### Task 40H-D — `planReadinessPanel()` emits a `<details>` with no matching `<summary>`
+
+`legacy-app.js:6596-6603`:
+
+```js
+return `<details class="validation-panel readiness-panel no-print"${pending?' open':''}>
+    <div class="validation-head">
+      ${ic('shield',17)}
+      <div>
+        <div class="validation-title">...</div>
+        <div class="validation-sub">...</div>
+      </div>
+    </summary>
+```
+
+The head is opened as a plain `<div class="validation-head">`, not
+`<summary>` — but it's still closed with `</summary>`, an orphan closing
+tag with nothing to match. Compare `filingReadinessCard()`
+(`readiness-card.js:25`), which correctly opens `<summary>` and closes it
+the same way. The practical effect on all four Plan types' Print Preview
+pages: the `<details>` element gets no real `<summary>` child, so it loses
+the browser's native disclosure semantics (default toggle marker, implicit
+button role, keyboard activation) that `filingReadinessCard()`'s version
+gets for free. Browsers silently drop the orphan `</summary>`, so this
+doesn't crash anything — which is exactly why it went unnoticed.
+
+**Decision:** Change `<div class="validation-head">` to
+`<summary class="validation-head">`, matching `filingReadinessCard()`'s
+structure. No other markup, styling, or behavior change.
+
+### Recommended Standard — Not Scoped for 40H
+
+The four wording/content/icon differences in the table above are cosmetic
+and could be reconciled cheaply. The parity-guarantee difference is not
+cosmetic — it's the same class of bug 40C-E already had to fix twice, and
+the hand-maintained architecture can produce another one at any time a
+Plan validator changes without its matching `planReadinessChecksX()`
+predicate being updated in lockstep. **Recommendation: migrate all four
+Plan types onto `filingReadinessCard()`**, carrying forward
+`planReadinessPanel()`'s two genuinely better pieces of content (the
+itemized, statute-cited manual-review list, and the "does not guarantee
+approval" disclaimer) rather than losing them — `filingReadinessCard()`'s
+`manual` lookup would need to accept an array of items instead of one
+sentence to hold that content, and the disclaimer would need to become
+universal rather than Plan-only.
+
+This is a real migration, not a copy-edit: each Plan type's readiness
+items would need to be re-derived from `structuredIssues` at matching
+granularity (`planReadinessChecksAnnual()` alone has 17 hand-written
+conditions), and `tests/unit/plan-annual-parity.spec.js` /
+`plan-simplified-readiness-parity.spec.js` / the equivalent Initial/Minor
+suites would need rework rather than deletion, since they're the existing
+regression guard against exactly this drift. That's out of proportion to
+40H's other three small, independent fixes — recommend scoping it as its
+own future milestone rather than folding it in here. Task 40H-D above
+(the `<summary>` fix) stands on its own regardless of whether or when that
+larger migration happens.
+
+### Task 40H-E — Add a preparer-authorization note above each signing page's perjury attestation
+
+Added directly by the requester (2026-09-13), not sourced from the QA
+report or the Print Preview audit above. Every filing type's guardian/party
+signature page pairs a sworn statement ("Under penalties of perjury...")
+with the actual signature capture, but nothing on that page tells the
+*preparer* — the person operating this app, who is not necessarily the same
+person signing — that attaching a signature on someone else's behalf
+requires that person's actual authorization.
+
+Confirmed by grep, not assumption: exactly seven sites carry this
+statement, one per feature module, together covering all nine filing types
+(`annual-accounting`'s single site serves Annual, Final, and Trust
+Accounting):
+
+- `guardian-inventory/index.js:929-932` — `<h1>Part III: Guardian(s)
+  Attestation</h1>` immediately followed by a
+  `<div class="schedule-instructions">` wrapping the statement.
+- `simplified-accounting/index.js:452-453` — `<h1>Part III — Guardian(s)
+  Declaration</h1>` immediately followed by `<div class="attestation-text">`.
+- `annual-accounting/index.js:648-649` — `<h1>Part III — Guardian(s)
+  Signature &amp; Declaration</h1>` immediately followed by
+  `<div class="attestation-text">`.
+- `plan-simplified/index.js:268-269` — `<h1>Signatures</h1>` immediately
+  followed by `<div class="attestation-text mb-3">`.
+- `plan-minor/index.js:352` — no heading immediately above; the statement is
+  an inline-styled `<p class="mt-2 mb-3" style="font-size:.85rem;...">`
+  following a block of certification checkboxes, deeper in the same page.
+- `plan-initial/index.js:514` — same shape as `plan-minor`.
+- `plan-annual/index.js:607` — same shape as `plan-minor`/`plan-initial`,
+  but using the shared `attestation-text` class.
+
+No shared renderer produces any of this markup — each site is hand-rolled
+per file, using three different, inconsistent class conventions
+(`attestation-text`, `schedule-instructions`, an inline-styled `<p>` with no
+class at all). A repo-wide grep for `attestation-text`, `Attestation`, and
+`preparerNote`/`renderPreparerNote` confirms there is nothing to extend:
+only the CSS class definition (`styles/cards.css`) and these seven call
+sites exist — no JS render function to add a parameter to.
+
+**Decision:** Insert one line of preparer-facing text immediately above the
+sworn statement at all seven sites, in a single new shared CSS class
+(`.preparer-note`, defined once in `styles/cards.css`) rather than matching
+each site's own inconsistent existing class — so the note looks and reads
+identically everywhere regardless of which of the three markup patterns its
+page uses today. Proposed text, open to wording adjustment at
+implementation:
+
+> Preparer's note: Before attaching any signature on this page, confirm you
+> have that party's actual legal authorization to sign on their behalf. Do
+> not sign for a party you have not been authorized to sign for.
+
+**Scope is the seven in-app editor pages only** — explicitly **not** the
+corresponding `pdf-model.js` sites that render the same sworn statement into
+the exported PDF/DOCX (`guardian-inventory/pdf-model.js:472`,
+`simplified-accounting/pdf-model.js:154`, `annual-accounting/pdf-model.js:266`,
+`plan-simplified/pdf-model.js:176`, `plan-minor/pdf-model.js:233`,
+`plan-initial/pdf-model.js:469`, `plan-annual/pdf-model.js:532`). This note
+is instructional text aimed at whoever is operating the app, not part of
+the document filed with the court — it has no reason to appear in the
+exported filing itself, and putting non-statutory text into a court-filed
+document is a different and much larger question than this task is scoped
+to answer. If the requester wants it in the export too, that should be its
+own explicit decision, not a side effect of this task.
+
+## Tasks Added From the Test-Data-Generation Pass (2026-09-13)
+
+A separate same-day session completed one filing of every type end to end
+with realistic data and recorded findings in
+`Probate_Guardian_TestData_Findings.md`. Every claim below was re-verified
+directly against current `master` — not taken on the report's word — and
+two of the report's nine findings turned out to describe the same
+underlying gap rather than two separate ones (see Task 40H-I). Two more
+needed no action: the report's own **F-8** ("New Form type silently
+resets") was already downgraded by that same session to a synthetic-event
+testing artifact, not a real bug — confirmed correct, no task here. Its
+**Section 4** note that the Verified Initial Inventory briefly showed
+"Automatic (Draft)" before settling on "Ready" independently corroborates
+Task 40H-A above (both are `getWardProgress()` symptoms of the same
+unguarded `validateGuardian` call) — recorded as supporting evidence, not a
+new task.
+
+### Task 40H-F — `planReadinessChecksX()` is a dangling global for all four Plan types, not just Minor
+
+The report's **F-1**: calling the plan readiness routine for Plan Minor
+throws `planReadinessChecksMinor is not a function`. Confirmed the
+mechanism exactly: `plan-minor/index.js:53` assigns
+`window.planReadinessChecksMinor` only inside `ensurePrintModule()`'s
+`import('./print.js').then(...)` callback — a real `window` property that
+exists only after that lazy module has resolved. `planReadinessChecks()`
+(`legacy-app.js:6575-6585`) calls whichever of the four
+`window.planReadinessChecksX()` globals matches `activeInventoryType`
+**unguarded** — no `typeof ... === 'function'` check, unlike 40H-A's
+guarded sibling call. All four Plan types share this identical unguarded
+dispatch, not just Minor; `planReadinessChecksMinor` is simply the one the
+report happened to hit.
+
+**Could not confirm the report's exact trigger path.** `planReadinessPanel()`
+(`:6587-6613`) — the only caller of `planReadinessChecks()` — is itself only
+reached from inside each Plan type's own `pagePrintPlanX()`, which every
+`mount()` calls *after* `await ensurePrintModule()` resolves
+(`plan-minor/index.js:62-64`, same shape in the other three). That ordering
+guarantees the global exists by the time `planReadinessPanel()` runs during
+ordinary navigation to `/print` — the report's own Method section describes
+calling the app's functions directly (`getActiveWard()`, `computeNavChecks()`,
+etc.) as part of its verification approach, and the most likely trigger is a
+direct `window.planReadinessChecks()`/`window.planReadinessChecksMinor()`
+console call made before that ward's Print Preview had been opened this
+session, not a path an ordinarily-navigating filer would hit. Recorded
+honestly rather than claimed as a reproduced UI bug — but the underlying
+architecture (four unguarded dangling globals, identical to 40H-A's fixed
+pattern) is real regardless of trigger, and worth the same defensive fix.
+
+**Decision:** Guard all four branches of `planReadinessChecks()`
+(`legacy-app.js:6581-6584`) the same way `:7629` already guards
+`validateGuardian`, returning a safe empty `{auto:[],manual:[]}` (matching
+what `planReadinessPanel()` at `:6588` destructures) instead of throwing
+when the relevant global isn't yet a function. Apply the same guard to all
+four dispatch branches, not just `planMinor` — fixing only the one the
+report reproduced would leave the identical gap live for the other three.
+
+### Task 40H-G — Free-text fields corrupt stored data: minor words get title-cased, apostrophes get stripped
+
+The report's **F-4** and **F-5**, both confirmed at their exact root cause
+— two different formatters, both reached from ordinary text-field blur:
+
+- **F-4 (title-casing):** `formatSafeTitleCase()`
+  (`src/core/form/form-contract.js:85-100`) capitalizes *every* purely
+  lowercase word with no exception list for minor words ("of", "and",
+  "the") — so `formatName()`/`formatAddress()`
+  (`legacy-app.js:1538-1545`), which every field `inferFieldKind()`
+  classifies as `name` or `address` runs through on blur, turns "Sunrise
+  Assisted Living of Clearwater" into "...Living **Of** Clearwater." This
+  contradicts the function's own docstring promise to leave "mixed-case
+  names... 100% untouched" — it keeps that promise for surnames but never
+  extended it to connecting words in longer phrases.
+- **F-5 (apostrophe stripping):** `sanitizeInput()` (`legacy-app.js:1109-1116`),
+  specifically `` cleaned.replace(/[<>\"'`]/g,'') `` at `:1112`, strips a
+  straight apostrophe entirely (no replacement character), turning "ward's"
+  into "wards." Reached via `validateSecurityInput()` (`:1151-1158`) →
+  `format === 'security'`, the format every field `inferFieldKind()`
+  classifies as plain `text` gets (`form-fields.js:93`), on blur
+  (`annual-accounting/index.js:286-287`, and the equivalent blur handler in
+  every other feature module using the same `data-*-format="security"`
+  convention). Not limited to Annual Accounting — this is the generic
+  free-text sanitizer used app-wide.
+
+**Decision:**
+
+1. Add a small stop-word set (`of`, `and`, `the`, `a`, `an`, `for`, `in`,
+   `on`, `at`, `to`, `by`) to `formatSafeTitleCase()` that stays lowercase
+   *unless* it's the first word — standard title-case convention, and
+   consistent with the function's own stated intent. Confirm this doesn't
+   regress `TITLE_CASE_CITY_PREFIXES`-style short words that should stay
+   capitalized (`St`, `Mt`, `Ft` are already 100%-uppercase words, not
+   affected by a lowercase-only stop list).
+2. Remove `'` from `sanitizeInput()`'s stripped-character set at `:1112` —
+   keep `<`, `>`, `"`, and `` ` `` stripped (the actual HTML/script-injection
+   vectors); a straight apostrophe in ordinary text is not one. Confirm
+   `detectXSSPayload()`/`detectSQLInjection()` (`:1091-1100`) don't rely on
+   apostrophe-stripping to catch anything — both match on keywords/tag
+   syntax, not quote characters, so this narrowing doesn't reopen either
+   check.
+
+### Task 40H-H — Schedule E, F-1, and F-2 totals go stale after the first render
+
+The report's **F-6** ("Schedule F-1 Total shows $0.00 after a $402,000 sale
+is entered") — confirmed, and confirmed to also affect two schedules the
+report didn't test. Root cause: every other Annual Accounting schedule's
+total cell carries `data-annual-total="<key>"`
+(`annual-accounting/index.js:766` through `:1109`, nine sites) so
+`refreshAnnualTotals()` (`:155-161`) can update it live on every
+input/blur, reading the key from `calcTotalsAnnual()`
+(`features/annual-accounting/totals.js:15-60`) — the single source of
+truth every other total goes through. Schedule E (`:1140-1143`, Transfers
+In/Out), Schedule F-1 (`:1173`, Sales of Real Property), and Schedule F-2
+(`:1203`, Sales of Personal Property) are the only three schedule totals in
+this file that **don't** follow that pattern: each computes its own local
+total once at render time (`pageSchF1Annual()`'s `const total=(d.schF1||[])
+.reduce(...)` at `:1152`, same shape for E and F-2) with no
+`data-annual-total` attribute and no entry in `calcTotalsAnnual()` at all —
+so the figure is only ever correct at the instant the page first renders,
+and never again. Confirmed `totals.js` has no `schE`/`schF1`/`schF2` key of
+any kind (`grep` returns zero matches).
+
+**Decision:** Add `schF1`, `schF2`, and `schE_in`/`schE_out` to
+`calcTotalsAnnual()`'s return object (`totals.js`), each summing its
+schedule the same way the existing entries do
+(`.reduce((s,r)=>s+n(r.salePrice),0)` for F-1, matching the local
+computation already in `index.js` so the numeric result doesn't change —
+only where it's computed and whether it refreshes). Add the matching
+`data-annual-total="..."` attribute to each of the three schedules' total
+cells (`:1140-1143`, `:1173`, `:1203`) and switch their interpolation from
+the local variable to `t.<key>`, matching the established pattern exactly.
+
+### Task 40H-I — "New Filing from Existing": ward-selector default and same-family carryover gap
+
+Two of the report's findings — **F-7** and the combination of **F-2**/**F-3**
+— both confirmed, with one correction to how F-2 was characterized.
+
+**F-7 (ward selector defaults wrong):** `core/modals/convert-ward-modal.js:32`
+— `const first = caseFile.wards[0];` — unconditionally defaults the "New
+Filing from Existing" modal's ward field to the first ward ever created in
+the case file, never the currently active one. (A dead legacy twin at
+`legacy-app.js:5272-5284` has the identical bug — shadowed and unreachable
+per the Milestone 40F catalog in "Open Items" below, so it's not a second
+site to fix, just confirmation this bug predates the module extraction.)
+**Decision:** Default to the active ward (`getActiveWard()`), falling back
+to `caseFile.wards[0]` only when there is no active ward.
+
+**F-2/F-3 (carryover gap — corrected and combined):** The report describes
+two findings — an empty-named cert recipient, and County/period/starting
+balance/schedules not carrying — but tracing both through
+`carryOverAccountingToAccounting()`'s "annual family" branch
+(`legacy-app.js:3902-3913`, reached for e.g. Annual → Final/Trust Accounting,
+which is what the report actually exercised) shows they're the same gap,
+not two: that branch's returned object carries only
+`{wardName, caseNumber, county:'', typeOfGuardianship, gid, guardian,
+attorney, attorney_bar, attorney_phone, attorney_street,
+attorney_cityStateZip, guardians[]}` — no `certRecipients`, `periodFrom`,
+`periodTo`, `startingBalance`, or any schedule key at all. **The report's
+"empty-named cert recipient" is not a corrupted carryover — nothing carries
+into `certRecipients`; the new filing's ordinary blank-seed default (from
+`initializeEmptyData()`) is what the report saw**, indistinguishable from
+any brand-new filing. Worth correcting precisely since it changes the fix:
+there's no "recipient carried with a blank name" to repair, only an absent
+carry to add.
+
+County is the one field here that's carried **deliberately**:
+`carryOverFields()` (`legacy-app.js:3920-3949`) explicitly blanks it
+(`:3940`) then restores it from the source ward's canonical Party record
+(`wardPartyId`/`resolveParty()`), not from the source filing's own
+snapshot — a named Milestone 40C-A/40C-F decision, with its own comment
+explaining why. **This part of the report needs re-verification, not a
+code change**: county should have come back correctly as long as the test
+ward had an established `wardPartyId`. Whether it didn't in this specific
+test run, or came back correctly and the report's wording just didn't
+distinguish "restored from Party" from "carried from the source filing," is
+unconfirmed — flagged for the requester rather than guessed at.
+
+Period (`periodFrom`/`periodTo`) and schedule line items (`schA`
+through `schF2`) are correctly absent — a new accounting period must not
+start pre-filled with the prior period's dates or transactions, so the
+report's expectation there does not describe a bug.
+
+**Decision (per requester choice, 2026-09-13): auto-carry starting balance
+and certificate-of-service recipients.** Starting balance should equal the
+prior filing's ending net assets — that is the actual statutory
+continuity, not an editorial choice — computed via
+`calcTotalsAnnual(sourceWard).netAssetsFromD` at the moment of conversion
+(same function Task 40H-H extends) and written to `newWard.startingBalance`
+in `carryOverAccountingToAccounting()`'s annual-family branch. Certificate
+recipients carry via a shallow copy of `sourceWard.certRecipients`, since
+the interested parties entitled to service are typically the same people
+across a ward's filings. Both land only in the annual-family branch
+(`:3902-3913`) where the gap was confirmed — the guardian/simplified
+branches above it were not audited for the same gap and are out of scope
+here.
+
+**Decision (per requester choice, 2026-09-13): correct `describeConversion()`'s
+confirmation message rather than add new signposting from scratch.** The
+report characterized Convert Ward as having no explanation of what
+carries — checked, and that's not quite right: `describeConversion()`
+(`legacy-app.js:5348-5365`) already builds the explanatory text
+`convertExistingWard()`'s closing `alert()` (`:5586`) shows. The problem is
+accuracy, not absence. An Annual → Final/Trust conversion hits this
+function's generic fallback branch (`:5361-5362`,
+`carrySourcesFor(destType).includes(srcType)`): *"The ward's name, case
+number, county, and guardian contact details are carried over exactly as
+entered... Everything specific to this new filing (residence and care
+details, schedules, signatures, etc.) starts blank."* Three inaccuracies,
+confirmed against the code above: it omits that the attorney block already
+carries (`carryOverAccountingToAccounting()`'s annual-family branch,
+`attorney`/`attorney_bar`/`attorney_phone`/`attorney_street`/
+`attorney_cityStateZip` at `:3903-3905`); it claims county is carried
+"exactly as entered," when it's actually restored from the ward's Party
+record and could in principle differ from the source filing's own value;
+and once this task's starting-balance/cert-recipients decision above lands,
+it will be flatly wrong to say those "start blank" too.
+
+**Fix:** add a same-family accounting-to-accounting branch to
+`describeConversion()` (checked ahead of the generic fallback, mirroring
+how the existing `annual`↔`simplified` branches at `:5355-5360` are
+ordered) stating plainly that ward/case/guardian/attorney identity, the
+starting balance (as the prior filing's ending net assets), and
+certificate-of-service recipients carry over; that county is restored from
+the ward's Party record rather than copied from the source filing; and that
+the accounting period and every schedule start blank. This is a
+same-session pairing with the auto-carry decision above — the message must
+describe the code's actual post-fix behavior, not the reverse.
+
+### Task 40H-J — Plan/Accounting → Guardian Inventory carryover writes attorney fields nothing reads
+
+Promoted from the Open Items register (previously "item 5") — a scoped,
+already-diagnosed defect, not a judgment call, added per requester choice
+(2026-09-13).
+
+`ward-lifecycle.js`'s `carryOverFieldsForAccounting()` guardian branch
+(`:233-258`) writes the source's attorney bar number, phone, and address
+into **flat** keys on the returned object:
+`attorneyBar:attyBar, attorneyPhone:attyPhone, attorneyEmail:attyEmail,
+attorneyAddress:attyStreet, attorneyCityStateZip:attyCityStateZip`
+(`:242-246`). Confirmed `emptyDataGuardian()` (`legacy-app.js:6089-6113`)
+has no such flat keys at all — its only attorney fields are
+`attorneyForGuardian` (a flat name string, which this branch does carry
+correctly via `attorneyForGuardian: attyName` at `:241`) and a **nested**
+`attorney:{name,barNumber,phone,streetAddress,cityStateZip,signatureDate,
+filingDate,signatureState,signatureImage}` object (`:6103`) — no flat
+`attorneyBar`/`attorneyPhone`/`attorneyAddress`/`attorneyCityStateZip` at
+all, and **no `email` field of any kind**, nested or flat.
+`validateGuardian()`/`pdf-model.js` read only the nested object. So a
+Plan or Accounting → Guardian Inventory carryover computes the bar number,
+phone, street, and city/state/zip correctly, then writes all four (plus a
+phantom email with nowhere to go) to keys the destination's editor,
+validator, and PDF model never look at — the values are silently dropped,
+every time, for every filing type that can carry into Guardian Inventory.
+
+The identical defect, on the opposite direction and already fixed, is the
+pattern to mirror: `legacy-app.js`'s `carryOverAccountingToAccounting()`
+guardian branch (`:3878-3889`) builds
+`attorney:{name:attorneyName,barNumber:attyBar,phone:attyPhone,
+streetAddress:attyStreet,cityStateZip:attyCityStateZip,signatureDate:null,
+filingDate:null,signatureState:'',signatureImage:''}` — note it also has no
+`email` key, confirming Guardian Inventory's attorney block genuinely has
+no email field app-wide, not just a gap in `emptyDataGuardian()`; `attyEmail`
+is correctly computed by both functions and correctly has nowhere to go.
+
+**Decision:** In `carryOverFieldsForAccounting()`'s guardian branch
+(`ward-lifecycle.js:233-258`), replace the five flat `attorneyBar`/
+`attorneyPhone`/`attorneyEmail`/`attorneyAddress`/`attorneyCityStateZip`
+keys with a nested `attorney:{name:attyName,barNumber:attyBar,
+phone:attyPhone,streetAddress:attyStreet,cityStateZip:attyCityStateZip,
+signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}`
+object, matching `emptyDataGuardian()`'s shape exactly (dropping
+`attyEmail` — already unused by the mirrored fix, and confirmed to have no
+destination field to occupy).
+
+**Noted, not scoped — F-9 (native `alert()` on filing conversion):**
+Confirmed `alert()` is this app's standard, uniform notification idiom —
+not a "New Filing from Existing"-specific choice. A repo-wide grep finds
+it at 50+ call sites across every feature module and both persistence
+paths, used identically for confirmations, warnings, and errors
+throughout. Replacing it in this one flow only would make that flow
+inconsistent with the rest of the app rather than better; replacing it
+everywhere is a real UX redesign, not a small independent fix in 40H's
+style. Recorded so it isn't lost, not scoped into this delivery.
+
+## Decisions Recorded — Resolved 2026-09-13, No Code Change
+
+Four items needed the requester's judgment rather than a mechanical fix.
+All four were presented as explicit choices and resolved the same way:
+current behavior is correct as-is. None is a task in this delivery;
+recorded here so they aren't re-litigated later.
+
+1. **Signature tri-state default "Unsigned" stores as `''`, not a distinct
+   token.** `pdf-model.js:436,453,511,595` all read
+   `signatureState: g.signatureState || ''`. **RESOLVED — leave as-is.**
+   Functionally inert (unsigned behaves correctly either way); the
+   ambiguity between "not yet answered" and "explicitly marked unsigned"
+   is real but nothing currently depends on distinguishing them. No code
+   change.
+2. **SSN/EIN stored unmasked in ward state / `.sav`.** Display masks to
+   dots; the underlying value is plaintext. **RESOLVED — confirmed
+   intentional.** This is a fully client-side app and `.sav` is optionally
+   AES-GCM encrypted at rest; plaintext-in-memory is standard for an
+   editable field. Conscious design choice, not a defect. No code change.
+3. **D-5 "Service Date" is a hard export blocker.**
+   `guardian-inventory/index.js:1177`:
+   `if(!d.serviceDate)errors.push('D-5 — Service Date is required.');` —
+   confirmed a genuine `errors.push`, not a warning. **RESOLVED — keep
+   required/blocking.** Treated as data entry (recording a known fact —
+   the date service occurred) rather than the procedural act of service
+   itself, so it does not violate `AGENTS.md` Section 4's manual/auto
+   distinction after all. No code change.
+4. **Three `_appState` keys (`walkthroughCompleted`, `firstLaunchSeen`,
+   `continuePromptShown`) are per-device onboarding-flag candidates.**
+   Milestone 40D moved `theme` to `localStorage` and its Decision 6
+   inventory flagged these three as the only other genuinely UI-only keys,
+   left as an explicit open decision rather than migrated. **RESOLVED —
+   keep in `.sav`, case-coupled.** Matches current behavior: every new case
+   re-shows onboarding regardless of what a device has already seen, which
+   is the safer default for a filer who may not be the same person who
+   last used this device. No code change.
+
+## Data, Portability, Security, and Legal Scope
+
+No persisted field is added, renamed, or reshaped; no `probate-guardian-data-model.csv`
+change; no `verify:data-model` run required. No export/import/backup path
+changes shape. No new sensitivity classification is introduced. Task 40H-E
+adds advisory text reminding the preparer to obtain authorization before
+signing on a party's behalf — it is a UI reminder, not a legal-sufficiency
+determination by the app itself, and it does not gate, block, or validate
+anything; a preparer can still proceed without acknowledging it, exactly as
+today. Task 40H-I writes `startingBalance` and `certRecipients` — both
+already-existing fields on every accounting-family ward — during carryover
+instead of leaving them at their empty-seed default; no new field, no
+schema change, no `verify:data-model` impact. Task 40H-J changes *where*
+four already-existing attorney values land on a Guardian Inventory ward
+(from unread flat keys to the nested `attorney` object every reader
+already expects) — no new field, no schema change. No legal-sufficiency
+determination is made or implied by any of the ten fixes.
+
+## File/Delivery Overlap Check
+
+Confirmed no file this delivery touches (`legacy-app.js` around
+`:1657-1696`, `:6587-6613`, and `:7629-8170`; `guardian-inventory/index.js`
+around `:171-180`, `:929-932`, and `:995-1020`) intersects any file
+Milestone 40C-1 is editing (its `legacy-app.js` sites are the
+Pinellas-fallback creation/conversion paths at `:4369-4524` and
+`:6127-6209`, and it does not touch `guardian-inventory/index.js` at all).
+No required ordering between the two; sequencing 40H after 40C-1 is a
+scheduling choice, not a dependency.
+
+Task 40H-E adds six further files, all new to this delivery and touched by
+no other open or landed Milestone 40 delivery: `simplified-accounting/index.js`
+(`:452-453`), `annual-accounting/index.js` (`:648-649`),
+`plan-simplified/index.js` (`:268-269`), `plan-minor/index.js` (`:352`),
+`plan-initial/index.js` (`:514`), `plan-annual/index.js` (`:607`), plus one
+new shared class in `styles/cards.css`.
+
+Tasks 40H-F through 40H-J add five more, none touched by any other open or
+landed Milestone 40 delivery: `form-contract.js` (`:85-100`, 40H-G's
+stop-word list), `features/annual-accounting/totals.js` (`:15-60`, 40H-H's
+three new total keys), `core/navigation/ward-lifecycle.js` (`:233-258`,
+40H-J's nested-attorney fix), and `legacy-app.js` at three ranges not
+already covered above — `:1109-1158` (40H-G's `sanitizeInput()`),
+`:3834-3950` and `:5348-5365` (40H-I's carryover fix and
+`describeConversion()` correction), and `:6575-6613` (40H-F's guard,
+overlapping the range already listed above for 40H-D — same function,
+different lines within it) — plus `core/modals/convert-ward-modal.js`
+(`:21-42`, 40H-I's ward-selector default).
+
+## Implementation Order and Dependencies
+
+**No task blocks another.** All ten are independent bug fixes confirmed at
+disjoint files or non-overlapping line ranges within a shared file — any
+one, or any subset, can be implemented and landed alone in any order. Three
+pairs share a file or a function neighborhood, which makes doing them
+together *convenient*, not *required*:
+
+- **40H-B + 40H-C** — both in `guardian-inventory/index.js`'s D-3 section
+  (`:171-178` vs. `:999-1019`), disjoint ranges. Same page a implementer
+  would already have open.
+- **40H-D + 40H-F** — `planReadinessPanel()` (`:6587-6613`) calls
+  `planReadinessChecks()` (`:6575-6585`); 40H-F guards the callee, 40H-D
+  fixes the caller's markup. Neither's fix depends on the other landing
+  first — 40H-F's guard doesn't change what `planReadinessPanel()` returns
+  when the global *is* defined (the normal case), and 40H-D's markup fix
+  doesn't touch `planReadinessChecks()` at all.
+- **40H-I + 40H-J** — both fix a carryover gap, but in different functions
+  in different files (`legacy-app.js`'s `carryOverAccountingToAccounting()`
+  vs. `ward-lifecycle.js`'s `carryOverFieldsForAccounting()`) handling
+  different conversion directions (accounting-to-accounting vs.
+  any-to-Guardian-Inventory). No shared code.
+
+**No dependency on any other Milestone 40 delivery.** 40A, 40B (withdrawn),
+40C-1, 40C-2, 40D, 40E, 40F, and 40G have all landed — 40H and 40I are the
+only two deliveries left open, per `MILESTONE-40-PROPOSAL.md`'s own index.
+Confirmed via `git log` that the one commit to land since this proposal's
+last citation pass (`3b8dadf`, a sidebar-context fix unrelated to any
+Milestone 40 delivery) touches only `legacy-app.js`, and only the line
+ranges already re-verified in the "Third pass" addendum above.
+
+**Relationship to `MILESTONE-40I-PROPOSAL.md`:** none. Confirmed zero file
+overlap in both directions (40I touches only `src/styles/forms.css`; no
+40H task touches that file). Either can be approved, implemented, and
+landed independently and in any order relative to the other.
+
+**Relationship to `MILESTONE-41-PROPOSAL.md`** (Draft, unscheduled,
+architectural — centralizing field rendering into Tier 1
+primitives/Tier 2 cards/Tier 3 declarative pages): not a blocking
+dependency in either direction, since 41 is not approved or scheduled, but
+three of 40H's tasks touch territory 41's own text explicitly assumes is
+already fixed, which is worth landing 40H ahead of any future 41 work
+rather than after:
+
+- 41's Section 2.6 states as a compliance fact that **"all radio pairs
+  [are] rendered in `<fieldset>` with `<legend>` tags."** That is only
+  true once Task 40H-C lands — today it is not (`grep -c fieldset
+  guardian-inventory/index.js` returns 0). If 41 is implemented before
+  40H-C, its own stated compliance claim would be false on arrival for the
+  one gap 40H-C closes.
+- 41's Tier 2 "Guardian & Attorney Details" card would read from the same
+  nested `attorney` object Task 40H-J fixes `carryOverFieldsForAccounting()`
+  to actually populate. Landing 40H-J first means that card inherits
+  correct carried-over data from day one, rather than inheriting — and
+  then needing to independently rediscover — the silent-drop bug.
+- 41's Tier 1 primitives are meant to become the canonical implementation
+  other code delegates to (Section 2.2: "legacy helpers will delegate
+  directly to Tier 1"). Task 40H-G fixes the two low-level text formatters
+  (`formatSafeTitleCase()`, `sanitizeInput()`) every text/name field
+  already runs through. Landing 40H-G first means Tier 1 canonicalizes the
+  *fixed* behavior; landing it after risks the reverse — the bug getting
+  copied into the new shared primitive as "how it's always worked."
+- Task 40H-E hand-inserts a `.preparer-note` element into all seven
+  currently hand-rolled signature pages. If 41's Tier 3 restructuring of
+  those same pages happens later, its implementer needs to carry that
+  element forward into whatever declarative structure replaces the
+  hand-rolled markup — noted here so it isn't dropped as incidental
+  cruft during that future migration.
+
+None of this blocks 40H on 41, or 41 on 40H — 41 is Draft and not queued
+for implementation. It is recorded because the requester asked whether any
+up/downstream dependency exists, and this is the one found.
+
+## Acceptance Criteria
+
+| Task | Scenario | Expected result |
+| --- | --- | --- |
+| 40H-A | Fresh session, dashboard renders a guardian-type ward before any Guardian Inventory page has been visited | No console exception; `getWardProgress()` returns a real result, not `null`, even if the guardian dimension is temporarily degraded |
+| 40H-A | Guardian Inventory feature bundle already loaded this session | Dashboard progress for that ward reflects full guardian validation, unchanged from today's eventual-consistency behavior |
+| 40H-B | Parent = Yes, child = Yes, parent → No, parent → Yes again | Child radios show Yes again — not blank |
+| 40H-B | Parent = No throughout, export attempted | Child's value (whatever it is in state) is never read or emitted, exactly as today |
+| 40H-C | D-3 Safe Deposit Box question, read via the DOM | Wrapped in `<fieldset>` with a `<legend>` containing the question text |
+| 40H-C | D-3 "Filed with Court?" sub-question, read via the DOM | Same — `<fieldset>`/`<legend>`, hidden/shown exactly as before |
+| 40H-D | Any Plan-type Print Preview page's readiness panel, read via the DOM | `<details>` contains a real `<summary>` element wrapping the head (title, subtitle, icon); no orphan closing tag |
+| 40H-D | Clicking/keyboard-activating the readiness panel's head on any Plan type | Native disclosure toggle behavior, matching `filingReadinessCard()`'s panel on the other five filing types |
+| 40H-E | Any of the seven signing pages (all nine filing types), read via the DOM | A `.preparer-note` element appears immediately above the perjury/attestation statement, containing the note text from Task 40H-E's Decision |
+| 40H-E | Exported PDF/DOCX for any filing type | Unchanged — no preparer-note text appears anywhere in the exported document |
+| 40H-F | `window.planReadinessChecksX` deliberately left undefined for each of the four Plan types, `planReadinessChecks()` called | Returns `{auto:[],manual:[]}`, does not throw |
+| 40H-F | Global defined (normal `/print` navigation) | Unchanged from current behavior for all four Plan types |
+| 40H-G | Payee/description field containing "Sunrise Assisted Living of Clearwater" or similar, blurred | Stored and displayed with "of" lowercase, matching standard title case |
+| 40H-G | Free-text field containing `ward's`, blurred | Apostrophe preserved; `<`, `>`, `"`, `` ` `` still stripped |
+| 40H-H | Schedule E, F-1, or F-2 row's amount field edited and blurred, no navigation | Schedule total updates immediately, matching the sum of entered rows |
+| 40H-I | "New Filing from Existing" opened while a non-first ward is active | Ward selector defaults to the active ward, not `caseFile.wards[0]` |
+| 40H-I | Annual Accounting → Final/Trust Accounting via "New Filing from Existing" | New filing's `startingBalance` equals the source's `netAssetsFromD`; `certRecipients` matches the source's list |
+| 40H-I | Confirmation message for that same conversion | States that starting balance, cert recipients, and attorney details carried, county was restored from the Party record, and period/schedules start blank — not the old generic "everything specific starts blank" text |
+| 40H-J | Plan or Accounting ward converted/carried into Guardian Inventory, source has an attorney bar number/phone/address | New ward's `attorney.barNumber`/`.phone`/`.streetAddress`/`.cityStateZip` are populated; D-2 page and exported PDF show them |
+| All | `npm run test:unit` | Green |
+
+## Verification Plan
+
+- **40H-A:** Add a new `tests/unit/dashboard-guardian-progress-guard.spec.js`
+  (or extend `dashboard-view-model.spec.js` if that's the more natural
+  home — check its current scope before choosing) asserting: with
+  `window.validateGuardian` deliberately left undefined, `computeNavChecks()`
+  /`getWardProgress()` do not throw and return a valid degraded result; with
+  it defined, results are unchanged from current behavior. Confirm this
+  test fails against the current unguarded code before the fix, per this
+  repository's own verification convention.
+- **40H-B:** Extend `tests/unit/guardian-inventory-yes-no-radio.spec.js`
+  with the parent-off-then-on round trip described in the Acceptance
+  Criteria table, plus an assertion that a `No`-parent filing's export
+  path never emits the child's value regardless of what it holds.
+- **40H-C:** Extend the same spec file with a DOM-level (or source-text,
+  matching that file's existing string-assertion style) check that both
+  D-3 groups are wrapped in `fieldset`/`legend`, mirroring the existing
+  `yesNoRadioHTML` assertions at `:36-44`.
+- **40H-D:** Add a source-text or DOM-level assertion (new or extended
+  spec — check whether an existing Plan-family print/readiness spec is the
+  natural home before creating one) that `planReadinessPanel()`'s returned
+  markup contains a `<summary>` opening tag matching its `</summary>`
+  close, for all four Plan types. Confirm this test fails against the
+  current markup before the fix.
+- **40H-E:** Add or extend a unit spec (check whether an existing
+  per-feature page-render spec is the natural home before creating a new
+  file — one spec covering all seven sites, or seven small assertions added
+  to each feature's existing render spec, either is acceptable) asserting a
+  `.preparer-note` element is present and precedes the attestation/perjury
+  text in DOM order, for all seven sites, and that no `.preparer-note`
+  element or equivalent text appears in the corresponding `pdf-model.js`
+  output for any of the nine filing types. Confirm the DOM assertion fails
+  against current markup before the fix, per this repository's own
+  verification convention.
+- **40H-F:** Extend `tests/unit/plan-readiness-county.spec.js` or add a new
+  spec (check current scope first — this file already exercises
+  `planReadinessChecks()`-family behavior per its own name) asserting each
+  of the four `window.planReadinessChecksX` globals being undefined does
+  not throw and returns the safe empty result. Confirm each fails against
+  current code before the fix.
+- **40H-G:** Add unit coverage in `tests/unit/` for `formatSafeTitleCase()`
+  (stop words stay lowercase mid-phrase, first word still capitalizes) and
+  `sanitizeInput()` (apostrophe preserved, `<>"` `` ` `` still stripped,
+  `detectXSSPayload`/`detectSQLInjection` still catch their existing test
+  cases). Confirm both fail against current code before the fix.
+- **40H-H:** Extend or add a unit spec for `calcTotalsAnnual()` asserting
+  `schF1`/`schF2`/`schE_in`/`schE_out` sum their schedules correctly, plus
+  a DOM/e2e-level assertion that editing a Schedule E/F-1/F-2 row updates
+  its total without navigation. Confirm the live-update assertion fails
+  against current code before the fix.
+- **40H-I:** Add unit coverage for `convertTargetsFor`-adjacent modal logic
+  asserting the ward selector defaults to the active ward, and extend
+  `tests/unit/ward-carryover.spec.js` (or add to it if same-family
+  accounting-to-accounting carryover isn't yet covered there) asserting
+  `startingBalance` and `certRecipients` carry correctly for an
+  Annual → Final/Trust conversion, while `periodFrom`/`periodTo`/every
+  schedule key remain blank. Add a source-text or unit assertion that
+  `describeConversion()`'s same-family branch mentions starting balance,
+  cert recipients, and the Party-record county restoration. Confirm all
+  three fail against current code before the fix.
+- **40H-J:** Extend `tests/unit/ward-carryover.spec.js`'s nested-shape
+  describe block (the home item 5 already named before being promoted)
+  asserting a Plan/Accounting → Guardian Inventory carryover writes the
+  source's attorney bar number, phone, street, and city/state/zip into the
+  destination's *nested* `attorney` object, and that no flat
+  `attorneyBar`/`attorneyPhone`/`attorneyAddress`/`attorneyCityStateZip`
+  key is present on the result. Confirm this fails against current code
+  before the fix.
+- Update `TEST-INDEX.md` for any new file or materially rescoped
+  description, per `AGENTS.md` Section 7.
+- This is ten small, independent fixes touching thirteen files — none
+  reshape persisted data. Targeted `npm run test:unit` (plus the specific
+  extended specs, plus 40H-H's DOM/e2e assertion) is the appropriate gate;
+  a full regression is not warranted on its own, per `AGENTS.md`'s Test
+  Execution Gate.
+
+## Open Items Carried Forward from the Milestone 40 Implementation Session (2026-09-13)
+
+Recorded here because 40H is the last open Milestone 40 proposal, so this is
+where a reader will look for "what is still outstanding." **None of these is a
+task in this delivery** — they are findings from implementing 40A, 40C-1, 40C-2,
+40D, 40E, 40F and 40G that were deliberately not fixed, so they are written down
+rather than lost. Each says plainly whether it is a defect, a decision, or
+cosmetic, and what verifying it would cost. *(Originally eight items; two were
+resolved 2026-09-13 — the per-device onboarding-flag decision moved to
+"Decisions Recorded" above, and the Plan/Accounting → Guardian Inventory
+attorney-carryover defect was promoted to Task 40H-J — leaving the six below.)*
+
+### 1. Nine pre-existing full-suite e2e failures on `master` (defect — unowned)
+
+The full `npm test` regression run at the end of 40D: **401 passed, 6 skipped,
+9 failed.** The nine were confirmed pre-existing during 40A — the entire change
+set was stashed, the three spec files re-run against untouched `HEAD`, and the
+identical nine failures reproduced — so they belong to no Milestone 40 delivery:
+
+- `pdf-preview-viewer.spec.ts:114` — "an incomplete filing's embedded preview is
+  blocked, not silently rendered," failing for **seven** filing types (Guardian
+  Inventory, Annual, Simplified, Plan Initial, Plan Annual, Plan Minor, Plan
+  Simplified). One test, parameterised; likely one root cause, not seven.
+- `schedule-card-layout.spec.ts:177` — "multi-column labels retain their required
+  marker and natural height." **Resolved by proposal, not yet by code:** this
+  is exactly item 19's territory, and `MILESTONE-40I-PROPOSAL.md` (drafted
+  the same day, after this note was first written) confirms it directly —
+  the test's `minHeight` assertion is this failure, two of item 19's three
+  original causes are already fixed on current `master`, and the third
+  (`forms.css:219-231`'s direct-child `min-height` rule) is 40I's entire
+  scope. See that proposal rather than re-deriving this independently.
+- `security.spec.ts:53` — "source markup has no executable event attributes or
+  inline scripts," reporting `src/core/pdf/pdf-annotate.js` and
+  `src/core/pdf/pdf-preview.js`. A security-boundary assertion, so worth reading
+  before the cosmetic ones.
+
+**These make `master` red on the full suite**, which matters beyond the three
+tests: it means a future full regression cannot be read as pass/fail without
+first knowing this baseline. Whoever picks them up should re-confirm the baseline
+first — they were last verified on 2026-09-13.
+
+### 2. Forty-five shadowed classic-script/module function pairs (latent, catalogued)
+
+Catalogued in `MILESTONE-40F-PROPOSAL.md` under "The router duplicate pair."
+`legacy-app.js` declares a top-level `function X` while a module also does
+`window.X = X`; because a top-level `function` in a classic script *is* the
+global property, the module's assignment overwrites it and the legacy copy
+becomes unreachable — including from bare calls inside `legacy-app.js` itself.
+
+Distribution: `ward-lifecycle.js` (11), `launch-preferences.js` (10),
+`crypto.js` (8), `convert-ward-modal.js` (4), `recovery-cache.js` (3),
+`prune-cards.js` (3), plus `form-contract.js`, `templates.js`,
+`annual-accounting/index.js` and `main.js`'s two re-exports.
+
+**These are dead weight, not live bugs** — `main.js` imports every one of those
+modules eagerly, so the module version wins from boot. The one lazily-loaded case
+(`duplicateAnnualRow`) is only reachable from UI its own mount creates. The risk
+is future-facing, and 40F demonstrated it is not theoretical: deleting the router
+pair revealed that legacy `navigate()`'s `_navSectionExpandedKey` reset had
+silently stopped running, leaving a hand-opened sidebar section stuck open for the
+rest of the session. Each pair is a place where someone edits a function that has
+not run in years and sees nothing happen. Removing them needs the same per-pair
+superset check 40F used, one at a time.
+
+### 3. Milestone 40C-1 verification item 9 — two e2e paths never covered (gap)
+
+40C-1's plan calls for `party-resolver.spec.ts` and `.sav` round-trip additions
+covering **Party-merge conflict handling** and **single-ward import
+reconstruction** of the ward-Party county. Both behaviours are implemented and
+unit-tested (`wardCountyMergeConflict()`, `backfillWardPartyCounties()` in
+`tests/unit/filing-county-defaults.spec.js`); what is missing is the e2e layer
+that drives them through the real merge UI and a real single-ward `.sav` import.
+
+Worth doing because the single-ward path is the one with no Party records in the
+archive at all — the reconstructed ward Party is seeded from the exported
+filing's own county under the unanimity rule, which is the least-exercised branch
+of the migration.
+
+### 4. One flaky e2e test (flake — unexplained)
+
+`dashboard-backup.spec.ts:99` ("explicit dashboard status and assignment
+round-trip through .sav") failed once during 38C verification and then passed
+3/3 — in isolation, with its whole file, and in the full cross-file sweep. Most
+likely download/file-write timing in `exportAndCapture()`. Left as-is because a
+single unreproducible failure is not enough to diagnose; if it recurs, the fix is
+an explicit wait on the saved file rather than another re-run. Recorded so a
+second occurrence is recognised as the second, not the first.
+
+### 5. Duplicated header comment blocks in six `print.js` files (cosmetic)
+
+`guardian-inventory`, `plan-annual`, `plan-initial`, `plan-minor`,
+`plan-simplified` and `simplified-accounting`'s `print.js` each open with their
+entire file-header comment **twice**, verbatim. Pre-existing and harmless, but it
+briefly read as damage during 40A's deletions — worth removing so it cannot
+misdirect a future reader mid-change. Verify against `git show HEAD:<file>` first;
+that is how it was established as pre-existing rather than introduced.
+
+### 6. `TEST-INDEX.md` has a duplicate row (cosmetic)
+
+`annual-accounting-pdf-model.spec.js` appears twice in the unit table with
+different descriptions ("Trust Accounting PDF-model table layout for percentage
+and currency columns" and "Trust/Annual Accounting PDF-model table layout, Part
+VIII trust disclosure, and duplicate title suppression"). The second looks like
+the current scope; the first looks like a stale row never removed when it was
+extended. One should be deleted, not merged.
+
+---
+
+<a id="milestone-40i-proposal-md"></a>
+
+# Archive: MILESTONE-40I-PROPOSAL.md
+
+# Milestone 40I: Fix Multi-Column Label Alignment (Resurrects Milestone 34-1E Item 19)
+
+## Status
+
+**Landed 2026-09-13** (`0ea392b`). The reported bug is confirmed fixed:
+Schedule B-4's Category now aligns with its primitive-built row-mates
+(2px apart, down from 33.6px), spot-checked at two more of the 13
+confirmed sites across two more filing types. Full e2e regression clean
+beyond the pre-existing, already-catalogued baseline.
+
+Three corrections, all caught by actually running the fix rather than
+shipping the proposal's assumptions as written:
+
+1. **The pre-existing regression test's own assertion was wrong.**
+   `schedule-card-layout.spec.ts:177` (added for archived item 19)
+   expected `getComputedStyle().minHeight` to read `'0px'` once the rule
+   was deleted. A genuinely absent `min-height` computes to the CSS
+   spec's initial value, `'auto'` — not `'0px'`. Corrected to match
+   measured reality.
+2. **Decision 2's planned test subject doesn't wrap to two lines where
+   assumed.** Plan Initial Q11's "Relationship of Agent(s)/Surrogate(s)
+   to the Ward" renders as one line at the 800px viewport this spec file
+   uses elsewhere — confirmed by measuring it directly. Replaced with a
+   direct pin on the actual reported bug site (Schedule B-4) instead.
+3. **A genuine, narrower residual was found and deliberately not
+   solved here.** Deleting the rule correctly fixes every confirmed
+   primitive-vs-hand-rolled mismatch, but also removes an
+   incidental side effect the same rule was providing: a row where
+   *both* fields are hand-rolled (so neither was ever mismatched by the
+   reported bug) can still misalign by up to ~17px, confirmed by
+   measurement, in a roughly 500–620px viewport band, if one field's
+   label happens to be long enough to wrap to two lines while its
+   sibling's doesn't (e.g. Plan Initial Q11's Relationship/"Name of
+   person who signed" pair — confirmed overlapping post-fix:
+   `nameInputTop 1048 < relLabelBottom 1059`). Both fields already used
+   identical markup, so this isn't the bug this delivery was scoped to
+   fix; recorded as follow-up scope rather than expanded into, the same
+   way Decision 3 already deferred markup migration. Extending the
+   selector to also cover primitive-wrapped labels was reconsidered
+   given this finding and rejected again, for the reason already on
+   record: it would reintroduce forced padding on today's correct
+   single-line primitive fields, which the corrected pre-existing test
+   (point 1 above) now explicitly pins against.
+
+**Residual closed 2026-09-13.** Fixed with a narrowly-scoped opt-in class
+(`.label-2line-reserve`, `forms.css`) applied directly to the two confirmed
+labels ("Name of person who signed" / "Relationship of Agent(s)/Surrogate(s)
+to the Ward", `plan-initial/index.js`) rather than a structural selector —
+deliberately not the same shape as either of the two prior, broader
+attempts in this territory (this file's own history, and a same-day
+uncommitted third attempt using `flex-grow` on a structural selector, which
+measured as a net regression — it bottom-aligned every hand-rolled date
+column's label too, pushing that column's input down by the date hint's
+height relative to its non-date sibling, at every viewport width). Plan
+Annual's structurally similar Q10 directive row (`Relationship of agent(s)
+to the ward` / `Contact information for agent(s)`) was measured at the same
+viewport band and does not reproduce the defect — its two fields do not
+stay side-by-side once the label would wrap, so it was left unfixed rather
+than assumed to need the same class. New regression test:
+`tests/e2e/schedule-card-layout.spec.ts`'s "Plan Initial Q11
+Name/Relationship labels align across sibling columns when one wraps to
+two lines" — confirmed failing (1048 vs 1065) against the pre-fix code,
+passing after.
+
+## Goal
+
+Fix a card-row layout defect where a field's label/input sits visibly lower
+than its row-mates in the same multi-column schedule row — reported live
+against Annual Accounting's Schedule B-4 "Category" field, but confirmed to
+be app-wide and to already have its own failing regression test
+(`tests/e2e/schedule-card-layout.spec.ts:177`) and its own prior diagnosis
+(`MILESTONE-34-1E`, item 19, archived in `MILESTONE-ARCHIVE.md`). This
+resurrects that item rather than re-diagnosing from scratch, but corrects
+its analysis against the *current* CSS, which has changed since it was
+written.
+
+## Background
+
+### What item 19 (2026, archived) found, and what's changed since
+
+Item 19 named three causes of row misalignment: required-marker (`*`)
+wrapping to its own line, inconsistent label spacing between single- and
+multi-column rows, and `numInput()`'s `$`/`%` affix rendering taller than
+`.form-control`. **Two of those three are already fixed**, confirmed by
+direct code read and by actually running the test:
+
+- **Asterisk-wrap: already fixed.** `forms.css:18` now has
+  `.req{...white-space:nowrap;}`, and `.form-label` (`forms.css:14`) is
+  `display:inline-flex;align-items:center;flex-wrap:wrap;gap:.25rem;`.
+  Running `schedule-card-layout.spec.ts:177` today, its marker-position
+  assertion (line 200, `markerTop <= lastTextBottom + 1`) **passes**.
+- **`.input-group-text` height mismatch: already fixed.** `forms.css:23`
+  now reads `.input-group-text{font-size:.88rem;...}`, matching
+  `.form-control`'s override exactly — item 19's cited mismatch (Bootstrap
+  default `1rem` vs. `.88rem`) no longer exists.
+- **Blanket/inconsistent `min-height`: still broken, and the current rule
+  is not vestigial — it is a deliberate third-generation fix, confirmed by
+  `git log`.** Item 19 cited `forms.css:178-180`, a `:has()`-based selector
+  (`.row.g-2:has(> [class*="col-"] ~ [class*="col-"]) > [class*="col-"]
+  .form-label`) applying to any 2+-column row. That rule no longer exists —
+  it was itself replacing a still-earlier `margin-top:auto`-pushing
+  mechanism. Both were removed by commit `14e61d7`
+  ("fix: resolve row field misalignment by eliminating margin-top auto
+  pushing and standardizing label zoning", 2026-09-11), which installed the
+  current rule as its intentional replacement, with its own explanatory
+  comment still in place at `forms.css:219-220`: "For multi-column rows in
+  cards/schedules, ensure 1-line and 2-line labels align vertically at the
+  bottom of the label zone so adjacent input fields start at the exact same
+  vertical baseline." This delivery is not deleting incidental drift — it is
+  proposing a **fourth** change to the same CSS territory (margin-top:auto →
+  the `:has()` rule item 19 diagnosed → `14e61d7`'s current rule → this
+  proposal), and neither of the first two rewrites left behind a regression
+  test pinning the behavior it was solving for. That history is exactly why
+  Decision 2 below requires a real assertion this time, not another
+  unpinned visual judgment call.
+
+  The current rule, `forms.css:219-231` (comment plus declaration):
+
+  ```css
+  /* For multi-column rows in cards/schedules, ensure 1-line and 2-line labels align vertically
+     at the bottom of the label zone so adjacent input fields start at the exact same vertical baseline. */
+  .schedule-entry-grid .row > [class*="col-"] > .form-label,
+  .entry-card-body .row > [class*="col-"] > .form-label,
+  .card-grid-2col .row > [class*="col-"] > .form-label,
+  .schedule-entry-grid .row > [class*="col-"] > legend,
+  .entry-card-body .row > [class*="col-"] > legend,
+  .card-grid-2col .row > [class*="col-"] > legend {
+    min-height: 2.1rem;
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  ```
+
+  This is a **direct-child** selector (`>`). Every field built through the
+  shared Tier 1 primitives — `renderFormField()`/`inpD()`-style helpers
+  (`core/form/form-fields.js:171`, `return `<div class="${wrapperClass}">
+  ...`, default `wrapperClass:'mb-2'`) and `renderSelectField()`
+  (`:199`, same `.mb-2` wrapper) — puts its `<label>` **inside** that
+  wrapper div, one level too deep to match. A hand-rolled field with no
+  wrapper (`<label class="form-label">` as a direct child of the column
+  `div`) *does* match, and gets pushed down by `align-items:flex-end`
+  filling a `min-height:2.1rem` box it doesn't need. That's the exact
+  mechanism behind the screenshot: Category (`annual-accounting/index.js:880`)
+  is hand-rolled, its `inpD()`-built row-mates are not.
+
+  **The three `> legend` selector lines (`:224-226`) are already dead
+  code, independent of this proposal.** A repo-wide `grep '<legend'`
+  finds exactly two `<legend>` elements anywhere in `src/`
+  (`legacy-app.js:6337`, `signature-state-control.js:57`), and both sit
+  inside a `<fieldset class="...mb-2">` — never a direct child of
+  `[class*="col-"]`. So half this rule already matches nothing today;
+  removing it has zero behavioral effect and is recorded here only so a
+  reader doesn't assume it was live.
+
+### Confirmed by running the test, not by reasoning about it
+
+```
+tests\e2e\schedule-card-layout.spec.ts:177:1 › multi-column labels retain their required marker and natural height
+Expected: "0px"
+Received: "33.6px"
+```
+
+Only the `minHeight` assertion (line 201) fails — `33.6px` is `2.1rem` at
+the default root size, i.e. the rule firing on a label that needs exactly
+one line. The test's own expectation is unambiguous: a label not spanning
+two lines should carry **no** forced minimum height at all, not a
+relocated or renamed one.
+
+### Blast radius — confirmed hand-rolled-in-a-mixed-row sites
+
+Audited directly (not from the archive, which predates several of these).
+A site is "mixed" — the actual failure condition — when a raw,
+wrapper-less label shares a `.row` with at least one field built through a
+primitive (`.mb-2`-wrapped, or a `<fieldset class="...mb-2">` like
+`yesNoRadioHTML()`/`renderSignatureStateControl()`), so one sibling gets
+pushed down and the other doesn't. **13 confirmed sites across five
+files** (Annual Accounting, Simplified Accounting, Plan Initial, Plan
+Minor, Plan Annual):
+
+- `annual-accounting/index.js`: Schedule B-4 Category (`:880`), Schedule C
+  "Loss / Reduction" (`:915`), Schedule D-1 "Ward's Amount" (`:952`),
+  Schedule D-2 "Total Value" (`:989`), Schedule D-3 "Ward's Amount"
+  (`:1024`), Schedule D-4 "Total Value" (`:1060`), Schedule D-5 "Type
+  (M/N/L/O)" (`:1094`) and "Ward's Balance Due" (`:1097`, same row),
+  Schedule E "Transfer Out Amt" (`:1129`).
+- `simplified-accounting/index.js`: Certificate of Service "Attorney Name
+  (linked)" (`:566`, shares a row with `inpSWithTooltip()`-built
+  "Signature Date" at `:567`).
+- `plan-initial/index.js`: Question 11 advance-directives row (`:413-422`)
+  — raw text-field labels share a row with `yesNoCheckboxS()`'s
+  `<fieldset class="plan-yes-no mb-2">` at `:420`.
+- `plan-minor/index.js`: the equivalent Question 10 advance-directives row
+  (`:499-509`), same shape, `yesNoCheckboxS()` at `:506`.
+- `plan-annual/index.js:218` (`q1Residences` "Facility name") — the site
+  the existing test already targets.
+
+**Not confirmed broken, deliberately excluded:** rows where every field in
+the row is hand-rolled with no primitive-built sibling (e.g. Simplified
+Accounting's remuneration row, `:597-598` — both "Guardian Name" and
+"Type" are raw, so both get pushed down *together* and stay aligned with
+each other), and `col-12` fields that are alone on their own line (no
+adjacent sibling to misalign against). These don't exhibit the bug — they
+just don't use the shared primitive, which is a separate, lower-priority
+`AGENTS.md` Section 9 convention gap, not a visual defect, and is not in
+scope here.
+
+Several Plan-family collection rows (`q9Providers`, `planGuardians` across
+all four Plan types, `q2Residences`, `q3Providers`, `q4Providers`) were
+grepped but not individually confirmed mixed-or-uniform with full
+confidence — some contain omitted/truncated matches in the audit pass.
+Re-check these against the fix during implementation rather than assuming
+the list above is exhaustive.
+
+## Decisions / Implementation
+
+1. **Remove the `min-height`/`align-items:flex-end`/`flex-wrap` treatment
+   at `forms.css:219-231`, comment and declaration together** (leaving the
+   comment behind would describe a rule that no longer exists) — rather
+   than extending its selector to also
+   match `.mb-2`-wrapped labels. Extending the selector was considered and
+   rejected: it would apply the same forced `min-height:2.1rem` to every
+   *currently correct* primitive-built field across the entire app (every
+   `inpD()`/`selD()`/equivalent call in all nine filing types), adding
+   unwanted empty space above single-line labels that render correctly
+   today via ordinary top-aligned block flow. Deleting the rule instead
+   makes hand-rolled and primitive-built labels behave identically (plain
+   block flow, top-aligned), which is exactly what the existing test
+   expects (`minHeight: '0px'`) and what the requester's own corrected
+   mockup showed (the short field pulled up to match its neighbors, not
+   its neighbors pushed down).
+2. **Pin the one real tradeoff with an assertion, not a one-time visual
+   check.** The deleted rule existed to bottom-align labels when one in a
+   row genuinely wraps to two lines, so that row's inputs don't start at
+   visibly different heights. Given neither of this rule's two prior
+   rewrites (see above) left behind a test for the behavior it was solving,
+   a third unpinned change would repeat the same mistake. Use
+   `plan-initial/index.js`'s Question 11 directives row (`:413-422`,
+   already in the confirmed-broken list) as the concrete subject: its
+   "Relationship of Agent(s)/Surrogate(s) to the Ward" label (`col-md-6`)
+   is long enough to genuinely wrap to two lines at the viewport width
+   `schedule-card-layout.spec.ts` already uses elsewhere. Add a new
+   assertion (extending that spec, not a separate file) that: (a) confirms
+   the label actually renders as two lines at the test's viewport width —
+   don't assert against a case that silently fits on one line; (b) after
+   the fix, asserts no overlap between that column's label/input and the
+   adjacent column's label/input — e.g. the shorter column's input top is
+   not above the taller column's label bottom. This gives the tradeoff a
+   red/green signal a future rewrite can't silently break, instead of
+   relying on someone's eyes at implementation time.
+3. **Do not touch the hand-rolled fields' markup as part of this
+   delivery.** Once the CSS no longer discriminates between wrapped and
+   unwrapped labels, every confirmed site in the blast-radius list above
+   is fixed by the one CSS change alone. Migrating those hand-rolled
+   fields onto `inpD()`/`selD()` (per `AGENTS.md` Section 9) is a
+   legitimate follow-up but a different, lower-stakes piece of work — do
+   not bundle it here.
+
+## Data, Portability, Security, and Legal Scope
+
+Pure CSS change to one rule in `forms.css`. No persisted data, export
+format, or validation logic is touched. No `probate-guardian-data-model.csv`
+change; no `verify:data-model` run required.
+
+## File/Delivery Overlap Check
+
+Touches only `src/styles/forms.css`. No other open or landed Milestone 40
+delivery edits this file.
+
+## Implementation Order and Dependencies
+
+**No dependency on `MILESTONE-40H-PROPOSAL.md` or any other Milestone 40
+delivery**, in either direction. 40A, 40B (withdrawn), 40C-1, 40C-2, 40D,
+40E, 40F, and 40G have all landed and none touched `forms.css`
+(`git log` confirms the last commit to touch it predates all of Milestone
+40); 40H's ten tasks touch `legacy-app.js` and nine other files, none of
+them `forms.css`. This delivery can be approved and implemented on its
+own, in any order relative to 40H.
+
+**Relationship to `MILESTONE-41-PROPOSAL.md`** (Draft, unscheduled — a
+future architectural migration of hand-rolled field markup onto centralized
+Tier 1/2/3 components): not a dependency, but worth recording since the
+two touch the same underlying mechanism from opposite ends. This delivery's
+root cause *is* the gap between hand-rolled markup and primitive-built
+markup (Decision 1's Background section above); Milestone 41, if it ever
+lands, would close that gap for good by migrating every hand-rolled site
+onto `renderFormField()`/`inpD()`-style primitives, which would make the
+underlying mismatch this delivery fixes structurally impossible to
+reintroduce. That is not a reason to wait: 41 is a large, unscheduled,
+multi-filing-type refactor, while this is a single CSS rule deletion with
+an immediate, confirmed production defect (the live screenshot that
+started this proposal). Landing this delivery now fixes the defect today;
+if 41 lands later, deleting this rule causes it no friction — a page built
+entirely from Tier 1 primitives never matched the deleted selector's
+`> .form-label`/`> legend` direct-child pattern in the first place (see
+the dead-`> legend`-selector finding in Decision 1's Background), so
+Milestone 41 arriving after this delivery finds nothing left to conflict
+with.
+
+## Acceptance Criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| `tests/e2e/schedule-card-layout.spec.ts:177` | Passes — `minHeight` reads `0px` for a single-line label in a multi-column row |
+| Annual Accounting Schedule B-4, Category field | Aligns with Check #/Date Paid/Payee/Amount in the same row, matching the requester's corrected mockup |
+| Every other confirmed site in the blast-radius list | Same — raw field aligns with its primitive-built row-mates |
+| Plan Initial Question 11's "Relationship of Agent(s)/Surrogate(s) to the Ward" row, at the viewport width where it wraps to two lines | New assertion (Decision 2) passes: the label genuinely renders as two lines, and no adjacent column's label/input overlaps another's |
+| Any row where every field is uniformly hand-rolled (e.g. Simplified Accounting's remuneration row) | Unchanged — was never broken, must not regress |
+
+## Verification Plan
+
+Add the two-line-label assertion described in Decision 2 to
+`tests/e2e/schedule-card-layout.spec.ts` **before** removing the CSS rule,
+and confirm it fails against current `master` for the right reason (no
+overlap protection exists yet) — this repository's own convention for
+proving a regression test actually tests something. Then remove the rule
+and run `npx playwright test tests/e2e/schedule-card-layout.spec.ts` in
+full (not just the one test) to confirm both the pre-existing failing
+assertion (line 201) and the new one pass, with no other assertion in the
+file regressing. Visually spot-check at least three of the confirmed
+blast-radius sites across at least two different filing types (Annual
+Accounting and one Plan type). This is a single-file CSS fix with a
+pre-existing failing test plus one new assertion as its acceptance gate —
+targeted `npm run test:e2e` on the one spec file (plus the visual
+spot-check) is the appropriate gate; a full regression is not warranted on
+its own, per `AGENTS.md`'s Test Execution Gate. Update `TEST-INDEX.md`
+only if `schedule-card-layout.spec.ts`'s description changes materially.
