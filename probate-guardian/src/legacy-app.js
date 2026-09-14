@@ -5696,45 +5696,14 @@ function formatDisplayDate(canonicalStr){
 window.formatDisplayDate = formatDisplayDate;
 
 function inpS(id,label,val,req=false,type='text'){
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: id,
-      label,
-      value: val,
-      type,
-      required: req,
-      id,
-    });
-  }
-  const isEmail=label.toLowerCase().includes('email');
-  const isDate=!isEmail&&(type==='date'||/\bdate\b/i.test(label));
-  const isPhone=!isEmail&&!isDate&&label.toLowerCase().includes('phone');
-  const isName=!isEmail&&!isDate&&(label.toLowerCase().includes('name')||label.toLowerCase().includes('payer')||label.toLowerCase().includes('payee')||label.toLowerCase().includes('lender')||label.toLowerCase().includes('creditor')||label.toLowerCase().includes('institution')||label.toLowerCase().includes('guardian')||label.toLowerCase().includes('attorney')||label.toLowerCase().includes('trustee')||label.toLowerCase().includes('claimant')||label.toLowerCase().includes('bonding')||label.toLowerCase().includes('company')||label.toLowerCase().includes('trust'));
-  const isZip=!isEmail&&!isDate&&label.toLowerCase().includes('zip');
-  const isAddress=!isEmail&&!isDate&&!isZip&&(label.toLowerCase().includes('street')||label.toLowerCase().includes('address')||label.toLowerCase().includes('city'));
-  const isSSN=!isEmail&&!isDate&&(label.toLowerCase().includes('ssn')||label.toLowerCase().includes('ein')||label.toLowerCase().includes('social security')||label.toLowerCase().includes('taxpayer id')||/\btin\b/i.test(label));
-  const isCaseNumber=!isEmail&&!isDate&&label.toLowerCase().includes('case number')&&!label.toLowerCase().includes('related');
-  const isBarNumber=!isEmail&&!isDate&&label.toLowerCase().includes('bar number');
-  const isAmountField=type==='number';
-  const fieldKind=isDate?'date':isAmountField?'money':isPhone?'phone':isName?'name':isZip?'zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'caseNumber':isBarNumber?'barNumber':'text';
-  const isPreserve=['text','caseNumber','accountNumber','checkNumber','barNumber','ssn'].includes(fieldKind);
-  const policy=isPreserve?'preserve':'normalize';
-  const format=isAmountField?'decimal':isPhone?'phone':isName?'name':isZip?'city-state-zip':isAddress?'address':isSSN?'ssn':isCaseNumber?'case-number':isBarNumber?'bar-number':type==='text'?'security':'';
-  const syncWard=id==='wardName'?' data-sync-ward-name="true"':'';
-  const syncGuardian=(id==='guardian'||id==='guardianName'||id==='guardianNames')?' data-sync-guardian-name="true"':'';
-  const formatted=isDate?(window.getFieldDraftDisplay?.(id,formatDisplayDate(val))||formatDisplayDate(val)):isPhone?formatPhone(val):isName?formatName(val):isZip?formatCityStateZip(val):isAddress?formatAddress(val):isSSN?formatSSN(val):isCaseNumber?formatCaseNumber(val):isBarNumber?formatBarNumber(val):val||'';
-  const inputType=isAmountField?'text':isSSN?'password':(isDate?'text':type);
-  const inputMode=isAmountField?' inputmode="decimal"':(isDate?' inputmode="text"':'');
-  const cleanedValue=isAmountField?sanitizeNonNegativeDecimal(formatted):formatted;
-  const isPercentField=isAmountField&&(label.toLowerCase().includes('%')||label.toLowerCase().includes('percent'));
-  const isDollarField=isAmountField&&!isPercentField;
-  const placeholder=isDate?' placeholder="MM/DD/YYYY"':'';
-  const hintId=`${id}_hint`;
-  const ariaDesc=isDate?` aria-describedby="${hintId}"`:'';
-  const inputHtml=`<input type="${inputType}" class="form-control" id="${id}" autocomplete="off"${inputMode}${placeholder} value="${String(cleanedValue).replace(/"/g,'&quot;')}" data-form-path="${esc(id)}" data-field-path="${esc(id)}" data-field-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" ${req?'data-field-required="true"':''}${format?` data-form-format="${format}"`:''}${syncWard}${syncGuardian}${ariaDesc}>`;
-  const wrappedInput=isDollarField?`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`:isPercentField?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:isSSN?`<div class="ssn-mask-wrap">${inputHtml}<button type="button" class="ssn-reveal-btn" aria-label="Show ${esc(label)}" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`:inputHtml;
-  const hintHtml=isDate?`<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div>`:'';
-  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${wrappedInput}${hintHtml}</div>`;
+  return window.renderFormField({
+    path: id,
+    label,
+    value: val,
+    type,
+    required: req,
+    id,
+  });
 }
 // Filtered-autocomplete text input for county fields, using the same
 // D['id']=this.value write convention as the other Simplified/Plan field helpers.
@@ -5754,24 +5723,11 @@ function countyInputS(id,label,val,req=false){
 // through formatName/formatAddress the way inpS guesses by label, because
 // these are sentences and paragraphs, not names or addresses.
 function txtP(id,label,val,rows=4,req=false,hint=''){
-  if (typeof window !== 'undefined' && typeof window.renderTextareaField === 'function') {
-    return window.renderTextareaField({ path: id, label, value: val, rows, required: req, hint, id });
-  }
-  return `<div class="mb-3">
-    <label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
-    ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
-    <textarea class="form-control" id="${id}" rows="${rows}" data-form-path="${esc(id)}" data-field-path="${esc(id)}" data-field-kind="text" data-field-format-policy="preserve" data-field-label="${esc(label)}" ${req?'data-field-required="true"':''}>${esc(val||'')}</textarea>
-  </div>`;
+  return window.renderTextareaField({ path: id, label, value: val, rows, required: req, hint, id });
 }
 
 function chkP(id,label,checked){
-  if (typeof window !== 'undefined' && typeof window.renderCheckboxField === 'function') {
-    return window.renderCheckboxField({ path: id, label, checked, id });
-  }
-  return `<div class="form-check plan-check">
-    <input class="form-check-input" type="checkbox" id="${id}" ${checked?'checked':''} data-form-path="${esc(id)}" data-form-value="boolean">
-    <label class="form-check-label" for="${id}">${label}</label>
-  </div>`;
+  return window.renderCheckboxField({ path: id, label, checked, id });
 }
 // Explicit binary answers retain the literal 'Yes'/'No' string contract used
 // by validators and every output format. Unlike the former checkbox, a radio
@@ -5779,21 +5735,7 @@ function chkP(id,label,checked){
 // remains ''. `binding` permits Annual Accounting's isolated event contract
 // without teaching its schedule controls to use the general form listener.
 function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form',tooltipKey=''){
-  if (typeof window !== 'undefined' && typeof window.renderYesNoField === 'function') {
-    return window.renderYesNoField({ path, label, value: val, id, required: req, route, binding, tooltipKey });
-  }
-  const safeId=String(id||path||'yes_no').replace(/[^A-Za-z0-9_-]/g,'_');
-  const groupId=`yesno_${safeId}`;
-  const pathAttr=binding==='annual'?'data-annual-path':'data-form-path';
-  const routeAttr=route?` data-form-route="${esc(route)}"`:'';
-  const tooltipHtml=(tooltipKey && typeof tooltip==='function')?tooltip(tooltipKey):'';
-  return `<fieldset class="plan-yes-no mb-2" data-yes-no-group="${esc(path)}">
-    <legend class="form-label mb-1">${esc(label)}${tooltipHtml}${req?'<span class="req">*</span>':''}</legend>
-    <div class="plan-radio-row">
-      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_yes" value="Yes" ${val==='Yes'?'checked':''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_yes">Yes</label></div>
-      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_no" value="No" ${val==='No'?'checked':''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_no">No</label></div>
-    </div>
-  </fieldset>`;
+  return window.renderYesNoField({ path, label, value: val, id, required: req, route, binding, tooltipKey });
 }
 
 function planGuardianBlank(type){
@@ -5847,20 +5789,7 @@ function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey=''){
 // ADL ratings ("no help" / "some assistance" / "cannot do at all"), which is
 // why the options are a parameter rather than hardcoded Yes/No.
 function radioP(id,label,val,options=['Yes','No'],req=false,hint=''){
-  if (typeof window !== 'undefined' && typeof window.renderRadioGroupField === 'function') {
-    return window.renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id });
-  }
-  const name=`radio_${id}`;
-  const btns=options.map((o,i)=>`
-    <div class="form-check form-check-inline">
-      <input class="form-check-input" type="radio" name="${name}" id="${id}_${i}" value="${esc(o)}" ${val===o?'checked':''} data-form-path="${esc(id)}">
-      <label class="form-check-label" for="${id}_${i}">${esc(o)}</label>
-    </div>`).join('');
-  return `<div class="mb-3">
-    <label class="form-label">${label}${req?'<span class="req">*</span>':''}</label>
-    ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
-    <div class="plan-radio-row">${btns}</div>
-  </div>`;
+  return window.renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id });
 }
 
 function pageNavS(prev,next){

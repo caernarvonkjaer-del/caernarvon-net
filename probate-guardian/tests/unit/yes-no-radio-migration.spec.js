@@ -7,16 +7,25 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
 describe('Milestone 37-5 explicit Yes/No radio migration', () => {
   const legacy = read('src/legacy-app.js');
+  const formFields = read('src/core/form/form-fields.js');
   const annual = read('src/features/annual-accounting/index.js');
   const initial = read('src/features/plan-initial/index.js');
   const planAnnual = read('src/features/plan-annual/index.js');
 
+  // Milestone 41-1 made legacy-app.js's yesNoRadioHTML() delegate to Tier 1's
+  // renderYesNoField() (form-fields.js) with zero call-site changes; the
+  // markup this test pins moved with it. Dead-code cleanup later deleted
+  // yesNoRadioHTML()'s own ~15-line duplicate fallback body (never reachable
+  // in the running app -- window.renderYesNoField is always defined by the
+  // time it's called, confirmed by MILESTONE-41-PROPOSAL.md's own audit), so
+  // the literal fieldset/radio markup this test used to find in legacy-app.js
+  // no longer exists there at all; form-fields.js is the one real source now.
   test('shared renderer is an accessible radio pair with an unanswered state', () => {
     expect(legacy).toContain('function yesNoRadioHTML(');
-    expect(legacy).toContain('<fieldset class="plan-yes-no');
-    expect(legacy).toContain('type="radio"');
-    expect(legacy).toContain('value="Yes"');
-    expect(legacy).toContain('value="No"');
+    expect(formFields).toContain('<fieldset class="plan-yes-no');
+    expect(formFields).toContain('type="radio"');
+    expect(formFields).toContain('value="Yes"');
+    expect(formFields).toContain('value="No"');
     expect(legacy).not.toContain('function yesNoCheckboxHTML(');
   });
 
