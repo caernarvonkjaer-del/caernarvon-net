@@ -3,11 +3,14 @@
 ## Status
 
 **41-1 landed 2026-09-13** — see its own "What landed" section, appended
-after §2's "41-1: Tier 1 completion" plan. **41-2 is in progress**: the
-Cover page's two cards (Case Caption, Ward Demographics/Reporting Period)
-are landed — see "What landed so far: Cover page cards" — the Signatures
-page's Guardian/Attorney/Preparer card is not yet built. **41-3 remains
-Draft**, not yet approved.
+after §2's "41-1: Tier 1 completion" plan. **41-2 landed 2026-09-13** — the
+Cover page's two cards and the Signatures page's Guardian identity card are
+built and wired into Plan Simplified; see "What landed so far: Cover page
+cards" and "What landed next: Signatures page card — 41-2 complete." The
+milestone's fourth named card (Residence & Facility Profile) was
+deliberately not built — Plan Simplified has no such fields to verify it
+against; see that section's closing note. **41-3 remains Draft**, not yet
+approved.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -438,6 +441,74 @@ suite: 770/770 (was 760; +10 new). Full targeted e2e:
 `plan-simplified-mount.spec.ts`, `page-structure.spec.ts`,
 `form-field-labels.spec.ts`, and Plan Simplified's `date-validation
 .contract.spec.ts` cases all green.
+
+### What landed next (2026-09-13): Signatures page card — 41-2 complete
+
+**The milestone's own "Guardian & Attorney Details" card name doesn't
+survive contact with the real page either**, for a sharper reason than the
+Cover page's box/heading mismatch: Guardian, Preparer, and Attorney have
+three genuinely different field shapes on this one page.
+Preparer/Attorney already use split `street`/`mailingStreet` +
+`cityStateZip` fields (not Guardian's single `mailingAddress`), Attorney
+alone has a Florida Bar Number field and two email fields, and only
+Guardian has Milestone 39's signature-state control (Unsigned/"/s/"/Stamp)
+mounted next to its signature-date field. Unifying all three into one
+configurable card would either lose fidelity or need config complexity
+disproportionate to a single pilot page — scoped down, matching this
+session's precedent for exactly this kind of finding (43E Decision 1, 43G
+Decision 3).
+
+**What was actually built, and why it's still real, valuable Tier 1
+adoption, not a non-event:** Preparer's and Attorney's blocks already call
+`inpS()` for every field, which already delegates to `renderFormField()`
+as of Milestone 41-1 — they were never the gap. The Guardian block's own
+name/phone/email/mailingAddress fields were: entirely hand-rolled raw
+`<input>` markup, with no `id`/`for` label association at all and no
+`data-field-required` attribute even though the name is genuinely required
+for the first guardian — never routed through `inpS()` or
+`renderFormField()` at any point in this file's history. New
+`src/core/form/cards/guardian-attorney-card.js` exports
+`renderPartyNameField()` and `renderPartyContactFields()` (split in two,
+not one, because the real layout interleaves them with the signature-date
+field and the signature-state control widget — order matters for the
+visual-diff proof) and closes exactly that gap. The signature-date field
+and the signature-state control itself stay in the page's own composition,
+unchanged — they're Milestone 39's lifecycle-bound widget, not a plain
+identity field.
+
+Confirmed the label/`id` change is additive-only (a real accessibility
+improvement, matching 41-1's `radioP()` precedent), not a regression: the
+formatting behavior (`formatName`/`formatPhone`/`formatAddress`, all three
+now dropped from this file's `window` destructure as genuinely dead code)
+is applied automatically by `renderFormField()`'s own label-based kind
+inference, confirmed to match the previous manual calls field-by-field
+before removing them.
+
+**Verification, same technique as the Cover page:** `git stash push --
+src/features/plan-simplified/index.js` to isolate just this slice's
+wiring, captured `extractFormContentSnapshot()` for the Signatures page
+with a fixture ward (plus an Attorney name/bar number set directly, since
+`fillMinimalValidPlanSimplifiedWard()` doesn't populate the Attorney block)
+before and after: identical. Pinned as a second permanent snapshot test in
+`plan-simplified-mount.spec.ts`; confirmed as a real guard via a temporary
+label change on the Phone Number field, caught, then restored.
+`tests/unit/form-cards.spec.js` extended with 3 more cases (13 total) for
+the two new exports. Full unit suite: 773/773 (was 770; +3 new). Full
+targeted e2e: `plan-simplified-mount.spec.ts` (7 tests, both snapshot pins),
+`page-structure.spec.ts`, `form-field-labels.spec.ts`,
+`signature-capture.contract.spec.ts`'s Plan Simplified Guardian section,
+and Plan Simplified's `date-validation.contract.spec.ts` cases all green.
+
+**41-2 is now complete**: both cards the Cover and Signatures pages needed
+are built, wired, and verified. `renderResidenceFacilityCard` (the
+milestone's fourth named card) was never built — Plan Simplified has no
+residence/facility fields at all (confirmed by reading its full model), so
+there was nothing on this pilot page to wire it into or verify it against.
+Building it now, unintegrated and unverifiable by this pilot, was
+deliberately not done; whichever 41-3 step first migrates a filing type
+that actually has these fields (Plan Initial or Plan Annual) is where that
+card gets designed against a real page, following this same
+verify-before-design discipline.
 
 ### 41-3: Tier 3 rollout, ordered by verified risk (not alphabetical or arbitrary)
 

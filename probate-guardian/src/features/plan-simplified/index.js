@@ -11,6 +11,7 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 // card boundaries 1:1 -- see case-caption-card.js's header comment.
 import { renderCaseCaptionFields } from '../../core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+import { renderPartyNameField, renderPartyContactFields } from '../../core/form/cards/guardian-attorney-card.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -25,13 +26,17 @@ import { renderWardIdentityFields, renderReportingPeriodFields } from '../../cor
 // this file is one of those legacy globals, deliberately left in place
 // rather than moved or wrapped: txtP/chkP/yesNoCheckboxS are still shared
 // with the three not-yet-extracted Plan types, and the rest (inpS,
-// countyInputS, pageNavS, renderScheduleDocsSection, esc, formatName,
-// formatPhone, formatAddress) are shared across all 9 ward types (see the
-// Milestone 3 plan's "Problem 3").
+// countyInputS, pageNavS, renderScheduleDocsSection, esc, formatDisplayDate)
+// are shared across all 9 ward types (see the Milestone 3 plan's
+// "Problem 3"). Milestone 41-2: formatName/formatPhone/formatAddress
+// dropped from this destructure -- their only call sites (the Guardian
+// block's name/phone/mailingAddress fields) now go through
+// renderFormField() via guardian-attorney-card.js, which applies the same
+// formatters automatically from each field's inferred kind.
 const {
   esc, ic, inpS, countyInputS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, yesNoCheckboxS,
-  formatName, formatPhone, formatAddress, formatDisplayDate,
+  formatDisplayDate,
 } = window;
 
 // print.js is dynamically imported only when the user reaches /print or
@@ -259,12 +264,10 @@ function pagePlanSSignatures(){
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><span class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${i?`<button type="button" class="btn btn-outline-danger btn-sm" data-form-action="remove-plan-guardian" data-index="${i}" data-route="/p3">Remove</button>`:''}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Printed Name${i===0?'<span class="req">*</span>':''}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
+          ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: p.name, required: i===0 })}
           <div class="col-md-6"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p3', signatureImage: p.signatureImage })}</div>
-          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-form-format="phone"></div>
-          <div class="col-12"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email" data-field-path="planGuardians.${i}.email"></div>
-          <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingAddress||''))}" data-form-path="planGuardians.${i}.mailingAddress" data-field-path="planGuardians.${i}.mailingAddress" data-form-format="address"></div>
+          ${renderPartyContactFields({ pathPrefix: `planGuardians.${i}`, phone: p.phone, email: p.email, mailingAddress: p.mailingAddress })}
         </div>
       </div>
     </div></div>`;

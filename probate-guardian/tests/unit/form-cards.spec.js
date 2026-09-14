@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderCaseCaptionFields } from '../../src/core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../src/core/form/cards/ward-demographics-card.js';
+import { renderPartyNameField, renderPartyContactFields } from '../../src/core/form/cards/guardian-attorney-card.js';
 
 // Milestone 41-2: Tier 2 cards each bind correctly to data-form-path and
 // render their required elements. Cards return bare field-group fragments
@@ -73,5 +74,40 @@ describe('renderReportingPeriodFields', () => {
     const html = renderReportingPeriodFields({ periodFrom: '', periodTo: '', fromLabel: 'Accounting Period From', toLabel: 'Accounting Period To' });
     expect(html).toContain('Accounting Period From');
     expect(html).toContain('Accounting Period To');
+  });
+});
+
+// Milestone 41-2: split into two exports (not one "Guardian & Attorney"
+// card as originally named) after reading Plan Simplified's real
+// Signatures page -- Guardian, Preparer, and Attorney each have a
+// genuinely different field shape (see guardian-attorney-card.js's header
+// comment), so only the Guardian block's own name/phone/email/
+// mailingAddress fields (its one real gap: entirely hand-rolled, never on
+// Tier 1) were built as a card. Preparer/Attorney already delegate to
+// Tier 1 via inpS() as of Milestone 41-1.
+describe('renderPartyNameField', () => {
+  it('binds the name field to <pathPrefix>.name', () => {
+    const html = renderPartyNameField({ pathPrefix: 'planGuardians.0', name: 'Jordan Alvarez', required: true });
+    expect(html).toContain('data-form-path="planGuardians.0.name"');
+    expect(html).toContain('value="Jordan Alvarez"');
+    expect(html).toContain('data-field-required="true"');
+  });
+
+  it('omits the required marker for a co-guardian slot', () => {
+    const html = renderPartyNameField({ pathPrefix: 'planGuardians.1', name: '', required: false });
+    expect(html).not.toContain('data-field-required="true"');
+  });
+});
+
+describe('renderPartyContactFields', () => {
+  it('binds phone, email, and mailing address to <pathPrefix>.<field>', () => {
+    const html = renderPartyContactFields({
+      pathPrefix: 'planGuardians.0', phone: '727-555-0102', email: 'guardian@example.com', mailingAddress: '10 Bay St, Clearwater, FL 33755',
+    });
+    expect(html).toContain('data-form-path="planGuardians.0.phone"');
+    expect(html).toContain('data-form-path="planGuardians.0.email"');
+    expect(html).toContain('data-form-path="planGuardians.0.mailingAddress"');
+    expect(html).toContain('value="727-555-0102"');
+    expect(html).toContain('value="guardian@example.com"');
   });
 });
