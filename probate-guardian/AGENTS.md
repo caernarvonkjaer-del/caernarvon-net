@@ -46,13 +46,13 @@ This organization organizes projects across three standardized archetypes:
   - Commit only your own task's files; don't sweep in unrelated concurrent work unless asked.
   - On a rejected push, pull/merge and resolve — never force-push over someone else's work.
   - **Sub-delivery dependencies block parallelization, not just approval.** When a milestone proposal splits work across concurrent agents, check each sub-delivery's own **Relation** field before starting it alongside another agent's in-flight work — a stated prerequisite (e.g. "38D Phase 1 is the only implementation prerequisite" for 38B) usually means real file-level overlap, not just doc-ordering. Concrete precedent: Milestone 44 split 44A/44D/44B to Antigravity and 44C to Claude; 44C was confirmed blocked on 44B landing first because both touch the same four `plan-*/print.js` files in close proximity (44B converts `prepareFilingOutput()` calls, 44C removes the adjacent `planReadinessChecks*()` functions in the same render path) and 44C's design consumes 44B's typed issue categories directly. Verify the actual file lists overlap (or don't) before assuming a "wait" or "safe to parallelize" call — don't guess from the proposal text alone.
-  - After another agent's sub-delivery lands, re-verify it directly (read the real diff, re-run its tests, check red/green discipline) before building on top of it or marking it done — a "Landed" status line in a proposal doc is a claim, not proof; this repo has already had one sub-delivery's landing commit scope-creep into another agent's not-yet-landed work on the same file (Milestone 44D's commit briefly documented a schema Milestone 38E hadn't shipped yet — caught and resolved once 38E actually landed, but only because it was re-checked rather than trusted).
+  - After another agent's sub-delivery lands, re-verify it directly (read the real diff, re-run its tests, check red/green discipline) before building on top of it or marking it done — a "Landed" status line in a proposal doc is a claim, not proof.
 - **Test Execution Gate**:
   - **Lite by default**: run targeted specs selected from `TEST-INDEX.md` for what changed (e.g. `npx vitest run tests/unit/x.spec.js`, `npx playwright test tests/e2e/x.spec.ts`).
   - **Recommend, then ask, for complex changes**: before commit/push, recommend a full regression run (`npm test`) with reasons if the change is broad, cross-cutting, or touches shared/core modules — never run it without explicit go-ahead.
   - **Skip tests** for documentation-only changes.
 - **Portable Paths**: Prefer repo-relative paths over absolute ones — contributors use different machines/OSes. On Windows, use forward slashes in tool/search arguments; backslashes can be misread as escapes.
-- **Verify Commit Citations**: Never cite a commit SHA or reference without directly checking it via `git log`/`git rev-parse` in tool output first — a milestone review this session cited two commit hashes that don't exist in the repo.
+- **Verify Commit Citations**: Never cite a commit SHA or reference without directly checking it via `git log`/`git rev-parse` in tool output first.
 
 ---
 
