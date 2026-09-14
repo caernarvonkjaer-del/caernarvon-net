@@ -595,11 +595,37 @@ counts is straightforward but out of scope here).
 
 ---
 
-## 44E — Milestone 39 Follow-On Scope Decision (informational, not a defect)
+## 44E — Milestone 39 Follow-On Scope Decision (informational, not a defect) — SUPERSEDED
 
 **Relation:** Independent, no forced action. **Risk:** N/A.
 
-### Background
+**Status: superseded before this document's own closing note was written.**
+This section originally reported 39-D and 39-A's follow-ons as an open,
+undecided scope question. That was already stale the moment it was
+recorded: `MILESTONE-45-PROPOSAL.md` (39-A's rollout) and
+`MILESTONE-46-PROPOSAL.md` (39-D's promotion) were both scoped in `8cc6d8f`
+on 2026-09-13 at 23:27 — hours **before** this document's "Full-milestone
+verification" closing note (`d2a1029`, 2026-09-14 05:49). Nobody had
+cross-referenced them at the time, so the decision this section asked for
+sat here looking open when it had already been made and largely executed.
+Left in place below for the record, with the correction up front rather
+than rewritten silently.
+
+Current state, checked directly against `master`:
+
+- **39-D**: promoted and mostly landed. `MILESTONE-46-PROPOSAL.md` —
+  46A (append-only per-party signature store) and 46B (apply-by-copy) are
+  **landed** (`a457bbd`, `e1f1aaf`). 46C (an export/import fix for a
+  reference-based design) was **cancelled outright**, not deferred, once
+  46B's copy-on-apply design made the dangling-reference problem it existed
+  to fix moot.
+- **39-A**: rolled out. `MILESTONE-45-PROPOSAL.md` — 45A (storage/
+  compression pass) and 45B (rollout from the Plan-Simplified-only pilot to
+  all nine filing keys) are **landed** (`508d09e`). 45C (making a reopened
+  annotation re-editable, not just visible) remains draft, with a recorded
+  recommendation to decline it until a filer actually reports needing it.
+
+### Original text (for the record)
 
 The review's sixth finding is not a status-text/reality mismatch — it is a
 confirmation that Milestone 39's own documented scope boundaries are still
@@ -620,13 +646,12 @@ accurate:
   verification beyond the current pdf.js re-parse test) remain open by the
   proposal's own design, not by omission.
 
-### Decision Required
-
-**DECISION NEEDED, no recommended default:** whether to formally scope any
-of 39-D or 39-A's named follow-ons as a new milestone now, or leave them
-deferred indefinitely as already-documented future work. Nothing here
-blocks 44A-44D; this section exists only so the review's sixth finding has
-a recorded disposition rather than silently dropping out of the compiled
+**DECISION NEEDED, no recommended default** (as originally written; already
+answered by 45/46 above): whether to formally scope any of 39-D or 39-A's
+named follow-ons as a new milestone now, or leave them deferred
+indefinitely as already-documented future work. Nothing here blocks
+44A-44D; this section exists only so the review's sixth finding has a
+recorded disposition rather than silently dropping out of the compiled
 list.
 
 ---
