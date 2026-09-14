@@ -52,6 +52,7 @@ This organization organizes projects across three standardized archetypes:
   - **Recommend, then ask, for complex changes**: before commit/push, recommend a full regression run (`npm test`) with reasons if the change is broad, cross-cutting, or touches shared/core modules — never run it without explicit go-ahead.
   - **Skip tests** for documentation-only changes.
 - **Portable Paths**: Prefer repo-relative paths over absolute ones — contributors use different machines/OSes. On Windows, use forward slashes in tool/search arguments; backslashes can be misread as escapes.
+- **Verify Commit Citations**: Never cite a commit SHA or reference without directly checking it via `git log`/`git rev-parse` in tool output first — a milestone review this session cited two commit hashes that don't exist in the repo.
 
 ---
 

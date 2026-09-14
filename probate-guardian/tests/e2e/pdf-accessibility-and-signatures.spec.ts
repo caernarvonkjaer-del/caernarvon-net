@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { freshStartNoPassword } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
 import { expectedPdfMetadataTitle } from './support/filing-matrix';
+import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-fixture';
 
 async function inspectPdfPages(pdfData: string) {
   const data = new Uint8Array(Buffer.from(pdfData, 'latin1'));
@@ -237,15 +238,13 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
   test('renders supporting PDFs as visual source pages with tagged selectable text', async ({ page }) => {
     await freshStartNoPassword(page);
 
-    const pdfInspection = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, createJsPdfInstance, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+    const fixture = await buildSupplementalAttachmentFixture(page, 'Uploaded bank statement support page', {
+      name: 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf', size: 3600,
+    });
+
+    const pdfInspection = await page.evaluate(async (file) => {
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
-      const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
-      const attachmentDoc = await createJsPdfInstance();
-      attachmentDoc.setFontSize(16);
-      attachmentDoc.text('Uploaded bank statement support page', 72, 120);
-      const attachmentDataUrl = attachmentDoc.output('datauristring');
-      const attachmentDigest = await digestDataUrl(attachmentDataUrl);
 
       const model = buildVerifiedInventoryModel({
         wardName: 'Harold Thomas Bennett',
@@ -267,17 +266,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
           b1: {
             initial: {
               comment: 'Statement verifies the restricted depository balance.',
-              files: [{
-                name: 'mock_bank_statement_wells_fargo_checking_3159_2026-08.pdf',
-                type: 'application/pdf',
-                size: 3600,
-                dataUrl: attachmentDataUrl,
-                contentDigest: attachmentDigest,
-                attestedDigest: attachmentDigest,
-                technicalStatus: 'ready',
-                attestationStatus: 'accepted',
-                pageCount: 1,
-              }],
+              files: [file],
             },
           },
         },
@@ -287,7 +276,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         rawPdfString: new TextDecoder('latin1').decode(await finalizeCourtFormPdf(doc)),
         numPages: doc.internal.getNumberOfPages(),
       };
-    });
+    }, fixture);
 
     const extractedText = await extractPdfText(pdfInspection.rawPdfString);
     expect(extractedText).toContain('Schedule B-1: Cash & Financial Accounts');
@@ -308,15 +297,13 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
   test('renders visual supporting PDFs for non-inventory forms through the shared PDF engine', async ({ page }) => {
     await freshStartNoPassword(page);
 
-    const pdfInspection = await page.evaluate(async () => {
-      const { buildPlanAnnualModel, createJsPdfInstance, generateCourtFormPdf } = await (window as any).loadPlanAnnualPdf();
+    const fixture = await buildSupplementalAttachmentFixture(page, 'Uploaded annual plan support page', {
+      name: 'annual_plan_residence_support.pdf', size: 3600,
+    });
+
+    const pdfInspection = await page.evaluate(async (file) => {
+      const { buildPlanAnnualModel, generateCourtFormPdf } = await (window as any).loadPlanAnnualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
-      const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
-      const attachmentDoc = await createJsPdfInstance();
-      attachmentDoc.setFontSize(16);
-      attachmentDoc.text('Uploaded annual plan support page', 72, 120);
-      const attachmentDataUrl = attachmentDoc.output('datauristring');
-      const attachmentDigest = await digestDataUrl(attachmentDataUrl);
       const sourceData = {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
@@ -325,17 +312,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         scheduleDocs: {
           planAResidences: {
             initial: {
-              files: [{
-                name: 'annual_plan_residence_support.pdf',
-                type: 'application/pdf',
-                size: 3600,
-                dataUrl: attachmentDataUrl,
-                contentDigest: attachmentDigest,
-                attestedDigest: attachmentDigest,
-                technicalStatus: 'ready',
-                attestationStatus: 'accepted',
-                pageCount: 1,
-              }],
+              files: [file],
             },
           },
         },
@@ -343,7 +320,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
       const model = buildPlanAnnualModel(sourceData);
       const doc = await generateCourtFormPdf(model, { sourceData });
       return { rawPdfString: new TextDecoder('latin1').decode(await finalizeCourtFormPdf(doc)) };
-    });
+    }, fixture);
 
     const pages = await inspectPdfPages(pdfInspection.rawPdfString);
     const documentTextPage = pages.find(pageInfo => pageInfo.text.includes('Uploaded annual plan support page'));

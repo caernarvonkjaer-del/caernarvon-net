@@ -713,6 +713,69 @@ per-type results, refactor, re-run, diff. Full `npm test` recommended
 before commit given this touches the PDF/signature path across every
 filing type (per `AGENTS.md`'s cross-cutting-change rule).
 
+### What landed and what was scoped down (2026-09-13)
+
+**Decision 1 was deliberately not attempted as a full table-driven merge —
+a scope decision, not a correctness finding.** Read the full 868-line file
+(larger than this proposal's own "795 lines" estimate) before deciding:
+the six filing-type blocks share two test *shapes* (a combined legacy/
+Unsigned/incomplete test, and a Stamp draw-apply-paint test per role), but
+diverge in ways that matter for correctness, not just presentation --
+three genuinely different field-storage shapes (collection-row
+`planGuardians[0]`/`guardians[0]`, nested-object `d.preparer.signatureState`,
+scalar `d.attorney_signatureState`), 1-4 cards per type, and per-type-unique
+flows a generic loop would have to special-case anyway (Guardian
+Inventory's blank-canvas-rejection test has no equivalent elsewhere; Annual
+Accounting's Attorney card is the only one proven through a blocked-then-
+fixed two-step flow rather than a direct stamp+image set; Plan Simplified's
+own pilot block is *more* granular than the other five, testing Unsigned
+and the incomplete-"/s/" case as separate tests rather than one combined
+test). A mechanical unification risks silently collapsing one of these
+into the wrong shape in a currently 100%-passing, high-value PDF/signature
+suite, for a decision whose own stated problem is redundancy, not a missed
+bug. Left as-is; flagged here for a future pass with a dedicated design
+review, per this repository's own precedent (43G's Decision 3 scoped
+similarly, for the same reason: real behavioral divergence across the
+files a generic factory would need to absorb).
+
+Decisions 2, 3, 4, and 5 landed as written:
+
+- **Decision 2**: `plan-pdf-wcag-compliance.spec.ts`'s four hand-duplicated
+  bodies converted to one `CONFIGS`-driven loop, matching
+  `pdf-preview-viewer.spec.ts`'s established pattern. Confirmed identical
+  4/4 pass before and after via `git stash`.
+- **Decision 3**: new `tests/e2e/support/supplemental-pdf-fixture.ts`
+  exports `buildSupplementalAttachmentFixture()`, adopted at all four named
+  call sites (`output-semantics.artifact.spec.ts`, all four tests in
+  `supplemental-pdf-accounting.spec.ts`, `pdf-evidence-lab.spec.ts`, and
+  both supplemental-PDF tests in `pdf-accessibility-and-signatures.spec.ts`)
+  — more sites than the proposal's own "four call sites" since
+  `supplemental-pdf-accounting.spec.ts` alone had four internally-duplicated
+  tests, all converted. `createJsPdfInstance`/`digestDataUrl` are core
+  modules, not feature-specific, confirmed by direct read — the helper
+  imports them directly rather than reaching through any one feature's own
+  `loadXPdf()` global the way every original call site happened to.
+- **Decision 4**: `pdf-preview-viewer.spec.ts`'s `FEATURES` array gained a
+  Trust Accounting entry — previously absent entirely, so this closes a
+  real gap (Trust's own "Preview renders the real PDF" and "embedded
+  preview blocked" coverage did not exist before), not just a dedupe.
+  `pdf-evidence-lab.spec.ts`'s Trust toolbar/pager test is removed, folded
+  into that loop. Its remaining test (supplemental PDF source/canvas/
+  digest/finalized-packet evidence) is kept — proves real ink-pixel
+  rendering and finalized-packet text containment that nothing else in the
+  suite does.
+- **Decision 5**: `pdf-evidence-lab.spec.ts`'s `nonWhitePixels > 0` raised
+  to `> 500` and `pdf-annotate.spec.ts`'s `pdfBytes.length > 0` raised to
+  `> 10000` — both still comfortably satisfied by real output (confirmed
+  by running), but no longer satisfiable by a single stray byte/pixel.
+
+Full targeted run: `plan-pdf-wcag-compliance.spec.ts` 4/4,
+`pdf-preview-viewer.spec.ts` 20/20 (was 18, +2 for the new Trust entries),
+`pdf-evidence-lab.spec.ts` 1/1 (was 2, -1 folded away),
+`supplemental-pdf-accounting.spec.ts` 4/4,
+`output-semantics.artifact.spec.ts` and `pdf-accessibility-and-signatures.spec.ts`
+green, `pdf-annotate.spec.ts` green. Full unit suite unaffected: 747/747.
+
 ---
 
 ## 43F — Close Real Coverage Gaps

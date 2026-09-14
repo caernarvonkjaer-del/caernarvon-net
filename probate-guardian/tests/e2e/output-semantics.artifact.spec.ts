@@ -7,6 +7,7 @@ import {
 } from './support/target';
 import { inspectPdf, extractPdfText } from './support/pdf-extract';
 import { extractXlsx } from './support/xlsx-extract';
+import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-fixture';
 import {
   filingCapabilities, expectedPdfMetadataTitle, expectedLegalCopy, type FilingType,
 } from './support/filing-matrix';
@@ -214,7 +215,11 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
     await freshStartNoPassword(page);
     await createWard(page, 'Schedule A Supplemental Order Ward', 'annual');
 
-    const result = await page.evaluate(async () => {
+    const fixture = await buildSupplementalAttachmentFixture(page, 'SCHEDULE A ATTACHMENT: Official SSA Award Letter for 2026-2027', {
+      id: 'test-ssa-award-doc', name: 'SSA_Award_Letter_2026.pdf', size: 4200,
+    });
+
+    const result = await page.evaluate(async (file) => {
       const d = (window as any).D;
       d.wardName = 'Sarah Jenkins';
       d.caseNumber = '26-PR-009123';
@@ -225,34 +230,15 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
         { payer: 'Social Security Administration', description: 'Monthly Retirement', bank: 'Chase Bank', accountNo: '1234', amount: '12000.00' },
       ];
 
-      const { buildAnnualAccountingModel, createJsPdfInstance, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
-      const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
-
-      // 1-page mock supporting document for Schedule A
-      const attachDoc = await createJsPdfInstance();
-      attachDoc.setFontSize(16);
-      attachDoc.text('SCHEDULE A ATTACHMENT: Official SSA Award Letter for 2026-2027', 50, 100);
-      const attachmentDataUrl = attachDoc.output('datauristring');
-      const attachmentDigest = await digestDataUrl(attachmentDataUrl);
 
       const periodKey = `${d.periodFrom}__${d.periodTo}`;
       d.scheduleDocs = {
         schA: {
           [periodKey]: {
             comment: 'Official SSA Award Letter for 2026-2027.',
-            files: [{
-              id: 'test-ssa-award-doc',
-              name: 'SSA_Award_Letter_2026.pdf',
-              type: 'application/pdf',
-              size: 4200,
-              dataUrl: attachmentDataUrl,
-              contentDigest: attachmentDigest,
-              attestedDigest: attachmentDigest,
-              technicalStatus: 'ready',
-              attestationStatus: 'accepted',
-              pageCount: 1,
-            }],
+            files: [file],
           },
         },
       };
@@ -264,7 +250,7 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
       return {
         rawPdfString: new TextDecoder('latin1').decode(rawPdfBytes),
       };
-    });
+    }, fixture);
 
     // Milestone 33, Phase 3.2: "The uploaded Schedule A document must occur
     // immediately after its Schedule A content, not merely be detected in the source data."

@@ -129,7 +129,12 @@ test.describe('Milestone 39-A: Print Preview annotation (pilot: Plan Simplified)
     const stored = await page.evaluate(() => (window as any).D.printAnnotations);
     expect(stored).toBeTruthy();
     expect(typeof stored.pdfBytes).toBe('string');
-    expect(stored.pdfBytes.length).toBeGreaterThan(0);
+    // Milestone 43E: >0 is a transport-only check (satisfied by a single
+    // stray byte) -- the real content proof is the getAnnotations() re-parse
+    // below, but a multi-page court form's base64 bytes are realistically
+    // tens of KB at minimum, so this floor catches a truncated/near-empty
+    // save well before that slower re-parse would.
+    expect(stored.pdfBytes.length).toBeGreaterThan(10000);
     expect(typeof stored.contentFingerprint).toBe('string');
 
     // Reopen the preview fresh (simulates closing and reopening Print

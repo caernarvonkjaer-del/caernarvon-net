@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-fixture';
 
 async function attachJson(testInfo: import('@playwright/test').TestInfo, name: string, value: unknown) {
   await testInfo.attach(name, {
@@ -14,19 +15,18 @@ test.describe('Milestone 34-1D: PDF evidence lab', () => {
     await createWard(page, 'Supplemental Evidence Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
 
-    const evidence = await page.evaluate(async () => {
+    const fixture = await buildSupplementalAttachmentFixture(page, 'EVIDENCE FIXTURE: Supplemental statement content', {
+      id: 'evidence-fixture', name: 'evidence-fixture.pdf',
+    });
+
+    const evidence = await page.evaluate(async (file) => {
       const d = (window as any).D;
-      const { buildAnnualAccountingModel, createJsPdfInstance } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel } = await (window as any).loadAnnualPdf();
       const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
-      const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
       const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
 
-      const attachment = await createJsPdfInstance();
-      attachment.setFontSize(16);
-      attachment.text('EVIDENCE FIXTURE: Supplemental statement content', 50, 100);
-      const dataUrl = attachment.output('datauristring');
-      const sourceBytes = Uint8Array.from(atob(dataUrl.split(',')[1]), c => c.charCodeAt(0));
+      const sourceBytes = Uint8Array.from(atob(file.dataUrl.split(',')[1]), c => c.charCodeAt(0));
       const sourcePdf = await (await ensurePdfjs()).getDocument({ data: sourceBytes }).promise;
       const sourcePage = await sourcePdf.getPage(1);
       const sourceText = (await sourcePage.getTextContent()).items.map((item: any) => item.str).join(' ');
@@ -41,12 +41,8 @@ test.describe('Milestone 34-1D: PDF evidence lab', () => {
         if (pixels[index] < 245 || pixels[index + 1] < 245 || pixels[index + 2] < 245) nonWhitePixels++;
       }
 
-      const digest = await digestDataUrl(dataUrl);
       const periodKey = `${d.periodFrom}__${d.periodTo}`;
-      d.scheduleDocs = { schA: { [periodKey]: { files: [{
-        id: 'evidence-fixture', name: 'evidence-fixture.pdf', type: 'application/pdf', size: sourceBytes.length,
-        dataUrl, contentDigest: digest, attestedDigest: digest, technicalStatus: 'ready', attestationStatus: 'accepted', pageCount: 1,
-      }] } } };
+      d.scheduleDocs = { schA: { [periodKey]: { files: [{ ...file, size: sourceBytes.length }] } } };
 
       const base = await generateCourtFormPdf(buildAnnualAccountingModel({ ...d, scheduleDocs: {} }), { sourceData: { ...d, scheduleDocs: {} } });
       const packet = await finalizeCourtFormPdf(await generateCourtFormPdf(buildAnnualAccountingModel(d), { sourceData: d }));
@@ -59,46 +55,31 @@ test.describe('Milestone 34-1D: PDF evidence lab', () => {
         source: { bytes: sourceBytes.length, pages: sourcePdf.numPages, text: sourceText, nonWhitePixels },
         finalizedPacket: { pages: packetPdf.numPages, basePages: base.internal.getNumberOfPages(), containsSourceText: packetText.includes('EVIDENCE FIXTURE') },
       };
-    });
+    }, fixture);
 
     await attachJson(testInfo, 'supplemental-pdf-evidence.json', evidence);
     expect(evidence.source.text).toContain('EVIDENCE FIXTURE');
-    expect(evidence.source.nonWhitePixels).toBeGreaterThan(0);
+    // Milestone 43E: >0 is satisfied by a single stray dark pixel anywhere
+    // on the page -- the 52-character 16pt string actually drawn here paints
+    // on the order of thousands of ink pixels, so a much higher floor still
+    // leaves comfortable margin while actually requiring real rendered text,
+    // not just "something, somewhere, wasn't pure white".
+    expect(evidence.source.nonWhitePixels).toBeGreaterThan(500);
     expect(evidence.finalizedPacket.pages).toBeGreaterThan(evidence.finalizedPacket.basePages);
     expect(evidence.finalizedPacket.containsSourceText).toBe(true);
   });
 
-  test('captures Trust toolbar, preview DOM, and finalized page-count evidence', async ({ page }, testInfo) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await freshStartNoPassword(page);
-    await createWard(page, 'Trust Preview Evidence Ward', 'trustAccounting');
-    await fillMinimalValidAnnualWard(page);
-    await expect.poll(() => page.evaluate(() => (window as any).validateAnnual())).toEqual([]);
-    await page.evaluate(() => (window as any).navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-
-    const evidence = await page.evaluate(async () => {
-      const { buildAnnualAccountingModel } = await (window as any).loadAnnualPdf();
-      const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
-      const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
-      const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
-      const finalized = await finalizeCourtFormPdf(await generateCourtFormPdf(buildAnnualAccountingModel((window as any).D)));
-      const finalizedPages = (await (await ensurePdfjs()).getDocument({ data: finalized }).promise).numPages;
-      const toolbar = document.querySelector('#pv-bar');
-      return {
-        viewport: { width: window.innerWidth, height: window.innerHeight },
-        previewPages: document.querySelectorAll('#print-doc-container .pdf-page').length,
-        finalizedPages,
-        pagerText: document.querySelector('#pv-count')?.textContent?.trim() || '',
-        toolbarPresent: !!toolbar,
-        toolbarRect: toolbar ? { width: toolbar.getBoundingClientRect().width, height: toolbar.getBoundingClientRect().height } : null,
-      };
-    });
-
-    await attachJson(testInfo, 'trust-preview-evidence.json', evidence);
-    await testInfo.attach('trust-preview-1440x900.png', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
-    expect(evidence.toolbarPresent).toBe(true);
-    expect(evidence.previewPages).toBe(evidence.finalizedPages);
-    expect(evidence.pagerText).toBe(`Page 1 of ${evidence.finalizedPages}`);
-  });
+  // Milestone 43E: the Trust toolbar/pager evidence test that used to live
+  // here is gone -- folded into pdf-preview-viewer.spec.ts's own FEATURES
+  // loop, which gained a Trust Accounting entry (previously the loop had
+  // none at all, so this closes a real gap, not just a duplicate: Trust's
+  // "Preview renders the real generated PDF" and "embedded preview blocked"
+  // tests are now real coverage that didn't exist before, and its own
+  // "pager uses the finalized PDF page count" test already proved the exact
+  // previewPages===finalizedPages/#pv-count agreement this file re-proved
+  // for Trust specifically). This file's remaining test above (supplemental
+  // PDF source/canvas/digest/finalized-packet evidence) is kept: it proves
+  // things nothing else in the suite does (a real rendered ink-pixel count,
+  // the finalized packet actually containing the attachment's own text),
+  // so the file stays rather than being deleted as debugging scaffolding.
 });

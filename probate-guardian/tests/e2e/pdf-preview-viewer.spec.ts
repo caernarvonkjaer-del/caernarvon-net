@@ -6,6 +6,13 @@ import {
   fillMinimalValidPlanMinorWard, fillMinimalValidPlanSimplifiedWard,
 } from './support/target';
 
+// Milestone 43E: this feature list previously had no Trust Accounting entry
+// at all -- the only e2e coverage of Trust's own preview/pager was
+// pdf-evidence-lab.spec.ts's Milestone 34-1D evidence test (folded into the
+// loop below instead, per that item's own finding that no Trust-specific
+// code exists anywhere -- Trust shares Annual's engine, so this closes a
+// real gap rather than just deduplicating).
+
 // Milestone 19-3: Preview and Print now render the actual generated PDF
 // (pdf.js canvas + TextLayer) instead of each feature's own buildPrintHTML()
 // HTML/CSS reconstruction -- one renderer (pdf-model.js + pdf-engine.js)
@@ -21,6 +28,9 @@ const FEATURES: Array<{
 }> = [
   { name: 'Guardian Inventory', create: (p, n) => createWard(p, n, 'guardian'), fill: fillMinimalValidGuardianWard },
   { name: 'Annual Accounting', create: (p, n) => createWard(p, n, 'annual'), fill: fillMinimalValidAnnualWard },
+  // Trust Accounting is formEngine()==='annual' -- same module, same
+  // validateAnnual(), same pdf-model.js, just different legal copy.
+  { name: 'Trust Accounting', create: (p, n) => createWard(p, n, 'trustAccounting'), fill: fillMinimalValidAnnualWard },
   // Simplified Accounting has its own eligibility-modal creation flow --
   // createWard()'s generic "Add Ward" modal doesn't apply (see
   // createSimplifiedWard()'s own header comment in support/target.ts).
