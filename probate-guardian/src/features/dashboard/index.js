@@ -72,13 +72,10 @@ function dashboardToolbarHTML() {
 
 function dashboardHeaderHTML() {
   const wards = getCaseFile().wards;
-  // Milestone 36-1 moved Close, Rename and Delete here from the sidebar. Close
-  // and Delete then moved on again into the row's own Actions cell, where they
-  // sit beside Open on the filing they act on. Rename stays: it is the one of
-  // the three that only ever applies to whichever filing is currently open.
-  const newFormBtn = `<button type="button" class="btn btn-sm btn-outline-primary dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} New Form</button>`;
-  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-outline-secondary dashboard-export-all" data-dashboard-action="export-all" title="Export all filings into a single combined .sav archive">${ic('archive', 14)} Export All Filings</button>` : '';
-  const newExistingBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>`;
+  // All three header actions share a unified primary button style on purpose.
+  const newFormBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} New Form</button>`;
+  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-export-all" data-dashboard-action="export-all" title="Export all filings into a single combined .sav archive">${ic('archive', 14)} Export All Filings</button>` : '';
+  const newExistingBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>`;
 
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
@@ -87,9 +84,7 @@ function dashboardHeaderHTML() {
       <p>Review exceptions, deadlines, and court status across active filings.</p>
     </div>
     <div class="dashboard-header-actions">
-      <div class="dashboard-filing-controls">
-        ${newFormBtn}
-      </div>
+      ${newFormBtn}
       ${exportAllBtn}
       ${newExistingBtn}
     </div>

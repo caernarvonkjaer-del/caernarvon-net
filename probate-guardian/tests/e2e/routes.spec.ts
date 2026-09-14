@@ -173,12 +173,46 @@ test.describe('routes', () => {
     await expect(main).toContainText('<img src=x onerror=alert(1)> Alpha Ward');
     await expectPrimaryMetricStrip();
 
-    // The filing controls moved out of the sidebar into the header cluster.
-    // Close and Delete then moved on into each row's Actions cell, so the
-    // header keeps only Rename and New Form.
-    await expect(main.locator('.dashboard-page-header .dashboard-filing-controls')).toHaveCount(1);
+    // Milestone 47A: header buttons are unified to btn-primary and the legacy
+    // .dashboard-filing-controls divider wrapper is removed.
+    await expect(main.locator('.dashboard-page-header .dashboard-filing-controls')).toHaveCount(0);
+    const headerBtns = main.locator('.dashboard-page-header .dashboard-header-actions button');
+    await expect(headerBtns).toHaveCount(3);
+    for (const btn of await headerBtns.all()) {
+      await expect(btn).toHaveClass(/btn-primary/);
+      await expect(btn).not.toHaveClass(/btn-outline/);
+    }
     await expect(main.locator('.dashboard-page-header #new-ward-btn')).toHaveCount(1);
     await expect(main.locator('.dashboard-page-header #new-ward-btn')).toHaveText(/^\s*New Form\s*$/);
+
+    // The three buttons share background, border, text color and height in
+    // both themes. .btn transitions its colors, so transitions are switched
+    // off while reading; otherwise the dark read could land mid-fade.
+    const html = page.locator('html');
+    const initialTheme = await html.getAttribute('data-theme');
+    await headerBtns.evaluateAll(btns => btns.forEach(b => { (b as HTMLElement).style.transition = 'none'; }));
+    const expectUniformHeaderBtns = async (theme: 'light' | 'dark') => {
+      await page.evaluate(t => { document.documentElement.dataset.theme = t; }, theme);
+      const styles = await headerBtns.evaluateAll(btns => btns.map(b => {
+        const cs = window.getComputedStyle(b);
+        return { bg: cs.backgroundColor, border: cs.borderColor, color: cs.color, height: cs.height };
+      }));
+      for (const prop of ['bg', 'border', 'color', 'height'] as const) {
+        expect(new Set(styles.map(s => s[prop])).size, `${theme} ${prop}`).toBe(1);
+      }
+      return page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim());
+    };
+    const lightInk = await expectUniformHeaderBtns('light');
+    const darkInk = await expectUniformHeaderBtns('dark');
+    // btn-primary is the same maroon in both themes, so confirm the switch
+    // through a token that does change.
+    expect(darkInk, 'dark theme actually applied').not.toBe(lightInk);
+    await headerBtns.evaluateAll(btns => btns.forEach(b => { (b as HTMLElement).style.transition = ''; }));
+    await page.evaluate(t => {
+      if (t === null) delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = t;
+    }, initialTheme);
+
     await expect(main.locator('.dashboard-page-header .dashboard-close-ward')).toHaveCount(0);
     await expect(main.locator('.dashboard-page-header .dashboard-delete-ward')).toHaveCount(0);
     await expect(main.locator('.dashboard-triage-actions [data-dashboard-action="delete"]')).toHaveCount(4);

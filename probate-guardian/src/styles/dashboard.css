@@ -94,12 +94,7 @@
 .dashboard-page-kicker{margin-bottom:.2rem;color:var(--brand-text);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
 .dashboard-header-actions{display:flex;align-items:flex-end;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;}
 .dashboard-header-actions .dashboard-control{margin:0;}
-/* The filing controls relocated from the sidebar in Milestone 36-1. They act
-   on the active filing, so they group together rather than sitting loose in a
-   row of page-level actions. */
-.dashboard-filing-controls{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding-right:.6rem;border-right:1px solid var(--line);}
-.dashboard-filing-controls:empty{display:none;}
-.dashboard-new-existing{white-space:nowrap;min-height:31px;}
+.dashboard-header-btn{white-space:nowrap;min-height:31px;}
 .dashboard-toolbar{display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem;flex-wrap:wrap;padding:.7rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);}
 .dashboard-control.dashboard-search-control{flex:0 1 380px;min-width:180px;}
 .dashboard-search-wrap{height:36px;display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--field);border-radius:var(--r-sm);padding:0 .7rem;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
@@ -306,9 +301,7 @@
   /* Header buttons go full width: at this size they are the page's primary
      controls and a 31px-tall auto-width button is an awkward tap target. */
   .dashboard-header-actions{display:grid;grid-template-columns:1fr;gap:.4rem;}
-  .dashboard-header-actions>.btn,.dashboard-new-existing,.dashboard-export-all{width:100%;}
-  .dashboard-filing-controls{border-right:0;padding-right:0;display:grid;grid-template-columns:1fr;gap:.4rem;}
-  .dashboard-filing-controls .btn{width:100%;}
+  .dashboard-header-actions>.btn{width:100%;}
   .dashboard-summary-strip{gap:.45rem;}
   .dashboard-stat-label{font-size:.62rem;}
 }
