@@ -963,12 +963,27 @@ Card generalization, as actually measured rather than projected:
 | `renderCaseCaptionFields` | 3 | 3 Plan types |
 | `renderResidenceFields` | 2 | Plan Initial, Plan Annual |
 | `renderPartyNameField` | 3 | 3 of 4 Plan types (Plan Annual's col-md-7 doesn't fit) |
-| `renderPartyContactFields` | 1 | Plan Simplified only — did not generalize |
+| ~~`renderPartyContactFields`~~ | — | **Deleted 2026-09-14** — never got past 1 caller; inlined back into Plan Simplified |
 
-Both speculative optional slots added in 41-2 (`renderReportingPeriodFields`'s
-`inceptionDate`, `renderWardIdentityFields`'s `ssn`) are still exercised by
-no real page, each having been ruled out by the first concrete candidate
-that appeared. They remain in place and should not be treated as proven.
+**Cleanup, 2026-09-14.** Both speculative optional slots added in 41-2
+(`renderReportingPeriodFields`'s `inceptionDate`, `renderWardIdentityFields`'s
+`ssn`) were **deleted**, along with `renderPartyContactFields`, which was
+inlined back into Plan Simplified — its only caller.
+
+Each had been ruled out by the first concrete candidate that appeared:
+Plan Initial has two inception-like dates, both required while its period
+fields are not; Plan Annual's ward SSN sits after county rather than
+adjacent to the name. They were removed rather than left in place because
+their unit tests made them *look* proven while no page exercised them,
+which invites the next caller to build on a shape that never survived
+contact with a real form. Same reasoning for the contact card: a shared
+helper with one user is not an abstraction, and a general name on it
+invites the next filing type to bend its page to fit.
+
+All of it is cheap to reintroduce if a genuine second case turns up — with
+that case in hand, which is the part that was missing the first time. The
+six filing types' byte-identical snapshot pins stayed green through the
+deletion, confirming nothing rendered changed.
 
 ### What this milestone deliberately does not require
 

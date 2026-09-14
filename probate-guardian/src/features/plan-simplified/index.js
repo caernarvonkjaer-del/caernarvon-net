@@ -11,7 +11,16 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 // card boundaries 1:1 -- see case-caption-card.js's header comment.
 import { renderCaseCaptionFields } from '../../core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
-import { renderPartyNameField, renderPartyContactFields } from '../../core/form/cards/guardian-attorney-card.js';
+import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
+// Milestone 41-3 cleanup: this page's guardian phone/email/mailingAddress
+// fields were briefly a shared renderPartyContactFields() card. They are
+// inlined back here because that card never had a second caller -- every
+// later filing type's guardian block turned out to be a different shape
+// (Plan Minor adds relationship and taxpayer ID and splits the address;
+// Plan Initial has no email at all; Plan Annual adds office address). A
+// "shared" helper with exactly one user is not an abstraction, and its
+// general name invited the next type to contort its page to fit.
+import { renderFormField } from '../../core/form/form-fields.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -267,7 +276,9 @@ function pagePlanSSignatures(){
           ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: p.name, required: i===0 })}
           <div class="col-md-6"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p3', signatureImage: p.signatureImage })}</div>
-          ${renderPartyContactFields({ pathPrefix: `planGuardians.${i}`, phone: p.phone, email: p.email, mailingAddress: p.mailingAddress })}
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: p.email })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingAddress`, label: 'Mailing Address', value: p.mailingAddress })}</div>
         </div>
       </div>
     </div></div>`;

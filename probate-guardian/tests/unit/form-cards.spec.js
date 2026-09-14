@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderCaseCaptionFields } from '../../src/core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../src/core/form/cards/ward-demographics-card.js';
-import { renderPartyNameField, renderPartyContactFields } from '../../src/core/form/cards/guardian-attorney-card.js';
+import { renderPartyNameField } from '../../src/core/form/cards/guardian-attorney-card.js';
 import { renderResidenceFields } from '../../src/core/form/cards/residence-facility-card.js';
 
 // Milestone 41-2: Tier 2 cards each bind correctly to data-form-path and
@@ -40,14 +40,16 @@ describe('renderWardIdentityFields', () => {
     expect(html).toContain('value="Harold Thomas Bennett"');
   });
 
-  it('omits the SSN field entirely when not passed (Plan Simplified has none)', () => {
+  // Milestone 41-3 cleanup: the speculative `ssn` slot these two tests
+  // covered is deleted. It was added in 41-2 before a second caller
+  // existed, then ruled out by the first real candidate -- Plan Annual's
+  // ward SSN sits after county rather than adjacent to the name. Tests
+  // that exercise an option no page passes make it look proven; removed
+  // with the option itself.
+  it('renders only the ward name -- there is no optional second field', () => {
     const html = renderWardIdentityFields({ wardName: 'Ward' });
-    expect(html).not.toContain('data-form-path="ssn"');
-  });
-
-  it('renders the SSN field when explicitly passed (a later filing type that has one)', () => {
-    const html = renderWardIdentityFields({ wardName: 'Ward', ssn: '123-45-6789' });
-    expect(html).toContain('data-form-path="ssn"');
+    expect(html).toContain('data-form-path="wardName"');
+    expect((html.match(/data-form-path=/g) || []).length).toBe(1);
   });
 });
 
@@ -60,15 +62,15 @@ describe('renderReportingPeriodFields', () => {
     expect(html).toContain('placeholder="MM/DD/YYYY"');
   });
 
-  it('omits the inception date field entirely when not passed', () => {
+  // Milestone 41-3 cleanup: the speculative `inceptionDate` slot these two
+  // tests covered is deleted -- Plan Initial, the first real candidate, has
+  // TWO inception-like dates and both are required while its period fields
+  // are not, which one optional date sharing the period's `required` flag
+  // could not express. No page ever passed it.
+  it('renders exactly the two period fields -- there is no optional third date', () => {
     const html = renderReportingPeriodFields({ periodFrom: '', periodTo: '' });
-    expect(html).not.toContain('data-form-path="inceptionDate"');
-  });
-
-  it('renders the inception date field when explicitly passed, with a custom label', () => {
-    const html = renderReportingPeriodFields({ periodFrom: '', periodTo: '', inceptionDate: '2025-06-01', inceptionLabel: 'Guardianship Inception Date (GID)' });
-    expect(html).toContain('data-form-path="inceptionDate"');
-    expect(html).toContain('Guardianship Inception Date (GID)');
+    expect((html.match(/data-form-path=/g) || []).length).toBe(2);
+    expect(html).not.toContain('inceptionDate');
   });
 
   it('accepts custom from/to labels for filing types that phrase the period differently', () => {
@@ -108,18 +110,13 @@ describe('renderPartyNameField', () => {
   });
 });
 
-describe('renderPartyContactFields', () => {
-  it('binds phone, email, and mailing address to <pathPrefix>.<field>', () => {
-    const html = renderPartyContactFields({
-      pathPrefix: 'planGuardians.0', phone: '727-555-0102', email: 'guardian@example.com', mailingAddress: '10 Bay St, Clearwater, FL 33755',
-    });
-    expect(html).toContain('data-form-path="planGuardians.0.phone"');
-    expect(html).toContain('data-form-path="planGuardians.0.email"');
-    expect(html).toContain('data-form-path="planGuardians.0.mailingAddress"');
-    expect(html).toContain('value="727-555-0102"');
-    expect(html).toContain('value="guardian@example.com"');
-  });
-});
+// Milestone 41-3 cleanup: renderPartyContactFields() is gone -- inlined
+// back into Plan Simplified, its only caller. Every other filing type's
+// guardian block is a different shape (Plan Minor adds relationship and
+// taxpayer ID and splits the address; Plan Initial has no email; Plan
+// Annual adds an office address), so it never generalized. Its behavior is
+// now covered where it actually lives: plan-simplified-mount.spec.ts's
+// byte-identical Signatures-page snapshot pin.
 
 // Milestone 41-3: the milestone's fourth named card, deferred twice before
 // this and built only once Plan Annual supplied a second real usage. Both

@@ -17,19 +17,25 @@
 // signature-state control widget itself stay in the page's own
 // composition -- they're tightly coupled to Milestone 39's signature-state
 // lifecycle, not a plain identity field.
-// Split into two exports, not one, because the real page interleaves them
-// with the signature-date field and the signature-state control widget
-// (name first, then date+signature control, then contact fields) --
-// preserving that exact field order matters for the 0-visual-diff proof,
-// since extractFormContentSnapshot() captures control values in DOM order.
+// Milestone 41-3 cleanup: this file briefly exported a second function,
+// renderPartyContactFields() (phone + email + one combined mailingAddress),
+// built for Plan Simplified's guardian block. It never gained a second
+// caller, and by the end of 41-3's rollout it was clear it never would --
+// every other filing type's guardian block is a genuinely different shape:
+// Plan Minor adds relationship and taxpayer ID and splits the address into
+// street + city/state/zip; Plan Initial has no email field at all; Plan
+// Annual adds a residence-or-office address on top. It has been inlined
+// back into its one caller. A shared helper with a single user is not an
+// abstraction, and a general name on it invites the next filing type to
+// bend its own page to fit rather than render what it actually has.
+//
+// renderPartyNameField() below is kept because it genuinely generalized:
+// three of the four Plan types use it. The fourth (Plan Annual) does not,
+// since its Printed Name field is col-md-7 rather than the col-12 this
+// hardcodes -- recorded rather than papered over with a colClass option,
+// which would reduce this to a configurable <div> around one call.
 import { renderFormField } from '../form-fields.js';
 
 export function renderPartyNameField({ pathPrefix, name = '', required = false, label = 'Printed Name' } = {}) {
   return `<div class="col-12">${renderFormField({ path: `${pathPrefix}.name`, label, value: name, required })}</div>`;
-}
-
-export function renderPartyContactFields({ pathPrefix, phone = '', email = '', mailingAddress = '' } = {}) {
-  return `<div class="col-md-6">${renderFormField({ path: `${pathPrefix}.phone`, label: 'Phone Number', value: phone })}</div>
-    <div class="col-12">${renderFormField({ path: `${pathPrefix}.email`, label: 'Email Address', value: email })}</div>
-    <div class="col-12">${renderFormField({ path: `${pathPrefix}.mailingAddress`, label: 'Mailing Address', value: mailingAddress })}</div>`;
 }
