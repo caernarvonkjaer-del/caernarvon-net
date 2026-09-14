@@ -1,30 +1,38 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
 
+// Milestone 43D: split from one mega-test covering six unrelated concerns
+// (label associations, guided-tour absence, case-number normalization, the
+// save-event hook, Schedule B-2 DOM stability, D-3 tri-state radio flow) into
+// six independently-reportable tests, so one failure doesn't mask the other
+// five's results. `openGuardianWard` factors the setup every one of them
+// needs (fresh start, Add Ward modal, land on the form).
+async function openGuardianWard(page: Page, name: string) {
+  await freshStartNoPassword(page);
+  await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+  const addWardModal = page.locator('#addWardModal');
+  await expect(addWardModal).toBeVisible();
+  await page.locator('#new-ward-name').fill(name);
+  await page.locator('#new-ward-type').selectOption('guardian');
+  await page.locator('[data-modal-action="add-ward"]').click();
+  await expect(addWardModal).toBeHidden();
+}
+
 test.describe('Verified Initial Inventory Workflow & Usability Improvements', () => {
-  test('verifies label associations, save event hook, no auto-tour, B-2 DOM stability, and D-3 tri-state flow', async ({ page }) => {
-    // 1. Open the application with fresh startup
+  test('label associations: clicking the Add Ward modal label focuses its input, and the landed form has no duplicate or empty visible labels', async ({ page }) => {
     await freshStartNoPassword(page);
-
-    // Open Add Ward modal
     await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
-
-    // Verify Add Ward Modal is visible
     const addWardModal = page.locator('#addWardModal');
     await expect(addWardModal).toBeVisible();
 
-    // Verify Label Association: Clicking label focuses the input
     const wardNameLabel = page.locator('label[for="new-ward-name"]');
     await expect(wardNameLabel).toBeVisible();
     await wardNameLabel.click();
     await expect(page.locator('#new-ward-name')).toBeFocused();
 
-    // Fill new ward details
     await page.locator('#new-ward-name').fill('Harold Thomas Bennett');
     await page.locator('#new-ward-type').selectOption('guardian');
     await page.locator('[data-modal-action="add-ward"]').click();
-
-    // Verify modal is closed and we land on the form
     await expect(addWardModal).toBeHidden();
 
     const labelAudit = await page.evaluate(() => ({
@@ -35,8 +43,11 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     }));
     expect(labelAudit.duplicateLabels).toBe(0);
     expect(labelAudit.emptyVisibleLabels).toBe(0);
+  });
 
-    // 2. Verify No Unprompted Auto-Tour
+  test('no unprompted auto-tour on landing', async ({ page }) => {
+    await openGuardianWard(page, 'Harold Thomas Bennett');
+
     // Commit cab6b67 removed handleHash()'s setTimeout(startWalkthrough, 1000)
     // (guarded by !walkthroughCompleted && !firstLaunchSeen); there is no
     // event for an absence, so this waits 500ms past that timer's own delay
@@ -49,44 +60,52 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     // passed trivially even if the auto-tour timer above were reintroduced.
     const walkthroughOverlay = page.locator('#walkthrough-overlay.active, .pg-walkthrough-overlay, .driver-popover, #walkthrough-modal');
     await expect(walkthroughOverlay).toHaveCount(0);
+  });
 
-    // 3. Test Case Number Normalization Rules on Cover Page
+  test('case number normalization rules on the Cover page', async ({ page }) => {
+    await openGuardianWard(page, 'Harold Thomas Bennett');
+
     const caseNumInput = page.locator('input[data-bind="caseNumber"]');
     await expect(caseNumInput).toBeVisible();
-    
-    // Test 262487 -> 26-002487-GD
+
+    // 262487 -> 26-002487-GD
     await caseNumInput.fill('262487');
     await caseNumInput.blur();
     await expect(caseNumInput).toHaveValue('26-002487-GD');
 
-    // Test preserving non-GD division code: 26-004218-GA -> 26-004218-GA
+    // Preserves a non-GD division code: 26-004218-GA -> 26-004218-GA
     await caseNumInput.fill('26-004218-GA');
     await caseNumInput.blur();
     await expect(caseNumInput).toHaveValue('26-004218-GA');
 
-    // Restore test case number
     await caseNumInput.fill('262487');
     await caseNumInput.blur();
     await expect(caseNumInput).toHaveValue('26-002487-GD');
+  });
 
-    // Fill remaining cover fields
+  test('deterministic save event hook (pg:backup-saved) fires with the expected filename', async ({ page }) => {
+    await openGuardianWard(page, 'Harold Thomas Bennett');
     await page.locator('input[data-bind="gid"]').fill('2026-01-15');
     await page.locator('select[data-bind="county"], input[data-bind="county"]').fill('Orange');
     await page.locator('input[data-bind="guardianName"]').fill('Sarah Jenkins');
     await page.locator('input[data-bind="attorneyForGuardian"]').fill('Robert Vance, Esq.');
 
-    // 4. Test Deterministic Save Event Hook (pg:backup-saved)
-    const savePromise = page.evaluate(() => {
-      return new Promise((resolve) => {
-        window.addEventListener('pg:backup-saved', (e) => {
-          resolve((e as CustomEvent).detail);
-        }, { once: true });
-      });
-    });
-
-    // Trigger save backup
-    const saveBtn = page.locator('#save-backup-btn, [data-shell-action="save-backup"], button:has-text("Save Backup")');
+    // Milestone 41B relabeled the sidebar's backup-all-wards button "Save
+    // Backup (.sav)" -- the same text the auto-export-reminder toast's own
+    // save-backup button already used, so a text-based OR-selector here now
+    // matches both. Target the sidebar action specifically.
+    const saveBtn = page.locator('[data-shell-action="backup-all-wards"]');
     if (await saveBtn.isVisible()) {
+      // Registered only once the button is confirmed visible, so a
+      // not-visible button (this `if` guard's whole point) never leaves an
+      // unawaited page.evaluate() listener dangling into test teardown.
+      const savePromise = page.evaluate(() => {
+        return new Promise((resolve) => {
+          window.addEventListener('pg:backup-saved', (e) => {
+            resolve((e as CustomEvent).detail);
+          }, { once: true });
+        });
+      });
       // Mock window.alert so it doesn't block
       await page.evaluate(() => { window.alert = () => {}; });
       await saveBtn.click();
@@ -98,25 +117,21 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
       // single-ward "share a copy" export still names itself after the ward).
       expect(saveDetail.fileName).toBe('guardianshipwarddata.sav');
     }
+  });
 
-    // 5. Test Schedule B-2 Vehicle In-Place DOM Stability
-    // navigate() fully awaits renderPage()/mountGuardianFeature() before
-    // page.evaluate() resolves, and the click below already auto-waits for
-    // actionability -- a fixed wait here was pure redundancy on top of both.
+  test('Schedule B-2 vehicle fields appear in-place without a page crash', async ({ page }) => {
+    await openGuardianWard(page, 'Harold Thomas Bennett');
     await page.evaluate(() => (window as any).navigate('/b2'));
 
-    // Add item to B-2
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
-    
+
     const descField = page.locator('#b2-description-0');
     await expect(descField).toBeVisible();
     await descField.fill('2021 Honda Accord Sedan');
 
-    // Toggle vehicle checkbox
     const vehicleCheckbox = page.locator('input[data-inventory-change="toggle-vehicle"][data-index="0"]');
     await vehicleCheckbox.check();
 
-    // Verify vehicle fields appeared in-place without page crash
     const yearInput = page.locator('#b2-vehicle-year-0');
     const makeInput = page.locator('#b2-vehicle-make-0');
     const modelInput = page.locator('#b2-vehicle-model-0');
@@ -130,19 +145,17 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await vinInput.fill('1HGCV1F32MA123456');
     await mileageInput.fill('45200');
 
-    // Fill remaining B-2 fields
     await page.locator('input[data-bind="scheduleB2.0.streetAddress"]').fill('123 Orange Ave');
     await page.locator('input[data-bind="scheduleB2.0.cityStateZip"]').fill('Orlando, FL 32801');
     await page.locator('input[data-bind="scheduleB2.0.valuationMethod"]').fill('Kelley Blue Book');
     await page.locator('input[data-bind="scheduleB2.0.fullAssetValue"]').fill('22500');
     await page.locator('input[data-bind="scheduleB2.0.wardPercent"]').fill('100');
+  });
 
-    // 6. Test Schedule D-3 Safe Deposit Tri-State Controls
-    // navigate() fully awaits rendering before page.evaluate() resolves, and
-    // the expect(...).toBeVisible() below already auto-retries precisely.
+  test('Schedule D-3 Safe Deposit Box tri-state flow, reflected on the Summary page', async ({ page }) => {
+    await openGuardianWard(page, 'Harold Thomas Bennett');
     await page.evaluate(() => (window as any).navigate('/d3'));
 
-    // Safe Deposit Box Yes/No Radios
     const sdbGroup = page.locator('fieldset[data-yes-no-group="hasSafeDepositBox"]');
     const sdbYes = sdbGroup.locator('input[type="radio"][value="Yes"]');
     const sdbNo = sdbGroup.locator('input[type="radio"][value="No"]');
@@ -163,11 +176,8 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await expect(sdbFiledYes).toBeVisible();
     await sdbFiledYes.check();
 
-    // 7. Verify Summary Page reflects completion
-    // navigate() fully awaits rendering before page.evaluate() resolves, and
-    // the expect(...).toBeVisible() below already auto-retries precisely.
+    // Summary page reflects completion.
     await page.evaluate(() => (window as any).navigate('/summary'));
-
     const d3Status = page.locator('text=D-3 — Audit Fee & Safe Deposit');
     await expect(d3Status).toBeVisible();
   });

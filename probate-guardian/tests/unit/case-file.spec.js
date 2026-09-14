@@ -1,3 +1,10 @@
+// Milestone 43D (Decision 4, option b): this file bundles three genuinely
+// separate concerns under one name -- persistence crypto services (key
+// derivation, salt), .sav packaging/filename helpers, and the single
+// save-clock invariant (plus a legacy-app.js parse guard riding along in
+// the same describe). None has a Decision-1-style correctness defect, so
+// this is pure organization, left as one file with its scope named here
+// rather than split into case-file.spec.js/crypto/*.spec.js siblings.
 import { describe, expect, test, beforeAll, beforeEach, afterEach } from 'vitest';
 import JSZip from 'jszip';
 import {

@@ -78,38 +78,6 @@ describe('"Amended Form?" prints the filer\'s actual answer', () => {
   });
 });
 
-describe('Annual-family filing identity in generated output', () => {
-  for (const [inventoryType, filingType, formName, attestationName] of [
-    ['finalAccounting', 'Final', 'FINAL GUARDIANSHIP ACCOUNTING', 'Final Accounting'],
-    ['trustAccounting', 'Trust', 'TRUST GUARDIANSHIP ACCOUNTING', 'Trust Accounting'],
-  ]) {
-    test(`${filingType} uses its own headers and signed-attestation language`, () => {
-      const model = buildAnnualAccountingModel({
-        ...annualBase,
-        inventoryType,
-        filingType,
-        periodFrom: '2026-01-01',
-        periodTo: '2026-12-31',
-      });
-      const preparer = model.sections.find((section) => section.id === 'part4').blocks[0].text;
-      const attorney = model.sections.find((section) => section.id === 'part5').blocks[0].text;
-
-      expect(model.metadata.formName).toBe(formName);
-      expect(model.metadata.title).toContain(attestationName);
-      expect(preparer).toContain(attestationName);
-      expect(attorney).toContain(attestationName.toLowerCase());
-    });
-  }
-
-  test('footer subtitle contains the filing descriptor but never embeds the ward name', () => {
-    for (const [inventoryType, filingType, subtitle] of [
-      ['annual', 'Annual', 'Annual Accounting'],
-      ['finalAccounting', 'Final', 'Final Accounting'],
-      ['trustAccounting', 'Trust', 'Trust Accounting'],
-    ]) {
-      const model = buildAnnualAccountingModel({ ...annualBase, inventoryType, filingType });
-      expect(model.metadata.formSubtitle).toBe(subtitle);
-      expect(model.metadata.formSubtitle).not.toContain(annualBase.wardName);
-    }
-  });
-});
+// Milestone 43D: "Annual-family filing identity in generated output" moved
+// to filing-descriptor.spec.js, which already owns filing-identity concerns
+// -- this file's own focus is the "Amended Form?" tri-state print line.

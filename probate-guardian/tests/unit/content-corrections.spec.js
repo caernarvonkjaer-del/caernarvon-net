@@ -30,55 +30,33 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
     });
   });
 
-  describe('Part VIII no-trusts certification check', () => {
-    // Evaluates the Part VIII completeness rule from legacy-app.js computeNavChecks()
-    const isPart8Complete = (D) => {
-      const verifiedEmpty = (k) => !!(D.scheduleNoItems && D.scheduleNoItems[k]);
-      return verifiedEmpty('a-p8') || verifiedEmpty('p8') || (D.trusts || []).some((t) => t && t.name);
-    };
-
-    it('reports complete when the user certifies there are no trusts', () => {
-      const D = {
-        trusts: [],
-        scheduleNoItems: { 'a-p8': true },
-      };
-      expect(isPart8Complete(D)).toBe(true);
-    });
-
-    it('reports complete with alternate key p8', () => {
-      const D = {
-        trusts: [],
-        scheduleNoItems: { p8: true },
-      };
-      expect(isPart8Complete(D)).toBe(true);
-    });
-
-    it('reports incomplete when there are no trusts and certification is unchecked', () => {
-      const D = {
-        trusts: [],
-        scheduleNoItems: {},
-      };
-      expect(isPart8Complete(D)).toBe(false);
-    });
-
-    it('reports complete when a named trust is present, regardless of checkbox', () => {
-      const D = {
-        trusts: [{ name: 'Family Trust', trustee: 'Jane Doe' }],
-        scheduleNoItems: {},
-      };
-      expect(isPart8Complete(D)).toBe(true);
-    });
-  });
+  // Milestone 43D: this block used to hand-reimplement the Part VIII
+  // completeness rule from legacy-app.js's computeNavChecks() ('a-p8':
+  // verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name))
+  // as a local const, which cannot catch a regression in the actual
+  // unexported rule -- confirmed there was no way to import and call the
+  // real one (a classic-script, module-private function, the same
+  // reachability gap 43A/43B found repeatedly elsewhere). Real coverage now
+  // exists in tests/e2e/annual-schedule-consistency.spec.ts's "Part VIII
+  // (Trusts) completes via verify-none OR a named trust row" test, driven
+  // through the real UI in a real browser -- confirmed to catch a
+  // regression (temporarily removed the named-trust completion path,
+  // watched it fail, restored it). Deleted here rather than left as a
+  // second, weaker copy.
 
   describe('Supporting Documents accounting period date formatting', () => {
-    it('formats canonical YYYY-MM-DD dates to MM/DD/YYYY in accounting period heading', () => {
-      const period = '2027-01-01__2027-12-31';
-      const [pf, pt] = period.split('__');
-      const fmtPf = pf ? formatDisplayDate(pf) || pf : '';
-      const fmtPt = pt ? formatDisplayDate(pt) || pt : '';
-
-      expect(fmtPf).toBe('01/01/2027');
-      expect(fmtPt).toBe('12/31/2027');
+    // Milestone 43D: this test used to also assert formatDisplayDate()'s
+    // own YYYY-MM-DD -> MM/DD/YYYY conversion directly (fmtPf/fmtPt), which
+    // is already covered by date-parser.spec.js's own formatDisplayDate
+    // suite -- trimmed here to its own distinct, otherwise-uncovered
+    // concern: the accounting-period note string legacy-app.js builds
+    // around that formatted output (also module-private, no export, same
+    // reachability gap as Part VIII above -- kept as a hand-reimplemented
+    // sanity check since no real function exists to import, unlike the
+    // date-formatting half this trimmed away).
+    it('builds the accounting-period note from already-formatted dates', () => {
+      const fmtPf = '01/01/2027';
+      const fmtPt = '12/31/2027';
 
       const activeInventoryType = 'annual';
       const periodNote = activeInventoryType === 'guardian' ? ''

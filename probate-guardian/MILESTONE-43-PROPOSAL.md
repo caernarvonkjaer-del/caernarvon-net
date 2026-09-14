@@ -13,7 +13,9 @@ premise landed separately (`7794180`) — see 43A's own "What landed and
 what was corrected" section. **43B also landed 2026-09-13**, in a smaller
 form than originally proposed — see its own "What landed and what was
 corrected" section. **43C landed 2026-09-13** — see its own "What landed"
-section. **43D–43H remain Draft**, not yet approved.
+section. **43D landed 2026-09-13**, with one premise correction (Decision 1)
+— see its own "What landed and what was corrected" section. **43E–43H
+remain Draft**, not yet approved.
 
 **Source:** two read-only test-suite audits run this session (2026-09-13),
 via parallel read-only research passes (no edits made in either): the
@@ -50,7 +52,7 @@ hygiene, not a single all-or-nothing delivery.
 | 43A — Delete or Fix Vacuous/Dead Tests | Correctness of the tests themselves | Small | **Landed** |
 | 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests | Correctness of the tests themselves | Medium | **Landed** |
 | 43C — De-duplicate Redundant Cross-File Coverage | Redundancy | Small–medium | **Landed** |
-| 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium | Draft |
+| 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium | **Landed** |
 | 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large | Draft |
 | 43F — Close Real Coverage Gaps | Missing coverage | Medium | Draft |
 | 43G — Test-Overhead & Granularity Fixes | Test performance/isolation | Small–medium | Draft |
@@ -558,6 +560,64 @@ assertion count per concern than before the split (a split must not
 silently drop coverage). Update `TEST-INDEX.md` in the same commit(s) per
 `AGENTS.md` §7 — `tests/unit/test-index-guard.spec.js` (Milestone 42A) will
 catch a missed row automatically.
+
+### What landed and what was corrected (2026-09-13)
+
+**Decision 1's premise did not hold, found before touching it (the same
+class of error 43A/43B's own reachability-gap findings already established
+in this repo): there is no `isPart8Complete` function to import.** The rule
+is inlined directly inside `legacy-app.js`'s `computeNavChecks()` object
+literal (`'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name)`),
+a classic-script, module-private expression with no ES export — "import and
+call the real function" was not an available fix. Confirmed no existing
+test drove this rule through a real browser either (the closest sibling,
+`annual-schedule-consistency.spec.ts`'s verify-none-checkbox test, doesn't
+cover Part VIII, and doesn't cover the named-trust completion path at all).
+Closed the real gap instead: a new `annual-schedule-consistency.spec.ts`
+test drives both completion paths (verify-none checkbox, named trust row)
+through the real UI in a real browser, confirmed to catch a regression
+(temporarily removed the named-trust path, watched the new test fail,
+restored it). The unit-level hand-reimplementation is deleted, not
+repaired, since real coverage now exists elsewhere (same reasoning 43A used
+for `milestone-38e.spec.js`).
+
+**Decision 2's date-formatting redundancy was only half true.** The test
+also hand-reimplemented an accounting-period note string built inside the
+same `computeNavChecks()`-adjacent, module-private code
+(`legacy-app.js:7439`) — another no-export function, so that half is kept
+(documented as a sanity check, not a real-function proof) while only the
+genuinely-redundant `formatDisplayDate()` assertions (already covered by
+`date-parser.spec.js`) were removed. The AO-2024-025 guard, clerk-filing-
+instructions, and Schedule C-2 placeholder concerns were left in
+`content-corrections.spec.js` as one file, per the decision's own "lowest-
+stakes, reviewer preference" framing — not worth inventing new files for.
+
+Decisions 3, 5, and 6 landed exactly as written: `attestation-layout.spec.ts`
+merged into `schedule-card-layout.spec.ts` (14/14 green); `verified-
+inventory-workflow.spec.ts`'s six-concern mega-test split into six
+independent tests (found and fixed one latent issue while splitting — a
+button-text locator collision with Milestone 41B's relabeled Save Backup
+button, and a dangling unawaited `page.evaluate()` listener that only
+surfaced once the save-event-hook concern ran as its own test rather than
+mid-chain); `amended-form-line.spec.js`'s Annual-family identity block moved
+to `filing-descriptor.spec.js`.
+
+Decision 4 (case-file.spec.js/routes.spec.ts): chose **option (b)** — scope
+comments naming each file's actual concerns, plus a new
+`assertNoInlineEventHandlers(scope, selectors)` helper in
+`tests/e2e/support/target.ts` replacing `routes.spec.ts`'s four hand-written
+`expect(locator(...)).toHaveCount(0)` call sites. The four were not
+byte-identical (two are; the other two use their own distinct attribute/
+target lists), so the helper factors the repeated shape (join list, locate,
+assert empty) rather than collapsing to one fixed selector.
+
+Full targeted run: unit (`content-corrections.spec.js`, `case-file.spec.js`,
+`amended-form-line.spec.js`, `filing-descriptor.spec.js`, `date-parser.spec.js`)
+46/46; e2e (`routes.spec.ts`, `schedule-card-layout.spec.ts`,
+`verified-inventory-workflow.spec.ts`, `annual-schedule-consistency.spec.ts`)
+43/43. Full unit suite: 732/732 (736 minus 4 — the deleted Part VIII unit
+tests, with their real replacement living in e2e). `TEST-INDEX.md` updated
+for every touched and moved file; `test-index-guard.spec.js` green.
 
 ---
 

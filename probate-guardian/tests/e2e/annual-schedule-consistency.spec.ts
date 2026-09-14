@@ -83,6 +83,43 @@ test.describe('annual accounting schedule consistency', () => {
     }
   });
 
+  // Milestone 43D: Part VIII (Trusts) has the same verify-none checkbox
+  // shape as the fourteen schedules above, but computeNavChecks()'s own
+  // 'a-p8' rule (legacy-app.js) also has a second, independent completion
+  // path -- a named trust row -- that none of those schedules has. Both
+  // paths were previously only proven by a hand-reimplementation of the
+  // rule in a Node-only unit test (content-corrections.spec.js), which
+  // cannot catch a regression in the real, unexported rule; this drives it
+  // through the real UI in a real browser instead.
+  test('Part VIII (Trusts) completes via verify-none OR a named trust row, matching computeNavChecks()', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Part VIII Trusts Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/p8'));
+
+    const before = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    expect(before, '/p8 should start incomplete on a blank filing').toBe(false);
+
+    const box = page.locator('input[data-annual-change="schedule-no-items"][data-schedule="a-p8"]');
+    await expect(box, '/p8 should offer a verify-none checkbox').toBeVisible();
+    await box.check();
+    const afterVerifyNone = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    expect(afterVerifyNone, '/p8 should be complete once the filer verifies there are no trusts').toBe(true);
+    await expect(page.locator('[data-nav="a-p8"] .nav-check')).toHaveClass(/complete/);
+
+    await box.uncheck();
+    const undone = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    expect(undone, '/p8 should return to incomplete when the filer unchecks the box').toBe(false);
+
+    // The second, independent completion path: a named trust row completes
+    // Part VIII even with the verify-none box unchecked.
+    await page.evaluate(() => {
+      (window as any).D.trusts = [{ name: 'Family Trust', trustee: 'Jane Doe' }];
+      (window as any).navigate('/p8');
+    });
+    const afterNamedTrust = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    expect(afterNamedTrust, '/p8 should be complete once a trust row has a name, regardless of the checkbox').toBe(true);
+  });
+
   test('schedule totals update as the filer types, on schedules other than A', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Live Totals Ward', 'annual');

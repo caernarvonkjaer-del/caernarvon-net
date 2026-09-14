@@ -2,7 +2,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import type { Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { currentTarget } from './target-profile';
 
 // package.json has "type": "module", so this file runs as ESM under
@@ -517,4 +517,16 @@ export async function exportAndCapture(page: Page): Promise<string> {
     await new Promise((r) => setTimeout(r, 50));
   }
   return savePath;
+}
+
+// Milestone 43D: routes.spec.ts asserted "no inline event handler attribute
+// anywhere in this scope" four times, each hand-writing out its own
+// comma-joined attribute-selector list and toHaveCount(0) call. The four
+// lists aren't all identical (some scope to a container and any of a fixed
+// attribute set; one checks specific elements against specific attributes),
+// so this doesn't collapse them to one call with one fixed selector -- it
+// factors the repeated "join list, locate, assert empty" shape itself, with
+// each call site still passing its own selector list.
+export async function assertNoInlineEventHandlers(scope: Locator | Page, selectors: string[]) {
+  await expect(scope.locator(selectors.join(', '))).toHaveCount(0);
 }

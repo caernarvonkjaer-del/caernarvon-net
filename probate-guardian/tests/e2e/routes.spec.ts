@@ -1,5 +1,11 @@
+// Milestone 43D (Decision 4, option b): despite its name, most of this
+// file's bulk is dashboard shell UI -- triage rows/queue, archive/closed
+// disclosure, sidebar nav accordion, inline-event-handler audits, dark-mode
+// toggle -- with route-table/mount coverage proper as a smaller share.
+// Pure organization, no correctness defect, left as one file with its scope
+// named here rather than split into routes.spec.ts/dashboard-shell-ui.spec.ts.
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword } from './support/target';
+import { freshStartNoPassword, assertNoInlineEventHandlers } from './support/target';
 
 // One smoke test per filing type, per Milestone 1's scoped safety net (not
 // exhaustive per-schedule coverage -- that's a later milestone). Uses
@@ -84,7 +90,7 @@ test.describe('routes', () => {
 
     const main = page.locator('#main-content');
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await expect(main.locator('[onchange], [onclick], [oninput], [onkeydown]')).toHaveCount(0);
+    await assertNoInlineEventHandlers(main, ['[onchange]', '[onclick]', '[oninput]', '[onkeydown]']);
     // The grouped-by-type/case/flat toggle was removed as dead code (no
     // dashboard role ever reached its render branch) -- see Milestone 8.
     await expect(main.locator('#dashboard-group-toggle')).toHaveCount(0);
@@ -110,7 +116,7 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/inventory-select'));
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await expect(main.locator('[onchange], [onclick], [oninput], [onkeydown]')).toHaveCount(0);
+    await assertNoInlineEventHandlers(main, ['[onchange]', '[onclick]', '[oninput]', '[onkeydown]']);
   });
 
   test('dashboard triage uses local preferences without mutating wards', async ({ page }) => {
@@ -252,7 +258,11 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await page.locator('[data-dashboard-bound="true"]').waitFor();
 
-    await expect(page.locator('[data-shell-action][onclick], [data-shell-action][oninput], [data-shell-action][onchange], [data-shell-action][onfocus], [data-shell-action][onkeydown], #ward-selector[oninput], #ward-selector[onfocus], #ward-selector[onkeydown]')).toHaveCount(0);
+    await assertNoInlineEventHandlers(page, [
+      '[data-shell-action][onclick]', '[data-shell-action][oninput]', '[data-shell-action][onchange]',
+      '[data-shell-action][onfocus]', '[data-shell-action][onkeydown]',
+      '#ward-selector[oninput]', '#ward-selector[onfocus]', '#ward-selector[onkeydown]',
+    ]);
 
     const html = page.locator('html');
     const initialTheme = await html.getAttribute('data-theme');
@@ -320,7 +330,10 @@ test.describe('routes', () => {
   test('ward management modals work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
-    await expect(page.locator('#lazy-fragment-host [onclick], #lazy-fragment-host [oninput], #lazy-fragment-host [onchange], #lazy-fragment-host [onfocus], #lazy-fragment-host [onkeydown]')).toHaveCount(0);
+    await assertNoInlineEventHandlers(page, [
+      '#lazy-fragment-host [onclick]', '#lazy-fragment-host [oninput]', '#lazy-fragment-host [onchange]',
+      '#lazy-fragment-host [onfocus]', '#lazy-fragment-host [onkeydown]',
+    ]);
 
     await page.locator('#new-ward-name').fill('alpha modal ward');
     // Name fields format on blur (not live per-keystroke -- see modal-events.js's
