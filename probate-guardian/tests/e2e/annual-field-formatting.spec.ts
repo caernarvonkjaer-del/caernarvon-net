@@ -140,4 +140,33 @@ test.describe('Annual Accounting on the shared write path', () => {
     await expect(ssn).toHaveValue('123-45-6789');
     expect(await page.evaluate(() => (window as any).D.guardians[0].ssn)).toBe('123-45-6789');
   });
+
+  // validateSecurityInput()'s SQL-injection heuristic used to match bare
+  // English words ("update", "delete", "insert", "drop", "exec") and a plain
+  // "--" against every plain free-text field in this family, blanking the
+  // whole field on blur -- there is no SQL backend anywhere in this app for
+  // that check to have ever protected. Removed at the source
+  // (legacy-app.js's detectSQLInjection()); XSS/path-traversal detection is
+  // untouched and still fires.
+  test('a free-text field is not blanked by an ordinary word that happens to be a SQL keyword', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Security Sanitize Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/schc'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
+    const description = page.locator('[data-annual-path="schC.0.description"]');
+    await description.waitFor({ state: 'visible' });
+
+    await description.fill('Update to appraisal value');
+    await description.blur();
+    await expect(description).toHaveValue('Update to appraisal value');
+    expect(await page.evaluate(() => (window as any).D.schC[0].description)).toBe('Update to appraisal value');
+
+    await description.fill('Sale of lot -- see attached');
+    await description.blur();
+    await expect(description).toHaveValue('Sale of lot -- see attached');
+
+    await description.fill('<script>alert(1)</script>');
+    await description.blur();
+    await expect(description).toHaveValue('');
+  });
 });

@@ -435,9 +435,12 @@ export function finalizeFieldValue(control, options = {}) {
     // legacy-app.js's validateSecurityInput() first: exactly what the
     // accounting family's own focusout handler did before it was retired,
     // and only for those fields -- no other filing type's free text was ever
-    // sanitized this way, and still isn't. Note it blanks a field outright
-    // on a heuristic match (a description beginning "Update ..." trips its
-    // SQL-keyword check); carried over unchanged, not endorsed.
+    // sanitized this way, and still isn't. It used to also blank a field
+    // outright on a bare SQL-keyword match ("Update to appraisal value"
+    // silently wiped on blur) -- that check was removed at the source
+    // (legacy-app.js's detectSQLInjection()) since this app has no SQL
+    // backend for it to ever protect; only real XSS/path-traversal patterns
+    // can still trigger a block here.
     const secured = (control.dataset?.fieldSanitize === 'security' && window.validateSecurityInput)
       ? window.validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
       : rawValue;

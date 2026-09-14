@@ -1088,11 +1088,21 @@ function guardianHasAnyData(g){
 }
 
 // ── SECURITY VALIDATION ──────────────────────────────
-// Detect and block SQL injection patterns
-function detectSQLInjection(s){
-  const sqlPatterns=[/(\bunion\b.*\bselect\b|\bselect\b.*\bfrom\b|\bdrop\b|\binsert\b|\bupdate\b|\bdelete\b|\bexec\b|\bscript\b|--|\/\*|\*\/|xp_|sp_)/i];
-  return sqlPatterns.some(p=>p.test(String(s||'')));
-}
+// A SQL-injection keyword/pattern detector used to sit here (bare
+// \bupdate\b/\bdelete\b/\binsert\b/\bdrop\b/\bexec\b/-- matches) and ran on
+// every plain free-text field in Annual/Final/Trust Accounting on blur
+// (validateSecurityInput() below). This app has no SQL backend anywhere --
+// nothing it ever produces is a database query built from user input -- so
+// the check protected against a vector that doesn't exist here, while
+// blanking real filer text on a false-positive keyword match: a Schedule C
+// description reading "Update to appraisal value" or "Sale of lot -- see
+// attached" was silently wiped to empty on blur, with only a console.warn
+// no filer would ever see. Removed rather than narrowed: there is no SQL
+// query context downstream for any narrower pattern to legitimately guard.
+// detectXSSPayload() and detectPathTraversal() stay -- both match tag/URI
+// syntax unlikely to appear in ordinary legal narrative, not bare English
+// words, so they carry a much lower false-positive cost for whatever benefit
+// they still provide.
 
 // Detect and block XSS/HTML injection
 function detectXSSPayload(s){
@@ -1110,8 +1120,8 @@ function detectPathTraversal(s){
 // Milestone 40H-G: dropped the straight apostrophe from the stripped set --
 // it turned "ward's" into "wards" in ordinary narrative text. Only the
 // actual HTML/script-injection vectors stay stripped (<, >, ", and `);
-// detectXSSPayload()/detectSQLInjection() above match on keywords and tag
-// syntax, not quote characters, so narrowing this doesn't reopen either check.
+// detectXSSPayload() above matches on tag syntax, not quote characters, so
+// narrowing this doesn't reopen it.
 function sanitizeInput(s){
   if(!s)return s;
   let cleaned=String(s);
@@ -1156,7 +1166,7 @@ function sanitizeDecimal(s){
 // Validate field value for security and format
 function validateSecurityInput(fieldName,value){
   const v=String(value||'');
-  if(detectSQLInjection(v)||detectXSSPayload(v)||detectPathTraversal(v)){
+  if(detectXSSPayload(v)||detectPathTraversal(v)){
     console.warn(`Security: Blocked dangerous input in ${fieldName}`);
     return '';
   }
