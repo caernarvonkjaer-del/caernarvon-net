@@ -129,7 +129,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      expect(await reopenPage.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
+      await expect.poll(() => reopenPage.evaluate(() => (window as any).getCaseFile()?.wards?.[0]?.dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: 'Alex Attorney',
       });
@@ -192,6 +192,10 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Single Export Roundtrip Ward');
+      await page.evaluate(() => {
+        const w = (window as any);
+        w.commitCoverCounty(w.D, 'Orange');
+      });
 
       const downloadPromise = page.waitForEvent('download');
       page.once('dialog', (d) => d.accept());
@@ -223,6 +227,24 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
       await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Single Export Roundtrip Ward');
+
+      // 40C-1 Item 9: single-ward export carries no Party records, but
+      // on reopen the ward Party is reconstructed with its county under the unanimity rule.
+      const partyData = await reopenPage.evaluate(() => {
+        const w = (window as any);
+        const ward = w.caseFile.wards[0];
+        const party = w.wardPartyForFiling(ward);
+        return {
+          wardCounty: ward.county,
+          hasParty: Boolean(party),
+          partyCounty: party?.county,
+          partyRole: party?.roles,
+        };
+      });
+      expect(partyData.wardCounty).toBe('Orange');
+      expect(partyData.hasParty).toBe(true);
+      expect(partyData.partyCounty).toBe('Orange');
+      expect(partyData.partyRole).toContain('ward');
     } finally {
       await reopenContext.close();
     }

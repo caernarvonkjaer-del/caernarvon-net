@@ -73,4 +73,91 @@ test.describe('party de-duplication (Milestone 7)', () => {
     });
     expect(wardBPhone).toBe('(555) 010-0100');
   });
+
+  test('two independently-created same-named wards with conflicting counties warn on merge, can be cancelled, and merge preserves kept county when accepted', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    // Ward A (annual): ward with county 'Orange'
+    await createWard(page, 'Conflict Ward X', 'annual');
+    await page.evaluate(() => {
+      const w = window as any;
+      w.commitCoverCounty(w.D, 'Orange');
+    });
+    const partyIdA = await page.evaluate(() => (window as any).D.wardPartyId);
+
+    // Ward B (planInitial): same ward name, conflicting county 'Pasco', separate record (Start Blank)
+    await page.evaluate((t) => (window as any).showAddWardModalForType(t), 'planInitial');
+    await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
+    await page.fill('#new-ward-name', 'Conflict Ward X');
+    await page.selectOption('#carry-source-ward', '');
+    await page.click('#addWardModal [data-modal-action="add-ward"]');
+    await page.locator('#addWardModal').waitFor({ state: 'hidden' });
+    await page.evaluate(() => {
+      const w = window as any;
+      w.commitCoverCounty(w.D, 'Pasco');
+    });
+    const partyIdB = await page.evaluate(() => (window as any).D.wardPartyId);
+
+    expect(partyIdA).toBeTruthy();
+    expect(partyIdB).toBeTruthy();
+    expect(partyIdA).not.toBe(partyIdB);
+
+    // Dismiss any auto-export reminder toast if visible
+    const reminderDismiss = page.locator('[data-shell-action="hide-auto-export-reminder"]');
+    if (await reminderDismiss.isVisible()) await reminderDismiss.click();
+
+    // Re-expand sidebar if auto-collapsed
+    const wardControlsToggle = page.locator('#ward-controls-toggle-btn');
+    if (await wardControlsToggle.count() > 0 && (await wardControlsToggle.textContent())?.includes('Show')) await wardControlsToggle.click();
+
+    // Navigate to Party Management
+    await page.click('[data-shell-action="toggle-help"]');
+    await page.click('[data-shell-action="party-management"]');
+    await expect(page).toHaveURL(/#\/party-management/);
+
+    const card = page.locator('#party-dedupe-queue > .entry-card').filter({ hasText: 'Conflict Ward X' });
+    await expect(card).toBeVisible();
+
+    // First attempt: cancel the merge. Verify the confirm dialog warned about conflicting counties.
+    let dialogMessageFirst = '';
+    page.once('dialog', (d) => {
+      dialogMessageFirst = d.message();
+      d.dismiss();
+    });
+    await card.locator(`[data-form-action="party-merge-keep"][data-keep-id="${partyIdA}"]`).click();
+
+    expect(dialogMessageFirst).toContain('Conflicting ward counties');
+    expect(dialogMessageFirst).toContain('Orange');
+    expect(dialogMessageFirst).toContain('Pasco');
+    // Card must still be visible in the queue because merge was cancelled
+    await expect(card).toBeVisible();
+
+    // Second attempt: accept the merge.
+    let dialogMessageSecond = '';
+    page.once('dialog', (d) => {
+      dialogMessageSecond = d.message();
+      d.accept();
+    });
+    await card.locator(`[data-form-action="party-merge-keep"][data-keep-id="${partyIdA}"]`).click();
+
+    expect(dialogMessageSecond).toContain('Conflicting ward counties');
+    await expect(page.locator('#party-dedupe-queue')).toContainText('No likely duplicates found.');
+
+    // Verify kept party retained 'Orange', discarded party marked mergedInto, and Ward B now points to partyIdA
+    const mergeResult = await page.evaluate(([keepId, discardId]) => {
+      const w = window as any;
+      const keepParty = w.resolveParty(keepId);
+      const discardParty = (w.caseFile.parties || []).find((p: any) => p.id === discardId);
+      const wardB = w.caseFile.wards.find((x: any) => x.inventoryType === 'planInitial');
+      return {
+        keepCounty: keepParty?.county,
+        discardMergedInto: discardParty?.mergedInto,
+        wardBPartyId: wardB?.wardPartyId,
+      };
+    }, [partyIdA, partyIdB]);
+
+    expect(mergeResult.keepCounty).toBe('Orange');
+    expect(mergeResult.discardMergedInto).toBe(partyIdA);
+    expect(mergeResult.wardBPartyId).toBe(partyIdA);
+  });
 });

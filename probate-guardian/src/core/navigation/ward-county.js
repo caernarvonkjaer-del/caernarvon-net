@@ -238,9 +238,24 @@ export function inferWardPartyCounty(party) {
  */
 export function backfillWardPartyCounties() {
   const caseFile = getCaseFile();
-  const parties = caseFile?.parties;
+  if (!caseFile) return { inferred: 0, conflicted: 0, untouched: 0 };
+  if (!Array.isArray(caseFile.parties)) caseFile.parties = [];
+
+  // For single-ward imports (which carry no Party records at all), reconstruct
+  // a ward Party only when the exported filing itself supplied a county --
+  // that is the one case where ensureWardPartyForFiling()'s own "only where the
+  // user has actually supplied ward identity" contract is satisfied here. A
+  // party-less ward with no county is left exactly as before: no Party is
+  // manufactured for it, so nothing new is written into an ordinary legacy
+  // .sav that never carried an explicit county.
+  for (const ward of (caseFile.wards || [])) {
+    if (ward && !wardPartyForFiling(ward) && normalizeCountyName(ward.county)) {
+      ensureWardPartyForFiling(ward);
+    }
+  }
+
+  const parties = caseFile.parties;
   const summary = { inferred: 0, conflicted: 0, untouched: 0 };
-  if (!Array.isArray(parties)) return summary;
   const now = new Date().toISOString();
   for (const party of parties) {
     if (!party || !(party.roles || []).includes('ward')) continue;

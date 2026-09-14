@@ -383,12 +383,13 @@ function inpD(label,val,setter,req=false,type='text'){
     required: req,
   });
 }
-function selD(label,val,setter,opts){
+function selD(label,val,setter,opts,req=false){
   return renderSelectField({
     path: setterPath(setter),
     label,
     value: val,
     options: opts,
+    required: req,
   });
 }
 // County-field counterpart to selD() -- same custom-setter-string
@@ -868,7 +869,7 @@ function pageSchB4Annual(){
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB4[${i}].checkNo=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB4[${i}].datePaid=this.value`,true,'date')}</div>
-        <div class="col-md-3"><label class="form-label" for="schB4_category_${i}">Category <span class="req">*</span></label><select class="form-select" id="schB4_category_${i}" data-annual-path="schB4.${i}.category"><option value="">— select —</option>${DISB_CATS.map(c=>`<option value="${c}" ${r.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div class="col-md-3">${selD('Category',r.category,`D.schB4[${i}].category=this.value`,DISB_CATS,true)}</div>
         <div class="col-md-3">${inpD('Payee',r.payee,`D.schB4[${i}].payee=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Amount',r.amount,`D.schB4[${i}].amount=this.value`,true,'number')}</div>
       </div></div>

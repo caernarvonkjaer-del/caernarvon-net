@@ -1,5 +1,6 @@
 import path from 'node:path';
 import os from 'node:os';
+import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { Page } from '@playwright/test';
 import { currentTarget } from './target-profile';
@@ -506,10 +507,14 @@ export async function crossCheckNavAndSummaryStatus(
 // dashboard-backup specs.
 export async function exportAndCapture(page: Page): Promise<string> {
   const downloadPromise = page.waitForEvent('download');
-  page.once('dialog', (d) => d.accept()); // exportGuardianDataZip()'s completion alert()
+  const dialogPromise = page.waitForEvent('dialog').then((d) => d.accept());
   await page.evaluate(() => { void (window as any).exportGuardianDataZip(); });
-  const download = await downloadPromise;
+  const [download] = await Promise.all([downloadPromise, dialogPromise]);
   const savePath = path.join(os.tmpdir(), `pg-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sav`);
   await download.saveAs(savePath);
+  for (let i = 0; i < 50; i++) {
+    if (fs.existsSync(savePath) && fs.statSync(savePath).size > 0) break;
+    await new Promise((r) => setTimeout(r, 50));
+  }
   return savePath;
 }

@@ -797,6 +797,10 @@ export async function importSavArchiveOrWard(file, options = {}) {
         await window.saveWardToState(ward);
       }
     }
+    if (typeof window !== 'undefined' && typeof window.backfillWardPartyCounties === 'function') {
+      try { window.backfillWardPartyCounties(); }
+      catch (e) { console.warn('Could not backfill ward-party counties on import', e); }
+    }
     if (guardianInfo && guardianInfo.guardianName) caseFile.guardianName = guardianInfo.guardianName;
     if (guardianInfo && guardianInfo.guardianEmail) caseFile.guardianEmail = guardianInfo.guardianEmail;
 

@@ -496,4 +496,148 @@ test.describe('party de-duplication (Milestone 7)', () => {
     expect(result.mergedAwayTombstone).toBeTruthy();
     expect(result.stillDismissed).toBe(true);
   });
+
+  test('single-ward .sav export has no parties.enc, and on load reconstructs the ward-Party with county under the unanimity rule', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(async () => {
+      const w = window as any;
+      const cf = w.caseFile;
+
+      // 1. Create a ward with an explicit county
+      const wardId = 'ward-unanimity-1';
+      const ward = {
+        wardId,
+        wardName: 'Reconstructed Ward',
+        inventoryType: 'annual',
+        county: 'Orange',
+      };
+      cf.wards = [ward];
+      const initialParty = w.ensureWardPartyForFiling(ward);
+      initialParty.county = 'Orange';
+
+      // 2. Build single-ward export blob (which deliberately has no parties.enc)
+      const blob = await w.buildSingleWardExportBlob(wardId);
+      const zip = await w.JSZip.loadAsync(blob);
+      const partiesEntry = zip.file('parties.enc');
+      const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
+
+      // 3. Clear existing state to simulate opening in a fresh/other session
+      cf.wards = [];
+      cf.parties = [];
+
+      // 4. Load from zip -- triggers loadCaseFileFromZip and backfillWardPartyCounties()
+      await w.loadCaseFileFromZip(zip, manifest, null);
+
+      const reconstructedParty = w.wardPartyForFiling(cf.wards[0]);
+      const nextFiling = { inventoryType: 'planInitial' };
+      w.linkDestinationToSourceWardParty(cf.wards[0], nextFiling);
+
+      return {
+        hadPartiesInZip: partiesEntry !== null,
+        partyCount: cf.parties.length,
+        reconstructedName: reconstructedParty?.name,
+        reconstructedCounty: reconstructedParty?.county,
+        reconstructedRole: reconstructedParty?.roles,
+        nextFilingCounty: nextFiling.county,
+        nextFilingPartyId: (nextFiling as any).wardPartyId,
+        reconstructedPartyId: reconstructedParty?.id,
+      };
+    });
+
+    expect(result.hadPartiesInZip).toBe(false);
+    expect(result.partyCount).toBe(1);
+    expect(result.reconstructedName).toBe('Reconstructed Ward');
+    expect(result.reconstructedCounty).toBe('Orange');
+    expect(result.reconstructedRole).toContain('ward');
+    expect(result.nextFilingCounty).toBe('Orange');
+    expect(result.nextFilingPartyId).toBe(result.reconstructedPartyId);
+  });
+
+  test('single-ward .sav export with no county gets no reconstructed Party -- backfill never manufactures identity the export never carried', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(async () => {
+      const w = window as any;
+      const cf = w.caseFile;
+
+      // A ward with no county at all -- the ordinary shape of a legacy
+      // archive that never went through the Cover county combobox.
+      const wardId = 'ward-no-county-1';
+      const ward = {
+        wardId,
+        wardName: 'No County Ward',
+        inventoryType: 'annual',
+        county: '',
+      };
+      cf.wards = [ward];
+
+      // No Party is created for it at all -- this ward genuinely has none.
+      const blob = await w.buildSingleWardExportBlob(wardId);
+      const zip = await w.JSZip.loadAsync(blob);
+      const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
+
+      cf.wards = [];
+      cf.parties = [];
+
+      await w.loadCaseFileFromZip(zip, manifest, null);
+
+      return {
+        partyCount: cf.parties.length,
+        reconstructedParty: w.wardPartyForFiling(cf.wards[0]),
+      };
+    });
+
+    expect(result.partyCount).toBe(0);
+    expect(result.reconstructedParty).toBeFalsy();
+  });
+
+  test('legacy backfill in .sav import: unanimous linked counties persist, conflicting linked counties leave county blank', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+
+      // Unanimous ward party: two filings both with 'Orange'
+      const partyA = w.createParty('ward');
+      partyA.name = 'Unanimous Ward';
+      partyA.county = ''; // legacy archive with no party county
+      const wardA1 = { wardId: 'w-a1', wardPartyId: partyA.id, county: 'Orange' };
+      const wardA2 = { wardId: 'w-a2', wardPartyId: partyA.id, county: 'orange' };
+
+      // Conflicted ward party: filings with 'Orange' and 'Pasco'
+      const partyB = w.createParty('ward');
+      partyB.name = 'Conflicted Ward';
+      partyB.county = '';
+      const wardB1 = { wardId: 'w-b1', wardPartyId: partyB.id, county: 'Orange' };
+      const wardB2 = { wardId: 'w-b2', wardPartyId: partyB.id, county: 'Pasco' };
+
+      cf.wards = [wardA1, wardA2, wardB1, wardB2];
+
+      const conflictCheck = w.wardCountyMergeConflict(partyA.id, partyB.id);
+      // Before backfill, party counties are blank so wardCountyMergeConflict is null
+      const conflictBefore = conflictCheck;
+
+      const summary = w.backfillWardPartyCounties();
+
+      // After backfill, partyA has 'Orange' and partyB remains blank
+      const conflictAfter = w.wardCountyMergeConflict(partyA.id, partyB.id);
+
+      return {
+        summary,
+        partyACounty: partyA.county,
+        partyBCounty: partyB.county,
+        conflictBefore,
+        conflictAfter,
+      };
+    });
+
+    expect(result.summary.inferred).toBe(1);
+    expect(result.summary.conflicted).toBe(1);
+    expect(result.partyACounty).toBe('Orange');
+    expect(result.partyBCounty).toBeFalsy();
+    expect(result.conflictBefore).toBeNull();
+    expect(result.conflictAfter).toBeNull(); // partyB has blank county so no conflict with partyA
+  });
 });
