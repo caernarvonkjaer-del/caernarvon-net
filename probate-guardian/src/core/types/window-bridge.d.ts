@@ -276,6 +276,8 @@ interface Window {
   openCaseFileAtLaunch: any;
   opener: any;
   openFloridaCourtPortal: any;
+  openUserGuide: any;
+  openUserGuideForCurrentPage: any;
   openWardFileAtLaunch: any;
   pageActivityLog: any;
   pageInventorySelector: any;

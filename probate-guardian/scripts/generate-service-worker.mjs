@@ -48,8 +48,15 @@ for (const match of indexHtml.matchAll(/(?:src|href)="([^"]+)"/g)) {
 }
 
 const runtimeAsset = /\.(?:html|js|css|json|png|jpe?g|svg|webp|woff2?|ttf)$/i;
+// Milestone 48: the standalone user manual is a real build output (Vite
+// copies it so window.open() can reach it) but, at 11.6MB, precaching it
+// would more than double the offline install -- the same tradeoff 42H
+// already made against shipping lib/tesseract's 9.5MB unconditionally.
+// It opens fine on demand any time there's a connection; it just isn't
+// guaranteed available on a fresh offline install.
+const precacheExclusions = new Set(['Probate-Guardian-User-Manual.html']);
 const files = (await walk(outputDir))
-  .filter(file => file !== 'sw.js' && runtimeAsset.test(file) && !/\.LICENSE\.txt$/i.test(file))
+  .filter(file => file !== 'sw.js' && runtimeAsset.test(file) && !/\.LICENSE\.txt$/i.test(file) && !precacheExclusions.has(file))
   .sort();
 
 const entries = [];

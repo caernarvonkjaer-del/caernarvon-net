@@ -39,6 +39,12 @@ const STATIC_COPY_TARGETS = [
   // build:web runs scripts/generate-service-worker.mjs after Vite copies
   // this source template, injecting a manifest derived from dist/web.
   { src: 'sw.js', dest: '.' },
+  // Milestone 48: the standalone end-user manual, opened via window.open()
+  // from the "?" button and the Help panel's "View User Guide" button --
+  // a plain same-origin navigation, not something Vite's HTML pipeline or
+  // bundler ever sees a reference to, so without this it builds fine and
+  // 404s the moment either button is clicked.
+  { src: 'Probate-Guardian-User-Manual.html', dest: '.' },
   { src: 'src/legacy-app.js', dest: '.' },
   { src: 'src/prepaint.js', dest: 'src', rename: { stripBase: true, name: 'prepaint.js' } },
   // fragments/*.html: src/fragment-loader.js fetches these as plain static

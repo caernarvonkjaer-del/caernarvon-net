@@ -10,6 +10,7 @@ function handleShellClick(event) {
     case 'close-ward': window.collapseWardControls?.(); if (window.unloadWard) window.unloadWard(); break;
     case 'dashboard': window.navigate('/dashboard'); break;
     case 'delete-ward': window.collapseWardControls?.(); window.confirmDeleteWard(); break;
+    case 'export-help': window.openUserGuide(); break;
     case 'hide-auto-export-reminder': window.hideAutoExportReminder(); break;
     case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;
     case 'new-form': window.collapseWardControls?.(); window.navigate('/inventory-select'); break;
@@ -21,7 +22,14 @@ function handleShellClick(event) {
     case 'skip-walkthrough': window.skipWalkthrough(); break;
     case 'start-walkthrough': window.startWalkthrough(); break;
     case 'switch-ward': window.handleSwitchWardClick(); break;
-    case 'toggle-help': window.toggleHelpPanel(); break;
+    // Milestone 48: on the dashboard (no filing open), "?" still opens the
+    // Help panel -- guided tour, activity log, and shared records live only
+    // there and aren't needed mid-filing. Inside a filing, "?" skips the
+    // panel and jumps straight to the manual page for the current one.
+    case 'toggle-help':
+      if (window.caseFile?.activeWardId) window.openUserGuideForCurrentPage?.();
+      else window.toggleHelpPanel();
+      break;
     case 'toggle-mobile-sidebar': window.toggleMobileSidebar(); break;
     case 'toggle-save-controls': window.toggleSaveControls(); break;
     case 'toggle-theme': window.toggleTheme(); break;

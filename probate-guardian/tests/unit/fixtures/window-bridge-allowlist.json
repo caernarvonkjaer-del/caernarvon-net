@@ -1135,6 +1135,14 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "openUserGuide"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "openUserGuideForCurrentPage"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "openWardFileAtLaunch"
     },
     {
