@@ -2,9 +2,11 @@
 
 ## Status
 
-**Index of independently approvable sub-deliveries, all Draft.** Approving
-or landing one does not authorize another — each still requires its own
-explicit approval by name, per `AGENTS.md` §2, before implementation.
+**44A-44D landed 2026-09-13; full-milestone verification run and recorded
+2026-09-14 (see closing note below). 44E remains an open scope decision,
+not a defect — nothing here blocks on it.** Approving or landing one
+sub-delivery never authorized another — each required its own explicit
+approval by name, per `AGENTS.md` §2, before implementation.
 
 **Source:** a 2026-09-13 cross-milestone review (a "Milestones 39-43 sweep"
 run by Codex, at the user's direction) found that Milestones 36, 37, and 39
@@ -640,5 +642,69 @@ review technique (direct grep/read of every cited file:line above) rather
 than trusting this document's citations to still be accurate at
 implementation time — `master` will have moved, including via Codex's
 concurrent 38E work.
+
+### Closing note (2026-09-14)
+
+**38A/B/D status lines re-verified against shipped code, not just read.**
+All three now live in `MILESTONE-ARCHIVE.md` (36-40I were archived
+2026-09-14); their status text already reads as corrected (38A "Landed
+2026-09-11, together with 38B, 38C and 38D"; 38B "Landed 2026-09-13 under
+Milestone 44C" with the overstated `b0321dd` claim called out; 38D "Landed
+2026-09-13 under Milestone 44B") rather than the stale text this
+milestone was opened to fix. Spot-verified the underlying code directly,
+not just the prose:
+
+- **44A** — `issue-registry.js:13` still defines
+  `'simplified.guardian.address-conflict'` with `bypassable: false`;
+  `simplified-accounting/index.js:639` still calls `createIssue()` with
+  that code at the conflict site.
+- **44B** — `issue-registry.js` still carries all 10 `supplemental.*`
+  codes and the 5 `output.*` technical/security codes; `excel.capacity.*`
+  is resolved via `getIssueDefinition()`'s regex branch (`:35-36`,
+  `category: 'capacity'`, `bypassable: false`, `capabilities: ['excel']`),
+  not a literal registry entry — confirmed by reading the function rather
+  than grepping for a string that was never meant to exist there.
+  `src/core/excel/excel-capacity.js` exists and constructs exactly that
+  code shape. `authorizeFilingOutput` is wired into all 7 `print.js`
+  hosts. The doc's own "flagged, not fixed" gap — the three accounting
+  hosts' Print-page capacity display (`index.js`'s `capOver =
+  checkExcelCapacity(...)` feeding `pagePrint()`) still reads the legacy
+  untyped global instead of `getExcelCapacityIssues()` — is still
+  accurate; not silently closed by later work.
+- **44C** — `src/core/filing/readiness-config.js` and `readiness-card.js`
+  exist as described; `grep -c 'function planReadinessChecks\b'
+  src/legacy-app.js` returns 0, confirming the old panel is actually gone,
+  not just superseded.
+- **44D** — re-confirmed in the prior session turn against `git show
+  9e65cba`; no change since.
+
+**`npm test` full green** — 786/786 unit, 517/523 e2e (6 intentionally
+skipped, 0 failed). This is the number *after* fixing a real regression
+the first run of this closing pass found; see below.
+
+**The verification did catch a real "milestone landed without running the
+full suite" gap — just not in 44A-44D, in 38E.** The first `npm test` run
+during this closing pass (before any fix) had 2 failing e2e tests:
+`ward-lock.spec.ts` ("entering the dashboard releases the ward lock") and
+`backup-restore-sav.spec.ts` ("Open Backup replacing actively open ward").
+Root cause: Milestone 38E's own `setD()` change (`src/core/state.js`,
+`48b39b77`, 2026-09-11) unconditionally runs `normalizeWardData(d)`
+whenever `d` is truthy, and the "no active ward" sentinel `{}` is truthy —
+`normalizeWardData()`'s field-backfill logic then silently grows that
+sentinel to 16 blank-string keys every time `enterDashboardEditingFocus()`
+clears it, which is every `/dashboard` navigation. This is the same
+pattern 44B's own "Second follow-up" section above already documented
+once for 38E (three stale test expectations caught only because this
+session happened to run `npm test`, "that milestone's own landing didn't
+run `npm test` first") — a second, independent instance of it, this time
+a real product defect rather than a stale test. Fixed with a one-line
+guard in `normalizeWardData()`; pinned with a new direct regression test
+in `tests/e2e/legacy-ward-data-normalization.spec.ts` (confirmed failing
+before, passing after); both originally-failing tests confirmed passing
+after the fix. Landed as `e4b6d23`, outside 44A-44D since it is a defect
+in 38E's own code, not a gap in any of this milestone's four sub-deliveries.
+See `MILESTONE-42-PROPOSAL.md`'s closing note for the same finding, since
+this same `npm test` run served both milestones' closing verification at
+once.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>

@@ -2,12 +2,12 @@
 
 ## Status
 
-**Draft only — index of independently approvable sub-deliveries.** This
-document authorizes no runtime, test, or documentation change. Each
-sub-delivery (42A–42H) requires separate, explicit approval by name, per
-`AGENTS.md` §2 — approving one does not authorize the others. Multiple
-sub-deliveries may be approved and executed at once by different sessions;
-each names its own file set and can be verified independently.
+**All eight sub-deliveries landed; full-milestone verification run and
+recorded 2026-09-14.** See "Full-milestone verification, once all eight
+sub-deliveries have landed" below for the closing note. This document's
+original text (below) is left as the historical proposal; approvals per
+`AGENTS.md` §2 are recorded by the commits cited in the closing note, not
+by editing the original per-sub-delivery text in place.
 
 **Source:** `docs/app-review-2026-09-13.md`, a read-only, directly-measured
 review of `master` at `d764e1e`. This proposal converts that review's
@@ -1031,5 +1031,78 @@ this file, the same way `MILESTONE-40H-PROPOSAL.md` recorded its own
 implementation-time corrections in place — this milestone is exactly the
 kind of work where "we said we'd remove X" should be checked against "X is
 actually gone," not assumed.
+
+### Closing note (2026-09-14)
+
+**All eight sub-deliveries confirmed landed directly via `git log`, not
+assumed from status text:** 42A (`e805ab5`, `7b182c3`), 42B (`5b8da75`),
+42C (`b5ec9d3`), 42D (`c42f903`), 42E (`a5b5b52`, `bd122e6`), 42F
+(`5088c27`, `c168799`), 42G (`3890669`), 42H (`1fafa80`).
+
+**`npm test` full green** — 786/786 unit, 517/523 e2e passed with 6
+intentionally skipped, zero failures. This was not the first attempt: the
+first full run this session (before the fix below) found 2 real e2e
+failures, both traced to a single root cause and fixed — see "A regression
+found by this closing run, not by any sub-delivery's own verification"
+below.
+
+**Appendix commands re-run against current `master`, compared to the
+review's `d764e1e` baseline:**
+
+| Metric | Baseline (`d764e1e`) | Now | Sub-delivery |
+| --- | --- | --- | --- |
+| `validation-adapter.js` `.includes()` / `.startsWith()` | 380 / 57 | 7 / 1 | 42F |
+| Working-tree line endings, `w/mixed` | 14 | 0 | 42A |
+| `lib/tesseract` tracked in git | present (9.5 MB) | 0 files | 42H |
+| `templates/ui-starter` tracked in git | present | 0 files | 42H |
+| `dist/web` / `dist/portable` | ~27 MB / ~26 MB | 14 MB / 13 MB | 42H |
+| `filing-type-enumeration-guard.spec.js` | did not exist | 2/2 passing | 42G |
+| Shadowed legacy twins (`scripts/audit-window-bridge.mjs`) | not measured this way | 0 | 42E |
+| `jszip`/`pdf-lib`/`pdfjs-dist` in `package.json` | `dependencies` | `devDependencies` | 42A (A3) |
+
+**One number moved the wrong direction, and it is not a 42-scope
+shortfall:** direct `window.D` reads (`grep -rho '\bwindow\.D\b' src`) went
+from 305 to 424, not down. 42D's own scope (re-verified above, "Correction
+to the source review") was never about reducing `window.D`/`getD()` reads
+— it unifies the post-write side-effect *tail* across the three binding
+paths, leaving each path's read/write style untouched. The likely source
+is later work this milestone doesn't own: Milestone 41-3's page-by-page
+migration out of `legacy-app.js` is, as of this note, still landing new
+feature-module files that read `window.D` directly rather than through
+`getD()` — a real, separate drift worth its own finding if Milestone 41
+doesn't already plan to correct it, but not evidence against anything 42D
+claimed or delivered.
+
+**A regression found by this closing run, not by any sub-delivery's own
+verification:** the first `npm test` run here (2026-09-14, before any fix)
+was not green — `ward-lock.spec.ts`'s "entering the dashboard releases the
+ward lock" and `backup-restore-sav.spec.ts`'s "Open Backup replacing
+actively open ward" both failed. Neither failure's own assertion names a
+normalization bug (one asserts `Object.keys(window.D).length === 0` and
+got `16`; the other's `waitForFunction` waiting on the same condition
+timed out and surfaced as a 60s test-timeout inside its own cleanup,
+masking the real cause). Root cause, confirmed by direct read of
+`legacy-app.js`: `setD({})` (`src/core/state.js`, added by Milestone 38E's
+`48b39b77` on 2026-09-11) unconditionally runs `normalizeWardData(d)`
+whenever `d` is truthy — and `{}` is truthy. Every `/dashboard`
+navigation's `enterDashboardEditingFocus()` calls `setD({})` to mean "no
+active ward," but `normalizeWardData()`'s top-level `migrateBoolean()`
+calls (three named booleans plus the 13 `q7*` keys) backfill `''` onto any
+merely-*absent* field, so the "empty" sentinel silently grew 16
+blank-string keys the instant it was set. `legacy-app.js`'s own
+`lockApp()` sets `window.D={}` directly for the same purpose and was never
+affected, which is why this had gone unnoticed since 38E landed. Fixed
+with a one-line guard in `normalizeWardData()` (empty object returns
+unchanged); pinned with a new direct regression test in
+`tests/e2e/legacy-ward-data-normalization.spec.ts`, confirmed failing
+(16 keys) before the fix and passing after; both originally-failing tests
+confirmed passing after the fix; full suite re-run clean (786/786 unit,
+517/523 e2e, the figures recorded above). Landed as `e4b6d23`, separately
+from this milestone's own eight sub-delivery commits since it is a defect
+in 38E's code, found incidentally while closing 42, not a 42 deliverable
+itself. This is the same "milestone lands without a full-suite run, a
+later closing pass finds what it missed" pattern `MILESTONE-44-PROPOSAL.md`
+independently records for 38E elsewhere — see that document's own closing
+note.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
