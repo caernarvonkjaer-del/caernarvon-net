@@ -1200,4 +1200,16 @@ convention `MILESTONE-42-PROPOSAL.md` calls for and
 `MILESTONE-40H-PROPOSAL.md` established: check "we said we'd fix X"
 against "X is actually fixed," not assumed.
 
-Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+### Closing verification (2026-09-13)
+
+Ran the full `npm test` (unit + e2e) at `8659edf` (43F, the last of the
+eight sub-deliveries, just landed). Unit: 747/747. E2e: 486 passed, 2
+failed, 6 skipped (17.8 min). Both failures are already-known, pre-existing
+gaps unrelated to any 43-series work — `backup-restore-sav.spec.ts`'s "Open
+Backup replacing actively open ward..." and `ward-lock.spec.ts`'s
+"entering the dashboard releases the ward lock..." — both were confirmed
+via `git stash` to already fail on unmodified `master` while landing
+Milestone 41B (see `MILESTONE-41B-PROPOSAL.md`'s own "What landed" note);
+neither touches any file this milestone changed. No new failures surfaced
+by the full sweep beyond what targeted runs already caught during each
+sub-delivery.
