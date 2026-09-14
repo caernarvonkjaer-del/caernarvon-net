@@ -332,13 +332,63 @@ function textInput(bind,placeholder='',type=''){
 }
 
 
+// Milestone 41-3 (Guardian Inventory step): delegates to Tier 1, same
+// pattern as textInput() above -- zero call-site changes across 24 sites.
+//
+// `claimSharedWriteListener: false` is the one departure from textInput()'s
+// own call: this field's stored value is a Number (bindForms() below does
+// setPath(...,parseFloat(val)||0)), and the shared writeDraftValue() would
+// compare that Number against control.value, a String, with strict !== --
+// always true -- silently overwriting the correct Number with a String on
+// every keystroke. Omitting data-field-path keeps the field claimed by
+// bindForms() alone, exactly as it was before this delegated -- see that
+// option's own comment in form-fields.js for the full account. Dollar-vs-
+// percent wrapping still comes from `bind`'s own "...Percent" suffix (no
+// label exists here to read it from instead -- a separate reqLabel()/
+// optLabel() call renders the caller's own label), which renderFormField()
+// now also checks for exactly this caller.
 function numInput(bind){
+  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
+    return window.renderFormField({
+      path: bind,
+      label: '',
+      value: '',
+      kind: 'money',
+      policy: 'normalize',
+      wrapperClass: '',
+      binding: 'bind',
+      inputType: 'decimal',
+      claimSharedWriteListener: false,
+    });
+  }
   const isPercent=/Percent$/i.test(bind);
   const inputHtml=`<input type="text" inputmode="decimal" class="form-control" data-bind="${bind}" data-input-type="decimal">`;
   return isPercent?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`;
 }
+// Milestone 41-3 (Guardian Inventory step): delegates to Tier 1, same
+// pattern as textInput() above -- zero call-site changes across 13 sites.
+//
+// Unlike numInput() above, this keeps the default claimSharedWriteListener
+// (data-field-path present, as it already was on every dateInput() field
+// before this delegated): bindForms() itself explicitly defers to the
+// shared writeDraftValue()/finalizeFieldValue() for date-kind fields (see
+// its own dataset.fieldKind==='date' early return), so there is no
+// competing writer or type mismatch to guard against here -- the field was
+// already, safely, claimed by both attributes at once.
 function dateInput(bind){
   const inputId='date_'+Math.random().toString(36).slice(2,9);
+  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
+    return window.renderFormField({
+      path: bind,
+      label: '',
+      value: '',
+      kind: 'date',
+      policy: 'normalize',
+      id: inputId,
+      wrapperClass: 'date-field-wrap',
+      binding: 'bind',
+    });
+  }
   const hintId=`${inputId}_hint`;
   return `<div class="date-field-wrap">
     <input type="text" inputmode="text" class="form-control" id="${inputId}" placeholder="MM/DD/YYYY" data-bind="${bind}" data-field-path="${bind}" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="${hintId}">

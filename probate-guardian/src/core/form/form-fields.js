@@ -78,6 +78,25 @@ export function renderFormField({
   // initial value formatting and on-input formatting, so a delegated field
   // must carry it verbatim or all of its formatting silently changes.
   inputType: bindInputType = null,
+  // Milestone 41-3 (Guardian Inventory numeric fields): data-field-path is
+  // what makes form-events.js's document-level listener notice a field at
+  // all, independent of `binding` -- it is stamped unconditionally below.
+  // For most 'bind' kinds that's a harmless no-op second write (bindForms()
+  // and the shared writeDraftValue() both land on the same string), which is
+  // exactly what textInput()'s 85 sites already ship. It is NOT harmless for
+  // a money/decimal field: bindForms() stores a parsed Number
+  // (setPath(...,parseFloat(val)||0)), while writeDraftValue() would compare
+  // that Number against control.value, a String, with strict !== -- always
+  // true -- and overwrite the correct Number with a String on every
+  // keystroke. bindForms() only defers its own 'input' handling to the
+  // shared listener for date-kind fields (its own dataset.fieldKind==='date'
+  // check); every other kind, decimal included, writes directly and expects
+  // to be the field's only writer. Set this false to omit data-field-path so
+  // a 'bind' field of such a kind stays claimed by exactly one listener, as
+  // it was before delegating to this renderer. focusFieldByPath()'s own
+  // selector already tries data-bind as a fallback, so jump-to-field
+  // navigation is unaffected.
+  claimSharedWriteListener = true,
 } = {}) {
   const inputId = id || `inp_${(path || 'field').replace(/[^a-zA-Z0-9_]/g, '_')}_${Math.random().toString(36).slice(2, 7)}`;
   const fieldKind = kind || inferFieldKind(label, type);
@@ -143,7 +162,11 @@ export function renderFormField({
     ? window.sanitizeNonNegativeDecimal(formatted)
     : formatted;
 
-  const isPercentField = isAmountField && (label.includes('%') || label.toLowerCase().includes('percent'));
+  // Guardian Inventory's numInput() has no label of its own (a separate
+  // reqLabel()/optLabel() call renders it) -- it named a field's dollar-vs-
+  // percent wrapping from its bind path's own "...Percent" suffix instead.
+  // Checked here too so delegating it to this renderer doesn't lose that.
+  const isPercentField = isAmountField && (label.includes('%') || label.toLowerCase().includes('percent') || /Percent$/i.test(path));
   const isDollarField = isAmountField && !isPercentField;
 
   const inputType = isAmountField ? 'text' : (isDate ? 'text' : type);
@@ -167,7 +190,8 @@ export function renderFormField({
     : ` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`;
   const inputTypeAttr = bindInputType ? ` data-input-type="${esc(bindInputType)}"` : '';
 
-  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}" data-field-path="${esc(path)}"${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${ariaDesc}>`;
+  const fieldPathAttr = claimSharedWriteListener ? ` data-field-path="${esc(path)}"` : '';
+  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${ariaDesc}>`;
 
   let lockIcon = DEFAULT_LOCK_ICON;
   if (typeof window !== 'undefined' && typeof window.ic === 'function') {

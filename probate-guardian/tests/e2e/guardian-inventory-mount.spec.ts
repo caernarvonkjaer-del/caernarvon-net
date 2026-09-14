@@ -390,4 +390,68 @@ test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
       inputType: el.getAttribute('data-input-type'),
     }))).toEqual({ hasBind: true, hasFormPath: false, inputType: 'name' });
   });
+
+  // Milestone 41-3: numInput()'s 24 sites and dateInput()'s 13 now delegate
+  // to the same Tier 1 renderer as textInput() above, closing out
+  // data-bind's last hand-rolled markup. numInput() is the one genuinely
+  // different case: bindForms()'s own decimal branch stores a Number
+  // (setPath(...,parseFloat(val)||0)), so a second writer claiming the
+  // field is not the harmless no-op it is for textInput()'s string-typed
+  // kinds -- the shared writeDraftValue() would compare its own String
+  // control.value against that Number with strict !==, always true, and
+  // silently overwrite the correct Number with a String on every keystroke.
+  // This is why numInput() omits data-field-path (claimSharedWriteListener:
+  // false in form-fields.js) where textInput() and dateInput() both keep it.
+  test('a numInput field stores a Number, keeps its $/% wrapping, and is claimed by exactly one listener', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Numeric Delegation Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.locator('[data-inventory-action="add-entry"], button:has-text("Add")').first().click();
+
+    const amount = page.locator('[data-bind^="scheduleA1."][data-bind$=".fullAssetValue"]').first();
+    await amount.waitFor({ state: 'visible', timeout: 10000 });
+    await amount.fill('150000');
+    await amount.dispatchEvent('input');
+
+    const stored = await page.evaluate(() => (window as any).D.scheduleA1?.[0]?.fullAssetValue);
+    expect(stored).toBe(150000);
+    expect(typeof stored).toBe('number');
+
+    const attrs = await amount.evaluate((el) => ({
+      hasBind: el.hasAttribute('data-bind'),
+      hasFormPath: el.hasAttribute('data-form-path'),
+      hasFieldPath: el.hasAttribute('data-field-path'),
+      inputType: el.getAttribute('data-input-type'),
+      dollarSign: el.closest('.input-group')?.querySelector('.input-group-text')?.textContent,
+    }));
+    expect(attrs).toEqual({ hasBind: true, hasFormPath: false, hasFieldPath: false, inputType: 'decimal', dollarSign: '$' });
+
+    // wardPercent has no label of its own (a separate reqLabel() call renders
+    // it), so its '%' wrapping comes entirely from its bind path's own
+    // "...Percent" suffix, not from renderFormField()'s usual label-text check.
+    const pct = page.locator('[data-bind^="scheduleA1."][data-bind$=".wardPercent"]').first();
+    const pctSign = await pct.evaluate((el) => el.closest('.input-group')?.querySelector('.input-group-text')?.textContent);
+    expect(pctSign).toBe('%');
+  });
+
+  // dateInput()'s fields, unlike numInput()'s, keep data-field-path: unlike
+  // decimal, bindForms() already defers date-kind fields entirely to the
+  // shared writeDraftValue()/finalizeFieldValue() (its own
+  // dataset.fieldKind==='date' early return on 'input'), so there is no
+  // competing writer or type mismatch to guard against for dates.
+  test('a dateInput field keeps data-field-path and its MM/DD/YYYY hint', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Delegation Ward', 'guardian');
+
+    const gid = page.locator('[data-bind="gid"]');
+    await gid.waitFor({ state: 'visible', timeout: 10000 });
+    const attrs = await gid.evaluate((el) => ({
+      hasBind: el.hasAttribute('data-bind'),
+      hasFieldPath: el.hasAttribute('data-field-path'),
+      fieldKind: el.getAttribute('data-field-kind'),
+      inWrap: el.closest('.date-field-wrap') !== null,
+    }));
+    expect(attrs).toEqual({ hasBind: true, hasFieldPath: true, fieldKind: 'date', inWrap: true });
+    await expect(page.locator('.date-field-wrap').filter({ has: gid }).locator('.form-text')).toHaveText('Use MM/DD/YYYY');
+  });
 });
