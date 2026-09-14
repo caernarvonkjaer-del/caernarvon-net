@@ -4,6 +4,28 @@ import { isTriStateAnswer } from '../../core/form/form-contract.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+// Milestone 41-3: Tier 2/1 adoption for Plan Minor. renderReportingPeriodFields()
+// already supports overridable from/to labels (built for exactly this kind
+// of divergence during 41-2) and fits this page's period fields unchanged.
+// Plan Minor has no caseNumber at all -- it uses ucn+ref instead, in a
+// page order (wardName, county, ucn, ref) that doesn't match
+// case-caption-card.js's/ward-demographics-card.js's fixed field order, so
+// those two fields are NOT wrapped in a card here; they were already on
+// Tier 1 via inpS()'s Milestone 41-1 delegation regardless. The
+// Signatures page's guardian block is a different story -- see the import
+// below.
+import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+// renderPartyContactFields() (Plan Simplified's shape: phone+email+one
+// mailingAddress field, in that order) does not generalize to this page's
+// guardian block: relationship+tin+phone+[date/signature-control]+split
+// mailingStreet/mailingCityStateZip+email, a different field set in a
+// different order. Only renderPartyNameField() (always-first, same
+// required-for-guardian-0 semantics) is reused; the rest convert to
+// renderFormField() directly -- genuine Tier 1 adoption without forcing a
+// card shape that would need to be configured into meaninglessness to fit
+// both types.
+import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
+import { renderFormField } from '../../core/form/form-fields.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -168,8 +190,7 @@ function pagePlanMCover(){
             <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
             <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
             <div class="col-12">${inpS('ref','Case #',d.ref)}</div>
-            <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,true,'date')}</div>
-            <div class="col-md-6">${inpS('periodTo','To',d.periodTo,true,'date')}</div>
+            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'To' })}
             <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,false,'/')}</div>
             <div class="col-md-6 mt-2">${d.amendedForm==='Yes'?radioP('amendedVersion','Version',d.amendedVersion,['1st','2nd','3rd']):''}</div>
           </div>
@@ -326,15 +347,15 @@ function pagePlanMSignatures(){
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${title}</span><span class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${i?`<button type="button" class="btn btn-outline-danger btn-sm" data-form-action="remove-plan-guardian" data-index="${i}" data-route="/p6">Remove</button>`:''}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
-          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship" data-field-path="planGuardians.${i}.relationship"></div>
-          <div class="col-md-6"><label class="form-label">Taxpayer ID #</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.tin||'')}" data-form-path="planGuardians.${i}.tin" data-field-path="planGuardians.${i}.tin" data-field-kind="ssn" data-field-format-policy="preserve" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show Taxpayer ID" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-          <div class="col-md-6"><label class="form-label">Telephone #</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-field-kind="phone" data-form-format="phone"></div>
+          ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: gd.name, required: i===0, label: 'Name' })}
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: gd.relationship })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.tin`, label: 'Taxpayer ID #', value: gd.tin })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Telephone #', value: gd.phone })}</div>
           <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(gd.signatureState, gd.signatureDate), route: '/p6', signatureImage: gd.signatureImage })}</div>
-          <div class="col-12"><label class="form-label">Mailing Address</label><input type="text" class="form-control" value="${esc(gd.mailingStreet||'')}" data-form-path="planGuardians.${i}.mailingStreet" data-field-path="planGuardians.${i}.mailingStreet"></div>
-          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip" data-field-path="planGuardians.${i}.mailingCityStateZip"></div>
-          <div class="col-12"><label class="form-label">Email Address</label><input type="email" class="form-control" value="${esc(gd.email||'')}" data-form-path="planGuardians.${i}.email" data-field-path="planGuardians.${i}.email"></div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Address', value: gd.mailingStreet })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingCityStateZip`, label: 'City/State/Zip', value: gd.mailingCityStateZip })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: gd.email })}</div>
         </div>
       </div>
     </div></div>`;

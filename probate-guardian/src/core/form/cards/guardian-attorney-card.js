@@ -24,8 +24,8 @@
 // since extractFormContentSnapshot() captures control values in DOM order.
 import { renderFormField } from '../form-fields.js';
 
-export function renderPartyNameField({ pathPrefix, name = '', required = false } = {}) {
-  return `<div class="col-12">${renderFormField({ path: `${pathPrefix}.name`, label: 'Printed Name', value: name, required })}</div>`;
+export function renderPartyNameField({ pathPrefix, name = '', required = false, label = 'Printed Name' } = {}) {
+  return `<div class="col-12">${renderFormField({ path: `${pathPrefix}.name`, label, value: name, required })}</div>`;
 }
 
 export function renderPartyContactFields({ pathPrefix, phone = '', email = '', mailingAddress = '' } = {}) {

@@ -9,8 +9,11 @@ built and wired into Plan Simplified; see "What landed so far: Cover page
 cards" and "What landed next: Signatures page card — 41-2 complete." The
 milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
-against; see that section's closing note. **41-3 remains Draft**, not yet
-approved.
+against; see that section's closing note. **41-3 is in progress**: Plan
+Minor (1 of 6) is landed — see its own "What landed" section under §2's
+"41-3: Tier 3 rollout" plan. Remaining: Plan Initial, Plan Annual,
+Simplified Accounting, Annual Accounting (covers Final/Trust), Guardian
+Inventory.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -532,6 +535,59 @@ Each type is its own commit and its own checkpoint — do not batch two
 filing types into one commit, per this repository's established discipline
 for exactly this shape of rollout (Milestone 39-C's per-role rollout,
 Milestone 42F's per-type validator conversion).
+
+### What landed (2026-09-13): Plan Minor
+
+**Confirmed, and now actually resolved, the divergence flagged as a known
+open decision when 41-2 landed**: Plan Minor has no `caseNumber` field at
+all (it uses `ucn` + `ref`), in a Cover-page field order (Ward Name,
+County, UCN, Case #) that doesn't match `case-caption-card.js`'s or
+`ward-demographics-card.js`'s fixed field sequence. Rather than force a
+mismatch, those fields were left exactly as they already were — genuinely
+already on Tier 1 via `inpS()`'s Milestone 41-1 delegation, just not
+wrapped in a Tier 2 card, since no card shape fits. Only
+`renderReportingPeriodFields()` was reused on this page (with this type's
+own "For the Period From"/"To" labels, exactly the kind of divergence that
+export's overridable labels were built for during 41-2).
+
+**A second, sharper version of the same finding on the Signatures page:**
+the milestone's "Guardian & Attorney Details" card, already scoped down
+once in 41-2, doesn't extend to Plan Minor's guardian block either.
+`renderPartyContactFields()` (Plan Simplified's shape: phone, email, one
+`mailingAddress` field, in that order) doesn't fit Plan Minor's real shape
+at all: relationship, taxpayer ID, phone, then (after the signature-date
+field and signature-state control) split `mailingStreet` +
+`mailingCityStateZip`, then email — a different field set in a different
+order. Reused only `renderPartyNameField()` (added a `label` override —
+Plan Minor's own field says plain "Name", not "Printed Name" — confirmed
+by direct diff, not assumed); every other guardian field converts straight
+to `renderFormField()` calls in the page's own composition. This is still
+genuine, valuable Tier 1 adoption of a real gap: like Plan Simplified's
+Guardian block, these fields were entirely hand-rolled raw markup with no
+`id`/`for` label association, never routed through any shared renderer.
+
+**Two real, deliberate content changes were found and accepted, not
+suppressed** — confirmed via the same `git stash` before/after technique,
+each isolated to a single field: (1) the guardian name field now carries
+`data-field-required` for the first guardian, which it always lacked
+despite `validatePlanMinor()` genuinely requiring it — the same category of
+fix as 41-1's `radioP()` fieldset addition; (2) the guardian's own phone
+field is now formatted consistently with every other phone field on this
+same page (`renderFormField()`'s automatic label-based formatting applies
+now that it's routed through Tier 1 — this field was the one hand-rolled
+exception that had never gone through any formatter). Both are additive,
+low-risk, and disclosed here rather than silently absorbed into the
+snapshot baseline.
+
+**Verification:** `plan-minor-mount.spec.ts` (7 tests, two new permanent
+snapshot pins for Cover and Signatures), `page-structure.spec.ts`,
+`form-field-labels.spec.ts`, `signature-capture.contract.spec.ts`'s Plan
+Minor section, and Plan Minor's `date-validation.contract.spec.ts` cases
+all green. Each new snapshot confirmed as a real regression guard via a
+temporary field-level change, caught, then restored.
+`tests/unit/form-cards.spec.js` extended with 1 more case (14 total) for
+`renderPartyNameField()`'s label override. Full unit suite: 774/774 (was
+773; +1 new — the Cover/Signatures pins are e2e, not unit).
 
 ### What this milestone deliberately does not require
 

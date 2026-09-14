@@ -97,6 +97,14 @@ describe('renderPartyNameField', () => {
     const html = renderPartyNameField({ pathPrefix: 'planGuardians.1', name: '', required: false });
     expect(html).not.toContain('data-field-required="true"');
   });
+
+  it('defaults to "Printed Name" but accepts a label override (Milestone 41-3: Plan Minor uses plain "Name")', () => {
+    const defaultLabel = renderPartyNameField({ pathPrefix: 'planGuardians.0', name: '' });
+    expect(defaultLabel).toContain('Printed Name');
+    const overridden = renderPartyNameField({ pathPrefix: 'planGuardians.0', name: '', label: 'Name' });
+    expect(overridden).not.toContain('Printed Name');
+    expect(overridden).toContain('>Name<');
+  });
 });
 
 describe('renderPartyContactFields', () => {
