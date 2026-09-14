@@ -120,6 +120,78 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
     expect(headings.blank).toContain('set the accounting period on the Cover page');
   });
 
+  // Milestone 43F, Decision 3: every test above drives getScheduleDocSlot()/
+  // renderScheduleDocsSection()/scheduleDocPeriodKey() directly through
+  // page.evaluate() -- none of them touch the real rendered DOM. The
+  // render function itself has no collapse/accordion behavior at all
+  // (confirmed by reading it directly: it's a plain always-visible
+  // `<div class="schedule-docs-section no-print">`, matching this file's
+  // own header comment that "nothing collapses"), so there is no real
+  // collapse behavior to assert against. What real UI interaction *can*
+  // check, and nothing did: does the heading actually update on screen
+  // after a real period edit through the Cover page's own inputs, and does
+  // typing in the real Comments textarea ever lose focus (the historical
+  // "lost focus" complaint) -- which would happen if any code path
+  // re-rendered the page on every keystroke.
+  test('the Supporting Documents heading updates through real period navigation, and the Comments box never loses focus while typing', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Real UI Period Ward', 'annual');
+
+    // Blank period, before anything is filled in: real navigation, real locator.
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await expect(page.locator('.schedule-docs-section h2').first()).toContainText(
+      'set the accounting period on the Cover page',
+    );
+
+    // Set the period through the actual Cover page inputs, not window.D.
+    await page.evaluate(() => (window as any).navigate('/'));
+    await page.fill('input[data-field-path="periodFrom"]', '01/15/2025');
+    await page.locator('input[data-field-path="periodTo"]').click();
+    await page.fill('input[data-field-path="periodTo"]', '12/31/2025');
+    await page.locator('input[data-field-path="periodFrom"]').click();
+
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await expect(page.locator('.schedule-docs-section h2').first()).toContainText(
+      'accounting period 01/15/2025 to 12/31/2025',
+    );
+
+    // Type into the real Comments textarea -- must never lose focus mid-type,
+    // since updateScheduleComment() (legacy-app.js) does not call renderPage().
+    const comment = page.locator('textarea[data-schedule-key="schA"]');
+    await comment.click();
+    await comment.pressSequentially('Bank statements are attached for the full year.');
+    await expect(comment).toBeFocused();
+    await expect(comment).toHaveValue('Bank statements are attached for the full year.');
+
+    // Navigating away and back must not lose the comment.
+    await page.evaluate(() => (window as any).navigate('/schb1'));
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await expect(page.locator('textarea[data-schedule-key="schA"]')).toHaveValue(
+      'Bank statements are attached for the full year.',
+    );
+
+    // Changing the period again (still through real UI) presents a real,
+    // empty textarea for the new period -- and the first period's comment
+    // is still there when we navigate back to it.
+    await page.evaluate(() => (window as any).navigate('/'));
+    await page.fill('input[data-field-path="periodFrom"]', '01/01/2026');
+    await page.locator('input[data-field-path="periodTo"]').click();
+    await page.fill('input[data-field-path="periodTo"]', '06/30/2026');
+    await page.locator('input[data-field-path="periodFrom"]').click();
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await expect(page.locator('textarea[data-schedule-key="schA"]')).toHaveValue('');
+
+    await page.evaluate(() => (window as any).navigate('/'));
+    await page.fill('input[data-field-path="periodFrom"]', '01/15/2025');
+    await page.locator('input[data-field-path="periodTo"]').click();
+    await page.fill('input[data-field-path="periodTo"]', '12/31/2025');
+    await page.locator('input[data-field-path="periodFrom"]').click();
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await expect(page.locator('textarea[data-schedule-key="schA"]')).toHaveValue(
+      'Bank statements are attached for the full year.',
+    );
+  });
+
   test('a Guardian Inventory keys by filing year, not by accounting period', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian Rekey Ward', 'guardian');

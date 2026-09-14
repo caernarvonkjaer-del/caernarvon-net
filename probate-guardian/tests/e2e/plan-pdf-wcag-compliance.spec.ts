@@ -18,8 +18,28 @@ import { extractPdfText } from './support/pdf-extract';
 // pattern pdf-preview-viewer.spec.ts already established for these same
 // four types. Each type's own model data (genuinely distinct field names
 // per filing type) and its own list of expected extracted-text substrings
-// are the only real per-type variation; `checkMarkInfo` and `minPages`
-// capture the two assertions that weren't uniform across all four either.
+// are the only real per-type variation; `minPages` captures the one
+// assertion that wasn't uniform across all four.
+//
+// Milestone 43F, Decision 1: the proposal's own recommended default (add
+// real axe-core WCAG scans, using pdf-form-specific.spec.ts:538 as the
+// template) does not survive direct inspection -- that test is titled
+// "axesCheck" but never calls axe-core, and no axe-core dependency or call
+// exists anywhere in this repo (confirmed via a repo-wide grep). axe-core
+// is also architecturally the wrong tool here regardless: it scans a live
+// browser DOM for accessibility issues, and this whole file (like the rest
+// of the PDF-accessibility cluster) never renders anything to a DOM --
+// jsPDF hands back raw PDF bytes, which axe-core has no way to inspect.
+// What this cluster actually tests, everywhere, is PDF/UA-1 *tag*
+// structure via direct regex assertions against the generated PDF bytes
+// (StructTreeRoot, MarkInfo, /ColSpan, heading order, embedded fonts). This
+// file only checked MarkInfo for one of the four Plan types (Plan Initial)
+// -- an asymmetry inherited unchanged through 43E's own table-driven
+// rewrite. Closing the actual coverage gap means applying that same
+// structural-regex methodology uniformly: MarkInfo is now asserted for all
+// four types, and a heading-order-has-no-skipped-level check (the same
+// computation pdf-form-specific.spec.ts's Milestone 20 test already uses)
+// is added for all four too.
 
 type WcagConfig = {
   name: string;
@@ -27,7 +47,6 @@ type WcagConfig = {
   buildFnName: string;
   model: Record<string, unknown>;
   minPages: number;
-  checkMarkInfo?: boolean;
   expectedText: string[];
 };
 
@@ -37,7 +56,6 @@ const CONFIGS: WcagConfig[] = [
     loaderGlobal: 'loadPlanInitialPdf',
     buildFnName: 'buildPlanInitialModel',
     minPages: 1,
-    checkMarkInfo: true,
     model: {
       wardName: 'Initial Plan Ward',
       caseNumber: '26-003100-GD',
@@ -207,11 +225,13 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
         const mod = await (window as any)[loaderGlobal]();
         const doc = await mod.generateCourtFormPdf(mod[buildFnName](model));
         const rawPdfString = doc.output();
+        const headingLevels = [...rawPdfString.matchAll(/\/S \/(H[1-6])/g)].map((m) => parseInt(m[1].slice(1), 10));
         return {
           numPages: doc.internal.getNumberOfPages(),
           hasStructTreeRoot: /\/StructTreeRoot/.test(rawPdfString),
           hasMarkInfo: /\/MarkInfo\s*<<\s*\/Marked\s*true/.test(rawPdfString),
           hasNoRasterImage: !/\/Subtype\s*\/Image/.test(rawPdfString) && !/\/Filter\s*\/DCTDecode/.test(rawPdfString),
+          headingLevels,
           rawPdfString,
         };
       }, { loaderGlobal: config.loaderGlobal, buildFnName: config.buildFnName, model: config.model });
@@ -219,10 +239,17 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
       const extractedText = await extractPdfText(result.rawPdfString);
 
       expect(result.hasStructTreeRoot).toBe(true);
-      if (config.checkMarkInfo) expect(result.hasMarkInfo).toBe(true);
+      expect(result.hasMarkInfo).toBe(true);
       expect(result.hasNoRasterImage).toBe(true);
       expect(result.numPages).toBeGreaterThan(config.minPages);
       for (const text of config.expectedText) expect(extractedText).toContain(text);
+
+      // Milestone 43F: PDF/UA-1 heading order must never skip a level.
+      let prevLevel = 0;
+      for (const level of result.headingLevels) {
+        if (prevLevel > 0) expect(level).toBeLessThanOrEqual(prevLevel + 1);
+        prevLevel = level;
+      }
     });
   }
 });

@@ -95,6 +95,45 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     expect(newWard.schD4[0].restricted).toBe('Yes');
   });
 
+  // Milestone 43F, Decision 4: tests/unit/convert-targets.spec.js (Milestone
+  // 42E/42G) already pins convertTargetsFor()'s own per-source eligibility
+  // exhaustively at the data level -- including that Plan Minor is never
+  // offered as a target for any source, and is offered no targets of its
+  // own -- but nothing had ever driven the real modal <select> to confirm
+  // it actually renders that filtered list, rather than (for example) some
+  // other, unfiltered set of <option>s the modal builds independently.
+  test('the modal\'s target <select> renders exactly convertTargetsFor()\'s eligible list, for a normal source and for Plan Minor\'s fully-ineligible case', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian Source Ward', 'guardian');
+
+    await page.evaluate(() => (window as any).showConvertWardModal());
+    await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
+
+    const guardianTargets = await page.evaluate(() => (window as any).convertTargetsFor('guardian'));
+    expect(guardianTargets.length).toBeGreaterThan(0);
+    expect(guardianTargets).not.toContain('planMinor');
+    let renderedValues = await page.locator('#convert-target-type option').evaluateAll(
+      (opts) => opts.map((o) => (o as HTMLOptionElement).value),
+    );
+    expect(renderedValues).toEqual(guardianTargets);
+
+    // Plan Minor as a source is the fully-ineligible case: convertTargetsFor
+    // returns an empty array, and the modal must show zero <option>s plus
+    // the "can't be converted" note rather than leaving stale options from
+    // the previous source selection on screen.
+    await createWard(page, 'Minor Source Ward', 'planMinor');
+    await page.evaluate(() => (window as any).showConvertWardModal());
+    await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
+
+    const minorTargets = await page.evaluate(() => (window as any).convertTargetsFor('planMinor'));
+    expect(minorTargets).toEqual([]);
+    renderedValues = await page.locator('#convert-target-type option').evaluateAll(
+      (opts) => opts.map((o) => (o as HTMLOptionElement).value),
+    );
+    expect(renderedValues).toEqual([]);
+    await expect(page.locator('#convert-note')).toContainText("can't be converted");
+  });
+
   test('confirmation message for an Annual -> Trust conversion describes what actually carried', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Trust Source Ward', 'annual');

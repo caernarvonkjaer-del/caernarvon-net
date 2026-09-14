@@ -3,6 +3,87 @@ import { freshStartNoPassword } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
 
 test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continuation', () => {
+  // Milestone 43F, Decision 2: this whole file exercised only
+  // buildVerifiedInventoryModel (Guardian Inventory) -- a regression in
+  // Annual/Trust/Final's own table rendering (they share the same
+  // type:'table' section shape and the same pdf-engine.js renderer, but are
+  // built by an entirely separate buildAnnualAccountingModel()) would ship
+  // undetected. Scoped to Annual Accounting only, per the proposal's own
+  // recommendation, rather than all nine filing types.
+  test('Milestone 43F: Annual Accounting Schedule D-1 regularity with /ColSpan, /Summary, and multi-page table continuation', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const inspection = await page.evaluate(async () => {
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+
+      const schD1 = [];
+      for (let i = 1; i <= 25; i++) {
+        schD1.push({
+          description: `Cash Account #${i}`,
+          accountNo: `***${1000 + i}`,
+          restricted: 'No',
+          type: 'Checking',
+          fullAmount: 10000 + i * 500,
+          wardPct: 100,
+        });
+      }
+
+      const d = {
+        wardName: 'Annual Table Semantics Ward',
+        caseNumber: '26-004400-GD',
+        county: 'Pinellas',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+        guardian: 'Priya Chandra',
+        attorney: 'Owen Blake, Esq.',
+        schA: [],
+        schB1: [], schB2: [], schB3: [], schB4: [],
+        schC: [],
+        schD1,
+        schD2: [], schD3: [], schD4: [], schD5: [],
+        schE: [], schF1: [], schF2: [],
+        trusts: [{ hasTrust: 'No' }],
+      };
+
+      const model = buildAnnualAccountingModel(d);
+      const doc = await generateCourtFormPdf(model);
+      const rawPdfString = doc.output();
+      const numPages = doc.internal.getNumberOfPages();
+
+      const tableMatches = [...rawPdfString.matchAll(/\/Type \/StructElem[\s\S]*?\/S \/Table[\s\S]*?>>/g)].map((m) => m[0]);
+      const tableAttrSummaryMatches = [...rawPdfString.matchAll(/\/A\s*<<[\s\S]*?\/O\s*\/Table[\s\S]*?\/Summary\s*\(([^)]+)\)[\s\S]*?>>/g)].map((m) => m[1]);
+      const straySummaryMatches = tableMatches.filter((tbl) => !tbl.includes('/A <<') && tbl.includes('/Summary'));
+      const colSpanMatches = [...rawPdfString.matchAll(/\/ColSpan\s+(\d+)/g)].map((m) => parseInt(m[1], 10));
+      const columnScopeMatches = [...rawPdfString.matchAll(/\/Scope \/Column/g)].map((m) => m[0]);
+
+      return {
+        numPages,
+        tableCount: tableMatches.length,
+        tableAttrSummaryMatches,
+        straySummaryCount: straySummaryMatches.length,
+        colSpanMatches,
+        columnScopeCount: columnScopeMatches.length,
+        rawPdfString,
+      };
+    });
+
+    // 25 rows in a single schedule table forces multi-page continuation.
+    expect(inspection.numPages).toBeGreaterThanOrEqual(2);
+    expect(inspection.tableCount).toBeGreaterThan(0);
+    expect(inspection.tableAttrSummaryMatches.length).toBe(inspection.tableCount);
+    expect(inspection.straySummaryCount).toBe(0);
+    for (const sumText of inspection.tableAttrSummaryMatches) {
+      expect(sumText.length).toBeGreaterThan(3);
+    }
+    expect(inspection.columnScopeCount).toBeGreaterThan(0);
+    expect(inspection.colSpanMatches.length).toBeGreaterThan(0);
+    expect(inspection.rawPdfString).not.toContain('/ColSpan /');
+
+    const extractedText = await extractPdfText(inspection.rawPdfString);
+    expect(extractedText).toContain('Cash Account #1');
+    expect(extractedText).toContain('Cash Account #25');
+  });
+
   test('Slice 19B: Table semantics, regularity with /ColSpan, /Summary, and multi-page table continuation', async ({ page }) => {
     await freshStartNoPassword(page);
 
@@ -111,10 +192,16 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
     expect(rowScopeCount).toBeGreaterThan(5);
 
     // Regularity & ColSpan:
-    // /ColSpan must be emitted as a numeric integer (e.g. /ColSpan 3 or /ColSpan 5), NOT /ColSpan /3
+    // /ColSpan must be emitted as a numeric integer (e.g. /ColSpan 3 or /ColSpan 7), NOT /ColSpan /3
     expect(colSpanMatches.length).toBeGreaterThan(0);
     expect(colSpanMatches).toContain(3); // from odd key-value grid (1 + 3 = 4 cols)
-    expect(colSpanMatches).toContain(5); // from Schedule A-1 totals (5 + 1 = 6 cols)
+    // Milestone 43F: Schedule A-1 now has 8 columns (Personal Residence?/
+    // Income Property? tri-state columns were added after this assertion
+    // was written), so its single-value totals row spans headers.length -
+    // 1 = 7, not the 5 this test asserted for years -- confirmed a stale
+    // assertion, not a regression, by reading pdf-model.js's own current
+    // 8-entry header array and pdf-engine.js's labelColSpan computation.
+    expect(colSpanMatches).toContain(7); // from Schedule A-1 totals (7 + 1 = 8 cols)
     expect(rawPdfString).not.toContain('/ColSpan /');
 
     // Verify Section Titles include Part VI
