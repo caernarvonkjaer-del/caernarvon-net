@@ -154,4 +154,32 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
       q7: ['No', '', 'Yes', 'No', ''],
     });
   });
+
+  // Found during Milestone 42/44's closing-verification full-suite run
+  // (2026-09-14), which caught two real e2e failures (ward-lock.spec.ts and
+  // backup-restore-sav.spec.ts) neither one directly names as a
+  // normalizeWardData() bug -- both just assert window.D is empty after
+  // leaving a ward and get a non-empty object back. Root cause: Milestone
+  // 38E's setD() (src/core/state.js) unconditionally runs
+  // normalizeWardData(d) whenever d is truthy, and an empty object is
+  // truthy. core/navigation/ward-lifecycle.js's enterDashboardEditingFocus()
+  // -- which every '/dashboard' navigation runs, per router.js -- calls
+  // setD({}) to mean "no active ward," but migrateBoolean()'s top-level
+  // calls (hasSafeDepositBox, safeDepositBoxFiled, amendedForm, and the 13
+  // q7* keys) each backfill '' onto a field that is merely absent, so the
+  // "empty" sentinel silently grows 16 blank-string keys the instant it's
+  // set. legacy-app.js's own lockApp() sets window.D={} directly for the
+  // same purpose and was never affected, which is why this went unnoticed.
+  test('normalizeWardData() leaves a genuinely empty object empty (the "no active ward" sentinel)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Sentinel Check Ward', 'guardian');
+
+    const keyCount = await page.evaluate(() => {
+      const empty = {};
+      (window as any).normalizeWardData(empty);
+      return Object.keys(empty).length;
+    });
+
+    expect(keyCount).toBe(0);
+  });
 });

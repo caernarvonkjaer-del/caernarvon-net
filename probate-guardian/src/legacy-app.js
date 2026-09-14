@@ -6325,7 +6325,7 @@ function isRestrictedAnswer(entry){
 }
 
 function normalizeWardData(d){
-  if(!d||typeof d!=='object')return d;
+  if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;
   const migrateBoolean=(obj,field,legacyField=null)=>{
     if(!obj||typeof obj!=='object')return;
     const current=obj[field];
