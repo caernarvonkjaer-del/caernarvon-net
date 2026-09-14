@@ -122,6 +122,18 @@ test.describe('routes', () => {
     await expect(resources.locator('a[href="https://www.pcpao.gov/"]')).toBeVisible();
   });
 
+  test('sidebar footer shows the current-year copyright notice, present regardless of dashboard vs. filing view', async ({ page }) => {
+    await freshStartNoPassword(page);
+    const copyright = page.locator('#sidebar-copyright');
+    await expect(copyright).toHaveText(
+      `© Copyright ${new Date().getFullYear()} Pinellas County Clerk of the Circuit Court and Comptroller`
+    );
+
+    await page.evaluate(() => (window as any).addWard('Copyright Notice Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+    await expect(copyright).toBeVisible();
+  });
+
   test('dashboard controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));

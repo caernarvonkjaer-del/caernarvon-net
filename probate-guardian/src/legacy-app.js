@@ -7700,7 +7700,16 @@ async function autoLoadTemplates(){
   }
 }
 
+// Sidebar copyright line -- year computed from the visitor's own clock so it
+// keeps incrementing on every Jan 1 with no code change required.
+function renderCopyrightNotice(){
+  const el=document.getElementById('sidebar-copyright');
+  if(!el)return;
+  el.textContent=`© Copyright ${new Date().getFullYear()} Pinellas County Clerk of the Circuit Court and Comptroller`;
+}
+
 async function initApp(){
+  renderCopyrightNotice();
   // Resolve recovery or file selection before the unlock flow.
   // Offer any unsaved recovery snapshot before the normal Open/Start choice.
   const restoredFromSessionCache=await checkSessionRestoreCacheAtLaunch();
