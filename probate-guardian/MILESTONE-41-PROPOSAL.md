@@ -12,11 +12,13 @@ deliberately not built — Plan Simplified has no such fields to verify it
 against; see that section's closing note. **41-3 is in progress**: Plan
 Minor, Plan Initial, Plan Annual, Simplified Accounting, and Annual
 Accounting are landed (the last covering Final and Trust too, so eight of the
-nine filing types), and **Guardian Inventory is blocked by design** — its
-fields bind via `data-bind` with no inline value, so migrating them means the
-`data-bind` retirement this document explicitly scopes out. See each step's
-own "What landed" section under §2's "41-3: Tier 3 rollout" plan, and
-"41-3 outcome" for the measured card-generalization table.
+nine filing types), and **Guardian Inventory is deferred** — a "blocked by
+design" claim recorded here on 2026-09-13 was **retracted on 2026-09-14**
+after its central argument didn't survive checking (the two binding
+conventions already coexist in that file today). The genuine obstacle is
+narrower and is recorded in that step's own section. See each step's "What
+landed" section under §2's "41-3: Tier 3 rollout" plan, and "41-3 outcome"
+for the measured card-generalization table.
 
 **Milestone 41 is complete** as scoped: 41-1, 41-2, and 41-3 (5 of 6
 migrated, 1 recorded as blocked) have all landed. All four of the
@@ -782,14 +784,61 @@ tests in that file, all green). Also green: `date-validation.contract.spec.ts`
 (32) and `annual-field-formatting.spec.ts`. Full unit suite: 778/778,
 unchanged — no new card code this step.
 
-### What landed (2026-09-13): Guardian Inventory — blocked by design, not by effort
+### What landed (2026-09-13): Guardian Inventory — deferred
 
-**No field migration is possible for this type inside 41-3's own stated
-constraints.** This is not a scope-down for time or risk appetite: it is the
-boundary this milestone already drew for itself, reached from the other side.
-The evidence, all from direct reading rather than inference:
+> **CORRECTION (2026-09-14).** The original version of this section claimed
+> Guardian Inventory was "blocked by design," and its central argument was
+> **wrong**. It is retained below the correction only so the error is
+> legible, not as reasoning anyone should rely on.
+>
+> **What was wrong.** The claim was that migrating a field switches the
+> binding convention *and* the value-population architecture at once, and
+> that this is what the milestone's "each type keeps its current binding
+> convention" clause forbids. Both halves fail on inspection:
+>
+> - *"Switching the binding convention" is not a thing that happens.* This
+>   file **already** renders `data-form-path` fields today — its 8
+>   `yesNoRadioHTML()` call sites, which have gone through Tier 1's
+>   `renderYesNoField()` since 41-1. Line 640 puts a `data-bind` text input
+>   and two `data-form-path` radios **in the same `formRow`**, working. The
+>   two conventions already coexist here; nothing would be switched.
+> - *The value-population architecture does not change either.*
+>   `bindForms()` selects `[data-bind]:not([data-bound])` — a Tier 1-rendered
+>   field simply isn't matched by it, and writes through the
+>   document-level delegated `data-form-path` listener instead, exactly as
+>   those 8 radios already do.
+> - *The label objection is also surmountable.* `renderFormField({ label: '',
+>   wrapperClass: '' })` renders input-only (verified), so this file's
+>   `reqLabel()`/`optLabel()` bold-label convention could be preserved
+>   untouched.
+>
+> Worse, the clause I cited exists to **prevent scope creep** — "don't
+> retire `data-bind` as part of this rollout" — and I used it as a reason to
+> do nothing at all. That inverts its purpose. A field can be rendered
+> through Tier 1 *while keeping* `data-bind`, which is precisely what the
+> clause asks for; that needs a `binding` option on `renderFormField()`,
+> which has direct precedent in `renderYesNoField()`'s existing
+> `binding: 'annual'`.
+>
+> **The real obstacle, found only while checking the above.** Guardian
+> Inventory's write path does strictly more than the shared one.
+> `afterChange(path)` (`legacy-app.js`) calls `updateCalcFields()`, then the
+> shared 42D tail `runFieldWriteSideEffects(path)`, then repaints the live
+> inventory totals (`totalA1`, `totalA2`, `netA`, `totalB1`…`totalInventory`).
+> The delegated `data-form-path` path runs only the shared tail. So moving a
+> money or schedule field off `data-bind` would **silently stop the live
+> totals from updating as the filer types** — a real regression, and the
+> reason the 8 Yes/No radios can live on `data-form-path` safely while these
+> fields cannot: those answers don't feed any total.
+>
+> **Status: deferred, not blocked.** The viable route is a `binding` option
+> on `renderFormField()` so Guardian's fields keep `data-bind` (and thus
+> `afterChange()`, and thus live totals) while their markup moves to Tier 1.
+> That is real, testable work across ~40 fields in a 1,170-line live court
+> form, and it was not attempted here.
 
-1. **The blocker.** Every field produced by this file's own `textInput()`,
+1. **The original (incorrect) blocker claim.** Every field produced by this
+   file's own `textInput()`,
    `dateInput()`, and `numInput()` helpers binds via `data-bind="<path>"` and
    carries **no inline `value` attribute at all** — values are applied by a
    separate post-render binding pass (which is what
@@ -803,6 +852,8 @@ The evidence, all from direct reading rather than inference:
    the markup generation moves."* Here the markup generation *is* the
    binding convention. Grep confirms the split: 9 `data-bind=` sites in the
    helpers, 0 literal `data-form-path` sites in the file.
+   **(Superseded — see the correction above. The premise that the two
+   conventions cannot coexist is false; they already do, in this file.)**
 2. **Three of the four cards have no applicable fields anyway.** There are
    **zero** `periodFrom`/`periodTo` occurrences in the entire file (this is
    an initial inventory, not a period accounting), so
@@ -838,13 +889,17 @@ type that work exists for, and it needs its own milestone: the value-
 population architecture changes with it, so it is materially larger than a
 markup swap and must not be smuggled into this rollout.
 
-## 41-3 outcome: 5 of 6 migrated, 1 blocked by design
+## 41-3 outcome: 5 of 6 migrated, 1 deferred
 
 Eight of the nine filing types now render at least part of their Cover
 and/or Signatures markup through Tier 2 cards or Tier 1 primitives, verified
-byte-for-byte. The ninth (Guardian Inventory) is blocked on the `data-bind`
-retirement this milestone explicitly scoped out, and is recorded above
-rather than left looking unfinished or quietly skipped.
+byte-for-byte. The ninth (Guardian Inventory) is **deferred, not blocked** —
+see the 2026-09-14 correction in its own section, which retracts the
+"blocked by design" claim originally recorded here. The genuine obstacle is
+that this type's `afterChange()` write tail repaints live inventory totals
+that the shared `data-form-path` path does not, so its fields must keep
+`data-bind` while their markup moves — achievable via a `binding` option on
+`renderFormField()`, not attempted in this milestone.
 
 Card generalization, as actually measured rather than projected:
 
