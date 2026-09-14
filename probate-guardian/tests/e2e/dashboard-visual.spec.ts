@@ -1,5 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
+
+// Milestone 43G: split from one test running all 6 viewports x 2 themes (12
+// combinations) in a single run, where one early failure masked every other
+// combination's result. Each combination is now its own test, at the cost
+// of repeating the (cheap) ward-setup fixture per combination rather than
+// once for all twelve.
 
 const VIEWPORTS = [
   { name: 'desktop', width: 1920, height: 1080 },
@@ -10,7 +16,7 @@ const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844 },
 ];
 
-test('dashboard remains coherent across Milestone 15 viewports and themes', async ({ page }, testInfo) => {
+async function setUpDashboard(page: Page) {
   await freshStartNoPassword(page);
   for (const [name, type] of [
     ['Correction Required', 'guardian'],
@@ -41,10 +47,15 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
   const main = page.locator('#main-content');
   await main.locator('[data-dashboard-bound="true"]').waitFor();
   await page.locator('[data-shell-action="hide-auto-export-reminder"]').click();
+  return main;
+}
 
-  for (const theme of ['light', 'dark']) {
-    await page.evaluate((nextTheme) => { document.documentElement.dataset.theme = nextTheme; }, theme);
-    for (const viewport of VIEWPORTS) {
+for (const theme of ['light', 'dark'] as const) {
+  for (const viewport of VIEWPORTS) {
+    test(`dashboard remains coherent at ${theme} ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }, testInfo) => {
+      const main = await setUpDashboard(page);
+
+      await page.evaluate((nextTheme) => { document.documentElement.dataset.theme = nextTheme; }, theme);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.waitForFunction((isNarrow) => {
         const sidebar = document.querySelector('.sidebar');
@@ -87,15 +98,22 @@ test('dashboard remains coherent across Milestone 15 viewports and themes', asyn
         path: testInfo.outputPath(`milestone-15-${theme}-${viewport.name}-${viewport.width}x${viewport.height}.png`),
         fullPage: false,
       });
-    }
+    });
   }
+}
 
+test('dashboard hides the retired assignment filter and keeps search, at a stable desktop size', async ({ page }, testInfo) => {
+  const main = await setUpDashboard(page);
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 1366, height: 768 });
   await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(0);
   await expect(main.locator('#dashboard-search')).toHaveCount(1);
   await page.screenshot({ path: testInfo.outputPath('milestone-15-light-1366x768.png'), fullPage: false });
+});
 
+test('mobile viewport collapses the sidebar and renders a scrollable triage row', async ({ page }, testInfo) => {
+  const main = await setUpDashboard(page);
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForFunction(() => document.querySelector('.sidebar')?.getBoundingClientRect().right <= 1);
   await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-light-390x844.png'), fullPage: false });

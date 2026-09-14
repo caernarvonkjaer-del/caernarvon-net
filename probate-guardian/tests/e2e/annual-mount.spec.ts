@@ -136,6 +136,26 @@ test.describe('annual-accounting feature module', () => {
     expect(mainContentCount).toBe(1);
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
+    // Milestone 43G: the currently-mounted page is Guardian Inventory's (the
+    // loop above ends on guardianId), so Annual's own data-annual-action
+    // click delegate should have been unbound on dispose -- a probe element
+    // using that attribute must not still reach Annual's handler. Same
+    // technique simplified-mount.spec.ts already uses against its own
+    // data-simplified-action delegate.
+    const staleDelegateCalls = await page.evaluate(() => {
+      let calls = 0;
+      (window as any).showPickPartyModal = () => { calls += 1; };
+      const probe = document.createElement('button');
+      probe.dataset.annualAction = 'link-party';
+      probe.dataset.role = 'guardian';
+      probe.dataset.index = '0';
+      document.getElementById('main-content')?.append(probe);
+      probe.click();
+      probe.remove();
+      return calls;
+    });
+    expect(staleDelegateCalls).toBe(0);
+
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
   });
 

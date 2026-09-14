@@ -14,7 +14,9 @@ what was corrected" section. **43B also landed 2026-09-13**, in a smaller
 form than originally proposed — see its own "What landed and what was
 corrected" section. **43C landed 2026-09-13** — see its own "What landed"
 section. **43D landed 2026-09-13**, with one premise correction (Decision 1)
-— see its own "What landed and what was corrected" section. **43E–43H
+— see its own "What landed and what was corrected" section. **43G landed
+2026-09-13**, with Decision 3 scoped down from its recommended default —
+see its own "What landed and what was corrected" section. **43E, 43F, 43H
 remain Draft**, not yet approved.
 
 **Source:** two read-only test-suite audits run this session (2026-09-13),
@@ -55,7 +57,7 @@ hygiene, not a single all-or-nothing delivery.
 | 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium | **Landed** |
 | 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large | Draft |
 | 43F — Close Real Coverage Gaps | Missing coverage | Medium | Draft |
-| 43G — Test-Overhead & Granularity Fixes | Test performance/isolation | Small–medium | Draft |
+| 43G — Test-Overhead & Granularity Fixes | Test performance/isolation | Small–medium | **Landed** |
 | 43H — Adopt or Retire `window-api.ts` | Dead infrastructure from 42C | Small, decision-required | Draft |
 
 **Sequencing:** none required. Every sub-delivery names its own file set;
@@ -854,6 +856,60 @@ count than before. Confirm the 6 relocated tests still catch what they
 did before by running them via `npx vitest run` post-move (they should
 require no `page`/browser context at all — if one does, it wasn't a clean
 move candidate and should stay in `tests/e2e/`).
+
+### What landed and what was corrected (2026-09-13)
+
+Decisions 1 and 2 landed exactly as written. `filing-capability-matrix.spec.ts`
+(whole file, not just the 3 named tests — every test in it was page-less)
+moved to `tests/unit/filing-capability-matrix.spec.js`, importing the same
+`tests/e2e/support/filing-matrix.ts` module several real, page-driven e2e
+specs also depend on (that module stays under `tests/e2e/support/`; only
+the audit-of-itself tests moved). `security.spec.ts`'s 3 page-less tests
+moved to a new `tests/unit/security-source-audit.spec.js` alongside the
+helpers only they need (`sourceFiles`, `withoutJsComments`,
+`EVENT_ATTRIBUTE_PATTERN`) — confirmed the 3 remaining page-driven tests
+use none of them. `dashboard-visual.spec.ts`'s 12-combination mega-test
+split into 12 per-combination tests plus the 2 tail assertions already
+written as their own tests, sharing a `setUpDashboard()` helper (full ward
+setup now repeats per test — the isolation/redundancy tradeoff this
+decision explicitly accepts). `guided-tour-navigation.spec.ts`'s 7-type
+loop split into 7 per-type tests.
+
+**Decision 3 landed in a smaller form than proposed, a deliberate scope
+choice, not a correctness finding.** Read `registerPlanMountTests` in full
+per the decision's own instruction before deciding: the four Plan types and
+the three non-Plan types (`annual-mount.spec.ts`, `simplified-mount.spec.ts`,
+`guardian-inventory-mount.spec.ts`) share five test *shapes*, but the three
+non-Plan files are each substantially larger (330-370 lines vs. Plan's
+shared ~135-line factory) and each carries multiple filing-specific tests
+of its own (Excel round-trip, Part VIII trust checkbox, rapid schedule
+entry, D-3 tri-state lifecycle, etc.) interleaved with the shared shapes.
+Building and migrating onto a generalized factory for three large,
+currently-green files is real, higher-blast-radius work in its own right,
+weighed here against the concrete, specific problem the decision actually
+named: `annual-mount.spec.ts` and `guardian-inventory-mount.spec.ts`'s own
+"repeated entry/exit" tests omit the stale-delegate-listener check
+`simplified-mount.spec.ts:138` already has. Closed that gap directly instead
+— each file's own delegate attribute (`data-annual-action`,
+`data-inventory-action`) has no `open-court-portal`-equivalent no-op action
+the way Simplified's own delegate does, so the probe instead monkey-patches
+`window.showPickPartyModal` (present in both switches as `case 'link-party'`)
+and fires a synthetic `link-party` probe element. Confirmed to catch a real
+regression: temporarily removed `dispose()`'s `eventControllers.get(container)?.abort()`
+call in `annual-accounting/index.js`, watched the new assertion fail (47
+stale calls after 15 mount/dispose cycles, expected 0), restored it. The
+generalized factory remains open future work if these three files' own
+shape ever needs to change for other reasons; not pursued here given the
+gap it would close beyond the concrete defect is organizational, not a
+second correctness finding.
+
+Full targeted run: unit (`filing-capability-matrix.spec.js`,
+`security-source-audit.spec.js`) 15/15; e2e (`security.spec.ts`,
+`dashboard-visual.spec.ts`, `guided-tour-navigation.spec.ts`,
+`annual-mount.spec.ts`, `guardian-inventory-mount.spec.ts`,
+`simplified-mount.spec.ts`) 3+14+7+28 = 52/52. Full unit suite: 747/747
+(732 plus 15 relocated). `TEST-INDEX.md` updated for every touched, moved,
+and new file.
 
 ---
 

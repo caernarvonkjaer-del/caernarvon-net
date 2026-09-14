@@ -1,13 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
 
+// Milestone 43G: split from one test looping all seven filing types in a
+// single run, where one early failure masked the other six results.
+
 const shellSteps = /Help|Ward|Light & Dark|Filing Progress|Select Your Ward/;
 
-test('guided-tour filing steps remain attached to active sidebar navigation', async ({ page }) => {
-  test.setTimeout(180000);
-  await freshStartNoPassword(page);
+for (const formType of ['guardian', 'simplified', 'annual', 'planSimplified', 'planAnnual', 'planInitial', 'planMinor']) {
+  test(`guided-tour filing steps remain attached to active sidebar navigation (${formType})`, async ({ page }) => {
+    test.setTimeout(60000);
+    await freshStartNoPassword(page);
 
-  for (const formType of ['guardian', 'simplified', 'annual', 'planSimplified', 'planAnnual', 'planInitial', 'planMinor']) {
     await page.evaluate((type) => (window as any).addWard(`Tour audit ${type}`, type), formType);
     // #walkthrough-title carries static placeholder text in the base HTML
     // until showWalkthroughStep() first overwrites it -- captured before
@@ -46,5 +49,5 @@ test('guided-tour filing steps remain attached to active sidebar navigation', as
       await page.locator('[data-shell-action="next-walkthrough"]').click();
       previousTitle = title;
     }
-  }
-});
+  });
+}
