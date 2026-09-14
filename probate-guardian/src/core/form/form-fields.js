@@ -225,8 +225,106 @@ export function renderTextareaField({
   </div>`;
 }
 
+/**
+ * Tri-state Yes/No radio pair, wrapped in a semantic fieldset/legend.
+ * Milestone 41-1: ported verbatim from legacy-app.js's yesNoRadioHTML() --
+ * the canonical binary-answer control, already fieldset/legend-compliant
+ * and already supporting both the `data-form-path` and `data-annual-path`
+ * binding conventions via `binding`. yesNoRadioHTML() itself now delegates
+ * here (mirroring inpS()'s proven delegation to renderFormField()), so its
+ * three thin wrappers -- yesNoCheckboxS(), yesNoCheckboxD(), and
+ * yesNoRadioAnnualHTML() -- gain Tier 1 rendering for free without their
+ * own edits: an audit of their bodies found neither yesNoCheckboxS() nor
+ * yesNoCheckboxD() is actually a checkbox despite the name -- both already
+ * call yesNoRadioHTML() directly, identically to yesNoRadioAnnualHTML().
+ */
+export function renderYesNoField({
+  path = '',
+  label = '',
+  value = '',
+  id = null,
+  required = false,
+  route = '',
+  binding = 'form',
+  tooltipKey = '',
+} = {}) {
+  const safeId = String(id || path || 'yes_no').replace(/[^A-Za-z0-9_-]/g, '_');
+  const groupId = `yesno_${safeId}`;
+  const pathAttr = binding === 'annual' ? 'data-annual-path' : 'data-form-path';
+  const routeAttr = route ? ` data-form-route="${esc(route)}"` : '';
+  const tooltipHtml = (tooltipKey && typeof window !== 'undefined' && typeof window.tooltip === 'function')
+    ? window.tooltip(tooltipKey)
+    : '';
+  const reqMark = required ? '<span class="req">*</span>' : '';
+  return `<fieldset class="plan-yes-no mb-2" data-yes-no-group="${esc(path)}">
+    <legend class="form-label mb-1">${esc(label)}${tooltipHtml}${reqMark}</legend>
+    <div class="plan-radio-row">
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_yes" value="Yes" ${value === 'Yes' ? 'checked' : ''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_yes">Yes</label></div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="${groupId}" id="${groupId}_no" value="No" ${value === 'No' ? 'checked' : ''} ${pathAttr}="${esc(path)}" data-form-value="yes-no"${routeAttr}><label class="form-check-label" for="${groupId}_no">No</label></div>
+    </div>
+  </fieldset>`;
+}
+
+/**
+ * Generic N-option radio group, wrapped in a semantic fieldset/legend.
+ * Milestone 41-1: ported from legacy-app.js's radioP(), which had no
+ * fieldset/legend at all (AGENTS.md's radio-pair rule was true for
+ * yesNoRadioHTML() but false for radioP()'s 7 call sites) -- this closes
+ * that gap as a side effect of the delegation, not a separate task. Used
+ * for the plain Yes/No case and for non-binary option sets (e.g. Plan
+ * Minor's 3-way visit-frequency question), which is why options is a
+ * parameter rather than hardcoded.
+ */
+export function renderRadioGroupField({
+  path = '',
+  label = '',
+  value = '',
+  options = ['Yes', 'No'],
+  required = false,
+  hint = '',
+  id = null,
+} = {}) {
+  const groupId = id || path;
+  const name = `radio_${groupId}`;
+  const reqMark = required ? '<span class="req">*</span>' : '';
+  const hintHtml = hint ? `<div class="plan-field-hint">${hint}</div>` : '';
+  const btns = options.map((o, i) => `
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="radio" name="${name}" id="${groupId}_${i}" value="${esc(o)}" ${value === o ? 'checked' : ''} data-form-path="${esc(path)}">
+      <label class="form-check-label" for="${groupId}_${i}">${esc(o)}</label>
+    </div>`).join('');
+  return `<fieldset class="mb-3">
+    <legend class="form-label">${label}${reqMark}</legend>
+    ${hintHtml}
+    <div class="plan-radio-row">${btns}</div>
+  </fieldset>`;
+}
+
+/**
+ * Standalone boolean checkbox (not a tri-state Yes/No radio pair).
+ * Milestone 41-1: ported verbatim from legacy-app.js's chkP() -- the audit
+ * above confirmed this is the only genuine checkbox among the three
+ * candidates named in the milestone proposal (yesNoCheckboxS()/
+ * yesNoCheckboxD() are both yesNoRadioHTML() wrappers, not checkboxes).
+ */
+export function renderCheckboxField({
+  path = '',
+  label = '',
+  checked = false,
+  id = null,
+} = {}) {
+  const checkboxId = id || path;
+  return `<div class="form-check plan-check">
+    <input class="form-check-input" type="checkbox" id="${checkboxId}" ${checked ? 'checked' : ''} data-form-path="${esc(path)}" data-form-value="boolean">
+    <label class="form-check-label" for="${checkboxId}">${label}</label>
+  </div>`;
+}
+
 if (typeof window !== 'undefined') {
   window.renderFormField = renderFormField;
   window.renderSelectField = renderSelectField;
   window.renderTextareaField = renderTextareaField;
+  window.renderYesNoField = renderYesNoField;
+  window.renderRadioGroupField = renderRadioGroupField;
+  window.renderCheckboxField = renderCheckboxField;
 }

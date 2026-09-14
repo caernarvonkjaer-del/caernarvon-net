@@ -2,11 +2,15 @@
 
 ## Status
 
-**Draft only — do not implement yet.** This proposal outlines an architectural
-refactoring to unify form construction across the codebase into a 3-tier
-hierarchical system: **Field Primitives → Card Templates → Form Composition**,
-the same target `AGENTS.md` §9 already names. It authorizes no runtime,
-data-model, test, or documentation change beyond this proposal.
+**41-1 landed 2026-09-13** — see its own "What landed" section, appended
+after §2's "41-1: Tier 1 completion" plan. **41-2 and 41-3 remain Draft**,
+not yet approved — this document authorizes no runtime, data-model, test,
+or documentation change for those phases beyond this proposal.
+
+This proposal outlines an architectural refactoring to unify form
+construction across the codebase into a 3-tier hierarchical system:
+**Field Primitives → Card Templates → Form Composition**, the same target
+`AGENTS.md` §9 already names.
 
 **Revision (2026-09-13):** every claim below was re-verified directly against
 current `master` (after Milestone 42's full A–H series landed) rather than
@@ -286,6 +290,61 @@ sites across the four Plan types and Guardian Inventory's D-3 are untouched
 by design, and stay untouched until 41-2/41-3 converts them to Tier 2/3
 composition, if ever (see "What this milestone deliberately does not
 require," below).
+
+### What landed (2026-09-13)
+
+**Step 1's audit resolved the flagged "Decision needed":** reading
+`chkP()`, `yesNoCheckboxS()`, and `yesNoCheckboxD()` directly found they do
+**not** collapse into one shape — they were never three variants of the
+same control. `chkP()` is the only genuine checkbox (`type="checkbox"`,
+`data-form-value="boolean"`). `yesNoCheckboxS()` and `yesNoCheckboxD()`
+are, despite their names, both already thin wrappers that call
+`yesNoRadioHTML()` directly — identically to the already-known
+`yesNoRadioAnnualHTML()`. So exactly two new Tier 1 primitives were needed,
+not three: `renderYesNoField()` (tri-state radio pair, ported verbatim from
+`yesNoRadioHTML()`) and `renderCheckboxField()` (ported verbatim from
+`chkP()`). A third, `renderRadioGroupField()`, was added for `radioP()`'s
+distinct N-option shape (2-way and 3-way, e.g. Plan Minor's visit-frequency
+question) — this is the one that intentionally adds the `<fieldset>`/
+`<legend>` wrapping `radioP()` never had, closing its accessibility gap as
+a side effect of delegation, per the plan's own design.
+
+All four legacy functions (`txtP()`, `chkP()`, `radioP()`,
+`yesNoRadioHTML()`) now carry the identical
+`if (typeof window.renderX === 'function') return window.renderX(...)`
+branch `inpS()` already used in production; `yesNoCheckboxS()`,
+`yesNoCheckboxD()`, and `yesNoRadioAnnualHTML()` needed no edits of their
+own since they only ever call `yesNoRadioHTML()`. Confirmed call-site
+counts by direct grep before touching anything: `txtP()` 23, `radioP()` 7,
+`chkP()` 32, `yesNoCheckboxS()` 24, `yesNoCheckboxD()` 3,
+`yesNoRadioAnnualHTML()` 5 — all Plan-type and Simplified Accounting pages,
+confirming the doc's own ~140-call-site estimate.
+
+**Verification, in the order the plan specified** (existing regression net
+before writing anything new): all 7 `*-mount.spec.ts` files (56 tests),
+`page-structure.spec.ts`, `form-field-labels.spec.ts`,
+`plan-benefits-tristate.spec.ts`, `plan-directive-cards.spec.ts`,
+`guardianship-selection-controls.spec.ts`, and the Plan-type sections of
+`signature-capture.contract.spec.ts` — 108 e2e tests total, all green with
+no new failures. Two guards this milestone must keep green (§3.3) needed a
+deliberate update, not a fix: `tests/unit/window-bridge.spec.js` (42C)
+flagged the three new `window.render*` globals, requiring
+`node scripts/audit-window-bridge.mjs --declare` (regenerates
+`window-bridge.d.ts`) and a by-hand addition to the checked-in
+`tests/unit/fixtures/window-bridge-allowlist.json` — exactly the deliberate,
+reviewed edit that guard exists to force. `npm run verify:data-model`
+confirmed unaffected (898 rows, no schema change). New tests:
+`tests/unit/form-fields.spec.js` extended with `renderYesNoField`/
+`renderRadioGroupField`/`renderCheckboxField` coverage (8 new cases); new
+`tests/unit/form-fields-legacy-delegation.spec.js` (6 cases) pins each
+legacy function's delegated output as byte-identical to calling its Tier 1
+primitive directly, using the same source-slice-and-`new Function`-eval
+technique `tests/unit/bar-number.spec.js` already established for this
+zero-export, browser-bound file — confirmed as a real regression guard by
+temporarily flipping one forwarded argument (`radioP()`'s `required`) and
+watching the new test fail on the resulting markup diff, then restoring.
+Full unit suite: 760/760 (was 747; +13 new). `TEST-INDEX.md` updated for
+both files in the same commit.
 
 ### 41-2: Tier 2 cards + pilot (new territory — build once, prove once)
 

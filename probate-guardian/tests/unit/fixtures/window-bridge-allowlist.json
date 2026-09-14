@@ -119,7 +119,15 @@
     },
     {
       "file": "src/core/form/form-fields.js",
+      "name": "renderCheckboxField"
+    },
+    {
+      "file": "src/core/form/form-fields.js",
       "name": "renderFormField"
+    },
+    {
+      "file": "src/core/form/form-fields.js",
+      "name": "renderRadioGroupField"
     },
     {
       "file": "src/core/form/form-fields.js",
@@ -128,6 +136,10 @@
     {
       "file": "src/core/form/form-fields.js",
       "name": "renderTextareaField"
+    },
+    {
+      "file": "src/core/form/form-fields.js",
+      "name": "renderYesNoField"
     },
     {
       "file": "src/core/form/prune-cards.js",

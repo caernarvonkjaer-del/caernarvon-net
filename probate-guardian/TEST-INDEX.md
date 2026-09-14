@@ -37,7 +37,8 @@ row here, has more than one, or a row names a file that no longer exists.
 | feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
 | form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers; canonical home for getControlKind()/getControlPolicy() path/kind pairs (Milestone 43C, consolidated from types-contract.spec.js and field-kind-inference.spec.js) |
 | field-kind-inference.spec.js         | Milestone 36-6: whole-word field-kind inference; no shipped path collides mid-word; no text formatter on checkbox/radio (further path/kind pairs consolidated into form-contract.spec.js, Milestone 43C) |
-| form-fields.spec.js                  | inferFieldKind, renderFormField, renderSelectField, renderTextareaField                                                   |
+| form-fields.spec.js                  | inferFieldKind, renderFormField, renderSelectField, renderTextareaField; Milestone 41-1: renderYesNoField, renderRadioGroupField, renderCheckboxField |
+| form-fields-legacy-delegation.spec.js | Milestone 41-1: txtP()/radioP()/chkP()/yesNoRadioHTML() delegate to their Tier 1 primitive with equivalent arguments; yesNoCheckboxS()/yesNoCheckboxD()/yesNoRadioAnnualHTML() remain thin yesNoRadioHTML() wrappers, not independent checkboxes |
 | form-write-side-effects.spec.js      | Milestone 42D: runFieldWriteSideEffects() is the one post-write tail (county commit, Party write-through, autosave, nav dots, ward card, name sync) and all three binding paths call it |
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
 | guardian-inventory-pdf-model.spec.js | Verified Guardian Inventory PDF model output                                                                              |

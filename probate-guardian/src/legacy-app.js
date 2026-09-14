@@ -5754,6 +5754,9 @@ function countyInputS(id,label,val,req=false){
 // through formatName/formatAddress the way inpS guesses by label, because
 // these are sentences and paragraphs, not names or addresses.
 function txtP(id,label,val,rows=4,req=false,hint=''){
+  if (typeof window !== 'undefined' && typeof window.renderTextareaField === 'function') {
+    return window.renderTextareaField({ path: id, label, value: val, rows, required: req, hint, id });
+  }
   return `<div class="mb-3">
     <label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>
     ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
@@ -5762,6 +5765,9 @@ function txtP(id,label,val,rows=4,req=false,hint=''){
 }
 
 function chkP(id,label,checked){
+  if (typeof window !== 'undefined' && typeof window.renderCheckboxField === 'function') {
+    return window.renderCheckboxField({ path: id, label, checked, id });
+  }
   return `<div class="form-check plan-check">
     <input class="form-check-input" type="checkbox" id="${id}" ${checked?'checked':''} data-form-path="${esc(id)}" data-form-value="boolean">
     <label class="form-check-label" for="${id}">${label}</label>
@@ -5773,6 +5779,9 @@ function chkP(id,label,checked){
 // remains ''. `binding` permits Annual Accounting's isolated event contract
 // without teaching its schedule controls to use the general form listener.
 function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form',tooltipKey=''){
+  if (typeof window !== 'undefined' && typeof window.renderYesNoField === 'function') {
+    return window.renderYesNoField({ path, label, value: val, id, required: req, route, binding, tooltipKey });
+  }
   const safeId=String(id||path||'yes_no').replace(/[^A-Za-z0-9_-]/g,'_');
   const groupId=`yesno_${safeId}`;
   const pathAttr=binding==='annual'?'data-annual-path':'data-form-path';
@@ -5838,6 +5847,9 @@ function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey=''){
 // ADL ratings ("no help" / "some assistance" / "cannot do at all"), which is
 // why the options are a parameter rather than hardcoded Yes/No.
 function radioP(id,label,val,options=['Yes','No'],req=false,hint=''){
+  if (typeof window !== 'undefined' && typeof window.renderRadioGroupField === 'function') {
+    return window.renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id });
+  }
   const name=`radio_${id}`;
   const btns=options.map((o,i)=>`
     <div class="form-check form-check-inline">

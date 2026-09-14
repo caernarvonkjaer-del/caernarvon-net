@@ -311,14 +311,17 @@ interface Window {
   removeWitness: any;
   renameWard: any;
   renderActivityLogList: any;
+  renderCheckboxField: any;
   renderFormField: any;
   renderLocalSectionGuidance: any;
   renderPage: any;
   renderPartyDirectoryRows: any;
   renderPartyManagementBody: any;
+  renderRadioGroupField: any;
   renderSelectField: any;
   renderTextareaField: any;
   renderYearManagerBody: any;
+  renderYesNoField: any;
   resetNavSectionExpanded: any;
   resizeTo: any;
   resolveCase: any;
