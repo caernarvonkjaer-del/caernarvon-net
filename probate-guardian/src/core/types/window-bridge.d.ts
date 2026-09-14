@@ -81,6 +81,7 @@ interface Window {
   convertSourceItems: any;
   convertTargetsFor: any;
   countyDriftWarnings: any;
+  countyInputS: any;
   countyOf: any;
   createCase: any;
   createFeatureBridge: any;

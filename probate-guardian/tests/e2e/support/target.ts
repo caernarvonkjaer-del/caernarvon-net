@@ -530,3 +530,31 @@ export async function exportAndCapture(page: Page): Promise<string> {
 export async function assertNoInlineEventHandlers(scope: Locator | Page, selectors: string[]) {
   await expect(scope.locator(selectors.join(', '))).toHaveCount(0);
 }
+
+/**
+ * Milestone 41-2: a "0 visual diff" proof technique for the Tier 1/2/3
+ * refactor. `Element.innerText` alone is not enough -- confirmed by direct
+ * capture that it excludes every <input>/<textarea>/<select> value
+ * entirely (they're control state, not text nodes), so a page whose field
+ * *values* silently changed would still show identical innerText. This
+ * combines the rendered static text (headings, hints, labels) with an
+ * explicit, DOM-order dump of every form control's current value, so a
+ * before/after capture across a markup refactor catches both.
+ */
+export async function extractFormContentSnapshot(page: Page, containerSelector = '#main-content'): Promise<string> {
+  return page.evaluate((selector) => {
+    const root = document.querySelector(selector);
+    if (!root) return '';
+    const text = (root as HTMLElement).innerText;
+    const values = Array.from(root.querySelectorAll('input, textarea, select'))
+      .map((el) => {
+        const control = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+        if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
+          return `[${control.type}:${control.name || control.id}=${control.checked ? 'checked' : 'unchecked'}]`;
+        }
+        return `[${control.tagName.toLowerCase()}:${control.value}]`;
+      })
+      .join('\n');
+    return `${text}\n---CONTROL VALUES---\n${values}`;
+  }, containerSelector);
+}

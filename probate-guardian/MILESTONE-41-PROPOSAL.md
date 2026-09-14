@@ -3,9 +3,11 @@
 ## Status
 
 **41-1 landed 2026-09-13** — see its own "What landed" section, appended
-after §2's "41-1: Tier 1 completion" plan. **41-2 and 41-3 remain Draft**,
-not yet approved — this document authorizes no runtime, data-model, test,
-or documentation change for those phases beyond this proposal.
+after §2's "41-1: Tier 1 completion" plan. **41-2 is in progress**: the
+Cover page's two cards (Case Caption, Ward Demographics/Reporting Period)
+are landed — see "What landed so far: Cover page cards" — the Signatures
+page's Guardian/Attorney/Preparer card is not yet built. **41-3 remains
+Draft**, not yet approved.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -368,6 +370,74 @@ any wider rollout.
 4. `tests/unit/form-cards.spec.js` (new): each card binds correctly to
    `data-form-path` and renders required elements, per the original draft's
    own test plan — unchanged, since this test genuinely does not exist yet.
+
+### What landed so far (2026-09-13): Cover page cards
+
+**Direct inspection of Plan Simplified's actual current markup forced a
+real design correction before any code was written.** The milestone's own
+4-card taxonomy (Case Caption & Court Identity; Ward Demographics &
+Inception; Guardian & Attorney Details; Residence & Facility Profile) does
+not map 1:1 onto this page's actual visual boxes: Ward Name, Case Number,
+and County all render inside ONE "Ward & Case Information" box today, split
+across what the taxonomy calls two different cards, while the reporting
+period sits in a wholly separate "Reporting Period" box. A card that
+insisted on its own heading/box per the taxonomy's literal boundary would
+have changed the visible layout — a real regression against the "0 visual
+diff" requirement, not a refactor. Resolved by having each card return a
+**bare field-group fragment** (no box or heading of its own); the page
+keeps every box/heading exactly as it was and places one or more card
+fragments inside it. This is also why `renderWardIdentityFields()` and
+`renderReportingPeriodFields()` are two independently-callable exports
+from `ward-demographics-card.js` rather than one combined function — they
+land in two different boxes on this page.
+
+**Also found while designing for later rollout (not corrected now, since
+41-2 is scoped to Plan Simplified only):** Plan Minor's own Cover page (per
+its `plan-pdf-wcag-compliance.spec.ts` fixture, confirmed in Milestone
+43F/43E's own work this session) has no `caseNumber` at all — it uses `ucn`
+(Uniform Case Number) and `ref` instead. `renderCaseCaptionFields()` is not
+designed to accommodate that divergence yet; whichever 41-3 step migrates
+Plan Minor will need its own decision here, not an assumption that this
+card works unchanged.
+
+**Built:** `src/core/form/cards/case-caption-card.js`
+(`renderCaseCaptionFields()`, Case Number + County, County reused via the
+existing `window.countyInputS()` widget since it has no Tier 1 equivalent
+and porting one is out of scope) and `src/core/form/cards/ward-demographics-card.js`
+(`renderWardIdentityFields()` — name, optional SSN;
+`renderReportingPeriodFields()` — period, optional inception date, with
+overridable labels for filing types that phrase the period differently).
+Optional fields render nothing at all when not passed, rather than an
+empty/disabled control, matching Plan Simplified's own current absence of
+an SSN or inception-date field. Wired into `pagePlanSCover()` only — the
+Signatures page's Guardian/Attorney/Preparer fields are 41-2's next slice,
+not yet touched.
+
+**Verification:** confirmed zero visual diff directly, not by inspection —
+`git stash push -- src/features/plan-simplified/index.js` to isolate just
+the card-wiring change, captured a full DOM snapshot (see below) before and
+after with a fixture ward filled, and diffed them: identical. Landed that
+snapshot technique as a new shared helper,
+`extractFormContentSnapshot()` (`tests/e2e/support/target.ts`), for 41-3 to
+reuse — `Element.innerText` alone is not enough for this proof: confirmed
+by direct capture that it excludes every `<input>`/`<textarea>`/`<select>`
+*value* entirely (they're control state, not text nodes), so a page whose
+field values silently changed would still show identical `innerText`. The
+helper combines rendered static text with an explicit, DOM-order dump of
+every control's value. The verified-identical snapshot is now pinned as a
+permanent regression guard in `plan-simplified-mount.spec.ts`; confirmed as
+a real guard by temporarily renaming one field's label and watching the
+test fail on the resulting diff, then restoring. New
+`tests/unit/form-cards.spec.js` (10 cases) covers both cards' `data-form-path`
+binding and optional-field omission directly. Regenerated
+`window-bridge.d.ts`: `countyInputS` had never been referenced as
+`window.countyInputS` before (only ever called as a bare global identifier
+elsewhere), so this is its first appearance in the generated declaration —
+not a new global, just its first explicit `window.` access site. Full unit
+suite: 770/770 (was 760; +10 new). Full targeted e2e:
+`plan-simplified-mount.spec.ts`, `page-structure.spec.ts`,
+`form-field-labels.spec.ts`, and Plan Simplified's `date-validation
+.contract.spec.ts` cases all green.
 
 ### 41-3: Tier 3 rollout, ordered by verified risk (not alphabetical or arbitrary)
 

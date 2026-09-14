@@ -3,6 +3,14 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+// Milestone 41-2: Tier 2 card templates. Plan Simplified is the pilot --
+// smallest surface, fastest full-cycle verification. Each card returns a
+// bare field-group fragment (no box/heading of its own), since this page's
+// current visual grouping (Ward Name + Case Number + County together in
+// one "Ward & Case Information" box) doesn't match the milestone's named
+// card boundaries 1:1 -- see case-caption-card.js's header comment.
+import { renderCaseCaptionFields } from '../../core/form/cards/case-caption-card.js';
+import { renderWardIdentityFields, renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -174,9 +182,8 @@ function pagePlanSCover(){
         <div class="summary-box">
           <h2 class="subsection-heading">Ward &amp; Case Information</h2>
           <div class="row g-2">
-            <div class="col-12">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-            <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-            <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
+            ${renderWardIdentityFields({ wardName: d.wardName, wardNameRequired: true })}
+            ${renderCaseCaptionFields({ caseNumber: d.caseNumber, county: d.county })}
           </div>
         </div>
       </div>
@@ -184,8 +191,7 @@ function pagePlanSCover(){
         <div class="summary-box">
           <h2 class="subsection-heading">Reporting Period</h2>
           <div class="row g-2">
-            <div class="col-md-6">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
-            <div class="col-md-6">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
+            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo })}
           </div>
         </div>
       </div>
