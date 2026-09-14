@@ -10,8 +10,8 @@ cards" and "What landed next: Signatures page card — 41-2 complete." The
 milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
 against; see that section's closing note. **41-3 is in progress**: Plan
-Minor (1 of 6) is landed — see its own "What landed" section under §2's
-"41-3: Tier 3 rollout" plan. Remaining: Plan Initial, Plan Annual,
+Minor and Plan Initial (2 of 6) are landed — see their own "What landed"
+sections under §2's "41-3: Tier 3 rollout" plan. Remaining: Plan Annual,
 Simplified Accounting, Annual Accounting (covers Final/Trust), Guardian
 Inventory.
 
@@ -588,6 +588,64 @@ temporary field-level change, caught, then restored.
 `tests/unit/form-cards.spec.js` extended with 1 more case (14 total) for
 `renderPartyNameField()`'s label override. Full unit suite: 774/774 (was
 773; +1 new — the Cover/Signatures pins are e2e, not unit).
+
+### What landed (2026-09-13): Plan Initial
+
+**The two Cover-page cards reused completely unchanged** — Plan Initial's
+"Ward & Case Information" box has the exact same field order as Plan
+Simplified's (wardName, then caseNumber, then county), so
+`renderWardIdentityFields()` + `renderCaseCaptionFields()` dropped in with
+no card-level edits at all, and the page's snapshot came back
+**byte-identical**. That's the first hard evidence these cards genuinely
+generalize rather than being Plan-Simplified-shaped.
+`renderReportingPeriodFields()` was reused too, with this page's own "For
+the Period From"/"Through" labels and `required: false` (this type doesn't
+require the period, unlike Plan Simplified and Plan Minor).
+
+**One card feature confirmed as still-unproven, and deliberately left
+unused:** `renderReportingPeriodFields()`'s optional `inceptionDate` slot
+was added speculatively in 41-2 for "a later type that has one." Plan
+Initial turns out to have *two* inception-like dates (Guardianship
+Inception Date and Date Letters Were Signed), both required while the
+period fields are not — so a single optional date sharing one `required`
+flag doesn't fit. Those two stay as direct `inpS()` calls (already on Tier
+1 via 41-1). The slot is left in place but is still exercised by nothing;
+it should not be treated as proven.
+
+**The milestone's fourth named card (Residence & Facility Profile) is
+deferred a second time, now on evidence rather than absence.** Plan Initial
+genuinely has these fields (wardLiving radios, residence address/city/
+phone, mailing address), which is why 41-2's deferral note named this step
+as where the card would get designed. On inspection they are *all already
+on Tier 1* via `inpS()`/`radioP()`'s Milestone 41-1 delegation — there is
+no adoption gap to close. Extracting a shared card from a single type's
+fields, with no second confirmed-identical shape in hand, is the same
+premature abstraction this session has already declined three times (43E
+Decision 1, 43G Decision 3, 41-2's own first deferral). Revisit once Plan
+Annual's real shape is read (41-3's next step): two concrete usages would
+justify it; one plus speculation does not.
+
+**Signatures page:** same hand-rolled gap as Plan Simplified and Plan Minor
+(raw `<input>` markup, no `id`/`for` association, no required marker
+despite `validatePlanInitial()` requiring the guardian name). Reused
+`renderPartyNameField()` with the `label: 'Name'` override (this type also
+says plain "Name"), and converted relationship / SSN-EIN / phone / street /
+cityStateZip to direct `renderFormField()` calls — a *third* distinct
+guardian-contact field shape (no email at all here, and `street` +
+`cityStateZip` rather than Plan Minor's `mailingStreet` +
+`mailingCityStateZip`), which is now conclusive that
+`renderPartyContactFields()` was correctly not forced onto these types.
+
+Carries the same two deliberate, disclosed improvements as Plan Minor: the
+guardian name field gains its missing `data-field-required`, and the
+guardian phone field is now formatted consistently with every other phone
+field on the page.
+
+**Verification:** `plan-initial-mount.spec.ts` (7 tests, two new permanent
+snapshot pins), `page-structure.spec.ts`, `form-field-labels.spec.ts`, and
+`signature-capture.contract.spec.ts`'s Plan Initial section all green. Pin
+confirmed as a real guard via a temporary label change, caught, restored.
+Full unit suite: 774/774 (unchanged — both new pins are e2e).
 
 ### What this milestone deliberately does not require
 

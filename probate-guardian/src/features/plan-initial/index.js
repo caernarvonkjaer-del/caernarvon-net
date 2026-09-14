@@ -5,6 +5,29 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+// Milestone 41-3: Cover page's "Ward & Case Information" box has the exact
+// same field order as Plan Simplified's (wardName, caseNumber, county) --
+// both cards reuse unchanged, no card-level changes needed, confirming
+// they genuinely generalize. inceptionDate/lettersSignedDate/successorGuardianship
+// stay as direct inpS()/renderSelectField() calls: already on Tier 1 via
+// Milestone 41-1's delegation, and inceptionDate+lettersSignedDate (two
+// required dates) don't fit renderReportingPeriodFields()'s optional
+// inceptionDate slot (built for one required-alongside-period date, not
+// two independently-required ones) -- only periodFrom/periodTo (not
+// required on this page, unlike Plan Simplified/Minor) are wired below.
+// The "Guardian, Attorney & Residence" box's own fields (guardianNames,
+// attorneyName, wardLiving, residence/mailing address) are ALL already on
+// Tier 1 via inpS()/radioP() too -- there is no adoption gap here to
+// justify building the milestone's fourth named card (Residence & Facility
+// Profile) yet. Building it now, with only this one type's shape in hand,
+// would repeat the same premature-abstraction mistake already avoided
+// twice this session (43E Decision 1, 43G Decision 3, and 41-2's own
+// deferral of this exact card) -- deferred again to whichever step
+// confirms Plan Annual's real shape next.
+import { renderCaseCaptionFields } from '../../core/form/cards/case-caption-card.js';
+import { renderWardIdentityFields, renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
+import { renderFormField } from '../../core/form/form-fields.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -180,14 +203,12 @@ function pagePlanICover(){
         <div class="summary-box">
           <h2 class="subsection-heading">Ward &amp; Case Information</h2>
           <div class="row g-2">
-            <div class="col-12">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-            <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-            <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
+            ${renderWardIdentityFields({ wardName: d.wardName, wardNameRequired: true })}
+            ${renderCaseCaptionFields({ caseNumber: d.caseNumber, county: d.county })}
             <div class="col-12">${renderSelectField({path:'successorGuardianship',label:'Successor Guardianship? (if applicable)',value:d.successorGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_LIFECYCLE_OPTIONS,d.successorGuardianship)})}</div>
             <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
             <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
-            <div class="col-md-6">${inpS('periodFrom','For the Period From',d.periodFrom,false,'date')}</div>
-            <div class="col-md-6">${inpS('periodTo','Through',d.periodTo,false,'date')}</div>
+            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'Through', required: false })}
           </div>
         </div>
       </div>
@@ -487,14 +508,14 @@ function pagePlanISignatures(){
       </div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-12"><label class="form-label">Name</label><input type="text" class="form-control" value="${esc(gd.name||'')}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
-          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(gd.relationship||'')}" data-form-path="planGuardians.${i}.relationship" data-field-path="planGuardians.${i}.relationship"></div>
-          <div class="col-md-6"><label class="form-label">SSN/EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(gd.ssn||'')}" data-form-path="planGuardians.${i}.ssn" data-field-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-          <div class="col-md-6"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(gd.phone||'')}" data-form-path="planGuardians.${i}.phone" data-field-path="planGuardians.${i}.phone" data-form-format="phone"></div>
+          ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: gd.name, required: i===0, label: 'Name' })}
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: gd.relationship })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN/EIN', value: gd.ssn })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: gd.phone })}</div>
           <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(gd.signatureState, gd.signatureDate), route: '/p9', signatureImage: gd.signatureImage })}</div>
-          <div class="col-12"><label class="form-label">Street Address</label><input type="text" class="form-control" value="${esc(gd.street||'')}" data-form-path="planGuardians.${i}.street" data-field-path="planGuardians.${i}.street"></div>
-          <div class="col-12"><label class="form-label">City/State/Zip</label><input type="text" class="form-control" value="${esc(gd.cityStateZip||'')}" data-form-path="planGuardians.${i}.cityStateZip" data-field-path="planGuardians.${i}.cityStateZip"></div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.street`, label: 'Street Address', value: gd.street })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.cityStateZip`, label: 'City/State/Zip', value: gd.cityStateZip })}</div>
         </div>
       </div>
     </div></div>`;

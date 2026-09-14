@@ -1,4 +1,5 @@
-import { fillMinimalValidPlanInitialWard } from './support/target';
+import { test, expect } from '@playwright/test';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard, extractFormContentSnapshot } from './support/target';
 import { registerPlanMountTests } from './support/plan-fixture';
 
 // Plan Initial is the fourth feature extraction (Milestone 5 of
@@ -25,4 +26,29 @@ registerPlanMountTests({
     { route: '/p9', key: 'pi-p9' },
     { route: '/p10', key: 'pi-p10' },
   ],
+});
+
+// Milestone 41-3: "0 visual diff" snapshot pins for Plan Initial's Tier 2/1
+// field migration, verified via git-stash before/after. The Cover page came
+// back byte-identical (both Cover cards reused unchanged from 41-2). The
+// Signatures page carries the same two deliberate improvements Plan Minor's
+// migration did: the guardian name field now has the data-field-required
+// marker validatePlanInitial() always implied, and the guardian phone field
+// is now formatted like every other phone field on the page.
+test('Cover page renders byte-identical visible text and control values through the reused Tier 2 cards', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Init Diff Ward', 'planInitial');
+  await fillMinimalValidPlanInitialWard(page);
+  await page.evaluate(() => (window as any).navigate('/'));
+  const snapshot = await extractFormContentSnapshot(page);
+  expect(snapshot).toBe("Initial Guardianship Plan — Cover\nAll Filings\n?\nThis report, with original signatures, is due within 60 days after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.\nWARD & CASE INFORMATION\nName of Ward\n*\nCase Number\n*\nCounty\n*\nSuccessor Guardianship? (if applicable)\n— select —\nSuccessor\nStandby\nSurrogate\nEmergency Temporary Guardianship\nNone\nGuardianship Inception Date\n*\nUse MM/DD/YYYY\nDate Letters Were Signed\n*\nUse MM/DD/YYYY\nFor the Period From\nUse MM/DD/YYYY\nThrough\nUse MM/DD/YYYY\nGUARDIAN, ATTORNEY & RESIDENCE\nGuardian Name(s)\n*\nAttorney Name\nThe ward is living:\n*\nIn a private residence leased or owned by them (house, condo or apartment)\nIn a private residence not leased or owned by them (such as family member)\nIn a facility (Skilled Nursing, Assisted Living, etc.)\nAddress Where Ward Is Currently Residing\n*\nCity / State / ZIP\n*\nPhone\nMailing Address for Ward (if different from above)\nMailing City / State / ZIP\nList any preexisting orders not to resuscitate or preexisting advance directives, the date signed, whether suspended by the court, and the steps taken to identify and locate them. Attach a copy of any directives to the plan.\nSupporting Documents — set the accounting period on the Cover page to file these by year\n\nUpload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.\n\n+ Upload PDF(s)\nNo supporting documents uploaded for this period.\nComments\nNext →\n---CONTROL VALUES---\n[input:Init Diff Ward]\n[input:26-000654]\n[input:Pinellas]\n[select:]\n[input:01/05/2026]\n[input:01/06/2026]\n[input:]\n[input:]\n[input:Sample Guardian]\n[input:]\n[radio:radio_wardLiving=unchecked]\n[radio:radio_wardLiving=unchecked]\n[radio:radio_wardLiving=checked]\n[input:123 Main St]\n[input:Clearwater, FL 33755]\n[input:]\n[input:]\n[input:]\n[textarea:]\n[input:]\n[textarea:]");
+});
+
+test('Signatures page renders the expected visible text and control values through the Guardian field migration', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Init Diff Ward', 'planInitial');
+  await fillMinimalValidPlanInitialWard(page);
+  await page.evaluate(() => (window as any).navigate('/p9'));
+  const snapshot = await extractFormContentSnapshot(page);
+  expect(snapshot).toBe("Certification and Signature of Guardian(s)\nAll Filings\n?\nIf the Ward's ability to exercise rights has changed since the Order Determining Capacity and Appointing Guardian, the guardian must file a Petition to Remove or Petition to Restore Rights, as appropriate.\nCheck all that apply:\nThe Ward was declared totally incapacitated and has not been given a copy of this plan\nThe Ward is a minor under the age of 14 and has not been given a copy of this plan\nThe guardian has consulted with the Ward, to the extent reasonable, has honored the Ward's wishes, and to the maximum extent possible the plan is in accordance with the Ward's wishes or consistent with the rights retained by the Ward\nIn exercising his or her powers, the guardian shall recognize any rights retained by the ward (F.S. 744.363(6))\nThe plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease\nThe plan provides for the Ward's medical care and mental health treatment\nPreparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.\n\nUnder penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.\n\nGuardian\nLink Person\nName\n*\nRelationship to Ward\nSSN/EIN\nPhone Number\nDate Signed\nUse MM/DD/YYYY\nSignature\nUnsigned\n\"/s/\" Signed\nSignature Stamp\nStreet Address\nCity/State/Zip\n+ Add Co-Guardian\nAll guardians of the person must sign and provide their most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.\nSupporting Documents — set the accounting period on the Cover page to file these by year\n\nUpload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.\n\n+ Upload PDF(s)\nNo supporting documents uploaded for this period.\nComments\n← Back\nNext →\n---CONTROL VALUES---\n[checkbox:certIncapacitatedNoCopy=unchecked]\n[checkbox:certMinorNoCopy=unchecked]\n[checkbox:certConsulted=checked]\n[checkbox:certRecognizeRights=unchecked]\n[checkbox:certNoRestriction=unchecked]\n[checkbox:certProvidesCare=unchecked]\n[input:Sample Guardian]\n[input:Parent]\n[input:123-45-6789]\n[input:(555) 555-5555]\n[input:01/11/2026]\n[radio:sigstate_planGuardians_0=unchecked]\n[radio:sigstate_planGuardians_0=checked]\n[radio:sigstate_planGuardians_0=unchecked]\n[input:123 Main St]\n[input:Clearwater, FL 33755]\n[input:]\n[textarea:]");
 });
