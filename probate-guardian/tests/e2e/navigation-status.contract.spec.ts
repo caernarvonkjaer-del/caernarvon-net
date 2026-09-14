@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard } from './support/target';
+import type { ValidatorIssue } from './support/window-api';
 
 // Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
 // status pilot ... then migrate Guardian, Simplified, and Annual only after
@@ -489,8 +490,12 @@ test.describe('Guardian Inventory navigation/status contract', () => {
 
     // Unlike the other filing types, Guardian's .print-preview-banner
     // carries no dynamic issue count -- the count lives in the separate
-    // validation panel validationPanel() renders alongside it.
-    const panelText = await page.locator('.validation-panel .validation-title').innerText();
+    // validation panel validationPanel() renders alongside it. Milestone 44C
+    // added the shared readiness card right after it, which reuses the same
+    // .validation-panel .validation-title classes -- filter to the
+    // error-panel's own text (same technique pdf-preview-viewer.spec.ts and
+    // plan-readiness.contract.spec.ts already use for this exact collision).
+    const panelText = await page.locator('.validation-panel .validation-title').filter({ hasText: /required field/ }).innerText();
     const match = panelText.match(/(\d+)\s+required field/);
     expect(match, `validation panel did not report a required-field count: "${panelText}"`).not.toBeNull();
     const expectedCount = Number(match![1]);
@@ -852,7 +857,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       return {
         providerCount: (w.D.q4Providers || []).filter((r: any) => r && (r.name || r.providerType || r.visits)).length,
         navComplete: w.computeNavChecks().checks['pa-p5'],
-        blocked: w.validatePlanAnnual().some((m: any) => String(m).includes('at least one provider must be listed')),
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('at least one provider must be listed')),
       };
     });
     expect(state.providerCount).toBe(0);
@@ -872,7 +877,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       const w = window as any;
       return {
         navComplete: w.computeNavChecks().checks['pa-p5'],
-        blocked: w.validatePlanAnnual().some((m: any) => String(m).includes('at least one provider must be listed')),
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('at least one provider must be listed')),
       };
     });
     expect(state.blocked).toBe(false);
@@ -889,8 +894,8 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       const w = window as any;
       return {
         navComplete: w.computeNavChecks().checks['pm-cover'],
-        caseBlocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Case Number is required')),
-        amendedBlocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Amended Form? must be answered')),
+        caseBlocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Case Number is required')),
+        amendedBlocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
       };
     });
     expect(baseline).toEqual({ navComplete: true, caseBlocked: false, amendedBlocked: false });
@@ -901,7 +906,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       w.D.ucn = ''; w.D.ref = '';
       return {
         navComplete: w.computeNavChecks().checks['pm-cover'],
-        blocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Case Number is required')),
+        blocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Case Number is required')),
       };
     });
     expect(noCaseIdentity).toEqual({ navComplete: false, blocked: true });
@@ -912,7 +917,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       w.D.ucn = ''; w.D.ref = '26-000123-GD';
       return {
         navComplete: w.computeNavChecks().checks['pm-cover'],
-        blocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Case Number is required')),
+        blocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Case Number is required')),
       };
     });
     expect(refOnly).toEqual({ navComplete: true, blocked: false });
@@ -924,7 +929,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       w.D.amendedForm = '';
       return {
         navComplete: w.computeNavChecks().checks['pm-cover'],
-        blocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Amended Form? must be answered')),
+        blocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
       };
     });
     expect(amendedBlank).toEqual({ navComplete: false, blocked: true });
@@ -934,7 +939,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       w.D.amendedForm = 'No';
       return {
         navComplete: w.computeNavChecks().checks['pm-cover'],
-        blocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Amended Form? must be answered')),
+        blocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
       };
     });
     expect(amendedNo).toEqual({ navComplete: true, blocked: false });
@@ -945,7 +950,7 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       w.D.amendedForm = 'Yes'; w.D.amendedVersion = '';
       return {
         navComplete: w.computeNavChecks().checks['pm-cover'],
-        blocked: w.validatePlanMinor().some((m: any) => String(m).includes('Cover — Amended Form version is required')),
+        blocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form version is required')),
       };
     });
     expect(amendedYesNoVersion).toEqual({ navComplete: false, blocked: true });

@@ -512,6 +512,19 @@ filing types, not just the three already migrated.
 - **Deliberately not done:** no predicate was rewritten to a typed issue
   (that is 38D Phase 2's migration of the Plan validators, not 38B's), and
   no visual redesign beyond what the shared card already renders.
+- **Gap found later, same day, while unrelated work (Milestone 43H)
+  incidentally exercised this page:** `navigation-status.contract.spec.ts`'s
+  Guardian Inventory "Print Preview panel and the blocked-export alert
+  agree" test started failing on a strict-mode locator violation — the
+  shared readiness card reuses the exact `.validation-panel
+  .validation-title` classes the classic error panel (`validationPanel()`)
+  already used on the same Guardian Inventory print page, and this one test
+  site had no disambiguating filter (`pdf-preview-viewer.spec.ts` already
+  did). 44C's own verification pass never ran this file. Fixed with the
+  same `.filter({ hasText: /required field/ })` technique already
+  established elsewhere; confirmed via `git stash` that no other
+  `.validation-panel .validation-title` site in `tests/e2e/` was similarly
+  exposed.
 
 ---
 

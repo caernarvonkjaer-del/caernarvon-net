@@ -37,6 +37,21 @@ export interface AdaptedIssue {
   message: string;
 }
 
+// Milestone 43H: the shape a validateX() function itself returns (per
+// issue-registry.js's createIssue()) -- the object adaptValidationErrors()
+// later normalizes into AdaptedIssue by adding `severity`. Distinct from
+// AdaptedIssue because a raw validator issue never has `severity` at all
+// (not merely blank) -- casting to AdaptedIssue for a call site that only
+// ever sees pre-adapt output would claim a field that isn't there.
+export interface ValidatorIssue {
+  code: string;
+  message: string;
+  section: string;
+  label: string;
+  path: string;
+  route: string;
+}
+
 /** The subset of the bridge the e2e suite treats as a contract. */
 export interface PgWindow extends Window {
   navigate(route: string, updateHash?: boolean): Promise<boolean>;

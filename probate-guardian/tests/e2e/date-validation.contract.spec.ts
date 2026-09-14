@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, createSimplifiedWard } from './support/target';
+import type { ValidatorIssue } from './support/window-api';
 
 // Milestone 34-1A, Item 2: date-order validation. Annual/Final/Trust,
 // Simplified, and the three Plan types that track a reporting period
@@ -398,7 +399,7 @@ test.describe('Guardian Inventory bond-period date-order validation', () => {
 
     const found = await page.evaluate(() => {
       const w = window as any;
-      return w.validateGuardian().find((m: any) => String(m).includes('Bond Period To must be on or after'));
+      return w.validateGuardian().find((m: ValidatorIssue) => m.message.includes('Bond Period To must be on or after'));
     });
     expect(found).toBeUndefined();
   });

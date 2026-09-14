@@ -107,7 +107,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | cover-county.spec.ts                     | Milestone 40C-A: the real Cover county combobox establishes the ward Party county, hydrates later filings, and never prints a Sixth Circuit caption when blank                           |
 | dashboard-backup.spec.ts                 | Dashboard preference isolation, single-ward backup/export, and Milestone 40C-1 single-ward export/reopen reconstructs ward-Party county under unanimity rule |
 | dashboard-visual.spec.ts                 | Milestone 15: dashboard coherence across viewports/themes -- one test per viewport/theme combination (Milestone 43G, split from one 12-combination mega-test)                           |
-| date-validation.contract.spec.ts         | Milestone 34-1A date-order validation across filing types; Milestone 40C-C no-mutation on entry and the D-4 bond period                                                                  |
+| date-validation.contract.spec.ts         | Milestone 34-1A date-order validation across filing types; Milestone 40C-C no-mutation on entry and the D-4 bond period; Milestone 43H: reads ValidatorIssue.message directly (window-api.ts) instead of substring-matching a stringified issue |
 | feature-load-failure.spec.ts             | Failed feature chunk shows reload action instead of blank view                                                                                                                           |
 | filing-identity.contract.spec.ts         | Filing-identity contract across all 9 filing types                                                                                                                                       |
 | form-entry-ux.spec.ts                    | Milestone 24: form entry UX, dates, preservation, guidance                                                                                                                               |
@@ -118,7 +118,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | guided-tour-navigation.spec.ts           | Guided-tour filing steps stay attached to active sidebar navigation -- one test per filing type (Milestone 43G, split from one 7-type mega-test)                                        |
 | guardianship-selection-controls.spec.ts  | Existing guardianship type/lifecycle fields expose GD-derived select options                                                                                                             |
 | legacy-ward-data-normalization.spec.ts   | Milestone 43A: normalizeWardData() legacy-boolean -> tri-state migration and window.calc restricted/unrestricted totals for Guardian Inventory (real browser coverage; replaces the always-passing dead tests/unit/milestone-38e.spec.js) |
-| navigation-status.contract.spec.ts       | Navigation/status contract: guidance, jump-link focus, issue-count agreement; Milestone 40C-E sidebar-vs-export-blocker parity                                                           |
+| navigation-status.contract.spec.ts       | Navigation/status contract: guidance, jump-link focus, issue-count agreement; Milestone 40C-E sidebar-vs-export-blocker parity; Milestone 43H: reads ValidatorIssue.message directly (window-api.ts); Guardian Print Preview issue-count test disambiguated from Milestone 44C's readiness card sharing its classes |
 | offline.spec.ts                          | Hosted offline cache (`@origin-state`)                                                                                                                                                   |
 | output-semantics.artifact.spec.ts        | Milestone 33 Phase 3: output semantics artifact contract                                                                                                                                 |
 | page-structure.spec.ts                   | All form pages preserve landmarks and heading structure                                                                                                                                  |
@@ -173,7 +173,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | plan-fixture.ts   | `registerPlanMountTests` — shared mount/dispose/routing test suite factory for the four Plan-\* filing types                        |
 | target-profile.ts | Current run target detection + classified skip helpers (skipExpectedTargetExclusion / skipEnvironmentLimitation / skipTemporaryGap) |
 | target.ts         | Page-object-style helpers (gotoApp, freshStartNoPassword, createWard, fillMinimalValid\*Ward, etc.); assertNoInlineEventHandlers() (Milestone 43D)                                 |
-| window-api.ts     | Milestone 42C: `PgWindow` type for the app globals specs reach through page.evaluate(), plus navigateTo/addFiling/activeFiling wrappers |
+| window-api.ts     | Milestone 42C: `PgWindow` type for the app globals specs reach through page.evaluate(), plus navigateTo/addFiling/activeFiling wrappers; Milestone 43H: `ValidatorIssue` type (raw validateX() issue shape) adopted by navigation-status.contract.spec.ts and date-validation.contract.spec.ts |
 | xlsx-extract.ts   | Extracts cell data from generated .xlsx for assertions                                                                              |
 
 ## Categories and scope

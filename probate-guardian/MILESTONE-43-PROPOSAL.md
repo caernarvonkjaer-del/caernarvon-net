@@ -16,8 +16,11 @@ corrected" section. **43C landed 2026-09-13** — see its own "What landed"
 section. **43D landed 2026-09-13**, with one premise correction (Decision 1)
 — see its own "What landed and what was corrected" section. **43G landed
 2026-09-13**, with Decision 3 scoped down from its recommended default —
-see its own "What landed and what was corrected" section. **43E, 43F, 43H
-remain Draft**, not yet approved.
+see its own "What landed and what was corrected" section. **43H landed
+2026-09-13** (option (a)) — see its own "What landed and what was
+corrected" section, which also documents a genuine, unrelated regression
+found and fixed while running its verification. **43E, 43F remain Draft**,
+not yet approved.
 
 **Source:** two read-only test-suite audits run this session (2026-09-13),
 via parallel read-only research passes (no edits made in either): the
@@ -58,7 +61,7 @@ hygiene, not a single all-or-nothing delivery.
 | 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large | Draft |
 | 43F — Close Real Coverage Gaps | Missing coverage | Medium | Draft |
 | 43G — Test-Overhead & Granularity Fixes | Test performance/isolation | Small–medium | **Landed** |
-| 43H — Adopt or Retire `window-api.ts` | Dead infrastructure from 42C | Small, decision-required | Draft |
+| 43H — Adopt or Retire `window-api.ts` | Dead infrastructure from 42C | Small, decision-required | **Landed** |
 
 **Sequencing:** none required. Every sub-delivery names its own file set;
 the only overlap between any two is 43E and 43F both touching
@@ -992,6 +995,38 @@ tests/e2e/date-validation.contract.spec.ts` green, same assertions, now
 reading `.message`/`.path` directly instead of substring-matching a
 stringified form. If (b): full e2e suite unaffected (confirms it was
 truly unreferenced).
+
+### What landed and what was corrected (2026-09-13)
+
+**Chose (a).** Added `ValidatorIssue` to `window-api.ts` rather than reusing
+the existing `AdaptedIssue` type the proposal named: confirmed by direct
+read of `issue-registry.js`'s `createIssue()` that a raw `validateX()`
+issue has no `severity` field at all (not merely blank) — `severity` is
+added later by `adaptValidationErrors()`. Casting these 10 sites' raw,
+pre-adapt output to `AdaptedIssue` (which declares `severity: string` as
+required) would claim a field that isn't there; `ValidatorIssue` matches
+`createIssue()`'s real shape (`code`, `message`, `section`, `label`, `path`,
+`route`) instead. All 10 `(m: any) => String(m).includes(...)` sites now
+read `(m: ValidatorIssue) => m.message.includes(...)` directly.
+
+**Found and fixed a genuine, unrelated regression while running this
+sub-delivery's own verification, not caught by Milestone 44C's own
+verification pass:** `navigation-status.contract.spec.ts`'s "Print Preview
+panel and the blocked-export alert agree on how many issues remain" test
+started failing with a strict-mode locator violation — 44C's shared
+readiness card reuses the exact `.validation-panel .validation-title`
+classes the classic error panel already used, and Guardian Inventory's
+print page renders both side by side. Confirmed via `git stash` against
+the pre-43H commit that this already failed before any 43H edit (a 44C
+gap, not something this sub-delivery introduced). `pdf-preview-viewer.spec.ts`
+already guarded the identical collision with a `.filter({ hasText: /required
+field/ })`; applied the same fix here. Grepped for every other
+`.validation-panel .validation-title` site in `tests/e2e/` to confirm no
+third unguarded instance exists.
+
+Full targeted run: `navigation-status.contract.spec.ts` +
+`date-validation.contract.spec.ts` 78/78 (was 77/78 before the readiness-card
+fix). Full unit suite unaffected: 747/747.
 
 ---
 
