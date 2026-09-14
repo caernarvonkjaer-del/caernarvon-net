@@ -343,6 +343,10 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "addSignatureImage"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "createParty"
     },
     {
@@ -359,7 +363,15 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "getActiveSignatureImage"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "getPartyIdForSlot"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "getSignatureImageById"
     },
     {
       "file": "src/core/party-resolver.js",
@@ -375,7 +387,15 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "listSignatureImages"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "mergeParties"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "partyForSignaturePath"
     },
     {
       "file": "src/core/party-resolver.js",

@@ -353,6 +353,31 @@ export function getPartyIdForSlot(filing, role, index = 0) {
   return null;
 }
 
+/**
+ * Milestone 46B: maps a signature control's `path` to the role/index slot
+ * that owns it, so the reusable-stamp affordance can find the party without
+ * every filing type wiring it through by hand. The three shapes below are
+ * the only ones renderSignatureStateControl() is ever called with, across
+ * all nine filing types: a collection row (`planGuardians.2`, `guardians.0`),
+ * or a flat role prefix (`attorney`, `preparer`).
+ */
+export function partySlotForSignaturePath(path) {
+  if (!path) return null;
+  const rowMatch = /^(?:plan)?[Gg]uardians\.(\d+)$/.exec(path);
+  if (rowMatch) return { role: 'guardian', index: Number(rowMatch[1]) };
+  if (path === 'attorney') return { role: 'attorney', index: 0 };
+  if (path === 'preparer') return { role: 'preparer', index: 0 };
+  return null;
+}
+
+/** Resolves the party linked to a signature control's path, or null. */
+export function partyForSignaturePath(filing, path) {
+  const slot = partySlotForSignaturePath(path);
+  if (!slot) return null;
+  const partyId = getPartyIdForSlot(filing, slot.role, slot.index);
+  return partyId ? resolveParty(partyId) : null;
+}
+
 /** Points a filing's role/index slot at a party id (or clears it with null). */
 export function setPartyIdForSlot(filing, role, index, partyId) {
   if (!filing) return;
@@ -550,6 +575,12 @@ window.hydrateFromParty = hydrateFromParty;
 window.dehydrateIntoParty = dehydrateIntoParty;
 window.getPartyIdForSlot = getPartyIdForSlot;
 window.setPartyIdForSlot = setPartyIdForSlot;
+// Milestone 46A/46B: reusable per-party signature stamps.
+window.addSignatureImage = addSignatureImage;
+window.getActiveSignatureImage = getActiveSignatureImage;
+window.getSignatureImageById = getSignatureImageById;
+window.listSignatureImages = listSignatureImages;
+window.partyForSignaturePath = partyForSignaturePath;
 window.slotsReferencing = slotsReferencing;
 window.syncIdentityField = syncIdentityField;
 window.isPartyPairDismissed = isPartyPairDismissed;

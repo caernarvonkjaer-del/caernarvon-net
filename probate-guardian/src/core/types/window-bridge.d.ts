@@ -34,6 +34,7 @@ interface Window {
   addPlanGuardian: any;
   addPlanRow: any;
   addRecipient: any;
+  addSignatureImage: any;
   addToRecentlyOpened: any;
   addWard: any;
   addWitness: any;
@@ -171,6 +172,7 @@ interface Window {
   formatSSN: any;
   formEngine: any;
   generateSaltB64: any;
+  getActiveSignatureImage: any;
   getActiveWard: any;
   getCaseFile: any;
   getCurrentLockedWardId: any;
@@ -186,6 +188,7 @@ interface Window {
   getPartyIdForSlot: any;
   getPath: any;
   getProbateGuardianTabState: any;
+  getSignatureImageById: any;
   getWardFileName: any;
   getWardFileStem: any;
   getWardPriorYears: any;
@@ -224,6 +227,7 @@ interface Window {
   issueMessage: any;
   linkDestinationToSourceWardParty: any;
   linkLabelsToInputs: any;
+  listSignatureImages: any;
   loadAndRenderActivityLog: any;
   loadAnnualFeature: any;
   loadAnnualPdf: any;
@@ -277,6 +281,7 @@ interface Window {
   pageNav: any;
   pagePartyManagement: any;
   PAGES_GUARDIAN: any;
+  partyForSignaturePath: any;
   PBKDF2_ITERATIONS: any;
   PG_APP_VERSION: any;
   pgHasUnsavedChanges: any;

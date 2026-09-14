@@ -5,6 +5,9 @@
 // and JS wiring instead of each card hand-rolling its own copy.
 import { SIGNATURE_STATES } from '../validation/signature-state.js';
 import { mountSignaturePad } from './signature-pad.js';
+// Milestone 46B: reusable per-party stamps. See mountSavedStampAffordance()
+// below for why applying one copies bytes rather than storing a reference.
+import { partyForSignaturePath, getActiveSignatureImage, addSignatureImage } from '../party-resolver.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -81,12 +84,30 @@ export function mountSignatureStateControls(container, { setImage, route }) {
     const group = container.querySelector(`[data-signature-state-group="${CSS.escape(path)}"]`);
     const checkedRadio = group?.querySelector('input[type="radio"]:checked');
     if (checkedRadio?.value !== 'stamp') return;
+
+    const commitImage = (dataUrl) => {
+      setImage(imagePath, dataUrl);
+      window.markDirtySinceExport?.();
+      window.autoSave?.();
+      if (route && window.renderPage) window.renderPage(route);
+    };
+
+    mountSavedStampAffordance(mountEl, path, commitImage);
+
     const handle = mountSignaturePad(mountEl, {
       onApply: (dataUrl) => {
-        setImage(imagePath, dataUrl);
-        window.markDirtySinceExport?.();
-        window.autoSave?.();
-        if (route && window.renderPage) window.renderPage(route);
+        // Milestone 46B: a freshly captured mark also becomes this party's
+        // reusable stamp, which is what makes 46A's history worth keeping --
+        // otherwise nothing would ever populate it. Appending is best-effort
+        // and never blocks signing: a filing whose slot isn't linked to a
+        // party yet still signs normally, it just has nothing to reuse later.
+        try {
+          const party = partyForSignaturePath(window.D, path);
+          if (party) addSignatureImage(party, dataUrl);
+        } catch (e) {
+          console.warn('Could not record reusable signature stamp', e);
+        }
+        commitImage(dataUrl);
       },
       onCancel: () => {
         mountEl.innerHTML = '';
@@ -95,4 +116,48 @@ export function mountSignatureStateControls(container, { setImage, route }) {
     handles.push(handle);
   });
   return handles;
+}
+
+/**
+ * Milestone 46B: offers this party's active saved stamp for reuse, if there
+ * is one. Applying **copies the image bytes onto the filing**, rather than
+ * storing a { partyId, imageId } reference.
+ *
+ * That is a deliberate correction to 39-D's original design, made after its
+ * own stated justification didn't survive scrutiny: it argued for a
+ * reference "not a copy, so a later change to the party's active stamp never
+ * retroactively alters an already-signed filing" -- but a copy is immutable
+ * too, so that reasoning doesn't actually separate the two. The genuine
+ * tradeoff is storage dedup versus portability, and a reference loses badly
+ * there: `buildSingleWardExportBlob()` packages only the ward, so an exported
+ * filing would carry a permanently dangling reference into any other case
+ * file. Copying keeps single-ward export working untouched and removed the
+ * entire export/import sub-delivery (39-D's 46C) from this milestone.
+ *
+ * The confirmation is required on every apply, per 46A's sensitivity
+ * classification: a reusable mark could otherwise be attached to a document
+ * its owner never saw.
+ */
+function mountSavedStampAffordance(mountEl, path, commitImage) {
+  let party = null;
+  try {
+    party = partyForSignaturePath(window.D, path);
+  } catch { /* an unlinked slot simply has nothing to offer */ }
+  const active = party ? getActiveSignatureImage(party) : null;
+  if (!active || !active.imageData) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'saved-stamp-offer mb-2';
+  const who = party.name ? ` for ${party.name}` : '';
+  wrap.innerHTML = `<button type="button" class="btn btn-outline-secondary btn-sm" data-signature-action="use-saved-stamp">Use my saved signature${esc(who)}</button>`;
+  // Inserted as a sibling *before* the pad's mount point, not inside it:
+  // mountSignaturePad() assigns innerHTML on that element, which would wipe
+  // this button out from under us.
+  mountEl.parentNode.insertBefore(wrap, mountEl);
+
+  wrap.querySelector('[data-signature-action="use-saved-stamp"]').addEventListener('click', () => {
+    const ok = window.confirm('Apply your saved signature to this filing?');
+    if (!ok) return;
+    commitImage(active.imageData);
+  });
 }

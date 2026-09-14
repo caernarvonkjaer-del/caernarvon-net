@@ -2,9 +2,15 @@
 
 ## Status
 
-**Authorized 2026-09-14.** The one open gate item is resolved — see "Open
-question" below. All three of 39-D's authorization-gate conditions are now
-satisfied, so this milestone may be implemented.
+**Landed 2026-09-14 as 46A + 46B. 46C was cancelled, not deferred.**
+
+39-D's central design choice — a filing storing a `{ partyId, imageId }`
+reference rather than a copy — was reversed during 46B after its own stated
+justification didn't hold up (a copy is equally immutable; the real tradeoff
+was storage dedup versus export portability, and portability won). Applying
+a saved stamp now copies bytes into the filing's existing 39-B
+`signatureImage` field, which removed the entire export/import sub-delivery
+from the milestone. See "46B: What landed" and "46C: REMOVED".
 
 This document promotes `MILESTONE-39-PROPOSAL.md`'s 39-D from a
 recommendation-recorded draft into a formally scoped milestone. 39-D's own
@@ -19,8 +25,8 @@ against current `master`:
 
 | Gate item | State |
 | --- | --- |
-| Compound party+entry reference design | **Resolved in the draft** — `signatureImageRef: { partyId, imageId }`, because `signatureImages` ids are per-party scoped. Carried forward unchanged below. |
-| Single-ward export/import fix | **Resolved in approach, still unbuilt** — re-verified as genuinely necessary against current code (see below). Scoped as 46C. |
+| Compound party+entry reference design | **Resolved, then reversed in 46B** — the compound shape was correct *if* a reference were used at all, but copy-on-apply proved the better call. Per-party id scoping still matters for 46A's store itself. |
+| Single-ward export/import fix | **Moot** — the reference design it protected was dropped in 46B, so there is nothing to repair. The analysis stands and is what motivated dropping it. |
 | Storage-growth question | **Resolved 2026-09-14 — option (a).** See "Open question." |
 
 Split into three sub-deliveries (46A/46B/46C) with a strict order, since
@@ -167,7 +173,92 @@ signature date is independent of `capturedAt`.
 
 ---
 
-## 46C: Single-ward export/import portability
+## 46B: What landed (2026-09-14) — and why the reference design was dropped
+
+**39-D's central design choice did not survive scrutiny, and was reversed
+with the requester's agreement.** Its Design section argued a filing must
+store `signatureImageRef: { partyId, imageId }` — *"records this reference,
+not a copy, so a later change to the party's active stamp never
+retroactively alters an already-signed filing."* That justification does
+not actually distinguish the two options: **a copy is immutable too.** A
+filing holding its own bytes is equally unaffected by anything the party
+does later.
+
+The real tradeoff is different from the one the design stated:
+
+| | Reference | Copy |
+| --- | --- | --- |
+| Old filing keeps its exact mark | Yes | Yes |
+| Storage | One image shared across filings | One per signed filing |
+| Single-ward export | **Breaks** — dangling `partyId` in any other case file | Works, untouched |
+| Extra machinery needed | 46C's export/import snapshot fix | None |
+
+Since a signature PNG is small under 39-B's existing per-image caps, the
+dedup benefit is minor and the portability cost is real. **Decision:
+copy-on-apply.** Applying a saved stamp writes the bytes into the filing's
+existing 39-B `signatureImage` field.
+
+Consequences, all verified rather than assumed:
+
+- **No new filing-level field.** `signatureImageRef` was never added — the
+  existing `signatureImage` carries it, so no filing-side data-model change
+  and no new rows in `probate-guardian-data-model.csv`.
+- **46C is removed from this milestone entirely** (see below). The
+  dangling-reference problem it existed to solve cannot occur.
+- **`buildSingleWardExportBlob()` is untouched**, so single-ward export and
+  import keep working exactly as before with no new code.
+
+**What was built:**
+
+- `partySlotForSignaturePath()` / `partyForSignaturePath()`
+  (`party-resolver.js`) map a signature control's `path` to its role/index
+  slot and resolve the linked party — the three shapes
+  `renderSignatureStateControl()` is ever called with across all nine filing
+  types (`planGuardians.N`, `guardians.N`, `attorney`, `preparer`). This is
+  what let the affordance work generically instead of each filing type
+  wiring it through by hand.
+- Capturing a stamp now also appends it to that party's history via
+  `addSignatureImage()` — which is what finally populates 46A's store;
+  nothing else would have. Best-effort and never blocking: a slot not yet
+  linked to a party still signs normally, it just has nothing to reuse.
+- A "Use my saved signature" button appears in the Stamp state when the
+  linked party has an active stamp. **Every apply is confirmed**, per 46A's
+  sensitivity classification — a reusable mark must never attach silently
+  to a document its owner never saw.
+
+**One implementation detail worth recording:** the affordance is inserted as
+a *sibling before* the pad's mount element, not inside it. `mountSignaturePad()`
+assigns `innerHTML` on that element, which silently wiped the button out
+from under the first implementation — caught by the new tests failing, not
+by inspection.
+
+**Verification:** new `tests/e2e/signature-stamp-reuse.spec.ts` (4 tests)
+covers the cross-filing reuse flow through the real party-linking UI, the
+confirmation being required, declining applying nothing, an unlinked slot
+offering nothing while still signing, and an already-signed filing keeping
+its exact mark after the party captures a newer stamp. No regression:
+`signature-capture.contract.spec.ts` 33 green, `party-write-through.spec.ts`
+green, full unit suite 789/789. The five new `window.*` globals were caught
+by Milestone 42C's frozen-bridge guard and added deliberately to the
+checked-in allowlist, with `window-bridge.d.ts` regenerated.
+
+---
+
+## 46C: REMOVED — not needed under copy-on-apply
+
+**This sub-delivery is cancelled, not deferred.** It existed solely to stop
+a reference-based design from breaking single-ward export/import. With 46B
+storing copies, a filing's signature travels inside the ward payload that
+`buildSingleWardExportBlob()` already packages, so there is no dangling
+reference to repair and no export/import change to make.
+
+The original scope is kept below for the record, because the *analysis* that
+produced it remains correct and is what justified dropping the reference
+design in the first place — `buildSingleWardExportBlob()` genuinely does
+package only `wards/${wardId}.enc` plus that ward's own filtered audit
+entries, with no party data, re-verified against current `master`.
+
+### Original scope (not implemented)
 
 **Depends on 46B. Not optional** — without it, 46B ships a regression in an
 existing shipped feature.
@@ -196,9 +287,11 @@ test is the milestone's real exit criterion.
 
 ## Sequencing
 
-46A → 46B → 46C, strictly. Do not land 46B without 46C in the same
-milestone: the window between them is a period where standalone export
-silently produces filings with dangling signature references.
+Planned as 46A → 46B → 46C strictly, with the warning that landing 46B
+without 46C would leave a window where standalone export silently produced
+filings with dangling signature references. **That risk was designed out
+rather than sequenced around:** 46B stores copies, so there are no
+references to dangle and 46C was cancelled. Delivered as 46A → 46B.
 
 ## Cross-cutting ramifications
 
