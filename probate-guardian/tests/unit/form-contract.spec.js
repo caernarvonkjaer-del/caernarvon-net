@@ -12,6 +12,7 @@ import {
   triStateText,
   isTriStateAnswer,
   getControlKind,
+  getControlPolicy,
 } from '../../src/core/form/form-contract.js';
 
 function createMockInput(initial = {}) {
@@ -315,6 +316,32 @@ describe('form-contract', () => {
         dataset: { formPath: 'guardian.ein' },
       });
       expect(getControlKind(einInput)).toBe('ssn');
+    });
+
+    // Milestone 43C: consolidated from types-contract.spec.js and
+    // field-kind-inference.spec.js's own duplicate path/kind pairs -- this
+    // describe block is getControlKind()'s one canonical home. Kept every
+    // pair the two removed copies covered that wasn't already here.
+    const kindOf = (path, extra = {}) => getControlKind(createMockInput({ type: 'text', dataset: { formPath: path, ...extra } }));
+
+    it('classifies further identifier/name/zip/address/date fields by whole word (from types-contract.spec.js)', () => {
+      expect(kindOf('caseNumber')).toBe('identifier');
+      expect(getControlPolicy(createMockInput({ type: 'text', dataset: { formPath: 'caseNumber' } }))).toBe('preserve');
+      const dateEl = createMockInput({ type: 'date', dataset: { formPath: 'periodFrom' } });
+      expect(getControlKind(dateEl)).toBe('date');
+      expect(getControlPolicy(dateEl)).toBe('normalize');
+      expect(kindOf('wardName')).toBe('name');
+      expect(getControlPolicy(createMockInput({ type: 'text', dataset: { formPath: 'wardName' } }))).toBe('display-only');
+    });
+
+    it('classifies genuine identifier fields by whole word (from field-kind-inference.spec.js)', () => {
+      expect(kindOf('preparer.ssnEin')).toBe('ssn');
+      expect(kindOf('ssn_ein')).toBe('ssn');
+      expect(kindOf('attorney_bar_number')).toBe('identifier');
+      expect(kindOf('guardianNames')).toBe('name');
+      expect(kindOf('mailingCityStateZip')).toBe('zip');
+      expect(kindOf('mailingStreet')).toBe('address');
+      expect(kindOf('certServiceDate')).toBe('date');
     });
 
     it('retains Yes and No on yes-no checkbox finalize without SSN erasure', () => {

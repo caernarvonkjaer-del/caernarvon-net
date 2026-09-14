@@ -1,15 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as Types from '../../src/core/types/index.js';
 import { SCHEDULE_SCHEMAS } from '../../src/core/form/schedule-definitions.js';
-import { getControlKind, getControlPolicy } from '../../src/core/form/form-contract.js';
-
-function createMockControl({ dataset = {}, type = 'text' } = {}) {
-  return {
-    dataset,
-    type,
-    value: '',
-  };
-}
 
 describe('Milestone 29: Type Contracts & Static Validation', () => {
   it('exports types module cleanly without runtime errors', () => {
@@ -38,19 +29,9 @@ describe('Milestone 29: Type Contracts & Static Validation', () => {
     expect(schD1).toHaveProperty('restricted');
   });
 
-  it('verifies field contract kinds and policies match type definitions', () => {
-    const el = createMockControl({ dataset: { fieldPath: 'caseNumber' } });
-    expect(getControlKind(el)).toBe('identifier');
-    expect(getControlPolicy(el)).toBe('preserve');
-
-    const dateEl = createMockControl({ dataset: { fieldPath: 'periodFrom' }, type: 'date' });
-    expect(getControlKind(dateEl)).toBe('date');
-    expect(getControlPolicy(dateEl)).toBe('normalize');
-
-    const nameEl = createMockControl({ dataset: { fieldPath: 'wardName' } });
-    expect(getControlKind(nameEl)).toBe('name');
-    expect(getControlPolicy(nameEl)).toBe('display-only');
-  });
+  // Milestone 43C: getControlKind()/getControlPolicy() coverage consolidated
+  // into form-contract.spec.js (that module's own name), which is where
+  // these three path/kind/policy pairs now live.
 
   it('validates canonical CaseFile shape structure', () => {
     /** @type {import('../../src/core/types/case-file.js').CaseFile} */

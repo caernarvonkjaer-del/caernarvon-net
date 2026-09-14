@@ -88,19 +88,11 @@ describe('field-kind inference', () => {
     expect(divergent).toEqual(['committeeIncorporated: substring=ssn word=text']);
   });
 
-  it('classifies genuine identifier fields by whole word', () => {
-    expect(getControlKind(textControl('preparer.ssnEin'))).toBe('ssn');
-    expect(getControlKind(textControl('guardian.ein'))).toBe('ssn');
-    expect(getControlKind(textControl('ssn_ein'))).toBe('ssn');
-    expect(getControlKind(textControl('caseNumber'))).toBe('identifier');
-    expect(getControlKind(textControl('attorney_bar_number'))).toBe('identifier');
-    // Plural tolerated, so guardianNames stays a name field.
-    expect(getControlKind(textControl('guardianNames'))).toBe('name');
-    expect(getControlKind(textControl('wardName'))).toBe('name');
-    expect(getControlKind(textControl('mailingCityStateZip'))).toBe('zip');
-    expect(getControlKind(textControl('mailingStreet'))).toBe('address');
-    expect(getControlKind(textControl('certServiceDate'))).toBe('date');
-  });
+  // Milestone 43C: the whole-word path/kind pairs this test asserted
+  // (preparer.ssnEin, ssn_ein, caseNumber, attorney_bar_number,
+  // guardianNames, wardName, mailingCityStateZip, mailingStreet,
+  // certServiceDate) are consolidated into form-contract.spec.js, that
+  // module's own canonical home for getControlKind() coverage.
 
   it('does not classify a mid-word needle as a match', () => {
     expect(getControlKind(textControl('committeeIncorporated'))).toBe('text');

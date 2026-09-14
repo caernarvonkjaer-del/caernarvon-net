@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Initial's readiness checklist agrees with the actual export-blocking
@@ -11,39 +11,7 @@ import { withOverrides, autoById } from './support/plan-readiness-parity.js';
 // Simplified pilot demonstrated a sample of -- 19 conditions here already
 // means 30 primary fixtures; adding every conditional sub-case would roughly
 // double that for marginal proof value beyond what the pilot established.
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  inpS: () => '',
-  countyInputS: () => '',
-  radioP: () => '',
-  pageNavS: () => '',
-  renderScheduleDocsSection: () => '',
-  txtP: () => '',
-  chkP: () => '',
-  planQ: () => '',
-  planCheckGroup: () => '',
-  yesNoCheckboxS: () => '',
-  formatName: (s) => s,
-  formatPhone: (s) => s,
-  formatDisplayDate: (s) => s,
-  toggleSsnReveal: () => '',
-  INITIAL_ADLS: [
-    ['lightHousekeeping', 'Light Housekeeping'], ['medication', 'Administration of Medication'],
-    ['managingMoney', 'Managing Money'], ['bathing', 'Bathing'],
-    ['prepareMeals', 'Prepare Meals'], ['stairs', 'Climbing Stairs'],
-    ['shopping', 'Shopping'], ['laundry', 'Doing Laundry'],
-    ['toileting', 'Toileting'], ['dressing', 'Dressing'],
-    ['transferring', 'Transferring (from wheelchair to chair/bed)'], ['eating', 'Eating'],
-    ['walking', 'Walking / Mobility'], ['grooming', 'Grooming'],
-    ['heavyChores', 'Heavy Chores'],
-  ],
-  highlightErrors: () => {},
-  validationPanel: () => '',
-  planReadinessPanel: () => '',
-  renderPage: () => {},
-  ...(global.window || {}),
-};
+global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
 
 vi.mock('../../src/features/plan-initial/pdf-model.js', () => ({ buildPlanInitialModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));

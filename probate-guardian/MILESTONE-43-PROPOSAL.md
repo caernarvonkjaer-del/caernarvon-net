@@ -12,7 +12,8 @@ or anything else in flight.
 premise landed separately (`7794180`) — see 43A's own "What landed and
 what was corrected" section. **43B also landed 2026-09-13**, in a smaller
 form than originally proposed — see its own "What landed and what was
-corrected" section. **43C–43H remain Draft**, not yet approved.
+corrected" section. **43C landed 2026-09-13** — see its own "What landed"
+section. **43D–43H remain Draft**, not yet approved.
 
 **Source:** two read-only test-suite audits run this session (2026-09-13),
 via parallel read-only research passes (no edits made in either): the
@@ -48,7 +49,7 @@ hygiene, not a single all-or-nothing delivery.
 | --- | --- | --- | --- |
 | 43A — Delete or Fix Vacuous/Dead Tests | Correctness of the tests themselves | Small | **Landed** |
 | 43B — Replace Source-Text Proxy Tests with Real Behavioral Tests | Correctness of the tests themselves | Medium | **Landed** |
-| 43C — De-duplicate Redundant Cross-File Coverage | Redundancy | Small–medium | Draft |
+| 43C — De-duplicate Redundant Cross-File Coverage | Redundancy | Small–medium | **Landed** |
 | 43D — Split Poorly-Scoped Catch-All Files | Scoping/organization | Medium | Draft |
 | 43E — PDF/Signature Cluster: Table-Driven Refactor + Fixture Dedup | Redundancy, largest by line count | Large | Draft |
 | 43F — Close Real Coverage Gaps | Missing coverage | Medium | Draft |
@@ -428,6 +429,29 @@ tests/unit/plan-minor-parity.spec.js tests/unit/plan-simplified-parity.spec.js`
 and `npx playwright test tests/e2e/party-dedupe.spec.ts
 tests/e2e/party-resolver.spec.ts` — all green, same assertion count or
 higher (never lower) per file after consolidation.
+
+### What landed (2026-09-13)
+
+All four decisions landed as written. Decision 2's diff step found
+`form-contract.spec.js:294-317` did **not** already cover
+`types-contract.spec.js`'s three pairs (`caseNumber`/`periodFrom`/`wardName`)
+nor most of `field-kind-inference.spec.js`'s ten (only `guardian.ein` and
+`committeeIncorporated` overlapped) — ported the missing pairs into two new
+`it()` blocks in `form-contract.spec.js`'s existing `getControlKind &
+boundary inference` describe before deleting either duplicate, per the
+decision's own instruction not to silently drop coverage. One porting
+mistake caught by actually running it: an initial `kindOf('periodFrom')`
+call defaulted to `type: 'text'`, which `getControlKind()` correctly does
+NOT classify as a date from the path alone (only `type==='date'` or a
+`has('date')` word match trigger it) — removed the redundant/wrong
+assertion, kept the correct one using an explicit `type: 'date'` mock,
+matching `types-contract.spec.js`'s original. Full targeted run: 9 files,
+206 tests, green. Full unit suite: 736/736 (739 minus 3 net — three
+duplicate-block deletions minus two new consolidated tests). E2e
+(`party-dedupe.spec.ts`, `party-resolver.spec.ts`): 22/22.
+`test-index-guard.spec.js` and `TEST-INDEX.md` updated for every touched
+file, including `plan-readiness-parity.js`'s new `createPlanTestWindowStub()`
+export.
 
 ---
 

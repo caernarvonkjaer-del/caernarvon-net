@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Minor's readiness checklist agrees with the actual export-blocking
@@ -7,29 +7,7 @@ import { withOverrides, autoById } from './support/plan-readiness-parity.js';
 // required-field fixtures only (see plan-initial-parity.spec.js's identical
 // note) -- secondary "explain when Other" conditionals are not repeated here.
 // This is the fourth and last Plan type for 37-3's reconciliation.
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  inpS: () => '',
-  countyInputS: () => '',
-  radioP: () => '',
-  pageNavS: () => '',
-  renderScheduleDocsSection: () => '',
-  txtP: () => '',
-  chkP: () => '',
-  planQ: () => '',
-  planCheckGroup: () => '',
-  yesNoCheckboxS: () => '',
-  formatName: (s) => s,
-  formatPhone: (s) => s,
-  formatDisplayDate: (s) => s,
-  toggleSsnReveal: () => '',
-  highlightErrors: () => {},
-  validationPanel: () => '',
-  planReadinessPanel: () => '',
-  renderPage: () => {},
-  ...(global.window || {}),
-};
+global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
 
 vi.mock('../../src/features/plan-minor/pdf-model.js', () => ({ buildPlanMinorModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));

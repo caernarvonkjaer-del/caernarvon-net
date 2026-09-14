@@ -18,7 +18,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | case-file.spec.js                    | Persistence crypto services (key derivation, salt); .sav packaging and filename helpers; Milestone 40F single save-clock invariant and legacy-app.js parse guard | 
 | case-county-drift.spec.js            | Case-vs-filing county mismatch advisory; Milestone 40C-A wording no longer claims the case registry is authoritative      |
 | checklist-export-parity.spec.js      | Milestone 36-6: section checklist vs export validation rule parity; Milestone 39-C's new signatureState/Image fields (Plan family + Annual Accounting) added to the known-gaps allow-list |
-| circuit-lookup.spec.js               | FL county to judicial circuit lookup; Milestone 40C-A: blank/unknown yields null circuit, empty ordinal and no caption    |
+| circuit-lookup.spec.js               | FL county to judicial circuit lookup; Milestone 40C-A: blank/unknown yields null circuit, empty ordinal and no caption; Milestone 43C: canonical home for this null-safety, de-duped from filing-county-defaults.spec.js |
 | combobox-controller.spec.js          | ComboboxController widget behavior                                                                                        |
 | content-corrections.spec.js          | Sub-milestone 36-5: content corrections (AO removal guard, Part VIII no-trust certification, date format, clerk guidance) |
 | convert-targets.spec.js              | Milestone 42E: Convert Ward target eligibility keyed to the narrow CONVERT_SOURCE_TYPE table (36-7 intent), not the creation-time carry table |
@@ -32,10 +32,10 @@ row here, has more than one, or a row names a file that no longer exists.
 | excel-engine.spec.js                 | Excel cell-writing helpers (setCell, fmtDate, numValue, etc.)                                                             |
 | filing-descriptor.spec.js            | Filing type → descriptor/copy resolution                                                                                  |
 | filing-type-enumeration-guard.spec.js | Milestone 42G: no file outside filing-descriptor.js (plus documented exceptions) lists 4+ distinct filing-type keys |
-| filing-county-defaults.spec.js       | Milestone 40C-A: no filing defaults to a county; ward-Party establish/hydrate, legacy unanimity backfill, merge conflict  |
+| filing-county-defaults.spec.js       | Milestone 40C-A: no filing defaults to a county; ward-Party establish/hydrate, legacy unanimity backfill, merge conflict (blank/unrecognized circuit-lookup null-safety itself lives in circuit-lookup.spec.js, Milestone 43C) |
 | feature-exports.spec.js              | Every filing feature module keeps its public `validate*` export (guards an edit wedging a declaration between `export` and `function`) |
-| form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers                                                        |
-| field-kind-inference.spec.js         | Milestone 36-6: whole-word field-kind inference; no shipped path collides mid-word; no text formatter on checkbox/radio   |
+| form-contract.spec.js                | Stored-text sanitization, safe title-casing, form contract helpers; canonical home for getControlKind()/getControlPolicy() path/kind pairs (Milestone 43C, consolidated from types-contract.spec.js and field-kind-inference.spec.js) |
+| field-kind-inference.spec.js         | Milestone 36-6: whole-word field-kind inference; no shipped path collides mid-word; no text formatter on checkbox/radio (further path/kind pairs consolidated into form-contract.spec.js, Milestone 43C) |
 | form-fields.spec.js                  | inferFieldKind, renderFormField, renderSelectField, renderTextareaField                                                   |
 | form-write-side-effects.spec.js      | Milestone 42D: runFieldWriteSideEffects() is the one post-write tail (county commit, Party write-through, autosave, nav dots, ward card, name sync) and all three binding paths call it |
 | guardianship-options.spec.js         | GD-derived guardianship type/lifecycle option lists and legacy-value select preservation                                  |
@@ -72,7 +72,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | tab-state.spec.js                    | Cross-tab peer-state normalization and risky-peer detection                                                               |
 | test-index-guard.spec.js             | Milestone 42A: every spec file has exactly one row in this file and every row names an existing file                     |
 | theme-persistence.spec.js            | Milestone 40D: theme stored per device in localStorage, one-time legacy .sav seed, pre-paint resolution, prepaint.js key parity |
-| types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy                                               |
+| types-contract.spec.js               | Milestone 29: static type contract validation against schema/control policy (getControlKind()/getControlPolicy() pairs consolidated into form-contract.spec.js, Milestone 43C) |
 | validation-adapter.spec.js           | Validation error adaptation and route resolution from section                                                             |
 | validation-issue.spec.js             | Milestone 42F: validationIssue()/issueFactory() build registry-backed issues from the "Section — detail" convention; toString() is the message; Milestone 44A: non-bypassable simplified.guardian.address-conflict code on Part IV address conflict, and that prepareFilingOutput()'s acknowledgement clears bypassable issues but never that one |
 | window-bridge.spec.js                | Milestone 42C: every window.X = site in src/ is in fixtures/window-bridge-allowlist.json (scripts/audit-window-bridge.mjs); window-bridge.d.ts in sync; no new triple definitions |
@@ -85,7 +85,7 @@ row here, has more than one, or a row names a file that no longer exists.
 
 | File                      | Purpose                                                                            |
 | ------------------------- | ---------------------------------------------------------------------------------- |
-| plan-readiness-parity.js  | Milestone 37-3: withOverrides()/autoById() shared by each Plan-type parity spec    |
+| plan-readiness-parity.js  | Milestone 37-3: withOverrides()/autoById() shared by each Plan-type parity spec; Milestone 43C: createPlanTestWindowStub() consolidates the four specs' duplicated global.window boilerplate |
 | fixtures/window-bridge-allowlist.json | Milestone 42C: the declared `window.X =` surface; regenerate with `node scripts/audit-window-bridge.mjs --json` |
 
 ## tests/e2e (Playwright, `npm run test:e2e`)
@@ -123,7 +123,7 @@ row here, has more than one, or a row names a file that no longer exists.
 | output-semantics.artifact.spec.ts        | Milestone 33 Phase 3: output semantics artifact contract                                                                                                                                 |
 | page-structure.spec.ts                   | All form pages preserve landmarks and heading structure                                                                                                                                  |
 | party-dedupe.spec.ts                     | Milestone 7: party de-duplication; Milestone 40C-1: ward county merge conflict warning, cancellation, and resolution                                                                    |
-| party-resolver.spec.ts                   | party-resolver hydration/dehydration core; party de-duplication; Milestone 40C-1: single-ward import reconstruction under unanimity rule, legacy backfill and merge conflict handling    |
+| party-resolver.spec.ts                   | party-resolver hydration/dehydration core; party de-duplication via resolver (Milestone 43C: retitled describe block to disambiguate from party-dedupe.spec.ts's identical title); Milestone 40C-1: single-ward import reconstruction under unanimity rule, legacy backfill and merge conflict handling    |
 | party-write-through.spec.ts              | Milestone 4: party write-through (planInitial + annual)                                                                                                                                  |
 | pdf-accessibility-and-signatures.spec.ts | Non-raster PDF generation, signatures & bookmarks                                                                                                                                        |
 | pdf-annotate.spec.ts                     | Milestone 39-A spike: pdf.js AnnotationEditorLayer toolbar (FreeText/Highlight/Undo/Clear), pilot-gated to Plan Simplified; persisted-annotation save/reopen round trip                  |

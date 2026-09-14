@@ -7,12 +7,6 @@ import {
   emptyDataPlanMinor,
   emptyDataAnnual,
 } from '../../src/core/state.js';
-import {
-  circuitForCounty,
-  getCircuitOrdinal,
-  getFloridaCircuitCourtCaption,
-} from '../../src/core/pdf/circuit-lookup.js';
-
 // Milestone 40C-A. The governing decision: a ward has NO default county until
 // the user selects County on that ward's first filing Cover. That first explicit
 // choice is stored on the canonical ward Party; later filings for the same ward
@@ -90,22 +84,10 @@ describe('Milestone 40C-A: no filing starts with a county', () => {
   });
 });
 
-describe('Milestone 40C-A: the circuit lookup never invents a county', () => {
-  test('a blank county produces no circuit, no ordinal and no caption', () => {
-    expect(circuitForCounty('')).toBeNull();
-    expect(getCircuitOrdinal('')).toBe('');
-    expect(getFloridaCircuitCourtCaption('')).toBeNull();
-  });
-
-  test('an unrecognized county produces no caption either', () => {
-    expect(getFloridaCircuitCourtCaption('Atlantis')).toBeNull();
-  });
-
-  test('a real county still resolves, so the 67 mappings are undisturbed', () => {
-    expect(getFloridaCircuitCourtCaption('Pinellas').line2).toBe('IN AND FOR PINELLAS COUNTY, FLORIDA');
-    expect(getFloridaCircuitCourtCaption('Orange').line1).toBe('IN THE CIRCUIT COURT OF THE NINTH JUDICIAL CIRCUIT');
-  });
-});
+// Milestone 40C-A's blank/unrecognized-county null-safety on circuitForCounty()/
+// getCircuitOrdinal()/getFloridaCircuitCourtCaption() lives in
+// circuit-lookup.spec.js (Milestone 43C de-dup) -- this file's own concern is
+// county *default assignment* behavior, not the lookup functions themselves.
 
 describe('Milestone 40C-A: the ward-county lifecycle', () => {
   let wardCounty;

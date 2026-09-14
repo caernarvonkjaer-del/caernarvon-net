@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Simplified's readiness checklist (planReadinessChecksSimplified()'s
@@ -12,26 +12,7 @@ import { withOverrides, autoById } from './support/plan-readiness-parity.js';
 // never invoked by planReadinessChecksSimplified() or the validation path
 // under test. validatePlanSimplified(), prepareFilingOutput(),
 // getSupplementalFilingIssues(), and county-guidance.js all run for real.
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  inpS: () => '',
-  countyInputS: () => '',
-  pageNavS: () => '',
-  renderScheduleDocsSection: () => '',
-  txtP: () => '',
-  chkP: () => '',
-  yesNoCheckboxS: () => '',
-  formatName: (s) => s,
-  formatPhone: (s) => s,
-  formatAddress: (s) => s,
-  formatDisplayDate: (s) => s,
-  highlightErrors: () => {},
-  validationPanel: () => '',
-  planReadinessPanel: () => '',
-  renderPage: () => {},
-  ...(global.window || {}),
-};
+global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
 
 vi.mock('../../src/features/plan-simplified/pdf-model.js', () => ({ buildPlanSimplifiedModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));

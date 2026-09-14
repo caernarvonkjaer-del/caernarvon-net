@@ -1,53 +1,12 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Annual's readiness checklist agrees with the actual export-blocking
 // path, same pattern as the Plan Simplified pilot. Scope note: primary
 // required-field fixtures only (see plan-initial-parity.spec.js's identical
 // note) -- secondary "explain when Other" conditionals are not repeated here.
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  inpS: () => '',
-  countyInputS: () => '',
-  radioP: () => '',
-  pageNavS: () => '',
-  renderScheduleDocsSection: () => '',
-  txtP: () => '',
-  chkP: () => '',
-  planQ: () => '',
-  planCheckGroup: () => '',
-  formatName: (s) => s,
-  formatPhone: (s) => s,
-  formatSSN: (s) => s,
-  formatAddress: (s) => s,
-  toggleSsnReveal: () => '',
-  formatDisplayDate: (s) => s,
-  PLAN_RIGHTS: [
-    ['marry', 'Right to marry'], ['vote', 'Right to vote'],
-    ['govBenefits', 'Right to personally apply for government benefits'], ['driver', "Right to have a driver's license"],
-    ['travel', 'Right to travel'], ['employment', 'Right to seek or retain employment'],
-    ['contract', 'Right to contract'], ['sue', 'Right to sue and be sued'],
-    ['property', 'Right to manage property or to make any gift or disposition'], ['residence', 'Right to determine residence'],
-    ['medical', 'Right to consent to medical treatment'], ['social', 'Right to make decisions about social environment or other aspects of social life'],
-  ],
-  PLAN_ADLS: [
-    ['eating', 'Eating'], ['prepareMeals', 'Prepare meals'],
-    ['heavyChores', 'Heavy chores (e.g. vacuuming)'], ['lightHousekeeping', 'Light housekeeping'],
-    ['managingMoney', 'Managing money'], ['dressing', 'Dressing'],
-    ['transportation', 'Transportation ability'], ['walking', 'Walking / mobility'],
-    ['toileting', 'Toileting'], ['stairs', 'Climbing stairs'],
-    ['transferring', 'Transferring (wheelchair to chair/bed)'], ['laundry', 'Doing laundry'],
-    ['shopping', 'Shopping'], ['bathing', 'Bathing'],
-    ['grooming', 'Grooming'], ['medication', 'Administration of medication'],
-  ],
-  highlightErrors: () => {},
-  validationPanel: () => '',
-  planReadinessPanel: () => '',
-  renderPage: () => {},
-  ...(global.window || {}),
-};
+global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
 
 vi.mock('../../src/features/plan-annual/pdf-model.js', () => ({ buildPlanAnnualModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));

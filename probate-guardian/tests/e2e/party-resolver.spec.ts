@@ -334,7 +334,11 @@ test.describe('party-resolver (unwired hydration/dehydration core)', () => {
 // referenceCountForParty(), all in src/core/party-resolver.js. Direct-logic
 // tests against hand-built parties/wards/cases, mirroring this file's own
 // style above; the real-UI proof lives in tests/e2e/party-dedupe.spec.ts.
-test.describe('party de-duplication (Milestone 7)', () => {
+// Milestone 43C: renamed from the identical 'party de-duplication
+// (Milestone 7)' title party-dedupe.spec.ts also uses, so grep/reporter
+// output disambiguates the two -- not a real duplicate, just a title
+// collision (the two files test complementary things).
+test.describe('party de-duplication via resolver (Milestone 7)', () => {
   test('findDuplicateCandidates matches on exact case-insensitive name, flags strongMatch on shared contact info, and excludes dismissed pairs', async ({ page }) => {
     await freshStartNoPassword(page);
 
