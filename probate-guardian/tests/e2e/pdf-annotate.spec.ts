@@ -100,6 +100,112 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await expect(noteBtn).toHaveAttribute('aria-pressed', 'false');
   });
 
+  // AnnotationEditorUIManager's viewParameters.realScale defaults to
+  // PixelsPerInch.PDF_TO_CSS_UNITS (~1.333, pdf.mjs:2742) and is only ever
+  // updated from a "scalechanging" event a full PDFViewer would dispatch --
+  // this integration has no such viewer and never fired one, so every new
+  // editor's click position was normalized against a canvas ~12% narrower
+  // than the one actually on screen (1.5, renderPagesInto()'s hardcoded
+  // scale), throwing placement off everywhere except very near the origin.
+  // Regression pin: click deep in the bottom-right quadrant and require the
+  // new editor to land there too, not pulled toward the top-left corner.
+  test('Add Note places the new FreeText editor near the clicked position, not pinned to a corner', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Position Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    await page.locator('[data-annotate-action="note"]').click();
+
+    const preClickBox = (await pdfPage.boundingBox())!;
+    const clickX = preClickBox.width * 0.75;
+    const clickY = preClickBox.height * 0.8;
+    await pdfPage.click({ position: { x: clickX, y: clickY } });
+
+    // Re-measure the page's box after the click: Playwright auto-scrolls the
+    // target into view for a click on a page taller than the viewport, so a
+    // box captured beforehand can already be stale by the time the editor
+    // exists -- comparing against it would compare two different scroll
+    // positions and misreport a correctly-placed editor as mislocated.
+    const pageBox = (await pdfPage.boundingBox())!;
+    const editorBox = (await pdfPage.locator('.freeTextEditor').boundingBox())!;
+    const editorCenterX = editorBox.x - pageBox.x + editorBox.width / 2;
+    const editorCenterY = editorBox.y - pageBox.y + editorBox.height / 2;
+    expect(editorCenterX).toBeGreaterThan(pageBox.width * 0.5);
+    expect(editorCenterY).toBeGreaterThan(pageBox.height * 0.5);
+  });
+
+  // Two real, independent bugs made Highlight mode a complete no-op, found
+  // by tracing why a selection never turned into a rendered highlight:
+  //
+  // 1. AnnotationEditorLayer was constructed with textLayer: null always
+  //    (pdf-annotate.js's addPage()), which makes enableTextSelection() a
+  //    silent no-op (pdf.mjs:27048-27057 guards its whole body on
+  //    this.#textLayer?.div) -- no pointerdown listener was ever attached
+  //    to any text layer. Fixed by passing { div: textLayerDiv }.
+  // 2. Even with a real selection reaching highlightSelection(), it was
+  //    constructed with drawLayer: null. HighlightEditor extends
+  //    DrawingEditor, whose _addOutlines() unconditionally calls
+  //    parent.drawLayer.draw(...) (pdf.mjs:21965/21973) to render the
+  //    highlight as an SVG path -- confirmed live to throw "Cannot read
+  //    properties of null (reading 'draw')", uncaught, for every single
+  //    highlight. Fixed by constructing and wiring a real pdfjsLib.DrawLayer
+  //    (see pdf-annotate.js's addPage()).
+  //
+  // A third, adjacent bug surfaced once the above two let a highlight
+  // actually get as far as being added to the page: highlightColors was
+  // also passed null, and getNonHCMColorName() (pdf.mjs:2841, called from
+  // every new Highlight editor's telemetry hook) has no null guard the way
+  // its neighbor getNonHCMColor() does -- confirmed live to throw
+  // uncaught right after the highlight was otherwise created successfully.
+  // Fixed by passing pdf.js's own default highlight color palette string.
+  //
+  // Playwright's synthetic mouse drag does not reliably produce a native
+  // browser text selection across pdf.js's absolutely-positioned per-line
+  // text-layer spans (confirmed empirically: document.getSelection() stayed
+  // empty through an identical drag sequence even after all three fixes
+  // above landed) -- a Playwright/CDP input-simulation limitation, not
+  // something in this app's code to fix. A programmatic Selection, which
+  // triggers the exact same "selectionchange" -> highlightSelection() path
+  // pdf.js's own UIManager listens for, is what a real user's mouse drag
+  // reaches, and is the standard way to test Selection-driven behavior
+  // under browser automation.
+  test('Highlight mode creates a highlight editor from a real text selection', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Real Highlight Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    await page.locator('[data-annotate-action="highlight"]').click();
+
+    const textSpan = pdfPage.locator('.textLayer span').first();
+    await textSpan.waitFor({ state: 'attached' });
+    const selection = await page.evaluate(() => {
+      const span = document.querySelector('.textLayer span') as HTMLElement;
+      const textNode = span.firstChild;
+      if (!textNode) return null;
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return sel.toString();
+    });
+    expect(selection).toBeTruthy();
+
+    await expect(pdfPage.locator('.highlightEditor')).toHaveCount(1);
+    expect(errors, `page errors: ${errors.join('\n')}`).toEqual([]);
+  });
+
   test('Clear Annotations removes every editor, and the toolbar never enters validated form data', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Clear Ward', 'planSimplified');

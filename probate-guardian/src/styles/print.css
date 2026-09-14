@@ -64,8 +64,41 @@
    toolbar) or its Ink/Stamp/Signature editors, none of which this
    milestone ships. --total-scale-factor matches pdf-preview.js's own
    hardcoded render scale (1.5) -- FreeText's padding/font-size math reads
-   this variable directly. */
-.pdf-page{--total-scale-factor:1.5;}
+   this variable directly.
+
+   --outline-width and --freetext-padding (upstream default 2px each,
+   pdf_viewer.css's own :root block) must be defined, not merely omitted as
+   "theming this spike doesn't need": AnnotationEditor.initialize()/
+   FreeTextEditor.initialize() (pdf.mjs) read them via getComputedStyle(
+   document.documentElement).getPropertyValue(...) once, the first time any
+   editor layer is built, and cache the result in a static field for the
+   page's entire lifetime. --outline-width has a `|| 0` fallback in
+   pdf.mjs, but --freetext-padding does not -- an absent custom property
+   resolves to '', parseFloat('') is NaN, and that NaN becomes
+   FreeTextEditor._internalPadding permanently. Every new FreeText note's
+   render() then calls getInitialTranslation(), which multiplies that NaN
+   through both axes and adds the result into the editor's own x/y via
+   translate() -- silently corrupting its stored position to NaN
+   regardless of where the page was actually clicked. fixAndSetPosition()
+   still runs, but `left:NaN%` / `top:NaN%` is an invalid CSS value the
+   browser discards, leaving both properties unset -- so the editor falls
+   back to its plain static-flow position, the container's top-left
+   corner. That is the "Add Note always lands in the corner" bug,
+   confirmed live: before defining these two, a click 75%/80% across the
+   page still produced x=NaN/y=NaN internally and an editor pinned at
+   (0,0); after, position tracked the click exactly.
+
+   --scale-round-x/--scale-round-y (upstream default 1px each, scoped to
+   .pdfViewer .page there) are the same kind of gap one layer over:
+   setLayerDimensions() (pdf.mjs, used by both TextLayer and
+   AnnotationEditorLayer's own div sizing) sizes each layer with
+   `round(down, var(--total-scale-factor) * <page size>, var(--scale-round-*))`
+   -- an unresolvable var() in that third argument doesn't crash, but it
+   is one more upstream-assumed variable this integration was silently
+   missing rather than deliberately declining, and belongs with the other
+   two rather than left for the next person to rediscover the same way. */
+.pdf-page{--total-scale-factor:1.5;--scale-round-x:1px;--scale-round-y:1px;}
+:root{--outline-width:2px;--freetext-padding:2px;}
 .annotationEditorLayer{position:absolute;inset:0;background:transparent;font-size:calc(100px * var(--total-scale-factor));transform-origin:0 0;cursor:auto;z-index:2;}
 .annotationEditorLayer.disabled{pointer-events:none;}
 .annotationEditorLayer.freetextEditing{cursor:text;}

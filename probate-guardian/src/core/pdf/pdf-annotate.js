@@ -82,25 +82,59 @@ export async function computeContentFingerprint(pdfDocument) {
 // node_modules/pdfjs-dist/web/pdf_viewer.mjs's AnnotationEditorLayerBuilder
 // and PDFViewer -- reference source only, not vendored/shipped).
 export class AnnotationSession {
-  constructor(pdfjsLib, container, pdfDocument) {
+  constructor(pdfjsLib, container, pdfDocument, scale) {
     this.pdfjsLib = pdfjsLib;
     this.pdfDocument = pdfDocument;
     this.eventBus = new MiniEventBus();
     // viewerAlert, altTextManager, commentManager, signatureManager,
-    // pageColors, highlightColors, mlManager, editorUndoBar are all safe as
-    // null -- confirmed directly against the constructor (pdf.mjs:2694):
-    // every one of them is only ever dereferenced with optional chaining
+    // pageColors, mlManager, editorUndoBar are all safe as null --
+    // confirmed directly against the constructor (pdf.mjs:2694): every one
+    // of them is only ever dereferenced with optional chaining
     // (`altTextManager?.destroy()`, `mlManager || null`, etc.) or not at all
     // on the FreeText/Highlight path this integration uses.
+    //
+    // highlightColors is NOT one of those -- this was wrongly grouped in
+    // with them and passed null, confirmed live to throw. It isn't a Map;
+    // the _highlightColors getter (pdf.mjs:2803) parses it as a
+    // "name=color,name=color" STRING. getNonHCMColorName() (pdf.mjs:2841),
+    // called from every new Highlight editor's telemetryInitialData getter
+    // via add() (pdf.mjs:27159), has no null guard the way its neighbor
+    // getNonHCMColor() does -- a null here means this.highlightColorNames
+    // is null, and .get() on null threw "Cannot read properties of null
+    // (reading 'get')" for every highlight, uncaught, right after it was
+    // otherwise successfully created. Real pdf.js's own default palette
+    // (AppOptions.highlightEditorColors, web/pdf_viewer.mjs), unchanged --
+    // no color-picker UI exists here to justify a different one.
+    const highlightColors = 'yellow=#FFFF98,green=#53FFBC,blue=#80EBFF,pink=#FFCBE6,red=#FF4F5F,'
+      + 'yellow_HCM=#FFFFCC,green_HCM=#53FFBC,blue_HCM=#80EBFF,pink_HCM=#F6B8FF,red_HCM=#C50043';
     this.uiManager = new pdfjsLib.AnnotationEditorUIManager(
       container, container, null, null, null, null,
-      this.eventBus, pdfDocument, null, null,
+      this.eventBus, pdfDocument, null, highlightColors,
       false, false, false, null, null, false
     );
+    // The constructor defaults viewParameters.realScale to
+    // PixelsPerInch.PDF_TO_CSS_UNITS (96/72 ~= 1.333, pdf.mjs:2742) and only
+    // ever updates it from a "scalechanging" event (pdf.mjs:3001) that a full
+    // PDFViewer dispatches on every zoom -- this integration has no such
+    // viewer and never fired one, so it stayed stuck at that default forever
+    // regardless of the scale actually used to render the page (1.5, passed
+    // in from renderPagesInto()). AnnotationEditor's own constructor divides
+    // a new editor's raw click coordinates by parentDimensions
+    // (pageWidth-in-points * realScale, pdf.mjs:5564-5569) to normalize them
+    // into the [0,1] fraction fixAndSetPosition() later renders as a CSS
+    // left/top percentage of the *actual* (1.5-scaled) layer div -- so every
+    // stuck-at-1.333 normalization was denominated in a canvas ~12% smaller
+    // than the real one, throwing off every placement by that fixed ratio
+    // compounded with whatever the click position was, visible as new notes
+    // and highlights landing away from the click instead of at it. Setting
+    // this directly (rather than reverse-solving a fake "scalechanging"
+    // payload through the *1.333 the handler itself applies) keeps the one
+    // real rendering scale as the single source of truth.
+    this.uiManager.viewParameters.realScale = scale;
     this.layers = new Map();
   }
 
-  async addPage(pageIndex, page, viewport, pageWrap) {
+  async addPage(pageIndex, page, viewport, pageWrap, textLayerDiv) {
     const div = document.createElement('div');
     div.className = 'annotationEditorLayer';
     div.style.width = `${viewport.width}px`;
@@ -116,11 +150,37 @@ export class AnnotationSession {
       l10n: nullL10n,
       viewport: clonedViewport,
       annotationLayer: null,
-      textLayer: null,
-      drawLayer: null,
+      // AnnotationEditorLayer only ever reads textLayer.div (enableTextSelection()/
+      // #textLayerPointerDown(), pdf.mjs:27050-27082) -- not a pdfjsLib.TextLayer
+      // instance, which doesn't even expose one (it keeps its container in a
+      // private #container field). A plain { div } wrapper around the real
+      // text layer div renderPagesInto() already built is all it looks at.
+      // This was hardcoded null before, which made enableTextSelection() a
+      // silent no-op: no pointerdown listener was ever attached anywhere, so
+      // Highlight mode had no way to start a selection-driven highlight at all.
+      textLayer: textLayerDiv ? { div: textLayerDiv } : null,
+      // A real DrawLayer, not null. HighlightEditor extends DrawingEditor,
+      // whose _addOutlines() unconditionally calls parent.drawLayer.draw(...)
+      // (pdf.mjs:21965/21973) to render the highlight as an SVG path -- with
+      // drawLayer null this threw "Cannot read properties of null (reading
+      // 'draw')" for every single highlight, inside pdf.js's own
+      // highlightSelection(), uncaught and silent to the filer (no visible
+      // error, just no highlight). Confirmed live: fixing textLayer alone
+      // (above) makes a real text selection reach highlightSelection() at
+      // all, but this is what lets it finish without throwing. Constructed
+      // and wired exactly like web/draw_layer_builder.js's
+      // DrawLayerBuilder.render()+setParent(canvasWrapper) (reference only,
+      // not vendored): setParent's target is the page wrapper, not this
+      // narrower annotationEditorLayer div, because DrawLayer.destroy() only
+      // removes the SVG roots it created and never removes itself.
+      drawLayer: (() => {
+        const dl = new this.pdfjsLib.DrawLayer({ pageIndex, textLayer: textLayerDiv || null });
+        dl.setParent(pageWrap);
+        return dl;
+      })(),
     });
     await layer.render({ viewport: clonedViewport, div, annotations: null, intent: 'display' });
-    this.layers.set(pageIndex, { layer, div });
+    this.layers.set(pageIndex, { layer, div, drawLayer: layer.drawLayer });
   }
 
   setMode(mode) {
@@ -146,7 +206,10 @@ export class AnnotationSession {
 
   destroy() {
     this.setMode(this.pdfjsLib.AnnotationEditorType.NONE);
-    for (const { layer } of this.layers.values()) layer.destroy();
+    for (const { layer, drawLayer } of this.layers.values()) {
+      layer.destroy();
+      drawLayer?.destroy();
+    }
     this.layers.clear();
     this.uiManager.destroy();
   }

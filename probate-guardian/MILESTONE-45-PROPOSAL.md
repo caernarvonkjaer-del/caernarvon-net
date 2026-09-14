@@ -6,7 +6,57 @@
 types / nine filing keys — see 45B's own DECISION section). See each
 sub-delivery's "What landed" section; 45A's measurement pass refuted this
 document's own stated reasoning about compression and is recorded in place.
-**45C remains draft and is recommended for deferral.** This document formally scopes the follow-on
+**45C remains draft and is recommended for deferral.**
+
+**Post-landing fix (2026-09-14):** the rollout exposed three real bugs in
+39-A's own spike code that its single-filing-type pilot never surfaced,
+reported live by a filer using the now-broadened feature. All three are in
+`pdf-annotate.js`'s `AnnotationSession`, none in 45A/45B's own changes:
+
+1. **Add Note landed in the corner, not at the click.** `FreeTextEditor`'s
+   `getInitialTranslation()` (`pdf.mjs:21376`) reads a static
+   `_internalPadding` populated once, on first use, from
+   `getComputedStyle(document.documentElement).getPropertyValue(
+   '--freetext-padding')` — this app's CSS never defined that custom
+   property (nor `--outline-width`, nor the `.pdfViewer .page`-scoped
+   `--scale-round-x`/`--scale-round-y` `setLayerDimensions()` also expects),
+   so `parseFloat('')` poisoned it to `NaN` for the page's entire lifetime.
+   Every new editor's `translate()` call then corrupted its own `x`/`y` to
+   `NaN`; `style.left = 'NaN%'` is invalid CSS the browser silently
+   discards, so the editor fell back to its plain static-flow position —
+   the container's top-left corner, regardless of where the page was
+   clicked. Fixed by defining the four missing custom properties in
+   `print.css`, matching `node_modules/pdfjs-dist/web/pdf_viewer.css`'s own
+   defaults exactly (2px/2px/1px/1px).
+2. **Highlight did nothing.** `AnnotationEditorLayer` was constructed with
+   `textLayer: null` always, which makes `enableTextSelection()` a silent
+   no-op (`pdf.mjs:27048-27057`) — no pointerdown listener was ever attached
+   to any text layer, so a drag-to-highlight had no mechanism to start one.
+   Fixed by passing `{ div: textLayerDiv }` — confirmed that's the only
+   shape `AnnotationEditorLayer` ever reads from it.
+3. **Once (2) was fixed, highlighting threw instead.** `HighlightEditor`
+   extends `DrawingEditor`, whose `_addOutlines()` unconditionally calls
+   `parent.drawLayer.draw(...)` (`pdf.mjs:21965`/`21973`) to render the
+   highlight as an SVG path — `drawLayer: null` threw `Cannot read
+   properties of null (reading 'draw')`, uncaught, for every highlight.
+   Fixed by constructing and wiring a real `pdfjsLib.DrawLayer`, matching
+   `web/draw_layer_builder.js`'s own construction and `setParent(
+   canvasWrapper)` call (reference only, not vendored). A fourth, smaller
+   issue surfaced once a highlight got that far: `highlightColors: null`
+   made `getNonHCMColorName()` (`pdf.mjs:2841`, called from every new
+   Highlight editor's telemetry hook, with no null guard) throw uncaught
+   right after the highlight was otherwise created successfully — fixed by
+   passing pdf.js's own default highlight color palette string instead of
+   `null`.
+
+None of the four are new regressions from 45A/45B — all four bugs were
+already latent in 39-A's original single-filing-type pilot; broadening to
+nine filing keys just multiplied the surface area that could hit them and
+made a filer actually notice. New regression coverage in
+`tests/e2e/pdf-annotate.spec.ts`: a click-position assertion for Add Note,
+and a real-selection-to-highlight assertion with a zero-page-errors check.
+
+This document formally scopes the follow-on
 work that `MILESTONE-39-PROPOSAL.md`'s own authorization gate carved out
 for 39-A:
 

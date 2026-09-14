@@ -229,9 +229,9 @@ async function renderPagesInto(container, pdfBytes) {
     await page.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
     const textContent = await page.getTextContent();
     await new pdfjsLib.TextLayer({ textContentSource: textContent, container: textLayerDiv, viewport }).render();
-    pages.push({ pageIndex: pageNum - 1, page, viewport, pageWrap });
+    pages.push({ pageIndex: pageNum - 1, page, viewport, pageWrap, textLayerDiv });
   }
-  return { pdfjsLib, pdfDocument, pages };
+  return { pdfjsLib, pdfDocument, pages, scale };
 }
 
 function refreshPreviewPager() {
@@ -369,12 +369,12 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
       }
     }
 
-    const { pdfjsLib, pdfDocument, pages } = await renderPagesInto(container, bytesToRender);
+    const { pdfjsLib, pdfDocument, pages, scale } = await renderPagesInto(container, bytesToRender);
 
     if (options.annotate) {
-      const session = new AnnotationSession(pdfjsLib, container, pdfDocument);
-      for (const { pageIndex, page, viewport, pageWrap } of pages) {
-        await session.addPage(pageIndex, page, viewport, pageWrap);
+      const session = new AnnotationSession(pdfjsLib, container, pdfDocument, scale);
+      for (const { pageIndex, page, viewport, pageWrap, textLayerDiv } of pages) {
+        await session.addPage(pageIndex, page, viewport, pageWrap, textLayerDiv);
       }
       _annotationSession = session;
       mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint);
