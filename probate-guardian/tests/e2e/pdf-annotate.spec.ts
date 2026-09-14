@@ -1,25 +1,55 @@
 import { test, expect } from '@playwright/test';
 import {
-  freshStartNoPassword, createWard,
+  freshStartNoPassword, createWard, createSimplifiedWard,
   fillMinimalValidPlanSimplifiedWard, fillMinimalValidGuardianWard,
+  fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard,
+  fillMinimalValidPlanAnnualWard, fillMinimalValidPlanInitialWard,
+  fillMinimalValidPlanMinorWard,
 } from './support/target';
 
 // Milestone 39-A spike: pdf.js AnnotationEditorLayer integration on Print
-// Preview, piloted on Plan Simplified only (src/core/pdf/pdf-annotate.js,
-// src/core/pdf/pdf-preview.js). Covers the toolbar's own behavior and the
-// "Persistence design" section's fingerprint/drift/reapply mechanism --
-// not a full rollout, since 39-C/39-D/39-E extend this to every other
-// filing type and to reusable stamps.
+// Preview (src/core/pdf/pdf-annotate.js, src/core/pdf/pdf-preview.js).
+// Covers the toolbar's own behavior and the "Persistence design" section's
+// fingerprint/drift/reapply mechanism.
+//
+// Milestone 45B: no longer a Plan Simplified pilot -- annotation is rolled
+// out to all nine filing keys (eight hosts; annual/final/trust share one).
+// The toolbar-behavior tests below still drive Plan Simplified because it
+// is the smallest and fastest to render, not because it is the only type
+// that has the toolbar -- the ANNOTATED_TYPES loop covers that.
 
-test.describe('Milestone 39-A: Print Preview annotation (pilot: Plan Simplified)', () => {
-  test('the annotate toolbar is gated to the pilot type only', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Annotate Gate Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
-    await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
-    await expect(page.locator('[data-annotate-action="toggle"]')).toHaveCount(0);
-  });
+test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)', () => {
+  // Milestone 45B: this used to assert the toolbar was absent everywhere
+  // except the Plan Simplified pilot. That gate was the pilot's, not the
+  // end state -- 45B's breadth decision (all eight filing types) supersedes
+  // 39-A's Non-Goal #3, which scoped the pilot rather than the outcome. The
+  // test is inverted rather than deleted: the thing worth guarding now is
+  // that every type actually mounts it, which is also what would catch a
+  // host being missed or regressing back to no options object.
+  const ANNOTATED_TYPES: Array<{ name: string; setup: (page: any) => Promise<void> }> = [
+    { name: 'planSimplified', setup: async (page) => { await createWard(page, 'Ann PS', 'planSimplified'); await fillMinimalValidPlanSimplifiedWard(page); } },
+    { name: 'planMinor', setup: async (page) => { await createWard(page, 'Ann PM', 'planMinor'); await fillMinimalValidPlanMinorWard(page); } },
+    { name: 'planInitial', setup: async (page) => { await createWard(page, 'Ann PI', 'planInitial'); await fillMinimalValidPlanInitialWard(page); } },
+    { name: 'planAnnual', setup: async (page) => { await createWard(page, 'Ann PA', 'planAnnual'); await fillMinimalValidPlanAnnualWard(page); } },
+    { name: 'simplified', setup: async (page) => { await createSimplifiedWard(page, 'Ann SA'); await fillMinimalValidSimplifiedWard(page); } },
+    { name: 'annual', setup: async (page) => { await createWard(page, 'Ann AA', 'annual'); await fillMinimalValidAnnualWard(page); } },
+    { name: 'finalAccounting', setup: async (page) => { await createWard(page, 'Ann FA', 'finalAccounting'); await fillMinimalValidAnnualWard(page); } },
+    { name: 'trustAccounting', setup: async (page) => { await createWard(page, 'Ann TA', 'trustAccounting'); await fillMinimalValidAnnualWard(page); } },
+    { name: 'guardian', setup: async (page) => { await createWard(page, 'Ann GI', 'guardian'); await fillMinimalValidGuardianWard(page); } },
+  ];
+
+  for (const type of ANNOTATED_TYPES) {
+    test(`${type.name}: Print Preview mounts the annotate toolbar (Milestone 45B rollout)`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await type.setup(page);
+      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 20000 });
+      await expect(page.locator('[data-annotate-action="toggle"]')).toHaveCount(1);
+      // Non-Goal #2 still holds for every type it rolls out to: the toolbar
+      // must never write into validated form data.
+      expect(await page.evaluate(() => JSON.stringify((window as any).D).includes('freeTextEditor'))).toBe(false);
+    });
+  }
 
   test('toggle reveals the sub-toolbar; Add Note creates an editable FreeText editor; Undo removes it', async ({ page }) => {
     const errors: string[] = [];
@@ -136,6 +166,8 @@ test.describe('Milestone 39-A: Print Preview annotation (pilot: Plan Simplified)
     // save well before that slower re-parse would.
     expect(stored.pdfBytes.length).toBeGreaterThan(10000);
     expect(typeof stored.contentFingerprint).toBe('string');
+    // Milestone 45A: stored bytes are gzipped before base64 encoding.
+    expect(stored.encoding).toBe('gzip');
 
     // Reopen the preview fresh (simulates closing and reopening Print
     // Preview in the same session) -- the "Persistence design" round trip.
@@ -161,8 +193,13 @@ test.describe('Milestone 39-A: Print Preview annotation (pilot: Plan Simplified)
       const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
       const pdfjsLib = await ensurePdfjs();
       const binary = atob(D.printAnnotations.pdfBytes);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const raw = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i);
+      // Milestone 45A: stored bytes are gzipped, so this read path has to
+      // inflate before parsing -- exactly what pdf-preview.js's own reader
+      // now does.
+      const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
       const doc = await pdfjsLib.getDocument({ data: bytes }).promise;
       const page1 = await doc.getPage(1);
       const annotations = await page1.getAnnotations({ intent: 'display' });
@@ -171,5 +208,109 @@ test.describe('Milestone 39-A: Print Preview annotation (pilot: Plan Simplified)
     // eslint-disable-next-line no-console
     console.log('39-A spike finding: real annotations parsed back out of the stored bytes =', JSON.stringify(storedAnnotationCheck));
     expect(storedAnnotationCheck.some((a: any) => a.subtype === 'FreeText')).toBe(true);
+  });
+});
+
+// Milestone 45A: the storage/compression pass 39-A's own "Persistence
+// design" asked for before any wider rollout. Its flagged concern was that
+// storing the whole annotated PDF "roughly doubles what a Print Preview
+// save adds to the .sav file" -- measured on the smallest filing type, and
+// due once annotation broadened past it.
+//
+// The measurement refuted the assumption that drafted the fix: a
+// maximally-filled Annual Accounting's annotated PDF is 269,008 raw bytes /
+// 358,680 base64'd, but only 60,282 gzipped / 83,888 base64'd -- a ~77%
+// reduction, not the "few percent" expected of an already-compressed
+// format. jsPDF does not compress its content streams by default. The .sav's
+// own zip layer cannot recover any of this, because filing data is
+// encrypted (high-entropy) before being zipped, so compressing here is the
+// only place the saving is still available.
+test.describe('Milestone 45A: annotation storage compression', () => {
+  test('stored annotation bytes are gzipped, materially smaller than the raw PDF, and still round-trip', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Compress Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    await page.locator('[data-annotate-action="note"]').click();
+    await pdfPage.click({ position: { x: 60, y: 60 } });
+    await page.keyboard.type('Compression check');
+    await pdfPage.click({ position: { x: 300, y: 300 } });
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    await page.locator('[data-annotate-action="save"]').click();
+    await downloadPromise;
+
+    const sizes = await page.evaluate(async () => {
+      const stored = (window as any).D.printAnnotations;
+      const binary = atob(stored.pdfBytes);
+      const raw = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i);
+      const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const inflated = new Uint8Array(await new Response(stream).arrayBuffer());
+      return { encoding: stored.encoding, storedBase64: stored.pdfBytes.length, inflatedBytes: inflated.length };
+    });
+
+    expect(sizes.encoding).toBe('gzip');
+    // The inflated PDF must be substantially larger than what we stored --
+    // i.e. compression actually did something, rather than the marker being
+    // set on uncompressed bytes.
+    expect(sizes.inflatedBytes).toBeGreaterThan(sizes.storedBase64);
+
+    // And the round trip still renders: reopening shows the annotation
+    // baked in, with no drift-discard announcement.
+    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
+    expect(await page.evaluate(() => !!(window as any).D.printAnnotations)).toBe(true);
+  });
+
+  test('an annotation saved by the 39-A pilot (raw base64, no encoding marker) still loads', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Legacy Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    await page.locator('[data-annotate-action="note"]').click();
+    await pdfPage.click({ position: { x: 60, y: 60 } });
+    await page.keyboard.type('Legacy shape');
+    await pdfPage.click({ position: { x: 300, y: 300 } });
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    await page.locator('[data-annotate-action="save"]').click();
+    await downloadPromise;
+
+    // Rewrite the stored entry into the exact shape the 39-A pilot wrote:
+    // raw (uncompressed) base64 and no `encoding` field at all.
+    await page.evaluate(async () => {
+      const D = (window as any).D;
+      const binary = atob(D.printAnnotations.pdfBytes);
+      const raw = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i);
+      const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const inflated = new Uint8Array(await new Response(stream).arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < inflated.length; i += 0x8000) bin += String.fromCharCode(...inflated.subarray(i, i + 0x8000));
+      D.printAnnotations = {
+        pdfBytes: btoa(bin),
+        contentFingerprint: D.printAnnotations.contentFingerprint,
+        capturedAt: D.printAnnotations.capturedAt,
+      };
+      (window as any).autoSave?.();
+    });
+
+    // Reopening must still reapply it -- not discard it as drift, and not
+    // throw trying to gunzip bytes that were never gzipped.
+    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
+    const after = await page.evaluate(() => (window as any).D.printAnnotations);
+    expect(after).toBeTruthy();
+    expect(after.encoding).toBeUndefined();
   });
 });

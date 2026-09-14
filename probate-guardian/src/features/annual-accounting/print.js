@@ -85,7 +85,7 @@ export function pagePrintAnnual(capOver){
 export async function mountPreview(){
   const baseIssues = () => [...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
   window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
-  await mountPdfPreview(buildModelForPreview, window.D, baseIssues);
+  await mountPdfPreview(buildModelForPreview, window.D, baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){

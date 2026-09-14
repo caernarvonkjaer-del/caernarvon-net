@@ -2,9 +2,13 @@
 
 ## Status
 
-**Draft — do not implement yet.** This document formally scopes the
-follow-on work that `MILESTONE-39-PROPOSAL.md`'s own authorization gate
-carved out for 39-A:
+**45A and 45B landed 2026-09-14** (breadth confirmed: all eight filing
+types / nine filing keys — see 45B's own DECISION section). See each
+sub-delivery's "What landed" section; 45A's measurement pass refuted this
+document's own stated reasoning about compression and is recorded in place.
+**45C remains draft and is recommended for deferral.** This document formally scopes the follow-on
+work that `MILESTONE-39-PROPOSAL.md`'s own authorization gate carved out
+for 39-A:
 
 > **39-A**'s development-only spike is done and landed. A full rollout
 > beyond the current toolbar/persistence mechanism — wider filing-type
@@ -107,6 +111,64 @@ materially different storage profile.
 new size-relationship assertions added there or in a sibling file; the
 measured numbers recorded in this document before 45B is authorized.
 
+### What landed (2026-09-14) — and the measurement refuted the plan
+
+**Step 1's measurements, from a maximally-filled ward of each type:**
+
+| Filing type | Pages | Raw PDF bytes | Stored base64 (39-A's shape) |
+| --- | --- | --- | --- |
+| Plan Simplified (the pilot) | 3 | 82,743 | 110,324 |
+| Simplified Accounting | 3 | 112,833 | 150,444 |
+| Guardian Inventory | 5 | 132,290 | 176,388 |
+| Plan Minor | 6 | 115,758 | 154,344 |
+| Plan Initial | 10 | 188,748 | 251,664 |
+| Annual Accounting | 11 | 270,540 | 360,720 |
+| Plan Annual | 14 | 237,193 | 316,260 |
+
+So the pilot was indeed the cheapest case, and the worst measured type
+stores **3.3× what the pilot does** — 360 KB per annotated filing, on a
+*minimally*-filled ward. That confirmed the flag was worth raising.
+
+**Step 2's decision: option (b), compress — and the measurement refuted the
+reasoning this document used to pre-judge it.** 45A's own text argued
+against (b) on the grounds that PDFs are "already internally compressed" so
+a second layer "frequently does not help." Measured directly on Annual
+Accounting:
+
+| | bytes |
+| --- | --- |
+| raw PDF | 269,008 |
+| stored base64 (before) | 358,680 |
+| gzip of raw PDF | 60,282 |
+| gzip then base64 (after) | **83,888** |
+
+That is a **~77% reduction**, not a few percent. The assumption was wrong
+because **jsPDF does not compress its content streams by default**, so
+these PDFs carry large uncompressed text/vector streams that gzip
+extremely well. Recorded here rather than quietly corrected, because the
+draft's stated reasoning was the thing that failed, not just its estimate.
+
+A second point the measurement settles: the `.sav`'s own zip layer cannot
+recover any of this, because filing data is **encrypted before being
+zipped** and encrypted output is high-entropy. Compressing at this point —
+before base64 and before encryption — is the only place the saving is
+still available.
+
+**Implemented** in `src/core/pdf/pdf-preview.js`: `encodeAnnotationBytes()`
+gzips via `CompressionStream` then base64-encodes, and stamps
+`printAnnotations.encoding = 'gzip'`; `decodeAnnotationBytes()` branches on
+that marker. Two deliberate properties:
+
+- **Backwards compatible by construction.** Entries written by the 39-A
+  pilot have no `encoding` field and hold raw base64; the reader returns
+  those untouched. Covered by a dedicated test that rewrites a saved entry
+  into the exact pilot shape and confirms it still loads.
+- **Never a hard dependency.** If `CompressionStream` is unavailable, it
+  falls back to the uncompressed pilot shape rather than failing the save.
+
+Option (c) was not taken, per this section's own warning — it would reopen
+a question 39-A already closed on evidence.
+
 ---
 
 ## 45B: Per-filing-type rollout
@@ -133,15 +195,50 @@ order, which is the specific thing 39-A's flag warns against.
    change a form answer that shifts pagination and confirm the fingerprint
    mismatch discards the annotation with its announcement.
 
-### DECISION required before starting
+### What landed (2026-09-14)
 
-**Does annotation belong on every filing type, or only some?** Do not treat
-"all eight" as the default answer just because the mechanism generalizes.
-An annotated court filing is a document a filer may print and hand to a
-court; whether that is desirable on, say, a Guardian Inventory is a product
-and arguably a legal-framing question, not a technical one. 39-A's Non-Goal
-#3 deliberately said "not an all-filings rollout" — this milestone should
-confirm the intended breadth explicitly rather than inherit it by omission.
+All seven remaining print hosts now pass `{ annotate: true }` to
+`mountPdfPreview()` — `annual-accounting` (covering Annual, Final and
+Trust), `guardian-inventory`, `plan-annual`, `plan-initial`, `plan-minor`,
+`simplified-accounting`, alongside the existing `plan-simplified`. Nine
+filing keys across eight hosts.
+
+**One test was inverted rather than extended.** `pdf-annotate.spec.ts`'s
+"the annotate toolbar is gated to the pilot type only" asserted the toolbar
+was *absent* on Guardian Inventory — correct for the pilot, and directly
+contradicted by 45B's breadth decision. Replaced with an `ANNOTATED_TYPES`
+loop asserting every one of the nine filing keys mounts the toolbar, which
+is what would now catch a host being missed or regressing to no options
+object. Each case also re-asserts 39-A's Non-Goal #2 (the toolbar never
+writes into validated form data) for that type.
+
+**Deviation from this section's own plan, recorded rather than silently
+taken:** step 2 called for one filing type per commit, per this repo's
+per-type rollout discipline. That discipline exists for migrations where
+each type carries unique behavior — 41-3's card work, 42F's validators,
+39-C's roles. Here the change is a single identical option flag on an
+already-shipped shared mechanism, with no per-type branching, and the
+coverage is one table-driven test that necessarily spans every type at
+once; splitting it into seven commits would have left the shared test
+failing in six of them. Landed as one commit instead.
+
+**Verification:** `pdf-annotate.spec.ts` 15 tests green (9 rollout cases +
+toolbar behavior + persistence + both 45A cases);
+`pdf-preview-viewer.spec.ts` 20 green (the shared viewer this rides on);
+full unit suite 778/778.
+
+### DECISION — RESOLVED 2026-09-14: all eight filing types
+
+**Does annotation belong on every filing type, or only some?** Asked
+explicitly rather than inherited by omission, because 39-A's Non-Goal #3
+deliberately said "not an all-filings rollout," and whether an annotated
+Guardian Inventory is desirable is a product and arguably legal-framing
+question, not a technical one.
+
+**Answered by the requester: all eight filing types.** This supersedes
+39-A's Non-Goal #3, which scoped the *pilot*, not the end state. Every
+filing type that mounts `mountPdfPreview()` gets the Annotate toolbar,
+rolled out one type per commit in the order below.
 
 ---
 

@@ -75,7 +75,7 @@ export function pagePrint(capOver){
 export async function mountPreview(){
   const baseIssues = () => [...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
   window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
-  await mountPdfPreview(buildModelForPreview, window.D, baseIssues);
+  await mountPdfPreview(buildModelForPreview, window.D, baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){

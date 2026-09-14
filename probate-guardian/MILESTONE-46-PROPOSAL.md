@@ -2,8 +2,9 @@
 
 ## Status
 
-**Draft — do not implement yet. One genuine open question needs the
-requester's answer before any code is written; see "Open question" below.**
+**Authorized 2026-09-14.** The one open gate item is resolved — see "Open
+question" below. All three of 39-D's authorization-gate conditions are now
+satisfied, so this milestone may be implemented.
 
 This document promotes `MILESTONE-39-PROPOSAL.md`'s 39-D from a
 recommendation-recorded draft into a formally scoped milestone. 39-D's own
@@ -20,7 +21,7 @@ against current `master`:
 | --- | --- |
 | Compound party+entry reference design | **Resolved in the draft** — `signatureImageRef: { partyId, imageId }`, because `signatureImages` ids are per-party scoped. Carried forward unchanged below. |
 | Single-ward export/import fix | **Resolved in approach, still unbuilt** — re-verified as genuinely necessary against current code (see below). Scoped as 46C. |
-| Storage-growth question | **Still open — needs the requester.** See "Open question." |
+| Storage-growth question | **Resolved 2026-09-14 — option (a).** See "Open question." |
 
 Split into three sub-deliveries (46A/46B/46C) with a strict order, since
 each genuinely depends on the previous one.
@@ -61,7 +62,18 @@ expansion work item is removed from scope on current evidence.
 
 ---
 
-## Open question (blocks authorization)
+## Open question — RESOLVED 2026-09-14: option (a)
+
+**Answered by the requester: per-image limits only.** Rely on 39-B's
+existing capped dimensions and capped file size; accept unbounded entry
+count, since a person's signature changes rarely. **No total-per-party cap,
+and therefore no "storage full" refusal path, message, or recovery flow** —
+that whole branch of UI and error handling is out of scope for this
+milestone. 46A implements the append-only store with no count or byte
+ceiling of its own.
+
+The original question and its reasoning are kept below, because the
+constraint that made it a real question still governs the design.
 
 **Is a per-image size cap sufficient, or is a hard cap on total per-party
 signature storage wanted as a backstop?**
@@ -77,7 +89,8 @@ That leaves two honest options:
 
 - **(a) Rely on 39-B's existing per-image limits** (capped dimensions,
   capped file size) and accept unbounded count. Growth in practice is slow —
-  a person's signature changes rarely. **Recommended default.**
+  a person's signature changes rarely. **Recommended default — and the
+  option chosen.**
 - **(b) Add a hard cap on total per-party signature bytes** as a backstop,
   which must refuse a *new* capture when full rather than delete an old
   entry, and therefore needs a user-facing message and a decision about
@@ -90,7 +103,8 @@ never occur. This needs an answer, not a guess — it changes 46A's scope.
 
 ## 46A: Data model and the append-only store
 
-**Prerequisite:** the open question above must be answered.
+**Prerequisite:** satisfied — the open question above was answered
+2026-09-14 (option (a), per-image limits only, no total-per-party cap).
 
 1. Add `party.signatureImages` — an array on the party record via
    `party-resolver.js`'s existing per-party convention (alongside `name`,

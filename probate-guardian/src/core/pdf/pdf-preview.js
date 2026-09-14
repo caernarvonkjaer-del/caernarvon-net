@@ -46,6 +46,54 @@ function base64ToBytes(base64) {
   return bytes;
 }
 
+// Milestone 45A: gzip the annotated PDF before base64-encoding it.
+//
+// Measured, not assumed -- and the measurement refuted the guess that
+// drafted this work item. A maximally-filled Annual Accounting's annotated
+// PDF is 269,008 raw bytes / 358,680 bytes once base64'd (what 39-A's pilot
+// stored); gzipped first it is 60,282 bytes / 83,888 base64'd. That is a
+// ~77% reduction, not the "few percent" expected from a format that is
+// usually already internally compressed -- jsPDF does not compress its
+// content streams by default, so they gzip extremely well.
+//
+// This matters specifically because the .sav's own zip layer cannot
+// recover any of it: filing data is encrypted before being zipped, and
+// encrypted output is high-entropy and does not compress. Compressing here,
+// before base64 and before encryption, is the only place the saving is
+// still available.
+//
+// Backwards compatibility is explicit, not incidental: entries written by
+// the 39-A pilot have no `encoding` field and hold raw base64. Those must
+// keep loading forever, so the reader branches on the marker rather than
+// assuming the new shape.
+const ANNOTATION_ENCODING_GZIP = 'gzip';
+
+async function compressBytes(bytes) {
+  if (typeof CompressionStream !== 'function') return null;
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function decompressBytes(bytes) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+// Returns the { pdfBytes, encoding } pair to persist. Falls back to the
+// uncompressed pilot shape if CompressionStream is unavailable, so this
+// never becomes a hard dependency for saving an annotation.
+async function encodeAnnotationBytes(bytes) {
+  const compressed = await compressBytes(bytes);
+  if (!compressed) return { pdfBytes: bytesToBase64(bytes), encoding: null };
+  return { pdfBytes: bytesToBase64(compressed), encoding: ANNOTATION_ENCODING_GZIP };
+}
+
+async function decodeAnnotationBytes(stored) {
+  const bytes = base64ToBytes(stored.pdfBytes);
+  if (stored.encoding !== ANNOTATION_ENCODING_GZIP) return bytes;
+  return decompressBytes(bytes);
+}
+
 // One annotation session per mounted preview, torn down and rebuilt on every
 // re-render (MILESTONE-39-PROPOSAL.md 39-A: "the spike must add a place to
 // hold that reference for the preview's lifetime and clear it on every
@@ -118,7 +166,8 @@ function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
       // regenerated (unannotated) content fingerprint at capture time, not
       // the annotated bytes' own content -- drift is measured against the
       // underlying form data, which is what can silently change later.
-      D.printAnnotations = { pdfBytes: bytesToBase64(bytes), contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
+      const { pdfBytes, encoding } = await encodeAnnotationBytes(bytes);
+      D.printAnnotations = { pdfBytes, encoding, contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
       window.markDirtySinceExport?.();
       window.autoSave?.();
       if (statusEl) statusEl.textContent = 'Annotations saved with this filing.';
@@ -311,7 +360,7 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
       fingerprint = await computeContentFingerprint(freshDoc);
       const stored = D.printAnnotations;
       if (stored && stored.contentFingerprint === fingerprint && stored.pdfBytes) {
-        bytesToRender = base64ToBytes(stored.pdfBytes);
+        bytesToRender = await decodeAnnotationBytes(stored);
       } else if (stored) {
         delete D.printAnnotations;
         window.markDirtySinceExport?.();
