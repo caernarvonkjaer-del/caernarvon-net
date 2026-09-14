@@ -97,6 +97,14 @@ export function renderFormField({
   // selector already tries data-bind as a fallback, so jump-to-field
   // navigation is unaffected.
   claimSharedWriteListener = true,
+  // Annual Accounting only (its inpD() passes it): stamps
+  // data-field-sanitize="security" on a plain free-text field so
+  // finalizeFieldValue() runs legacy-app.js's validateSecurityInput() on
+  // blur -- what that family's own retired focusout handler did with the
+  // data-annual-format="security" this renderer stamps on every plain text
+  // field of every filing type. An opt-in rather than keyed off that format
+  // attribute, so the other eight filing types keep never running it.
+  securitySanitize = false,
 } = {}) {
   const inputId = id || `inp_${(path || 'field').replace(/[^a-zA-Z0-9_]/g, '_')}_${Math.random().toString(36).slice(2, 7)}`;
   const fieldKind = kind || inferFieldKind(label, type);
@@ -189,9 +197,10 @@ export function renderFormField({
     ? ` data-bind="${esc(path)}"`
     : ` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`;
   const inputTypeAttr = bindInputType ? ` data-input-type="${esc(bindInputType)}"` : '';
+  const sanitizeAttr = (securitySanitize && format === 'security') ? ' data-field-sanitize="security"' : '';
 
   const fieldPathAttr = claimSharedWriteListener ? ` data-field-path="${esc(path)}"` : '';
-  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${ariaDesc}>`;
+  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${ariaDesc}>`;
 
   let lockIcon = DEFAULT_LOCK_ICON;
   if (typeof window !== 'undefined' && typeof window.ic === 'function') {

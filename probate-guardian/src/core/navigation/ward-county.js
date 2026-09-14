@@ -132,12 +132,11 @@ export function commitCoverCounty(filing, rawCounty) {
  * without repeating the check.
  *
  * Called from form-contract.js's runFieldWriteSideEffects() (Milestone 42D),
- * the one post-write tail all three binding conventions share -- data-form-path
- * via writeDraftValue()/finalizeFieldValue(), data-annual-path via
- * annual-accounting's persistAnnualControl(), and legacy-app.js's
- * bindForms()/afterChange() for Guardian Inventory. Before 42D each of those
- * three called this separately, and hooking only one had silently covered six
- * filing types and missed three.
+ * the one post-write tail every binding convention shares -- data-form-path
+ * and data-annual-path via writeDraftValue()/finalizeFieldValue(), and
+ * legacy-app.js's bindForms()/afterChange() for Guardian Inventory's
+ * data-bind. Before 42D each write path called this separately, and hooking
+ * only one had silently covered six filing types and missed three.
  *
  * `attorney_county` deliberately does not match: it is a separate field and must
  * never establish the ward's county.

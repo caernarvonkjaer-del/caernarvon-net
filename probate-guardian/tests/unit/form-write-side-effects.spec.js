@@ -27,6 +27,10 @@ function freshWindow() {
     refreshWardInfoCard: rec('wardCard'),
     syncActiveWardNameDisplay: rec('wardName'),
     syncGuardianNameDisplay: rec('guardianName'),
+    // The tail closes by dispatching `pg:field-written` on window -- the hook
+    // Annual Accounting's refreshAnnualTotals() subscribes to now that its
+    // own persistAnnualControl() (which called it directly) is gone.
+    dispatchEvent: rec('fieldWritten'),
   };
   return w;
 }
@@ -44,7 +48,8 @@ describe('runFieldWriteSideEffects()', () => {
 
   it('runs county commit and Party write-through before autosave, then the display refreshes', () => {
     run('guardians.0.name', { dataset: {} });
-    expect(w.calls).toEqual(['county', 'slot', 'identity', 'autoSave', 'navDots', 'wardCard', 'guardianName']);
+    expect(w.calls).toEqual(['county', 'slot', 'identity', 'autoSave', 'navDots', 'wardCard', 'guardianName', 'fieldWritten']);
+    expect(w.dispatchEvent.mock.calls[0][0]).toMatchObject({ type: 'pg:field-written', detail: { path: 'guardians.0.name' } });
   });
 
   it('hands every path to maybeCommitCoverCounty (it is the one that scopes to `county`)', () => {
@@ -110,20 +115,38 @@ describe('all three binding paths call the shared tail', () => {
     expect(w.calls).toContain('autoSave');
   });
 
-  // persistAnnualControl (annual-accounting/index.js) and afterChange
-  // (legacy-app.js) are module-private -- neither is exported, so there is
-  // no way to import and invoke them directly the way writeDraftValue/
+  // Annual/Final/Trust (data-annual-path) no longer has a write path of its
+  // own: persistAnnualControl() was retired, and form-events.js's listeners
+  // claim data-annual-path exactly as they do data-form-path, so the tail is
+  // reached through the same two real functions as above.
+  it('data-annual-path reaches the shared tail through writeDraftValue/finalizeFieldValue, with no persistAnnualControl left', async () => {
+    const w = freshWindow();
+    globalThis.window = w;
+    globalThis.document = globalThis.document || { querySelectorAll: () => [] };
+    vi.resetModules();
+    const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
+
+    writeDraftValue({ dataset: { annualPath: 'schC.0.description' }, type: 'text', value: 'Sale of homestead' });
+    expect(w.calls).toContain('autoSave');
+    w.calls.length = 0;
+    finalizeFieldValue({ dataset: { annualPath: 'schC.0.description' }, type: 'text', value: 'Sale of homestead' });
+    expect(w.calls).toContain('autoSave');
+
+    expect(read('src/features/annual-accounting/index.js')).not.toMatch(/function persistAnnualControl/);
+    // The document-level listeners are what route the events here: all four
+    // binding checks go through one helper that names all three attributes.
+    const events = read('src/form-events.js');
+    expect(events).toMatch(/const boundPath = \(control\) => control\.dataset\.fieldPath \|\| control\.dataset\.formPath \|\| control\.dataset\.annualPath;/);
+    expect((events.match(/boundPath\(control\)/g) || []).length).toBe(4);
+    expect(events).not.toMatch(/dataset\.fieldPath \|\| control\.dataset\.formPath\)/);
+  });
+
+  // afterChange (legacy-app.js) is module-private -- not exported, so there
+  // is no way to import and invoke it directly the way writeDraftValue/
   // finalizeFieldValue are above. Source-text confirmation of the call site
   // is the best available check in this Node-only suite; a real invocation
   // would need e2e (a real browser/window), same reachability gap Milestone
   // 43A found for normalizeWardData()/window.calc.
-  it('persistAnnualControl (data-annual-path)', () => {
-    const body = bodyOf(read('src/features/annual-accounting/index.js'), 'persistAnnualControl');
-    expect(body).toContain('runFieldWriteSideEffects(path, control)');
-    expect(body).not.toContain('identitySlotForPath');
-    expect(body).not.toContain('maybeCommitCoverCounty');
-  });
-
   it('afterChange (legacy data-bind)', () => {
     const body = bodyOf(read('src/legacy-app.js'), 'afterChange');
     expect(body).toContain('window.runFieldWriteSideEffects(path)');

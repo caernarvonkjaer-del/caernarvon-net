@@ -9,10 +9,14 @@ import './core/form/schedule-definitions.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 
-// The data-form-path write path is writeDraftValue() on input/compositionend
-// and finalizeFieldValue() on blur/change, wired by the listeners below.
-// (A persistFormControl() wrapper and a formatters table used to sit here
-// with no callers; removed in Milestone 42D.)
+// The data-form-path and data-annual-path write path is writeDraftValue() on
+// input/compositionend and finalizeFieldValue() on blur/change, wired by the
+// listeners below. data-annual-path joined it when Annual Accounting's own
+// container-scoped persistAnnualControl() listeners were retired; the
+// formats only that path knew (signed-decimal, security, ZIP limit) now live
+// in form-contract.js. (A persistFormControl() wrapper and a formatters
+// table used to sit here with no callers; removed in Milestone 42D.)
+const boundPath = (control) => control.dataset.fieldPath || control.dataset.formPath || control.dataset.annualPath;
 
 document.addEventListener('click', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
@@ -58,7 +62,7 @@ document.addEventListener('click', (event) => {
 document.addEventListener('input', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
-  if (control.dataset.fieldPath || control.dataset.formPath) {
+  if (boundPath(control)) {
     writeDraftValue(control, { event });
   }
   if (control.dataset.formControl === 'county') window.filterCountyDropdown(control);
@@ -70,7 +74,7 @@ document.addEventListener('input', (event) => {
 document.addEventListener('compositionend', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
-  if (control.dataset.fieldPath || control.dataset.formPath) {
+  if (boundPath(control)) {
     writeDraftValue(control, { event });
   }
 });
@@ -102,7 +106,7 @@ document.addEventListener('change', (event) => {
     window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
   }
-  if (control instanceof HTMLSelectElement && (control.dataset.fieldPath || control.dataset.formPath)) {
+  if (control instanceof HTMLSelectElement && boundPath(control)) {
     writeDraftValue(control, { event });
     finalizeFieldValue(control, { event });
   }
@@ -118,7 +122,7 @@ document.addEventListener('focusout', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (control.dataset.formControl === 'county') setTimeout(() => window.hideCountyDropdown(control.id), 150);
-  if (control.dataset.fieldPath || control.dataset.formPath) {
+  if (boundPath(control)) {
     finalizeFieldValue(control, { event });
   }
 });

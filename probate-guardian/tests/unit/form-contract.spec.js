@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 global.window = global;
 import {
   sanitizeStoredText,
@@ -357,6 +357,112 @@ describe('form-contract', () => {
       chk.checked = false;
       finalizeFieldValue(chk);
       expect(window.D.committeeIncorporated).toBe('No');
+    });
+  });
+
+  // Annual/Final/Trust Accounting's own persistAnnualControl() write path was
+  // retired in favour of this one; these are the formats only it had, now
+  // keyed by attribute here so every filing type shares one implementation.
+  describe('accounting-family formats absorbed from persistAnnualControl()', () => {
+    beforeEach(() => {
+      // Verbatim copies of legacy-app.js's helpers -- classic-script globals
+      // at runtime, which this Node suite has to supply itself.
+      window.sanitizeNonNegativeDecimal = (s) => {
+        let v = String(s || '').replace(/[^0-9.]/g, '');
+        const firstDot = v.indexOf('.');
+        if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+        return v;
+      };
+      window.sanitizeDecimal = (s) => {
+        const str = String(s || '');
+        return (str.trim().startsWith('-') ? '-' : '') + window.sanitizeNonNegativeDecimal(str);
+      };
+      window.applyZipLimit = (el) => {
+        const digitCount = (el.value.match(/\d/g) || []).length;
+        if (digitCount > 9) {
+          const arr = el.value.split('');
+          let removed = 0;
+          for (let i = arr.length - 1; i >= 0 && removed < digitCount - 9; i--) {
+            if (/\d/.test(arr[i])) { arr.splice(i, 1); removed++; }
+          }
+          el.value = arr.join('');
+        }
+      };
+      window.validateSecurityInput = (_label, v) => String(v).replace(/[<>"`]/g, '');
+      window.formatSSN = (s) => {
+        const digits = String(s || '').replace(/\D/g, '').slice(0, 9);
+        if (digits.length === 0) return '';
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+        return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+      };
+    });
+    afterEach(() => {
+      delete window.sanitizeNonNegativeDecimal;
+      delete window.sanitizeDecimal;
+      delete window.applyZipLimit;
+      delete window.validateSecurityInput;
+      delete window.formatSSN;
+    });
+
+    it('formats an SSN on blur even though renderFormField() stamps it policy="preserve"', () => {
+      // The generic preserve branch used to sit above the ssn branch and
+      // catch every renderer-built SSN field first, so blur left the raw
+      // digits that the next render would then dash. Annual's retired write
+      // path inserted the dashes itself; the shared one now does too.
+      const ssn = createMockInput({ dataset: { fieldPath: 'guardians.0.ssn', fieldKind: 'ssn', fieldFormatPolicy: 'preserve' }, value: '123456789' });
+      finalizeFieldValue(ssn);
+      expect(ssn.value).toBe('123-45-6789');
+      expect(window.D.guardians[0].ssn).toBe('123-45-6789');
+    });
+
+    it('classifies data-annual-format="signed-decimal" as signed-money with the normalize policy', () => {
+      const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' } });
+      expect(getControlKind(loss)).toBe('signed-money');
+      expect(getControlPolicy(loss)).toBe('normalize');
+    });
+
+    it('keeps a leading minus on a signed-money field, filtering live, and stores a Number on blur', () => {
+      const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' }, value: '-1,250.5' });
+      writeDraftValue(loss);
+      expect(loss.value).toBe('-1250.5');
+      expect(window.D.schC[0].loss).toBe('-1250.5');
+      finalizeFieldValue(loss);
+      expect(window.D.schC[0].loss).toBe(-1250.5);
+      expect(loss.value).toBe('-1250.5');
+    });
+
+    it('keeps a lone minus as an in-progress draft rather than wiping it', () => {
+      const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' }, value: '-' });
+      writeDraftValue(loss);
+      expect(loss.value).toBe('-');
+      expect(window.D.schC[0].loss).toBe('-');
+    });
+
+    it('filters a money field live on input (caret-safe character rejection, minus included) and stores a Number on blur', () => {
+      const amount = createMockInput({ dataset: { fieldPath: 'schA.0.amount', fieldKind: 'money' }, value: '-1,000' });
+      writeDraftValue(amount);
+      expect(amount.value).toBe('1000');
+      expect(window.D.schA[0].amount).toBe('1000');
+      finalizeFieldValue(amount);
+      expect(window.D.schA[0].amount).toBe(1000);
+    });
+
+    it('applies the nine-digit ZIP+4 cap before formatting City / State / Zip', () => {
+      const zip = createMockInput({ dataset: { fieldPath: 'preparer.cityStateZip', fieldKind: 'zip' }, value: 'clearwater, fl 33755-43219' });
+      finalizeFieldValue(zip);
+      expect(zip.value).toBe('Clearwater, FL 33755-4321');
+      expect(window.D.preparer.cityStateZip).toBe('Clearwater, FL 33755-4321');
+    });
+
+    it('runs the security sanitizer only on fields stamped data-field-sanitize="security"', () => {
+      const optedIn = createMockInput({ dataset: { fieldPath: 'schC.0.description', fieldKind: 'text', fieldSanitize: 'security', fieldLabel: 'Description' }, value: '<b>Sale</b> of homestead' });
+      finalizeFieldValue(optedIn);
+      expect(window.D.schC[0].description).toBe('bSale/b of homestead');
+
+      const plain = createMockInput({ dataset: { fieldPath: 'notes', fieldKind: 'text' }, value: '<b>Sale</b> of homestead' });
+      finalizeFieldValue(plain);
+      expect(window.D.notes).toBe('<b>Sale</b> of homestead');
     });
   });
 });

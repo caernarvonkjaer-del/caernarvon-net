@@ -41,6 +41,7 @@ interface Window {
   announceStatus: any;
   annualReconcileState: any;
   applyAccountingFilingType: any;
+  applyZipLimit: any;
   attachFormHeaderActions: any;
   auditLog: any;
   autoSave: any;
@@ -338,6 +339,7 @@ interface Window {
   restoreBackupSavFile: any;
   runFieldWriteSideEffects: any;
   runRememberedHandleOperation: any;
+  sanitizeDecimal: any;
   sanitizeForExcel: any;
   sanitizeNegativeAmounts: any;
   sanitizeNonNegativeDecimal: any;
@@ -418,6 +420,7 @@ interface Window {
   validatePlanInitial: any;
   validatePlanMinor: any;
   validatePlanSimplified: any;
+  validateSecurityInput: any;
   validateSimplified: any;
   validateWardBackupOverwrite: any;
   validationIssue: any;

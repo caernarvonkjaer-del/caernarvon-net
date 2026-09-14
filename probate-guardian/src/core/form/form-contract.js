@@ -217,6 +217,7 @@ export function getControlKind(control) {
   if (format === 'address' || has('address') || has('street')) return 'address';
   if (format === 'phone' || has('phone')) return 'phone';
   if (format === 'ssn' || has('ssn') || has('ein')) return 'ssn';
+  if (format === 'signed-decimal') return 'signed-money';
   if (format === 'decimal' || control.type === 'number') return 'money';
   if (control.type === 'date' || has('date')) return 'date';
   return 'text';
@@ -229,7 +230,7 @@ export function getControlPolicy(control) {
   if (control.dataset?.fieldFormatPolicy) return control.dataset.fieldFormatPolicy;
   const kind = getControlKind(control);
   if (kind === 'identifier' || kind === 'text' || kind === 'boolean') return 'preserve';
-  if (kind === 'date' || kind === 'money' || kind === 'phone' || kind === 'ssn' || kind === 'percent') return 'normalize';
+  if (kind === 'date' || kind === 'money' || kind === 'signed-money' || kind === 'phone' || kind === 'ssn' || kind === 'percent') return 'normalize';
   if (kind === 'name' || kind === 'address') return 'display-only';
   return 'preserve';
 }
@@ -237,15 +238,18 @@ export function getControlPolicy(control) {
 /**
  * Milestone 42D: the one post-write tail for every filing type.
  *
- * Three binding conventions write field values -- data-form-path here
- * (Simplified Accounting and the four Plans), data-annual-path in
- * annual-accounting/index.js's persistAnnualControl() (Annual/Final/Trust),
- * and data-bind via legacy-app.js's bindForms()/afterChange() (Guardian
- * Inventory). Their value-formatting differs and stays where it is; what
- * they had in common was this exact list of side effects, copied three times
- * and drifting (40C-A had to add maybeCommitCoverCounty() to each one
- * separately). Every path now calls this instead, so a new post-write hook
- * is added once.
+ * Two write paths remain. data-form-path and data-annual-path both arrive
+ * here through writeDraftValue()/finalizeFieldValue() -- Simplified
+ * Accounting, the four Plans, and, since Annual/Final/Trust's own
+ * persistAnnualControl() was retired, the accounting family too (that
+ * retirement is why getControlKind()/finalizeFieldValue() below know the
+ * signed-decimal, security-sanitize and ZIP-limit formats that path had
+ * kept to itself). data-bind still writes via legacy-app.js's
+ * bindForms()/afterChange() (Guardian Inventory). What every path had in
+ * common was this exact list of side effects, once copied three times and
+ * drifting (40C-A had to add maybeCommitCoverCounty() to each one
+ * separately). Every path calls this instead, so a new post-write hook is
+ * added once.
  *
  * Order: the ward-county and Party write-throughs mutate the model, so they
  * run before autoSave() queues the snapshot; the display refreshes follow.
@@ -253,6 +257,13 @@ export function getControlPolicy(control) {
  * fan-out -- that would rewrite sibling filings correctly filed elsewhere.
  * Name sync honours the control's data-sync-* flags (form-fields.js) and,
  * for the flag-less legacy data-bind path, the path itself.
+ *
+ * The closing `pg:field-written` event is how a mounted feature adds its own
+ * per-write refresh without this file naming it: Annual Accounting's
+ * refreshAnnualTotals() subscribes in its bindEvents() (AbortController-
+ * scoped, so it cannot outlive the page), where persistAnnualControl() used
+ * to call it directly. That function is never published as a global, so
+ * nothing dangles after dispose -- the bug class 40F/40H-A/43G kept finding.
  */
 export function runFieldWriteSideEffects(path, control = null) {
   if (!path) return;
@@ -266,6 +277,7 @@ export function runFieldWriteSideEffects(path, control = null) {
   const dataset = control?.dataset || {};
   if (dataset.syncWardName || path === 'wardName') window.syncActiveWardNameDisplay?.();
   if (dataset.syncGuardianName || path === 'guardianName' || path === 'guardians.0.name') window.syncGuardianNameDisplay?.();
+  if (typeof CustomEvent === 'function') window.dispatchEvent?.(new CustomEvent('pg:field-written', { detail: { path } }));
 }
 
 /**
@@ -280,9 +292,24 @@ export function writeDraftValue(control, options = {}) {
 
   const kind = getControlKind(control);
   const isCheckbox = control?.type === 'checkbox';
-  const rawValue = isCheckbox
+  let rawValue = isCheckbox
     ? (control.dataset?.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
     : control.value;
+
+  if ((kind === 'money' || kind === 'signed-money') && !isCheckbox) {
+    // Live character filtering only -- the caret-safe kind of formatting (a
+    // rejected keystroke, like maxlength), never a rewrite. Both legacy write
+    // paths did this for amounts, and the live schedule totals read the model
+    // on every keystroke, so a typed "1,000" must not sit there as 1 until
+    // blur. Phone/SSN stay blur-only: those formatters insert punctuation and
+    // move the caret, which Milestone 24 ruled out here on purpose.
+    const filter = kind === 'signed-money' ? window.sanitizeDecimal : window.sanitizeNonNegativeDecimal;
+    if (filter) {
+      const filtered = filter(rawValue);
+      if (control.value !== filtered) control.value = filtered;
+      rawValue = filtered;
+    }
+  }
 
   if (kind === 'date') {
     // Only auto-format a complete eight-digit value. Seven digits can be a
@@ -376,11 +403,45 @@ export function finalizeFieldValue(control, options = {}) {
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (kind === 'zip' || control.dataset?.formFormat === 'city-state-zip' || control.dataset?.annualFormat === 'zip') {
+    // applyZipLimit() caps the field at nine digits (ZIP+4) in place before
+    // formatting -- both legacy write paths did; this one had skipped it.
+    if (window.applyZipLimit) {
+      window.applyZipLimit(control);
+      rawValue = control.value;
+    }
     const formatted = formatCityStateZip(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
+  } else if (kind === 'phone' && window.formatPhone) {
+    const formatted = window.formatPhone(rawValue);
+    control.value = formatted;
+    if (window.setPath) window.setPath(window.D, path, formatted);
+  } else if (kind === 'ssn' && window.formatSSN) {
+    // Above the generic preserve branch on purpose: renderFormField() stamps
+    // SSN/EIN fields data-field-format-policy="preserve" (identifier-like,
+    // so sanitizeStoredText() semantics), which used to catch them first and
+    // left this branch unreachable for every renderer-built SSN field -- a
+    // value typed as 123456789 stayed that way until the next render, where
+    // the same renderer already applies formatSSN(). Blur now matches
+    // render, and Annual/Final/Trust keep the dash insertion their retired
+    // persistAnnualControl() gave them (there per keystroke; here on blur,
+    // the two-phase contract's rule for caret-moving formatters).
+    const formatted = window.formatSSN(rawValue);
+    control.value = formatted;
+    if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (policy === 'preserve') {
-    const cleaned = sanitizeStoredText(rawValue);
+    // data-field-sanitize="security" (renderFormField()'s securitySanitize
+    // option -- Annual Accounting's inpD() is its only caller) runs
+    // legacy-app.js's validateSecurityInput() first: exactly what the
+    // accounting family's own focusout handler did before it was retired,
+    // and only for those fields -- no other filing type's free text was ever
+    // sanitized this way, and still isn't. Note it blanks a field outright
+    // on a heuristic match (a description beginning "Update ..." trips its
+    // SQL-keyword check); carried over unchanged, not endorsed.
+    const secured = (control.dataset?.fieldSanitize === 'security' && window.validateSecurityInput)
+      ? window.validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
+      : rawValue;
+    const cleaned = sanitizeStoredText(secured);
     if (window.setPath) window.setPath(window.D, path, cleaned);
     control.value = cleaned;
   } else if (kind === 'name' || kind === 'address' || policy === 'display-only') {
@@ -391,14 +452,12 @@ export function finalizeFieldValue(control, options = {}) {
     const cleaned = window.sanitizeNonNegativeDecimal(rawValue);
     control.value = cleaned;
     if (window.setPath) window.setPath(window.D, path, parseFloat(cleaned) || 0);
-  } else if (kind === 'phone' && window.formatPhone) {
-    const formatted = window.formatPhone(rawValue);
-    control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
-  } else if (kind === 'ssn' && window.formatSSN) {
-    const formatted = window.formatSSN(rawValue);
-    control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+  } else if (kind === 'signed-money' && window.sanitizeDecimal) {
+    // "Enter as negative" amounts (Annual Schedule C losses, Schedule E
+    // transfers out): the one money kind that keeps a leading minus.
+    const cleaned = window.sanitizeDecimal(rawValue);
+    control.value = cleaned;
+    if (window.setPath) window.setPath(window.D, path, parseFloat(cleaned) || 0);
   }
 
   runFieldWriteSideEffects(path, control);

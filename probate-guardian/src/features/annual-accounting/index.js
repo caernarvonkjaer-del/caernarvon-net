@@ -4,7 +4,6 @@ import { renderLocalSectionGuidance } from '../../core/status/section-status.js'
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
-import { runFieldWriteSideEffects } from '../../core/form/form-contract.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
@@ -51,10 +50,7 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 const {
   esc, ic, autoSave, navigate, updateNavDots, renderScheduleDocsSection,
   pageIntroRow, browserRecommendationNotice, linkAccordions,
-  formatName, formatPhone, formatSSN, formatAddress, formatCityStateZip,
-  formatAccountNumber, formatBarNumber, formatCaseNumber, formatCheckNumber,
-  finalizeCaseNumber, applyZipLimit, validateSecurityInput,
-  sanitizeDecimal, sanitizeNonNegativeDecimal,
+  sanitizeDecimal,
   toggleSsnReveal, tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
@@ -158,7 +154,9 @@ function setterPath(setter) {
  * Declarative on purpose -- the same shape as Guardian Inventory's
  * `[data-calcbind]`/updateCalcFields() pair. A total cell opts in by carrying
  * `data-annual-total="<key>"` naming its key in calcTotalsAnnual()'s result,
- * and nothing else has to be registered anywhere. This replaces a hardcoded
+ * and nothing else has to be registered anywhere. Runs after every field
+ * write via the `pg:field-written` event form-contract.js's shared post-write
+ * tail dispatches (subscribed in bindEvents()). This replaces a hardcoded
  * `document.getElementById('schA_total')` refresh that left every schedule
  * except A stale, and which no one would have thought to extend when adding
  * a schedule.
@@ -200,64 +198,28 @@ function annualDescriptor(data = window.D) {
   return resolveFilingDescriptor(data).descriptor;
 }
 
-function persistAnnualControl(control, applyFormat = true) {
-  const path = control.dataset.annualPath || control.dataset.fieldPath;
-  if (!path) return;
-  if (control.dataset.fieldKind === 'date') {
-    // Handled by form-events.js on blur to store canonical YYYY-MM-DD
-    return;
-  }
-  let value = control.type === 'checkbox'
-    ? (control.dataset.annualValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
-    : control.value;
-  const formatters = {
-    account: formatAccountNumber,
-    address: formatAddress,
-    bar: formatBarNumber,
-    case: formatCaseNumber,
-    check: formatCheckNumber,
-    decimal: sanitizeNonNegativeDecimal,
-    'signed-decimal': sanitizeDecimal,
-    name: formatName,
-    phone: formatPhone,
-    security: (current) => validateSecurityInput(control.dataset.annualLabel, current),
-    ssn: formatSSN,
-    zip: (current) => { applyZipLimit(control); return formatCityStateZip(current); },
-  };
-  const formatter = applyFormat && formatters[control.dataset.annualFormat];
-  if (formatter) {
-    value = formatter(value);
-    control.value = value;
-  }
-  window.setPath(window.D, path, value);
-  // Annual/Final/Trust bind via data-annual-path and never reach
-  // form-contract.js's writeDraftValue()/finalizeFieldValue(), so the shared
-  // post-write tail (county commit, Party write-through, autosave, nav dots,
-  // ward card, name sync -- Milestone 42D) is called here explicitly.
-  runFieldWriteSideEffects(path, control);
-  refreshAnnualTotals();
-}
-
 function bindEvents(container) {
   eventControllers.get(container)?.abort();
   const controller = new AbortController();
   eventControllers.set(container, controller);
   const options = { signal: controller.signal };
-  container.addEventListener('input', (event) => {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-      // formatName()/formatAddress() title-case a complete value and trim it,
-      // which eats a just-typed trailing space and moves the caret to the end.
-      // bindForms() in legacy-app.js made these finalize-only long ago; this
-      // module binds its own inputs and was never brought along, so typing
-      // "Morgan Reyes" here used to store "MorganReyes". Digit-count limiting
-      // and the decimal formatters stay live: they behave like maxlength
-      // rather than rewriting whole words.
-      // Bar numbers are padded to their fixed width only after entry finishes;
-      // padding on every keystroke would make ordinary typing impossible.
-      const isWordFormat = ['name', 'address', 'zip', 'security', 'case', 'bar'].includes(event.target.dataset.annualFormat);
-      persistAnnualControl(event.target, !isWordFormat);
-    }
-  }, options);
+  // Field writes are not handled here. Every Annual/Final/Trust control --
+  // inpD()'s renderFormField() output and the hand-rolled data-annual-path
+  // fields alike -- is claimed by form-events.js's document-level listeners
+  // and written through form-contract.js's writeDraftValue()/
+  // finalizeFieldValue(), the same path as Simplified Accounting and the
+  // four Plans. This module used to run its own persistAnnualControl()
+  // beside that: a second writer on the same events with its own copy of
+  // the formatters (the renderFormField() fields carry data-field-path, so
+  // the shared listener was already firing on them too -- blurring a name
+  // field ran the post-write tail twice). What that copy alone knew --
+  // signed-decimal amounts, the security sanitizer, the ZIP digit cap --
+  // now lives in form-contract.js, keyed by attribute, so this file no
+  // longer decides how any value is formatted. The one thing it still owes
+  // each write is the live schedule-total repaint, subscribed here to the
+  // event the shared tail dispatches; the AbortController ends it with the
+  // page, so nothing dangles after dispose().
+  window.addEventListener('pg:field-written', () => refreshAnnualTotals(), options);
   container.addEventListener('change', (event) => {
     const control = event.target;
     if (control instanceof HTMLSelectElement && control.dataset.annualPath === 'filingType') {
@@ -271,30 +233,7 @@ function bindEvents(container) {
       updateNavDots();
       return;
     }
-    if (control instanceof HTMLSelectElement || (control instanceof HTMLInputElement && ['checkbox', 'radio'].includes(control.type))) persistAnnualControl(control);
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'import-excel') _excelModule.importExcel(control);
-  }, options);
-  container.addEventListener('focusout', (event) => {
-    const control = event.target;
-    if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
-    const format = control.dataset.annualFormat;
-    if (format === 'case') {
-      control.value = finalizeCaseNumber(control.value);
-    } else if (format === 'name') {
-      control.value = formatName(control.value);
-    } else if (format === 'address') {
-      control.value = formatAddress(control.value);
-    } else if (format === 'zip') {
-      applyZipLimit(control);
-      control.value = formatCityStateZip(control.value);
-    } else if (format === 'security') {
-      control.value = validateSecurityInput(control.dataset.annualLabel, control.value);
-    } else if (format === 'bar') {
-      control.value = formatBarNumber(control.value);
-    } else {
-      return;
-    }
-    persistAnnualControl(control, false);
   }, options);
   container.addEventListener('click', (event) => {
     const control = event.target instanceof Element ? event.target.closest('[data-annual-action]') : null;
@@ -388,6 +327,11 @@ function buildNavAnnual(container){
 // safe-circularity pattern as validateAnnual.
 export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return x<0?`(${Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`${x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
 export function fmtD(s){return s?String(s).substring(0,10):'';}
+// securitySanitize: this family's plain free-text fields keep running
+// legacy-app.js's validateSecurityInput() on blur (see the option's own
+// comment in form-fields.js) -- the behavior of the retired
+// persistAnnualControl() focusout handler, now declared per field rather
+// than assumed of everything inside this module's container.
 function inpD(label,val,setter,req=false,type='text'){
   return renderFormField({
     path: setterPath(setter),
@@ -395,6 +339,7 @@ function inpD(label,val,setter,req=false,type='text'){
     value: val,
     type,
     required: req,
+    securitySanitize: true,
   });
 }
 function selD(label,val,setter,opts,req=false){
@@ -420,6 +365,7 @@ function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
     type,
     required: req,
     tooltipKey,
+    securitySanitize: true,
   });
 }
 function pageNavAnnual(prev,next){

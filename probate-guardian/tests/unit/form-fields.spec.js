@@ -124,6 +124,24 @@ describe('renderFormField', () => {
     expect(html).toContain('data-field-kind="ssn"');
     expect(html).toContain('data-field-format-policy="preserve"');
   });
+
+  // Annual Accounting's inpD() opts its plain free-text fields into the
+  // legacy security sanitizer on blur; nothing else does, and the flag must
+  // not leak onto typed fields (the sanitizer would mangle an email).
+  it('stamps data-field-sanitize="security" only when asked, and only on plain text fields', () => {
+    const optedIn = renderFormField({ path: 'schC.0.description', label: 'Full Description and Identification', securitySanitize: true });
+    expect(optedIn).toContain('data-field-sanitize="security"');
+    expect(optedIn).toContain('data-annual-format="security"');
+
+    const email = renderFormField({ path: 'attorney_email', label: 'Primary Email (e-filing)', type: 'email', securitySanitize: true });
+    expect(email).not.toContain('data-field-sanitize');
+    const amount = renderFormField({ path: 'schA.0.amount', label: 'Amount', type: 'number', securitySanitize: true });
+    expect(amount).not.toContain('data-field-sanitize');
+
+    const byDefault = renderFormField({ path: 'notes', label: 'Notes' });
+    expect(byDefault).toContain('data-annual-format="security"');
+    expect(byDefault).not.toContain('data-field-sanitize');
+  });
 });
 
 describe('renderSelectField and renderTextareaField', () => {

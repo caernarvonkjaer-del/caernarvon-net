@@ -58,3 +58,86 @@ test.describe('Annual Accounting field formatting', () => {
     expect(stored).toBe('xxxx1234 suncoast bank');
   });
 });
+
+// Annual/Final/Trust's own persistAnnualControl() write path is retired;
+// every field now writes through form-contract.js like Simplified Accounting
+// and the four Plans. These pin the parts only that retired path used to do,
+// and that it is genuinely gone rather than still running alongside.
+test.describe('Annual Accounting on the shared write path', () => {
+  test('a name field is written by exactly one path: two autosaves for input then blur, not three', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Single Writer Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
+    const payer = page.locator('[data-annual-path="schA.0.payer"]');
+    await payer.waitFor({ state: 'visible' });
+
+    // Before this, the container listener and the document listener both
+    // claimed this field (it carries data-field-path AND data-annual-path):
+    // input ran the tail once, blur ran it twice -- three autosaves.
+    await page.evaluate(() => {
+      (window as any).__autoSaves = 0;
+      (window as any).autoSave = () => { (window as any).__autoSaves += 1; };
+    });
+    await payer.fill('social security administration');
+    await payer.blur();
+    await expect(payer).toHaveValue('Social Security Administration');
+    expect(await page.evaluate(() => (window as any).__autoSaves)).toBe(2);
+    expect(await page.evaluate(() => (window as any).D.schA[0].payer)).toBe('Social Security Administration');
+  });
+
+  test('Schedule C loss keeps its minus: filtered live, a negative Number on blur, live totals following', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Signed Decimal Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/schc'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
+    const loss = page.locator('[data-annual-path="schC.0.loss"]');
+    await loss.waitFor({ state: 'visible' });
+
+    // This field is hand-rolled (data-annual-path only, no data-field-path):
+    // the one kind of Annual control the shared listener never used to see.
+    await loss.fill('-1,250');
+    await expect(loss).toHaveValue('-1250');
+    await expect(page.locator('[data-annual-total="schC_losses"]')).toHaveText('(1,250.00)');
+    expect(await page.evaluate(() => (window as any).D.schC[0].loss)).toBe('-1250');
+
+    await loss.blur();
+    expect(await page.evaluate(() => (window as any).D.schC[0].loss)).toBe(-1250);
+    await expect(loss).toHaveValue('-1250');
+    await expect(page.locator('[data-annual-total="schC_net"]')).toHaveText('(1,250.00)');
+  });
+
+  test('an amount filters live as typed, so "1,000" never reaches the running total as 1', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Live Filter Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
+    const amount = page.locator('[data-annual-path="schA.0.amount"]');
+    await amount.waitFor({ state: 'visible' });
+
+    await amount.fill('1,000');
+    await expect(amount).toHaveValue('1000');
+    await expect(page.locator('[data-annual-total="schA"]')).toHaveText('1,000.00');
+    expect(await page.evaluate(() => (window as any).D.schA[0].amount)).toBe('1000');
+    await amount.blur();
+    expect(await page.evaluate(() => (window as any).D.schA[0].amount)).toBe(1000);
+  });
+
+  test('phone and SSN format on blur through the shared finalizer', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Blur Format Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/p3'));
+
+    const phone = page.locator('[data-annual-path="guardians.0.phone"]');
+    await phone.fill('5555550101');
+    await phone.blur();
+    await expect(phone).toHaveValue('(555) 555-0101');
+    expect(await page.evaluate(() => (window as any).D.guardians[0].phone)).toBe('(555) 555-0101');
+
+    const ssn = page.locator('[data-annual-path="guardians.0.ssn"]');
+    await ssn.fill('123456789');
+    await ssn.blur();
+    await expect(ssn).toHaveValue('123-45-6789');
+    expect(await page.evaluate(() => (window as any).D.guardians[0].ssn)).toBe('123-45-6789');
+  });
+});
