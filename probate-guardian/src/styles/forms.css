@@ -221,3 +221,20 @@
   margin-bottom: 0;
 }
 
+/* Milestone 40I residual: a small number of confirmed, both-hand-rolled
+   sibling-column pairs (no primitive-built sibling in the row) can still
+   misalign when one label genuinely wraps to two lines and the other
+   doesn't, in a roughly 500-620px viewport band. Deliberately opt-in via
+   this class on specific labels rather than a structural selector -- the
+   two prior generations of this fix (a `:has()` rule, then a direct-child
+   `[class*="col-"] > .form-label` rule) were both removed because they
+   also matched every primitive-built field's `.mb-2`-wrapped label
+   somewhere in the app, forcing unwanted space above correct single-line
+   labels. This class only ever appears where a human has confirmed, by
+   measurement, that its specific sibling pair needs it. */
+.label-2line-reserve {
+  min-height: 2.1rem;
+  display: flex;
+  align-items: flex-end;
+}
+

@@ -241,6 +241,55 @@ test('Schedule B-4 Category aligns with its primitive-built row-mates (reported 
   expect(await affix.evaluate((element) => getComputedStyle(element).fontSize)).toBe('14.08px');
 });
 
+// Milestone 40I's own residual, deferred at the time (see
+// MILESTONE-40I-PROPOSAL.md's "Three corrections" #3): deleting the
+// blanket min-height rule correctly fixed every hand-rolled/primitive
+// mismatch, but left one narrower case unaddressed -- a row where BOTH
+// fields are hand-rolled (no primitive sibling, so the original bug never
+// touched it) can still misalign when one label wraps to two lines and its
+// sibling's doesn't. Confirmed here at Plan Initial's Q11 "Name of person
+// who signed" / "Relationship of Agent(s)/Surrogate(s) to the Ward" pair --
+// the exact site 40I measured (nameInputTop 1048 < relLabelBottom 1059
+// pre-fix). Fixed with a narrowly-scoped opt-in class
+// (`.label-2line-reserve`, forms.css) on just these two labels, not a
+// structural selector -- the two prior, broader attempts at this same
+// territory (a `:has()` rule, then a direct-child `[class*="col-"] >
+// .form-label` rule) were both removed because they also matched every
+// primitive-built field's `.mb-2`-wrapped label somewhere else in the app.
+test('Plan Initial Q11 Name/Relationship labels align across sibling columns when one wraps to two lines', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Q11 Directive Alignment Ward', 'planInitial');
+  await page.evaluate(() => {
+    const data = (window as any).D;
+    data.q11Executed = true;
+    data.q11Directives = [{
+      title: 'DNR Order',
+      dateSigned: '2025-01-01',
+      signedBy: 'Jane Guardian',
+      relationship: 'Daughter and Healthcare Surrogate',
+    }];
+    (window as any).navigate('/p8');
+  });
+  await page.setViewportSize({ width: 576, height: 1100 });
+
+  const card = page.locator('.entry-card').first();
+  const relLabel = card.locator('.form-label', { hasText: 'Relationship of Agent(s)/Surrogate(s) to the Ward' });
+  const nameInput = card.locator('input[data-field-path="q11Directives.0.signedBy"]');
+  const relInput = card.locator('input[data-field-path="q11Directives.0.relationship"]');
+
+  // Confirm the label genuinely renders as two lines at this width --
+  // don't assert against a case that silently fits on one line.
+  const relLabelLineCount = await relLabel.evaluate((el) => Math.round(el.getBoundingClientRect().height / 17));
+  expect(relLabelLineCount).toBeGreaterThanOrEqual(2);
+
+  const nameInputTop = await nameInput.evaluate((el) => Math.round(el.getBoundingClientRect().top));
+  const relInputTop = await relInput.evaluate((el) => Math.round(el.getBoundingClientRect().top));
+  // Within a couple of pixels, not pixel-perfect -- subpixel rounding
+  // between the two labels' own fractional heights accounts for the rest
+  // (same tolerance the Schedule B-4 test above this one uses).
+  expect(Math.abs(nameInputTop - relInputTop)).toBeLessThanOrEqual(2);
+});
+
 test('tablet-band schedule field rows do not overflow horizontally or render narrower than 118px', async ({ page }) => {
   await freshStartNoPassword(page);
   await page.evaluate(() => (window as any).addWard('Tablet Layout Ward', 'annual'));

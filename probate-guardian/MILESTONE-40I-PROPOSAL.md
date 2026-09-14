@@ -42,6 +42,26 @@ shipping the proposal's assumptions as written:
    single-line primitive fields, which the corrected pre-existing test
    (point 1 above) now explicitly pins against.
 
+**Residual closed 2026-09-13.** Fixed with a narrowly-scoped opt-in class
+(`.label-2line-reserve`, `forms.css`) applied directly to the two confirmed
+labels ("Name of person who signed" / "Relationship of Agent(s)/Surrogate(s)
+to the Ward", `plan-initial/index.js`) rather than a structural selector —
+deliberately not the same shape as either of the two prior, broader
+attempts in this territory (this file's own history, and a same-day
+uncommitted third attempt using `flex-grow` on a structural selector, which
+measured as a net regression — it bottom-aligned every hand-rolled date
+column's label too, pushing that column's input down by the date hint's
+height relative to its non-date sibling, at every viewport width). Plan
+Annual's structurally similar Q10 directive row (`Relationship of agent(s)
+to the ward` / `Contact information for agent(s)`) was measured at the same
+viewport band and does not reproduce the defect — its two fields do not
+stay side-by-side once the label would wrap, so it was left unfixed rather
+than assumed to need the same class. New regression test:
+`tests/e2e/schedule-card-layout.spec.ts`'s "Plan Initial Q11
+Name/Relationship labels align across sibling columns when one wraps to
+two lines" — confirmed failing (1048 vs 1065) against the pre-fix code,
+passing after.
+
 ## Goal
 
 Fix a card-row layout defect where a field's label/input sits visibly lower
