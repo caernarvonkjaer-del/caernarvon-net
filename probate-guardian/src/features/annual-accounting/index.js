@@ -10,6 +10,20 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/fo
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+// Milestone 41-3: same structural story as its sibling Simplified
+// Accounting, confirmed by reading the real markup. Only
+// renderReportingPeriodFields() applies: wardName has no column wrapper
+// (it sits directly in the summary-box), caseNumber uses the tooltip
+// variant inpDWithTooltip() and is paired with the GID rather than county,
+// and county sits in the other box entirely via countyInputD() -- so
+// caseNumber and county are never adjacent, which is
+// renderCaseCaptionFields()'s premise. One deliberate difference from the
+// Plan types: inpD() passes no explicit id, so these fields currently get
+// randomized ids (inp_periodFrom_xxxxx); the card passes a stable
+// `periodFrom`/`periodTo` id instead. Confirmed safe -- this page renders
+// each of those paths exactly once, and the specs that target these fields
+// do so by [data-field-path], not by id.
+import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -550,8 +564,7 @@ function pagePart1Annual(){
           <div class="col-md-6">${inpD('Guardianship Inception Date (GID)',d.gid,"D.gid=this.value",true,'date')}</div>
         </div>
         <div class="row g-2">
-          <div class="col-md-6">${inpD('Period From',d.periodFrom,"D.periodFrom=this.value",true,'date')}</div>
-          <div class="col-md-6">${inpD('Period To',d.periodTo,"D.periodTo=this.value",true,'date')}</div>
+          ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Period From', toLabel: 'Period To' })}
         </div>
         <div class="row g-2">
           <div class="col-md-6">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'])}</div>

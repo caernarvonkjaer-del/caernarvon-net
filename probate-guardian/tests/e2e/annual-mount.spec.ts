@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot } from './support/target';
 
 // Annual Accounting is the sixth feature extraction (Milestone 7 of
 // INDEX-SPLIT-PLAN.md) -- the largest yet, and the second Plan/Accounting
@@ -387,3 +387,32 @@ test.describe('annual-accounting feature module', () => {
   });
 });
 
+
+// Milestone 41-3: Annual Accounting's Cover page came back byte-identical
+// through renderReportingPeriodFields() (verified via git-stash
+// before/after). Annual, Final, and Trust share one engine and one
+// index.js, so this one migration covers three filing types -- the loop
+// below confirms all three render the card's fields, with the full
+// byte-level pin on the annual alias.
+test('Cover page renders byte-identical visible text and control values through the reporting-period card', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Acct Diff Ward', 'annual');
+  await fillMinimalValidAnnualWard(page);
+  await page.evaluate(() => (window as any).navigate('/'));
+  const snapshot = await extractFormContentSnapshot(page);
+  expect(snapshot).toBe("Cover & Part I — Required Information\nAll Filings\n?\nGeneral Instructions\nImport Excel File (existing annual accounting template)\nREQUIRED INFORMATION\nName of Ward\n*\nCase Number\n?\n*\nGuardianship Inception Date (GID)\n*\nUse MM/DD/YYYY\nPeriod From\n*\nUse MM/DD/YYYY\nPeriod To\n*\nUse MM/DD/YYYY\nFiling Type\n— select —\nAnnual\nFinal\nTrust\nAmended Form?\nYes\nNo\nGUARDIAN & ATTORNEY\nGuardian\n*\nAttorney for Guardian\nCounty\nType of Guardianship\n*\n— select —\nPlenary\nLimited\nGuardian Advocate\nVoluntary\nMinor - Person\nMinor - Property\nMinor - Person - Property\nRelated Case Numbers (siblings/relatives with guardianships)\nQUICK SUMMARY (AUTO-CALCULATED)\nStarting Balance\n10,000.00\nSch A — Income\n500.00\nTotal Disbursements (B-1 thru B-4)\n0.00\nSch C — Capital Adj. Net\n0.00\nNet Assets at End of Period\n10,500.00\nNet Assets from Sch D (should match above)\n0.00\nNext →\n---CONTROL VALUES---\n[input:]\n[input:Acct Diff Ward]\n[input:26-000789]\n[input:01/01/2025]\n[input:01/01/2026]\n[input:12/31/2026]\n[select:Annual]\n[radio:yesno_amendedForm=unchecked]\n[radio:yesno_amendedForm=checked]\n[input:Sample Guardian]\n[input:Sample Attorney]\n[input:Pinellas]\n[select:]\n[input:]");
+});
+
+for (const alias of ['finalAccounting', 'trustAccounting']) {
+  test(`${alias} renders the same reporting-period card fields as the annual alias (one engine, three filing types)`, async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Acct Alias Ward', alias);
+    await fillMinimalValidAnnualWard(page);
+    await page.evaluate(() => (window as any).navigate('/'));
+    const snapshot = await extractFormContentSnapshot(page);
+    expect(snapshot).toContain('Period From');
+    expect(snapshot).toContain('Period To');
+    await expect(page.locator('input[data-field-path="periodFrom"]')).toHaveAttribute('id', 'periodFrom');
+    await expect(page.locator('input[data-field-path="periodTo"]')).toHaveAttribute('id', 'periodTo');
+  });
+}

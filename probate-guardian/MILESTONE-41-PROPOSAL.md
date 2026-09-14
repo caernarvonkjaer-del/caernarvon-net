@@ -10,12 +10,13 @@ cards" and "What landed next: Signatures page card — 41-2 complete." The
 milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
 against; see that section's closing note. **41-3 is in progress**: Plan
-Minor, Plan Initial, Plan Annual, and Simplified Accounting (4 of 6) are
-landed — see their own "What landed" sections under §2's "41-3: Tier 3
-rollout" plan. All four of the milestone's named Tier 2 cards now exist; the
-fourth (Residence & Facility Profile) landed with the Plan Annual step, once
-a second real usage justified extracting it. Remaining: Annual Accounting
-(covers Final/Trust), Guardian Inventory.
+Minor, Plan Initial, Plan Annual, Simplified Accounting, and Annual
+Accounting (5 of 6 — the last covering Final and Trust too, so eight of the
+nine filing types are done) are landed — see their own "What landed"
+sections under §2's "41-3: Tier 3 rollout" plan. All four of the milestone's
+named Tier 2 cards now exist; the fourth (Residence & Facility Profile)
+landed with the Plan Annual step, once a second real usage justified
+extracting it. Remaining: Guardian Inventory.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -741,6 +742,37 @@ total, all green), plus `page-structure.spec.ts`,
 `form-field-labels.spec.ts`, and `carryover-workflow.spec.ts` (which
 exercises this type's Cover page through the eligibility-redirect flow).
 Full unit suite: 778/778, unchanged — this step added no new card code.
+
+### What landed (2026-09-13): Annual Accounting (covers Final and Trust)
+
+**One migration, three filing types** — Annual, Final, and Trust share one
+engine and one `index.js`, exactly as §1's Tier 3 note said. Structurally
+this is the same story as its sibling Simplified Accounting, confirmed by
+reading the real markup: only `renderReportingPeriodFields()` applies,
+because `wardName` has no column wrapper, `caseNumber` uses the tooltip
+variant `inpDWithTooltip()` and is paired with the GID rather than county,
+and county sits in the other box via `countyInputD()` — so `caseNumber` and
+`county` are never adjacent here either. That takes the reporting-period
+card to **seven call sites across eight filing types**.
+
+**One deliberate, disclosed difference:** this type's fields go through
+`inpD()`, which passes no explicit `id`, so they currently get *randomized*
+ids (`inp_periodFrom_a1b2c`); the card passes stable `periodFrom`/`periodTo`
+ids. Confirmed safe rather than assumed: this page renders each of those
+paths exactly once (checked by grep — one `D.periodFrom=this.value` site in
+the whole file), and the specs that target these fields do so by
+`[data-field-path]`, not by id. `date-validation.contract.spec.ts`'s 32
+cases — including the Milestone 40C-C "entering a date range never rewrites
+the other endpoint" regressions that drive these exact two inputs — all
+stay green.
+
+**Verification:** Cover page byte-identical via `git stash` before/after.
+New pins in `annual-mount.spec.ts`: the full byte-level snapshot on the
+`annual` alias, plus a loop asserting `finalAccounting` and
+`trustAccounting` render the same card fields with the new stable ids (15
+tests in that file, all green). Also green: `date-validation.contract.spec.ts`
+(32) and `annual-field-formatting.spec.ts`. Full unit suite: 778/778,
+unchanged — no new card code this step.
 
 ### What this milestone deliberately does not require
 
