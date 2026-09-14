@@ -11,12 +11,20 @@ milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
 against; see that section's closing note. **41-3 is in progress**: Plan
 Minor, Plan Initial, Plan Annual, Simplified Accounting, and Annual
-Accounting (5 of 6 — the last covering Final and Trust too, so eight of the
-nine filing types are done) are landed — see their own "What landed"
-sections under §2's "41-3: Tier 3 rollout" plan. All four of the milestone's
-named Tier 2 cards now exist; the fourth (Residence & Facility Profile)
-landed with the Plan Annual step, once a second real usage justified
-extracting it. Remaining: Guardian Inventory.
+Accounting are landed (the last covering Final and Trust too, so eight of the
+nine filing types), and **Guardian Inventory is blocked by design** — its
+fields bind via `data-bind` with no inline value, so migrating them means the
+`data-bind` retirement this document explicitly scopes out. See each step's
+own "What landed" section under §2's "41-3: Tier 3 rollout" plan, and
+"41-3 outcome" for the measured card-generalization table.
+
+**Milestone 41 is complete** as scoped: 41-1, 41-2, and 41-3 (5 of 6
+migrated, 1 recorded as blocked) have all landed. All four of the
+milestone's named Tier 2 cards exist; the fourth (Residence & Facility
+Profile) landed with the Plan Annual step, once a second real usage
+justified extracting it. The follow-up this exposed — retiring `data-bind`
+and `data-annual-path` — needs its own milestone, per §"What this milestone
+deliberately does not require."
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -773,6 +781,86 @@ New pins in `annual-mount.spec.ts`: the full byte-level snapshot on the
 tests in that file, all green). Also green: `date-validation.contract.spec.ts`
 (32) and `annual-field-formatting.spec.ts`. Full unit suite: 778/778,
 unchanged — no new card code this step.
+
+### What landed (2026-09-13): Guardian Inventory — blocked by design, not by effort
+
+**No field migration is possible for this type inside 41-3's own stated
+constraints.** This is not a scope-down for time or risk appetite: it is the
+boundary this milestone already drew for itself, reached from the other side.
+The evidence, all from direct reading rather than inference:
+
+1. **The blocker.** Every field produced by this file's own `textInput()`,
+   `dateInput()`, and `numInput()` helpers binds via `data-bind="<path>"` and
+   carries **no inline `value` attribute at all** — values are applied by a
+   separate post-render binding pass (which is what
+   `guardian-inventory-mount.spec.ts`'s "does not race post-render binding"
+   test exists to protect). `renderFormField()` emits `data-form-path` *and*
+   an inline `value`. Migrating even one of these fields therefore switches
+   the binding convention **and** the value-population architecture in the
+   same edit — which is precisely the `data-bind` retirement this document's
+   own "What this milestone deliberately does not require" defers: *"Each
+   type keeps its current binding convention through its own 41-3 step; only
+   the markup generation moves."* Here the markup generation *is* the
+   binding convention. Grep confirms the split: 9 `data-bind=` sites in the
+   helpers, 0 literal `data-form-path` sites in the file.
+2. **Three of the four cards have no applicable fields anyway.** There are
+   **zero** `periodFrom`/`periodTo` occurrences in the entire file (this is
+   an initial inventory, not a period accounting), so
+   `renderReportingPeriodFields()` — the card that reached seven call sites
+   across eight filing types — has nothing to attach to. There are no
+   `wardLiving`/residence fields in the Plan shape, so the Residence &
+   Facility card doesn't apply. And `caseNumber` and `county` are never
+   adjacent: each sits in its own `formRow(col(...))`, separated by the GID
+   field, and they use different helpers (`textInput` vs.
+   `countyInputBind`) — adjacency inside one shared row is
+   `renderCaseCaptionFields()`'s whole premise.
+3. **A correction to this document's own premise.** §"What changed in this
+   revision" item 3 states Guardian Inventory "has zero Tier 1 adoption."
+   That was accurate when written, and is now outdated — **41-1 changed it.**
+   This file makes 8 `yesNoRadioHTML()` calls, and that helper delegates to
+   Tier 1's `renderYesNoField()` as of 41-1, so its eight Yes/No radio
+   groups are Tier 1-rendered today (confirmed green by
+   `guardian-inventory-tri-state-radios.spec.ts`, whose own test name
+   asserts they "write to their declared data-form-path"). Guardian
+   Inventory was scheduled last as the highest-effort target; it turns out
+   41-1's zero-call-site delegation had already done the part of the job
+   that was reachable without a convention change.
+
+**Nothing was changed in this step.** Baseline confirmed green before
+recording the finding: `guardian-inventory-mount.spec.ts` and
+`guardian-inventory-tri-state-radios.spec.ts`, 12 tests, all passing.
+
+**The real follow-up this exposes** is the one §"What this milestone
+deliberately does not require" already names — retiring `data-bind` (and
+`data-annual-path`) now that 42D's `runFieldWriteSideEffects()` makes them
+behaviorally equivalent paths to the same tail. Guardian Inventory is the
+type that work exists for, and it needs its own milestone: the value-
+population architecture changes with it, so it is materially larger than a
+markup swap and must not be smuggled into this rollout.
+
+## 41-3 outcome: 5 of 6 migrated, 1 blocked by design
+
+Eight of the nine filing types now render at least part of their Cover
+and/or Signatures markup through Tier 2 cards or Tier 1 primitives, verified
+byte-for-byte. The ninth (Guardian Inventory) is blocked on the `data-bind`
+retirement this milestone explicitly scoped out, and is recorded above
+rather than left looking unfinished or quietly skipped.
+
+Card generalization, as actually measured rather than projected:
+
+| Card | Real call sites | Filing types |
+| --- | --- | --- |
+| `renderReportingPeriodFields` | 7 | 8 (all but Guardian Inventory) |
+| `renderWardIdentityFields` | 3 | 3 Plan types |
+| `renderCaseCaptionFields` | 3 | 3 Plan types |
+| `renderResidenceFields` | 2 | Plan Initial, Plan Annual |
+| `renderPartyNameField` | 3 | 3 of 4 Plan types (Plan Annual's col-md-7 doesn't fit) |
+| `renderPartyContactFields` | 1 | Plan Simplified only — did not generalize |
+
+Both speculative optional slots added in 41-2 (`renderReportingPeriodFields`'s
+`inceptionDate`, `renderWardIdentityFields`'s `ssn`) are still exercised by
+no real page, each having been ruled out by the first concrete candidate
+that appeared. They remain in place and should not be treated as proven.
 
 ### What this milestone deliberately does not require
 
