@@ -26,6 +26,12 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 // confirms Plan Annual's real shape next.
 import { renderCaseCaptionFields } from '../../core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+// Milestone 41-3 (Plan Annual step): the Residence & Facility Profile card
+// deferred above was built once Plan Annual supplied a second real usage,
+// and this page was retro-fitted onto it in the same commit -- two real
+// users is what justified extracting it. This page passes its own wording
+// for the two labels that differ from Plan Annual's.
+import { renderResidenceFields } from '../../core/form/cards/residence-facility-card.js';
 import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
 import { renderFormField } from '../../core/form/form-fields.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
@@ -218,17 +224,20 @@ function pagePlanICover(){
           <div class="row g-2">
             <div class="col-12">${inpS('guardianNames','Guardian Name(s)',d.guardianNames,true)}</div>
             <div class="col-12">${inpS('attorneyName','Attorney Name',d.attorneyName)}</div>
-            <div class="col-12 mt-3">
-              ${radioP('wardLiving','The ward is living:',d.wardLiving,[
+            ${renderResidenceFields({
+              wardLiving: d.wardLiving,
+              wardLivingOptions: [
                 'In a private residence leased or owned by them (house, condo or apartment)',
                 'In a private residence not leased or owned by them (such as family member)',
-                'In a facility (Skilled Nursing, Assisted Living, etc.)'],true)}
-            </div>
-            <div class="col-12">${inpS('residenceAddress','Address Where Ward Is Currently Residing',d.residenceAddress,true)}</div>
-            <div class="col-md-7">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
-            <div class="col-md-5">${inpS('residencePhone','Phone',d.residencePhone)}</div>
-            <div class="col-12">${inpS('mailingAddress','Mailing Address for Ward (if different from above)',d.mailingAddress)}</div>
-            <div class="col-12">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
+                'In a facility (Skilled Nursing, Assisted Living, etc.)'],
+              residenceAddress: d.residenceAddress,
+              residenceAddressLabel: 'Address Where Ward Is Currently Residing',
+              residenceCityStateZip: d.residenceCityStateZip,
+              residencePhone: d.residencePhone,
+              mailingAddress: d.mailingAddress,
+              mailingAddressLabel: 'Mailing Address for Ward (if different from above)',
+              mailingCityStateZip: d.mailingCityStateZip,
+            })}
           </div>
         </div>
       </div>

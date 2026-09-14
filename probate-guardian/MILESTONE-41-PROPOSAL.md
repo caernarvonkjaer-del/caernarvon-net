@@ -10,10 +10,12 @@ cards" and "What landed next: Signatures page card — 41-2 complete." The
 milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
 against; see that section's closing note. **41-3 is in progress**: Plan
-Minor and Plan Initial (2 of 6) are landed — see their own "What landed"
-sections under §2's "41-3: Tier 3 rollout" plan. Remaining: Plan Annual,
-Simplified Accounting, Annual Accounting (covers Final/Trust), Guardian
-Inventory.
+Minor, Plan Initial, and Plan Annual (3 of 6) are landed — see their own
+"What landed" sections under §2's "41-3: Tier 3 rollout" plan. All four of
+the milestone's named Tier 2 cards now exist; the fourth (Residence &
+Facility Profile) landed with the Plan Annual step, once a second real
+usage justified extracting it. Remaining: Simplified Accounting, Annual
+Accounting (covers Final/Trust), Guardian Inventory.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -646,6 +648,65 @@ snapshot pins), `page-structure.spec.ts`, `form-field-labels.spec.ts`, and
 `signature-capture.contract.spec.ts`'s Plan Initial section all green. Pin
 confirmed as a real guard via a temporary label change, caught, restored.
 Full unit suite: 774/774 (unchanged — both new pins are e2e).
+
+### What landed (2026-09-13): Plan Annual — and the fourth card, finally
+
+**The Residence & Facility Profile card is built.** Deferred twice on
+purpose (41-2: Plan Simplified has no such fields; Plan Initial: they were
+already on Tier 1, so one type's shape wasn't enough to justify extracting
+a card). Plan Annual supplies the second real usage, and the two shapes
+line up exactly where it matters — identical field paths (`wardLiving`,
+`residenceAddress`, `residenceCityStateZip`, `residencePhone`,
+`mailingAddress`, `mailingCityStateZip`), identical order, identical column
+widths. Only visible text diverges: four labels are worded differently and
+`wardLiving`'s three option strings differ in wording and capitalization.
+That's precisely the divergence `renderReportingPeriodFields()`'s
+overridable labels already handle across three types, so the card takes
+per-type label and option overrides. **Plan Initial was retro-fitted onto
+it in the same commit** — two real users is what justified extracting it,
+so both landed together rather than leaving it single-use.
+
+The strongest verification of the session came for free here: Plan
+Initial's Cover-page snapshot pin was captured *before* this card existed,
+and it still passes unchanged after the retro-fit — an independent check
+that the shared card produces byte-identical output. Temporarily changing
+one shared label then made **both** types' pins fail, confirming the card
+is guarded from two directions at once.
+
+**Plan Annual's own migration is the cleanest of the four Plan types: both
+pages came back byte-identical.** Unlike Plan Minor and Plan Initial, this
+type already applied its own formatters (`formatName`/`formatSSN`/
+`formatPhone`/`formatAddress`) to the guardian block and already showed the
+required asterisk for guardian 0, so routing those fields through
+`renderFormField()` changed nothing visible at all — no disclosed content
+changes needed for this step. `radioP` and all four formatters are now dead
+in this file and were dropped from its `window` destructure.
+
+**A fourth distinct guardian-contact shape, and a card's real limit found:**
+this page's guardian block adds `officeStreet`/`officeCityStateZip` on top of
+mailing address, and — decisively — its Printed Name field is `col-md-7`
+(paired with a `col-md-5` Date Signed on the same row), not the `col-12`
+`renderPartyNameField()` hardcodes. Adding a `colClass` parameter would
+reduce that card to a configurable `<div>` around a single
+`renderFormField()` call, which is no abstraction at all, so this page's
+guardian fields go straight to Tier 1. Confirmed fit for that card:
+**3 of 4 Plan types, not 4 of 4** — recorded rather than papered over.
+
+**Also confirmed: `renderWardIdentityFields()`'s optional `ssn` slot does
+not generalize either.** Plan Annual has a ward SSN field, which is why
+that slot was added speculatively in 41-2 — but it sits *after* county
+rather than adjacent to wardName, and its label is "Social Security
+Number", so it doesn't fit. Together with the `inceptionDate` slot Plan
+Initial already ruled out, both of 41-2's speculative optional slots are
+now confirmed unexercised by any real page. They remain in place but should
+not be treated as proven.
+
+**Verification:** 31 tests green across all four Plan types
+(`plan-annual-mount.spec.ts`, `plan-initial-mount.spec.ts`,
+`plan-minor-mount.spec.ts`, `plan-simplified-mount.spec.ts`) plus
+`page-structure.spec.ts` and `form-field-labels.spec.ts`. Two new
+byte-identical snapshot pins for Plan Annual. Full unit suite: 778/778 (was
+774; +4 for the new card).
 
 ### What this milestone deliberately does not require
 

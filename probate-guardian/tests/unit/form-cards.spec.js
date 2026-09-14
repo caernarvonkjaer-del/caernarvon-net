@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderCaseCaptionFields } from '../../src/core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../src/core/form/cards/ward-demographics-card.js';
 import { renderPartyNameField, renderPartyContactFields } from '../../src/core/form/cards/guardian-attorney-card.js';
+import { renderResidenceFields } from '../../src/core/form/cards/residence-facility-card.js';
 
 // Milestone 41-2: Tier 2 cards each bind correctly to data-form-path and
 // render their required elements. Cards return bare field-group fragments
@@ -117,5 +118,65 @@ describe('renderPartyContactFields', () => {
     expect(html).toContain('data-form-path="planGuardians.0.mailingAddress"');
     expect(html).toContain('value="727-555-0102"');
     expect(html).toContain('value="guardian@example.com"');
+  });
+});
+
+// Milestone 41-3: the milestone's fourth named card, deferred twice before
+// this and built only once Plan Annual supplied a second real usage. Both
+// Plan Initial and Plan Annual share its field paths, order, and column
+// widths exactly; only label text and the wardLiving option strings differ,
+// which is what the overridable labels are for.
+describe('renderResidenceFields', () => {
+  it('binds every residence and mailing field to its canonical path', () => {
+    const html = renderResidenceFields({
+      wardLiving: 'In a facility (skilled nursing, assisted living, etc.)',
+      wardLivingOptions: ['In a private residence leased or owned by them', 'In a facility (skilled nursing, assisted living, etc.)'],
+      residenceAddress: '123 Main St',
+      residenceCityStateZip: 'Clearwater, FL 33755',
+      residencePhone: '727-555-0101',
+      mailingAddress: 'PO Box 4',
+      mailingCityStateZip: 'Largo, FL 33770',
+    });
+    expect(html).toContain('data-form-path="wardLiving"');
+    expect(html).toContain('data-form-path="residenceAddress"');
+    expect(html).toContain('data-form-path="residenceCityStateZip"');
+    expect(html).toContain('data-form-path="residencePhone"');
+    expect(html).toContain('data-form-path="mailingAddress"');
+    expect(html).toContain('data-form-path="mailingCityStateZip"');
+  });
+
+  it('renders wardLiving as a fieldset-wrapped radio group with the caller-supplied options', () => {
+    const html = renderResidenceFields({
+      wardLiving: 'In a facility',
+      wardLivingOptions: ['At home', 'In a facility'],
+    });
+    expect(html).toContain('<fieldset class="mb-3">');
+    expect(html).toContain('<legend class="form-label">The ward is living:');
+    expect(html).toContain('value="At home"');
+    expect(html).toMatch(/value="In a facility" checked/);
+  });
+
+  it('accepts per-type label overrides for the two labels that differ between Plan Initial and Plan Annual', () => {
+    const html = renderResidenceFields({
+      wardLivingOptions: [],
+      residenceAddressLabel: 'Address Where Ward Is Currently Residing',
+      mailingAddressLabel: 'Mailing Address for Ward (if different from above)',
+    });
+    expect(html).toContain('Address Where Ward Is Currently Residing');
+    expect(html).toContain('Mailing Address for Ward (if different from above)');
+    expect(html).not.toContain('Address Where Ward Resides');
+  });
+
+  it('marks residence address and city/state/zip required, and leaves phone and mailing optional', () => {
+    const html = renderResidenceFields({ wardLivingOptions: [] });
+    // Exactly two data-field-required attributes: residenceAddress and
+    // residenceCityStateZip. wardLiving is required too, but
+    // renderRadioGroupField only renders the visual asterisk in its legend
+    // and emits no data-field-required attribute -- a faithful port of
+    // radioP()'s original behavior, confirmed rather than assumed.
+    expect((html.match(/data-field-required="true"/g) || []).length).toBe(2);
+    expect(html).toContain('The ward is living:<span class="req">*</span>');
+    expect(html).not.toMatch(/Phone<span class="req">/);
+    expect(html).not.toMatch(/Mailing City \/ State \/ ZIP<span class="req">/);
   });
 });

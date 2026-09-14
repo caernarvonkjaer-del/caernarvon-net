@@ -3,6 +3,26 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+// Milestone 41-3: Tier 2 cards. This page's periodFrom/periodTo labels are
+// renderReportingPeriodFields()'s own defaults, so it reuses with zero
+// overrides. ssn and gid stay on inpS() (already Tier 1): this type's
+// inception field is `gid`, not `inceptionDate`, and its ward-SSN field
+// sits after county rather than adjacent to wardName, so neither fits the
+// optional slots in ward-demographics-card.js -- the second candidate to
+// confirm those two speculative slots don't generalize. The Residence &
+// Facility Profile card is built and first used here; see its own header
+// comment for why Plan Annual is what finally justified it.
+import { renderCaseCaptionFields } from '../../core/form/cards/case-caption-card.js';
+import { renderWardIdentityFields, renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+import { renderResidenceFields } from '../../core/form/cards/residence-facility-card.js';
+// renderPartyNameField() is deliberately NOT imported here: it hardcodes a
+// col-12 wrapper, and this page's Printed Name field is col-md-7 (paired
+// with a col-md-5 Date Signed on the same row). A colClass parameter would
+// reduce that card to a configurable div around one renderFormField() call,
+// which is no abstraction at all -- so this page's guardian fields go
+// straight to Tier 1 instead. Confirmed fit: 3 of 4 Plan types for that
+// card, not 4 of 4.
+import { renderFormField } from '../../core/form/form-fields.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -21,10 +41,16 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 // `PLAN_ADL_RATINGS`/`PLAN_BENEFITS` stay legacy because
 // computeNavChecks()'s planAnnual branch reads them directly (see the
 // Milestone 4 plan's "Confirmed facts" and "Design decisions").
+// Milestone 41-3: radioP and formatName/formatPhone/formatSSN/formatAddress
+// dropped from this destructure -- all now dead here. wardLiving's radio
+// group moved into residence-facility-card.js (which calls Tier 1's
+// renderRadioGroupField directly), and the guardian block's formatters are
+// applied automatically by renderFormField() from each field's inferred
+// kind, confirmed field-by-field against the previous manual calls.
 const {
-  esc, ic, inpS, countyInputS, radioP, pageNavS,
+  esc, ic, inpS, countyInputS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
-  formatName, formatPhone, formatSSN, formatAddress, toggleSsnReveal,
+  toggleSsnReveal,
   formatDisplayDate,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
 } = window;
@@ -183,13 +209,11 @@ function pagePlanACover(){
         <div class="summary-box">
           <h2 class="subsection-heading">Ward &amp; Case Information</h2>
           <div class="row g-2">
-            <div class="col-12">${inpS('wardName','Name of Ward',d.wardName,true)}</div>
-            <div class="col-md-6">${inpS('caseNumber','Case Number',d.caseNumber,true)}</div>
-            <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
+            ${renderWardIdentityFields({ wardName: d.wardName, wardNameRequired: true })}
+            ${renderCaseCaptionFields({ caseNumber: d.caseNumber, county: d.county })}
             <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn)}</div>
             <div class="col-md-6">${inpS('gid','Guardianship Inception Date',d.gid,true,'date')}</div>
-            <div class="col-md-6">${inpS('periodFrom','Reporting Period From',d.periodFrom,true,'date')}</div>
-            <div class="col-md-6">${inpS('periodTo','Reporting Period To',d.periodTo,true,'date')}</div>
+            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo })}
           </div>
         </div>
       </div>
@@ -199,17 +223,18 @@ function pagePlanACover(){
           <div class="row g-2">
             <div class="col-12">${inpS('guardian','Guardian Name(s)',d.guardian,true)}</div>
             <div class="col-12">${inpS('attorney','Attorney Name',d.attorney)}</div>
-            <div class="col-12 mt-3">
-              ${radioP('wardLiving','The ward is living:',d.wardLiving,[
+            ${renderResidenceFields({
+              wardLiving: d.wardLiving,
+              wardLivingOptions: [
                 'In a private residence leased or owned by them',
                 'In a private residence not leased or owned by them',
-                'In a facility (skilled nursing, assisted living, etc.)'],true)}
-            </div>
-            <div class="col-12">${inpS('residenceAddress','Address Where Ward Resides',d.residenceAddress,true)}</div>
-            <div class="col-md-7">${inpS('residenceCityStateZip','City / State / ZIP',d.residenceCityStateZip,true)}</div>
-            <div class="col-md-5">${inpS('residencePhone','Phone',d.residencePhone)}</div>
-            <div class="col-12">${inpS('mailingAddress','Mailing Address (if different)',d.mailingAddress)}</div>
-            <div class="col-12">${inpS('mailingCityStateZip','Mailing City / State / ZIP',d.mailingCityStateZip)}</div>
+                'In a facility (skilled nursing, assisted living, etc.)'],
+              residenceAddress: d.residenceAddress,
+              residenceCityStateZip: d.residenceCityStateZip,
+              residencePhone: d.residencePhone,
+              mailingAddress: d.mailingAddress,
+              mailingCityStateZip: d.mailingCityStateZip,
+            })}
           </div>
         </div>
       </div>
@@ -560,17 +585,17 @@ function pagePlanASignatures(){
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><span class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${i?`<button type="button" class="btn btn-outline-danger btn-sm" data-form-action="remove-plan-guardian" data-index="${i}" data-route="/p11">Remove</button>`:''}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
-          <div class="col-md-7"><label class="form-label">Printed Name${reqMark}</label><input type="text" class="form-control" value="${esc(formatName(p.name||''))}" data-form-path="planGuardians.${i}.name" data-field-path="planGuardians.${i}.name" data-form-format="name"></div>
+          <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.name`, label: 'Printed Name', value: p.name, required: i===0 })}</div>
           <div class="col-md-5"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${reqMark}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p11', signatureImage: p.signatureImage })}</div>
-          <div class="col-md-5"><label class="form-label">SSN / EIN</label><div class="ssn-mask-wrap"><input type="text" autocomplete="off" class="form-control ssn-masked" value="${esc(formatSSN(p.ssn||''))}" data-form-path="planGuardians.${i}.ssn" data-form-format="ssn"><button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div></div>
-          <div class="col-md-7"><label class="form-label">Phone Number</label><input type="text" class="form-control" value="${esc(formatPhone(p.phone||''))}" data-form-path="planGuardians.${i}.phone" data-form-format="phone"></div>
-          <div class="col-12"><label class="form-label">Email Address</label><input type="text" class="form-control" value="${esc(p.email||'')}" data-form-path="planGuardians.${i}.email"></div>
-          <div class="col-12"><label class="form-label">Mailing Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.mailingStreet||''))}" data-form-path="planGuardians.${i}.mailingStreet" data-form-format="address"></div>
-          <div class="col-12"><label class="form-label">Mailing City / State / ZIP</label><input type="text" class="form-control" value="${esc(p.mailingCityStateZip||'')}" data-form-path="planGuardians.${i}.mailingCityStateZip"></div>
-          <div class="col-12"><label class="form-label">Residence or Office Street Address</label><input type="text" class="form-control" value="${esc(formatAddress(p.officeStreet||''))}" data-form-path="planGuardians.${i}.officeStreet" data-form-format="address"></div>
-          <div class="col-12"><label class="form-label">Residence or Office City / State / ZIP</label><input type="text" class="form-control" value="${esc(p.officeCityStateZip||'')}" data-form-path="planGuardians.${i}.officeCityStateZip"></div>
-          <div class="col-12"><label class="form-label">Relationship to Ward</label><input type="text" class="form-control" value="${esc(p.relationship||'')}" data-form-path="planGuardians.${i}.relationship"></div>
+          <div class="col-md-5">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN / EIN', value: p.ssn })}</div>
+          <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: p.email })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Street Address', value: p.mailingStreet })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingCityStateZip`, label: 'Mailing City / State / ZIP', value: p.mailingCityStateZip })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeStreet`, label: 'Residence or Office Street Address', value: p.officeStreet })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeCityStateZip`, label: 'Residence or Office City / State / ZIP', value: p.officeCityStateZip })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: p.relationship })}</div>
         </div>
       </div>
     </div></div>`;
