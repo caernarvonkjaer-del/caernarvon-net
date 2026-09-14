@@ -2,7 +2,31 @@
 
 ## Status
 
-**Draft only — do not implement yet.** Independent of `MILESTONE-41-PROPOSAL.md`'s
+**Landed 2026-09-13.** All four decisions landed as recommended (Decision 4:
+`triggerImportZip()`/`importGuardianDataZip()` deliberately left in place as
+their own future follow-up, per that decision's own reasoning). One
+citation correction found during implementation: the help/onboarding copy
+this proposal's Step 3 named at `index.html:391,395,876-877,898` actually
+lives in `src/legacy-app.js` (lines 392, 396, 877, 878, 899 on the
+`master` commit implementation started from) — `index.html` itself has no
+help-panel or walkthrough text, only the sidebar buttons. Updated the real
+file instead. `backup-restore-sav.spec.ts`'s new Step 6 test needed one
+addition beyond the proposal's own description: the save-controls panel
+collapses after the first click (`collapseSaveControls?.()`), so the panel
+must be explicitly reopened before the second click — without it the test
+hangs waiting on a hidden button rather than failing fast. Two pre-existing,
+unrelated test failures were found and confirmed (via `git stash` against
+unmodified `master`) to already fail identically before this change:
+`backup-restore-sav.spec.ts`'s "Open Backup replacing actively open ward…"
+and `ward-lock.spec.ts`'s "entering the dashboard releases the ward lock…"
+— left untouched, not this delivery's scope. Verification:
+`npx playwright test backup-restore-sav.spec.ts ward-lock.spec.ts` green
+apart from those two pre-existing failures; full unit suite 739/739
+(unaffected, this delivery touches no unit-tested module).
+
+---
+
+Independent of `MILESTONE-41-PROPOSAL.md`'s
 3-tier form architecture (referred to below as 41A): different files, different
 subsystem (save/export, not form rendering), no shared touchpoints. Sequenced
 after Milestone 42 per direct instruction (2026-09-13), though this task's

@@ -4,22 +4,13 @@ function handleShellClick(event) {
 
   switch (actionElement.dataset.shellAction) {
     case 'activity-log': window.toggleHelpPanel(); window.navigate('/activity-log'); break;
-    case 'backup-all-wards': window.collapseSaveControls?.(); window.backupAllWardsNow?.(); break;
+    case 'backup-all-wards': window.collapseSaveControls?.(); window.saveBackupNow(); break;
     case 'clear-data': window.collapseSaveControls?.(); window.clearAllData(); break;
     case 'close-mobile-sidebar': window.closeMobileSidebar(); break;
     case 'close-ward': window.collapseWardControls?.(); if (window.unloadWard) window.unloadWard(); break;
     case 'dashboard': window.navigate('/dashboard'); break;
     case 'delete-ward': window.collapseWardControls?.(); window.confirmDeleteWard(); break;
-    case 'export-data':
-      window.collapseSaveControls?.();
-      if (typeof window.getActiveWard === 'function' && window.getActiveWard()) {
-        window.saveBackupNow();
-      } else if (typeof window.exportGuardianDataZip === 'function') {
-        window.exportGuardianDataZip();
-      }
-      break;
     case 'hide-auto-export-reminder': window.hideAutoExportReminder(); break;
-    case 'import-data': window.collapseSaveControls?.(); window.triggerImportZip(); break;
     case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;
     case 'new-form': window.collapseWardControls?.(); window.navigate('/inventory-select'); break;
     case 'next-walkthrough': window.nextWalkthroughStep(); break;

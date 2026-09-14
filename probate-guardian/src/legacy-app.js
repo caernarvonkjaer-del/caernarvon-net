@@ -389,11 +389,11 @@ const HELP_CONTENT = {
     content: `<div class="help-section-title">How Saving Works</div>
     <p>Your data is saved automatically to this device as you type. You can see the save status in the sidebar.</p>
     <div class="help-section-title">Creating a Backup</div>
-    <p>Use the <strong>Save Data File (.sav)</strong> button to download an encrypted backup. Store this file safely—it's your safeguard if your device is lost or damaged.</p>
+    <p>Use the <strong>Save Backup (.sav)</strong> button to download an encrypted backup. Store this file safely—it's your safeguard if your device is lost or damaged.</p>
     <div class="help-section-title">Auto-Save</div>
     <p>Adjust the Auto-Save interval (5 min, 10 min, 30 min, or Off) to control how often backups are created.</p>
     <div class="help-section-title">Restoring from Backup</div>
-    <p>Use <strong>Open Data File (.sav)</strong> to restore from a backup file you previously saved.</p>
+    <p>Use <strong>Open Backup (.sav)</strong> to restore from a backup file you previously saved.</p>
     <div class="help-section-title">Activity Log</div>
     <p>Every unlock and backup made on this device is recorded in the Activity Log, linked at the bottom of this help panel — useful for confirming a backup actually ran.</p>`
   }
@@ -874,8 +874,8 @@ async function exportHelpGuideAsPDF(){
         <p>Your data lives on this device only, so backups are your safety net.</p>
         </div>
         <div class="defs">
-          <div class="row"><div class="t">Create a backup</div><div class="d">Click <span class="k">Save Data File (.sav)</span> and store it somewhere separate — an external drive, a synced folder, or emailed to yourself.</div></div>
-          <div class="row"><div class="t">Restore a backup</div><div class="d">Click <span class="k">Open Data File (.sav)</span> and choose your file. Everything returns at once.</div></div>
+          <div class="row"><div class="t">Create a backup</div><div class="d">Click <span class="k">Save Backup (.sav)</span> and store it somewhere separate — an external drive, a synced folder, or emailed to yourself.</div></div>
+          <div class="row"><div class="t">Restore a backup</div><div class="d">Click <span class="k">Open Backup (.sav)</span> and choose your file. Everything returns at once.</div></div>
         </div>
         <div class="note"><span class="nl">Important</span>If you forget your master password and lose every backup, the data cannot be recovered. Keep at least two copies in different places.</div>
       </div>
@@ -896,7 +896,7 @@ async function exportHelpGuideAsPDF(){
         <h2><span class="sn">07</span>Troubleshooting</h2>
         <p>Answers to the questions that come up most often.</p>
         </div>
-        <div class="qa"><div class="q">Changes are not saving.</div><div class="a">Check the sidebar status. If it reads “needs one manual save first,” click <span class="k">Save Data File</span> once to enable auto-save.</div></div>
+        <div class="qa"><div class="q">Changes are not saving.</div><div class="a">Check the sidebar status. If it reads “needs one manual save first,” click <span class="k">Save Backup</span> once to enable auto-save.</div></div>
         <div class="qa"><div class="q">A form will not export.</div><div class="a">Run Print Preview and complete any field highlighted in red.</div></div>
         <div class="qa"><div class="q">I forgot my password.</div><div class="a">It cannot be reset or recovered. Restore from a backup, or start again in No Password mode.</div></div>
         <div class="qa"><div class="q">The app is slow to open.</div><div class="a">Large files with many wards take longer. Archive wards you no longer need.</div></div>

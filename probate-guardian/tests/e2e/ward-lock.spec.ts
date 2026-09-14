@@ -304,7 +304,7 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
     await expect(saveToggleBtn).toHaveText('Hide save controls ▴');
 
     // Clicking save data file collapses save controls
-    await page.locator('[data-shell-action="export-data"]').click();
+    await page.locator('[data-shell-action="backup-all-wards"]').click();
     await expect(saveToggleBtn).toHaveText('Show save controls ▾');
   });
 });

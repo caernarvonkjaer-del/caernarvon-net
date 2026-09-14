@@ -45,7 +45,7 @@ async function captureDownload(page: import('@playwright/test').Page, trigger: (
 
 test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: '@origin-state' }, () => {
 
-  test('Save Controls has Backup All Wards (.sav) and Open Backup (.sav) buttons with correct attributes', async ({ browser }) => {
+  test('Save Controls has Save Backup and Open Backup buttons with correct attributes', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -58,7 +58,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       const backupAllBtn = page.locator('button[data-shell-action="backup-all-wards"]');
       await expect(backupAllBtn).toBeVisible();
-      await expect(backupAllBtn).toHaveText(/Backup All Filings \(\.sav\)/);
+      await expect(backupAllBtn).toHaveText(/Save Backup \(\.sav\)/);
 
       const openBackupBtn = page.locator('button[data-shell-action="open-backup-sav"]');
       await expect(openBackupBtn).toBeVisible();
@@ -72,7 +72,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
     }
   });
 
-  test('Backup All Wards (.sav) exports a valid multi-ward archive containing all wards and self-contained audit log', async ({ browser }) => {
+  test('Save Backup exports a valid multi-ward archive containing all wards and self-contained audit log', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -247,7 +247,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await createWard(page, 'Single Ward Solo');
 
       await ensureSaveControlsOpen(page);
-      const saveWardBtn = page.locator('button[data-shell-action="export-data"]');
+      const saveWardBtn = page.locator('button[data-shell-action="backup-all-wards"]');
       const res = await captureDownload(page, async () => {
         await saveWardBtn.click();
       });
@@ -431,6 +431,70 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       // Tab 1 must still hold the lock on targetWardId
       const tab1HeldId = await tab1.evaluate(() => (window as any).getCurrentLockedWardId());
       expect(tab1HeldId).toBe(targetWardId);
+    } finally {
+      await context.close();
+    }
+  });
+
+  // Milestone 41B, Step 6: the one real behavioral change introduced by
+  // re-pointing Save Backup at saveBackupNow() -- a second click, once a
+  // file handle exists from an earlier grant, silently rewrites instead of
+  // repeating the Save-As prompt. Every other test in this file exercises a
+  // fresh browser.newContext() with no prior save, so saveBackupNow()'s own
+  // loadCaseFileHandle() always comes back empty and every click falls
+  // through to the identical exportCaseFileZip() download path -- this is
+  // the one path with zero coverage in either direction before this test.
+  // Playwright cannot drive the real native showSaveFilePicker dialog, so a
+  // mock FileSystemFileHandle is armed directly via rememberCaseFileHandle()
+  // -- the same idiom case-file-protection.spec.ts already established for
+  // exercising this branch.
+  test('Save Backup rewrites silently, with no repeat Save-As dialog, once a case file handle already exists', async ({ browser }) => {
+    const context = await browser.newContext();
+    try {
+      const page = await context.newPage();
+      await gotoApp(page);
+      await startNewCase(page);
+      await chooseNoPassword(page);
+      await createWard(page, 'Handle Reuse Ward');
+      await ensureSaveControlsOpen(page);
+
+      // First click, no handle yet: today's exact "Save-As" behavior.
+      const backupAllBtn = page.locator('button[data-shell-action="backup-all-wards"]');
+      await captureDownload(page, async () => {
+        await backupAllBtn.click();
+      });
+
+      // Arm a mock handle, as if the picker above had just granted one.
+      await page.evaluate(async () => {
+        const { blob } = await (window as any).buildCaseFileBlob();
+        const mockHandle = {
+          name: 'case-file.sav',
+          writeCallCount: 0,
+          queryPermission: async () => 'granted',
+          requestPermission: async () => 'granted',
+          getFile: async () => new File([blob], 'case-file.sav', { type: 'application/octet-stream' }),
+          createWritable: async () => ({
+            write: async () => { (window as any).__mockHandleWriteCount = ((window as any).__mockHandleWriteCount || 0) + 1; },
+            close: async () => {},
+          }),
+        };
+        await (window as any).rememberCaseFileHandle(mockHandle);
+      });
+
+      // Second click: expect a silent rewrite -- no second download event --
+      // and the alert() path saveBackupNow() takes on success. The first
+      // click's own handler collapses the save-controls panel, so it must
+      // be reopened before the button is clickable again.
+      await ensureSaveControlsOpen(page);
+      let downloadFired = false;
+      page.once('download', () => { downloadFired = true; });
+      let alertMessage = '';
+      page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
+      await backupAllBtn.click();
+      await page.waitForFunction(() => (window as any).__mockHandleWriteCount === 1, { timeout: 5000 });
+
+      expect(downloadFired).toBe(false);
+      expect(alertMessage).toBe('Backup saved.');
     } finally {
       await context.close();
     }
