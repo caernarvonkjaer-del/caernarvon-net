@@ -550,7 +550,24 @@ export async function extractFormContentSnapshot(page: Page, containerSelector =
       .map((el) => {
         const control = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
         if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
-          return `[${control.type}:${control.name || control.id}=${control.checked ? 'checked' : 'unchecked'}]`;
+          // Prefer a stable binding path over `id`: Guardian Inventory's
+          // checkboxes carry randomized ids (auto_xxxxxxx) and no name, which
+          // made this snapshot differ between two runs of identical code --
+          // caught while proving the Milestone 41-3 delegation, and fixed
+          // here so the pins measure content rather than render nonce.
+          // `id` is last and is rejected when auto-generated:
+          // linkLabelsToInputs() (legacy-app.js) stamps `auto_<random>` onto
+          // any input lacking an id, so keying on it made this snapshot
+          // differ between two runs of identical code.
+          const stableId = /^auto_/.test(control.id) ? '' : control.id;
+          const key = control.name
+            || control.getAttribute('data-bind')
+            || control.getAttribute('data-form-path')
+            || control.getAttribute('data-field-path')
+            || control.getAttribute('data-schedule')
+            || stableId
+            || (control.closest('label')?.textContent || '').trim().slice(0, 40);
+          return `[${control.type}:${key}=${control.checked ? 'checked' : 'unchecked'}]`;
         }
         return `[${control.tagName.toLowerCase()}:${control.value}]`;
       })

@@ -9,24 +9,27 @@ built and wired into Plan Simplified; see "What landed so far: Cover page
 cards" and "What landed next: Signatures page card — 41-2 complete." The
 milestone's fourth named card (Residence & Facility Profile) was
 deliberately not built — Plan Simplified has no such fields to verify it
-against; see that section's closing note. **41-3 is in progress**: Plan
-Minor, Plan Initial, Plan Annual, Simplified Accounting, and Annual
-Accounting are landed (the last covering Final and Trust too, so eight of the
-nine filing types), and **Guardian Inventory is deferred** — a "blocked by
-design" claim recorded here on 2026-09-13 was **retracted on 2026-09-14**
-after its central argument didn't survive checking (the two binding
-conventions already coexist in that file today). The genuine obstacle is
-narrower and is recorded in that step's own section. See each step's "What
-landed" section under §2's "41-3: Tier 3 rollout" plan, and "41-3 outcome"
-for the measured card-generalization table.
+against; see that section's closing note. **41-3 landed 2026-09-13/14, 6 of
+6**: Plan Minor, Plan Initial, Plan Annual, Simplified Accounting, Annual
+Accounting (covering Final and Trust too), and Guardian Inventory. See each
+step's "What landed" section under §2's "41-3: Tier 3 rollout" plan, and
+"41-3 outcome" for the measured card-generalization table.
 
-**Milestone 41 is complete** as scoped: 41-1, 41-2, and 41-3 (5 of 6
-migrated, 1 recorded as blocked) have all landed. All four of the
-milestone's named Tier 2 cards exist; the fourth (Residence & Facility
-Profile) landed with the Plan Annual step, once a second real usage
-justified extracting it. The follow-up this exposed — retiring `data-bind`
-and `data-annual-path` — needs its own milestone, per §"What this milestone
-deliberately does not require."
+Guardian Inventory was briefly recorded here on 2026-09-13 as "blocked by
+design." **That claim was wrong and was retracted on 2026-09-14** — its
+central argument (that migrating a field would switch binding conventions)
+is false, since both conventions already coexist in that file. The real
+obstacle was narrower, the work landed the same day, and the retraction is
+kept in place rather than edited away.
+
+**Milestone 41 is complete**: 41-1, 41-2, and 41-3 (all six types) have
+landed. All four of the milestone's named Tier 2 cards exist; the fourth
+(Residence & Facility Profile) landed with the Plan Annual step, once a
+second real usage justified extracting it. Retiring `data-bind` and
+`data-annual-path` outright remains separate follow-up work, per §"What this
+milestone deliberately does not require" — Guardian Inventory's fields now
+render through Tier 1 while *keeping* `data-bind`, which is what that clause
+asks for.
 
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
@@ -831,11 +834,9 @@ unchanged — no new card code this step.
 > reason the 8 Yes/No radios can live on `data-form-path` safely while these
 > fields cannot: those answers don't feed any total.
 >
-> **Status: deferred, not blocked.** The viable route is a `binding` option
-> on `renderFormField()` so Guardian's fields keep `data-bind` (and thus
-> `afterChange()`, and thus live totals) while their markup moves to Tier 1.
-> That is real, testable work across ~40 fields in a 1,170-line live court
-> form, and it was not attempted here.
+> **Status: LANDED 2026-09-14.** The route described here was taken — see
+> "Guardian Inventory: what actually landed" immediately below. 41-3 is
+> 6 of 6.
 
 1. **The original (incorrect) blocker claim.** Every field produced by this
    file's own `textInput()`,
@@ -889,17 +890,69 @@ type that work exists for, and it needs its own milestone: the value-
 population architecture changes with it, so it is materially larger than a
 markup swap and must not be smuggled into this rollout.
 
-## 41-3 outcome: 5 of 6 migrated, 1 deferred
+### Guardian Inventory: what actually landed (2026-09-14)
 
-Eight of the nine filing types now render at least part of their Cover
-and/or Signatures markup through Tier 2 cards or Tier 1 primitives, verified
-byte-for-byte. The ninth (Guardian Inventory) is **deferred, not blocked** —
-see the 2026-09-14 correction in its own section, which retracts the
-"blocked by design" claim originally recorded here. The genuine obstacle is
-that this type's `afterChange()` write tail repaints live inventory totals
-that the shared `data-form-path` path does not, so its fields must keep
-`data-bind` while their markup moves — achievable via a `binding` option on
-`renderFormField()`, not attempted in this milestone.
+Done via the route the retraction identified, after the "blocked by design"
+claim was withdrawn.
+
+**Tier 1 gained two options**, both narrow and both precedented:
+
+- `binding: 'bind'` makes `renderFormField()` emit `data-bind` and
+  **suppress** `data-form-path`/`data-annual-path`. The suppression is the
+  entire safety property, not a detail: a field carrying both would be
+  claimed by `bindForms()`'s listener *and* by `form-events.js`'s
+  document-level `data-form-path` listener, double-writing on every
+  keystroke. Direct precedent: `renderYesNoField()`'s existing `binding`.
+- `inputType` emits `data-input-type` verbatim. `bindForms()` switches on
+  that attribute for both initial value formatting and on-input formatting,
+  so a delegated field missing it would silently change how every value is
+  formatted.
+
+**`textInput()` now delegates, with zero changes to its 85 call sites** —
+the same pattern `inpS()`/`txtP()`/`radioP()`/`chkP()` got in 41-1. `kind`
+and `policy` are passed explicitly because this file computes them from its
+`type` argument, not from a label, and `renderFormField()` would otherwise
+infer them from the empty label these fields deliberately pass. `value` is
+left blank on purpose: `bindForms()` assigns `.value` right after render
+using its own formatter, so populating it would be overwritten anyway, and
+blank matches the pre-delegation markup exactly.
+
+**The `ssn` branch is deliberately not delegated.** `renderFormField()`
+builds the reveal button's `aria-label` from the field's visible label, and
+these fields supply their label separately via `reqLabel()`, so a delegated
+call would degrade it to "Show ". Two call sites; kept as-is rather than
+adding a Tier 1 option serving one filing type.
+
+**Verification.** Five pages (Cover, D-1, A-1, B-1, C-1) byte-identical
+before/after via the `git stash` snapshot technique used for the other five
+types. A new permanent test in `guardian-inventory-mount.spec.ts` pins the
+three things markup can't show: the write still lands in `window.D` through
+`bindForms()`, the live inventory total still repaints as an amount is typed
+(`afterChange()`'s extra work), and exactly one listener claims the field
+(`data-bind` present, `data-form-path` absent, `data-input-type` preserved).
+Confirmed a real guard: removing `binding: 'bind'` fails it. Full unit suite
+789/789; 56 e2e green across all six migrated types plus
+`page-structure.spec.ts` and `form-field-labels.spec.ts`.
+
+**A flaw in this milestone's own proof technique was found and fixed while
+doing this.** `extractFormContentSnapshot()` keyed checkboxes and radios on
+`name || id`, and Guardian Inventory's schedule "no items" checkboxes have
+neither a `name` nor any binding attribute — `linkLabelsToInputs()`
+(`legacy-app.js`) stamps them with a random `auto_<nonce>` id. The snapshot
+therefore differed between two runs of *identical* code, which would have
+been read as a false diff. Caught by diffing two runs of the same build
+rather than trusting the first before/after result. The helper now prefers
+stable binding attributes, rejects `auto_` ids outright, and falls back to
+label text — verified stable across repeated runs, with all six types'
+existing pins still green.
+
+## 41-3 outcome: 6 of 6 migrated
+
+**All nine filing types** now render at least part of their markup through
+Tier 2 cards or Tier 1 primitives, verified byte-for-byte. Guardian
+Inventory was initially recorded here as "blocked by design"; that claim was
+retracted on 2026-09-14 and the work landed the same day — see its own
+section for both the retraction and what shipped.
 
 Card generalization, as actually measured rather than projected:
 

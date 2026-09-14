@@ -289,8 +289,44 @@ function textInput(bind,placeholder='',type=''){
   // dash-insertion all keep working exactly as for a text input) with a
   // lock/unlock toggle button to reveal it on demand. See toggleSsnReveal().
   if(type==='ssn'){
+    // Not delegated: renderFormField() builds the reveal button's
+    // aria-label from the field's own visible label, and these fields
+    // supply their label separately via reqLabel(), so a delegated call
+    // (label: '') would degrade it to "Show ". Two call sites; kept as-is
+    // rather than adding a Tier 1 option that exists for one filing type.
     return `<div class="ssn-mask-wrap"><input class="form-control ssn-masked" id="${inputId}" type="text" autocomplete="off" data-bind="${bind}" data-field-path="${bind}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" placeholder="${placeholder}"${dataType}>`
       +`<button type="button" class="ssn-reveal-btn" aria-label="Show SSN/EIN" data-form-action="toggle-ssn">${ic('lock',14)}</button></div>`;
+  }
+  // Milestone 41-3: delegates to Tier 1, mirroring inpS()/txtP()/radioP()/
+  // chkP()'s 41-1 delegation -- zero call-site changes across 85 sites.
+  //
+  // Three arguments carry the whole safety of this: `binding: 'bind'` keeps
+  // the field on bindForms()'s write path (and therefore afterChange(),
+  // which repaints the live inventory totals the shared path does not), and
+  // suppresses data-form-path so the two listeners can't both claim it;
+  // `inputType` preserves the data-input-type attribute bindForms() switches
+  // on for every read and write format; and `kind`/`policy` are passed
+  // explicitly because this file computes them from the type argument, not
+  // from a label -- which renderFormField() would otherwise infer, wrongly,
+  // from the empty label these fields deliberately pass.
+  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
+    return window.renderFormField({
+      path: bind,
+      label: '',
+      // Deliberately blank: bindForms() assigns .value immediately after
+      // render using its own data-input-type formatter, so populating it
+      // here would be overwritten anyway -- and leaving it blank keeps this
+      // exactly as the pre-delegation markup behaved (textInput() never
+      // emitted a value attribute either).
+      value: '',
+      kind: fieldKind,
+      policy,
+      placeholder,
+      id: inputId,
+      wrapperClass: '',
+      binding: 'bind',
+      inputType: type || 'text',
+    });
   }
   return `<input class="form-control" id="${inputId}" data-bind="${bind}" data-field-path="${bind}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" placeholder="${placeholder}"${dataType}>`;
 }

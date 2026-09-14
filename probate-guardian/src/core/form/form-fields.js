@@ -61,6 +61,23 @@ export function renderFormField({
   id = null,
   wrapperClass = 'mb-2',
   placeholder = null,
+  // Milestone 41-3 (Guardian Inventory step): which write path this field
+  // belongs to. Default 'form' keeps the existing behavior for all eight
+  // other filing types -- data-form-path plus the data-annual-path alias.
+  //
+  // 'bind' emits `data-bind` INSTEAD, and deliberately suppresses both
+  // data-form-path and data-annual-path. That suppression is the whole
+  // point, not a detail: Guardian Inventory writes through bindForms()'s
+  // own listeners, whose tail (afterChange) additionally repaints the live
+  // inventory totals. A field carrying both attributes would be claimed by
+  // bindForms() AND by form-events.js's document-level data-form-path
+  // listener at once, double-writing on every keystroke. Direct precedent
+  // for a per-caller binding switch: renderYesNoField()'s `binding`.
+  binding = 'form',
+  // Guardian Inventory's bindForms() switches on `data-input-type` for both
+  // initial value formatting and on-input formatting, so a delegated field
+  // must carry it verbatim or all of its formatting silently changes.
+  inputType: bindInputType = null,
 } = {}) {
   const inputId = id || `inp_${(path || 'field').replace(/[^a-zA-Z0-9_]/g, '_')}_${Math.random().toString(36).slice(2, 7)}`;
   const fieldKind = kind || inferFieldKind(label, type);
@@ -141,7 +158,16 @@ export function renderFormField({
   const classes = [className];
   if (isSSN) classes.push('ssn-masked');
 
-  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}" data-field-path="${esc(path)}" data-form-path="${esc(path)}" data-annual-path="${esc(path)}" data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${ariaDesc}>`;
+  // See the `binding` option's own comment: 'bind' must emit data-bind and
+  // suppress data-form-path/data-annual-path, or the field would be written
+  // twice per keystroke by two different listeners.
+  const isBindBinding = binding === 'bind';
+  const bindingAttrs = isBindBinding
+    ? ` data-bind="${esc(path)}"`
+    : ` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`;
+  const inputTypeAttr = bindInputType ? ` data-input-type="${esc(bindInputType)}"` : '';
+
+  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}" data-field-path="${esc(path)}"${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${ariaDesc}>`;
 
   let lockIcon = DEFAULT_LOCK_ICON;
   if (typeof window !== 'undefined' && typeof window.ic === 'function') {

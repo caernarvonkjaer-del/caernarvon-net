@@ -348,3 +348,46 @@ test.describe('guardian-inventory feature module', () => {
     await expect(sdbFiledYes).toBeChecked();
   });
 });
+
+// Milestone 41-3 (Guardian Inventory step): textInput() now delegates to
+// Tier 1's renderFormField(), with zero changes to its 85 call sites --
+// the same delegation pattern inpS()/txtP()/radioP()/chkP() got in 41-1.
+//
+// This test exists because the delegation's real risk is invisible in
+// markup. This filing type's write tail, afterChange(), does strictly more
+// than the shared one: updateCalcFields(), then runFieldWriteSideEffects(),
+// then a repaint of the live inventory totals. Moving a field onto the
+// shared data-form-path listener would silently stop those totals updating
+// as the filer types -- which is exactly why the delegation passes
+// binding: 'bind' to keep these fields on bindForms()'s path, and why
+// data-form-path must be absent so the two listeners can't both claim the
+// field and double-write on every keystroke.
+test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
+  test('a delegated field still writes through bindForms, repaints live totals, and is claimed by exactly one listener', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'GI Delegation Ward', 'guardian');
+    await page.evaluate(() => (window as any).navigate('/a1'));
+
+    await page.locator('[data-inventory-action="add-entry"], button:has-text("Add")').first().click();
+    const desc = page.locator('[data-bind^="scheduleA1."][data-bind$=".propertyDescription"]').first();
+    await desc.waitFor({ state: 'visible', timeout: 10000 });
+    await desc.fill('Delegated Homestead');
+    await desc.dispatchEvent('input');
+    expect(await page.evaluate(() => (window as any).D.scheduleA1?.[0]?.propertyDescription)).toBe('Delegated Homestead');
+
+    // The live total must track the amount as it is typed -- afterChange()'s
+    // extra work, which the shared write tail does not perform.
+    const amount = page.locator('[data-bind^="scheduleA1."][data-bind$=".fullAssetValue"]').first();
+    await amount.fill('150000');
+    await amount.dispatchEvent('input');
+    expect(await page.locator('#totalA1').innerText()).toContain('150,000');
+
+    // Exactly one write path claims the field, and bindForms()'s own
+    // formatting switch still has the attribute it reads.
+    expect(await desc.evaluate((el) => ({
+      hasBind: el.hasAttribute('data-bind'),
+      hasFormPath: el.hasAttribute('data-form-path'),
+      inputType: el.getAttribute('data-input-type'),
+    }))).toEqual({ hasBind: true, hasFormPath: false, inputType: 'name' });
+  });
+});
