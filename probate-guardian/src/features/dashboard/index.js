@@ -4,7 +4,9 @@
 // mountDashboardFeature() bridge, using the same window.createFeatureBridge()
 // pattern as Guardian, Simplified, Plan, and Annual features.
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
-import { caseNumberOf } from '../../core/case-resolver.js';
+import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
+import { normalizeCountyName } from '../../core/navigation/ward-county.js';
+import { groupsForCounties, resourcesPanelHTML } from './resources.js';
 
 const {
   esc, ic, navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
@@ -597,6 +599,18 @@ function renderDashboardPage() {
   renderDashboardSummary();
   renderDashboardWorklist();
   renderDashboardGrid();
+  renderSidebarResources();
+}
+
+function renderSidebarResources() {
+  const sidebarResources = document.getElementById('sidebar-resources');
+  if (!sidebarResources) return;
+  const wards = getCaseFile()?.wards || [];
+  const counties = wards.map(w => normalizeCountyName(countyOf(w)));
+  const groups = groupsForCounties(counties);
+  sidebarResources.innerHTML = resourcesPanelHTML(groups, { esc, ic });
+  sidebarResources.hidden = false;
+  sidebarResources.removeAttribute('hidden');
 }
 
 // Feature bridge contract: mount(container, page) and dispose(container)
@@ -606,6 +620,7 @@ export async function mount(container, page) {
   _dashboardHost = container;
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
   renderDashboardPage();
+  renderSidebarResources();
 }
 
 export function dispose(container) {
@@ -616,6 +631,13 @@ export function dispose(container) {
   _closedSectionOpen = false;
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
   _dashboardHost = null;
+
+  const sidebarResources = document.getElementById('sidebar-resources');
+  if (sidebarResources) {
+    sidebarResources.innerHTML = '';
+    sidebarResources.hidden = true;
+    sidebarResources.setAttribute('hidden', '');
+  }
 }
 
 // Optional nav rendering — this feature doesn't have custom nav per the

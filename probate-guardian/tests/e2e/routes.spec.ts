@@ -79,6 +79,49 @@ test.describe('routes', () => {
     await expect(nav).toBeEmpty();
   });
 
+  // Milestone 47B: Helpful Resources panel in the dashboard sidebar.
+  // Visible on dashboard, hidden and emptied inside a filing, restored on return.
+  test('helpful resources panel is visible on dashboard, hidden inside filings, and restored on return', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Resource Sidebar Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+
+    const resources = page.locator('#sidebar-resources');
+    const nav = page.locator('#nav-sections');
+
+    // Inside a filing: #sidebar-resources is hidden and empty; #nav-sections has sections
+    await expect(resources).toBeHidden();
+    await expect(resources).toBeEmpty();
+    await expect(nav.locator('.nav-section')).not.toHaveCount(0);
+
+    // Navigate to dashboard
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await expect(page).toHaveURL(/#\/dashboard/);
+
+    // On dashboard: #sidebar-resources is visible and contains Pinellas Property Appraiser link
+    await expect(resources).toBeVisible();
+    const pcpaoLink = resources.locator('a[href="https://www.pcpao.gov/"]');
+    await expect(pcpaoLink).toBeVisible();
+    await expect(pcpaoLink).toContainText('Property Appraiser');
+
+    // Return to the filing via the triage queue Open button
+    const main = page.locator('#main-content');
+    await main.locator('[data-dashboard-bound="true"]').waitFor();
+    await main.locator('[data-dashboard-action="open-ward"]').first().click();
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+
+    // Inside filing again: hidden and empty
+    await expect(resources).toBeHidden();
+    await expect(resources).toBeEmpty();
+    await expect(nav.locator('.nav-section')).not.toHaveCount(0);
+
+    // Return to dashboard again: restored
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await expect(page).toHaveURL(/#\/dashboard/);
+    await expect(resources).toBeVisible();
+    await expect(resources.locator('a[href="https://www.pcpao.gov/"]')).toBeVisible();
+  });
+
   test('dashboard controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));

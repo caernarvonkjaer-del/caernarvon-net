@@ -93,6 +93,13 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
    each other with no visual break between "info about this ward" and
    "pages within this ward's form". */
 #nav-sections{border-top:1px solid var(--line);margin-top:.6rem;padding-top:.5rem;}
+#nav-sections:empty{display:none;}
+#sidebar-resources[hidden]{display:none;}
+#sidebar-resources{border-top:1px solid var(--line);margin-top:.6rem;padding-top:.5rem;}
+.sidebar-resource-link{position:relative;display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:1px .5rem;padding:.42rem .6rem;color:var(--ink-2);text-decoration:none;font-size:.8rem;cursor:pointer;border:none;background:none;width:calc(100% - 1rem);text-align:left;border-radius:var(--r-sm);transition:background .13s,color .13s;}
+.sidebar-resource-link:hover{background:var(--surface-3);color:var(--ink);}
+.sidebar-resource-desc{padding:0 .6rem .45rem;margin:0 .5rem;font-size:.72rem;color:var(--ink-4);line-height:1.3;}
+.sidebar-resource-disclaimer{margin:.85rem .75rem .5rem;padding:.65rem .75rem;font-size:.71rem;color:var(--ink-4);line-height:1.35;border-top:1px solid var(--line);}
 .nav-section-label{padding:.85rem .95rem .3rem;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-4);}
 .nav-section-label.nav-section-toggle{display:flex;align-items:center;gap:.35rem;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .nav-section-label.nav-section-toggle:hover{color:var(--ink-2);}
