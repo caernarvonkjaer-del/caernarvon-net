@@ -51,3 +51,64 @@ for (const formType of ['guardian', 'simplified', 'annual', 'planSimplified', 'p
     }
   });
 }
+
+test('guided-tour dashboard sequence covers all dashboard steps from help panel', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate((type) => (window as any).addWard('Tour Dashboard Ward', type), 'annual');
+  await page.evaluate(() => (window as any).navigate('/dashboard'));
+
+  const main = page.locator('#main-content');
+  await main.locator('[data-dashboard-bound="true"]').waitFor();
+  await expect(page).toHaveURL(/#\/dashboard/);
+
+  // Open Help panel
+  await page.locator('#help-toggle-btn').click();
+  await expect(page.locator('#help-panel')).toBeVisible();
+
+  // Click Start guided tour inside the help panel
+  await page.locator('#help-panel [data-shell-action="start-walkthrough"]').click();
+
+  // 1. Closes the Help panel
+  await expect(page.locator('#help-panel')).toBeHidden();
+
+  // 2. Activates the walkthrough overlay
+  await expect(page.locator('#walkthrough-overlay')).toHaveClass(/active/);
+
+  // 3. Starts at "Help & Guidance" and advances through all dashboard steps without skipping
+  const expectedSteps = [
+    { title: 'Help & Guidance', selector: '#help-toggle-btn' },
+    { title: 'Create New Filing', selector: '#new-ward-btn' },
+    { title: 'Compliance Overview', selector: '.dashboard-summary-strip' },
+    { title: 'Search & Filter', selector: '#dashboard-search' },
+    { title: 'Light & Dark Appearance', selector: '#theme-toggle-btn' },
+    { title: 'All Filings Queue', selector: '.dashboard-triage-queue, .dashboard-empty' },
+  ];
+
+  for (let i = 0; i < expectedSteps.length; i++) {
+    const step = expectedSteps[i];
+    await page.waitForFunction(
+      (expectedTitle) => document.getElementById('walkthrough-title')?.textContent?.includes(expectedTitle),
+      step.title,
+      { timeout: 5000 },
+    );
+    await expect(page.locator('#walkthrough-title')).toContainText(step.title);
+    await expect(page.locator('#walkthrough-progress')).toHaveText(`${i + 1}/${expectedSteps.length}`);
+
+    // Verify highlight is attached to the target element
+    const highlightAttached = await page.locator('#walkthrough-overlay .walkthrough-highlight').evaluate((hl, sel) => {
+      const target = document.querySelector(sel);
+      if (!target) return false;
+      const targetRect = target.getBoundingClientRect();
+      const hlRect = hl.getBoundingClientRect();
+      return Math.abs(hlRect.left - (targetRect.left - 6)) <= 2
+        && Math.abs(hlRect.top - (targetRect.top - 6)) <= 2;
+    }, step.selector);
+    expect(highlightAttached, `Highlight attached to ${step.selector}`).toBe(true);
+
+    // Advance to next step
+    await page.locator('[data-shell-action="next-walkthrough"]').click();
+  }
+
+  // After the last step, walkthrough overlay deactivates
+  await expect(page.locator('#walkthrough-overlay')).not.toHaveClass(/active/);
+});

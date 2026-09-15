@@ -32,6 +32,8 @@ import './core/excel/exceljs-loader.js';
 import './core/pdf/html2pdf-loader.js';
 import './fragment-loader.js';
 import './features-loader.js';
+import './features/help/help-content.js';
+import { termsAcceptanceReady } from './terms-acceptance.js';
 import './shell-events.js';
 import './modal-events.js';
 import './form-events.js';
@@ -100,5 +102,9 @@ if (typeof window !== 'undefined') {
     // leave a blank page with no explanation.
     throw new Error('window.initApp is not available — legacy-app.js must load before main.js');
   }
+  // Do not begin recovery, file-open, or new-case startup until the first-use
+  // acknowledgement has been accepted. This makes the terms dialog the first
+  // application interaction instead of merely a layer above an active flow.
+  await termsAcceptanceReady;
   window.initApp();
 }

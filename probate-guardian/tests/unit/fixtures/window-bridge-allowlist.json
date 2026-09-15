@@ -822,6 +822,18 @@
       "name": "writeStoredTheme"
     },
     {
+      "file": "src/core/ui/dialogs.js",
+      "name": "alertModal"
+    },
+    {
+      "file": "src/core/ui/dialogs.js",
+      "name": "confirmModal"
+    },
+    {
+      "file": "src/core/ui/dialogs.js",
+      "name": "promptModal"
+    },
+    {
       "file": "src/core/validation/validation-adapter.js",
       "name": "adaptValidationErrors"
     },
@@ -990,6 +1002,10 @@
       "name": "printCurrentFilingPdf"
     },
     {
+      "file": "src/features/help/help-content.js",
+      "name": "HELP_CONTENT"
+    },
+    {
       "file": "src/features/plan-annual/index.js",
       "name": "doSavePdfPlanAnnual"
     },
@@ -1080,14 +1096,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "collapseWardControls"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "D"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "D"
     },
     {
       "file": "src/legacy-app.js",
@@ -1256,18 +1264,6 @@
     {
       "file": "src/main.js",
       "name": "navigate"
-    },
-    {
-      "file": "src/core/ui/dialogs.js",
-      "name": "alertModal"
-    },
-    {
-      "file": "src/core/ui/dialogs.js",
-      "name": "confirmModal"
-    },
-    {
-      "file": "src/core/ui/dialogs.js",
-      "name": "promptModal"
     }
   ]
 }

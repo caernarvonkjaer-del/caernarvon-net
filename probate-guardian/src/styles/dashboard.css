@@ -53,7 +53,7 @@
 
 /* ── Triage Worklist & Queue ──────────────────────────── */
 .dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);container-type:inline-size;container-name:triage-queue;}
-.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(110px,1fr) minmax(90px,.8fr) minmax(110px,.8fr) minmax(90px,.7fr) minmax(130px,1fr) minmax(100px,.7fr) minmax(390px,auto);align-items:center;gap:.7rem;padding:.65rem .75rem;}
+.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(160px,1.3fr) 110px 140px 100px minmax(160px,1.3fr) 120px 430px;align-items:center;gap:.7rem;padding:.65rem .75rem;}
 .dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.67rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-sort-btn{background:none;border:none;font:inherit;color:inherit;text-transform:inherit;font-weight:inherit;font-size:inherit;padding:0;display:inline-flex;align-items:center;gap:.25rem;cursor:pointer;text-align:left;}
 .dashboard-sort-btn:hover{color:var(--ink);}
@@ -72,11 +72,13 @@
 .dashboard-triage-muted{color:var(--ink-4);font-size:.78rem;}
 .dashboard-triage-deadline{display:flex;align-items:flex-start;flex-direction:column;gap:.25rem;min-width:0;}
 .dashboard-priority-reason{font-size:.76rem;line-height:1.25;}
-/* A fixed eight-column grid, not a flex row: every action lands in the same
-   column on every row even when Close or Prior years is an empty cell. */
-.dashboard-triage-actions{display:grid;grid-template-columns:repeat(8,max-content);gap:.25rem;align-items:center;}
+/* A fixed grid: every action lands in the same column on every row even
+   when Prior years is an empty placeholder cell. Column 5 is locked to 66px
+   so that subsequent action columns (Archive, Delete) align identically. */
+.dashboard-triage-actions{display:grid;grid-template-columns:repeat(4,max-content) 66px repeat(2,max-content);gap:.25rem;align-items:center;}
 .dashboard-triage-actions .btn{font-size:.68rem;padding:.22rem .38rem;white-space:nowrap;}
-.dashboard-action-empty{display:inline-block;width:1px;}
+.dashboard-triage-actions [data-dashboard-action="prior-years"]{width:66px;padding-left:0;padding-right:0;text-align:center;box-sizing:border-box;}
+.dashboard-action-empty{display:inline-block;width:66px;box-sizing:border-box;}
 .dashboard-workflow-select{font-size:.74rem;font-weight:600;min-width:0;max-width:100%;}
 .dashboard-workflow-disapproved-needs-correction{color:var(--danger-text);border-color:color-mix(in srgb,var(--danger-text) 44%,var(--field));background-color:color-mix(in srgb,var(--danger-text) 8%,var(--surface));font-weight:700;}
 .dashboard-workflow-pending-court-review{color:var(--accent-text);border-color:color-mix(in srgb,var(--accent-text) 42%,var(--field));background-color:color-mix(in srgb,var(--accent-text) 7%,var(--surface));font-weight:700;}

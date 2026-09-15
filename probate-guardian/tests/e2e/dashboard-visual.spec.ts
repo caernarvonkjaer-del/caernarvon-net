@@ -120,3 +120,62 @@ test('mobile viewport collapses the sidebar and renders a scrollable triage row'
   await main.locator('.dashboard-triage-row').first().scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-row-light-390x844.png'), fullPage: false });
 });
+
+test('dashboard action buttons share identical horizontal positions on rows with and without prior years', async ({ page }) => {
+  await freshStartNoPassword(page);
+
+  await page.evaluate((type) => (window as any).addWard('Ward With Prior Years', type), 'annual');
+  await page.evaluate((type) => (window as any).addWard('Ward Without Prior Years', type), 'annual');
+
+  await page.evaluate(() => {
+    const caseFile = (window as any).getCaseFile();
+    const ward1 = caseFile.wards.find((w: any) => w.wardName === 'Ward With Prior Years');
+    ward1.years = [{ key: '2023', label: '2023 Accounting', archivedAt: new Date().toISOString(), data: {} }];
+    (window as any).navigate('/dashboard');
+  });
+
+  const main = page.locator('#main-content');
+  await main.locator('[data-dashboard-bound="true"]').waitFor();
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  const rows = main.locator('.dashboard-triage-row');
+  await expect(rows).toHaveCount(2);
+
+  // Assert one row has the "Prior years" button and one has the placeholder
+  await expect(rows.nth(0).locator('[data-dashboard-action="prior-years"]')).toHaveCount(1);
+  await expect(rows.nth(1).locator('.dashboard-action-empty')).toHaveCount(1);
+
+  const positions = await rows.evaluateAll((rowElements) => {
+    return rowElements.map((row) => {
+      const actions = row.querySelector('.dashboard-triage-actions');
+      if (!actions) return null;
+      const getLeft = (sel: string) => {
+        const el = actions.querySelector(sel);
+        return el ? Math.round(el.getBoundingClientRect().left) : null;
+      };
+      return {
+        open: getLeft('[data-dashboard-action="open-ward"]'),
+        backup: getLeft('[data-dashboard-action="backup"]'),
+        pdf: getLeft('[data-dashboard-action="pdf"]'),
+        newYear: getLeft('[data-dashboard-action="new-year"]'),
+        priorYearsOrEmpty: getLeft('[data-dashboard-action="prior-years"]') ?? getLeft('.dashboard-action-empty'),
+        archive: getLeft('[data-dashboard-action="archive"]'),
+        delete: getLeft('[data-dashboard-action="delete"]'),
+      };
+    });
+  });
+
+  expect(positions[0]).not.toBeNull();
+  expect(positions[1]).not.toBeNull();
+
+  // Columns preceding prior-years share identical left positions
+  expect(positions[0]!.open).toBe(positions[1]!.open);
+  expect(positions[0]!.backup).toBe(positions[1]!.backup);
+  expect(positions[0]!.pdf).toBe(positions[1]!.pdf);
+  expect(positions[0]!.newYear).toBe(positions[1]!.newYear);
+  // Prior years button and empty placeholder share identical left positions
+  expect(positions[0]!.priorYearsOrEmpty).toBe(positions[1]!.priorYearsOrEmpty);
+  // Columns following prior-years share identical left positions
+  expect(positions[0]!.archive).toBe(positions[1]!.archive);
+  expect(positions[0]!.delete).toBe(positions[1]!.delete);
+});

@@ -14,6 +14,16 @@
 // tests/unit/theme-persistence.spec.js asserts the two literals still agree, so
 // the duplication cannot drift silently.
 try {
+  // Like the theme, acknowledgement is a device-only preference that must be
+  // readable before first paint. The module that owns the dialog repeats this
+  // exact key/version and performs all interaction after the DOM exists.
+  try {
+    if (localStorage.getItem('pg.termsAccepted') === '2026-09-15') {
+      document.documentElement.setAttribute('data-terms-accepted', 'true');
+    }
+  } catch (storageError) {
+    // If storage is unavailable, require acknowledgement for this visit.
+  }
   var stored = null;
   try {
     var raw = localStorage.getItem('pg-theme-v1');

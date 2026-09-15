@@ -209,6 +209,7 @@ interface Window {
   handleStartupOpenInputChange: any;
   handleSwitchWardClick: any;
   hasOpenedCaseBefore: any;
+  HELP_CONTENT: any;
   hideAutoExportReminder: any;
   hideCountyDropdown: any;
   hideSaveError: any;

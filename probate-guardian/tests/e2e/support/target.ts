@@ -23,11 +23,13 @@ const target = currentTarget;
 // save/open automatable at all — real native pickers can't be driven by
 // Playwright, and this exercises a genuinely shipped path rather than a
 // synthetic shortcut.
-export async function gotoApp(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+export async function gotoApp(page: Page, options: { acceptTerms?: boolean } = {}): Promise<void> {
+  const acceptTerms = options.acceptTerms !== false;
+  await page.addInitScript((termsAccepted) => {
     delete window.showSaveFilePicker;
     delete window.showOpenFilePicker;
-  });
+    if (termsAccepted) localStorage.setItem('pg.termsAccepted', '2026-09-15');
+  }, acceptTerms);
   if (target === 'portable') {
     const filePath = path.resolve(__dirname, '../../../dist/portable/index.html');
     await page.goto(pathToFileURL(filePath).href, { waitUntil: 'networkidle' });
