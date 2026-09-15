@@ -13,6 +13,14 @@ import { createPlanTestWindowStub } from './support/plan-readiness-parity.js';
 // is proven separately and fixture-by-fixture in tests/unit/plan-*-parity.spec.js;
 // this file proves the mapping is COMPLETE, that its predicate ids are REAL,
 // and that the suppression it drives behaves as intended.
+//
+// Completeness is checked against BOTH halves of each validator: empty data for
+// the unconditional requirements, and CONDITIONAL_FIXTURES below for the
+// "explain the Other you checked" / consistency / date-order rules that only
+// fire once a filer has answered something. Every code either maps to a
+// predicate or is on the audited DELIBERATELY_UNCOVERED list, and every entry
+// on that list must still be reachable in the validator -- so neither a new
+// rule nor a deleted one can drift past unnoticed.
 
 global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
 
@@ -44,6 +52,7 @@ const DELIBERATELY_UNCOVERED = {
     'q7RestoreExplain',      // explanation required only when rights should be restored
     'q8OtherText',           // description required only when "Other" directive is checked
     'q8None',                // NONE-and-also-listed consistency rule
+    'q9RemunerationExplain', // explanation required only when payment was received
     'preparer_signatureDate', // date-order only; Plan Simplified has no preparer predicate row
     'attorney_signatureDate', // date-order only; no attorney predicate row on this Plan
   ],
@@ -65,9 +74,67 @@ const DELIBERATELY_UNCOVERED = {
   ],
 };
 
+// Empty data fires only a validator's UNCONDITIONAL requirements. These
+// fixtures turn on every conditional trigger at once -- each "explain the
+// Other you just checked" rule, each consistency rule, each per-row name
+// requirement, and the date-order rules (a signature date before the period
+// end) -- while leaving the dependent field blank, so the conditional half of
+// each validator is exercised too. Without this, a newly-added conditional
+// requirement would slip past the coverage check entirely; that is exactly how
+// planSimplified's own q9RemunerationExplain went unlisted when this suite
+// first landed.
+const CONDITIONAL_FIXTURES = {
+  planSimplified: {
+    periodFrom: '2025-01-01', periodTo: '2025-12-31',
+    q7RestoreRights: 'Yes',
+    q8None: true, q8Other: true,
+    q9Remuneration: 'Yes',
+    preparer_signatureDate: '2024-01-01',
+    attorney_signatureDate: '2024-01-01',
+    planGuardians: [{ signatureState: 'typed' }],
+  },
+  planAnnual: {
+    periodFrom: '2025-01-01', periodTo: '2025-12-31',
+    q3SettingOther: true, q3MedSpecialist: true,
+    q9MentalOther: true, q9PhysOther: true,
+    q10NoDirectives: true, q10Executed: true, q10ExecOther: true,
+    q11NoRemuneration: true,
+    q1Residences: [{ street: 'somewhere' }],
+    q4Providers: [{ providerType: 'physician' }],
+    attorney_signatureDate: '2024-01-01',
+    planGuardians: [{ signatureState: 'typed' }],
+  },
+  planInitial: {
+    q2Setting: 'Other', q3MedSpecialist: true, q3MedOther: true,
+    q4Mental: 'Other', q5Personal: 'Other', q6Other: true,
+    q7Trusts: 'Yes',
+    mentalOther: true, physOther: true, usesOther: true, needsOther: true,
+    q11ExecOther: true, committeeIncorporated: 'No',
+    q9Providers: [{ providerType: 'physician' }],
+    attorney_name: 'Dana Reyes',
+    planGuardians: [{ signatureState: 'typed' }],
+  },
+  planMinor: {
+    periodFrom: '2025-01-01', periodTo: '2025-12-31',
+    amendedForm: 'Yes', q4Other: true, q5Other: true,
+    q3Providers: [{ first: 'Alex' }],
+    preparer_name: 'Sam Cole', attorney_name: 'Dana Reyes',
+    preparer_signatureDate: '2024-01-01', attorney_signatureDate: '2024-01-01',
+    planGuardians: [{ signatureState: 'typed' }],
+  },
+};
+
 function predicateIdsFor(key) {
   window.D = {};
   return new Set(getFilingReadiness(key, {}, []).automatic.map((row) => row.id));
+}
+
+// Every code the real validator can emit, unconditional and conditional alike.
+function allEmittedCodes(key) {
+  return new Set([
+    ...codesFrom(key, {}),
+    ...codesFrom(key, structuredClone(CONDITIONAL_FIXTURES[key])),
+  ]);
 }
 
 // Every issue code a validator really emits for the given data.
@@ -100,6 +167,26 @@ describe('38D Phase 2: Plan predicate -> validator issue coverage', () => {
       const uncovered = [...new Set(codesFrom(key, {}))]
         .filter((code) => predicateIdsCoveringIssue(key, code).length === 0);
       expect(uncovered, `${key}: validator emits these with no predicate covering them`).toEqual([]);
+    });
+
+    it(`${key}: every code the validator can emit is classified -- covered by a predicate, or on the audited uncovered list`, () => {
+      // The conditional half. Anything the validator can produce must be a
+      // deliberate decision, not an accident: either a predicate represents it,
+      // or it is listed above with the reason it stands alone.
+      const audited = new Set(DELIBERATELY_UNCOVERED[key].map((path) => `${key}.${path}.required`));
+      const unclassified = [...allEmittedCodes(key)]
+        .filter((code) => predicateIdsCoveringIssue(key, code).length === 0 && !audited.has(code));
+      expect(unclassified, `${key}: neither covered by a predicate nor on the DELIBERATELY_UNCOVERED list -- classify each one`).toEqual([]);
+    });
+
+    it(`${key}: every entry on the uncovered list is one the validator can really still emit`, () => {
+      // Stops the list rotting: a rule deleted from the validator must not
+      // leave a stale exemption sitting here claiming to document it.
+      const emitted = allEmittedCodes(key);
+      for (const path of DELIBERATELY_UNCOVERED[key]) {
+        const code = `${key}.${path}.required`;
+        expect(emitted.has(code), `${key}: "${path}" is documented as a live uncovered rule, but no validator branch emits it any more`).toBe(true);
+      }
     });
 
     it(`${key}: the deliberately-uncovered list is honest -- none of it is secretly mapped`, () => {

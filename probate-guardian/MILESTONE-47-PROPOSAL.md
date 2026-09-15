@@ -27,16 +27,16 @@ messages, in the format this repo's other milestone docs use, so 47 has
 the same paper trail. It does not represent a plan that was reviewed and
 authorized before the fact — that step didn't happen here.
 
-**Open provenance question:** 47B's commit message references "Decision
-D4" and "the proposal's draft wording, which Q2 flag 2 still has open" —
-phrasing that matches this repo's own lettered-decision/flagged-question
+**Provenance question — CLOSED 2026-09-15.** 47B's commit message references
+"Decision D4" and "the proposal's draft wording, which Q2 flag 2 still has
+open" — phrasing that matches this repo's own lettered-decision/flagged-question
 convention (see `MILESTONE-42-PROPOSAL.md`'s "Q2" numbering, `39-D`-style
-gate items). That strongly suggests a real proposal document existed
-somewhere — a local file, a chat transcript, notes — that guided the
-implementation but was never committed to the repo. If Garrett still has
-it, it should replace or supplement this backfill rather than be treated
-as lost; this document reverse-engineers the same ground from code alone
-and cannot recover whatever "Q2 flag 2" actually asked.
+gate items), which suggested a real proposal document had guided the
+implementation without ever being committed. **Confirmed with Garrett: he
+does not have those notes.** Whatever "Decision D4" and "Q2 flag 2" asked is
+gone, and this document — reverse-engineered from the two commits' diffs —
+is now the authoritative record of what 47A/47B are. Nothing further to
+recover; do not re-open this looking for a lost file.
 
 ---
 
