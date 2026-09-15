@@ -243,6 +243,32 @@ test.describe('Milestone 39-C: Upload background-transparency (luminance-thresho
     expect(bgAlpha).toBe(0);
     expect(inkAlpha).toBe(255);
   });
+
+  test('a selected signature upload can be cleared without applying it', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Sig Clear Upload Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await gotoSignaturesPage(page);
+
+    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    await page.locator('[data-sig-tab="upload"]').click();
+    await page.setInputFiles('[data-sig-upload]', { name: 'upload.png', mimeType: 'image/png', buffer: await buildSyntheticUploadPng(page) });
+
+    await expect.poll(() => page.locator('[data-sig-panel="upload"] canvas').evaluate((c) => {
+      const data = (c as HTMLCanvasElement).getContext('2d')!.getImageData(0, 0, (c as HTMLCanvasElement).width, (c as HTMLCanvasElement).height).data;
+      return [...data].some((value, index) => index % 4 === 3 && value !== 0);
+    })).toBe(true);
+
+    await page.locator('[data-sig-action="clear-upload"]').click();
+    await expect(page.locator('[data-sig-upload]')).toHaveValue('');
+    await expect.poll(() => page.locator('[data-sig-panel="upload"] canvas').evaluate((c) => {
+      const data = (c as HTMLCanvasElement).getContext('2d')!.getImageData(0, 0, (c as HTMLCanvasElement).width, (c as HTMLCanvasElement).height).data;
+      return [...data].every((value, index) => index % 4 !== 3 || value === 0);
+    })).toBe(true);
+    await page.locator('[data-sig-action="apply"]').click();
+    await expect(page.locator('.signature-pad-error')).toContainText('Add a signature before applying.');
+  });
 });
 
 // Milestone 39-C: rolls 39-B's exact mechanism out to the three remaining

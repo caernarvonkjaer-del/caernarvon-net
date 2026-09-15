@@ -195,6 +195,7 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
       <div class="signature-pad-panel" data-sig-panel="upload" hidden>
         <input type="file" accept="image/png,image/jpeg" class="form-control" data-sig-upload>
         <canvas width="${CANVAS_W}" height="${CANVAS_H}" class="signature-pad-canvas signature-pad-canvas-preview" aria-hidden="true"></canvas>
+        <div class="signature-pad-actions"><button type="button" class="btn btn-sm btn-outline-secondary" data-sig-action="clear-upload">Clear selected file</button></div>
       </div>
       <p class="signature-pad-error text-danger" role="alert" hidden></p>
       <div class="signature-pad-footer">
@@ -270,6 +271,14 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
   container.querySelector('[data-sig-action="clear-draw"]').addEventListener('click', () => {
     const ctx = drawCanvas.getContext('2d');
     ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  }, { signal });
+
+  container.querySelector('[data-sig-action="clear-upload"]').addEventListener('click', () => {
+    uploadedDataUrl = null;
+    uploadInput.value = '';
+    const ctx = uploadPreview.getContext('2d');
+    ctx.clearRect(0, 0, uploadPreview.width, uploadPreview.height);
+    showError('');
   }, { signal });
 
   container.querySelector('[data-sig-action="cancel"]').addEventListener('click', () => {
