@@ -1,5 +1,59 @@
 # Milestone 48: Help Content Modularization, Manual Figure Spacing, Ward Dashboard Column Alignment, Guided Tour Fix, and Terms Acknowledgement Gate
 
+## Status
+
+**Landed 2026-09-15, all five sub-deliveries. This section is a backfill,
+written 2026-09-15 after the fact** — unlike this repo's other milestones,
+this document and its implementation were committed together in one pass
+rather than drafted, approved, and landed as separate steps; no separate
+draft-then-implement paper trail exists to point to.
+
+All primary work is `104f9b7` ("feat: implement Milestone 48 guidance and
+startup terms", `egarrett021`/Garrett, 2026-09-15 14:51:42), which created
+this document itself alongside `help-content.js` (48A), the
+`Probate-Guardian-User-Manual.html` float-class removal (48B),
+`terms-acceptance.js` (48E), the guided-tour dashboard sequence (48D), and
+an initial `dashboard.css` pass. Two follow-ups the same afternoon completed
+or refined that work:
+
+- `d5478b8` ("fix: balance dashboard triage columns", Garrett, 15:34:35) —
+  the `dashboard.css` grid-template-columns rebalance that actually delivers
+  48C's "normalize action-slot widths across Annual and non-Annual rows"
+  claim; `104f9b7`'s own dashboard.css touch was not yet this fix.
+- `fc05e55` ("feat: add dedicated help page", Garrett, 15:56:12) — renamed
+  `Probate-Guardian-User-Manual.html` to `help/index.html` and updated its
+  two references (`legacy-app.js`, `vite.config.js`), a routing refinement
+  beyond 48A/48B's original text but consistent with their intent.
+
+**Additional, out-of-scope-for-48B work landed the same evening:** `b91542a`
+("fix: let user manual text use full viewport width", this account +
+Claude Sonnet 5, 17:20:17) removed `ch`-based max-width caps that were
+leaving large dead margins on wide screens — a real improvement to the same
+page, but not part of 48B's own described fix (float-class removal) and not
+mentioned in this document's original text below.
+
+**Verified 2026-09-15, after the fact, against current `master`** (not
+assumed from the commits' own messages):
+
+- **48A** — `legacy-app.js`'s `HELP_CONTENT` is a `Proxy` delegating to
+  `window.HELP_CONTENT` exactly as described; `user-guide-wiring.spec.ts`
+  (6/6) passes, confirming the "?" help button still routes correctly for
+  every filing type through the extracted content.
+- **48B** — no `float-r`, `float-l`, or `float:` rule remains anywhere in
+  `help/index.html`, confirmed by direct grep.
+- **48C** — `dashboard-visual.spec.ts`'s "dashboard action buttons share
+  identical horizontal positions on rows with and without prior years" test
+  passes, the exact claim 48C makes.
+- **48D** — `guided-tour-navigation.spec.ts` (8/8) passes, including the
+  dashboard-sequence and active-sidebar-navigation coverage 48D's own text
+  describes.
+- **48E** — `terms-acceptance.spec.ts` (2/2) passes: startup is blocked
+  until acknowledgement, and a stale stored version re-triggers it.
+
+Full unit suite green (819/819) at the same commit. No gap found between
+this document's description and shipped behavior — the missing piece was
+purely this status note, not the work itself.
+
 ## Overview
 
 Milestone 48 addresses five core UI, layout, modularization, and launch-flow requirements:

@@ -6,7 +6,8 @@
 types / nine filing keys — see 45B's own DECISION section). See each
 sub-delivery's "What landed" section; 45A's measurement pass refuted this
 document's own stated reasoning about compression and is recorded in place.
-**45C remains draft and is recommended for deferral.**
+**45C declined 2026-09-15** — see its own section's closing note. This
+milestone is now closed in full.
 
 **Post-landing fix (2026-09-14):** the rollout exposed three real bugs in
 39-A's own spike code that its single-filing-type pilot never surfaced,
@@ -314,11 +315,23 @@ after 45B lands, with its own spike, because the unknown is whether pdf.js
 supports that reconstruction cleanly at all — and that question deserves a
 spike, not a plan.
 
+### Declined 2026-09-15
+
+Confirmed with the requester: decline, per this section's own recommendation
+above. No filer has reported needing to edit a prior annotation since 45A/45B
+landed 2026-09-14, and the current behavior (persist, visible, clear-and-redraw)
+remains sufficient for the marking-up-a-preview-before-printing use case this
+milestone actually serves. This is a decline, not a deferral — closing the
+open question rather than leaving it pending. If a real need surfaces later,
+re-scope it fresh with its own spike into whether pdf.js's editor
+reconstruction from `getAnnotations()` output is even viable, per the "Why
+this is written as declinable" reasoning above, which still holds.
+
 ---
 
 ## Sequencing
 
-45A → 45B. 45C independent, and recommended for deferral.
+45A → 45B. 45C independent, declined — see its own section's closing note.
 
 ## Cross-cutting ramifications
 

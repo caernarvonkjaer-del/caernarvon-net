@@ -3,8 +3,8 @@
 ## Status
 
 **44A-44D landed 2026-09-13; full-milestone verification run and recorded
-2026-09-14 (see closing note below). 44E remains an open scope decision,
-not a defect — nothing here blocks on it.** Approving or landing one
+2026-09-14 (see closing note below). 44E is superseded — see its own
+section — and fully closed as of 2026-09-15.** Approving or landing one
 sub-delivery never authorized another — each required its own explicit
 approval by name, per `AGENTS.md` §2, before implementation.
 
@@ -40,7 +40,7 @@ confirmation. Of the six original findings:
 | 44B — Resume 38D's Typed, Non-Bypassable Output Boundary | Cross-cutting validator/output migration | Large | Landed 2026-09-13 |
 | 44C — Land 38B's Universal Readiness-Card Architecture | Architecture, four Plan types | Medium-large | Landed 2026-09-13 |
 | 44D — Correct 37-6 Data-Model Catalogue Drift | Documentation-only | Small | Landed 2026-09-13 |
-| 44E — Milestone 39 Follow-On Scope Decision | Not a defect; decision only | N/A | Informational |
+| 44E — Milestone 39 Follow-On Scope Decision | Not a defect; decision only | N/A | Superseded/Closed 2026-09-15 |
 
 **Sequencing:** 44A is independent and the highest-urgency item (a live,
 confirmed bypass of a requirement its own spec calls non-bypassable) — it
@@ -622,8 +622,11 @@ Current state, checked directly against `master`:
 - **39-A**: rolled out. `MILESTONE-45-PROPOSAL.md` — 45A (storage/
   compression pass) and 45B (rollout from the Plan-Simplified-only pilot to
   all nine filing keys) are **landed** (`508d09e`). 45C (making a reopened
-  annotation re-editable, not just visible) remains draft, with a recorded
-  recommendation to decline it until a filer actually reports needing it.
+  annotation re-editable, not just visible) is **declined as of 2026-09-15**
+  (see its own section's closing note) — no filer has reported needing it,
+  and current preview-only behavior remains sufficient. Both of 39-A's
+  named follow-ons are now fully disposed of, closing this section's last
+  remaining thread.
 
 ### Original text (for the record)
 
