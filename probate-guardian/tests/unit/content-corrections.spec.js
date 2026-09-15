@@ -6,7 +6,22 @@ import { buildPlanSimplifiedModel } from '../../src/features/plan-simplified/pdf
 
 describe('Sub-milestone 36-5: Content Corrections', () => {
   describe('Administrative Order 2024-025 removal guard', () => {
-    it('ensures no circuit-specific Administrative Order 2024-025 appears in src/', () => {
+    // Milestone 47B (2026-09-15): src/features/dashboard/resources.js links
+    // to the Sixth Circuit's own AO index page from a "Sixth Judicial
+    // Circuit" resource group. Unlike the Milestone 36-5 violation this
+    // guard exists to catch (the AO stated unconditionally, as a filing
+    // requirement, on-screen and in printed documents, regardless of the
+    // filer's actual county), this mention is gated by groupsForCounties()
+    // to filings whose county is Pinellas/Pasco/circuit-6 -- the same
+    // gating AGENTS.md's "County Gating" rule requires -- names the order
+    // only as a link description, never a requirement, and sits under the
+    // panel's own third-party disclaimer. Exempted by exact file path
+    // rather than weakening the string match, so any *other* file
+    // reintroducing the ungated defect is still caught; the second test
+    // below pins that this one exception stays gated and disclaimed.
+    const ALLOWED_FILES = new Set(['features/dashboard/resources.js']);
+
+    it('ensures no circuit-specific Administrative Order 2024-025 appears in src/ outside the one documented exception', () => {
       const srcDir = path.resolve(__dirname, '../../src');
       const filesWithAO = [];
 
@@ -19,14 +34,31 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
           } else if (/\.(js|html|css)$/.test(entry.name)) {
             const content = fs.readFileSync(fullPath, 'utf8');
             if (content.includes('2024-025') || content.includes('Administrative Order 2024')) {
-              filesWithAO.push(path.relative(srcDir, fullPath));
+              const relPath = path.relative(srcDir, fullPath);
+              if (!ALLOWED_FILES.has(relPath.replace(/\\/g, '/'))) filesWithAO.push(relPath);
             }
           }
         }
       }
 
       scanDir(srcDir);
-      expect(filesWithAO, 'Administrative Order 2024-025 should be removed from all src files').toEqual([]);
+      expect(filesWithAO, 'Administrative Order 2024-025 should be removed from all src files except the one documented, gated exception (see ALLOWED_FILES above)').toEqual([]);
+    });
+
+    it('keeps the one allowed AO 2024-025 mention county-gated and disclaimed, never stated as a filing requirement', () => {
+      const resourcesPath = path.resolve(__dirname, '../../src/features/dashboard/resources.js');
+      const content = fs.readFileSync(resourcesPath, 'utf8');
+
+      // Still exists, inside the Sixth Circuit resource group specifically...
+      const sixthCircuitGroup = content.slice(content.indexOf("id: 'sixth-circuit'"), content.indexOf("id: 'florida'"));
+      expect(sixthCircuitGroup).toContain('2024-025');
+
+      // ...that group is filtered by county, not rendered unconditionally...
+      expect(content).toContain('hasSixthCircuitLocalGuidance');
+      expect(content).toMatch(/showSixth\s*=\s*showPinellas\s*\|\|\s*showPasco/);
+
+      // ...and the panel carries its own third-party disclaimer.
+      expect(content).toContain("isn't affiliated with them");
     });
   });
 
