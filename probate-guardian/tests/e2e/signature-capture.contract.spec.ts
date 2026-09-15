@@ -122,6 +122,54 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     });
     expect(paintedImage).toBe(true);
   });
+
+  // Milestone 50F. renderTypedPreview() drew at a fixed font size with no
+  // measureText() check, so a long typed name overflowed the 600x180 canvas
+  // and was clipped at both edges -- and Apply reuses that same canvas
+  // (typePreview.toDataURL()), so the clipping was baked into the stored
+  // signatureImage, not just the on-screen preview. Asserts on the STORED
+  // PNG deliberately, since that is the artefact the PDF engine stamps onto
+  // the filed document -- a preview-only assertion would have passed against
+  // the original bug too.
+  test('Signature Stamp: a long typed name is condensed to fit, not clipped -- checked on the stored stamp, not just the preview', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Sig Long Type Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await gotoSignaturesPage(page);
+
+    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    await page.locator('[data-sig-tab="type"]').first().click();
+
+    const longName = 'Bartholomew Fitzgerald-Montgomery III';
+    await page.fill('#sig-pad-typed-name', longName);
+    await page.waitForTimeout(200);
+    await page.locator('[data-sig-action="apply"]').click();
+
+    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+
+    // Scan the stored PNG's left-most and right-most pixel columns for any
+    // non-transparent ink -- the signature line of a clipped rendering.
+    const edges = await page.evaluate(async () => {
+      const src = (window as any).D.planGuardians[0].signatureImage as string;
+      const img = new Image();
+      await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = src; });
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, c.width, c.height).data;
+      let left = 0, right = 0;
+      for (let y = 0; y < c.height; y++) {
+        if (data[(y * c.width) * 4 + 3] > 0) left++;
+        if (data[(y * c.width + c.width - 1) * 4 + 3] > 0) right++;
+      }
+      return { left, right };
+    });
+    expect(edges.left, 'no ink touching the left edge').toBe(0);
+    expect(edges.right, 'no ink touching the right edge').toBe(0);
+  });
 });
 
 // Milestone 39-C: "Upload background-transparency gate" -- the luminance-

@@ -215,16 +215,30 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
 
   const showError = (msg) => { errorEl.textContent = msg; errorEl.hidden = !msg; };
 
+  // Milestone 50F: a long typed name at the fixed base size overflowed the
+  // canvas and was clipped at both edges -- canvas fillText() neither shrinks
+  // nor wraps on its own. Apply reuses this exact canvas (see the 'type'
+  // branch below), so a clipped preview became a clipped stamp on the filed
+  // PDF. Shrink to fit first; maxWidth on fillText is a second, independent
+  // guard in case a font metric quirk leaves the loop's estimate short.
+  const TYPE_MAX_FONT_PX = Math.round(CANVAS_H * 0.4);
+  const TYPE_MIN_FONT_PX = 12; // below this a cursive signature stops being legible; condense, never refuse
   const renderTypedPreview = () => {
     const ctx = typePreview.getContext('2d');
     ctx.clearRect(0, 0, typePreview.width, typePreview.height);
     const name = typeInput.value.trim();
     if (!name) return;
+    const maxWidth = typePreview.width * 0.92; // leave a visual margin on both sides
+    let size = TYPE_MAX_FONT_PX;
+    ctx.font = `${size}px cursive`;
+    while (ctx.measureText(name).width > maxWidth && size > TYPE_MIN_FONT_PX) {
+      size -= 2;
+      ctx.font = `${size}px cursive`;
+    }
     ctx.fillStyle = '#0b1a33';
-    ctx.font = `${Math.round(typePreview.height * 0.4)}px cursive`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
-    ctx.fillText(name, typePreview.width / 2, typePreview.height / 2);
+    ctx.fillText(name, typePreview.width / 2, typePreview.height / 2, maxWidth);
   };
   typeInput.addEventListener('input', renderTypedPreview, { signal });
 

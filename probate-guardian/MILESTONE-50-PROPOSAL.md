@@ -54,17 +54,17 @@ items), **Verification**, and **Cross-cutting notes** per `AGENTS.md` §8
 where an axis is actually implicated — marked N/A elsewhere rather than
 left silent.
 
-| Sub-delivery | Category | Verdict after the 2026-09-14 verification pass |
-| --- | --- | --- |
-| 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. Recommend closure (optional cheap guard). |
-| 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness → **rendering** | **Confirmed, root cause found.** The carry works; the page never re-renders, so the Cover looks blank. Small fix. |
-| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. |
-| 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap, and the black is the *selection outline*, not the highlight. Severity depends on one unanswered check. |
-| 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** Needs a layout decision. |
-| 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. |
-| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Needs a scoping decision before any work. |
-| 50H — County & Active-Filing combobox interaction pattern | Accessibility | **Split.** County combobox has a real keyboard gap. The "plain click" claim is an automation artifact. The Active Filing half is already fixed. |
-| 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | **Root cause correct; framing too narrow.** Affects all four `SPECIAL_PAGES`, and the symptom is session-path dependent. |
+| Sub-delivery | Category | Verdict after the 2026-09-14 verification pass | Status |
+| --- | --- | --- | --- |
+| 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. Recommend closure (optional cheap guard). | Open (recommend close) |
+| 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness → **rendering** | **Confirmed, root cause found.** The carry works; the page never re-renders, so the Cover looks blank. Small fix. | **Landed 2026-09-14** |
+| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. | Open (recommend close) |
+| 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap, and the black is the *selection outline*, not the highlight. Severity depends on one unanswered check. | Open |
+| 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** Needs a layout decision. | Open |
+| 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. | **Landed 2026-09-14** |
+| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Needs a scoping decision before any work. | Open |
+| 50H — County & Active-Filing combobox interaction pattern | Accessibility | **Split.** County combobox has a real keyboard gap. The "plain click" claim is an automation artifact. The Active Filing half is already fixed. | Open |
+| 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | **Root cause correct; framing too narrow.** Affects all four `SPECIAL_PAGES`, and the symptom is session-path dependent. | **Landed 2026-09-14** |
 
 ---
 
@@ -101,15 +101,27 @@ edits to one large classic-script file. The other items are file-isolated:
 
 **Suggested order, by value against effort:**
 
-1. **50B** and **50I** — small, self-contained, and both fix something a
-   filer sees immediately.
-2. **50F** — small, and it is the only item confirmed to affect a filed
-   court document.
+1. ~~**50B** and **50I**~~ — small, self-contained, and both fix something a
+   filer sees immediately. **Landed 2026-09-14.**
+2. ~~**50F**~~ — small, and it is the only item confirmed to affect a filed
+   court document. **Landed 2026-09-14.**
 3. **50D** — small (CSS only), but answer its Step 1 first; severity is
    unknown until then.
 4. **50E**, **50H** — real, but each needs a design decision made first.
 5. **50G** — do not start until its scope question is answered.
 6. **50A**, **50C** — close with tests only, no production code change.
+
+**Execution log:**
+
+- **2026-09-14 — 50B, 50I, 50F landed** (`src/legacy-app.js`,
+  `src/core/signature/signature-pad.js`; regression guards added to
+  `tests/e2e/carryover-workflow.spec.ts`, `tests/e2e/routes.spec.ts`,
+  `tests/e2e/signature-capture.contract.spec.ts`). No `window.*` bridge
+  changes, no data-model changes, no new spec files. Each item's own
+  "Corrective plan" section above carries the execution detail and any
+  deviation from what was originally proposed. 50D, 50E, 50G, 50H remain
+  open pending the decisions their own plans call for; 50A/50C remain open
+  pending the recommended closure.
 
 ---
 
@@ -240,7 +252,7 @@ attorney name reaching a filed document) is not met.
 
 ---
 
-## 50B — Simplified Accounting Eligibility "Load Ward Info From" Not Populating
+## 50B — Simplified Accounting Eligibility "Load Ward Info From" Not Populating — **Landed 2026-09-14**
 
 **Category:** Data correctness. **Confidence:** Low-Medium — I flagged this
 as "questionable" during the walkthrough itself, meaning I wasn't fully
@@ -338,7 +350,19 @@ fields — the app actively contradicts the screen. The data is intact and
 appears as soon as the filer navigates away and back, which is very likely
 why the walkthrough could not decide whether it had really failed.
 
-### Corrective plan
+### Corrective plan — EXECUTED 2026-09-14, approach 1 (narrow fix)
+
+Both branches of `doConfirmSimplifiedEligibility()` now call
+`renderPage('/')` and `updateSidebar()` immediately after their carry-over
+`Object.assign()`/`saveWardToState()` and before their own `alert(...)`,
+mirroring `doAddWard()`'s existing tail exactly as step 1 below describes.
+Step 2 (the deeper `addWard()`-signature redesign) was **not** taken — it
+remains flagged as future scope only, per the plan's own recommendation.
+Regression guard (step 3) added to `tests/e2e/carryover-workflow.spec.ts`:
+both the qualifying and non-qualifying-redirect tests now assert the
+**rendered** `[data-form-path="caseNumber"]`/`[data-form-path="attorney"]`
+input values, not just `window.D`. All prior steps below are kept as the
+historical record of what was decided and why.
 
 1. **Fix, narrow (recommended).** In `doConfirmSimplifiedEligibility()`,
    add the same render tail `doAddWard()` already uses, in **both**
@@ -826,7 +850,7 @@ in scope to **preserve**, and pinned by the guard in step 4.
 
 ---
 
-## 50F — Typed-Signature Preview Clips Long Names
+## 50F — Typed-Signature Preview Clips Long Names — **Landed 2026-09-14**
 
 **Category:** Visual / possible output accuracy. **Confidence:** High that
 the on-screen preview clips; genuinely unconfirmed whether the exported
@@ -913,7 +937,21 @@ appends to the party's reusable stamp history (`:104-106`), and what the PDF
 engine stamps onto the generated document. There is no separate
 "export-quality" render path that would fix it later.
 
-### Corrective plan
+### Corrective plan — EXECUTED 2026-09-14, exactly as proposed
+
+`renderTypedPreview()` (`src/core/signature/signature-pad.js`) now shrinks
+the font in a `measureText()` loop down to a 12px floor and passes
+`maxWidth` to `fillText()` as the belt-and-braces guard, per step 1 below —
+implemented essentially verbatim, floor included. Step 2's decision (12px
+floor, condense rather than refuse) was taken as recommended. Step 3 (the
+Upload/Draw siblings) was already answered by the verification pass itself
+and needed no further check. Step 4's regression guard was added to
+`tests/e2e/signature-capture.contract.spec.ts`: types a 37-character name,
+applies it, then decodes the **stored** `signatureImage` PNG back into a
+canvas and asserts zero non-transparent pixels in its left-most and
+right-most columns — the exact artefact and the exact check the plan called
+for, not a preview-only assertion. All prior steps below are kept as the
+historical record.
 
 1. **Fix: scale to fit, never clip.** In `renderTypedPreview()`, measure and
    shrink before drawing — and pass `maxWidth` to `fillText` as a
@@ -1323,7 +1361,7 @@ on any filing, which is a baseline-operation gap, not a refinement.
 
 ---
 
-## 50I — Manage Shared Records: Save Controls Accordion Never Auto-Collapses
+## 50I — Manage Shared Records: Save Controls Accordion Never Auto-Collapses — **Landed 2026-09-14**
 
 **Category:** UI/UX Consistency. **Confidence:** High — unlike most items
 above, this was root-caused directly against current `master` source by
@@ -1443,7 +1481,45 @@ applySaveControlsCollapsedState();
 
 Alan's original report is consistent with exactly that path.
 
-### Corrective plan
+**Addendum, found during implementation:** `updateSidebar()` itself is
+**not** called on every route change — confirmed by reading `router.js`
+and `shell-events.js`'s `'dashboard'` action (`window.navigate('/dashboard')`
+directly, no sidebar refresh). It only runs at boot (`initApp()`) and from
+explicit ward-lifecycle actions (`switchWard`/`addWard`/`deleteWard`/
+`renameWard`). So the save-controls section does not re-evaluate on every
+navigation to a `SPECIAL_PAGES` route — its collapsed state is whatever the
+*last* such call left it as. This does not change the diagnosis above (the
+gate condition is still wrong) but it does mean the accurate description is
+"whatever `updateSidebar()` last computed persists across ordinary
+navigation," not "each route re-decides." Verified directly: calling
+`window.updateSidebar()` with `activeWardId`/`activeInventoryType` both null
+(the exact state `initApp()` leaves them in for a restored case with no
+stored active ward) left `#save-controls-body` expanded before the fix and
+collapsed after, with the toggle button still reachable.
+
+### Corrective plan — EXECUTED 2026-09-14, plus one addition (step 3 confirmed necessary)
+
+The gate at `src/legacy-app.js:4912` (now shifted to `:4923` after
+Milestone 49B's earlier edits) was changed to the unconditional form from
+step 1. Step 2's `activeWardId`-vs-`activeInventoryType` question was
+answered by direct measurement (see the addendum above) rather than by
+inspection alone: pushed a ward record and drove `updateSidebar()` with
+both null, confirming `_saveControlsCollapsed` was the safe predicate to
+drop the condition from, not `activeWardId`. Step 3 turned out to be a REAL
+finding, not a hypothetical: measured live, `saveToggleBtn.style.display`
+was already `'none'` in that exact no-active-ward state (the previous line's
+own `activeWardId?'block':'none'` ternary), which combined with the new
+unconditional collapse would have left the section collapsed with **no
+visible control to reopen it** — worse than the original bug. Fixed by
+making the toggle button's own visibility unconditional too, justified by
+the same reasoning step 3 anticipated: `updateSidebar()` only reaches this
+line once `caseFile.wards.length>0` is already established by the function's
+own early return, so the save controls always apply to *some* case file
+regardless of whether one filing is currently active. Step 4's regression
+guard was added to `tests/e2e/routes.spec.ts`, asserting both halves (body
+collapsed, toggle visible and clickable) plus that `_saveControlsUserToggled`
+still overrides the gate on a later call. All prior steps below are kept as
+the historical record.
 
 1. **Fix the gate at `src/legacy-app.js:4912`.** The intent stated in the
    code's own comment (`:4850-4855` in the original numbering) is that the

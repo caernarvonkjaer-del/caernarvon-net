@@ -134,6 +134,44 @@ test.describe('routes', () => {
     await expect(copyright).toBeVisible();
   });
 
+  // Milestone 50I. updateSidebar()'s save-controls auto-collapse used to gate
+  // on activeInventoryType (a filing page being open), which left the section
+  // expanded on every SPECIAL_PAGES route for a session that reached one
+  // before ever opening a filing -- the real case being a restored case file
+  // with no stored active ward, which initApp() leaves activeInventoryType
+  // unset for before its own updateSidebar() call. That exact boot sequence
+  // can't be staged through a real reload in this harness (the no-password
+  // harness doesn't persist across reloads), so this drives updateSidebar()
+  // itself in that state -- the faithful, if indirect, proxy. See
+  // MILESTONE-50-PROPOSAL.md's 50I "Verified" section.
+  test('save controls default collapsed even with no active filing, and the toggle stays reachable to reopen it', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Save Controls Ward', 'guardian'));
+    await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
+
+    const toggleBtn = page.locator('#save-controls-toggle-btn');
+    const body = page.locator('#save-controls-body');
+    // On a filing page it is already collapsed by the existing behavior.
+    await expect(toggleBtn).toHaveText('Show save controls ▾');
+
+    await page.evaluate(() => {
+      const w = window as any;
+      w.caseFile.activeWardId = null;
+      w.activeInventoryType = null;
+      w.updateSidebar();
+    });
+    await expect(body).toBeHidden();
+    await expect(toggleBtn).toBeVisible();
+    await expect(toggleBtn).toHaveText('Show save controls ▾');
+
+    // A user who explicitly expands it keeps that choice -- the gate must
+    // never re-collapse over an explicit toggle.
+    await toggleBtn.click();
+    await expect(toggleBtn).toHaveText('Hide save controls ▴');
+    await page.evaluate(() => (window as any).updateSidebar());
+    await expect(toggleBtn).toHaveText('Hide save controls ▴');
+  });
+
   test('dashboard controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));

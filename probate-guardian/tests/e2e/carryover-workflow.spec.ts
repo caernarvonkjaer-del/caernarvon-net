@@ -28,6 +28,7 @@ async function createInventorySource(page: Page, wardName: string, county: strin
     };
     w.D.guardianName = 'Gale Guardian';
     w.D.wardName = name;
+    w.D.caseNumber = '24-000456-GD';
   }, wardName);
 
   if (county) {
@@ -99,6 +100,15 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
     expect(note).toContain('restored');
     expect(note).toContain('Orange');
     expect(note, 'must not claim a Simplified Annual Plan source').not.toContain('Simplified Annual Plan');
+
+    // Milestone 50B regression guard: doConfirmSimplifiedEligibility() used to
+    // mutate window.D via the carry-over Object.assign() AFTER addWard() had
+    // already rendered the (blank) Cover, with nothing re-rendering it -- so
+    // the stored values above were correct while the screen stayed blank.
+    // Assert the RENDERED inputs, not just window.D, so that gap can't
+    // silently reopen.
+    await expect(page.locator('[data-form-path="caseNumber"]')).toHaveValue('24-000456-GD');
+    await expect(page.locator('[data-form-path="attorney"]')).toHaveValue('Nina Nested, Esq.');
   });
 
   test('a source whose ward has no county on record says so instead of implying carryover', async ({ page }) => {
@@ -138,6 +148,11 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
     expect(note).toContain('does not qualify');
     expect(note).toContain('Initial Inventory');
     expect(note).toContain('Orange');
+
+    // Milestone 50B regression guard -- same rendered-value gap as the
+    // qualifying branch above, but for the non-qualifying -> Annual redirect.
+    await expect(page.locator('[data-form-path="caseNumber"]')).toHaveValue('24-000456-GD');
+    await expect(page.locator('[data-form-path="attorney"]')).toHaveValue('Nina Nested, Esq.');
   });
 
   test('cancelling the eligibility flow creates no destination and changes no source data', async ({ page }) => {

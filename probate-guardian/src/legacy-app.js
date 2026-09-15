@@ -4609,6 +4609,13 @@ async function doConfirmSimplifiedEligibility(){
         }
       }
       await saveWardToState(window.D);
+      // Milestone 50B: addWard() already rendered the Cover from a blank
+      // filing before the Object.assign() above mutated window.D -- nothing
+      // repaints on its own, so without this the filer sees blank fields
+      // while carryNote (below) claims details were carried over. Mirrors
+      // doAddWard()'s own render tail after its carry-over Object.assign().
+      renderPage('/');
+      updateSidebar();
       if(carryNote)alert(carryNote);
     }else{
       await addWard(name,'annual');
@@ -4626,6 +4633,10 @@ async function doConfirmSimplifiedEligibility(){
           carryNote=carryOverSummaryNote(src,window.D);
         }
       }
+      // Milestone 50B: same re-render this branch's own carry-over mutation
+      // needs -- see the comment on the qualifying branch above.
+      renderPage('/');
+      updateSidebar();
       // Milestone 40C-F item 4: one message, and it names what actually
       // happened to the carryover and the county rather than leaving the filer
       // to guess after the redirect.
@@ -4907,9 +4918,20 @@ function updateSidebar(){
   // their visibility. The sidebar must not reach for them by id: on a form
   // page they are not in the document at all.
 
+  // Milestone 50I: this line only runs once caseFile.wards.length>0 (the
+  // early return at the top of updateSidebar() catches the empty case), so
+  // the save controls always apply to some case file -- gating visibility on
+  // activeWardId hid the toggle button whenever no filing was active (e.g. a
+  // restored case landing on /dashboard), leaving no way to reach it.
   const saveToggleBtn=document.getElementById('save-controls-toggle-btn');
-  if(saveToggleBtn)saveToggleBtn.style.display=activeWardId?'block':'none';
-  if(activeInventoryType&&!_saveControlsUserToggled)_saveControlsCollapsed=true;
+  if(saveToggleBtn)saveToggleBtn.style.display='block';
+  // Collapses by default on every page, matching every other page's
+  // behavior, unless the user has explicitly toggled it this session.
+  // Previously gated on activeInventoryType (a filing page being open),
+  // which left it expanded on /dashboard, /party-management, /activity-log
+  // and /inventory-select for any session that hadn't yet opened a filing --
+  // confirmed live: a restored case with no active filing shows it expanded.
+  if(!_saveControlsUserToggled)_saveControlsCollapsed=true;
   applySaveControlsCollapsedState();
 
   if(!activeInventoryType){
