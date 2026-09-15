@@ -114,6 +114,7 @@
 .dashboard-control span{padding-left:.1rem;}
 .dashboard-toolbar-actions{margin-left:auto;display:inline-flex;align-items:center;gap:.45rem;flex-shrink:0;}
 .dashboard-toolbar-actions .topnav-btn{height:36px;box-sizing:border-box;}
+.feedback-entry-actions{display:flex;justify-content:center;gap:.65rem;margin:-.75rem 0 1.5rem;flex-wrap:wrap;}
 .dashboard-toolbar-actions .topnav-theme,.dashboard-toolbar-actions .topnav-help{width:36px;padding:0;}
 
 

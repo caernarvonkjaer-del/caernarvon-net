@@ -39,6 +39,8 @@ const ICONS={
   shield:'<path d="M12 3.2 20 6v6.1c0 4.6-3.3 7.5-8 8.7-4.7-1.2-8-4.1-8-8.7V6Z"/>',
   sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.6M12 18.6v2.6M4.2 12H1.6M22.4 12h-2.6M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>',
   moon:'<path d="M20.2 14.3A8.3 8.3 0 0 1 9.7 3.8a8.3 8.3 0 1 0 10.5 10.5Z"/>',
+  bug:'<path d="M9 9.2h6a3.8 3.8 0 0 1 3.8 3.8v2.4A3.8 3.8 0 0 1 15 19.2H9a3.8 3.8 0 0 1-3.8-3.8V13A3.8 3.8 0 0 1 9 9.2Z"/><path d="M8.2 5.8 6.6 4.2M12 5.6V3.4M15.8 5.8l1.6-1.6M5.2 12H3.4M20.6 12h-1.8M9.4 14.2h.1M14.5 14.2h.1"/>',
+  message:'<path d="M4.2 5.2h15.6v11.2H9l-4.8 4v-4H4.2Z"/><path d="M8 9.2h8M8 12.4h5.4"/>',
 };
 function ic(n,size){
   return '<svg class="ic" width="'+(size||16)+'" height="'+(size||16)+'" viewBox="0 0 24 24" '
@@ -5579,6 +5581,10 @@ function pageInventorySelector(){
   return `<div style="max-width:900px;margin:0 auto;">
   <h1 style="font-size:1.8rem;color:var(--ink);margin-bottom:2rem;text-align:center;">Start New Form</h1>
   <p style="text-align:center;color:var(--ink-3);margin-bottom:2rem;font-size:.95rem;">Select the form type for a ward. You can manage multiple wards of different types.</p>
+  <div class="feedback-entry-actions" aria-label="Beta feedback">
+    <button type="button" class="topnav-btn" data-feedback-open="bug">${ic('bug',16)} Report a Bug</button>
+    <button type="button" class="topnav-btn" data-feedback-open="comment">${ic('message',16)} Comment Card</button>
+  </div>
   <div class="inventory-selector">
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="guardian" role="button" tabindex="0" aria-label="Create Initial Inventory ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/></svg> Initial Inventory</h2>

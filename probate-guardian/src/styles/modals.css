@@ -90,3 +90,7 @@ html[data-terms-accepted="true"] #pg-terms-overlay{display:none;}
 .modal-autonote{font-size:.8rem;color:var(--ok-text);margin-top:.35rem;display:none;}
 #carry-source-wrap,#elig-carry-source-wrap{display:none;}
 .modal-scroll-list{margin-bottom:1rem;max-height:340px;overflow-y:auto;}
+#feedbackModal .modal-box{max-width:600px;}
+.feedback-rating{display:flex;flex-wrap:wrap;gap:.65rem;font-size:.84rem;color:var(--ink-2);}
+.feedback-rating label{white-space:nowrap;}
+#feedback-send[aria-disabled="true"]{pointer-events:none;opacity:.55;}

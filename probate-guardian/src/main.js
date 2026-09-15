@@ -33,6 +33,7 @@ import './core/pdf/html2pdf-loader.js';
 import './fragment-loader.js';
 import './features-loader.js';
 import './features/help/help-content.js';
+import './core/feedback/feedback-modal.js';
 import { termsAcceptanceReady } from './terms-acceptance.js';
 import './shell-events.js';
 import './modal-events.js';

@@ -264,3 +264,25 @@
   </div>
 </div>
 
+
+<!-- Beta feedback modal: mail is only opened in the user's own email client. -->
+<div id="feedbackModal" class="modal-overlay">
+  <div class="modal-box feedback-modal-box">
+    <h2 id="feedback-modal-title" class="modal-box-title">Report a Bug</h2>
+    <p id="feedback-modal-intro" class="modal-desc">Tell us what happened so we can improve this beta release.</p>
+    <p class="modal-note-box">Please do not include ward names, case numbers, dates of birth, Social Security numbers, or other private case details.</p>
+    <div id="feedback-bug-fields">
+      <div class="mb-3"><label class="form-label" for="feedback-description">What happened?</label><textarea id="feedback-description" class="form-control" rows="3"></textarea></div>
+      <div class="mb-3"><label class="form-label" for="feedback-steps">Steps to reproduce <span class="text-muted">(optional)</span></label><textarea id="feedback-steps" class="form-control" rows="2"></textarea></div>
+      <div class="mb-3"><label class="form-label" for="feedback-expected">What did you expect? <span class="text-muted">(optional)</span></label><textarea id="feedback-expected" class="form-control" rows="2"></textarea></div>
+    </div>
+    <div id="feedback-comment-fields" hidden>
+      <fieldset class="mb-3"><legend class="form-label">Overall, how is Probate Guardian working for you?</legend><div class="feedback-rating"><label><input id="feedback-rating-1" type="radio" name="feedback-rating" value="1"> 1 Not well</label><label><input type="radio" name="feedback-rating" value="2"> 2</label><label><input type="radio" name="feedback-rating" value="3"> 3</label><label><input type="radio" name="feedback-rating" value="4"> 4</label><label><input type="radio" name="feedback-rating" value="5"> 5 Very well</label></div></fieldset>
+      <div class="mb-3"><label class="form-label" for="feedback-working">What is working well? <span class="text-muted">(optional)</span></label><textarea id="feedback-working" class="form-control" rows="2"></textarea></div>
+      <div class="mb-3"><label class="form-label" for="feedback-improve">What should we improve? <span class="text-muted">(optional)</span></label><textarea id="feedback-improve" class="form-control" rows="2"></textarea></div>
+    </div>
+    <label class="form-check mb-3"><input id="feedback-technical-details" class="form-check-input" type="checkbox"><span class="form-check-label">Include browser, screen size, and theme</span></label>
+    <p id="feedback-status" class="modal-help-text" aria-live="polite"></p>
+    <div class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary" data-modal-action="close" data-modal-id="feedbackModal">Cancel</button><button type="button" id="feedback-copy" class="btn btn-outline-primary" data-feedback-action="copy">Copy message</button><a id="feedback-send" class="btn btn-primary ms-auto" aria-disabled="true">Send</a></div>
+  </div>
+</div>

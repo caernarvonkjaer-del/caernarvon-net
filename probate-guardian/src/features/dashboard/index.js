@@ -61,6 +61,8 @@ function dashboardToolbarActionsHTML() {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
   return `<div class="dashboard-toolbar-actions">
+    <button type="button" class="topnav-btn" data-feedback-open="bug">${ic('bug', 16)} Report a Bug</button>
+    <button type="button" class="topnav-btn" data-feedback-open="comment">${ic('message', 16)} Comment Card</button>
     <button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${ic(isDark ? 'sun' : 'moon', 16)}</button>
     <button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>
   </div>`;
