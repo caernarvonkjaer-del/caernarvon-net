@@ -179,3 +179,20 @@ test('dashboard action buttons share identical horizontal positions on rows with
   expect(positions[0]!.archive).toBe(positions[1]!.archive);
   expect(positions[0]!.delete).toBe(positions[1]!.delete);
 });
+
+test('dashboard column sorting toggles only between ascending and descending', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await page.evaluate((type) => (window as any).addWard('Zulu Filing', type), 'annual');
+  await page.evaluate((type) => (window as any).addWard('Alpha Filing', type), 'guardian');
+  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  const wardSort = page.locator('[data-dashboard-sort="name"]');
+  await wardSort.click();
+  await expect(wardSort).toHaveAttribute('aria-sort', 'ascending');
+  await wardSort.click();
+  await expect(wardSort).toHaveAttribute('aria-sort', 'descending');
+  await wardSort.click();
+  await expect(wardSort).toHaveAttribute('aria-sort', 'ascending');
+});

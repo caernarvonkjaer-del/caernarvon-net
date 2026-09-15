@@ -494,7 +494,7 @@ async function handleDashboardClick(event) {
       if (_dashboardTriageSort.direction === 'asc') {
         _dashboardTriageSort = { key, direction: 'desc' };
       } else {
-        _dashboardTriageSort = { key: 'priority', direction: 'asc' };
+        _dashboardTriageSort = { key, direction: 'asc' };
       }
     } else {
       _dashboardTriageSort = { key, direction: 'asc' };
