@@ -303,16 +303,58 @@ const nonPlanManual = {
   ],
 };
 
+// These five forms share issue-derived export validation rather than the
+// Plan family's hand-written predicates. Keep that single validation source
+// authoritative, but surface its major filing sections even when every field
+// has passed so filers receive the same detailed review view as Plan filers.
+// A failed overview row is informational; the exact validator issue below it
+// remains the one export-blocking, routed readiness row.
+const issueText = issue => `${issue?.section || ''} ${issue?.message || ''}`.toLowerCase();
+const matchesSection = (issues, pattern) => !(issues || []).some(issue => pattern.test(issueText(issue)));
+const detailRow = (id, label, issues, pattern) => ({ id, label, ok: matchesSection(issues, pattern) });
+
+function nonPlanDetails(type, issues) {
+  const prefix = `${type}.review`;
+  const common = [
+    detailRow(`${prefix}.cover`, 'Cover information, filing identity, and reporting dates are complete', issues, /\bcover\b/),
+    detailRow(`${prefix}.signatures`, 'Guardian, preparer, attorney, and certification information is complete where required', issues, /guardian|preparer|attorney|certificate of service|certification/),
+  ];
+  if (type === 'guardian') return [
+    ...common.slice(0, 1),
+    detailRow(`${prefix}.real-property`, 'Schedule A â€” real property and secured debt entries are complete or verified empty', issues, /\ba-1\b|\ba-2\b/),
+    detailRow(`${prefix}.personal-property`, 'Schedule B â€” financial accounts, personal property, and liabilities are complete or verified empty', issues, /\bb-1\b|\bb-2\b|\bb-3\b|\bb-4\b/),
+    detailRow(`${prefix}.income-claims`, 'Schedule C â€” income, claims, actions, trusts, and other assets are complete or verified empty', issues, /\bc-1\b|\bc-2\b|\bc-3\b|\bc-4\b|\bc-5\b/),
+    ...common.slice(1),
+    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /\bd-3\b|\bd-4\b|\bd-5\b/),
+  ];
+  if (type === 'simplified') return [
+    detailRow(`${prefix}.eligibility`, 'Simplified-accounting eligibility is confirmed', issues, /eligibility/),
+    ...common.slice(0, 1),
+    detailRow(`${prefix}.activity`, 'Part II financial activity and Part III reconciliation are complete', issues, /part ii|part iii/),
+    ...common.slice(1),
+    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /part ix|part x|certificate of service/),
+  ];
+  const filingLabel = type === 'finalAccounting' ? 'Final Accounting' : type === 'trustAccounting' ? 'Trust Accounting' : 'Annual Accounting';
+  return [
+    ...common.slice(0, 1),
+    detailRow(`${prefix}.activity`, 'Accounting activity, totals, and reconciliation are complete', issues, /part ii|part iii|part iv|part v|part vi|part vii|reconcile|net assets/),
+    detailRow(`${prefix}.schedules`, 'Schedules A through F are complete for every entered line', issues, /schedule [a-f]/),
+    detailRow(`${prefix}.trusts`, `${filingLabel} trust disclosures are complete`, issues, /part viii|trust/),
+    ...common.slice(1),
+    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /part ix|part x|certificate of service/),
+  ];
+}
+
 // One row per filing. `automaticFamilies` documents where each filing's
 // blocking automatic rows come from (registry issue-code prefixes and, for
 // Plans, the readiness-only predicate table); `unsupported` names the source
 // inventory's clerk/court-record family that is counted but never rendered.
 export const READINESS_CONFIG = Object.freeze({
-  guardian: { automaticFamilies: ['guardian.*'], predicates: null, manual: () => nonPlanManual.guardian, unsupported: 'guardian.unsupported.case-record' },
-  simplified: { automaticFamilies: ['simplified.*'], predicates: null, manual: () => nonPlanManual.simplified, unsupported: 'simplified.unsupported.case-record' },
-  annual: { automaticFamilies: ['annual.*'], predicates: null, manual: () => nonPlanManual.annual, unsupported: 'annual.unsupported.audit-record' },
-  finalAccounting: { automaticFamilies: ['finalAccounting.*'], predicates: null, manual: () => nonPlanManual.finalAccounting, unsupported: 'finalAccounting.unsupported.case-record' },
-  trustAccounting: { automaticFamilies: ['trustAccounting.*'], predicates: null, manual: () => nonPlanManual.trustAccounting, unsupported: 'trustAccounting.unsupported.audit-record' },
+  guardian: { automaticFamilies: ['guardian.*'], predicates: null, details: (_, issues) => nonPlanDetails('guardian', issues), manual: () => nonPlanManual.guardian, unsupported: 'guardian.unsupported.case-record' },
+  simplified: { automaticFamilies: ['simplified.*'], predicates: null, details: (_, issues) => nonPlanDetails('simplified', issues), manual: () => nonPlanManual.simplified, unsupported: 'simplified.unsupported.case-record' },
+  annual: { automaticFamilies: ['annual.*'], predicates: null, details: (_, issues) => nonPlanDetails('annual', issues), manual: () => nonPlanManual.annual, unsupported: 'annual.unsupported.audit-record' },
+  finalAccounting: { automaticFamilies: ['finalAccounting.*'], predicates: null, details: (_, issues) => nonPlanDetails('finalAccounting', issues), manual: () => nonPlanManual.finalAccounting, unsupported: 'finalAccounting.unsupported.case-record' },
+  trustAccounting: { automaticFamilies: ['trustAccounting.*'], predicates: null, details: (_, issues) => nonPlanDetails('trustAccounting', issues), manual: () => nonPlanManual.trustAccounting, unsupported: 'trustAccounting.unsupported.audit-record' },
   planSimplified: { automaticFamilies: ['planSimplified.*', 'cover.*', 'plan.*', 'signatures.*'], predicates: planSimplifiedAutomatic, manual: planSimplifiedManual, unsupported: 'planSimplified.unsupported.case-record' },
   planAnnual: { automaticFamilies: ['planAnnual.*', 'cover.*', 'plan.*', 'signatures.*'], predicates: planAnnualAutomatic, manual: planAnnualManual, unsupported: 'planAnnual.unsupported.case-record' },
   planInitial: { automaticFamilies: ['planInitial.*', 'cover.*', 'plan.*', 'signatures.*'], predicates: planInitialAutomatic, manual: planInitialManual, unsupported: 'planInitial.unsupported.case-record' },
@@ -351,10 +393,14 @@ export function getFilingReadiness(inventoryType, data, validationIssues = []) {
     }));
 
   const manual = config.manual(d, local).map(row => ({ ...row, route: '', classification: 'manual', blocking: false }));
+  const details = typeof config.details === 'function'
+    ? config.details(d, validationIssues).map(row => ({ ...row, classification: 'overview', blocking: false }))
+    : [];
 
   return {
     key: inventoryType,
     automatic: [...predicateRows, ...issueRows],
+    details,
     manual,
     unsupportedCount: config.unsupported ? 1 : 0,
   };

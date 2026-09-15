@@ -54,6 +54,16 @@ describe('markup contract', () => {
     // No real tag carries an inline handler (the escaped text above is not a tag).
     expect(html).not.toMatch(/<[^>]*\son\w+=/);
   });
+
+  it('shows detailed, form-specific validation coverage for the inventory and accounting forms', () => {
+    for (const filingType of ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting']) {
+      const html = renderReadinessCard({ filingType, data: { wardId: 'w1', county: 'Pinellas' } });
+      expect(html).toContain('data-readiness-class="overview"');
+      expect(html).not.toContain('No automated issues found.');
+    }
+    expect(renderReadinessCard({ filingType: 'guardian', data: { wardId: 'w1' } })).toContain('Schedule A');
+    expect(renderReadinessCard({ filingType: 'annual', data: { wardId: 'w1' } })).toContain('Schedules A through F');
+  });
 });
 
 describe('summary and open-by-default rule', () => {
@@ -111,7 +121,7 @@ describe('routing', () => {
     ];
     const html = renderReadinessCard({ filingType: 'annual', data: { wardId: 'w1' }, validationIssues: outside });
     for (const word of ['supp', 'cap', 'tech', 'sec', 'ident']) expect(html).not.toContain(`>${word}<`);
-    expect(html).toContain('No automated issues found.');
+    expect(html).toContain('Schedules A through F are complete for every entered line');
     expect(isOpen(html)).toBe(false);
   });
 });

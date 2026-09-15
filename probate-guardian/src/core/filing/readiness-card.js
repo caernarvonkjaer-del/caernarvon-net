@@ -49,6 +49,11 @@ function manualRow(row) {
   return `<div class="readiness-row" data-readiness-id="${escapeHtml(row.id)}" data-readiness-class="manual"><span class="readiness-mark manual" aria-hidden="true">•</span><span>${escapeHtml(row.label)}</span></div>`;
 }
 
+function overviewRow(row) {
+  const ok = row.ok === true;
+  return `<div class="readiness-row" data-readiness-id="${escapeHtml(row.id)}" data-readiness-class="overview"><span class="readiness-mark ${ok ? 'ok' : 'pending'}" aria-hidden="true">${ok ? 'âœ“' : 'âš '}</span><span><span class="visually-hidden">${ok ? 'Passed: ' : 'Needs review: '}</span>${escapeHtml(row.label)}</span></div>`;
+}
+
 export function resetReadinessCardState() {
   remembered = null;
 }
@@ -71,7 +76,7 @@ export function renderReadinessCard({ filingType, data, validationIssues = [], e
     ? `${pending} item${pending === 1 ? '' : 's'} outstanding`
     : (remaining ? MANUAL_REVIEW_SUMMARY : ALL_CHECKS_PASS_SUMMARY);
 
-  const automaticRows = readiness.automatic.map(automaticRow).join('')
+  const automaticRows = [...(readiness.details || []).map(overviewRow), ...readiness.automatic.map(automaticRow)].join('')
     || '<div class="readiness-row"><span class="readiness-mark ok" aria-hidden="true">✓</span><span>No automated issues found.</span></div>';
 
   return `<details id="${READINESS_CARD_ID}" class="validation-panel readiness-panel no-print" data-readiness-key="${escapeHtml(key)}" data-readiness-filing="${escapeHtml(type)}"${open ? ' open' : ''}>
