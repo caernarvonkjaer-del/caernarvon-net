@@ -204,6 +204,36 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
 
     await expect(pdfPage.locator('.highlightEditor')).toHaveCount(1);
     expect(errors, `page errors: ${errors.join('\n')}`).toEqual([]);
+
+    // Milestone 50D. The DrawLayer-authored svg.highlight/svg.highlightOutline
+    // elements (siblings of .highlightEditor, appended directly under
+    // .pdf-page) were missing from print.css's scoped-down pdf_viewer.css
+    // port entirely -- confirmed live, the highlight itself rendered the
+    // correct yellow, but the selection outline drawn on top of it had no
+    // fill and fell back to opaque black, and even the correct yellow
+    // painted mix-blend-mode:normal (an opaque block) instead of upstream's
+    // multiply (a tint). The selection this test just made leaves the
+    // highlight selected, which is the exact state that triggered both.
+    const svgs = await page.evaluate(() => {
+      const host = document.querySelector('#print-doc-container .pdf-page')!;
+      return [...host.querySelectorAll('svg')].map((s) => ({
+        cls: s.getAttribute('class') || '',
+        fill: getComputedStyle(s).fill,
+        blend: getComputedStyle(s).mixBlendMode,
+      }));
+    });
+    const highlight = svgs.find((s) => s.cls.split(' ').includes('highlight'));
+    expect(highlight, 'the highlight svg itself must be present').toBeTruthy();
+    expect(highlight!.fill).toBe('rgb(255, 255, 152)'); // the palette's default yellow, #FFFF98
+    expect(highlight!.blend).toBe('multiply'); // tints the text underneath rather than covering it
+    // No SVG inside .pdf-page may compute an opaque black fill -- worded to
+    // catch any future missing-rule regression of this same shape, not just
+    // this one element (the black shape was specifically the unfilled
+    // highlightOutline falling back to the SVG default, not a color choice
+    // anyone made on purpose).
+    for (const svg of svgs) {
+      expect(svg.fill, `svg.${svg.cls} must not fall back to opaque black`).not.toBe('rgb(0, 0, 0)');
+    }
   });
 
   test('Clear Annotations removes every editor, and the toolbar never enters validated form data', async ({ page }) => {

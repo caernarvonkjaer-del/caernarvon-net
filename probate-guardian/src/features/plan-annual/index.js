@@ -350,7 +350,7 @@ function pagePlanABenefits(){
     <h1>3G. Insurance &amp; Benefits</h1>
     <div class="schedule-instructions">Health and accident insurance, and any private or governmental benefits the ward receives toward the cost of medical, mental health or related services. Mark whether the ward is <strong>eligible</strong> for each, and whether you have <strong>applied</strong> for it.</div>
     <table class="table plan-benefits-table">
-      <thead><tr><th>Benefit</th><th class="text-center" style="width:7rem">Eligible</th><th class="text-center" style="width:7rem">Applied for</th></tr></thead>
+      <thead><tr><th>Benefit</th><th class="text-center">Eligible</th><th class="text-center">Applied for</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="plan-check-grid mt-3">

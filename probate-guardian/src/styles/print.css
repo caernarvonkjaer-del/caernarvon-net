@@ -96,9 +96,39 @@
    -- an unresolvable var() in that third argument doesn't crash, but it
    is one more upstream-assumed variable this integration was silently
    missing rather than deliberately declining, and belongs with the other
-   two rather than left for the next person to rediscover the same way. */
+   two rather than left for the next person to rediscover the same way.
+
+   Milestone 50D: the DrawLayer-authored `svg.highlight`/`svg.highlightOutline`
+   elements (appended directly under `.pdf-page` -- see pdf-annotate.js's
+   addPage(), which calls DrawLayer.setParent(pageWrap) with pageWrap being
+   the `.pdf-page` div itself; there is no `.canvasWrapper` in this
+   integration, that's full-viewer-only) were missing from this port
+   entirely, which the port's own list of deliberate exclusions above does
+   NOT include -- an oversight, not a decision. Two real defects resulted:
+   (1) `svg.highlightOutline` (drawn on top of a currently-selected
+   highlight) had no `fill` at all, so it inherited the SVG default of
+   opaque black, painting a solid black shape over the highlight while
+   selected -- confirmed live, and confirmed NOT to reach a saved annotated
+   PDF (pdf.js's own serialization writes a real /Highlight annotation with
+   the correct color; "currently selected in the editor" has no PDF
+   representation to leak into). (2) even the correctly-yellow
+   `svg.highlight` itself computed `mix-blend-mode:normal`, so a highlight
+   painted an opaque block over the text it marks instead of tinting it --
+   upstream uses `multiply`. Ported from pdf_viewer.css's `.canvasWrapper
+   svg` rules (`&.highlight`/`&.highlightOutline`, ~line 1636), flattened out
+   of their nested `&`/`:is()` form to match this file's existing style, and
+   restricted to the non-rotated, non-free-draw case (`data-main-rotation`
+   and Ink-style free highlighting are both features this integration
+   doesn't use, matching the port's existing scope). The selected-highlight
+   stroke (`--outline-color`/`--outline-around-color`/`--outline-around-width`,
+   upstream defaults) is also ported, deliberately: without it, `fill:none`
+   on `highlightOutline` leaves a selected highlight with no visible
+   selection cue at all. Skipped: the `hovered:not(.selected)` stroke variant
+   (mouse-hover is not the selection state this fix is about) and the
+   forced-colors branch (this port already declines forced-colors support
+   generally, per the exclusions listed above). */
 .pdf-page{--total-scale-factor:1.5;--scale-round-x:1px;--scale-round-y:1px;}
-:root{--outline-width:2px;--freetext-padding:2px;}
+:root{--outline-width:2px;--freetext-padding:2px;--outline-color:#0060df;--outline-around-color:#f0f0f4;--outline-around-width:1px;}
 .annotationEditorLayer{position:absolute;inset:0;background:transparent;font-size:calc(100px * var(--total-scale-factor));transform-origin:0 0;cursor:auto;z-index:2;}
 .annotationEditorLayer.disabled{pointer-events:none;}
 .annotationEditorLayer.freetextEditing{cursor:text;}
@@ -110,6 +140,10 @@
 .annotationEditorLayer .freeTextEditor .internal:empty::before{content:attr(default-content);color:gray;}
 .annotationEditorLayer .freeTextEditor .internal:focus{outline:none;-webkit-user-select:auto;-moz-user-select:auto;user-select:auto;}
 .annotationEditorLayer .highlightEditor{border:none;outline:none;pointer-events:none;}
+.pdf-page svg.highlight{position:absolute;fill-rule:evenodd;mix-blend-mode:multiply;}
+.pdf-page svg.highlightOutline{position:absolute;fill-rule:evenodd;fill:none;mix-blend-mode:normal;}
+.pdf-page svg.highlightOutline.selected .mainOutline{stroke:var(--outline-around-color);stroke-width:calc(var(--outline-width) + 2 * var(--outline-around-width));}
+.pdf-page svg.highlightOutline.selected .secondaryOutline{stroke:var(--outline-color);stroke-width:var(--outline-width);}
 
 /* ── Milestone 39-A: Annotate toolbar ─────────────────── */
 .pdf-annotate-toolbar{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.5rem .7rem;margin-bottom:1rem;}

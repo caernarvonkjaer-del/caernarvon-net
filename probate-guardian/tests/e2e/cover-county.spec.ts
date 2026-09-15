@@ -51,6 +51,39 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
     expect(stored.partyCounty, 'and stores the county on it').toBe('Orange');
   });
 
+  // Milestone 50H. The county dropdown previously had no keyboard route at
+  // all: type-then-Tab discarded whatever was highlighted, since Tab-blur
+  // closes the dropdown without committing. Selecting entirely by keyboard
+  // must reach the exact same commit path a mouse click does -- asserting
+  // only the input's value or only D.county would still pass a broken
+  // "set .value directly" shortcut that skips commitCoverCounty() and
+  // silently never establishes the canonical ward-Party county; the third
+  // assertion below is what actually proves that didn't happen.
+  test('selecting a county entirely by keyboard establishes the same canonical ward Party county as a mouse click', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Keyboard County Ward', 'annual');
+
+    const county = page.locator(COUNTY_INPUT).first();
+    await county.click();
+    await county.pressSequentially('Pasc');
+    await expect(page.locator('[data-form-mousedown="select-county"][data-county="Pasco"]')).toBeVisible();
+    await county.press('ArrowDown');
+    await county.press('Enter');
+
+    await expect(county).toHaveValue('Pasco');
+    await expect(page.locator('.county-combobox-dropdown.show')).toHaveCount(0); // closes on commit, no 150ms-timer race
+
+    const stored = await page.evaluate(() => {
+      const w = window as any;
+      const filing = w.D;
+      const party = filing.wardPartyId ? (w.caseFile.parties || []).find((p: any) => p.id === filing.wardPartyId) : null;
+      return { filingCounty: filing.county, wardPartyId: filing.wardPartyId || null, partyCounty: party ? party.county : null };
+    });
+    expect(stored.filingCounty).toBe('Pasco');
+    expect(stored.wardPartyId, 'the keyboard path links a canonical ward Party too').toBeTruthy();
+    expect(stored.partyCounty, 'and reaches commitCoverCounty(), not just the input\'s .value').toBe('Pasco');
+  });
+
   test('a second filing for the same ward hydrates the county without re-asking', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Hydrating Ward', 'annual');

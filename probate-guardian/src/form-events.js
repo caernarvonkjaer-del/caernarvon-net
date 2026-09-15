@@ -137,10 +137,35 @@ document.addEventListener('focusout', (event) => {
   }
 });
 
+// Milestone 50H: keyboard route to the county dropdown -- previously only
+// mousedown could select an option, and Tab-blur closed the dropdown
+// (focusout above) without committing whatever was highlighted, leaving no
+// way to set a county without a mouse at all.
+document.addEventListener('keydown', (event) => {
+  if (event.target instanceof HTMLInputElement && event.target.dataset.formControl === 'county') {
+    window.onCountyKeydown(event.target, event);
+  }
+});
+
 document.addEventListener('mousedown', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
   event.preventDefault();
+  window.selectCountyOption(option.dataset.inputId, option.dataset.county);
+});
+
+// Milestone 50H: a plain click alongside the mousedown handler above.
+// mousedown+preventDefault is what real pointer interaction actually needs
+// (it stops the input's blur closing the dropdown before selection
+// registers) and stays the primary path -- this changes nothing for a real
+// mouse/touch user. It exists so a script-driven `element.click()` (which
+// dispatches only 'click', not the full mousedown/mouseup/click sequence a
+// real pointer produces) also works, rather than silently doing nothing.
+// selectCountyOption() is idempotent, so the harmless double-call a real
+// click still triggers (mousedown, then click) costs nothing observable.
+document.addEventListener('click', (event) => {
+  const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
+  if (!option) return;
   window.selectCountyOption(option.dataset.inputId, option.dataset.county);
 });
 

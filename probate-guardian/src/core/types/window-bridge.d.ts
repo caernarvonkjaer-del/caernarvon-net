@@ -281,6 +281,7 @@ interface Window {
   onConvertSourceFocus: any;
   onConvertSourceInput: any;
   onConvertSourceKeydown: any;
+  onCountyKeydown: any;
   onWardSelectorFocus: any;
   onWardSelectorInput: any;
   onWardSelectorKeydown: any;

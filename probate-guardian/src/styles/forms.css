@@ -167,6 +167,23 @@
 /* ── Plan (Narrative) Form Controls ───────────────────── */
 .plan-field-hint{font-size:.79rem;color:var(--ink-3);line-height:1.5;margin-bottom:.4rem;}
 .plan-radio-row{display:flex;flex-wrap:wrap;gap:1.1rem;padding:.15rem 0;}
+/* Milestone 50E: the Annual Plan benefits table's Eligible/Applied-for
+   columns pack a Yes/No pair (a .plan-radio-row) into each cell. The general
+   rule above wraps that pair whenever it doesn't fit -- correct for a
+   full-width narrative-form question, but each answer column here used to
+   be pinned to a fixed 7rem (now removed from the markup), which never had
+   room for "Yes"/"No" side by side, so every row silently wrapped: two
+   stacked .form-check rows at the WCAG 2.5.5 min-height:2.75rem tap target
+   (forms.css above) plus the legend, ~156px measured, versus ~44px for a
+   comparable single-answer row elsewhere in the same form family. Scoped to
+   this table specifically -- not to .plan-radio-row or .form-check
+   globally, which are used across every form in the app -- so the pair lays
+   out horizontally and the column sizes to that content (no fixed width) at
+   any width with room for it; below the existing tablet/off-canvas-sidebar
+   breakpoint the pair still wraps, which is correct there, not a bug this
+   item is about. The 44px tap target itself is untouched either way. */
+.plan-benefits-table .plan-radio-row{gap:.6rem;}
+@media (min-width:576px){.plan-benefits-table .plan-radio-row{flex-wrap:nowrap;}}
 .plan-check{margin-bottom:.3rem;}
 .plan-check .form-check-label{font-size:.88rem;color:var(--ink-2);}
 .plan-question{border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;background:var(--surface);}

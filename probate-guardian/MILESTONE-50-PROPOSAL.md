@@ -59,11 +59,11 @@ left silent.
 | 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. | **Closed 2026-09-14** |
 | 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness → **rendering** | **Confirmed, root cause found.** The carry works; the page never re-renders, so the Cover looks blank. Small fix. | **Landed 2026-09-14** |
 | 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. | **Closed 2026-09-14** |
-| 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap, and the black is the *selection outline*, not the highlight. Severity depends on one unanswered check. | Open |
-| 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** Needs a layout decision. | Open |
+| 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap; the black was the *selection outline*, not the highlight. Export confirmed clean; downgraded to preview-only. | **Landed 2026-09-14** |
+| 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** No siblings shared the shape. | **Landed 2026-09-14** |
 | 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. | **Landed 2026-09-14** |
-| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Needs a scoping decision before any work. | Open |
-| 50H — County & Active-Filing combobox interaction pattern | Accessibility | **Split.** County combobox has a real keyboard gap. The "plain click" claim is an automation artifact. The Active Filing half is already fixed. | Open |
+| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Full sweep approved. | In progress |
+| 50H — County & Active-Filing combobox interaction pattern | Accessibility | **Split.** County combobox had a real keyboard gap, now fixed. The "plain click" claim was an automation artifact. The Active Filing half was already fixed. | **Landed 2026-09-14** |
 | 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | **Root cause correct; framing too narrow.** Affects all four `SPECIAL_PAGES`, and the symptom is session-path dependent. | **Landed 2026-09-14** |
 
 ---
@@ -105,9 +105,11 @@ edits to one large classic-script file. The other items are file-isolated:
    filer sees immediately. **Landed 2026-09-14.**
 2. ~~**50F**~~ — small, and it is the only item confirmed to affect a filed
    court document. **Landed 2026-09-14.**
-3. **50D** — small (CSS only); its Step 1 has now been answered (see below).
-4. **50E**, **50H** — real, but each needs a design decision made first.
-5. **50G** — do not start until its scope question is answered.
+3. ~~**50D**~~ — small (CSS only). **Landed 2026-09-14.**
+4. ~~**50E**, **50H**~~ — each needed a design decision, now made.
+   **Landed 2026-09-14.**
+5. **50G** — scope decided (full sweep, including `alert()`/`prompt()`); in
+   progress.
 6. ~~**50A**, **50C**~~ — close with tests only, no production code change.
    **Closed 2026-09-14.**
 
@@ -139,8 +141,21 @@ edits to one large classic-script file. The other items are file-isolated:
   decoration (pdf.js's UI convention for "this editor is currently
   selected"), which by construction cannot be serialized into a PDF file at
   all. Severity is downgraded accordingly: this is a preview-only visual
-  bug, not a court-document defect. 50D otherwise remains open pending the
-  UX decision in its own step 3.
+  bug, not a court-document defect.
+- **2026-09-14 — decision questions answered for 50D, 50E, 50G, 50H; 50D,
+  50E, 50H landed.** 50D: ported the missing highlight/outline CSS plus the
+  selected-state stroke (decision: port it), confirmed visually — correct
+  translucent yellow with a visible blue selection outline. 50E: laid the
+  Yes/No pair out horizontally with the column sized to content (decision:
+  preferred approach), confirmed no sibling page shares the shape, measured
+  95px rows (from 156px) at desktop/tablet with the 44px tap target intact,
+  and phone width still correctly stacks. 50H: added the county combobox's
+  missing keyboard support (Arrow/Home/End/Escape/Enter, committing through
+  the exact same `mousedown`-dispatch path a real click uses, avoiding the
+  "sets `.value` directly and skips the county commit" trap the plan
+  flagged) plus the optional `click` listener (decision: add it). 50G:
+  scope decided as the full sweep (confirm + alert + prompt); execution
+  below.
 
 ---
 
@@ -586,7 +601,7 @@ in item 3, flagged for Alan rather than resolved here.
 
 ---
 
-## 50D — Highlight Annotation Renders Solid Black
+## 50D — Highlight Annotation Renders Solid Black — **Landed 2026-09-14**
 
 **Category:** Visual rendering, on court-facing PDF output. **Confidence:**
 Medium.
@@ -700,7 +715,28 @@ concept of editor-selection state to serialize. **Severity is downgraded**:
 this is a preview-only visual bug during editing, not a court-document
 defect — the Legal/Compliance note below is corrected accordingly.
 
-### Corrective plan
+### Corrective plan — EXECUTED 2026-09-14, decision 3 taken as "port the stroke"
+
+Ported to `src/styles/print.css`, right after the existing
+`.annotationEditorLayer .highlightEditor` rule: `svg.highlight`
+(`fill-rule:evenodd;mix-blend-mode:multiply`), `svg.highlightOutline`
+(`fill:none;mix-blend-mode:normal`), and the selected-state stroke on
+`.mainOutline`/`.secondaryOutline` using `--outline-color`/
+`--outline-around-color`/`--outline-around-width` (upstream defaults,
+added to the file's existing `:root` line alongside `--outline-width`,
+which was already there). Decision 3 was taken as recommended: the
+selection stroke is ported, so a selected highlight keeps a visible cue
+(confirmed visually — a blue outline around the yellow highlight).
+Deliberately skipped, per the plan: the `hovered:not(.selected)` variant
+(mouse-hover is a different state than selection) and the forced-colors
+branch (this port already declines forced-colors support). The port's
+header comment was extended with the full root-cause account, matching
+step 2's instruction that the comment is the file's own contract about
+what it deliberately omits. Regression guard (step 4) added to the exact
+test named below: `svg.highlight` computed fill/blend-mode pinned to the
+correct palette yellow and `multiply`, plus the general "no SVG inside
+`.pdf-page` computes opaque black" assertion. All prior steps below are
+kept as the historical record.
 
 1. ~~**Answer this first — it sets the severity.**~~ **Answered above:**
    export is clean, severity downgraded to preview-only.
@@ -831,7 +867,28 @@ it to make rows shorter would trade a layout complaint for an accessibility
 regression. The height is a symptom of the **column width**, not of the tap
 target.
 
-### Corrective plan
+### Corrective plan — EXECUTED 2026-09-14, preferred approach, no siblings affected
+
+Step 1's blast-radius check found **no siblings share this shape**: Plan
+Annual's Rights table renders one radio per cell (not a Yes/No pair), and
+its ADLs table uses a `<select>`, not radios at all — Benefits is the only
+page with two radio groups packed into one narrow column. Scope stayed
+exactly `.plan-benefits-table` as a result. The preferred approach (step 2)
+was taken: `<th style="width:7rem">` was removed from both answer-column
+headers in `pagePlanABenefits()` (`src/features/plan-annual/index.js`) so
+the column sizes to content, and a scoped rule in `src/styles/forms.css`
+(`.plan-benefits-table .plan-radio-row{flex-wrap:nowrap}` inside a
+`@media (min-width:576px)` block, reusing this app's existing Bootstrap-style
+phone breakpoint rather than inventing a new one) keeps the pair on one line
+whenever there's room. Verified live at all three widths named in step 3:
+desktop and tablet both render 95px rows (down from 156px) with Yes/No side
+by side; phone (390px) correctly still stacks, with no horizontal overflow
+at any width. The 44px `.form-check` tap target is untouched in all three.
+Regression guard (step 4) added as a new, self-contained test at the end of
+`schedule-card-layout.spec.ts` (that file has no `describe` blocks; matching
+its existing top-level-`test` convention rather than nesting into its one
+giant sweep test), asserting both halves: row height and the `min-height`
+computed style. All prior steps below are kept as the historical record.
 
 1. **Check the blast radius before scoping.** Grep for other
    `yesNoRadioHTML(...)` calls inside narrow fixed-width table cells —
@@ -1214,7 +1271,7 @@ shared infrastructure rather than a one-off.
 
 ---
 
-## 50H — County & Active-Filing Combobox Interaction Pattern
+## 50H — County & Active-Filing Combobox Interaction Pattern — **Landed 2026-09-14**
 
 **Category:** Interaction robustness / possible accessibility gap.
 **Confidence:** Medium — the non-standard event handling is confirmed;
@@ -1338,6 +1395,36 @@ that was fixed**. The walkthrough build predated that fix.
 **Explicitly out of scope:** the Active Filing picker (already correct, and
 is the reference implementation to copy), and any change to the `mousedown`
 handler (working as designed).
+
+### EXECUTED 2026-09-14, steps 1-4 and 6 as specified; step 5 taken (approved decision)
+
+`countyAutocompleteHTML()`/`filterCountyDropdown()`/`hideCountyDropdown()`
+gained the combobox roles/ARIA state from step 1. A new
+`onCountyKeydown(inp, e)` (modelled directly on `onWardSelectorKeydown()`,
+parameterized on which input fired it since county isn't a singleton the
+way the ward selector is) implements Arrow/Home/End/Escape/Enter, wired
+next to the existing `focusin`/`focusout` county listeners in
+`src/form-events.js` per step 2. Step 3's trap was avoided by construction,
+not just by care: Enter dispatches a synthetic `mousedown` on the
+highlighted option — the exact technique `onWardSelectorKeydown()` already
+uses — so the keyboard path runs through `selectCountyOption()` via the
+*same* listener a real click uses, incapable of diverging into a bare
+`.value` assignment. Step 4's race was checked directly: since
+`dispatchEvent()` for a synthetic event doesn't trigger the browser's
+native focus-shift side effects, focus never leaves the input during an
+Enter-commit, so the input's own `focusout` (and its 150ms deferred
+`hideCountyDropdown`) never fires at all — `selectCountyOption()`'s own
+synchronous call to `hideCountyDropdown()` is what actually closes it, with
+nothing to race against. Step 5 (the optional click listener) was taken
+per the approved decision, added alongside the `mousedown` listener in
+`form-events.js` with a comment recording why the harmless double-fire for
+a real click is acceptable (`selectCountyOption()` is idempotent). Step 6's
+regression guard, added to `tests/e2e/cover-county.spec.ts`, asserts all
+three values the step calls for — input value, `D.county`, and the ward
+Party's canonical county — via a real `ArrowDown`+`Enter` sequence, plus
+that the dropdown actually closes (proving step 4's race analysis rather
+than just asserting it away). All prior numbered steps below are kept as
+the historical record.
 
 1. **Mark up the dropdown as a real combobox.** In
    `countyAutocompleteHTML()` (`src/legacy-app.js:1563-1570`) add

@@ -573,3 +573,30 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
   await expect(psSigCards.first()).toBeVisible();
 });
 
+// Milestone 50E. Each answer column on the Annual Plan's benefits table
+// (3G. Insurance & Benefits) packed a Yes/No radio pair into a column
+// fixed at 7rem, which never had room for the pair side by side, so it
+// silently wrapped every row -- two stacked WCAG 2.5.5 min-height:2.75rem
+// (44px) tap targets plus the legend, ~156px measured, versus ~95px once
+// the pair lays out horizontally. Both halves of the fix matter equally:
+// the row must actually get shorter, AND the 44px tap target -- the reason
+// a "fix" could plausibly make this worse by shrinking it instead -- must
+// survive untouched.
+test('Annual Guardianship Plan benefits table lays Yes/No pairs out horizontally, without shrinking the 44px tap target', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Benefits Layout Ward', 'planAnnual');
+  await page.evaluate(() => (window as any).navigate('/p4'));
+  const table = page.locator('.plan-benefits-table');
+  await table.locator('tbody tr').first().waitFor();
+
+  const rowHeights = await table.locator('tbody tr').evaluateAll(
+    (rows) => rows.slice(0, 3).map((r) => r.getBoundingClientRect().height),
+  );
+  for (const h of rowHeights) expect(h, 'row must not still be stacking the Yes/No pair').toBeLessThan(120);
+
+  const checkHeights = await table.locator('.form-check').evaluateAll(
+    (checks) => checks.slice(0, 4).map((c) => getComputedStyle(c).minHeight),
+  );
+  for (const mh of checkHeights) expect(mh, 'the WCAG 2.5.5 tap target must not shrink').toBe('44px');
+});
+
