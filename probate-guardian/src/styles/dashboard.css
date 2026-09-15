@@ -53,7 +53,10 @@
 
 /* ── Triage Worklist & Queue ──────────────────────────── */
 .dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);container-type:inline-size;container-name:triage-queue;}
-.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(160px,1.3fr) 110px 140px 100px minmax(160px,1.3fr) 120px 430px;align-items:center;gap:.7rem;padding:.65rem .75rem;}
+/* Keep the filing identity fields readable without letting them consume the
+   spare desktop width. The action cluster remains a fixed track, so its
+   controls do not squeeze together while Ward/Form Type/Contacts drift apart. */
+.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(150px,.9fr) minmax(180px,1fr) minmax(105px,.55fr) minmax(145px,.7fr) minmax(95px,.55fr) minmax(180px,1fr) minmax(120px,.7fr) max-content;align-items:center;gap:.7rem;padding:.65rem .75rem;}
 .dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.67rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-sort-btn{background:none;border:none;font:inherit;color:inherit;text-transform:inherit;font-weight:inherit;font-size:inherit;padding:0;display:inline-flex;align-items:center;gap:.25rem;cursor:pointer;text-align:left;}
 .dashboard-sort-btn:hover{color:var(--ink);}
