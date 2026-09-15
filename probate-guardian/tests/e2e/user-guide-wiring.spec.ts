@@ -1,7 +1,7 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import { freshStartNoPassword, createWard, createSimplifiedWard } from './support/target';
 
-// Milestone 48: Probate-Guardian-User-Manual.html is wired in as a permanent
+// The dedicated help/index.html page is wired in as a permanent
 // part of the app -- opened via window.open(), a same-origin top-level
 // navigation the CSP's script-src/object-src restrictions don't touch (same
 // reasoning as the print-preview PDF blob navigation elsewhere in the app).
@@ -47,7 +47,7 @@ test.describe('user guide wiring', () => {
     await expect(page.locator('[data-shell-action="export-help"]')).toHaveText('View User Guide');
 
     const url = await clickAndCaptureGuideTab(page, context, '[data-shell-action="export-help"]');
-    expect(url).toMatch(/Probate-Guardian-User-Manual\.html$/);
+    expect(url).toMatch(/help\/$/);
   });
 
   const GUARDIAN_CASES: Array<[string, string]> = [
@@ -71,7 +71,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `route ${route}`).toContain(`Probate-Guardian-User-Manual.html#${anchor}`);
+      expect(url, `route ${route}`).toContain(`help/#${anchor}`);
       await expect(page.locator('#help-panel'), `route ${route} panel`).not.toBeVisible();
     }
   });
@@ -88,7 +88,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `route ${route}`).toContain(`Probate-Guardian-User-Manual.html#${anchor}`);
+      expect(url, `route ${route}`).toContain(`help/#${anchor}`);
     }
   });
 
@@ -105,7 +105,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `route ${route}`).toContain(`Probate-Guardian-User-Manual.html#${anchor}`);
+      expect(url, `route ${route}`).toContain(`help/#${anchor}`);
     }
   });
 
@@ -115,13 +115,13 @@ test.describe('user guide wiring', () => {
     await page.evaluate(() => (window as any).navigate('/schd2'));
     await page.waitForURL(/#\/schd2$/);
     let url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-    expect(url).toContain('Probate-Guardian-User-Manual.html#annual-accounting-schedules');
+    expect(url).toContain('help/#annual-accounting-schedules');
 
     await createWard(page, 'Final Guide Ward', 'finalAccounting');
     await page.evaluate(() => (window as any).navigate('/p2'));
     await page.waitForURL(/#\/p2$/);
     url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-    expect(url).toContain('Probate-Guardian-User-Manual.html#annual-accounting-p2');
+    expect(url).toContain('help/#annual-accounting-p2');
   });
 
   const PLAN_CASES: Array<[string, string, string]> = [
@@ -137,7 +137,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `${type} ${route}`).toContain(`Probate-Guardian-User-Manual.html#${anchor}`);
+      expect(url, `${type} ${route}`).toContain(`help/#${anchor}`);
     }
   });
 });

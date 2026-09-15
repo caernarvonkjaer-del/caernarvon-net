@@ -292,7 +292,7 @@ function updateHelpContext(){
   if(helpPanelOpen)showContextualHelp();
 }
 
-// Milestone 48: the standalone Probate-Guardian-User-Manual.html, deep-linked
+// The standalone help page, deep-linked
 // from the "?" button (in a filing) and the Help panel's "View User Guide"
 // button (on the dashboard). Anchors below match the id attributes actually
 // present in that file -- see its own h2/h3 headings. Guardian Inventory,
@@ -301,7 +301,7 @@ function updateHelpContext(){
 // since it's written per schedule group, not per exact page); the four Plan
 // types have no h3 breakdown at all, so every one of their pages maps to the
 // same h2 section -- there simply isn't finer content to jump to yet.
-const USER_GUIDE_URL='Probate-Guardian-User-Manual.html';
+const USER_GUIDE_URL='help/';
 const USER_GUIDE_ANCHORS={
   guardian:{
     '/':'inventory-cover', '/summary':'inventory-summary',
