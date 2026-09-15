@@ -395,6 +395,14 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "namesNearlyMatch"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "normalizePartyName"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "partyForSignaturePath"
     },
     {
@@ -419,7 +427,15 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "subPartiesOf"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "syncIdentityField"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "unmergeParty"
     },
     {
       "file": "src/core/party-resolver.js",

@@ -2448,6 +2448,7 @@ const ACTIVITY_EVENT_META={
   DATA_EXPORT:      {label:'Backup saved',             iconName:'download'},
   DATA_IMPORT:      {label:'Backup restored',          iconName:'upload'},
   PARTY_MERGE:      {label:'Shared record merged',     iconName:'swap'},
+  PARTY_UNMERGE:    {label:'Shared record unmerged',   iconName:'swap'},
 };
 let _activityLogEntries=[]; // newest-first, loaded once per page visit
 const ACTIVITY_LOG_RENDER_CAP=300; // safety cap on DOM rows, not on what's exported
@@ -2628,12 +2629,20 @@ function partyFieldValue(party,path){
 function partyRoleBadgesHTML(party){
   return (party.roles||[]).map(r=>`<span class="badge bg-secondary">${esc(r)}</span>`).join(' ');
 }
+// Screen-local selection state, never persisted: the (at most two) directory
+// rows ticked to compare, and the sub rows ticked to unmerge. Reset each
+// time the page is opened.
+let _partyCompareIds=[];
+let _partyUnmergeIds=[];
 function pagePartyManagement(){
+  _partyCompareIds=[];
+  _partyUnmergeIds=[];
   return `<div class="schedule-page">
     <h1>Manage Shared Records</h1>
-    <div class="schedule-instructions">Shared records (parties) hold one person's contact info for guardians, attorneys, and preparers, so it stays the same everywhere it's used. This screen surfaces records that look like the same person entered twice, and lets you search everything on file.</div>
+    <div class="schedule-instructions">Shared records (parties) hold one person's contact info for guardians, attorneys, and preparers, so it stays the same everywhere it's used. This screen surfaces records that look like the same person entered twice, lets you pick any two records yourself to compare and merge, and lets you search everything on file. A merged record stays listed beneath its primary and can be unmerged later.</div>
     <div id="party-dedupe-queue"></div>
     <h2 class="subsection-heading" style="margin-top:1.5rem;">All Shared Records</h2>
+    <div class="schedule-instructions">Tick <b>Compare</b> on any two records to review them as a merge candidate above. Records already merged are listed beneath their primary; tick one and choose <b>Unmerge Selected</b> to make it a separate record again.</div>
     <div class="mb-3"><label class="visually-hidden" for="party-directory-search">Search shared records by name</label><input type="text" id="party-directory-search" class="form-control form-control-sm" placeholder="Search by name…" autocomplete="off" data-form-input="party-directory"></div>
     <div id="party-directory-rows"></div>
   </div>`;
@@ -2648,12 +2657,25 @@ function renderPartyManagementBody(){
 function renderPartyDedupeQueue(){
   const host=document.getElementById('party-dedupe-queue');
   if(!host)return;
-  const candidates=window.findDuplicateCandidates();
-  if(!candidates.length){host.innerHTML='<div class="dashboard-empty-inline">No likely duplicates found.</div>';return;}
-  host.innerHTML=candidates.map(partyDedupeCardHTML).join('');
+  const manual=manualCompareCandidate();
+  const cards=[...(manual?[manual]:[]),...window.findDuplicateCandidates()];
+  if(!cards.length){host.innerHTML='<div class="dashboard-empty-inline">No likely duplicates found. Tick <b>Compare</b> on any two records below to review them here.</div>';return;}
+  host.innerHTML=cards.map(partyDedupeCardHTML).join('');
 }
-function partyDedupeCardHTML({partyA,partyB,strongMatch}){
-  const badge=strongMatch?'Same name and contact info':'Same name only';
+function manualCompareCandidate(){
+  if(_partyCompareIds.length!==2)return null;
+  const [partyA,partyB]=_partyCompareIds.map(id=>(caseFile.parties||[]).find(p=>p.id===id&&!p.mergedInto));
+  if(!partyA||!partyB)return null;
+  return {partyA,partyB,strongMatch:false,matchKind:'manual'};
+}
+function partyMatchBadge({matchKind,strongMatch}){
+  if(matchKind==='manual')return ['Selected by you','bg-primary'];
+  if(matchKind==='near')return strongMatch?['Similar name and same contact info','bg-danger']:['Possible match: similar name','bg-warning text-dark'];
+  return strongMatch?['Same name and contact info','bg-danger']:['Same name only','bg-secondary'];
+}
+function partyDedupeCardHTML(candidate){
+  const {partyA,partyB,matchKind}=candidate;
+  const [badge,badgeClass]=partyMatchBadge(candidate);
   const column=(party,other)=>`<div class="col-12 col-md-6"><div class="entry-card mb-0 h-100">
     <div class="entry-card-header">${esc(party.name)||'(unnamed)'}</div>
     <div class="entry-card-body">
@@ -2664,13 +2686,16 @@ function partyDedupeCardHTML({partyA,partyB,strongMatch}){
         const differs=val!==otherVal;
         return `<div class="row g-1 mb-1"><div class="col-5" style="font-size:.78rem;color:var(--ink-3);">${esc(label)}</div><div class="col-7" style="font-size:.85rem;${differs?'font-weight:700;color:var(--danger-text);':''}">${esc(val)||'—'}</div></div>`;
       }).join('')}
-      <button type="button" class="btn btn-sm btn-primary mt-2 w-100" data-form-action="party-merge-keep" data-keep-id="${esc(party.id)}" data-discard-id="${esc(other.id)}">Keep This One</button>
+      <button type="button" class="btn btn-sm btn-primary mt-2 w-100" data-form-action="party-merge-keep" data-keep-id="${esc(party.id)}" data-discard-id="${esc(other.id)}">This One is Primary</button>
     </div>
   </div></div>`;
+  const dismiss=matchKind==='manual'
+    ?`<button type="button" class="btn btn-sm btn-outline-secondary" data-form-action="party-clear-compare">Clear Selection</button>`
+    :`<button type="button" class="btn btn-sm btn-outline-secondary" data-form-action="party-dismiss-pair" data-party-a="${esc(partyA.id)}" data-party-b="${esc(partyB.id)}">Not the Same Person</button>`;
   return `<div class="entry-card mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <span class="badge ${strongMatch?'bg-danger':'bg-secondary'}">${esc(badge)}</span>
-      <button type="button" class="btn btn-sm btn-outline-secondary" data-form-action="party-dismiss-pair" data-party-a="${esc(partyA.id)}" data-party-b="${esc(partyB.id)}">Not the Same Person</button>
+      <span class="badge ${badgeClass}">${esc(badge)}</span>
+      ${dismiss}
     </div>
     <div class="row g-3">${column(partyA,partyB)}${column(partyB,partyA)}</div>
   </div>`;
@@ -2680,28 +2705,57 @@ function renderPartyDirectoryRows(){
   if(!host)return;
   const q=(document.getElementById('party-directory-search')?.value||'').trim().toLowerCase();
   const parties=(caseFile.parties||[]).filter(p=>!p.mergedInto&&(!q||String(p.name||'').toLowerCase().includes(q)));
-  if(!parties.length){host.innerHTML='<div class="dashboard-empty-inline">No shared records yet.</div>';return;}
-  host.innerHTML=parties.map(p=>{
+  const toolbar=_partyUnmergeIds.length?`<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary" data-form-action="party-unmerge-selected">Unmerge Selected (${_partyUnmergeIds.length})</button></div>`:'';
+  if(!parties.length){host.innerHTML=toolbar+'<div class="dashboard-empty-inline">No shared records yet.</div>';return;}
+  const compareFull=_partyCompareIds.length>=2;
+  host.innerHTML=toolbar+parties.map(p=>{
     const count=window.referenceCountForParty(p.id);
+    const checked=_partyCompareIds.includes(p.id);
     return `<div class="entry-card mb-2">
-    <div class="d-flex justify-content-between align-items-center">
-      <div><strong>${esc(p.name)||'(unnamed)'}</strong> ${partyRoleBadgesHTML(p)}</div>
-      <span style="font-size:.8rem;color:var(--ink-3);">${count} reference${count===1?'':'s'}</span>
+    <div class="d-flex justify-content-between align-items-center gap-2">
+      <div class="form-check mb-0">
+        <input class="form-check-input" type="checkbox" id="party-compare-${esc(p.id)}" title="Compare" data-form-action="party-compare-toggle" data-party-id="${esc(p.id)}"${checked?' checked':''}${!checked&&compareFull?' disabled':''}>
+        <label class="form-check-label" for="party-compare-${esc(p.id)}"><strong>${esc(p.name)||'(unnamed)'}</strong> ${partyRoleBadgesHTML(p)}</label>
+      </div>
+      <span style="font-size:.8rem;color:var(--ink-3);white-space:nowrap;">${count} reference${count===1?'':'s'}</span>
     </div>
+    ${window.subPartiesOf(p.id).map(partySubRowHTML).join('')}
   </div>`;
   }).join('');
 }
+function partySubRowHTML(sub){
+  const checked=_partyUnmergeIds.includes(sub.id);
+  const mergedAt=sub.mergeRecord?.mergedAt?new Date(sub.mergeRecord.mergedAt).toLocaleDateString():'';
+  return `<div class="ms-3 ps-3 mt-2 border-start"><div class="form-check mb-0">
+    <input class="form-check-input" type="checkbox" id="party-unmerge-${esc(sub.id)}" title="Select to unmerge" data-form-action="party-unmerge-toggle" data-party-id="${esc(sub.id)}"${checked?' checked':''}>
+    <label class="form-check-label" for="party-unmerge-${esc(sub.id)}" style="font-size:.85rem;">${esc(sub.name)||'(unnamed)'} ${partyRoleBadgesHTML(sub)} <span style="font-size:.78rem;color:var(--ink-3);">merged into this record${mergedAt?' on '+esc(mergedAt):''}</span></label>
+  </div></div>`;
+}
+function togglePartyCompareSelection(partyId,checked){
+  _partyCompareIds=_partyCompareIds.filter(id=>id!==partyId);
+  if(checked&&_partyCompareIds.length<2)_partyCompareIds.push(partyId);
+  renderPartyManagementBody();
+}
+function clearPartyCompareSelection(){
+  _partyCompareIds=[];
+  renderPartyManagementBody();
+}
+function togglePartyUnmergeSelection(partyId,checked){
+  _partyUnmergeIds=_partyUnmergeIds.filter(id=>id!==partyId);
+  if(checked)_partyUnmergeIds.push(partyId);
+  renderPartyManagementBody();
+}
 // The confirm() message doubles as the "prompt per-field" step the
 // persistence-rewrite plan calls for: it lists every field that would be
-// backfilled onto the kept record from the discarded one (blank-on-keep,
-// present-on-discard) so nothing is adopted silently. Cancelling aborts the
+// backfilled onto the primary record from the sub (blank-on-primary,
+// present-on-sub) so nothing is adopted silently. Cancelling aborts the
 // whole merge -- there's no partial-adopt state to manage.
 async function doPartyMergeKeep(keepId,discardId){
   const keep=window.resolveParty(keepId),discard=window.resolveParty(discardId);
   if(!keep||!discard)return;
   const conflict=typeof window.wardCountyMergeConflict==='function'?window.wardCountyMergeConflict(keepId,discardId):null;
   const adoptable=PARTY_FIELD_ROWS.filter(([path])=>!partyFieldValue(keep,path)&&partyFieldValue(discard,path));
-  let message=`Merge "${discard.name}" into "${keep.name}"?\n\nEvery filing and case referencing "${discard.name}" will be updated to reference "${keep.name}" instead. This cannot be undone from within the app.`;
+  let message=`Make "${keep.name}" the primary record and merge "${discard.name}" into it?\n\nEvery filing and case referencing "${discard.name}" will be updated to reference "${keep.name}" instead. "${discard.name}" will be listed beneath "${keep.name}" in All Shared Records, where it can be unmerged later.`;
   if(conflict){
     message+=`\n\nWarning: Conflicting ward counties detected ("${conflict.keepCounty}" vs "${conflict.discardCounty}"). Merging will retain "${conflict.keepCounty}" on "${keep.name}".`;
   }
@@ -2711,11 +2765,26 @@ async function doPartyMergeKeep(keepId,discardId){
   if(!confirm(message))return;
   window.mergeParties(keepId,discardId,{adoptBlankFields:adoptable.length>0});
   await auditLog('PARTY_MERGE',`Merged "${discard.name}" into "${keep.name}"`,true);
+  _partyCompareIds=[];
   autoSave();
   renderPartyManagementBody();
 }
 async function doPartyDismissPair(idA,idB){
   window.dismissPartyPair(idA,idB);
+  autoSave();
+  renderPartyManagementBody();
+}
+async function doPartyUnmergeSelected(){
+  const subs=_partyUnmergeIds.map(id=>(caseFile.parties||[]).find(p=>p.id===id)).filter(p=>p&&p.mergedInto&&p.mergeRecord);
+  if(!subs.length)return;
+  const lines=subs.map(s=>`• "${s.name}" (merged into "${window.resolveParty(s.mergedInto)?.name}")`);
+  const message=`Unmerge ${subs.length===1?'this record':'these records'}?\n\n${lines.join('\n')}\n\nEach becomes its own shared record again. Filings and cases that referenced it before the merge will reference it again, and any fields the primary record filled in from it will be cleared -- unless you have changed them since.`;
+  if(!confirm(message))return;
+  for(const sub of subs){
+    const primaryName=window.resolveParty(sub.mergedInto)?.name;
+    if(window.unmergeParty(sub.id))await auditLog('PARTY_UNMERGE',`Unmerged "${sub.name}" from "${primaryName}"`,true);
+  }
+  _partyUnmergeIds=[];
   autoSave();
   renderPartyManagementBody();
 }

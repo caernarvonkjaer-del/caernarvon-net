@@ -31,6 +31,18 @@
  * @property {string} createdAt - ISO creation timestamp.
  * @property {string} updatedAt - ISO modification timestamp.
  * @property {string | null} [mergedInto] - Tombstone pointer to surviving Party if merged.
+ * @property {PartyMergeRecord | null} [mergeRecord] - What the merge changed elsewhere, written on
+ *   the merged-away (sub) party so unmergeParty() can reverse it; null otherwise. A tombstone
+ *   with mergedInto but no mergeRecord predates undo tracking and cannot be unmerged.
+ */
+
+/**
+ * @typedef {Object} PartyMergeRecord
+ * @property {string} mergedAt - ISO timestamp of the merge.
+ * @property {string[]} adoptedFields - Dotted Party paths backfilled onto the primary from this sub.
+ * @property {string[]} adoptedRoles - Roles the primary gained from this sub.
+ * @property {Array<{ wardId: string, role: string, index: number }>} repointedSlots - Filing FK slots moved from this sub to the primary.
+ * @property {string[]} repointedCases - caseFile.cases[].id values whose wardPartyId moved to the primary.
  */
 
 /**

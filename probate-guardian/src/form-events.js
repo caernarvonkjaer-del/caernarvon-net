@@ -46,8 +46,14 @@ document.addEventListener('click', (event) => {
     case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
+    case 'party-clear-compare': window.clearPartyCompareSelection(); break;
+    // The two checkbox actions read the box's own state: a click on a checkbox
+    // toggles it before listeners run, so `checked` is already the new value.
+    case 'party-compare-toggle': window.togglePartyCompareSelection(actionElement.dataset.partyId, actionElement.checked); break;
     case 'party-dismiss-pair': window.doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
     case 'party-merge-keep': window.doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
+    case 'party-unmerge-selected': window.doPartyUnmergeSelected(); break;
+    case 'party-unmerge-toggle': window.togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
     case 'print': window.printCurrentFilingPdf(); break;
     case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;

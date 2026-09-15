@@ -54,6 +54,7 @@ export function createParty(role) {
     createdAt: now,
     updatedAt: now,
     mergedInto: null,
+    mergeRecord: null,
   };
   if (caseFile && Array.isArray(caseFile.parties)) caseFile.parties.push(party);
   return party;
@@ -467,36 +468,89 @@ export function dismissPartyPair(idA, idB) {
   }
 }
 
+// ── Near-match name comparison ─────────────────────────────────────────────
+// Case/punctuation/accent-insensitive, with "Last, First" folded to
+// "First Last" so the token positions below line up. Suffixes (Jr/Sr/III)
+// are deliberately NOT stripped: a father and son with otherwise identical
+// names are the one same-name case that is routinely two real people.
+export function normalizePartyName(name) {
+  let s = String(name || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const comma = s.indexOf(',');
+  if (comma > 0 && comma < s.length - 1) s = s.slice(comma + 1) + ' ' + s.slice(0, comma);
+  return s.replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Optimal-string-alignment edit distance (insert/delete/substitute plus one
+// adjacent transposition). Bails out early on a length gap the caller's
+// threshold could never absorb.
+function editDistance(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const prev2 = new Array(b.length + 1), prev = new Array(b.length + 1), cur = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    cur[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], prev2[j - 2] + 1);
+    }
+    for (let j = 0; j <= b.length; j++) { prev2[j] = prev[j]; prev[j] = cur[j]; }
+  }
+  return prev[b.length];
+}
+
 /**
- * Candidate duplicate pairs: non-merged parties sharing an exact,
- * case-insensitive, trimmed, non-empty name -- the same rule
- * refreshCarrySourceSelect() already uses for wards (legacy-app.js). Pairs
- * already dismissed are excluded. `strongMatch` is a prioritization signal
- * only (a shared phone/email/taxId/barNumber on top of the name match), not
- * a separate detection path -- see this file's persistence-rewrite plan §6.
+ * True for two already-normalized names that are probably the same person
+ * despite not being identical: equal after normalization (spacing,
+ * punctuation, "Last, First"), the same first and last name with a middle
+ * name/initial present on only one side or abbreviated on one side, or a
+ * one-to-two character typo (scaled to name length so short names don't
+ * false-positive). Exact matches are the caller's job.
+ */
+export function namesNearlyMatch(normA, normB) {
+  if (!normA || !normB) return false;
+  if (normA === normB) return true;
+  const ta = normA.split(' '), tb = normB.split(' ');
+  if (ta.length >= 2 && tb.length >= 2 && ta[0] === tb[0] && ta[ta.length - 1] === tb[tb.length - 1]) {
+    const ma = ta.slice(1, -1), mb = tb.slice(1, -1);
+    if (!ma.length || !mb.length) return true;
+    if (ma.length === mb.length && ma.every((m, i) => m === mb[i] || (m[0] === mb[i][0] && (m.length === 1 || mb[i].length === 1)))) return true;
+  }
+  const shortest = Math.min(normA.length, normB.length);
+  const max = shortest < 5 ? 0 : shortest < 10 ? 1 : 2;
+  return max > 0 && editDistance(normA, normB, max) <= max;
+}
+
+function sharesContactDetail(a, b) {
+  return ['phone', 'email'].some(f => a[f] && b[f] && a[f] === b[f])
+    || ['taxId', 'barNumber'].some(f => a.identifiers?.[f] && b.identifiers?.[f] && a.identifiers[f] === b.identifiers[f]);
+}
+
+/**
+ * Candidate duplicate pairs among non-merged, non-blank-named parties, with
+ * `matchKind` 'exact' (case-insensitive, trimmed name equality -- the same
+ * rule refreshCarrySourceSelect() uses for wards) or 'near' (see
+ * namesNearlyMatch()). Exact pairs come first. Pairs already dismissed are
+ * excluded. `strongMatch` is a prioritization signal only (a shared
+ * phone/email/taxId/barNumber on top of the name match), not a separate
+ * detection path -- see this file's persistence-rewrite plan §6.
  */
 export function findDuplicateCandidates() {
   const caseFile = window.caseFile;
-  const parties = ((caseFile && caseFile.parties) || []).filter(p => !p.mergedInto && String(p.name || '').trim());
-  const byName = new Map();
-  for (const party of parties) {
-    const key = party.name.trim().toLowerCase();
-    if (!byName.has(key)) byName.set(key, []);
-    byName.get(key).push(party);
-  }
-  const candidates = [];
-  for (const group of byName.values()) {
-    for (let i = 0; i < group.length; i++) {
-      for (let j = i + 1; j < group.length; j++) {
-        const [a, b] = [group[i], group[j]];
-        if (isPartyPairDismissed(a.id, b.id)) continue;
-        const strongMatch = ['phone', 'email'].some(f => a[f] && b[f] && a[f] === b[f])
-          || ['taxId', 'barNumber'].some(f => a.identifiers?.[f] && b.identifiers?.[f] && a.identifiers[f] === b.identifiers[f]);
-        candidates.push({ partyA: a, partyB: b, strongMatch });
-      }
+  const entries = ((caseFile && caseFile.parties) || [])
+    .filter(p => !p.mergedInto && String(p.name || '').trim())
+    .map(party => ({ party, exactKey: party.name.trim().toLowerCase(), norm: normalizePartyName(party.name) }));
+  const exact = [], near = [];
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const a = entries[i], b = entries[j];
+      if (isPartyPairDismissed(a.party.id, b.party.id)) continue;
+      const matchKind = a.exactKey === b.exactKey ? 'exact' : namesNearlyMatch(a.norm, b.norm) ? 'near' : null;
+      if (!matchKind) continue;
+      (matchKind === 'exact' ? exact : near).push({ partyA: a.party, partyB: b.party, strongMatch: sharesContactDetail(a.party, b.party), matchKind });
     }
   }
-  return candidates;
+  return [...exact, ...near];
 }
 
 /** How many filing/case slots currently reference this party -- powers the directory's reference count. */
@@ -510,13 +564,17 @@ export function referenceCountForParty(partyId) {
 }
 
 /**
- * Merges discardId into keepId: repoints every filing/case FK, unions
- * roles, optionally backfills fields blank on keep from discard (never the
- * reverse -- keep's own values are never overwritten), tombstones discard
- * (mergedInto), and re-hydrates every filing now pointing at keep so the
- * merge is visible immediately rather than waiting for the next edit.
+ * Merges discardId (the sub) into keepId (the primary): repoints every
+ * filing/case FK, unions roles, optionally backfills fields blank on the
+ * primary from the sub (never the reverse -- the primary's own values are
+ * never overwritten), tombstones the sub (mergedInto), and re-hydrates every
+ * filing now pointing at the primary so the merge is visible immediately
+ * rather than waiting for the next edit. Everything the merge changed on
+ * the primary or on filings is written to the sub's mergeRecord so
+ * unmergeParty() can put it back. A sub that has subs of its own keeps them
+ * (they still point at it, not at the new primary) -- the one-level rule.
  * Does not call autoSave() -- same convention as syncIdentityField(), the
- * caller (doMergeParties() in legacy-app.js) already does.
+ * caller (doPartyMergeKeep() in legacy-app.js) already does.
  */
 export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {}) {
   const keep = resolveParty(keepId);
@@ -524,43 +582,125 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   if (!keep || !discard || keep === discard) return false;
   if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-merge');
 
+  const now = new Date().toISOString();
+  const record = { mergedAt: now, adoptedFields: [], adoptedRoles: [], repointedSlots: [], repointedCases: [] };
+
   if (adoptBlankFields) {
     for (const field of PARTY_COMPARE_FIELDS) {
-      if (!keep[field] && discard[field]) keep[field] = discard[field];
+      if (!keep[field] && discard[field]) { keep[field] = discard[field]; record.adoptedFields.push(field); }
     }
     for (const field of ['taxId', 'barNumber']) {
       keep.identifiers = keep.identifiers || { taxId: null, barNumber: null };
-      if (!keep.identifiers[field] && discard.identifiers?.[field]) keep.identifiers[field] = discard.identifiers[field];
+      if (!keep.identifiers[field] && discard.identifiers?.[field]) { keep.identifiers[field] = discard.identifiers[field]; record.adoptedFields.push(`identifiers.${field}`); }
     }
     for (const field of ['street', 'cityStateZip']) {
       if (discard.address?.[field] && !keep.address?.[field]) {
         keep.address = keep.address || { street: '', cityStateZip: '' };
         keep.address[field] = discard.address[field];
+        record.adoptedFields.push(`address.${field}`);
       }
       if (discard.officeAddress?.[field] && !keep.officeAddress?.[field]) {
         keep.officeAddress = keep.officeAddress || { street: '', cityStateZip: '' };
         keep.officeAddress[field] = discard.officeAddress[field];
+        record.adoptedFields.push(`officeAddress.${field}`);
       }
     }
   }
 
+  record.adoptedRoles = (discard.roles || []).filter(r => !(keep.roles || []).includes(r));
   keep.roles = [...new Set([...(keep.roles || []), ...(discard.roles || [])])];
 
   const caseFile = window.caseFile;
   for (const ward of (caseFile && caseFile.wards) || []) {
     for (const slot of slotsReferencing(ward, discardId)) {
+      record.repointedSlots.push({ wardId: ward.wardId, role: slot.role, index: slot.index });
       setPartyIdForSlot(ward, slot.role, slot.index, keepId);
       hydrateFromParty(keep, ward, slot.role, slot.index);
     }
   }
   for (const kase of (caseFile && caseFile.cases) || []) {
-    if (kase.wardPartyId === discardId) kase.wardPartyId = keepId;
+    if (kase.wardPartyId === discardId) { record.repointedCases.push(kase.id); kase.wardPartyId = keepId; }
   }
 
-  const now = new Date().toISOString();
   discard.mergedInto = keepId;
+  discard.mergeRecord = record;
   discard.updatedAt = now;
   keep.updatedAt = now;
+  return true;
+}
+
+/**
+ * The subs listed beneath a primary: parties merged directly into it that
+ * carry an undo record. A sub's own subs are one level too deep and stay
+ * hidden until that sub is itself unmerged; a tombstone with mergedInto set
+ * but no mergeRecord predates undo tracking and stays hidden for good --
+ * exactly what it was before tracking existed.
+ */
+export function subPartiesOf(primaryId) {
+  const caseFile = window.caseFile;
+  if (!primaryId || !caseFile || !Array.isArray(caseFile.parties)) return [];
+  return caseFile.parties.filter(p => p.mergedInto === primaryId && p.mergeRecord);
+}
+
+// createParty()'s blank shape: name and address lines are '', everything
+// else null -- an unmerge restores the field to the same "never entered"
+// value the record would have had.
+const PARTY_EMPTY_STRING_PATHS = new Set(['name', 'address.street', 'address.cityStateZip', 'officeAddress.street', 'officeAddress.cityStateZip']);
+const SLOT_ROLES = new Set(['ward', 'attorney', 'preparer', 'guardian']);
+
+function partyPathValue(party, path) {
+  return path.split('.').reduce((v, k) => (v == null ? v : v[k]), party);
+}
+
+/**
+ * Reverses mergeParties() for one direct sub of a top-level primary. Slots
+ * and cases repointed by the merge go back to the sub if they still point
+ * at the primary (and re-hydrate from the sub); fields the primary adopted
+ * are cleared only if they still hold the sub's value, so an edit made
+ * since the merge is kept; roles the primary gained are dropped unless a
+ * filing slot still uses the primary in that role. The sub's own data was
+ * never touched by the merge, so it comes back exactly as it was. Refuses a
+ * sub whose primary is itself merged (two levels deep) and a pre-tracking
+ * tombstone. Does not call autoSave() -- the caller does.
+ */
+export function unmergeParty(subId) {
+  const caseFile = window.caseFile;
+  if (!subId || !caseFile || !Array.isArray(caseFile.parties)) return false;
+  const sub = caseFile.parties.find(p => p.id === subId);
+  if (!sub || !sub.mergedInto || !sub.mergeRecord) return false;
+  const primary = caseFile.parties.find(p => p.id === sub.mergedInto);
+  if (!primary || primary.mergedInto) return false;
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-unmerge');
+  const record = sub.mergeRecord;
+
+  for (const { wardId, role, index } of record.repointedSlots || []) {
+    const ward = (caseFile.wards || []).find(w => w.wardId === wardId);
+    if (!ward || getPartyIdForSlot(ward, role, index) !== primary.id) continue;
+    setPartyIdForSlot(ward, role, index, sub.id);
+    hydrateFromParty(sub, ward, role, index);
+  }
+  for (const caseId of record.repointedCases || []) {
+    const kase = (caseFile.cases || []).find(k => k.id === caseId);
+    if (kase && kase.wardPartyId === primary.id) kase.wardPartyId = sub.id;
+  }
+
+  for (const path of record.adoptedFields || []) {
+    if (partyPathValue(primary, path) !== partyPathValue(sub, path)) continue;
+    const keys = path.split('.');
+    const last = keys.pop();
+    const parent = keys.reduce((v, k) => (v == null ? v : v[k]), primary);
+    if (parent) parent[last] = PARTY_EMPTY_STRING_PATHS.has(path) ? '' : null;
+  }
+
+  const roleStillUsed = role => (caseFile.wards || []).some(w => slotsReferencing(w, primary.id).some(s => s.role === role))
+    || (role === 'ward' && (caseFile.cases || []).some(k => k.wardPartyId === primary.id));
+  primary.roles = (primary.roles || []).filter(r => !(record.adoptedRoles || []).includes(r) || !SLOT_ROLES.has(r) || roleStillUsed(r));
+
+  const now = new Date().toISOString();
+  sub.mergedInto = null;
+  sub.mergeRecord = null;
+  sub.updatedAt = now;
+  primary.updatedAt = now;
   return true;
 }
 
@@ -586,5 +726,9 @@ window.syncIdentityField = syncIdentityField;
 window.isPartyPairDismissed = isPartyPairDismissed;
 window.dismissPartyPair = dismissPartyPair;
 window.findDuplicateCandidates = findDuplicateCandidates;
+window.namesNearlyMatch = namesNearlyMatch;
+window.normalizePartyName = normalizePartyName;
 window.referenceCountForParty = referenceCountForParty;
 window.mergeParties = mergeParties;
+window.subPartiesOf = subPartiesOf;
+window.unmergeParty = unmergeParty;

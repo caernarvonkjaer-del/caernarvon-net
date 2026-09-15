@@ -492,12 +492,14 @@ test.describe('party de-duplication via resolver (Milestone 7)', () => {
       return {
         partyCount: cf.parties.length,
         mergedAwayTombstone: cf.parties.find((p: any) => p.id === mergedAway.id)?.mergedInto,
+        mergedAwayRecordAt: cf.parties.find((p: any) => p.id === mergedAway.id)?.mergeRecord?.mergedAt,
         stillDismissed: w.isPartyPairDismissed(keep.id, discard.id),
       };
     });
 
     expect(result.partyCount).toBe(3);
     expect(result.mergedAwayTombstone).toBeTruthy();
+    expect(result.mergedAwayRecordAt).toBeTruthy(); // the undo record rides along with the tombstone
     expect(result.stillDismissed).toBe(true);
   });
 
@@ -643,5 +645,182 @@ test.describe('party de-duplication via resolver (Milestone 7)', () => {
     expect(result.partyBCounty).toBeFalsy();
     expect(result.conflictBefore).toBeNull();
     expect(result.conflictAfter).toBeNull(); // partyB has blank county so no conflict with partyA
+  });
+});
+
+// Merge undo tracking and near-name detection: mergeParties() writes a
+// mergeRecord on the sub, unmergeParty() reverses exactly what that record
+// says (one level deep only), and findDuplicateCandidates() adds a
+// lower-confidence 'near' tier beneath the exact-name pairs.
+test.describe('party merge undo & near-match detection', () => {
+  test('findDuplicateCandidates lists exact-name pairs first, then near-name pairs, and leaves genuinely different names alone', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const make = (name: string) => { const p = w.createParty('guardian'); p.name = name; return p; };
+      const a = make('Jane Doe');
+      const b = make('jane doe '); // exact under the existing trim/lowercase rule
+      const c = make('Jane A. Doe'); // middle initial
+      const d = make('Doe, Jane'); // Last, First
+      const e = make('Janet Doerr'); // three edits away -- a different person
+      const f = make('John Doe Sr.'); // suffix is never stripped: father vs son stays two people
+      const g = make('John Doe');
+      const h = make('Jhon Doe'); // one transposition
+      const ids: Record<string, string> = { a: a.id, b: b.id, c: c.id, d: d.id, e: e.id, f: f.id, g: g.id, h: h.id };
+      const label = (id: string) => Object.keys(ids).find(k => ids[k] === id);
+      const candidates = w.findDuplicateCandidates();
+      return {
+        kinds: candidates.map((x: any) => `${[label(x.partyA.id), label(x.partyB.id)].sort().join('')}:${x.matchKind}`) as string[],
+        firstKind: candidates[0]?.matchKind,
+        lastKind: candidates[candidates.length - 1]?.matchKind,
+      };
+    });
+
+    expect(result.kinds).toContain('ab:exact');
+    for (const near of ['ac:near', 'ad:near', 'bc:near', 'bd:near', 'cd:near', 'gh:near']) expect(result.kinds).toContain(near);
+    expect(result.kinds.filter((k) => /e|f/.test(k.split(':')[0]))).toEqual([]);
+    expect(result.kinds.filter((k) => k.endsWith(':exact'))).toEqual(['ab:exact']);
+    expect(result.firstKind).toBe('exact');
+    expect(result.lastKind).toBe('near');
+  });
+
+  test('mergeParties records what it changed, and unmergeParty puts it back: FKs return to the sub and re-hydrate, adopted fields clear, adopted roles drop', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const primary = w.createParty('guardian');
+      primary.name = 'Jane Doe';
+      primary.phone = '555-0100';
+      const sub = w.createParty('attorney');
+      sub.name = 'Jane Doe';
+      sub.phone = '555-0200';
+      sub.email = 'jane@example.com'; // primary has none -- adopted
+      const wardA: any = { wardId: 'a', inventoryType: 'guardian', guardianPartyIds: [sub.id], attorney: {} };
+      const kase = w.createCase({ caseNumber: '24-1', county: 'Pinellas' });
+      kase.wardPartyId = sub.id;
+      cf.wards.push(wardA);
+
+      w.mergeParties(primary.id, sub.id, { adoptBlankFields: true });
+      const afterMerge = {
+        listedUnderPrimary: w.subPartiesOf(primary.id).map((p: any) => p.id),
+        record: JSON.parse(JSON.stringify(sub.mergeRecord)),
+        wardAPhone: wardA.guardians?.[0]?.phone,
+        primaryEmail: primary.email,
+        primaryRoles: primary.roles.slice().sort(),
+      };
+
+      const unmerged = w.unmergeParty(sub.id);
+      return {
+        afterMerge,
+        unmerged,
+        subId: sub.id,
+        caseId: kase.id,
+        wardAPartyId: wardA.guardianPartyIds[0],
+        wardAPhone: wardA.guardians?.[0]?.phone,
+        caseWardPartyId: kase.wardPartyId,
+        primaryEmail: primary.email,
+        primaryPhone: primary.phone,
+        primaryRoles: primary.roles.slice().sort(),
+        subMergedInto: sub.mergedInto,
+        subRecord: sub.mergeRecord,
+        subEmail: sub.email,
+        listedUnderPrimary: w.subPartiesOf(primary.id),
+        candidatesAgain: w.findDuplicateCandidates().length,
+      };
+    });
+
+    expect(result.afterMerge.listedUnderPrimary).toEqual([result.subId]);
+    expect(result.afterMerge.record.adoptedFields).toEqual(['email']);
+    expect(result.afterMerge.record.adoptedRoles).toEqual(['attorney']);
+    expect(result.afterMerge.record.repointedSlots).toEqual([{ wardId: 'a', role: 'guardian', index: 0 }]);
+    expect(result.afterMerge.record.repointedCases).toEqual([result.caseId]);
+    expect(result.afterMerge.record.mergedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(result.afterMerge.wardAPhone).toBe('555-0100');
+    expect(result.afterMerge.primaryEmail).toBe('jane@example.com');
+    expect(result.afterMerge.primaryRoles).toEqual(['attorney', 'guardian']);
+
+    expect(result.unmerged).toBe(true);
+    expect(result.wardAPartyId).toBe(result.subId);
+    expect(result.wardAPhone).toBe('555-0200'); // re-hydrated from the sub, not left holding the primary's value
+    expect(result.caseWardPartyId).toBe(result.subId);
+    expect(result.primaryEmail).toBeNull();
+    expect(result.primaryPhone).toBe('555-0100');
+    expect(result.primaryRoles).toEqual(['guardian']);
+    expect(result.subMergedInto).toBeNull();
+    expect(result.subRecord).toBeNull();
+    expect(result.subEmail).toBe('jane@example.com'); // the sub's own data was never touched
+    expect(result.listedUnderPrimary).toEqual([]);
+    expect(result.candidatesAgain).toBe(1); // both top-level and same-named again, so the pair resurfaces
+  });
+
+  test('unmergeParty keeps a primary field edited since the merge, and leaves a slot that was re-linked elsewhere since the merge', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const primary = w.createParty('guardian');
+      primary.name = 'Jane Doe';
+      const sub = w.createParty('guardian');
+      sub.name = 'Jane Doe';
+      sub.email = 'jane@example.com';
+      sub.notes = 'from sub';
+      const third = w.createParty('guardian');
+      third.name = 'Someone Else';
+      const wardA: any = { wardId: 'a', inventoryType: 'guardian', guardianPartyIds: [sub.id] };
+      cf.wards.push(wardA);
+
+      w.mergeParties(primary.id, sub.id, { adoptBlankFields: true });
+      primary.email = 'edited@example.com'; // changed after the merge -- must survive
+      w.setPartyIdForSlot(wardA, 'guardian', 0, third.id); // re-linked after the merge -- must not be yanked back
+
+      const unmerged = w.unmergeParty(sub.id);
+      return { unmerged, primaryEmail: primary.email, primaryNotes: primary.notes, wardAPartyId: wardA.guardianPartyIds[0], thirdId: third.id };
+    });
+
+    expect(result.unmerged).toBe(true);
+    expect(result.primaryEmail).toBe('edited@example.com');
+    expect(result.primaryNotes).toBeNull(); // still held the sub's value, so it was cleared
+    expect(result.wardAPartyId).toBe(result.thirdId);
+  });
+
+  test('one level only: a sub of a sub stays hidden under the new primary and cannot be unmerged until the middle record is; a pre-tracking tombstone is never listed', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const make = (name: string) => { const p = w.createParty('guardian'); p.name = name; return p; };
+      const a = make('Jane Doe'), b = make('Jane Doe'), c = make('Jane Doe');
+      const legacy = make('Jane Doe');
+      w.mergeParties(b.id, a.id, { adoptBlankFields: false }); // a -> b
+      w.mergeParties(c.id, b.id, { adoptBlankFields: false }); // b -> c, carrying a beneath it
+      legacy.mergedInto = c.id; // merged before undo tracking existed: no mergeRecord
+
+      const underCBefore = w.subPartiesOf(c.id).map((p: any) => p.id);
+      const aWhileNested = w.unmergeParty(a.id);
+      const resolvedA = w.resolveParty(a.id)?.id;
+
+      const bUnmerged = w.unmergeParty(b.id);
+      const underCAfter = w.subPartiesOf(c.id).map((p: any) => p.id);
+      const underBAfter = w.subPartiesOf(b.id).map((p: any) => p.id);
+      const aNow = w.unmergeParty(a.id);
+      const legacyUnmerge = w.unmergeParty(legacy.id);
+
+      return { ids: { a: a.id, b: b.id, c: c.id }, underCBefore, aWhileNested, resolvedA, bUnmerged, underCAfter, underBAfter, aNow, aMergedInto: a.mergedInto, legacyUnmerge, legacyMergedInto: legacy.mergedInto };
+    });
+
+    expect(result.underCBefore).toEqual([result.ids.b]); // not a (two levels down), not legacy (no record)
+    expect(result.aWhileNested).toBe(false);
+    expect(result.resolvedA).toBe(result.ids.c); // the chain still resolves all the way up meanwhile
+    expect(result.bUnmerged).toBe(true);
+    expect(result.underCAfter).toEqual([]);
+    expect(result.underBAfter).toEqual([result.ids.a]); // b's own sub comes back with it
+    expect(result.aNow).toBe(true);
+    expect(result.aMergedInto).toBeNull();
+    expect(result.legacyUnmerge).toBe(false);
+    expect(result.legacyMergedInto).toBe(result.ids.c);
   });
 });

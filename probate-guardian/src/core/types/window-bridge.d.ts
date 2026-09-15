@@ -65,6 +65,7 @@ interface Window {
   checkSessionRestoreCacheAtLaunch: any;
   checkSimplifiedEligibility: any;
   clearAllData: any;
+  clearPartyCompareSelection: any;
   clearSessionRestoreCache: any;
   closeMobileSidebar: any;
   closeModal: any;
@@ -111,6 +112,7 @@ interface Window {
   doGuardianSetup: any;
   doPartyDismissPair: any;
   doPartyMergeKeep: any;
+  doPartyUnmergeSelected: any;
   doPickCase: any;
   doPickParty: any;
   doRenameWard: any;
@@ -260,9 +262,11 @@ interface Window {
   mk: any;
   mountDashboardFeature: any;
   moveTo: any;
+  namesNearlyMatch: any;
   navigate: any;
   nextWalkthroughStep: any;
   normalizeCountyName: any;
+  normalizePartyName: any;
   normalizePlanGuardians: any;
   normalizeWardData: any;
   notifyProbateGuardianTabStateChanged: any;
@@ -387,6 +391,7 @@ interface Window {
   startNewWardAtLaunch: any;
   startWalkthrough: any;
   submitUnlockForm: any;
+  subPartiesOf: any;
   suggestedCaseFileName: any;
   switchWard: any;
   syncActiveWardNameDisplay: any;
@@ -398,6 +403,8 @@ interface Window {
   toggleB2Vehicle: any;
   toggleHelpPanel: any;
   toggleMobileSidebar: any;
+  togglePartyCompareSelection: any;
+  togglePartyUnmergeSelection: any;
   toggleSaveControls: any;
   toggleSsnReveal: any;
   toggleTheme: any;
@@ -405,6 +412,7 @@ interface Window {
   triggerImportZip: any;
   triggerOpenBackupSav: any;
   unloadWard: any;
+  unmergeParty: any;
   updateCarrySourcePicker: any;
   updateConvertNote: any;
   updateConvertNotePreview: any;
