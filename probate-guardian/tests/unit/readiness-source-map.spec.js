@@ -104,10 +104,18 @@ describe('3. every bypassable validation issue appears exactly once in the card,
     });
   }
 
+  // Milestone 38D Phase 2: suppression is now matched per issue code against
+  // the predicate that covers it, so this fixture has to use each Plan's REAL
+  // case-number path -- Plan Minor's validator emits `ucn` (its cover asks for
+  // a UCN or Case #), never `caseNumber`. Under 44C's blanket rule any path at
+  // all was suppressed here, which is exactly why a synthetic one went
+  // unnoticed; the test now exercises a code the validator can really produce.
+  const CASE_NUMBER_PATH = { planSimplified: 'caseNumber', planAnnual: 'caseNumber', planInitial: 'caseNumber', planMinor: 'ucn' };
+
   for (const key of PLAN_KEYS) {
     it(`${key}: while a predicate is pending, the validator's own issues (typed or plain) are represented by the predicate rows, never listed twice`, () => {
       const plain = legacyString('Cover — Name of Ward is required');
-      const typed = createRequiredIssue({ filingType: key, path: 'caseNumber', message: 'Cover — Case Number is required' });
+      const typed = createRequiredIssue({ filingType: key, path: CASE_NUMBER_PATH[key], message: 'Cover — Case Number is required' });
       const rows = getFilingReadiness(key, blank(key), [plain, typed, ...outOfCard]).automatic;
       expect(rows.filter((r) => r.label === 'Cover — Name of Ward is required').length).toBe(0);
       expect(rows.filter((r) => r.id === typed.code).length).toBe(0);

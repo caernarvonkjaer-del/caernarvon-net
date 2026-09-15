@@ -467,6 +467,23 @@ filing types, not just the three already migrated.
   and data-integrity issues add rows on every filing regardless. Issue rows
   that carry a path but no route get theirs from `resolveRouteFromSection()`,
   the same resolver the Preview jump links use.
+  - **Superseded 2026-09-15 — the missing mapping now exists.** The blanket
+    rule described above ("while any predicate is pending, suppress all of
+    this filing's own validator issues") was always a stand-in for the
+    predicate→issue-id link 38D Phase 1 never delivered, and it over-reached:
+    an issue *no* predicate checks (the conditional `autoStaysTrue` rules)
+    stayed hidden until every unrelated predicate passed, so a filer met
+    their blockers one at a time. `readiness-config.js` now carries
+    `PLAN_PREDICATE_ISSUE_PATHS` — each Plan predicate row mapped to the
+    validator `path`s it actually covers, taken from what the four
+    `plan-*-parity.spec.js` suites already prove — and suppresses per issue
+    code instead. Plain-string issues keep the blanket rule, since
+    `validation.legacy-unmapped` carries no path to match on. Guarded by
+    `tests/unit/readiness-predicate-coverage.spec.js`. **Naming caveat:** the
+    original `MILESTONE-38D-PROPOSAL.md` assigned this mapping to *Phase 1*
+    and used "Phase 2" for revision-bound acknowledgement and output-gate
+    unification; "38D Phase 2" as used in this section and since is the
+    informal label for the leftover mapping work only.
 - **`src/core/filing/readiness-card.js` (rewritten)** — `renderReadinessCard({ filingType, data, validationIssues, expanded })`,
   `bindReadinessCard(container)`, `resetReadinessCardState()`. One native
   `<details id="filing-readiness-card">` with one `<summary>`; escapes all

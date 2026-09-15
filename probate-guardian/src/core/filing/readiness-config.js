@@ -399,6 +399,139 @@ export const READINESS_CONFIG = Object.freeze({
   planMinor: { automaticFamilies: ['planMinor.*', 'cover.*', 'plan.*', 'signatures.*'], predicates: planMinorAutomatic, manual: planMinorManual, unsupported: 'planMinor.unsupported.case-record' },
 });
 
+// ---------------------------------------------------------------------------
+// Milestone 38D Phase 2: which validator issue each Plan predicate row covers.
+//
+// 38B assumed 38D Phase 1 would give every Plan predicate a canonical issue id.
+// It didn't -- validators emit `planX.<path>.required` codes with nothing
+// linking them to a predicate id -- so 44C shipped a blanket rule instead:
+// while ANY predicate is pending, suppress EVERY one of that filing's own
+// validator issues. That over-reaches. An issue no predicate checks at all
+// (the conditional "explanation required when…" rules) stayed hidden until
+// every unrelated predicate passed, so a filer met their blockers one at a
+// time instead of seeing them together.
+//
+// This table is that missing link, expressed the way tests/unit/plan-*-parity.spec.js
+// already prove it (one predicate id per constituent required field). Keys are
+// predicate row ids; values are the validator's own `path` arguments,
+// canonicalised the way createRequiredIssue() does it (`.0.` becomes `[]`).
+// A trailing `.*` matches every key beneath that prefix -- the per-right and
+// per-ADL issues name whichever entry is still unanswered.
+//
+// A path absent from this table is DELIBERATELY uncovered and surfaces
+// immediately; tests/unit/readiness-predicate-coverage.spec.js audits that list
+// and pins why each entry is not a predicate row. "Unmapped means show" is also
+// the right default for a future validator check nobody maps here: a duplicated
+// row is cosmetic, a wrongly-hidden export blocker is not.
+const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
+  planSimplified: {
+    'cover.period': ['periodFrom', 'periodTo'],
+    'cover.wardCaseCounty': ['wardName', 'caseNumber', 'county'],
+    'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
+    'signatures.guardian1.contact': ['planGuardians[].email', 'planGuardians[].phone', 'planGuardians[].mailingAddress'],
+    'plan.q1': ['q1Residences'],
+    'plan.q2': ['q2BestPlacement'],
+    'plan.q3': ['q3MedicalTreatment'],
+    'plan.q4': ['q4Diagnosis'],
+    'plan.q5': ['q5SocialServices'],
+    'plan.q6': ['q6Interaction'],
+    'plan.q7': ['q7RestoreRights'],
+    'plan.q8': ['q8DNR'],
+    'plan.q9': ['q9Remuneration'],
+  },
+  planAnnual: {
+    'cover.period': ['periodFrom', 'periodTo'],
+    'cover.wardCaseGid': ['wardName', 'caseNumber', 'gid'],
+    'cover.county': ['county'],
+    'cover.guardianName': ['guardian'],
+    'cover.wardResidence': ['wardLiving', 'residenceAddress', 'residenceCityStateZip'],
+    'plan.q1residences': ['q1Residences[].name'],
+    'plan.q2': ['q2NoMove'],
+    'plan.q3': ['q3SettingALF'],
+    'plan.q4providers': ['q4Providers[].name'],
+    'plan.q5': ['q5SocialSkills', 'q5Activities'],
+    'plan.q6rights': ['rights.*'],
+    'plan.q8adls': ['adls.*'],
+    'plan.q9': ['q9MentalNone', 'q9PhysNone'],
+    'plan.q10directives': ['q10NoDirectives'],
+    'plan.q11remuneration': ['q11NoRemuneration', 'q11NoRemunerationName'],
+    'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
+    'signatures.guardian1.contact': ['planGuardians[].mailingStreet', 'planGuardians[].phone', 'planGuardians[].ssn'],
+    'signatures.attorney': ['attorney', 'attorney_signatureDate', 'attorney_signatureImage'],
+  },
+  planInitial: {
+    'cover.wardCaseCounty': ['wardName', 'caseNumber', 'county'],
+    'cover.dates': ['inceptionDate', 'lettersSignedDate'],
+    'cover.guardianNames': ['guardianNames'],
+    'cover.wardResidence': ['wardLiving', 'residenceAddress', 'residenceCityStateZip'],
+    'plan.q2': ['q2Setting'],
+    'plan.q3': ['q3MedPrimary'],
+    'plan.q4': ['q4Mental'],
+    'plan.q5': ['q5Personal'],
+    'plan.q6q7': ['q6CareFacility'],
+    'plan.q7explain': ['q7Explain'],
+    'plan.q9providers': ['q9Providers[].name'],
+    'plan.q10a.adls': ['adls.*'],
+    'plan.q10bcd': ['mentalAlzheimers', 'physMobility', 'usesDentures'],
+    'plan.q11needs': ['needsDentures'],
+    'plan.q11directives': ['q11NoDirectives'],
+    'plan.q10f.committee': ['committeeIncorporated'],
+    'signatures.certifications': ['certIncapacitatedNoCopy'],
+    'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
+    'signatures.guardian1.contact': ['planGuardians[].street', 'planGuardians[].phone', 'planGuardians[].ssn'],
+    'signatures.attorney': ['attorney_name', 'attorney_signatureDate', 'attorney_signatureImage'],
+  },
+  planMinor: {
+    'cover.amendedForm': ['amendedForm'],
+    'cover.wardCountyPeriod': ['wardName', 'county', 'periodFrom', 'periodTo'],
+    'cover.caseNumber': ['ucn'],
+    'cover.guardianName': ['guardianName'],
+    'cover.residence': ['q1ResidenceName', 'q1Street'],
+    'plan.q3providers': ['q3Providers[].last'],
+    'plan.q4': ['q4Primary'],
+    'plan.q5': ['q5SchoolProgress', 'q5SocialDevelopment', 'q5Communicates', 'q5Interpersonal'],
+    'plan.q5e': ['q5NoUnmetNeeds'],
+    'signatures.certifications': ['certIncapacitated'],
+    'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
+    'signatures.guardian1.contact': ['planGuardians[].mailingStreet', 'planGuardians[].phone', 'planGuardians[].tin'],
+    'signatures.preparer': ['preparer_name', 'preparer_signatureDate', 'preparer_signatureImage'],
+    'signatures.attorney': ['attorney_name', 'attorney_signatureDate', 'attorney_signatureImage'],
+  },
+});
+
+const PLAN_ISSUE_COVERAGE = (() => {
+  const byType = {};
+  for (const [type, rows] of Object.entries(PLAN_PREDICATE_ISSUE_PATHS)) {
+    const exact = new Map();
+    const prefixes = [];
+    for (const [predicateId, paths] of Object.entries(rows)) {
+      for (const path of paths) {
+        if (path.endsWith('.*')) {
+          prefixes.push({ prefix: `${type}.${path.slice(0, -1)}`, predicateId });
+        } else {
+          const code = `${type}.${path}.required`;
+          if (!exact.has(code)) exact.set(code, []);
+          exact.get(code).push(predicateId);
+        }
+      }
+    }
+    byType[type] = { exact, prefixes };
+  }
+  return byType;
+})();
+
+/** Predicate row ids whose own check already accounts for this issue code. */
+export function predicateIdsCoveringIssue(inventoryType, code) {
+  const index = PLAN_ISSUE_COVERAGE[inventoryType];
+  if (!index) return [];
+  const key = String(code || '');
+  const exact = index.exact.get(key);
+  if (exact) return exact;
+  return index.prefixes.filter(entry => key.startsWith(entry.prefix)).map(entry => entry.predicateId);
+}
+
+export { PLAN_PREDICATE_ISSUE_PATHS };
+
 function isCardIssue(issue) {
   return !!issue && issue.showInReadiness === true && IN_CARD_CATEGORIES.has(issue.category);
 }
@@ -412,12 +545,24 @@ export function getFilingReadiness(inventoryType, data, validationIssues = []) {
   const predicateRows = typeof config.predicates === 'function'
     ? config.predicates(d).map(row => ({ ...row, route: '', path: '', classification: 'automatic', blocking: true }))
     : [];
-  const predicatePending = predicateRows.some(row => row.ok !== true);
-  const isOwnValidatorIssue = issue => issue.code === 'validation.legacy-unmapped' || String(issue.code).startsWith(`${inventoryType}.`);
+  const pendingPredicateIds = new Set(predicateRows.filter(row => row.ok !== true).map(row => row.id));
+  // Milestone 38D Phase 2: match each typed issue against the predicate row
+  // that actually covers it (PLAN_PREDICATE_ISSUE_PATHS above) instead of 44C's
+  // blanket "any predicate pending hides all of this filing's issues" rule, so
+  // an issue no pending predicate accounts for is listed right away rather than
+  // waiting for every unrelated predicate to pass first.
+  //
+  // A plain-string validator issue is the one case that cannot be attributed:
+  // prepareFilingOutput() wraps it as `validation.legacy-unmapped` with no
+  // path, so there is nothing to match on and it keeps 44C's blanket rule.
+  const coveredByPendingPredicate = (issue) => {
+    if (issue.code === 'validation.legacy-unmapped') return pendingPredicateIds.size > 0;
+    return predicateIdsCoveringIssue(inventoryType, issue.code).some(id => pendingPredicateIds.has(id));
+  };
 
   const issueRows = (validationIssues || [])
     .filter(isCardIssue)
-    .filter(issue => !(predicatePending && isOwnValidatorIssue(issue)))
+    .filter(issue => !coveredByPendingPredicate(issue))
     .map(issue => ({
       id: issue.code,
       label: issue.message || issue.code,
