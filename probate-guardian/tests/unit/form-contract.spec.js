@@ -117,6 +117,42 @@ describe('form-contract', () => {
       expect(formatCityStateZip('33602')).toBe('33602');
       expect(formatCityStateZip('33602-1234')).toBe('33602-1234');
     });
+
+    // Milestone 50C. A walkthrough reported these two literals folding into
+    // a ZIP field; verified 2026-09-14 against current master (not
+    // reproduced -- formatCityStateZip() never moves text between fields;
+    // it only formats the one field it's given, and these two inputs are
+    // simply shapes it declines to touch). Closed as not-reproducing, but
+    // pinned here as the durable deliverable: a "we said we'd fixed X" claim
+    // with no permanent test coverage is exactly how a regression could
+    // slip in unnoticed, whether or not this specific report was accurate.
+    // See MILESTONE-50-PROPOSAL.md's 50C "Verified" section.
+    it('leaves malformed input unchanged rather than guessing -- these are the exact literals the walkthrough reported', () => {
+      // No separator before the state code: the per-word regex requires a
+      // token to be all-letters (or all-digits) to reformat it; a token
+      // mixing letters and digits with no space passes through untouched.
+      expect(formatCityStateZip('St.Petersburg,FL33704')).toBe('St.Petersburg,FL33704');
+      // A lone word with an interior capital: deliberately NOT title-cased,
+      // because the same rule that would fix "MAlvern" -> "Malvern" would
+      // also flatten legitimately mixed-case Florida names on a court
+      // document -- see the next test.
+      expect(formatCityStateZip('MAlvern')).toBe('MAlvern');
+    });
+
+    it('never flattens an already-mixed-case name -- the guard the previous test\'s behavior protects', () => {
+      // These are genuine Florida surnames/place names typed with their
+      // correct interior capital already in place, not typos. If a future
+      // "fix" for the MAlvern case above starts title-casing any word
+      // containing an uppercase letter, these break -- that is the point:
+      // it documents why formatCityStateZip() leaves such words alone
+      // rather than "repairing" them. (A fully-lowercase "mckinney" still
+      // gets title-cased to "Mckinney" by the existing, unrelated
+      // all-lowercase branch -- that is pre-existing behavior, unrelated to
+      // the interior-capital guard this test pins.)
+      expect(formatCityStateZip('McKinney, FL')).toBe('McKinney, FL');
+      expect(formatCityStateZip('DeLand, FL 32720')).toBe('DeLand, FL 32720');
+      expect(formatCityStateZip("O'Brien, FL")).toBe("O'Brien, FL");
+    });
   });
 
   describe('writeDraftValue & finalizeFieldValue two-phase commit', () => {

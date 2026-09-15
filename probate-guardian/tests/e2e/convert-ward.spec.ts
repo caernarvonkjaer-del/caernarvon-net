@@ -95,6 +95,35 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     expect(newWard.schD4[0].restricted).toBe('Yes');
   });
 
+  // Milestone 50A. A walkthrough reported the attorney name appearing
+  // duplicated on this exact path; verified 2026-09-14 against current
+  // master (not reproduced -- carryOverFieldsForPlan()'s planAnnual branch
+  // is a single `attorney: attyName` assignment, no concatenation). Closed
+  // as a real defect, but the suspected mechanism is cheap to pin
+  // permanently so a future edit to that function can't quietly introduce
+  // it. See MILESTONE-50-PROPOSAL.md's 50A "Verified" section for the full
+  // analysis, including the likely source of the observation (the same
+  // attorney field legitimately appears on three different routes -- Cover,
+  // Attorney Certification, and Summary -- which is not a bug).
+  test('Initial Guardianship Plan -> Annual Guardianship Plan carries the attorney name exactly once, never doubled', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Plan Attorney Source Ward', 'planInitial');
+
+    const sourceWardId = await page.evaluate(() => {
+      const d = (window as any).D;
+      d.attorneyName = 'Zensiqua Okaforsson';
+      return d.wardId;
+    });
+
+    const newWard = await page.evaluate(async (srcId) => {
+      await (window as any).convertExistingWard(srcId, 'planAnnual');
+      return (window as any).getActiveWard();
+    }, sourceWardId);
+
+    expect(newWard.inventoryType).toBe('planAnnual');
+    expect(newWard.attorney).toBe('Zensiqua Okaforsson');
+  });
+
   // Milestone 43F, Decision 4: tests/unit/convert-targets.spec.js (Milestone
   // 42E/42G) already pins convertTargetsFor()'s own per-source eligibility
   // exhaustively at the data level -- including that Plan Minor is never

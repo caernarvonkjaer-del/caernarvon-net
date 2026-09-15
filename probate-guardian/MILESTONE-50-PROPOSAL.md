@@ -56,9 +56,9 @@ left silent.
 
 | Sub-delivery | Category | Verdict after the 2026-09-14 verification pass | Status |
 | --- | --- | --- | --- |
-| 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. Recommend closure (optional cheap guard). | Open (recommend close) |
+| 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. | **Closed 2026-09-14** |
 | 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness → **rendering** | **Confirmed, root cause found.** The carry works; the page never re-renders, so the Cover looks blank. Small fix. | **Landed 2026-09-14** |
-| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. | Open (recommend close) |
+| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. | **Closed 2026-09-14** |
 | 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap, and the black is the *selection outline*, not the highlight. Severity depends on one unanswered check. | Open |
 | 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** Needs a layout decision. | Open |
 | 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. | **Landed 2026-09-14** |
@@ -105,11 +105,11 @@ edits to one large classic-script file. The other items are file-isolated:
    filer sees immediately. **Landed 2026-09-14.**
 2. ~~**50F**~~ — small, and it is the only item confirmed to affect a filed
    court document. **Landed 2026-09-14.**
-3. **50D** — small (CSS only), but answer its Step 1 first; severity is
-   unknown until then.
+3. **50D** — small (CSS only); its Step 1 has now been answered (see below).
 4. **50E**, **50H** — real, but each needs a design decision made first.
 5. **50G** — do not start until its scope question is answered.
-6. **50A**, **50C** — close with tests only, no production code change.
+6. ~~**50A**, **50C**~~ — close with tests only, no production code change.
+   **Closed 2026-09-14.**
 
 **Execution log:**
 
@@ -119,13 +119,32 @@ edits to one large classic-script file. The other items are file-isolated:
   `tests/e2e/signature-capture.contract.spec.ts`). No `window.*` bridge
   changes, no data-model changes, no new spec files. Each item's own
   "Corrective plan" section above carries the execution detail and any
-  deviation from what was originally proposed. 50D, 50E, 50G, 50H remain
-  open pending the decisions their own plans call for; 50A/50C remain open
-  pending the recommended closure.
+  deviation from what was originally proposed.
+- **2026-09-14 — 50A, 50C closed**, neither reproduced. Regression guards
+  added anyway (`tests/e2e/convert-ward.spec.ts` for 50A —
+  `carryover-workflow.spec.ts` doesn't actually drive the Plan-to-Plan path
+  50A was about, so the guard landed in the file that does;
+  `tests/unit/form-contract.spec.js` for 50C, including a test that pins
+  *why* the reported "MAlvern" behavior is deliberate — the same guard
+  protects "McKinney" on a filed document). 50C's item 3 (repair vs. flag
+  vs. leave-as-typed for malformed input) is intentionally left open; it
+  governs only hypothetical future work, not this closure.
+- **2026-09-14 — 50D's Step 1 answered.** Saved an annotated PDF with one
+  highlight left selected (the exact on-screen state that renders the black
+  outline), then re-opened the saved bytes with pdf.js and read the actual
+  annotation object back: exactly one annotation, `subtype: "Highlight"`,
+  `color: [255, 255, 152]` (the correct yellow), a real appearance stream,
+  and **no second "outline" object of any kind**. The export is clean — the
+  black outline is confirmed to be a pure on-screen editing-session
+  decoration (pdf.js's UI convention for "this editor is currently
+  selected"), which by construction cannot be serialized into a PDF file at
+  all. Severity is downgraded accordingly: this is a preview-only visual
+  bug, not a court-document defect. 50D otherwise remains open pending the
+  UX decision in its own step 3.
 
 ---
 
-## 50A — Attorney Name Duplicated on Plan-to-Plan Carryover
+## 50A — Attorney Name Duplicated on Plan-to-Plan Carryover — **CLOSED 2026-09-14 (not reproduced)**
 
 **Category:** Data correctness. **Confidence:** Medium-High.
 
@@ -230,19 +249,26 @@ Name" fields. Plan Initial has the genuinely-two-field version of this:
 `attorney_name` (Attorney card) with the same value (`:112-113`), because
 that form really does collect it in two places.
 
-### Corrective plan — close, no production change
+### Corrective plan — CLOSED 2026-09-14, no production change
 
-1. **Close 50A.** No defect exists in the carryover mapping. Record the
-   finding rather than deleting the item, so the same walkthrough
-   observation doesn't get re-filed later.
-2. **Optional, cheap:** extend `tests/e2e/carryover-workflow.spec.ts` with
-   one assertion on the Initial Plan → Annual Plan path that
-   `D.attorney` equals the source's attorney name exactly (not a
-   concatenation). Costs a few lines, permanently pins the thing that was
-   suspected. No new spec file, so no `TEST-INDEX.md` change.
-3. **Do not** "fix" the two-field Plan Initial shape as part of this — that
-   is the form's real structure, not a bug, and changing it is a form-design
-   decision for Alan, not a defect repair.
+1. **Closed.** No defect exists in the carryover mapping. Recorded here
+   rather than deleted, so the same walkthrough observation doesn't get
+   re-filed later.
+2. **Regression guard added**, deliberately in a different file than
+   originally suggested: `tests/e2e/carryover-workflow.spec.ts` doesn't
+   actually drive this path (it exercises Guardian Inventory → Simplified/
+   Annual Accounting via the eligibility modal, a different function
+   entirely). The real path 50A was about — "Create New Form for Existing
+   Ward" from an Initial Guardianship Plan to an Annual Guardianship Plan —
+   is Convert Ward's Plan-to-Plan carryover, already covered by
+   `tests/e2e/convert-ward.spec.ts`. Added there: *"Initial Guardianship
+   Plan → Annual Guardianship Plan carries the attorney name exactly once,
+   never doubled"*, asserting `newWard.attorney` equals the source's
+   attorney name exactly via the real `convertExistingWard()` entry point.
+   No new spec file, so no `TEST-INDEX.md` change.
+3. **Not done, correctly:** the two-field Plan Initial shape (`attorneyName`
+   + `attorney_name` both written from the same source value) was left
+   alone — that is the form's real structure, not a bug.
 
 **Cross-cutting (`AGENTS.md` §8):** Data Model N/A — confirmed no stored
 duplication, so no `probate-guardian-data-model.csv` row is implicated.
@@ -412,7 +438,7 @@ existing render tail rather than introducing a new refresh mechanism.
 
 ---
 
-## 50C — City/State/Zip Normalization Regression Risk
+## 50C — City/State/Zip Normalization Regression Risk — **CLOSED 2026-09-14 (not reproduced)**
 
 **Category:** Data correctness / regression. **Confidence:** Medium.
 
@@ -528,31 +554,29 @@ reported literals are inputs the formatter has no rule for, not inputs a
 rule mishandles. Explanation (b) from the original write-up — a stale build,
 or a misremembered field — is the better fit.
 
-### Corrective plan — close, with tests and one decision
+### Corrective plan — CLOSED 2026-09-14, with tests; decision 3 still open
 
-1. **Close 50C as not-reproducing.** Say so plainly in the record; do not
-   force a fix onto a non-reproducing report.
-2. **Still add the regression cases** (the original Step 4's reasoning is
-   right, and is the one durable deliverable here). Extend
-   `tests/unit/form-contract.spec.js`, which already owns
-   `formatCityStateZip()` coverage, pinning **current** behaviour:
-   both literals pass through unchanged, `"st. petersburg, fl 33704"`
-   normalises correctly, and — the important one —
-   `"mckinney"`/`"McKinney"` are **not** flattened. That last case
-   documents *why* the interior-capital guard exists, so a future
-   well-meaning "fix" for `MAlvern` fails the suite instead of shipping.
+1. **Closed as not-reproducing.** No fix forced onto a non-reproducing
+   report.
+2. **Regression cases added** to `tests/unit/form-contract.spec.js`
+   (already owns `formatCityStateZip()` coverage): both reported literals
+   pinned unchanged (`"St.Petersburg,FL33704"`, `"MAlvern"`), plus a second
+   test pinning that an *already-mixed-case* name (`"McKinney, FL"`,
+   `"DeLand, FL 32720"`, `"O'Brien, FL"`) is never flattened — the guard
+   that would break if a future "fix" for `MAlvern` started title-casing
+   any word with an interior capital. Verified directly against the real
+   function before writing the assertions (`mckinney, fl` → `Mckinney, FL`,
+   not `mckinney, FL` — the all-lowercase branch is separate from, and
+   unrelated to, the interior-capital guard being pinned; noted in the
+   test's own comment so it isn't mistaken for the same mechanism later).
    No new spec file, so no `TEST-INDEX.md` change.
-3. **One decision for Alan, not to be made unilaterally:** should a
+3. **Still open — a real decision for Alan, not made here:** should a
    malformed combined entry like `"St.Petersburg,FL33704"` be *repaired*
-   silently, *flagged* to the filer, or *left as typed*?
-   - **Recommended: left as typed, and surfaced by validation if at all.**
-     Silent repair of address text on a court document is the riskier
-     direction, and the app's own convention (`AGENTS.md` §3's
-     non-destructive principle) favours not rewriting what a filer entered.
-   - If flagging is wanted, that is a readiness-panel item, not a formatter
-     change, and must respect the §4 parity invariant (every `auto`
-     readiness item maps 1-to-1 to an export validation error) — so it would
-     be `manual`/advisory, not a blocker.
+   silently, *flagged* to the filer, or *left as typed* (current, and
+   recommended, behavior)? This governs only *future* work (a repair or
+   flagging feature, should one ever be wanted) — it does not block closing
+   this finding, since nothing is currently broken. Left unanswered
+   deliberately; raise it separately if and when it becomes relevant.
 
 **Cross-cutting (`AGENTS.md` §8):** Data Model N/A. Test Coverage & Index:
 this is the whole deliverable — item 2 above. Legal/Compliance: the accuracy
@@ -614,10 +638,11 @@ translucent, plus whatever automated guard Step 3 lands on.
 
 ### Cross-cutting notes
 
-**Legal/Compliance:** annotations here are being made on documents destined
-for actual court filings or internal review of those filings — a highlight
-that obscures the underlying text in solid black rather than tinting it is
-a real functional defect for that use case, not just an aesthetic one.
+**Legal/Compliance — superseded, see the "Verified" section below.**
+Annotations here are being made on documents destined for actual court
+filings or internal review of those filings — a highlight that obscures
+the underlying text in solid black rather than tinting it is a real
+functional defect for that use case, not just an aesthetic one.
 
 ### Verified 2026-09-14 — CONFIRMED, but the black is not the highlight
 
@@ -663,18 +688,22 @@ words it is meant to mark. The walkthrough did not report this separately —
 it was hidden behind the black outline — but it is the same fix and the same
 functional concern this item's cross-cutting note raises.
 
+**Step 1 answered 2026-09-14 — the export is clean.** Saved an annotated
+PDF with one highlight deliberately left *selected* (the exact on-screen
+state that renders the black outline), then re-opened the saved bytes with
+pdf.js and read back the actual annotation object: exactly one annotation,
+`subtype: "Highlight"`, `color: [255, 255, 152]` (the correct yellow), a
+real appearance stream, and no second "outline" object of any kind. The
+black outline cannot reach the file by construction — it is pdf.js's UI
+convention for "this editor is currently selected," and a PDF has no
+concept of editor-selection state to serialize. **Severity is downgraded**:
+this is a preview-only visual bug during editing, not a court-document
+defect — the Legal/Compliance note below is corrected accordingly.
+
 ### Corrective plan
 
-1. **Answer this first — it sets the severity.** Determine whether the
-   defect reaches the **saved** annotated PDF or only the on-screen preview.
-   The saved bytes come from pdf.js's own serialisation
-   (`session.saveAnnotatedBytes()` → `saveBtn` handler,
-   `src/core/pdf/pdf-preview.js:160-166`), **not** from the DOM, so page CSS
-   very likely does not affect it — meaning the exported document probably
-   has a correct highlight and no outline at all. Verify by saving an
-   annotated PDF with one highlight and opening it. If the export is clean,
-   this is an alarming-looking preview bug, **not** a court-document defect,
-   and the Legal/Compliance framing above should be corrected in the record.
+1. ~~**Answer this first — it sets the severity.**~~ **Answered above:**
+   export is clean, severity downgraded to preview-only.
 2. **Fix: complete the port.** Add the missing highlight rules to
    `src/styles/print.css`, immediately after the existing
    `.annotationEditorLayer .highlightEditor` rule (`:112`). Take the exact
@@ -703,11 +732,10 @@ functional concern this item's cross-cutting note raises.
 
 **Cross-cutting (`AGENTS.md` §8):** Data Model N/A — annotations are stored
 as opaque PDF bytes (`D.printAnnotations`), unaffected by page CSS. Legacy
-Data Migration N/A. Export/Import: **this is the open question in Step 1** —
-check the saved-PDF path explicitly rather than assuming CSS carries into
-it. Legal/Compliance: contingent entirely on Step 1; if the export is clean,
-downgrade this item's severity in the record rather than leaving the
-stronger claim standing.
+Data Migration N/A. Export/Import: **answered** — the saved-PDF path does
+not carry the defect; see the "Verified" section's Step-1 result. Legal/
+Compliance: **downgraded** — preview-only, not a court-document defect, per
+the same finding.
 
 ---
 
