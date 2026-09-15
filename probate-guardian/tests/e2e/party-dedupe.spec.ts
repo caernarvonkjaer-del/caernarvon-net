@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, acceptDynDialog, dismissDynDialog } from './support/target';
 
 // End-to-end proof for persistence-rewrite Milestone 7: the party
 // de-duplication screen (src/legacy-app.js's pagePartyManagement(), backed
@@ -64,8 +64,8 @@ test.describe('party de-duplication (Milestone 7)', () => {
     await expect(card).toBeVisible();
     await expect(card).toContainText('Same name only'); // phones differ -- not a strong match
 
-    page.once('dialog', (d) => d.accept());
     await card.locator(`[data-form-action="party-merge-keep"][data-keep-id="${partyIdA}"]`).click();
+    await acceptDynDialog(page);
 
     await expect(page.locator('#party-dedupe-queue')).toContainText('No likely duplicates found.');
 
@@ -126,12 +126,8 @@ test.describe('party de-duplication (Milestone 7)', () => {
     await expect(card).toBeVisible();
 
     // First attempt: cancel the merge. Verify the confirm dialog warned about conflicting counties.
-    let dialogMessageFirst = '';
-    page.once('dialog', (d) => {
-      dialogMessageFirst = d.message();
-      d.dismiss();
-    });
     await card.locator(`[data-form-action="party-merge-keep"][data-keep-id="${partyIdA}"]`).click();
+    const dialogMessageFirst = await dismissDynDialog(page);
 
     expect(dialogMessageFirst).toContain('Conflicting ward counties');
     expect(dialogMessageFirst).toContain('Orange');
@@ -140,12 +136,8 @@ test.describe('party de-duplication (Milestone 7)', () => {
     await expect(card).toBeVisible();
 
     // Second attempt: accept the merge.
-    let dialogMessageSecond = '';
-    page.once('dialog', (d) => {
-      dialogMessageSecond = d.message();
-      d.accept();
-    });
     await card.locator(`[data-form-action="party-merge-keep"][data-keep-id="${partyIdA}"]`).click();
+    const dialogMessageSecond = await acceptDynDialog(page);
 
     expect(dialogMessageSecond).toContain('Conflicting ward counties');
     await expect(page.locator('#party-dedupe-queue')).toContainText('No likely duplicates found.');
@@ -211,9 +203,8 @@ test.describe('party de-duplication (Milestone 7)', () => {
 
     const primaryButton = card.locator(`[data-form-action="party-merge-keep"][data-keep-id="${idA}"]`);
     await expect(primaryButton).toHaveText('This One is Primary');
-    let mergeDialog = '';
-    page.once('dialog', (d) => { mergeDialog = d.message(); d.accept(); });
     await primaryButton.click();
+    const mergeDialog = await acceptDynDialog(page);
     expect(mergeDialog).toContain('can be unmerged later');
     expect(mergeDialog).toContain('Email: robert@example.com'); // offered as a backfill onto the primary
 
@@ -229,9 +220,8 @@ test.describe('party de-duplication (Milestone 7)', () => {
     await unmergeBox(idB).check();
     const unmergeButton = page.locator('[data-form-action="party-unmerge-selected"]');
     await expect(unmergeButton).toHaveText('Unmerge Selected (1)');
-    let unmergeDialog = '';
-    page.once('dialog', (d) => { unmergeDialog = d.message(); d.accept(); });
     await unmergeButton.click();
+    const unmergeDialog = await acceptDynDialog(page);
     expect(unmergeDialog).toContain('"Robert Jones" (merged into "Alice Smith")');
 
     await expect(unmergeBox(idB)).toHaveCount(0);

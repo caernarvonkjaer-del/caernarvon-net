@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { chooseNoPassword, createWard, gotoApp, startNewCase } from './support/target';
+import { chooseNoPassword, createWard, gotoApp, startNewCase, dismissDynDialog } from './support/target';
 import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 const warningText = 'Probate Guardian is already open in another tab. Save or close that tab before continuing here.';
@@ -119,10 +119,8 @@ test('confirms before activating an update with unsaved work', { tag: '@origin-s
     (window as any).pgHasUnsavedChanges = () => true;
   });
 
-  page.once('dialog', async dialog => {
-    expect(dialog.message()).toContain('Save or export your work before reloading.');
-    await dialog.dismiss();
-  });
   await page.getByRole('button', { name: 'Reload now' }).click();
+  const confirmMessage = await dismissDynDialog(page);
+  expect(confirmMessage).toContain('Save or export your work before reloading.');
   await expect.poll(() => page.evaluate(() => (window as any).__swMessages.length)).toBe(0);
 });

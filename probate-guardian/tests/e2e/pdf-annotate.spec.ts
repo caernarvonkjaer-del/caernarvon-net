@@ -4,7 +4,7 @@ import {
   fillMinimalValidPlanSimplifiedWard, fillMinimalValidGuardianWard,
   fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard,
   fillMinimalValidPlanAnnualWard, fillMinimalValidPlanInitialWard,
-  fillMinimalValidPlanMinorWard,
+  fillMinimalValidPlanMinorWard, acceptDynDialog,
 } from './support/target';
 
 // Milestone 39-A spike: pdf.js AnnotationEditorLayer integration on Print
@@ -261,8 +261,8 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await noteBtn.click(); // off again
     await expect(pdfPage.locator('.freeTextEditor')).toHaveCount(2);
 
-    page.once('dialog', (d) => d.accept());
     await page.locator('[data-annotate-action="clear"]').click();
+    await acceptDynDialog(page);
     await expect(pdfPage.locator('.freeTextEditor')).toHaveCount(0);
 
     // Non-Goal #2: annotations never merge into any validated answer.

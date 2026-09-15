@@ -525,6 +525,25 @@ test.describe('routes', () => {
       await expect(main).not.toBeEmpty();
       await expect(main.locator('.summary-box').first()).toBeVisible();
       await expect(main.getByRole('heading', { level: 1 })).toContainText('Summary');
+
+      // Milestone 50G: addWard() above leaves the debounced autosave dirty,
+      // which writes to the shared pg-session-cache IndexedDB store. Left in
+      // place, the NEXT iteration's freshStartNoPassword() reload would hit
+      // checkSessionRestoreCacheAtLaunch()'s confirmModal() before its own
+      // #startup-choice-overlay ever shows -- a DOM dialog nobody interacts
+      // with just sits there, unlike a native confirm() (which a previous
+      // run's unlistened dialog would have had auto-dismissed by Playwright,
+      // clearing the cache as a side effect of declining, not of saving).
+      await page.evaluate(async () => {
+        await (window as any).flushPendingSave();
+        await (window as any).clearSessionRestoreCache();
+        // Confirmed live: without this, some later mount/render tick
+        // re-marks the app dirty and re-arms the debounced autosave, which
+        // can fire and re-populate the cache before the next reload's
+        // navigation actually unloads this page -- clearing alone isn't
+        // enough to prevent the offer from reappearing.
+        (window as any)._dirtySinceExport = false;
+      });
     }
 
     expect(errors).toEqual([]);

@@ -17,6 +17,7 @@ import {
 import { clearSessionRestoreCache } from './recovery-cache.js';
 import { getCaseFile, getTemplateCache } from '../state.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
+import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
 
 export const CASE_FILE_FORMAT_VERSION = 1;
 
@@ -363,11 +364,11 @@ export async function beginRecordingExport(message, wardId = null) {
 export async function exportCaseFileZip() {
   const caseFile = getCaseFile();
   if (!caseFile.wards || caseFile.wards.length === 0) {
-    alert('No wards to back up. Please add or open a ward first.');
+    await alertModal('No wards to back up. Please add or open a ward first.');
     return;
   }
   if (typeof window !== 'undefined' && typeof window.JSZip === 'undefined') {
-    alert('ZIP library failed to load — cannot export.');
+    await alertModal('ZIP library failed to load — cannot export.');
     return;
   }
   const count = caseFile.wards.length;
@@ -392,7 +393,7 @@ export async function exportCaseFileZip() {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('pg:backup-saved', { detail: { fileName: savedName, count } }));
     }
-    alert(`Backup complete: ${count} form(s) saved to ${savedName}`);
+    await alertModal(`Backup complete: ${count} form(s) saved to ${savedName}`);
   } catch (e) {
     if (rollback) rollback();
     if (e && e.name === 'AbortError') return;
@@ -400,7 +401,7 @@ export async function exportCaseFileZip() {
     if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
       window.auditLog('DATA_EXPORT', String((e && e.message) || e), false);
     }
-    alert('Export failed: ' + ((e && e.message) || e));
+    await alertModal('Export failed: ' + ((e && e.message) || e));
   }
 }
 
@@ -491,7 +492,7 @@ export async function validateWardBackupOverwrite(pickedHandle) {
   if (caseHandle && typeof pickedHandle.isSameEntry === 'function') {
     try {
       if ((await pickedHandle.isSameEntry(caseHandle)) && caseFile.wards && caseFile.wards.length > 1) {
-        return confirm(
+        return confirmModal(
           'Warning: You selected your main case file, which holds multiple wards. Overwriting it with just this one ward will replace the other wards on disk. Are you sure you want to overwrite?'
         );
       }
@@ -523,7 +524,7 @@ export async function saveBackupNow() {
       const perm = await handle.requestPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
         await writeCaseToHandle(handle, false);
-        alert('Backup saved.');
+        await alertModal('Backup saved.');
         return;
       }
     }
@@ -664,14 +665,14 @@ export async function importSavArchiveOrWard(file, options = {}) {
     if (typeof window !== 'undefined' && typeof window.validateImportFile === 'function') {
       const check = await window.validateImportFile(file, 'sav');
       if (!check.ok) {
-        alert(check.message);
+        await alertModal(check.message);
         return false;
       }
     }
     const securityMode = getSecurityMode();
     let cryptoKey = getCryptoKey();
     if (securityMode === 'encrypted' && !cryptoKey) {
-      alert('Please unlock the app before importing a data file.');
+      await alertModal('Please unlock the app before importing a data file.');
       return false;
     }
     const zip = await JSZip.loadAsync(file);
@@ -683,7 +684,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
     const currentSalt = await loadAppState('cryptoSalt');
     let key = cryptoKey;
     if (manifest.securityMode !== 'none' && manifest.salt !== currentSalt) {
-      const pw = prompt('This file came from a different installation.\nEnter the master password that was in use when it was exported:');
+      const pw = await promptModal('This file came from a different installation.\nEnter the master password that was in use when it was exported:');
       if (!pw) return false;
       key = await deriveKeyFromPassword(pw, manifest.salt);
     }
@@ -753,7 +754,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
         ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
         : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`
       : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
-    if (!confirm(promptText)) return false;
+    if (!(await confirmModal(promptText))) return false;
 
     // Milestone 38C: close any open editor BEFORE replacing ward data, using
     // the real unload path. unloadWard() flushes pending values, releases the
@@ -852,9 +853,9 @@ export async function importSavArchiveOrWard(file, options = {}) {
           })
         );
       }
-      alert(`Backup restored: ${imported.length} ward(s) loaded.`);
+      await alertModal(`Backup restored: ${imported.length} ward(s) loaded.`);
     } else {
-      alert(`Import complete: ${imported.length} form(s) loaded.`);
+      await alertModal(`Import complete: ${imported.length} form(s) loaded.`);
     }
     return true;
   } catch (e) {
@@ -862,7 +863,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
     if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
       window.auditLog('DATA_IMPORT', String((e && e.message) || e), false);
     }
-    alert((isBackupFlow ? 'Could not open backup file: ' : 'Import failed: ') + ((e && e.message) || e));
+    await alertModal((isBackupFlow ? 'Could not open backup file: ' : 'Import failed: ') + ((e && e.message) || e));
     return false;
   }
 }

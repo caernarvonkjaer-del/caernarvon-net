@@ -62,7 +62,7 @@ left silent.
 | 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap; the black was the *selection outline*, not the highlight. Export confirmed clean; downgraded to preview-only. | **Landed 2026-09-14** |
 | 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** No siblings shared the shape. | **Landed 2026-09-14** |
 | 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. | **Landed 2026-09-14** |
-| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Full sweep approved. | In progress |
+| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Full sweep approved and executed. | **Landed 2026-09-15** |
 | 50H — County & Active-Filing combobox interaction pattern | Accessibility | **Split.** County combobox had a real keyboard gap, now fixed. The "plain click" claim was an automation artifact. The Active Filing half was already fixed. | **Landed 2026-09-14** |
 | 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | **Root cause correct; framing too narrow.** Affects all four `SPECIAL_PAGES`, and the symptom is session-path dependent. | **Landed 2026-09-14** |
 
@@ -108,8 +108,8 @@ edits to one large classic-script file. The other items are file-isolated:
 3. ~~**50D**~~ — small (CSS only). **Landed 2026-09-14.**
 4. ~~**50E**, **50H**~~ — each needed a design decision, now made.
    **Landed 2026-09-14.**
-5. **50G** — scope decided (full sweep, including `alert()`/`prompt()`); in
-   progress.
+5. ~~**50G**~~ — scope decided (full sweep, including `alert()`/`prompt()`);
+   built and landed. **Landed 2026-09-15.**
 6. ~~**50A**, **50C**~~ — close with tests only, no production code change.
    **Closed 2026-09-14.**
 
@@ -156,6 +156,17 @@ edits to one large classic-script file. The other items are file-isolated:
   flagged) plus the optional `click` listener (decision: add it). 50G:
   scope decided as the full sweep (confirm + alert + prompt); execution
   below.
+- **2026-09-15 — 50G landed: full sweep, all 87 native-dialog sites.**
+  New module `src/core/ui/dialogs.js` (`confirmModal()`/`alertModal()`/
+  `promptModal()`) reuses the app's existing `.modal-overlay`/`.modal-box`
+  markup and `modal-events.js`'s generic Escape/focus-trap/a11y-observer
+  handling as-is — the actual mechanism turned out to be that generic
+  observer, not the `showModal`/`closeModal` pair this item's own
+  "Suspected area" guessed at. All 87 sites (17 `confirm()`, 68 `alert()`,
+  2 `prompt()`) across ~25 `src/` files converted; the four flagged
+  synchronous/inline-return call sites were each individually made `async`
+  with every caller checked, not redesigned wholesale. Full detail in the
+  item's own "EXECUTED" section below.
 
 ---
 
@@ -1095,7 +1106,7 @@ Flagging for Alan's priority call rather than asserting a legal conclusion.
 
 ---
 
-## 50G — Native `window.confirm()` Dialogs Break App-Modal Consistency
+## 50G — Native `window.confirm()` Dialogs Break App-Modal Consistency — **Landed 2026-09-15**
 
 **Category:** Consistency / robustness. **Confidence:** High — confirmed
 both by direct observation and by reading the relevant bundle.
@@ -1215,9 +1226,168 @@ cannot drop into unchanged:
 Those need restructuring, not replacing. This is why 50G cannot honestly be
 described as "a mechanical replacement of the dialog mechanism".
 
-### Corrective plan — do not start until the scope question is answered
+### Corrective plan — EXECUTED 2026-09-15, decision 1(c) taken (full sweep), decision 2 built as specified
 
-**Decision required from Alan before any work (`AGENTS.md` §2).**
+**Decision taken:** full scope, **(c) everything, including `prompt()`** —
+not the recommended narrower (a). All 87 sites converted: 17 `confirm()`,
+68 `alert()`, 2 `prompt()`.
+
+**Mechanism.** New file `src/core/ui/dialogs.js` exports
+`confirmModal(messageOrOptions)`, `alertModal(messageOrOptions)`, and
+`promptModal(messageOrOptions)`, each returning a `Promise` that resolves
+with exactly what its native counterpart would return (`true`/`false` for
+confirm, `undefined` for alert, the trimmed string or `null` for prompt —
+`Escape` behaves like Cancel for confirm/prompt). One divergence from the
+plan's guess: the actual reuse mechanism is not `showModal`/`closeModal` —
+those turned out not to be what the existing `#addWardModal`/
+`#simplifiedEligibilityModal` markup runs on. Each dialog builds a plain
+`div.modal-overlay > div.modal-box` and appends it to `document.body`;
+`modal-events.js`'s existing generic `MutationObserver` (`modalA11yObserver`)
+and generic `handleModalKeydown` pick it up automatically — Escape-to-close,
+Tab focus-trap, and `role="dialog"`/`aria-modal`/`aria-labelledby` all come
+free, with zero changes to `modal-events.js` itself. `legacy-app.js` (a
+classic, non-module script) uses the three functions via `window.*`
+(`dialogs.js` bridges them explicitly); every ES-module file imports them
+directly. Three new `window.*` bridge entries
+(`alertModal`/`confirmModal`/`promptModal`, all attributed to
+`src/core/ui/dialogs.js`) added to
+`tests/unit/fixtures/window-bridge-allowlist.json`;
+`window-bridge.d.ts` regenerated via `audit-window-bridge.mjs --declare`.
+
+**The four flagged synchronous/inline-return sites** (`removePlanGuardian`,
+the `simplified-accounting/index.js` loop `break`, the
+`annual-accounting/index.js` early `return`, and the two `case-file.js`
+branch-logic sites) were each individually made `async`, and every one of
+their own callers was traced and confirmed safe — either already using
+`await`, or genuinely fire-and-forget (a `switch` dispatch or a DOM event
+listener, where a delayed async resolution changes nothing observable).
+This held for the full sweep, not just those four: roughly 35 sites in
+`legacy-app.js` alone needed their enclosing function newly marked `async`,
+each checked the same way. No caller was found where a function silently
+becoming a `Promise` created a live bug — restructuring per-site, exactly
+as the plan called for, not a wholesale redesign.
+
+**50G-2 (the alert path) was folded into this same sweep**, not deferred as
+a separate toast-based UX redesign — decision 1(c) supersedes the
+alternative framing in decision 1's option (b) writeup below. Every
+`alert()` became `alertModal()`, kept as a blocking modal (matching
+`confirm()`'s treatment) rather than redesigned as a non-blocking toast;
+that redesign remains available as genuinely separate future UX work if
+wanted, but was not part of what was approved here.
+
+**50G-3 (the guard) was built, but as zero-tolerance, not an allow-list.**
+Milestone 42C's `window-bridge.spec.js` allow-list pattern fits a case where
+some `window.X =` sites are legitimate and must be enumerated; here the
+target is that **no** native-dialog call site should exist in `src/` at all,
+so a plain content scan is the right shape — no JSON fixture to maintain.
+New file `tests/unit/native-dialog-guard.spec.js` scans every `.js` file
+under `src/` (excluding `dialogs.js` itself, whose own doc comments
+legitimately name `confirm()`/`alert()`/`prompt()` to document the native
+contract each replacement matches) for `\b(?:window\.)?(?:alert|confirm|
+prompt)\(` and asserts zero matches. Confirmed passing against the fully
+converted tree. `TEST-INDEX.md` row added per `AGENTS.md` §7, verified
+against `test-index-guard.spec.js`.
+
+**Two DOM/stacking bugs found and fixed as a byproduct**, neither present
+in native `confirm()`/`alert()`/`prompt()` because those render outside the
+DOM entirely and are always topmost regardless of page CSS (two more
+byproduct findings — a test-code deadlock shape and a deeper
+session-restore-cache gap — follow below):
+
+- **Stacking.** `#startup-choice-overlay`/`#security-choice-overlay`/
+  `#unlock-overlay`/`#ward-locked-overlay` carry z-index 10000–10002;
+  `dialogs.js`'s dynamically-created overlays inherited only the generic
+  `.modal-overlay` z-index of 9999. A `confirmModal()`/`alertModal()`
+  firing while one of those screens was still open (e.g. the PWA
+  update-available confirm arriving before the startup screen is
+  dismissed, or a corrupt-file-open alert while the startup screen is
+  still up) rendered invisibly behind it and was unclickable — reproduced
+  live via a genuinely stalled `.click()`. Fixed with one new rule in
+  `src/styles/modals.css`: `.modal-overlay[id^="dyn-dialog-"]{z-index:10010;}`.
+- **Selector collision in the test helper.** `tests/e2e/support/target.ts`'s
+  `autoAcceptDynDialogs()`/`acceptDynDialog()`/etc. originally matched any
+  `.modal-overlay.show .modal-box` — which also matches the app's own real,
+  static overlays sharing those same classes. Scoped to
+  `.modal-overlay[id^="dyn-dialog-"].show .modal-box` (`dialogs.js`'s own
+  id prefix for every dialog it creates).
+
+**e2e test fallout was far larger than the cross-cutting note below
+predicted, and kept growing through three separate discovery passes** —
+targeted testing of files a grep found, a full 555-test suite run, and
+live debugging of two of that run's failures. The two files the
+cross-cutting note originally named turned out to be one right, one wrong
+in the opposite direction from what a full-suite run later proved:
+`party-dedupe.spec.ts` did need conversion for the reason expected;
+`convert-ward.spec.ts` had no `page.once('dialog', …)` pattern to convert,
+but the full-suite run found it failing anyway, for an unrelated reason (see
+below) — "needed no changes" was wrong, just not for the reason originally
+guessed. In total, 22 files under `tests/e2e/` were touched: 20 spec files
+plus `support/target.ts` (five new helpers —
+`readDynDialogMessage`/`acceptDynDialog`/`dismissDynDialog`/
+`escapeDynDialog`/`fillDynPrompt`, plus `autoAcceptDynDialogs()` for
+variable-count sequences) and `support/plan-fixture.ts` (shared by all four
+Plan-type mount specs). Three distinct native-dialog idioms had to be found
+and converted, not just the `page.once('dialog', …)`/`page.on('dialog', …)`
+pair this item originally anticipated: `page.waitForEvent('dialog')` (found
+only by tracing a live test hang) and direct
+`window.alert = () => {…}`/`window.confirm = () => {…}` stubbing (found the
+same way) both slipped past the original grep. A final sweep
+(`grep -rn "waitForEvent('dialog')\|\.once('dialog'\|\.on('dialog'"` plus a
+second pass for `\.alert\s*=\|\.confirm\s*=\|\.prompt\s*=`) confirms zero
+remain anywhere in `tests/e2e/`, aside from the one genuinely-still-native
+`beforeunload` listener in `recovery-cache.spec.ts` (browser-level, has no
+DOM-dialog equivalent).
+
+**A third native-dialog deadlock shape, found only by the full-suite run:**
+`convert-ward.spec.ts`'s three data-carry tests each called
+`await (window as any).convertExistingWard(srcId, targetType)` directly
+inside a single `page.evaluate()` and awaited the whole thing —
+`convertExistingWard()` always ends with a trailing "Converted…"
+`alertModal()`, so that `evaluate()` call could never resolve: nothing
+outside it exists yet to dismiss the dialog it's still waiting on. Same
+shape, same fix as the ones already documented elsewhere in this file
+(`plan-fixture.ts`'s blocked-export test, `dashboard-backup.spec.ts`'s
+`saveBackupNow` test): fire the call without awaiting it inside the
+`evaluate()`, stash the eventual result on `window`, dismiss the dialog from
+the test's own code, then read the result back.
+
+**A genuine pre-existing architectural gap, unrelated to this item, was
+exposed (not introduced) by the conversion, and turned out both larger and
+subtler than first found:** `exportCaseFileZip()`'s own
+`clearSessionRestoreCache()` call is gated on a truthy File System Access
+handle, which every e2e test target force-disables (`target.ts`'s own
+header comment) — so the download-fallback export path never actually
+clears the session-restore cache. This surfaced in six tests across four
+files, not the two originally found: `backup-restore-sav.spec.ts`'s
+cross-tab lock-contention test and `recovery-cache.spec.ts`'s "a successful
+.sav save clears the cache" test (both export first, then open a second
+context/reload), plus three `ward-lock.spec.ts` multi-tab tests and
+`routes.spec.ts`'s "all 9 form types" test (which reload the same page in a
+loop without ever exporting at all — a ward simply existing is enough to
+dirty the debounced autosave). All six previously passed by accident: the
+native `page.once('dialog', …)` listener each test registered (or, for the
+two that registered none at all, Playwright's default handling for an
+un-listened dialog) had already been spent on an earlier or unrelated
+dialog, so the *next* restore-offer confirm — never explicitly handled —
+got auto-declined by Playwright's own default, which cleared the cache as
+a side effect of declining, not of saving. A DOM dialog nobody interacts
+with has no such default and just sits open forever, hanging the test.
+
+Fixed in all six by explicitly calling `window.clearSessionRestoreCache()`
+at the point each test's flow would otherwise leave the cache dirty,
+reproducing what a real successful Save-As already does. **Clearing the
+cache alone was not sufficient**, confirmed by live debugging of
+`routes.spec.ts`'s test: some later render/mount tick re-marks the app
+dirty and re-arms the debounced autosave, which can re-populate the very
+cache entry just cleared before the next reload's navigation actually
+unloads the page — the "restore session?" dialog reappeared even
+immediately after an awaited clear. The reliable fix additionally resets
+`window._dirtySinceExport = false` right after the clear, so nothing left
+pending can re-trigger the write; applied everywhere the clear is, not just
+where it was needed to make routes.spec.ts pass.
+
+All prior numbered content below is kept as the historical record of what
+was proposed before the decision.
 
 1. **Scope.** Which of these three?
    - **(a) Confirms only — recommended.** The 17 `confirm()` sites are the
@@ -1260,14 +1430,23 @@ described as "a mechanical replacement of the dialog mechanism".
 **Sequencing note:** land 50G-3's guard **last**, not first — an allow-list
 seeded before the conversions would need editing on every commit of 50G-1.
 
-**Cross-cutting (`AGENTS.md` §8):** Data Model N/A. Test Coverage & Index:
-one new unit spec (50G-3) plus a `TEST-INDEX.md` row; existing e2e specs
-that dismiss native dialogs via `page.once('dialog', …)` — including
-`party-dedupe.spec.ts` and `convert-ward.spec.ts` — **will break** when
-their call sites convert, and updating them is part of 50G-1's cost, not a
-surprise to discover later. UI/UX Consistency: reuses the existing modal
-markup; the new piece is the awaitable wrapper, which should be named as
-shared infrastructure rather than a one-off.
+**Cross-cutting (`AGENTS.md` §8), as executed:** Data Model N/A — confirmed,
+no persisted shape touched anywhere in the sweep. Test Coverage & Index:
+one new unit spec (`native-dialog-guard.spec.js`, zero-tolerance rather than
+an allow-list) plus its `TEST-INDEX.md` row; 22 `tests/e2e/` files updated
+(see the EXECUTED narrative above for the full list, the three dialog
+idioms found beyond the one originally anticipated, and the two rounds of
+full-suite-run discoveries beyond the files a grep alone could find).
+UI/UX Consistency: reuses the existing modal markup and `modal-events.js`'s
+generic a11y/focus-trap observer as-is; the new piece is the awaitable
+wrapper in `src/core/ui/dialogs.js`, named as shared infrastructure. Three
+real, previously-latent bugs found and fixed along the way: a z-index
+stacking gap (dyn dialogs could render behind an already-open startup/
+security screen), a deadlock shape in test code that awaits a native-dialog-
+triggering call inside a single `evaluate()` (three distinct sites, same
+fix each time), and a pre-existing session-restore-cache clearing gap
+exposed by six e2e tests that had been passing for the wrong reason — all
+detailed above.
 
 ---
 

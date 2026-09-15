@@ -506,10 +506,14 @@ export async function crossCheckNavAndSummaryStatus(
 // to make one. Shared by save-open-sav's case-file-roundtrip and
 // dashboard-backup specs.
 export async function exportAndCapture(page: Page): Promise<string> {
+  // Milestone 50G: exportGuardianDataZip() (an alias for exportCaseFileZip())
+  // triggers the download synchronously, then shows a trailing "Backup
+  // complete" alertModal() once saving finishes -- awaited in that order,
+  // same as captureDownload()'s own reasoning in backup-restore-sav.spec.ts.
   const downloadPromise = page.waitForEvent('download');
-  const dialogPromise = page.waitForEvent('dialog').then((d) => d.accept());
   await page.evaluate(() => { void (window as any).exportGuardianDataZip(); });
-  const [download] = await Promise.all([downloadPromise, dialogPromise]);
+  const download = await downloadPromise;
+  await acceptDynDialog(page);
   const savePath = path.join(os.tmpdir(), `pg-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sav`);
   await download.saveAs(savePath);
   for (let i = 0; i < 50; i++) {
@@ -574,4 +578,125 @@ export async function extractFormContentSnapshot(page: Page, containerSelector =
       .join('\n');
     return `${text}\n---CONTROL VALUES---\n${values}`;
   }, containerSelector);
+}
+
+// Milestone 50G. confirm()/alert()/prompt() were replaced app-wide with
+// confirmModal()/alertModal()/promptModal() (src/core/ui/dialogs.js) --
+// awaitable dialogs built on the app's own .modal-overlay/.modal-box, not
+// Playwright's native `dialog` event. These four replace the
+// page.once('dialog', ...) / page.on('dialog', ...) idiom used throughout
+// this suite before that milestone.
+//
+// The control-flow shape changed, not just the selector: a native dialog is
+// synchronous (registering the listener before the triggering click is what
+// caught it, since the browser blocked on it inside that same click), so
+// the old idiom always reads "arm the listener, then click, dialog handled
+// inline". The DOM dialog is asynchronous -- clicking the trigger returns
+// immediately, and the modal appears a tick later -- so the natural
+// Playwright shape is sequential instead: click the trigger, wait for
+// `.modal-overlay.show`, then act on it. These helpers are written for that
+// call-after shape; call them AFTER the action that opens the dialog, not
+// before.
+// Scoped to dialogs.js's own dyn-dialog-N ids (see buildShell() there), not
+// just '.modal-overlay.show .modal-box' -- that broader selector also
+// matches the app's real static overlays (e.g. #startup-choice-overlay),
+// which share the same modal classes and can legitimately be showing at the
+// same time a dyn dialog is expected. Confirmed live: without this scoping,
+// autoAcceptDynDialogs mistook a freshly-shown #startup-choice-overlay for a
+// prompt (it also contains a hidden file <input>) and hung trying to fill it.
+const DYN_DIALOG = '.modal-overlay[id^="dyn-dialog-"].show .modal-box';
+
+/** Reads the currently-open dynamic dialog's message text without closing it. */
+export async function readDynDialogMessage(page: Page): Promise<string> {
+  const box = page.locator(DYN_DIALOG);
+  await box.waitFor();
+  return (await box.locator('.modal-box-intro').textContent()) ?? '';
+}
+
+/** Waits for a confirmModal()/alertModal() dialog and clicks its affirmative button (Confirm or OK), returning its message. */
+export async function acceptDynDialog(page: Page): Promise<string> {
+  const box = page.locator(DYN_DIALOG);
+  await box.waitFor();
+  const message = (await box.locator('.modal-box-intro').textContent()) ?? '';
+  await box.locator('[data-dyn-action="confirm"], [data-dyn-action="ok"]').click();
+  return message;
+}
+
+/** Waits for a confirmModal() dialog and clicks Cancel, returning its message. */
+export async function dismissDynDialog(page: Page): Promise<string> {
+  const box = page.locator(DYN_DIALOG);
+  await box.waitFor();
+  const message = (await box.locator('.modal-box-intro').textContent()) ?? '';
+  await box.locator('[data-dyn-action="cancel"]').click();
+  return message;
+}
+
+/** Waits for a confirmModal()/alertModal() dialog and dismisses it via Escape (matches native Escape-cancels semantics), returning its message. */
+export async function escapeDynDialog(page: Page): Promise<string> {
+  const box = page.locator(DYN_DIALOG);
+  await box.waitFor();
+  const message = (await box.locator('.modal-box-intro').textContent()) ?? '';
+  await page.keyboard.press('Escape');
+  return message;
+}
+
+/** Waits for a promptModal() dialog, fills its input, and clicks OK. Pass value=null to click Cancel instead (matches native prompt()'s null-on-cancel). */
+export async function fillDynPrompt(page: Page, value: string | null): Promise<void> {
+  const box = page.locator(DYN_DIALOG);
+  await box.waitFor();
+  if (value === null) {
+    await box.locator('[data-dyn-action="cancel"]').click();
+    return;
+  }
+  await box.locator('input').fill(value);
+  await box.locator('[data-dyn-action="ok"]').click();
+}
+
+/**
+ * The `page.on('dialog', ...)` replacement: auto-accepts every dynamic
+ * dialog that appears until `.stop()` is called, for flows where an
+ * unknown or variable number of confirm/alert/prompt dialogs fire in
+ * sequence (e.g. a restore flow that confirms, then prompts for a
+ * password, then alerts on completion). Polls for `.modal-overlay.show`
+ * rather than listening for a browser event, since these dialogs are
+ * plain DOM, not the native `dialog` event. `promptValue` fills any
+ * promptModal() encountered; a promptModal with no `promptValue` given is
+ * cancelled (matching native prompt()'s behavior when nothing can answer
+ * it). `messages` records each dialog's text as it's accepted, in order.
+ * Always call `.stop()` when the flow is done, ideally in a `finally` --
+ * an unstopped watcher keeps polling for the rest of the test.
+ *
+ * Real gotcha, confirmed live, not hypothetical: this poll loop shares the
+ * one page/CDP session with everything else the test does on that page, so
+ * it can be **starved for many seconds** by uninterrupted foreground
+ * activity (evaluate/waitForFunction calls back-to-back) running at the
+ * same time -- it is not a true background thread. If a test does other
+ * meaningful work on the page while a dialog might still be open or about
+ * to appear (switching wards, more evaluates, ...), insert
+ * `await expect.poll(() => watcher.messages.length).toBe(N)` (the exact
+ * count for that step) or, if the count can genuinely vary, `await
+ * expect.poll(() => page.locator('.modal-overlay.show').count()).toBe(0)`
+ * right after triggering that step and BEFORE the next piece of foreground
+ * work -- `expect.poll()`'s own repeated re-checks are what give the
+ * watcher's loop a turn to run; without one, a fast sequence of foreground
+ * calls can outrun it for the rest of the test.
+ */
+export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?: string } = {}): { stop: () => void; messages: string[] } {
+  let stopped = false;
+  const messages: string[] = [];
+  const loop = (async () => {
+    while (!stopped) {
+      const box = page.locator(DYN_DIALOG);
+      const appeared = await box.waitFor({ timeout: 200 }).then(() => true).catch(() => false);
+      if (!appeared || stopped) continue;
+      const text = (await box.locator('.modal-box-intro').textContent().catch(() => '')) ?? '';
+      if (await box.locator('input').count() > 0) {
+        await fillDynPrompt(page, promptValue ?? null).catch(() => {});
+      } else {
+        await box.locator('[data-dyn-action="confirm"], [data-dyn-action="ok"]').click().catch(() => {});
+      }
+      messages.push(text);
+    }
+  })();
+  return { stop: () => { stopped = true; return loop; }, messages };
 }

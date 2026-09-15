@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   gotoApp, startNewCase, chooseNoPassword, chooseEncrypted,
   createWard, fillMinimalValidGuardianWard, exportAndCapture,
+  autoAcceptDynDialogs, acceptDynDialog,
 } from './support/target';
 
 // Milestone 33, Phase 2.4 -- Migration Sequence step 3. The persistence
@@ -78,17 +79,14 @@ test.describe('Persistence and recovery contract', () => {
       expect(draft?.rawValue).toBe('02/14/26');
 
       await reopenPage.evaluate(() => (window as any).navigate('/print'));
-      // dialog must be registered before the trigger, not after -- otherwise
-      // this races the dialog handler rather than waiting on it deterministically.
-      const dialogPromise = reopenPage.waitForEvent('dialog');
-      const triggerPromise = reopenPage.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+      // Milestone 50G: the export-blocked alert is now an awaitable
+      // alertModal() DOM dialog, not a blocking native one -- trigger first,
+      // then wait for it, rather than pre-arming a listener.
+      await reopenPage.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
         button.disabled = false;
         button.click();
       });
-      const dialog = await dialogPromise;
-      const alertMessage = dialog.message();
-      await dialog.accept();
-      await triggerPromise;
+      const alertMessage = await acceptDynDialog(reopenPage);
       expect(alertMessage).toContain('Cannot export — 1 required field missing');
     } finally {
       await reopenContext.close();
@@ -128,32 +126,26 @@ test.describe('Persistence and recovery contract', () => {
     await createWard(page, 'Encrypted Recovery Ward');
     await forceCacheWrite(page);
 
-    // A single persistent handler, not two .once() calls -- Node's
-    // EventEmitter fires every registered 'dialog' listener on each event,
-    // so two queued .once() handlers would both fire on the FIRST dialog
-    // rather than one per dialog. Distinguish by type instead, same idiom
-    // recovery-cache.spec.ts's own "declining the offer" test already uses.
-    // Three dialogs fire on the failed attempt: confirm() (restore offer),
-    // prompt() (password), then alert() (the wrong-password error) -- an
-    // unhandled alert blocks the page, so it must be accepted too.
-    page.on('dialog', (d) => {
-      if (d.type() === 'confirm') d.accept(); // "unsaved work" restore-offer
-      else if (d.type() === 'prompt') d.accept('wrong-password');
-      else d.accept(); // the wrong-password alert()
-    });
+    // A single watcher per attempt, not two -- its promptValue is fixed for
+    // its whole lifetime, so the wrong-password attempt and the real one
+    // below each need their own, stopped before the next is armed. Three
+    // dialogs fire on the failed attempt: the "unsaved work" restore-offer
+    // confirmModal(), the password promptModal(), then the wrong-password
+    // alertModal() -- left open, that alert would block the page like its
+    // native ancestor did, so it must be accepted too.
+    let dialogs = autoAcceptDynDialogs(page, { promptValue: 'wrong-password' });
     await gotoApp(page);
     await expect(page.locator('#startup-choice-overlay')).toHaveClass(/show/); // failed restore falls through
+    await expect.poll(() => dialogs.messages.length).toBe(3);
+    await dialogs.stop();
 
     // Cache left in place -- the offer repeats on the next launch.
-    page.removeAllListeners('dialog');
-    page.on('dialog', (d) => {
-      if (d.type() === 'confirm') d.accept();
-      else if (d.type() === 'prompt') d.accept(password);
-      else d.accept(); // the success alert()
-    });
+    dialogs = autoAcceptDynDialogs(page, { promptValue: password });
     await gotoApp(page);
     await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
     await expect(page.locator('#ward-selector')).toHaveValue('');
+    await expect.poll(() => dialogs.messages.length).toBe(3);
+    await dialogs.stop();
     await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
     await expect(page.locator('#ward-selector')).toHaveValue('Encrypted Recovery Ward');
   });

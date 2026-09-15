@@ -38,6 +38,7 @@ interface Window {
   addToRecentlyOpened: any;
   addWard: any;
   addWitness: any;
+  alertModal: any;
   announceStatus: any;
   annualReconcileState: any;
   applyAccountingFilingType: any;
@@ -82,6 +83,7 @@ interface Window {
   computeSectionStatus: any;
   confirmDeleteWard: any;
   confirmDeleteWardYear: any;
+  confirmModal: any;
   confirmStartNewYear: any;
   convertSourceItems: any;
   convertTargetsFor: any;
@@ -309,6 +311,7 @@ interface Window {
   PLAN_RIGHTS: any;
   prepareFilingOutput: any;
   printCurrentFilingPdf: any;
+  promptModal: any;
   pruneBlankCards: any;
   pvSelect: any;
   pvStep: any;

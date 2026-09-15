@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog } from './support/target';
 import type { ValidatorIssue } from './support/window-api';
 
 // Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
@@ -230,13 +230,12 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
       expect(expectedCount).toBeGreaterThan(0);
 
       // Same ordering constraint as plan-fixture.ts's blocked-export test:
-      // the trigger's own promise won't settle until the alert it raises is
-      // dismissed, so it must be started (not awaited) before the dialog wait.
-      const dialogPromise = page.waitForEvent('dialog');
+      // some triggerBlockedExport configs call the async doSavePdf*
+      // function directly via page.evaluate(), whose returned promise won't
+      // settle until its internal `await alertModal(...)` resolves -- start
+      // the trigger, then wait for and accept the dialog, then await it.
       const triggerPromise = triggerBlockedExport(page);
-      const dialog = await dialogPromise;
-      const alertMessage = dialog.message();
-      await dialog.accept();
+      const alertMessage = await acceptDynDialog(page);
       await triggerPromise;
 
       expect(alertMessage).toContain(`${expectedCount} required field`);
@@ -501,15 +500,11 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     const expectedCount = Number(match![1]);
     expect(expectedCount).toBeGreaterThan(0);
 
-    const dialogPromise = page.waitForEvent('dialog');
-    const triggerPromise = page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    const dialog = await dialogPromise;
-    const alertMessage = dialog.message();
-    await dialog.accept();
-    await triggerPromise;
+    const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain(`${expectedCount} required field`);
   });

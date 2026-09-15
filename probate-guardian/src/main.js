@@ -1,5 +1,6 @@
 // Pure ESM application bootstrap and orchestration entry point.
 import './core/state.js';
+import './core/ui/dialogs.js';
 import './core/party-resolver.js';
 import './core/case-resolver.js';
 import './core/feature-bridge.js';

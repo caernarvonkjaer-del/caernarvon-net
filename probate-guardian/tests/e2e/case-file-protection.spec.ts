@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/target';
+import { gotoApp, startNewCase, chooseNoPassword, createWard, acceptDynDialog, dismissDynDialog } from './support/target';
 
 // The following tests cover the unified single-case-file model that
 // replaced the old per-ward-file / multi-ward-archive split. Several tests
@@ -107,7 +107,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       await createWard(page, 'Ward First');
       await createWard(page, 'Ward Second');
 
-      const testResult = await page.evaluate(async () => {
+      await page.evaluate(async () => {
         let writeCallCount = 0;
         let writtenBytes = 0;
         const { blob: multiWardBlob } = await (window as any).buildCaseFileBlob();
@@ -131,28 +131,32 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
         // Mock showSaveFilePicker to return the same caseHandle (as if user picked it in the file dialog)
         (window as any).showSaveFilePicker = async () => caseHandle;
 
-        let confirmCalled = false;
-        (window as any).confirm = () => {
-          confirmCalled = true;
-          return false; // user rejects overwriting the multi-ward case file
-        };
-
         const activeWard = (window as any).caseFile.wards[0];
         const singleWardBlob = await (window as any).buildSingleWardExportBlob(activeWard.wardId);
 
-        let caughtErrorName = null;
-        try {
-          await (window as any).saveBlobAs(singleWardBlob, 'test.sav', (window as any).validateWardBackupOverwrite);
-        } catch (e: any) {
-          caughtErrorName = e && e.name;
-        }
-
-        const caseStillArmed = !!(await (window as any).loadCaseFileHandle());
-
-        return { confirmCalled, caughtErrorName, writeCallCount, writtenBytes, caseStillArmed };
+        // Milestone 50G: validateWardBackupOverwrite() now shows a real
+        // confirmModal() DOM dialog instead of calling window.confirm()
+        // synchronously -- that promise only resolves once the dialog is
+        // dismissed from outside this evaluate() call, so fire saveBlobAs()
+        // without awaiting it here and stash the outcome on window for the
+        // test to read back after cancelling the dialog.
+        (window as any).__testPromise = (async () => {
+          let caughtErrorName = null;
+          try {
+            await (window as any).saveBlobAs(singleWardBlob, 'test.sav', (window as any).validateWardBackupOverwrite);
+          } catch (e: any) {
+            caughtErrorName = e && e.name;
+          }
+          const caseStillArmed = !!(await (window as any).loadCaseFileHandle());
+          return { caughtErrorName, writeCallCount, writtenBytes, caseStillArmed };
+        })();
       });
 
-      expect(testResult.confirmCalled).toBe(true);
+      // User rejects overwriting the multi-ward case file.
+      const confirmMessage = await dismissDynDialog(page);
+      const testResult = await page.evaluate(() => (window as any).__testPromise);
+
+      expect(confirmMessage).toBeTruthy();
       expect(testResult.caughtErrorName).toBe('AbortError');
       expect(testResult.writeCallCount).toBe(0);
       expect(testResult.writtenBytes).toBe(0);
@@ -190,13 +194,6 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
 
         await (window as any).rememberCaseFileHandle(caseHandle);
         (window as any).showSaveFilePicker = async () => caseHandle;
-
-        (window as any).__confirmCalled = false;
-        (window as any).confirm = () => {
-          (window as any).__confirmCalled = true;
-          return false; // reject overwrite
-        };
-        (window as any).alert = () => {};
       });
 
       await page.evaluate(() => (window as any).navigate('/dashboard'));
@@ -214,7 +211,10 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       await page.evaluate(() => { (window as any).__writeCallCount = 0; });
       await backupBtn.click();
 
-      await expect.poll(() => page.evaluate(() => (window as any).__confirmCalled)).toBe(true);
+      // Milestone 50G: reject overwrite -- validateWardBackupOverwrite()'s
+      // confirmModal() replaces the old window.confirm() stub.
+      const confirmMessage = await dismissDynDialog(page);
+      expect(confirmMessage).toBeTruthy();
 
       const result = await page.evaluate(async () => {
         return {
@@ -239,7 +239,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       await chooseNoPassword(page);
       await createWard(page, 'Open Data File Test Ward');
 
-      const result = await page.evaluate(async () => {
+      await page.evaluate(async () => {
         const w = window as any;
         const { blob } = await w.buildCaseFileBlob();
         const openHandle = {
@@ -251,13 +251,21 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
           createWritable: async () => ({ write: async () => {}, close: async () => {} }),
         };
         w.showOpenFilePicker = async () => [openHandle];
-        w.confirm = () => true; // "replace the existing ward(s)?" prompt inside importSavArchiveOrWard()
 
-        await w.triggerImportZip();
-
-        const armed = await w.loadCaseFileHandle();
-        return { armedName: armed?.name };
+        // Milestone 50G: importSavArchiveOrWard() shows two real DOM
+        // dialogs now (a confirmModal() "replace the existing ward(s)?"
+        // prompt, then a trailing "Import complete" alertModal()) instead of
+        // calling window.confirm() synchronously -- fire without awaiting
+        // here so the test can accept both from outside this evaluate().
+        w.__testPromise = w.triggerImportZip().then(async () => {
+          const armed = await w.loadCaseFileHandle();
+          return { armedName: armed?.name };
+        });
       });
+
+      await acceptDynDialog(page); // "replace the existing ward(s)?"
+      await acceptDynDialog(page); // trailing "Import complete" alert
+      const result = await page.evaluate(() => (window as any).__testPromise);
 
       expect(result.armedName).toBe('opened-case.sav');
     } finally {

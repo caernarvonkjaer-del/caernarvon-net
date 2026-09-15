@@ -16,6 +16,7 @@ import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
+import { alertModal } from '../../core/ui/dialogs.js';
 
 function buildModelForPreview(D){
   return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -92,7 +93,7 @@ export async function doSavePdf(){
   const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
-    alert(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
+    await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
     return;
   }
   const ward=(window.D.wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
@@ -103,10 +104,10 @@ export async function doSavePdf(){
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateCourtFormPdf(model);
-    saveFinalizedPdf(await finalizeCourtFormPdf(doc), filename);
+    await saveFinalizedPdf(await finalizeCourtFormPdf(doc), filename);
   }catch(e){
     console.error('PDF export failed',e);
-    alert('PDF export failed: '+e.message);
+    await alertModal('PDF export failed: '+e.message);
   }
 }
 

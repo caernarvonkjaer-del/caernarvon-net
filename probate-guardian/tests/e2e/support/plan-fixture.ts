@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus } from './target';
+import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus, acceptDynDialog } from './target';
 
 // Shared contract for the four plan-mount specs (plan-annual, plan-initial,
 // plan-minor, plan-simplified). Each spec's own file keeps only its feature
@@ -53,16 +53,16 @@ export function registerPlanMountTests(config: PlanMountConfig) {
       await makeFiling(page, `Incomplete ${featureName} Ward`);
       await page.evaluate(() => (window as any).navigate('/print'));
 
-      // triggerBlockedExport()'s own promise (an evaluate() or locator
-      // action) will not settle until the alert it triggers is dismissed --
-      // it must be started, not awaited, before waiting for the dialog, or
-      // this deadlocks: the trigger waits on the dialog, and Promise.all
-      // would wait on the trigger.
-      const dialogPromise = page.waitForEvent('dialog');
+      // Milestone 50G: the export-blocked alert is now an awaitable
+      // alertModal() DOM dialog -- but some triggerBlockedExport configs
+      // call the async doSavePdf* function directly via page.evaluate(),
+      // whose returned promise does not settle until that function's own
+      // internal `await alertModal(...)` resolves. Start the trigger without
+      // awaiting it yet (same reasoning the old dialogPromise/triggerPromise
+      // pair used for native dialogs), wait for the dialog to actually
+      // appear and accept it, then await the trigger to confirm it finished.
       const triggerPromise = triggerBlockedExport(page);
-      const dialog = await dialogPromise;
-      const alertMessage = dialog.message();
-      await dialog.accept();
+      const alertMessage = await acceptDynDialog(page);
       await triggerPromise;
 
       expect(alertMessage).toContain('Cannot export');

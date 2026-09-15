@@ -27,6 +27,7 @@ import { announceStatus } from '../status/live-region.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
+import { alertModal, confirmModal } from '../ui/dialogs.js';
 
 // Milestone 39-A: base64 round-trip for a persisted annotated PDF
 // (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
@@ -152,16 +153,16 @@ function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
     setActiveTool(highlightBtn.getAttribute('aria-pressed') === 'true' ? NONE : HIGHLIGHT);
   });
   undoBtn.addEventListener('click', () => session.undo());
-  clearBtn.addEventListener('click', () => {
+  clearBtn.addEventListener('click', async () => {
     if (session.isEmpty()) return;
-    if (!window.confirm('Remove all annotations from this preview?')) return;
+    if (!(await confirmModal('Remove all annotations from this preview?'))) return;
     session.clearAll();
   });
   saveBtn.addEventListener('click', async () => {
     try {
       const bytes = await session.saveAnnotatedBytes();
       const ward = (D.wardName || 'Preview').replace(/[^a-z0-9]/gi, '_');
-      saveFinalizedPdf(bytes, `${ward}_Annotated.pdf`);
+      await saveFinalizedPdf(bytes, `${ward}_Annotated.pdf`);
       // Persisted per 39-A's "Persistence design": the filing's own
       // regenerated (unannotated) content fingerprint at capture time, not
       // the annotated bytes' own content -- drift is measured against the
@@ -435,9 +436,9 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     // panel once that fallback was gone.
     container.innerHTML = blockedPanelHTML(authorization.issues, D.inventoryType);
     container.querySelector('[data-preview-action="override"]')
-      ?.addEventListener('click', () => {
+      ?.addEventListener('click', async () => {
         if (authorization.status === 'blocked') return;
-        if (!window.confirm('Requirements remain outstanding. Continue with ordinary preview and output?')) return;
+        if (!(await confirmModal('Requirements remain outstanding. Continue with ordinary preview and output?'))) return;
         if (acknowledgeOutstandingRequirements(D, baseIssues)) {
           document.querySelectorAll('[data-form-action*="save"], [data-simplified-action^="save"], [data-annual-action^="save"], [data-inventory-action^="save"]').forEach((control) => {
             // Format-capacity controls carry their own explicit explanation and
@@ -466,7 +467,7 @@ export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
       // The full list belongs on the Print Preview panel, which groups it and
       // can be read at leisure. An alert box holding fifty sentences cannot.
       const count = authorization.issues.length;
-      alert(`Cannot print: ${count} required item${count === 1 ? '' : 's'} still missing. Open Print Preview to see what they are.`);
+      await alertModal(`Cannot print: ${count} required item${count === 1 ? '' : 's'} still missing. Open Print Preview to see what they are.`);
       return;
     }
     const model = buildModel(D);
@@ -476,6 +477,6 @@ export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
     window.open(blobUrl, '_blank');
   } catch (e) {
     console.error('PDF print failed', e);
-    alert(`PDF print failed: ${e.message || e}`);
+    await alertModal(`PDF print failed: ${e.message || e}`);
   }
 }

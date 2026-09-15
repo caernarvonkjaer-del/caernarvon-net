@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, acceptDynDialog } from './support/target';
 import { skipEnvironmentLimitation } from './support/target-profile';
 
 // Milestone 33, Phase 2.2 -- Migration Sequence step 3. Organized by field
@@ -186,17 +186,11 @@ test.describe('Form entry contract', () => {
     await expect(gidInput).toHaveAttribute('aria-invalid', 'true');
 
     await page.evaluate(() => (window as any).navigate('/print'));
-    // dialog must be registered before the trigger, not after -- otherwise
-    // this races the dialog handler rather than waiting on it deterministically.
-    const dialogPromise = page.waitForEvent('dialog');
-    const triggerPromise = page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    const dialog = await dialogPromise;
-    const alertMessage = dialog.message();
-    await dialog.accept();
-    await triggerPromise;
+    const alertMessage = await acceptDynDialog(page);
     expect(alertMessage).toContain('Cannot export');
   });
 });

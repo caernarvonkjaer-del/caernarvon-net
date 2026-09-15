@@ -3,6 +3,7 @@ import { encryptJSON, decryptJSONWithKey, deriveAndVerifyKey, getSecurityMode, g
 import { loadAppState, saveAppState } from './launch-preferences.js';
 import { getCaseFile, setAppState } from '../state.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
+import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
 
 export const SESSION_CACHE_DB = 'pg-session-cache';
 export const SESSION_CACHE_STORE = 'snapshot';
@@ -126,7 +127,7 @@ export async function checkSessionRestoreCacheAtLaunch() {
     return false;
   }
   if (!cache || !Array.isArray(cache.wards) || !cache.wards.length) return false;
-  const proceed = confirm(
+  const proceed = await confirmModal(
     `This browser has unsaved work from a previous session (last changed ${formatRelativeTime(cache.savedAt)}) that was never saved to a .sav file — most likely because the tab was closed or crashed before a backup was made.\n\n` +
       'Click OK to restore that work now, or Cancel to discard it and start fresh.'
   );
@@ -137,7 +138,7 @@ export async function checkSessionRestoreCacheAtLaunch() {
   try {
     let key = null;
     if (cache.securityMode === 'encrypted') {
-      const pw = prompt('Enter the master password to restore this session:');
+      const pw = await promptModal('Enter the master password to restore this session:');
       if (!pw) return false; // leave cache in place
       key = await deriveAndVerifyKey(pw, { salt: cache.salt, verifier: cache.verifier, guardian: cache.guardian }, null);
     }
@@ -169,11 +170,11 @@ export async function checkSessionRestoreCacheAtLaunch() {
       if (typeof window.updateLastSavedIndicator === 'function') window.updateLastSavedIndicator();
       if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
     }
-    alert(`Restored ${restoredWards.length} form(s) from your last unsaved session. Please save a backup file now.`);
+    await alertModal(`Restored ${restoredWards.length} form(s) from your last unsaved session. Please save a backup file now.`);
     return true;
   } catch (e) {
     console.error('session restore failed', e);
-    alert('Could not restore the previous session (wrong password, or the cached data is corrupted). It has been left in place; you can try again next time the app opens.');
+    await alertModal('Could not restore the previous session (wrong password, or the cached data is corrupted). It has been left in place; you can try again next time the app opens.');
     return false;
   }
 }

@@ -1,6 +1,7 @@
 // Modal orchestration for converting an existing ward filing to another form type.
 import { getCaseFile } from '../state.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
+import { alertModal } from '../ui/dialogs.js';
 
 export { convertTargetsFor };
 
@@ -17,7 +18,7 @@ export function convertSourceItems() {
 export async function showConvertWardModal() {
   const caseFile = getCaseFile();
   if (!caseFile.wards || !caseFile.wards.length) {
-    alert(
+    await alertModal(
       "You don't have any existing forms yet to convert. Create a form first using one of the options above, then come back here to convert it later if needed."
     );
     return;

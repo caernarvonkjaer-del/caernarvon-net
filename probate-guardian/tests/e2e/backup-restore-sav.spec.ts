@@ -8,7 +8,9 @@ import {
   startNewCase,
   chooseNoPassword,
   chooseEncrypted,
-  createWard
+  createWard,
+  acceptDynDialog,
+  autoAcceptDynDialogs,
 } from './support/target';
 import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
@@ -33,11 +35,18 @@ function waitForBackupRestored(page: import('@playwright/test').Page) {
   }));
 }
 
+// Milestone 50G: exportCaseFileZip()/saveBackupNow() trigger the download
+// (synchronously, inside saveBlobAs()'s fallback <a> click -- the File
+// System Access API is force-disabled for every test target, see this
+// file's own header comment) and only afterwards show a trailing
+// "Backup complete"/"Backup saved" alertModal(), so the two are waited on
+// in that same order here rather than a single native `dialog` listener
+// armed before the trigger.
 async function captureDownload(page: import('@playwright/test').Page, trigger: () => Promise<void>) {
   const downloadPromise = page.waitForEvent('download');
-  page.once('dialog', (d) => d.accept());
   await trigger();
   const download = await downloadPromise;
+  await acceptDynDialog(page);
   const savePath = path.join(os.tmpdir(), `pg-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sav`);
   await download.saveAs(savePath);
   return { path: savePath, filename: download.suggestedFilename() };
@@ -155,14 +164,18 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await createWard(page, 'Temporary Ward');
 
       // Auto-accept confirm and alert dialogs
-      page.on('dialog', async (dialog) => {
-        await dialog.accept();
-      });
+      const dialogs = autoAcceptDynDialogs(page);
 
       // Trigger Open Backup (.sav) using the file input
       const restoredPromise = waitForBackupRestored(page);
       await page.setInputFiles('#backup-import-input', backupPath);
       await restoredPromise;
+      // pg:backup-restored fires before the trailing "Backup restored"
+      // alertModal(), so wait for that second dialog to actually be
+      // accepted too before stopping the watcher -- otherwise it can be
+      // left open, overlapping whatever the test does next.
+      await expect.poll(() => dialogs.messages.length).toBe(2);
+      dialogs.stop();
 
       // Verify wards are restored
       const wardCount = await page.evaluate(() => (window as any).caseFile.wards.length);
@@ -212,17 +225,15 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await chooseEncrypted(page, masterPassword);
       await createWard(page, 'Scratch Ward');
 
-      page.on('dialog', async (dialog) => {
-        if (dialog.type() === 'prompt') {
-          await dialog.accept(masterPassword);
-        } else {
-          await dialog.accept();
-        }
-      });
+      const dialogs = autoAcceptDynDialogs(page, { promptValue: masterPassword });
 
       const restoredPromise = waitForBackupRestored(page);
       await page.setInputFiles('#backup-import-input', backupPath);
       await restoredPromise;
+      // Three dialogs in this encrypted flow: the restore confirm, the
+      // master-password prompt, then the trailing "Backup restored" alert.
+      await expect.poll(() => dialogs.messages.length).toBe(3);
+      dialogs.stop();
 
       const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
       expect(wardNames).toContain('Secret Ward 1');
@@ -264,22 +275,19 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await chooseNoPassword(page);
       await createWard(page, 'Host Ward');
 
-      const dialogMessages: string[] = [];
-      page.on('dialog', async (dialog) => {
-        dialogMessages.push(dialog.message());
-        await dialog.accept();
-      });
+      const dialogs = autoAcceptDynDialogs(page);
 
       await page.setInputFiles('#backup-import-input', singleWardPath);
       // pg:backup-restored fires before the completion alert(), so waiting on
-      // it risks checking dialogMessages before the 2nd dialog is recorded --
+      // it risks checking dialogs.messages before the 2nd dialog is recorded --
       // poll the exact value under test instead.
-      await expect.poll(() => dialogMessages.length).toBe(2);
+      await expect.poll(() => dialogs.messages.length).toBe(2);
+      dialogs.stop();
 
       // One confirmation dialog, then the completion alert -- same flow as
       // restoring a many-ward backup, just with "1 ward(s)".
-      expect(dialogMessages[0]).toContain('Restore backup containing 1 ward(s)');
-      expect(dialogMessages[1]).toContain('Backup restored');
+      expect(dialogs.messages[0]).toContain('Restore backup containing 1 ward(s)');
+      expect(dialogs.messages[1]).toContain('Backup restored');
 
       // Both the pre-existing host ward and the merged one are present.
       const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
@@ -328,12 +336,22 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await startNewCase(page);
       await chooseNoPassword(page);
 
-      page.on('dialog', async (d) => { await d.accept(); });
+      // Stays armed for both restores this test drives further down. Its
+      // background poll loop competes for the same page/CDP session as this
+      // test's own foreground evaluates/waitForFunctions, so each restore's
+      // pair of dialogs (confirm, then a trailing alert once the whole
+      // import finishes) is explicitly waited out to completion via
+      // dialogs.messages before doing anything else with the page --
+      // otherwise the watcher can be starved indefinitely by the
+      // uninterrupted foreground activity right after it, exactly the
+      // failure this comment is here to prevent from silently reappearing.
+      const dialogs = autoAcceptDynDialogs(page);
 
       // First restore the backup to load the ward. Restore does not open it,
       // so reaching the data requires an explicit switch.
       await page.setInputFiles('#backup-import-input', backupPath);
       await page.waitForFunction(() => ((window as any).caseFile?.wards || []).length === 1, { timeout: 10_000 });
+      await expect.poll(() => dialogs.messages.length).toBe(2);
       expect(await page.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
 
       await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
@@ -358,12 +376,14 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
         () => Object.keys((window as any).D || {}).length === 0,
         { timeout: 10_000 }
       );
+      await expect.poll(() => dialogs.messages.length).toBe(4);
       expect(await page.evaluate(() => (window as any).D?.caseNumber)).toBeUndefined();
 
       // Opening it again yields the backup's data, not the discarded edit.
       await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
       const reboundCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
       expect(reboundCaseNum).toBe('CASE-SAVED-IN-BACKUP');
+      dialogs.stop();
     } finally {
       await context2.close();
     }
@@ -401,19 +421,42 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(tab1Locks).toContain(`pg-ward-${targetWardId}`);
 
-      // Now open Tab 2 in the same browser context (shares Web Locks API manager)
+      // Tab 1's ward creation autosaved a session-restore snapshot to their
+      // shared (same-origin) pg-session-cache IndexedDB database, since the
+      // File System Access API's real handle-based export (the one branch
+      // that clears it) is force-disabled for every test target -- left in
+      // place, Tab 2's own boot would find it and show a "restore previous
+      // session?" confirmModal() before it ever reaches the startup-choice
+      // screen startNewCase() expects, well before this test's own dialog
+      // watcher is armed for what it actually came here to test. A real
+      // successful Save-As clears this same cache (see exportCaseFileZip()),
+      // so this is exactly that cleanup, done explicitly since the fallback
+      // download path this suite exercises doesn't get to do it itself.
+      await tab1.evaluate(async () => {
+        await (window as any).clearSessionRestoreCache();
+        (window as any)._dirtySinceExport = false;
+      });
+
+      // Now open Tab 2 in the same browser context (shares that same
+      // IndexedDB, hence the cleanup above, and the Web Locks API manager
+      // this test is actually about).
       const tab2 = await context.newPage();
       await gotoApp(tab2);
       await startNewCase(tab2);
       await chooseNoPassword(tab2);
       // Tab 2 starts fresh with no existing wards
 
-      tab2.on('dialog', async (d) => { await d.accept(); });
+      const tab2Dialogs = autoAcceptDynDialogs(tab2);
 
       // Restore the backup in Tab 2. This loads the ward but opens nothing.
       await tab2.setInputFiles('#backup-import-input', backupPath);
       await tab2.waitForFunction(() => ((window as any).caseFile?.wards || []).length >= 1, { timeout: 10_000 });
       expect(await tab2.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
+      // Two dialogs (restore confirm, then the trailing completion alert)
+      // -- wait for both before proceeding, same reasoning as the other
+      // restore flows above.
+      await expect.poll(() => tab2Dialogs.messages.length).toBe(2);
+      tab2Dialogs.stop();
 
       // The user then chooses Edit, which is where contention now surfaces.
       await tab2.evaluate((id) => (window as any).switchWard(id), targetWardId);
@@ -488,10 +531,9 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await ensureSaveControlsOpen(page);
       let downloadFired = false;
       page.once('download', () => { downloadFired = true; });
-      let alertMessage = '';
-      page.once('dialog', (d) => { alertMessage = d.message(); d.accept(); });
       await backupAllBtn.click();
       await page.waitForFunction(() => (window as any).__mockHandleWriteCount === 1, { timeout: 5000 });
+      const alertMessage = await acceptDynDialog(page);
 
       expect(downloadFired).toBe(false);
       expect(alertMessage).toBe('Backup saved.');

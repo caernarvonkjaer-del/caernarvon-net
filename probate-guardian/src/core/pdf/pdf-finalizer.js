@@ -4,6 +4,7 @@ import {
   dataUrlToBytes,
   SUPPLEMENTAL_PDF_LIMITS,
 } from './supplemental-pdf.js';
+import { alertModal } from '../ui/dialogs.js';
 
 export async function finalizeCourtFormPdf(doc) {
   const sourcePages = doc.__pgNativePdfAttachments || [];
@@ -73,9 +74,9 @@ export async function finalizeCourtFormPdf(doc) {
   return await filing.save({ useObjectStreams: false });
 }
 
-export function saveFinalizedPdf(pdfBytes, filename) {
+export async function saveFinalizedPdf(pdfBytes, filename) {
   if (pdfBytes?.length > SUPPLEMENTAL_PDF_LIMITS.finalPacketWarningBytes) {
-    alert('The finalized PDF is large and may take extra time to download, open, or print.');
+    await alertModal('The finalized PDF is large and may take extra time to download, open, or print.');
   }
   const url = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
   const link = document.createElement('a');

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog } from './support/target';
 
 // Simplified Accounting is the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md) -- these specs go beyond routes.spec.ts's single
@@ -35,17 +35,11 @@ test.describe('simplified-accounting feature module', () => {
     await createSimplifiedWard(page, 'Incomplete Simplified Ward');
     await page.evaluate(() => (window as any).navigate('/print'));
 
-    // dialog must be registered before the trigger, not after -- otherwise
-    // this races the dialog handler rather than waiting on it deterministically.
-    const dialogPromise = page.waitForEvent('dialog');
-    const triggerPromise = page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    await page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    const dialog = await dialogPromise;
-    const alertMessage = dialog.message();
-    await dialog.accept();
-    await triggerPromise;
+    const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain('Cannot export');
   });

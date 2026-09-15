@@ -8,6 +8,7 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { confirmModal } from '../../core/ui/dialogs.js';
 // Milestone 41-3: only renderReportingPeriodFields() fits this filing type,
 // and it fits twice (the Cover page's "Accounting Period" pair and the Part
 // III Declaration's "Period" pair, each with its own label wording). The
@@ -72,7 +73,7 @@ function bindEvents(container) {
   eventControllers.set(container, controller);
   const options = { signal: controller.signal };
 
-  container.addEventListener('click', (event) => {
+  container.addEventListener('click', async (event) => {
     const actionElement = event.target instanceof Element ? event.target.closest('[data-simplified-action]') : null;
     if (!actionElement) return;
     const index = Number.parseInt(actionElement.dataset.index, 10);
@@ -85,7 +86,7 @@ function bindEvents(container) {
         break;
       }
       case 'remove-guardian': {
-        if (index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !window.confirm(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`)) break;
+        if (index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
         if (removeCollectionRow('guardians', index, window.D)) {
           autoSave();
           navigate('/p4');

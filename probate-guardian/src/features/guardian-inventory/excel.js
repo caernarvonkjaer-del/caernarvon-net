@@ -11,6 +11,7 @@ import { validateGuardian } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
+import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, saveData, navigate,
@@ -51,11 +52,11 @@ export async function doSaveExcel(){
     if (authorization.status === 'blocked') {
       const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
       if (capIssues.length) {
-        alert('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
+        await alertModal('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
           + capIssues.map(o => `• ${o.message}`).join('\n')
           + '\n\nSave as PDF instead — the PDF includes every entry.');
       } else {
-        alert(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
+        await alertModal(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
       }
     }
     renderPage('/print');
@@ -66,7 +67,7 @@ export async function doSaveExcel(){
   try{
     const inv=window.D;
     const templateB64=await ensureTemplate('guardian');
-    if(!templateB64){alert('Template not loaded. Please import the Excel template first.');return;}
+    if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
     const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
     const yesNo=v=>(v==='Yes'||v===true)?'Yes':((v==='No'||v===false)?'No':'');

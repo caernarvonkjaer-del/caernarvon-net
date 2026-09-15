@@ -1256,6 +1256,18 @@
     {
       "file": "src/main.js",
       "name": "navigate"
+    },
+    {
+      "file": "src/core/ui/dialogs.js",
+      "name": "alertModal"
+    },
+    {
+      "file": "src/core/ui/dialogs.js",
+      "name": "confirmModal"
+    },
+    {
+      "file": "src/core/ui/dialogs.js",
+      "name": "promptModal"
     }
   ]
 }

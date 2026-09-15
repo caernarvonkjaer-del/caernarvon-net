@@ -6,6 +6,7 @@ import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
+import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotals, guardianHasAnyData,
@@ -38,11 +39,11 @@ export async function doSaveExcel(){
     if (authorization.status === 'blocked') {
       const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
       if (capIssues.length) {
-        alert('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
+        await alertModal('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
           + capIssues.map(o => `• ${o.message}`).join('\n')
           + '\n\nSave as PDF instead — the PDF includes every entry.');
       } else {
-        alert(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
+        await alertModal(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
       }
     }
     renderPage('/print');
@@ -51,7 +52,7 @@ export async function doSaveExcel(){
   try{
     const inv=window.D;
     const templateB64=await ensureTemplate('simplified');
-    if(!templateB64){alert('Template not loaded. Please import the Excel template first.');return;}
+    if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
     const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
     const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
@@ -188,7 +189,7 @@ export async function doSaveExcel(){
     await saveWorkbookFile(workbook, `${ward2}_SimplifiedAccounting.xlsx`);
   }catch(err){
     console.error('Excel export failed:',err);
-    alert('Excel export failed: '+err.message);
+    await alertModal('Excel export failed: '+err.message);
   }
 }
 
@@ -289,7 +290,7 @@ export async function importExcel(input){
 
       // PARTS V, VI — Attorney and Certificate of Service
       if(p34){
-        if(!window.confirm('Replace the first three guardian slots with the values from this workbook? Any additional saved guardians will be kept.')) return;
+        if(!(await confirmModal('Replace the first three guardian slots with the values from this workbook? Any additional saved guardians will be kept.'))) return;
         const overflowRows=(window.D.guardians||[]).slice(3);
         const overflowPartyIds=(window.D.guardianPartyIds||[]).slice(3);
         window.D.guardians=[...guardianSlotsFromWorkbook(p34),...overflowRows];

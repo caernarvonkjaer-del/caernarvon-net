@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { gotoApp, startNewCase, chooseNoPassword, createWard, exportAndCapture } from './support/target';
+import { gotoApp, startNewCase, chooseNoPassword, createWard, exportAndCapture, acceptDynDialog } from './support/target';
 
 // The following tests cover the unified single-case-file model that
 // replaced the old per-ward-file / multi-ward-archive split. Several tests
@@ -197,8 +197,11 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
         w.commitCoverCounty(w.D, 'Orange');
       });
 
+      // Milestone 50G: saveBlobAs() called directly with no preWriteValidator
+      // shows no dialog at all in the test-forced fallback-download path
+      // (the FSA showSaveFilePicker branch it would otherwise validate is
+      // disabled for every test target) -- nothing to wait on here.
       const downloadPromise = page.waitForEvent('download');
-      page.once('dialog', (d) => d.accept());
       await page.evaluate(async () => {
         const w = (window as any);
         const wardId = w.caseFile.activeWardId;
@@ -302,30 +305,36 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await chooseNoPassword(page);
       await createWard(page, 'Fallback Ward');
 
-      const result = await page.evaluate(async () => {
+      const dirtyBefore = await page.evaluate(() => {
         // Disable showSaveFilePicker to simulate Firefox / Safari
         (window as any).showSaveFilePicker = undefined;
-
-        let alertMsg = '';
-        (window as any).alert = (msg: string) => { alertMsg = msg; };
-
         (window as any).markDirtySinceExport();
-        const dirtyBefore = (window as any).pgHasUnsavedChanges();
-
-        await (window as any).saveBackupNow();
-
-        const dirtyAfter = (window as any).pgHasUnsavedChanges();
-        // A plain download yields no reconnectable handle -- the fast-path
-        // Open screen on next launch should NOT be offered from this alone.
-        const caseOpenedBefore = await (window as any).hasOpenedCaseBefore();
-
-        return { dirtyBefore, dirtyAfter, caseOpenedBefore, alertMsg };
+        return (window as any).pgHasUnsavedChanges();
       });
 
-      expect(result.dirtyBefore).toBe(true);
+      // Milestone 50G: saveBackupNow() falls through to exportCaseFileZip(),
+      // whose trailing "Backup complete" alert is now an awaitable
+      // alertModal() -- that promise only resolves once the DOM dialog is
+      // dismissed, so calling saveBackupNow() from inside a single evaluate()
+      // and awaiting it there would deadlock (nothing outside that evaluate
+      // call could interact with the dialog to dismiss it). Start it, then
+      // dismiss the dialog from the test side, same as elsewhere in this file.
+      const downloadPromise = page.waitForEvent('download');
+      await page.evaluate(() => { void (window as any).saveBackupNow(); });
+      await downloadPromise;
+      const alertMsg = await acceptDynDialog(page);
+
+      const result = await page.evaluate(async () => ({
+        dirtyAfter: (window as any).pgHasUnsavedChanges(),
+        // A plain download yields no reconnectable handle -- the fast-path
+        // Open screen on next launch should NOT be offered from this alone.
+        caseOpenedBefore: await (window as any).hasOpenedCaseBefore(),
+      }));
+
+      expect(dirtyBefore).toBe(true);
       expect(result.dirtyAfter).toBe(false);
       expect(result.caseOpenedBefore).toBe(false);
-      expect(result.alertMsg).toContain('Backup complete');
+      expect(alertMsg).toContain('Backup complete');
     } finally {
       await context.close();
     }

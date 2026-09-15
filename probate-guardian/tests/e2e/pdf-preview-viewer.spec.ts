@@ -4,6 +4,7 @@ import {
   fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanAnnualWard,
   fillMinimalValidPlanMinorWard, fillMinimalValidPlanSimplifiedWard,
+  acceptDynDialog,
 } from './support/target';
 
 // Milestone 43E: this feature list previously had no Trust Accounting entry
@@ -136,17 +137,12 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
 
       // The override renders the draft and says so; it does not lift the gate.
       // Milestone 38D (b0321dd) made the override an affirmative act: it asks
-      // via window.confirm() first, and a dismissed dialog renders nothing.
-      // Playwright dismisses dialogs by default, which is exactly what left
-      // this test red for every filing type until Milestone 42B -- accept it,
-      // and assert it was asked, since the confirm IS the guarantee.
-      const confirmAsked = page.waitForEvent('dialog').then(async (dialog) => {
-        expect(dialog.type()).toBe('confirm');
-        expect(dialog.message()).toContain('Requirements remain outstanding');
-        await dialog.accept();
-      });
+      // via confirmModal() first (a native window.confirm() before Milestone
+      // 50G), and a dismissed dialog renders nothing -- accept it, and assert
+      // it was asked, since the confirm IS the guarantee.
       await blocked.locator('[data-preview-action="override"]').click();
-      await confirmAsked;
+      const confirmMessage = await acceptDynDialog(page);
+      expect(confirmMessage).toContain('Requirements remain outstanding');
       await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
       // 38D's replacement guarantee (AGENTS.md section 4): after an affirmative
       // override the output renders faithfully -- no draft watermark, which

@@ -8,6 +8,7 @@ import { mountSignaturePad } from './signature-pad.js';
 // Milestone 46B: reusable per-party stamps. See mountSavedStampAffordance()
 // below for why applying one copies bytes rather than storing a reference.
 import { partyForSignaturePath, getActiveSignatureImage, addSignatureImage } from '../party-resolver.js';
+import { confirmModal } from '../ui/dialogs.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -155,8 +156,8 @@ function mountSavedStampAffordance(mountEl, path, commitImage) {
   // this button out from under us.
   mountEl.parentNode.insertBefore(wrap, mountEl);
 
-  wrap.querySelector('[data-signature-action="use-saved-stamp"]').addEventListener('click', () => {
-    const ok = window.confirm('Apply your saved signature to this filing?');
+  wrap.querySelector('[data-signature-action="use-saved-stamp"]').addEventListener('click', async () => {
+    const ok = await confirmModal('Apply your saved signature to this filing?');
     if (!ok) return;
     commitImage(active.imageData);
   });

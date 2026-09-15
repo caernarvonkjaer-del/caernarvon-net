@@ -7,6 +7,7 @@ import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, 
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
 import { groupsForCounties, resourcesPanelHTML } from './resources.js';
+import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 
 const {
   esc, ic, navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
@@ -392,13 +393,13 @@ async function exportSingleWardZip(wardId) {
     const logFn = window.auditLog || auditLog;
     if (typeof logFn === 'function') logFn('DATA_EXPORT', `Exported single ward "${wardName}" to ward file`, true, wardId);
     if (window.finishSingleWardExport) window.finishSingleWardExport(handle, ward);
-    alert(`Backup saved for ${ward.wardName || 'this ward'}.`);
+    await alertModal(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     console.error('single ward export failed', e);
     const logFn = window.auditLog || auditLog;
     if (typeof logFn === 'function') logFn('DATA_EXPORT', String(e && e.message || e), false, wardId);
-    alert('Export failed: ' + (e && e.message || e));
+    await alertModal('Export failed: ' + (e && e.message || e));
   }
 }
 
@@ -462,7 +463,7 @@ async function updateDashboardWorkflow(wardId, field, value) {
       });
       if (unlinkedSiblings.length > 0) {
         const confirmMsg = `Also set this judge on ${unlinkedSiblings.length} other filing${unlinkedSiblings.length === 1 ? '' : 's'} for case "${caseNum}"?`;
-        if (confirm(confirmMsg)) {
+        if (await confirmModal(confirmMsg)) {
           for (const sibling of unlinkedSiblings) {
             const sibWf = normalizeDashboardWorkflow(sibling.dashboardWorkflow);
             if (workflow.assigneeName) sibWf.assigneeName = workflow.assigneeName;

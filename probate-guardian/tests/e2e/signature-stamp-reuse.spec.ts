@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanSimplifiedWard, acceptDynDialog, dismissDynDialog } from './support/target';
 
 // Milestone 46B: a party who signs repeatedly shouldn't redraw their
 // signature every time. Capturing a stamp appends it to that party's
@@ -78,11 +78,9 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
 
     // Every apply is confirmed -- a reusable mark must never be attached
     // silently to a document its owner never saw (46A's sensitivity rule).
-    page.once('dialog', (d) => {
-      expect(d.message()).toContain('Apply your saved signature');
-      d.accept();
-    });
     await offer.click();
+    const confirmMessage = await acceptDynDialog(page);
+    expect(confirmMessage).toContain('Apply your saved signature');
 
     const reused = await page.evaluate(() => ((window as any).D.planGuardians[0].signatureImage || '').slice(0, 24));
     expect(reused).toBe(afterCapture.filingImage);
@@ -106,8 +104,8 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     });
     await page.locator('input[value="stamp"]').first().check();
 
-    page.once('dialog', (d) => d.dismiss());
     await page.locator('[data-signature-action="use-saved-stamp"]').first().click();
+    await dismissDynDialog(page);
     expect(await page.evaluate(() => (window as any).D.planGuardians[0].signatureImage)).toBe('');
   });
 

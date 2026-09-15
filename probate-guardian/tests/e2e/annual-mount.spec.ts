@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog } from './support/target';
 
 // Annual Accounting is the sixth feature extraction (Milestone 7 of
 // INDEX-SPLIT-PLAN.md) -- the largest yet, and the second Plan/Accounting
@@ -41,17 +41,11 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'Incomplete Annual Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/print'));
 
-    // dialog must be registered before the trigger, not after -- otherwise
-    // this races the dialog handler rather than waiting on it deterministically.
-    const dialogPromise = page.waitForEvent('dialog');
-    const triggerPromise = page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    await page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    const dialog = await dialogPromise;
-    const alertMessage = dialog.message();
-    await dialog.accept();
-    await triggerPromise;
+    const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain('Cannot export');
   });

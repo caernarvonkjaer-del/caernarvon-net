@@ -1,3 +1,5 @@
+import { confirmModal } from './core/ui/dialogs.js';
+
 const isHostedPwaBuild = document.querySelector('meta[name="pg-build"][content="web"]');
 
 if (isHostedPwaBuild && location.protocol !== 'file:' && 'serviceWorker' in navigator) {
@@ -104,10 +106,10 @@ if (isHostedPwaBuild && location.protocol !== 'file:' && 'serviceWorker' in navi
     window.location.reload();
   }
 
-  function requestUpdateActivation(registration) {
+  async function requestUpdateActivation(registration) {
     const worker = registration.waiting;
     if (!worker) return;
-    if (hasUnsavedChanges() && !confirm('This case has unsaved changes. Save or export your work before reloading.\n\nReload now anyway?')) {
+    if (hasUnsavedChanges() && !(await confirmModal('This case has unsaved changes. Save or export your work before reloading.\n\nReload now anyway?'))) {
       updateNoticeShownFor = null;
       showUpdateReady(registration);
       return;

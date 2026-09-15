@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
-import { gotoApp, startNewCase, chooseNoPassword, chooseEncrypted, createWard, exportAndCapture } from './support/target';
+import { gotoApp, startNewCase, chooseNoPassword, chooseEncrypted, createWard, exportAndCapture, acceptDynDialog } from './support/target';
 
 test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted paths', () => {
   test('unencrypted export then open round-trips ward data', async ({ browser }) => {
@@ -115,9 +115,8 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
 
       await gotoApp(corruptPage);
       await corruptPage.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
-      const dialogPromise = corruptPage.waitForEvent('dialog');
       await corruptPage.setInputFiles('#startup-open-input', corruptPath);
-      await (await dialogPromise).accept();
+      await acceptDynDialog(corruptPage);
 
       // Rejected, not crashed: still on the startup screen, no uncaught errors.
       await expect(corruptPage.locator('#startup-choice-overlay')).toHaveClass(/show/);

@@ -14,6 +14,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
+import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
   renderPage, ensureTemplate, sanitizeForExcel, calcTotalsAnnual,
@@ -62,11 +63,11 @@ export async function doSaveExcel(){
     if (authorization.status === 'blocked') {
       const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
       if (capIssues.length) {
-        alert('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
+        await alertModal('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
           + capIssues.map(o => `• ${o.message}`).join('\n')
           + '\n\nSave as PDF instead — the PDF includes every entry.');
       } else {
-        alert(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
+        await alertModal(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
       }
     }
     renderPage('/print');
@@ -75,7 +76,7 @@ export async function doSaveExcel(){
   try{
     const inv=window.D;
     const templateB64=await ensureTemplate('annual');
-    if(!templateB64){alert('Template not loaded. Please import the Excel template first.');return;}
+    if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
     const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
     const fD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
@@ -379,7 +380,7 @@ export async function doSaveExcel(){
     await saveWorkbookFile(workbook, `${wardFile}_${formSlug}.xlsx`);
   }catch(err){
     console.error('Excel export failed:',err);
-    alert('Excel export failed: '+err.message);
+    await alertModal('Excel export failed: '+err.message);
   }
 }
 export async function importExcel(input){

@@ -9,6 +9,7 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/fo
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { confirmModal } from '../../core/ui/dialogs.js';
 // Milestone 41-3: same structural story as its sibling Simplified
 // Accounting, confirmed by reading the real markup. Only
 // renderReportingPeriodFields() applies: wardName has no column wrapper
@@ -235,7 +236,7 @@ function bindEvents(container) {
     }
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'import-excel') _excelModule.importExcel(control);
   }, options);
-  container.addEventListener('click', (event) => {
+  container.addEventListener('click', async (event) => {
     const control = event.target instanceof Element ? event.target.closest('[data-annual-action]') : null;
     if (!control) return;
     event.preventDefault();
@@ -246,7 +247,7 @@ function bindEvents(container) {
       case 'duplicate-row': duplicateAnnualRow(collection, index, control.dataset.route); break;
       case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
-      case 'remove-row': removeAnnualRow(collection, index, control.dataset.route); break;
+      case 'remove-row': await removeAnnualRow(collection, index, control.dataset.route); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
@@ -272,8 +273,8 @@ function addAnnualRow(collection, route) {
     navigate(route);
   }
 }
-function removeAnnualRow(collection, index, route) {
-  if (collection === 'guardians' && index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !window.confirm(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`)) return;
+async function removeAnnualRow(collection, index, route) {
+  if (collection === 'guardians' && index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
   if (removeCollectionRow(collection, index, window.D)) {
     autoSave();
     navigate(route);

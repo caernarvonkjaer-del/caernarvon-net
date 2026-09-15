@@ -1010,7 +1010,7 @@ async function exportHelpGuideAsPDF(){
     }).save();
   }catch(e){
     console.error('PDF guide export failed',e);
-    alert('Sorry — the PDF guide could not be generated. Please try again.');
+    await window.alertModal('Sorry — the PDF guide could not be generated. Please try again.');
   }
 }
 
@@ -2625,7 +2625,7 @@ async function exportActivityLog(){
   }catch(e){
     if(e&&e.name==='AbortError')return;
     console.error('Activity log export failed',e);
-    alert('Export failed: '+(e&&e.message||e));
+    await window.alertModal('Export failed: '+(e&&e.message||e));
   }
 }
 
@@ -2884,7 +2884,7 @@ function togglePartyUnmergeSelection(partyId,checked){
   if(checked)_partyUnmergeIds.push(partyId);
   renderPartyManagementBody();
 }
-// The confirm() message doubles as the "prompt per-field" step the
+// The confirmModal() message doubles as the "prompt per-field" step the
 // persistence-rewrite plan calls for: it lists every field that would be
 // backfilled onto the primary record from the sub (blank-on-primary,
 // present-on-sub) so nothing is adopted silently. Cancelling aborts the
@@ -2901,7 +2901,7 @@ async function doPartyMergeKeep(keepId,discardId){
   if(adoptable.length){
     message+=`\n\nAlso fill in these currently-blank fields on "${keep.name}" from "${discard.name}":\n`+adoptable.map(([path,label])=>`• ${label}: ${partyFieldValue(discard,path)}`).join('\n');
   }
-  if(!confirm(message))return;
+  if(!(await window.confirmModal(message)))return;
   window.mergeParties(keepId,discardId,{adoptBlankFields:adoptable.length>0});
   await auditLog('PARTY_MERGE',`Merged "${discard.name}" into "${keep.name}"`,true);
   _partyCompareIds=[];
@@ -2918,7 +2918,7 @@ async function doPartyUnmergeSelected(){
   if(!subs.length)return;
   const lines=subs.map(s=>`• "${s.name}" (merged into "${window.resolveParty(s.mergedInto)?.name}")`);
   const message=`Unmerge ${subs.length===1?'this record':'these records'}?\n\n${lines.join('\n')}\n\nEach becomes its own shared record again. Filings and cases that referenced it before the merge will reference it again, and any fields the primary record filled in from it will be cleared -- unless you have changed them since.`;
-  if(!confirm(message))return;
+  if(!(await window.confirmModal(message)))return;
   for(const sub of subs){
     const primaryName=window.resolveParty(sub.mergedInto)?.name;
     if(window.unmergeParty(sub.id))await auditLog('PARTY_UNMERGE',`Unmerged "${sub.name}" from "${primaryName}"`,true);
@@ -3413,7 +3413,7 @@ async function openWardFileAtLaunch(){
         return;
       }
       console.error('Open case file failed',e);
-      alert('Could not open that file: '+(e&&e.message||e));
+      await window.alertModal('Could not open that file: '+(e&&e.message||e));
     }
     return;
   }
@@ -3443,13 +3443,13 @@ window.handleStartupOpenInputChange = handleStartupOpenInputChange;
 async function loadCaseFileAtLaunch(file){
   try{
     const check=await validateImportFile(file,'sav');
-    if(!check.ok){alert(check.message);return false;}
-    if(typeof JSZip==='undefined'){alert('ZIP library failed to load — cannot open this file.');return false;}
+    if(!check.ok){await window.alertModal(check.message);return false;}
+    if(typeof JSZip==='undefined'){await window.alertModal('ZIP library failed to load — cannot open this file.');return false;}
     const zip=await JSZip.loadAsync(file);
     const manifestEntry=zip.file('manifest.json');
-    if(!manifestEntry){alert('Not a Probate Guardian data file (no manifest.json inside).');return false;}
+    if(!manifestEntry){await window.alertModal('Not a Probate Guardian data file (no manifest.json inside).');return false;}
     const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-case'){alert('Not a Probate Guardian data file.');return false;}
+    if(manifest.format!=='probate-guardian-case'){await window.alertModal('Not a Probate Guardian data file.');return false;}
     _securityMode=manifest.securityMode||(manifest.salt?'encrypted':'none');
     if(_securityMode==='encrypted'){
       await promptPasswordForFile(manifest,zip); // sets _cryptoKey; only resolves on a verified password
@@ -3481,7 +3481,7 @@ async function loadCaseFileAtLaunch(file){
     return { ok: true, wardId: (caseFile.wards[0] && caseFile.wards[0].wardId) || null };
   }catch(e){
     console.error('Failed to open case file',e);
-    alert('Could not open that file: '+(e&&e.message||e));
+    await window.alertModal('Could not open that file: '+(e&&e.message||e));
     return false;
   }
 }
@@ -3660,15 +3660,15 @@ function setupDragAndDropImport(){
     const files=Array.from(e.dataTransfer.files||[]);
     const zipFile=files.find(f=>{const n=f.name.toLowerCase();return n.endsWith('.sav')||n.endsWith('.zip');});
     if(!zipFile){
-      if(files.length)alert('Please drop a Probate Guardian .sav case data file.');
+      if(files.length)await window.alertModal('Please drop a Probate Guardian .sav case data file.');
       return;
     }
     await importGuardianDataZip(zipFile);
   });
 }
 
-function clearAllData(){
-  if(!confirm('Clear all data for current form? This cannot be undone.'))return;
+async function clearAllData(){
+  if(!(await window.confirmModal('Clear all data for current form? This cannot be undone.')))return;
   const ward=getActiveWard();
   if(!ward)return;
   const {wardId,wardName,inventoryType,createdDate}=ward;
@@ -4543,7 +4543,7 @@ async function doAddWard(){
   const type=document.getElementById('new-ward-type').value;
   const carrySourceId=document.getElementById('carry-source-ward').value;
   console.log('doAddWard - name:',name,'type:',type,'carrySourceId:',carrySourceId);
-  if(!name){alert('Please enter a ward name');return;}
+  if(!name){await window.alertModal('Please enter a ward name');return;}
   if(type==='planMinor'){
     const candidateSource=carrySourceId?caseFile.wards.find(w=>w.wardId===carrySourceId):null;
     const sameNameWard=caseFile.wards.find(w=>
@@ -4551,7 +4551,7 @@ async function doAddWard(){
     );
     const adultIndicator=candidateSource||sameNameWard;
     if(adultIndicator&&(adultIndicator.inventoryType!=='planMinor'||adultIndicator.gid||adultIndicator.inceptionDate)){
-      const proceed=confirm(`Annual Plan (Minors) is typically used for minor wards, but existing records for "${name}" indicate an adult filing or adult guardianship inception date. Do you want to continue creating this minor plan?`);
+      const proceed=await window.confirmModal(`Annual Plan (Minors) is typically used for minor wards, but existing records for "${name}" indicate an adult filing or adult guardianship inception date. Do you want to continue creating this minor plan?`);
       if(!proceed)return;
     }
   }
@@ -4583,7 +4583,7 @@ async function doAddWard(){
     closeModal('addWardModal');
   }catch(e){
     console.error('Failed to add ward',e);
-    alert('Failed to add form. Check console.');
+    await window.alertModal('Failed to add form. Check console.');
   }
 }
 
@@ -4641,8 +4641,8 @@ async function doConfirmSimplifiedEligibility(){
   const dep=document.getElementById('elig-depository').value;
   const txn=document.getElementById('elig-only-transactions').value;
   const carrySourceId=document.getElementById('elig-carry-source-ward').value;
-  if(!name){alert('Please enter a ward name');return;}
-  if(!dep||!txn){alert('Please answer both eligibility questions');return;}
+  if(!name){await window.alertModal('Please enter a ward name');return;}
+  if(!dep||!txn){await window.alertModal('Please answer both eligibility questions');return;}
   const qualifies=dep==='Yes'&&txn==='Yes';
   try{
     if(qualifies){
@@ -4660,7 +4660,7 @@ async function doConfirmSimplifiedEligibility(){
         }else{
           // Milestone 40C-F item 1: the selected source could not be resolved,
           // so say so rather than reporting a carryover that did not happen.
-          alert('The selected source filing could not be found, so nothing was carried over. The new filing was created blank.');
+          await window.alertModal('The selected source filing could not be found, so nothing was carried over. The new filing was created blank.');
         }
       }
       await saveWardToState(window.D);
@@ -4671,7 +4671,7 @@ async function doConfirmSimplifiedEligibility(){
       // doAddWard()'s own render tail after its carry-over Object.assign().
       renderPage('/');
       updateSidebar();
-      if(carryNote)alert(carryNote);
+      if(carryNote)await window.alertModal(carryNote);
     }else{
       await addWard(name,'annual');
       // Carry over to the Annual too — the guardian picked a source ward
@@ -4695,13 +4695,13 @@ async function doConfirmSimplifiedEligibility(){
       // Milestone 40C-F item 4: one message, and it names what actually
       // happened to the carryover and the county rather than leaving the filer
       // to guess after the redirect.
-      alert('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.'
+      await window.alertModal('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.'
         +(carryNote?`\n\n${carryNote}`:''));
     }
     closeModal('simplifiedEligibilityModal');
   }catch(e){
     console.error('Failed to add ward',e);
-    alert('Failed to add form. Check console.');
+    await window.alertModal('Failed to add form. Check console.');
   }
 }
 
@@ -4715,13 +4715,13 @@ async function showRenameWardModal(){
 
 async function doRenameWard(){
   const newName=document.getElementById('rename-ward-input').value.trim();
-  if(!newName){alert('Please enter a ward name');return;}
+  if(!newName){await window.alertModal('Please enter a ward name');return;}
   try{
     await renameWard(caseFile.activeWardId,newName);
     closeModal('renameWardModal');
   }catch(e){
     console.error('Failed to rename ward',e);
-    alert('Failed to rename ward. Check console.');
+    await window.alertModal('Failed to rename ward. Check console.');
   }
 }
 
@@ -4750,13 +4750,13 @@ async function doDeleteWard(){
     if(wasOnDashboard)navigate('/dashboard');
   }catch(e){
     console.error('Failed to delete ward',e);
-    alert('Failed to delete form. Check console.');
+    await window.alertModal('Failed to delete form. Check console.');
   }
 }
 
 async function doGuardianSetup(){
   const name=document.getElementById('setup-guardian-name').value.trim();
-  if(!name){alert('Please enter your name');return;}
+  if(!name){await window.alertModal('Please enter your name');return;}
   caseFile.guardianName=name;
   caseFile.guardianEmail=document.getElementById('setup-guardian-email').value.trim();
   await saveData();
@@ -5283,7 +5283,7 @@ async function convertExistingWard(sourceWardId,targetType){
   const sourceWard=caseFile.wards.find(w=>w.wardId===sourceWardId);
   if(!sourceWard)return;
   const srcType=sourceWard.inventoryType;
-  if(srcType===targetType){alert('Please choose a different inventory type to convert to.');return;}
+  if(srcType===targetType){await window.alertModal('Please choose a different inventory type to convert to.');return;}
 
   const wardId=createWardId();
   const newWard={
@@ -5327,7 +5327,7 @@ async function convertExistingWard(sourceWardId,targetType){
   _dirtySinceExport=true;
   updateLastSavedIndicator();
   navigate('/');
-  alert(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
+  await window.alertModal(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
 }
 
 async function doConvertWard(){
@@ -5728,7 +5728,7 @@ async function doDeleteWardYear(){
     if(currentPage==='/dashboard')renderDashboardGrid();
   }catch(e){
     console.error('Failed to delete year',e);
-    alert('Failed to delete year. Check console.');
+    await window.alertModal('Failed to delete year. Check console.');
   }
 }
 
@@ -6076,11 +6076,11 @@ function addPlanGuardian(route){
   if(rows.length>=planGuardianMax(d.inventoryType))return false;
   rows.push(planGuardianBlank(d.inventoryType)); d.planGuardians=rows; autoSave(); navigate(route); return true;
 }
-function removePlanGuardian(index,route){
+async function removePlanGuardian(index,route){
   const d=window.D; const rows=normalizePlanGuardians(d);
   if(index<=0||index>=rows.length)return false;
   const row=rows[index];
-  if(planGuardianHasAnyData(row)&&!window.confirm(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`))return false;
+  if(planGuardianHasAnyData(row)&&!(await window.confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
   rows.splice(index,1); d.planGuardians=rows;
   if(Array.isArray(d.guardianPartyIds))d.guardianPartyIds.splice(index,1);
   autoSave(); navigate(route); return true;
@@ -7561,7 +7561,7 @@ async function handleScheduleDocUpload(scheduleKey,fileList){
   }));
   const results=await Promise.all(readers);
   results.filter(Boolean).forEach(r=>{slot.files.push(r);added.push(r);});
-  if(rejected.length)alert(`Some supporting documents were not attached: ${rejected.join(', ')}`);
+  if(rejected.length)await window.alertModal(`Some supporting documents were not attached: ${rejected.join(', ')}`);
   if(!added.length){renderPage(currentPage);return;}
   autoSave();
   renderPage(currentPage);

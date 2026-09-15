@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import JSZip from 'jszip';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus, acceptDynDialog } from './support/target';
 
 // Guardian Inventory is Milestone 8 of INDEX-SPLIT-PLAN.md: Phase A moved
 // page/nav/validation/row UI into src/features/guardian-inventory/index.js;
@@ -121,17 +121,11 @@ test.describe('guardian-inventory feature module', () => {
     await createWard(page, 'Incomplete Guardian Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/print'));
 
-    // dialog must be registered before the trigger, not after -- otherwise
-    // this races the dialog handler rather than waiting on it deterministically.
-    const dialogPromise = page.waitForEvent('dialog');
-    const triggerPromise = page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
+    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();
     });
-    const dialog = await dialogPromise;
-    const alertMessage = dialog.message();
-    await dialog.accept();
-    await triggerPromise;
+    const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain('Cannot export');
   });

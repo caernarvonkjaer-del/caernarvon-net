@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, acceptDynDialog } from './support/target';
 
 // Milestone 40H-I: "New Filing from Existing" (Convert Ward) -- a
 // ward-selector default that pointed at the wrong ward, and a same-family
@@ -43,10 +43,16 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     );
     expect(expectedStartingBalance).toBe(150000);
 
-    const newWard = await page.evaluate(async (srcId) => {
-      await (window as any).convertExistingWard(srcId, 'finalAccounting');
-      return (window as any).getActiveWard();
+    // Milestone 50G: convertExistingWard() always ends with a trailing
+    // "Converted..." alertModal(), whose promise only resolves once that
+    // DOM dialog is dismissed from outside this evaluate() call -- fire it
+    // without awaiting here, accept the dialog, then read the result back.
+    await page.evaluate((srcId) => {
+      (window as any).__testPromise = (window as any).convertExistingWard(srcId, 'finalAccounting')
+        .then(() => (window as any).getActiveWard());
     }, sourceWardId);
+    await acceptDynDialog(page);
+    const newWard = await page.evaluate(() => (window as any).__testPromise);
 
     expect(newWard.inventoryType).toBe('finalAccounting');
     // Annual Accounting's own mount-time sanitizeNegativeAmounts() coerces
@@ -83,10 +89,14 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
       return d.wardId;
     });
 
-    const newWard = await page.evaluate(async (srcId) => {
-      await (window as any).convertExistingWard(srcId, 'annual');
-      return (window as any).getActiveWard();
+    // Milestone 50G: see the "Annual -> Final Accounting" test above for why
+    // this can't just await convertExistingWard() inside the evaluate().
+    await page.evaluate((srcId) => {
+      (window as any).__testPromise = (window as any).convertExistingWard(srcId, 'annual')
+        .then(() => (window as any).getActiveWard());
     }, sourceWardId);
+    await acceptDynDialog(page);
+    const newWard = await page.evaluate(() => (window as any).__testPromise);
 
     expect(newWard.inventoryType).toBe('annual');
     expect(newWard.schD1[0].restricted).toBe('Yes');
@@ -115,10 +125,14 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
       return d.wardId;
     });
 
-    const newWard = await page.evaluate(async (srcId) => {
-      await (window as any).convertExistingWard(srcId, 'planAnnual');
-      return (window as any).getActiveWard();
+    // Milestone 50G: see the "Annual -> Final Accounting" test above for why
+    // this can't just await convertExistingWard() inside the evaluate().
+    await page.evaluate((srcId) => {
+      (window as any).__testPromise = (window as any).convertExistingWard(srcId, 'planAnnual')
+        .then(() => (window as any).getActiveWard());
     }, sourceWardId);
+    await acceptDynDialog(page);
+    const newWard = await page.evaluate(() => (window as any).__testPromise);
 
     expect(newWard.inventoryType).toBe('planAnnual');
     expect(newWard.attorney).toBe('Zensiqua Okaforsson');

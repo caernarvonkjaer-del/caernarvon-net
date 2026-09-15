@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, acceptDynDialog } from './support/target';
 
 // Milestone 40C-F / 40C-G2. Exercises the REAL Initial-Inventory to
 // Simplified-Accounting path through the eligibility modal -- the redirect that
@@ -44,11 +44,15 @@ async function createInventorySource(page: Page, wardName: string, county: strin
   return page.evaluate(() => (window as any).caseFile.activeWardId);
 }
 
-/** Drives the eligibility modal to completion, capturing any dialog text. */
+/**
+ * Drives the eligibility modal to completion, capturing any dialog text.
+ * doConfirmSimplifiedEligibility() always shows exactly one alertModal()
+ * (the carry-over note, or the does-not-qualify notice) before it closes
+ * the eligibility modal itself -- so this waits for and accepts that one
+ * dynamic dialog first, then waits for the eligibility modal to follow it
+ * shut.
+ */
 async function confirmEligibility(page: Page, wardName: string, sourceWardId: string, qualifies: boolean) {
-  const dialogs: string[] = [];
-  page.on('dialog', async (d) => { dialogs.push(d.message()); await d.accept(); });
-
   await page.evaluate(({ name, srcId }) => (window as any).showSimplifiedEligibilityModal(name, srcId),
     { name: wardName, srcId: sourceWardId });
   await page.locator('#simplifiedEligibilityModal.show').waitFor({ state: 'visible' });
@@ -56,8 +60,9 @@ async function confirmEligibility(page: Page, wardName: string, sourceWardId: st
   await page.selectOption('#elig-only-transactions', 'Yes');
   await expect(page.locator('#elig-carry-source-ward')).toHaveValue(sourceWardId);
   await page.click('#simplifiedEligibilityModal [data-modal-action="confirm-simplified-eligibility"]');
+  const message = await acceptDynDialog(page);
   await page.locator('#simplifiedEligibilityModal').waitFor({ state: 'hidden' });
-  return dialogs;
+  return [message];
 }
 
 test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect', () => {

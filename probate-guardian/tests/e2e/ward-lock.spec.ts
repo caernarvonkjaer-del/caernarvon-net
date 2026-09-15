@@ -68,6 +68,24 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
       const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
 
+      // Milestone 50G: Tab 1's debounced autosave writes to the shared
+      // pg-session-cache IndexedDB store as soon as a ward exists to be
+      // dirty about. Left in place, Tab 2's own boot-time
+      // checkSessionRestoreCacheAtLaunch() finds it and shows a "restore
+      // previous session?" confirmModal() before Tab 2 even reaches the
+      // startup-choice screen startNewCase() waits for -- with a real
+      // native confirm(), Playwright's default auto-dismiss of an
+      // unlistened dialog happened to decline that offer and clear the
+      // cache as a side effect, which is the only reason this ever passed;
+      // a DOM dialog nobody interacts with just sits open forever. Flush
+      // first so the clear isn't immediately undone by a still-pending
+      // debounced write, matching what a real Save-As already does.
+      await tab1.evaluate(async () => {
+        await (window as any).flushPendingSave();
+        await (window as any).clearSessionRestoreCache();
+        (window as any)._dirtySinceExport = false;
+      });
+
       // Tab 2 opens
       const tab2 = await context.newPage();
       await gotoApp(tab2);
@@ -105,6 +123,16 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
       const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+
+      // Milestone 50G: see the "different wards" test above for why this is
+      // needed -- Tab 1's debounced autosave leaves a stale session-restore
+      // cache entry that would otherwise show Tab 2 an unhandled DOM confirm
+      // dialog before it ever reaches the startup screen.
+      await tab1.evaluate(async () => {
+        await (window as any).flushPendingSave();
+        await (window as any).clearSessionRestoreCache();
+        (window as any)._dirtySinceExport = false;
+      });
 
       // Tab 2 opens while Tab 1 is still in Ward A's editor.
       const tab2 = await context.newPage();
@@ -166,6 +194,16 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
       const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+
+      // Milestone 50G: see the "different wards" test above for why this is
+      // needed -- Tab 1's debounced autosave leaves a stale session-restore
+      // cache entry that would otherwise show Tab 2 an unhandled DOM confirm
+      // dialog before it ever reaches the startup screen.
+      await tab1.evaluate(async () => {
+        await (window as any).flushPendingSave();
+        await (window as any).clearSessionRestoreCache();
+        (window as any)._dirtySinceExport = false;
+      });
 
       // Tab 2 opens and creates Ward B
       const tab2 = await context.newPage();

@@ -19,6 +19,7 @@ import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
+import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
   highlightErrors, validationPanel,
@@ -70,17 +71,17 @@ export async function doSavePdf(){
   const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
-    alert(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
+    await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
     return;
   }
   const ward=(window.D.wardName||'InitialGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
   try{
     const model = buildPlanInitialModel(window.D);
     const doc = await generateCourtFormPdf(model);
-    saveFinalizedPdf(await finalizeCourtFormPdf(doc), `${ward}_InitialGuardianshipPlan.pdf`);
+    await saveFinalizedPdf(await finalizeCourtFormPdf(doc), `${ward}_InitialGuardianshipPlan.pdf`);
   }catch(e){
     console.error('PDF export failed',e);
-    alert('PDF export failed: '+e.message);
+    await alertModal('PDF export failed: '+e.message);
   }
 }
 
