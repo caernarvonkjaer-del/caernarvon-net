@@ -321,9 +321,9 @@ function nonPlanDetails(type, issues) {
   ];
   if (type === 'guardian') return [
     ...common.slice(0, 1),
-    detailRow(`${prefix}.real-property`, 'Schedule A â€” real property and secured debt entries are complete or verified empty', issues, /\ba-1\b|\ba-2\b/),
-    detailRow(`${prefix}.personal-property`, 'Schedule B â€” financial accounts, personal property, and liabilities are complete or verified empty', issues, /\bb-1\b|\bb-2\b|\bb-3\b|\bb-4\b/),
-    detailRow(`${prefix}.income-claims`, 'Schedule C â€” income, claims, actions, trusts, and other assets are complete or verified empty', issues, /\bc-1\b|\bc-2\b|\bc-3\b|\bc-4\b|\bc-5\b/),
+    detailRow(`${prefix}.real-property`, 'Schedule A \u2014 real property and secured debt entries are complete or verified empty', issues, /\ba-1\b|\ba-2\b/),
+    detailRow(`${prefix}.personal-property`, 'Schedule B \u2014 financial accounts, personal property, and liabilities are complete or verified empty', issues, /\bb-1\b|\bb-2\b|\bb-3\b|\bb-4\b/),
+    detailRow(`${prefix}.income-claims`, 'Schedule C \u2014 income, claims, actions, trusts, and other assets are complete or verified empty', issues, /\bc-1\b|\bc-2\b|\bc-3\b|\bc-4\b|\bc-5\b/),
     ...common.slice(1),
     detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /\bd-3\b|\bd-4\b|\bd-5\b/),
   ];

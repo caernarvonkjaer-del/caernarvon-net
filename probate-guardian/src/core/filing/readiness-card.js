@@ -51,7 +51,7 @@ function manualRow(row) {
 
 function overviewRow(row) {
   const ok = row.ok === true;
-  return `<div class="readiness-row" data-readiness-id="${escapeHtml(row.id)}" data-readiness-class="overview"><span class="readiness-mark ${ok ? 'ok' : 'pending'}" aria-hidden="true">${ok ? 'âœ“' : 'âš '}</span><span><span class="visually-hidden">${ok ? 'Passed: ' : 'Needs review: '}</span>${escapeHtml(row.label)}</span></div>`;
+  return `<div class="readiness-row" data-readiness-id="${escapeHtml(row.id)}" data-readiness-class="overview"><span class="readiness-mark ${ok ? 'ok' : 'pending'}" aria-hidden="true">${ok ? '&#10003;' : '&#9888;'}</span><span><span class="visually-hidden">${ok ? 'Passed: ' : 'Needs review: '}</span>${escapeHtml(row.label)}</span></div>`;
 }
 
 export function resetReadinessCardState() {

@@ -63,6 +63,10 @@ describe('markup contract', () => {
     }
     expect(renderReadinessCard({ filingType: 'guardian', data: { wardId: 'w1' } })).toContain('Schedule A');
     expect(renderReadinessCard({ filingType: 'annual', data: { wardId: 'w1' } })).toContain('Schedules A through F');
+    const guardian = renderReadinessCard({ filingType: 'guardian', data: { wardId: 'w1' } });
+    expect(guardian).toContain('&#10003;');
+    expect(guardian).not.toContain('âœ');
+    expect(guardian).not.toContain('â€”');
   });
 });
 
