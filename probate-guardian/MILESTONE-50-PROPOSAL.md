@@ -56,6 +56,7 @@ left silent.
 | 50F — Typed-signature preview clips long names | Visual / possible output accuracy | High that the preview clips; unconfirmed whether the exported PDF is also affected |
 | 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | High — confirmed by direct observation and by reading the relevant bundle |
 | 50H — County & Active-Filing combobox interaction pattern | Interaction robustness / possible accessibility gap | Medium — confirmed non-standard event handling; real-user impact unconfirmed |
+| 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | High — confirmed directly against current `master` source, not inferred |
 
 ---
 
@@ -595,3 +596,85 @@ commit correctly; if changed, existing e2e specs touching either control
 this is worth treating as more than cosmetic — court-facing professional
 software should support keyboard-only operation as a baseline, independent
 of whether any specific user has requested it.
+
+---
+
+## 50I — Manage Shared Records: Save Controls Accordion Never Auto-Collapses
+
+**Category:** UI/UX Consistency. **Confidence:** High — unlike most items
+above, this was root-caused directly against current `master` source by
+Claude Code, not observed via black-box walkthrough or inferred from a
+style-reference proposal.
+
+### Observed
+
+Alan: "Save tools on the manage shared records page should display in the
+bottom left, and default accordion collapsed, like every other page."
+
+### Root cause (confirmed, not inferred)
+
+`updateSidebar()` (`src/legacy-app.js:4878-4905`) is the one place that
+decides whether the sidebar's "Save controls" accordion (the
+`save-controls-toggle-btn`/`save-controls-body` pair — last-saved/auto-save
+indicators plus manual save/export controls, which always renders at the
+bottom of the sidebar via `.sidebar-save-section`'s position in the shared
+flex layout, per `src/styles/shell.css:38,49,172`) auto-collapses on page
+entry:
+
+```js
+const saveToggleBtn=document.getElementById('save-controls-toggle-btn');
+if(saveToggleBtn)saveToggleBtn.style.display=activeWardId?'block':'none';
+if(activeInventoryType&&!_saveControlsUserToggled)_saveControlsCollapsed=true;
+applySaveControlsCollapsedState();
+```
+
+The auto-collapse (line 4904) only fires when `activeInventoryType` is
+truthy — i.e. only while one of the nine real filing types' own pages is
+open. `/party-management` is one of four routes in `SPECIAL_PAGES`
+(`src/legacy-app.js:7815`: `'/dashboard','/inventory-select',
+'/activity-log','/party-management'`), which by design run with no
+`activeInventoryType` set. So on this page, `_saveControlsCollapsed` is
+never flipped to `true` on arrival and the section renders however it was
+last left — expanded by default (`_saveControlsCollapsed` initializes
+`false` at line 4856) unless the user happened to have manually collapsed
+it earlier in the session. The comment directly above this code
+(`src/legacy-app.js:4850-4855`) states the intended behavior in the code's
+own words — "collapses automatically once a form is active... so the
+schedule list gets the room back" — confirming this is a real gap against
+the code's own stated intent, not a matter of interpretation. The section's
+*position* (bottom-left) is unaffected — it's the same shared DOM node on
+every page — so the actual defect is entirely the missing auto-collapse,
+which is most likely what reads as "wrong" about its placement when it
+shows up expanded and taller than usual.
+
+### Steps
+
+1. Confirm live whether the other two non-form `SPECIAL_PAGES` (Dashboard,
+   Activity Log) show the identical always-expanded symptom, or whether
+   something else about those two happens to mask it — this determines
+   whether the fix belongs narrowly on party-management or in the shared
+   `updateSidebar()` gate for all `SPECIAL_PAGES`.
+2. Fix the gate at `src/legacy-app.js:4904` to also auto-collapse when a
+   ward is active but no filing type is open (party-management always has
+   an active ward context while visible, since the whole sidebar is hidden
+   when `caseFile.wards.length===0`, per lines 4880-4883) — e.g. collapse
+   whenever `activeWardId` is set, not only when `activeInventoryType` is
+   set. Preserve `_saveControlsUserToggled`'s existing override so a user
+   who manually re-expands it keeps that choice for the rest of the
+   session, matching current filing-page behavior.
+3. **Regression guard.** Extend whatever e2e coverage already exercises
+   `save-controls-toggle-btn`/`applySaveControlsCollapsedState` to also
+   visit `/party-management` and assert the section arrives collapsed,
+   matching a filing page.
+
+### Verification
+
+New/extended e2e assertion green; manual confirmation that Save Controls
+arrives collapsed on Manage Shared Records, identical to any filing page.
+
+### Cross-cutting notes
+
+**UI/UX Consistency:** directly this axis — one shared sidebar component
+should behave identically everywhere it mounts; this is a single missed
+condition in a shared function, not a design disagreement or a case for a
+page-specific override.
