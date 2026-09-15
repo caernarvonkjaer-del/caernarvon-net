@@ -12,6 +12,8 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
   const EXPECTED_HOSTS = new Set([
     'www.pcpao.gov',
     'www.mypinellasclerk.gov',
+    'public.co.pinellas.fl.us',
+    'guardianassociation.org',
     'pinellastaxcollector.gov',
     'pascopa.com',
     'www.pascoclerk.com',
@@ -149,7 +151,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
       }
     });
 
-    test('renders section with aria-labelledby and footer disclaimer', () => {
+  test('renders section with aria-labelledby and footer disclaimer', () => {
       const html = resourcesPanelHTML(groupsForCounties([]), {
         esc: s => s,
         ic: () => '',
@@ -158,8 +160,21 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
       expect(html).toContain('aria-labelledby="sidebar-resources-title"');
       expect(html).toContain('id="sidebar-resources-title"');
       expect(html).toContain(
-        "These are independent government and third-party sites. Probate Guardian isn't affiliated with them and doesn't control their content."
-      );
-    });
+      "These are independent government and third-party sites. Probate Guardian isn't affiliated with them and doesn't control their content."
+    );
   });
+
+  test('renders county sections as collapsed accordions', () => {
+    const html = resourcesPanelHTML(groupsForCounties(['Pinellas']), { esc: s => s, ic: () => '' });
+    expect(html).toContain('<details class="sidebar-resource-group">');
+    expect(html).toContain('<summary class="nav-section-label sidebar-resource-summary">Pinellas County</summary>');
+    expect(html).not.toContain('<details class="sidebar-resource-group" open>');
+  });
+
+  test('includes Pinellas court records and guardian association resources', () => {
+    const pinellas = RESOURCE_GROUPS.find(group => group.id === 'pinellas');
+    expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-court-records', url: 'https://public.co.pinellas.fl.us/login/login_nonsubscriber.jsp' }));
+    expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-guardian-association', url: 'https://guardianassociation.org/' }));
+  });
+});
 });

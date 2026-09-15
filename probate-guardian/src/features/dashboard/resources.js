@@ -23,6 +23,18 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.mypinellasclerk.gov/Home/Probate-Mental-Health#49273-guardianships',
       },
       {
+        id: 'pinellas-court-records',
+        label: 'Court Records',
+        description: 'Search Pinellas County court and official records',
+        url: 'https://public.co.pinellas.fl.us/login/login_nonsubscriber.jsp',
+      },
+      {
+        id: 'pinellas-guardian-association',
+        label: 'Guardian Association of Pinellas County',
+        description: 'Education, resources, and professional guardian network',
+        url: 'https://guardianassociation.org/',
+      },
+      {
         id: 'pinellas-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -192,15 +204,15 @@ export function resourcesPanelHTML(groups = [], { esc = defaultEsc, ic = default
   if (!groups || groups.length === 0) return '';
 
   const groupsHTML = groups.map(group => `
-    <div class="sidebar-resource-group">
-      <div class="nav-section-label">${esc(group.heading)}</div>
+    <details class="sidebar-resource-group">
+      <summary class="nav-section-label sidebar-resource-summary">${esc(group.heading)}</summary>
       ${group.links.map(link => `
         <div class="sidebar-resource-item">
           <a class="sidebar-resource-link" href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">${esc(link.label)} ${ic('external', 12)}<span class="visually-hidden"> (opens in a new tab)</span></a>
           <div class="sidebar-resource-desc">${esc(link.description)}</div>
         </div>
       `).join('')}
-    </div>
+    </details>
   `).join('');
 
   return `<section class="sidebar-resources-panel" aria-labelledby="sidebar-resources-title">
