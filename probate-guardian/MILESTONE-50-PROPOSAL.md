@@ -6,6 +6,14 @@
 `AGENTS.md` §2, this is a proposal only; nothing here should be started
 until Alan explicitly approves a specific sub-delivery by name.
 
+**Verification pass completed 2026-09-14** (see "Verification pass" below).
+Every item was checked against current `master` source and, where the claim
+needed runtime evidence, against the running app. Each item now carries a
+**Verified** block (what is actually true) and a **Corrective plan** (what
+to do about it). Two items did not reproduce and are recommended for
+closure; one is much larger than originally scoped; one was partly fixed
+already. The Draft gate above still applies to every corrective plan.
+
 ## Source and an important caveat on confidence
 
 Every item below was observed during a manual, page-by-page walkthrough of
@@ -46,17 +54,62 @@ items), **Verification**, and **Cross-cutting notes** per `AGENTS.md` §8
 where an axis is actually implicated — marked N/A elsewhere rather than
 left silent.
 
-| Sub-delivery | Category | Confidence this is a real, current defect |
+| Sub-delivery | Category | Verdict after the 2026-09-14 verification pass |
 | --- | --- | --- |
-| 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | Medium-High — reproduced once; needs source confirmation of stored vs. display-only |
-| 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness | Low-Medium — single observation, already flagged "questionable" at the time |
-| 50C — City/State/Zip normalization regression risk | Data correctness / regression | Medium — Alan separately confirmed this exact bug class was fixed before; recurrence needs explanation |
-| 50D — Highlight annotation renders solid black | Visual rendering, on court-facing PDF output | Medium — reproduced, but described as inconsistent across attempts |
-| 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | High that it's reproducible; may overlap already-planned work — see note |
-| 50F — Typed-signature preview clips long names | Visual / possible output accuracy | High that the preview clips; unconfirmed whether the exported PDF is also affected |
-| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | High — confirmed by direct observation and by reading the relevant bundle |
-| 50H — County & Active-Filing combobox interaction pattern | Interaction robustness / possible accessibility gap | Medium — confirmed non-standard event handling; real-user impact unconfirmed |
-| 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | High — confirmed directly against current `master` source, not inferred |
+| 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. Recommend closure (optional cheap guard). |
+| 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness → **rendering** | **Confirmed, root cause found.** The carry works; the page never re-renders, so the Cover looks blank. Small fix. |
+| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. |
+| 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap, and the black is the *selection outline*, not the highlight. Severity depends on one unanswered check. |
+| 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** Needs a layout decision. |
+| 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. |
+| 50G — Native `window.confirm()` dialogs break app-modal consistency | Consistency / robustness | **Confirmed but far larger than scoped:** 87 native-dialog sites, not 2. Needs a scoping decision before any work. |
+| 50H — County & Active-Filing combobox interaction pattern | Accessibility | **Split.** County combobox has a real keyboard gap. The "plain click" claim is an automation artifact. The Active Filing half is already fixed. |
+| 50I — Manage Shared Records: Save Controls accordion never auto-collapses | UI/UX Consistency | **Root cause correct; framing too narrow.** Affects all four `SPECIAL_PAGES`, and the symptom is session-path dependent. |
+
+---
+
+## Verification pass (2026-09-14)
+
+**Method.** Every claim was checked two ways where possible: read against
+current `master` source (not against either uploaded zip), and exercised in
+the running app through temporary Playwright probes that measured real
+values — stored field values after a carryover, computed SVG fill colours,
+rendered row heights, canvas pixel coverage at the image edges, and the
+collapsed state of the sidebar accordion on each route. The probes were
+throwaway and are not in the tree; the specific numbers they produced are
+quoted in each item's **Verified** block so the next person does not have
+to re-derive them.
+
+**What changed as a result.** Two findings (50A, 50C) did not reproduce and
+should be closed rather than fixed. Two (50D, 50F) reproduced but with a
+different root cause or a materially different severity than the
+walkthrough could see from the outside. One (50G) is an order of magnitude
+larger than its write-up implies. One (50H) is half already-fixed. The
+remaining three (50B, 50E, 50I) are real and actionable close to as
+described.
+
+**Sequencing and file-overlap note (`AGENTS.md` §1, multi-agent).**
+Three sub-deliveries touch `src/legacy-app.js` in different regions —
+50B (`doConfirmSimplifiedEligibility`, ~4593-4640), 50H
+(`countyAutocompleteHTML`/`filterCityDropdown`, ~1563-1600), and 50I
+(`updateSidebar`, ~4905-4915). They are independent in content but should
+be **sequenced, not parallelised across agents**, to avoid conflicting
+edits to one large classic-script file. The other items are file-isolated:
+50D is `src/styles/print.css` only, 50F is
+`src/core/signature/signature-pad.js` only, 50E is
+`src/features/plan-annual/index.js` plus one stylesheet.
+
+**Suggested order, by value against effort:**
+
+1. **50B** and **50I** — small, self-contained, and both fix something a
+   filer sees immediately.
+2. **50F** — small, and it is the only item confirmed to affect a filed
+   court document.
+3. **50D** — small (CSS only), but answer its Step 1 first; severity is
+   unknown until then.
+4. **50E**, **50H** — real, but each needs a design decision made first.
+5. **50G** — do not start until its scope question is answered.
+6. **50A**, **50C** — close with tests only, no production code change.
 
 ---
 
@@ -138,6 +191,53 @@ kind of accuracy issue `AGENTS.md`'s opening line calls out — worth treating
 this at higher priority than its cosmetic-seeming symptom suggests until the
 stored-vs-display question is answered.
 
+### Verified 2026-09-14 — NOT REPRODUCED
+
+The stored-vs-display question above is answered: **neither is duplicated.**
+
+- `carryOverFieldsForPlan()`'s `planAnnual` branch
+  (`src/core/navigation/ward-lifecycle.js:153-177`) performs a single
+  assignment, `attorney: attyName`. There is no concatenation and no second
+  write to the same key. The `attyName` chain itself
+  (`:96`) resolves to exactly one source field.
+- Exercised live: an Initial Guardianship Plan with attorney
+  `"Zensiqua Okaforsson"`, converted via the real
+  `convertExistingWard(srcId, 'planAnnual')` entry point. Result:
+  `carryOverFields(src,'planAnnual').attorney === "Zensiqua Okaforsson"`,
+  the converted filing's stored `D.attorney` is that string exactly once,
+  and exactly one rendered input on the Cover carries it.
+
+**Most likely explanation for the observation.** The Annual Plan binds the
+same `attorney` field in three places by design — the Cover
+(`src/features/plan-annual/index.js:225`), the Attorney Certification card
+(`:631`), and the Summary list (`:171`). They are on different routes, so
+no single page shows it twice, but moving between Cover and Certification
+during a walkthrough shows the same name in what looks like two "Attorney
+Name" fields. Plan Initial has the genuinely-two-field version of this:
+`carryOverFieldsForPlan()` writes both `attorneyName` (Cover) and
+`attorney_name` (Attorney card) with the same value (`:112-113`), because
+that form really does collect it in two places.
+
+### Corrective plan — close, no production change
+
+1. **Close 50A.** No defect exists in the carryover mapping. Record the
+   finding rather than deleting the item, so the same walkthrough
+   observation doesn't get re-filed later.
+2. **Optional, cheap:** extend `tests/e2e/carryover-workflow.spec.ts` with
+   one assertion on the Initial Plan → Annual Plan path that
+   `D.attorney` equals the source's attorney name exactly (not a
+   concatenation). Costs a few lines, permanently pins the thing that was
+   suspected. No new spec file, so no `TEST-INDEX.md` change.
+3. **Do not** "fix" the two-field Plan Initial shape as part of this — that
+   is the form's real structure, not a bug, and changing it is a form-design
+   decision for Alan, not a defect repair.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — confirmed no stored
+duplication, so no `probate-guardian-data-model.csv` row is implicated.
+Legacy Data Migration N/A — no `.sav` file can carry a doubled value from
+this path. Legal/Compliance: the escalation condition stated above (a wrong
+attorney name reaching a filed document) is not met.
+
 ---
 
 ## 50B — Simplified Accounting Eligibility "Load Ward Info From" Not Populating
@@ -198,6 +298,93 @@ spec confirming the fix.
 Same as 50A's Data Model / Legacy Data Migration conditionals, contingent
 on confirming a real defect first. Export/Import/Portability: N/A unless
 the fix touches the shared carryover function used elsewhere.
+
+### Verified 2026-09-14 — CONFIRMED, and it is a rendering bug, not a carryover bug
+
+The carryover itself works perfectly. What fails is the screen.
+
+Exercised live: an Annual Accounting source with
+`caseNumber = "24-000123-GD"` and county Pinellas, then the Simplified
+eligibility modal with that filing chosen in **Load Ward Info From**.
+Immediately after confirming:
+
+- stored `D.caseNumber` === `"24-000123-GD"` ✅ (the carry ran)
+- stored `D.county` === `"Pinellas"` ✅
+- the rendered Cover input `[data-form-path="caseNumber"]` === `""` ❌
+
+**Root cause (confirmed, not inferred).**
+`doConfirmSimplifiedEligibility()` (`src/legacy-app.js:4593-4640`) mutates
+`window.D` *after* the page has already been rendered, and never re-renders:
+
+- `await addWard(name,'simplified')` →
+  `addWard()` (`src/core/navigation/ward-lifecycle.js:432-442`) calls
+  `activateWard()` then `navigate('/')`, which renders the Cover from the
+  filing's **blank** state.
+- `Object.assign(window.D, carryOverFields(src,'simplified'))` (`:4601`)
+  then mutates that same object — but nothing repaints.
+- Compare the equivalent tail in `doAddWard()` (`src/legacy-app.js:4506-4517`):
+  after its own `Object.assign(...)` it calls `await saveWardToState(ward)`,
+  **`renderPage('/')` and `updateSidebar()`**. Those two calls are exactly
+  what the eligibility path is missing.
+
+The same gap exists in the non-qualifying branch (`:4614-4628`), which
+redirects to a standard Annual Accounting.
+
+**Worse than the original report.** The carry note alert
+(`carryOverSummaryNote()`, `:4572-4582`) still fires, so the filer is told
+*"Details were carried over from the selected Annual Accounting. County
+(Pinellas) was restored from this ward's record."* while looking at blank
+fields — the app actively contradicts the screen. The data is intact and
+appears as soon as the filer navigates away and back, which is very likely
+why the walkthrough could not decide whether it had really failed.
+
+### Corrective plan
+
+1. **Fix, narrow (recommended).** In `doConfirmSimplifiedEligibility()`,
+   add the same render tail `doAddWard()` already uses, in **both**
+   branches, immediately after the existing `saveWardToState(...)` and
+   **before** the `alert(...)` — so the filer dismisses the carry-over
+   notice onto a populated Cover rather than a blank one:
+
+   ```js
+   await saveWardToState(window.D);
+   renderPage('/');
+   updateSidebar();
+   if(carryNote)alert(carryNote);
+   ```
+
+   Note the non-qualifying branch currently calls `saveWardToState` *inside*
+   its `if(src)` block (`:4625`) while the qualifying branch calls it
+   outside (`:4611`) — do not "tidy" that difference while fixing; it is
+   out of scope and the two branches create different filing types.
+
+2. **Alternative, deeper — flagged, not recommended now.** Have `addWard()`
+   accept an optional carry payload so the carry is applied *before* the
+   first render, removing the whole class of "mutate after render" from
+   every caller. That touches three call sites and `ward-lifecycle.js`'s
+   public signature; it is a better end state but a materially larger change
+   than the defect warrants. Raise separately if the pattern recurs.
+
+3. **Regression guard.** Extend `tests/e2e/carryover-workflow.spec.ts` —
+   which already covers the eligibility modal and its Annual redirect — with
+   an assertion on the **rendered input value**, not just `window.D`:
+
+   ```ts
+   await expect(page.locator('[data-form-path="caseNumber"]')).toHaveValue('24-000123-GD');
+   ```
+
+   This is the assertion that matters: a `window.D`-only check passes today
+   against the broken build, which is exactly how this shipped. Cover both
+   branches (qualifying → Simplified, non-qualifying → Annual). No new spec
+   file, so no `TEST-INDEX.md` change.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — no persisted shape
+changes; the stored values were always correct. Legacy Data Migration N/A —
+no `.sav` file holds bad data from this path (a filer who navigated away and
+back got correct values; one who didn't may have re-typed over correct data,
+which is indistinguishable from ordinary editing and not worth detecting).
+Export/Import N/A. UI/UX Consistency: the fix reuses `doAddWard()`'s
+existing render tail rather than introducing a new refresh mechanism.
 
 ---
 
@@ -269,9 +456,85 @@ cases.
 **Test Coverage & Index:** this is the core deliverable here — a
 previously-fixed bug with no apparent regression guard is a testing-index
 gap on its own, independent of whether the code itself is currently broken.
-**Legal/Compliance:** an address that ends up wrong on a filed document
+**Legal/Compliance placeholder — see the verified block below.** An address that ends up wrong on a filed document
 (guardian or ward residence, in particular) is a real-world accuracy
 concern for court paperwork, not merely cosmetic.
+
+### Verified 2026-09-14 — NOT REPRODUCED as described
+
+Step 1 and Step 2 above were both run against current `master`.
+
+`formatCityStateZip()` (`src/core/form/form-contract.js:137-160`), called
+directly with the two literal inputs from the report:
+
+| Input | Output |
+| --- | --- |
+| `"St.Petersburg,FL33704"` | `"St.Petersburg,FL33704"` (unchanged) |
+| `"MAlvern"` | `"MAlvern"` (unchanged) |
+| `"st. petersburg, fl 33704"` | `"St. Petersburg, FL 33704"` ✅ correct |
+
+Driven through the real UI on a Plan Minor Cover — the only form in the app
+with genuinely separate City / State / **Zip** boxes (`q1City` / `q1State` /
+`q1Zip`, `src/features/plan-minor/index.js:208-210`) — typing the first
+literal into City and blurring left `q1City` holding it, `q1State` empty,
+and `q1Zip` untouched. **Nothing folds city or state text into a ZIP field.**
+No code path in `src/` moves a value between those fields;
+`applyZipLimit()` (`src/legacy-app.js:1665-1675`) only deletes digits beyond
+nine from the field it is given, and neither literal has nine digits.
+
+**What is actually true — a different, narrower gap.**
+`formatCityStateZip()` declines to normalise two input shapes:
+
+- **No separator before the state code** (`",FL33704"`): the per-word regex
+  `^([a-zA-Z]+)([^a-zA-Z]*)$` (`:143`) cannot match a token with interior
+  letters, so the whole token is returned verbatim.
+- **Interior capitals** (`"MAlvern"`): the title-casing branch is guarded by
+  `/^[a-z]+$/.test(alpha)` (`:154`), so anything already containing an
+  uppercase letter mid-word is left alone.
+
+That second guard is almost certainly **deliberate and load-bearing** — it
+is what stops the formatter from destroying legitimately mixed-case Florida
+names like `McKinney`, `DeLand`, `DeBary` and `O'Brien`. Any "fix" that
+title-cases `MAlvern` → `Malvern` would also rewrite `McKinney` → `Mckinney`
+on a court document. That is a worse failure than leaving a typo as typed.
+
+**On the "previously fixed, now regressed" question:** there is no evidence
+of a regression. The correct-format case normalises correctly, and the two
+reported literals are inputs the formatter has no rule for, not inputs a
+rule mishandles. Explanation (b) from the original write-up — a stale build,
+or a misremembered field — is the better fit.
+
+### Corrective plan — close, with tests and one decision
+
+1. **Close 50C as not-reproducing.** Say so plainly in the record; do not
+   force a fix onto a non-reproducing report.
+2. **Still add the regression cases** (the original Step 4's reasoning is
+   right, and is the one durable deliverable here). Extend
+   `tests/unit/form-contract.spec.js`, which already owns
+   `formatCityStateZip()` coverage, pinning **current** behaviour:
+   both literals pass through unchanged, `"st. petersburg, fl 33704"`
+   normalises correctly, and — the important one —
+   `"mckinney"`/`"McKinney"` are **not** flattened. That last case
+   documents *why* the interior-capital guard exists, so a future
+   well-meaning "fix" for `MAlvern` fails the suite instead of shipping.
+   No new spec file, so no `TEST-INDEX.md` change.
+3. **One decision for Alan, not to be made unilaterally:** should a
+   malformed combined entry like `"St.Petersburg,FL33704"` be *repaired*
+   silently, *flagged* to the filer, or *left as typed*?
+   - **Recommended: left as typed, and surfaced by validation if at all.**
+     Silent repair of address text on a court document is the riskier
+     direction, and the app's own convention (`AGENTS.md` §3's
+     non-destructive principle) favours not rewriting what a filer entered.
+   - If flagging is wanted, that is a readiness-panel item, not a formatter
+     change, and must respect the §4 parity invariant (every `auto`
+     readiness item maps 1-to-1 to an export validation error) — so it would
+     be `manual`/advisory, not a blocker.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A. Test Coverage & Index:
+this is the whole deliverable — item 2 above. Legal/Compliance: the accuracy
+concern quoted above is real but is not caused by the reported mechanism;
+whether an un-normalised address is acceptable on a filing is the decision
+in item 3, flagged for Alan rather than resolved here.
 
 ---
 
@@ -331,6 +594,96 @@ translucent, plus whatever automated guard Step 3 lands on.
 for actual court filings or internal review of those filings — a highlight
 that obscures the underlying text in solid black rather than tinting it is
 a real functional defect for that use case, not just an aesthetic one.
+
+### Verified 2026-09-14 — CONFIRMED, but the black is not the highlight
+
+Reproduced cleanly (the intermittency is explained below). Driving the real
+toolbar on a Plan Simplified Print Preview and making a genuine text
+selection produces **two** sibling SVGs inside `.pdf-page`, both created by
+pdf.js's `DrawLayer` and appended to the page wrapper:
+
+| SVG | `fill` attribute | computed fill | computed `mix-blend-mode` |
+| --- | --- | --- | --- |
+| `class="highlight"` | `#FFFF98` | `rgb(255, 255, 152)` ✅ yellow | `normal` |
+| `class="highlightOutline selected"` | *(none)* | **`rgb(0, 0, 0)`** ❌ | `normal` |
+
+So the highlight shape itself is the correct yellow. The black is the
+**selection outline** pdf.js draws *on top of* a currently-selected
+highlight, which carries no `fill` attribute and therefore falls back to the
+SVG default `fill: black`, fully opaque.
+
+**This explains the reported intermittency exactly.** The black shape exists
+only while that highlight is selected. Click elsewhere and it disappears,
+leaving yellow — which is why the walkthrough could not pin down a rule and
+honestly described it as "unreliable" rather than "always black".
+
+**Root cause — a CSS gap, and not in the suspected file.**
+`src/core/pdf/pdf-annotate.js` is correct: it passes pdf.js's own default
+palette string (`:108-109`) and the editor reads the colour from it
+(`HighlightEditor.initialize()` sets `fill` from
+`uiManager.highlightColors`). The gap is in
+**`src/styles/print.css:58-112`**, the deliberately scoped-down port of
+`pdf_viewer.css`. That port carries the `.annotationEditorLayer`,
+`.freeTextEditor` and `.highlightEditor` families, but **omits every
+`svg.highlight` / `svg.highlightOutline` rule** — and those are precisely
+where upstream sets `fill: none` on the outline and blends the highlight.
+The port's own header comment lists what it deliberately excludes
+(theming, forced-colors, the per-editor delete toolbar); the highlight SVG
+rules are not on that list, so this is an oversight rather than a decision.
+
+**Second, separate defect in the same gap.** The correct yellow shape
+computes `mix-blend-mode: normal` with `fill-opacity: 1`. Upstream applies
+`multiply`, which is what lets the text show *through* a highlight. As
+shipped, even a correctly-coloured highlight paints an opaque block over the
+words it is meant to mark. The walkthrough did not report this separately —
+it was hidden behind the black outline — but it is the same fix and the same
+functional concern this item's cross-cutting note raises.
+
+### Corrective plan
+
+1. **Answer this first — it sets the severity.** Determine whether the
+   defect reaches the **saved** annotated PDF or only the on-screen preview.
+   The saved bytes come from pdf.js's own serialisation
+   (`session.saveAnnotatedBytes()` → `saveBtn` handler,
+   `src/core/pdf/pdf-preview.js:160-166`), **not** from the DOM, so page CSS
+   very likely does not affect it — meaning the exported document probably
+   has a correct highlight and no outline at all. Verify by saving an
+   annotated PDF with one highlight and opening it. If the export is clean,
+   this is an alarming-looking preview bug, **not** a court-document defect,
+   and the Legal/Compliance framing above should be corrected in the record.
+2. **Fix: complete the port.** Add the missing highlight rules to
+   `src/styles/print.css`, immediately after the existing
+   `.annotationEditorLayer .highlightEditor` rule (`:112`). Take the exact
+   declarations from upstream `node_modules/pdfjs-dist/web/pdf_viewer.css`
+   (a devDependency, retained for exactly this purpose per
+   `lib/VENDORED-LIBRARIES.md`) rather than inventing them — at minimum the
+   `svg.highlight` fill-rule/blend rules and `svg.highlightOutline`'s
+   `fill: none`. Scope them under `.pdf-page` to match the rest of the port,
+   and extend the port's header comment to record that these were added and
+   why (the comment is the file's own contract about what it deliberately
+   omits, and leaving it stale would reintroduce the same class of gap).
+3. **One UX decision, small:** with `fill: none` applied, a *selected*
+   highlight has no visual selection affordance unless upstream's stroke
+   rules are ported too. Either port them (matches pdf.js), or accept no
+   selection cue (consistent with this toolbar already excluding pdf.js's
+   per-editor delete UI). Recommend porting the stroke — it is the same
+   copy-paste and selection state is otherwise invisible.
+4. **Regression guard.** Extend the existing
+   `tests/e2e/pdf-annotate.spec.ts` test *"Highlight mode creates a
+   highlight editor from a real text selection"* (`:176-207`), which already
+   builds a real selection, with computed-style assertions: the
+   `svg.highlight` computed `fill` is the palette colour, and **no SVG
+   inside `.pdf-page` computes an opaque black fill**. That second assertion
+   is the one that fails today and is worded to catch any future
+   missing-rule regression of the same shape, not just this one element.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — annotations are stored
+as opaque PDF bytes (`D.printAnnotations`), unaffected by page CSS. Legacy
+Data Migration N/A. Export/Import: **this is the open question in Step 1** —
+check the saved-PDF path explicitly rather than assuming CSS carries into
+it. Legal/Compliance: contingent entirely on Step 1; if the export is clean,
+downgrade this item's severity in the record rather than leaving the
+stronger claim standing.
 
 ---
 
@@ -394,6 +747,83 @@ this page is in that spec's scope, or gets extended to cover it if not.
 to address — prefer the existing card pattern over a new one, and name
 which pattern is actually being reused once Step 2 above is answered.
 
+### Verified 2026-09-14 — CONFIRMED, measured, and NOT covered by Milestone 40I
+
+**Step 1's overlap question is answered: no overlap.** Milestone 40I
+**landed 2026-09-13** (`MILESTONE-ARCHIVE.md:13413`) and was a different
+defect entirely — a single `min-height` rule *deletion* in `forms.css`
+fixing multi-column card-row **label misalignment** (a hand-rolled field's
+label sitting ~17px lower than its primitive-built row-mates). It does not
+touch row height on this page and does not resolve this finding.
+
+**Measured on the real page** (Annual Guardianship Plan → `/p4`,
+*3G. Insurance & Benefits*):
+
+- **156px per row**, uniformly, across all 12 rows
+- **1909px total table height**
+- the `.form-check` inside each cell measures exactly **44px**
+
+**Root cause — arithmetic, not a stray rule.** `pagePlanABenefits()`
+(`src/features/plan-annual/index.js:338-362`) renders a `<table
+class="plan-benefits-table">` whose two answer columns are pinned narrow —
+`<th class="text-center" style="width:7rem">` (`:353`) — and each cell holds
+a `yesNoRadioHTML(...)` pair (`:345-346`). At 7rem the Yes and No options
+cannot sit side by side, so they wrap to stacked; each is a `.form-check`
+carrying `min-height:2.75rem` (44px) from `src/styles/forms.css:123`.
+44 × 2, plus the legend and cell padding, is the observed 156px.
+
+**The 44px is deliberate and must not be the thing that gets removed.**
+`forms.css:121-122` states it outright: *"WCAG 2.5.5 wants at least a 44x44
+tap target — a bare native checkbox is much smaller than that."* Shrinking
+it to make rows shorter would trade a layout complaint for an accessibility
+regression. The height is a symptom of the **column width**, not of the tap
+target.
+
+### Corrective plan
+
+1. **Check the blast radius before scoping.** Grep for other
+   `yesNoRadioHTML(...)` calls inside narrow fixed-width table cells —
+   Plan Annual's ADLs and Rights pages (`PLAN_ADLS`/`PLAN_ADL_RATINGS`/
+   `PLAN_RIGHTS`, same feature file) are built from the same primitives and
+   may share the shape exactly. Fixing only the benefits page would leave
+   siblings visibly inconsistent, which is the opposite of this item's own
+   UI/UX Consistency axis. Decide scope from what that grep finds.
+2. **Fix by letting the pair sit horizontally, not by shrinking the target.**
+   Two candidate approaches, to be chosen against what Step 1 finds:
+   - **Preferred:** make the radio pair explicitly horizontal within these
+     cells — a scoped rule such that `.plan-benefits-table .form-check`
+     siblings lay out in a nowrap row — and let the column size to its
+     content instead of being pinned at `7rem`. Keeps `min-height:2.75rem`
+     untouched, so the tap target survives.
+   - **Alternative:** widen the two `width:7rem` columns to whatever the
+     side-by-side pair actually needs (~10-11rem at the default font).
+     Simpler, but a magic number that breaks again if the labels change.
+   Either way the change is scoped to `.plan-benefits-table` (or a shared
+   class if Step 1 finds siblings) — **not** to `.form-check` globally,
+   which is used across every form in the app.
+3. **Verify at real widths.** The app has a mobile/tablet breakpoint and
+   container queries in the dashboard; check the fix at desktop (~1440px),
+   tablet (~1024px) and phone (~390px). At the narrow end the stacked layout
+   may be correct and should be allowed to stack — the goal is "not stacked
+   when there is room", not "never stacked".
+4. **Regression guard.** Extend `tests/e2e/schedule-card-layout.spec.ts`
+   with a **paired** assertion on this page, both halves of which matter:
+   - each benefits row renders below a sane height (e.g. ≤ 88px at desktop
+     width), and
+   - `.form-check` inside it still computes `min-height` ≥ 44px.
+
+   The second assertion is what stops a future "fix" from hitting the target
+   by deleting the accessibility rule. No new spec file, so no
+   `TEST-INDEX.md` change — but update that spec's row text if its scope
+   description no longer covers this page.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — presentation only.
+UI/UX Consistency: the reused pattern is `yesNoRadioHTML()` + `.form-check`
+(`src/core/form/form-fields.js`, `src/styles/forms.css:123`); this item
+changes only how that pattern is *laid out* inside one table, and invents no
+new component. Accessibility: the 44px WCAG 2.5.5 tap target is explicitly
+in scope to **preserve**, and pinned by the guard in step 4.
+
 ---
 
 ## 50F — Typed-Signature Preview Clips Long Names
@@ -445,6 +875,100 @@ fix confirmed through to the applied stamp and an exported PDF sample.
 Alan's own judgment on priority once it's known whether this reaches the
 actual filed document, per `AGENTS.md` §8's instruction not to resolve
 legal-sufficiency questions in a planning document.
+
+### Verified 2026-09-14 — CONFIRMED, and Step 1 is answered: it reaches the document
+
+**This is the highest-severity confirmed item in Milestone 50.** Step 1's
+open question — preview-only, or does it carry through? — resolves to
+*carries through*, because apply and preview draw on **the same canvas**.
+
+Measured live (Plan Simplified → `/p3`, guardian 0 set to Stamp, Type tab,
+name `"Bartholomew Fitzgerald-Montgomery III"`, 37 characters):
+
+- canvas is **600 × 180** (`CANVAS_W`/`CANVAS_H`,
+  `src/core/signature/signature-pad.js:136-137`)
+- font resolves to **72px cursive**
+- rendered text width is **1388px** — **2.3× the canvas width**
+- non-transparent pixels are present on **both** the left edge column (31 px
+  of height) and the right edge column (8 px) — i.e. the name is cut off at
+  both ends, not merely overflowing on one side
+- after clicking **Apply Signature**, the stored stamp
+  (`D.planGuardians[0].signatureImage`) is a 600 × 180 PNG with
+  **identical edge-pixel counts (31 / 8)** — the truncation is baked into
+  the saved image
+
+**Root cause.** `renderTypedPreview()`
+(`src/core/signature/signature-pad.js:218-228`) sets a **fixed** font size,
+`Math.round(typePreview.height * 0.4)`, and calls
+`ctx.fillText(name, w/2, h/2)` with **no `measureText()` check and no
+`maxWidth` argument**. Canvas `fillText` does not shrink or wrap; anything
+wider than the canvas is simply clipped at its edges.
+
+**Why it reaches the PDF.** The Apply handler (`:265-287`) for the `type`
+tab does `renderTypedPreview(); sourceCanvas = typePreview; dataUrl =
+typePreview.toDataURL('image/png')` (`:268`) — the very canvas that was just
+clipped. That data URL is what `onApply` commits via `setImage(...)`
+(`signature-state-control.js:88-93`) into the filing, what Milestone 46A
+appends to the party's reusable stamp history (`:104-106`), and what the PDF
+engine stamps onto the generated document. There is no separate
+"export-quality" render path that would fix it later.
+
+### Corrective plan
+
+1. **Fix: scale to fit, never clip.** In `renderTypedPreview()`, measure and
+   shrink before drawing — and pass `maxWidth` to `fillText` as a
+   belt-and-braces guard so a name that bottoms out at the floor size is
+   *condensed* rather than cut:
+
+   ```js
+   const maxWidth = typePreview.width * 0.92;      // leave a visual margin
+   let size = Math.round(typePreview.height * 0.4);
+   ctx.font = `${size}px cursive`;
+   while (ctx.measureText(name).width > maxWidth && size > 12) {
+     size -= 2;
+     ctx.font = `${size}px cursive`;
+   }
+   ctx.fillText(name, typePreview.width / 2, typePreview.height / 2, maxWidth);
+   ```
+
+   Because Apply reuses this same canvas, **fixing the preview fixes the
+   stored stamp and the exported PDF with no second change** — state that in
+   the commit message so it is not re-investigated later.
+2. **One decision, small:** the minimum font floor. Below roughly 12px a
+   cursive signature stops being legible, and the input is already bounded
+   at `maxlength="80"` (`:192`). Recommend **floor at 12px plus the
+   `maxWidth` condense** — always render something, never refuse. Rejecting
+   a long legal name would be a worse outcome than a condensed one, and a
+   filer with a genuinely long name has no alternative.
+3. **Check the two sibling previews while in the file.** The Upload tab
+   draws with `drawImage(..., uploadPreview.width, uploadPreview.height)`
+   (`:240`), which scales rather than clips, and Draw is inherently
+   in-bounds — so neither shares this bug. Confirm rather than assume, and
+   record it, so the next reader does not re-check all three.
+4. **Regression guard.** Extend
+   `tests/e2e/signature-capture.contract.spec.ts` (which already drives the
+   Stamp state and the pad) with a test that types a 37+ character name,
+   clicks Apply, loads the **stored** `signatureImage` back into a canvas,
+   and asserts **zero non-transparent pixels in its left-most and right-most
+   columns**. Asserting on the stored PNG rather than the on-screen preview
+   is the point: it is the artefact that reaches the court document, and it
+   is what measures 31/8 today. No new spec file, so no `TEST-INDEX.md`
+   change.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — same field, same PNG
+dimensions, no persisted shape change; no
+`probate-guardian-data-model.csv` row is affected. **Legacy Data Migration —
+a real decision, answer it explicitly:** filings and Milestone 46A stamp
+histories saved before this fix may already hold a clipped PNG.
+**Recommended: leave them alone.** Silently re-rendering a stored signature
+image would rewrite a filer's executed mark without asking, which is worse
+than leaving a known-bad one they can re-capture deliberately; consider
+instead surfacing nothing and letting re-capture (an existing, explicit user
+action) be the remedy. Export/Import: the PDF stamping path consumes the
+stored data URL unchanged, so no export code needs touching. Legal/Compliance:
+Step 1 is now answered — a visibly truncated signature **can** reach a filed
+document today, which is the escalation condition this item set for itself.
+Flagging for Alan's priority call rather than asserting a legal conclusion.
 
 ---
 
@@ -514,6 +1038,113 @@ an established modal pattern; this brings two outliers into line with it,
 per `AGENTS.md` §8's preference for reusing existing patterns over
 inventing new ones (here, the reverse: eliminating a non-conforming
 pattern).
+
+### Verified 2026-09-14 — CONFIRMED, but roughly 40× the scope described
+
+Both named sites are real:
+
+- `src/core/pdf/pdf-preview.js:157` —
+  `window.confirm('Remove all annotations from this preview?')` behind the
+  Clear Annotations button (`:155`). The exact wording differs from this
+  item's paraphrase, but the mechanism is as reported.
+- `src/core/signature/signature-state-control.js:159` —
+  `window.confirm('Apply your saved signature to this filing?')`, quoted
+  correctly from the bundle.
+
+**Step 1's audit, run against `src/`:**
+
+| Dialog | Call sites |
+| --- | --- |
+| `confirm(` | **17** |
+| `alert(` | **68** |
+| `prompt(` | **2** |
+| **Total** | **87** |
+
+Across at least ten files: `pdf-preview.js`, `persistence/case-file.js`,
+`persistence/recovery-cache.js`, `signature/signature-state-control.js`,
+`features/annual-accounting/*`, `features/simplified-accounting/*`,
+`features/dashboard/index.js`, `legacy-app.js`, `pwa-ui.js`. A third
+`confirm()` sits in `pdf-preview.js:440` (proceed past outstanding
+requirements). **The finding is correct; "two outliers" is not** — this is a
+codebase-wide convention, not an oversight in two places, and that changes
+how it should be scoped and approved.
+
+**Disclosure:** Milestone 49/49B (landed 2026-09-14) added three further
+`confirm()` sites in `legacy-app.js` — the party merge, unmerge, and
+closed-filing sync prompts — deliberately following the surrounding
+`doPartyMergeKeep()` pattern. They are in scope for whatever 50G becomes.
+
+**The hard part is not the swap.** The app's modal system
+(`showModal`/`closeModal`, `fragments/common-modals.html`) is imperative and
+returns nothing. `confirm()` is synchronous and returns a boolean, and
+several call sites use that return value inline in ways an awaitable modal
+cannot drop into unchanged:
+
+- `src/legacy-app.js:6006` — `removePlanGuardian` uses `!window.confirm(...)`
+  to `return false` from a **synchronous** function.
+- `src/features/simplified-accounting/index.js:88` — inside a loop, using
+  the result to `break`.
+- `src/features/annual-accounting/index.js:276` — early `return` in the same
+  shape.
+- `src/core/persistence/case-file.js:494,756` — return values feeding
+  persistence branch logic.
+
+Those need restructuring, not replacing. This is why 50G cannot honestly be
+described as "a mechanical replacement of the dialog mechanism".
+
+### Corrective plan — do not start until the scope question is answered
+
+**Decision required from Alan before any work (`AGENTS.md` §2).**
+
+1. **Scope.** Which of these three?
+   - **(a) Confirms only — recommended.** The 17 `confirm()` sites are the
+     destructive/consequential ones this item is actually about. Highest
+     value, bounded, and the `alert()`s are a different problem.
+   - **(b) Confirms + alerts (85).** Much larger. Many `alert()`s are
+     success/failure notices in `catch` blocks ("Export failed: …",
+     "Backup complete: N form(s) saved") where a blocking modal is arguably
+     *worse* UX than a native dialog, and where the right answer is probably
+     a non-blocking toast — which is a UX redesign, not a mechanism swap,
+     and is explicitly out of this item's stated intent.
+   - **(c) Everything, including `prompt()`.**
+2. **Mechanism.** Whichever scope is chosen, the first deliverable is shared
+   infrastructure that does not exist yet: an **awaitable confirm modal**
+   (e.g. `confirmModal({ title, message, confirmLabel, danger })` returning
+   `Promise<boolean>`), built on the existing `.modal-overlay`/`.modal-box`
+   markup and `showModal`/`closeModal` so it inherits the app's focus
+   handling and styling rather than inventing a second modal system.
+
+**Suggested split, if approved:**
+
+- **50G-1 — the confirm path.** Build `confirmModal()`; convert the 17
+  `confirm()` sites. Most are already inside `async` functions
+  (`doPartyMergeKeep`, `doPartyUnmergeSelected`, dashboard delete) and take
+  an `await` cleanly. Budget the real work for the four synchronous /
+  inline-return sites listed above, each of which needs its caller made
+  async or restructured — handle those individually and verify each
+  caller's own callers still behave (a function that silently became a
+  Promise is a live bug, not a refactor).
+- **50G-2 — the alert path.** Separate sub-delivery, separate approval,
+  contingent on decision 1(b)/1(c). Likely wants a toast/inline-status
+  pattern rather than a modal, and should be scoped as UX work.
+- **50G-3 — the guard.** A unit test in the Milestone 42C allow-list style
+  (`tests/unit/window-bridge.spec.js` + its JSON fixture is the working
+  model): a fixture enumerating every permitted native-dialog site, and a
+  test that fails when a new one appears in `src/`. Seed the allow-list with
+  whatever survives the chosen scope so it passes on day one, then it
+  ratchets. Add its row to `TEST-INDEX.md` per `AGENTS.md` §7.
+
+**Sequencing note:** land 50G-3's guard **last**, not first — an allow-list
+seeded before the conversions would need editing on every commit of 50G-1.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A. Test Coverage & Index:
+one new unit spec (50G-3) plus a `TEST-INDEX.md` row; existing e2e specs
+that dismiss native dialogs via `page.once('dialog', …)` — including
+`party-dedupe.spec.ts` and `convert-ward.spec.ts` — **will break** when
+their call sites convert, and updating them is part of 50G-1's cost, not a
+surprise to discover later. UI/UX Consistency: reuses the existing modal
+markup; the new piece is the awaitable wrapper, which should be named as
+shared infrastructure rather than a one-off.
 
 ---
 
@@ -597,6 +1228,99 @@ this is worth treating as more than cosmetic — court-facing professional
 software should support keyboard-only operation as a baseline, independent
 of whether any specific user has requested it.
 
+### Verified 2026-09-14 — three findings, only one actionable
+
+This item's own caution was well placed. Tested three interaction modes
+against the real county combobox on a filing Cover:
+
+| Interaction | Result |
+| --- | --- |
+| Real mouse click (`mousedown` → `mouseup` → `click`) | ✅ **works** — commits "Orange" |
+| JS `element.click()` only (no `mousedown`) | ❌ fails — value unchanged |
+| Keyboard: type, `ArrowDown`, `Enter` | ❌ **fails** — value unchanged |
+
+**1. The "plain click" claim is an automation artifact — as suspected.** A
+real click fires `mousedown` first, which is the only listener there is
+(`src/form-events.js:140-144`). A tool driving `element.click()` in JS fires
+*only* a `click` event, which nothing handles. The `mousedown` +
+`preventDefault()` pattern is deliberate and load-bearing — the comment at
+`src/legacy-app.js:1587-1592` explains it stops the input's `blur` from
+closing the dropdown before selection registers. **Do not replace it.**
+
+**2. The keyboard gap is real.** The county dropdown
+(`filterCountyDropdown()`, `src/legacy-app.js:1574-1582`) renders plain
+`<button class="county-combobox-item">` elements with **no `role="option"`,
+no `aria-activedescendant`, and no `keydown` handler anywhere**. Worse,
+`focusout` schedules `hideCountyDropdown()` 150ms later
+(`src/form-events.js:134`), so tabbing toward the buttons closes the list
+before it can be reached. There is no keyboard route to a county at all.
+This is a genuine WCAG gap on a required field of every filing.
+
+**3. The Active Filing half is already fixed — this finding is stale.** The
+sidebar ward selector commits on a plain click (verified: `activeWardId`
+changes), and it already has full keyboard support — `ArrowDown`/`ArrowUp`/
+`Home`/`End`/`Enter`/`Escape` with `aria-activedescendant`, in
+`onWardSelectorKeydown()` (`src/legacy-app.js:4115-4155`). `Enter`
+dispatches a synthetic `mousedown` on the highlighted option so both paths
+share one commit. The code comment at `:4092-4094` records the exact
+behaviour this item reported ("selecting an entry left the active filing
+unchanged; a separate Switch Filing button was required") as a **past bug
+that was fixed**. The walkthrough build predated that fix.
+
+### Corrective plan — scope to the county combobox's keyboard support only
+
+**Explicitly out of scope:** the Active Filing picker (already correct, and
+is the reference implementation to copy), and any change to the `mousedown`
+handler (working as designed).
+
+1. **Mark up the dropdown as a real combobox.** In
+   `countyAutocompleteHTML()` (`src/legacy-app.js:1563-1570`) add
+   `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, and
+   `aria-controls` to the input. In `filterCountyDropdown()` (`:1574-1582`)
+   add `role="listbox"` to the dropdown and `role="option"` plus a stable
+   `id` to each item.
+2. **Add keyboard handling, modelled on the ward selector.** Mirror
+   `onWardSelectorKeydown()` (`:4115-4155`) — `ArrowDown`/`ArrowUp` move a
+   `data-combo-index`, `Home`/`End` jump, `Escape` closes, `Enter` commits —
+   and wire it next to the existing county `focusin`/`focusout` listeners in
+   `src/form-events.js:125-138` rather than inventing a new dispatch site.
+3. **Commit through the existing path — this is the trap to avoid.** `Enter`
+   must call `selectCountyOption(id, county)` (`src/legacy-app.js:1593`), the
+   same function the `mousedown` path uses, **not** set `input.value`
+   directly. `selectCountyOption()` dispatches a real `input` event
+   specifically so the field's normal write path runs, which is what
+   triggers `maybeCommitCoverCounty()` →
+   `commitCoverCounty()` — establishing the canonical ward-Party county
+   (Milestone 40C-A). Setting `.value` directly would select a county on
+   screen while silently skipping that commit, producing a filing whose
+   Cover shows a county the ward Party never recorded.
+4. **Handle the `focusout` race.** The 150ms deferred
+   `hideCountyDropdown()` (`src/form-events.js:134`) must not fire between a
+   keyboard commit and the re-render. Confirm behaviour when `Enter` is
+   pressed and focus stays in the input — the existing ward selector solves
+   the same problem by hiding the dropdown itself before committing.
+5. **Optional, cheap:** add a `click` listener alongside the existing
+   `mousedown` one. It changes nothing for real users but makes the control
+   behave under JS-driven `.click()`, so the next person writing a test does
+   not lose the time this walkthrough did. Worth a line of comment saying
+   that is *why* it exists.
+6. **Regression guard.** Extend `tests/e2e/cover-county.spec.ts` — which
+   already drives the real combobox by `mousedown` — with a **keyboard-only**
+   selection test: focus the input, type a prefix, `ArrowDown`, `Enter`, then
+   assert all three of the input's value, `D.county`, **and the ward Party's
+   canonical `county`**. That third assertion is what proves step 3 was done
+   correctly; the first two would pass even with the broken direct-`.value`
+   shortcut. No new spec file, so no `TEST-INDEX.md` change.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — no persisted shape
+changes, but note the county **commit side effect** in step 3 is the
+integration risk, not the markup. Legacy Data Migration N/A. UI/UX
+Consistency: the pattern being reused is named — `onWardSelectorKeydown()`'s
+existing combobox implementation in the same file; this brings the second
+combobox up to the first one's standard rather than inventing a third
+convention. Accessibility: a keyboard-only filer currently cannot set county
+on any filing, which is a baseline-operation gap, not a refinement.
+
 ---
 
 ## 50I — Manage Shared Records: Save Controls Accordion Never Auto-Collapses
@@ -678,3 +1402,98 @@ arrives collapsed on Manage Shared Records, identical to any filing page.
 should behave identically everywhere it mounts; this is a single missed
 condition in a shared function, not a design disagreement or a case for a
 page-specific override.
+
+### Verified 2026-09-14 — root cause correct; framing is too narrow
+
+**The code analysis above holds.** Line numbers have shifted by roughly +8
+since it was written (Milestone 49/49B edits to `legacy-app.js`); the gate
+is now at **`src/legacy-app.js:4912`**, with `_saveControlsCollapsed`
+initialised `false` at **`:4864`**:
+
+```js
+const saveToggleBtn=document.getElementById('save-controls-toggle-btn');
+if(saveToggleBtn)saveToggleBtn.style.display=activeWardId?'block':'none';
+if(activeInventoryType&&!_saveControlsUserToggled)_saveControlsCollapsed=true;
+applySaveControlsCollapsedState();
+```
+
+**Two corrections to the write-up, both from live measurement:**
+
+1. **It is not specific to `/party-management`.** `/dashboard`,
+   `/inventory-select` and `/activity-log` run through the identical gate
+   with no `activeInventoryType`. Step 1 above suspected this; it is
+   confirmed. The fix belongs in the shared `updateSidebar()` condition, and
+   the sub-delivery should be retitled accordingly rather than implying a
+   page-specific defect.
+2. **The symptom is session-path dependent, which is why it is hard to
+   catch.** In any session that reaches Manage Shared Records the ordinary
+   way, a filing page has already been visited — creating *or* opening a
+   filing calls `navigate('/')` — so the flag is already `true` and the
+   accordion measures **collapsed** on `/party-management`, `/dashboard` and
+   a filing page alike. Measured: `#save-controls-body` computed
+   `display: none` on all three, toggle reading *"Show save controls ▾"*.
+
+   The genuine reproduction is a session that reaches a special page
+   **without ever opening a filing** — restore a case file, land on the
+   dashboard, then Help → Manage shared records. That path could not be
+   staged in the e2e harness (a reload in the no-password harness does not
+   restore the case file), so this half rests on the code reading, which is
+   unambiguous: with `activeInventoryType` null, `_saveControlsCollapsed`
+   keeps its initial `false` and the section renders expanded.
+
+Alan's original report is consistent with exactly that path.
+
+### Corrective plan
+
+1. **Fix the gate at `src/legacy-app.js:4912`.** The intent stated in the
+   code's own comment (`:4850-4855` in the original numbering) is that the
+   section collapses on arrival unless the user has said otherwise. The
+   simplest change that matches both that intent and Alan's ask ("default
+   accordion collapsed, like every other page") is to drop the
+   filing-type condition entirely:
+
+   ```js
+   if(!_saveControlsUserToggled)_saveControlsCollapsed=true;
+   ```
+
+   `_saveControlsUserToggled` continues to protect a filer who deliberately
+   expanded it, so the sticky behaviour on filing pages is unchanged.
+2. **Check the predicate against reality before settling on it.** Two
+   candidates were considered — gating on `activeWardId` instead of
+   `activeInventoryType`, or removing the condition. `activeWardId` is
+   **not** safe without checking: `routes.spec.ts` already pins that
+   *"returning to the dashboard clears the previous filing's sidebar
+   context"*, so `activeWardId` may be null on `/dashboard`, which would
+   leave that page still uncollapsed. Confirm what `activeWardId` actually
+   holds on each of the four `SPECIAL_PAGES` (`src/legacy-app.js:7815`)
+   before choosing; the unconditional form in step 1 sidesteps the question
+   and is recommended for that reason. (`SPECIAL_PAGES` is now at
+   `src/legacy-app.js:7823`, also shifted by the Milestone 49/49B edits.)
+3. **Confirm the toggle button's own visibility separately.** The line above
+   the gate hides `save-controls-toggle-btn` entirely when `activeWardId` is
+   falsy (`:4911`). If a special page can have no active ward, the section
+   could end up collapsed with no visible control to expand it — worse than
+   the bug being fixed. Check this while doing step 2 and, if it happens,
+   show the toggle whenever the sidebar itself is shown.
+4. **Do not change the section's position.** As the write-up correctly
+   notes, `.sidebar-save-section` is the same DOM node in the same shared
+   flex layout on every page (`src/styles/shell.css:38,49,172`) — it is
+   already bottom-left. The "should display in the bottom left" half of the
+   report is satisfied today; only the collapse is missing.
+5. **Regression guard.** Extend `tests/e2e/routes.spec.ts`, which already
+   owns sidebar-behaviour coverage, with two assertions:
+   - arriving at `/dashboard`, `/party-management` and `/activity-log`
+     leaves `#save-controls-body` collapsed, and
+   - after the user manually expands it, navigating does **not** re-collapse
+     it — pinning `_saveControlsUserToggled`'s override, so a later
+     "simplification" of the gate cannot quietly remove the user's choice.
+
+   No new spec file, so no `TEST-INDEX.md` change.
+
+**Cross-cutting (`AGENTS.md` §8):** Data Model N/A — `_saveControlsCollapsed`
+and `_saveControlsUserToggled` are session-only script state, not persisted,
+so no `probate-guardian-data-model.csv` row is involved. Legacy Data
+Migration N/A. Export/Import N/A. UI/UX Consistency: directly this axis, and
+the corrected scope (all four `SPECIAL_PAGES`, one shared condition)
+strengthens rather than weakens the original argument — the fix is one
+condition in one shared function, with no page-specific override anywhere.
