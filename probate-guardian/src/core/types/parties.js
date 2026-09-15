@@ -23,6 +23,8 @@
  * @property {string | null} [secondaryEmail] - Secondary email address.
  * @property {PartyAddress} address - Mailing/residence address.
  * @property {PartyAddress | null} [officeAddress] - Professional office address.
+ * @property {PartyAddress | null} [mailingAddress] - Milestone 49B: a ward's mailing address where
+ *   a filing collects it separately from the residence (which is `address`); null until supplied.
  * @property {string | null} [county] - Milestone 40C-A: canonical Florida county
  *   for a Party with the 'ward' role; null until the first explicit Cover
  *   selection. Later filings for this ward hydrate from it. Meaningless for

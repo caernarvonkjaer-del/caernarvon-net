@@ -824,3 +824,164 @@ test.describe('party merge undo & near-match detection', () => {
     expect(result.legacyMergedInto).toBe(result.ids.c);
   });
 });
+
+// Milestone 49B: the ward is a full identity role (name, SSN, residence,
+// phone, mailing address -- whichever the filing type collects), and a filing
+// marked Closed on the dashboard is cut off from its party records in both
+// directions until the user syncs it by hand.
+test.describe('ward identity role & closed-filing cut-off (Milestone 49B)', () => {
+  test('ward fields round-trip per type: Annual Plan (SSN, residence, mailing), Minor Plan (split city/state/zip), Simplified (SSN), Guardian Inventory (name only)', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const party = w.createParty('ward');
+      Object.assign(party, { name: 'Eleanor Whitfield', phone: '(727) 555-0101', identifiers: { taxId: '111-22-3333', barNumber: null },
+        address: { street: '410 Bayshore Dr', cityStateZip: 'Clearwater, FL 33756' }, mailingAddress: { street: 'PO Box 9', cityStateZip: 'Largo, FL 33770' } });
+      const planAnnual: any = { inventoryType: 'planAnnual' };
+      const planMinor: any = { inventoryType: 'planMinor' };
+      const simplified: any = { inventoryType: 'simplified' };
+      const inventory: any = { inventoryType: 'guardian' };
+      for (const f of [planAnnual, planMinor, simplified, inventory]) w.hydrateFromParty(party, f, 'ward', 0);
+
+      // Dehydrate the other way from a Minor Plan with a hand-typed split address.
+      const minorEdited: any = { inventoryType: 'planMinor', wardName: 'Eleanor Whitfield', q1Street: '12 Oak St', q1City: 'St. Petersburg', q1State: 'FL', q1Zip: '33701', q1Phone: '(727) 555-0202' };
+      const party2 = w.createParty('ward');
+      w.dehydrateIntoParty(minorEdited, 'ward', 0, party2);
+
+      return {
+        planAnnual: { wardName: planAnnual.wardName, ssn: planAnnual.ssn, residenceAddress: planAnnual.residenceAddress, residenceCityStateZip: planAnnual.residenceCityStateZip, residencePhone: planAnnual.residencePhone, mailingAddress: planAnnual.mailingAddress, mailingCityStateZip: planAnnual.mailingCityStateZip },
+        planMinor: { wardName: planMinor.wardName, q1Street: planMinor.q1Street, q1City: planMinor.q1City, q1State: planMinor.q1State, q1Zip: planMinor.q1Zip, q1Phone: planMinor.q1Phone, ssn: planMinor.ssn },
+        simplified: { wardName: simplified.wardName, ssn: simplified.ssn, residenceAddress: simplified.residenceAddress },
+        inventory: { wardName: inventory.wardName, ssn: inventory.ssn, keys: Object.keys(inventory).sort() },
+        readInventory: w.readRoleFields(inventory, 'ward', 0),
+        party2: { address: party2.address, phone: party2.phone, taxId: party2.identifiers.taxId },
+        slots: {
+          annualSsn: w.identitySlotForPath(planAnnual, 'ssn'),
+          minorCity: w.identitySlotForPath(planMinor, 'q1City'),
+          initialMailing: w.identitySlotForPath({ inventoryType: 'planInitial' }, 'mailingCityStateZip'),
+          simplifiedGuardianSsn: w.identitySlotForPath(simplified, 'guardians.0.ssn'),
+          inventorySsn: w.identitySlotForPath(inventory, 'ssn'),
+        },
+      };
+    });
+
+    expect(result.planAnnual).toEqual({ wardName: 'Eleanor Whitfield', ssn: '111-22-3333', residenceAddress: '410 Bayshore Dr', residenceCityStateZip: 'Clearwater, FL 33756', residencePhone: '(727) 555-0101', mailingAddress: 'PO Box 9', mailingCityStateZip: 'Largo, FL 33770' });
+    expect(result.planMinor).toEqual({ wardName: 'Eleanor Whitfield', q1Street: '410 Bayshore Dr', q1City: 'Clearwater', q1State: 'FL', q1Zip: '33756', q1Phone: '(727) 555-0101', ssn: undefined });
+    expect(result.simplified).toEqual({ wardName: 'Eleanor Whitfield', ssn: '111-22-3333', residenceAddress: undefined });
+    expect(result.inventory.keys).toEqual(['inventoryType', 'wardName']); // nothing invented on a type with no slot for it
+    expect(result.readInventory).toEqual({ name: 'Eleanor Whitfield' });
+    expect(result.party2).toEqual({ address: { street: '12 Oak St', cityStateZip: 'St. Petersburg, FL 33701' }, phone: '(727) 555-0202', taxId: null });
+    expect(result.slots.annualSsn).toEqual({ role: 'ward', index: 0 });
+    expect(result.slots.minorCity).toEqual({ role: 'ward', index: 0 });
+    expect(result.slots.initialMailing).toEqual({ role: 'ward', index: 0 });
+    expect(result.slots.simplifiedGuardianSsn).toEqual({ role: 'guardian', index: 0 }); // the nested guardian SSN is still the guardian's
+    expect(result.slots.inventorySsn).toBeNull(); // Guardian Inventory has no ward SSN field
+  });
+
+  test('a closed filing neither receives party edits nor sends its own out; drift is reported and cleared by an explicit sync; reopening does not catch up by itself', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const party = w.createParty('guardian');
+      Object.assign(party, { name: 'Jane Doe', phone: '555-0100' });
+      const open: any = { wardId: 'open', inventoryType: 'annual', guardianPartyIds: [party.id] };
+      const closed: any = { wardId: 'closed', wardName: 'Ward C', inventoryType: 'planInitial', guardianPartyIds: [party.id], archived: true };
+      cf.wards.push(open, closed);
+      w.hydrateFromParty(party, open, 'guardian', 0);
+      w.hydrateFromParty(party, closed, 'guardian', 0);
+
+      // Edit on the open filing: party and open siblings follow, the closed one does not.
+      open.guardians[0].phone = '555-0200';
+      w.syncIdentityField(open, 'guardian', 0);
+      const afterOpenEdit = { party: party.phone, closed: closed.planGuardians[0].phone };
+
+      // Edit inside the closed filing: nothing leaves it.
+      closed.planGuardians[0].name = 'Jane Q. Doe';
+      w.syncIdentityField(closed, 'guardian', 0);
+      const afterClosedEdit = { party: party.name, open: open.guardians[0].name };
+
+      const drift = w.closedFilingDrift(party.id).map((d: any) => ({ wardId: d.filing.wardId, role: d.role, keys: d.differences.map((x: any) => x.key).sort() }));
+      const filingDrift = w.filingDriftFromParties(closed).map((d: any) => ({ role: d.role, partyName: d.party.name }));
+      const openDrift = w.filingDriftFromParties(open);
+
+      // Reopen: still stale until synced.
+      closed.archived = false;
+      const afterReopen = { phone: closed.planGuardians[0].phone, drift: w.closedFilingDrift(party.id).length };
+      closed.archived = true;
+
+      const synced = w.syncFilingSlotWithParty(closed, 'guardian', 0);
+      const afterSync = { phone: closed.planGuardians[0].phone, name: closed.planGuardians[0].name, drift: w.closedFilingDrift(party.id).length };
+      const unlinkedSync = w.syncFilingSlotWithParty(closed, 'attorney', 0);
+
+      return { afterOpenEdit, afterClosedEdit, drift, filingDrift, openDrift, afterReopen, synced, afterSync, unlinkedSync };
+    });
+
+    expect(result.afterOpenEdit).toEqual({ party: '555-0200', closed: '555-0100' });
+    expect(result.afterClosedEdit).toEqual({ party: 'Jane Doe', open: 'Jane Doe' });
+    expect(result.drift).toEqual([{ wardId: 'closed', role: 'guardian', keys: ['name', 'phone'] }]);
+    expect(result.filingDrift).toEqual([{ role: 'guardian', partyName: 'Jane Doe' }]);
+    expect(result.openDrift).toEqual([]);
+    expect(result.afterReopen).toEqual({ phone: '555-0100', drift: 0 }); // no longer "closed drift", but not rewritten either
+    expect(result.synced).toBe(true);
+    expect(result.afterSync).toEqual({ phone: '555-0200', name: 'Jane Doe', drift: 0 });
+    expect(result.unlinkedSync).toBe(false);
+  });
+
+  test('legacy backfill fills the ward Party from its filings and open filings from the Party, never overwriting a value or touching a closed filing', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const party = w.createParty('ward'); party.name = 'Eleanor Whitfield'; // pre-49B: name and county only
+      const annualPlan: any = { wardId: 'ap', inventoryType: 'planAnnual', wardPartyId: party.id, wardName: 'Eleanor Whitfield', ssn: '111-22-3333', residenceAddress: '410 Bayshore Dr', residenceCityStateZip: 'Clearwater, FL 33756', residencePhone: '', mailingAddress: '', mailingCityStateZip: '' };
+      const initialPlan: any = { wardId: 'ip', inventoryType: 'planInitial', wardPartyId: party.id, wardName: 'Eleanor Whitfield', residenceAddress: '', residenceCityStateZip: '', residencePhone: '(727) 555-0101', mailingAddress: 'PO Box 9', mailingCityStateZip: 'Largo, FL 33770' };
+      const closedPlan: any = { wardId: 'cp', inventoryType: 'planAnnual', wardPartyId: party.id, wardName: 'Eleanor Whitfield', ssn: '', residenceAddress: '99 Old Rd', residenceCityStateZip: 'Tampa, FL 33602', residencePhone: '', archived: true };
+      const inventory: any = { wardId: 'gi', inventoryType: 'guardian', wardPartyId: party.id, wardName: 'Eleanor Whitfield' };
+      cf.wards.push(annualPlan, initialPlan, closedPlan, inventory);
+
+      const touched = w.backfillWardPartyIdentity();
+      return {
+        touched,
+        party: { taxId: party.identifiers.taxId, address: party.address, phone: party.phone, mailing: party.mailingAddress },
+        initialPlan: { residenceAddress: initialPlan.residenceAddress, residenceCityStateZip: initialPlan.residenceCityStateZip, residencePhone: initialPlan.residencePhone, ssn: initialPlan.ssn },
+        annualPlan: { residencePhone: annualPlan.residencePhone, mailingAddress: annualPlan.mailingAddress, residenceAddress: annualPlan.residenceAddress },
+        closedPlan: { residenceAddress: closedPlan.residenceAddress, ssn: closedPlan.ssn, residencePhone: closedPlan.residencePhone },
+        inventoryKeys: Object.keys(inventory).sort(),
+      };
+    });
+
+    expect(result.party).toEqual({ taxId: '111-22-3333', address: { street: '410 Bayshore Dr', cityStateZip: 'Clearwater, FL 33756' }, phone: '(727) 555-0101', mailing: { street: 'PO Box 9', cityStateZip: 'Largo, FL 33770' } });
+    expect(result.initialPlan).toEqual({ residenceAddress: '410 Bayshore Dr', residenceCityStateZip: 'Clearwater, FL 33756', residencePhone: '(727) 555-0101', ssn: undefined }); // no SSN slot on this type
+    expect(result.annualPlan).toEqual({ residencePhone: '(727) 555-0101', mailingAddress: 'PO Box 9', residenceAddress: '410 Bayshore Dr' });
+    expect(result.closedPlan).toEqual({ residenceAddress: '99 Old Rd', ssn: '', residencePhone: '' }); // an open filing's value beat it for the Party; it was not rewritten
+    expect(result.inventoryKeys).toEqual(['inventoryType', 'wardId', 'wardName', 'wardPartyId']);
+    expect(result.touched).toBeGreaterThan(0);
+  });
+
+  test('merge and unmerge move a closed filing\'s link but leave its copy alone, so it shows as drift', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const cf = w.caseFile;
+      const primary = w.createParty('guardian'); Object.assign(primary, { name: 'Jane Doe', phone: '555-0100' });
+      const sub = w.createParty('guardian'); Object.assign(sub, { name: 'Jane Doe', phone: '555-0200' });
+      const closed: any = { wardId: 'closed', wardName: 'Ward C', inventoryType: 'annual', guardianPartyIds: [sub.id], archived: true };
+      cf.wards.push(closed);
+      w.hydrateFromParty(sub, closed, 'guardian', 0);
+
+      w.mergeParties(primary.id, sub.id, { adoptBlankFields: false });
+      const afterMerge = { link: closed.guardianPartyIds[0], phone: closed.guardians[0].phone, drift: w.closedFilingDrift(primary.id).map((d: any) => d.differences.map((x: any) => x.key)) };
+      w.unmergeParty(sub.id);
+      const afterUnmerge = { link: closed.guardianPartyIds[0], phone: closed.guardians[0].phone, drift: w.closedFilingDrift(sub.id).length };
+      return { primaryId: primary.id, subId: sub.id, afterMerge, afterUnmerge };
+    });
+
+    expect(result.afterMerge).toEqual({ link: result.primaryId, phone: '555-0200', drift: [['phone']] });
+    expect(result.afterUnmerge).toEqual({ link: result.subId, phone: '555-0200', drift: 0 });
+  });
+});

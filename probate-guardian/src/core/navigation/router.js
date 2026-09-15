@@ -225,6 +225,9 @@ export async function renderPage(page) {
       const mount = window[mountFeatureFnName(engine)];
       if (typeof mount === 'function') await mount(page);
     }
+    if (page === '/' && activeWard && activeWard.archived && typeof window.renderClosedFilingSyncNotice === 'function') {
+      window.renderClosedFilingSyncNotice(el, activeWard);
+    }
     if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
     // Milestone 40C-C removed window.enforceDateRanges(); date-range order is
     // reported by checkDateOrder() in each validator, not wired onto the inputs.

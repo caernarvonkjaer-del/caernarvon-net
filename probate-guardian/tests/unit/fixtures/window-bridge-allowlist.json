@@ -347,6 +347,14 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "backfillWardPartyIdentity"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "closedFilingDrift"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "createParty"
     },
     {
@@ -356,6 +364,10 @@
     {
       "file": "src/core/party-resolver.js",
       "name": "dismissPartyPair"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "filingDriftFromParties"
     },
     {
       "file": "src/core/party-resolver.js",
@@ -380,6 +392,10 @@
     {
       "file": "src/core/party-resolver.js",
       "name": "identitySlotForPath"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "isFilingClosed"
     },
     {
       "file": "src/core/party-resolver.js",
@@ -411,6 +427,10 @@
     },
     {
       "file": "src/core/party-resolver.js",
+      "name": "reconcileSlotWithParty"
+    },
+    {
+      "file": "src/core/party-resolver.js",
       "name": "referenceCountForParty"
     },
     {
@@ -428,6 +448,10 @@
     {
       "file": "src/core/party-resolver.js",
       "name": "subPartiesOf"
+    },
+    {
+      "file": "src/core/party-resolver.js",
+      "name": "syncFilingSlotWithParty"
     },
     {
       "file": "src/core/party-resolver.js",

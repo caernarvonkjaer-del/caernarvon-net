@@ -2449,6 +2449,7 @@ const ACTIVITY_EVENT_META={
   DATA_IMPORT:      {label:'Backup restored',          iconName:'upload'},
   PARTY_MERGE:      {label:'Shared record merged',     iconName:'swap'},
   PARTY_UNMERGE:    {label:'Shared record unmerged',   iconName:'swap'},
+  PARTY_SYNC:       {label:'Closed filing synced with shared record', iconName:'swap'},
 };
 let _activityLogEntries=[]; // newest-first, loaded once per page visit
 const ACTIVITY_LOG_RENDER_CAP=300; // safety cap on DOM rows, not on what's exported
@@ -2617,17 +2618,38 @@ const PARTY_FIELD_ROWS=[
   ['secondaryEmail','Secondary Email'],
   ['identifiers.taxId','SSN/EIN/TIN'],
   ['identifiers.barNumber','Bar Number'],
+  ['county','County'],
   ['address.street','Street Address'],
   ['address.cityStateZip','City/State/Zip'],
+  ['mailingAddress.street','Mailing Street'],
+  ['mailingAddress.cityStateZip','Mailing City/State/Zip'],
   ['officeAddress.street','Office Street'],
   ['officeAddress.cityStateZip','Office City/State/Zip'],
   ['notes','Notes'],
 ];
+// Labels for the flat slot shape readRoleFields() returns (party-resolver.js).
+const SLOT_FIELD_LABELS={name:'Name',taxId:'SSN/EIN/TIN',barNumber:'Bar Number',phone:'Phone',email:'Email',secondaryEmail:'Secondary Email',street:'Street Address',cityStateZip:'City/State/Zip',officeStreet:'Office Street',officeCityStateZip:'Office City/State/Zip',mailingStreet:'Mailing Street',mailingCityStateZip:'Mailing City/State/Zip'};
 function partyFieldValue(party,path){
   return path.split('.').reduce((v,k)=>v&&v[k],party)||'';
 }
 function partyRoleBadgesHTML(party){
   return (party.roles||[]).map(r=>`<span class="badge bg-secondary">${esc(r)}</span>`).join(' ');
+}
+function filingLabel(filing){
+  return `${filing.wardName||'(unnamed)'} — ${INVENTORY_TYPES[filing.inventoryType]?.name||filing.inventoryType}${filing.archived?' (closed)':''}`;
+}
+function slotLabel(role,index){
+  return role==='guardian'?`Guardian ${index+1}`:role.charAt(0).toUpperCase()+role.slice(1);
+}
+// The filings a record is linked into, one line per slot -- for a ward the
+// most useful clue to whether two records are the same person.
+function partyReferenceLinesHTML(partyId){
+  const lines=[];
+  for(const filing of caseFile.wards||[]){
+    for(const slot of window.slotsReferencing(filing,partyId))lines.push(`${filingLabel(filing)} · ${slotLabel(slot.role,slot.index)}`);
+  }
+  if(!lines.length)return '<div style="font-size:.8rem;color:var(--ink-3);">Not linked to any filing</div>';
+  return `<div style="font-size:.8rem;color:var(--ink-3);">Used by:</div><ul class="mb-0 ps-3" style="font-size:.8rem;">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`;
 }
 // Screen-local selection state, never persisted: the (at most two) directory
 // rows ticked to compare, and the sub rows ticked to unmerge. Reset each
@@ -2686,6 +2708,7 @@ function partyDedupeCardHTML(candidate){
         const differs=val!==otherVal;
         return `<div class="row g-1 mb-1"><div class="col-5" style="font-size:.78rem;color:var(--ink-3);">${esc(label)}</div><div class="col-7" style="font-size:.85rem;${differs?'font-weight:700;color:var(--danger-text);':''}">${esc(val)||'—'}</div></div>`;
       }).join('')}
+      <div class="mt-2">${partyReferenceLinesHTML(party.id)}</div>
       <button type="button" class="btn btn-sm btn-primary mt-2 w-100" data-form-action="party-merge-keep" data-keep-id="${esc(party.id)}" data-discard-id="${esc(other.id)}">This One is Primary</button>
     </div>
   </div></div>`;
@@ -2720,8 +2743,69 @@ function renderPartyDirectoryRows(){
       <span style="font-size:.8rem;color:var(--ink-3);white-space:nowrap;">${count} reference${count===1?'':'s'}</span>
     </div>
     ${window.subPartiesOf(p.id).map(partySubRowHTML).join('')}
+    ${partyClosedDriftHTML(p.id)}
   </div>`;
   }).join('');
+}
+// Closed filings whose copy of this record has fallen behind it, each with
+// its own Sync with Current button (see party-resolver.js's closed-filing
+// section for why they don't just stay in sync).
+function partyClosedDriftHTML(partyId){
+  const drift=window.closedFilingDrift(partyId);
+  if(!drift.length)return '';
+  const rows=drift.map(d=>`<div class="d-flex justify-content-between align-items-center gap-2 mt-1">
+    <span style="font-size:.85rem;">Closed filing <b>${esc(filingLabel(d.filing).replace(' (closed)',''))}</b> · ${esc(slotLabel(d.role,d.index))} differs: ${esc(d.differences.map(x=>SLOT_FIELD_LABELS[x.key]||x.key).join(', '))}</span>
+    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" data-form-action="party-sync-closed" data-ward-id="${esc(d.filing.wardId)}" data-role="${esc(d.role)}" data-index="${d.index}">Sync with Current</button>
+  </div>`).join('');
+  const all=drift.length>1?`<div class="mt-2"><button type="button" class="btn btn-sm btn-primary" data-form-action="party-sync-closed-all" data-party-id="${esc(partyId)}">Sync All (${drift.length})</button></div>`:'';
+  return `<div class="ms-3 ps-3 mt-2 border-start">${rows}${all}</div>`;
+}
+async function doPartySyncClosed(wardId,role,index){
+  const filing=(caseFile.wards||[]).find(w=>w.wardId===wardId);
+  if(!filing)return;
+  if(window.syncFilingSlotWithParty(filing,role,Number(index)||0)){
+    await auditLog('PARTY_SYNC',`Synced ${slotLabel(role,Number(index)||0)} on closed filing "${filing.wardName}" with its shared record`,true,wardId);
+    autoSave();
+  }
+  renderPartyManagementBody();
+}
+async function doPartySyncClosedAll(partyId){
+  for(const d of window.closedFilingDrift(partyId)){
+    if(window.syncFilingSlotWithParty(d.filing,d.role,d.index))await auditLog('PARTY_SYNC',`Synced ${slotLabel(d.role,d.index)} on closed filing "${d.filing.wardName}" with its shared record`,true,d.filing.wardId);
+  }
+  autoSave();
+  renderPartyManagementBody();
+}
+// The Cover of a closed filing: which linked records have moved on since it
+// was closed, with a Sync with Current button per slot. Rendered by the
+// router after the feature mounts its Cover, only for closed filings.
+function renderClosedFilingSyncNotice(container,filing){
+  if(!container||!filing||!filing.archived)return;
+  container.querySelector('[data-closed-filing-sync]')?.remove();
+  const drift=window.filingDriftFromParties(filing);
+  if(!drift.length)return;
+  const rows=drift.map(d=>`<li class="d-flex justify-content-between align-items-center gap-2 mb-1">
+    <span><b>${esc(slotLabel(d.role,d.index))}</b> "${esc(d.party.name||'(unnamed)')}": ${esc(d.differences.map(x=>SLOT_FIELD_LABELS[x.key]||x.key).join(', '))}</span>
+    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" data-form-action="filing-sync-closed" data-role="${esc(d.role)}" data-index="${d.index}">Sync with Current</button>
+  </li>`).join('');
+  const notice=document.createElement('div');
+  notice.className='alert alert-warning mb-3';
+  notice.setAttribute('data-closed-filing-sync','');
+  notice.innerHTML=`<div class="mb-1"><b>This filing is closed.</b> Its shared records have changed since it was closed; it keeps what was filed until you sync it.</div>
+    <ul class="list-unstyled mb-0">${rows}</ul>
+    ${drift.length>1?`<button type="button" class="btn btn-sm btn-primary mt-2" data-form-action="filing-sync-closed-all">Sync All (${drift.length})</button>`:''}`;
+  const h1=container.querySelector('.schedule-page > h1, .schedule-page h1');
+  if(h1)h1.insertAdjacentElement('afterend',notice);else container.prepend(notice);
+}
+async function doFilingSyncClosed(role,index){
+  const filing=window.D;
+  if(!filing)return;
+  const slots=role?[{role,index:Number(index)||0}]:window.filingDriftFromParties(filing).map(d=>({role:d.role,index:d.index}));
+  for(const s of slots){
+    if(window.syncFilingSlotWithParty(filing,s.role,s.index))await auditLog('PARTY_SYNC',`Synced ${slotLabel(s.role,s.index)} on closed filing "${filing.wardName}" with its shared record`,true,filing.wardId);
+  }
+  autoSave();
+  renderPage(currentPage);
 }
 function partySubRowHTML(sub){
   const checked=_partyUnmergeIds.includes(sub.id);
@@ -3719,6 +3803,14 @@ function carryOverFields(sourceWard,targetType){
   fields.county='';
   if(wardPartyId){
     fields.wardPartyId=wardPartyId;
+    // Milestone 49B: the ward's identity (residence, SSN, ...) comes from the
+    // Party -- the current record -- with the source's copy filling any gap.
+    // The destination doesn't exist yet, so reconcile a filing-shaped probe
+    // and carry its fields along.
+    const probe={...fields,inventoryType:targetType};
+    if(window.reconcileSlotWithParty(probe,'ward',0)){
+      for(const k of Object.keys(probe))if(k!=='inventoryType')fields[k]=probe[k];
+    }
     const party=typeof window.resolveParty==='function'?window.resolveParty(wardPartyId):null;
     const canonical=typeof window.normalizeCountyName==='function'
       ?window.normalizeCountyName(party&&party.county)
@@ -3837,7 +3929,9 @@ async function doCreatePartyFromSlot(){
   closeModal('pickPartyModal');
   const party=window.createParty(role);
   window.setPartyIdForSlot(window.D,role,index,party.id);
-  window.syncIdentityField(window.D,role,index);
+  // A brand-new party has no other slot to fan out to, and a closed filing's
+  // syncIdentityField() is a no-op -- seed the record directly either way.
+  window.dehydrateIntoParty(window.D,role,index,party);
   autoSave();
   renderPage(currentPage);
   updateNavDots();

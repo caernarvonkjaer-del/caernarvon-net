@@ -43,6 +43,8 @@ document.addEventListener('click', (event) => {
     case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': window.exportActivityLog(); break;
+    case 'filing-sync-closed': window.doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'filing-sync-closed-all': window.doFilingSyncClosed(); break;
     case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     case 'navigate': window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
@@ -52,6 +54,8 @@ document.addEventListener('click', (event) => {
     case 'party-compare-toggle': window.togglePartyCompareSelection(actionElement.dataset.partyId, actionElement.checked); break;
     case 'party-dismiss-pair': window.doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
     case 'party-merge-keep': window.doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
+    case 'party-sync-closed': window.doPartySyncClosed(actionElement.dataset.wardId, actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'party-sync-closed-all': window.doPartySyncClosedAll(actionElement.dataset.partyId); break;
     case 'party-unmerge-selected': window.doPartyUnmergeSelected(); break;
     case 'party-unmerge-toggle': window.togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
     case 'print': window.printCurrentFilingPdf(); break;

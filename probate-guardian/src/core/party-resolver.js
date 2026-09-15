@@ -38,6 +38,9 @@ export function createParty(role) {
     secondaryEmail: null,
     address: { street: '', cityStateZip: '' },
     officeAddress: null,
+    // Milestone 49B: the ward's mailing address where a filing collects one
+    // separately from the residence address (which lives in `address`).
+    mailingAddress: null,
     // Milestone 40C-A item 2: meaningful only for a Party with the 'ward' role.
     // Null until the user selects County on that ward's first filing Cover;
     // thereafter it is the canonical value later filings hydrate from. It is
@@ -120,11 +123,6 @@ export function addSignatureImage(party, imageData, { capturedAt = null } = {}) 
 }
 
 // ── Per-type, per-role field correspondence ────────────────────────────────
-// Ward identity itself needs no entry here -- every type stores it as the
-// single flat field `wardName`, with no other contact fields, so
-// readRoleFields()/writeRoleFields() special-case role==='ward' directly
-// rather than needing the container machinery below at all.
-//
 // Three container shapes exist across the 7 form types:
 //   'array'  -- a row lives at filing[field][index] (guardian rows)
 //   'object' -- a single nested object at filing[field] (some attorney/preparer)
@@ -135,8 +133,18 @@ export function addSignatureImage(party, imageData, { capturedAt = null } = {}) 
 //               barNumber, attorney_secondary_email vs attorney_secondaryEmail)
 // `joinedAddress` (only on planSimplified's guardian rows) names a field
 // that holds "street, cityStateZip" as one joined string instead of two.
+// `splitCityStateZip` (only planMinor's ward) names three fields holding
+// city, state and zip separately, joined as "City, ST 12345".
+//
+// The ward is a role like the others (Milestone 49B): every type has
+// `wardName`; Simplified Accounting and Annual Plan also collect the ward's
+// SSN; the three Plans that ask where the ward lives map that residence onto
+// the Party's `address`, its phone onto `phone`, and (Initial/Annual Plan) the
+// separate mailing address onto `mailingAddress`. County is deliberately NOT
+// here -- it has its own per-filing-snapshot rule in navigation/ward-county.js.
 const ROLE_FIELD_MAPS = {
   guardian: { // Initial Inventory
+    ward: { container: { type: 'flat' }, keys: { name: 'wardName' } },
     guardian: { container: { type: 'array', field: 'guardians' },
       keys: { name: 'name', taxId: 'ssnEin', phone: 'phone', street: 'streetAddress', cityStateZip: 'cityStateZip' } },
     attorney: { container: { type: 'object', field: 'attorney' },
@@ -145,6 +153,7 @@ const ROLE_FIELD_MAPS = {
       keys: { name: 'name', taxId: 'ssnEin', phone: 'phone', street: 'streetAddress', cityStateZip: 'cityStateZip' } },
   },
   simplified: {
+    ward: { container: { type: 'flat' }, keys: { name: 'wardName', taxId: 'ssn' } },
     guardian: { container: { type: 'array', field: 'guardians' },
       keys: { name: 'name', taxId: 'ssn', phone: 'phone', email: 'email', street: 'mailingStreet', cityStateZip: 'mailingCityStateZip' } },
     attorney: { container: { type: 'flat' },
@@ -152,6 +161,7 @@ const ROLE_FIELD_MAPS = {
     preparer: null, // this type has no preparer
   },
   annual: { // also finalAccounting/trustAccounting via formEngine()
+    ward: { container: { type: 'flat' }, keys: { name: 'wardName' } },
     guardian: { container: { type: 'array', field: 'guardians' },
       keys: { name: 'name', taxId: 'ssn', phone: 'phone', email: 'email', street: 'mailingStreet', cityStateZip: 'mailingCityStateZip', officeStreet: 'officeStreet', officeCityStateZip: 'officeCityStateZip' } },
     attorney: { container: { type: 'flat' },
@@ -160,6 +170,8 @@ const ROLE_FIELD_MAPS = {
       keys: { name: 'name', taxId: 'ssn', phone: 'phone', street: 'street', cityStateZip: 'cityStateZip' } },
   },
   planInitial: {
+    ward: { container: { type: 'flat' },
+      keys: { name: 'wardName', phone: 'residencePhone', street: 'residenceAddress', cityStateZip: 'residenceCityStateZip', mailingStreet: 'mailingAddress', mailingCityStateZip: 'mailingCityStateZip' } },
     guardian: { container: { type: 'array', field: 'planGuardians' },
       keys: { name: 'name', taxId: 'ssn', phone: 'phone', street: 'street', cityStateZip: 'cityStateZip' } },
     attorney: { container: { type: 'flat' },
@@ -167,6 +179,7 @@ const ROLE_FIELD_MAPS = {
     preparer: null,
   },
   planSimplified: {
+    ward: { container: { type: 'flat' }, keys: { name: 'wardName' } },
     guardian: { container: { type: 'array', field: 'planGuardians' },
       keys: { name: 'name', phone: 'phone', email: 'email' }, joinedAddress: 'mailingAddress' },
     attorney: { container: { type: 'flat' },
@@ -175,6 +188,8 @@ const ROLE_FIELD_MAPS = {
       keys: { name: 'preparer_name', phone: 'preparer_phone', email: 'preparer_email', street: 'preparer_mailingStreet', cityStateZip: 'preparer_cityStateZip' } },
   },
   planAnnual: {
+    ward: { container: { type: 'flat' },
+      keys: { name: 'wardName', taxId: 'ssn', phone: 'residencePhone', street: 'residenceAddress', cityStateZip: 'residenceCityStateZip', mailingStreet: 'mailingAddress', mailingCityStateZip: 'mailingCityStateZip' } },
     guardian: { container: { type: 'array', field: 'planGuardians' },
       keys: { name: 'name', taxId: 'ssn', phone: 'phone', email: 'email', street: 'mailingStreet', cityStateZip: 'mailingCityStateZip', officeStreet: 'officeStreet', officeCityStateZip: 'officeCityStateZip' } },
     attorney: { container: { type: 'flat' },
@@ -182,6 +197,8 @@ const ROLE_FIELD_MAPS = {
     preparer: null,
   },
   planMinor: {
+    ward: { container: { type: 'flat' },
+      keys: { name: 'wardName', phone: 'q1Phone', street: 'q1Street' }, splitCityStateZip: { city: 'q1City', state: 'q1State', zip: 'q1Zip' } },
     guardian: { container: { type: 'array', field: 'planGuardians' },
       keys: { name: 'name', taxId: 'tin', phone: 'phone', email: 'email', street: 'mailingStreet', cityStateZip: 'mailingCityStateZip' } },
     attorney: { container: { type: 'flat' },
@@ -222,12 +239,13 @@ export function identitySlotForPath(filing, path) {
   const engine = engineTypeFor(filing);
   const forType = ROLE_FIELD_MAPS[engine];
   if (!forType) return null;
-  for (const role of ['guardian', 'attorney', 'preparer']) {
+  for (const role of ['ward', 'guardian', 'attorney', 'preparer']) {
     const config = forType[role];
     if (!config) continue;
-    const { container, keys, joinedAddress } = config;
+    const { container, keys, joinedAddress, splitCityStateZip } = config;
     const fieldNames = new Set(Object.values(keys));
     if (joinedAddress) fieldNames.add(joinedAddress);
+    if (splitCityStateZip) Object.values(splitCityStateZip).forEach(f => fieldNames.add(f));
     if (container.type === 'array') {
       const m = path.match(new RegExp('^' + escapeRegExp(container.field) + '\\.(\\d+)\\.(.+)$'));
       if (m && fieldNames.has(m[2])) return { role, index: Number(m[1]) };
@@ -241,19 +259,37 @@ export function identitySlotForPath(filing, path) {
   return null;
 }
 
+const FLAT_KEYS = ['name', 'taxId', 'barNumber', 'phone', 'email', 'secondaryEmail', 'street', 'cityStateZip', 'officeStreet', 'officeCityStateZip', 'mailingStreet', 'mailingCityStateZip'];
+
+// "Clearwater, FL 33756" <-> { city, state, zip }. A value with no comma is
+// treated as city only; state/zip split on the last run of whitespace.
+function splitCityStateZipValue(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return { city: '', state: '', zip: '' };
+  const comma = s.lastIndexOf(',');
+  const city = comma === -1 ? s : s.slice(0, comma).trim();
+  const rest = comma === -1 ? '' : s.slice(comma + 1).trim();
+  const m = /^(.*?)\s+(\S+)$/.exec(rest);
+  return m ? { city, state: m[1], zip: m[2] } : { city, state: rest, zip: '' };
+}
+function joinCityStateZipValue({ city, state, zip }) {
+  const tail = [state, zip].filter(Boolean).join(' ');
+  return [city, tail].filter(Boolean).join(', ');
+}
+
 /** Reads a role's fields off a filing into the flat shape hydrate/dehydrate share. Returns {} if this type/role has no mapping (e.g. simplified has no preparer). */
 export function readRoleFields(filing, role, index = 0) {
-  if (role === 'ward') return { name: filing && filing.wardName || '' };
+  if (!filing) return {};
   const config = roleConfigFor(filing, role);
-  if (!config) return {};
-  const { container, keys, joinedAddress } = config;
+  if (!config) return role === 'ward' ? { name: filing.wardName || '' } : {};
+  const { container, keys, joinedAddress, splitCityStateZip } = config;
   let sub;
   if (container.type === 'array') sub = ((filing[container.field] || [])[index]) || {};
   else if (container.type === 'object') sub = filing[container.field] || {};
   else sub = filing; // 'flat' -- keys name exact top-level fields already
 
   const out = {};
-  for (const flatKey of ['name', 'taxId', 'barNumber', 'phone', 'email', 'secondaryEmail', 'street', 'cityStateZip', 'officeStreet', 'officeCityStateZip']) {
+  for (const flatKey of FLAT_KEYS) {
     if (keys[flatKey]) out[flatKey] = sub[keys[flatKey]] || '';
   }
   if (joinedAddress) {
@@ -262,15 +298,18 @@ export function readRoleFields(filing, role, index = 0) {
     out.street = i === -1 ? raw : raw.slice(0, i);
     out.cityStateZip = i === -1 ? '' : raw.slice(i + 2);
   }
+  if (splitCityStateZip) {
+    out.cityStateZip = joinCityStateZipValue({ city: sub[splitCityStateZip.city] || '', state: sub[splitCityStateZip.state] || '', zip: sub[splitCityStateZip.zip] || '' });
+  }
   return out;
 }
 
 /** Writes the flat shape back into a filing's role fields. No-ops if this type/role has no mapping. */
 export function writeRoleFields(filing, role, index, fields) {
-  if (role === 'ward') { filing.wardName = fields.name || ''; return; }
+  if (!filing) return;
   const config = roleConfigFor(filing, role);
-  if (!config) return;
-  const { container, keys, joinedAddress } = config;
+  if (!config) { if (role === 'ward') filing.wardName = fields.name || ''; return; }
+  const { container, keys, joinedAddress, splitCityStateZip } = config;
   let sub;
   if (container.type === 'array') {
     if (!Array.isArray(filing[container.field])) filing[container.field] = [];
@@ -283,15 +322,22 @@ export function writeRoleFields(filing, role, index, fields) {
     sub = filing;
   }
 
-  // joinedAddress roles simply omit `street`/`cityStateZip` from `keys`
-  // (see the config table above), so this loop already leaves them alone.
-  for (const flatKey of ['name', 'taxId', 'barNumber', 'phone', 'email', 'secondaryEmail', 'street', 'cityStateZip', 'officeStreet', 'officeCityStateZip']) {
+  // joinedAddress/splitCityStateZip roles simply omit the corresponding
+  // flat keys from `keys` (see the config table above), so this loop already
+  // leaves them alone.
+  for (const flatKey of FLAT_KEYS) {
     if (keys[flatKey] && fields[flatKey] !== undefined) {
       sub[keys[flatKey]] = fields[flatKey];
     }
   }
   if (joinedAddress) {
     sub[joinedAddress] = [fields.street, fields.cityStateZip].filter(Boolean).join(', ');
+  }
+  if (splitCityStateZip && fields.cityStateZip !== undefined) {
+    const parts = splitCityStateZipValue(fields.cityStateZip);
+    sub[splitCityStateZip.city] = parts.city;
+    sub[splitCityStateZip.state] = parts.state;
+    sub[splitCityStateZip.zip] = parts.zip;
   }
 }
 
@@ -309,6 +355,8 @@ function partyToFlatFields(party) {
     cityStateZip: (party.address && party.address.cityStateZip) || '',
     officeStreet: (party.officeAddress && party.officeAddress.street) || '',
     officeCityStateZip: (party.officeAddress && party.officeAddress.cityStateZip) || '',
+    mailingStreet: (party.mailingAddress && party.mailingAddress.street) || '',
+    mailingCityStateZip: (party.mailingAddress && party.mailingAddress.cityStateZip) || '',
   };
 }
 
@@ -330,6 +378,132 @@ function mergeFlatFieldsIntoParty(party, fields) {
     if (fields.officeStreet !== undefined) party.officeAddress.street = fields.officeStreet;
     if (fields.officeCityStateZip !== undefined) party.officeAddress.cityStateZip = fields.officeCityStateZip;
   }
+  if (fields.mailingStreet !== undefined || fields.mailingCityStateZip !== undefined) {
+    party.mailingAddress = party.mailingAddress || { street: '', cityStateZip: '' };
+    if (fields.mailingStreet !== undefined) party.mailingAddress.street = fields.mailingStreet;
+    if (fields.mailingCityStateZip !== undefined) party.mailingAddress.cityStateZip = fields.mailingCityStateZip;
+  }
+}
+
+// ── Closed filings (Milestone 49B) ─────────────────────────────────────────
+// A filing marked Closed on the dashboard (`archived`) is cut off from its
+// party records in both directions: edits to a party no longer flow into it,
+// and edits made inside it no longer flow out. It catches up only when the
+// user asks, via syncFilingSlotWithParty() below -- from Manage Shared
+// Records or the filing's own Cover. Marking it Open again resumes live sync
+// going forward without rewriting anything.
+export function isFilingClosed(filing) {
+  return !!(filing && filing.archived);
+}
+
+// One slot's copy versus its party. Only fields the filing type actually
+// maps are compared, so a Guardian Inventory (ward name only) never "drifts"
+// on an address it has no field for. Null when linked and identical, or not
+// linked at all.
+function slotDrift(filing, role, index) {
+  const partyId = getPartyIdForSlot(filing, role, index);
+  const party = partyId ? resolveParty(partyId) : null;
+  if (!party) return null;
+  const partyFields = partyToFlatFields(party);
+  const filingFields = readRoleFields(filing, role, index);
+  const differences = Object.keys(filingFields)
+    .filter(key => String(filingFields[key] || '') !== String(partyFields[key] || ''))
+    .map(key => ({ key, filingValue: filingFields[key] || '', partyValue: partyFields[key] || '' }));
+  return differences.length ? { filing, role, index, party, differences } : null;
+}
+
+/** Every slot on closed filings whose copy of this party's fields no longer matches the party. */
+export function closedFilingDrift(partyId) {
+  const caseFile = window.caseFile;
+  if (!partyId || !caseFile) return [];
+  const out = [];
+  for (const filing of caseFile.wards || []) {
+    if (!isFilingClosed(filing)) continue;
+    for (const slot of slotsReferencing(filing, partyId)) {
+      const drift = slotDrift(filing, slot.role, slot.index);
+      if (drift) out.push(drift);
+    }
+  }
+  return out;
+}
+
+/** Every linked slot on one filing whose copy no longer matches its party -- the Cover notice on a closed filing. */
+export function filingDriftFromParties(filing) {
+  if (!filing) return [];
+  const slots = [];
+  for (const role of ['ward', 'attorney', 'preparer']) if (getPartyIdForSlot(filing, role, 0)) slots.push({ role, index: 0 });
+  (filing.guardianPartyIds || []).forEach((id, index) => { if (id) slots.push({ role: 'guardian', index }); });
+  return slots.map(s => slotDrift(filing, s.role, s.index)).filter(Boolean);
+}
+
+/**
+ * Brings a slot that is linked while it already has content -- a carry-over
+ * from another filing, the first Cover county selection -- into line with
+ * its party: the party's values win where it has them (it is the current
+ * record; the source of a carry may be an older filing), and the filing
+ * fills whatever the party still lacks. Both sides end identical, so the
+ * mirror the live sync relies on holds from the start instead of the next
+ * edit pushing this filing's blanks over the party.
+ */
+export function reconcileSlotWithParty(filing, role, index = 0) {
+  const partyId = getPartyIdForSlot(filing, role, index);
+  const party = partyId ? resolveParty(partyId) : null;
+  if (!party) return false;
+  const partyFields = partyToFlatFields(party);
+  const filingFields = readRoleFields(filing, role, index);
+  const filled = {};
+  for (const key of Object.keys(filingFields)) filled[key] = partyFields[key] || filingFields[key] || '';
+  writeRoleFields(filing, role, index, filled);
+  mergeFlatFieldsIntoParty(party, filled);
+  party.updatedAt = new Date().toISOString();
+  return true;
+}
+
+/**
+ * Legacy migration for the ward role (Milestone 49B): before it, a ward Party
+ * held only name and county, and each filing kept its own residence/SSN. Fill
+ * the Party's blanks from its linked filings (open filings first, so a live
+ * value beats a closed filing's older one), then fill each OPEN filing's blanks
+ * from the Party. Nothing non-blank is ever overwritten, and closed filings are
+ * never written -- they stay exactly as filed. Returns how many records changed.
+ */
+export function backfillWardPartyIdentity() {
+  const caseFile = window.caseFile;
+  if (!caseFile) return 0;
+  const filings = (caseFile.wards || []).filter(f => f && getPartyIdForSlot(f, 'ward', 0));
+  const ordered = [...filings.filter(f => !isFilingClosed(f)), ...filings.filter(isFilingClosed)];
+  let touched = 0;
+  for (const filing of ordered) {
+    const party = resolveParty(getPartyIdForSlot(filing, 'ward', 0));
+    if (!party) continue;
+    const partyFields = partyToFlatFields(party);
+    const filingFields = readRoleFields(filing, 'ward', 0);
+    const adopt = {};
+    for (const key of Object.keys(filingFields)) if (!partyFields[key] && filingFields[key]) adopt[key] = filingFields[key];
+    if (Object.keys(adopt).length) { mergeFlatFieldsIntoParty(party, adopt); party.updatedAt = new Date().toISOString(); touched++; }
+  }
+  for (const filing of filings) {
+    if (isFilingClosed(filing)) continue;
+    const party = resolveParty(getPartyIdForSlot(filing, 'ward', 0));
+    if (!party) continue;
+    const partyFields = partyToFlatFields(party);
+    const filingFields = readRoleFields(filing, 'ward', 0);
+    const fill = {};
+    for (const key of Object.keys(filingFields)) if (!filingFields[key] && partyFields[key]) fill[key] = partyFields[key];
+    if (Object.keys(fill).length) { writeRoleFields(filing, 'ward', 0, fill); touched++; }
+  }
+  return touched;
+}
+
+/** Pulls the party's current values into one slot of a (closed) filing. Returns false if the slot isn't linked. */
+export function syncFilingSlotWithParty(filing, role, index = 0) {
+  const partyId = getPartyIdForSlot(filing, role, index);
+  const party = partyId ? resolveParty(partyId) : null;
+  if (!party) return false;
+  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-sync');
+  hydrateFromParty(party, filing, role, index);
+  if (window.markDirtySinceExport) window.markDirtySinceExport();
+  return true;
 }
 
 /** Hydrate direction: party -> filing. Overwrites this role's fields on the filing with the party's current values. */
@@ -421,6 +595,7 @@ export function slotsReferencing(filing, partyId) {
  * doesn't happen to go through that path.
  */
 export function syncIdentityField(filing, role, index = 0) {
+  if (isFilingClosed(filing)) return; // cut off in both directions -- see closedFilingDrift()
   const partyId = getPartyIdForSlot(filing, role, index);
   if (!partyId) return;
   const party = resolveParty(partyId);
@@ -430,6 +605,7 @@ export function syncIdentityField(filing, role, index = 0) {
   const caseFile = window.caseFile;
   if (caseFile && Array.isArray(caseFile.wards)) {
     for (const other of caseFile.wards) {
+      if (isFilingClosed(other)) continue;
       for (const slot of slotsReferencing(other, partyId)) {
         if (other === filing && slot.role === role && slot.index === index) continue; // already current
         hydrateFromParty(party, other, slot.role, slot.index);
@@ -443,7 +619,7 @@ export function syncIdentityField(filing, role, index = 0) {
 // Canonical fields a merge/comparison cares about, matching Party's own
 // nested shape (see createParty() above) rather than the flat shape
 // readRoleFields()/writeRoleFields() use -- there's no filing involved here.
-const PARTY_COMPARE_FIELDS = ['name', 'phone', 'email', 'secondaryEmail', 'notes'];
+const PARTY_COMPARE_FIELDS = ['name', 'phone', 'email', 'secondaryEmail', 'county', 'notes'];
 
 function partyPairKey(idA, idB) {
   return [idA, idB].sort().join('::');
@@ -604,18 +780,26 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
         keep.officeAddress[field] = discard.officeAddress[field];
         record.adoptedFields.push(`officeAddress.${field}`);
       }
+      if (discard.mailingAddress?.[field] && !keep.mailingAddress?.[field]) {
+        keep.mailingAddress = keep.mailingAddress || { street: '', cityStateZip: '' };
+        keep.mailingAddress[field] = discard.mailingAddress[field];
+        record.adoptedFields.push(`mailingAddress.${field}`);
+      }
     }
   }
 
   record.adoptedRoles = (discard.roles || []).filter(r => !(keep.roles || []).includes(r));
   keep.roles = [...new Set([...(keep.roles || []), ...(discard.roles || [])])];
 
+  // A closed filing's link moves to the primary (so the record stays
+  // reachable) but its copy of the fields is left alone; it then shows as
+  // out of date with the primary until the user syncs it.
   const caseFile = window.caseFile;
   for (const ward of (caseFile && caseFile.wards) || []) {
     for (const slot of slotsReferencing(ward, discardId)) {
       record.repointedSlots.push({ wardId: ward.wardId, role: slot.role, index: slot.index });
       setPartyIdForSlot(ward, slot.role, slot.index, keepId);
-      hydrateFromParty(keep, ward, slot.role, slot.index);
+      if (!isFilingClosed(ward)) hydrateFromParty(keep, ward, slot.role, slot.index);
     }
   }
   for (const kase of (caseFile && caseFile.cases) || []) {
@@ -645,7 +829,7 @@ export function subPartiesOf(primaryId) {
 // createParty()'s blank shape: name and address lines are '', everything
 // else null -- an unmerge restores the field to the same "never entered"
 // value the record would have had.
-const PARTY_EMPTY_STRING_PATHS = new Set(['name', 'address.street', 'address.cityStateZip', 'officeAddress.street', 'officeAddress.cityStateZip']);
+const PARTY_EMPTY_STRING_PATHS = new Set(['name', 'address.street', 'address.cityStateZip', 'officeAddress.street', 'officeAddress.cityStateZip', 'mailingAddress.street', 'mailingAddress.cityStateZip']);
 const SLOT_ROLES = new Set(['ward', 'attorney', 'preparer', 'guardian']);
 
 function partyPathValue(party, path) {
@@ -677,7 +861,7 @@ export function unmergeParty(subId) {
     const ward = (caseFile.wards || []).find(w => w.wardId === wardId);
     if (!ward || getPartyIdForSlot(ward, role, index) !== primary.id) continue;
     setPartyIdForSlot(ward, role, index, sub.id);
-    hydrateFromParty(sub, ward, role, index);
+    if (!isFilingClosed(ward)) hydrateFromParty(sub, ward, role, index);
   }
   for (const caseId of record.repointedCases || []) {
     const kase = (caseFile.cases || []).find(k => k.id === caseId);
@@ -723,6 +907,12 @@ window.listSignatureImages = listSignatureImages;
 window.partyForSignaturePath = partyForSignaturePath;
 window.slotsReferencing = slotsReferencing;
 window.syncIdentityField = syncIdentityField;
+window.isFilingClosed = isFilingClosed;
+window.reconcileSlotWithParty = reconcileSlotWithParty;
+window.backfillWardPartyIdentity = backfillWardPartyIdentity;
+window.closedFilingDrift = closedFilingDrift;
+window.filingDriftFromParties = filingDriftFromParties;
+window.syncFilingSlotWithParty = syncFilingSlotWithParty;
 window.isPartyPairDismissed = isPartyPairDismissed;
 window.dismissPartyPair = dismissPartyPair;
 window.findDuplicateCandidates = findDuplicateCandidates;

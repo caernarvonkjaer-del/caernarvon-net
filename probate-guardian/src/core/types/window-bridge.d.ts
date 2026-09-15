@@ -46,6 +46,7 @@ interface Window {
   auditLog: any;
   autoSave: any;
   backfillWardPartyCounties: any;
+  backfillWardPartyIdentity: any;
   backupAllWardsNow: any;
   beginRecordingExport: any;
   BLANK_CARD_COLLECTIONS: any;
@@ -67,6 +68,7 @@ interface Window {
   clearAllData: any;
   clearPartyCompareSelection: any;
   clearSessionRestoreCache: any;
+  closedFilingDrift: any;
   closeMobileSidebar: any;
   closeModal: any;
   closeWardLockedModal: any;
@@ -109,9 +111,12 @@ interface Window {
   doCreatePartyFromSlot: any;
   doDeleteWard: any;
   doDeleteWardYear: any;
+  doFilingSyncClosed: any;
   doGuardianSetup: any;
   doPartyDismissPair: any;
   doPartyMergeKeep: any;
+  doPartySyncClosed: any;
+  doPartySyncClosedAll: any;
   doPartyUnmergeSelected: any;
   doPickCase: any;
   doPickParty: any;
@@ -151,6 +156,7 @@ interface Window {
   exportActivityLog: any;
   exportCaseFileZip: any;
   exportGuardianDataZip: any;
+  filingDriftFromParties: any;
   filterCountyDropdown: any;
   finalizeCaseNumber: any;
   finalizeFieldValue: any;
@@ -223,6 +229,7 @@ interface Window {
   isBlankCard: any;
   isBlankScheduleEntry: any;
   isContinuePromptShown: any;
+  isFilingClosed: any;
   isHelpPanelOpen: any;
   isOutputAcknowledgedFor: any;
   isPartyPairDismissed: any;
@@ -309,6 +316,7 @@ interface Window {
   readRememberedFile: any;
   readRoleFields: any;
   readStoredTheme: any;
+  reconcileSlotWithParty: any;
   referenceCountForParty: any;
   refreshAutoSaveArmedStatus: any;
   refreshWardInfoCard: any;
@@ -325,6 +333,7 @@ interface Window {
   renameWard: any;
   renderActivityLogList: any;
   renderCheckboxField: any;
+  renderClosedFilingSyncNotice: any;
   renderFormField: any;
   renderLocalSectionGuidance: any;
   renderPage: any;
@@ -396,6 +405,7 @@ interface Window {
   switchWard: any;
   syncActiveWardNameDisplay: any;
   syncB2VehicleDescription: any;
+  syncFilingSlotWithParty: any;
   syncGuardianNameDisplay: any;
   syncIdentityField: any;
   tdSig: any;

@@ -21,7 +21,7 @@
 
 import { getCaseFile } from '../state.js';
 import { FL_COUNTY_CIRCUIT } from '../pdf/circuit-lookup.js';
-import { createParty, resolveParty, setPartyIdForSlot, getPartyIdForSlot } from '../party-resolver.js';
+import { createParty, resolveParty, setPartyIdForSlot, getPartyIdForSlot, reconcileSlotWithParty, backfillWardPartyIdentity } from '../party-resolver.js';
 
 /**
  * Canonical Florida county spelling for a user-entered value, or '' if it is
@@ -67,8 +67,8 @@ export function ensureWardPartyForFiling(filing) {
   if (existing) return existing;
   const party = createParty('ward');
   if (!party) return null;
-  party.name = filing.wardName || '';
   setPartyIdForSlot(filing, 'ward', 0, party.id);
+  reconcileSlotWithParty(filing, 'ward', 0); // name, and whatever else this type holds for the ward
   return party;
 }
 
@@ -201,6 +201,9 @@ export function linkDestinationToSourceWardParty(sourceFiling, destFiling) {
   if (!party) return out;
   setPartyIdForSlot(destFiling, 'ward', 0, party.id);
   out.linked = true;
+  // Ward identity (residence, SSN, ...) fills in from the Party wherever the
+  // carry left a blank; county keeps its own rule below.
+  reconcileSlotWithParty(destFiling, 'ward', 0);
   out.hydrated = hydrateCountyFromWardParty(destFiling);
   out.county = normalizeCountyName(destFiling.county);
   return out;
@@ -271,6 +274,9 @@ export function backfillWardPartyCounties() {
       summary.conflicted++;
     }
   }
+  // Milestone 49B rides on the same load-time hook: with the Parties now in
+  // place, fill the ward identity blanks both ways (see its own doc comment).
+  backfillWardPartyIdentity();
   return summary;
 }
 
