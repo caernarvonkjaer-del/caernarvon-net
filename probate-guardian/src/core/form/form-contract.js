@@ -159,6 +159,64 @@ export function formatCityStateZip(s) {
   }).join('');
 }
 
+export const CITY_STATE_ZIP_WARNING = "Couldn't separate city, state, and ZIP — please check this entry.";
+
+/**
+ * Milestone 50C: flags a city/state/zip entry that glues a state/zip run
+ * directly onto letters with no separating space (e.g.
+ * "St.Petersburg,FL33704"). formatCityStateZip()'s per-word regex has no
+ * boundary to work with in that shape, so it leaves the token untouched
+ * rather than guess -- title-casing and state-uppercasing silently never
+ * apply. Deliberately narrow (a letter immediately followed by 4+ digits):
+ * broader "the regex didn't match" detection would also catch legitimate
+ * punctuation-only words like "O'Brien" or "Winter-Haven", which the
+ * formatter already leaves alone on purpose.
+ */
+export function isMalformedCityStateZip(s) {
+  return /[A-Za-z]\d{4,}/.test(String(s || ''));
+}
+
+/**
+ * Toggles the Bootstrap is-invalid/invalid-feedback pair that flags a
+ * malformed city/state/zip entry, per Milestone 50C's decision: flag the
+ * filer, don't silently repair (too risky against the interior-capital
+ * guard above) and don't stay silent (the original, superseded behavior).
+ * Reuses is-invalid the same way the date branch below already does; unlike
+ * that branch, this one also renders a message, since a border-color-only
+ * cue was judged too easy to miss for a court-filing accuracy issue.
+ * Bootstrap's own `.is-invalid ~ .invalid-feedback` rule (lib/bootstrap.min.css)
+ * shows/hides the message with no new stylesheet. The DOM-insertion half is
+ * guarded off in the unit-test harness (a plain mock object, no `document`),
+ * where the is-invalid/aria-invalid signal alone still applies.
+ */
+export function setCityStateZipFeedback(control, show) {
+  if (!control) return;
+  if (show) {
+    control.classList.add('is-invalid');
+    control.setAttribute('aria-invalid', 'true');
+  } else {
+    control.classList.remove('is-invalid');
+    control.removeAttribute('aria-invalid');
+  }
+  if (typeof control.insertAdjacentElement !== 'function') return;
+  let feedback = control.nextElementSibling;
+  if (!(feedback && feedback.dataset && feedback.dataset.cszFeedback === 'true')) feedback = null;
+  if (show) {
+    if (!feedback) {
+      feedback = document.createElement('div');
+      feedback.className = 'invalid-feedback';
+      feedback.dataset.cszFeedback = 'true';
+      feedback.textContent = CITY_STATE_ZIP_WARNING;
+      control.insertAdjacentElement('afterend', feedback);
+    }
+    if (!feedback.id) feedback.id = `csz_feedback_${Math.random().toString(36).slice(2, 9)}`;
+    control.setAttribute('aria-describedby', feedback.id);
+  } else if (feedback) {
+    if (control.getAttribute('aria-describedby') === feedback.id) control.removeAttribute('aria-describedby');
+    feedback.remove();
+  }
+}
+
 /**
  * Reads the canonical model path from any recognized attribute on the control.
  */
@@ -412,6 +470,7 @@ export function finalizeFieldValue(control, options = {}) {
     const formatted = formatCityStateZip(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
+    setCityStateZipFeedback(control, isMalformedCityStateZip(formatted));
   } else if (kind === 'phone' && window.formatPhone) {
     const formatted = window.formatPhone(rawValue);
     control.value = formatted;

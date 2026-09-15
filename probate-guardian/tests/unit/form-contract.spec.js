@@ -4,6 +4,7 @@ import {
   sanitizeStoredText,
   formatSafeTitleCase,
   formatCityStateZip,
+  isMalformedCityStateZip,
   writeDraftValue,
   finalizeFieldValue,
   commitPendingFieldValues,
@@ -152,6 +153,32 @@ describe('form-contract', () => {
       expect(formatCityStateZip('McKinney, FL')).toBe('McKinney, FL');
       expect(formatCityStateZip('DeLand, FL 32720')).toBe('DeLand, FL 32720');
       expect(formatCityStateZip("O'Brien, FL")).toBe("O'Brien, FL");
+    });
+  });
+
+  // Milestone 50C, decision made 2026-09-15: flag a malformed entry to the
+  // filer rather than silently repair it or leave it silently as typed.
+  // isMalformedCityStateZip() is deliberately narrow -- a letter run
+  // immediately followed by 4+ digits -- so it catches the reported
+  // no-separator shape without also flagging legitimate punctuation-only
+  // words the formatter already leaves alone on purpose (O'Brien,
+  // Winter-Haven), which a broader "the formatter's regex didn't match"
+  // check would have caught too.
+  describe('isMalformedCityStateZip', () => {
+    it('flags a state/zip run glued directly onto letters with no separating space', () => {
+      expect(isMalformedCityStateZip('St.Petersburg,FL33704')).toBe(true);
+      expect(isMalformedCityStateZip('Tampa33602')).toBe(true);
+    });
+
+    it('does not flag well-formed entries, digit-only zips, or the pre-existing punctuation-guard words', () => {
+      expect(isMalformedCityStateZip('Tampa, FL 33602')).toBe(false);
+      expect(isMalformedCityStateZip('Tampa')).toBe(false);
+      expect(isMalformedCityStateZip('33602')).toBe(false);
+      expect(isMalformedCityStateZip('33602-1234')).toBe(false);
+      expect(isMalformedCityStateZip('MAlvern')).toBe(false);
+      expect(isMalformedCityStateZip("O'Brien, FL")).toBe(false);
+      expect(isMalformedCityStateZip('Winter-Haven, FL')).toBe(false);
+      expect(isMalformedCityStateZip('')).toBe(false);
     });
   });
 
@@ -489,6 +516,25 @@ describe('form-contract', () => {
       finalizeFieldValue(zip);
       expect(zip.value).toBe('Clearwater, FL 33755-4321');
       expect(window.D.preparer.cityStateZip).toBe('Clearwater, FL 33755-4321');
+    });
+
+    // Milestone 50C: flag, don't silently repair or stay silent. The mock
+    // control has no `document`/insertAdjacentElement, so this exercises the
+    // is-invalid/aria-invalid half that still applies without a real DOM --
+    // the message-element half is covered by the e2e regression guard
+    // instead (form-entry.contract.spec.ts), which runs against a real page.
+    it('flags a malformed city/state/zip entry as invalid on blur, and clears the flag once corrected', () => {
+      const zip = createMockInput({ dataset: { fieldPath: 'preparer.cityStateZip', fieldKind: 'zip' }, value: 'St.Petersburg,FL33704' });
+      finalizeFieldValue(zip);
+      expect(zip.value).toBe('St.Petersburg,FL33704');
+      expect(zip.classList.contains('is-invalid')).toBe(true);
+      expect(zip.getAttribute('aria-invalid')).toBe('true');
+
+      zip.value = 'st. petersburg, fl 33704';
+      finalizeFieldValue(zip);
+      expect(zip.value).toBe('St. Petersburg, FL 33704');
+      expect(zip.classList.contains('is-invalid')).toBe(false);
+      expect(zip.getAttribute('aria-invalid')).toBeNull();
     });
 
     it('runs the security sanitizer only on fields stamped data-field-sanitize="security"', () => {

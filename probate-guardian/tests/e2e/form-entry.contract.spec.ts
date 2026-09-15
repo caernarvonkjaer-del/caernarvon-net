@@ -171,6 +171,38 @@ test.describe('Form entry contract', () => {
     expect(await cityStateZipInput.inputValue()).toBe('Orlando FL 32801');
   });
 
+  test('a malformed city/state/zip entry is flagged to the filer on blur, and the flag clears once corrected', async ({ page }) => {
+    // Milestone 50C's decision (2026-09-15): a combined entry the formatter
+    // has no word-boundary to work with (no separator before the state code,
+    // e.g. "St.Petersburg,FL33704") is flagged rather than silently repaired
+    // or left with no signal at all. form-contract.js's setCityStateZipFeedback()
+    // toggles is-invalid + a real .invalid-feedback sibling element, which
+    // Bootstrap's own is-invalid~invalid-feedback CSS rule shows/hides -- the
+    // unit-level coverage (form-contract.spec.js) can't see this half since
+    // its mock control has no real `document`.
+    await freshStartNoPassword(page);
+    await createWard(page, 'City State Zip Flag Ward', 'annual');
+    await page.evaluate(() => (window as any).navigate('/p4'));
+
+    const cityStateZipInput = page.locator('[data-form-path="preparer.cityStateZip"]');
+    await cityStateZipInput.fill('St.Petersburg,FL33704');
+    await cityStateZipInput.blur();
+    expect(await cityStateZipInput.inputValue()).toBe('St.Petersburg,FL33704');
+    await expect(cityStateZipInput).toHaveClass(/is-invalid/);
+    await expect(cityStateZipInput).toHaveAttribute('aria-invalid', 'true');
+
+    const feedback = page.locator('[data-form-path="preparer.cityStateZip"] + [data-csz-feedback]');
+    await expect(feedback).toBeVisible();
+    expect(await feedback.textContent()).toMatch(/couldn't separate city, state, and zip/i);
+
+    await cityStateZipInput.fill('st. petersburg, fl 33704');
+    await cityStateZipInput.blur();
+    expect(await cityStateZipInput.inputValue()).toBe('St. Petersburg, FL 33704');
+    await expect(cityStateZipInput).not.toHaveClass(/is-invalid/);
+    await expect(cityStateZipInput).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(feedback).toHaveCount(0);
+  });
+
   test('an invalid date blocks export immediately, without a reload', async ({ page }) => {
     // The reload-and-still-blocked half of this behavior (Phase 2.4's
     // "invalid input preservation and output blocking") lives in

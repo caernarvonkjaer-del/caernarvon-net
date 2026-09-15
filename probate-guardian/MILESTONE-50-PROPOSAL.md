@@ -58,7 +58,7 @@ left silent.
 | --- | --- | --- | --- |
 | 50A — Attorney name duplicated on Plan-to-Plan carryover | Data correctness | **Not reproduced.** Stored value is correct and singular. | **Closed 2026-09-14** |
 | 50B — Simplified Accounting eligibility "Load Ward Info From" not populating | Data correctness → **rendering** | **Confirmed, root cause found.** The carry works; the page never re-renders, so the Cover looks blank. Small fix. | **Landed 2026-09-14** |
-| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — needs a decision, not a fix. | **Closed 2026-09-14** |
+| 50C — City/State/Zip normalization regression risk | Data correctness / regression | **Not reproduced as described.** Nothing folds text into a ZIP field. A separate, narrower tolerance gap exists — decided (flag to filer) and built. | **Landed 2026-09-15** |
 | 50D — Highlight annotation renders solid black | Visual rendering | **Confirmed, root cause found — and not in the file suspected.** A CSS gap; the black was the *selection outline*, not the highlight. Export confirmed clean; downgraded to preview-only. | **Landed 2026-09-14** |
 | 50E — Annual Plan benefits schedule rows render oversized | Visual / layout | **Confirmed, measured, and NOT covered by Milestone 40I.** No siblings shared the shape. | **Landed 2026-09-14** |
 | 50F — Typed-signature preview clips long names | Output accuracy | **Confirmed, and escalated.** The clipping is baked into the stored stamp PNG, so it reaches the filed PDF. Not preview-only. | **Landed 2026-09-14** |
@@ -110,8 +110,10 @@ edits to one large classic-script file. The other items are file-isolated:
    **Landed 2026-09-14.**
 5. ~~**50G**~~ — scope decided (full sweep, including `alert()`/`prompt()`);
    built and landed. **Landed 2026-09-15.**
-6. ~~**50A**, **50C**~~ — close with tests only, no production code change.
-   **Closed 2026-09-14.**
+6. ~~**50A**~~ — close with tests only, no production code change.
+   **Closed 2026-09-14.** ~~**50C**~~ — closed as not-reproduced 2026-09-14
+   with tests only; its one open decision (item 3) was then made and built.
+   **Decision landed 2026-09-15.**
 
 **Execution log:**
 
@@ -167,6 +169,13 @@ edits to one large classic-script file. The other items are file-isolated:
   synchronous/inline-return call sites were each individually made `async`
   with every caller checked, not redesigned wholesale. Full detail in the
   item's own "EXECUTED" section below.
+- **2026-09-15 — 50C's decision 3 answered and landed: flag to the filer.**
+  New `isMalformedCityStateZip()` plus `setCityStateZipFeedback()`
+  (`src/core/form/form-contract.js`), wired into `finalizeFieldValue()`'s
+  existing `zip` branch — one call site covers every `cityStateZip` field in
+  the app. `is-invalid`/`aria-invalid` plus a real `.invalid-feedback`
+  sibling, shown via Bootstrap's existing CSS. Full detail in the item's own
+  "Corrective plan" section above.
 
 ---
 
@@ -580,7 +589,7 @@ reported literals are inputs the formatter has no rule for, not inputs a
 rule mishandles. Explanation (b) from the original write-up — a stale build,
 or a misremembered field — is the better fit.
 
-### Corrective plan — CLOSED 2026-09-14, with tests; decision 3 still open
+### Corrective plan — CLOSED 2026-09-14, with tests; decision 3 EXECUTED 2026-09-15
 
 1. **Closed as not-reproducing.** No fix forced onto a non-reproducing
    report.
@@ -596,19 +605,56 @@ or a misremembered field — is the better fit.
    unrelated to, the interior-capital guard being pinned; noted in the
    test's own comment so it isn't mistaken for the same mechanism later).
    No new spec file, so no `TEST-INDEX.md` change.
-3. **Still open — a real decision for Alan, not made here:** should a
-   malformed combined entry like `"St.Petersburg,FL33704"` be *repaired*
-   silently, *flagged* to the filer, or *left as typed* (current, and
-   recommended, behavior)? This governs only *future* work (a repair or
-   flagging feature, should one ever be wanted) — it does not block closing
-   this finding, since nothing is currently broken. Left unanswered
-   deliberately; raise it separately if and when it becomes relevant.
+3. **Decided 2026-09-15 — flag to the filer — and built the same day.**
+   Deliberately not "repair silently" (too risky against the
+   interior-capital guard pinned in item 2) and not "leave as typed with no
+   signal" (the original recommendation, superseded by this decision).
+
+   **Detection.** `isMalformedCityStateZip()`
+   (`src/core/form/form-contract.js`) flags a letter run immediately
+   followed by 4+ digits with no separating space — the exact shape the
+   Verified section above found (`"...FL33704"`). Deliberately narrower than
+   "the per-word regex didn't match at all": that broader signal would also
+   catch `"O'Brien"`/`"Winter-Haven"`-shaped tokens, which the formatter
+   already leaves alone on purpose and which are not the reported defect.
+
+   **Wiring.** `finalizeFieldValue()`'s existing `zip` branch calls
+   `setCityStateZipFeedback(control, isMalformedCityStateZip(formatted))`
+   right after computing `formatted`, in the one shared post-write tail
+   Milestone 42D consolidated — so every `cityStateZip` field in the app
+   (Cover, guardian/attorney/preparer addresses, all of Guardian Inventory's
+   schedule rows) is covered by this one call site, not a per-feature
+   change. `setCityStateZipFeedback()` toggles `is-invalid`/`aria-invalid`
+   the same way the adjacent date branch already does (mock-safe, no DOM
+   insertion required — this half runs unchanged in the unit-test harness's
+   plain mock objects), and additionally creates/removes a real
+   `.invalid-feedback` sibling element carrying the message, guarded behind
+   `typeof control.insertAdjacentElement === 'function'` so it only runs
+   against a real DOM. No new CSS: Bootstrap's own
+   `.is-invalid ~ .invalid-feedback{display:block}` rule (already vendored,
+   `lib/bootstrap.min.css`) shows and hides the message automatically.
+   Flag clears itself the next time the field is corrected and re-blurred,
+   since the same branch runs on every blur regardless of outcome.
+
+   **Regression guards.** Unit: `tests/unit/form-contract.spec.js` gained an
+   `isMalformedCityStateZip` describe block (positive on the two glued
+   shapes, negative on well-formed input, digit-only zips, and the item-2
+   punctuation-guard words) plus a `finalizeFieldValue` test toggling the
+   flag on then off across two blurs — the is-invalid/aria-invalid half
+   only, since the mock control has no `document`. E2e:
+   `tests/e2e/form-entry.contract.spec.ts` added a full-DOM test against
+   `preparer.cityStateZip` on Annual Accounting's `/p4`, typing the exact
+   reported literal, asserting the real `.invalid-feedback` element renders
+   and is visible, then correcting the value and asserting both the class
+   and the element are gone. No new spec file in either suite, so no
+   `TEST-INDEX.md` change.
 
 **Cross-cutting (`AGENTS.md` §8):** Data Model N/A. Test Coverage & Index:
-this is the whole deliverable — item 2 above. Legal/Compliance: the accuracy
-concern quoted above is real but is not caused by the reported mechanism;
-whether an un-normalised address is acceptable on a filing is the decision
-in item 3, flagged for Alan rather than resolved here.
+covered above — item 2's original guard plus item 3's new detection/toggle
+coverage. Legal/Compliance: the accuracy concern quoted above is real but is
+not caused by the reported mechanism; whether an un-normalised address is
+acceptable on a filing was the decision in item 3, now resolved and built as
+"flag, don't silently repair or stay silent."
 
 ---
 
