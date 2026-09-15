@@ -33,7 +33,7 @@
   nav.toc a{display:block;padding:6px 14px 6px 18px;color:var(--ink-2);text-decoration:none;font-size:16px;border-left:3px solid transparent}
   nav.toc a:hover{background:var(--brand-050);color:var(--brand);border-left-color:var(--brand)}
   nav.toc a.sub{padding-left:32px;font-size:16px;color:var(--ink-3)}
-  main{flex:1;min-width:0;padding:34px 48px 80px;max-width:1240px}
+  main{flex:1;min-width:0;padding:34px 48px 80px}
   h1,h2,h3,h4{color:var(--ink);letter-spacing:-.01em;line-height:1.25}
   h1{font-size:34px;margin:0 0 6px;position:relative;padding-bottom:12px;border-bottom:1px solid var(--line)}
   h1:after{content:"";position:absolute;left:0;bottom:-1px;width:44px;height:2px;background:var(--brand);border-radius:2px}
@@ -41,12 +41,12 @@
   h2:after{content:"";position:absolute;left:0;bottom:-1px;width:44px;height:2px;background:var(--brand);border-radius:2px}
   h3{font-size:21px;margin:34px 0 10px;scroll-margin-top:16px}
   h4{font-size:17px;margin:24px 0 8px;color:var(--ink-2)}
-  p{margin:0 0 14px;max-width:78ch}
-  ul,ol{max-width:78ch;padding-left:26px;margin:0 0 14px}
+  p{margin:0 0 14px}
+  ul,ol{padding-left:26px;margin:0 0 14px}
   li{margin-bottom:6px}
   li>ul,li>ol{margin-top:6px}
   code,kbd{font-family:Consolas,"Segoe UI Mono",Menlo,monospace;font-size:16px;background:var(--surface-3);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink)}
-  .lead{font-size:18px;color:var(--ink-3);max-width:80ch}
+  .lead{font-size:18px;color:var(--ink-3)}
   .eyebrow{font-size:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px}
   /* UI labels as they appear in the app */
   .ui{font-weight:600;color:var(--ink)}
@@ -54,7 +54,7 @@
   .btnlike.outline{color:var(--brand);background:#fff;border:1px solid var(--brand)}
   .btnlike.neutral{color:var(--ink-2);background:var(--surface);border:1px solid var(--line)}
   /* callouts modelled on .schedule-instructions */
-  .note{background:var(--accent-050);border:1px solid var(--accent-line);border-left:3px solid var(--accent);border-radius:var(--r-sm);padding:12px 16px;margin:16px 0;color:var(--ink-2);max-width:86ch}
+  .note{background:var(--accent-050);border:1px solid var(--accent-line);border-left:3px solid var(--accent);border-radius:var(--r-sm);padding:12px 16px;margin:16px 0;color:var(--ink-2)}
   .note.warn{background:#fff8ec;border-color:#f0dfbf;border-left-color:var(--warn)}
   .note.danger{background:var(--brand-050);border-color:var(--brand-200);border-left-color:var(--danger)}
   .note.ok{background:#eef8f1;border-color:#cfe6d6;border-left-color:var(--ok)}
@@ -66,7 +66,7 @@
   figure.wide img{width:100%}
   figure.close img{max-width:min(100%,760px)}
   figure.narrow img{max-width:min(100%,520px)}
-  figcaption{font-size:16px;color:var(--ink-3);margin-top:8px;max-width:86ch}
+  figcaption{font-size:16px;color:var(--ink-3);margin-top:8px}
   figcaption b{color:var(--ink-2)}
   .fig-row{display:flex;flex-wrap:wrap;gap:20px}
   .fig-row figure{flex:1 1 320px;margin-top:8px}
@@ -77,7 +77,7 @@
   tr:last-child td{border-bottom:0}
   .tblwrap{overflow-x:auto}
   /* step lists */
-  ol.steps{counter-reset:s;list-style:none;padding-left:0;max-width:86ch}
+  ol.steps{counter-reset:s;list-style:none;padding-left:0}
   ol.steps>li{counter-increment:s;position:relative;padding-left:44px;margin-bottom:12px}
   ol.steps>li:before{content:counter(s);position:absolute;left:0;top:1px;width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;display:grid;place-items:center;font-size:16px}
   /* summary cards */
