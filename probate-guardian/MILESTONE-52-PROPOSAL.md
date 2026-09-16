@@ -18,6 +18,91 @@ regenerate the same window-bridge governance files) is therefore satisfied;
 52A is unblocked as of this update. See "Sequencing and concurrency" below,
 which is otherwise unchanged from first publication.
 
+## Execution status — 2026-09-16
+
+Added by the Milestone 51 agent, resuming on this tree at 05:04 EDT after
+confirming the agent that authored this document had stopped (clean tree,
+in sync with `origin/master`, no commit for six hours; its last was
+`e59a9bc`, 2026-09-15 22:24).
+
+**Approval basis, stated plainly because `AGENTS.md` §2 matters here.**
+This document is still marked **Draft**, and §2 says a Draft proposal is
+not a work order and needs approval of a specific delivery *by name*.
+Alan's instruction was "evaluate ms 52 for unfinished work and continue
+with it" — which names the milestone, not its twelve sub-deliveries. That
+was treated as approval to work MS52, with the scope drawn at risk: the
+six **Low**-risk sub-deliveries whose verification gates can be met
+unattended were executed; the six **Medium**-risk ones were not, because
+their own Verification sections require manual keyboard testing, manual
+click-throughs, and byte-comparison of a workbook filed with a Florida
+probate court — none of which can be done while the requester is asleep,
+and three of which (52A, 52B, 52F) deliberately change behavior.
+
+| Sub-delivery | Status |
+| --- | --- |
+| 52C — IndexedDB store-opener | **Landed** `eefc242` |
+| 52E — `escapeHtml()` | **Landed** `05b4159` |
+| 52G — `checkSignatureState()` call shape | **Landed** `416017f` |
+| 52I — PDF byte-decoding helpers | **Landed** `fd5d9bc` |
+| 52L — Test-suite support helpers | **Landed** `9731296` |
+| 52D — Window-backed getter/setter factory | **Blocked — needs a scoping decision from Alan.** See below |
+| 52A, 52B, 52F, 52H, 52J, 52K | **Not started** — Medium risk, awaiting explicit approval by name |
+
+Unit suite after the five: 845 passing across 78 files, the same count as
+before, since 52L changed how ten specs are scaffolded and not what they
+assert.
+
+### Corrections this execution made to this document
+
+Each was found by reading the code rather than the write-up, and each is
+recorded in full in its own commit message:
+
+1. **52I named one dead local; there are three.** `isPdfBytes` in
+   `pdf-engine.js` has zero call sites, so the instruction to add it to
+   the `supplemental-pdf.js` import would have created an unused import
+   for dead code. Its siblings `isPngBytes` and `isJpegBytes` are equally
+   dead. All three deleted; only `dataUrlToBytes` was a real duplicate.
+2. **52G's proposed signature names three parameters no call site
+   passes.** None of the eight sites passes `filingType`, `datePath` or
+   `imagePath`. They are also not uniform — one passes `name`, and the
+   attorney/preparer sites have no `person` object at all, reading flat
+   `attorney_*`/`preparer_*` keys.
+3. **52E's recommended home rests on a false premise.** The proposal put
+   the shared `escapeHtml` in `output-advisories.js` because
+   "readiness-card.js already imports from it." It does not. A leaf module
+   was used instead, avoiding a new card-renderer→advisories edge.
+
+### 52D — why it was not executed
+
+52D's premise is that "nine pairs share one shape." Five do. The other
+four do not, and the proposed factory would silently change behavior on
+two of them and cannot express the other two at all:
+
+- **`getCaseFile`/`setCaseFile` and `getD`/`setD` guard on truthiness**,
+  not `!== undefined`. Decision 3 flags this for `getD` only;
+  `getCaseFile` has it too. Under the proposed factory's `w !== undefined`
+  test, a `window.caseFile` or `window.D` of `null` would start being
+  returned instead of falling back to the module value.
+- **`setD` is not a plain setter.** It calls
+  `window.normalizeWardData(d)` before storing, which the factory has no
+  place for.
+- **`getAppState(key)`/`setAppState(key, val)` is a keyed map accessor**,
+  not a single-value ref — different arity, and it returns `null` rather
+  than the module value for a missing key.
+- **`getTemplateCache()`/`setTemplateCache(type, b64)` is asymmetric** —
+  the getter returns the whole cache, the setter writes one entry by key.
+
+There is also a cost the document does not account for: **`crypto.js`
+imports nothing today.** It is a deliberate leaf holding the AES key
+material. Putting `windowBackedRef` in `state.js` as D1 specifies would
+make the crypto module depend on the legacy state adapter to borrow a
+five-line utility.
+
+So the honest options are to apply the factory to the five that genuinely
+match (leaving the file with both styles), or to drop 52D. Either is a
+scoping call that belongs to Alan, not to an unattended agent — the
+sub-delivery cannot be delivered as written.
+
 ## Source and verification status
 
 The twelve findings below came from the "Duplicated code (beyond the two big
