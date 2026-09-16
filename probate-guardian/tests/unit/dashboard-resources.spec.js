@@ -403,9 +403,21 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
 
   test('renders county sections as collapsed accordions', () => {
     const html = resourcesPanelHTML(groupsForCircuit(6), { esc: s => s, ic: () => '' });
-    expect(html).toContain('<details class="sidebar-resource-group">');
+    expect(html).toContain('<details class="sidebar-resource-group" name="sidebar-resource-accordion">');
     expect(html).toContain('<summary class="nav-section-label sidebar-resource-summary">Pinellas County</summary>');
-    expect(html).not.toContain('<details class="sidebar-resource-group" open>');
+    expect(html).not.toContain('<details class="sidebar-resource-group" name="sidebar-resource-accordion" open>');
+  });
+
+  test('accordion sections share a name so opening one collapses the others', () => {
+    // <details> elements that share a `name` form a native, mutually-exclusive
+    // accordion group -- the browser closes any open sibling when one opens,
+    // with no JS required.
+    const html = resourcesPanelHTML(groupsForCircuit(6), { esc: s => s, ic: () => '' });
+    const openTags = html.match(/<details class="sidebar-resource-group"[^>]*>/g) || [];
+    expect(openTags.length).toBeGreaterThan(1);
+    for (const tag of openTags) {
+      expect(tag).toContain('name="sidebar-resource-accordion"');
+    }
   });
 
   test('includes Pinellas court records and guardian association resources', () => {

@@ -2677,7 +2677,7 @@ export function resourcesPanelHTML(groups, { selectedCircuit = 6, esc = defaultE
   }).join('');
 
   const groupsHTML = displayGroups.map(group => `
-    <details class="sidebar-resource-group">
+    <details class="sidebar-resource-group" name="sidebar-resource-accordion">
       <summary class="nav-section-label sidebar-resource-summary">${esc(group.heading)}</summary>
       ${group.links && group.links.length > 0 ? group.links.map(link => `
         <div class="sidebar-resource-item">
