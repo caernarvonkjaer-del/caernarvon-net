@@ -5704,7 +5704,7 @@ function pageInventorySelector(){
   <p style="text-align:center;color:var(--ink-3);margin-bottom:2rem;font-size:.95rem;">Select the form type for a ward. You can manage multiple wards of different types.</p>
   <div class="feedback-entry-actions" aria-label="Beta feedback">
     <button type="button" class="topnav-btn" data-feedback-open="bug">${ic('bug',16)} Report a Bug</button>
-    <button type="button" class="topnav-btn" data-feedback-open="comment">${ic('message',16)} Comment Card</button>
+    <a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message',16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>
   </div>
   <div class="inventory-selector">
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="guardian" role="button" tabindex="0" aria-label="Create Initial Inventory ward">
