@@ -98,9 +98,27 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await expect(page).toHaveURL(/#\/dashboard/);
 
-    // On dashboard: #sidebar-resources is visible and contains Pinellas Property Appraiser link
+    // On dashboard: #sidebar-resources is visible and contains Pinellas Property Appraiser link.
+    //
+    // Milestone 47B rendered each group's links inline; 7e9596e ("organize
+    // dashboard resources") moved them inside collapsed <details> accordions and
+    // pinned that intent in dashboard-resources.spec.js
+    // ('renders county sections as collapsed accordions', which asserts the
+    // markup is NOT emitted with `open`). It did not update this spec, so these
+    // assertions were still describing the pre-7e9596e layout and had been
+    // failing on master since. A link now has to be reached the way a user
+    // reaches it: expand the group first.
     await expect(resources).toBeVisible();
     const pcpaoLink = resources.locator('a[href="https://www.pcpao.gov/"]');
+    const pinellasSummary = resources.locator('summary.sidebar-resource-summary', { hasText: 'Pinellas County' });
+
+    // Collapsed by default -- in the DOM, not yet visible. Asserting this rather
+    // than just working around it means the accordion itself stays covered here,
+    // so a regression to always-open (or always-closed) fails at this level too.
+    await expect(pinellasSummary).toBeVisible();
+    await expect(pcpaoLink).toBeHidden();
+
+    await pinellasSummary.click();
     await expect(pcpaoLink).toBeVisible();
     await expect(pcpaoLink).toContainText('Property Appraiser');
 
@@ -115,11 +133,15 @@ test.describe('routes', () => {
     await expect(resources).toBeEmpty();
     await expect(nav.locator('.nav-section')).not.toHaveCount(0);
 
-    // Return to dashboard again: restored
+    // Return to dashboard again: restored. dispose() empties the panel and
+    // renderSidebarResources() rebuilds it, so the group is collapsed afresh --
+    // the expansion above is not expected to survive the round trip.
     await page.evaluate(() => (window as any).navigate('/dashboard'));
     await expect(page).toHaveURL(/#\/dashboard/);
     await expect(resources).toBeVisible();
-    await expect(resources.locator('a[href="https://www.pcpao.gov/"]')).toBeVisible();
+    await expect(pcpaoLink).toBeHidden();
+    await resources.locator('summary.sidebar-resource-summary', { hasText: 'Pinellas County' }).click();
+    await expect(pcpaoLink).toBeVisible();
   });
 
   test('sidebar footer shows the current-year copyright notice, present regardless of dashboard vs. filing view', async ({ page }) => {
