@@ -48,7 +48,37 @@ and three of which (52A, 52B, 52F) deliberately change behavior.
 | 52D — Window-backed getter/setter factory | **Landed** `c37f478` — Alan chose "apply to the 5 that match" (2026-09-16); see below |
 | 52A — Continue-prompt banner (3 bridges) | **Landed** `cdbff52` — see below; also fixes a double-render bug this delivery found |
 | 52K — Guardian Inventory Excel schedule layout | **Landed** `34f681e` — see below; found (did not fix) a real wardPercent round-trip bug |
-| 52B, 52F, 52H, 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+| 52B — Ward-decode pipeline + encrypt/decrypt fan-out | **Landed** `ec83360` — see below; fixes session-restore's all-or-nothing corruption failure |
+| 52F, 52H, 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+
+### 2026-09-16, live session — 52B landed
+
+Landed as documented: `decodeWardRecord()`, `encryptCaseFileCore()`, and
+`decryptCaseFileCore()` now live in `case-file.js`, and
+`recovery-cache.js` imports all three instead of maintaining its own
+copies. Per the doc's own scoping, guardian-info decrypt was left out of
+`decryptCaseFileCore()` entirely — both files already treated a corrupted
+guardian blob as fatal, so there was no asymmetry to resolve there, only
+in the three non-ward fields (parties/cases/dismissedPartyPairs).
+
+The behavior change (B3) landed as specified: `recovery-cache.js` gained
+the per-field try/catch-and-fall-back-to-`[]` guard `case-file.js`
+already had, so a corrupted `parties`/`cases`/`partyDismissals` blob in
+the session-restore cache no longer aborts the whole restore. Verified
+red-first per the doc's own convention — stashed both source files back
+to pre-52B, reran the new corruption test, confirmed it failed with the
+old all-or-nothing message, then restored and reran green.
+
+New coverage, `tests/e2e/case-file-core-fields-roundtrip.spec.ts` (3
+tests), also closes a real pre-existing gap: neither
+`case-file-roundtrip.spec.ts` nor `backup-restore-sav.spec.ts` populated
+`parties`/`cases`/`dismissedPartyPairs` at all, so nothing proved those
+fields survived a full `.sav` export/reimport or a session-restore
+cache save/restore before this delivery. Full unit suite: 845/845. e2e:
+the new spec plus 50 more across every spec file touching the
+encrypt/decrypt and party paths (backup-restore-sav,
+case-file-roundtrip, recovery-cache, persistence-recovery.contract,
+party-dedupe, party-resolver, closed-filing-sync) — 53/53.
 
 ### 2026-09-16, live session — 52K landed, plus a found-not-fixed defect
 
