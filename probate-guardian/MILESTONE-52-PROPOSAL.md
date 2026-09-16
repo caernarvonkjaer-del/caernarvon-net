@@ -45,8 +45,77 @@ and three of which (52A, 52B, 52F) deliberately change behavior.
 | 52G — `checkSignatureState()` call shape | **Landed** `416017f` |
 | 52I — PDF byte-decoding helpers | **Landed** `fd5d9bc` |
 | 52L — Test-suite support helpers | **Landed** `9731296` |
-| 52D — Window-backed getter/setter factory | **Blocked — needs a scoping decision from Alan.** See below |
-| 52A, 52B, 52F, 52H, 52J, 52K | **Not started** — Medium risk, awaiting explicit approval by name |
+| 52D — Window-backed getter/setter factory | **Landed** `c37f478` — Alan chose "apply to the 5 that match" (2026-09-16); see below |
+| 52A — Continue-prompt banner (3 bridges) | **Landed** `cdbff52` — see below; also fixes a double-render bug this delivery found |
+| 52B, 52F, 52H, 52J, 52K | **Not started** — Medium risk, awaiting explicit approval by name |
+
+### 2026-09-16, live session — 52A landed, plus a bug this document didn't anticipate
+
+The three bridges (A1–A7) landed as documented. But wiring them wasn't
+enough to actually see a banner: `navigate('/dashboard')` sets
+`window.location.hash`, which asynchronously fires the app's own
+`hashchange` listener (`handleHash()`) *in addition to* the render
+`navigate()` already did directly — a second, redundant render of
+whatever page it navigated to. That's harmless for an ordinary
+idempotent render, but `showContinuePromptIfNeeded()` marks itself shown
+on its first run and unconditionally clears its container on every run,
+so the second render silently wiped the banner the instant after the
+first one drew it. This is not what the doc's Verification section 3
+would have caught by manual click-through alone — it was caught here by
+instrumenting `continue-prompt-container`'s `innerHTML` setter and
+capturing both call stacks, which showed one from `navigate()`'s direct
+`renderPage()` call and one from the `hashchange` echo of that same
+navigation, both landing in `mountDashboardFeature`. Fixed by having
+`handleHash()` skip its own render when `currentPage` already equals the
+incoming hash — true exactly when `navigate()` (or `renderPage()`'s own
+`/dashboard`-with-no-wards redirect) already rendered for it. This is a
+pre-existing router quirk, not something 52A introduced; it was invisible
+before because nothing else on `/dashboard`'s render path was a one-shot
+gated on its own prior output.
+
+New coverage: `tests/e2e/continue-prompt-banner.spec.ts` (4 tests) —
+ward-switch reaches `getRecentlyOpenedWards()`, the banner renders with a
+real relative time and the rest of the dashboard renders below it, it
+does not reappear on a later same-session visit, and the flag survives a
+`.sav` export/reopen for the same ward pairing. Full unit suite:
+845/845. e2e: the new spec plus 61 more across
+routes/startup/dashboard-backup/convert-ward/ward-lock/unlock/
+case-file-roundtrip/persistence-recovery/closed-filing-sync/party-dedupe
+— chosen to cover every route the `handleHash()` change touches, not
+just the ones 52A's own files list named.
+
+### 2026-09-16, live session — 52D resolved and landed
+
+Alan reviewed the "why it was not executed" analysis below and chose to
+apply `windowBackedRef` to the 5 pairs that genuinely match the shape
+(`getCryptoKey`/`setCryptoKey`, `getSecurityMode`/`setSecurityMode` in
+`crypto.js`; `getCaseFileHandle`/`setCaseFileHandle`,
+`isDirtySinceExport`/`setDirtySinceExport`,
+`getLastExportAt`/`setLastExportAt` in `case-file.js`), leaving the other 4
+hand-written. Landed as `c37f478`.
+
+One placement change from the original D1 spec: the factory lives in a new
+`src/core/persistence/window-backed-ref.js` leaf, not in `state.js`. None
+of `state.js`'s own pairs qualify for the factory under this narrowed
+scope, so routing `crypto.js` through `state.js` — the "legacy state
+adapter" cost this document's own blocking note flagged — would have been
+a real new dependency for no shared benefit; a small leaf module both
+`crypto.js` and `case-file.js` can import avoids it.
+
+One implementation trap worth recording for future window-bridge work:
+the first pass wrote each `write` closure as
+`(v) => { if (typeof window !== 'undefined') window._x = v; }` — one line.
+`scripts/audit-window-bridge.mjs`'s assignment regex requires
+`window.` to start its own line (only leading whitespace before it), so
+collapsing the `if`-guard onto one line silently dropped 5 assignments
+from the governance files without any test failing (nothing in the
+existing suite asserts the *count* stays put, only that entries present
+are consistent). Caught by the Verification step 1 diff this section
+specifies, not by the unit suite. Fixed by keeping each assignment on its
+own line, matching the multi-line `if { }` shape the original hand-written
+setters already used. `node scripts/audit-window-bridge.mjs --json` diffs
+byte-identical before/after in the corrected version. Full unit suite:
+845/845 (unchanged).
 
 Unit suite after the five: 845 passing across 78 files, the same count as
 before, since 52L changed how ten specs are scaffolded and not what they
