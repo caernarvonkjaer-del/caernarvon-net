@@ -1,39 +1,33 @@
 // WebCrypto PBKDF2/AES-GCM encryption at rest for Probate Guardian case files.
+import { windowBackedRef } from './window-backed-ref.js';
 
 export const PBKDF2_ITERATIONS = 210000;
 export const CRYPTO_VERIFIER_PLAINTEXT = 'PG_VERIFIER_V1';
 export const PLAIN_MODE_PREFIX = 'PLAIN:';
 
-let _cryptoKey = null; // CryptoKey in memory during unlocked session
-let _securityMode = 'encrypted'; // 'encrypted' | 'none'
+const _cryptoKeyRef = windowBackedRef(
+  () => (typeof window !== 'undefined' ? window._cryptoKey : undefined),
+  (v) => {
+    if (typeof window !== 'undefined') {
+      window._cryptoKey = v;
+    }
+  },
+  null,
+);
+export const getCryptoKey = _cryptoKeyRef.get;
+export const setCryptoKey = _cryptoKeyRef.set;
 
-export function getCryptoKey() {
-  if (typeof window !== 'undefined' && window._cryptoKey !== undefined) {
-    return window._cryptoKey;
-  }
-  return _cryptoKey;
-}
-
-export function setCryptoKey(key) {
-  _cryptoKey = key;
-  if (typeof window !== 'undefined') {
-    window._cryptoKey = key;
-  }
-}
-
-export function getSecurityMode() {
-  if (typeof window !== 'undefined' && window._securityMode !== undefined) {
-    return window._securityMode;
-  }
-  return _securityMode;
-}
-
-export function setSecurityMode(mode) {
-  _securityMode = mode;
-  if (typeof window !== 'undefined') {
-    window._securityMode = mode;
-  }
-}
+const _securityModeRef = windowBackedRef(
+  () => (typeof window !== 'undefined' ? window._securityMode : undefined),
+  (v) => {
+    if (typeof window !== 'undefined') {
+      window._securityMode = v;
+    }
+  },
+  'encrypted', // 'encrypted' | 'none'
+);
+export const getSecurityMode = _securityModeRef.get;
+export const setSecurityMode = _securityModeRef.set;
 
 export function _b64FromBytes(bytes) {
   let bin = '';

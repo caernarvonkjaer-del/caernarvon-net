@@ -16,51 +16,45 @@ import {
 } from './launch-preferences.js';
 import { clearSessionRestoreCache } from './recovery-cache.js';
 import { getCaseFile, getTemplateCache } from '../state.js';
+import { windowBackedRef } from './window-backed-ref.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
 import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
 
 export const CASE_FILE_FORMAT_VERSION = 1;
 
-let _caseFileHandle = null;
 let _autoSaveArmed = false;
 let _autoExportIntervalMinutes = 10;
-let _lastExportAt = null;
 let _saveRetrySweepTimer = null;
 let _lastSavedTickTimer = null;
 let _fallbackReminderTimer = null;
-let _dirtySinceExport = false;
 
-export function getCaseFileHandle() {
-  if (typeof window !== 'undefined' && window._caseFileHandle !== undefined) {
-    return window._caseFileHandle;
-  }
-  return _caseFileHandle;
-}
-
-export function setCaseFileHandle(handle) {
-  _caseFileHandle = handle;
-  if (typeof window !== 'undefined') {
-    window._caseFileHandle = handle;
-  }
-}
+const _caseFileHandleRef = windowBackedRef(
+  () => (typeof window !== 'undefined' ? window._caseFileHandle : undefined),
+  (v) => {
+    if (typeof window !== 'undefined') {
+      window._caseFileHandle = v;
+    }
+  },
+  null,
+);
+export const getCaseFileHandle = _caseFileHandleRef.get;
+export const setCaseFileHandle = _caseFileHandleRef.set;
 
 export function isAutoSaveArmed() {
   return _autoSaveArmed;
 }
 
-export function isDirtySinceExport() {
-  if (typeof window !== 'undefined' && window._dirtySinceExport !== undefined) {
-    return window._dirtySinceExport;
-  }
-  return _dirtySinceExport;
-}
-
-export function setDirtySinceExport(dirty) {
-  _dirtySinceExport = dirty;
-  if (typeof window !== 'undefined') {
-    window._dirtySinceExport = dirty;
-  }
-}
+const _dirtySinceExportRef = windowBackedRef(
+  () => (typeof window !== 'undefined' ? window._dirtySinceExport : undefined),
+  (v) => {
+    if (typeof window !== 'undefined') {
+      window._dirtySinceExport = v;
+    }
+  },
+  false,
+);
+export const isDirtySinceExport = _dirtySinceExportRef.get;
+export const setDirtySinceExport = _dirtySinceExportRef.set;
 
 // The single "last successful save" clock. Every read and write goes through
 // this pair, mirroring getCaseFileHandle/setCaseFileHandle above -- the
@@ -69,19 +63,17 @@ export function setDirtySinceExport(dirty) {
 // every consumer of it (the Activity Log readout, the first-backup reminder
 // in ward-lifecycle.js, which reads it as a bare property) saw a frozen
 // value no matter how many real saves had succeeded.
-export function getLastExportAt() {
-  if (typeof window !== 'undefined' && window._lastExportAt !== undefined) {
-    return window._lastExportAt;
-  }
-  return _lastExportAt;
-}
-
-export function setLastExportAt(ts) {
-  _lastExportAt = ts;
-  if (typeof window !== 'undefined') {
-    window._lastExportAt = ts;
-  }
-}
+const _lastExportAtRef = windowBackedRef(
+  () => (typeof window !== 'undefined' ? window._lastExportAt : undefined),
+  (v) => {
+    if (typeof window !== 'undefined') {
+      window._lastExportAt = v;
+    }
+  },
+  null,
+);
+export const getLastExportAt = _lastExportAtRef.get;
+export const setLastExportAt = _lastExportAtRef.set;
 
 export async function saveBlobAs(blob, suggestedName, preWriteValidator) {
   if (typeof window !== 'undefined' && window.showSaveFilePicker) {
