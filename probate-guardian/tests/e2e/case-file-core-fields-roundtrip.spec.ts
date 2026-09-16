@@ -135,4 +135,36 @@ test.describe('Case-file core fields (parties/cases/dismissedPartyPairs) round-t
     expect(state.wardCount, 'ward survives the restore despite the corrupted parties field').toBeGreaterThan(0);
     expect(state.parties, 'parties falls back to empty rather than aborting the whole restore').toEqual([]);
   });
+
+  // Milestone 54: selectedCircuit is case-scoped state, but it deliberately
+  // does NOT ride alongside the four core fields above -- it lives in the
+  // encrypted appState blob (case-file.js's buildCaseFileBlob() comment
+  // explains why), which importSavArchiveOrWard()'s MERGE path (wards by id,
+  // parties/cases appended -- see the function's own comments) has never
+  // read for anything. An earlier version of this fix routed selectedCircuit
+  // through the same four-field core decryptCaseFileCore() shares with
+  // recovery-cache.js and defaulted a missing value to 6 there, which meant
+  // importing ANY archive predating this field -- a restored backup, a
+  // single-ward export from an older session -- silently reset the current
+  // circuit to 6 even though nothing about that import should have touched
+  // it. Moving it out of the shared core removes the whole bug class by
+  // construction: this import path simply never reaches selectedCircuit, so
+  // there is nothing left to default.
+  test('importing an archive never changes the current selectedCircuit, no matter what the archive itself carries', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Circuit Import Ward', 'guardian');
+    // Exported while the session default (6) is in effect -- so the archive
+    // being imported below does carry its own circuit data (6, via
+    // appState), just not the one this test cares about proving is ignored.
+    const savPath = await exportAndCapture(page);
+
+    await page.evaluate(() => { (window as any).caseFile.selectedCircuit = 12; });
+
+    await page.setInputFiles('#backup-import-input', savPath);
+    await acceptDynDialog(page);
+    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.length)).toBeGreaterThan(0);
+
+    const selectedCircuit = await page.evaluate(() => (window as any).caseFile.selectedCircuit);
+    expect(selectedCircuit, 'a merge-import must never change the current circuit selection').toBe(12);
+  });
 });

@@ -3451,6 +3451,13 @@ async function loadCaseFileFromZip(zip,manifest,key){
       _appState.unlockFailState=a.unlockFailState;
       _autoExportIntervalMinutes=(a.autoExportIntervalMinutes==null)?10:Number(a.autoExportIntervalMinutes);
       _lastExportAt=a.lastExportAt||null;
+      // Milestone 54: caseFile-scoped, not app-launch-scoped, but carried in
+      // this blob rather than its own zip entry -- see buildCaseFileBlob()'s
+      // comment on why. A full .sav open is the one path that should adopt
+      // the archive's circuit selection; merge-import and crash recovery
+      // deliberately do not (case-file.js, recovery-cache.js).
+      const sc=Number(a.selectedCircuit);
+      caseFile.selectedCircuit=(sc>=1&&sc<=20)?sc:6;
     }catch(e){console.warn('Could not read app preferences from .sav file',e);}
   }
   // Milestone 38C, same rule as above and deliberately outside the appState

@@ -215,6 +215,18 @@ export async function buildCaseFileBlob() {
     autoExportIntervalMinutes: (typeof window !== 'undefined' && window._autoExportIntervalMinutes !== undefined) ? window._autoExportIntervalMinutes : _autoExportIntervalMinutes,
     lastExportAt: getLastExportAt(),
     unlockFailState: await loadAppState('unlockFailState'),
+    // Milestone 54: unlike every other field above, this one is sourced from
+    // caseFile, not loadAppState() -- it IS case-scoped state, not a launch
+    // preference. It rides in this blob rather than getting its own CSV row
+    // and .enc zip entry (the design 54A originally shipped with) because
+    // this blob is read ONLY at full .sav launch-load (loadCaseFileFromZip()
+    // in legacy-app.js), never by importSavArchiveOrWard()'s merge-import
+    // path or by the session-restore-cache path -- exactly the behavior a
+    // circuit selection needs: restored when a whole file is opened, left
+    // alone by "Open Backup"/"Restore"/"Import" merging data into an
+    // already-open case. A dedicated zip entry read by decryptCaseFileCore()
+    // could not make that distinction without its caller re-implementing it.
+    selectedCircuit: caseFile.selectedCircuit || 6,
   };
 
   const templateCache = getTemplateCache();
@@ -721,7 +733,11 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
       console.warn(`Could not read party dismissals${suffix}`, e);
     }
   }
-  return { parties: importedParties, cases: importedCases, dismissedPartyPairs: importedPartyDismissals };
+  return {
+    parties: importedParties,
+    cases: importedCases,
+    dismissedPartyPairs: importedPartyDismissals,
+  };
 }
 
 export async function importSavArchiveOrWard(file, options = {}) {
@@ -783,6 +799,11 @@ export async function importSavArchiveOrWard(file, options = {}) {
     const importedPartiesFile = zip.file('parties.enc');
     const importedCasesFile = zip.file('cases.enc');
     const importedPartyDismissalsFile = zip.file('partyDismissals.enc');
+    // Milestone 54: deliberately no selectedCircuit here -- it lives in the
+    // appState blob now (see buildCaseFileBlob()'s comment), which this
+    // merge-import path has never read for anything. Importing/restoring a
+    // backup must never change which circuit the current session has
+    // selected.
     const {
       parties: importedParties,
       cases: importedCases,

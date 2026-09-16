@@ -135,6 +135,11 @@ export async function checkSessionRestoreCacheAtLaunch() {
     caseFile.parties = parties;
     caseFile.cases = cases;
     caseFile.dismissedPartyPairs = dismissedPartyPairs;
+    // Milestone 54: selectedCircuit deliberately NOT restored here -- it now
+    // lives in the appState blob (case-file.js's buildCaseFileBlob()
+    // comment), which crash recovery has never carried, same as theme or
+    // walkthroughCompleted. caseFile is freshly initialized by getCaseFile()
+    // before this runs, so it already holds state.js's default (6).
     caseFile.activeWardId = null;
 
     setCryptoKey(key);

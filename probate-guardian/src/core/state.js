@@ -18,6 +18,12 @@ let _caseFile = {
   activeWardId: null,
   guardianName: '',
   guardianEmail: '',
+  // Milestone 54: null, not a default of 6, so the dashboard can tell "never
+  // explicitly chosen" (derive a default from the user's filings, per
+  // Decision D4's intent) from "the user picked 6" (an override, kept as-is
+  // even if their filings later suggest a different circuit). See
+  // dashboard/resources.js's deriveDefaultCircuit().
+  selectedCircuit: null,
   parties: [],
   cases: [],
   dismissedPartyPairs: [],
