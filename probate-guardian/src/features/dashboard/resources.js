@@ -610,7 +610,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'broward-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.browardclerk.org/',
+        url: 'https://www.browardclerk.org/Divisions/ProbateAndGuardianship',
       },
       {
         id: 'broward-court-records',
@@ -920,7 +920,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'escambia-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.escambiaclerk.com/',
+        url: 'https://www.escambiaclerk.com/323/Probate-Guardianship-Mental-Health',
       },
       {
         id: 'escambia-court-records',
@@ -1856,7 +1856,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'okaloosa-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.okaloosaclerk.com/',
+        url: 'https://okaloosaclerk.com/customer-service/guardianship-mental-health/',
       },
       {
         id: 'okaloosa-court-records',
@@ -2073,7 +2073,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'santa-rosa-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.santarosaclerk.com/',
+        url: 'https://santarosaclerk.com/links/online-forms/probate/',
       },
       {
         id: 'santa-rosa-court-records',
@@ -2420,7 +2420,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'walton-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://clerkofcourts.co.walton.fl.us/',
+        url: 'https://waltonclerkfl.gov/index.asp?SEC=00D6A330-44CE-4358-84B0-C19693ADCE5B#EADAFC68-B97A-4BA2-BD0C-EECD1EA1F454',
       },
       {
         id: 'walton-court-records',
