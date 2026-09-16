@@ -2,50 +2,18 @@
  * On-demand loader for html2pdf.bundle.min.js.
  *
  * html2pdf (~945 KB) is heavy and only needed when generating PDFs via
- * jsPDF / html2pdf. This loader injects lib/html2pdf.bundle.min.js lazily.
+ * jsPDF / html2pdf. Milestone 52H: script injection and promise caching
+ * moved to the shared loadGlobalScript() -- this file now only supplies the
+ * URL and the "is it already loaded" check.
  */
-
-let html2pdfPromise = null;
+import { loadGlobalScript } from '../vendor-loader.js';
 
 export async function getHtml2Pdf() {
-  if (typeof window !== 'undefined' && (window.html2pdf || window.jspdf || window.jsPDF)) {
-    return window.html2pdf || window.jspdf?.jsPDF || window.jsPDF;
-  }
-  if (typeof globalThis !== 'undefined' && (globalThis.html2pdf || globalThis.jspdf || globalThis.jsPDF)) {
-    return globalThis.html2pdf || globalThis.jspdf?.jsPDF || globalThis.jsPDF;
-  }
-
-  if (!html2pdfPromise) {
-    html2pdfPromise = new Promise((resolve, reject) => {
-      if (typeof window === 'undefined') {
-        reject(new Error('html2pdf not available in headless/node environment.'));
-        return;
-      }
-
-      if (window.html2pdf || window.jspdf || window.jsPDF) {
-        resolve(window.html2pdf || window.jspdf?.jsPDF || window.jsPDF);
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = 'lib/html2pdf.bundle.min.js';
-      script.addEventListener('load', () => {
-        if (window.html2pdf || window.jspdf || window.jsPDF) {
-          resolve(window.html2pdf || window.jspdf?.jsPDF || window.jsPDF);
-        } else {
-          html2pdfPromise = null;
-          reject(new Error('html2pdf failed to initialize after script load.'));
-        }
-      });
-      script.addEventListener('error', (err) => {
-        html2pdfPromise = null;
-        reject(new Error('Failed to load lib/html2pdf.bundle.min.js: ' + (err?.message || 'Network/file error')));
-      });
-      document.head.appendChild(script);
-    });
-  }
-
-  return html2pdfPromise;
+  return loadGlobalScript('lib/html2pdf.bundle.min.js', {
+    check: () =>
+      (typeof window !== 'undefined' && (window.html2pdf || window.jspdf?.jsPDF || window.jsPDF)) ||
+      (typeof globalThis !== 'undefined' && (globalThis.html2pdf || globalThis.jspdf?.jsPDF || globalThis.jsPDF)),
+  });
 }
 
 if (typeof window !== 'undefined') {
