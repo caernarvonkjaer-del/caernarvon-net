@@ -2,8 +2,7 @@
 import { encryptJSON, decryptJSONWithKey, deriveAndVerifyKey, getSecurityMode, getCryptoKey, setCryptoKey } from './crypto.js';
 import { loadAppState, openIndexedDbStore, saveAppState } from './launch-preferences.js';
 import { getCaseFile, setAppState } from '../state.js';
-import { formatRelativeTime } from './case-file.js';
-import { migratePlanTriState } from '../filing/plan-tristate.js';
+import { formatRelativeTime, decodeWardRecord, encryptCaseFileCore, decryptCaseFileCore } from './case-file.js';
 import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
 
 export const SESSION_CACHE_DB = 'pg-session-cache';
@@ -68,23 +67,22 @@ export async function saveSessionRestoreCache() {
     for (const ward of caseFile.wards) {
       wards.push({ wardId: ward.wardId, enc: await encryptJSON(ward) });
     }
-    const guardian = await encryptJSON({
-      guardianName: caseFile.guardianName,
-      guardianEmail: caseFile.guardianEmail,
+    const core = await encryptCaseFileCore({
+      guardianInfo: { guardianName: caseFile.guardianName, guardianEmail: caseFile.guardianEmail },
+      parties: caseFile.parties,
+      cases: caseFile.cases,
+      dismissedPartyPairs: caseFile.dismissedPartyPairs,
     });
-    const parties = await encryptJSON(caseFile.parties || []);
-    const cases = await encryptJSON(caseFile.cases || []);
-    const partyDismissals = await encryptJSON(caseFile.dismissedPartyPairs || []);
     await _sessionCachePut({
       savedAt: Date.now(),
       securityMode,
       salt: salt || null,
       verifier: verifier || null,
-      guardian,
+      guardian: core.guardian,
       wards,
-      parties,
-      cases,
-      partyDismissals,
+      parties: core.parties,
+      cases: core.cases,
+      partyDismissals: core.partyDismissals,
     });
   } catch (e) {
     console.warn('session-restore cache write failed', e);
@@ -93,13 +91,6 @@ export async function saveSessionRestoreCache() {
 
 export async function clearSessionRestoreCache() {
   await _sessionCacheClear();
-}
-
-function sanitizeObjectData(obj) {
-  if (typeof window !== 'undefined' && typeof window.sanitizeObjectData === 'function') {
-    return window.sanitizeObjectData(obj);
-  }
-  return obj;
 }
 
 export async function checkSessionRestoreCacheAtLaunch() {
@@ -127,18 +118,23 @@ export async function checkSessionRestoreCacheAtLaunch() {
     }
     const restoredWards = [];
     for (const w of cache.wards) {
-      const ward = migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(w.enc, key)));
+      const ward = await decodeWardRecord(w.enc, key);
       if (ward && ward.wardId) restoredWards.push(ward);
     }
     if (!restoredWards.length) throw new Error('Archive contained no readable data.');
     const g = await decryptJSONWithKey(cache.guardian, key);
+    const { parties, cases, dismissedPartyPairs } = await decryptCaseFileCore(
+      { parties: cache.parties, cases: cache.cases, partyDismissals: cache.partyDismissals },
+      key,
+      { source: 'from session-restore cache' },
+    );
     const caseFile = getCaseFile();
     caseFile.wards = restoredWards;
     caseFile.guardianName = (g && g.guardianName) || '';
     caseFile.guardianEmail = (g && g.guardianEmail) || '';
-    caseFile.parties = cache.parties ? (await decryptJSONWithKey(cache.parties, key)) || [] : [];
-    caseFile.cases = cache.cases ? (await decryptJSONWithKey(cache.cases, key)) || [] : [];
-    caseFile.dismissedPartyPairs = cache.partyDismissals ? (await decryptJSONWithKey(cache.partyDismissals, key)) || [] : [];
+    caseFile.parties = parties;
+    caseFile.cases = cases;
+    caseFile.dismissedPartyPairs = dismissedPartyPairs;
     caseFile.activeWardId = null;
 
     setCryptoKey(key);

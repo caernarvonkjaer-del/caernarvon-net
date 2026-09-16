@@ -225,9 +225,15 @@ export async function buildCaseFileBlob() {
 
   const auditLogEntries = (typeof window !== 'undefined' && window._auditLogEntries) || [];
   zip.file('auditLog.enc', await encryptJSON(auditLogEntries));
-  zip.file('parties.enc', await encryptJSON(caseFile.parties || []));
-  zip.file('cases.enc', await encryptJSON(caseFile.cases || []));
-  zip.file('partyDismissals.enc', await encryptJSON(caseFile.dismissedPartyPairs || []));
+  const core = await encryptCaseFileCore({
+    guardianInfo: { guardianName: caseFile.guardianName, guardianEmail: caseFile.guardianEmail },
+    parties: caseFile.parties,
+    cases: caseFile.cases,
+    dismissedPartyPairs: caseFile.dismissedPartyPairs,
+  });
+  zip.file('parties.enc', core.parties);
+  zip.file('cases.enc', core.cases);
+  zip.file('partyDismissals.enc', core.partyDismissals);
   zip.file(
     'manifest.json',
     JSON.stringify(
@@ -238,10 +244,7 @@ export async function buildCaseFileBlob() {
         securityMode: getSecurityMode(),
         salt,
         verifier,
-        guardian: await encryptJSON({
-          guardianName: caseFile.guardianName,
-          guardianEmail: caseFile.guardianEmail,
-        }),
+        guardian: core.guardian,
         appState: await encryptJSON(appStateBlob),
         templates: templateTypes,
         wards: wardIndex,
@@ -650,6 +653,77 @@ function sanitizeObjectData(obj) {
   return obj;
 }
 
+// Milestone 52B: the decode pipeline for one encrypted ward record, shared
+// by importSavArchiveOrWard() below and recovery-cache.js's
+// checkSessionRestoreCacheAtLaunch(). Deliberately has no try/catch of its
+// own -- the two callers wrap it differently (one re-throws a specific
+// per-ward message, the other relies on its outer catch), and that
+// difference is intentional, not an inconsistency to also merge here.
+export async function decodeWardRecord(encoded, key) {
+  return migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(encoded, key)));
+}
+
+// Milestone 52B: the four-field encrypt fan-out shared by
+// buildCaseFileBlob() below and recovery-cache.js's
+// saveSessionRestoreCache(). Returns ciphertext strings only -- each caller
+// keeps deciding where its own ciphertext lands (buildCaseFileBlob() scatters
+// three of them across separate zip entries and the fourth into the
+// manifest; saveSessionRestoreCache() puts all four as sibling fields on one
+// IndexedDB record), so this does not touch either caller's output shape.
+export async function encryptCaseFileCore({ guardianInfo, parties, cases, dismissedPartyPairs }) {
+  return {
+    guardian: await encryptJSON(guardianInfo),
+    parties: await encryptJSON(parties || []),
+    cases: await encryptJSON(cases || []),
+    partyDismissals: await encryptJSON(dismissedPartyPairs || []),
+  };
+}
+
+// Milestone 52B: the matching decrypt side for parties/cases/partyDismissals
+// only -- guardian info is deliberately NOT included here. Both callers
+// already treat a corrupted guardian blob as fatal (case-file.js re-throws a
+// specific "wrong password" message; recovery-cache.js lets it propagate to
+// its own outer catch), and that's left exactly as it was. What WAS
+// inconsistent, and is resolved here: case-file.js already tolerated a
+// corrupted parties/cases/partyDismissals blob (log a warning, fall back to
+// an empty array, keep going), while recovery-cache.js had no per-field
+// guard at all, so the same kind of corruption there aborted the entire
+// session-restore. recovery-cache.js is brought up to case-file.js's
+// standard -- see MILESTONE-52-PROPOSAL.md's 52B section for why that
+// direction, not the reverse. `source` only shades the console.warn text
+// (e.g. "from imported file" vs "from session-restore cache").
+export async function decryptCaseFileCore({ parties, cases, partyDismissals }, key, { source = '' } = {}) {
+  const suffix = source ? ` ${source}` : '';
+  let importedParties = [];
+  if (parties) {
+    try {
+      const p = await decryptJSONWithKey(parties, key);
+      if (Array.isArray(p)) importedParties = p;
+    } catch (e) {
+      console.warn(`Could not read parties${suffix}`, e);
+    }
+  }
+  let importedCases = [];
+  if (cases) {
+    try {
+      const c = await decryptJSONWithKey(cases, key);
+      if (Array.isArray(c)) importedCases = c;
+    } catch (e) {
+      console.warn(`Could not read cases${suffix}`, e);
+    }
+  }
+  let importedPartyDismissals = [];
+  if (partyDismissals) {
+    try {
+      const d = await decryptJSONWithKey(partyDismissals, key);
+      if (Array.isArray(d)) importedPartyDismissals = d;
+    } catch (e) {
+      console.warn(`Could not read party dismissals${suffix}`, e);
+    }
+  }
+  return { parties: importedParties, cases: importedCases, dismissedPartyPairs: importedPartyDismissals };
+}
+
 export async function importSavArchiveOrWard(file, options = {}) {
   const { handle = null, isBackupFlow = false } = options;
   try {
@@ -699,43 +773,29 @@ export async function importSavArchiveOrWard(file, options = {}) {
       }
       let ward;
       try {
-        ward = migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(await f.async('string'), key)));
+        ward = await decodeWardRecord(await f.async('string'), key);
       } catch (err) {
         throw new Error(`The file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
       }
       if (ward && ward.wardId) imported.push(ward);
     }
 
-    let importedParties = [];
-    let importedCases = [];
     const importedPartiesFile = zip.file('parties.enc');
-    if (importedPartiesFile) {
-      try {
-        const p = await decryptJSONWithKey(await importedPartiesFile.async('string'), key);
-        if (Array.isArray(p)) importedParties = p;
-      } catch (e) {
-        console.warn('Could not read parties from imported file', e);
-      }
-    }
     const importedCasesFile = zip.file('cases.enc');
-    if (importedCasesFile) {
-      try {
-        const c = await decryptJSONWithKey(await importedCasesFile.async('string'), key);
-        if (Array.isArray(c)) importedCases = c;
-      } catch (e) {
-        console.warn('Could not read cases from imported file', e);
-      }
-    }
-    let importedPartyDismissals = [];
     const importedPartyDismissalsFile = zip.file('partyDismissals.enc');
-    if (importedPartyDismissalsFile) {
-      try {
-        const d = await decryptJSONWithKey(await importedPartyDismissalsFile.async('string'), key);
-        if (Array.isArray(d)) importedPartyDismissals = d;
-      } catch (e) {
-        console.warn('Could not read party dismissals from imported file', e);
-      }
-    }
+    const {
+      parties: importedParties,
+      cases: importedCases,
+      dismissedPartyPairs: importedPartyDismissals,
+    } = await decryptCaseFileCore(
+      {
+        parties: importedPartiesFile ? await importedPartiesFile.async('string') : null,
+        cases: importedCasesFile ? await importedCasesFile.async('string') : null,
+        partyDismissals: importedPartyDismissalsFile ? await importedPartyDismissalsFile.async('string') : null,
+      },
+      key,
+      { source: 'from imported file' },
+    );
     if (!imported.length && !guardianInfo) throw new Error('File contained no readable data.');
 
     const caseFile = getCaseFile();
