@@ -1209,11 +1209,19 @@ the reasoning is the part worth finding later.
   string `"46023"` — and 46023 is an Excel serial date. `setCell()` branches on
   `typeof value === 'number'`, so merging them could flip a date cell between
   numeric and text in a filed workbook. Measured, not reasoned.
-  **Still open, recorded, not reachable:** all five Group A copies mangle a real
-  `Date` — `String(new Date('2026-05-20T00:00:00Z')).substring(0,10)` is
-  `"Tue May 19"`, wrong format *and* off by a day. Unreachable today because both
-  import readers normalize to strings; `readCellText()` avoids it explicitly via
-  `toISOString()`.
+  **The `Date` hazard the audit turned up is now FIXED** (`656cccf`). All five
+  Group A copies used to mangle a real `Date` —
+  `String(new Date('2026-05-20T00:00:00Z')).substring(0,10)` is `"Tue May 19"`,
+  wrong format *and* off by a day — and `annual-accounting/index.js`'s `fmtD`
+  feeds `pdf-model.js`'s period line, every signature date, and the
+  under-penalties-of-perjury attestation, so the failure mode was a wrong date
+  inside a sworn statement. Each copy now normalizes via `toISOString()` before
+  stringifying; the A2 copies' `length >= 10` type-preservation branch is
+  untouched. It was never reachable (both import readers normalize to strings,
+  and the fields come from date inputs), which is why it is recorded as
+  hardening — but it was reproduced against the shipped function before the fix,
+  and `tests/unit/date-truncation-helpers.spec.js` now pins the guard in all five
+  including that it precedes the first `String()` call.
 - **`readCellText` passthrough → left in place, blocker documented in
   `excel-engine.js`.** It cannot move alone: its body calls `unwrapCellValue()`
   *and* `fmtDate()`, both legacy globals, and `legacy-app.js` is a classic script
