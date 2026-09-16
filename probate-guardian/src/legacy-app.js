@@ -5812,8 +5812,8 @@ async function mountAnnualNav(container){
 // Guardian Inventory's page/nav/validation/row UI moved to
 // src/features/guardian-inventory/index.js (Milestone 8, Phases A and B --
 // print/PDF/Excel import-export now live in that feature's print.js/
-// excel.js too). Shared capacity/Excel helpers (checkExcelCapacity(),
-// excelCapacityPanel(), ensureTemplate()),
+// excel.js too). Shared Excel helpers (excelCapacityPanel(), ensureTemplate()
+// -- checkExcelCapacity() moved to core in Milestone 51F),
 // openFloridaCourtPortal(), and dashboard calc/mk stay legacy -- shared
 // with Annual/Simplified or needed synchronously before this feature loads.
 let _guardianFeatureBridge=null;
@@ -6234,25 +6234,24 @@ function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v
 // itself after three seconds — no file, no usable explanation. Same guard
 // as the other types turns that into a clear, actionable message.
 
-function checkExcelCapacity(caps){
-  const d=window.D;
-  const over=[];
-  if(!d)return over;
-  for(const key of Object.keys(caps)){
-    const info=caps[key];
-    const list=Array.isArray(d[key])?d[key]:[];
-    // Remuneration is filtered before writing, so only rows with content
-    // actually consume a slot. Every other schedule writes each array
-    // element positionally, blank or not.
-    const count=typeof info.isPopulated==='function'
-      ? list.filter(info.isPopulated).length
-      : key==='remuneration'
-        ? list.filter(r=>r&&(r.guardian||r.type||r.amount||r.description)).length
-        : list.length;
-    if(count>info.cap)over.push({label:info.label,route:info.route,cap:info.cap,count:count});
-  }
-  return over;
-}
+// Milestone 51F deleted this file's checkExcelCapacity() twin. It duplicated
+// src/core/excel/excel-capacity.js's implementation of the same rule verbatim --
+// the remuneration-filtering comment above was present, word for word, in both --
+// and the two ran on different paths: the three feature index.js files
+// destructured THIS one off `window` for the print-page capacity panel, while
+// their sibling excel.js files reached the core one through
+// getExcelCapacityIssues() for the export gate. A capacity rule that can
+// disagree between the readiness panel and the export gate is exactly the class
+// of defect AGENTS.md section 4's parity invariant exists to prevent, and nothing
+// kept the two copies in step.
+//
+// The three index.js files now import the core version directly and pass
+// window.D explicitly. It is a strict superset: it takes the data as an argument
+// instead of reading the global implicitly, guards a null/non-object caps entry,
+// and adds a `key` field to each overflow record. excelCapacityPanel() below
+// reads only label/route/cap/count, so the extra field is inert, and every cap
+// entry in all three CAPS tables defines a label, so core's `info.label || key`
+// fallback can never differ from this version's plain info.label.
 
 function excelCapacityPanel(over){
   const rows=over.map(o=>`<div class="validation-group">

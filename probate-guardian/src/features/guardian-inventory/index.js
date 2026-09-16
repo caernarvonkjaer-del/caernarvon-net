@@ -3,6 +3,11 @@ import { renderLocalSectionGuidance } from '../../core/status/section-status.js'
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+// Milestone 51F: the capacity rule has ONE implementation. This used to come
+// off `window` from a legacy-app.js twin that duplicated core's logic verbatim
+// (remuneration-filtering comment included), so the print-page capacity panel
+// and the export gate ran two separate copies of the same court-facing rule.
+import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
@@ -22,7 +27,6 @@ const {
   formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
   formatAccountNumber, formatCheckNumber, formatCityStateZip, finalizeCaseNumber, applyZipLimit,
   sanitizeNonNegativeDecimal, calc, mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
-  checkExcelCapacity,
 } = window;
 
 const D = new Proxy({}, {
@@ -99,7 +103,7 @@ export async function mount(container, page) {
     case '/d4':   html=pageD4();break;
     case '/d5':   html=pageD5();break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS);
+      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS, window.D);
       html = _printModule.pagePrint(capOver);
       break;
     }

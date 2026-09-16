@@ -2,6 +2,11 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+// Milestone 51F: the capacity rule has ONE implementation. This used to come
+// off `window` from a legacy-app.js twin that duplicated core's logic verbatim
+// (remuneration-filtering comment included), so the print-page capacity panel
+// and the export gate ran two separate copies of the same court-facing rule.
+import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
@@ -58,7 +63,7 @@ const {
   tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
-  guardianHasAnyData, checkExcelCapacity,
+  guardianHasAnyData,
 } = window;
 
 // print.js/excel.js are dynamically imported once, together, the first time
@@ -114,7 +119,7 @@ export async function mount(container, page) {
     case '/p10':   html = pagePart10Annual(); break;
     case '/p11':   html = pagePart11Annual(); break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.ANNUAL_EXCEL_CAPS);
+      const capOver = checkExcelCapacity(_excelModule.ANNUAL_EXCEL_CAPS, window.D);
       html = _printModule.pagePrintAnnual(capOver);
       break;
     }

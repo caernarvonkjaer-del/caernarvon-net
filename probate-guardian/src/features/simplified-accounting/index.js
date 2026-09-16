@@ -2,6 +2,11 @@ import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+// Milestone 51F: the capacity rule has ONE implementation. This used to come
+// off `window` from a legacy-app.js twin that duplicated core's logic verbatim
+// (remuneration-filtering comment included), so the print-page capacity panel
+// and the export gate ran two separate copies of the same court-facing rule.
+import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { addCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { createSimplifiedGuardian, getSimplifiedGuardianAddressConflicts, normalizeSimplifiedGuardianCompatibility, resolveSimplifiedGuardianAddressConflict } from './guardian-compatibility.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -50,7 +55,7 @@ const {
   renderScheduleDocsSection, browserRecommendationNotice, pageIntroRow,
   linkAccordions,
   yesNoCheckboxS, inpS, countyInputS, pageNavS, calcTotals,
-  guardianHasAnyData, checkExcelCapacity,
+  guardianHasAnyData,
 } = window;
 
 // print.js/excel.js are dynamically imported once, together, the first time
@@ -169,7 +174,7 @@ export async function mount(container, page) {
     case '/p6':    html = pagePart6(); break;
     case '/p7':    html = pagePart7(); break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.SIMPLIFIED_EXCEL_CAPS);
+      const capOver = checkExcelCapacity(_excelModule.SIMPLIFIED_EXCEL_CAPS, window.D);
       html = _printModule.pagePrintSimplified(capOver);
       break;
     }
