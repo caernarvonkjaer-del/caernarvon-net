@@ -23,6 +23,7 @@ import {
 import { ensurePdfjs } from './pdfjs-loader.js';
 import {
   assertFilingEligibleSupplement,
+  dataUrlToBytes,
   resolveActiveDocPeriod,
 } from './supplemental-pdf.js';
 import { maskSSN } from './ssn-format.js';
@@ -420,38 +421,6 @@ export async function generateCourtFormPdf(model, options = {}) {
     }
     return false;
   };
-
-  const dataUrlToBytes = (dataUrl) => {
-    const base64 = String(dataUrl || '').split(',')[1] || '';
-    const bin = atob(base64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes;
-  };
-
-  const isPdfBytes = (bytes) => bytes
-    && bytes.length >= 4
-    && bytes[0] === 0x25
-    && bytes[1] === 0x50
-    && bytes[2] === 0x44
-    && bytes[3] === 0x46;
-
-  const isPngBytes = (bytes) => bytes
-    && bytes.length >= 8
-    && bytes[0] === 0x89
-    && bytes[1] === 0x50
-    && bytes[2] === 0x4e
-    && bytes[3] === 0x47
-    && bytes[4] === 0x0d
-    && bytes[5] === 0x0a
-    && bytes[6] === 0x1a
-    && bytes[7] === 0x0a;
-
-  const isJpegBytes = (bytes) => bytes
-    && bytes.length >= 3
-    && bytes[0] === 0xff
-    && bytes[1] === 0xd8
-    && bytes[2] === 0xff;
 
   const formatMailingAddress = (value) => {
     const text = String(value || '').trim();

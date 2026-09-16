@@ -23,6 +23,7 @@ import { generateCourtFormPdf } from './pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from './pdf-finalizer.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
 import { AnnotationSession, computeContentFingerprint } from './pdf-annotate.js';
+import { base64ToBytes } from '../images/png-dimensions.js';
 import { announceStatus } from '../status/live-region.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
@@ -40,13 +41,6 @@ function bytesToBase64(bytes) {
   }
   return btoa(binary);
 }
-function base64ToBytes(base64) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
 // Milestone 45A: gzip the annotated PDF before base64-encoding it.
 //
 // Measured, not assumed -- and the measurement refuted the guess that
