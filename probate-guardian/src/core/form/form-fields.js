@@ -3,6 +3,15 @@
 
 import { formatDisplayDate } from './date-parser.js';
 
+// Escapes &<>" but deliberately NOT the apostrophe, unlike
+// core/filing/escape-html.js. Milestone 52E looked at merging the two and
+// left this one alone on purpose: every one of its ~25 call sites is inside
+// this file, building Tier 1 field-primitive HTML in which every attribute is
+// double-quoted, so an unescaped apostrophe is not a syntactic hazard here.
+// It is a real inconsistency in the abstract, not one causing any
+// cross-module divergence today -- recorded so it stops reading as an
+// oversight. Anything that starts single-quoting attributes, or any new
+// external caller, must revisit this.
 export function esc(s) {
   if (s === null || s === undefined) return '';
   return String(s)

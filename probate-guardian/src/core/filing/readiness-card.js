@@ -11,6 +11,7 @@
 
 import { getFilingReadiness } from './readiness-config.js';
 import { getReadinessJurisdiction } from './county-guidance.js';
+import { escapeHtml } from './escape-html.js';
 
 export const READINESS_CARD_ID = 'filing-readiness-card';
 export const MANUAL_REVIEW_SUMMARY = 'Automated checks passed; manual review remains.';
@@ -18,12 +19,6 @@ export const ALL_CHECKS_PASS_SUMMARY = 'All configured checks pass.';
 
 let remembered = null; // { key, open }
 const boundContainers = new WeakSet();
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
 
 const SHIELD_ICON = '<svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.2 20 6v6.1c0 4.6-3.3 7.5-8 8.7-4.7-1.2-8-4.1-8-8.7V6Z"/></svg>';
 

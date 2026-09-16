@@ -1,10 +1,6 @@
 // Non-blocking output notices shared by every filing print surface.
 
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[character]));
-}
+import { escapeHtml } from './escape-html.js';
 
 export function renderOutputAdvisories(advisories = []) {
   if (!advisories.length) return '';
