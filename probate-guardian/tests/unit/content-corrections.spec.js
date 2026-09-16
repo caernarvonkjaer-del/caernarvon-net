@@ -60,8 +60,12 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
       const resourcesPath = path.resolve(__dirname, '../../src/features/dashboard/resources.js');
       const content = fs.readFileSync(resourcesPath, 'utf8');
 
-      // Still exists, inside the Sixth Circuit resource group specifically...
-      const sixthCircuitGroup = content.slice(content.indexOf("id: 'sixth-circuit'"), content.indexOf("id: 'florida'"));
+      // Still exists, inside the Sixth Circuit resource group specifically --
+      // bounded to 'circuit-1' (Milestone 54's helpful-links wiring inserted
+      // the other 19 circuits' groups directly after this one, ending with
+      // 'circuit-1'; slicing to 'florida' the way this test used to would
+      // now sweep in all of them and stop isolating anything).
+      const sixthCircuitGroup = content.slice(content.indexOf("id: 'sixth-circuit'"), content.indexOf("id: 'circuit-1'"));
       expect(sixthCircuitGroup).toContain('2024-025');
       expect(sixthCircuitGroup).toContain("scope: 'circuit-6'");
 
