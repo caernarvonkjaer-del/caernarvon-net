@@ -165,3 +165,45 @@ Tier 3: Declarative Form Composition (pages assemble sequences of cards)
 - **UI Preference Persistence**: Theme and other pure UI-only display preferences (not case/filing data) belong in `localStorage`, never in `.sav`/case state — they carry nothing sensitive and must be readable synchronously before first paint, which an encrypted or async-loaded case file cannot guarantee. Theme follows this since Milestone 40D (`src/core/theme-preference.js`, key `pg-theme-v1`, read by `src/prepaint.js`).
 - **Iconography**: Use the lightweight SVG icon system (`icons.js` / `ic(name, size)`). When using icons inside interactive controls (`<button>`, `<a>`), always supply an accessible name via `aria-label`, `title`, or visible text.
 - **Card & Summary Anatomy**: Use standardized `.entry-card` and `.summary-box` classes with scoped container queries (`cards.css`) for consistent multi-column responsive layout across screens.
+
+## 11. Packaging for External Hosting (DNN & Similar)
+
+When the requester needs an installable package for a site they control
+outside this repo's own hosting (e.g. uploading to a DNN/DotNetNuke portal,
+or any host that serves this app from an arbitrary subfolder rather than its
+own domain root), use the **portable** build, not the web build:
+
+1. **Build it**: `npm run build` (builds both `dist/web` and `dist/portable`;
+   `npm run build:portable` alone is enough if only the package is needed).
+   `dist/web` is unsuitable for this purpose — `vite.config.js` hardcodes its
+   `base` to `/probate-guardian/`, so it only works mounted at exactly that
+   path. `dist/portable` uses a relative `base: './'`, so it works from any
+   folder a host puts it in. See `vite.config.js`'s top-of-file comment for
+   the full web-vs-portable rationale; treat that file as authoritative if
+   this section and the code ever disagree.
+2. **Don't hand-pick files.** `dist/portable`'s contents are not fixed — Vite
+   content-hashes several filenames (`icon-192-<hash>.png`,
+   `manifest-<hash>.json`, the inlined bundle, etc.) and `vite.config.js`'s
+   `STATIC_COPY_TARGETS` list (what gets copied verbatim: `lib/`, `icons/`,
+   `fragments/`, `help/`, `src/legacy-app.js`, `src/prepaint.js`, manifest,
+   service worker) can gain or lose entries as the app evolves. Always zip
+   whatever `dist/portable` actually contains after a fresh build — never
+   reuse a file list or hashed filename from a previous package.
+3. **Zip the folder's *contents*, not the folder itself** — DNN (and most
+   static hosts) expect `index.html` at the root of the uploaded package, not
+   nested inside a `portable/` subfolder. On Windows, PowerShell's
+   `Compress-Archive` is more reliable for this than whatever `zip`/`7z`
+   happens to be on `PATH` (this machine's `zip` is a broken legacy build —
+   verify any zip tool actually recursed into subdirectories before trusting
+   it):
+   ```powershell
+   Compress-Archive -Path "dist\portable\*" -DestinationPath "<output>.zip" -Force
+   ```
+4. **Verify before delivering.** Smoke-test the freshly built
+   `dist/portable/index.html` (it's designed to run via `file://`, matching
+   how a static host serves it) for console/page errors before zipping —
+   a throwaway Playwright script opening the file and checking
+   `page.on('pageerror'/'console')` for errors is enough; delete it after.
+   Confirm the zip actually contains the subdirectories (`lib/`, `icons/`,
+   `fragments/`, `help/`, `src/`), not just top-level files, before treating
+   the package as done.
