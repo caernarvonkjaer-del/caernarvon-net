@@ -47,7 +47,38 @@ and three of which (52A, 52B, 52F) deliberately change behavior.
 | 52L — Test-suite support helpers | **Landed** `9731296` |
 | 52D — Window-backed getter/setter factory | **Landed** `c37f478` — Alan chose "apply to the 5 that match" (2026-09-16); see below |
 | 52A — Continue-prompt banner (3 bridges) | **Landed** `cdbff52` — see below; also fixes a double-render bug this delivery found |
-| 52B, 52F, 52H, 52J, 52K | **Not started** — Medium risk, awaiting explicit approval by name |
+| 52K — Guardian Inventory Excel schedule layout | **Landed** `34f681e` — see below; found (did not fix) a real wardPercent round-trip bug |
+| 52B, 52F, 52H, 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+
+### 2026-09-16, live session — 52K landed, plus a found-not-fixed defect
+
+Landed as documented: all 11 schedules' page/sheet-name + row-number
+layout now live in one `SCHEDULE_XX_PAGES` constant each, read by both
+the writer and `readRows()` (which now destructures `name` instead of
+`sheet` — the two keys had no other consumer, so this eliminates the
+mapping rather than reconciling it). New coverage,
+`tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts`, goes
+further than the doc's own Verification asked: every row of all 11
+schedules at exact page-template capacity round-trips through
+export/import, not just the last row of the last page, since a
+writer/reader page-advance off-by-one would typically shift every row
+after the seam.
+
+Building that fixture surfaced a real, pre-existing defect, out of
+52K's scope and left unfixed: **`wardPercent`/`jointOwnerPercent`
+never round-trip correctly through Excel.** The writer stores the
+plain 0-100 number the form's "Ward's % (0-100)" input and its own
+`>0` validation use (`src/features/guardian-inventory/index.js:1208`
+and its per-schedule siblings); the reader's `pct()` helper
+(`excel.js`, in `parseInitialInventoryWorkbook()`) multiplies the raw
+cell value by 100, as if the cell held a 0-1 fraction. A value entered
+as `50` is written as `50`, then read back as `5000` on any Excel
+re-import. This affects every one of the 11 schedules' percent field
+and is unrelated to the page/row layout 52K consolidated — it predates
+this delivery and predates this document. Not a scoping call: this is
+a real bug in a value a Florida probate court receives, and belongs to
+whoever picks it up next as its own fix, not a silent side effect of
+52K.
 
 ### 2026-09-16, live session — 52A landed, plus a bug this document didn't anticipate
 
