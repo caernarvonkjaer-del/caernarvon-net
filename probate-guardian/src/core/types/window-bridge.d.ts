@@ -65,7 +65,6 @@ interface Window {
   caseNumberOf: any;
   casesGroupingWards: any;
   checkSessionRestoreCacheAtLaunch: any;
-  checkSimplifiedEligibility: any;
   clearAllData: any;
   clearPartyCompareSelection: any;
   clearSessionRestoreCache: any;
@@ -75,7 +74,6 @@ interface Window {
   closeWardLockedModal: any;
   collapseSaveControls: any;
   collapseWardControls: any;
-  ComboboxController: any;
   commitCoverCounty: any;
   commitPendingFieldValues: any;
   commitStoredDateDrafts: any;
@@ -390,7 +388,6 @@ interface Window {
   showAddWardModalForType: any;
   showAutoExportReminder: any;
   showConvertWardModal: any;
-  showEligibilityModal: any;
   showModal: any;
   showPickCaseModal: any;
   showPickPartyModal: any;

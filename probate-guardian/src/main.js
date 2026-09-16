@@ -6,7 +6,6 @@ import './core/case-resolver.js';
 import './core/feature-bridge.js';
 import './core/ward-lock.js';
 import './core/form/form-fields.js';
-import './core/form/combobox-controller.js';
 import './core/form/schedule-definitions.js';
 // Milestone 33, Phase 2.3: eager, load-order-independent import so
 // window.renderLocalSectionGuidance (used by legacy-app.js's shared
@@ -27,7 +26,6 @@ import './core/navigation/router.js';
 import './core/filing/output-authorization.js';
 import './core/modals/convert-ward-modal.js';
 import './core/modals/year-manager-modal.js';
-import './core/modals/eligibility-modal.js';
 import './core/excel/exceljs-loader.js';
 import './core/pdf/html2pdf-loader.js';
 import './fragment-loader.js';
