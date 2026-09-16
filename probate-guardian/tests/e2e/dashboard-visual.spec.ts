@@ -180,6 +180,54 @@ test('dashboard action buttons share identical horizontal positions on rows with
   expect(positions[0]!.delete).toBe(positions[1]!.delete);
 });
 
+// A CSS layout regression, not a markup one: .dashboard-triage-header and
+// every .dashboard-triage-row used to each independently declare the same
+// grid-template-columns text and display:grid, which reads as "the same
+// columns" but is not -- each is its own separate CSS Grid container, and
+// Grid solves each one's track widths from only its own content. The last
+// track is max-content, sized in the header against a five-letter <span>
+// ("Actions") and in every row against a six-button cluster; those resolve
+// to different actual pixel widths, so every upstream flexible (fr) column
+// -- Case # onward -- drifted between the header and the rows, worse the
+// longer a row's own content ran. Fixed by making .dashboard-triage-queue
+// the one grid that declares the 8 tracks, with the header and every row as
+// its subgrid children (grid-template-columns:subgrid) rather than each
+// solving its own. This pins that fix: a row with an intentionally long
+// ward name must not pull its columns out of alignment with the header or
+// with a row that has short content.
+test('dashboard triage header and rows stay column-aligned regardless of content length', async ({ page }) => {
+  await freshStartNoPassword(page);
+
+  await page.evaluate(() => (window as any).addWard('Short', 'guardian'));
+  await page.evaluate(() => (window as any).addWard('A Very Long Ward Name Meant To Stress The Ward Column Width', 'annual'));
+
+  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  const main = page.locator('#main-content');
+  await main.locator('[data-dashboard-bound="true"]').waitFor();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  const rows = main.locator('.dashboard-triage-row');
+  await expect(rows).toHaveCount(2);
+
+  const lefts = await main.evaluate((root) => {
+    const leftsOf = (container: Element, selector: string) =>
+      [...container.querySelectorAll(selector)].map((el) => Math.round(el.getBoundingClientRect().left));
+    return {
+      header: leftsOf(root.querySelector('.dashboard-triage-header')!, ':scope > *'),
+      rows: [...root.querySelectorAll('.dashboard-triage-row')].map((row) =>
+        leftsOf(row, ':scope > .dashboard-triage-cell')
+      ),
+    };
+  });
+
+  expect(lefts.header, 'header has 8 columns').toHaveLength(8);
+  for (const [i, rowLefts] of lefts.rows.entries()) {
+    expect(rowLefts, `row ${i} has 8 columns`).toHaveLength(8);
+    expect(rowLefts, `row ${i} columns align with the header`).toEqual(lefts.header);
+  }
+  expect(lefts.rows[1], 'the long-ward-name row aligns with the short one').toEqual(lefts.rows[0]);
+});
+
 test('dashboard column sorting toggles only between ascending and descending', async ({ page }) => {
   await freshStartNoPassword(page);
   await page.evaluate((type) => (window as any).addWard('Zulu Filing', type), 'annual');

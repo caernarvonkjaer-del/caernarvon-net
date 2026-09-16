@@ -310,10 +310,14 @@ function triageHeaderHTML(sortable = true) {
 
 function triageQueueHTML(rows, { sortable = true, emptyMessage = '', extraClass = '' } = {}) {
   const body = rows.map(triageRowHTML).join('');
-  return `<div class="dashboard-triage-queue${extraClass ? ` ${extraClass}` : ''}">
+  // dashboard-triage-queue-wrap carries the container-query context
+  // (dashboard.css); .dashboard-triage-queue itself needs to be a
+  // descendant of that container, not the container, to be a legitimate
+  // subject of its own @container rules -- see that CSS rule's comment.
+  return `<div class="dashboard-triage-queue-wrap"><div class="dashboard-triage-queue${extraClass ? ` ${extraClass}` : ''}">
     ${triageHeaderHTML(sortable)}
     ${body || `<div class="dashboard-empty-inline">${esc(emptyMessage)}</div>`}
-  </div>`;
+  </div></div>`;
 }
 
 function renderTriageQueue(projectedWards) {

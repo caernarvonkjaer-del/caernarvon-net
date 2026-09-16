@@ -52,11 +52,48 @@
 
 
 /* ── Triage Worklist & Queue ──────────────────────────── */
-.dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);container-type:inline-size;container-name:triage-queue;}
+/* The 8 column tracks are declared ONCE, here, on the queue itself -- the
+   shared parent of the header row and every filing row. Header and rows
+   used to each declare this same grid-template-columns text independently,
+   which reads as "the same columns" but is not: display:grid on the header
+   div and display:grid on each <article> row makes FOUR-PLUS SEPARATE grid
+   containers, and CSS Grid solves each one's track sizing from only ITS OWN
+   content. The last track is max-content (see the actions-cluster comment
+   below) -- in the header that resolves against a five-letter <span>, in
+   every row it resolves against a six-button cluster, so the header's and
+   each row's flexible (fr) tracks upstream of it computed to DIFFERENT
+   actual pixel widths despite the identical CSS text, and every column from
+   Case # onward drifted out of alignment with its header. subgrid makes the
+   header and every row inherit these exact tracks from this one shared grid
+   instead of each solving their own -- alignment holds regardless of what
+   any individual row's content needs. */
+/* container-type lives on this WRAPPER, not on .dashboard-triage-queue
+   itself, even though the queue is the element every @container rule below
+   actually needs to restyle. Per the CSS Containment spec, an element that
+   establishes a size container cannot restyle ITS OWN layout-affecting
+   properties (grid-template-columns, in particular) from a query against
+   that same container -- only descendants can be. Confirmed by direct
+   measurement while chasing a real regression this caused: with
+   container-type on .dashboard-triage-queue itself, its Tier-2 rule
+   (@container triage-queue (max-width:1040px), below) silently failed to
+   apply -- computed border and grid-template-columns stayed at their
+   desktop values at a 390px viewport -- while .dashboard-triage-header and
+   .dashboard-triage-row, both descendants queried against that same
+   container, updated correctly in the same block. This wrapper exists
+   solely to move the container context one level up so the queue itself
+   becomes a legitimate query subject. */
+.dashboard-triage-queue-wrap{container-type:inline-size;container-name:triage-queue;}
+.dashboard-triage-queue{border:1px solid var(--line);border-radius:var(--r-sm);overflow-x:auto;overflow-y:hidden;background:var(--surface);display:grid;grid-template-columns:minmax(150px,.9fr) minmax(180px,1fr) minmax(105px,.55fr) minmax(145px,.7fr) minmax(95px,.55fr) minmax(180px,1fr) minmax(120px,.7fr) max-content;}
 /* Keep the filing identity fields readable without letting them consume the
    spare desktop width. The action cluster remains a fixed track, so its
-   controls do not squeeze together while Ward/Form Type/Contacts drift apart. */
-.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:minmax(150px,.9fr) minmax(180px,1fr) minmax(105px,.55fr) minmax(145px,.7fr) minmax(95px,.55fr) minmax(180px,1fr) minmax(120px,.7fr) max-content;align-items:center;gap:.7rem;padding:.65rem .75rem;}
+   controls do not squeeze together while Ward/Form Type/Contacts drift apart.
+   subgrid + grid-column:1/-1: each header/row spans every parent track and
+   aligns to them exactly, rather than sizing its own copy of them (see the
+   comment on .dashboard-triage-queue above). The narrower per-breakpoint
+   rules further down replace grid-template-columns outright (a genuinely
+   different, non-subgrid layout for cards), which is an ordinary cascade
+   override, not a subgrid concern. */
+.dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center;gap:.7rem;padding:.65rem .75rem;}
 .dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.67rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-sort-btn{background:none;border:none;font:inherit;color:inherit;text-transform:inherit;font-weight:inherit;font-size:inherit;padding:0;display:inline-flex;align-items:center;gap:.25rem;cursor:pointer;text-align:left;}
 .dashboard-sort-btn:hover{color:var(--ink);}
@@ -216,7 +253,21 @@
    parts: an identity header, a ruled field grid, and an action footer. Without
    that split the labels and values read as one drift of loose text. */
 @container triage-queue (max-width:1040px){
-  .dashboard-triage-queue{border:0;background:transparent;overflow:visible;}
+  /* Every row is a grid ITEM of .dashboard-triage-queue's outer 8-column
+     grid (grid-column:1/-1, so it can subgrid to those columns at desktop
+     width -- see that rule's own comment). A spanning item can't opt out of
+     the EXPLICIT tracks it spans: even once a row replaces its own
+     grid-template-columns with this tier's 2-column card layout below,
+     the outer grid still solves its 8 columns' widths first, and each of
+     those minmax(150px,...)-style tracks still enforces its own px floor
+     regardless of what the spanning row's content actually needs -- so
+     without this override every card would still be held to the desktop
+     table's ~1050px+ minimum width here, overflowing this container at
+     exactly the sizes this breakpoint exists to fix. One flexible,
+     floor-free column removes that constraint; each row (now genuinely
+     spanning a single unconstrained track) is free to size to whatever its
+     own 2-column card grid below actually needs. */
+  .dashboard-triage-queue{border:0;background:transparent;overflow:visible;grid-template-columns:minmax(0,1fr);}
   .dashboard-triage-header{display:none;}
   .dashboard-triage-row{
     display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;padding:0;
