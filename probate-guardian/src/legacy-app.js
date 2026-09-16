@@ -375,7 +375,12 @@ const TOOLTIPS = {
   'ssn_ein': "SSN: Social Security Number (for individuals). EIN: Employer Identification Number (for businesses, trusts, or entities).",
   'signature_date': "The date this document was signed. Must be within the accounting period or filing timeframe.",
   'inception_date': "The date when the guardianship was officially established by court order.",
-  'ward_pct': "The percentage of this asset that belongs to the ward. Enter 0-100.",
+  // Milestone 51C deleted an unused 'ward_percent' key whose wording carried a
+  // worked example this one lacked. Per Alan, that fuller wording is adopted here
+  // -- the example shows the expected format to a pro se filer who has never
+  // entered a percentage on a court form. This is the key all six call sites
+  // actually pass (annual-accounting/index.js, Schedules D-1..D-5 and Part VIII).
+  'ward_pct': "The percentage of this asset that belongs to the ward. For example, if the ward owns 50% of a property, enter 50.",
   'case_number': "The case number from the court order appointing you as guardian. Found on the letters of guardianship.",
   'full_amount': "The total value of this asset before accounting for the ward's percentage.",
   'full_debt': "The total amount owed on this liability.",
@@ -982,8 +987,34 @@ function fmtDateCard(s){
 // would otherwise be interpreted as a formula by Excel/Sheets when the
 // exported file is opened. Only applied at export time — never affects the
 // live in-app values stored in window.D or how they render on screen.
+// Formula-injection guard for spreadsheet output. The character set is OWASP's
+// complete CSV-injection list: = + - @ TAB(0x09) CR(0x0D) LF(0x0A).
+//
+// Milestone 51 widened this from /^[=+\-@]/ after researching the gap. Three
+// findings worth recording, because the change is HARDENING rather than a fix
+// and the distinction matters if anyone revisits it:
+//
+//  1. Not exploitable through this app's own output today. The app writes only
+//     .xlsx (via ExcelJS into a court template) and never CSV, and it never
+//     writes a {formula:...} cell -- every value goes through setCell() as a
+//     string or a number, which ExcelJS stores as a typed string/number that
+//     Excel does not evaluate. An unsanitized "=cmd" lands in the workbook as
+//     inert text.
+//  2. So the real vector is secondary: a clerk re-saving the .xlsx as CSV, or
+//     copying cells into another sheet, where the literal text is re-parsed.
+//     That is what this guard defends, and it is why it is worth keeping
+//     complete rather than partial.
+//  3. sanitizeStoredText()'s .trim() already strips leading tab/CR/LF from any
+//     value that passes through it, so the three characters added here are very
+//     nearly unreachable. Added anyway: a half-correct guard invites someone to
+//     re-derive all of the above later, and the previous state had TWO
+//     incomplete versions of this rule disagreeing with each other.
+//
+// Deliberately NOT included: the full-width variants (＝ ＋ － ＠) OWASP also
+// mentions for some locales. Not a plausible threat model for Florida probate
+// filings, and adding them would risk mangling legitimate content.
 function sanitizeForExcel(s){
-  return /^[=+\-@]/.test(s) ? "'"+s : s;
+  return /^[=+\-@\t\r\n]/.test(s) ? "'"+s : s;
 }
 
 // A co-guardian slot counts as "in use" if any field is filled, not just Name —

@@ -1,4 +1,4 @@
-import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
 import { renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -166,15 +166,14 @@ function buildNavPlanInitial(container){
 function getSummaryConfigPlanInitial(){
   const d=window.D;
   const nav=window.computeNavChecks();
-  const fd=v=>v?String(v).substring(0,10):'—';
   return {
     formTitle:'Initial Guardianship Plan — Summary',
     infoRows:[
       {label:'Ward Name',value:esc(d.wardName)},
       {label:'Case Number',value:esc(d.caseNumber)},
       {label:'County',value:esc(d.county)},
-      {label:'Inception Date',value:fd(d.inceptionDate)},
-      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Inception Date',value:formatSummaryDate(d.inceptionDate)},
+      {label:'Period',value:formatSummaryDate(d.periodFrom)+' – '+formatSummaryDate(d.periodTo)},
       {label:'Guardian',value:esc(d.guardianNames)},
       {label:'Attorney',value:esc(d.attorneyName)},
     ],

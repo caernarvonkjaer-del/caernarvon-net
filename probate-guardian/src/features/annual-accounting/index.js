@@ -1,4 +1,4 @@
-import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
@@ -394,13 +394,12 @@ function getSummaryConfigAnnual(){
   const nav=window.computeNavChecks();
   const t=calcTotalsAnnual();
   const f=v=>fmtAnnual(v)||'—';
-  const fd=v=>v?String(v).substring(0,10):'—';
   return {
     formTitle:`${descriptor?.displayName||'Annual Accounting'} — Summary`,
     infoRows:[
       {label:'Ward Name',value:esc(d.wardName)},
       {label:'Case Number',value:esc(d.caseNumber)},
-      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Period',value:formatSummaryDate(d.periodFrom)+' – '+formatSummaryDate(d.periodTo)},
       {label:'Filing Type',value:esc(d.filingType||'Annual')+(d.amendedForm==='Yes'?' (Amended)':'')},
       {label:'Guardian',value:esc(d.guardian)},
       {label:'Attorney',value:esc(d.attorney)},

@@ -52,12 +52,31 @@
 //     into an affirmative 'No'. The dead one is gone; the correct local one is
 //     the canonical tri-state Excel writer.
 //   - readCellText here was a passthrough that delegated to window.readCellText
-//     when present. All three features call that legacy global (legacy-app.js:1190)
-//     directly, so the wrapper had no caller once the readers above went.
-//     Unwinding the features onto an ES import is a separate item -- see
-//     MILESTONE-51-PROPOSAL.md's out-of-scope list -- but keeping an unused
+//     when present. All three features call that legacy global directly, so the
+//     wrapper had no caller once the readers above went. Keeping an unused
 //     wrapper "for later" is exactly how this module got into its previous state,
 //     so it was deleted rather than kept.
+//
+// WHY readCellText CANNOT SIMPLY MOVE TO CORE (investigated, Milestone 51,
+// decision: leave it and record the blocker). 51F did exactly that move for
+// checkExcelCapacity, so this looks like the obvious follow-up. It is not, and
+// the reason is not obvious from the call sites:
+//
+// legacy-app.js's readCellText() is not self-contained -- its body calls
+// unwrapCellValue() (formula/richText/hyperlink/error unwrapping) and fmtDate()
+// (to normalize a Date via toISOString(), deliberately avoiding a
+// locale/timezone-dependent Date#toString()). Both are legacy globals.
+// legacy-app.js is a classic script and cannot `import`, so moving readCellText
+// alone leaves a core function reaching back through `window` for two helpers --
+// precisely the passthrough shape deleted above.
+//
+// So the real options are: move the whole cluster (unwrapCellValue + fmtDate +
+// readCellText) and delete three globals, which touches every import-path cell
+// read in the app and needs its own cell-level gate on the IMPORT direction; or
+// leave it. Left deliberately: there is exactly ONE implementation today, so
+// there is no duplication cost and nothing can drift -- only the mechanism by
+// which the features reach it is legacy. Do not re-raise this as a trivial
+// one-function swap; it is a cluster move or nothing.
 
 import { getExcelJS } from './exceljs-loader.js';
 
@@ -67,11 +86,16 @@ export { getExcelJS };
  * Sanitizes cell text to prevent formula injection in spreadsheet software.
  *
  * Delegates to legacy-app.js's sanitizeForExcel() when present, which is the
- * implementation that actually runs in the browser. NOTE the fallback below is
- * deliberately STRICTER than that one: it also guards a leading tab or carriage
- * return, which legacy-app.js:985 does not. The two are pinned against each
- * other in tests/unit/excel-engine.spec.js; the stricter set is a superset, so
- * adopting this wrapper can never sanitize less than calling the global directly.
+ * implementation that actually runs in the browser; the fallback below covers the
+ * Node/test case.
+ *
+ * Both now guard OWASP's complete CSV-injection set -- = + - @ TAB(0x09)
+ * CR(0x0D) LF(0x0A) -- and tests/unit/excel-engine.spec.js pins them as EQUAL
+ * rather than merely one-directional. Before Milestone 51 they disagreed: the
+ * production rule was /^[=+\-@]/ and this fallback /^[=+\-@\t\r]/, so NEITHER
+ * matched OWASP (both missed LF) and the stricter of the two ran only in the one
+ * place it could not matter. See legacy-app.js's sanitizeForExcel() for why
+ * widening it is hardening rather than a fix.
  * @param {string} str
  * @returns {string}
  */
@@ -80,7 +104,7 @@ export function sanitizeCellValue(str) {
     return window.sanitizeForExcel(str);
   }
   const s = String(str ?? '');
-  if (/^[=+\-@\t\r]/.test(s)) {
+  if (/^[=+\-@\t\r\n]/.test(s)) {
     return "'" + s;
   }
   return s;

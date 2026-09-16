@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import {
   setCell,
@@ -72,24 +74,39 @@ describe('Excel Engine unit tests', () => {
       }
     });
 
-    it("the local fallback guards a superset of legacy sanitizeForExcel's characters", () => {
-      // legacy-app.js:985 is /^[=+\-@]/; this fallback adds \t and \r. A superset
-      // is safe in one direction only, so pin the direction: anything the legacy
-      // rule escapes, this must escape too. (The reverse does NOT hold, and that
-      // asymmetry is deliberate -- see excel-engine.js's note. The legacy version
-      // is the one that runs in production.)
-      const legacyEscapes = s => /^[=+\-@]/.test(s);
+    // Milestone 51 widened both rules to OWASP's complete CSV-injection set and
+    // pins them as EQUAL here. The previous version of this test hardcoded a copy
+    // of the legacy rule, which would silently go stale the moment either side
+    // changed -- so this reads the production regex out of legacy-app.js instead
+    // of restating it.
+    const OWASP_LEADING_CHARS = ['=', '+', '-', '@', '\t', '\r', '\n'];
+
+    it('the production sanitizer guards OWASP\'s complete leading-character set', () => {
+      const legacySource = fs.readFileSync(
+        path.resolve(process.cwd(), 'src/legacy-app.js'), 'utf8',
+      );
+      const match = legacySource.match(/function sanitizeForExcel\(s\)\{\s*return (\/\^\[[^\]]+\]\/)\.test\(s\)/);
+      expect(match, 'sanitizeForExcel() must still be findable in legacy-app.js').toBeTruthy();
+      // eslint-disable-next-line no-eval
+      const legacyRule = eval(match[1]);
+      for (const ch of OWASP_LEADING_CHARS) {
+        expect(legacyRule.test(ch + 'x'), `production rule must escape ${JSON.stringify(ch)}`).toBe(true);
+      }
+      // A leading space is NOT on the list and must not be escaped -- over-escaping
+      // would put a stray apostrophe into a filed court document.
+      expect(legacyRule.test(' =x')).toBe(false);
+      expect(legacyRule.test('x')).toBe(false);
+    });
+
+    it('the Node fallback escapes exactly the same set as the production rule', () => {
       const original = globalThis.window;
       if (original !== undefined) delete globalThis.window;
       try {
-        for (const s of ['=x', '+x', '-x', '@x', '\tx', '\rx', 'x', ' =x', '']) {
-          if (legacyEscapes(s)) {
-            expect(sanitizeCellValue(s), `legacy escapes ${JSON.stringify(s)}, so core must`).toBe("'" + s);
-          }
+        for (const ch of OWASP_LEADING_CHARS) {
+          expect(sanitizeCellValue(ch + 'x'), `fallback must escape ${JSON.stringify(ch)}`).toBe("'" + ch + 'x');
         }
-        // And the two extra characters the stricter fallback adds.
-        expect(sanitizeCellValue('\tx')).toBe("'\tx");
-        expect(sanitizeCellValue('\rx')).toBe("'\rx");
+        expect(sanitizeCellValue(' =x')).toBe(' =x');
+        expect(sanitizeCellValue('plain')).toBe('plain');
       } finally {
         if (original !== undefined) globalThis.window = original;
       }

@@ -1,4 +1,4 @@
-import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
@@ -168,14 +168,13 @@ function buildNavPlanAnnual(container){
 function getSummaryConfigPlanAnnual(){
   const d=window.D;
   const nav=window.computeNavChecks();
-  const fd=v=>v?String(v).substring(0,10):'—';
   return {
     formTitle:'Annual Guardianship Plan — Summary',
     infoRows:[
       {label:'Ward Name',value:esc(d.wardName)},
       {label:'Case Number',value:esc(d.caseNumber)},
       {label:'County',value:esc(d.county)},
-      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Period',value:formatSummaryDate(d.periodFrom)+' – '+formatSummaryDate(d.periodTo)},
       {label:'Guardian',value:esc(d.guardian)},
       {label:'Attorney',value:esc(d.attorney)},
     ],

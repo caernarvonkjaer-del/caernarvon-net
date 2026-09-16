@@ -46,6 +46,31 @@ export function navStatus(nav, keys) {
   return 'not-started';
 }
 
+/**
+ * A stored date (YYYY-MM-DD, possibly with a time suffix) formatted for a
+ * summary/print row, with an em-dash placeholder when there is no value.
+ *
+ * Milestone 51 (fmtDate audit) consolidated six character-identical `fd`
+ * closures from the six feature index.js files into this one. It is the DISPLAY
+ * formatter, and the em-dash is the whole point of it.
+ *
+ * DO NOT merge this with the Excel-export date helpers (`fD`/`fmtD` in the three
+ * feature excel.js files) or with legacy-app.js's `fmtDate`. Those return '' for
+ * an empty value because they write into spreadsheet cells and a court document
+ * must show a blank, never a literal "—". They also diverge from each other in a
+ * way that looks mergeable and is not: the excel.js variants' `length >= 10`
+ * guard returns the ORIGINAL value for short input, preserving its type, so a
+ * numeric input stays a number -- and setCell() branches on
+ * `typeof value === 'number'`, so swapping them can flip a date cell between
+ * numeric and text in a filed workbook. See MILESTONE-51-PROPOSAL.md's audit.
+ *
+ * @param {any} value
+ * @returns {string}
+ */
+export function formatSummaryDate(value) {
+  return value ? String(value).substring(0, 10) : '—';
+}
+
 export function renderStatusBadge(status) {
   if (status === 'complete')
     return `<span style="color:var(--ok-text);font-weight:600;">✓ Complete</span>`;

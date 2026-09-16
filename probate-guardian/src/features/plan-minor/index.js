@@ -1,4 +1,4 @@
-import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
+import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { isTriStateAnswer } from '../../core/form/form-contract.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -150,7 +150,6 @@ function buildNavPlanMinor(container){
 function getSummaryConfigPlanMinor(){
   const d=window.D;
   const nav=window.computeNavChecks();
-  const fd=v=>v?String(v).substring(0,10):'—';
   return {
     formTitle:'Annual Plan — Minors — Summary',
     infoRows:[
@@ -158,7 +157,7 @@ function getSummaryConfigPlanMinor(){
       {label:'UCN',value:esc(d.ucn)},
       {label:'Case #',value:esc(d.ref)},
       {label:'County',value:esc(d.county)},
-      {label:'Period',value:fd(d.periodFrom)+' – '+fd(d.periodTo)},
+      {label:'Period',value:formatSummaryDate(d.periodFrom)+' – '+formatSummaryDate(d.periodTo)},
       {label:'Guardian',value:esc(d.guardianName)},
     ],
     leftCards:[
