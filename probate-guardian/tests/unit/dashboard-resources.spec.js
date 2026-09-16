@@ -17,6 +17,9 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
   // wiring task in MILESTONE-53-PROPOSAL.md's appendix.
   const EXPECTED_HOSTS = new Set([
     '2ndcircuit.leoncountyfl.gov',
+    'app02.clerk.org',
+    'apps.stjohnsclerk.com',
+    'appsgp.mypalmbeachclerk.com',
     'bakerclerk.com',
     'baypa.net',
     'bcpa.net',
@@ -28,9 +31,18 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'charlotteclerk.com',
     'circuit7.org',
     'circuit8.org',
+    'clerkapps.okaloosaclerk.com',
     'clerkofcourts.co.walton.fl.us',
+    'cms.collierclerk.com',
     'columbia.floridapa.com',
+    'core.duvalclerk.com',
+    'court.baycoclerk.com',
+    'courtcasesearch.stlucieclerk.gov',
     'courtrecords.mypinellasclerk.gov',
+    'courtrecords.seminoleclerk.org',
+    'courts.charlotteclerk.com',
+    'courts.osceolaclerk.com',
+    'cvweb.leonclerk.com',
     'dixiecountytaxcollector.com',
     'elderaffairs.org',
     'fl-gilchrist-taxcollector.publicaccessnow.com',
@@ -47,7 +59,9 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'hardeepa.com',
     'hendryprop.com',
     'hernandoclerk.com',
+    'hover.hillsclerk.com',
     'indianriverclerk.com',
+    'inquiry.clayclerk.com',
     'jeffersonpa.net',
     'jeffersontc.com',
     'jud10.flcourts.org',
@@ -57,7 +71,9 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'levytaxcollector.com',
     'libertypa.org',
     'madisonpa.com',
+    'matrix.leeclerk.org',
     'mcpafl.org',
+    'myeclerk.myorangeclerk.com',
     'myokeeclerk.com',
     'myorangeclerk.com',
     'mywakullapa.com',
@@ -66,12 +82,19 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'ocpaweb.ocpafl.org',
     'okaloosapa.com',
     'pa.putnam-fl.com',
-    'pascoclerk.com',
     'pascopa.com',
     'pbcpao.gov',
     'pinellastaxcollector.gov',
+    'pro.polkcountyclerk.net',
+    'public.brevardclerk.com',
+    'public.escambiaclerk.com',
+    'pubrecords.taylorclerk.com',
     'putnamclerk.com',
     'qpublic.net',
+    'records.flaglerclerk.gov',
+    'records.manateeclerk.com',
+    'scorss.citrusclerk.org',
+    'secure.sarasotaclerk.com',
     'seminolecounty.tax',
     'srcpa.gov',
     'stjohnsclerk.com',
@@ -84,10 +107,12 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'union.floridapa.com',
     'vcpa.vcgov.org',
     'vctaxcollector.org',
+    'waltonclerkfl.gov',
     'waltonpa.com',
     'www.15thcircuit.com',
     'www.17th.flcourts.org',
     'www.acpafl.org',
+    'www.alachuaclerk.org',
     'www.alachuacollector.com',
     'www.alachuacounty.us',
     'www.bakerpa.com',
@@ -108,6 +133,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'www.citrusclerk.org',
     'www.citruspa.org',
     'www.citrustc.us',
+    'www.civitekflorida.com',
     'www.clayclerk.com',
     'www.claycountytax.com',
     'www.clerk-of-the-court.com',
@@ -171,6 +197,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'www.lafayettepa.com',
     'www.lafayettetc.com',
     'www.lakecopropappr.com',
+    'www.lakecountyclerkfl.gov',
     'www.laketax.com',
     'www.leeclerk.org',
     'www.leepa.org',
@@ -190,6 +217,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'www.martinclerk.com',
     'www.miamidade.gov',
     'www.miamidadeclerk.gov',
+    'www.monroe-clerk.com',
     'www.monroetaxcollector.com',
     'www.mybakertc.com',
     'www.myflcourtaccess.com',
@@ -243,6 +271,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     'www.waltontaxcollector.com',
     'www.washingtonclerk.com',
     'www.washingtoncountytaxcollector.com',
+    'www2.miamidadeclerk.gov',
   ]);
 
   test('RESOURCE_GROUPS and link collections are frozen', () => {
@@ -384,7 +413,10 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
 
   test('includes Pinellas court records and guardian association resources', () => {
     const pinellas = RESOURCE_GROUPS.find(group => group.id === 'pinellas');
-    expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-court-records', url: 'https://courtrecords.mypinellasclerk.gov/' }));
+    // URL updated to the more specific search path as part of the follow-up
+    // that added a Court Records link to every county -- see
+    // MILESTONE-53-PROPOSAL.md's Milestone 54 appendix.
+    expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-court-records', url: 'https://courtrecords.mypinellasclerk.gov/MyCr/Cases/Search' }));
     expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-guardian-association', url: 'https://guardianassociation.org/' }));
   });
 });
@@ -422,6 +454,23 @@ describe('Milestone 54: Judicial Circuit selector and per-county accordions', ()
     for (let circuit = 1; circuit <= 20; circuit++) {
       const stubs = groupsForCircuit(circuit).filter(g => g.scope !== 'statewide' && !g.scope.startsWith('circuit-') && g.links.length === 0);
       expect(stubs, `circuit ${circuit} stub groups`).toEqual([]);
+    }
+  });
+
+  // Follow-up to the helpful-links wiring: every county gets its own Court
+  // Records link (id ending in "court-records", or "court-records-civil"/
+  // "court-records-criminal" for Miami-Dade and Seminole, whose clerks split
+  // civil/family/probate lookups from criminal ones) in addition to its
+  // Clerk/probate-guardianship link -- not a replacement for it.
+  test('every non-statewide, non-circuit-level group has a Court Records link', () => {
+    const countyGroups = RESOURCE_GROUPS.filter(g => g.scope !== 'statewide' && !g.scope.startsWith('circuit-'));
+    expect(countyGroups.length).toBe(67);
+    for (const group of countyGroups) {
+      const courtRecordsLinks = group.links.filter(l => l.id.includes('court-records'));
+      expect(courtRecordsLinks.length, `${group.heading} has at least one Court Records link`).toBeGreaterThan(0);
+      for (const link of courtRecordsLinks) {
+        expect(link.label, `${group.heading}'s ${link.id} label`).toMatch(/Court Records/);
+      }
     }
   });
 

@@ -31,7 +31,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         // serves OFFICIAL records (deeds, liens) from a separate host,
         // officialrecords.mypinellasclerk.gov, which this link does not reach.
         description: 'Search Pinellas County court records',
-        url: 'https://courtrecords.mypinellasclerk.gov/',
+        url: 'https://courtrecords.mypinellasclerk.gov/MyCr/Cases/Search',
       },
       {
         id: 'pinellas-guardian-association',
@@ -68,7 +68,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'pasco-court-records',
         label: 'Search Court Records',
         description: 'Search Pasco County court records',
-        url: 'https://pascoclerk.com/172/Search-Court-Records',
+        url: 'https://www.civitekflorida.com/ocrs/county/51/',
       },
       {
         id: 'pasco-tax-collector',
@@ -458,6 +458,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.alachuacounty.us/Depts/Clerk/Pages/Clerk.aspx',
       },
       {
+        id: 'alachua-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.alachuaclerk.org/court_records/',
+      },
+      {
         id: 'alachua-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -481,6 +487,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://bakerclerk.com/',
+      },
+      {
+        id: 'baker-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/02/',
       },
       {
         id: 'baker-tax-collector',
@@ -508,6 +520,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.baycoclerk.com/',
       },
       {
+        id: 'bay-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://court.baycoclerk.com/',
+      },
+      {
         id: 'bay-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -531,6 +549,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://bradfordclerk.com/',
+      },
+      {
+        id: 'bradford-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/04/',
       },
       {
         id: 'bradford-tax-collector',
@@ -558,6 +582,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://brevardclerk.us/',
       },
       {
+        id: 'brevard-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://public.brevardclerk.com/BMWebLatest/Home.aspx/Search',
+      },
+      {
         id: 'brevard-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -581,6 +611,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.browardclerk.org/',
+      },
+      {
+        id: 'broward-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.browardclerk.org/Web2',
       },
       {
         id: 'broward-tax-collector',
@@ -608,6 +644,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.calhounclerk.com/',
       },
       {
+        id: 'calhoun-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/07/',
+      },
+      {
         id: 'calhoun-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -631,6 +673,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://charlotteclerk.com/',
+      },
+      {
+        id: 'charlotte-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://courts.charlotteclerk.com/Benchmark/Home.aspx/Search',
       },
       {
         id: 'charlotte-tax-collector',
@@ -658,6 +706,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.citrusclerk.org/',
       },
       {
+        id: 'citrus-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://scorss.citrusclerk.org/',
+      },
+      {
         id: 'citrus-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -681,6 +735,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.clayclerk.com/',
+      },
+      {
+        id: 'clay-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://inquiry.clayclerk.com/',
       },
       {
         id: 'clay-tax-collector',
@@ -708,6 +768,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.collierclerk.com/',
       },
       {
+        id: 'collier-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://cms.collierclerk.com/cmsweb#!/',
+      },
+      {
         id: 'collier-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -731,6 +797,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.columbiaclerk.com/',
+      },
+      {
+        id: 'columbia-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/12/',
       },
       {
         id: 'columbia-tax-collector',
@@ -758,6 +830,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.desotoclerk.com/',
       },
       {
+        id: 'desoto-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/14/',
+      },
+      {
         id: 'desoto-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -781,6 +859,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.dixieclerk.com/',
+      },
+      {
+        id: 'dixie-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/15/',
       },
       {
         id: 'dixie-tax-collector',
@@ -808,6 +892,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.duvalclerk.com/',
       },
       {
+        id: 'duval-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://core.duvalclerk.com/',
+      },
+      {
         id: 'duval-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -831,6 +921,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.escambiaclerk.com/',
+      },
+      {
+        id: 'escambia-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://public.escambiaclerk.com/BMWebLatest/Home.aspx/Search',
       },
       {
         id: 'escambia-tax-collector',
@@ -858,6 +954,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://flaglerclerk.com/',
       },
       {
+        id: 'flagler-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://records.flaglerclerk.gov/',
+      },
+      {
         id: 'flagler-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -881,6 +983,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.franklinclerk.com/',
+      },
+      {
+        id: 'franklin-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/19/',
       },
       {
         id: 'franklin-tax-collector',
@@ -908,6 +1016,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.gadsdenclerk.com/',
       },
       {
+        id: 'gadsden-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.gadsdenclerk.com/CourtScribePublicInquiry/',
+      },
+      {
         id: 'gadsden-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -931,6 +1045,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.gilchristclerk.com/',
+      },
+      {
+        id: 'gilchrist-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/21/',
       },
       {
         id: 'gilchrist-tax-collector',
@@ -958,6 +1078,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://gladesclerk.com/',
       },
       {
+        id: 'glades-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/22/',
+      },
+      {
         id: 'glades-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -981,6 +1107,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.gulfclerk.com/',
+      },
+      {
+        id: 'gulf-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/23/',
       },
       {
         id: 'gulf-tax-collector',
@@ -1008,6 +1140,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.hamiltonclerk.com/',
       },
       {
+        id: 'hamilton-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/24/',
+      },
+      {
         id: 'hamilton-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1031,6 +1169,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.hardeeclerk.com/',
+      },
+      {
+        id: 'hardee-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/25/',
       },
       {
         id: 'hardee-tax-collector',
@@ -1058,6 +1202,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.hendryclerk.org/',
       },
       {
+        id: 'hendry-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/26/',
+      },
+      {
         id: 'hendry-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1081,6 +1231,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://hernandoclerk.com/',
+      },
+      {
+        id: 'hernando-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/27/',
       },
       {
         id: 'hernando-tax-collector',
@@ -1108,6 +1264,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.hcclerk.org/',
       },
       {
+        id: 'highlands-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/28/',
+      },
+      {
         id: 'highlands-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1131,6 +1293,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.hillsclerk.com/',
+      },
+      {
+        id: 'hillsborough-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://hover.hillsclerk.com/html/home.html',
       },
       {
         id: 'hillsborough-tax-collector',
@@ -1158,6 +1326,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.holmesclerk.com/',
       },
       {
+        id: 'holmes-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/30/',
+      },
+      {
         id: 'holmes-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1181,6 +1355,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://indianriverclerk.com/',
+      },
+      {
+        id: 'indian-river-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://indianriverclerk.com/court-records/online-case-view/',
       },
       {
         id: 'indian-river-tax-collector',
@@ -1208,6 +1388,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.jacksonclerk.com/',
       },
       {
+        id: 'jackson-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/32/',
+      },
+      {
         id: 'jackson-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1231,6 +1417,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.jeffersonclerk.com/',
+      },
+      {
+        id: 'jefferson-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/33/',
       },
       {
         id: 'jefferson-tax-collector',
@@ -1258,6 +1450,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.lafayetteclerk.com/',
       },
       {
+        id: 'lafayette-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/34/',
+      },
+      {
         id: 'lafayette-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1281,6 +1479,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://lakecountyclerk.org/',
+      },
+      {
+        id: 'lake-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.lakecountyclerkfl.gov/departments/courts-management/court-data-records-division/search-online-court-records/',
       },
       {
         id: 'lake-tax-collector',
@@ -1308,6 +1512,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.leeclerk.org/',
       },
       {
+        id: 'lee-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://matrix.leeclerk.org/',
+      },
+      {
         id: 'lee-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1331,6 +1541,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.clerk.leon.fl.us/',
+      },
+      {
+        id: 'leon-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://cvweb.leonclerk.com/public/online_services/search_courts_hc/search_by_name_hc.asp',
       },
       {
         id: 'leon-tax-collector',
@@ -1358,6 +1574,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.levyclerk.com/',
       },
       {
+        id: 'levy-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/38/',
+      },
+      {
         id: 'levy-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1381,6 +1603,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.libertyclerk.com/',
+      },
+      {
+        id: 'liberty-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/39/',
       },
       {
         id: 'liberty-tax-collector',
@@ -1408,6 +1636,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.madisonclerk.com/',
       },
       {
+        id: 'madison-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/40/',
+      },
+      {
         id: 'madison-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1431,6 +1665,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.manateeclerk.com/',
+      },
+      {
+        id: 'manatee-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://records.manateeclerk.com/CourtRecords/Search',
       },
       {
         id: 'manatee-tax-collector',
@@ -1458,6 +1698,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.marioncountyclerk.org/',
       },
       {
+        id: 'marion-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/42/',
+      },
+      {
         id: 'marion-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1481,6 +1727,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.martinclerk.com/',
+      },
+      {
+        id: 'martin-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/43/',
       },
       {
         id: 'martin-tax-collector',
@@ -1508,6 +1760,18 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.miamidadeclerk.gov/',
       },
       {
+        id: 'miami-dade-court-records-civil',
+        label: 'Court Records — Civil, Family & Probate',
+        description: 'Search civil, family, and probate court records',
+        url: 'https://www2.miamidadeclerk.gov/ocs/',
+      },
+      {
+        id: 'miami-dade-court-records-criminal',
+        label: 'Court Records — Criminal',
+        description: 'Search criminal court records',
+        url: 'https://www2.miamidadeclerk.gov/cjis/',
+      },
+      {
         id: 'miami-dade-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1531,6 +1795,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.clerk-of-the-court.com/',
+      },
+      {
+        id: 'monroe-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.monroe-clerk.com/disclaimer/court-records-link',
       },
       {
         id: 'monroe-tax-collector',
@@ -1558,6 +1828,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.nassauclerk.com/',
       },
       {
+        id: 'nassau-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/45/',
+      },
+      {
         id: 'nassau-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1581,6 +1857,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.okaloosaclerk.com/',
+      },
+      {
+        id: 'okaloosa-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://clerkapps.okaloosaclerk.com/ClerkQuest/',
       },
       {
         id: 'okaloosa-tax-collector',
@@ -1608,6 +1890,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://myokeeclerk.com/',
       },
       {
+        id: 'okeechobee-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/47/',
+      },
+      {
         id: 'okeechobee-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1631,6 +1919,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://myorangeclerk.com/',
+      },
+      {
+        id: 'orange-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://myeclerk.myorangeclerk.com/',
       },
       {
         id: 'orange-tax-collector',
@@ -1658,6 +1952,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.osceolaclerk.com/',
       },
       {
+        id: 'osceola-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://courts.osceolaclerk.com/BenchmarkWeb/Home.aspx/Search',
+      },
+      {
         id: 'osceola-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1681,6 +1981,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.mypalmbeachclerk.com/',
+      },
+      {
+        id: 'palm-beach-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://appsgp.mypalmbeachclerk.com/ecaseview',
       },
       {
         id: 'palm-beach-tax-collector',
@@ -1708,6 +2014,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.polkcountyclerk.net/',
       },
       {
+        id: 'polk-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://pro.polkcountyclerk.net/PRO',
+      },
+      {
         id: 'polk-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1731,6 +2043,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://putnamclerk.com/',
+      },
+      {
+        id: 'putnam-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/54/',
       },
       {
         id: 'putnam-tax-collector',
@@ -1758,6 +2076,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.santarosaclerk.com/',
       },
       {
+        id: 'santa-rosa-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/57/',
+      },
+      {
         id: 'santa-rosa-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1781,6 +2105,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.sarasotaclerk.com/',
+      },
+      {
+        id: 'sarasota-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://secure.sarasotaclerk.com/AnonLanding.aspx',
       },
       {
         id: 'sarasota-tax-collector',
@@ -1808,6 +2138,18 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.seminoleclerk.org/',
       },
       {
+        id: 'seminole-court-records-civil',
+        label: 'Court Records — Civil, Family & Probate',
+        description: 'Search civil, family, and probate court records',
+        url: 'https://courtrecords.seminoleclerk.org/civil/',
+      },
+      {
+        id: 'seminole-court-records-criminal',
+        label: 'Court Records — Criminal',
+        description: 'Search criminal court records',
+        url: 'https://courtrecords.seminoleclerk.org/criminal/default.aspx',
+      },
+      {
         id: 'seminole-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1831,6 +2173,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://stjohnsclerk.com/',
+      },
+      {
+        id: 'st-johns-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://apps.stjohnsclerk.com/Benchmark/Home.aspx/Search',
       },
       {
         id: 'st-johns-tax-collector',
@@ -1858,6 +2206,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://stlucieclerk.gov/',
       },
       {
+        id: 'st-lucie-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://courtcasesearch.stlucieclerk.gov/BenchmarkWebExternal/Home.aspx/Search',
+      },
+      {
         id: 'st-lucie-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1881,6 +2235,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.sumterclerk.com/',
+      },
+      {
+        id: 'sumter-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/60/',
       },
       {
         id: 'sumter-tax-collector',
@@ -1908,6 +2268,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.suwgov.org/',
       },
       {
+        id: 'suwannee-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/61/',
+      },
+      {
         id: 'suwannee-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1931,6 +2297,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.taylorclerk.com/',
+      },
+      {
+        id: 'taylor-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://pubrecords.taylorclerk.com/',
       },
       {
         id: 'taylor-tax-collector',
@@ -1958,6 +2330,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.unionclerk.com/',
       },
       {
+        id: 'union-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/63/',
+      },
+      {
         id: 'union-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -1981,6 +2359,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.clerk.org/',
+      },
+      {
+        id: 'volusia-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://app02.clerk.org/cm_evt/inquiry.aspx',
       },
       {
         id: 'volusia-tax-collector',
@@ -2008,6 +2392,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://www.wakullaclerk.com/',
       },
       {
+        id: 'wakulla-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/65/',
+      },
+      {
         id: 'wakulla-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -2033,6 +2423,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         url: 'https://clerkofcourts.co.walton.fl.us/',
       },
       {
+        id: 'walton-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://waltonclerkfl.gov/courtrecords',
+      },
+      {
         id: 'walton-tax-collector',
         label: 'Tax Collector',
         description: 'Property tax bills and payments',
@@ -2056,6 +2452,12 @@ export const RESOURCE_GROUPS = Object.freeze([
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
         url: 'https://www.washingtonclerk.com/',
+      },
+      {
+        id: 'washington-court-records',
+        label: 'Court Records',
+        description: 'Search county court records',
+        url: 'https://www.civitekflorida.com/ocrs/county/67/',
       },
       {
         id: 'washington-tax-collector',
