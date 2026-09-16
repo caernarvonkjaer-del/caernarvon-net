@@ -1,6 +1,6 @@
 // Crash recovery and session-restore cache stored in IndexedDB (pg-session-cache).
 import { encryptJSON, decryptJSONWithKey, deriveAndVerifyKey, getSecurityMode, getCryptoKey, setCryptoKey } from './crypto.js';
-import { loadAppState, saveAppState } from './launch-preferences.js';
+import { loadAppState, openIndexedDbStore, saveAppState } from './launch-preferences.js';
 import { getCaseFile, setAppState } from '../state.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
 import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
@@ -9,15 +9,7 @@ export const SESSION_CACHE_DB = 'pg-session-cache';
 export const SESSION_CACHE_STORE = 'snapshot';
 
 export function _sessionCacheDb() {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') {
-      return reject(new Error('IndexedDB not supported'));
-    }
-    const req = indexedDB.open(SESSION_CACHE_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(SESSION_CACHE_STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+  return openIndexedDbStore(SESSION_CACHE_DB, SESSION_CACHE_STORE);
 }
 
 export async function _sessionCacheGet() {

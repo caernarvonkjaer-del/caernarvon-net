@@ -17,16 +17,31 @@ export function setRememberedFileUnavailable(val) {
   _rememberedFileUnavailable = val;
 }
 
-export function _launchPrefDb() {
+// Milestone 52C: the one IndexedDB open-with-one-object-store routine, shared
+// with recovery-cache.js's _sessionCacheDb(). It lives here because this is
+// the lower-level of the two modules -- recovery-cache.js already imports from
+// it, not the reverse.
+//
+// Deliberately the opener ONLY. The two modules' get/put/delete wrappers look
+// similar but encode different, load-bearing error contracts: this file's take
+// an explicit key and let a failure reject (its callers handle that), while
+// recovery-cache.js's hardcode the 'current' key and swallow every failure,
+// because a broken crash-recovery cache must never block the app from
+// loading. Merging those is a behavior change, not a deduplication.
+export function openIndexedDbStore(dbName, storeName) {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
       return reject(new Error('IndexedDB not supported'));
     }
-    const req = indexedDB.open(LAUNCH_PREF_DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(LAUNCH_PREF_STORE);
+    const req = indexedDB.open(dbName, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(storeName);
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+export function _launchPrefDb() {
+  return openIndexedDbStore(LAUNCH_PREF_DB, LAUNCH_PREF_STORE);
 }
 
 export async function _launchPrefGet(key) {
