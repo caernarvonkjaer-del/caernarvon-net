@@ -9,14 +9,14 @@ one sub-delivery does not authorize the others.
 
 **Numbering note.** 52 is confirmed free — checked against `src/`, `tests/`,
 every `*.md`, and `git log --grep` before this document was written, and
-independently re-confirmed by the agent currently executing Milestone 51.
-Milestone 51 (dead code, dead bridges, parallel implementations) is that
-agent's in-flight work as of this writing: 51A, 51B, 51C and 51E are landed;
-51D is staged and verified but uncommitted, pending a full regression run;
-51F is not yet started. See "Sequencing and concurrency" below for what that
-means for this document's own sequencing — in short, most of Milestone 52 is
-untouched territory relative to 51, but one sub-delivery (52A) shares 51's
-riskiest collision surface and must not run alongside it.
+independently re-confirmed by the agent that was then executing Milestone
+51. **Milestone 51 has since landed in full**, including two sub-deliveries
+(51H, 51I) added after its original seven for defects found during
+execution — see `MILESTONE-51-PROPOSAL.md`. The sequencing constraint this
+note originally described (52A blocked until 51 fully lands, because both
+regenerate the same window-bridge governance files) is therefore satisfied;
+52A is unblocked as of this update. See "Sequencing and concurrency" below,
+which is otherwise unchanged from first publication.
 
 ## Source and verification status
 
@@ -25,7 +25,10 @@ items above)" section of an external audit Alan handed over, itself produced
 from a broader dead-code/duplication sweep of this codebase. Every item was
 re-derived against current `master` before this document was written, not
 copied from the audit text. Two corrections and one new finding came out of
-that process:
+that process, plus a second new finding (item 4) added after first
+publication, once the Milestone 51 agent reported an observation from
+probing this document's original 52A fix rather than claiming it as a
+conclusion:
 
 1. **Finding 1 is a live bug, not just a triple duplication.** The audit
    correctly found `formatRelativeTime()` copied byte-for-byte into
@@ -75,6 +78,79 @@ that process:
    fixed single `'current'` key with every call wrapped in try/catch). See
    52C for why only the opener is consolidated.
 
+4. **The continue-prompt banner turns out to have three independent missing
+   bridges, not one — and two of them sit chronologically *before* item 1's
+   crash, in the same function.** The Milestone 51 agent, probing this
+   document's original 52A fix, reported the banner not rendering at all —
+   container present, emptied, no thrown error — and correctly declined to
+   call that a finding on its own, since it is equally consistent with
+   normal gating. Tracing `showContinuePromptIfNeeded()`
+   (`dashboard/index.js:160-181`) line by line against what is and is not
+   actually bridged:
+
+   - **`getRecentlyOpenedWards` — never bridged.** Confirmed by an
+     exhaustive literal search of `legacy-app.js` for the identifier: it
+     matches exactly once, its own definition (`:3925-3931`). No
+     `window.getRecentlyOpenedWards = ...` exists anywhere, in any form —
+     not the standard assignment convention, not an `Object.assign(window,
+     ...)` block (the file has none), not dynamic `window[...]` assignment
+     (the file has none). `dashboard/index.js:14` destructures it from
+     `window` at module load and gets `undefined` permanently. Calling it
+     at `dashboard/index.js:165` throws `TypeError: getRecentlyOpenedWards
+     is not a function` — **before** the `formatRelativeTime` line in item
+     1 is ever reached.
+   - **`addToRecentlyOpened` — never bridged.** Same exhaustive-search
+     method, same result: one match, its own definition
+     (`legacy-app.js:3915-3919`). Its only call site is a one-time
+     legacy-`.sav`-migration seed (`legacy-app.js:3421`) that fires at most
+     once per archive. The **normal**, ongoing call site — every time a
+     user actually switches wards — is
+     `src/core/navigation/ward-lifecycle.js:395-397`, which guards the call
+     behind `typeof window.addToRecentlyOpened === 'function'`; that guard
+     has never once been true since the call site was introduced (Milestone
+     27, 2026-09-07, `f4a92e8` — legacy-monolith decomposition; the bridge
+     was evidently never carried over when this call was extracted from
+     legacy-app.js). Even if `getRecentlyOpenedWards` above were fixed in
+     isolation, it would have nothing to return for any case created under
+     current code, because nothing ever adds to the list it reads.
+   - **`formatRelativeTime` — item 1's finding, reachable only past both of
+     the above.**
+
+   **Why the Milestone 51 agent saw no error, traced rather than guessed:**
+   `showContinuePromptIfNeeded()` checks `isContinuePromptShown()` (`:164`)
+   — reading `legacy-app.js`'s own closure variable `_appState.continuePromptShown`
+   (`:936`, `:2902`) — before it ever reaches the broken
+   `getRecentlyOpenedWards()` call. That variable can become `true` through
+   exactly one working path today: importing a `.sav` file whose appState
+   blob already carries `continuePromptShown: true`, hydrated verbatim at
+   `legacy-app.js:3412` (`_appState.continuePromptShown=a.continuePromptShown;`).
+   It **cannot** currently become `true` any other way — its only other
+   writer, `markContinuePromptShown()` (`:2904-2907`), is called from
+   exactly one place, `dashboard/index.js:169`, which sits **after** the
+   `getRecentlyOpenedWards()` crash in the same function and is therefore
+   unreachable. (This also means there is no lurking export/import
+   asymmetry to worry about: `markContinuePromptShown()` writes both its
+   own variable and, via the correctly-bridged `saveAppState()`
+   (`launch-preferences.js:151`), `window._appState` — the same object
+   `buildCaseFileBlob()` reads via `loadAppState()` when exporting. The two
+   sides agree; the variable simply never gets set in the first place.) A
+   reused test fixture `.sav` that happened to be exported with this flag
+   already `true` — plausible for any repeatedly-reused multi-ward test
+   archive — would short-circuit `showContinuePromptIfNeeded()` at `:164`
+   on every load, container emptied by the line above, no error: exactly
+   the observation reported. This is inference about the Milestone 51
+   agent's specific test fixture, not something directly observed in it —
+   flagged as such rather than asserted as certain, in the same spirit the
+   agent flagged its own observation rather than overclaiming it.
+
+   **Net effect:** the feature has been non-functional since Milestone 27
+   (2026-09-07) for any case whose `.sav` doesn't already carry this one
+   flag true, and even a case that does carry it hits one of two further
+   crashes the moment that flag is ever false again (a fresh case, a
+   different ward's history, or the flag never having been true to begin
+   with). All three bridges are fixed together in 52A below — fixing any
+   subset would leave the feature still broken.
+
 Everything else on the original list reproduced as described, with current
 line numbers re-confirmed below.
 
@@ -97,7 +173,7 @@ ramifications, marked **N/A** where genuinely inert rather than left silent.
 
 | Sub-delivery | What | Risk | Size |
 | --- | --- | --- | --- |
-| 52A — `formatRelativeTime()`: one home, one bug fixed | 3 duplicates + 1 missing bridge (live bug) | **Medium** | Small |
+| 52A — The continue-prompt banner: three missing bridges, one feature | 3 `formatRelativeTime` duplicates + 3 missing bridges (3 compounding live bugs) | **Medium** | Small |
 | 52B — Ward-record decode pipeline and encrypt/decrypt fan-out | 2 pairs of near-duplicate functions | **Medium** | Small–medium |
 | 52C — IndexedDB store-opener: one function, not two | 1 consolidation (opener only) | Low | Trivial |
 | 52D — Window-backed getter/setter pattern: one factory | 9 pairs across 3 modules | Low | Small |
@@ -129,6 +205,19 @@ switches to an ES import (it does not currently destructure anything from
 several things from `crypto.js` and `state.js` this way). `legacy-app.js`
 deletes its copy and calls `window.formatRelativeTime`, matching every other
 case-file.js-owned helper it already calls that way.
+
+**Decision 1b — `getRecentlyOpenedWards` and `addToRecentlyOpened` both get
+the same treatment: real `window` bridges, added in `legacy-app.js`
+alongside their neighbors.** Per Source note 4, neither has ever been
+assigned to `window`, despite `dashboard/index.js` destructuring the former
+and `ward-lifecycle.js:395-397` guarding a call to the latter behind
+`typeof window.addToRecentlyOpened === 'function'` — a guard clearly
+written expecting the bridge to exist. Both fixes are one line each, in the
+same "Global bridge" style already used throughout `legacy-app.js` for
+dozens of other functions in this exact neighborhood (`isContinuePromptShown`,
+`markContinuePromptShown`, and — once Decision 1 lands —
+`formatRelativeTime`). This is not a new architectural decision so much as
+finishing two that were already half-made.
 
 **Decision 2 — the IndexedDB consolidation is the opener only.**
 `_launchPrefDb()`/`_sessionCacheDb()` are genuinely identical modulo the two
@@ -189,11 +278,15 @@ diff can still move. 52K should not start until 51D lands (see
 
 ---
 
-## 52A — `formatRelativeTime()`: One Home, One Bug Fixed
+## 52A — The Continue-Prompt Banner: Three Missing Bridges, One Feature
 
 **Risk: Medium.** This is the one sub-delivery in this milestone that both
-fixes a live defect and adds a new `window.*` name, which means it shares
-Milestone 51's governance-file collision surface (see "Sequencing").
+fixes a live defect and adds new `window.*` names, which means it shares
+Milestone 51's governance-file collision surface (see "Sequencing"). It
+grew from one confirmed bug (`formatRelativeTime`) to three during scoping
+— see Source note 4 — after the Milestone 51 agent reported an observation
+from probing the original, narrower version of this fix without claiming
+more than it had established.
 
 ### Files
 
@@ -204,74 +297,116 @@ Milestone 51's governance-file collision surface (see "Sequencing").
 
 ### Steps
 
-**A1. Keep `formatRelativeTime()` in `case-file.js` (already there,
+**A1. Bridge `getRecentlyOpenedWards`.** Add
+`window.getRecentlyOpenedWards = getRecentlyOpenedWards;` to `legacy-app.js`'s
+existing dashboard-adjacent bridge assignments (near `:3925-3931`'s
+definition, or grouped with the other dashboard-consumed globals — match
+whatever grouping convention the surrounding code already uses). No logic
+change to the function itself.
+
+**A2. Bridge `addToRecentlyOpened`.** Add `window.addToRecentlyOpened =
+addToRecentlyOpened;` alongside it. This makes
+`ward-lifecycle.js:395-397`'s existing guarded call — unreachable since
+Milestone 27 — start firing on every real ward switch. No change needed in
+`ward-lifecycle.js` itself; the guard was already written correctly.
+
+**A3. Keep `formatRelativeTime()` in `case-file.js` (already there,
 `:306-314`), export it, and add `window.formatRelativeTime =
 formatRelativeTime;` to the existing bridge block at `:908-948`.** No
 logic changes to the function itself — it is already correct and is what
 all three copies agree on.
 
-**A2. `recovery-cache.js`: delete the local copy (`:105-113`) and import
-`formatRelativeTime` from `./case-file.js`.** Confirm this does not create a
-circular import — `recovery-cache.js` already imports `getCaseFile`,
-`setAppState` from `../state.js` and several things from `./crypto.js`, and
-`case-file.js` imports neither `recovery-cache.js` nor anything that chains
-back to it (verify with a quick import-graph check before landing, not
-after).
+**A4. `recovery-cache.js`: delete the local `formatRelativeTime` copy
+(`:105-113`) and import it from `./case-file.js`.** Confirm this does not
+create a circular import — `recovery-cache.js` already imports
+`getCaseFile`, `setAppState` from `../state.js` and several things from
+`./crypto.js`, and `case-file.js` imports neither `recovery-cache.js` nor
+anything that chains back to it (verify with a quick import-graph check
+before landing, not after).
 
-**A3. `legacy-app.js`: delete the local copy (`:2947-2954`) and its
-call site at `:2387` calls `window.formatRelativeTime` instead** — no
-change needed there beyond removing the now-dead local function, since
-`formatRelativeTime` was already called unqualified in a classic script,
-which resolves to the global scope the same way `window.formatRelativeTime`
-would.
+**A5. `legacy-app.js`: delete its local `formatRelativeTime` copy
+(`:2947-2954`)** — its call site at `:2387` keeps working unqualified,
+resolving through the global scope the same way `window.formatRelativeTime`
+would, since it is a classic script.
 
-**A4. `dashboard/index.js`: no code change required at the call site**
-(`:177`) or the destructure (`:18`) — this is the one place in the whole
-sub-delivery that starts working correctly instead of throwing, once A1
-lands. Add a regression test for it (see Verification) so it stays working.
+**A6. `dashboard/index.js`: no code change required** at either call site
+(`:165`, `:177`) or the destructure (`:13-19`) — this is the one file in
+the whole sub-delivery that starts working correctly instead of throwing,
+once A1–A3 land. Add regression coverage for it (see Verification) so it
+stays working.
 
-**A5. Regenerate the bridge governance files.**
+**A7. Regenerate the bridge governance files.**
 `node scripts/audit-window-bridge.mjs --declare` for `window-bridge.d.ts`;
-regenerate the allowlist from the script's `--json` output.
+regenerate the allowlist from the script's `--json` output. Three new
+names this time, not one — confirm the diff shows exactly
+`getRecentlyOpenedWards`, `addToRecentlyOpened`, and `formatRelativeTime`,
+nothing else.
 
 ### Verification
 
-1. **New coverage for the bug, not just the refactor.** No spec exercises
-   `showContinuePromptIfNeeded()` today. Add a unit test (new file or an
-   addition to `tests/unit/dashboard-view-model.spec.js` if it already
-   stubs enough of `window` — check before creating a new file) that stubs
-   `getRecentlyOpenedWards()` to return a ward different from
-   `getCaseFile().activeWardId`, calls the dashboard's mount/render path,
-   and asserts the continue-prompt banner renders with a "... ago" string
-   instead of throwing. This is the regression gate for the actual defect,
-   not just the dedup.
+1. **New coverage for the actual defect chain, not just the dedup.** No
+   spec exercises `showContinuePromptIfNeeded()`, `addToRecentlyOpened()`,
+   or the ward-switch call site that should invoke it today. Add:
+   - A unit or e2e test that switches between two wards and confirms
+     `getRecentlyOpenedWards()` gains an entry each time (closing A1/A2's
+     gap — this is the one that would have caught Milestone 27's
+     regression).
+   - A test that then loads the dashboard with that state (recently
+     opened ward differing from active, prompt not yet shown) and asserts
+     the continue-prompt banner renders with a real "... ago" string
+     instead of throwing (closing A3's gap).
+   - A test confirming `markContinuePromptShown()` becomes reachable and
+     persists — dismiss or trigger the banner once, then confirm
+     `isContinuePromptShown()` is `true` on a subsequent render in the same
+     session, so the banner does not reappear every time.
 2. `npx vitest run tests/unit/window-bridge.spec.js` — allowlist and `.d.ts`
    back in sync.
 3. `npx playwright test tests/e2e/routes.spec.ts` (dashboard mount) plus a
-   manual repro: open the app with two wards, switch to one, reload so the
-   other is "recently opened" but not active, and confirm the banner shows a
-   real relative time and the ward grid/summary/sidebar still render below
-   it.
+   manual repro end to end: open the app with two wards, switch to one,
+   switch to the other, return to the dashboard, and confirm the banner
+   appears with a real relative time and the ward grid/summary/sidebar
+   still render below it — then confirm it does *not* reappear on a second
+   visit without switching wards again.
 4. Confirm `src/legacy-app.js:2387`'s "last saved ..." indicator still
-   renders correctly (the other live caller of this function).
+   renders correctly (the other live caller of `formatRelativeTime`).
+5. **Export/import round-trip for the flag itself:** trigger the banner,
+   let it mark itself shown, export a `.sav`, re-import it (or open it in a
+   second profile), and confirm the imported case does not re-show the
+   banner for the same ward pairing — this is what proves A1/A2 didn't just
+   move the crash further down the same broken chain.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
-- **Data Model:** N/A — no persisted shape change. `continuePromptShown` is
-  already part of the `.sav`-persisted app state (per `dashboard/index.js:158`'s
-  own comment) and is untouched here.
-- **Legacy Data Migration:** N/A.
-- **Test Coverage & Index:** one new test (new spec file or an addition to
-  an existing one — decide during implementation which, and update
-  `TEST-INDEX.md` accordingly either way, per §7).
-- **Export/Import/Portability:** N/A.
-- **Security & Sensitivity:** N/A — one net new `window` name, replacing
-  three disconnected private functions with one shared, correctly-bridged
-  one.
-- **UI/UX Consistency:** **directly implicated — this is a UI bug fix.**
-  The continue-prompt banner currently either throws (breaking the rest of
-  the dashboard) or, if a user has never tripped the gate, silently never
-  gets exercised. After this lands it renders as designed.
+- **Data Model:** N/A — no persisted shape change. `continuePromptShown`
+  and `recentWards` are already part of the `.sav`-persisted app state
+  (`case-file.js:220-222`, carried on import at `legacy-app.js:3412`) and
+  are untouched in shape here — this sub-delivery makes the existing
+  read/write paths reachable, it does not add new fields.
+- **Legacy Data Migration:** N/A for the fix itself. Worth noting for
+  context: any `.sav` file exported since Milestone 27 has an accurate but
+  perpetually-empty `recentWards` list and a `continuePromptShown` that is
+  `true` only if it happened to be seeded by the one-time legacy-migration
+  path (`legacy-app.js:3421`) before that file was last exported. Nothing
+  needs to migrate — an empty list is valid input, and the feature simply
+  starts working correctly for activity going forward.
+- **Test Coverage & Index:** new tests per Verification step 1 above (new
+  spec file or additions to existing ones — decide during implementation
+  which, and update `TEST-INDEX.md` accordingly either way, per §7).
+- **Export/Import/Portability:** touched indirectly — `recentWards` and
+  `continuePromptShown` both round-trip through `.sav` export/import
+  (`buildCaseFileBlob()`/import-hydration), and Verification step 5 is the
+  gate proving that round-trip still works once these three functions are
+  reachable rather than dead.
+- **Security & Sensitivity:** N/A — three net new `window` names, each
+  replacing a function that already existed and was already meant to be
+  reachable this way, per the guard code already written to expect them.
+- **UI/UX Consistency:** **directly implicated — this is a UI bug fix,
+  larger in practice than it first looked.** Before this lands, the
+  "Continue where you left off" banner cannot appear for any case created
+  since Milestone 27 (2026-09-07) except through an accidental legacy-seed
+  path, and on the rare case where it can appear, it crashes instead of
+  rendering, taking the rest of the dashboard down with it. After this
+  lands, it works as designed on every ward switch.
 - **Legal/Compliance:** N/A.
 
 ---
@@ -1117,62 +1252,68 @@ proposal's "safe to parallelize" call must be verified against actual file
 overlap at the time work starts, not assumed from this document's snapshot
 of the tree.
 
-**The one real collision: 52A vs. Milestone 51's remaining work.** 52A is
-the only sub-delivery in this document that adds a `window.*` name, which
-means it regenerates `tests/unit/fixtures/window-bridge-allowlist.json` and
+**The collision this section originally warned about no longer applies —
+recorded here for anyone reading this document's history rather than its
+current state.** 52A is the only sub-delivery in this document that adds
+`window.*` names, which means it regenerates
+`tests/unit/fixtures/window-bridge-allowlist.json` and
 `src/core/types/window-bridge.d.ts` — the same two generated files every
-remaining Milestone 51 sub-delivery also touches. Per Milestone 51's own
-"Sequencing and concurrency" section, a conflict in a generated file has no
-correct manual resolution; the fix is always "regenerate from merged
-source," which means whichever of 51's remaining work and 52A lands second
-is blocked on the first anyway. **52A must not start until Milestone 51 is
-fully landed** (specifically, until 51F is committed) — not because 52A's
-own change is risky, but because two agents regenerating the same generated
-files at the same time is the specific failure mode both documents now
-name.
+Milestone 51 sub-delivery also touched. Per Milestone 51's own "Sequencing
+and concurrency" section, a conflict in a generated file has no correct
+manual resolution; the fix is always "regenerate from merged source." At
+first publication, Milestone 51 was still in flight (51D staged, 51F not
+started) and this section blocked 52A until it landed in full. **Milestone
+51 has since landed completely, including 51H and 51I**
+(`MILESTONE-51-PROPOSAL.md`), so 52A carries no live collision risk as of
+this update — before starting it, still run
+`node scripts/audit-window-bridge.mjs` first to confirm the tree is quiet,
+per the general sync-before-starting rule above, but no other milestone's
+work is known to be pending against these two files.
 
-**52K should also wait on Milestone 51D specifically** (not all of 51),
-per Decision 5 — 51D is actively editing `guardian-inventory/excel.js`,
-uncommitted, and while the current line ranges do not overlap, an
-uncommitted diff is not a stable basis to build on top of.
+**52K similarly waited on Milestone 51D specifically** (not all of 51),
+per Decision 5 — 51D was actively editing `guardian-inventory/excel.js`,
+uncommitted, at first publication. 51D landed as `5328954`; 52K is
+unblocked.
 
 **Everything else in this document (52B, 52C, 52D, 52E, 52F, 52G, 52H, 52I,
-52J, 52L) touches no file Milestone 51 touches and adds no `window.*` name**
+52J, 52L) touches no file Milestone 51 touched and adds no `window.*` name**
 (52D by explicit design — see Decision 3 and its verification gate) **and
-can proceed independently of Milestone 51's remaining work**, subject to
-the general sync-before-starting rule above and to their own internal
-ordering:
+was never blocked by Milestone 51's work in the first place.**
 
-**Suggested order, by risk ascending, for the non-blocked sub-deliveries:**
+**Suggested order, by risk ascending, now that nothing in this document is
+blocked:**
 
 1. **52L** — test-only, zero production risk, and its shared helpers make
-   writing 52A's new regression test (which needs a `window` stub) and
+   writing 52A's new regression tests (which need a `window` stub) and
    52K's round-trip test slightly easier if landed first.
 2. **52C, 52E, 52G, 52I** — low risk, single-purpose, no shared-file
    contention with each other.
 3. **52D** — low risk but should land as its own reviewable commit given
    the governance-file verification gate in its own Verification section.
-4. **52B** — medium risk, case-load/session-restore path; land with the
+4. **52A** — medium risk; no longer needs to wait on anything, but still
+   deserves its own commit given the scope grew from one bridge to three
+   during scoping (Source note 4) and touches the same governance files as
+   52D just above it — land them as separate commits, not combined, so a
+   governance-file regeneration mistake in one is easy to isolate from the
+   other.
+5. **52K** — medium risk, Excel export/import correctness path; unblocked
+   now that 51D is committed.
+6. **52B** — medium risk, case-load/session-restore path; land with the
    corruption-recovery test written first (red, per this repo's
    convention), then green.
-5. **52F** — medium risk, and gated on F1's answer from Alan before F2 can
+7. **52F** — medium risk, and gated on F1's answer from Alan before F2 can
    be written at all; do not start F2 speculatively.
-6. **52J** — medium risk, user-facing keyboard behavior change; land last
-   among the unblocked items so it is reviewed against an otherwise quiet
-   tree, matching Milestone 51's own reasoning for sequencing 51F last.
-
-**Then, once Milestone 51 fully lands:**
-
-7. **52A** — the governance-file-touching one.
-8. **52K** — once 51D specifically is confirmed committed.
+8. **52J** — medium risk, user-facing keyboard behavior change; land last,
+   so it is reviewed against an otherwise quiet tree, matching Milestone
+   51's own reasoning for sequencing 51F last.
 
 ## Acceptance criteria
 
 | Scenario | Expected result |
 | --- | --- |
-| Two-ward dashboard, recently-opened ward ≠ active ward, prompt not yet shown | Continue-prompt banner renders with a real relative-time string; summary strip, ward grid, and sidebar resources all still render below it |
 | `node scripts/audit-window-bridge.mjs`, before vs. after 52D | Assignment list and `D`'s file entries byte-identical |
-| `node scripts/audit-window-bridge.mjs`, before vs. after 52A | Exactly one new assignment: `formatRelativeTime` in `case-file.js` |
+| `node scripts/audit-window-bridge.mjs`, before vs. after 52A | Exactly three new assignments, all in `legacy-app.js` or `case-file.js`: `getRecentlyOpenedWards`, `addToRecentlyOpened`, `formatRelativeTime` |
+| Switch between two wards, then open the dashboard | `getRecentlyOpenedWards()` reflects the switch; the continue-prompt banner appears once with a real relative-time string, does not crash, and does not reappear on a second visit without switching again (52A) |
 | `.sav` export → import round-trip, populated case | Identical case data before and after |
 | Session-restore cache save → restore round-trip | Identical case data before and after |
 | Session-restore cache with one corrupted non-ward field | Restores the other fields instead of failing outright (52B) |
