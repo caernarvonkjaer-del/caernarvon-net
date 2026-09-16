@@ -1229,15 +1229,18 @@ Named here so they are not rediscovered as omissions:
   selector's** (52J, J2) — both are believed equivalent but were built in
   separate milestones (50H vs. earlier); confirm before overwriting rather
   than assuming.
-- **The two defects the Milestone 51 agent found and recorded in
-  `MILESTONE-51-PROPOSAL.md`'s "Found during 51's execution" section** (the
-  co-guardian card that disappears on a second "+ Add Co-Guardian" click,
-  and the pre-existing `verified-inventory-workflow.spec.ts` "label
-  associations" failure) — real, user-visible correctness bugs, not
-  duplication findings, and outside the scope Alan handed over for this
-  document. Not included here so this milestone stays focused on what it
-  was asked to cover; they remain recorded in Milestone 51's document and
-  are natural candidates for a future milestone of their own.
+- **The two defects the Milestone 51 agent found while executing 51 — landed,
+  not deferred.** The disappearing co-guardian card (a stale
+  `visiblePendingGuardianIndex` surviving a `normalizeGuardians()` reindex)
+  and the redundant `label`/`for` pairing on the terms checkbox that had
+  been shadowing 51's test gates both landed as **Milestone 51H and 51I**
+  (`0db1258`, 2026-09-15), inside Milestone 51 itself, at Alan's direction —
+  not deferred to a future milestone as this entry previously said. Neither
+  was ever one of the twelve findings this document covers, so nothing else
+  in MS52 changes as a result; this note exists only so a reader who
+  remembers the earlier "future milestone" wording doesn't go looking for
+  them here or elsewhere. See `MILESTONE-51-PROPOSAL.md`'s 51H/51I sections
+  for the fix, root cause, and verification.
 - **The formula-injection sanitizer tab/CR gap** Milestone 51 also parked —
   a security judgment for a qualified reviewer, unrelated to duplication,
   and explicitly not decided by either milestone document.
