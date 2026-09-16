@@ -57,6 +57,43 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(3);
   });
 
+  // Milestone 51H regression test. Written red: before the fix, clicking
+  // "+ Add Co-Guardian" a second time without typing anything made the
+  // co-guardian card DISAPPEAR. addGuardian() recorded pendingGuardianIndex as the
+  // pre-push length, normalizeGuardians() then pruned the earlier blank row and
+  // REINDEXED D.guardians, but visiblePendingGuardianIndex still held the
+  // pre-prune index -- so pageD1()'s filter matched no row for the guardian that
+  // had just been added, while D.guardians silently kept an extra blank entry.
+  //
+  // The user-visible symptom was a button that appeared to delete the card it had
+  // just created, with no error anywhere.
+  test('co-guardians: adding twice with nothing typed still leaves exactly one co-guardian card', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Collection Controls Ward', 'guardian');
+    await goto(page, GUARDIAN_ROUTE);
+
+    const addCo = page.locator('[data-inventory-action="add-guardian"]');
+    const removeCo = page.locator('[data-inventory-action="remove-guardian"]');
+
+    await addCo.click();
+    await expect(removeCo).toHaveCount(1);
+
+    // Second click, still nothing typed into the first co-guardian.
+    await addCo.click();
+
+    // The blank row is pruned (by design) and the newly added one takes its place,
+    // so the count stays at one rather than dropping to zero.
+    await expect(removeCo, 'the co-guardian card must not vanish on a second add').toHaveCount(1);
+
+    // And the store must not accumulate invisible blank rows behind the UI: what
+    // is rendered and what is stored have to agree.
+    const state = await page.evaluate(() => ({
+      stored: (window as any).D.guardians.length,
+      rendered: document.querySelectorAll('[data-inventory-action="remove-guardian"]').length + 1,
+    }));
+    expect(state.stored, 'stored guardian rows must match the rendered cards').toBe(state.rendered);
+  });
+
   test('co-guardians: Remove drops the chosen row and leaves the others intact', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Collection Controls Ward', 'guardian');

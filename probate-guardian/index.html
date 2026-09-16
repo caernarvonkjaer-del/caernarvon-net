@@ -173,7 +173,13 @@
       <p class="pg-terms-full">This summary is for convenience only. The full <a href="https://www.mypinellasclerk.gov/ADA-Records#652133-terms-of-use" target="_blank" rel="noopener noreferrer">Terms of Use</a> and <a href="https://www.mypinellasclerk.gov/ADA-Records#652134-privacy-policy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> on the Clerk&rsquo;s official website control in the event of any difference.</p>
     </div>
     <div class="pg-terms-footer">
-      <label class="pg-terms-check" for="pg-terms-agree"><input type="checkbox" id="pg-terms-agree"><span>I have read and agree to the Clerk&rsquo;s Terms of Use and Privacy Policy.</span></label>
+      <!-- Milestone 51I: no `for` attribute here on purpose. This label WRAPS its
+           checkbox, which associates them implicitly; adding `for` as well made the
+           association redundant and some screen readers announce such a pair twice.
+           Clicking the label still toggles the box through the implicit association.
+           Guarded by verified-inventory-workflow.spec.ts's label audit, which counts
+           any label[for] that also wraps a control. -->
+      <label class="pg-terms-check"><input type="checkbox" id="pg-terms-agree"><span>I have read and agree to the Clerk&rsquo;s Terms of Use and Privacy Policy.</span></label>
       <button type="button" class="btn btn-primary" id="pg-terms-continue" disabled>Continue</button>
     </div>
   </div>

@@ -58,8 +58,22 @@ function guardianHasData(guardian) {
 }
 function normalizeGuardians() {
   const guardians = Array.isArray(D.guardians) ? D.guardians : [];
+  // Milestone 51H: hold the pending row by IDENTITY, not by index. The filter
+  // below prunes blank co-guardian rows, which REINDEXES the array -- so
+  // pendingGuardianIndex (recorded against the pre-prune array in addGuardian())
+  // can point at the wrong row, or past the end, once the prune has run.
+  //
+  // Carrying the stale index straight over to visiblePendingGuardianIndex meant
+  // pageD1()'s filter matched no row for a guardian that had just been added:
+  // clicking "+ Add Co-Guardian" twice with nothing typed pruned the first blank
+  // row, shifted the new one down into its place, and then rendered neither --
+  // the card appeared to delete itself, while D.guardians silently kept an extra
+  // blank entry. Resolving the row's new position after the prune keeps what is
+  // stored and what is rendered in agreement.
+  const pendingRow = pendingGuardianIndex == null ? null : guardians[pendingGuardianIndex];
   const normalized = guardians.filter((guardian, index) => index === 0 || index === pendingGuardianIndex || guardianHasData(guardian));
-  visiblePendingGuardianIndex = pendingGuardianIndex;
+  const pendingAfterPrune = pendingRow ? normalized.indexOf(pendingRow) : -1;
+  visiblePendingGuardianIndex = pendingAfterPrune >= 0 ? pendingAfterPrune : null;
   pendingGuardianIndex = null;
   if (!normalized.length) normalized.push(mk.guardian());
   if (normalized.length !== guardians.length || !Array.isArray(D.guardians)) {

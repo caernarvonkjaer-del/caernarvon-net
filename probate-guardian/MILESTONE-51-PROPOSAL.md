@@ -16,6 +16,8 @@ sub-delivery's own verification block run before its commit:
 | 51E | `4eba207` | unit 839/839; new spec 7/7; e2e 27 passed |
 | 51D | `5328954` | 14,704-cell workbook gate at 0 diffs; **full regression** 562 passed |
 | 51F | `851d17b` | 336-row panel-identity gate at 0 diffs; e2e 84 passed |
+| 51H | (below) | red-first regression test; collection-controls 8/8, guardian e2e 60 passed |
+| 51I | (below) | the label audit that had been red all along now passes; terms gate 8/8 |
 
 Two commits sit alongside these: `dc5d1ad` repaired a pre-existing
 `routes.spec.ts` failure that was shadowing 51's gates (7e9596e had moved the
@@ -167,6 +169,13 @@ ramifications, marked **N/A** where genuinely inert rather than left silent.
 | 51E — Dead `window.*` bridges over live functions | 13 assignments | Low | Small |
 | 51F — `checkExcelCapacity`: one implementation | Rewire 3 features, delete legacy twin | **Medium** | Small–medium |
 | 51G — `renderDashboardWorklist()` and its container | A confirmed complete no-op | Low | Trivial |
+| 51H — The disappearing co-guardian card | **A correctness fix, not cleanup** — added after the original seven | Low | Trivial |
+| 51I — Redundant label association on the terms checkbox | **A correctness fix, not cleanup** — added after the original seven | Low | Trivial |
+
+**51H and 51I were not in the original scope.** Both are defects this milestone
+*found* while executing, recorded first in its out-of-scope list, then fixed
+inside 51 at Alan's direction rather than deferred. They are the only two
+sub-deliveries here that change behavior a user can see.
 
 ## Decisions taken during scoping
 
@@ -939,6 +948,162 @@ check of the dashboard at desktop and mobile widths in both themes.
 
 ---
 
+## 51H — The Disappearing Co-Guardian Card
+
+**Added after the original seven sub-deliveries, at Alan's direction.** Found
+while writing 51E's new e2e coverage; not predicted by this document's original
+scope. **Risk:** Low, and confined to one function — but it is a correctness
+fix, not cleanup, so it was done red-first rather than as a behavior-neutral
+swap.
+
+### Observed
+
+On Initial Inventory's Guardian Attestation page (`/d1`), clicking
+"+ Add Co-Guardian" a second time without typing anything into the first one
+made the co-guardian card **disappear**. No error, no console warning — the
+button appeared to delete the card it had just created. Reproduced reliably.
+
+### Root cause
+
+`addGuardian()` records `pendingGuardianIndex` as the pre-push array length,
+then pushes a blank guardian and re-renders. `normalizeGuardians()` then prunes
+every co-guardian row with no data (keeping index 0 and the pending index), and
+that prune **reindexes** `D.guardians`. The pending row survives the filter but
+lands at a different position, while `visiblePendingGuardianIndex` was assigned
+the *pre-prune* index verbatim. `pageD1()`'s render filter matches
+`i === visiblePendingGuardianIndex`, so it matched no row at all — often an
+index past the end of the shortened array.
+
+Concretely: `[g0(data), g1(blank)]` + Add → pending 2, array `[g0, g1, g2]` →
+the prune drops `g1` → `[g0, g2]` with `g2` now at index 1, while
+`visiblePendingGuardianIndex` is still 2. Only Guardian #1 renders.
+`D.guardians.length` is 2, so the Add button keeps rendering and the store
+silently holds a row the UI never shows.
+
+### Fix
+
+Hold the pending row by **identity** rather than by index, and resolve its
+position *after* the prune:
+
+```js
+const pendingRow = pendingGuardianIndex == null ? null : guardians[pendingGuardianIndex];
+const normalized = guardians.filter(...);
+const pendingAfterPrune = pendingRow ? normalized.indexOf(pendingRow) : -1;
+visiblePendingGuardianIndex = pendingAfterPrune >= 0 ? pendingAfterPrune : null;
+```
+
+The pruning behavior itself is deliberately unchanged — blank co-guardian rows
+still do not persist, which is the existing design, and Milestone 39-C's
+`signatureImage` carve-out in `guardianHasData()` still protects a drawn
+signature from being pruned before a name is typed.
+
+### Verification
+
+New test in `tests/e2e/guardian-inventory-collection-controls.spec.ts`, written
+**red first**: it failed with "expected 1, received 0" against the unfixed code,
+confirming the defect reproduces, then passed after the fix. It asserts both
+that the card survives the second add *and* that `D.guardians.length` matches
+the rendered card count — the silent store/UI divergence was half the defect, so
+asserting only the visible card would have left it possible to "fix" the render
+while still accumulating hidden blank rows.
+
+The whole spec runs 8/8, including 51E's existing "adding accumulates rows once
+each is given data, up to the maximum of three", which is what proves the prune
+still works and the fix did not simply disable it. Wider: guardian-inventory
+mount, tri-state radios, schedule-card-layout, startup and routes — 60 passed.
+Unit suite 836/836, Vite build clean.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model:** no shape change. But this defect *was* a data-integrity issue
+  in effect: `D.guardians` accumulated blank rows the filer could neither see
+  nor remove. The fix makes stored and rendered rows agree again, which the new
+  assertion pins.
+- **Legacy Data Migration:** an existing `.sav` saved while the defect was live
+  may already carry a stray blank co-guardian row. Nothing is needed:
+  `normalizeGuardians()` prunes exactly that row on the next render of `/d1`,
+  since it has no data and is no longer pending. No migration code, and no
+  filing loses a row that had content — `guardianHasData()` decides that,
+  unchanged.
+- **Test Coverage & Index:** one new test in an existing spec; `TEST-INDEX.md`
+  row extended per §7.
+- **Export/Import/Portability:** a hidden blank row would have been written to
+  the workbook's guardian slots as empty cells. Fixing the divergence removes
+  that; no export code changed.
+- **Security & Sensitivity:** N/A.
+- **UI/UX Consistency:** restores the obvious expectation that Add adds.
+- **Legal/Compliance:** co-guardian identity appears on a filed court document,
+  and a blank row silently retained in stored data is the kind of thing that
+  can reach an export. This makes what is stored match what the filer sees. No
+  judgment about statutory co-guardian requirements is made or implied.
+
+---
+
+## 51I — Redundant Label Association on the Terms Checkbox
+
+**Added after the original seven sub-deliveries, at Alan's direction.**
+**Risk:** Low — one attribute, on markup already guarded by an existing test.
+
+### Observed
+
+`tests/e2e/verified-inventory-workflow.spec.ts`'s "label associations …" test
+had been failing on `master` (`duplicateLabels` expected 0, received 1)
+throughout Milestone 51's execution. It shadowed several of 51's gates: every
+run that touched that spec produced a failure which had to be re-checked
+against a stashed-clean tree before it could be attributed. Confirmed
+pre-existing, then diagnosed.
+
+### Root cause
+
+The Milestone 48 terms-acceptance checkbox in `index.html` both **wrapped** its
+input and carried `for="pg-terms-agree"`:
+
+```html
+<label class="pg-terms-check" for="pg-terms-agree"><input type="checkbox" id="pg-terms-agree">…</label>
+```
+
+That is a redundant double association — implicit (wrapping) and explicit
+(`for`) at once. The audit counts any `label[for]` that also wraps a control,
+and this was the only one in the app.
+
+### Fix, and the decision behind it
+
+Dropped the `for` attribute and kept the wrapping association. Clicking the
+label still toggles the checkbox.
+
+**Considered and rejected: refining the guard** so it only flags a label whose
+`for` points at a control *other* than one it wraps. That is arguably the more
+precise rule — a label wrapping its own target is redundant rather than
+ambiguous — but weakening an accessibility guard to accommodate markup is the
+wrong default here, and the redundancy is worth removing on its own merits:
+some screen readers announce an implicitly-and-explicitly associated pair
+twice. Milestone 36-5's AO-2024-025 precedent is the shape to follow when a
+guard genuinely must yield — a narrow, documented exception — and this did not
+warrant one.
+
+### Verification
+
+`verified-inventory-workflow.spec.ts` now passes in full (8/8 together with
+`terms-acceptance.spec.ts`), including the label audit that had been red.
+`terms-acceptance.spec.ts`'s two tests matter most here, because that checkbox
+gates startup: both pass, so the implicit association still drives the gate.
+Nothing selects the label by `for` — `src/terms-acceptance.js` uses
+`getElementById('pg-terms-agree')` and the e2e test uses `#pg-terms-agree`.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security:** N/A.
+- **Test Coverage & Index:** no new or renamed spec, so no `TEST-INDEX.md`
+  change. The guard that catches this already existed — it was simply red.
+- **UI/UX Consistency:** no visual change; the label behaves identically.
+- **Accessibility:** removes a duplicate announcement on the one control a user
+  must interact with before the app will start.
+- **Legal/Compliance:** the control acknowledges the Clerk's Terms of Use. Its
+  wording and the acknowledgement flow are untouched — only the redundant
+  attribute is gone.
+
+---
+
 ## Sequencing and concurrency
 
 **This milestone is sequential.** Every sub-delivery except 51G touches
@@ -1018,24 +1183,13 @@ while executing 51 and are real, reproducible, and unfixed. They are recorded
 here rather than only in the commit messages that found them, because a commit
 message is not where the next person looks.
 
-### Found during 51's execution — real defects, not cleanup
+### Found during 51's execution — fixed as 51H and 51I
 
-- **Initial Inventory: "+ Add Co-Guardian" clicked twice makes the co-guardian
-  card disappear.** Found while writing 51E's new e2e coverage. `addGuardian()`
-  sets `pendingGuardianIndex` to the pre-push length, then
-  `normalizeGuardians()` prunes the blank co-guardian row and **reindexes**
-  `D.guardians` — but `visiblePendingGuardianIndex` still holds the pre-prune
-  index, so `pageD1()`'s filter
-  (`src/features/guardian-inventory/index.js:984`) matches no row and the new
-  card is never rendered. `D.guardians` silently retains an extra blank entry
-  while the UI shows only Guardian #1, and the Add button keeps rendering
-  because `D.guardians.length < 3` is still true. Not caused by 51E, which only
-  removed `window.*` assignments in that file. User-visible and silent; worth
-  fixing on its own.
-- **`tests/e2e/verified-inventory-workflow.spec.ts` "label associations …" fails
-  on `master`.** `duplicateLabels` expected 0, received 1. Confirmed
-  pre-existing by re-running against a stashed-clean tree. Not investigated
-  beyond confirming it is not 51's doing.
+Both were originally parked here as out of scope. Alan asked for them to be
+fixed inside Milestone 51 rather than deferred to a later one, so they are
+now sub-deliveries in their own right — see "51H" and "51I" below. Milestone
+52's own out-of-scope list still describes them as deferred; that entry is
+now stale, and 52 does not need to carry them.
 
 ### Known, deliberately not actioned by 51
 
