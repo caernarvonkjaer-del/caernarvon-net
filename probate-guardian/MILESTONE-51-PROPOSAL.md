@@ -1191,37 +1191,62 @@ now sub-deliveries in their own right — see "51H" and "51I" below. Milestone
 52's own out-of-scope list still describes them as deferred; that entry is
 now stale, and 52 does not need to carry them.
 
+### Resolved after 51 closed (`6f0967f`, `c3c087e`)
+
+Four entries below were parked as out of scope, then decided by Alan and handled
+in follow-up commits. Kept here with their outcomes rather than deleted, because
+the reasoning is the part worth finding later.
+
+- **`fmtDate` divergent twins → audited, Group B consolidated only.** The entry
+  below described "two twins". The audit found **thirteen** date-truncating
+  copies in four groups, and the divergences are load-bearing. Only Group B —
+  six character-identical `fd` closures returning the `'—'` display placeholder —
+  was consolidated, into `summary-renderer.js`'s `formatSummaryDate()`.
+  **A1 (`fmtDate`, `annual/index.js`'s `fmtD`) and A2 (the three `excel.js`
+  `fD`/`fmtD` copies) were deliberately left as two implementations**: A2's
+  `length >= 10` guard returns the *original* value for short input, preserving
+  its type, so `fD(46023)` is the number `46023` where `fmtDate(46023)` is the
+  string `"46023"` — and 46023 is an Excel serial date. `setCell()` branches on
+  `typeof value === 'number'`, so merging them could flip a date cell between
+  numeric and text in a filed workbook. Measured, not reasoned.
+  **Still open, recorded, not reachable:** all five Group A copies mangle a real
+  `Date` — `String(new Date('2026-05-20T00:00:00Z')).substring(0,10)` is
+  `"Tue May 19"`, wrong format *and* off by a day. Unreachable today because both
+  import readers normalize to strings; `readCellText()` avoids it explicitly via
+  `toISOString()`.
+- **`readCellText` passthrough → left in place, blocker documented in
+  `excel-engine.js`.** It cannot move alone: its body calls `unwrapCellValue()`
+  *and* `fmtDate()`, both legacy globals, and `legacy-app.js` is a classic script
+  that cannot `import`. So the options are a three-function cluster move (every
+  import-path cell read, needing its own gate on the IMPORT direction) or
+  nothing. Nothing, for now — there is exactly one implementation, so no
+  duplication cost and nothing can drift.
+- **`ward_pct` tooltip → worked example adopted**, per Alan.
+- **Formula-injection sanitizer → widened to OWASP's complete set** (`= + - @`
+  TAB CR LF) in both the production rule and the Node fallback. **Hardening, not
+  a fix:** the app writes only `.xlsx`, never CSV, and never a `{formula:…}`
+  cell, so ExcelJS stores every value as a typed string Excel does not evaluate;
+  `sanitizeStoredText()`'s `.trim()` already strips leading tab/CR/LF. The real
+  vector is secondary (a clerk re-saving as CSV, or copying cells out), which is
+  why completing the set was worth it. Note **both** previous versions were
+  wrong: production was `/^[=+\-@]/` and the fallback `/^[=+\-@\t\r]/`, so
+  neither matched OWASP — both missed LF. Full-width variants excluded
+  deliberately.
+- **`TEST-INDEX.md`'s duplicate `app-shell / misc` row → removed** (`c3c087e`).
+
 ### Known, deliberately not actioned by 51
 
-- **Combobox consolidation.** Per Alan and Codex, the ward-name modal
-  comboboxes and the Guardian-specific county markup still have accessibility
-  gaps that Milestone 50H did not reach. Deleting `ComboboxController` (51A)
-  neither fixes nor worsens them. This deserves its own milestone, scoped
-  against what 50H actually landed.
-- **Unwinding core `readCellText`'s `window.readCellText` passthrough.** 51D
-  deleted the wrapper rather than keep an unused one, but all three feature
-  `excel.js` files still call the legacy global directly. Converting them to an
-  ES import is the same question 51F answers for `checkExcelCapacity`, with a
-  larger blast radius (every import-path cell read).
-- **The production formula-injection sanitizer is weaker than the core
-  fallback.** `legacy-app.js:985`'s `sanitizeForExcel` is `/^[=+\-@]/`;
-  `excel-engine.js`'s fallback also guards a leading tab and carriage return.
-  The legacy one is what runs in the browser. 51D pinned the direction in a
-  test and changed no behavior, but whether tab/CR-prefixed cell content needs
-  escaping is an open security question for a qualified reviewer, not something
-  a cleanup should decide.
+- **Combobox consolidation — now Milestone 52's 52J, not a future milestone.**
+  This entry originally called for its own milestone. MS52 covers it, and scoped
+  it more accurately: the ARIA attributes are **already complete** on all four
+  comboboxes (Milestone 50H), and the real gap is **arrow-key navigation**, absent
+  on exactly two (`initWardNameCombobox` and the convert-source dropdown). 52J
+  extracts one shared handler from the ward selector's working implementation.
+  Left to 52 on Alan's instruction — both would edit the same region of
+  `legacy-app.js`.
 - **`.dashboard-top-row`'s two-column CSS** (51G, G4) — shared with a
   `legacy-app.js` surface, so changing it would quietly affect a second
   surface.
-- **`legacy-app.js`'s `fmtDate` vs. the core one** — divergent twins
-  (unconditional truncation vs. a `length >= 10` guard); documented in 51D's
-  module header, not resolved.
 - **The orphaned `pg-dashboard-preferences-v1` localStorage key** (51A) —
   inert, deliberately left rather than shipping a migration whose only purpose
   is to delete something already inert.
-- **Upgrading the `ward_pct` tooltip wording** (51C, C3) — the deleted
-  `ward_percent` key carried a worked example the live key lacks. A content
-  change, not a cleanup.
-- **`TEST-INDEX.md` has two rows both labelled `app-shell / misc`**, the second
-  a superset of the first. Pre-existing; left alone even though 51A and 51B
-  both edited those rows, to avoid widening a governance-file diff.
