@@ -30,14 +30,11 @@ interface Window {
   adaptValidationErrors: any;
   addCollectionRow: any;
   addEntry: any;
-  addGuardian: any;
   addPlanGuardian: any;
   addPlanRow: any;
-  addRecipient: any;
   addSignatureImage: any;
   addToRecentlyOpened: any;
   addWard: any;
-  addWitness: any;
   alertModal: any;
   announceStatus: any;
   annualReconcileState: any;
@@ -293,7 +290,6 @@ interface Window {
   openWardFileAtLaunch: any;
   pageActivityLog: any;
   pageInventorySelector: any;
-  pageNav: any;
   pagePartyManagement: any;
   PAGES_GUARDIAN: any;
   partyForSignaturePath: any;
@@ -325,13 +321,9 @@ interface Window {
   releaseWardLock: any;
   rememberCaseFileHandle: any;
   removeCollectionRow: any;
-  removeEntry: any;
-  removeGuardian: any;
   removePlanGuardian: any;
   removePlanRow: any;
-  removeRecipient: any;
   removeScheduleDoc: any;
-  removeWitness: any;
   renameWard: any;
   renderActivityLogList: any;
   renderCheckboxField: any;
@@ -379,7 +371,6 @@ interface Window {
   setAccountingFilingType: any;
   setPartyIdForSlot: any;
   setPath: any;
-  setScheduleNoItems: any;
   setupAmountFieldValidation: any;
   setupAutoExportTimer: any;
   setupFallbackSaveReminder: any;
@@ -405,13 +396,11 @@ interface Window {
   suggestedCaseFileName: any;
   switchWard: any;
   syncActiveWardNameDisplay: any;
-  syncB2VehicleDescription: any;
   syncFilingSlotWithParty: any;
   syncGuardianNameDisplay: any;
   syncIdentityField: any;
   tdSig: any;
   THEME_STORAGE_KEY: any;
-  toggleB2Vehicle: any;
   toggleHelpPanel: any;
   toggleMobileSidebar: any;
   togglePartyCompareSelection: any;

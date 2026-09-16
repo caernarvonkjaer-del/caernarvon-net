@@ -1244,17 +1244,26 @@ export function validateGuardian(){
 
 // ═══════════════════════════════════════════════════════
 // PRINT VIEW
+// Milestone 51E: 11 of the 14 bridge assignments that used to sit here were
+// deleted. Every one of those functions is still alive -- they are dispatched
+// internally through this feature's own data-form-action / data-inventory-change
+// handlers (see bindEvents above) -- but nothing outside this module ever read
+// them off `window`.
+//
+// Two looked like counter-examples and are not:
+//   - removeEntry: tests/e2e/startup.spec.ts calls root.removeEntry(), which is
+//     a FileSystemDirectoryHandle method, not this global.
+//   - pageNav: print.js consumes it, but through the static ES import at
+//     print.js:12, never through window. The function is alive; the bridge was
+//     dead.
+//
+// The three that remain, and why:
+//   - addEntry / duplicateEntry: two e2e specs drive them through the bridge on
+//     purpose (guardian-inventory-mount, guardian-inventory-tri-state-radios).
+//   - validateGuardian: legacy-app.js's production validate() flow calls the
+//     global directly (:6675, :7068, :7589). Note the Milestone 40H-A comment at
+//     :6661-6665 recording a real bug caused by calling it before assignment --
+//     that history is a reason to leave this bridge, and that comment, alone.
 window.addEntry = addEntry;
-window.removeEntry = removeEntry;
-window.setScheduleNoItems = setScheduleNoItems;
 window.duplicateEntry = duplicateEntry;
-window.addGuardian = addGuardian;
-window.removeGuardian = removeGuardian;
-window.addRecipient = addRecipient;
-window.removeRecipient = removeRecipient;
-window.addWitness = addWitness;
-window.removeWitness = removeWitness;
-window.syncB2VehicleDescription = syncB2VehicleDescription;
-window.toggleB2Vehicle = toggleB2Vehicle;
-window.pageNav = pageNav;
 window.validateGuardian = validateGuardian;

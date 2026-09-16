@@ -26,14 +26,6 @@
       "name": "resolveCase"
     },
     {
-      "file": "src/core/excel/excel-engine.js",
-      "name": "ExcelEngine"
-    },
-    {
-      "file": "src/core/excel/exceljs-loader.js",
-      "name": "getExcelJS"
-    },
-    {
       "file": "src/core/feature-bridge.js",
       "name": "createFeatureBridge"
     },
@@ -155,6 +147,10 @@
     },
     {
       "file": "src/core/form/schedule-definitions.js",
+      "name": "SCHEDULE_SCHEMAS"
+    },
+    {
+      "file": "src/core/form/schedule-definitions.js",
       "name": "addCollectionRow"
     },
     {
@@ -164,10 +160,6 @@
     {
       "file": "src/core/form/schedule-definitions.js",
       "name": "removeCollectionRow"
-    },
-    {
-      "file": "src/core/form/schedule-definitions.js",
-      "name": "SCHEDULE_SCHEMAS"
     },
     {
       "file": "src/core/modals/convert-ward-modal.js",
@@ -268,10 +260,6 @@
     {
       "file": "src/core/navigation/ward-lifecycle.js",
       "name": "activateWard"
-    },
-    {
-      "file": "src/core/navigation/ward-lifecycle.js",
-      "name": "activeInventoryType"
     },
     {
       "file": "src/core/navigation/ward-lifecycle.js",
@@ -455,6 +443,10 @@
     },
     {
       "file": "src/core/persistence/case-file.js",
+      "name": "CASE_FILE_FORMAT_VERSION"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
       "name": "_caseFileHandle"
     },
     {
@@ -484,10 +476,6 @@
     {
       "file": "src/core/persistence/case-file.js",
       "name": "buildSingleWardExportBlob"
-    },
-    {
-      "file": "src/core/persistence/case-file.js",
-      "name": "CASE_FILE_FORMAT_VERSION"
     },
     {
       "file": "src/core/persistence/case-file.js",
@@ -619,6 +607,18 @@
     },
     {
       "file": "src/core/persistence/crypto.js",
+      "name": "CRYPTO_VERIFIER_PLAINTEXT"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "PBKDF2_ITERATIONS"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
+      "name": "PLAIN_MODE_PREFIX"
+    },
+    {
+      "file": "src/core/persistence/crypto.js",
       "name": "_b64FromBytes"
     },
     {
@@ -632,10 +632,6 @@
     {
       "file": "src/core/persistence/crypto.js",
       "name": "_securityMode"
-    },
-    {
-      "file": "src/core/persistence/crypto.js",
-      "name": "CRYPTO_VERIFIER_PLAINTEXT"
     },
     {
       "file": "src/core/persistence/crypto.js",
@@ -660,14 +656,6 @@
     {
       "file": "src/core/persistence/crypto.js",
       "name": "generateSaltB64"
-    },
-    {
-      "file": "src/core/persistence/crypto.js",
-      "name": "PBKDF2_ITERATIONS"
-    },
-    {
-      "file": "src/core/persistence/crypto.js",
-      "name": "PLAIN_MODE_PREFIX"
     },
     {
       "file": "src/core/persistence/launch-preferences.js",
@@ -743,11 +731,11 @@
     },
     {
       "file": "src/core/state.js",
-      "name": "caseFile"
+      "name": "D"
     },
     {
       "file": "src/core/state.js",
-      "name": "D"
+      "name": "caseFile"
     },
     {
       "file": "src/core/state.js",
@@ -787,6 +775,10 @@
     },
     {
       "file": "src/core/theme-preference.js",
+      "name": "THEME_STORAGE_KEY"
+    },
+    {
+      "file": "src/core/theme-preference.js",
       "name": "readStoredTheme"
     },
     {
@@ -796,10 +788,6 @@
     {
       "file": "src/core/theme-preference.js",
       "name": "seedStoredThemeFromLegacy"
-    },
-    {
-      "file": "src/core/theme-preference.js",
-      "name": "THEME_STORAGE_KEY"
     },
     {
       "file": "src/core/theme-preference.js",
@@ -931,51 +919,7 @@
     },
     {
       "file": "src/features/guardian-inventory/index.js",
-      "name": "addGuardian"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "addRecipient"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "addWitness"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
       "name": "duplicateEntry"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "pageNav"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "removeEntry"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "removeGuardian"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "removeRecipient"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "removeWitness"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "setScheduleNoItems"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "syncB2VehicleDescription"
-    },
-    {
-      "file": "src/features/guardian-inventory/index.js",
-      "name": "toggleB2Vehicle"
     },
     {
       "file": "src/features/guardian-inventory/index.js",
@@ -1051,6 +995,58 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "D"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INITIAL_ADLS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INITIAL_ADL_RATINGS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INVENTORY_TYPES"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "INVENTORY_TYPE_META"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PAGES_GUARDIAN"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PG_APP_VERSION"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_ADLS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_ADL_RATINGS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_BENEFITS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_RIGHTS"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "PLAN_RIGHT_STATES"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "SCHEDULE_NAV_KEYS"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "addPlanGuardian"
     },
     {
@@ -1067,10 +1063,6 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "caseFile"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "closeWardLockedModal"
     },
     {
@@ -1080,22 +1072,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "collapseWardControls"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "D"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "D"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "D"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "D"
     },
     {
       "file": "src/legacy-app.js",
@@ -1120,22 +1096,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "handleStartupOpenInputChange"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "INITIAL_ADL_RATINGS"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "INITIAL_ADLS"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "INVENTORY_TYPE_META"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "INVENTORY_TYPES"
     },
     {
       "file": "src/legacy-app.js",
@@ -1179,35 +1139,7 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "PAGES_GUARDIAN"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "PG_APP_VERSION"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "pgHasUnsavedChanges"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "PLAN_ADL_RATINGS"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "PLAN_ADLS"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "PLAN_BENEFITS"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "PLAN_RIGHT_STATES"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "PLAN_RIGHTS"
     },
     {
       "file": "src/legacy-app.js",
@@ -1216,10 +1148,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "removePlanGuardian"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "SCHEDULE_NAV_KEYS"
     },
     {
       "file": "src/legacy-app.js",
