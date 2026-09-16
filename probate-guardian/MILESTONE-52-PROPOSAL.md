@@ -50,7 +50,33 @@ and three of which (52A, 52B, 52F) deliberately change behavior.
 | 52K — Guardian Inventory Excel schedule layout | **Landed** `34f681e` — see below; found (did not fix) a real wardPercent round-trip bug |
 | 52B — Ward-decode pipeline + encrypt/decrypt fan-out | **Landed** `ec83360` — see below; fixes session-restore's all-or-nothing corruption failure |
 | 52F — `extractCarryIdentity()`, Decision 6 | **Landed** `beea47b` — see below; also found and resolved a fourth attorney-order divergence in `legacy-app.js` |
-| 52H, 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+| 52H — `loadGlobalScript()` | **Landed** `05d1b75` — see below |
+| 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+
+### 2026-09-16, live session — 52H landed
+
+Landed as documented: `src/core/vendor-loader.js`'s `loadGlobalScript(src,
+{ check })` owns the script-injection/promise-cache/retry-on-error logic
+internally, keyed by `src`, so neither `html2pdf-loader.js` nor
+`exceljs-loader.js` needs its own module-level promise variable anymore.
+`pdfjs-loader.js` stayed out of scope exactly as the doc specified — a
+different loading mechanism (`import()`, not a `<script>` tag) with its
+own separate, unfixed bug.
+
+One small behavioral widening, folded in deliberately: `check()` now
+checks both `window.X` and `globalThis.X` for both loaders uniformly —
+previously only `exceljs-loader.js` had the `globalThis` fallback.
+Real browser sessions are unaffected (`window` is always defined
+there).
+
+New coverage, `tests/e2e/vendor-loader-retry.spec.ts`, closes a real gap
+neither loader had before: blocks the first `lib/exceljs.min.js`
+request, confirms the rejection is caught and surfaced as status text
+with no uncaught page error, then lets the second request through and
+confirms the export succeeds — proving the shared cache entry actually
+clears on failure rather than staying poisoned. Full unit suite:
+846/846. e2e: the new spec plus 36 more across every PDF/Excel export
+path in guardian-inventory-mount/annual-mount/simplified-mount.
 
 ### 2026-09-16, live session — 52F landed
 
