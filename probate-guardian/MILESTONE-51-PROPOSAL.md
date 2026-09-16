@@ -2,10 +2,68 @@
 
 ## Status
 
-**Draft — not an authorization to implement anything below.** Per
-`AGENTS.md` §2, this is a proposal only; nothing here should be started
-until Alan explicitly approves a specific sub-delivery by name. Approval of
-one sub-delivery does not authorize the others.
+**All seven sub-deliveries landed 2026-09-15.** Alan approved 51G + 51C by
+name, then authorized the remainder in this document's recommended order.
+Executed in that order — 51G, 51C, 51A, 51B, 51E, 51D, 51F — with each
+sub-delivery's own verification block run before its commit:
+
+| Sub-delivery | Commit | Verification |
+| --- | --- | --- |
+| 51G | `6e04d30` | routes.spec.ts 22 passed |
+| 51C | `6521e1a` | unit 853/853 (+6 new guards); e2e 30 + 68 passed |
+| 51A | `374dcb1` | unit 842/842; e2e 28 + 7 passed |
+| 51B | `09ac96b` | unit 839/839; e2e 46 passed |
+| 51E | `4eba207` | unit 839/839; new spec 7/7; e2e 27 passed |
+| 51D | `5328954` | 14,704-cell workbook gate at 0 diffs; **full regression** 562 passed |
+| 51F | `851d17b` | 336-row panel-identity gate at 0 diffs; e2e 84 passed |
+
+Two commits sit alongside these: `dc5d1ad` repaired a pre-existing
+`routes.spec.ts` failure that was shadowing 51's gates (7e9596e had moved the
+dashboard resource links into collapsed `<details>` accordions without
+updating the e2e assertions), and `cbe5558` moved this document's out-of-scope
+list to carry the defects found during execution.
+
+**What changed from the plan, recorded rather than silently applied:**
+
+- **51C's guard discipline was stated wrongly in this document.** It said both
+  C1's and C2's guards should "pass against current `master`." That is right
+  for C2 (a precondition guard) but wrong for C1 — a dead-code *detector* must
+  go red before the fix or it is detecting nothing. C1's went red on all three
+  branches, then green.
+- **51C's destructure count was 10, not 12 — and the real number was 12.**
+  `toggleSsnReveal` turned out to be dead in **five** feature modules, not
+  three; its only real call site is `form-events.js`'s delegated `toggle-ssn`
+  handler.
+- **51A needed a justification this document did not have.**
+  `eligibility-modal.js` has a second export, `checkSimplifiedEligibility()`,
+  which is also dead — the rule is reimplemented inline in three places. Worth
+  recording that the dead version treated an *unanswered* field as ineligible
+  where the live banner only warns on an explicit `'No'`; the live code is the
+  one that respects `AGENTS.md` §3.
+- **51D's `setCell` was duplicated three times, not once**, and adopting core's
+  left `sanitizeForExcel` unused in all three files, so that went too.
+- **51E's verification improved on the plan.** This document asked for a manual
+  click-through. Checking first showed five of the eleven handlers had *no* e2e
+  coverage at all, so the manual pass became
+  `guardian-inventory-collection-controls.spec.ts` (7 tests), which also pins
+  the bridge decision itself.
+- **Two of the verification gates were vacuous on first attempt**, and both are
+  recorded in their commits: 51D's workbook gate reported "identical" with
+  `percentValue` deliberately broken (the fixture populated no Schedule D rows),
+  and 51F's panel gate missed a `>` → `>=` flip (a fixture overflowing by
+  exactly cap+1 satisfies both). Both were corrected until an injected fault
+  produced a real diff. A gate that cannot fail is not evidence.
+
+**The original Draft text is left below as the historical proposal.** Per
+`AGENTS.md` §2 it authorized nothing on its own; approvals are recorded by the
+commits above.
+
+---
+
+**Original status (historical):** Draft — not an authorization to implement
+anything below. Per `AGENTS.md` §2, this is a proposal only; nothing here
+should be started until Alan explicitly approves a specific sub-delivery by
+name. Approval of one sub-delivery does not authorize the others.
 
 **Numbering note.** This work was originally handed over as "Milestone 49."
 That number is already taken: Milestone 49 and 49B landed 2026-09-14
