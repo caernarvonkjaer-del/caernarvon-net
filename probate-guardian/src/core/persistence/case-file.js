@@ -295,7 +295,7 @@ export async function buildSingleWardExportBlob(wardId) {
   return blob;
 }
 
-function formatRelativeTime(ts) {
+export function formatRelativeTime(ts) {
   const diffMin = Math.floor((Date.now() - ts) / 60000);
   if (diffMin < 1) return 'just now';
   if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
@@ -937,4 +937,5 @@ if (typeof window !== 'undefined') {
   window.beginRecordingExport = beginRecordingExport;
   window.getLastExportAt = getLastExportAt;
   window.isAutoSaveArmed = isAutoSaveArmed;
+  window.formatRelativeTime = formatRelativeTime;
 }

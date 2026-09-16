@@ -2,6 +2,7 @@
 import { encryptJSON, decryptJSONWithKey, deriveAndVerifyKey, getSecurityMode, getCryptoKey, setCryptoKey } from './crypto.js';
 import { loadAppState, openIndexedDbStore, saveAppState } from './launch-preferences.js';
 import { getCaseFile, setAppState } from '../state.js';
+import { formatRelativeTime } from './case-file.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
 import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
 
@@ -92,16 +93,6 @@ export async function saveSessionRestoreCache() {
 
 export async function clearSessionRestoreCache() {
   await _sessionCacheClear();
-}
-
-function formatRelativeTime(ts) {
-  const diffMin = Math.floor((Date.now() - ts) / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
 }
 
 function sanitizeObjectData(obj) {

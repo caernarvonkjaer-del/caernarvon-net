@@ -2982,17 +2982,6 @@ window.markContinuePromptShown=markContinuePromptShown;
 // same way any case file does -- there's no separate "single ward" format.
 
 
-// "3 minutes ago" / "2 hours ago" / "5 days ago" style relative timestamp.
-function formatRelativeTime(ts){
-  const diffMin=Math.floor((Date.now()-ts)/60000);
-  if(diffMin<1)return 'just now';
-  if(diffMin<60)return `${diffMin} minute${diffMin===1?'':'s'} ago`;
-  const diffHr=Math.floor(diffMin/60);
-  if(diffHr<24)return `${diffHr} hour${diffHr===1?'':'s'} ago`;
-  const diffDay=Math.floor(diffHr/24);
-  return `${diffDay} day${diffDay===1?'':'s'} ago`;
-}
-
 // _lastAutoSavedAt used to be consulted here as a second "last saved" clock.
 // It was never declared in this file, so the fallback arm of that ternary
 // threw a ReferenceError on every page load -- window._lastAutoSavedAt is
@@ -3957,6 +3946,7 @@ function addToRecentlyOpened(ward){
   list.unshift({wardId:ward.wardId,wardName:ward.wardName,inventoryType:ward.inventoryType,timestamp:Date.now()});
   saveRecentlyOpenedWards(list.slice(0,RECENT_WARDS_MAX));
 }
+window.addToRecentlyOpened=addToRecentlyOpened;
 
 // Re-derives name/type from the live ward record (in case it was renamed
 // or converted since being logged) and drops entries for wards that no
@@ -3969,6 +3959,7 @@ function getRecentlyOpenedWards(){
     })
     .filter(Boolean);
 }
+window.getRecentlyOpenedWards=getRecentlyOpenedWards;
 
 // ═══════════════════════════════════════════════════════
 // WARD ACTIVATION / UNLOAD (Single Chokepoint)
@@ -7797,6 +7788,16 @@ const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log','/party-ma
 async function handleHash(){
   const h=window.location.hash.replace('#','');
   if(SPECIAL_PAGES.includes(h)){
+    // router.js's navigate() sets window.location.hash itself, then renders
+    // directly -- but assigning the hash also queues this same listener via
+    // the browser's native 'hashchange' event, which fires asynchronously
+    // afterward and re-renders a second time for no reason. Harmless for a
+    // plain re-render, but showContinuePromptIfNeeded() is a one-shot: its
+    // first run draws the banner and marks itself shown, so the redundant
+    // second run immediately wipes what the first just drew. currentPage
+    // already equals h whenever navigate() (or renderPage()'s own redirect)
+    // already handled this exact hash, which is the only case this skips.
+    if(currentPage===h)return;
     currentPage=h;
     renderPage(h);
     // renderPage() may have redirected (e.g. /dashboard with no wards yet

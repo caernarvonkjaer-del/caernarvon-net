@@ -174,6 +174,7 @@ interface Window {
   formatDraftIssues: any;
   formatName: any;
   formatPhone: any;
+  formatRelativeTime: any;
   formatSafeTitleCase: any;
   formatSSN: any;
   formEngine: any;
@@ -194,6 +195,7 @@ interface Window {
   getPartyIdForSlot: any;
   getPath: any;
   getProbateGuardianTabState: any;
+  getRecentlyOpenedWards: any;
   getSignatureImageById: any;
   getWardFileName: any;
   getWardFileStem: any;
