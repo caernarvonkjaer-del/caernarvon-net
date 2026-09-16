@@ -1202,7 +1202,7 @@ along the way: `probate-guardian-data-model.csv` (54A added the
 the `appState` blob). `git status` reflects only files that still differ
 from `origin/master`.
 
-### New task: wire `MILESTONE-54-HELPFUL-LINKS.md` into `RESOURCE_GROUPS`
+### New task: wire `MILESTONE-54-HELPFUL-LINKS.md` into `RESOURCE_GROUPS` — Landed `3e38f78`, 2026-09-16
 
 Added at Alan's direction, **gated on Milestone 54's circuit-selector
 structure landing and working first** — this task assumes `groupsForCircuit()`,
@@ -1262,3 +1262,19 @@ own noted placeholder choices (e.g. pointing both "Clerk — Guardianships"
 and "Court Records" at the same landing page where no deep link was found)
 — those are content decisions for whoever executes this task, working from
 that document's own stated research notes.
+
+**Landed, all 67/20 in one pass.** All 67 counties and all 20 circuits went
+in together — the source document had complete coverage, so there was no
+partial-rollout decision to make. `MILESTONE-54-HELPFUL-LINKS.md`'s
+placeholder note (single combined Clerk link rather than separate
+Guardianships/Court-Records items, except where the source gave a verified
+deep link) was taken as written: one combined "Clerk — Probate &
+Guardianship" link per generic county, matching the source table's own
+single Clerk column; Pasco's verified separate Court Records link was added
+as its own item, matching Pinellas's existing pattern. Three circuits (1,
+11, 14) got only their probate/guardianship-information link, not an
+administrative-orders one, because the source document explicitly found no
+stable AO index for those rather than inventing a URL — taken as-is, per its
+own instruction. See `3e38f78`'s commit message for full verification
+detail (88 groups, 250 links, zero empty stubs across any circuit, visually
+confirmed in a real browser for two circuits).
