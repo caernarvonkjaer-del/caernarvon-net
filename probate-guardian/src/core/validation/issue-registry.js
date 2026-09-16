@@ -30,20 +30,22 @@ const definitions = Object.freeze({
   'output.security.denied': { category: 'security', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
 });
 
+// The literal-key lookup below answers first, so a later branch is only
+// reachable if it can match a code that is NOT a literal key above. Milestone
+// 51C deleted three that could not: an alternation over all ten
+// `supplemental.*` keys, one over all four technical `output.*` keys, and an
+// equality check on `output.security.denied` -- each enumerating codes already
+// defined above, so none of them ever executed. The two surviving patterns are
+// prefix matchers whose suffix is built at runtime, which is what makes them
+// live. `tests/unit/issue-registry.spec.js` now fails if a literal-plus-regex
+// pair like that is reintroduced.
 export function getIssueDefinition(code) {
   if (definitions[code]) return definitions[code];
+  // Suffix is `${filingType}.${scheduleKey}`, built in excel-capacity.js -- not enumerable here.
   if (/^excel\.capacity\.(guardian|simplified|annual|finalAccounting|trustAccounting)\./.test(code)) {
     return { category: 'capacity', bypassable: false, capabilities: EXCEL_CAPABILITIES, showInReadiness: false };
   }
-  if (/^supplemental\.(missing-data|decode-failed|not-pdf|too-large|checking|not-ready|page-limit|blocked|total-bytes|total-pages)$/.test(code)) {
-    return { category: 'supplemental', bypassable: false, capabilities: PDF_CAPABILITIES, showInReadiness: false };
-  }
-  if (/^output\.(template\.missing|resource\.unavailable|generation\.failed|capability\.unsupported)$/.test(code)) {
-    return { category: 'technical', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false };
-  }
-  if (code === 'output.security.denied') {
-    return { category: 'security', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false };
-  }
+  // Suffix is `${canonicalPath}.required` and similar, from createRequiredIssue().
   if (/^(guardian|simplified|annual|finalAccounting|trustAccounting|planSimplified|planAnnual|planInitial|planMinor)\./.test(code)) {
     return definitions['validation.legacy-unmapped'];
   }

@@ -46,10 +46,15 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // module already reaches them the same way, and moving them into a shared
 // core module is a separate restructuring, not required by this milestone
 // (see the Milestone 6 plan's "Confirmed facts" and "Design decisions").
+// Milestone 51C: `formatName`, `formatPhone` and `toggleSsnReveal` were
+// destructured here without ever being called, and are dropped -- the same pass
+// plan-annual got in Milestone 41-3 and plan-simplified in 41-2, which
+// plan-initial and plan-minor never received. `countyInputS` stays: unlike the
+// other three Plan types, this one still calls it directly (see /p1 below).
 const {
   esc, ic, inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatName, formatPhone, formatDisplayDate, toggleSsnReveal,
+  formatDisplayDate,
 } = window;
 
 // print.js is dynamically imported only when the user reaches /print or
@@ -221,7 +226,6 @@ function pagePlanMCover(){
 function pagePlanMResidences(){
   const d=window.D;
   const rows=(d.q2Residences||[]).map((r,i)=>{
-    const set=f=>`D.q2Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Residence ${i+1}</span>
@@ -253,7 +257,6 @@ function pagePlanMResidences(){
 function pagePlanMProviders(){
   const d=window.D;
   const rows=(d.q3Providers||[]).map((r,i)=>{
-    const set=f=>`D.q3Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Provider ${i+1}</span>

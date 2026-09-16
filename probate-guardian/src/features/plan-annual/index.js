@@ -47,10 +47,19 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // renderRadioGroupField directly), and the guardian block's formatters are
 // applied automatically by renderFormField() from each field's inferred
 // kind, confirmed field-by-field against the previous manual calls.
+// Milestone 51C continues that pass: `countyInputS` and `toggleSsnReveal` were
+// also dead here and are dropped. County goes through renderCaseCaptionFields()
+// (case-caption-card.js, see /p1 below), and the ward SSN field through inpS()
+// per this file's own note above -- so neither global was ever called here.
+//
+// `toggleSsnReveal` in particular was destructured but never called in FIVE
+// feature modules. Its only real call site is the delegated handler in
+// src/form-events.js ('toggle-ssn'), which reaches window.toggleSsnReveal
+// directly; a feature module never needs it in scope. Plan Minor is the one
+// Plan type that does still call countyInputS (index.js:190), so it keeps it.
 const {
-  esc, ic, inpS, countyInputS, pageNavS,
+  esc, ic, inpS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
-  toggleSsnReveal,
   formatDisplayDate,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
 } = window;
@@ -247,7 +256,6 @@ function pagePlanACover(){
 function pagePlanAResidences(){
   const d=window.D;
   const rows=(d.q1Residences||[]).map((r,i)=>{
-    const set=f=>`D.q1Residences[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Residence ${i+1}</span>
@@ -366,7 +374,6 @@ function pagePlanABenefits(){
 function pagePlanAProviders(){
   const d=window.D;
   const rows=(d.q4Providers||[]).map((r,i)=>{
-    const set=f=>`D.q4Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Provider ${i+1}</span>
@@ -497,7 +504,6 @@ function pagePlanADirectives(){
     <label class="form-check-label" for="q10Executed">The ward executed the following advance directives</label>
   </div>`;
   const blocks=(d.q10Directives||[]).map((r,i)=>{
-    const set=f=>`D.q10Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Directive ${i+1}</span>

@@ -52,7 +52,10 @@ const {
   esc, ic, autoSave, navigate, updateNavDots, renderScheduleDocsSection,
   pageIntroRow, browserRecommendationNotice, linkAccordions,
   sanitizeDecimal,
-  toggleSsnReveal, tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
+  // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
+  // never called here. Its only call site is the delegated 'toggle-ssn' handler
+  // in src/form-events.js, which uses window.toggleSsnReveal directly.
+  tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
   guardianHasAnyData, checkExcelCapacity,

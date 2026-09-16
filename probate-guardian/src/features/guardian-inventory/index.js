@@ -14,7 +14,11 @@ const {
   esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
   sanitizeNegativeAmounts, linkLabelsToInputs, setupAmountFieldValidation,
   updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
-  browserRecommendationNotice, toggleSsnReveal, renderScheduleDocsSection,
+  // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
+  // never called here (the comment near the SSN field below still points at the
+  // function, which is correct: it runs via src/form-events.js's delegated
+  // 'toggle-ssn' handler, not from this module).
+  browserRecommendationNotice, renderScheduleDocsSection,
   formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
   formatAccountNumber, formatCheckNumber, formatCityStateZip, finalizeCaseNumber, applyZipLimit,
   sanitizeNonNegativeDecimal, calc, mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,

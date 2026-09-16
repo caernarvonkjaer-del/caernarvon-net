@@ -35,15 +35,17 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // this file is one of those legacy globals, deliberately left in place
 // rather than moved or wrapped: txtP/chkP/yesNoCheckboxS are still shared
 // with the three not-yet-extracted Plan types, and the rest (inpS,
-// countyInputS, pageNavS, renderScheduleDocsSection, esc, formatDisplayDate)
+// pageNavS, renderScheduleDocsSection, esc, formatDisplayDate)
 // are shared across all 9 ward types (see the Milestone 3 plan's
 // "Problem 3"). Milestone 41-2: formatName/formatPhone/formatAddress
 // dropped from this destructure -- their only call sites (the Guardian
 // block's name/phone/mailingAddress fields) now go through
 // renderFormField() via guardian-attorney-card.js, which applies the same
 // formatters automatically from each field's inferred kind.
+// Milestone 51C: `countyInputS` dropped for the same reason -- destructured
+// here but never called. Of the four Plan types only plan-minor still calls it.
 const {
-  esc, ic, inpS, countyInputS, pageNavS,
+  esc, ic, inpS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, yesNoCheckboxS,
   formatDisplayDate,
 } = window;

@@ -1,4 +1,5 @@
 // Milestone 38D / 44B: Canonical Validation Issue Registry Unit Tests
+import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   ALL_CAPABILITIES,
@@ -147,6 +148,93 @@ describe('issue-registry definitions', () => {
     expect(getIssueDefinition('completely.unknown.code')).toBeNull();
     expect(getIssueDefinition('')).toBeNull();
     expect(getIssueDefinition('random-string')).toBeNull();
+  });
+});
+
+// Milestone 51C1. getIssueDefinition() resolves a literal key first
+// (`if (definitions[code]) return definitions[code]`), so any later branch that
+// can ONLY match codes already present as literal keys is unreachable -- which
+// is exactly how three dead branches accumulated here (the supplemental.*
+// alternation, the output.* alternation, and the `code === 'output.security.denied'`
+// equality check all enumerated codes that were already literal keys).
+//
+// This guard reads the source rather than probing behavior on purpose: a dead
+// branch and a live one are indistinguishable from the outside, because both
+// return the same definition. Only the source says which one answered.
+describe('issue-registry: no unreachable fallback branches (Milestone 51C)', () => {
+  const source = fs.readFileSync(
+    new URL('../../src/core/validation/issue-registry.js', import.meta.url),
+    'utf8',
+  );
+
+  const literalKeys = (() => {
+    const block = source.match(/const definitions = Object\.freeze\(\{([\s\S]*?)\n\}\);/);
+    expect(block, 'definitions object literal must be findable in source').toBeTruthy();
+    return new Set([...block[1].matchAll(/^\s*'([^']+)'\s*:/gm)].map(m => m[1]));
+  })();
+
+  const resolverBody = (() => {
+    const fn = source.match(/export function getIssueDefinition\(code\) \{([\s\S]*?)\n\}/);
+    expect(fn, 'getIssueDefinition() must be findable in source').toBeTruthy();
+    return fn[1];
+  })();
+
+  // Expands a fully-literal anchored pattern such as
+  // `^output\.(a\.b|c)$` into ['output.a.b', 'output.c']. Returns null for any
+  // pattern carrying real regex machinery (wildcards, quantifiers, classes) or
+  // lacking both anchors -- those can match codes that are not literal keys, so
+  // they are legitimately reachable and this guard must not judge them.
+  function expandLiteralPattern(pattern) {
+    if (!pattern.startsWith('^') || !pattern.endsWith('$')) return null;
+    const body = pattern.slice(1, -1);
+    if (/[.*+?\[\]{}]/.test(body.replace(/\\\./g, ''))) return null;
+    let codes = [''];
+    for (const token of body.match(/\([^()]*\)|[^()]+/g) || []) {
+      const alternatives = token.startsWith('(')
+        ? token.slice(1, -1).split('|')
+        : [token];
+      codes = codes.flatMap(prefix => alternatives.map(alt => prefix + alt));
+    }
+    return codes.map(c => c.replace(/\\\./g, '.'));
+  }
+
+  it('every fully-enumerated regex branch can match at least one code that is not already a literal key', () => {
+    const dead = [];
+    for (const [, pattern] of resolverBody.matchAll(/\/(\^[^/]+\$)\/\.test\(code\)/g)) {
+      const codes = expandLiteralPattern(pattern);
+      if (!codes) continue; // prefix/wildcard pattern -- reachable by construction
+      if (codes.every(code => literalKeys.has(code))) {
+        dead.push({ pattern, codes });
+      }
+    }
+    expect(
+      dead,
+      `Unreachable branch(es) in getIssueDefinition(): every code these patterns match is `
+      + `already a literal key in definitions, so the line-34 lookup always answers first. `
+      + `Delete the branch, or give the pattern a code that is not a literal key.\n`
+      + dead.map(d => `  /${d.pattern}/ -> ${d.codes.join(', ')}`).join('\n'),
+    ).toEqual([]);
+  });
+
+  it('no equality branch tests for a code that is already a literal key', () => {
+    const dead = [...resolverBody.matchAll(/code === '([^']+)'/g)]
+      .map(m => m[1])
+      .filter(code => literalKeys.has(code));
+    expect(
+      dead,
+      `Unreachable equality branch(es) in getIssueDefinition(): these codes are already `
+      + `literal keys in definitions, so the line-34 lookup always answers first: ${dead.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('the surviving prefix patterns are still recognised as reachable, not silently skipped', () => {
+    // Guards the guard: if expandLiteralPattern() ever started returning a code
+    // list for these, the test above would begin judging genuinely-live
+    // branches, and a real one could be deleted on its say-so.
+    expect(expandLiteralPattern('^excel\\.capacity\\.(guardian|simplified)\\.')).toBeNull();
+    expect(expandLiteralPattern('^(guardian|planMinor)\\.')).toBeNull();
+    // ...and that it does still expand the shape it is meant to catch.
+    expect(expandLiteralPattern('^output\\.(a\\.b|c)$')).toEqual(['output.a.b', 'output.c']);
   });
 });
 

@@ -58,10 +58,17 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // extracted Plan features. No excel.js: no Plan filing type has Excel
 // support (confirmed by grep -- see the Milestone 5 plan's "Confirmed
 // facts").
+// Milestone 51C: `countyInputS`, `formatName`, `formatPhone` and
+// `toggleSsnReveal` were all destructured here without ever being called, and
+// are dropped. plan-annual got the formatter half of this cleanup in Milestone
+// 41-3 and plan-simplified in 41-2 (each left a note saying so); plan-initial
+// and plan-minor never got that pass, which is why they still carried them.
+// See plan-annual/index.js's Milestone 51C note for why toggleSsnReveal is
+// never needed in a feature module's scope.
 const {
-  esc, ic, inpS, countyInputS, radioP, pageNavS,
+  esc, ic, inpS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatName, formatPhone, formatDisplayDate, toggleSsnReveal,
+  formatDisplayDate,
   INITIAL_ADLS, INITIAL_ADL_RATINGS,
 } = window;
 
@@ -332,7 +339,6 @@ function pagePlanISocialBenefits(){
 function pagePlanIProviders(){
   const d=window.D;
   const rows=(d.q9Providers||[]).map((r,i)=>{
-    const set=f=>`D.q9Providers[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Provider ${i+1}</span>
@@ -430,7 +436,6 @@ function pagePlanIDirectives(){
   const d=window.D;
   const cb=(id,label)=>chkP(id,label,d[id]);
   const dirs=(d.q11Directives||[]).map((r,i)=>{
-    const set=f=>`D.q11Directives[${i}].${f}=this.value;autoSave();updateNavDots()`;
     return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">
         <span>Advance Directive ${i+1}</span>

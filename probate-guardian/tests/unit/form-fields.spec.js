@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import {
   inferFieldKind,
@@ -262,5 +265,109 @@ describe('renderCheckboxField', () => {
   it('renders unchecked when checked is false', () => {
     const html = renderCheckboxField({ path: 'q9DNR', label: 'DNR', checked: false });
     expect(html).not.toContain('checked>');
+  });
+});
+
+// Milestone 51C2. legacy-app.js's yesNoCheckboxD(label, val, setter, ...) used
+// to accept `setter` in two shapes: a plain dot path ('trusts.0.hasTrust'), or
+// an inline assignment string ("D.trusts[0].hasTrust=this.value;navigate('/p8')")
+// that it reverse-engineered a path and a route out of with two regexes. Every
+// live call site passes the plain path, so both regexes were unreachable and
+// were deleted.
+//
+// This guard pins the precondition that made that safe. It must hold both
+// before and after the simplification: a new call site written in the old
+// inline-assignment shape would now silently produce an empty path -- a binary
+// field on a filed accounting that stops recording the filer's answer, with no
+// error. That is quiet enough to ship, so it is worth a test.
+describe('yesNoCheckboxD call sites pass a plain path, never an inline setter (Milestone 51C)', () => {
+  // Extracts each call's argument text, quote- and paren-aware, so HTML
+  // attributes surrounding the call (class="col-md-6") cannot be mistaken for
+  // an assignment inside it.
+  function callArgumentLists(source, fnName) {
+    const lists = [];
+    const needle = `${fnName}(`;
+    for (let idx = source.indexOf(needle); idx !== -1; idx = source.indexOf(needle, idx + 1)) {
+      const before = source.slice(source.lastIndexOf('\n', idx) + 1, idx);
+      // Skip the declaration itself and any prose mention in a comment.
+      if (/function\s*$/.test(before) || before.includes('//') || before.trimStart().startsWith('*')) continue;
+      let depth = 0;
+      let quote = null;
+      let i = idx + needle.length - 1;
+      const start = idx + needle.length;
+      for (; i < source.length; i++) {
+        const ch = source[i];
+        if (quote) {
+          if (ch === '\\') i++;
+          else if (ch === quote) quote = null;
+          continue;
+        }
+        if (ch === "'" || ch === '"' || ch === '`') quote = ch;
+        else if (ch === '(') depth++;
+        else if (ch === ')' && --depth === 0) break;
+      }
+      lists.push(source.slice(start, i));
+    }
+    return lists;
+  }
+
+  function topLevelArgs(argText) {
+    const args = [];
+    let depth = 0;
+    let quote = null;
+    let current = '';
+    for (let i = 0; i < argText.length; i++) {
+      const ch = argText[i];
+      if (quote) {
+        current += ch;
+        if (ch === '\\') { current += argText[++i] ?? ''; }
+        else if (ch === quote) quote = null;
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === '`') { quote = ch; current += ch; continue; }
+      if (ch === '(' || ch === '[' || ch === '{') depth++;
+      if (ch === ')' || ch === ']' || ch === '}') depth--;
+      if (ch === ',' && depth === 0) { args.push(current.trim()); current = ''; continue; }
+      current += ch;
+    }
+    if (current.trim()) args.push(current.trim());
+    return args;
+  }
+
+  const srcDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../src');
+  const featuresDir = path.join(srcDir, 'features');
+  const sourceFiles = fs.readdirSync(featuresDir, { recursive: true })
+    .filter(name => String(name).endsWith('.js'))
+    .map(name => path.join(featuresDir, String(name)))
+    .concat([path.join(srcDir, 'legacy-app.js')]);
+
+  const callSites = sourceFiles.flatMap(file => {
+    const source = fs.readFileSync(file, 'utf8');
+    return callArgumentLists(source, 'yesNoCheckboxD')
+      .map(argText => ({ file: path.relative(srcDir, file), args: topLevelArgs(argText) }));
+  });
+
+  it('finds the known call sites, so a silent zero-match does not pass vacuously', () => {
+    expect(callSites.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('every call passes a plain dot path as the setter argument', () => {
+    const offenders = callSites
+      .map(site => ({ ...site, setter: site.args[2] ?? '' }))
+      .filter(site => site.setter.includes('=') || site.setter.includes('navigate('));
+    expect(
+      offenders,
+      'yesNoCheckboxD() no longer parses an inline "D.x=this.value;navigate(...)" setter -- '
+      + 'pass the dot path as the 3rd argument and the route as the 4th:\n'
+      + offenders.map(o => `  ${o.file}: ${o.setter}`).join('\n'),
+    ).toEqual([]);
+  });
+
+  it('the route argument, when given, is a plain route string and not a parsed one', () => {
+    for (const site of callSites) {
+      const route = site.args[3];
+      if (route === undefined) continue;
+      expect(route, `${site.file} route argument`).toMatch(/^(?:'\/[^']*'|"\/[^"]*"|`\/[^`]*`|true|false)$/);
+    }
   });
 });

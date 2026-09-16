@@ -362,7 +362,11 @@ window.openUserGuideForCurrentPage=openUserGuideForCurrentPage;
 // TOOLTIP SYSTEM
 // ═══════════════════════════════════════════════════════
 const TOOLTIPS = {
-  'ward_percent': "The percentage of this asset that belongs to the ward. For example, if the ward owns 50% of a property, enter 50.",
+  // Milestone 51C removed a 'ward_percent' key here. It was never read -- all six
+  // call sites pass 'ward_pct' (see below) -- and it carried slightly different
+  // wording, including a worked example the live key lacks. Deleted as-is on
+  // purpose: improving 'ward_pct's wording is a user-facing content change, not
+  // a cleanup, and belongs in its own commit with the text reviewed.
   'restricted': "Assets that cannot be used without court permission, such as real estate that must be sold through a court approval process.",
   'carrying_value': "The depreciated value of an asset for accounting purposes. This may differ from current market value.",
   'personal_residence': "The primary home where the ward currently lives. This is reported separately from investment properties.",
@@ -5937,9 +5941,17 @@ window.removePlanGuardian=removePlanGuardian;
 function yesNoCheckboxS(id,label,val,req=false,route=''){
   return yesNoRadioHTML(id,label,val,id,req,route);
 }
-function yesNoCheckboxD(label,val,setter,reqOrRoute=false,explicitRoute=''){
-  const path=!setter?'':(!setter.includes('=')?setter:((setter.match(/D(?:\[['"]([^'"]+)['"]\]|\.([\w.[\]]+))\s*=/)||[]).slice(1).find(Boolean)||''));
-  const route=typeof reqOrRoute==='string'&&reqOrRoute.startsWith('/')?reqOrRoute:(explicitRoute||(setter.match(/navigate\(['"]([^'"]+)['"]\)/)||[])[1]||'');
+// Milestone 51C: `setter` used to accept a second shape -- an inline assignment
+// string like "D.trusts[0].hasTrust=this.value;navigate('/p8')" -- which this
+// function reverse-engineered a path and a route out of with two regexes. Every
+// call site passes a plain dot path and the route as the 4th argument, so both
+// regexes (and the 5th `explicitRoute` parameter, which nothing ever passed)
+// were unreachable and are gone. tests/unit/form-fields.spec.js fails if a new
+// call site reintroduces the inline shape, which would otherwise yield an empty
+// path and silently stop recording the filer's answer.
+function yesNoCheckboxD(label,val,setter,reqOrRoute=false){
+  const path=setter||'';
+  const route=typeof reqOrRoute==='string'&&reqOrRoute.startsWith('/')?reqOrRoute:'';
   const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
   return yesNoRadioHTML(path||label,label,val,path,req,route);
 }
