@@ -70,7 +70,10 @@ conclusion:
    `ward-lifecycle.js:224` tries `attorneyName` first. A source ward with
    more than one of those fields populated with different values would carry
    over a different attorney name depending on which function ran — today,
-   silently, by design or by accident, nobody has recorded which. See 52F.
+   silently, by design or by accident, nobody has recorded which. **Now
+   resolved** — the reachability check came back positive against real
+   `probate-guardian-data-model.csv` shapes, and Alan has decided the
+   order; see 52F's Decision 6.
    Separately, the IndexedDB "boilerplate" in Finding 3
    (`launch-preferences.js` vs. `recovery-cache.js`) is identical only for
    the database-opening step; the get/put/delete wrappers differ in a way
@@ -178,7 +181,7 @@ ramifications, marked **N/A** where genuinely inert rather than left silent.
 | 52C — IndexedDB store-opener: one function, not two | 1 consolidation (opener only) | Low | Trivial |
 | 52D — Window-backed getter/setter pattern: one factory | 9 pairs across 3 modules | Low | Small |
 | 52E — `escapeHtml()`: two duplicates merged, one divergent variant documented | 2 consolidated, 1 left alone | Low | Trivial |
-| 52F — Attorney-fallback carry-over: one helper, one resolved divergence | 3 near-duplicates, 1 real behavior question | **Medium** | Small |
+| 52F — Attorney-fallback carry-over: one helper, one resolved divergence | 3 near-duplicates, 1 behavior change (resolved, Decision 6) | **Medium** | Small |
 | 52G — `checkSignatureState()` call shape, `readiness-config.js` | 8 repeats, 1 file | Low | Trivial |
 | 52H — Vendor-script loader pattern: one `loadGlobalScript()` | 2 loaders consolidated | Low | Small |
 | 52I — PDF byte-decoding helpers: import, don't reimplement | 3 functions, 2 files | Low | Trivial |
@@ -274,7 +277,17 @@ diff), so there is no literal merge conflict today. But 51D's edit is
 uncommitted, and per `AGENTS.md` §1, sub-delivery dependencies are about
 real file-level proximity, not just current line numbers — an uncommitted
 diff can still move. 52K should not start until 51D lands (see
-"Sequencing").
+"Sequencing"). **Update: 51D landed as `5328954`; 52K is unblocked.**
+
+**Decision 6 — attorney-fallback priority: the authoritative field wins over
+the cosmetic one, added after F1's reachability check came back positive.**
+Full reasoning and the resolved fallback order are in 52F's own section
+below, not repeated here, since it is long enough to need its own
+worked example. In brief: `probate-guardian-data-model.csv` documents
+`attorneyForGuardian`/`attorneyName` as explicitly cosmetic and
+`attorney.name`/`attorney_name` as the validated/certification fields on
+the same ward types, so `extractCarryIdentity()` checks the authoritative
+pair first.
 
 ---
 
@@ -722,8 +735,9 @@ special characters (`&<>"'`).
 ## 52F — Attorney-Fallback Carry-Over: One Helper, One Resolved Divergence
 
 **Risk: Medium.** Per Source note 3, the two functions do not agree on
-fallback order today, and this sub-delivery cannot land without deciding
-that rather than silently picking one side.
+fallback order today. **This is no longer an open question** — F1's
+reachability check came back positive against real data-model shapes, and
+Alan has decided the order. Both are recorded below as Decision 6.
 
 ### Files
 
@@ -751,22 +765,53 @@ atty.name || attyFlat` in the Accounting version. Every other field
 (`caseNum`, `gName`, the other four `atty*` fields) uses the same order in
 both.
 
-### Steps
+### Decision 6 — F1 resolved positive; authoritative fields win
 
-**F1. Determine whether the order difference is reachable.** Check whether
-any real source-ward shape in this codebase can have more than one of
-`attorneyForGuardian` / `attorney_name` / `attorneyName` / `atty.name` /
-`attyFlat` populated with **different** values simultaneously for the same
-ward. If the data model guarantees at most one is ever non-empty for a
-given ward type (check `probate-guardian-data-model.csv` and each feature's
-attorney-field wiring), the order is cosmetic and either order is safe to
-adopt. If not, this is a real behavioral choice — **raise it as a question
-to Alan before landing**, do not resolve it by picking whichever order
-"looks newer."
+**F1's answer: yes, reachable, on two real shapes, not a hypothetical.**
+`probate-guardian-data-model.csv` documents both pairs as independently-set
+fields on the *same* ward type:
+
+- `guardian_inventory` row 158: `attorneyForGuardian` — "Initial Inventory
+  cover field; distinct from accounting attorney." Row 284:
+  `attorney.name` (i.e. `atty.name` in the code above) — "Party field,"
+  required. Two separate inputs on the same ward.
+- `plan_initial` row 806: `attorneyName` — **in the CSV's own words**,
+  "Cosmetic-only cover display field, distinct from the validated
+  `attorney_name` certification field." Row 836: `attorney_name` itself,
+  required.
+
+Neither existing function actually implements a consistent policy once this
+is known: the Plan version checks the cosmetic `attorneyForGuardian` before
+the authoritative `atty.name`; the Accounting version checks the cosmetic
+`attorneyName` before the authoritative `attorney_name`. Both get the
+Guardian Inventory pair, the Plan Initial pair, or both backwards.
+
+**Alan's decision: the authoritative field wins.** `extractCarryIdentity()`
+(F2 below) uses the order
+
+```js
+const attyName = src.attorney_name || atty.name || src.attorneyForGuardian
+  || src.attorneyName || attyFlat || '';
+```
+
+— the two validated/Party fields (`attorney_name` for Plan- and
+Accounting-shaped sources, `atty.name` for Guardian-Inventory-shaped ones)
+checked first, in either order relative to each other since a given source
+ward's own shape populates at most one of the two; the three cosmetic
+fields (`attorneyForGuardian`, `attorneyName`, `attyFlat`) as fallback,
+also mutually exclusive by ward shape in practice, so their relative order
+does not matter the way the authoritative-vs-cosmetic split does. This is a
+real behavior change from both existing functions for the two documented
+divergent cases, and is a genuine improvement, not a coin flip: a
+certification field is what makes the filing legally accurate, and a
+cover-page label is exactly what the data model already calls it —
+cosmetic.
+
+### Steps
 
 **F2. Extract `extractCarryIdentity(sourceWard)`** returning `{ caseNum,
 gName, attyName, attyBar, attyPhone, attyEmail, attyStreet,
-attyCityStateZip }`, using whichever order F1 settles on, into
+attyCityStateZip }`, using Decision 6's order for `attyName`, into
 `ward-lifecycle.js`. Both `carryOverFieldsForPlan()` and
 `carryOverFieldsForAccounting()` call it and use the result for the fields
 that were previously duplicated inline, keeping whatever plan-specific or
@@ -785,24 +830,27 @@ forcing it.
 
 ### Verification
 
-1. **A fixture explicitly designed to distinguish the two orders:** a source
-   ward with `attorneyForGuardian`, `attorneyName`, and `atty.name` all set
-   to different non-empty strings. Run it through both
-   `carryOverFieldsForPlan()` and `carryOverFieldsForAccounting()` before
-   this change (recording which name each produces) and after (confirming
-   both now agree on the F1-decided order). This is the regression gate —
-   without it, a silent behavior change in one direction is indistinguishable
-   from a silent behavior change in the other.
+1. **A fixture explicitly designed to exercise Decision 6:** a source ward
+   with `attorneyForGuardian` (or `attorneyName`) **and** `atty.name` (or
+   `attorney_name`) both set to different non-empty strings. Confirm the
+   pre-change functions each produce their old, differing result, and the
+   post-change shared helper produces the authoritative field's value for
+   both — this is the regression gate proving Decision 6 actually landed,
+   not just that the two functions now agree with each other.
 2. `npx vitest run` on whichever specs cover carry-over (check
    `TEST-INDEX.md` for `ward-lifecycle` coverage) plus
    `tests/e2e/carryover-workflow.spec.ts` if it exists.
 3. Manual carry-over test, Guardian Inventory → each of the four Plan types
    and → each of the three Accounting types, confirming attorney fields
-   populate as expected in both directions.
+   populate as expected in both directions, with particular attention to
+   any existing test fixture or manual case that has both an authoritative
+   and a cosmetic attorney field populated — Decision 6 changes its result.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
-- **Data Model:** N/A — reads existing fields, writes no new shape.
+- **Data Model:** N/A — reads existing fields, writes no new shape. Decision
+  6 is grounded directly in `probate-guardian-data-model.csv`'s existing
+  field descriptions; no CSV change needed.
 - **Legacy Data Migration:** N/A — a carry-over is a point-in-time copy
   operation, not a stored-data migration; no existing `.sav` file's stored
   shape is affected.
@@ -811,15 +859,20 @@ forcing it.
   create one) with a `TEST-INDEX.md` row.
 - **Export/Import/Portability:** N/A.
 - **Security & Sensitivity:** N/A.
-- **UI/UX Consistency:** if F1 finds the divergence is reachable, this
-  changes which attorney name appears after a real carry-over for some
-  source wards — user-visible, and exactly why F1 must be answered before
-  F2 ships, not folded into "the refactor."
+- **UI/UX Consistency:** **directly implicated.** For any source ward with
+  both an authoritative and a cosmetic attorney field populated, the
+  attorney name that appears after a carry-over changes from whichever this
+  document's inconsistent status quo happened to produce to the
+  authoritative field's value, on both carry-over directions. This is the
+  intended effect of Decision 6, not a side effect to be minimized.
 - **Legal/Compliance:** an attorney's name on a filing is not a
-  form-validation nicety — F1's answer should be treated with the same care
-  `AGENTS.md` §5 gives county/legal-hierarchy determinations, even though
-  this document takes no position on which order is "more correct" beyond
-  "both should agree."
+  form-validation nicety. Decision 6 was made with that weight — the choice
+  favors the field the data model itself calls validated/certification over
+  the one it calls cosmetic — but it remains a product decision made by
+  Alan, not a legal-sufficiency determination; this document does not
+  assert that the certification field is always the one that should appear
+  on every filing type, only that it is the more defensible default absent
+  a type-specific reason otherwise.
 
 ---
 
@@ -1301,8 +1354,9 @@ blocked:**
 6. **52B** — medium risk, case-load/session-restore path; land with the
    corruption-recovery test written first (red, per this repo's
    convention), then green.
-7. **52F** — medium risk, and gated on F1's answer from Alan before F2 can
-   be written at all; do not start F2 speculatively.
+7. **52F** — medium risk. F1's reachability question is answered and
+   Decision 6 is settled, so F2 is no longer gated — sequenced here on risk
+   alone, not on a pending answer.
 8. **52J** — medium risk, user-facing keyboard behavior change; land last,
    so it is reviewed against an otherwise quiet tree, matching Milestone
    51's own reasoning for sequencing 51F last.
@@ -1317,7 +1371,7 @@ blocked:**
 | `.sav` export → import round-trip, populated case | Identical case data before and after |
 | Session-restore cache save → restore round-trip | Identical case data before and after |
 | Session-restore cache with one corrupted non-ward field | Restores the other fields instead of failing outright (52B) |
-| Carry-over fixture with divergent attorney-name candidates, Guardian → each Plan and Accounting type | Same attorney name regardless of which carry-over function runs (52F) |
+| Carry-over fixture with divergent attorney-name candidates, Guardian → each Plan and Accounting type | Both functions produce the authoritative field's value, not just the same value as each other (52F, Decision 6) |
 | All four legacy comboboxes, keyboard-only | Arrow-key navigation, Home/End, Enter-to-select, Escape-to-close all work identically on all four (52J) |
 | Verified Initial Inventory Excel export, fully populated, all 11 schedules | Byte-identical to the pre-52K export from the same fixture |
 | Verified Initial Inventory Excel import of that export | Identical resulting `D.scheduleXX` arrays, including last-page/last-row boundaries |
@@ -1337,10 +1391,12 @@ are the lite gate (`AGENTS.md` §1). Three sub-deliveries warrant more:
   it is an Excel export/import path for a document filed with a Florida
   probate court, and the byte-comparison/round-trip gates in its
   Verification section are manual checks no spec covers on its own.
-- **52F** — not a full-suite case on its own, but F1's question must be
-  answered by Alan before F2 is written; do not treat "the code compiles
-  and tests pass" as an answer to a question about which of two existing,
-  disagreeing behaviors is correct.
+- **52F** — not a full-suite case on its own. F1's question is answered and
+  Decision 6 is settled, but do not treat "the code compiles and tests
+  pass" as sufficient evidence Decision 6 actually landed — Verification
+  step 1's distinguishing fixture is the only check that proves the
+  authoritative field wins rather than merely proving the two functions
+  agree with each other.
 
 For 52A's regression test and 52B's corruption-recovery test, follow this
 repository's red-first convention: write the test, confirm it fails against
