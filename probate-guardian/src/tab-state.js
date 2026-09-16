@@ -38,12 +38,13 @@ export function isFreshPeer(state, selfTabId, now = Date.now(), ttlMs = TAB_HEAR
   return now - normalized.updatedAt <= ttlMs;
 }
 
-export function isRiskyPeer(state, selfTabId, now = Date.now(), ttlMs = TAB_HEARTBEAT_TTL_MS) {
-  if (!isFreshPeer(state, selfTabId, now, ttlMs)) return false;
-  const normalized = normalizeTabState(state, now);
-  return Boolean(normalized && (normalized.dirty || normalized.hasActiveCase));
-}
-
+// Milestone 51B removed an exported isRiskyPeer() from here. Nothing called it:
+// summarizePeerTabs() below duplicates its predicate inline at the point where
+// it has already normalized the state and confirmed freshness, so calling the
+// export would have repeated both. The inline form is the better code and the
+// export was the redundant half. Its four test cases were ported onto
+// summarizePeerTabs() in tab-state.spec.js rather than deleted -- three of them
+// (hasActiveCase, TTL staleness, self-exclusion) were covered nowhere else.
 export function summarizePeerTabs(states, selfTabId, now = Date.now(), ttlMs = TAB_HEARTBEAT_TTL_MS) {
   const freshPeers = [];
   const riskyPeers = [];

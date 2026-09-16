@@ -190,32 +190,22 @@ describe('Milestone 40C-A: the ward-county lifecycle', () => {
     expect(filing.county).toBe('');
   });
 
-  describe('carryover linking takes county from the Party, not the source filing', () => {
-    test('links the destination and hydrates from the Party', () => {
-      const source = newFiling();
-      wardCounty.commitCoverCounty(source, 'Orange');
-      const dest = newFiling();
-
-      const result = wardCounty.linkDestinationToSourceWardParty(source, dest);
-      expect(result.linked).toBe(true);
-      expect(result.hydrated).toBe(true);
-      expect(dest.wardPartyId).toBe(source.wardPartyId);
-      expect(dest.county).toBe('Orange');
-    });
-
-    test('a source filing whose Party has no county contributes nothing, even though the source itself has one', () => {
-      // This is the case the decision specifically forbids: the source snapshot
-      // says Pasco, but that is history, not the ward's canonical county.
-      const source = newFiling({ county: 'Pasco' });
-      wardCounty.ensureWardPartyForFiling(source);
-      const dest = newFiling();
-
-      const result = wardCounty.linkDestinationToSourceWardParty(source, dest);
-      expect(result.linked).toBe(true);
-      expect(result.hydrated).toBe(false);
-      expect(dest.county).toBe('');
-    });
-  });
+  // Milestone 51B: two tests were removed here with the function they covered,
+  // ward-county.js's linkDestinationToSourceWardParty(), which had no production
+  // caller. They were not unique coverage -- tests/e2e/cover-county.spec.ts
+  // already asserts both of the same semantic cases (with the same 'Orange' and
+  // 'Pasco' values) against legacy-app.js's carryOverFields(), which is the
+  // carry-over path the app actually takes:
+  //
+  //   'a second filing for the same ward hydrates the county without re-asking'
+  //     -- the destination links to the same ward Party and takes its county.
+  //   'a county the ward Party does not have is not invented from the source filing'
+  //     -- a source snapshot of 'Pasco' whose Party has no county supplies
+  //        nothing, which is the case Milestone 40C-A item 3 forbids.
+  //
+  // So the rule stayed covered and moved from the dead twin to the live path,
+  // rather than being dropped. Do not re-add unit coverage here for a function
+  // that no longer exists; extend cover-county.spec.ts instead.
 
   describe('legacy migration: infer only a unanimous county', () => {
     test('infers when every linked filing with a county agrees', () => {

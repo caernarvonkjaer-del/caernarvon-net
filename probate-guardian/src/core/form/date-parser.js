@@ -128,42 +128,10 @@ export function formatDisplayDate(canonicalStr) {
   return canonicalStr;
 }
 
-/**
- * Generates accessible date input HTML with format hints and metadata.
- */
-export function dateInputHTML({
-  path,
-  label = '',
-  value = '',
-  required = false,
-  id = '',
-  section = '',
-  className = 'form-control',
-  hint = 'Use MM/DD/YYYY',
-}) {
-  const inputId = id || `date_${path.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-  const reqMark = required ? '<span class="req">*</span>' : '';
-  const displayVal = formatDisplayDate(value) || value || '';
-  const hintId = `${inputId}_hint`;
-
-  return `<div class="mb-2">
-    ${label ? `<label class="form-label" for="${inputId}">${label}${reqMark}</label>` : ''}
-    <input
-      type="text"
-      inputmode="text"
-      class="${className}"
-      id="${inputId}"
-      autocomplete="off"
-      placeholder="MM/DD/YYYY"
-      value="${String(displayVal).replace(/"/g, '&quot;')}"
-      data-field-path="${path}"
-      data-form-path="${path}"
-      data-field-kind="date"
-      data-field-format-policy="normalize"
-      ${section ? `data-field-section="${section}"` : ''}
-      ${required ? 'data-field-required="true"' : ''}
-      aria-describedby="${hintId}"
-    >
-    ${hint ? `<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">${hint}</div>` : ''}
-  </div>`;
-}
+// Milestone 51C/51B removed dateInputHTML() from here. It had zero references
+// anywhere -- not even in date-parser.spec.js -- and was superseded rather than
+// merely unused: its data-field-kind="date" / data-field-format-policy markup
+// belongs to the Tier 1 field-primitive design that form-fields.js actually
+// implements (see its date handling, AGENTS.md section 9). The rest of this module
+// (parseFlexibleDate, formatDisplayDate, isLeapYear, getDaysInMonth) is live in
+// form-contract.js, commit-coordinator.js, form-fields.js and two features.

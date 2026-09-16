@@ -5,11 +5,20 @@
 // twice over -- it injected Pinellas when the source had no county, and it took
 // the county from an arbitrary SOURCE FILING even when that filing was an older
 // one filed in a county the ward has since left. County is now supplied from the
-// canonical ward Party after the destination is linked to it (see
-// core/navigation/ward-county.js's linkDestinationToSourceWardParty(), which
-// legacy-app.js's carryOverFields() calls as the single entry point for every
-// carry-over surface). When the Party has no county the destination stays blank
-// and the Cover asks -- which is the point of the decision.
+// canonical ward Party after the destination is linked to it. When the Party has
+// no county the destination stays blank and the Cover asks -- which is the point
+// of the decision.
+//
+// Milestone 51B corrected this comment. It used to name
+// core/navigation/ward-county.js's linkDestinationToSourceWardParty() as the
+// single entry point that legacy-app.js's carryOverFields() called. That was
+// never true -- legacy-app.js never referenced that function -- and the stale
+// pointer outlived the thing it pointed at until the function was deleted as
+// dead code. The real single entry point is legacy-app.js's carryOverFields(),
+// which does this work inline (blanks county, carries wardPartyId, reconciles a
+// filing-shaped probe against the Party, then sets county from the resolved
+// Party). Every carry-over surface -- Add Ward, Convert Ward, in-place Load Ward
+// Info, and new-year creation -- routes through it.
 import { getCaseFile, getD, setD } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 

@@ -185,29 +185,21 @@ export function hydrateCountyFromWardParty(filing) {
   return true;
 }
 
-/**
- * Links a destination filing to a source filing's ward Party and hydrates its
- * county from that Party. Used by carryover, conversion and year creation.
- *
- * Takes the county from the PARTY, never from the source filing's own snapshot:
- * an arbitrary source filing may be an old one filed in a county the ward has
- * since moved from, and item 3 forbids using an unrelated source's county.
- * Returns { linked, hydrated, county }.
- */
-export function linkDestinationToSourceWardParty(sourceFiling, destFiling) {
-  const out = { linked: false, hydrated: false, county: '' };
-  if (!sourceFiling || !destFiling) return out;
-  const party = wardPartyForFiling(sourceFiling);
-  if (!party) return out;
-  setPartyIdForSlot(destFiling, 'ward', 0, party.id);
-  out.linked = true;
-  // Ward identity (residence, SSN, ...) fills in from the Party wherever the
-  // carry left a blank; county keeps its own rule below.
-  reconcileSlotWithParty(destFiling, 'ward', 0);
-  out.hydrated = hydrateCountyFromWardParty(destFiling);
-  out.county = normalizeCountyName(destFiling.county);
-  return out;
-}
+// Milestone 51B removed linkDestinationToSourceWardParty() from here. It had no
+// production caller -- despite a comment in ward-lifecycle.js claiming
+// legacy-app.js's carryOverFields() was its single entry point, legacy-app.js
+// never referenced it at all.
+//
+// carryOverFields() (legacy-app.js) reimplements the same intent inline and
+// reaches the same end state by a different route, because it builds a field bag
+// for a destination that does not exist yet rather than mutating one that does:
+// it blanks county, carries wardPartyId on the returned bag, runs
+// reconcileSlotWithParty() against a filing-shaped probe to hydrate ward
+// identity, then sets county from the resolved Party via normalizeCountyName().
+// The difference is the shape of the caller, not the policy -- Milestone 40C-A
+// item 3's rule (county comes from the Party, never from an arbitrary source
+// filing) is enforced by both, and remains covered against the live path by
+// tests/e2e/cover-county.spec.ts's two carryOverFields() tests.
 
 /**
  * Legacy migration (40C-A's migration rule). For a ward Party with no county,
@@ -305,7 +297,6 @@ if (typeof window !== 'undefined') {
   window.commitCoverCounty = commitCoverCounty;
   window.maybeCommitCoverCounty = maybeCommitCoverCounty;
   window.hydrateCountyFromWardParty = hydrateCountyFromWardParty;
-  window.linkDestinationToSourceWardParty = linkDestinationToSourceWardParty;
   window.inferWardPartyCounty = inferWardPartyCounty;
   window.backfillWardPartyCounties = backfillWardPartyCounties;
   window.wardCountyMergeConflict = wardCountyMergeConflict;

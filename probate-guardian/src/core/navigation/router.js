@@ -4,11 +4,16 @@ import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descript
 import { resetReadinessCardState } from '../filing/readiness-card.js';
 
 let _currentPage = '/dashboard';
-const _routeHooks = {
-  before: [],
-  after: [],
-};
-const _customRoutes = new Map();
+
+// Milestone 51B removed addBeforeNavigateHook(), addAfterNavigateHook() and
+// registerRoute() from this module, along with the _routeHooks arrays and
+// _customRoutes map they populated and the three dispatch sites that read them.
+// Nothing outside router.spec.js ever registered a hook or a custom route, so
+// the arrays were permanently empty and the map permanently unset -- the two
+// `for (const hook of ...)` loops in navigate() and the _customRoutes branch in
+// renderPage() could never execute. This app routes by a hash + a switch in
+// renderPage(); if a genuine cross-cutting navigation concern turns up later,
+// reintroduce the hook mechanism at that point with a real caller.
 
 export function getCurrentPage() {
   if (typeof window !== 'undefined' && window.currentPage) {
@@ -22,26 +27,6 @@ export function setCurrentPage(page) {
   if (typeof window !== 'undefined') {
     window.currentPage = page;
   }
-}
-
-export function addBeforeNavigateHook(fn) {
-  _routeHooks.before.push(fn);
-  return () => {
-    const idx = _routeHooks.before.indexOf(fn);
-    if (idx >= 0) _routeHooks.before.splice(idx, 1);
-  };
-}
-
-export function addAfterNavigateHook(fn) {
-  _routeHooks.after.push(fn);
-  return () => {
-    const idx = _routeHooks.after.indexOf(fn);
-    if (idx >= 0) _routeHooks.after.splice(idx, 1);
-  };
-}
-
-export function registerRoute(path, handler) {
-  _customRoutes.set(path, handler);
 }
 
 export function toggleMobileSidebar() {
@@ -87,15 +72,6 @@ export async function navigate(page, { updateHash = true } = {}) {
     }
   }
 
-  for (const hook of _routeHooks.before) {
-    try {
-      const allowed = await hook(page, previousPage);
-      if (allowed === false) return false;
-    } catch (e) {
-      console.warn('beforeNavigate hook threw', e);
-    }
-  }
-
   if (page === '/dashboard' && typeof window !== 'undefined' && typeof window.enterDashboardEditingFocus === 'function') {
     if (!await window.enterDashboardEditingFocus()) return false;
   }
@@ -108,13 +84,6 @@ export async function navigate(page, { updateHash = true } = {}) {
   await renderPage(page);
   closeMobileSidebar();
 
-  for (const hook of _routeHooks.after) {
-    try {
-      await hook(page, previousPage);
-    } catch (e) {
-      console.warn('afterNavigate hook threw', e);
-    }
-  }
   return true;
 }
 
@@ -128,11 +97,6 @@ export async function renderPage(page) {
   // ward is open and de-dupes concurrent calls, so navigate() is unaffected.
   if (page === '/dashboard' && typeof window !== 'undefined' && typeof window.enterDashboardEditingFocus === 'function') {
     if (!await window.enterDashboardEditingFocus()) return;
-  }
-
-  if (_customRoutes.has(page)) {
-    const handler = _customRoutes.get(page);
-    return await handler(page);
   }
 
   if (typeof document === 'undefined') return;

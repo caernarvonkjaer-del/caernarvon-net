@@ -536,8 +536,12 @@ test.describe('party de-duplication via resolver (Milestone 7)', () => {
       await w.loadCaseFileFromZip(zip, manifest, null);
 
       const reconstructedParty = w.wardPartyForFiling(cf.wards[0]);
-      const nextFiling = { inventoryType: 'planInitial' };
-      w.linkDestinationToSourceWardParty(cf.wards[0], nextFiling);
+      // Milestone 51B: this used to call ward-county.js's
+      // linkDestinationToSourceWardParty(), which had no production caller and
+      // has been deleted. carryOverFields() is the real carry-over entry point
+      // and enforces the same Milestone 40C-A rule, so the assertion now runs
+      // against the path the app actually takes.
+      const nextFiling = w.carryOverFields(cf.wards[0], 'planInitial');
 
       return {
         hadPartiesInZip: partiesEntry !== null,

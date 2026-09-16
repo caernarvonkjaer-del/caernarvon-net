@@ -1,13 +1,22 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
+import { describe, expect, test, beforeEach } from 'vitest';
 import {
   navigate,
-  registerRoute,
   getCurrentPage,
   setCurrentPage,
-  addBeforeNavigateHook,
-  addAfterNavigateHook,
 } from '../../src/core/navigation/router.js';
 
+// Milestone 51B: three tests were removed here along with the exports they
+// covered -- registerRoute(), addBeforeNavigateHook() and addAfterNavigateHook().
+// All three were dead in production: nothing outside this file ever registered a
+// hook or a custom route. They were also self-referential -- each registered a
+// custom route purely to give navigate() somewhere to go, then asserted the hook
+// mechanism against it -- so they exercised no route this app actually serves and
+// their deletion loses no coverage of live behavior.
+//
+// navigate()'s own contract was only covered incidentally by those tests, so the
+// last test below now covers it directly. Real route rendering is a DOM concern
+// and is covered in tests/e2e/routes.spec.ts; these unit tests run in plain Node
+// with no document, where renderPage() early-returns by design.
 describe('navigation router services', () => {
   beforeEach(() => {
     setCurrentPage('/dashboard');
@@ -19,43 +28,19 @@ describe('navigation router services', () => {
     expect(getCurrentPage()).toBe('/inventory-select');
   });
 
-  test('registerRoute dispatches to custom route handlers', async () => {
-    const handler = vi.fn().mockResolvedValue('rendered-custom');
-    registerRoute('/custom-test', handler);
+  test('navigate() advances the active route and reports success', async () => {
+    expect(getCurrentPage()).toBe('/dashboard');
 
-    const result = await navigate('/custom-test');
-    expect(result).toBe(true);
-    expect(handler).toHaveBeenCalledWith('/custom-test');
-    expect(getCurrentPage()).toBe('/custom-test');
-  });
-
-  test('beforeNavigate hook can intercept and cancel navigation', async () => {
-    const targetHandler = vi.fn();
-    registerRoute('/blocked-route', targetHandler);
-
-    const unsubscribe = addBeforeNavigateHook((toPage) => {
-      if (toPage === '/blocked-route') return false;
-      return true;
-    });
-
-    const result = await navigate('/blocked-route');
-    expect(result).toBe(false);
-    expect(targetHandler).not.toHaveBeenCalled();
-    expect(getCurrentPage()).toBe('/dashboard'); // remained on previous page!
-
-    unsubscribe();
-  });
-
-  test('afterNavigate hook triggers upon completed navigation', async () => {
-    const afterFn = vi.fn();
-    const unsubscribe = addAfterNavigateHook(afterFn);
-
-    registerRoute('/allowed-route', vi.fn().mockResolvedValue(true));
-    const result = await navigate('/allowed-route');
+    const result = await navigate('/p1', { updateHash: false });
 
     expect(result).toBe(true);
-    expect(afterFn).toHaveBeenCalledWith('/allowed-route', '/dashboard');
+    expect(getCurrentPage()).toBe('/p1');
+  });
 
-    unsubscribe();
+  test('navigate() to the current route is still reported as success', async () => {
+    setCurrentPage('/p1');
+    const result = await navigate('/p1', { updateHash: false });
+    expect(result).toBe(true);
+    expect(getCurrentPage()).toBe('/p1');
   });
 });

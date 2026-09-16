@@ -77,13 +77,9 @@ export function setAppState(key, val) {
   }
 }
 
-export function getAllAppState() {
-  if (typeof window !== 'undefined' && window._appState) {
-    return window._appState;
-  }
-  return _appState;
-}
-
+// Milestone 51B removed getAllAppState() from here -- zero references,
+// including in this module's own spec. Callers that need a single key use
+// getAppState(key) above; nothing ever wanted the whole bag.
 export function getTemplateCache() {
   if (typeof window !== 'undefined' && window._templateCache) {
     return window._templateCache;
@@ -111,14 +107,9 @@ export function getActiveWard() {
   return null;
 }
 
-/**
- * The active ward's inventoryType key (e.g. 'simplified'), or null if no
- * ward is active. Reads window.D.inventoryType or internal _D.
- */
-export function getActiveInventoryType() {
-  const d = getD();
-  return d && d.inventoryType ? d.inventoryType : null;
-}
+// Milestone 51B removed getActiveInventoryType() from here -- zero references,
+// spec included. Callers read getD().inventoryType directly, which is the same
+// one-line lookup this wrapped.
 
 // Milestone 40C-A item 1 — applies to EVERY blank-data factory in this file, and
 // to emptyDataGuardian() in legacy-app.js: `county` starts blank, never

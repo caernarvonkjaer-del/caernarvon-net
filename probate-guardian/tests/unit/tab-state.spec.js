@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { TAB_WARNING_TEXT, isRiskyPeer, normalizeTabState, summarizePeerTabs } from '../../src/tab-state.js';
+import { TAB_WARNING_TEXT, normalizeTabState, summarizePeerTabs } from '../../src/tab-state.js';
 
 describe('tab-state helpers', () => {
   test('normalizes only browser-local, safe case identity fields', () => {
@@ -29,12 +29,29 @@ describe('tab-state helpers', () => {
     expect(state.activeCase.ssn).toBeUndefined();
   });
 
-  test('treats active or dirty fresh peers as warning-worthy', () => {
+  // Milestone 51B: these four cases used to be asserted against an exported
+  // isRiskyPeer(), which summarizePeerTabs() duplicated inline rather than
+  // called -- so the export was dead and was deleted. The cases are real, and
+  // three of them (hasActiveCase, TTL staleness, self-exclusion) were covered
+  // nowhere else, so they are ported here to drive the live path instead of
+  // being dropped with the function.
+  test('treats active or dirty fresh peers as warning-worthy, and ignores stale or self tabs', () => {
     const now = 20000;
-    expect(isRiskyPeer({ tabId: 'other', dirty: true, updatedAt: now }, 'self', now)).toBe(true);
-    expect(isRiskyPeer({ tabId: 'other', hasActiveCase: true, updatedAt: now }, 'self', now)).toBe(true);
-    expect(isRiskyPeer({ tabId: 'other', updatedAt: now - 16000, dirty: true }, 'self', now)).toBe(false);
-    expect(isRiskyPeer({ tabId: 'self', updatedAt: now, dirty: true }, 'self', now)).toBe(false);
+    const risky = (state) => summarizePeerTabs([state], 'self', now);
+
+    expect(risky({ tabId: 'other', dirty: true, updatedAt: now }).shouldWarn).toBe(true);
+    expect(risky({ tabId: 'other', hasActiveCase: true, updatedAt: now }).shouldWarn).toBe(true);
+
+    // Past the heartbeat TTL: not a fresh peer at all, so neither risky nor
+    // counted as another open tab.
+    const stale = risky({ tabId: 'other', updatedAt: now - 16000, dirty: true });
+    expect(stale.shouldWarn).toBe(false);
+    expect(stale.hasOtherOpenTab).toBe(false);
+
+    // This tab's own heartbeat is never a peer.
+    const own = risky({ tabId: 'self', updatedAt: now, dirty: true });
+    expect(own.shouldWarn).toBe(false);
+    expect(own.hasOtherOpenTab).toBe(false);
   });
 
   test('summarizes clean second tabs separately from risky tabs', () => {

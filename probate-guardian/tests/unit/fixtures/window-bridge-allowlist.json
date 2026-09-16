@@ -243,10 +243,6 @@
     },
     {
       "file": "src/core/navigation/ward-county.js",
-      "name": "linkDestinationToSourceWardParty"
-    },
-    {
-      "file": "src/core/navigation/ward-county.js",
       "name": "maybeCommitCoverCounty"
     },
     {

@@ -236,7 +236,6 @@ interface Window {
   isPartyPairDismissed: any;
   isScheduleIncomplete: any;
   issueMessage: any;
-  linkDestinationToSourceWardParty: any;
   linkLabelsToInputs: any;
   listSignatureImages: any;
   loadAndRenderActivityLog: any;

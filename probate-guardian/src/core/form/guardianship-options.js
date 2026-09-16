@@ -16,13 +16,11 @@ export const GUARDIANSHIP_LIFECYCLE_OPTIONS = [
   'None',
 ];
 
-export const GUARDIAN_CLASSIFICATION_OPTIONS = [
-  'Professional',
-  'Public',
-  'Family',
-  'Non-professional',
-];
-
+// Milestone 51B removed GUARDIAN_CLASSIFICATION_OPTIONS from here
+// (Professional/Public/Family/Non-professional). Nothing imported it, and
+// unlike the two lists above it was not even referenced by this module's own
+// spec. No filing collects a guardian classification today; if one ever does,
+// add the list back next to the field that needs it rather than speculatively.
 export function optionsWithLegacyValue(options, currentValue) {
   const value = currentValue === null || currentValue === undefined ? '' : String(currentValue);
   const base = options.map((option) => ({ value: option, label: option }));
