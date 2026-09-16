@@ -49,7 +49,49 @@ and three of which (52A, 52B, 52F) deliberately change behavior.
 | 52A — Continue-prompt banner (3 bridges) | **Landed** `cdbff52` — see below; also fixes a double-render bug this delivery found |
 | 52K — Guardian Inventory Excel schedule layout | **Landed** `34f681e` — see below; found (did not fix) a real wardPercent round-trip bug |
 | 52B — Ward-decode pipeline + encrypt/decrypt fan-out | **Landed** `ec83360` — see below; fixes session-restore's all-or-nothing corruption failure |
-| 52F, 52H, 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+| 52F — `extractCarryIdentity()`, Decision 6 | **Landed** `beea47b` — see below; also found and resolved a fourth attorney-order divergence in `legacy-app.js` |
+| 52H, 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+
+### 2026-09-16, live session — 52F landed
+
+Landed as documented, including F3's investigation of `legacy-app.js`'s
+third copy (`carryOverAccountingToAccounting()`), which the doc
+suspected "may have a fourth, undiscovered order." It did:
+`attorneyForGuardian||srcAttyFlat||srcAtty.name`, cosmetic-first, and it
+never checked the flat `attorney_name`/`attorneyName` fields the other
+two functions do. Converted to call `extractCarryIdentity()` for the
+guardian-name and attorney fields (gName's chain there is a strict
+superset of this function's own, so no behavior narrowing);
+`caseNumber` was left alone since the extra `ucn`/`ref` fallbacks only
+matter for Plan Minor sources, which never reach this
+accounting-to-accounting-only function.
+
+`extractCarryIdentity()` is now bridged onto `window`
+(`window.extractCarryIdentity`) so `legacy-app.js` can reach it —
+governance files regenerated and diffed to confirm exactly that one
+new name.
+
+One more divergence found while writing the shared extractor, beyond
+what the doc's Background section named: `gName`'s fallback order also
+differed between the two `ward-lifecycle.js` functions
+(`guardianName`-then-`guardianNames` vs. the reverse;
+`guardians[]`-then-`planGuardians[]` vs. the reverse). Verified
+harmless before unifying it, the same way F1 verified Decision 6's
+divergence was real: `guardianName` belongs to
+`guardian_inventory`/`plan_minor` and `guardianNames` to `plan_initial`
+alone (per `probate-guardian-data-model.csv`), never both on one
+source ward; `guardians[]`/`planGuardians[]` are exclusive to the
+Accounting/Plan families respectively. Check order never changes the
+result for any real ward shape.
+
+`tests/unit/ward-carryover.spec.js`'s existing "still prefers an
+explicit flat attorney name over the nested one" test asserted the
+**old**, pre-Decision-6 behavior — rewritten to assert the new one, and
+a second test added for the `plan_initial`-flat divergent shape
+(`attorneyName` vs `attorney_name`), Decision 6's other documented real
+case. Full unit suite: 846/846. e2e: `carryover-workflow.spec.ts` (5/5)
+and `convert-ward.spec.ts` (6/6), including the guardian→annual
+accounting-to-accounting path F3's change touches directly.
 
 ### 2026-09-16, live session — 52B landed
 
