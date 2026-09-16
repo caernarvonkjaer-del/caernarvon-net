@@ -25,8 +25,13 @@ export const RESOURCE_GROUPS = Object.freeze([
       {
         id: 'pinellas-court-records',
         label: 'Court Records',
-        description: 'Search Pinellas County court and official records',
-        url: 'https://public.co.pinellas.fl.us/login/login_nonsubscriber.jsp',
+        // The Clerk moved public case-records access to courtrecords.mypinellasclerk.gov;
+        // the old public.co.pinellas.fl.us/login/login_nonsubscriber.jsp link was the
+        // legacy portal. Description narrowed to "court records" to match: Pinellas
+        // serves OFFICIAL records (deeds, liens) from a separate host,
+        // officialrecords.mypinellasclerk.gov, which this link does not reach.
+        description: 'Search Pinellas County court records',
+        url: 'https://courtrecords.mypinellasclerk.gov/',
       },
       {
         id: 'pinellas-guardian-association',

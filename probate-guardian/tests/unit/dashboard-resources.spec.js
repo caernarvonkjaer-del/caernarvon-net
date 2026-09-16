@@ -12,7 +12,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
   const EXPECTED_HOSTS = new Set([
     'www.pcpao.gov',
     'www.mypinellasclerk.gov',
-    'public.co.pinellas.fl.us',
+    'courtrecords.mypinellasclerk.gov',
     'guardianassociation.org',
     'pinellastaxcollector.gov',
     'pascopa.com',
@@ -173,7 +173,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
 
   test('includes Pinellas court records and guardian association resources', () => {
     const pinellas = RESOURCE_GROUPS.find(group => group.id === 'pinellas');
-    expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-court-records', url: 'https://public.co.pinellas.fl.us/login/login_nonsubscriber.jsp' }));
+    expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-court-records', url: 'https://courtrecords.mypinellasclerk.gov/' }));
     expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-guardian-association', url: 'https://guardianassociation.org/' }));
   });
 });
