@@ -967,7 +967,15 @@ const r2=(v)=>Math.round(v*100)/100;
 const fmt=(v)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v||0);
 window.fmt=fmt;
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function fmtDate(s){return s?String(s).substring(0,10):'';}
+// Milestone 51 follow-up: the `instanceof Date` guard is load-bearing, not
+// defensive noise. Without it, String(dateObj).substring(0,10) yields a
+// LOCALE-and-TIMEZONE-dependent prefix of Date#toString() -- "Tue May 19" for a
+// 2026-05-20T00:00:00Z date, which is both the wrong format and the wrong DAY.
+// These values reach filed court documents (Excel cells, PDF bodies, and the
+// under-penalties-of-perjury attestation's "from X through Y"), so a silent
+// off-by-one date is not cosmetic. Guarded across all five Group A copies of
+// this rule; see tests/unit/date-truncation-helpers.spec.js.
+function fmtDate(s){const v=s instanceof Date?s.toISOString():s;return v?String(v).substring(0,10):'';}
 // Dashboard-card-only variant: treats an implausible year (e.g. the
 // "0002-05-10" a native <input type="date"> would happily store if a
 // user typed "2" into the year segment and tabbed away -- see the

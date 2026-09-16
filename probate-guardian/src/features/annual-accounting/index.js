@@ -335,7 +335,13 @@ function buildNavAnnual(container){
 // statically imported back from here rather than duplicated, same
 // safe-circularity pattern as validateAnnual.
 export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return x<0?`(${Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`${x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
-export function fmtD(s){return s?String(s).substring(0,10):'';}
+// The `instanceof Date` guard matters here more than anywhere: this helper feeds
+// pdf-model.js's Part I period line, every signature date, and the
+// under-penalties-of-perjury attestation's "from X through Y". Without it,
+// String(dateObj).substring(0,10) gives "Tue May 19" for a 2026-05-20T00:00:00Z
+// date -- wrong format and a day early, inside a sworn statement. See
+// tests/unit/date-truncation-helpers.spec.js.
+export function fmtD(s){const v=s instanceof Date?s.toISOString():s;return v?String(v).substring(0,10):'';}
 // securitySanitize: this family's plain free-text fields keep running
 // legacy-app.js's validateSecurityInput() on blur (see the option's own
 // comment in form-fields.js) -- the behavior of the retired

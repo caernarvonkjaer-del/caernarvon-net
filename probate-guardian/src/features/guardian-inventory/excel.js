@@ -69,7 +69,14 @@ export async function doSaveExcel(){
     const templateB64=await ensureTemplate('guardian');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
-    const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
+    // Milestone 51 follow-up: `instanceof Date` guard. Without it,
+    // String(dateObj).substring(0,10) writes a locale/timezone-dependent
+    // "Tue May 19" into a filed workbook for a 2026-05-20T00:00:00Z date --
+    // wrong format AND a day early. The length>=10 branch is left exactly as
+    // it was: its type preservation (a short numeric input stays a number, so
+    // setCell writes a numeric cell) is why this is not merged with
+    // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
+    const fmtD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
     // Milestone 51D: this is the canonical tri-state Excel writer for this app,
     // and it stays local deliberately. core/excel/excel-engine.js used to export a
     // yesNo(bool) under the SAME NAME that returned 'No' for '', null and
