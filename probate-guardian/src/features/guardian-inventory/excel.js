@@ -42,6 +42,32 @@ export const GUARDIAN_EXCEL_CAPS={
   scheduleC5:{cap:15,label:'Schedule C-5 — Joint Owners',route:'/c5'},
 };
 
+// Milestone 52K: each schedule's page/sheet-name + row-number layout used to
+// be hand-typed twice -- once in its fillScheduleXX() writer below, once
+// more in parseInitialInventoryWorkbook()'s readRows() calls -- with a
+// different key for the same field (`name` on the writer side, `sheet` on
+// the reader side). Neither name is read generically; readRows() destructures
+// its own `sheet` key locally and the writers read `.name` directly, so
+// there is no external consumer to keep in sync -- both sides now share one
+// object per schedule and read the same `name` key. A template sheet
+// renumbered on one side and not the other used to silently desync export
+// and import for that schedule; now there is only one side to edit. The
+// sheet-name strings below are copied verbatim from the court's Excel
+// template, trailing spaces/punctuation quirks included (e.g. 'A-2-REAL
+// ESTATE MTG pg 1 ', 'B-3 INTANGIBLE pg 1;') -- these are real worksheet
+// names, not typos to fix.
+const SCHEDULE_A1_PAGES=[{name:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{name:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{name:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}];
+const SCHEDULE_A2_PAGES=[{name:'A-2-REAL ESTATE MTG pg 1 ',rows:[30,35,40,45,50]},{name:'A-2-REAL ESTATE MTG pg 2',rows:[7,12,17,22,27,32,37,42,47]},{name:'A-2-REAL ESTATE MTG pg 3',rows:[7,12,17,22,27,32,37,42,47,52]}];
+const SCHEDULE_B1_PAGES=[{name:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{name:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{name:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{name:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}];
+const SCHEDULE_B2_PAGES=[{name:'B-2 PER PROP pg 1',rows:[33,38,43,48,53,58]},{name:'B-2 PER PROP pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]},{name:'B-2 PER PROP pg 3',rows:[7,12,17,22,27,32,37,42,47,52,57]},{name:'B-2 PER PROP pg 4',rows:[7,12,17,22,27,32,37,42,47,52,57]}];
+const SCHEDULE_B3_PAGES=[{name:'B-3 INTANGIBLE pg 1;',rows:[22,27,32,37,42,47,52,57,62]},{name:'B-3 INTANGIBLE pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]}];
+const SCHEDULE_B4_PAGES=[{name:'B-4 PERS PROP LIAB pg 1',rows:[23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 2',rows:[8,13,18,23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 3',rows:[8,13,18,23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 4',rows:[8,13,18,23,28,33,38,43,48]}];
+const SCHEDULE_C1_PAGES=[{name:'C-1 INCOME pg 1',rows:[29,34,39,44,49]},{name:'C-1 INCOME pg 2',rows:[7,12,17,22,27,32,37,42,47]},{name:'C-1 INCOME pg 3',rows:[7,12,17,22,27,32,37,42,47]}];
+const SCHEDULE_C2_PAGES=[{name:'C-2 LAWSUIT AGAINST 1',rows:[19,24,29,34,39,44]},{name:'C-2 LAWSUIT AGAINST pg 2',rows:[7,12,17,22,27,32,37]}];
+const SCHEDULE_C3_PAGES=[{name:'C-3 LAWSUIT BY WARD pg 1',rows:[20,25,30,35,40,45]},{name:'C-3 LAWSUIT BY WARD pg 2',rows:[7,12,17,22,27,32,37,42]}];
+const SCHEDULE_C4_PAGES=[{name:'C-4 TRUSTS pg 1',rows:[23,28,33,38,43,48,53]},{name:'C-4 TRUSTS pg 2',rows:[7,12,17,22,27,32,37,42,47]}];
+const SCHEDULE_C5_PAGES=[{name:'C-5 JOINT OWNERS pg 1 ',rows:[19,24,29,34,39,44,49]},{name:'C-5 JOINT OWNERS pg 2',rows:[7,12,17,22,27,32,37,42]}];
+
 export async function doSaveExcel(){
   const capacityIssues = getExcelCapacityIssues('guardian', window.D, GUARDIAN_EXCEL_CAPS);
   const authorization = authorizeFilingOutput(window.D, () => validateGuardian(), {
@@ -119,8 +145,8 @@ export async function doSaveExcel(){
       const sheet=workbook.getWorksheet('A-1-REAL ESTATE pg 1');
       if(!sheet)return;
       let idx=0;
+      const pages=SCHEDULE_A1_PAGES;
       for(const e of entries||[]){
-        const pages=[{name:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{name:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{name:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}];
         let pageIdx=0,rowIdxInPage=0;
         for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
         const pg=workbook.getWorksheet(pages[pageIdx].name);
@@ -139,7 +165,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleA2=(entries)=>{
-      const pages=[{name:'A-2-REAL ESTATE MTG pg 1 ',rows:[30,35,40,45,50]},{name:'A-2-REAL ESTATE MTG pg 2',rows:[7,12,17,22,27,32,37,42,47]},{name:'A-2-REAL ESTATE MTG pg 3',rows:[7,12,17,22,27,32,37,42,47,52]}];
+      const pages=SCHEDULE_A2_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -159,7 +185,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleB1=(entries)=>{
-      const pages=[{name:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{name:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{name:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{name:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}];
+      const pages=SCHEDULE_B1_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -180,7 +206,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleB2=(entries)=>{
-      const pages=[{name:'B-2 PER PROP pg 1',rows:[33,38,43,48,53,58]},{name:'B-2 PER PROP pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]},{name:'B-2 PER PROP pg 3',rows:[7,12,17,22,27,32,37,42,47,52,57]},{name:'B-2 PER PROP pg 4',rows:[7,12,17,22,27,32,37,42,47,52,57]}];
+      const pages=SCHEDULE_B2_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -200,7 +226,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleB3=(entries)=>{
-      const pages=[{name:'B-3 INTANGIBLE pg 1;',rows:[22,27,32,37,42,47,52,57,62]},{name:'B-3 INTANGIBLE pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]}];
+      const pages=SCHEDULE_B3_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -220,7 +246,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleB4=(entries)=>{
-      const pages=[{name:'B-4 PERS PROP LIAB pg 1',rows:[23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 2',rows:[8,13,18,23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 3',rows:[8,13,18,23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 4',rows:[8,13,18,23,28,33,38,43,48]}];
+      const pages=SCHEDULE_B4_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -240,7 +266,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleC1=(entries)=>{
-      const pages=[{name:'C-1 INCOME pg 1',rows:[29,34,39,44,49]},{name:'C-1 INCOME pg 2',rows:[7,12,17,22,27,32,37,42,47]},{name:'C-1 INCOME pg 3',rows:[7,12,17,22,27,32,37,42,47]}];
+      const pages=SCHEDULE_C1_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -261,7 +287,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleC2=(entries)=>{
-      const pages=[{name:'C-2 LAWSUIT AGAINST 1',rows:[19,24,29,34,39,44]},{name:'C-2 LAWSUIT AGAINST pg 2',rows:[7,12,17,22,27,32,37]}];
+      const pages=SCHEDULE_C2_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -282,7 +308,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleC3=(entries)=>{
-      const pages=[{name:'C-3 LAWSUIT BY WARD pg 1',rows:[20,25,30,35,40,45]},{name:'C-3 LAWSUIT BY WARD pg 2',rows:[7,12,17,22,27,32,37,42]}];
+      const pages=SCHEDULE_C3_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -303,7 +329,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleC4=(entries)=>{
-      const pages=[{name:'C-4 TRUSTS pg 1',rows:[23,28,33,38,43,48,53]},{name:'C-4 TRUSTS pg 2',rows:[7,12,17,22,27,32,37,42,47]}];
+      const pages=SCHEDULE_C4_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -325,7 +351,7 @@ export async function doSaveExcel(){
     };
 
     const fillScheduleC5=(entries)=>{
-      const pages=[{name:'C-5 JOINT OWNERS pg 1 ',rows:[19,24,29,34,39,44,49]},{name:'C-5 JOINT OWNERS pg 2',rows:[7,12,17,22,27,32,37,42]}];
+      const pages=SCHEDULE_C5_PAGES;
       let idx=0;
       for(const e of entries||[]){
         let pageIdx=0,rowIdxInPage=0;
@@ -471,23 +497,23 @@ function parseInitialInventoryWorkbook(wb){
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
   const triState=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return 'Yes';if(t==='no')return 'No';return '';};
   const pct=(s,a)=>Math.round(num(s,a)*100*1e6)/1e6;
-  const readRows=(pages,reader)=>{const out=[];for(const{sheet:name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
+  const readRows=(pages,reader)=>{const out=[];for(const{name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
   const si=ws('SUMMARY I ');
   const inv={
     wardName:txt(si,'C7'),caseNumber:txt(si,'H7'),gid:dt(si,'F7'),county:txt(si,'G3'),
     guardianName:txt(si,'D23'),attorneyForGuardian:txt(si,'D24'),typeOfGuardianship:txt(si,'D25'),
     hasSafeDepositBox:triState(si,'D26'),safeDepositBoxFiled:triState(si,'H26'),amendedForm:triState(si,'I8'),
-    scheduleA1:readRows([{sheet:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{sheet:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),residence:triState(s,`E${r}`),income:triState(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
-    scheduleA2:readRows([{sheet:'A-2-REAL ESTATE MTG pg 1 ',rows:[30,35,40,45,50]},{sheet:'A-2-REAL ESTATE MTG pg 2',rows:[7,12,17,22,27,32,37,42,47]},{sheet:'A-2-REAL ESTATE MTG pg 3',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`F${r}`);if(!name&&!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),lenderCityStateZip:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),notes:'',liabilityType:txt(s,`E${r}`)||'Mortgage',fullDebtBalance:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleB1:readRows([{sheet:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{sheet:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{sheet:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),restricted:triState(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
-    scheduleB2:readRows([{sheet:'B-2 PER PROP pg 1',rows:[33,38,43,48,53,58]},{sheet:'B-2 PER PROP pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]},{sheet:'B-2 PER PROP pg 3',rows:[7,12,17,22,27,32,37,42,47,52,57]},{sheet:'B-2 PER PROP pg 4',rows:[7,12,17,22,27,32,37,42,47,52,57]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`),amountInSDB:0}}),
-    scheduleB3:readRows([{sheet:'B-3 INTANGIBLE pg 1;',rows:[22,27,32,37,42,47,52,57,62]},{sheet:'B-3 INTANGIBLE pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`),amountInSDB:0}}),
-    scheduleB4:readRows([{sheet:'B-4 PERS PROP LIAB pg 1',rows:[23,28,33,38,43,48]},{sheet:'B-4 PERS PROP LIAB pg 2',rows:[8,13,18,23,28,33,38,43,48]},{sheet:'B-4 PERS PROP LIAB pg 3',rows:[8,13,18,23,28,33,38,43,48]},{sheet:'B-4 PERS PROP LIAB pg 4',rows:[8,13,18,23,28,33,38,43,48]}],(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleC1:readRows([{sheet:'C-1 INCOME pg 1',rows:[29,34,39,44,49]},{sheet:'C-1 INCOME pg 2',rows:[7,12,17,22,27,32,37,42,47]},{sheet:'C-1 INCOME pg 3',rows:[7,12,17,22,27,32,37,42,47]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
-    scheduleC2:readRows([{sheet:'C-2 LAWSUIT AGAINST 1',rows:[19,24,29,34,39,44]},{sheet:'C-2 LAWSUIT AGAINST pg 2',rows:[7,12,17,22,27,32,37]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleC3:readRows([{sheet:'C-3 LAWSUIT BY WARD pg 1',rows:[20,25,30,35,40,45]},{sheet:'C-3 LAWSUIT BY WARD pg 2',rows:[7,12,17,22,27,32,37,42]}],(s,r)=>{const defendantName=txt(s,`B${r}`),desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc)return null;const parts=desc.split(' / ');return{defendantName,actionDescription:parts[0]||desc,caseNumber:parts[1]||'',status:txt(s,`C${r+1}`),courtJurisdiction:txt(s,`C${r+2}`),actionDate:dt(s,`E${r}`),estimatedSettlement:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleC4:readRows([{sheet:'C-4 TRUSTS pg 1',rows:[23,28,33,38,43,48,53]},{sheet:'C-4 TRUSTS pg 2',rows:[7,12,17,22,27,32,37,42,47]}],(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`I${r}`);if(!name&&!val)return null;return{trustName:name,trusteeName:txt(s,`C${r+1}`),trusteeAddress:txt(s,`C${r+2}`),trusteeCityStateZip:txt(s,`C${r+3}`),dateCreated:dt(s,`E${r}`),accountNumber:txt(s,`F${r}`),trustType:txt(s,`H${r}`)||'Pooled',trustAmount:val,wardPercent:pct(s,`J${r}`)}}),
-    scheduleC5:readRows([{sheet:'C-5 JOINT OWNERS pg 1 ',rows:[19,24,29,34,39,44,49]},{sheet:'C-5 JOINT OWNERS pg 2',rows:[7,12,17,22,27,32,37,42]}],(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerAddress:txt(s,`C${r+1}`),ownerName:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),
+    scheduleA1:readRows(SCHEDULE_A1_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),residence:triState(s,`E${r}`),income:triState(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
+    scheduleA2:readRows(SCHEDULE_A2_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`F${r}`);if(!name&&!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),lenderCityStateZip:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),notes:'',liabilityType:txt(s,`E${r}`)||'Mortgage',fullDebtBalance:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleB1:readRows(SCHEDULE_B1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),restricted:triState(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
+    scheduleB2:readRows(SCHEDULE_B2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`),amountInSDB:0}}),
+    scheduleB3:readRows(SCHEDULE_B3_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`),amountInSDB:0}}),
+    scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleC1:readRows(SCHEDULE_C1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
+    scheduleC2:readRows(SCHEDULE_C2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleC3:readRows(SCHEDULE_C3_PAGES,(s,r)=>{const defendantName=txt(s,`B${r}`),desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc)return null;const parts=desc.split(' / ');return{defendantName,actionDescription:parts[0]||desc,caseNumber:parts[1]||'',status:txt(s,`C${r+1}`),courtJurisdiction:txt(s,`C${r+2}`),actionDate:dt(s,`E${r}`),estimatedSettlement:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleC4:readRows(SCHEDULE_C4_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`I${r}`);if(!name&&!val)return null;return{trustName:name,trusteeName:txt(s,`C${r+1}`),trusteeAddress:txt(s,`C${r+2}`),trusteeCityStateZip:txt(s,`C${r+3}`),dateCreated:dt(s,`E${r}`),accountNumber:txt(s,`F${r}`),trustType:txt(s,`H${r}`)||'Pooled',trustAmount:val,wardPercent:pct(s,`J${r}`)}}),
+    scheduleC5:readRows(SCHEDULE_C5_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerAddress:txt(s,`C${r+1}`),ownerName:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),
     guardians:(()=>{const p3=ws('PART III');const gs=[];for(let i=0;i<3;i++){const b=7+i*6;const name=txt(p3,`F${b+1}`);if(!name&&i>0)continue;gs.push({signatureDate:dt(p3,`D${b}`),name,ssnEin:txt(p3,`B${b+2}`),streetAddress:txt(p3,`F${b+2}`),phone:txt(p3,`B${b+4}`),cityStateZip:txt(p3,`F${b+4}`)});}return gs.length?gs:[mk.guardian()];})(),
     preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G12'),name:txt(p4,'I12'),ssnEin:txt(p4,'B14'),streetAddress:txt(p4,'I14'),phone:txt(p4,'B16'),cityStateZip:txt(p4,'I16')};})(),
     attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G25'),filingDate:dt(p4,'G26'),name:txt(p4,'I25'),barNumber:txt(p4,'B27'),streetAddress:txt(p4,'I27'),phone:txt(p4,'B29'),cityStateZip:txt(p4,'I29')};})(),
