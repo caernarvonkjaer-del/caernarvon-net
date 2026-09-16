@@ -20,7 +20,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'pinellas-clerk-guardianships',
         label: 'Clerk — Guardianships',
         description: 'Clerk of Court guardianship information',
-        url: 'https://www.mypinellasclerk.gov/Home/Probate-Mental-Health#49273-guardianships',
+        url: 'https://www.mypinellasclerk.gov/Guardianship',
       },
       {
         id: 'pinellas-court-records',
@@ -455,7 +455,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'alachua-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.alachuacounty.us/Depts/Clerk/Pages/Clerk.aspx',
+        url: 'https://alachuacounty.us/Depts/Clerk/Pages/Guardianship.aspx',
       },
       {
         id: 'alachua-court-records',
@@ -517,7 +517,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'bay-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.baycoclerk.com/',
+        url: 'https://www.baycoclerk.com/court-divisions/probate/',
       },
       {
         id: 'bay-court-records',
@@ -548,7 +548,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'bradford-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://bradfordclerk.com/',
+        url: 'https://www.bradfordcountyfl.gov/circuit_court',
       },
       {
         id: 'bradford-court-records',
@@ -579,7 +579,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'brevard-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://brevardclerk.us/',
+        url: 'https://www.brevardclerk.us/guardianship-handbook-and-forms',
       },
       {
         id: 'brevard-court-records',
@@ -672,7 +672,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'charlotte-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://charlotteclerk.com/',
+        url: 'https://charlotteclerk.com/courts/probate',
       },
       {
         id: 'charlotte-court-records',
@@ -703,7 +703,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'citrus-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.citrusclerk.org/',
+        url: 'https://www.citrusclerk.org/226/Guardianship',
       },
       {
         id: 'citrus-court-records',
@@ -734,7 +734,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'clay-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.clayclerk.com/',
+        url: 'https://clayclerk.com/departments/civil-court-services/guardianship/',
       },
       {
         id: 'clay-court-records',
@@ -765,7 +765,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'collier-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.collierclerk.com/',
+        url: 'https://www.collierclerk.com/court-divisions/court-guardianship/',
       },
       {
         id: 'collier-court-records',
@@ -796,7 +796,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'columbia-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.columbiaclerk.com/',
+        url: 'https://columbiaclerk.com/court-services/probate/',
       },
       {
         id: 'columbia-court-records',
@@ -827,7 +827,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'desoto-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.desotoclerk.com/',
+        url: 'https://www.desotoclerk.com/court-services/probate-guardianship/',
       },
       {
         id: 'desoto-court-records',
@@ -858,7 +858,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'dixie-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.dixieclerk.com/',
+        url: 'https://dixieclerk.com/departments-services/court-services/',
       },
       {
         id: 'dixie-court-records',
@@ -951,7 +951,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'flagler-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://flaglerclerk.com/',
+        url: 'https://flaglerclerk.gov/courts/guardianship/',
       },
       {
         id: 'flagler-court-records',
@@ -982,7 +982,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'franklin-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.franklinclerk.com/',
+        url: 'https://www.franklinclerk.com/courts/probate-guardianship/',
       },
       {
         id: 'franklin-court-records',
@@ -1044,7 +1044,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'gilchrist-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.gilchristclerk.com/',
+        url: 'https://gilchristclerk.com/probate/',
       },
       {
         id: 'gilchrist-court-records',
@@ -1075,7 +1075,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'glades-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://gladesclerk.com/',
+        url: 'https://gladesclerk.com/court-services/probate/',
       },
       {
         id: 'glades-court-records',
@@ -1106,7 +1106,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'gulf-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.gulfclerk.com/',
+        url: 'https://www.gulfclerk.com/courts/probate/guardianship/',
       },
       {
         id: 'gulf-court-records',
@@ -1137,7 +1137,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'hamilton-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.hamiltonclerk.com/',
+        url: 'https://hamiltonclerk.com/courts/',
       },
       {
         id: 'hamilton-court-records',
@@ -1168,7 +1168,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'hardee-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.hardeeclerk.com/',
+        url: 'https://www.hardeeclerk.com/departments/courts/probate-division/',
       },
       {
         id: 'hardee-court-records',
@@ -1199,7 +1199,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'hendry-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.hendryclerk.org/',
+        url: 'https://www.hendryclerk.org/courts/',
       },
       {
         id: 'hendry-court-records',
@@ -1230,7 +1230,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'hernando-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://hernandoclerk.com/',
+        url: 'https://hernandoclerk.com/court-services/probate-guardianship/',
       },
       {
         id: 'hernando-court-records',
@@ -1292,7 +1292,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'hillsborough-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.hillsclerk.com/',
+        url: 'https://www.hillsclerk.com/Court-Services/Probate-Guardianship',
       },
       {
         id: 'hillsborough-court-records',
@@ -1478,7 +1478,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'lake-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://lakecountyclerk.org/',
+        url: 'https://www.lakecountyclerk.org/',
       },
       {
         id: 'lake-court-records',
@@ -1509,7 +1509,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'lee-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.leeclerk.org/',
+        url: 'https://www.leeclerk.org/departments/courts/guardianship',
       },
       {
         id: 'lee-court-records',
@@ -1540,7 +1540,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'leon-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.clerk.leon.fl.us/',
+        url: 'https://cvweb.leonclerk.com/public/court_services/probate/',
       },
       {
         id: 'leon-court-records',
@@ -1726,7 +1726,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'martin-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.martinclerk.com/',
+        url: 'https://www.martinclerk.com/193/Guardianship',
       },
       {
         id: 'martin-court-records',
@@ -1757,7 +1757,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'miami-dade-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.miamidadeclerk.gov/',
+        url: 'https://www.miamidadeclerk.gov/clerk/mental-health-court.page',
       },
       {
         id: 'miami-dade-court-records-civil',
@@ -1794,7 +1794,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'monroe-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.clerk-of-the-court.com/',
+        url: 'https://www.monroe-clerk.com/probate-and-guardianship',
       },
       {
         id: 'monroe-court-records',
@@ -1825,7 +1825,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'nassau-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.nassauclerk.com/',
+        url: 'https://www.nassauclerk.com/230/2257/Guardianship',
       },
       {
         id: 'nassau-court-records',
@@ -1887,7 +1887,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'okeechobee-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://myokeeclerk.com/',
+        url: 'https://www.clerk.co.okeechobee.fl.us/',
       },
       {
         id: 'okeechobee-court-records',
@@ -1918,7 +1918,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'orange-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://myorangeclerk.com/',
+        url: 'https://www.myorangeclerk.com/Divisions/Probate/Guardianship',
       },
       {
         id: 'orange-court-records',
@@ -1949,7 +1949,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'osceola-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.osceolaclerk.com/',
+        url: 'https://osceolaclerk.com/',
       },
       {
         id: 'osceola-court-records',
@@ -1980,7 +1980,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'palm-beach-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.mypalmbeachclerk.com/',
+        url: 'https://www.mypalmbeachclerk.com/departments/courts/guardianship',
       },
       {
         id: 'palm-beach-court-records',
@@ -2011,7 +2011,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'polk-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.polkcountyclerk.net/',
+        url: 'https://www.polkcountyclerk.net/161/Guardianship',
       },
       {
         id: 'polk-court-records',
@@ -2042,7 +2042,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'putnam-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://putnamclerk.com/',
+        url: 'https://clerk.putnam-fl.com/',
       },
       {
         id: 'putnam-court-records',
@@ -2104,7 +2104,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'sarasota-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.sarasotaclerk.com/',
+        url: 'https://www.sarasotaclerk.com/court-services/guardianship',
       },
       {
         id: 'sarasota-court-records',
@@ -2135,7 +2135,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'seminole-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.seminoleclerk.org/',
+        url: 'https://www.seminoleclerkfl.gov/guardianship/',
       },
       {
         id: 'seminole-court-records-civil',
@@ -2203,7 +2203,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'st-lucie-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://stlucieclerk.gov/',
+        url: 'https://stlucieclerk.gov/departments-top-menu/guardianship',
       },
       {
         id: 'st-lucie-court-records',
@@ -2234,7 +2234,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'sumter-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.sumterclerk.com/',
+        url: 'https://www.sumterclerk.com/courts/civil/probate/',
       },
       {
         id: 'sumter-court-records',
@@ -2327,7 +2327,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'union-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.unionclerk.com/',
+        url: 'https://unionclerk.com/departments-services/court-services/probate/',
       },
       {
         id: 'union-court-records',
@@ -2358,7 +2358,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'volusia-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.clerk.org/',
+        url: 'https://www.clerk.org/probate.aspx',
       },
       {
         id: 'volusia-court-records',
@@ -2389,7 +2389,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'wakulla-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.wakullaclerk.com/',
+        url: 'https://wakullaclerk.org/courts/guardianship.php',
       },
       {
         id: 'wakulla-court-records',
@@ -2420,7 +2420,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'walton-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://waltonclerkfl.gov/index.asp?SEC=00D6A330-44CE-4358-84B0-C19693ADCE5B#EADAFC68-B97A-4BA2-BD0C-EECD1EA1F454',
+        url: 'https://waltonclerkfl.gov/will',
       },
       {
         id: 'walton-court-records',
@@ -2451,7 +2451,7 @@ export const RESOURCE_GROUPS = Object.freeze([
         id: 'washington-clerk',
         label: 'Clerk — Probate & Guardianship',
         description: 'Clerk of Court probate and guardianship information',
-        url: 'https://www.washingtonclerk.com/',
+        url: 'https://www.washingtonclerk.com/court-information/probate/',
       },
       {
         id: 'washington-court-records',
