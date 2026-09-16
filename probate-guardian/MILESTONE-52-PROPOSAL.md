@@ -1,0 +1,1243 @@
+# Milestone 52: Duplicated-Code Consolidation — Executable Delivery Index
+
+## Status
+
+**Draft — not an authorization to implement anything below.** Per
+`AGENTS.md` §2, this is a proposal only; nothing here should be started
+until Alan explicitly approves a specific sub-delivery by name. Approval of
+one sub-delivery does not authorize the others.
+
+**Numbering note.** 52 is confirmed free — checked against `src/`, `tests/`,
+every `*.md`, and `git log --grep` before this document was written, and
+independently re-confirmed by the agent currently executing Milestone 51.
+Milestone 51 (dead code, dead bridges, parallel implementations) is that
+agent's in-flight work as of this writing: 51A, 51B, 51C and 51E are landed;
+51D is staged and verified but uncommitted, pending a full regression run;
+51F is not yet started. See "Sequencing and concurrency" below for what that
+means for this document's own sequencing — in short, most of Milestone 52 is
+untouched territory relative to 51, but one sub-delivery (52A) shares 51's
+riskiest collision surface and must not run alongside it.
+
+## Source and verification status
+
+The twelve findings below came from the "Duplicated code (beyond the two big
+items above)" section of an external audit Alan handed over, itself produced
+from a broader dead-code/duplication sweep of this codebase. Every item was
+re-derived against current `master` before this document was written, not
+copied from the audit text. Two corrections and one new finding came out of
+that process:
+
+1. **Finding 1 is a live bug, not just a triple duplication.** The audit
+   correctly found `formatRelativeTime()` copied byte-for-byte into
+   `src/core/persistence/case-file.js:306-314`,
+   `src/core/persistence/recovery-cache.js:105-113`, and
+   `src/legacy-app.js:2947-2954`. What it did not report: **none of the three
+   is ever exposed as `window.formatRelativeTime`**, yet
+   `src/features/dashboard/index.js:18` destructures `formatRelativeTime`
+   from `window` and calls it at `:177` inside `showContinuePromptIfNeeded()`
+   — the "Continue where you left off" banner shown whenever a user's most
+   recently opened ward differs from the currently active one
+   (`dashboard/index.js:160-181`, reached from every `renderDashboardPage()`
+   call, `:594`). Calling `undefined(...)` throws a `TypeError`, uncaught,
+   inside `mount()` (`dashboard/index.js:617-621`) — which is called with no
+   `try`/`catch` by `feature-bridge.js`'s `mountPage()`
+   (`await mod.mount(container, page)`, no wrapper around that line). The
+   result: `renderDashboardSummary()`, `renderDashboardGrid()` and
+   `renderSidebarResources()`, the three calls immediately after
+   `showContinuePromptIfNeeded()` in `renderDashboardPage()`
+   (`dashboard/index.js:594-598`), never run. **A user with more than one
+   ward/filing who navigates in a way that trips the continue-prompt gate
+   gets a dashboard with no summary strip, no ward grid, and no sidebar
+   resources — a silent, uncaught crash, not a cosmetic gap.** No unit or
+   e2e spec covers `showContinuePromptIfNeeded()` or the continue-prompt
+   banner at all (verified by grep across `tests/`), which is presumably how
+   this survived. See 52A.
+
+2. **Finding 12's file count is stale by one.** `tests/unit/combobox-controller.spec.js`
+   was deleted by Milestone 51A (it shipped with `combobox-controller.js`,
+   the dead class it tested). The "3 files hand-roll fake-DOM-element mocks"
+   claim is now 2 files: `tests/unit/form-contract.spec.js` and
+   `tests/unit/live-region.spec.js`. See 52L.
+
+3. **Two of the twelve are not safe mechanical merges, and this document
+   does not treat them as one.** `carryOverFieldsForPlan()` and
+   `carryOverFieldsForAccounting()` (Finding 6) build `attyName` from the
+   same five candidate fields **in a different priority order** —
+   `ward-lifecycle.js:92` tries `attorneyForGuardian` first,
+   `ward-lifecycle.js:224` tries `attorneyName` first. A source ward with
+   more than one of those fields populated with different values would carry
+   over a different attorney name depending on which function ran — today,
+   silently, by design or by accident, nobody has recorded which. See 52F.
+   Separately, the IndexedDB "boilerplate" in Finding 3
+   (`launch-preferences.js` vs. `recovery-cache.js`) is identical only for
+   the database-opening step; the get/put/delete wrappers differ in a way
+   that matters (explicit multi-key access with no error-swallowing vs. a
+   fixed single `'current'` key with every call wrapped in try/catch). See
+   52C for why only the opener is consolidated.
+
+Everything else on the original list reproduced as described, with current
+line numbers re-confirmed below.
+
+## Why this is one milestone and not twelve commits
+
+Unlike Milestone 51, most of these twelve findings do not share a single
+governance surface — they are spread across persistence, PDF, Excel, the
+legacy combobox code, and the test suite, with little file overlap between
+them. They are grouped here because they are one *kind* of finding
+(duplication the original audit surfaced in one pass) and because a few of
+them genuinely do collide with each other or with Milestone 51's remaining
+work — see "Sequencing and concurrency." This index exists so those
+collisions are visible before anyone starts, not discovered mid-edit.
+
+## How this index is organized
+
+Each sub-delivery states **Risk**, **Files**, numbered **Steps**, a
+**Verification** block, and — per `AGENTS.md` §8 — cross-cutting
+ramifications, marked **N/A** where genuinely inert rather than left silent.
+
+| Sub-delivery | What | Risk | Size |
+| --- | --- | --- | --- |
+| 52A — `formatRelativeTime()`: one home, one bug fixed | 3 duplicates + 1 missing bridge (live bug) | **Medium** | Small |
+| 52B — Ward-record decode pipeline and encrypt/decrypt fan-out | 2 pairs of near-duplicate functions | **Medium** | Small–medium |
+| 52C — IndexedDB store-opener: one function, not two | 1 consolidation (opener only) | Low | Trivial |
+| 52D — Window-backed getter/setter pattern: one factory | 9 pairs across 3 modules | Low | Small |
+| 52E — `escapeHtml()`: two duplicates merged, one divergent variant documented | 2 consolidated, 1 left alone | Low | Trivial |
+| 52F — Attorney-fallback carry-over: one helper, one resolved divergence | 3 near-duplicates, 1 real behavior question | **Medium** | Small |
+| 52G — `checkSignatureState()` call shape, `readiness-config.js` | 8 repeats, 1 file | Low | Trivial |
+| 52H — Vendor-script loader pattern: one `loadGlobalScript()` | 2 loaders consolidated | Low | Small |
+| 52I — PDF byte-decoding helpers: import, don't reimplement | 3 functions, 2 files | Low | Trivial |
+| 52J — Legacy combobox keyboard navigation: one shared handler | 4 comboboxes, 2 gain new behavior | **Medium** | Small–medium |
+| 52K — Guardian Inventory Excel schedule layout: one page/row map | 11 schedules, write+read paths | **Medium** | Small–medium |
+| 52L — Test-suite duplication: three shared support helpers | 3+5+2 files → 3 new support modules | Low | Small |
+
+## Decisions taken during scoping
+
+**Decision 1 — `formatRelativeTime` moves to `case-file.js` and gains a real
+`window` bridge.** Not a new module: `case-file.js` already owns the
+convention this needs (a "Global bridge for legacy scripts and test
+harnesses" block at `:908-948` that bridges dozens of its exports), and it
+already exports the one other consumer of relative-time formatting,
+`updateLastSavedIndicator()`. `recovery-cache.js` and `dashboard/index.js`
+are both ES modules and could import it directly instead of going through
+`window` — but `dashboard/index.js` already destructures its entire
+`case-file.js`-originated surface from `window` in one block (`:12-19`), and
+changing just this one name to an ES import while leaving the other dozen as
+`window` destructures would be a smaller, riskier, and *less* consistent
+change than adding one more name to the existing block. `recovery-cache.js`
+switches to an ES import (it does not currently destructure anything from
+`window` at module scope for a same-layer sibling, and already imports
+several things from `crypto.js` and `state.js` this way). `legacy-app.js`
+deletes its copy and calls `window.formatRelativeTime`, matching every other
+case-file.js-owned helper it already calls that way.
+
+**Decision 2 — the IndexedDB consolidation is the opener only.**
+`_launchPrefDb()`/`_sessionCacheDb()` are genuinely identical modulo the two
+exported constants they pass to `indexedDB.open()`. The get/put/delete pairs
+are not: `launch-preferences.js`'s take an explicit `key` and let a failure
+reject (its callers handle that); `recovery-cache.js`'s hardcode the key
+`'current'` and swallow every failure into a no-op, because a broken
+crash-recovery cache must never block the app from loading. Merging those
+two error-handling contracts to save a few more lines is not this
+sub-delivery's job and is **not attempted**.
+
+**Decision 3 — the window-backed getter/setter factory must not change what
+`scripts/audit-window-bridge.mjs` sees.** The nine pairs (Finding 4) all
+follow the shape `if (typeof window !== 'undefined' && window._x !==
+undefined) return window._x; return _x;` for the getter, `_x = v; if
+(window) window._x = v;` for the setter. The naive fix — a factory keyed by
+a string property name using `window[key]` — would replace nine
+static, single-line `window._x = ...` assignments (which the audit script's
+`^\s*window\.([A-Za-z_$][\w$]*)\s*=` regex finds) with dynamic bracket
+assignments the regex cannot see, silently shrinking the assignments list
+`node scripts/audit-window-bridge.mjs` reports and leaving `window.D` (the
+one bridged name in this group with real legacy-app.js consumers) looking
+like it has zero assignment sites. **The factory instead takes explicit
+`read`/`write` closures per call site**, so each module keeps its own
+literal `window._x = v;` line (see 52D) — the audit script's view of the
+`window` surface does not change at all, and neither does the actual set of
+names, so this sub-delivery needs no governance-file regeneration.
+
+**Decision 4 — the combobox consolidation closes the keyboard-navigation gap
+rather than merely documenting it.** Milestone 51's "Deliberately out of
+scope" section named this as its own future milestone; this is that
+milestone, for the one aspect the original audit actually flagged (keyboard
+completeness — the ARIA-attribute work is already done, per 51's Source
+note 2). Two of the four comboboxes (`initWardNameCombobox`'s dropdown and
+the convert-source dropdown) currently have no arrow-key navigation at all —
+Escape only, plus Enter on the convert-source one. This is a real,
+user-facing capability gap: a keyboard-only or screen-reader user cannot
+select a suggestion from either dropdown without a mouse. Given `role="combobox"`/
+`aria-expanded`/`role="listbox"` are already present (Milestone 50H) but
+arrow-key handling is not, shipping the ARIA attributes without the keyboard
+behavior they promise is arguably worse than shipping neither — so 52J
+extracts `onWardSelectorKeydown()`'s complete implementation (the one with
+full Up/Down/Home/End/Enter support) into a shared handler and wires all
+four comboboxes to it, rather than deduplicating only the parts that were
+already identical. This is flagged **Medium** risk and needs manual
+keyboard-only testing, not just a code-shape review, because it changes what
+a user can do, not just how the code is organized.
+
+**Decision 5 — Guardian Inventory's schedule layout consolidation waits for
+`guardian-inventory/excel.js` to go quiet.** The line ranges 52K touches
+(`:99-326`, `:456-494` as of this writing) do not overlap the lines
+Milestone 51D is currently editing in the same file (`:10-90`, confirmed by
+diff), so there is no literal merge conflict today. But 51D's edit is
+uncommitted, and per `AGENTS.md` §1, sub-delivery dependencies are about
+real file-level proximity, not just current line numbers — an uncommitted
+diff can still move. 52K should not start until 51D lands (see
+"Sequencing").
+
+---
+
+## 52A — `formatRelativeTime()`: One Home, One Bug Fixed
+
+**Risk: Medium.** This is the one sub-delivery in this milestone that both
+fixes a live defect and adds a new `window.*` name, which means it shares
+Milestone 51's governance-file collision surface (see "Sequencing").
+
+### Files
+
+`src/core/persistence/case-file.js`, `src/core/persistence/recovery-cache.js`,
+`src/legacy-app.js`, `src/features/dashboard/index.js`,
+`tests/unit/fixtures/window-bridge-allowlist.json`,
+`src/core/types/window-bridge.d.ts`.
+
+### Steps
+
+**A1. Keep `formatRelativeTime()` in `case-file.js` (already there,
+`:306-314`), export it, and add `window.formatRelativeTime =
+formatRelativeTime;` to the existing bridge block at `:908-948`.** No
+logic changes to the function itself — it is already correct and is what
+all three copies agree on.
+
+**A2. `recovery-cache.js`: delete the local copy (`:105-113`) and import
+`formatRelativeTime` from `./case-file.js`.** Confirm this does not create a
+circular import — `recovery-cache.js` already imports `getCaseFile`,
+`setAppState` from `../state.js` and several things from `./crypto.js`, and
+`case-file.js` imports neither `recovery-cache.js` nor anything that chains
+back to it (verify with a quick import-graph check before landing, not
+after).
+
+**A3. `legacy-app.js`: delete the local copy (`:2947-2954`) and its
+call site at `:2387` calls `window.formatRelativeTime` instead** — no
+change needed there beyond removing the now-dead local function, since
+`formatRelativeTime` was already called unqualified in a classic script,
+which resolves to the global scope the same way `window.formatRelativeTime`
+would.
+
+**A4. `dashboard/index.js`: no code change required at the call site**
+(`:177`) or the destructure (`:18`) — this is the one place in the whole
+sub-delivery that starts working correctly instead of throwing, once A1
+lands. Add a regression test for it (see Verification) so it stays working.
+
+**A5. Regenerate the bridge governance files.**
+`node scripts/audit-window-bridge.mjs --declare` for `window-bridge.d.ts`;
+regenerate the allowlist from the script's `--json` output.
+
+### Verification
+
+1. **New coverage for the bug, not just the refactor.** No spec exercises
+   `showContinuePromptIfNeeded()` today. Add a unit test (new file or an
+   addition to `tests/unit/dashboard-view-model.spec.js` if it already
+   stubs enough of `window` — check before creating a new file) that stubs
+   `getRecentlyOpenedWards()` to return a ward different from
+   `getCaseFile().activeWardId`, calls the dashboard's mount/render path,
+   and asserts the continue-prompt banner renders with a "... ago" string
+   instead of throwing. This is the regression gate for the actual defect,
+   not just the dedup.
+2. `npx vitest run tests/unit/window-bridge.spec.js` — allowlist and `.d.ts`
+   back in sync.
+3. `npx playwright test tests/e2e/routes.spec.ts` (dashboard mount) plus a
+   manual repro: open the app with two wards, switch to one, reload so the
+   other is "recently opened" but not active, and confirm the banner shows a
+   real relative time and the ward grid/summary/sidebar still render below
+   it.
+4. Confirm `src/legacy-app.js:2387`'s "last saved ..." indicator still
+   renders correctly (the other live caller of this function).
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model:** N/A — no persisted shape change. `continuePromptShown` is
+  already part of the `.sav`-persisted app state (per `dashboard/index.js:158`'s
+  own comment) and is untouched here.
+- **Legacy Data Migration:** N/A.
+- **Test Coverage & Index:** one new test (new spec file or an addition to
+  an existing one — decide during implementation which, and update
+  `TEST-INDEX.md` accordingly either way, per §7).
+- **Export/Import/Portability:** N/A.
+- **Security & Sensitivity:** N/A — one net new `window` name, replacing
+  three disconnected private functions with one shared, correctly-bridged
+  one.
+- **UI/UX Consistency:** **directly implicated — this is a UI bug fix.**
+  The continue-prompt banner currently either throws (breaking the rest of
+  the dashboard) or, if a user has never tripped the gate, silently never
+  gets exercised. After this lands it renders as designed.
+- **Legal/Compliance:** N/A.
+
+---
+
+## 52B — Ward-Record Decode Pipeline and Encrypt/Decrypt Fan-Out
+
+**Risk: Medium.** Both functions sit on the case-load and session-restore
+paths — the two places a user's actual case data passes through this code.
+Consolidating them is safe only if the two callers' actual differences
+(there are some) survive the merge.
+
+### Files
+
+`src/core/persistence/case-file.js`, `src/core/persistence/recovery-cache.js`.
+
+### Background
+
+Two duplicated shapes, confirmed at current line numbers:
+
+- **The decode wrapper + pipeline.** `sanitizeObjectData(obj)` — delegate to
+  `window.sanitizeObjectData` if present, else pass through — is defined
+  identically at `case-file.js:654-659` and `recovery-cache.js:115-120`. The
+  pipeline that uses it, `migratePlanTriState(sanitizeObjectData(await
+  decryptJSONWithKey(...)))`, appears at `case-file.js:710` (inside
+  `importSavArchiveOrWard()`'s per-ward loop) and `recovery-cache.js:147`
+  (inside `checkSessionRestoreCacheAtLaunch()`'s per-ward loop).
+- **The encrypt/decrypt fan-out.** `buildCaseFileBlob()`
+  (`case-file.js:192-...`) and `saveSessionRestoreCache()`
+  (`recovery-cache.js:64-...`) each independently `encryptJSON()` the
+  guardian info, parties, cases, and dismissed-party-pairs arrays as four
+  separate calls. The two importer-side functions
+  (`importSavArchiveOrWard()`, `checkSessionRestoreCacheAtLaunch()`) each
+  independently decrypt the same four with an empty-array fallback on
+  failure — except `case-file.js` wraps each of the three non-ward fields in
+  its own try/catch (a bad blob logs and falls back to `[]`), while
+  `recovery-cache.js`'s equivalent has no per-field guard, so a corrupt
+  field there throws and is only caught by the function's outer catch,
+  turning a partial-recovery case into a full "could not restore" failure.
+
+### Steps
+
+**B1. Extract the decode wrapper and pipeline into one function,
+`decodeWardRecord(encoded, key)`, in `case-file.js`,** returning
+`migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(encoded,
+key)))`. Export it; `recovery-cache.js` imports it and deletes its own
+`sanitizeObjectData()` and inlined pipeline.
+
+**B2. Extract the four-field encrypt fan-out into
+`encryptCaseFileCore({ guardianInfo, parties, cases, dismissedPartyPairs
+}, key)`,** returning the four ciphertext strings (or whatever shape
+`buildCaseFileBlob()`'s manifest currently expects — match its existing
+output exactly, do not redesign the manifest). `saveSessionRestoreCache()`
+calls the same function.
+
+**B3. Extract the matching decrypt side as
+`decryptCaseFileCore(manifestFields, key)`,** and **resolve the
+try/catch asymmetry explicitly rather than picking one side's behavior by
+accident.** Recommendation: keep `case-file.js`'s per-field try/catch
+(partial recovery is strictly better for a `.sav` **import** — the "The
+file's data for ... has been modified" error already exists per-ward, so a
+per-field version for the case-wide arrays is consistent) and bring
+`recovery-cache.js` up to the same standard, rather than the reverse. This
+is a **behavior change for `checkSessionRestoreCacheAtLaunch()`** — say so
+explicitly in the commit message, since Decision-quality changes buried in
+a "consolidation" commit are exactly what this repo's audit history keeps
+finding.
+
+**B4. Update both callers** (`importSavArchiveOrWard()`,
+`checkSessionRestoreCacheAtLaunch()`, `buildCaseFileBlob()`,
+`saveSessionRestoreCache()`) to call the four shared functions in place of
+their inlined logic.
+
+### Verification
+
+1. `npx vitest run tests/unit/case-file.spec.js` (confirm this file exists
+   and covers `buildCaseFileBlob`/`importSavArchiveOrWard`; if coverage is
+   thin, that is itself a finding worth a comment in the PR, not a blocker
+   for this milestone) plus any recovery-cache-specific spec.
+2. **Round-trip test, both paths:** export a `.sav` with a populated case
+   (guardian info, 2+ parties, 2+ wards, a dismissed-party pair), re-import
+   it, and diff the result against the pre-export state. Do the same for
+   the session-restore cache (save, then restore).
+3. **Corruption test for B3's behavior change:** deliberately corrupt one
+   non-ward field (e.g. truncate the `parties` ciphertext) in a saved
+   session-restore cache and confirm `checkSessionRestoreCacheAtLaunch()`
+   now recovers the rest instead of failing outright — this is the
+   regression gate for the behavior change, and it must be written and
+   shown red against the pre-B3 code before B3 lands, per this repo's
+   red-first convention.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model:** N/A — no field shape changes.
+- **Legacy Data Migration:** **Not N/A.** B3 changes what happens when an
+  existing session-restore cache (created before this change) has a
+  corrupted non-ward field — verify against a cache blob shaped by the
+  *old* code, not only newly-created ones.
+- **Test Coverage & Index:** the corruption-recovery test in Verification
+  step 3 is new coverage; add it to whichever spec file already covers
+  `recovery-cache.js`, or create one and add a `TEST-INDEX.md` row.
+- **Export/Import/Portability:** directly implicated — this is the `.sav`
+  export/import and session-restore-cache path.
+- **Security & Sensitivity:** N/A — no change to what gets encrypted, with
+  what key, or under what security mode.
+- **UI/UX Consistency:** B3 changes the session-restore-cache failure mode
+  from "all-or-nothing" to "partial recovery" for one class of corruption —
+  a user sees more of their data survive a corrupted cache than before,
+  never less.
+- **Legal/Compliance:** N/A.
+
+---
+
+## 52C — IndexedDB Store-Opener: One Function, Not Two
+
+**Risk: Low.** Per Decision 2, this is deliberately narrow.
+
+### Files
+
+`src/core/persistence/launch-preferences.js`, `src/core/persistence/recovery-cache.js`.
+
+### Steps
+
+**C1. Extract `openIndexedDbStore(dbName, storeName)`** — the
+`new Promise((resolve, reject) => { ... indexedDB.open ... onupgradeneeded
+... onsuccess ... onerror ... })` body shared identically by
+`_launchPrefDb()` (`launch-preferences.js:19-27`) and `_sessionCacheDb()`
+(`recovery-cache.js:10-18`) — into `launch-preferences.js` (it is already
+the lower-level of the two; `recovery-cache.js` already imports from it).
+Export it.
+
+**C2. `_launchPrefDb()` becomes `() => openIndexedDbStore(LAUNCH_PREF_DB,
+LAUNCH_PREF_STORE)`; `_sessionCacheDb()` becomes `() =>
+openIndexedDbStore(SESSION_CACHE_DB, SESSION_CACHE_STORE)`.** Both keep
+their existing names and export signatures — only the body changes — so no
+caller anywhere needs to change.
+
+**C3. Leave every get/put/delete/clear wrapper exactly as-is**, per
+Decision 2.
+
+### Verification
+
+`npx vitest run` on whichever specs cover `launch-preferences.js` and
+`recovery-cache.js` (confirm which via `TEST-INDEX.md` before assuming
+none do), plus a manual check: clear IndexedDB in a dev profile, reload,
+confirm "has opened before" and remembered-file-handle behavior still work,
+and confirm a session-restore cache still round-trips.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security / UI / Legal:**
+  N/A across the board — pure internal refactor, zero behavior change, two
+  different database names and store names untouched.
+- **Test Coverage & Index:** no new tests needed; existing coverage of both
+  files' public functions already exercises the opener indirectly.
+
+---
+
+## 52D — Window-Backed Getter/Setter Pattern: One Factory, Same Assignments
+
+**Risk: Low**, contingent on Decision 3's design actually being followed —
+see Verification for the check that proves it was.
+
+### Files
+
+`src/core/persistence/crypto.js`, `src/core/persistence/case-file.js`,
+`src/core/state.js`.
+
+### Background
+
+Nine pairs share one shape: a module-private variable, a getter that
+prefers `window._x` when defined, a setter that writes both.
+
+| Module | Pairs |
+| --- | --- |
+| `crypto.js` | `getCryptoKey`/`setCryptoKey` (`:10-22`), `getSecurityMode`/`setSecurityMode` (`:24-...`) |
+| `case-file.js` | `getCaseFileHandle`/`setCaseFileHandle` (`:33-45`), `isDirtySinceExport`/`setDirtySinceExport`, `getLastExportAt`/`setLastExportAt` |
+| `state.js` | `getCaseFile`/`setCaseFile`, `getD`/`setD` (`window.D` — the one name in this group with real `legacy-app.js` consumers), `getAppState`/`setAppState`, `getTemplateCache`/`setTemplateCache` |
+
+### Steps
+
+**D1. Add a factory to `src/core/state.js`** (the lowest-level of the three
+modules, already imported by both others):
+
+```js
+export function windowBackedRef(read, write, initial) {
+  let _value = initial;
+  return {
+    get: () => { const w = read(); return w !== undefined ? w : _value; },
+    set: (v) => { _value = v; write(v); },
+  };
+}
+```
+
+**D2. Convert each pair to call the factory, keeping each module's own
+literal `window._x = ...` line inside its `write` closure** — per Decision
+3, this is the whole point of passing closures instead of a key string.
+Example (`crypto.js`):
+
+```js
+const _cryptoKeyRef = windowBackedRef(
+  () => (typeof window !== 'undefined' ? window._cryptoKey : undefined),
+  (v) => { if (typeof window !== 'undefined') window._cryptoKey = v; },
+  null,
+);
+export const getCryptoKey = _cryptoKeyRef.get;
+export const setCryptoKey = _cryptoKeyRef.set;
+```
+
+Repeat for all nine pairs across the three files, preserving each pair's
+existing exported function names (so no caller changes).
+
+**D3. `getD`/`setD` keep their extra `window.D` truthiness check** (`state.js:49`:
+`if (typeof window !== 'undefined' && window.D)`, not `!== undefined` —
+`window.D` is checked for truthiness, not mere definition, unlike the other
+eight). Do not silently normalize this to match the other eight; if it
+should change, that is a separate decision with its own reasoning, not a
+side effect of deduplication.
+
+### Verification
+
+1. **The governance-file check that proves Decision 3 held:** run
+   `node scripts/audit-window-bridge.mjs` before and after, and diff the
+   output. The assignment count and the `D` entry's file list must be
+   **identical** before and after. If they are not, the factory design
+   leaked bracket-notation somewhere and needs to be fixed before this
+   lands, not accepted as an acceptable side effect.
+2. `npx vitest run` on whichever specs cover `crypto.js`, `case-file.js`,
+   `state.js` directly (check `TEST-INDEX.md`), plus
+   `tests/unit/window-bridge.spec.js` (should need no regeneration at all,
+   per the point above).
+3. A full app smoke pass: unlock with a password (exercises
+   `getCryptoKey`/`setCryptoKey`), switch wards (`getCaseFile`/`setCaseFile`,
+   `getD`/`setD`), reload with an active case (`getAppState`/`setAppState`,
+   `getTemplateCache`/`setTemplateCache` via template loading).
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Legal:** N/A.
+- **Test Coverage & Index:** no new spec files; existing coverage of the
+  nine functions' public behavior is unchanged and should still pass
+  unmodified.
+- **Security & Sensitivity:** `getCryptoKey`/`setCryptoKey` are the one pair
+  in this group holding actual key material. The factory does not change
+  where that material lives (still `window._cryptoKey` plus a module
+  closure, exactly as today) — only how the getter/setter bodies are
+  generated. No new exposure.
+- **UI/UX Consistency:** N/A — no behavior change, verified by step 1 above
+  in the most literal sense available (byte-identical tool output).
+
+---
+
+## 52E — `escapeHtml()`: Two Duplicates Merged, One Divergent Variant Documented
+
+**Risk: Low.**
+
+### Files
+
+`src/core/filing/readiness-card.js`, `src/core/filing/output-advisories.js`,
+`src/core/form/form-fields.js` (documented, not changed).
+
+### Background
+
+`readiness-card.js:22-26` and `output-advisories.js:3-7` are behaviorally
+identical (`&<>"'` all escaped), implemented two different ways — a chained
+`.replace()` in one, a single regex with a character map in the other.
+`form-fields.js:6-13`'s `esc()` escapes `&<>"` but **not** apostrophe — a
+real, not cosmetic, difference. But `esc()` has **zero external
+callers** (verified: not exported to `window`, not imported by any other
+file — every one of its ~25 call sites is inside `form-fields.js` itself,
+building Tier 1 field-primitive HTML where every attribute is
+double-quoted, so an unescaped apostrophe is not a syntactic hazard today).
+It is a real inconsistency in the abstract, but not one causing any
+cross-module divergence in practice, and its ~25 call sites give it far
+more blast radius to touch than the other two combined.
+
+### Steps
+
+**E1. Extract one shared `escapeHtml(value)`** — behaviorally the union of
+the two identical versions (unchanged) — into a small shared module.
+`src/core/filing/` has no existing "shared utility" file at this level;
+recommend `src/core/filing/output-advisories.js` keeps owning and exporting
+it (it is already imported by `readiness-card.js` for
+`renderOutputAdvisories`-adjacent reasons — confirm the actual import graph
+before finalizing, since `readiness-card.js` importing from
+`output-advisories.js` should not create a cycle) rather than inventing a
+new file for one four-line function.
+
+**E2. `readiness-card.js` deletes its copy and imports the shared one.**
+
+**E3. Leave `form-fields.js`'s `esc()` alone**, per the background above.
+Add a one-line comment at its definition noting the apostrophe difference is
+known and intentional-by-inaction, so it stops looking like an oversight to
+the next auditor.
+
+### Verification
+
+`npx vitest run` on whichever specs cover `readiness-card.js` and
+`output-advisories.js`'s rendered HTML (check `TEST-INDEX.md`), confirming
+output is byte-identical before/after for a label containing all five
+special characters (`&<>"'`).
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security / Legal:** N/A.
+- **Test Coverage & Index:** no new spec; existing readiness-card/
+  output-advisories coverage should be sufficient — extend it with one
+  all-five-characters case if it does not already have one.
+- **UI/UX Consistency:** zero rendered-output change (the two merged
+  functions already agreed).
+
+---
+
+## 52F — Attorney-Fallback Carry-Over: One Helper, One Resolved Divergence
+
+**Risk: Medium.** Per Source note 3, the two functions do not agree on
+fallback order today, and this sub-delivery cannot land without deciding
+that rather than silently picking one side.
+
+### Files
+
+`src/core/navigation/ward-lifecycle.js`, `src/legacy-app.js`.
+
+### Background
+
+`carryOverFieldsForPlan()` (`ward-lifecycle.js:88-...`) and
+`carryOverFieldsForAccounting()` (`:218-...`) each independently destructure
+`caseNum`, `gName`, and five `atty*` fields from an arbitrary source ward,
+both carrying inline comments recording that the same Milestone 40C-F item 2
+bug (Guardian Inventory's nested `src.attorney.{name,...}` shape not being
+read by the flat-only chains) had to be found and fixed in both places
+separately — direct evidence the duplication has already cost real
+debugging time once. `legacy-app.js:3604-3618`'s `carryOverFields()` has a
+third, similarly-shaped inline block for the same intent, reached from a
+different call site.
+
+**The divergence that must be resolved, not merged over:** `attyName`'s
+fallback order differs between the two —
+`src.attorneyForGuardian || attyFlat || src.attorney_name ||
+src.attorneyName || atty.name` in the Plan version vs.
+`src.attorneyName || src.attorney_name || src.attorneyForGuardian ||
+atty.name || attyFlat` in the Accounting version. Every other field
+(`caseNum`, `gName`, the other four `atty*` fields) uses the same order in
+both.
+
+### Steps
+
+**F1. Determine whether the order difference is reachable.** Check whether
+any real source-ward shape in this codebase can have more than one of
+`attorneyForGuardian` / `attorney_name` / `attorneyName` / `atty.name` /
+`attyFlat` populated with **different** values simultaneously for the same
+ward. If the data model guarantees at most one is ever non-empty for a
+given ward type (check `probate-guardian-data-model.csv` and each feature's
+attorney-field wiring), the order is cosmetic and either order is safe to
+adopt. If not, this is a real behavioral choice — **raise it as a question
+to Alan before landing**, do not resolve it by picking whichever order
+"looks newer."
+
+**F2. Extract `extractCarryIdentity(sourceWard)`** returning `{ caseNum,
+gName, attyName, attyBar, attyPhone, attyEmail, attyStreet,
+attyCityStateZip }`, using whichever order F1 settles on, into
+`ward-lifecycle.js`. Both `carryOverFieldsForPlan()` and
+`carryOverFieldsForAccounting()` call it and use the result for the fields
+that were previously duplicated inline, keeping whatever plan-specific or
+accounting-specific logic follows in each function untouched.
+
+**F3. Investigate `legacy-app.js:3604-3618`'s copy before touching it** —
+its own comment ("the same defect... in three" places) suggests it may
+already be aligned with one of the two `ward-lifecycle.js` orderings, or it
+may have a fourth, undiscovered order. If it reaches the same end state via
+`extractCarryIdentity()`'s output shape, convert it to call the shared
+function (it can, per Milestone 51's Decision 6-adjacent precedent for
+similar carry-over inlining — `carryOverFields()` already calls into
+`ward-lifecycle.js`-owned logic elsewhere for county/party resolution). If
+it does not fit cleanly, document why in the commit message rather than
+forcing it.
+
+### Verification
+
+1. **A fixture explicitly designed to distinguish the two orders:** a source
+   ward with `attorneyForGuardian`, `attorneyName`, and `atty.name` all set
+   to different non-empty strings. Run it through both
+   `carryOverFieldsForPlan()` and `carryOverFieldsForAccounting()` before
+   this change (recording which name each produces) and after (confirming
+   both now agree on the F1-decided order). This is the regression gate —
+   without it, a silent behavior change in one direction is indistinguishable
+   from a silent behavior change in the other.
+2. `npx vitest run` on whichever specs cover carry-over (check
+   `TEST-INDEX.md` for `ward-lifecycle` coverage) plus
+   `tests/e2e/carryover-workflow.spec.ts` if it exists.
+3. Manual carry-over test, Guardian Inventory → each of the four Plan types
+   and → each of the three Accounting types, confirming attorney fields
+   populate as expected in both directions.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model:** N/A — reads existing fields, writes no new shape.
+- **Legacy Data Migration:** N/A — a carry-over is a point-in-time copy
+  operation, not a stored-data migration; no existing `.sav` file's stored
+  shape is affected.
+- **Test Coverage & Index:** the distinguishing fixture in Verification
+  step 1 is new, targeted coverage — add it to the carry-over spec (or
+  create one) with a `TEST-INDEX.md` row.
+- **Export/Import/Portability:** N/A.
+- **Security & Sensitivity:** N/A.
+- **UI/UX Consistency:** if F1 finds the divergence is reachable, this
+  changes which attorney name appears after a real carry-over for some
+  source wards — user-visible, and exactly why F1 must be answered before
+  F2 ships, not folded into "the refactor."
+- **Legal/Compliance:** an attorney's name on a filing is not a
+  form-validation nicety — F1's answer should be treated with the same care
+  `AGENTS.md` §5 gives county/legal-hierarchy determinations, even though
+  this document takes no position on which order is "more correct" beyond
+  "both should agree."
+
+---
+
+## 52G — `checkSignatureState()` Call Shape, `readiness-config.js`
+
+**Risk: Low.** Single file, mechanical.
+
+### Files
+
+`src/core/filing/readiness-config.js`.
+
+### Background
+
+The call shape `checkSignatureState({ state: inferLegacySignatureState(
+person.signatureState, person.signatureDate), date: person.signatureDate,
+image: person.signatureImage, sectionLabel, roleLabel, filingType,
+datePath, imagePath }).length === 0` (parameter names vary slightly by call
+site) is repeated 8 times across the four Plan `*Automatic()` functions
+(confirmed at current line numbers: `:57`, `:109`, `:116`, `:171`, `:194`,
+`:233`, `:244`, `:250`), varying only the person object, `sectionLabel`,
+`roleLabel`, and (for guardian calls) whether the result also gates on
+`has(g0.name)`.
+
+### Steps
+
+**G1. Extract `signedAndDated(person, { sectionLabel, roleLabel,
+filingType, datePath, imagePath })`** returning the boolean, wrapping the
+existing `checkSignatureState(...).length === 0` shape exactly. Keep
+`inferLegacySignatureState()` called the same way inside it.
+
+**G2. Replace all 8 call sites.** For the 4 guardian-signature call sites
+that also check `has(g0.name)`, keep that check at the call site (it is
+about a different field, not part of the signature-state shape) — do not
+fold it into the helper.
+
+### Verification
+
+`npx vitest run` on the four `plan-*-parity.spec.js` files plus
+`tests/unit/readiness-predicate-coverage.spec.js` — between them these
+assert the exact issue codes/readiness items each Plan type emits and
+would catch any accidental change to which fields gate readiness.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security / UI / Legal:**
+  N/A — pure internal refactor within one file, identical boolean output
+  for identical input.
+- **Test Coverage & Index:** no new spec needed; existing parity specs are
+  the gate.
+
+---
+
+## 52H — Vendor-Script Loader Pattern: One `loadGlobalScript()`
+
+**Risk: Low**, with one behavioral improvement folded in deliberately.
+
+### Files
+
+`src/core/pdf/html2pdf-loader.js`, `src/core/excel/exceljs-loader.js`.
+
+### Background
+
+Both files: check whether the vendor global already exists → return it if
+so → otherwise cache a loading `Promise` → inject a `<script>` tag →
+resolve on load, **null out the cached promise and reject on error** (so a
+later call can retry). Confirmed identical shape at current line counts (53
+and 64 lines respectively). `src/core/pdf/pdfjs-loader.js` uses a different
+mechanism (dynamic `import()`, not a `<script>` tag) and has no `window.*`
+bridge, and its own `ensurePdfjs()` does **not** null out its cached promise
+on failure — a known, separate issue, out of scope here (see "Deliberately
+out of scope") since fixing it is a one-line change to a different loading
+strategy, not a consolidation.
+
+### Steps
+
+**H1. Extract `loadGlobalScript(src, { check })`** — `check` is a
+zero-arg function returning the already-loaded global if present, `src` is
+the script URL — returning a cached `Promise` that resolves to `check()`'s
+result once the script loads, nulls itself on error, and injects the
+`<script>` tag with the same attributes (`async`, etc. — match whichever of
+the two currently sets what and keep the union) into a shared module.
+`src/core/pdf/` or a new `src/core/vendor-loader.js` are both reasonable
+homes; recommend the latter since neither `pdf/` nor `excel/` should own a
+utility the other imports from.
+
+**H2. `html2pdf-loader.js` and `exceljs-loader.js` both call it,** keeping
+their own exported function names (`getHtml2Pdf`, `getExcelJS`) and their
+own `window.*` bridges exactly as today (per Milestone 51's finding that
+`window.getExcelJS` is itself unused — **do not re-litigate that here**;
+51E already deleted it, and this sub-delivery must not resurrect it as a
+side effect of moving code around).
+
+### Verification
+
+`npx vitest run` on whichever specs cover PDF/Excel loading (check
+`TEST-INDEX.md`), plus a manual pass: generate a PDF and an Excel export in
+the same session (exercises both loaders), and force one script load to
+fail (block the request in devtools) to confirm the retry-after-failure
+behavior both files already have is preserved by the shared helper.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security / Legal:** N/A.
+- **Test Coverage & Index:** no new spec required if existing coverage
+  already exercises both loaders' success and failure paths; if it does
+  not, add a failure-path case for at least one and note it in
+  `TEST-INDEX.md`.
+- **UI/UX Consistency:** N/A — both loaders keep their exact current
+  behavior, including the retry-on-failure semantics.
+
+---
+
+## 52I — PDF Byte-Decoding Helpers: Import, Don't Reimplement
+
+**Risk: Low.** Confirmed byte-identical or logically-equivalent in every
+case.
+
+### Files
+
+`src/core/pdf/pdf-engine.js`, `src/core/pdf/supplemental-pdf.js`,
+`src/core/pdf/pdf-preview.js`, `src/core/images/png-dimensions.js`.
+
+### Background
+
+- `pdf-engine.js:424-430`'s local `dataUrlToBytes` closure is byte-identical
+  in logic to `supplemental-pdf.js:14-20`'s exported `dataUrlToBytes`;
+  `pdf-engine.js:27` already imports other functions from
+  `supplemental-pdf.js` in the same `import { ... } from
+  './supplemental-pdf.js'` statement.
+- `pdf-engine.js:432-437`'s local `isPdfBytes` checks the same four-byte
+  `%PDF` header as `supplemental-pdf.js:22-24`'s exported `isPdfBytes`, via
+  an explicit `bytes[0]===0x25 && ...` chain instead of
+  `PDF_HEADER.every(...)` — logically equivalent, including for
+  too-short-input, since an out-of-range array index reads `undefined`,
+  which fails the `=== value` check the same way an explicit length guard
+  would.
+- `pdf-preview.js:43-48`'s local `base64ToBytes` is byte-identical to
+  `png-dimensions.js:13-18`'s exported version, which `pdf-engine.js` and
+  `signature-pad.js` already import correctly.
+
+### Steps
+
+**I1. `pdf-engine.js`: delete the local `dataUrlToBytes`/`isPdfBytes`
+closures, add both names to its existing `supplemental-pdf.js` import.**
+
+**I2. `pdf-preview.js`: delete the local `base64ToBytes`, import it from
+`../images/png-dimensions.js`.**
+
+### Verification
+
+`npx vitest run` on whichever specs cover `pdf-engine.js`, `pdf-preview.js`,
+`supplemental-pdf.js` (check `TEST-INDEX.md`), plus a manual PDF-preview and
+supplemental-PDF-attachment pass — these three functions sit on the
+annotation/attachment path, not the primary court-form generation path, so
+the blast radius is narrower than Milestone 51D's Excel work, but still
+worth a real click-through rather than unit tests alone.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Security / Legal:** N/A.
+- **Test Coverage & Index:** no new spec needed.
+- **Export/Import/Portability:** touches the supplemental-PDF-attachment and
+  PDF-preview paths; the primary court-form PDF path (`pdf-engine.js`'s main
+  export functions) is unaffected beyond these two helper swaps.
+- **UI/UX Consistency:** N/A — identical output for identical input.
+
+---
+
+## 52J — Legacy Combobox Keyboard Navigation: One Shared Handler
+
+**Risk: Medium**, per Decision 4 — this closes a real capability gap, not
+just code shape.
+
+### Files
+
+`src/legacy-app.js`.
+
+### Background
+
+Four hand-rolled comboboxes, all already sharing `comboboxFilterItems()`
+(`:3948`), `comboboxRenderDropdown()` (`:3953`), and `comboboxHide()`
+(`:3968`):
+
+| Combobox | Keydown handler | Arrow-key nav |
+| --- | --- | --- |
+| Ward selector | `onWardSelectorKeydown` (`:4016`) | **Full** — Up/Down/Home/End/Enter/Escape, `aria-activedescendant`/`aria-selected` kept in sync |
+| County (per Milestone 50H) | inline, near `:1414-1479` | Full (confirmed during Milestone 51's scoping) |
+| Ward-name modal | inline in `initWardNameCombobox` (`:4359`) | **None** — Escape only |
+| Convert-source | `onConvertSourceKeydown` (`:4901`) | **None** — Escape and Enter (`preventDefault` only) only |
+
+### Steps
+
+**J1. Extract `bindComboboxKeyboardNav(input, dropdown, { onSelect })`**
+from `onWardSelectorKeydown()`'s complete implementation (Up/Down/Home/End/
+Enter/Escape, `aria-activedescendant`/`aria-selected` maintenance), generalized
+over which option gets "picked" on Enter (each combobox's existing pick
+callback).
+
+**J2. Ward selector and the county combobox call the shared handler**
+(replacing their own inline implementations with a call to the shared one —
+confirm the county combobox's existing behavior is a strict match before
+switching it, since it was implemented separately during Milestone 50H and
+may have small differences worth preserving intentionally rather than
+overwriting).
+
+**J3. `initWardNameCombobox()` and the convert-source dropdown adopt the
+shared handler,** gaining Up/Down/Home/End navigation they do not have
+today.
+
+**J4. Do not touch `comboboxFilterItems()`/`comboboxRenderDropdown()`/
+`comboboxHide()`** — already shared, not part of this finding.
+
+### Verification
+
+1. **Keyboard-only manual pass, all four surfaces:** open each combobox
+   without a mouse, navigate with arrow keys, confirm Home/End jump to the
+   first/last option, confirm Enter selects the highlighted option and
+   Escape closes without selecting, and confirm a screen reader (or the
+   accessibility tree in devtools) announces the active option via
+   `aria-activedescendant` for all four, not just the two that already had
+   it.
+2. `npx playwright test` on whichever e2e specs exercise ward switching,
+   ward-name entry, and case-type conversion (check `TEST-INDEX.md`) — add
+   a keyboard-navigation assertion to each if none exists, since this is
+   new behavior with no regression coverage today.
+3. Confirm the existing mouse/click interaction with all four is unchanged
+   — this sub-delivery adds a capability, it does not remove or alter the
+   pointer path.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security / Legal:** N/A.
+- **Test Coverage & Index:** new keyboard-navigation assertions needed for
+  the ward-name and convert-source e2e coverage; update `TEST-INDEX.md`
+  descriptions to mention keyboard coverage if the rows don't already.
+- **UI/UX Consistency:** **directly implicated, positively** — all four
+  comboboxes behave the same way for keyboard users after this lands,
+  where two currently do not.
+
+---
+
+## 52K — Guardian Inventory Excel Schedule Layout: One Page/Row Map
+
+**Risk: Medium.** Sits on the Excel import/export path for the Verified
+Initial Inventory, same caution class as Milestone 51D/51F. Per Decision 5,
+wait for Milestone 51D to land before starting (see "Sequencing").
+
+### Files
+
+`src/features/guardian-inventory/excel.js`.
+
+### Background
+
+Each of the 11 schedules' page/row layout is hand-typed twice: once inside
+its `fillScheduleXX()` writer (e.g. Schedule A-1's `pages=[{name:'A-1-REAL
+ESTATE pg 1',rows:[27,32,37,42]},...]` at `:116`) and again inline in the
+`readRows([{sheet:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},...], ...)`
+call inside `parseInitialInventoryWorkbook()` (`:473` and following, one
+call per schedule through roughly `:494` as of this writing — confirm exact
+end line at implementation time given 51D's in-flight edits to this file's
+top). The two copies use different key names for the same field (`name` on
+the writer side, `sheet` on the reader side) but otherwise identical
+sheet-name strings and row-number arrays. A template renumbering fixed on
+one side and not the other would silently desync export and import for
+that schedule.
+
+### Steps
+
+**K1. For each of the 11 schedules, hoist its `{ sheet, rows }` array (or
+array-of-arrays, for the multi-page ones) to one module-level constant** —
+e.g. `SCHEDULE_A1_PAGES`, matching the existing per-schedule naming already
+implicit in the function names (`fillScheduleA1`, `scheduleA1`).
+
+**K2. `fillScheduleXX()` writers reference `SCHEDULE_XX_PAGES.map(p =>
+({ name: p.sheet, rows: p.rows }))` or, if the `name`/`sheet` key
+difference has no actual consumer that cares about the property name
+(check: is `name` vs `sheet` read anywhere by generic code, or only by
+each function's own destructuring?), standardize on one key name and update
+both sides to use it directly with no mapping needed.**
+
+**K3. `parseInitialInventoryWorkbook()`'s `readRows(...)` calls reference
+the same 11 constants.**
+
+### Verification
+
+This is the sub-delivery in this milestone closest in shape to Milestone
+51D/51F, and should be held to the same standard:
+
+1. `npx vitest run tests/unit/xlsx-extract.spec.js` (and any other spec
+   covering Guardian Inventory Excel import/export — check `TEST-INDEX.md`).
+2. **Byte-comparison export gate:** generate a Verified Initial Inventory
+   Excel export from a fully-populated fixture (all 11 schedules with
+   multiple rows, enough to span every page) before and after this change,
+   and diff cell-by-cell. Passing tests are not sufficient evidence a
+   filed-with-the-court workbook is unchanged.
+3. **Round-trip import gate:** import the export from step 2 and confirm
+   the resulting `D.scheduleXX` arrays are identical to the fixture that
+   produced it, for all 11 schedules, including the last row on the last
+   page of each (the boundary most likely to reveal an off-by-one between
+   the writer and reader maps if K1/K2 introduced one).
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model:** N/A — no persisted shape change.
+- **Legacy Data Migration:** N/A for export. For import, this is precisely
+  the path that populates `D` from an uploaded workbook — the round-trip
+  gate above is the safeguard.
+- **Test Coverage & Index:** the round-trip gate in Verification step 3 is
+  new coverage if it does not already exist at this granularity; add it and
+  update `TEST-INDEX.md`.
+- **Export/Import/Portability:** directly implicated — this is the whole
+  sub-delivery.
+- **Security & Sensitivity:** N/A.
+- **UI/UX Consistency:** N/A — no UI, workbook layout must be byte-identical
+  per the verification gate.
+- **Legal/Compliance:** this workbook is filed with a Florida probate
+  court. The byte-comparison and round-trip gates are what make "unchanged"
+  a checked claim rather than an assumption, consistent with how Milestone
+  51D treated the same class of risk.
+
+---
+
+## 52L — Test-Suite Duplication: Three Shared Support Helpers
+
+**Risk: Low.** Test-only changes; no production code touched.
+
+### Files
+
+`tests/unit/bar-number.spec.js`, `tests/unit/checklist-export-parity.spec.js`,
+`tests/unit/form-fields-legacy-delegation.spec.js`,
+`tests/unit/field-kind-inference.spec.js`,
+`tests/unit/filing-type-enumeration-guard.spec.js`,
+`tests/unit/content-corrections.spec.js`,
+`tests/unit/native-dialog-guard.spec.js`,
+`tests/unit/security-source-audit.spec.js`,
+`tests/unit/form-contract.spec.js`, `tests/unit/live-region.spec.js`,
+new files under `tests/unit/support/`, `TEST-INDEX.md`.
+
+### Background, re-verified against current `master`
+
+- **Brace-slicing "extract a function out of legacy-app.js" algorithm**,
+  reimplemented three times: `bar-number.spec.js:11`'s `loadFormatBarNumber()`,
+  `checklist-export-parity.spec.js:177`'s `sliceFunction()`,
+  `form-fields-legacy-delegation.spec.js:27`'s `extractFunction()` — the
+  third's own comment says it is copying "the technique
+  tests/unit/bar-number.spec.js already established," i.e. by hand, not by
+  import.
+- **Source-tree file walker**, reimplemented five times with two shapes:
+  `field-kind-inference.spec.js:20` and
+  `filing-type-enumeration-guard.spec.js:55` both define an identical
+  `walk(dir, out=[])`; `content-corrections.spec.js:28` and
+  `native-dialog-guard.spec.js:22` both define a near-identical `scanDir(dir)`;
+  `security-source-audit.spec.js:23` does the same job with Node's
+  `{ recursive: true }` `readdirSync` option instead of manual recursion.
+- **Fake-DOM-element mocks**, reimplemented independently — **corrected
+  count: 2 files, not 3** (Source note 2 above):
+  `form-contract.spec.js`'s `createMockInput()` and `live-region.spec.js`'s
+  `createMockDocument()` both rebuild an attrs-`Map`-backed
+  `getAttribute`/`setAttribute`/`hasAttribute`/`removeAttribute`, and (one
+  of the two) a `classList` Set-backed add/remove/contains.
+  `tests/unit/combobox-controller.spec.js`, the third file the original
+  audit named, no longer exists (deleted by Milestone 51A along with the
+  dead class it tested).
+
+### Steps
+
+**L1. `tests/unit/support/legacy-source-extract.js`** — export
+`extractLegacyFunction(name, { from = 'src/legacy-app.js' } = {})`,
+generalizing the three brace-counting implementations (confirm they are
+actually identical in brace-matching logic, not just intent, before
+collapsing them — a subtle difference in how one handles a brace inside a
+template-literal or comment would be a real regression, not a style
+nit). `bar-number.spec.js`, `checklist-export-parity.spec.js`, and
+`form-fields-legacy-delegation.spec.js` import it and delete their local
+copies.
+
+**L2. `tests/unit/support/source-scan.js`** — export
+`walkSourceFiles(dir, { extensions } = {})`, generalizing the five
+walkers (the `{ recursive: true }` version in `security-source-audit.spec.js`
+is functionally equivalent to manual recursion but only correct on a Node
+version that supports the option — check the repo's `engines`/`@types/node`
+version already assumes it, since `package.json` pins `@types/node: ^26.5.1`,
+which should be recent enough; confirm rather than assume). All five files
+import it and delete their local walker.
+
+**L3. `tests/unit/support/dom-mocks.js`** — export a `createMockElement()`
+primitive covering the attrs-`Map` and `classList`-`Set` behavior both
+`form-contract.spec.js` and `live-region.spec.js` need. Each file's
+existing `createMockInput()`/`createMockDocument()` becomes a thin wrapper
+around the shared primitive if their specific needs diverge, or a direct
+alias if they don't — check both before assuming one shape fits.
+
+**L4. Update `TEST-INDEX.md`** for the three new support files (matching
+`support/plan-readiness-parity.js`'s existing row, if it has one — if it
+doesn't, this is a good place to add rows for all four support files at
+once) and confirm the ten affected spec files' descriptions still match
+what they test (none of this changes what they test, only how, so
+descriptions should be unaffected — verify rather than assume for the same
+reason `AGENTS.md` §7 exists).
+
+### Verification
+
+`npx vitest run tests/unit/bar-number.spec.js tests/unit/checklist-export-parity.spec.js tests/unit/form-fields-legacy-delegation.spec.js tests/unit/field-kind-inference.spec.js tests/unit/filing-type-enumeration-guard.spec.js tests/unit/content-corrections.spec.js tests/unit/native-dialog-guard.spec.js tests/unit/security-source-audit.spec.js tests/unit/form-contract.spec.js tests/unit/live-region.spec.js` —
+all ten must pass unchanged (same assertions, same pass/fail outcomes) after
+switching to the shared helpers. A test that only passes because the shared
+helper is subtly more permissive than the original is a hidden coverage
+loss, not a successful consolidation — check what each spec is actually
+asserting before and after, not just that it stays green.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Data Model / Legacy Data Migration / Export / Security / UI/UX / Legal:**
+  N/A — test-only.
+- **Test Coverage & Index:** three new support files, `TEST-INDEX.md`
+  updated in the same commit per §7. No spec's actual coverage changes;
+  only its implementation does.
+
+---
+
+## Sequencing and concurrency
+
+**Multi-agent note.** As of this writing, another agent is executing
+Milestone 51 on this same tree: 51A/51B/51C/51E landed, 51D staged
+uncommitted pending a full regression run, 51F not yet started (touches
+`legacy-app.js` plus the three feature `index.js` files). That agent has
+confirmed it will not touch source while its regression is in flight and
+will sync before each remaining step. Before starting **any** sub-delivery
+below, sync with `master` and re-check `git log` — per `AGENTS.md` §1, a
+proposal's "safe to parallelize" call must be verified against actual file
+overlap at the time work starts, not assumed from this document's snapshot
+of the tree.
+
+**The one real collision: 52A vs. Milestone 51's remaining work.** 52A is
+the only sub-delivery in this document that adds a `window.*` name, which
+means it regenerates `tests/unit/fixtures/window-bridge-allowlist.json` and
+`src/core/types/window-bridge.d.ts` — the same two generated files every
+remaining Milestone 51 sub-delivery also touches. Per Milestone 51's own
+"Sequencing and concurrency" section, a conflict in a generated file has no
+correct manual resolution; the fix is always "regenerate from merged
+source," which means whichever of 51's remaining work and 52A lands second
+is blocked on the first anyway. **52A must not start until Milestone 51 is
+fully landed** (specifically, until 51F is committed) — not because 52A's
+own change is risky, but because two agents regenerating the same generated
+files at the same time is the specific failure mode both documents now
+name.
+
+**52K should also wait on Milestone 51D specifically** (not all of 51),
+per Decision 5 — 51D is actively editing `guardian-inventory/excel.js`,
+uncommitted, and while the current line ranges do not overlap, an
+uncommitted diff is not a stable basis to build on top of.
+
+**Everything else in this document (52B, 52C, 52D, 52E, 52F, 52G, 52H, 52I,
+52J, 52L) touches no file Milestone 51 touches and adds no `window.*` name**
+(52D by explicit design — see Decision 3 and its verification gate) **and
+can proceed independently of Milestone 51's remaining work**, subject to
+the general sync-before-starting rule above and to their own internal
+ordering:
+
+**Suggested order, by risk ascending, for the non-blocked sub-deliveries:**
+
+1. **52L** — test-only, zero production risk, and its shared helpers make
+   writing 52A's new regression test (which needs a `window` stub) and
+   52K's round-trip test slightly easier if landed first.
+2. **52C, 52E, 52G, 52I** — low risk, single-purpose, no shared-file
+   contention with each other.
+3. **52D** — low risk but should land as its own reviewable commit given
+   the governance-file verification gate in its own Verification section.
+4. **52B** — medium risk, case-load/session-restore path; land with the
+   corruption-recovery test written first (red, per this repo's
+   convention), then green.
+5. **52F** — medium risk, and gated on F1's answer from Alan before F2 can
+   be written at all; do not start F2 speculatively.
+6. **52J** — medium risk, user-facing keyboard behavior change; land last
+   among the unblocked items so it is reviewed against an otherwise quiet
+   tree, matching Milestone 51's own reasoning for sequencing 51F last.
+
+**Then, once Milestone 51 fully lands:**
+
+7. **52A** — the governance-file-touching one.
+8. **52K** — once 51D specifically is confirmed committed.
+
+## Acceptance criteria
+
+| Scenario | Expected result |
+| --- | --- |
+| Two-ward dashboard, recently-opened ward ≠ active ward, prompt not yet shown | Continue-prompt banner renders with a real relative-time string; summary strip, ward grid, and sidebar resources all still render below it |
+| `node scripts/audit-window-bridge.mjs`, before vs. after 52D | Assignment list and `D`'s file entries byte-identical |
+| `node scripts/audit-window-bridge.mjs`, before vs. after 52A | Exactly one new assignment: `formatRelativeTime` in `case-file.js` |
+| `.sav` export → import round-trip, populated case | Identical case data before and after |
+| Session-restore cache save → restore round-trip | Identical case data before and after |
+| Session-restore cache with one corrupted non-ward field | Restores the other fields instead of failing outright (52B) |
+| Carry-over fixture with divergent attorney-name candidates, Guardian → each Plan and Accounting type | Same attorney name regardless of which carry-over function runs (52F) |
+| All four legacy comboboxes, keyboard-only | Arrow-key navigation, Home/End, Enter-to-select, Escape-to-close all work identically on all four (52J) |
+| Verified Initial Inventory Excel export, fully populated, all 11 schedules | Byte-identical to the pre-52K export from the same fixture |
+| Verified Initial Inventory Excel import of that export | Identical resulting `D.scheduleXX` arrays, including last-page/last-row boundaries |
+| PDF preview and supplemental-PDF attachment flows | Unchanged behavior after 52I |
+| Ten affected unit specs (52L) | Same assertions pass/fail identically after switching to shared support helpers |
+| `MILESTONE-52-PROPOSAL.md` | Amended in place with a dated "Landed" note per sub-delivery, per repo convention |
+
+## Verification plan
+
+Per sub-delivery, the targeted specs named in each **Verification** block
+are the lite gate (`AGENTS.md` §1). Three sub-deliveries warrant more:
+
+- **52B** — recommend a full `npm test` to Alan before committing: it
+  changes the case-load and session-restore paths, which is exactly the
+  "broad, cross-cutting, touches shared/core modules" case that rule names.
+- **52K** — same recommendation, for the same reason Milestone 51D got one:
+  it is an Excel export/import path for a document filed with a Florida
+  probate court, and the byte-comparison/round-trip gates in its
+  Verification section are manual checks no spec covers on its own.
+- **52F** — not a full-suite case on its own, but F1's question must be
+  answered by Alan before F2 is written; do not treat "the code compiles
+  and tests pass" as an answer to a question about which of two existing,
+  disagreeing behaviors is correct.
+
+For 52A's regression test and 52B's corruption-recovery test, follow this
+repository's red-first convention: write the test, confirm it fails against
+current `master` for the reason this document describes (an uncaught
+`TypeError`, or an all-or-nothing recovery failure), then make the change
+and confirm it turns green.
+
+## Deliberately out of scope
+
+Named here so they are not rediscovered as omissions:
+
+- **`pdfjs-loader.js`'s missing retry-on-failure reset** (mentioned in 52H's
+  Background) — a genuine small bug (one cached-promise failure poisons all
+  future calls in that session), but it is a fix to a *different* loading
+  strategy (dynamic `import()`, no `<script>` tag, no `window` bridge), not
+  a consolidation with the two files 52H actually touches. Worth a
+  one-line follow-up commit on its own.
+- **Unifying `launch-preferences.js`'s and `recovery-cache.js`'s
+  get/put/delete error-handling contracts** (52C, Decision 2) — the
+  multi-key/throw vs. fixed-key/swallow difference is load-bearing for each
+  file's actual use case and merging it is a behavior change with its own
+  question to answer, not a byproduct of sharing the opener.
+- **`form-fields.js`'s `esc()` apostrophe gap** (52E) — real, but
+  self-contained and zero-blast-radius today; documented rather than
+  changed.
+- **The county combobox's exact keyboard-nav implementation vs. the ward
+  selector's** (52J, J2) — both are believed equivalent but were built in
+  separate milestones (50H vs. earlier); confirm before overwriting rather
+  than assuming.
+- **The two defects the Milestone 51 agent found and recorded in
+  `MILESTONE-51-PROPOSAL.md`'s "Found during 51's execution" section** (the
+  co-guardian card that disappears on a second "+ Add Co-Guardian" click,
+  and the pre-existing `verified-inventory-workflow.spec.ts` "label
+  associations" failure) — real, user-visible correctness bugs, not
+  duplication findings, and outside the scope Alan handed over for this
+  document. Not included here so this milestone stays focused on what it
+  was asked to cover; they remain recorded in Milestone 51's document and
+  are natural candidates for a future milestone of their own.
+- **The formula-injection sanitizer tab/CR gap** Milestone 51 also parked —
+  a security judgment for a qualified reviewer, unrelated to duplication,
+  and explicitly not decided by either milestone document.
