@@ -182,19 +182,6 @@ function showContinuePromptIfNeeded() {
   </div>`;
 }
 
-function renderDashboardWorklist() {
-  // The deadlines/recent panel belonged to the family layout, which Milestone
-  // 36-1 removed. The triage queue already surfaces deadlines as a sortable
-  // column, so the top row collapses to a single column and stays empty.
-  const container = document.getElementById('dashboard-worklist-container');
-  if (!container) return;
-  const topRow = document.getElementById('dashboard-top-row');
-  container.hidden = true;
-  container.innerHTML = '';
-  if (topRow) topRow.classList.add('single-col');
-}
-
-
 function deadlineDisplay(row) {
   if (!row.deadlineDate) return '<span class="dashboard-triage-muted">No deadline</span>';
   const date = row.deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -414,7 +401,6 @@ async function toggleDashboardWardArchived(wardId) {
   markDirtySinceExport();
   updateLastSavedIndicator();
   renderDashboardSummary();
-  renderDashboardWorklist();
   renderDashboardGrid();
 }
 
@@ -580,15 +566,25 @@ function unbindDashboardEvents(container) {
   if (_dashboardContainer === container) _dashboardContainer = null;
 }
 
+// Milestone 51G: the deadlines/recent panel this row once held belonged to the
+// family layout Milestone 36-1 removed, and renderDashboardWorklist() -- which
+// hid an already-hidden container, emptied an already-empty one, and added
+// `single-col` to an element the template already marks `single-col` -- was a
+// complete no-op by the time it was deleted.
+//
+// The empty .dashboard-top-row wrapper deliberately STAYS. Its margin-bottom
+// (src/styles/dashboard.css:23) is live spacing between the summary strip and
+// the filing grid; removing the div removes that gap and shifts the whole page
+// up. Delete it only together with a decision about that spacing -- see
+// MILESTONE-51-PROPOSAL.md's 51G/G4, which also notes that
+// legacy-app.js:3895 emits the same class for a different surface.
 function pageDashboard() {
   return `<div class="schedule-page" data-dashboard-root>
     <div id="continue-prompt-container"></div>
     ${dashboardHeaderHTML()}
     <div class="dashboard-toolbar">${dashboardToolbarHTML()}</div>
     <div id="dashboard-summary-strip-container"></div>
-    <div class="dashboard-top-row single-col" id="dashboard-top-row">
-      <div id="dashboard-worklist-container" hidden></div>
-    </div>
+    <div class="dashboard-top-row single-col" id="dashboard-top-row"></div>
     <div id="dashboard-grid-container"></div>
   </div>`;
 }
@@ -600,7 +596,6 @@ function renderDashboardPage() {
   bindDashboardEvents(_dashboardHost.querySelector('[data-dashboard-root]'));
   showContinuePromptIfNeeded();
   renderDashboardSummary();
-  renderDashboardWorklist();
   renderDashboardGrid();
   renderSidebarResources();
 }
