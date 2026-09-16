@@ -163,11 +163,36 @@ describe('ward-carryover', () => {
       }
     });
 
-    it('still prefers an explicit flat attorney name over the nested one', () => {
+    it('prefers the authoritative nested attorney field over the cosmetic flat one (Milestone 52F Decision 6)', () => {
+      // Was "still prefers an explicit flat attorney name over the nested
+      // one" pre-52F -- probate-guardian-data-model.csv calls
+      // attorneyForGuardian a cosmetic Initial Inventory cover field
+      // distinct from the required, validated attorney.name Party field.
+      // Decision 6: the authoritative field wins when a real source ward
+      // has both populated with different values, reversing this test's
+      // old assertion deliberately.
       const src = nestedInventorySource();
-      src.attorneyForGuardian = 'Flat Wins, Esq.';
-      expect(carryOverFieldsForPlan(src, 'planInitial').attorney_name).toBe('Flat Wins, Esq.');
-      expect(carryOverFieldsForAccounting(src, 'annual').attorney).toBe('Flat Wins, Esq.');
+      src.attorneyForGuardian = 'Cosmetic Cover Field, Esq.';
+      expect(carryOverFieldsForPlan(src, 'planInitial').attorney_name).toBe('Nina Nested, Esq.');
+      expect(carryOverFieldsForAccounting(src, 'annual').attorney).toBe('Nina Nested, Esq.');
+    });
+
+    it('prefers the authoritative attorney_name field over plan_initial\'s cosmetic attorneyName (Milestone 52F Decision 6)', () => {
+      // The other real divergent shape Decision 6 resolved:
+      // probate-guardian-data-model.csv calls plan_initial's attorneyName a
+      // "Cosmetic-only cover display field, distinct from the validated
+      // attorney_name certification field."
+      const src = {
+        inventoryType: 'planInitial',
+        wardName: 'Plan Source Ward',
+        caseNumber: '2026-GA-888',
+        guardianNames: 'Gale Guardian',
+        attorneyName: 'Cosmetic Cover Field, Esq.',
+        attorney_name: 'Authoritative Certification, Esq.',
+        planGuardians: [{ name: 'Gale Guardian' }],
+      };
+      expect(carryOverFieldsForPlan(src, 'planInitial').attorney_name).toBe('Authoritative Certification, Esq.');
+      expect(carryOverFieldsForAccounting(src, 'annual').attorney).toBe('Authoritative Certification, Esq.');
     });
 
     it('leaves county blank in both directions regardless of the source county', () => {

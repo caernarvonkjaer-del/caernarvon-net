@@ -3621,33 +3621,33 @@ function carryOverAccountingToAccounting(src,targetType){
   };
   // Whoever the guardian/attorney are is stored under different keys on the
   // Initial Inventory than on the accountings.
-  const guardianName=src.guardianName||src.guardian||'';
-  // Milestone 40C-F item 2, third instance of the same defect. A Guardian
-  // Inventory keeps attorney details NESTED at src.attorney.{name,...}, and
-  // Guardian Inventory is in ACCOUNTING_FORM_TYPES, so this accounting-to-
-  // accounting path handles guardian -> annual/simplified and hit the object
-  // directly: `src.attorneyForGuardian||src.attorney` assigned the whole nested
-  // OBJECT into the destination's flat `attorney` string field whenever
-  // attorneyForGuardian was blank. Caught by carryover-workflow.spec.ts.
   //
-  // The proposal identified this defect in one function; it is in three --
-  // carryOverFieldsForPlan, carryOverFieldsForAccounting (both in
-  // core/navigation/ward-lifecycle.js) and this one.
-  const srcAtty=(src.attorney&&typeof src.attorney==='object')?src.attorney:{};
-  const srcAttyFlat=typeof src.attorney==='string'?src.attorney:'';
-  const attorneyName=src.attorneyForGuardian||srcAttyFlat||srcAtty.name||'';
-  // Milestone 40C-F item 2 also requires attorney identity AND CONTACT details
-  // to reach the destination shape. This function carried the name only, for
-  // every accounting-to-accounting carryover regardless of source type, so bar
-  // number, phone, email and address were silently dropped. Destination field
-  // names genuinely differ per engine -- annual uses attorney_bar, simplified
-  // uses attorney_barNumber, and Guardian Inventory keeps the whole thing nested
-  // -- so each branch maps them under its own names rather than one shared set.
-  const attyBar=src.attorneyBar||src.attorney_bar||src.attorney_barNumber||srcAtty.barNumber||'';
-  const attyPhone=src.attorneyPhone||src.attorney_phone||srcAtty.phone||'';
-  const attyEmail=src.attorneyEmail||src.attorney_email||srcAtty.email||'';
-  const attyStreet=src.attorneyAddress||src.attorney_street||srcAtty.streetAddress||'';
-  const attyCityStateZip=src.attorneyCityStateZip||src.attorney_cityStateZip||srcAtty.cityStateZip||'';
+  // Milestone 40C-F item 2, third instance of the same defect (fixed the
+  // same way as the other two, core/navigation/ward-lifecycle.js's
+  // carryOverFieldsForPlan/carryOverFieldsForAccounting -- see that file's
+  // extractCarryIdentity() for the full history): a Guardian Inventory
+  // keeps attorney details NESTED at src.attorney.{name,...}, and Guardian
+  // Inventory is in ACCOUNTING_FORM_TYPES, so this accounting-to-accounting
+  // path handles guardian -> annual/simplified and used to hit the object
+  // directly -- `src.attorneyForGuardian||src.attorney` assigned the whole
+  // nested OBJECT into the destination's flat `attorney` string field
+  // whenever attorneyForGuardian was blank. Caught by
+  // carryover-workflow.spec.ts.
+  //
+  // Milestone 52F Decision 6: this function's own attorneyName order
+  // (attorneyForGuardian||srcAttyFlat||srcAtty.name, and it never checked
+  // the flat attorney_name/attorneyName fields at all) was a FOURTH order,
+  // not a copy of either ward-lifecycle.js function's -- confirmed while
+  // investigating whether this function could share extractCarryIdentity()
+  // at all. It can, for the guardian-name and attorney fields: gName's
+  // chain there is a strict superset of this function's own bare
+  // `src.guardianName||src.guardian` (more fallbacks, never fewer), and
+  // attyName now gets Decision 6's resolved authoritative-field-wins order
+  // like the other two carry-over directions. caseNumber above is left as
+  // its own simple src.caseNumber||'' -- extractCarryIdentity()'s caseNum
+  // adds ucn/ref fallbacks that matter for Plan Minor sources, which never
+  // reach this accounting-to-accounting-only function.
+  const { gName: guardianName, attyName: attorneyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(src);
 
   if(engine==='guardian'){
     return {...base, gid:src.gid||'', guardianName, attorneyForGuardian:attorneyName,

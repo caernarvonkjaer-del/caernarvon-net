@@ -85,29 +85,54 @@ export function carryWardsFor(type, excludeWardId) {
   return srcs.flatMap((st) => (caseFile.wards || []).filter((w) => w.inventoryType === st && w.wardId !== excludeWardId));
 }
 
-export function carryOverFieldsForPlan(sourceWard, planType) {
+// Milestone 40C-F item 2. A Guardian Inventory source keeps attorney details
+// NESTED at src.attorney.{name,barNumber,phone,streetAddress,cityStateZip}
+// (see emptyDataGuardian()); every other source type stores them flat. The
+// chains below read both. attyName has a second defect fixed the same way:
+// a bare `src.attorney` fallback would, for a Guardian source with a blank
+// attorneyForGuardian, resolve to the nested OBJECT and get assigned into a
+// destination string field -- reading atty.name explicitly avoids that.
+//
+// Milestone 52F Decision 6: attyName's fallback order used to differ between
+// carryOverFieldsForPlan() and carryOverFieldsForAccounting() -- the Plan
+// version checked the cosmetic attorneyForGuardian before the authoritative
+// atty.name; the Accounting version checked the cosmetic attorneyName before
+// the authoritative attorney_name. probate-guardian-data-model.csv's own
+// field descriptions (guardian_inventory rows 158/284, plan_initial rows
+// 806/836) call one of each pair a cover/cosmetic field and the other
+// validated/certification -- neither function actually implemented a
+// consistent policy once that's known. Resolved: the authoritative field
+// wins. See MILESTONE-52-PROPOSAL.md's 52F section for the full reasoning.
+//
+// gName's fallback order also differed (guardianName-then-guardianNames vs.
+// the reverse; guardians[]-then-planGuardians[] vs. the reverse) but,
+// unlike attyName, this was verified harmless before unifying it:
+// guardianName belongs to guardian_inventory/plan_minor and guardianNames
+// to plan_initial alone (per the same CSV), so a source ward never has both
+// populated; guardians[] and planGuardians[] are likewise exclusive to the
+// Accounting and Plan families respectively. Check order therefore never
+// changes the result for any real ward shape. caseNum and the other four
+// atty* fields (Bar, Phone, Email, Street, CityStateZip) already matched
+// exactly between the two functions -- nothing to resolve there.
+export function extractCarryIdentity(sourceWard) {
   const src = sourceWard || {};
   const caseNum = src.caseNumber || src.ucn || src.ref || '';
-  const gName = src.guardianName || src.guardianNames || src.guardian || (src.guardians && src.guardians[0]?.name) || (src.planGuardians && src.planGuardians[0]?.name) || '';
-  // Milestone 40C-F item 2, same defect as carryOverFieldsForAccounting below
-  // and NOT limited to that one function as the proposal assumed: this
-  // Plan-direction builder reads the same flat-only chains, and Guardian
-  // Inventory is a declared carry source for every Plan type
-  // (CARRY_SOURCE_TYPE), so a Guardian -> Plan carryover dropped all five
-  // attorney details too.
-  //
-  // Worse here than there: bare `src.attorney` sat SECOND in attyName's chain,
-  // so a Guardian source reached the nested OBJECT immediately whenever
-  // attorneyForGuardian was blank, and that object was assigned into the
-  // destination's string attorney fields.
+  const gName = src.guardianName || src.guardianNames || src.guardian
+    || (src.guardians && src.guardians[0]?.name) || (src.planGuardians && src.planGuardians[0]?.name) || '';
   const atty = (src.attorney && typeof src.attorney === 'object') ? src.attorney : {};
   const attyFlat = typeof src.attorney === 'string' ? src.attorney : '';
-  const attyName = src.attorneyForGuardian || attyFlat || src.attorney_name || src.attorneyName || atty.name || '';
+  const attyName = src.attorney_name || atty.name || src.attorneyForGuardian || src.attorneyName || attyFlat || '';
   const attyBar = src.attorneyBar || src.attorney_bar || atty.barNumber || '';
   const attyPhone = src.attorneyPhone || src.attorney_phone || atty.phone || '';
   const attyEmail = src.attorneyEmail || src.attorney_email || atty.email || '';
   const attyStreet = src.attorneyAddress || src.attorney_street || atty.streetAddress || '';
   const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || atty.cityStateZip || '';
+  return { caseNum, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip };
+}
+
+export function carryOverFieldsForPlan(sourceWard, planType) {
+  const src = sourceWard || {};
+  const { caseNum, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
   const gs = (src.guardians && src.guardians.length ? src.guardians : src.planGuardians) || [];
 
   if (planType === 'planInitial') {
@@ -217,27 +242,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
 
 export function carryOverFieldsForAccounting(sourceWard, accountingType) {
   const src = sourceWard || {};
-  const caseNum = src.caseNumber || src.ucn || src.ref || '';
-  const gName = src.guardianNames || src.guardianName || src.guardian || (src.planGuardians && src.planGuardians[0]?.name) || (src.guardians && src.guardians[0]?.name) || '';
-  // Milestone 40C-F item 2. A Guardian Inventory source keeps attorney details
-  // NESTED at src.attorney.{name,barNumber,phone,streetAddress,cityStateZip}
-  // (see emptyDataGuardian()); every other source type stores them flat. These
-  // chains previously read flat keys only, so all five silently carried over
-  // BLANK from an Initial Inventory -- the most common carryover source there
-  // is. The nested reads are added to each chain.
-  //
-  // attyName had a second, worse defect: its last fallback was bare
-  // `src.attorney`, which for a Guardian source with a blank attorneyForGuardian
-  // resolved to the nested OBJECT and was then assigned into string fields on
-  // the destination. It reads src.attorney?.name instead.
-  const atty = (src.attorney && typeof src.attorney === 'object') ? src.attorney : {};
-  const attyFlat = typeof src.attorney === 'string' ? src.attorney : '';
-  const attyName = src.attorneyName || src.attorney_name || src.attorneyForGuardian || atty.name || attyFlat || '';
-  const attyBar = src.attorneyBar || src.attorney_bar || atty.barNumber || '';
-  const attyPhone = src.attorneyPhone || src.attorney_phone || atty.phone || '';
-  const attyEmail = src.attorneyEmail || src.attorney_email || atty.email || '';
-  const attyStreet = src.attorneyAddress || src.attorney_street || atty.streetAddress || '';
-  const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || atty.cityStateZip || '';
+  const { caseNum, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
   const gs = src.planGuardians || src.guardians || [];
 
   if (accountingType === 'guardian') {
@@ -529,4 +534,5 @@ if (typeof window !== 'undefined') {
   window.carryWardsFor = carryWardsFor;
   window.carryOverFieldsForPlan = carryOverFieldsForPlan;
   window.carryOverFieldsForAccounting = carryOverFieldsForAccounting;
+  window.extractCarryIdentity = extractCarryIdentity;
 }

@@ -153,6 +153,7 @@ interface Window {
   exportActivityLog: any;
   exportCaseFileZip: any;
   exportGuardianDataZip: any;
+  extractCarryIdentity: any;
   filingDriftFromParties: any;
   filterCountyDropdown: any;
   finalizeCaseNumber: any;

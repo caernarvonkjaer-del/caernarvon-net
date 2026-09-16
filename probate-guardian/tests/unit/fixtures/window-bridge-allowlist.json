@@ -307,6 +307,10 @@
     },
     {
       "file": "src/core/navigation/ward-lifecycle.js",
+      "name": "extractCarryIdentity"
+    },
+    {
+      "file": "src/core/navigation/ward-lifecycle.js",
       "name": "renameWard"
     },
     {
