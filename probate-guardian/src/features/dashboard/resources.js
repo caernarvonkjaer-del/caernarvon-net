@@ -24,7 +24,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'pinellas-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         // The Clerk moved public case-records access to courtrecords.mypinellasclerk.gov;
         // the old public.co.pinellas.fl.us/login/login_nonsubscriber.jsp link was the
         // legacy portal. Description narrowed to "court records" to match: Pinellas
@@ -66,7 +66,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'pasco-court-records',
-        label: 'Search Court Records',
+        label: 'Search Clerk of Court Records',
         description: 'Search Pasco County court records',
         url: 'https://www.civitekflorida.com/ocrs/county/51/',
       },
@@ -459,7 +459,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'alachua-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.alachuaclerk.org/court_records/',
       },
@@ -490,7 +490,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'baker-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/02/',
       },
@@ -521,7 +521,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'bay-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://court.baycoclerk.com/',
       },
@@ -552,7 +552,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'bradford-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/04/',
       },
@@ -583,7 +583,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'brevard-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://public.brevardclerk.com/BMWebLatest/Home.aspx/Search',
       },
@@ -614,7 +614,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'broward-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.browardclerk.org/Web2',
       },
@@ -645,7 +645,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'calhoun-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/07/',
       },
@@ -676,7 +676,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'charlotte-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://courts.charlotteclerk.com/Benchmark/Home.aspx/Search',
       },
@@ -707,7 +707,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'citrus-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://scorss.citrusclerk.org/',
       },
@@ -738,7 +738,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'clay-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://inquiry.clayclerk.com/',
       },
@@ -769,7 +769,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'collier-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://cms.collierclerk.com/cmsweb#!/',
       },
@@ -800,7 +800,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'columbia-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/12/',
       },
@@ -831,7 +831,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'desoto-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/14/',
       },
@@ -862,7 +862,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'dixie-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/15/',
       },
@@ -893,7 +893,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'duval-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://core.duvalclerk.com/',
       },
@@ -924,7 +924,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'escambia-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://public.escambiaclerk.com/BMWebLatest/Home.aspx/Search',
       },
@@ -955,7 +955,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'flagler-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://records.flaglerclerk.gov/',
       },
@@ -986,7 +986,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'franklin-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/19/',
       },
@@ -1017,7 +1017,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'gadsden-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.gadsdenclerk.com/CourtScribePublicInquiry/',
       },
@@ -1048,7 +1048,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'gilchrist-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/21/',
       },
@@ -1079,7 +1079,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'glades-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/22/',
       },
@@ -1110,7 +1110,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'gulf-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/23/',
       },
@@ -1141,7 +1141,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'hamilton-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/24/',
       },
@@ -1172,7 +1172,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'hardee-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/25/',
       },
@@ -1203,7 +1203,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'hendry-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/26/',
       },
@@ -1234,7 +1234,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'hernando-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/27/',
       },
@@ -1265,7 +1265,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'highlands-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/28/',
       },
@@ -1296,7 +1296,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'hillsborough-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://hover.hillsclerk.com/html/home.html',
       },
@@ -1327,7 +1327,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'holmes-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/30/',
       },
@@ -1358,7 +1358,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'indian-river-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://indianriverclerk.com/court-records/online-case-view/',
       },
@@ -1389,7 +1389,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'jackson-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/32/',
       },
@@ -1420,7 +1420,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'jefferson-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/33/',
       },
@@ -1451,7 +1451,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'lafayette-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/34/',
       },
@@ -1482,7 +1482,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'lake-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.lakecountyclerkfl.gov/departments/courts-management/court-data-records-division/search-online-court-records/',
       },
@@ -1513,7 +1513,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'lee-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://matrix.leeclerk.org/',
       },
@@ -1544,7 +1544,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'leon-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://cvweb.leonclerk.com/public/online_services/search_courts_hc/search_by_name_hc.asp',
       },
@@ -1575,7 +1575,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'levy-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/38/',
       },
@@ -1606,7 +1606,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'liberty-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/39/',
       },
@@ -1637,7 +1637,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'madison-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/40/',
       },
@@ -1668,7 +1668,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'manatee-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://records.manateeclerk.com/CourtRecords/Search',
       },
@@ -1699,7 +1699,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'marion-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/42/',
       },
@@ -1730,7 +1730,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'martin-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/43/',
       },
@@ -1761,13 +1761,13 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'miami-dade-court-records-civil',
-        label: 'Court Records — Civil, Family & Probate',
+        label: 'Clerk of Court Records — Civil, Family & Probate',
         description: 'Search civil, family, and probate court records',
         url: 'https://www2.miamidadeclerk.gov/ocs/',
       },
       {
         id: 'miami-dade-court-records-criminal',
-        label: 'Court Records — Criminal',
+        label: 'Clerk of Court Records — Criminal',
         description: 'Search criminal court records',
         url: 'https://www2.miamidadeclerk.gov/cjis/',
       },
@@ -1798,7 +1798,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'monroe-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.monroe-clerk.com/disclaimer/court-records-link',
       },
@@ -1829,7 +1829,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'nassau-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/45/',
       },
@@ -1860,7 +1860,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'okaloosa-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://clerkapps.okaloosaclerk.com/ClerkQuest/',
       },
@@ -1891,7 +1891,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'okeechobee-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/47/',
       },
@@ -1922,7 +1922,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'orange-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://myeclerk.myorangeclerk.com/',
       },
@@ -1953,7 +1953,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'osceola-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://courts.osceolaclerk.com/BenchmarkWeb/Home.aspx/Search',
       },
@@ -1984,7 +1984,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'palm-beach-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://appsgp.mypalmbeachclerk.com/ecaseview',
       },
@@ -2015,7 +2015,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'polk-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://pro.polkcountyclerk.net/PRO',
       },
@@ -2046,7 +2046,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'putnam-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/54/',
       },
@@ -2077,7 +2077,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'santa-rosa-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/57/',
       },
@@ -2108,7 +2108,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'sarasota-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://secure.sarasotaclerk.com/AnonLanding.aspx',
       },
@@ -2139,13 +2139,13 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'seminole-court-records-civil',
-        label: 'Court Records — Civil, Family & Probate',
+        label: 'Clerk of Court Records — Civil, Family & Probate',
         description: 'Search civil, family, and probate court records',
         url: 'https://courtrecords.seminoleclerk.org/civil/',
       },
       {
         id: 'seminole-court-records-criminal',
-        label: 'Court Records — Criminal',
+        label: 'Clerk of Court Records — Criminal',
         description: 'Search criminal court records',
         url: 'https://courtrecords.seminoleclerk.org/criminal/default.aspx',
       },
@@ -2176,7 +2176,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'st-johns-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://apps.stjohnsclerk.com/Benchmark/Home.aspx/Search',
       },
@@ -2207,7 +2207,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'st-lucie-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://courtcasesearch.stlucieclerk.gov/BenchmarkWebExternal/Home.aspx/Search',
       },
@@ -2238,7 +2238,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'sumter-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/60/',
       },
@@ -2269,7 +2269,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'suwannee-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/61/',
       },
@@ -2300,7 +2300,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'taylor-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://pubrecords.taylorclerk.com/',
       },
@@ -2331,7 +2331,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'union-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/63/',
       },
@@ -2362,7 +2362,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'volusia-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://app02.clerk.org/cm_evt/inquiry.aspx',
       },
@@ -2393,7 +2393,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'wakulla-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/65/',
       },
@@ -2424,7 +2424,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'walton-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://waltonclerkfl.gov/courtrecords',
       },
@@ -2455,7 +2455,7 @@ export const RESOURCE_GROUPS = Object.freeze([
       },
       {
         id: 'washington-court-records',
-        label: 'Court Records',
+        label: 'Clerk of Court Records',
         description: 'Search county court records',
         url: 'https://www.civitekflorida.com/ocrs/county/67/',
       },
