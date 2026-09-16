@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import { extractLegacyFunction } from './support/legacy-source-extract.js';
 
 // Florida Bar member numbers are sequential identifiers. Normalize them to the
 // current eight-digit representation so leading zeroes are retained consistently.
@@ -9,18 +8,7 @@ import path from 'path';
 // rather than an importable module, so the function is sliced out of the
 // source and evaluated on its own.
 function loadFormatBarNumber() {
-  const src = fs.readFileSync(path.resolve(__dirname, '../../src/legacy-app.js'), 'utf8');
-  const header = 'function formatBarNumber(';
-  const start = src.indexOf(header);
-  expect(start, 'formatBarNumber not found in legacy-app.js').toBeGreaterThan(-1);
-  const open = src.indexOf('{', start);
-  let depth = 0;
-  let end = -1;
-  for (let i = open; i < src.length; i++) {
-    if (src[i] === '{') depth++;
-    else if (src[i] === '}') { depth--; if (depth === 0) { end = i + 1; break; } }
-  }
-  const body = src.slice(start, end);
+  const body = extractLegacyFunction('formatBarNumber');
   // eslint-disable-next-line no-new-func
   return new Function(`${body}; return formatBarNumber;`)();
 }

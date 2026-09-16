@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FILING_TYPE_KEYS } from '../../src/core/filing/filing-descriptor.js';
+import { walkSourceFiles } from './support/source-scan.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const REGISTRY_FILE = 'src/core/filing/filing-descriptor.js';
@@ -52,14 +53,7 @@ function stripComments(source) {
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(p, out);
-    else if (entry.name.endsWith('.js')) out.push(p);
-  }
-  return out;
-}
+const walk = (dir) => walkSourceFiles(dir);
 
 describe('filing-type key enumeration stays in filing-descriptor.js', () => {
   const files = walk(path.join(root, 'src')).map((f) => path.relative(root, f).replace(/\\/g, '/'));

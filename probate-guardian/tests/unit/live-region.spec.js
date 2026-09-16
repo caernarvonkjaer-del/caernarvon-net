@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { attributeBag } from './support/dom-mocks.js';
 
 function createMockDocument() {
   const elements = new Map();
 
   function createElement(tag) {
-    const attrs = new Map();
     const children = [];
     const el = {
       tagName: tag.toUpperCase(),
@@ -14,10 +14,7 @@ function createMockDocument() {
       parentNode: null,
       nextSibling: null,
       children,
-      setAttribute: (k, v) => attrs.set(k, String(v)),
-      getAttribute: (k) => attrs.get(k) || null,
-      hasAttribute: (k) => attrs.has(k),
-      removeAttribute: (k) => attrs.delete(k),
+      ...attributeBag(),
       appendChild: (child) => {
         child.parentNode = el;
         children.push(child);

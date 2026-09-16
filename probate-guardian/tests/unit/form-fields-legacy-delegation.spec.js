@@ -1,16 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import {
   renderTextareaField,
   renderYesNoField,
   renderRadioGroupField,
   renderCheckboxField,
 } from '../../src/core/form/form-fields.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SRC = fs.readFileSync(path.resolve(__dirname, '../../src/legacy-app.js'), 'utf8');
+import { extractLegacyFunction } from './support/legacy-source-extract.js';
 
 // Milestone 41-1: inpS() already proved (in production, on every call once
 // main.js's eager import has run) that a legacy helper can delegate its
@@ -19,27 +14,14 @@ const SRC = fs.readFileSync(path.resolve(__dirname, '../../src/legacy-app.js'), 
 // `if (typeof window.renderX === 'function') return window.renderX(...)`
 // pattern. This is a permanent guard against that delegation silently
 // drifting -- not a one-time migration check -- by extracting each
-// un-exported legacy-app.js function via source-slicing (the technique
-// tests/unit/bar-number.spec.js already established for this file, since
-// it's a classic, zero-export, browser-bound script) and confirming its
+// un-exported legacy-app.js function via source-slicing (Milestone 52L:
+// now the shared support/legacy-source-extract.js, rather than the third
+// hand-copy of the technique bar-number.spec.js established for this
+// classic, zero-export, browser-bound script) and confirming its
 // output, given a real window.renderX, equals calling that Tier 1
 // primitive directly with equivalent arguments.
-function extractFunction(name) {
-  const header = `function ${name}(`;
-  const start = SRC.indexOf(header);
-  expect(start, `${name} not found in legacy-app.js`).toBeGreaterThan(-1);
-  const open = SRC.indexOf('{', start);
-  let depth = 0;
-  let end = -1;
-  for (let i = open; i < SRC.length; i++) {
-    if (SRC[i] === '{') depth++;
-    else if (SRC[i] === '}') { depth--; if (depth === 0) { end = i + 1; break; } }
-  }
-  return SRC.slice(start, end);
-}
-
 function loadWithWindow(name, windowStub) {
-  const body = extractFunction(name);
+  const body = extractLegacyFunction(name);
   // eslint-disable-next-line no-new-func
   const factory = new Function('window', `${body}; return ${name};`);
   return factory(windowStub);
@@ -100,10 +82,10 @@ describe('legacy call-site delegation to Tier 1 primitives (Milestone 41-1)', ()
   // that reintroduces a real, independent implementation under either
   // name is a deliberate, reviewed change, not a silent drift.
   it('yesNoCheckboxS(), yesNoCheckboxD(), and yesNoRadioAnnualHTML() remain thin wrappers around yesNoRadioHTML(), not independent checkboxes', () => {
-    expect(extractFunction('yesNoCheckboxS')).toContain('return yesNoRadioHTML(');
-    expect(extractFunction('yesNoCheckboxD')).toContain('return yesNoRadioHTML(');
-    expect(extractFunction('yesNoRadioAnnualHTML')).toContain('return yesNoRadioHTML(');
-    expect(extractFunction('yesNoCheckboxS')).not.toContain('type="checkbox"');
-    expect(extractFunction('yesNoCheckboxD')).not.toContain('type="checkbox"');
+    expect(extractLegacyFunction('yesNoCheckboxS')).toContain('return yesNoRadioHTML(');
+    expect(extractLegacyFunction('yesNoCheckboxD')).toContain('return yesNoRadioHTML(');
+    expect(extractLegacyFunction('yesNoRadioAnnualHTML')).toContain('return yesNoRadioHTML(');
+    expect(extractLegacyFunction('yesNoCheckboxS')).not.toContain('type="checkbox"');
+    expect(extractLegacyFunction('yesNoCheckboxD')).not.toContain('type="checkbox"');
   });
 });

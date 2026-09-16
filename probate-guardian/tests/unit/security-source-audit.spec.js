@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walkSourceFiles } from './support/source-scan.js';
 
 // Milestone 43G: moved from tests/e2e/security.spec.ts -- none of these
 // three touch `page`; they're pure Node fs/regex source-text audits paying
@@ -17,12 +18,13 @@ const sourceSurfaces = [
   'templates',
 ];
 
+// Milestone 52L: the shared walker. Its results feed emptiness assertions
+// below, so the depth-first order it uses in place of readdirSync's
+// { recursive: true } changes nothing here -- the set is what matters.
+// A scan target may name an individual file rather than a directory, which
+// walkSourceFiles handles directly.
 function sourceFiles(entry) {
-  const absolute = path.join(projectRoot, entry);
-  if (!fs.statSync(absolute).isDirectory()) return [absolute];
-  return fs.readdirSync(absolute, { recursive: true, withFileTypes: true })
-    .filter((item) => item.isFile() && /\.(?:html|js)$/.test(item.name))
-    .map((item) => path.join(item.parentPath, item.name));
+  return walkSourceFiles(path.join(projectRoot, entry), { extensions: ['.html', '.js'] });
 }
 
 function withoutJsComments(source) {

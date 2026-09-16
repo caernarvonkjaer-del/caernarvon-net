@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { formatDisplayDate } from '../../src/core/form/date-parser.js';
 import { buildPlanSimplifiedModel } from '../../src/features/plan-simplified/pdf-model.js';
+import { walkSourceFiles } from './support/source-scan.js';
 
 describe('Sub-milestone 36-5: Content Corrections', () => {
   describe('Administrative Order 2024-025 removal guard', () => {
@@ -25,23 +26,16 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
       const srcDir = path.resolve(__dirname, '../../src');
       const filesWithAO = [];
 
-      function scanDir(dir) {
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
-        for (const entry of entries) {
-          const fullPath = path.join(dir, entry.name);
-          if (entry.isDirectory()) {
-            scanDir(fullPath);
-          } else if (/\.(js|html|css)$/.test(entry.name)) {
-            const content = fs.readFileSync(fullPath, 'utf8');
-            if (content.includes('2024-025') || content.includes('Administrative Order 2024')) {
-              const relPath = path.relative(srcDir, fullPath);
-              if (!ALLOWED_FILES.has(relPath.replace(/\\/g, '/'))) filesWithAO.push(relPath);
-            }
-          }
+      // Scans every shipped asset, not just executable code -- the AO text
+      // is prose, so .html and .css count.
+      for (const fullPath of walkSourceFiles(srcDir, { extensions: ['.js', '.html', '.css'] })) {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        if (content.includes('2024-025') || content.includes('Administrative Order 2024')) {
+          const relPath = path.relative(srcDir, fullPath);
+          if (!ALLOWED_FILES.has(relPath.replace(/\\/g, '/'))) filesWithAO.push(relPath);
         }
       }
 
-      scanDir(srcDir);
       expect(filesWithAO, 'Administrative Order 2024-025 should be removed from all src files except the one documented, gated exception (see ALLOWED_FILES above)').toEqual([]);
     });
 

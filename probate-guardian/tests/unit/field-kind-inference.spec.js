@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { getControlKind, getControlPolicy } from '../../src/core/form/form-contract.js';
+import { walkSourceFiles } from './support/source-scan.js';
 
 // ── Cross-cutting guard (Milestone 36-6 item 12) ─────────────────────────
 //
@@ -17,14 +18,7 @@ import { getControlKind, getControlPolicy } from '../../src/core/form/form-contr
 
 const SRC = path.resolve(__dirname, '../../src');
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (/\.js$/.test(entry.name)) out.push(full);
-  }
-  return out;
-}
+const walk = (dir) => walkSourceFiles(dir);
 
 // A path argument may be a plain quoted string or a template literal carrying
 // row-index interpolation, e.g. `scheduleC2.${i}.claimantName`. Interpolations

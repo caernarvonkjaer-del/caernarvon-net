@@ -15,24 +15,16 @@ import {
   getControlKind,
   getControlPolicy,
 } from '../../src/core/form/form-contract.js';
+import { attributeBag, classListBag } from './support/dom-mocks.js';
 
 function createMockInput(initial = {}) {
-  const classes = new Set(initial.classes || []);
-  const attrs = new Map();
   return {
     value: initial.value || '',
     dataset: initial.dataset || {},
     type: initial.type || 'text',
     checked: initial.checked || false,
-    classList: {
-      add: (c) => classes.add(c),
-      remove: (c) => classes.delete(c),
-      contains: (c) => classes.has(c),
-    },
-    setAttribute: (k, v) => attrs.set(k, String(v)),
-    removeAttribute: (k) => attrs.delete(k),
-    getAttribute: (k) => attrs.get(k) || null,
-    hasAttribute: (k) => attrs.has(k),
+    classList: classListBag(initial.classes || []),
+    ...attributeBag(),
   };
 }
 

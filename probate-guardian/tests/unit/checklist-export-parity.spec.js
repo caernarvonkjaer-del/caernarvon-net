@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { sliceBalancedFunction } from './support/legacy-source-extract.js';
 
 // Provide browser globals required by legacy feature modules
 global.window = {
@@ -173,18 +174,10 @@ describe('checklist and export validator field parity', () => {
 
   const readSrc = (rel) => fs.readFileSync(path.resolve(__dirname, '../../src', rel), 'utf8');
 
-  // Returns the brace-balanced body that follows `header`.
-  function sliceFunction(src, header) {
-    const start = src.indexOf(header);
-    if (start === -1) return '';
-    const open = src.indexOf('{', start);
-    let depth = 0;
-    for (let i = open; i < src.length; i++) {
-      if (src[i] === '{') depth++;
-      else if (src[i] === '}') { depth--; if (depth === 0) return src.slice(open, i + 1); }
-    }
-    return '';
-  }
+  // Returns the brace-balanced body that follows `header`. Milestone 52L
+  // moved the brace matching into support/legacy-source-extract.js; this
+  // spec wants the body only (it searches inside it), not the header.
+  const sliceFunction = (src, header) => sliceBalancedFunction(src, header, { includeHeader: false });
 
   const modelFields = (text) => new Set([...text.matchAll(/\b[dD]\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
 

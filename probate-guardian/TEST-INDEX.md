@@ -94,6 +94,9 @@ row here, has more than one, or a row names a file that no longer exists.
 | File                      | Purpose                                                                            |
 | ------------------------- | ---------------------------------------------------------------------------------- |
 | plan-readiness-parity.js  | Milestone 37-3: withOverrides()/autoById() shared by each Plan-type parity spec; Milestone 43C: createPlanTestWindowStub() consolidates the four specs' duplicated global.window boilerplate |
+| legacy-source-extract.js  | Milestone 52L: sliceBalancedFunction()/extractLegacyFunction() -- the brace-balanced "cut a function out of legacy-app.js" slice, previously hand-copied into bar-number.spec.js, checklist-export-parity.spec.js and form-fields-legacy-delegation.spec.js. Naive brace counting (no string/comment awareness) kept verbatim on purpose |
+| source-scan.js            | Milestone 52L: walkSourceFiles(dir, { extensions }) -- the recursive source-tree walk the five source-scanning guard specs each reimplemented (field-kind-inference, filing-type-enumeration-guard, content-corrections, native-dialog-guard, security-source-audit). Extension sets stay per-caller; a file target yields itself |
+| dom-mocks.js              | Milestone 52L: attributeBag()/classListBag() -- the attrs-Map and classList-Set fakes form-contract.spec.js and live-region.spec.js each rebuilt. Deliberately not one shared element shape: the two mocks are an `<input>` and a tree node |
 | fixtures/window-bridge-allowlist.json | Milestone 42C: the declared `window.X =` surface; regenerate with `node scripts/audit-window-bridge.mjs --json` |
 
 ## tests/e2e (Playwright, `npm run test:e2e`)
