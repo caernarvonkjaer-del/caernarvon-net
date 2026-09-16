@@ -2,10 +2,15 @@
 
 ## Status
 
-**Draft — not an authorization to implement anything below.** Per
-`AGENTS.md` §2, this is a proposal only; nothing here should be started
-until Alan explicitly approves a specific sub-delivery by name. Approval of
-one sub-delivery does not authorize the others.
+**All twelve sub-deliveries landed 2026-09-16.** Alan authorized the full
+risk-ascending sequence by name (see the AskUserQuestion record from
+2026-09-15's scoping session). A scheduled unattended run correctly
+refused to execute against this document's original "Draft — not an
+authorization" status line before it was updated to record that
+authorization; a live session then executed the full sequence. See
+"Milestone 52: closed — all twelve sub-deliveries landed" near the end
+of this document for the final commit table and a summary of what was
+found and fixed along the way.
 
 **Numbering note.** 52 is confirmed free — checked against `src/`, `tests/`,
 every `*.md`, and `git log --grep` before this document was written, and
@@ -51,7 +56,97 @@ and three of which (52A, 52B, 52F) deliberately change behavior.
 | 52B — Ward-decode pipeline + encrypt/decrypt fan-out | **Landed** `ec83360` — see below; fixes session-restore's all-or-nothing corruption failure |
 | 52F — `extractCarryIdentity()`, Decision 6 | **Landed** `beea47b` — see below; also found and resolved a fourth attorney-order divergence in `legacy-app.js` |
 | 52H — `loadGlobalScript()` | **Landed** `05d1b75` — see below |
-| 52J | **Not started** — Medium risk, awaiting explicit approval by name |
+| 52J — `bindComboboxKeyboardNav()`, Decision 4 | **Landed** `543c199` — see below; county combobox deliberately not switched |
+
+**All twelve sub-deliveries have now landed.** See the closing note below.
+
+### 2026-09-16, live session — 52J landed, closing Milestone 52
+
+Landed as documented: `bindComboboxKeyboardNav()` shares
+`onWardSelectorKeydown()`'s complete Up/Down/Home/End/Enter
+implementation across the ward selector, the "Add Ward" modal's
+ward-name combobox, and the "Convert Ward" modal's source combobox.
+The latter two go from Escape-only to full keyboard navigation — a
+real capability gap closed, per Decision 4.
+
+The county combobox (Cover page) was investigated (per J2's own
+instruction to confirm before switching) and found genuinely
+incompatible, not just superficially different: it renders `<button>`
+options through its own `filterCountyDropdown()`/`data-form-mousedown`
+delegation rather than `comboboxRenderDropdown()`, and hides via a CSS
+class toggle (`hideCountyDropdown()`) rather than this handler's
+inline `style.display`. Wiring it to the shared hide callback would
+have set an inline style that `filterCountyDropdown()` never clears on
+reopen, permanently hiding the dropdown after the first Escape.
+Confirmed by reading both hide paths, not assumed. It already has full
+keyboard nav (Milestone 50H), so there was no capability gap to close
+there — left untouched, exactly as the doc anticipated might be
+necessary.
+
+The ward-name and convert-source `<input>`s were also missing half the
+WAI-ARIA combobox contract their dropdowns already had (`role="listbox"`
+existed on both dropdowns; neither input had `role="combobox"`,
+`aria-autocomplete`, or `aria-controls`) — added in
+`fragments/common-modals.html`, since shipping keyboard behavior
+without the ARIA attributes that make it discoverable would have been
+the same kind of incomplete shipment Decision 4's own rationale warned
+against for the reverse case.
+
+New `tests/e2e/combobox-keyboard-nav.spec.ts` (3 tests) covers the two
+newly-capable comboboxes plus confirms the ward selector's existing
+behavior is unchanged. Full unit suite: 846/846. e2e: the new spec plus
+48 more across every surface touching these three comboboxes, and
+`cover-county.spec.ts` confirming the untouched county combobox still
+works.
+
+---
+
+## Milestone 52: closed — all twelve sub-deliveries landed
+
+| Sub-delivery | Commit |
+| --- | --- |
+| 52L — Test-suite support helpers | `9731296` |
+| 52C — IndexedDB store-opener | `eefc242` |
+| 52E — `escapeHtml()` | `05b4159` |
+| 52G — `checkSignatureState()` call shape | `416017f` |
+| 52I — PDF byte-decoding helpers | `fd5d9bc` |
+| 52D — Window-backed getter/setter factory | `c37f478` |
+| 52A — Continue-prompt banner (3 bridges) | `cdbff52` |
+| 52K — Guardian Inventory Excel schedule layout | `34f681e` |
+| 52B — Ward-decode pipeline + encrypt/decrypt fan-out | `ec83360` |
+| 52F — `extractCarryIdentity()`, Decision 6 | `beea47b` |
+| 52H — `loadGlobalScript()` | `05d1b75` |
+| 52J — `bindComboboxKeyboardNav()`, Decision 4 | `543c199` |
+
+The first five landed unattended (a scheduled cloud run correctly
+refused the other seven — see the 2026-09-16 note at the top of this
+document — before a live session resumed and completed the rest).
+
+**Real defects found and fixed along the way, beyond what this document
+originally scoped:**
+- 52A: a double-render race in the router (`navigate()`'s direct render
+  plus a redundant `hashchange`-triggered re-render) that silently wiped
+  the continue-prompt banner the instant after it drew.
+- 52B: `checkSessionRestoreCacheAtLaunch()`'s all-or-nothing corruption
+  failure — a single corrupted non-ward field used to abort recovering
+  the ward and guardian data right along with it.
+- 52F: a fourth, undiscovered attorney-name fallback order in
+  `legacy-app.js`'s `carryOverAccountingToAccounting()`, on top of the
+  two the document already knew about.
+
+**Found and deliberately left unfixed, flagged for a future pass:**
+- 52K: `wardPercent`/`jointOwnerPercent` never round-trip correctly
+  through Guardian Inventory's Excel export/import — the writer stores
+  a plain 0-100 number, the reader's `pct()` multiplies by 100 assuming
+  a stored fraction. Pre-existing, unrelated to the page/row-layout
+  consolidation 52K actually scoped.
+
+**Scoping calls made explicitly rather than folded in silently:**
+- 52D applied to 5 of the originally-proposed 9 window-backed pairs;
+  the other 4 diverge in ways the shared factory cannot express without
+  changing behavior (Alan's choice, recorded above).
+- 52J left the county combobox on its own separate implementation
+  (this session's own investigation, recorded above).
 
 ### 2026-09-16, live session — 52H landed
 
