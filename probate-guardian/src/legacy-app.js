@@ -3998,6 +3998,81 @@ function comboboxRenderDropdown(dropdownEl,items,onPick){
 function comboboxHide(dropdownEl){
   if(dropdownEl)dropdownEl.style.display='none';
 }
+// Gives each rendered option a stable id, scoped by the dropdown's own id so
+// multiple comboboxes on the page never collide -- aria-activedescendant
+// needs a real id to point at, and comboboxRenderDropdown() itself doesn't
+// assign one (Milestone 52J: previously only the ward selector did this,
+// inline, for itself alone).
+function comboboxAssignOptionIds(dropdownEl){
+  [...dropdownEl.querySelectorAll('[role="option"]')].forEach((option,index)=>{
+    option.id=`${dropdownEl.id}-option-${index}`;
+  });
+}
+// Milestone 52J Decision 4: shared keyboard handler for the ward-selector /
+// ward-name / convert-source combobox family (comboboxRenderDropdown()'s
+// <div role="option"> items, each with a direct per-option mousedown
+// listener). Extracted from onWardSelectorKeydown()'s complete
+// implementation -- the only one of the four comboboxes with full
+// Up/Down/Home/End/Enter support before this delivery; ward-name and
+// convert-source had Escape only (plus a bare preventDefault on Enter for
+// convert-source), a real capability gap for a keyboard-only or
+// screen-reader user, which this closes.
+//
+// The county combobox (:1502 onCountyKeydown, near :1448
+// countyAutocompleteHTML) is deliberately NOT switched to this, despite
+// very similar logic (same comboIndex/aria-activedescendant bookkeeping,
+// same Enter-dispatches-a-mousedown commit trick): it renders <button>
+// options through its own filterCountyDropdown()/data-form-mousedown
+// delegation, not comboboxRenderDropdown(), and hides via a CSS class
+// toggle (hideCountyDropdown()), not this function's inline
+// style.display. Wiring county to a hide callback hardcoded to
+// comboboxHide() would set an inline style that filterCountyDropdown()
+// never clears on reopen, permanently hiding the dropdown after the first
+// Escape -- confirmed by reading both hide paths, not assumed. County
+// already has full keyboard nav (Milestone 50H), so there is no
+// capability gap to close there, only a code-shape win not worth that
+// risk. See MILESTONE-52-PROPOSAL.md's 52J section.
+function bindComboboxKeyboardNav(input,dropdown,{onEnterWithNoSelection,hide=comboboxHide}={}){
+  return function comboboxKeydownHandler(e){
+    const options=[...dropdown.querySelectorAll('[role="option"]')];
+    if(e.key==='Escape'){
+      hide(dropdown);
+      input.dataset.comboIndex='';
+      input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-expanded','false');
+    }
+    else if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();
+      if(!options.length)return;
+      const current=Number.parseInt(input.dataset.comboIndex,10);
+      const next=Number.isInteger(current)
+        ? (e.key==='ArrowDown' ? Math.min(current+1,options.length-1) : Math.max(current-1,0))
+        : (e.key==='ArrowDown' ? 0 : options.length-1);
+      input.dataset.comboIndex=String(next);
+      input.setAttribute('aria-activedescendant',options[next].id);
+      options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
+    }
+    else if(e.key==='Home'||e.key==='End'){
+      e.preventDefault();
+      if(!options.length)return;
+      const next=e.key==='Home'?0:options.length-1;
+      input.dataset.comboIndex=String(next);
+      input.setAttribute('aria-activedescendant',options[next].id);
+      options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
+    }
+    else if(e.key==='Enter'){
+      e.preventDefault();
+      const current=Number.parseInt(input.dataset.comboIndex,10);
+      if(Number.isInteger(current)&&options[current]){
+        options[current].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
+      }else{
+        hide(dropdown);
+        input.setAttribute('aria-expanded','false');
+        if(onEnterWithNoSelection)onEnterWithNoSelection();
+      }
+    }
+  };
+}
 
 // Active Ward combobox: lets you type a ward's name to filter/select it, or
 // click into the field to see every ward as a dropdown — same as the plain
@@ -4043,46 +4118,15 @@ function onWardSelectorFocus(){
   // yet, it's just what's active.
   wardSelectorShowDropdown('');
 }
+// Milestone 52J: thin wrapper kept under this exact name -- shell-events.js
+// calls window.onWardSelectorKeydown(event) by name via its own delegated
+// listener, so the id lookups stay here (fresh each call, matching every
+// other handler in this file) rather than baking input/dropdown into a
+// closure created once at script-parse time.
 function onWardSelectorKeydown(e){
   const input=document.getElementById('ward-selector');
   const dropdown=document.getElementById('ward-selector-dropdown');
-  const options=[...dropdown.querySelectorAll('[role="option"]')];
-  if(e.key==='Escape'){
-    comboboxHide(dropdown);
-    input.dataset.comboIndex='';
-    input.removeAttribute('aria-activedescendant');
-    input.setAttribute('aria-expanded','false');
-  }
-  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-    e.preventDefault();
-    if(!options.length)return;
-    const current=Number.parseInt(input.dataset.comboIndex,10);
-    const next=Number.isInteger(current)
-      ? (e.key==='ArrowDown' ? Math.min(current+1,options.length-1) : Math.max(current-1,0))
-      : (e.key==='ArrowDown' ? 0 : options.length-1);
-    input.dataset.comboIndex=String(next);
-    input.setAttribute('aria-activedescendant',options[next].id);
-    options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
-  }
-  else if(e.key==='Home'||e.key==='End'){
-    e.preventDefault();
-    if(!options.length)return;
-    const next=e.key==='Home'?0:options.length-1;
-    input.dataset.comboIndex=String(next);
-    input.setAttribute('aria-activedescendant',options[next].id);
-    options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
-  }
-  else if(e.key==='Enter'){
-    e.preventDefault();
-    const current=Number.parseInt(input.dataset.comboIndex,10);
-    if(Number.isInteger(current)&&options[current]){
-      options[current].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
-    }else{
-      comboboxHide(dropdown);
-      input.setAttribute('aria-expanded','false');
-      handleSwitchWardClick();
-    }
-  }
+  bindComboboxKeyboardNav(input,dropdown,{onEnterWithNoSelection:handleSwitchWardClick})(e);
 }
 document.addEventListener('click',e=>{
   const wrap=document.getElementById('ward-selector-wrap');
@@ -4391,16 +4435,35 @@ function initWardNameCombobox(inputId,dropdownId,onPick){
   const dropdown=document.getElementById(dropdownId);
   if(!input||!dropdown||input.dataset.comboInit)return;
   input.dataset.comboInit='1';
-  const show=()=>comboboxRenderDropdown(dropdown,comboboxFilterItems(wardNameComboItems(),input.value),item=>{
-    input.value=item.label;
-    comboboxHide(dropdown);
-    if(onPick)onPick(input.value);
-  });
+  const show=()=>{
+    comboboxRenderDropdown(dropdown,comboboxFilterItems(wardNameComboItems(),input.value),item=>{
+      input.value=item.label;
+      input.dataset.comboIndex='';
+      input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-expanded','false');
+      comboboxHide(dropdown);
+      if(onPick)onPick(input.value);
+    });
+    // Milestone 52J: option ids scoped by this combobox's own dropdown id,
+    // so aria-activedescendant has something real to point at -- ward-
+    // selector keeps its own historical ward-selector-option-N scheme
+    // (routes.spec.ts asserts that literal pattern); this one and
+    // convert-source's use the shared helper since nothing depends on
+    // their exact id strings.
+    comboboxAssignOptionIds(dropdown);
+    input.dataset.comboIndex='';
+    input.setAttribute('aria-expanded','true');
+  };
   input.addEventListener('focus',show);
   input.addEventListener('input',()=>{show();if(onPick)onPick(input.value);});
-  input.addEventListener('keydown',e=>{if(e.key==='Escape')comboboxHide(dropdown);});
+  // Milestone 52J Decision 4: was Escape-only. Now gains full Up/Down/
+  // Home/End/Enter via the shared handler, matching the ward selector.
+  input.addEventListener('keydown',bindComboboxKeyboardNav(input,dropdown));
   document.addEventListener('click',e=>{
-    if(!input.contains(e.target)&&!dropdown.contains(e.target))comboboxHide(dropdown);
+    if(!input.contains(e.target)&&!dropdown.contains(e.target)){
+      comboboxHide(dropdown);
+      input.setAttribute('aria-expanded','false');
+    }
   });
 }
 
@@ -4915,9 +4978,15 @@ function convertSourceShowDropdown(query){
   comboboxRenderDropdown(dropdown,comboboxFilterItems(convertSourceItems(),query),item=>{
     input.value=item.label;
     input.dataset.wardId=item.wardId;
+    input.dataset.comboIndex='';
+    input.removeAttribute('aria-activedescendant');
+    input.setAttribute('aria-expanded','false');
     comboboxHide(dropdown);
     updateConvertTargetOptions();
   });
+  comboboxAssignOptionIds(dropdown);
+  input.dataset.comboIndex='';
+  input.setAttribute('aria-expanded','true');
 }
 function onConvertSourceInput(){
   document.getElementById('convert-source-ward').dataset.wardId='';
@@ -4928,14 +4997,25 @@ function onConvertSourceFocus(){
   // may already be pre-filled with a ward's name.
   convertSourceShowDropdown('');
 }
+// Milestone 52J Decision 4: was Escape (dead in practice -- see below) and a
+// bare preventDefault() on Enter. Now gains full Up/Down/Home/End/Enter via
+// the shared handler. modal-events.js's handleModalKeydown() intercepts
+// Escape for any open modal before this ever runs (closes the whole modal,
+// not just the dropdown) -- true before this change too, so the shared
+// handler's own Escape branch is reachable here in form only; not a
+// regression, since Escape's dropdown-only behavior was already
+// unreachable through this combobox specifically.
 function onConvertSourceKeydown(e){
+  const input=document.getElementById('convert-source-ward');
   const dropdown=document.getElementById('convert-source-ward-dropdown');
-  if(e.key==='Escape')comboboxHide(dropdown);
-  else if(e.key==='Enter')e.preventDefault();
+  bindComboboxKeyboardNav(input,dropdown)(e);
 }
 document.addEventListener('click',e=>{
   const wrap=document.getElementById('convert-source-ward-wrap');
-  if(wrap&&!wrap.contains(e.target))comboboxHide(document.getElementById('convert-source-ward-dropdown'));
+  if(wrap&&!wrap.contains(e.target)){
+    comboboxHide(document.getElementById('convert-source-ward-dropdown'));
+    document.getElementById('convert-source-ward')?.setAttribute('aria-expanded','false');
+  }
 });
 
 

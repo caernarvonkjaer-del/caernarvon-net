@@ -30,7 +30,7 @@
     <div class="mb-3">
       <label class="form-label" for="convert-source-ward">Ward</label>
       <div class="ward-combobox-wrap" id="convert-source-ward-wrap">
-        <input type="text" class="form-control ward-picker-select" id="convert-source-ward" placeholder="Type or select a ward…" autocomplete="off" data-modal-input="convert-source">
+        <input type="text" class="form-control ward-picker-select" id="convert-source-ward" placeholder="Type or select a ward…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="convert-source-ward-dropdown" aria-expanded="false" data-modal-input="convert-source">
         <div id="convert-source-ward-dropdown" class="ward-combobox-dropdown" role="listbox" aria-label="Matching wards"></div>
       </div>
     </div>
@@ -142,7 +142,7 @@
     <div class="mb-3">
       <label class="form-label" for="new-ward-name">Ward Name (full legal name)</label>
       <div class="ward-combobox-wrap">
-        <input type="text" class="form-control" id="new-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-modal-input="format-name">
+        <input type="text" class="form-control" id="new-ward-name" placeholder="e.g., Jane Smith" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="new-ward-name-dropdown" aria-expanded="false" data-modal-input="format-name">
         <div id="new-ward-name-dropdown" class="ward-combobox-dropdown" role="listbox" aria-label="Ward name suggestions"></div>
       </div>
       <datalist id="ward-name-suggestions"></datalist>
