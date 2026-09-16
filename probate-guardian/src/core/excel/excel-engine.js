@@ -1,38 +1,77 @@
 /**
  * Centralized Excel Engine for Probate Guardian.
  *
- * Provides shared workbook creation, cell setting with sanitization,
- * safe workbook downloading with object URL cleanup, cell formatting,
- * and value extraction.
+ * Cell writing with formula-injection sanitization, numeric/percentage
+ * coercion, and safe workbook downloading with object URL cleanup.
  */
+
+// ── Milestone 51D: what this module is, and what it deliberately no longer is ──
+//
+// Before 51D, only two of this module's fourteen exports had a production
+// caller (getExcelJS, saveWorkbookFile). The rest were dead, and several were
+// dead *next to* a hand-rolled local twin in the feature excel.js files, which
+// is the worst of both: two implementations of one rule, with the shared one
+// rotting because nothing exercised it.
+//
+// 51D resolved that by direction rather than uniformly:
+//
+//   ADOPTED (the local twin was logically identical, so the swap is provably
+//   behavior-neutral): setCell -- duplicated identically in all three feature
+//   excel.js files; numValue and percentValue -- annual-accounting/excel.js's
+//   `nv` and `pv` closures.
+//
+//   DELETED as never-wired capability, NOT as a judgment about the feature:
+//   protectSheet and autoFitColumns. Nothing in this app has ever protected a
+//   worksheet or set a column width. "Wiring them up" would have changed what a
+//   clerk receives -- a protected sheet may need to be edited by the court, and
+//   column widths are visible formatting -- so that is a new feature with its own
+//   review, not a cleanup side effect. Recoverable from git history.
+//
+//   DELETED as dead, with the divergence recorded below so a future
+//   consolidation starts from known semantics instead of rediscovering them:
+//   readCellNumber, readCellDate, fmtDate, yesNo, yesNoTristate, readCellText,
+//   createWorkbook, loadWorkbookFromBuffer.
+//
+// THE READERS ARE NOT INTERCHANGEABLE WITH THE FEATURES' LOCAL ONES. This is the
+// part worth reading before any future attempt to "finish" the consolidation:
+//
+//   - readCellNumber returned 0 for an unparseable cell. The features' local
+//     gcNum (annual-accounting/excel.js) returns ''. In an accounting schedule
+//     that is not cosmetic: 0 is a stated zero the court reads as an assertion,
+//     '' is a blank the readiness card flags as missing. Swapping them would
+//     write false zeros into filings on Excel import.
+//   - The feature readers route cell values through unwrapCellValue (formula
+//     cells, richText); the core readers did not.
+//   - fmtDate here truncated only when length >= 10; legacy-app.js:961's
+//     fmtDate truncates unconditionally. They differ on short strings.
+//   - yesNo(bool) returned 'No' for '', null and undefined -- which AGENTS.md
+//     section 3 forbids outright ("Never default or coerce an unanswered field
+//     to 'No', at any stage"). guardian-inventory/excel.js has a correct
+//     tri-state local under the SAME NAME. Consolidating those mechanically
+//     would have turned every unanswered binary in a filed Initial Inventory
+//     into an affirmative 'No'. The dead one is gone; the correct local one is
+//     the canonical tri-state Excel writer.
+//   - readCellText here was a passthrough that delegated to window.readCellText
+//     when present. All three features call that legacy global (legacy-app.js:1190)
+//     directly, so the wrapper had no caller once the readers above went.
+//     Unwinding the features onto an ES import is a separate item -- see
+//     MILESTONE-51-PROPOSAL.md's out-of-scope list -- but keeping an unused
+//     wrapper "for later" is exactly how this module got into its previous state,
+//     so it was deleted rather than kept.
 
 import { getExcelJS } from './exceljs-loader.js';
 
 export { getExcelJS };
 
 /**
- * Creates a new ExcelJS Workbook instance, ensuring ExcelJS is loaded.
- * @returns {Promise<any>}
- */
-export async function createWorkbook() {
-  const ExcelJS = await getExcelJS();
-  return new ExcelJS.Workbook();
-}
-
-/**
- * Loads an Excel workbook from an ArrayBuffer or Uint8Array.
- * @param {ArrayBuffer|Uint8Array} buffer
- * @returns {Promise<any>}
- */
-export async function loadWorkbookFromBuffer(buffer) {
-  const workbook = await createWorkbook();
-  const arrayBuffer = buffer instanceof Uint8Array ? buffer.buffer : buffer;
-  await workbook.xlsx.load(arrayBuffer);
-  return workbook;
-}
-
-/**
  * Sanitizes cell text to prevent formula injection in spreadsheet software.
+ *
+ * Delegates to legacy-app.js's sanitizeForExcel() when present, which is the
+ * implementation that actually runs in the browser. NOTE the fallback below is
+ * deliberately STRICTER than that one: it also guards a leading tab or carriage
+ * return, which legacy-app.js:985 does not. The two are pinned against each
+ * other in tests/unit/excel-engine.spec.js; the stricter set is a superset, so
+ * adopting this wrapper can never sanitize less than calling the global directly.
  * @param {string} str
  * @returns {string}
  */
@@ -68,17 +107,6 @@ export function setCell(sheet, addr, value) {
 }
 
 /**
- * Formats dates to standard YYYY-MM-DD for court filings.
- * @param {any} val
- * @returns {string}
- */
-export function fmtDate(val) {
-  if (!val) return '';
-  const str = String(val).trim();
-  return str.length >= 10 ? str.substring(0, 10) : str;
-}
-
-/**
  * Converts a value to numeric, defaulting to 0.
  * @param {any} val
  * @returns {number}
@@ -95,24 +123,6 @@ export function numValue(val) {
 export function percentValue(val) {
   const p = parseFloat(val);
   return isNaN(p) ? 0 : p > 1 ? p / 100 : p;
-}
-
-/**
- * Boolean to Yes / No string.
- * @param {any} bool
- * @returns {'Yes'|'No'}
- */
-export function yesNo(bool) {
-  return bool ? 'Yes' : 'No';
-}
-
-/**
- * Tristate boolean to Yes / No / empty.
- * @param {boolean|null|undefined} val
- * @returns {'Yes'|'No'|''}
- */
-export function yesNoTristate(val) {
-  return val === true ? 'Yes' : val === false ? 'No' : '';
 }
 
 /**
@@ -153,111 +163,6 @@ export async function saveWorkbookFile(workbook, filename) {
       } catch (e) {}
     }, 1500);
   }
-}
-
-/**
- * Reads plain text from a cell, unwrapping formulas, richText, etc.
- * @param {any} cell
- * @returns {string}
- */
-export function readCellText(cell) {
-  if (!cell) return '';
-  if (typeof window !== 'undefined' && typeof window.readCellText === 'function') {
-    return window.readCellText(cell);
-  }
-  const v = cell.value;
-  if (v == null) return '';
-  if (typeof v === 'string') return v.trim();
-  if (typeof v === 'number') return String(v);
-  if (v instanceof Date) return v.toISOString().substring(0, 10);
-  if (typeof v === 'object') {
-    if (v.text) return String(v.text).trim();
-    if (v.result != null) return String(v.result).trim();
-    if (Array.isArray(v.richText)) return v.richText.map((t) => t.text || '').join('').trim();
-  }
-  return String(v).trim();
-}
-
-/**
- * Reads a numeric value from a cell.
- * @param {any} cell
- * @returns {number}
- */
-export function readCellNumber(cell) {
-  if (!cell) return 0;
-  const txt = readCellText(cell);
-  const clean = txt.replace(/[$,]/g, '');
-  return parseFloat(clean) || 0;
-}
-
-/**
- * Reads a date string (YYYY-MM-DD) from a cell.
- * @param {any} cell
- * @returns {string|null}
- */
-export function readCellDate(cell) {
-  if (!cell || cell.value == null) return null;
-  const v = cell.value;
-  if (v instanceof Date) {
-    return v.toISOString().substring(0, 10);
-  }
-  if (typeof v === 'number') {
-    // Excel serial date to JS date
-    const d = new Date((v - 25569) * 86400 * 1000);
-    return isNaN(d.getTime()) ? null : d.toISOString().substring(0, 10);
-  }
-  const txt = readCellText(cell);
-  if (!txt) return null;
-  if (/^\d{4}-\d{2}-\d{2}/.test(txt)) return txt.substring(0, 10);
-  const parsed = Date.parse(txt);
-  if (!isNaN(parsed)) {
-    return new Date(parsed).toISOString().substring(0, 10);
-  }
-  return txt.substring(0, 10);
-}
-
-/**
- * Protects a worksheet with standard court workbook protection flags.
- * @param {any} sheet
- * @param {string} [password='']
- */
-export function protectSheet(sheet, password = '') {
-  if (!sheet || typeof sheet.protect !== 'function') return;
-  sheet.protect(password, {
-    selectLockedCells: true,
-    selectUnlockedCells: true,
-    formatCells: false,
-    formatColumns: false,
-    formatRows: false,
-    insertColumns: false,
-    insertRows: false,
-    insertHyperlinks: false,
-    deleteColumns: false,
-    deleteRows: false,
-    sort: false,
-    autoFilter: false,
-    pivotTables: false,
-  });
-}
-
-/**
- * Auto-fits columns based on cell content length.
- * @param {any} sheet
- * @param {number} [minWidth=10]
- * @param {number} [maxWidth=60]
- */
-export function autoFitColumns(sheet, minWidth = 10, maxWidth = 60) {
-  if (!sheet?.columns) return;
-  sheet.columns.forEach((column) => {
-    let maxLen = 0;
-    column.eachCell?.({ includeEmpty: false }, (cell) => {
-      const text = readCellText(cell);
-      if (text.length > maxLen) {
-        maxLen = text.length;
-      }
-    });
-    column.width = Math.max(minWidth, Math.min(maxLen + 2, maxWidth));
-  });
 }
 
 // Milestone 51E deleted a `window.ExcelEngine = { ...16 helpers }` bridge from

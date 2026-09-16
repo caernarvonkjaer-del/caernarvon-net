@@ -10,11 +10,11 @@
 import { validateGuardian } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
-import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
+import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
-  renderPage, ensureTemplate, sanitizeForExcel, saveData, navigate,
+  renderPage, ensureTemplate, saveData, navigate,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, unwrapCellValue, capitalizeImportedFields,
   sanitizeObjectData, mk,
@@ -70,8 +70,20 @@ export async function doSaveExcel(){
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
     const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
+    // Milestone 51D: this is the canonical tri-state Excel writer for this app,
+    // and it stays local deliberately. core/excel/excel-engine.js used to export a
+    // yesNo(bool) under the SAME NAME that returned 'No' for '', null and
+    // undefined -- which AGENTS.md section 3 forbids ("Never default or coerce an
+    // unanswered field to 'No', at any stage"). Consolidating onto that export
+    // would have turned every unanswered binary in a filed Initial Inventory into
+    // an affirmative 'No', so the dead one was deleted instead. This version is
+    // also a superset of the engine's yesNoTristate(), which handled only real
+    // booleans, not the 'Yes'/'No' strings these fields actually store.
     const yesNo=v=>(v==='Yes'||v===true)?'Yes':((v==='No'||v===false)?'No':'');
-    const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
+    // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
+    // closure this replaces was byte-identical in all three feature excel.js files
+    // apart from a null-sheet guard, and routed text through the same
+    // sanitizeForExcel() the shared version delegates to.
 
     if(stat)stat.textContent='Loading template…';
     const bin=atob(templateB64);

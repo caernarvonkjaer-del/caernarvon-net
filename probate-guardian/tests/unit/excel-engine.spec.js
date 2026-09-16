@@ -1,33 +1,28 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   setCell,
-  fmtDate,
   numValue,
   percentValue,
-  yesNo,
-  yesNoTristate,
-  readCellText,
-  readCellNumber,
-  readCellDate,
-  protectSheet,
-  autoFitColumns,
   sanitizeCellValue,
 } from '../../src/core/excel/excel-engine.js';
 
+// Milestone 51D rewrote this spec down to the module's surviving exports. It
+// previously covered fourteen, ten of which had no production caller; see
+// excel-engine.js's own header for what was deleted and why, including the
+// reader-semantics divergence (0 vs '' for an unparseable cell) that makes those
+// readers deliberately NOT interchangeable with the features' local ones.
+//
+// setCell, numValue and percentValue are covered here because 51D made them live:
+// all three feature excel.js files now import setCell, and annual-accounting also
+// imports numValue/percentValue, in place of byte-identical local closures.
 describe('Excel Engine unit tests', () => {
-  describe('formatting and conversion helpers', () => {
-    it('fmtDate truncates ISO timestamps to YYYY-MM-DD', () => {
-      expect(fmtDate('2026-09-08T14:30:00Z')).toBe('2026-09-08');
-      expect(fmtDate('2026-01-15')).toBe('2026-01-15');
-      expect(fmtDate('')).toBe('');
-      expect(fmtDate(null)).toBe('');
-    });
-
+  describe('numeric coercion helpers', () => {
     it('numValue parses floats or falls back to 0', () => {
-      expect(numValue('1234.56')).toBe(1234.56);
-      expect(numValue(987)).toBe(987);
-      expect(numValue('invalid')).toBe(0);
+      expect(numValue('123.45')).toBe(123.45);
+      expect(numValue(67)).toBe(67);
+      expect(numValue('')).toBe(0);
       expect(numValue(null)).toBe(0);
+      expect(numValue('not a number')).toBe(0);
     });
 
     it('percentValue converts percentages to decimal fractions', () => {
@@ -38,103 +33,99 @@ describe('Excel Engine unit tests', () => {
       expect(percentValue('invalid')).toBe(0);
     });
 
-    it('yesNo formats booleans cleanly', () => {
-      expect(yesNo(true)).toBe('Yes');
-      expect(yesNo(false)).toBe('No');
-      expect(yesNo(null)).toBe('No');
-    });
-
-    it('yesNoTristate handles true, false, and null/undefined', () => {
-      expect(yesNoTristate(true)).toBe('Yes');
-      expect(yesNoTristate(false)).toBe('No');
-      expect(yesNoTristate(null)).toBe('');
-      expect(yesNoTristate(undefined)).toBe('');
+    it('numValue and percentValue match the closures they replaced in annual-accounting/excel.js', () => {
+      // The local ones were `v=>parseFloat(v)||0` and
+      // `v=>{const p=parseFloat(v);return isNaN(p)?0:p>1?p/100:p;}`. Pinning the
+      // equivalence is what makes 51D's adoption provably behavior-neutral rather
+      // than merely asserted.
+      const localNv = v => parseFloat(v) || 0;
+      const localPv = (v) => { const p = parseFloat(v); return isNaN(p) ? 0 : p > 1 ? p / 100 : p; };
+      for (const v of ['', null, undefined, 0, 1, 0.5, 50, 100, '0', '50', '0.25', 'x', '12.5%', -3, 1e3]) {
+        expect(numValue(v), `numValue(${JSON.stringify(v)})`).toBe(localNv(v));
+        expect(percentValue(v), `percentValue(${JSON.stringify(v)})`).toBe(localPv(v));
+      }
     });
   });
 
   describe('sanitization and cell writing', () => {
-    it('sanitizeCellValue prefixes formula injection characters with single quote', () => {
-      expect(sanitizeCellValue('=SUM(A1:A10)')).toBe("'=SUM(A1:A10)");
-      expect(sanitizeCellValue('+123')).toBe("'+123");
-      expect(sanitizeCellValue('-456')).toBe("'-456");
-      expect(sanitizeCellValue('@cmd')).toBe("'@cmd");
-      expect(sanitizeCellValue('Regular text')).toBe('Regular text');
+    it('sanitizeCellValue prefixes formula-injection characters with a single quote', () => {
+      expect(sanitizeCellValue('=SUM(A1:A2)')).toBe("'=SUM(A1:A2)");
+      expect(sanitizeCellValue('+1')).toBe("'+1");
+      expect(sanitizeCellValue('-1')).toBe("'-1");
+      expect(sanitizeCellValue('@import')).toBe("'@import");
+      expect(sanitizeCellValue('Plain text')).toBe('Plain text');
+      expect(sanitizeCellValue(null)).toBe('');
     });
 
-    it('setCell writes sanitized values or numbers to worksheet cell', () => {
-      const cellMap = new Map();
-      const mockSheet = {
-        getCell: (addr) => {
-          if (!cellMap.has(addr)) {
-            cellMap.set(addr, { value: null });
+    it('sanitizeCellValue defers to legacy-app.js sanitizeForExcel when it is present', () => {
+      // In the browser that global always exists, so this wrapper is a passthrough
+      // and adopting core setCell cannot change what the features sanitized with.
+      const spy = vi.fn(() => 'DELEGATED');
+      const original = globalThis.window;
+      globalThis.window = { sanitizeForExcel: spy };
+      try {
+        expect(sanitizeCellValue('=danger')).toBe('DELEGATED');
+        expect(spy).toHaveBeenCalledWith('=danger');
+      } finally {
+        if (original === undefined) delete globalThis.window;
+        else globalThis.window = original;
+      }
+    });
+
+    it("the local fallback guards a superset of legacy sanitizeForExcel's characters", () => {
+      // legacy-app.js:985 is /^[=+\-@]/; this fallback adds \t and \r. A superset
+      // is safe in one direction only, so pin the direction: anything the legacy
+      // rule escapes, this must escape too. (The reverse does NOT hold, and that
+      // asymmetry is deliberate -- see excel-engine.js's note. The legacy version
+      // is the one that runs in production.)
+      const legacyEscapes = s => /^[=+\-@]/.test(s);
+      const original = globalThis.window;
+      if (original !== undefined) delete globalThis.window;
+      try {
+        for (const s of ['=x', '+x', '-x', '@x', '\tx', '\rx', 'x', ' =x', '']) {
+          if (legacyEscapes(s)) {
+            expect(sanitizeCellValue(s), `legacy escapes ${JSON.stringify(s)}, so core must`).toBe("'" + s);
           }
-          return cellMap.get(addr);
-        },
-      };
-
-      setCell(mockSheet, 'A1', 'Hello World');
-      expect(mockSheet.getCell('A1').value).toBe('Hello World');
-
-      setCell(mockSheet, 'B1', '=1+1');
-      expect(mockSheet.getCell('B1').value).toBe("'=1+1");
-
-      setCell(mockSheet, 'C1', 12345.67);
-      expect(mockSheet.getCell('C1').value).toBe(12345.67);
-
-      setCell(mockSheet, 'D1', null);
-      expect(mockSheet.getCell('D1').value).toBeNull();
-
-      setCell(mockSheet, 'E1', '');
-      expect(mockSheet.getCell('E1').value).toBeNull();
-    });
-  });
-
-  describe('cell reading helpers', () => {
-    it('readCellText extracts strings from plain, numeric, or formula cells', () => {
-      expect(readCellText({ value: 'Sample Text' })).toBe('Sample Text');
-      expect(readCellText({ value: 1234 })).toBe('1234');
-      expect(readCellText({ value: { result: 'Computed Value' } })).toBe('Computed Value');
-      expect(readCellText({ value: { text: 'Plain Text Object' } })).toBe('Plain Text Object');
-      expect(readCellText({ value: { richText: [{ text: 'Part 1 ' }, { text: 'Part 2' }] } })).toBe('Part 1 Part 2');
-      expect(readCellText(null)).toBe('');
+        }
+        // And the two extra characters the stricter fallback adds.
+        expect(sanitizeCellValue('\tx')).toBe("'\tx");
+        expect(sanitizeCellValue('\rx')).toBe("'\rx");
+      } finally {
+        if (original !== undefined) globalThis.window = original;
+      }
     });
 
-    it('readCellNumber parses currency-formatted strings', () => {
-      expect(readCellNumber({ value: '$1,234.56' })).toBe(1234.56);
-      expect(readCellNumber({ value: '456.78' })).toBe(456.78);
-      expect(readCellNumber({ value: 999 })).toBe(999);
-      expect(readCellNumber({ value: 'not a number' })).toBe(0);
+    it('setCell writes sanitized values or numbers to a worksheet cell', () => {
+      const cells = {};
+      const sheet = { getCell: (addr) => (cells[addr] = cells[addr] || { value: undefined }) };
+
+      setCell(sheet, 'A1', 'Hello');
+      expect(cells.A1.value).toBe('Hello');
+
+      setCell(sheet, 'A2', 1234.5);
+      expect(cells.A2.value).toBe(1234.5);
+
+      setCell(sheet, 'A3', '');
+      expect(cells.A3.value).toBeNull();
+
+      setCell(sheet, 'A4', null);
+      expect(cells.A4.value).toBeNull();
+
+      setCell(sheet, 'A5', '=BAD()');
+      expect(cells.A5.value).toBe("'=BAD()");
     });
 
-    it('readCellDate extracts formatted ISO date string', () => {
-      expect(readCellDate({ value: new Date('2026-05-20T00:00:00Z') })).toBe('2026-05-20');
-      expect(readCellDate({ value: '2026-08-15' })).toBe('2026-08-15');
-      // Excel serial date for 2026-01-01 (approx 46023)
-      expect(readCellDate({ value: null })).toBeNull();
-    });
-  });
-
-  describe('sheet protection and auto-fit columns', () => {
-    it('protectSheet invokes sheet.protect with standard permissions', () => {
-      const protectSpy = vi.fn();
-      const mockSheet = { protect: protectSpy };
-
-      protectSheet(mockSheet, 'password123');
-      expect(protectSpy).toHaveBeenCalledWith('password123', expect.objectContaining({
-        selectLockedCells: true,
-        selectUnlockedCells: true,
-        formatCells: false,
-      }));
+    it('setCell tolerates a missing sheet instead of throwing', () => {
+      // The local closures this replaced had no such guard; it is the only
+      // behavioral difference, and it is strictly additive.
+      expect(setCell(null, 'A1', 'x')).toBeNull();
+      expect(setCell(undefined, 'A1', 'x')).toBeNull();
     });
 
-    it('autoFitColumns calculates column widths based on maximum text length', () => {
-      const col1 = { width: 0, eachCell: (opts, cb) => { cb({ value: 'Short' }); cb({ value: 'Much longer text content' }); } };
-      const col2 = { width: 0, eachCell: (opts, cb) => { cb({ value: 'Abc' }); } };
-      const mockSheet = { columns: [col1, col2] };
-
-      autoFitColumns(mockSheet, 10, 50);
-      expect(col1.width).toBe('Much longer text content'.length + 2);
-      expect(col2.width).toBe(10); // Minimum width
+    it('setCell returns the cell it wrote', () => {
+      const cell = { value: undefined };
+      const sheet = { getCell: () => cell };
+      expect(setCell(sheet, 'B2', 'v')).toBe(cell);
     });
   });
 });

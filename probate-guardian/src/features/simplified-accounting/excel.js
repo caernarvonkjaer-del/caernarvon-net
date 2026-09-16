@@ -5,11 +5,11 @@
 import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
-import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
+import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 
 const {
-  renderPage, ensureTemplate, sanitizeForExcel, calcTotals, guardianHasAnyData,
+  renderPage, ensureTemplate, calcTotals, guardianHasAnyData,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, capitalizeImportedFields, sanitizeObjectDataInPlace, autoSave,
   getCurrentPage,
@@ -55,7 +55,10 @@ export async function doSaveExcel(){
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
     const fmtD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
-    const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
+    // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
+    // closure this replaces was byte-identical in all three feature excel.js files
+    // apart from a null-sheet guard, and routed text through the same
+    // sanitizeForExcel() the shared version delegates to.
     const n=v=>parseFloat(v)||0;
 
     const bin=atob(templateB64);

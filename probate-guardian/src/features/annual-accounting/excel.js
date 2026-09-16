@@ -13,11 +13,11 @@ import { validateAnnual } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
-import { getExcelJS, saveWorkbookFile } from '../../core/excel/excel-engine.js';
+import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
-  renderPage, ensureTemplate, sanitizeForExcel, calcTotalsAnnual,
+  renderPage, ensureTemplate, calcTotalsAnnual,
   annualReconcileState, guardianHasAnyData, formDisplayName,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   readCellText, unwrapCellValue, capitalizeImportedFields,
@@ -78,10 +78,13 @@ export async function doSaveExcel(){
     const templateB64=await ensureTemplate('annual');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
-    const setCell=(sheet,addr,v)=>{const c=sheet.getCell(addr);if(v==null||v===''){c.value=null;}else if(typeof v==='number'){c.value=v;}else{c.value=sanitizeForExcel(String(v));}};
+    // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
+    // closure this replaces was byte-identical in all three feature excel.js files
+    // apart from a null-sheet guard, and routed text through the same
+    // sanitizeForExcel() the shared version delegates to.
+    // nv/pv were local closures character-identical to core numValue/percentValue.
+    const nv=numValue, pv=percentValue;
     const fD=s=>(s&&String(s).length>=10)?String(s).substring(0,10):(s||'');
-    const nv=v=>parseFloat(v)||0;
-    const pv=v=>{const p=parseFloat(v);return isNaN(p)?0:p>1?p/100:p;};
 
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
