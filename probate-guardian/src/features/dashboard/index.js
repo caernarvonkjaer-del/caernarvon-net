@@ -6,7 +6,7 @@
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
-import { groupsForCounties, resourcesPanelHTML } from './resources.js';
+import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML } from './resources.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 
 const {
@@ -607,12 +607,43 @@ function renderDashboardPage() {
 function renderSidebarResources() {
   const sidebarResources = document.getElementById('sidebar-resources');
   if (!sidebarResources) return;
-  const wards = getCaseFile()?.wards || [];
-  const counties = wards.map(w => normalizeCountyName(countyOf(w)));
-  const groups = groupsForCounties(counties);
-  sidebarResources.innerHTML = resourcesPanelHTML(groups, { esc, ic });
+  const cf = getCaseFile();
+  // Milestone 54, Decision D4's successor: a manual selection (a concrete
+  // 1-20 on caseFile.selectedCircuit) always wins. Absent one, derive a
+  // default from the counties on the user's filings rather than always
+  // falling straight to 6 -- deriveDefaultCircuit() itself falls back to
+  // null when no filing has a resolvable county, hence the ?? chain ending
+  // in 6. The derived value is a DISPLAY default only: it is never written
+  // to caseFile.selectedCircuit, so it keeps tracking the filings live
+  // (add a ward in another circuit, the default follows) until the user
+  // picks one explicitly via the selector below.
+  const counties = (cf?.wards || []).map(w => normalizeCountyName(countyOf(w)));
+  const selectedCircuit = cf?.selectedCircuit ?? deriveDefaultCircuit(counties) ?? 6;
+  const groups = groupsForCircuit(selectedCircuit);
+  sidebarResources.innerHTML = resourcesPanelHTML(groups, { selectedCircuit, esc, ic });
   sidebarResources.hidden = false;
   sidebarResources.removeAttribute('hidden');
+
+  const selectEl = sidebarResources.querySelector('#sidebar-circuit-select');
+  if (selectEl) {
+    selectEl.addEventListener('change', (e) => {
+      const newCircuit = Number(e.target.value) || 6;
+      const currentCaseFile = getCaseFile();
+      if (currentCaseFile) {
+        currentCaseFile.selectedCircuit = newCircuit;
+      }
+      if (typeof markDirtySinceExport === 'function') {
+        markDirtySinceExport();
+      }
+      renderSidebarResources();
+      // renderSidebarResources() just replaced this element's own container's
+      // innerHTML, destroying the <select> the user was just interacting
+      // with -- a closed <select> fires 'change' on every arrow-key press,
+      // so without this a keyboard user's selection works for exactly one
+      // keystroke before focus falls out of the control entirely.
+      sidebarResources.querySelector('#sidebar-circuit-select')?.focus();
+    });
+  }
 }
 
 // Feature bridge contract: mount(container, page) and dispose(container)

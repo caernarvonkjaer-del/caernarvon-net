@@ -12,14 +12,31 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
     // Circuit" resource group. Unlike the Milestone 36-5 violation this
     // guard exists to catch (the AO stated unconditionally, as a filing
     // requirement, on-screen and in printed documents, regardless of the
-    // filer's actual county), this mention is gated by groupsForCounties()
-    // to filings whose county is Pinellas/Pasco/circuit-6 -- the same
-    // gating AGENTS.md's "County Gating" rule requires -- names the order
-    // only as a link description, never a requirement, and sits under the
-    // panel's own third-party disclaimer. Exempted by exact file path
-    // rather than weakening the string match, so any *other* file
-    // reintroducing the ungated defect is still caught; the second test
-    // below pins that this one exception stays gated and disclaimed.
+    // filer's actual county), this mention names the order only as a link
+    // description, never a requirement, and sits under the panel's own
+    // third-party disclaimer. Exempted by exact file path rather than
+    // weakening the string match, so any *other* file reintroducing the
+    // ungated defect is still caught; the second test below pins that this
+    // one exception stays gated and disclaimed.
+    //
+    // Milestone 54 (2026-09-16) changed HOW it is gated, not whether: 47B
+    // gated the whole Sixth Circuit group by the counties on the user's
+    // FILINGS (groupsForCounties(), Decision D4 -- Pinellas/Pasco/no-county
+    // showed it, anything else did not). The circuit selector replaced that
+    // with the user's SELECTED circuit (groupsForCircuit(), keyed by
+    // RESOURCE_GROUPS' `scope: 'circuit-6'`) -- the group, and the AO link
+    // inside it, render only when circuit 6 is the one chosen, for any of
+    // Florida's 20 circuits. This is a materially different exposure a
+    // qualified reviewer should confirm still satisfies AGENTS.md section
+    // 5's "never shown as mandatory statewide requirements for other
+    // counties": a filer whose OWN filings are in, say, the 13th Circuit can
+    // now manually browse the Sixth Circuit's resource group (and see the AO
+    // link) by selecting it from the dropdown, which 47B's filing-county
+    // gate would never have shown them. Nothing in the UI asserts the order
+    // applies to their filing, and it is inside the panel's disclaimer either
+    // way -- but this document does not resolve that judgment call, per
+    // AGENTS.md section 8's "flag for a qualified person" rule. Recorded in
+    // MILESTONE-53-PROPOSAL.md's Milestone 54 appendix.
     const ALLOWED_FILES = new Set(['features/dashboard/resources.js']);
 
     it('ensures no circuit-specific Administrative Order 2024-025 appears in src/ outside the one documented exception', () => {
@@ -39,17 +56,19 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
       expect(filesWithAO, 'Administrative Order 2024-025 should be removed from all src files except the one documented, gated exception (see ALLOWED_FILES above)').toEqual([]);
     });
 
-    it('keeps the one allowed AO 2024-025 mention county-gated and disclaimed, never stated as a filing requirement', () => {
+    it('keeps the one allowed AO 2024-025 mention circuit-gated and disclaimed, never stated as a filing requirement', () => {
       const resourcesPath = path.resolve(__dirname, '../../src/features/dashboard/resources.js');
       const content = fs.readFileSync(resourcesPath, 'utf8');
 
       // Still exists, inside the Sixth Circuit resource group specifically...
       const sixthCircuitGroup = content.slice(content.indexOf("id: 'sixth-circuit'"), content.indexOf("id: 'florida'"));
       expect(sixthCircuitGroup).toContain('2024-025');
+      expect(sixthCircuitGroup).toContain("scope: 'circuit-6'");
 
-      // ...that group is filtered by county, not rendered unconditionally...
-      expect(content).toContain('hasSixthCircuitLocalGuidance');
-      expect(content).toMatch(/showSixth\s*=\s*showPinellas\s*\|\|\s*showPasco/);
+      // ...that group is included only when its own `scope` matches the
+      // SELECTED circuit (groupsForCircuit()), not rendered unconditionally
+      // for every circuit...
+      expect(content).toMatch(/RESOURCE_GROUPS\.find\(g\s*=>\s*g\.scope\s*===\s*`circuit-\$\{cNum\}`\)/);
 
       // ...and the panel carries its own third-party disclaimer.
       expect(content).toContain("isn't affiliated with them");

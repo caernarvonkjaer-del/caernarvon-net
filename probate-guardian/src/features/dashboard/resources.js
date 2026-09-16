@@ -1,8 +1,8 @@
-// Helpful Resources panel for the dashboard sidebar (Milestone 47B).
-// Pure module: resource link directory, county-scoping policy, and markup generator.
+// Helpful Resources panel for the dashboard sidebar (Milestone 47B & Milestone 54).
+// Pure module: resource link directory, circuit & county scoping policy, and markup generator.
 
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
-import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import { FL_COUNTY_CIRCUIT, CIRCUIT_ORDINALS, circuitForCounty } from '../../core/pdf/circuit-lookup.js';
 
 export const RESOURCE_GROUPS = Object.freeze([
   {
@@ -158,29 +158,106 @@ export const RESOURCE_GROUPS = Object.freeze([
 })));
 
 /**
- * Filter resource groups matching Decision D4:
- * - "Florida" always.
- * - Pinellas, Pasco and the Sixth Circuit group for counties that appear on any filing.
- * - Both Pinellas and Pasco while no filing has a county.
+ * Resolve county names belonging to a Florida Judicial Circuit (1 through 20).
+ * @param {number|string} circuitNum
+ * @returns {string[]} Alphabetical array of county names
  */
-export function groupsForCounties(counties = []) {
+export function countiesForCircuit(circuitNum) {
+  const cNum = Number(circuitNum) || 6;
+  const validNum = cNum >= 1 && cNum <= 20 ? cNum : 6;
+  return Object.keys(FL_COUNTY_CIRCUIT)
+    .filter(county => FL_COUNTY_CIRCUIT[county] === validNum)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Build resource groups for a given Judicial Circuit (Milestone 54):
+ * - One group per county in the selected circuit.
+ * - Included circuit-level group if present (e.g. Sixth Judicial Circuit).
+ * - "Florida" statewide group always included at the bottom.
+ * @param {number|string} [circuitNum=6]
+ * @returns {Array}
+ */
+export function groupsForCircuit(circuitNum = 6) {
+  const cNum = Number(circuitNum) || 6;
+  const counties = countiesForCircuit(cNum);
+  const result = [];
+
+  for (const county of counties) {
+    const existingGroup = RESOURCE_GROUPS.find(g => g.scope === county);
+    if (existingGroup) {
+      result.push(existingGroup);
+    } else {
+      result.push({
+        id: `county-${county.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        heading: `${county} County`,
+        scope: county,
+        links: [],
+      });
+    }
+  }
+
+  // Circuit-level group (e.g. "Sixth Judicial Circuit"), if RESOURCE_GROUPS
+  // has one for this circuit -- keyed by `scope`, not hardcoded to circuit 6,
+  // so a future circuit-level group (Milestone 54's helpful-links wiring
+  // task) is picked up automatically rather than needing this function
+  // edited per circuit. This is also the AO 2024-025 link's gate (Milestone
+  // 36-5/47B): it renders only inside the Sixth Circuit's own group, which
+  // itself renders only when circuit 6 is the one selected -- a different
+  // mechanism than 47B's filing-county gate, but the same guarantee AGENTS.md
+  // section 5 requires: never shown unconditionally, only when the SELECTED
+  // circuit is 6, and always inside this panel's own third-party disclaimer.
+  // See tests/unit/content-corrections.spec.js's "AO 2024-025 removal guard".
+  const circuitGroup = RESOURCE_GROUPS.find(g => g.scope === `circuit-${cNum}`);
+  if (circuitGroup && !result.includes(circuitGroup)) {
+    result.push(circuitGroup);
+  }
+
+  // Always append Florida statewide group at the end
+  const floridaGroup = RESOURCE_GROUPS.find(g => g.id === 'florida');
+  if (floridaGroup && !result.includes(floridaGroup)) {
+    result.push(floridaGroup);
+  }
+
+  return result;
+}
+
+/**
+ * Milestone 54, Decision D4's successor: the circuit selector's DEFAULT,
+ * not a filter. Derived from the counties that actually appear on the
+ * user's filings -- the most common circuit among them wins a tie broken by
+ * circuit number, so one outlier filing doesn't flip the default back and
+ * forth. Returns null when no filing has a resolvable county, so the caller
+ * can fall back to the neutral default (6) instead of guessing.
+ *
+ * Superseded here (Milestone 47B's `groupsForCounties`, which filtered
+ * RESOURCE_GROUPS directly to Pinellas/Pasco/Sixth-Circuit-only): this app
+ * now shows every county's accordion for whichever circuit is selected
+ * (`groupsForCircuit`), so "which groups to show" is no longer county-list
+ * dependent -- only "which circuit is selected by default" still is, which
+ * is what this function answers. This is a *default*, not a filter: a
+ * manual selection always overrides it (see dashboard/index.js), and this
+ * function's result is never written back to caseFile.selectedCircuit.
+ * @param {string[]} [counties]
+ * @returns {number|null}
+ */
+export function deriveDefaultCircuit(counties = []) {
   const rawList = Array.isArray(counties) ? counties : [];
-  const normalized = Array.from(new Set(
-    rawList.map(c => normalizeCountyName(c)).filter(Boolean)
-  ));
-
-  const hasCounties = normalized.length > 0;
-  const showPinellas = !hasCounties || normalized.includes('Pinellas');
-  const showPasco = !hasCounties || normalized.includes('Pasco');
-  const showSixth = showPinellas || showPasco || normalized.some(c => hasSixthCircuitLocalGuidance(c));
-
-  return RESOURCE_GROUPS.filter(g => {
-    if (g.id === 'pinellas') return showPinellas;
-    if (g.id === 'pasco') return showPasco;
-    if (g.id === 'sixth-circuit') return showSixth;
-    if (g.id === 'florida') return true;
-    return false;
-  });
+  const normalized = rawList.map(c => normalizeCountyName(c)).filter(Boolean);
+  const tally = new Map();
+  for (const county of normalized) {
+    const circuit = circuitForCounty(county);
+    if (!circuit) continue;
+    tally.set(circuit, (tally.get(circuit) || 0) + 1);
+  }
+  if (tally.size === 0) return null;
+  let best = null;
+  for (const [circuit, count] of tally) {
+    if (!best || count > best.count || (count === best.count && circuit < best.circuit)) {
+      best = { circuit, count };
+    }
+  }
+  return best.circuit;
 }
 
 function defaultEsc(s) {
@@ -200,28 +277,49 @@ function defaultIc(name, size) {
 }
 
 /**
- * Render the Helpful Resources panel markup.
- * @param {Array} groups
- * @param {{ esc?: (s: string) => string, ic?: (name: string, size?: number) => string }} [helpers]
+ * Render the Helpful Resources panel markup with Judicial Circuit selector (Milestone 54).
+ *
+ * `groups` left `undefined` derives the panel's groups from `selectedCircuit`
+ * via `groupsForCircuit()`; an explicit array (including `[]`) is rendered
+ * as given, and an empty result renders nothing -- a caller passing no
+ * groups on purpose gets an empty panel, not a silent circuit-6 fallback.
+ * @param {Array} [groups]
+ * @param {{ selectedCircuit?: number, esc?: (s: string) => string, ic?: (name: string, size?: number) => string }} [options]
  * @returns {string}
  */
-export function resourcesPanelHTML(groups = [], { esc = defaultEsc, ic = defaultIc } = {}) {
-  if (!groups || groups.length === 0) return '';
+export function resourcesPanelHTML(groups, { selectedCircuit = 6, esc = defaultEsc, ic = defaultIc } = {}) {
+  const activeCircuit = selectedCircuit >= 1 && selectedCircuit <= 20 ? Number(selectedCircuit) : 6;
+  const displayGroups = groups === undefined ? groupsForCircuit(activeCircuit) : (Array.isArray(groups) ? groups : []);
 
-  const groupsHTML = groups.map(group => `
+  if (!displayGroups || displayGroups.length === 0) return '';
+
+  const circuitOptionsHTML = Array.from({ length: 20 }, (_, idx) => {
+    const num = idx + 1;
+    const ordinal = CIRCUIT_ORDINALS[num] || String(num);
+    const selected = num === activeCircuit ? ' selected' : '';
+    return `<option value="${num}"${selected}>${esc(ordinal)} Judicial Circuit</option>`;
+  }).join('');
+
+  const groupsHTML = displayGroups.map(group => `
     <details class="sidebar-resource-group">
       <summary class="nav-section-label sidebar-resource-summary">${esc(group.heading)}</summary>
-      ${group.links.map(link => `
+      ${group.links && group.links.length > 0 ? group.links.map(link => `
         <div class="sidebar-resource-item">
           <a class="sidebar-resource-link" href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">${esc(link.label)} ${ic('external', 12)}<span class="visually-hidden"> (opens in a new tab)</span></a>
           <div class="sidebar-resource-desc">${esc(link.description)}</div>
         </div>
-      `).join('')}
+      `).join('') : '<div class="sidebar-resource-empty">No county-specific links yet — see Florida below.</div>'}
     </details>
   `).join('');
 
   return `<section class="sidebar-resources-panel" aria-labelledby="sidebar-resources-title">
     <h2 class="sidebar-resources-title visually-hidden" id="sidebar-resources-title">Helpful Resources</h2>
+    <div class="sidebar-circuit-selector-wrap">
+      <label for="sidebar-circuit-select" class="nav-section-label sidebar-circuit-label">Judicial Circuit</label>
+      <select id="sidebar-circuit-select" class="form-select form-select-sm sidebar-circuit-select" data-action="change-circuit">
+        ${circuitOptionsHTML}
+      </select>
+    </div>
     ${groupsHTML}
     <div class="sidebar-resource-disclaimer">
       These are independent government and third-party sites. Probate Guardian isn't affiliated with them and doesn't control their content.
