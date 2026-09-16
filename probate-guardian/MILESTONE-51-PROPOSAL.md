@@ -954,23 +954,62 @@ self-consistent.
 
 ## Deliberately out of scope
 
-Named here so they are not rediscovered as omissions:
+Named here so they are not rediscovered as omissions. **Anyone scoping a later
+milestone should read this list first** — the two defects at the top were found
+while executing 51 and are real, reproducible, and unfixed. They are recorded
+here rather than only in the commit messages that found them, because a commit
+message is not where the next person looks.
+
+### Found during 51's execution — real defects, not cleanup
+
+- **Initial Inventory: "+ Add Co-Guardian" clicked twice makes the co-guardian
+  card disappear.** Found while writing 51E's new e2e coverage. `addGuardian()`
+  sets `pendingGuardianIndex` to the pre-push length, then
+  `normalizeGuardians()` prunes the blank co-guardian row and **reindexes**
+  `D.guardians` — but `visiblePendingGuardianIndex` still holds the pre-prune
+  index, so `pageD1()`'s filter
+  (`src/features/guardian-inventory/index.js:984`) matches no row and the new
+  card is never rendered. `D.guardians` silently retains an extra blank entry
+  while the UI shows only Guardian #1, and the Add button keeps rendering
+  because `D.guardians.length < 3` is still true. Not caused by 51E, which only
+  removed `window.*` assignments in that file. User-visible and silent; worth
+  fixing on its own.
+- **`tests/e2e/verified-inventory-workflow.spec.ts` "label associations …" fails
+  on `master`.** `duplicateLabels` expected 0, received 1. Confirmed
+  pre-existing by re-running against a stashed-clean tree. Not investigated
+  beyond confirming it is not 51's doing.
+
+### Known, deliberately not actioned by 51
 
 - **Combobox consolidation.** Per Alan and Codex, the ward-name modal
   comboboxes and the Guardian-specific county markup still have accessibility
   gaps that Milestone 50H did not reach. Deleting `ComboboxController` (51A)
   neither fixes nor worsens them. This deserves its own milestone, scoped
   against what 50H actually landed.
-- **Unwinding core `readCellText`'s `window.readCellText` passthrough**
-  (51D, D8) — same question as 51F but across every import-path cell read.
+- **Unwinding core `readCellText`'s `window.readCellText` passthrough.** 51D
+  deleted the wrapper rather than keep an unused one, but all three feature
+  `excel.js` files still call the legacy global directly. Converting them to an
+  ES import is the same question 51F answers for `checkExcelCapacity`, with a
+  larger blast radius (every import-path cell read).
+- **The production formula-injection sanitizer is weaker than the core
+  fallback.** `legacy-app.js:985`'s `sanitizeForExcel` is `/^[=+\-@]/`;
+  `excel-engine.js`'s fallback also guards a leading tab and carriage return.
+  The legacy one is what runs in the browser. 51D pinned the direction in a
+  test and changed no behavior, but whether tab/CR-prefixed cell content needs
+  escaping is an open security question for a qualified reviewer, not something
+  a cleanup should decide.
 - **`.dashboard-top-row`'s two-column CSS** (51G, G4) — shared with a
-  `legacy-app.js` surface.
-- **`legacy-app.js`'s `fmtDate` vs. core's** — divergent twins; documented in
-  D3, not resolved.
+  `legacy-app.js` surface, so changing it would quietly affect a second
+  surface.
+- **`legacy-app.js`'s `fmtDate` vs. the core one** — divergent twins
+  (unconditional truncation vs. a `length >= 10` guard); documented in 51D's
+  module header, not resolved.
 - **The orphaned `pg-dashboard-preferences-v1` localStorage key** (51A) —
-  inert, deliberately left.
-- **Upgrading the `ward_pct` tooltip wording** (51C, C3) — a content change,
-  not a cleanup.
-- **`TEST-INDEX.md` has two rows both labelled `app-shell / misc`** (`:225`
-  and `:226`), the second a superset of the first. Pre-existing, unrelated to
-  this milestone, worth fixing in a docs commit.
+  inert, deliberately left rather than shipping a migration whose only purpose
+  is to delete something already inert.
+- **Upgrading the `ward_pct` tooltip wording** (51C, C3) — the deleted
+  `ward_percent` key carried a worked example the live key lacks. A content
+  change, not a cleanup.
+- **`TEST-INDEX.md` has two rows both labelled `app-shell / misc`**, the second
+  a superset of the first. Pre-existing; left alone even though 51A and 51B
+  both edited those rows, to avoid widening a governance-file diff.
