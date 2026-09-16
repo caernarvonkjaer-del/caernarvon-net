@@ -42,6 +42,34 @@ const IN_CARD_CATEGORIES = new Set(['validation', 'data-integrity']);
 const has = v => !!(v !== '' && v !== null && v !== undefined);
 const legacyGlobal = (name) => (typeof window !== 'undefined' && Array.isArray(window[name])) ? window[name] : [];
 
+// Milestone 52G: the shape all eight Plan signature checks below repeat --
+// derive the legacy tri-state from the stored state/date pair, run the shared
+// validator, and pass only if it reports nothing. Callers keep handing over
+// raw values for whatever record shape their role actually uses (a nested
+// guardian row, or flat `attorney_*`/`preparer_*` keys on the form data),
+// which is checkSignatureState()'s own shape-agnostic contract.
+//
+// `fields` is spread through verbatim rather than enumerated, so each call
+// site keeps passing exactly what its own role needs. That matters for
+// `name`: checkSignatureState() branches on `name !== undefined` to decide
+// whether a missing printed name is its error to report, and only one of the
+// eight call sites (Plan Initial's attorney) supplies one. The other seven
+// omit it deliberately -- their roles already require a printed name
+// unconditionally elsewhere, so reporting it here too would duplicate the
+// error for one blank field. Enumerating a fixed field list in this helper
+// would keep working only by accident; spreading keeps the decision where it
+// belongs, at the call site.
+//
+// The `has(g0.name)` guard four of the guardian call sites also apply stays
+// at the call site: it is about a different field, not part of the
+// signature-state shape.
+function signedAndDated(fields) {
+  return checkSignatureState({
+    ...fields,
+    state: inferLegacySignatureState(fields.state, fields.date),
+  }).length === 0;
+}
+
 function serviceReminder(local, localText, otherText) {
   return local ? localText : otherText;
 }
@@ -54,12 +82,12 @@ function planSimplifiedAutomatic(d) {
   return [
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.wardCaseCounty', label: 'Ward name, case number, and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && checkSignatureState({
-      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+      state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
-    }).length === 0 },
+    }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian contact details provided (email, phone, mailing address)', ok: has(g0.email) && has(g0.phone) && has(g0.mailingAddress) },
     { id: 'plan.q1', label: "Ward's residences for the year are listed", ok: has(d.q1Residences) },
     { id: 'plan.q2', label: 'Question 2 — reason this placement best suits the ward is stated', ok: has(d.q2BestPlacement) },
@@ -106,20 +134,20 @@ function planAnnualAutomatic(d) {
     { id: 'cover.wardCaseGid', label: 'Ward name, case number and inception date are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.gid) },
     { id: 'cover.county', label: 'County is on the plan', ok: has(d.county) },
     { id: 'cover.guardianName', label: 'Guardian Name(s) is on the plan', ok: has(d.guardian) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && checkSignatureState({
-      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+      state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian',
-    }).length === 0 },
+    }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.mailingStreet) && has(g0.phone) && has(g0.ssn) },
-    { id: 'signatures.attorney', label: 'Attorney certification signature complete (if attorney included)', ok: checkSignatureState({
-      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+    { id: 'signatures.attorney', label: 'Attorney certification signature complete (if attorney included)', ok: signedAndDated({
+      state: d.attorney_signatureState,
       name: d.attorney,
       date: d.attorney_signatureDate,
       image: d.attorney_signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Attorney',
-    }).length === 0 },
+    }) },
     { id: 'cover.wardResidence', label: "Ward's current residence and living arrangement, including city/state/ZIP, stated", ok: has(d.wardLiving) && has(d.residenceAddress) && has(d.residenceCityStateZip) },
     { id: 'plan.q1residences', label: `Residences for the year listed (${res.length})`, ok: res.length > 0 },
     { id: 'plan.q2', label: 'Question 2 — address change addressed', ok: !!(d.q2NoMove || d.q2WithinCounty || d.q2WithinCircuit || d.q2OutsideApproved || d.q2OutsideVenuePetition) },
@@ -168,12 +196,12 @@ function planInitialAutomatic(d) {
     { id: 'cover.wardCaseCounty', label: 'Ward name, case number and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
     { id: 'cover.dates', label: 'Guardianship Inception Date and date Letters were signed are stated', ok: has(d.inceptionDate) && has(d.lettersSignedDate) },
     { id: 'cover.guardianNames', label: "Guardian name(s) are on the plan", ok: has(d.guardianNames) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && checkSignatureState({
-      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+      state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian',
-    }).length === 0 },
+    }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.street) && has(g0.phone) && has(g0.ssn) },
     { id: 'cover.wardResidence', label: "Ward's current living arrangement and address, including city/state/ZIP, are stated", ok: has(d.wardLiving) && has(d.residenceAddress) && has(d.residenceCityStateZip) },
     { id: 'plan.q2', label: 'Question 2 — best-suited residential setting selected', ok: has(d.q2Setting) },
@@ -191,12 +219,12 @@ function planInitialAutomatic(d) {
     { id: 'plan.q11directives', label: 'Question 11 — advance directives answered (none, or executed directives listed)', ok: !!d.q11NoDirectives !== !!d.q11Executed },
     { id: 'plan.q10f.committee', label: 'Question 10F — examining committee recommendation question answered', ok: has(d.committeeIncorporated) },
     { id: 'signatures.certifications', label: 'At least one certification statement is checked', ok: !!(d.certIncapacitatedNoCopy || d.certMinorNoCopy || d.certConsulted || d.certRecognizeRights || d.certNoRestriction || d.certProvidesCare) },
-    { id: 'signatures.attorney', label: 'Attorney certification signed and dated (if represented)', ok: !(d.attorney_name || d.attorney_bar || d.attorney_signatureDate || (d.attorney_signatureState && d.attorney_signatureState !== 'none')) || (has(d.attorney_name) && checkSignatureState({
-      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+    { id: 'signatures.attorney', label: 'Attorney certification signed and dated (if represented)', ok: !(d.attorney_name || d.attorney_bar || d.attorney_signatureDate || (d.attorney_signatureState && d.attorney_signatureState !== 'none')) || (has(d.attorney_name) && signedAndDated({
+      state: d.attorney_signatureState,
       date: d.attorney_signatureDate,
       image: d.attorney_signatureImage,
       sectionLabel: 'Attorney Certification', roleLabel: 'Attorney',
-    }).length === 0) },
+    })) },
   ];
 }
 
@@ -230,29 +258,29 @@ function planMinorAutomatic(d) {
     { id: 'cover.caseNumber', label: 'Case number (UCN or Case #) is on the plan', ok: has(d.ucn) || has(d.ref) },
     { id: 'cover.guardianName', label: 'Guardian Name is on the plan', ok: has(d.guardianName) },
     { id: 'cover.residence', label: 'Current residence and address stated', ok: has(d.q1ResidenceName) && has(d.q1Street) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && checkSignatureState({
-      state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+      state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
-    }).length === 0 },
+    }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and taxpayer ID provided', ok: has(g0.mailingStreet) && has(g0.phone) && has(g0.tin) },
     { id: 'signatures.certifications', label: 'At least one certification statement is checked', ok: !!(d.certIncapacitated || d.certMinor || d.certConsulted || d.certNoRestriction || d.certProvidesCare || d.certPhysicianAttached) },
     { id: 'plan.q4', label: 'Question 4 — provision of medical services selected', ok: !!(d.q4Primary || d.q4Dentist || d.q4Specialist || d.q4PT || d.q4ST || d.q4OT || d.q4MinorDecides || d.q4Other) },
     { id: 'plan.q5', label: "Question 5 — school progress, social development, communication, and interpersonal statements completed", ok: has(d.q5SchoolProgress) && has(d.q5SocialDevelopment) && has(d.q5Communicates) && has(d.q5Interpersonal) },
     { id: 'plan.q5e', label: 'Question 5E — unmet social needs answered', ok: !!(d.q5NoUnmetNeeds || d.q5DoesNotCareToSocialize || d.q5UnmetNeeds || d.q5Other) },
-    { id: 'signatures.preparer', label: 'Preparer certification completed (if a preparer is named)', ok: !(d.preparer_name || d.preparer_signatureDate || (d.preparer_signatureState && d.preparer_signatureState !== 'none')) || (has(d.preparer_name) && checkSignatureState({
-      state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate),
+    { id: 'signatures.preparer', label: 'Preparer certification completed (if a preparer is named)', ok: !(d.preparer_name || d.preparer_signatureDate || (d.preparer_signatureState && d.preparer_signatureState !== 'none')) || (has(d.preparer_name) && signedAndDated({
+      state: d.preparer_signatureState,
       date: d.preparer_signatureDate,
       image: d.preparer_signatureImage,
       sectionLabel: 'Preparer & Attorney', roleLabel: 'Preparer',
-    }).length === 0) },
-    { id: 'signatures.attorney', label: 'Attorney certification signed and dated (if represented)', ok: !(d.attorney_name || d.attorney_signatureDate || (d.attorney_signatureState && d.attorney_signatureState !== 'none')) || (has(d.attorney_name) && checkSignatureState({
-      state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
+    })) },
+    { id: 'signatures.attorney', label: 'Attorney certification signed and dated (if represented)', ok: !(d.attorney_name || d.attorney_signatureDate || (d.attorney_signatureState && d.attorney_signatureState !== 'none')) || (has(d.attorney_name) && signedAndDated({
+      state: d.attorney_signatureState,
       date: d.attorney_signatureDate,
       image: d.attorney_signatureImage,
       sectionLabel: 'Preparer & Attorney', roleLabel: 'Attorney',
-    }).length === 0) },
+    })) },
     { id: 'plan.q3providers', label: `Treatment providers listed (${provs.length})`, ok: provs.length > 0 },
   ];
 }
