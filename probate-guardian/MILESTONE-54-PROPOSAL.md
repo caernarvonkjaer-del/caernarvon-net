@@ -2,16 +2,14 @@
 
 ## Status
 
-**Draft — not an authorization to implement or commit anything below.** Per `AGENTS.md` §2, this proposal requires explicit approval of specific sub-deliveries by name (e.g. 54A, 54B, 54C, 54D) before landing to `master`.
+**Landed 2026-09-16, approved by Alan.** Approval was given as "act on all of the remaining work" after direct review of the working-tree implementation (already fixed and fully green at that point — see `MILESTONE-53-PROPOSAL.md`'s Milestone 54 appendix for the code review that preceded it), confirmed explicitly for this milestone's code specifically before committing, per `AGENTS.md` §2. Landed as two commits rather than four sub-deliveries — 54D was never a real sub-delivery (its "test index & full suite" content is just §7's normal same-commit requirement) and 54B/54C share one commit since neither's diff is meaningfully separable from the other (the circuit engine and its UI wiring were authored and reviewed together).
 
-*Implementation Note*: The proposed changes have been authored in the working tree and verified against the unit & e2e test suites (full unit suite 78 files / 850 tests passing, `tests/e2e/routes.spec.ts` 23/23 passing, data-model verification clean), but **zero commits have been made to master**.
-
-| Sub-delivery | Status | Verification Gate (Verified in Working Tree) |
+| Sub-delivery | Commit | Verification |
 | --- | --- | --- |
-| **54A** — Data Model & `.sav` Persistence | **Draft / Ready** | `npm run verify:data-model` clean (915 rows) |
-| **54B** — Resource Directory & Circuit Engine | **Draft / Ready** | unit specs 19/19 passed in `dashboard-resources.spec.js` |
-| **54C** — Dashboard UI & Event Wiring | **Draft / Ready** | e2e `routes.spec.ts` 23/23 passed |
-| **54D** — Test Index & Full Suite | **Draft / Ready** | full unit suite 78/78 files, 850/850 tests passed; `test-index-guard` passed |
+| 54A — Data model & `.sav`/appState persistence | `2acab29` | `case-file-core-fields-roundtrip.spec.ts` 4/4 (incl. new merge-import regression test, red-first); full unit 78/78 files, 852/852 tests; `routes.spec.ts` 27/27 |
+| 54B/54C — Resource directory, circuit engine, dashboard UI | `6cffd15` | `dashboard-resources.spec.js` unit tests; `routes.spec.ts` 27/27; `dashboard-visual.spec.ts` 17/17 (all viewport/theme combinations) |
+
+**What changed from the design below, recorded rather than silently applied** — see `MILESTONE-53-PROPOSAL.md`'s Milestone 54 appendix for the full account: `selectedCircuit` persists via the encrypted `appState` blob, not the CSV row + dedicated `.enc` zip entry this document originally specified (§2's "Data Model Schema" and "State & `.sav` Serialization" below are superseded by that appendix); `groupsForCounties()`/Decision D4 was kept as the selector's *default* rather than being replaced outright by a pure manual selector, via a new `deriveDefaultCircuit()`; six defects in the original working-tree implementation (a merge-import circuit clobber, keyboard focus loss, a polymorphic function signature, loose county matching, a dead conditional, and unstyled empty accordions) were found and fixed before landing.
 
 **Numbering note.** Milestone 54 is confirmed free — checked against `src/`, `tests/`, `TEST-INDEX.md`, every `*.md`, and `git log` before writing. Milestone 53 is being written concurrently by Claude per user prompt instructions.
 
