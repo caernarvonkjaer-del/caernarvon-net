@@ -138,6 +138,161 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     expect(editorCenterY).toBeGreaterThan(pageBox.height * 0.5);
   });
 
+  // Milestone 55A: selecting or committing a FreeText note left two UI
+  // artifacts visibly scattered across the filing -- a native color <input>
+  // rendered as a red rectangular swatch, and a short blank mark (an empty,
+  // iconless deleteButton) farther down the page. Both came from one
+  // toolbar (EditorToolbar, pdf.mjs) this integration had no CSS or
+  // accessible-name decoration for at all. FreeText-only per the milestone's
+  // Decision (Highlight's structurally different ColorPicker toolbar is out
+  // of scope). Structural assertions (computed styles, bounding boxes)
+  // rather than a pixel screenshot, so this identifies the actual failure
+  // mode rather than merely noticing *a* pixel changed.
+  test('FreeText editor toolbar: contained, styled, accessible, and fully hidden on deselect', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Toolbar Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    const noteBtn = page.locator('[data-annotate-action="note"]');
+    await noteBtn.click();
+    await pdfPage.click({ position: { x: 80, y: 80 } });
+    await page.keyboard.type('Toolbar check');
+    await noteBtn.click(); // off -- commits the editor, mode -> NONE
+
+    const note = pdfPage.locator('.freeTextEditor').first();
+    await expect(note).toHaveCount(1);
+    // A committed (not actively-editing) FreeText editor has
+    // pointer-events:none by design -- pdf.js's own idle-mode behavior, so
+    // that ordinary text selection on the page still works with annotations
+    // present. Confirmed directly (elementFromPoint at the editor's own
+    // center resolves to the text layer beneath, not the editor, while Add
+    // Note mode is off). Re-arming Add Note mode restores pointer-events on
+    // existing editors; clicking directly on this one then selects it
+    // in place rather than placing a second, confirmed empirically (editor
+    // count stays 1).
+    await noteBtn.click();
+    const noteBox = (await note.boundingBox())!;
+    await page.mouse.click(noteBox.x + noteBox.width / 2, noteBox.y + noteBox.height / 2);
+    await expect(pdfPage.locator('.freeTextEditor')).toHaveCount(1);
+    await expect(note).toHaveClass(/selectedEditor/);
+
+    const toolbar = note.locator('.editToolbar');
+    await expect(toolbar).toBeVisible();
+    await expect(toolbar).toHaveCount(1);
+
+    const colorPicker = toolbar.locator('.basicColorPicker');
+    const deleteButton = toolbar.locator('.deleteButton');
+
+    // Horizontal flex row, both controls roughly vertically centered and
+    // fully inside the toolbar's own bounds -- the structural shape the
+    // reported "widely separated but aligned at the same horizontal origin"
+    // artifact broke.
+    const buttonsDisplay = await toolbar.locator('.buttons').evaluate((el) => getComputedStyle(el).display);
+    expect(buttonsDisplay).toBe('flex');
+    const toolbarBox = (await toolbar.boundingBox())!;
+    const colorBox = (await colorPicker.boundingBox())!;
+    const deleteBox = (await deleteButton.boundingBox())!;
+    expect(colorBox.x).toBeGreaterThanOrEqual(toolbarBox.x - 1);
+    expect(colorBox.x + colorBox.width).toBeLessThanOrEqual(toolbarBox.x + toolbarBox.width + 1);
+    expect(deleteBox.x).toBeGreaterThanOrEqual(toolbarBox.x - 1);
+    expect(deleteBox.x + deleteBox.width).toBeLessThanOrEqual(toolbarBox.x + toolbarBox.width + 1);
+    const colorCenterY = colorBox.y + colorBox.height / 2;
+    const deleteCenterY = deleteBox.y + deleteBox.height / 2;
+    expect(Math.abs(colorCenterY - deleteCenterY)).toBeLessThan(4);
+
+    // The toolbar must be inside the PDF page and adjacent to its owning
+    // note, not displaced over unrelated filing rows.
+    const pageBox = (await pdfPage.boundingBox())!;
+    expect(toolbarBox.x).toBeGreaterThanOrEqual(pageBox.x - 5);
+    expect(toolbarBox.y).toBeGreaterThanOrEqual(pageBox.y - 5);
+    expect(Math.abs(toolbarBox.x - noteBox.x)).toBeLessThan(50);
+    expect(Math.abs(toolbarBox.y - noteBox.y)).toBeLessThan(80);
+
+    // Accessible names -- nullL10n never resolves data-l10n-id into a real
+    // aria-label; pdf-annotate.js's own decorateFreeTextToolbar() must.
+    await expect(colorPicker).toHaveAttribute('aria-label', 'Note color');
+    await expect(colorPicker).toHaveAttribute('title', 'Note color');
+    await expect(deleteButton).toHaveAttribute('aria-label', 'Delete note');
+    await expect(deleteButton).toHaveAttribute('title', 'Delete note');
+    // The delete button must have real visible content -- addDeleteButton()
+    // (pdf.mjs) creates it with none at all; an icon or a text fallback,
+    // never nothing, is the entire point of this sub-delivery.
+    const deleteButtonHasContent = await deleteButton.evaluate((el) => el.textContent!.trim().length > 0 || el.querySelector('svg') !== null);
+    expect(deleteButtonHasContent).toBe(true);
+
+    // Change the color through the real PDF.js parameter path and confirm
+    // the note's rendered color actually changes.
+    const colorBefore = await note.evaluate((el) => getComputedStyle(el.querySelector('.internal')!).color);
+    await colorPicker.evaluate((el: HTMLInputElement) => {
+      el.value = '#ff0000';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    const colorAfter = await note.evaluate((el) => getComputedStyle(el.querySelector('.internal')!).color);
+    expect(colorAfter).not.toBe(colorBefore);
+
+    // Deselecting must fully hide the toolbar -- no leftover visible color
+    // swatch or delete mark anywhere on the page. Turn Add Note mode off
+    // first (it was re-armed above to make the existing note clickable);
+    // clicking empty space while it is still on would place a new editor
+    // there instead of merely deselecting this one.
+    await noteBtn.click();
+    await pdfPage.click({ position: { x: 10, y: 400 } });
+    await expect(toolbar).toBeHidden();
+    await expect(pdfPage.locator('.freeTextEditor')).toHaveCount(1);
+    await expect(pdfPage.locator('.basicColorPicker:visible')).toHaveCount(0);
+    await expect(pdfPage.locator('.deleteButton:visible')).toHaveCount(0);
+
+    // Re-select (same re-arm-then-click sequence as above) and delete
+    // through the real toolbar control.
+    await noteBtn.click();
+    await page.mouse.click(noteBox.x + noteBox.width / 2, noteBox.y + noteBox.height / 2);
+    await expect(toolbar).toBeVisible();
+    await toolbar.locator('.deleteButton').click();
+    await expect(pdfPage.locator('.freeTextEditor')).toHaveCount(0);
+
+    expect(errors, `page errors: ${errors.join('\n')}`).toEqual([]);
+  });
+
+  test('FreeText editor toolbar retains a visible border under forced-colors (Windows High Contrast) emulation', async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active' });
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Forced Colors Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    const noteBtn = page.locator('[data-annotate-action="note"]');
+    await noteBtn.click();
+    await pdfPage.click({ position: { x: 80, y: 80 } });
+    await page.keyboard.type('Forced colors check');
+    await noteBtn.click();
+
+    const note = pdfPage.locator('.freeTextEditor').first();
+    // See the previous test's comment: a committed editor has
+    // pointer-events:none by design, so re-arm Add Note mode to make it
+    // clickable again before selecting it.
+    await noteBtn.click();
+    const noteBox = (await note.boundingBox())!;
+    await page.mouse.click(noteBox.x + noteBox.width / 2, noteBox.y + noteBox.height / 2);
+    const toolbar = note.locator('.editToolbar');
+    await expect(toolbar).toBeVisible();
+
+    const toolbarBorder = await toolbar.evaluate((el) => getComputedStyle(el).borderStyle);
+    expect(toolbarBorder).not.toBe('none');
+    const deleteBorder = await toolbar.locator('.deleteButton').evaluate((el) => getComputedStyle(el).borderStyle);
+    expect(deleteBorder).not.toBe('none');
+  });
+
   // Two real, independent bugs made Highlight mode a complete no-op, found
   // by tracing why a selection never turned into a rendered highlight:
   //

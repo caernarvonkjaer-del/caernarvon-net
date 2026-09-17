@@ -60,9 +60,11 @@
    .annotationEditorLayer/.freeTextEditor/.highlightEditor families --
    positioning and the FreeText/Highlight visuals this spike's toolbar
    actually uses, not pdf.js's full theming system (light-dark() custom
-   properties, forced-colors queries, the floating per-editor delete
-   toolbar) or its Ink/Stamp/Signature editors, none of which this
-   milestone ships. --total-scale-factor matches pdf-preview.js's own
+   properties) or its Ink/Stamp/Signature editors, none of which this
+   milestone ships. Milestone 55A (below) added the floating per-editor
+   delete toolbar for FreeText specifically -- this comment's exclusion
+   list no longer includes it; see that section instead.
+   --total-scale-factor matches pdf-preview.js's own
    hardcoded render scale (1.5) -- FreeText's padding/font-size math reads
    this variable directly.
 
@@ -142,6 +144,36 @@
 .annotationEditorLayer .highlightEditor{border:none;outline:none;pointer-events:none;}
 .pdf-page svg.highlight{position:absolute;fill-rule:evenodd;mix-blend-mode:multiply;}
 .pdf-page svg.highlightOutline{position:absolute;fill-rule:evenodd;fill:none;mix-blend-mode:normal;}
+
+/* ── Milestone 55A: FreeText per-editor toolbar (color + delete) ──────────
+   Scoped to `.freeTextEditor .editToolbar` specifically, NOT the broader
+   `.annotationEditorLayer` -- pdf.mjs's EditorToolbar is one generic
+   component every editor type instantiates for itself (each editor's own
+   `this.div` gets `className = this.name`, i.e. "freeTextEditor" or
+   "highlightEditor"), so a selector scoped to the layer would also restyle
+   Highlight's structurally different toolbar (a ColorPicker swatch dropdown,
+   not this BasicColorPicker native input), which this sub-delivery
+   deliberately does not touch (see MILESTONE-55-PROPOSAL.md's 55A Decision).
+   Without any of this, the browser renders the color input with its native,
+   unstyled appearance (the reported red swatch) and the empty, iconless
+   `<button class="basic deleteButton">` pdf.mjs's addDeleteButton() creates
+   as a small blank mark -- both inheriting the annotation layer's scaled
+   100px font-size base with no override, which is why they appeared widely
+   separated but aligned at the same horizontal origin. */
+.freeTextEditor{position:relative;}
+.freeTextEditor .editToolbar{position:absolute;top:-34px;left:0;display:flex;align-items:center;gap:.15rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xs);padding:.15rem .3rem;font-size:14px;line-height:1;box-shadow:var(--sh-2);z-index:3;white-space:nowrap;}
+.freeTextEditor .editToolbar.hidden{display:none;}
+.freeTextEditor .editToolbar .buttons{display:flex;align-items:center;gap:.3rem;}
+.freeTextEditor .basicColorPicker{width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:var(--r-xs);cursor:pointer;background:none;}
+.freeTextEditor .deleteButton{display:flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;border:none;border-radius:var(--r-xs);background:none;color:var(--ink);cursor:pointer;font-size:12px;}
+.freeTextEditor .deleteButton svg{width:14px;height:14px;}
+.freeTextEditor .deleteButton:hover,.freeTextEditor .basicColorPicker:hover{background:var(--line-2);}
+.freeTextEditor .deleteButton:focus-visible,.freeTextEditor .basicColorPicker:focus-visible{outline:2px solid var(--outline-color);outline-offset:1px;}
+.freeTextEditor .divider{width:1px;height:18px;background:var(--line);margin:0 .15rem;}
+@media (forced-colors:active){
+  .freeTextEditor .editToolbar{border:1px solid CanvasText;forced-color-adjust:none;}
+  .freeTextEditor .deleteButton,.freeTextEditor .basicColorPicker{border:1px solid CanvasText;}
+}
 .pdf-page svg.highlightOutline.selected .mainOutline{stroke:var(--outline-around-color);stroke-width:calc(var(--outline-width) + 2 * var(--outline-around-width));}
 .pdf-page svg.highlightOutline.selected .secondaryOutline{stroke:var(--outline-color);stroke-width:var(--outline-width);}
 

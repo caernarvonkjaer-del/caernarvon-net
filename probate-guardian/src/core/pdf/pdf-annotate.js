@@ -76,6 +76,38 @@ export async function computeContentFingerprint(pdfDocument) {
   return (acc >>> 0).toString(16);
 }
 
+// Milestone 55A: pdf.mjs's core-only integration uses nullL10n (above), so
+// it never runs the full viewer's Fluent localization layer that would
+// normally turn a control's `data-l10n-id` into a real `aria-label`.
+// EditorToolbar.addDeleteButton() (pdf.mjs) creates
+// `<button class="basic deleteButton">` with literally no child content --
+// an icon is a viewer-CSS-only affordance upstream, never DOM the editor
+// itself creates -- and BasicColorPicker's `<input class="basicColorPicker"
+// type="color">` carries only that same inert `data-l10n-id`. Both are
+// decorated here once, the moment pdf.js creates them, rather than assumed
+// to already have real accessible names.
+//
+// `ic()` is a bare top-level function in legacy-app.js (a classic script),
+// not an importable module -- reachable only via `window.ic`, guarded
+// exactly like the three other ES modules that already do this
+// (form-fields.js, router.js, dashboard/resources.js). The fallback must
+// never be an empty string: an unavailable window.ic would otherwise
+// reproduce the exact iconless-button defect this decoration exists to fix,
+// just from a different cause.
+function decorateFreeTextToolbar(toolbarEl) {
+  const colorPicker = toolbarEl.querySelector('.basicColorPicker');
+  if (colorPicker && !colorPicker.hasAttribute('aria-label')) {
+    colorPicker.setAttribute('aria-label', 'Note color');
+    colorPicker.setAttribute('title', 'Note color');
+  }
+  const deleteButton = toolbarEl.querySelector('.deleteButton');
+  if (deleteButton && !deleteButton.hasAttribute('aria-label')) {
+    deleteButton.setAttribute('aria-label', 'Delete note');
+    deleteButton.setAttribute('title', 'Delete note');
+    deleteButton.innerHTML = typeof window.ic === 'function' ? window.ic('trash', 14) : 'Delete';
+  }
+}
+
 // Owns one Print Preview's annotation-editor lifecycle: one UIManager shared
 // across every rendered page's own AnnotationEditorLayer, matching how
 // pdf.js's own multi-page viewer wires this (confirmed via
@@ -180,7 +212,22 @@ export class AnnotationSession {
       })(),
     });
     await layer.render({ viewport: clonedViewport, div, annotations: null, intent: 'display' });
-    this.layers.set(pageIndex, { layer, div, drawLayer: layer.drawLayer });
+    // Milestone 55A: EditorToolbar creates the FreeText toolbar's DOM
+    // asynchronously, only once an editor is selected -- there is no
+    // synchronous hook after layer.render() to decorate it at. The toolbar
+    // div and its color-picker/delete-button children are appended in
+    // separate mutations (render() first, addButton() calls after), so
+    // reacting only to each mutation's own addedNodes can run the decorator
+    // before a button exists yet and never revisit that toolbar once it
+    // does. Re-scanning the whole layer on every mutation batch instead
+    // sidesteps that ordering entirely; decorateFreeTextToolbar()'s own
+    // `!hasAttribute('aria-label')` guard makes repeated calls on an
+    // already-decorated toolbar a no-op, so this stays cheap.
+    const toolbarObserver = new MutationObserver(() => {
+      div.querySelectorAll('.freeTextEditor .editToolbar').forEach(decorateFreeTextToolbar);
+    });
+    toolbarObserver.observe(div, { childList: true, subtree: true });
+    this.layers.set(pageIndex, { layer, div, drawLayer: layer.drawLayer, toolbarObserver });
   }
 
   setMode(mode) {
@@ -206,9 +253,10 @@ export class AnnotationSession {
 
   destroy() {
     this.setMode(this.pdfjsLib.AnnotationEditorType.NONE);
-    for (const { layer, drawLayer } of this.layers.values()) {
+    for (const { layer, drawLayer, toolbarObserver } of this.layers.values()) {
       layer.destroy();
       drawLayer?.destroy();
+      toolbarObserver?.disconnect();
     }
     this.layers.clear();
     this.uiManager.destroy();
