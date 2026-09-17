@@ -155,6 +155,31 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     });
   });
 
+  test('57A migrates legacy dependent bond/depository dates without guessing negative answers', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Legacy Bond Choice Ward', 'guardian');
+
+    const guardian = await page.evaluate(() => {
+      const d = (window as any).D;
+      delete d.bondWaived;
+      d.bondWaivedDate = '2026-01-15';
+      (window as any).normalizeWardData(d);
+      return { bondWaived: d.bondWaived, restrictedDepository: d.restrictedDepository };
+    });
+    expect(guardian).toEqual({ bondWaived: 'Yes', restrictedDepository: '' });
+
+    await createWard(page, 'Legacy Annual Depository Ward', 'annual');
+    const annual = await page.evaluate(() => {
+      const d = (window as any).D;
+      delete d.restrictedDepository;
+      delete d.bondWaived;
+      d.restrictedDepositoryReceiptDate = '2026-02-03';
+      (window as any).normalizeWardData(d);
+      return { bondWaived: d.bondWaived, restrictedDepository: d.restrictedDepository };
+    });
+    expect(annual).toEqual({ bondWaived: '', restrictedDepository: 'Yes' });
+  });
+
   // Found during Milestone 42/44's closing-verification full-suite run
   // (2026-09-14), which caught two real e2e failures (ward-lock.spec.ts and
   // backup-restore-sav.spec.ts) neither one directly names as a

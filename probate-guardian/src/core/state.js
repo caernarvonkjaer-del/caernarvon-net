@@ -431,7 +431,8 @@ export function emptyDataAnnual() {
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:'',
     // Schedules
-    schA:[], schB1:[], schB2:[], schB3:[], schB4:[],
+      schA:[], schB1:[], schB2:[], schB3:[], schB4:[], schB4Accounts:[],
+    trustAccountingFiled:'', trustAssetsValue:'',
     schC:[], schD1:[], schD2:[], schD3:[], schD4:[], schD5:[],
     schE:[], schF1:[], schF2:[],
     // Parts VI & VII – reconciliation. Line 20 (net assets computed from the
@@ -448,10 +449,12 @@ export function emptyDataAnnual() {
     ],
     // Part IX – Bond
     guardianRelationship:'Professional Guardian',
-    restrictedDepositoryReceiptDate:'',
+    // These are intentionally tri-state answers. A blank means a legacy
+    // filing has not expressed either answer; it is never silently a "No."
+    bondWaived:'', restrictedDepository:'', restrictedDepositoryReceiptDate:'',
     bondAmount:'', bondPeriodFrom:'', bondPeriodTo:'', bondingCompany:'',
     // Part X – Cert of Service
-    certDate:'', certIndicator:'',
+    certDate:'', certIndicator:'', certNoRecipients:'',
     certAttySignDate:'',
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',

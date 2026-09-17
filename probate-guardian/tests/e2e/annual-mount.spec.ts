@@ -50,6 +50,54 @@ test.describe('annual-accounting feature module', () => {
     expect(alertMessage).toContain('Cannot export');
   });
 
+  test('Part IX records bond-waiver and restricted-depository choices without dropping hidden details', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual Bond Choice Ward', 'annual');
+    await page.evaluate(() => {
+      Object.assign((window as any).D, {
+        bondAmount: '7500', bondingCompany: 'Annual Surety', restrictedDepositoryReceiptDate: '2026-02-03',
+      });
+      (window as any).navigate('/p9');
+    });
+
+    const waiver = page.locator('fieldset[data-yes-no-group="bondWaived"]');
+    const depository = page.locator('fieldset[data-yes-no-group="restrictedDepository"]');
+    await expect(waiver).toBeVisible();
+    await expect(depository).toBeVisible();
+    await waiver.locator('input[value="Yes"]').check();
+    await expect(page.locator('[data-annual-path="bondAmount"]')).toBeHidden();
+    await expect(page.locator('[data-annual-path="guardianRelationship"]')).toBeVisible();
+    expect(await page.evaluate(() => (window as any).D.bondAmount)).toBe('7500');
+    expect(await page.evaluate(() => (window as any).validateAnnual().filter((issue: any) => String(issue.message || issue).startsWith('Part IX')))).toEqual([]);
+    expect(await page.evaluate(() => (window as any).computeNavChecks().checks['a-p9'])).toBe(true);
+
+    await depository.locator('input[value="Yes"]').check();
+    await expect(page.locator('[data-annual-path="restrictedDepositoryReceiptDate"]')).toBeVisible();
+    await expect(page.locator('[data-annual-path="restrictedDepositoryReceiptDate"]')).toHaveValue('02/03/2026');
+  });
+
+  test('Part X requires a named extra recipient unless no recipients is explicitly selected', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annual Service Recipient Ward', 'annual');
+    await page.evaluate(() => {
+      const d = (window as any).D;
+      d.certDate = '2026-02-04';
+      d.certRecipients = [
+        { name: 'First Recipient', line2: '1 Main St', line3: 'Clearwater, FL 33755', line4: '' },
+        { name: '', line2: '1 Main St', line3: '', line4: '' },
+      ];
+      (window as any).navigate('/p10');
+    });
+
+    expect(await page.evaluate(() => (window as any).validateAnnual().some((issue: any) => String(issue.message || issue).includes('Recipient 2 Name')))).toBe(true);
+    const none = page.locator('fieldset[data-yes-no-group="certNoRecipients"]');
+    await expect(none).toContainText('No recipients are required');
+    await none.locator('input[value="Yes"]').check();
+    await expect(page.locator('.entry-card-header', { hasText: 'Recipient 1' })).toBeHidden();
+    expect(await page.evaluate(() => (window as any).D.certRecipients[1].line2)).toBe('1 Main St');
+    expect(await page.evaluate(() => (window as any).validateAnnual().some((issue: any) => String(issue.message || issue).includes('Recipient 2')))).toBe(false);
+  });
+
   test('a fully completed filing exports a real PDF', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Complete Annual PDF Ward', 'annual');

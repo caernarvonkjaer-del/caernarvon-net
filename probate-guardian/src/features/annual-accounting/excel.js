@@ -16,6 +16,7 @@ import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js'
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { alertModal } from '../../core/ui/dialogs.js';
+import { newSchB4Id, sortedSchB4Rows } from '../../core/filing/schb4-accounts.js';
 
 const {
   renderPage, ensureTemplate, calcTotalsAnnual,
@@ -56,6 +57,11 @@ export async function doSaveExcel(){
   const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';
   const capacityIssues = getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS);
+  const assignedB4Accounts = new Set((window.D.schB4 || []).map(r => r.bankAccountId).filter(Boolean));
+  if (assignedB4Accounts.size > 1) {
+    await alertModal('This Excel template has a single bank/account header for the B-4 register. Export PDF for multiple B-4 accounts; it identifies the bank and account on every transaction.');
+    return;
+  }
   const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
@@ -92,7 +98,7 @@ export async function doSaveExcel(){
     // it was: its type preservation (a short numeric input stays a number, so
     // setCell writes a numeric cell) is why this is not merged with
     // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
-    const fD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
+    const fD=s=>{const v=s instanceof Date?s.toISOString():s;const iso=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(iso)?`${iso.slice(5,7)}/${iso.slice(8,10)}/${iso.slice(0,4)}`:(v||'');};
 
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
@@ -100,6 +106,15 @@ export async function doSaveExcel(){
     const ExcelJS = await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
+
+    // The bundled court workbook repeats named-formula headers on schedule
+    // pages. Replace only those two verified formula cells with literal filing
+    // values, avoiding #NAME? in readers that do not calculate defined names.
+    workbook.worksheets.forEach(ws => ws.getRow(2).eachCell(cell => {
+      const formula = cell.value?.formula;
+      if (formula === 'Name_of_Ward') setCell(ws, cell.address, inv.wardName || '');
+      if (formula === 'Case_Number') setCell(ws, cell.address, inv.caseNumber || '');
+    }));
 
     // PART I
     const p1=workbook.getWorksheet('PART I');
@@ -224,11 +239,15 @@ export async function doSaveExcel(){
       });
     }
 
-    // Schedule B-4 — other disbursements (write to pages p2-p3 only)
+    // Schedule B-4: this template's p2 header describes its one check register.
     const sb4p2=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
     if(sb4p2){
-      inv.schB4.forEach((r,i)=>{
-        if(i<25){const row=20+i; setCell(sb4p2,`C${row}`,r.checkNo||''); setCell(sb4p2,`D${row}`,fD(r.datePaid)); setCell(sb4p2,`E${row}`,r.category||''); setCell(sb4p2,`G${row}`,r.payee||''); setCell(sb4p2,`I${row}`,nv(r.amount));}
+      const account=(inv.schB4Accounts||[]).find(a=>a.id===[...assignedB4Accounts][0]);
+      setCell(sb4p2,'C6',account?.bankName||'');
+      setCell(sb4p2,'H6',account?.accountNo||'');
+      sb4p2.getColumn('I').width=Math.max(sb4p2.getColumn('I').width||0,18);
+      sortedSchB4Rows(inv.schB4||[]).forEach((r,i)=>{
+        if(i<25){const row=20+i; setCell(sb4p2,`C${row}`,r.checkNo||''); setCell(sb4p2,`D${row}`,fD(r.datePaid)); setCell(sb4p2,`E${row}`,r.category||''); setCell(sb4p2,`G${row}`,r.payee||''); setCell(sb4p2,`I${row}`,nv(r.amount)); sb4p2.getCell(`I${row}`).numFmt='$#,##0.00';}
       });
     }
 
@@ -347,11 +366,15 @@ export async function doSaveExcel(){
     const p9=workbook.getWorksheet('PART IX ');
     if(p9){
       setCell(p9,'G8',inv.guardianRelationship||'');
-      setCell(p9,'G9',fD(inv.restrictedDepositoryReceiptDate));
-      setCell(p9,'H20',nv(inv.bondAmount));
-      setCell(p9,'E21',fD(inv.bondPeriodFrom));
-      setCell(p9,'G21',fD(inv.bondPeriodTo));
-      setCell(p9,'D22',inv.bondingCompany||'');
+      // The official workbook has a restricted-depository receipt-date cell,
+      // not a separate Yes/No field. Preserve legacy unanswered values, but
+      // do not print a retained date after an explicit No.
+      setCell(p9,'G9',fD(inv.restrictedDepository === 'No' ? '' : inv.restrictedDepositoryReceiptDate));
+      const bondIsWaived=inv.bondWaived==='Yes';
+      setCell(p9,'H20',bondIsWaived?'':nv(inv.bondAmount));
+      setCell(p9,'E21',bondIsWaived?'':fD(inv.bondPeriodFrom));
+      setCell(p9,'G21',bondIsWaived?'':fD(inv.bondPeriodTo));
+      setCell(p9,'D22',bondIsWaived?'':(inv.bondingCompany||''));
     }
 
     // Part X — cert of service. Recipients (B/I column anchors, rows
@@ -362,7 +385,7 @@ export async function doSaveExcel(){
     // real value cell is G25 (anchor of G25:I25), not H25.
     const p10=workbook.getWorksheet('PART X');
     if(p10){
-      const r=inv.certRecipients;
+      const r=inv.certNoRecipients==='Yes'?[]:inv.certRecipients;
       setCell(p10,'B11',r[0]&&r[0].name||''); setCell(p10,'B12',r[0]&&r[0].line2||''); setCell(p10,'B13',r[0]&&r[0].line3||''); setCell(p10,'B14',r[0]&&r[0].line4||'');
       setCell(p10,'I11',r[1]&&r[1].name||''); setCell(p10,'I12',r[1]&&r[1].line2||''); setCell(p10,'I13',r[1]&&r[1].line3||''); setCell(p10,'I14',r[1]&&r[1].line4||'');
       setCell(p10,'B17',r[2]&&r[2].name||''); setCell(p10,'B18',r[2]&&r[2].line2||''); setCell(p10,'B19',r[2]&&r[2].line3||''); setCell(p10,'B20',r[2]&&r[2].line4||'');
@@ -552,9 +575,12 @@ export async function importExcel(input){
       // overflow beyond 25 entries, matching ANNUAL_EXCEL_CAPS.schB4.
       const sb4=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
       D.schB4=[];
+      D.schB4Accounts=[];
+      const b4Bank=gcStr(sb4,'C6'), b4Number=gcStr(sb4,'H6');
+      if(b4Bank||b4Number)D.schB4Accounts.push({id:newSchB4Id(),bankName:b4Bank,accountNo:b4Number});
       if(sb4)for(let row=20;row<=44;row++){
         const checkNo=gcStr(sb4,`C${row}`),payee=gcStr(sb4,`G${row}`),amt=gcNum(sb4,`I${row}`);
-        if(rowHasData(checkNo,payee,amt))D.schB4.push({checkNo,datePaid:gcDate(sb4,`D${row}`),category:gcStr(sb4,`E${row}`),payee,amount:amt});
+        if(rowHasData(checkNo,payee,amt))D.schB4.push({id:newSchB4Id(),bankAccountId:D.schB4Accounts[0]?.id||'',checkNo,datePaid:gcDate(sb4,`D${row}`),category:gcStr(sb4,`E${row}`),payee,amount:amt});
       }
 
       // Schedule C — capital adjustments
@@ -655,6 +681,7 @@ export async function importExcel(input){
       if(p9){
         D.guardianRelationship=gcStr(p9,'G8')||D.guardianRelationship;
         D.restrictedDepositoryReceiptDate=gcDate(p9,'G9');
+        D.restrictedDepository=D.restrictedDepositoryReceiptDate?'Yes':'';
         D.bondAmount=gcNum(p9,'H20');
         D.bondPeriodFrom=gcDate(p9,'E21');
         D.bondPeriodTo=gcDate(p9,'G21');

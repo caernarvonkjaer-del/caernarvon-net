@@ -6,6 +6,7 @@ import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddress } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { sortedSchB4Rows } from '../../core/filing/schb4-accounts.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -53,6 +54,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
     return `${parts[1]}/${parts[2]}/${parts[0]}`;
   };
 
+  const triText = (value) => yesNoText(value) || '—';
+  const triIsYes = (value) => triText(value) === 'Yes';
+
   const formatSig = (name) => {
     const str = (name || '').trim();
     if (!str) return '';
@@ -84,7 +88,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const caseInfoItems = [
     { label: 'Name of Ward', value: wardName },
     { label: 'Case Number', value: caseNumber },
-    { label: 'For the Period', value: `From: ${fmtD(d.periodFrom)}   To: ${fmtD(d.periodTo)}` },
+    { label: 'Period From', value: fmtD(d.periodFrom) },
+    { label: 'Period To', value: fmtD(d.periodTo) },
     { label: 'Guardian', value: d.guardian || '' },
     { label: 'Attorney for Guardian', value: d.attorney || '' },
     { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
@@ -144,6 +149,16 @@ export function buildAnnualAccountingModel(D, options = {}) {
         },
         colWidths: [75, 25],
         colAlign: ['left', 'right'],
+      },
+      {
+        type: 'key-value-grid',
+        tag: 'Part',
+        items: [
+          { label: 'Trust accounting filed or required', value: d.trustAccountingFiled || 'Unanswered' },
+          ...(d.trustAccountingFiled === 'Yes'
+            ? [{ label: 'Value of trust assets (not included in estate audit fee)', value: fmtS(d.trustAssetsValue) }]
+            : []),
+        ],
       },
     ],
   });
@@ -497,8 +512,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
   ];
 
   if ((d.schB4 || []).length > 0) {
-    const regRows = d.schB4.map((r, i) => [
+    const accounts = new Map((d.schB4Accounts || []).map(a => [a.id, a]));
+    const regRows = sortedSchB4Rows(d.schB4).map((r, i) => [
       String(i + 1),
+      accounts.get(r.bankAccountId)?.bankName || '',
+      accounts.get(r.bankAccountId)?.accountNo || r.bankAcct || '',
       r.checkNo || '',
       fmtD(r.datePaid),
       r.category || '',
@@ -509,11 +527,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
       type: 'table',
       tag: 'Table',
       title: 'Schedule B-4: All Other Disbursements — Check Register',
-      headers: ['#', 'Check #', 'Date Paid', 'Category', 'Payee', 'Amount'],
+      headers: ['#', 'Bank', 'Account #', 'Check #', 'Date Paid', 'Category', 'Payee', 'Amount'],
       rows: regRows,
       totals: { label: 'Schedule B-4 Detail Total', value: fmtS(t.schB4) },
-      colWidths: [6, 14, 14, 26, 26, 14],
-      colAlign: ['center', 'left', 'left', 'left', 'left', 'right'],
+      colWidths: [5, 17, 14, 10, 12, 18, 14, 10],
+      colAlign: ['center', 'left', 'left', 'left', 'left', 'left', 'left', 'right'],
     });
   }
 
@@ -910,7 +928,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Depository and Relationship Information',
         items: [
           { label: "Guardian's Relationship to Ward", value: d.guardianRelationship || 'None' },
-          { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) || 'None' },
+          { label: 'Restricted Depository?', value: triText(d.restrictedDepository) },
+          ...(triIsYes(d.restrictedDepository) ? [
+            { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) || 'None' },
+          ] : []),
         ],
       },
       {
@@ -936,7 +957,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
         type: 'key-value-grid',
         tag: 'Table',
         title: 'Bond Policy Details',
-        items: [
+        items: triIsYes(d.bondWaived) ? [
+          { label: 'Bond waived by court order', value: 'Yes' },
+        ] : [
           { label: 'Bond Amount', value: fmtS(d.bondAmount) },
           { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom)}   To: ${fmtD(d.bondPeriodTo)}` },
           { label: 'Name of Bonding Company', value: d.bondingCompany || '' },
@@ -951,11 +974,13 @@ export function buildAnnualAccountingModel(D, options = {}) {
     {
       type: 'notice',
       tag: 'P',
-      text: 'Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to:',
+      text: d.certNoRecipients === 'Yes'
+        ? 'The filer selected that no recipients are listed on this Certificate of Service.'
+        : 'Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to:',
     },
   ];
 
-  if (certRecipients.length > 0) {
+  if (d.certNoRecipients !== 'Yes' && certRecipients.length > 0) {
     certBlocks.push({
       type: 'table',
       tag: 'Table',
@@ -973,7 +998,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       colWidths: [6, 44, 50],
       colAlign: ['center', 'left', 'left'],
     });
-  } else {
+  } else if (d.certNoRecipients !== 'Yes') {
     certBlocks.push({
       type: 'notice',
       tag: 'P',

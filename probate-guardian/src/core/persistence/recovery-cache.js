@@ -26,17 +26,14 @@ export async function _sessionCacheGet() {
 }
 
 export async function _sessionCachePut(val) {
-  try {
-    const db = await _sessionCacheDb();
-    await new Promise((resolve) => {
-      const tx = db.transaction(SESSION_CACHE_STORE, 'readwrite');
-      tx.objectStore(SESSION_CACHE_STORE).put(val, 'current');
-      tx.oncomplete = resolve;
-      tx.onerror = resolve;
-    });
-  } catch (e) {
-    /* non-critical */
-  }
+  const db = await _sessionCacheDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(SESSION_CACHE_STORE, 'readwrite');
+    tx.objectStore(SESSION_CACHE_STORE).put(val, 'current');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error || new Error('Local resume write failed'));
+    tx.onabort = () => reject(tx.error || new Error('Local resume write aborted'));
+  });
 }
 
 export async function _sessionCacheClear() {
@@ -56,9 +53,9 @@ export async function _sessionCacheClear() {
 export async function saveSessionRestoreCache() {
   const securityMode = getSecurityMode();
   const cryptoKey = getCryptoKey();
-  if (securityMode === 'encrypted' && !cryptoKey) return;
+  if (securityMode === 'encrypted' && !cryptoKey) return false;
   const caseFile = getCaseFile();
-  if (!caseFile.wards || !caseFile.wards.length) return; // nothing worth recovering yet
+  if (!caseFile.wards || !caseFile.wards.length) return false; // nothing worth recovering yet
 
   try {
     const salt = await loadAppState('cryptoSalt');
@@ -84,8 +81,10 @@ export async function saveSessionRestoreCache() {
       cases: core.cases,
       partyDismissals: core.partyDismissals,
     });
+    return true;
   } catch (e) {
     console.warn('session-restore cache write failed', e);
+    return false;
   }
 }
 
@@ -93,7 +92,7 @@ export async function clearSessionRestoreCache() {
   await _sessionCacheClear();
 }
 
-export async function checkSessionRestoreCacheAtLaunch() {
+export async function checkSessionRestoreCacheAtLaunch({ confirmRestore = true } = {}) {
   let cache;
   try {
     cache = await _sessionCacheGet();
@@ -101,13 +100,11 @@ export async function checkSessionRestoreCacheAtLaunch() {
     return false;
   }
   if (!cache || !Array.isArray(cache.wards) || !cache.wards.length) return false;
-  const proceed = await confirmModal(
-    `This browser has unsaved work from a previous session (last changed ${formatRelativeTime(cache.savedAt)}) that was never saved to a .sav file — most likely because the tab was closed or crashed before a backup was made.\n\n` +
-      'Click OK to restore that work now, or Cancel to discard it and start fresh.'
-  );
-  if (!proceed) {
-    await clearSessionRestoreCache();
-    return false;
+  if (confirmRestore) {
+    const proceed = await confirmModal(
+      `This browser has a locally protected filing from ${formatRelativeTime(cache.savedAt)}. Restore it on this device?`
+    );
+    if (!proceed) return false;
   }
   try {
     let key = null;
@@ -154,7 +151,7 @@ export async function checkSessionRestoreCacheAtLaunch() {
       if (typeof window.updateLastSavedIndicator === 'function') window.updateLastSavedIndicator();
       if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
     }
-    await alertModal(`Restored ${restoredWards.length} form(s) from your last unsaved session. Please save a backup file now.`);
+    await alertModal(`Restored ${restoredWards.length} form(s) from this device. Keep a separate .sav backup in case browser storage is cleared.`);
     return true;
   } catch (e) {
     console.error('session restore failed', e);

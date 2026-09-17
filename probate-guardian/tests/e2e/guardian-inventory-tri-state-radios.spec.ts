@@ -12,7 +12,7 @@ import { freshStartNoPassword, createWard } from './support/target';
 // radio and confirms the actual state write lands at the exact path the
 // source claims, closing that gap for real.
 test.describe('Guardian Inventory tri-state radios are correctly wired to their state paths', () => {
-  test('Amended Form, Schedule A-1/B-1/B-2/B-3/D-3 radios write to their declared data-form-path on click', async ({ page }) => {
+  test('Amended Form, Schedule A-1/B-1/B-2/B-3/D-3/D-4 radios write to their declared data-form-path on click', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Radio Wiring Ward', 'guardian');
 
@@ -26,6 +26,8 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
       { route: '/b3', schedule: null, path: 'scheduleB3.0.inSafeDepositBox', label: 'In Safe Deposit Box?' },
       { route: '/d3', schedule: null, path: 'hasSafeDepositBox', label: 'Does the ward have a safe deposit box' },
       { route: '/d3', schedule: null, path: 'safeDepositBoxFiled', label: 'Safe Deposit Box Inventory Filed with Court?' },
+      { route: '/d4', schedule: null, path: 'bondWaived', label: 'Was the bond waived by court order?' },
+      { route: '/d4', schedule: null, path: 'restrictedDepository', label: 'Are cash or intangible assets held in a restricted depository?' },
     ];
 
     let currentRoute = '';
@@ -69,5 +71,48 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
     await parent.locator('input[value="Yes"]').check();
     await expect(child).toBeVisible();
     await expect(child.locator('input[value="Yes"]')).toBeChecked();
+  });
+
+  test('D-4 keeps bond details while a waiver is selected and removes only their validation blockers', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Bond Waiver Ward', 'guardian');
+    await page.evaluate(() => {
+      Object.assign((window as any).D, {
+        bondAmount: '5000', bondPeriodFrom: '2026-01-01', bondPeriodTo: '2027-01-01', bondingCompany: 'Sample Surety',
+      });
+      (window as any).navigate('/d4');
+    });
+
+    const waiver = page.locator('fieldset[data-yes-no-group="bondWaived"]');
+    await waiver.locator('input[value="Yes"]').check();
+    await expect(page.locator('[data-bind="bondAmount"]')).toBeHidden();
+    await expect(page.locator('[data-bind="bondWaivedDate"]')).toHaveCount(1);
+    expect(await page.evaluate(() => (window as any).D.bondAmount)).toBe('5000');
+    expect(await page.evaluate(() => (window as any).validateGuardian().filter((issue: any) => String(issue.message || issue).startsWith('D-4')))).toEqual([]);
+
+    await waiver.locator('input[value="No"]').check();
+    await expect(page.locator('[data-bind="bondAmount"]')).toBeVisible();
+    await expect(page.locator('[data-bind="bondAmount"]')).toHaveValue('5000');
+  });
+
+  test('D-5 permits one recipient, requires a partially entered additional recipient, and preserves recipients when none is selected', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Service Recipient Ward', 'guardian');
+    await page.evaluate(() => {
+      (window as any).D.serviceRecipients = [
+        { name: 'First Recipient', address: '1 Main St', cityStateZip: 'Clearwater, FL 33755' },
+        { name: 'Partial Recipient', address: '', cityStateZip: '' },
+      ];
+      (window as any).navigate('/d5');
+    });
+
+    const none = page.locator('fieldset[data-yes-no-group="serviceNoRecipients"]');
+    await expect(none).toContainText('No recipients are required');
+    expect(await page.evaluate(() => (window as any).validateGuardian().some((issue: any) => String(issue.message || issue).startsWith('D-5 Recipient 2')))).toBe(true);
+
+    await none.locator('input[value="Yes"]').check();
+    await expect(page.locator('.entry-card-header', { hasText: 'Recipient 1' })).toBeHidden();
+    expect(await page.evaluate(() => (window as any).D.serviceRecipients[1].name)).toBe('Partial Recipient');
+    expect(await page.evaluate(() => (window as any).validateGuardian().some((issue: any) => String(issue.message || issue).startsWith('D-5 Recipient')))).toBe(false);
   });
 });

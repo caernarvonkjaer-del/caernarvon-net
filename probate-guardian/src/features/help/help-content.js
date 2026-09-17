@@ -170,7 +170,7 @@ export const HELP_CONTENT = Object.freeze({
   'saving': {
     title: 'Backup & Saving',
     content: `<div class="help-section-title">How Saving Works</div>
-    <p>Your data is saved automatically to this device as you type. You can see the save status in the sidebar.</p>
+    <p>Your protected filing can be resumed on this device after you enter its password. Browser storage can be cleared, so also keep a separate .sav backup. You can see the save status in the sidebar.</p>
     <div class="help-section-title">Creating a Backup</div>
     <p>Use the <strong>Save Backup (.sav)</strong> button to download an encrypted backup. Store this file safely—it's your safeguard if your device is lost or damaged.</p>
     <div class="help-section-title">Auto-Save</div>

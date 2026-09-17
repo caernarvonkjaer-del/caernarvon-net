@@ -189,8 +189,12 @@
 <div id="startup-choice-overlay" class="modal-overlay" inert aria-hidden="true">
   <div class="modal-box">
     <h2 class="modal-box-title">Probate Guardian</h2>
-    <p class="modal-box-intro">This app keeps nothing in this browser between visits — your whole case lives in one .sav file you choose and control. Open it to continue where you left off, or start a brand-new case.</p>
+    <p class="modal-box-intro">Continue a filing saved on this device, open a separate .sav backup, or start a new case. Browser storage may be cleared, so keep a backup file.</p>
     <p id="startup-file-status" class="alert alert-warning" role="alert">The previously opened case file could not be found. If you restored it, select it again below so this browser can reconnect to it.</p>
+    <button type="button" class="security-choice-option" data-startup-action="resume-on-device">
+      <div class="security-choice-header"><span class="security-choice-title">Continue on This Device</span></div>
+      <ul class="security-choice-list"><li>Enter the password if this filing is protected.</li></ul>
+    </button>
     <button type="button" class="security-choice-option" data-startup-action="open-ward">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/></svg></span>

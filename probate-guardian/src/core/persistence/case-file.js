@@ -14,7 +14,7 @@ import {
   forgetPersistedCaseFileHandle,
   markCaseOpenedBefore,
 } from './launch-preferences.js';
-import { clearSessionRestoreCache } from './recovery-cache.js';
+import { saveSessionRestoreCache } from './recovery-cache.js';
 import { getCaseFile, getTemplateCache } from '../state.js';
 import { windowBackedRef } from './window-backed-ref.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
@@ -387,10 +387,10 @@ export async function exportCaseFileZip() {
     const handle = await saveBlobAs(blob, suggestedName);
     if (handle) {
       await rememberCaseFileHandle(handle);
-      clearSessionRestoreCache();
       markCaseOpenedBefore();
     }
     setDirtySinceExport(false);
+    await saveSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
     if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {
@@ -447,7 +447,7 @@ export async function writeCaseToHandle(handle, viaTimer) {
     window.hideSaveError();
   }
   setDirtySinceExport(false);
-  clearSessionRestoreCache();
+  await saveSessionRestoreCache();
   hideAutoExportReminder();
   await refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
@@ -903,7 +903,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
     }
 
     setDirtySinceExport(false);
-    clearSessionRestoreCache();
+    await saveSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
     if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {

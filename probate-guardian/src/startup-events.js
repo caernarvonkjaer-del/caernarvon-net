@@ -2,6 +2,7 @@ document.addEventListener('click', (event) => {
   const control = event.target instanceof Element ? event.target.closest('[data-startup-action]') : null;
   if (!control) return;
   switch (control.dataset.startupAction) {
+    case 'resume-on-device': window.resumeCaseOnDeviceAtLaunch(); break;
     case 'open-ward':
     case 'open-case': (window.openWardFileAtLaunch || window.openCaseFileAtLaunch)(); break;
     case 'select-security': window.selectSecurityMode(control.dataset.securityMode); break;

@@ -44,6 +44,8 @@ import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
 import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
+import { scheduleEvidenceState, missingScheduleEvidence } from './core/filing/schedule-evidence.js';
+import { normalizeSchB4Accounts, newSchB4Id } from './core/filing/schb4-accounts.js';
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
 if (typeof window !== 'undefined') {
@@ -65,6 +67,10 @@ if (typeof window !== 'undefined') {
   }
 
   window.navigate = navigate;
+  window.scheduleEvidenceState = scheduleEvidenceState;
+  window.missingScheduleEvidence = missingScheduleEvidence;
+  window.normalizeSchB4Accounts = normalizeSchB4Accounts;
+  window.newSchB4Id = newSchB4Id;
   // activateWard/switchWard are published by ward-lifecycle.js itself; the
   // third copy this file used to add was removed in Milestone 42E.
   window.markFilingRevisionChanged = markFilingRevisionChanged;
