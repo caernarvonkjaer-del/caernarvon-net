@@ -313,7 +313,6 @@ interface Window {
   pvSelect: any;
   pvStep: any;
   queueAllScheduleDocValidations: any;
-  readCellText: any;
   readRememberedFile: any;
   readRoleFields: any;
   readStoredTheme: any;

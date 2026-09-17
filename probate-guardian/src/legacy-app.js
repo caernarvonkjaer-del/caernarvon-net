@@ -967,15 +967,6 @@ const r2=(v)=>Math.round(v*100)/100;
 const fmt=(v)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v||0);
 window.fmt=fmt;
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-// Milestone 51 follow-up: the `instanceof Date` guard is load-bearing, not
-// defensive noise. Without it, String(dateObj).substring(0,10) yields a
-// LOCALE-and-TIMEZONE-dependent prefix of Date#toString() -- "Tue May 19" for a
-// 2026-05-20T00:00:00Z date, which is both the wrong format and the wrong DAY.
-// These values reach filed court documents (Excel cells, PDF bodies, and the
-// under-penalties-of-perjury attestation's "from X through Y"), so a silent
-// off-by-one date is not cosmetic. Guarded across all five Group A copies of
-// this rule; see tests/unit/date-truncation-helpers.spec.js.
-function fmtDate(s){const v=s instanceof Date?s.toISOString():s;return v?String(v).substring(0,10):'';}
 
 // Neutralizes formula/CSV injection: a cell value starting with =, +, -, or @
 // would otherwise be interpreted as a formula by Excel/Sheets when the
@@ -1183,44 +1174,6 @@ function assertWorkbookWithinLimits(workbook){
       throw new Error(`Sheet "${ws.name}" has ${n} rows — far more than a Clerk of Court template ever has. It was not imported.`);
     }
   }
-}
-
-// Resolves a raw ExcelJS cell value down to a plain scalar or Date,
-// unwrapping every non-literal shape ExcelJS hands back: {formula,result}
-// (a formula cell — prefer the computed result), {richText:[...]} (join the
-// runs' text), {text,hyperlink} (the link's display text), and {error}
-// (a cell showing #REF!/#DIV0!/etc — nothing sensible to import). A formula
-// result can itself be any of these shapes, so this recurses once on
-// .result. Returns null instead of ever handing back a raw object — a
-// shape this doesn't recognize should import as blank, not as "[object
-// Object]" in a case number or a ward's name.
-function unwrapCellValue(v){
-  if(v==null)return null;
-  if(v instanceof Date)return v;
-  if(typeof v!=='object')return v;
-  if('error' in v)return null;
-  if('result' in v)return unwrapCellValue(v.result);
-  if(Array.isArray(v.richText))return v.richText.map(r=>r&&r.text||'').join('');
-  if('hyperlink' in v){
-    const t=v.text;
-    return Array.isArray(t)?t.map(r=>r&&r.text||'').join(''):t;
-  }
-  return null;
-}
-
-// Text form of an ExcelJS cell — the replacement for the `const gc=addr=>
-// {const c=ws.getCell(addr);return c.value!=null?String(c.value).trim()
-// :'';}` pattern that used to be redefined at every import site. That
-// pattern printed the literal string "[object Object]" into whatever field
-// it fed whenever the cell held a formula, rich text, a hyperlink, or an
-// error — all of which a real court-issued template can contain. Dates are
-// normalized through the app's own fmtDate (YYYY-MM-DD) instead of a
-// locale/timezone-dependent Date#toString().
-function readCellText(cell){
-  const v=unwrapCellValue(cell?cell.value:null);
-  if(v==null)return '';
-  if(v instanceof Date)return fmtDate(v.toISOString());
-  return String(v).trim();
 }
 
 // Recursively sanitize all string fields in an object (for loaded data)

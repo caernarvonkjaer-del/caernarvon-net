@@ -14,13 +14,14 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
+import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
   renderPage, ensureTemplate, calcTotalsAnnual,
   annualReconcileState, guardianHasAnyData, formDisplayName,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
-  readCellText, unwrapCellValue, capitalizeImportedFields,
+  capitalizeImportedFields,
   sanitizeObjectDataInPlace, autoSave, getCurrentPage,
   r2,
 } = window;

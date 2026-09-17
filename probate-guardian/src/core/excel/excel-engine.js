@@ -42,8 +42,9 @@
 //     write false zeros into filings on Excel import.
 //   - The feature readers route cell values through unwrapCellValue (formula
 //     cells, richText); the core readers did not.
-//   - fmtDate here truncated only when length >= 10; legacy-app.js:961's
-//     fmtDate truncates unconditionally. They differ on short strings.
+//   - fmtDate here truncated only when length >= 10; the surviving fmtDate
+//     (now cell-reader.js's, moved there by 53B) truncates unconditionally.
+//     They differ on short strings.
 //   - yesNo(bool) returned 'No' for '', null and undefined -- which AGENTS.md
 //     section 3 forbids outright ("Never default or coerce an unanswered field
 //     to 'No', at any stage"). guardian-inventory/excel.js has a correct
@@ -51,32 +52,27 @@
 //     would have turned every unanswered binary in a filed Initial Inventory
 //     into an affirmative 'No'. The dead one is gone; the correct local one is
 //     the canonical tri-state Excel writer.
-//   - readCellText here was a passthrough that delegated to window.readCellText
-//     when present. All three features call that legacy global directly, so the
-//     wrapper had no caller once the readers above went. Keeping an unused
-//     wrapper "for later" is exactly how this module got into its previous state,
-//     so it was deleted rather than kept.
+//   - the readCellText that used to live here was a passthrough delegating to
+//     the legacy global of the same name. All three features called that global
+//     directly, so the wrapper had no caller once the readers above went.
+//     Keeping an unused wrapper "for later" is exactly how this module got into
+//     its previous state, so it was deleted rather than kept.
 //
-// WHY readCellText CANNOT SIMPLY MOVE TO CORE (investigated, Milestone 51,
-// decision: leave it and record the blocker). 51F did exactly that move for
-// checkExcelCapacity, so this looks like the obvious follow-up. It is not, and
-// the reason is not obvious from the call sites:
+// THE IMPORT-DIRECTION READERS NOW LIVE IN ./cell-reader.js (Milestone 53B).
+// The block that used to sit here explained why the cluster could not move --
+// readCellText's body calls unwrapCellValue and fmtDate, both of which were
+// classic-script globals, so moving readCellText alone would have left a core
+// function reaching back through `window` for two helpers. It ended: "it is a
+// cluster move or nothing."
 //
-// legacy-app.js's readCellText() is not self-contained -- its body calls
-// unwrapCellValue() (formula/richText/hyperlink/error unwrapping) and fmtDate()
-// (to normalize a Date via toISOString(), deliberately avoiding a
-// locale/timezone-dependent Date#toString()). Both are legacy globals.
-// legacy-app.js is a classic script and cannot `import`, so moving readCellText
-// alone leaves a core function reaching back through `window` for two helpers --
-// precisely the passthrough shape deleted above.
-//
-// So the real options are: move the whole cluster (unwrapCellValue + fmtDate +
-// readCellText) and delete three globals, which touches every import-path cell
-// read in the app and needs its own cell-level gate on the IMPORT direction; or
-// leave it. Left deliberately: there is exactly ONE implementation today, so
-// there is no duplication cost and nothing can drift -- only the mechanism by
-// which the features reach it is legacy. Do not re-raise this as a trivial
-// one-function swap; it is a cluster move or nothing.
+// 53B was the cluster move. fmtDate, unwrapCellValue and readCellText are now
+// three exports of ./cell-reader.js, bodies unchanged, and the classic-script
+// originals are deleted -- so this module's writers and that module's readers
+// are the two directions of one boundary, each reached by `import` only.
+// See MILESTONE-53-PROPOSAL.md for the gate that proved the move
+// behavior-neutral, and cell-reader.js's own header before adding anything to
+// it (the 0-vs-'' divergence recorded above is the reason a readCellNumber
+// does not belong there either).
 
 import { getExcelJS } from './exceljs-loader.js';
 

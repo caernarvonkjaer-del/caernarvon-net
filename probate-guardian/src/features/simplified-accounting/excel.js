@@ -6,12 +6,13 @@ import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
+import { readCellText } from '../../core/excel/cell-reader.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 
 const {
   renderPage, ensureTemplate, calcTotals, guardianHasAnyData,
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
-  readCellText, capitalizeImportedFields, sanitizeObjectDataInPlace, autoSave,
+  capitalizeImportedFields, sanitizeObjectDataInPlace, autoSave,
   getCurrentPage,
 } = window;
 

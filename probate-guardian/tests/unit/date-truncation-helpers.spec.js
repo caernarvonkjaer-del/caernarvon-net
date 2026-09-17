@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 
 globalThis.window = globalThis.window || {};
 const { fmtD } = await import('../../src/features/annual-accounting/index.js');
+const { fmtDate } = await import('../../src/core/excel/cell-reader.js');
 
 // Milestone 51's fmtDate audit found thirteen date-truncating copies in this app,
 // in four groups. The five "Group A" copies all shared one latent bug: they
@@ -22,9 +23,11 @@ const { fmtD } = await import('../../src/features/annual-accounting/index.js');
 // cost is one expression and the failure mode is a wrong date in a sworn
 // statement.
 describe('Group A date-truncation helpers: Date objects', () => {
-  // The only Group A copy that is importable; the other four are a classic-script
-  // global and three closures local to their excel.js writers, which the source
-  // scan below covers instead.
+  // Two of the five Group A copies are importable as of Milestone 53B, which
+  // moved legacy-app.js's fmtDate into src/core/excel/cell-reader.js -- it was
+  // a classic-script global before and could only be source-scanned. The other
+  // three are closures local to their excel.js writers, which the source scan
+  // below covers instead.
   test('fmtD() normalizes a Date through toISOString(), not Date#toString()', () => {
     expect(fmtD(new Date('2026-05-20T00:00:00Z'))).toBe('2026-05-20');
     // A timestamp late in the UTC day is the case a local-timezone conversion
@@ -41,6 +44,21 @@ describe('Group A date-truncation helpers: Date objects', () => {
     expect(fmtD(0)).toBe('');
     expect(fmtD('abc')).toBe('abc');
   });
+
+  test('fmtDate() normalizes a Date through toISOString(), not Date#toString()', () => {
+    expect(fmtDate(new Date('2026-05-20T00:00:00Z'))).toBe('2026-05-20');
+    expect(fmtDate(new Date('2026-01-01T23:59:59Z'))).toBe('2026-01-01');
+  });
+
+  test('fmtDate() still behaves as before for every non-Date input', () => {
+    expect(fmtDate('2026-09-15')).toBe('2026-09-15');
+    expect(fmtDate('2026-09-15T14:30:00Z')).toBe('2026-09-15');
+    expect(fmtDate('')).toBe('');
+    expect(fmtDate(null)).toBe('');
+    expect(fmtDate(undefined)).toBe('');
+    expect(fmtDate(0)).toBe('');
+    expect(fmtDate('abc')).toBe('abc');
+  });
 });
 
 // A source scan, because four of the five copies cannot be imported: one is a
@@ -50,7 +68,9 @@ describe('Group A date-truncation helpers: Date objects', () => {
 // shipped code.
 describe('Group A date-truncation helpers: every copy carries the Date guard', () => {
   const COPIES = [
-    { file: 'src/legacy-app.js', name: 'fmtDate' },
+    // Milestone 53B moved this copy out of legacy-app.js (a classic script) into
+    // an ES module; the guard it carries is unchanged.
+    { file: 'src/core/excel/cell-reader.js', name: 'fmtDate' },
     { file: 'src/features/annual-accounting/index.js', name: 'fmtD' },
     { file: 'src/features/annual-accounting/excel.js', name: 'fD' },
     { file: 'src/features/guardian-inventory/excel.js', name: 'fmtD' },
