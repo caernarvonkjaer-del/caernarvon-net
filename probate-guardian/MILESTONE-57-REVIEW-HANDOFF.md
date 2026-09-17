@@ -1,12 +1,17 @@
-# Milestone 57 review — handoff (session paused 2026-09-17 evening)
+# Milestone 57 review — handoff (2026-09-17)
 
 Working from the review verdict: 57A defective validation, 57B incomplete/unsafe
 conversion, 57C blank-period bug, 57D critical Excel regression, 57E-1 poorly
 integrated, 57F Guardian Excel round-trip defect + unverified PDF fix, 57G no
 defect found, 57H privacy/product-design regression. Recommendation was to stop
-release on three items before touching the rest. Status below.
+release on three items before touching the rest.
 
-## Done and verified (safe to leave as-is, or commit)
+**All three stop-release items are done, tested, committed, and pushed to
+`master`** (commit `c991869` covers 57H + the Guardian Inventory date fix;
+the B-4 Excel fix landed just after). Status below; "Not started" at the
+bottom is the real remaining work.
+
+## Done and verified
 
 ### 1. 57H — replaced the encrypted cross-session cache with a position marker
 Per your instruction mid-session: no case data in browser storage for the
@@ -66,52 +71,48 @@ normalize ISO, `MM/DD/YYYY`, and `MM/DD/YY`, matching annual-accounting's
 `tests/unit/guardian-inventory-date-roundtrip.spec.js` — confirmed red
 against the old code, green now.
 
-Full unit suite: **956/956 passing**. `npm run verify:data-model`: clean.
-Nothing committed yet — all changes are in the working tree.
+### 3. Annual Accounting Schedule B-4 multi-account Excel export
 
-## In progress — 3. Annual Accounting Schedule B-4 multi-account Excel export
+Confirmed by unzipping the real embedded
+template (`templates/annual-template.js`, decoded and inspected directly)
+that the workbook has 18 B-4 check-register pages, not the one (`p2`) the
+app wrote to — `SCH B-4 OTHER DISB p2` through `p19`, each with its own
+`BANK:` / `ACCOUNT NUMBER #:` header at C6/H6 (shared strings 280/535,
+verified). The court's own item numbering groups them into 4 blocks with a
+reset at p8, p12, and p16 — room for 4 distinct bank accounts:
 
-This is the one still open. Current code (`src/features/annual-accounting/excel.js`
-`doSaveExcel()`) blocks the *entire* Excel export — every schedule, not just
-B-4 — whenever a filer has assigned disbursements to more than one bank
-account, forcing PDF-only. Before 57D, B-4 had no per-row bank field at all,
-so Excel export always worked; this is a real regression for anyone paying
-from more than one account.
+| Account | Pages | Row capacity |
+| :-- | :-- | --: |
+| 1 | p2 (rows 20-44) + p3-p7 (rows 8-34 each) | 160 |
+| 2 | p8 (rows 8-37) + p9-p11 (rows 8-34 each) | 111 |
+| 3 | p12 (rows 8-37) + p13-p15 (rows 8-34 each) | 111 |
+| 4 | p16 (rows 8-38) + p17-p19 (rows 8-34 each) | 112 |
 
-**What I confirmed by unzipping the real embedded template**
-(`templates/annual-template.js`, decoded and inspected directly — not
-guessed): the workbook has 18 check-register pages for B-4, not one —
-`SCH B-4 OTHER DISB p2` through `p19` (only `p2` is currently written to).
-Each page has its own `BANK:` / `ACCOUNT NUMBER #:` header at C6/H6 (shared
-strings 280 and 535 — verified). The item numbering across pages groups into
-**4 blocks with resets**: p2–p7 (6 pages), p8–p11 (4 pages), p12–p15 (4
-pages), p16–p19 (4 pages) — i.e. the template supports up to **4 accounts**,
-with page 2's account getting the largest allocation.
+`src/features/annual-accounting/excel.js`:
+- `SCH_B4_ACCOUNT_BLOCKS` — the page/row map above.
+- `planSchB4Export(schB4, schB4Accounts)` — pure, exported, unit-tested.
+  Groups disbursements by account (schB4Accounts[] order = block order),
+  blocks export only if there are >4 accounts or one account's rows exceed
+  its block's real capacity (message names the account, still offers PDF);
+  no-accounts filings fall back to one unlabeled group on block 1 (same as
+  the old behavior, but with p3-p7's headroom instead of being capped at
+  p2's 25 rows).
+- `doSaveExcel()` — the old "2+ accounts → block everything" check replaced
+  with `planSchB4Export()`; the writer now loops each group across its
+  block's pages, writing the header once on the block's first page.
+- `importExcel()` — inverse: reads all 4 blocks, one account per block
+  (only created if that block's header has content).
+- `ANNUAL_EXCEL_CAPS.schB4.cap` raised from 25 to 494 (sum of all 4 blocks)
+  — now just a backstop; `planSchB4Export()` is the real capacity check.
 
-**What's NOT nailed down yet**: the exact row capacity per page/account
-(my per-page item-count scan hit a bug — it was reading raw `<v>` shared-string
-*indices* off unrelated cells as if they were item counts on some rows, so
-the final numbers I had were wrong; needs a redo that filters to numeric
-(non-`t="s"`) cells only), and the precise row ranges to write to on the
-"non-p2" first-page-of-a-group layouts (p8/p12/p16 use a taller register
-starting at row 8, not row 20 like p2 — confirmed — but I hadn't finished
-mapping exact last-row per page when I stopped).
+New test: `tests/unit/schb4-account-export-plan.spec.js` (7 tests) — two
+accounts no longer block export and land in separate blocks; no-accounts
+legacy fallback; >4 accounts still blocks; over-capacity account still
+blocks and is named; exact-capacity is allowed.
 
-**Suggested implementation shape**, once capacities are confirmed: group
-`inv.schB4` rows by `bankAccountId`, assign each account to its own
-page-block in account order (1st account → p2-block, 2nd → p8-block, etc.),
-write that account's bank name/number into every page of its block, error
-only if there are more than 4 distinct accounts *or* one account's row count
-exceeds its block's total capacity (matching the existing capacity-issue
-pattern in `ANNUAL_EXCEL_CAPS`/`getExcelCapacityIssues`, not a hard block).
-Needs a `sortedSchB4Rows` grouping change and a rewritten `ANNUAL_EXCEL_CAPS.schB4`
-entry (currently `cap:25`, which is only p2's count).
-
-**Next step**: redo the per-page row-capacity scan correctly, confirm the
-last usable row on each of the 4 "block-start" layouts (p2, p8, p12, p16)
-and each "continuation" layout (p3-p7, p9-p11, p13-p15, p17-p19), then
-implement + add a unit test proving the multi-account write no longer
-blocks export and attributes each page's rows to the right account.
+Full unit suite: **963/963 passing**. `verify:data-model` clean. No e2e spec
+currently asserts the old blocking behavior (checked), so nothing there
+needed updating.
 
 ## Not started
 57A (defective validation), 57B (unsafe conversion), 57C (blank-period

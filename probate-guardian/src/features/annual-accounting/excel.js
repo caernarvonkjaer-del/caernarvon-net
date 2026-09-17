@@ -36,12 +36,74 @@ const ANNUAL_P67_CELLS = {
   explanation: null  // cell for the written explanation of a difference
 };
 
+// Milestone 57 review: the bundled workbook actually has 18 B-4 check-
+// register pages, not the one (p2) this app used to write to -- 'SCH B-4
+// OTHER DISB p2' through 'p19', each with its own blank BANK:/ACCOUNT
+// NUMBER # header at C6/H6 (verified against the live template's XML, incl.
+// shared-string labels 280/535). Their row spans aren't uniform (p2 has
+// less room, having just followed the SUMMARY page; p8/p12/p16 similarly
+// have slightly more room than their own follow-on pages), and the court's
+// own item numbering inside the template groups them into exactly 4 blocks
+// with a reset at p8, p12, and p16 -- i.e. room for 4 distinct bank
+// accounts, each getting its own run of pages. One account's disbursements
+// fill its block's pages in order; the header is written once, on the
+// block's first page only.
+export const SCH_B4_ACCOUNT_BLOCKS=[
+  [{sheet:'SCH B-4 OTHER DISB p2',first:20,last:44},{sheet:'SCH B-4 OTHER DISB p3',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p4',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p5',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p6',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p7',first:8,last:34}],
+  [{sheet:'SCH B-4 OTHER DISB p8',first:8,last:37},{sheet:'SCH B-4 OTHER DISB p9',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p10',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p11',first:8,last:34}],
+  [{sheet:'SCH B-4 OTHER DISB p12',first:8,last:37},{sheet:'SCH B-4 OTHER DISB p13',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p14',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p15',first:8,last:34}],
+  [{sheet:'SCH B-4 OTHER DISB p16',first:8,last:38},{sheet:'SCH B-4 OTHER DISB p17',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p18',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p19',first:8,last:34}],
+];
+
+function schB4BlockCapacity(block){
+  return block.reduce((sum,page)=>sum+(page.last-page.first+1),0);
+}
+
+// Groups schB4 rows by account (schB4Accounts[] order = block order) and
+// checks each account's row count against its assigned block's real page
+// capacity, instead of the old flat "more than one account -> block
+// everything" rule. An empty schB4Accounts[] (legacy filings, or a filer
+// who never split B-4 into accounts) falls back to one unlabeled group
+// using the first block, exactly like the app's pre-57D behavior -- except
+// now that group also gets p3-p7's overflow room instead of being capped
+// at p2's 25 rows alone.
+export function planSchB4Export(schB4, schB4Accounts){
+  const accounts=schB4Accounts||[];
+  const rows=schB4||[];
+  if(accounts.length>SCH_B4_ACCOUNT_BLOCKS.length){
+    return {ok:false,message:`This Excel template supports up to ${SCH_B4_ACCOUNT_BLOCKS.length} Schedule B-4 bank accounts; this filing has ${accounts.length}. Export PDF instead — it identifies the bank and account on every transaction.`};
+  }
+  const byAccount=new Map(accounts.map(a=>[a.id,[]]));
+  const unassigned=[];
+  for(const r of rows){
+    if(r.bankAccountId&&byAccount.has(r.bankAccountId))byAccount.get(r.bankAccountId).push(r);
+    else unassigned.push(r);
+  }
+  if(unassigned.length&&accounts.length){
+    return {ok:false,message:'Some Schedule B-4 disbursements are not assigned to a bank account. Assign every disbursement to an account (Schedule B-4) before exporting to Excel.'};
+  }
+  const groups=accounts.map((account,i)=>({bankName:account.bankName||'',accountNo:account.accountNo||'',rows:byAccount.get(account.id)||[],block:SCH_B4_ACCOUNT_BLOCKS[i]}));
+  if(!accounts.length&&unassigned.length)groups.push({bankName:'',accountNo:'',rows:unassigned,block:SCH_B4_ACCOUNT_BLOCKS[0]});
+  for(const g of groups){
+    const cap=schB4BlockCapacity(g.block);
+    if(g.rows.length>cap){
+      return {ok:false,message:`Schedule B-4${g.bankName?` account "${g.bankName}"`:''} has ${g.rows.length} disbursements, more than this Excel template's ${cap}-row page allotment for it. Export PDF instead — it includes every entry.`};
+    }
+  }
+  return {ok:true,groups};
+}
+
 export const ANNUAL_EXCEL_CAPS={
   schA:{cap:50,label:'Schedule A — Income',route:'/scha'}, // 20 on p1 + 30 on p2 (SCH A INCOME p2)
   schB1:{cap:24,label:'Schedule B-1 — Attorney Fees',route:'/schb1'},
   schB2:{cap:24,label:'Schedule B-2 — Guardian Fees',route:'/schb2'},
   schB3:{cap:24,label:'Schedule B-3 — Other Court-Ordered Disbursements',route:'/schb3'},
-  schB4:{cap:25,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
+  // A flat backstop only -- planSchB4Export() above enforces the real,
+  // per-account block capacity. This is the sum of every block's rows
+  // (160+111+111+112), so no realistic filing ever reaches it through this
+  // generic length check; it exists so a schB4 array that somehow bypassed
+  // planSchB4Export() still can't silently overflow the template.
+  schB4:{cap:494,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
   schC:{cap:6,label:'Schedule C — Capital Adjustments',route:'/schc'},
   schD1:{cap:11,label:'Schedule D-1 — Cash Assets',route:'/schd1'},
   schD2:{cap:8,label:'Schedule D-2 — Real Estate',route:'/schd2'},
@@ -57,9 +119,9 @@ export async function doSaveExcel(){
   const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';
   const capacityIssues = getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS);
-  const assignedB4Accounts = new Set((window.D.schB4 || []).map(r => r.bankAccountId).filter(Boolean));
-  if (assignedB4Accounts.size > 1) {
-    await alertModal('This Excel template has a single bank/account header for the B-4 register. Export PDF for multiple B-4 accounts; it identifies the bank and account on every transaction.');
+  const sb4Plan = planSchB4Export(window.D.schB4, window.D.schB4Accounts);
+  if (!sb4Plan.ok) {
+    await alertModal(sb4Plan.message);
     return;
   }
   const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
@@ -239,15 +301,22 @@ export async function doSaveExcel(){
       });
     }
 
-    // Schedule B-4: this template's p2 header describes its one check register.
-    const sb4p2=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
-    if(sb4p2){
-      const account=(inv.schB4Accounts||[]).find(a=>a.id===[...assignedB4Accounts][0]);
-      setCell(sb4p2,'C6',account?.bankName||'');
-      setCell(sb4p2,'H6',account?.accountNo||'');
-      sb4p2.getColumn('I').width=Math.max(sb4p2.getColumn('I').width||0,18);
-      sortedSchB4Rows(inv.schB4||[]).forEach((r,i)=>{
-        if(i<25){const row=20+i; setCell(sb4p2,`C${row}`,r.checkNo||''); setCell(sb4p2,`D${row}`,fD(r.datePaid)); setCell(sb4p2,`E${row}`,r.category||''); setCell(sb4p2,`G${row}`,r.payee||''); setCell(sb4p2,`I${row}`,nv(r.amount)); sb4p2.getCell(`I${row}`).numFmt='$#,##0.00';}
+    // Schedule B-4: each planSchB4Export() group fills one account block
+    // (SCH_B4_ACCOUNT_BLOCKS) in page order; the bank/account header is
+    // written once, on the block's first page only.
+    for(const g of sb4Plan.groups){
+      const sorted=sortedSchB4Rows(g.rows);
+      let idx=0;
+      g.block.forEach((page,pageIdx)=>{
+        const ws=workbook.getWorksheet(page.sheet);
+        if(!ws)return;
+        if(pageIdx===0){setCell(ws,'C6',g.bankName); setCell(ws,'H6',g.accountNo);}
+        ws.getColumn('I').width=Math.max(ws.getColumn('I').width||0,18);
+        for(let row=page.first;row<=page.last&&idx<sorted.length;row++,idx++){
+          const r=sorted[idx];
+          setCell(ws,`C${row}`,r.checkNo||''); setCell(ws,`D${row}`,fD(r.datePaid)); setCell(ws,`E${row}`,r.category||''); setCell(ws,`G${row}`,r.payee||''); setCell(ws,`I${row}`,nv(r.amount));
+          ws.getCell(`I${row}`).numFmt='$#,##0.00';
+        }
       });
     }
 
@@ -570,17 +639,28 @@ export async function importExcel(input){
         if(rowHasData(bankAcct,checkNo,payee,amt))D.schB3.push({bankAcct,checkNo,datePaid:gcDate(sb3,`F${row}`),payee,courtOrderDate:gcDate(sb3,`H${row}`),amount:amt});
       }
 
-      // Schedule B-4 — the check-register page (p2) is this app's only
-      // input surface for it; pages 3+ exist in the real template for
-      // overflow beyond 25 entries, matching ANNUAL_EXCEL_CAPS.schB4.
-      const sb4=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
+      // Schedule B-4 — reads all four account blocks (SCH_B4_ACCOUNT_BLOCKS),
+      // inverse of doSaveExcel()'s writer: one account per block, read from
+      // its first page's header, with that block's pages read in order for
+      // its disbursements.
       D.schB4=[];
       D.schB4Accounts=[];
-      const b4Bank=gcStr(sb4,'C6'), b4Number=gcStr(sb4,'H6');
-      if(b4Bank||b4Number)D.schB4Accounts.push({id:newSchB4Id(),bankName:b4Bank,accountNo:b4Number});
-      if(sb4)for(let row=20;row<=44;row++){
-        const checkNo=gcStr(sb4,`C${row}`),payee=gcStr(sb4,`G${row}`),amt=gcNum(sb4,`I${row}`);
-        if(rowHasData(checkNo,payee,amt))D.schB4.push({id:newSchB4Id(),bankAccountId:D.schB4Accounts[0]?.id||'',checkNo,datePaid:gcDate(sb4,`D${row}`),category:gcStr(sb4,`E${row}`),payee,amount:amt});
+      for(const block of SCH_B4_ACCOUNT_BLOCKS){
+        const headerSheet=workbook.getWorksheet(block[0].sheet);
+        const bank=gcStr(headerSheet,'C6'), number=gcStr(headerSheet,'H6');
+        let accountId='';
+        if(bank||number){
+          accountId=newSchB4Id();
+          D.schB4Accounts.push({id:accountId,bankName:bank,accountNo:number});
+        }
+        for(const page of block){
+          const ws=workbook.getWorksheet(page.sheet);
+          if(!ws)continue;
+          for(let row=page.first;row<=page.last;row++){
+            const checkNo=gcStr(ws,`C${row}`),payee=gcStr(ws,`G${row}`),amt=gcNum(ws,`I${row}`);
+            if(rowHasData(checkNo,payee,amt))D.schB4.push({id:newSchB4Id(),bankAccountId:accountId,checkNo,datePaid:gcDate(ws,`D${row}`),category:gcStr(ws,`E${row}`),payee,amount:amt});
+          }
+        }
       }
 
       // Schedule C — capital adjustments
