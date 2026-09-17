@@ -560,6 +560,82 @@ export function predicateIdsCoveringIssue(inventoryType, code) {
 
 export { PLAN_PREDICATE_ISSUE_PATHS };
 
+export const PLAN_PREDICATE_ROUTES = Object.freeze({
+  planSimplified: {
+    'cover.period': { route: '/', path: 'periodFrom' },
+    'cover.wardCaseCounty': { route: '/', path: 'wardName' },
+    'signatures.guardian1.core': { route: '/p3', path: 'planGuardians.0.name' },
+    'signatures.guardian1.contact': { route: '/p3', path: 'planGuardians.0.email' },
+    'plan.q1': { route: '/p2', path: 'q1Residences' },
+    'plan.q2': { route: '/p2', path: 'q2BestPlacement' },
+    'plan.q3': { route: '/p2', path: 'q3MedicalTreatment' },
+    'plan.q4': { route: '/p2', path: 'q4Diagnosis' },
+    'plan.q5': { route: '/p2', path: 'q5SocialServices' },
+    'plan.q6': { route: '/p2', path: 'q6Interaction' },
+    'plan.q7': { route: '/p2', path: 'q7RestoreRights' },
+    'plan.q8': { route: '/p2', path: 'q8DNR' },
+    'plan.q9': { route: '/p2', path: 'q9Remuneration' },
+  },
+  planAnnual: {
+    'cover.period': { route: '/', path: 'periodFrom' },
+    'cover.wardCaseGid': { route: '/', path: 'wardName' },
+    'cover.county': { route: '/', path: 'county' },
+    'cover.guardianName': { route: '/', path: 'guardian' },
+    'cover.wardResidence': { route: '/', path: 'wardLiving' },
+    'plan.q1residences': { route: '/p2', path: 'q1Residences.0.name' },
+    'plan.q2': { route: '/p3', path: 'q2NoMove' },
+    'plan.q3': { route: '/p3', path: 'q3SettingALF' },
+    'plan.q4providers': { route: '/p5', path: 'q4Providers.0.name' },
+    'plan.q5': { route: '/p6', path: 'q5SocialSkills' },
+    'plan.q6rights': { route: '/p6', path: 'rights' },
+    'plan.q8adls': { route: '/p7', path: 'adls' },
+    'plan.q9': { route: '/p8', path: 'q9MentalNone' },
+    'plan.q10directives': { route: '/p9', path: 'q10NoDirectives' },
+    'plan.q11remuneration': { route: '/p10', path: 'q11NoRemuneration' },
+    'signatures.guardian1.core': { route: '/p11', path: 'planGuardians.0.name' },
+    'signatures.guardian1.contact': { route: '/p11', path: 'planGuardians.0.mailingStreet' },
+    'signatures.attorney': { route: '/p11', path: 'attorney' },
+  },
+  planInitial: {
+    'cover.wardCaseCounty': { route: '/', path: 'wardName' },
+    'cover.dates': { route: '/', path: 'inceptionDate' },
+    'cover.guardianNames': { route: '/', path: 'guardianNames' },
+    'cover.wardResidence': { route: '/', path: 'wardLiving' },
+    'plan.q2': { route: '/p2', path: 'q2Setting' },
+    'plan.q3': { route: '/p2', path: 'q3MedPrimary' },
+    'plan.q4': { route: '/p3', path: 'q4Mental' },
+    'plan.q5': { route: '/p3', path: 'q5Personal' },
+    'plan.q6q7': { route: '/p4', path: 'q6CareFacility' },
+    'plan.q7explain': { route: '/p4', path: 'q7Explain' },
+    'plan.q9providers': { route: '/p5', path: 'q9Providers.0.name' },
+    'plan.q10a.adls': { route: '/p6', path: 'adls.dressing' },
+    'plan.q10bcd': { route: '/p7', path: 'mentalAlzheimers' },
+    'plan.q11needs': { route: '/p8', path: 'needsDentures' },
+    'plan.q11directives': { route: '/p8', path: 'q11NoDirectives' },
+    'plan.q10f.committee': { route: '/p8', path: 'committeeIncorporated' },
+    'signatures.certifications': { route: '/p9', path: 'certIncapacitatedNoCopy' },
+    'signatures.guardian1.core': { route: '/p9', path: 'planGuardians.0.name' },
+    'signatures.guardian1.contact': { route: '/p9', path: 'planGuardians.0.street' },
+    'signatures.attorney': { route: '/p10', path: 'attorney_name' },
+  },
+  planMinor: {
+    'cover.amendedForm': { route: '/', path: 'amendedForm' },
+    'cover.wardCountyPeriod': { route: '/', path: 'wardName' },
+    'cover.caseNumber': { route: '/', path: 'ucn' },
+    'cover.guardianName': { route: '/', path: 'guardianName' },
+    'cover.residence': { route: '/', path: 'q1ResidenceName' },
+    'plan.q3providers': { route: '/p3', path: 'q3Providers.0.last' },
+    'plan.q4': { route: '/p4', path: 'q4Primary' },
+    'plan.q5': { route: '/p5', path: 'q5SchoolProgress' },
+    'plan.q5e': { route: '/p5', path: 'q5NoUnmetNeeds' },
+    'signatures.certifications': { route: '/p6', path: 'certIncapacitated' },
+    'signatures.guardian1.core': { route: '/p6', path: 'planGuardians.0.name' },
+    'signatures.guardian1.contact': { route: '/p6', path: 'planGuardians.0.mailingStreet' },
+    'signatures.preparer': { route: '/p7', path: 'preparer_name' },
+    'signatures.attorney': { route: '/p7', path: 'attorney_name' },
+  },
+});
+
 function isCardIssue(issue) {
   return !!issue && issue.showInReadiness === true && IN_CARD_CATEGORIES.has(issue.category);
 }
@@ -571,7 +647,16 @@ export function getFilingReadiness(inventoryType, data, validationIssues = []) {
   const local = hasSixthCircuitLocalGuidance(d.county);
 
   const predicateRows = typeof config.predicates === 'function'
-    ? config.predicates(d).map(row => ({ ...row, route: '', path: '', classification: 'automatic', blocking: true }))
+    ? config.predicates(d).map(row => {
+        const info = PLAN_PREDICATE_ROUTES[inventoryType]?.[row.id] || {};
+        return {
+          ...row,
+          route: row.route || info.route || '',
+          path: row.path || info.path || '',
+          classification: 'automatic',
+          blocking: true,
+        };
+      })
     : [];
   const pendingPredicateIds = new Set(predicateRows.filter(row => row.ok !== true).map(row => row.id));
   // Milestone 38D Phase 2: match each typed issue against the predicate row

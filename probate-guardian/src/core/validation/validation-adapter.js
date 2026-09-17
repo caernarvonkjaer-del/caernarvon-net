@@ -62,8 +62,11 @@ const PLAN_SECTION_ROUTE_MAPS = {
     'cover': '/',
     '1. residences': '/p2',
     '2–3. residence & care': '/p3',
+    '2-3. residence & care': '/p3',
+    '3g. insurance & benefits': '/p4',
     '4. medical treatment': '/p5',
     '5–7. skills & rights': '/p6',
+    '5-7. skills & rights': '/p6',
     '8. daily living': '/p7',
     '9. disabilities & devices': '/p8',
     '10. advance directives': '/p9',
@@ -73,17 +76,22 @@ const PLAN_SECTION_ROUTE_MAPS = {
   planInitial: {
     'cover': '/',
     '2–3. setting & medical care': '/p2',
+    '2-3. setting & medical care': '/p2',
     '4–5. mental health & personal care': '/p3',
+    '4-5. mental health & personal care': '/p3',
     '6–7. socialization & benefits': '/p4',
+    '6-7. socialization & benefits': '/p4',
     '9. examining providers': '/p5',
     '10a. daily living': '/p6',
     '10b–d. disabilities & devices': '/p7',
+    '10b-d. disabilities & devices': '/p7',
     '11. advance directives': '/p8',
     'signatures': '/p9',
     'attorney certification': '/p10',
   },
   planMinor: {
     'cover': '/',
+    '2. prior residences': '/p2',
     '3. treatment providers': '/p3',
     '4. medical services': '/p4',
     '5. education & social development': '/p5',
@@ -119,13 +127,14 @@ const PLAN_SECTION_ROUTE_MAPS = {
 export function resolveRouteFromSection(sectionStr, filingType) {
   if (!sectionStr) return '/';
   const clean = String(sectionStr).trim();
+  const type = filingType || (typeof window !== 'undefined' && window.activeInventoryType);
   if (typeof window !== 'undefined' && typeof window.errorRoute === 'function') {
-    const viaLegacy = window.errorRoute(clean);
+    const viaLegacy = window.errorRoute(clean, type);
     if (viaLegacy) return viaLegacy;
   }
-  const planMap = PLAN_SECTION_ROUTE_MAPS[filingType];
+  const planMap = type ? PLAN_SECTION_ROUTE_MAPS[type] : null;
   if (planMap) {
-    const hit = planMap[clean.toLowerCase()];
+    const hit = planMap[clean.toLowerCase()] || planMap[clean.toLowerCase().replace(/[\u2013\u2014]/g, '-')];
     if (hit) return hit;
   }
   const lower = clean.toLowerCase();

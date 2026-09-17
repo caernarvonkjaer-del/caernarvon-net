@@ -27,6 +27,7 @@ function stateKey(data, filingType) {
 }
 
 function jumpLink(row) {
+  if (row.ok === true) return '';
   if (!row.route && !row.path) return '';
   return `<button type="button" class="validation-go" data-form-action="jump-to-field" data-route="${escapeHtml(row.route)}" data-jump-path="${escapeHtml(row.path)}">Go to field</button>`;
 }
