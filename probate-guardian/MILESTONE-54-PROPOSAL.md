@@ -318,8 +318,6 @@ This catalog is generated from the final `RESOURCE_GROUPS` entries in `src/featu
 
 - **Florida** — [Florida Courts E-Filing Portal](https://www.myflcourtaccess.com/); [Florida Statutes, Chapter 744](https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0700-0799/0744/0744ContentsIndex.html); [Florida Probate Rules](https://www.floridabar.org/rules/ctproc/); [Florida Courts — Guardianship](https://www.flcourts.gov/Services/Family-Courts/domestic-relations-court-resources/guardianship); [Office of Public & Professional Guardians](https://elderaffairs.org/programs-and-services/office-of-public-professional-guardians-oppg/); [Florida Abuse Hotline](https://www.myflfamilies.com/services/abuse/abuse-hotline); [Florida Treasure Hunt](https://www.fltreasurehunt.gov/); [SSA Representative Payee](https://www.ssa.gov/payee/); [VA Fiduciary Program](https://www.benefits.va.gov/fiduciary/)
 
----
-
 ## Appendix: Change record — pre-landing code review, design decisions, and the helpful-links wiring task
 
 **Moved here 2026-09-16 from `MILESTONE-53-PROPOSAL.md`** (see this document's
@@ -600,3 +598,9 @@ own instruction. See `3e38f78`'s commit message for full verification
 detail — figures superseded by the "Final Shipped Link Catalog" section
 above, which reflects what actually shipped after the later link
 reconciliation pass, not this task's original landing.
+
+---
+
+## Explicitly Authorized Side Edit — Preview & Export Navigation Controls
+
+**Authorized directly by Alan on 2026-09-16.** The shared Preview & Export banner now includes **All Filings**, **Light/Dark mode**, and **Help** controls for every filing type. The controls had already been defined in the shared preview-pager path, but were mounted only after confirming that a preview contained at least two pages. Moving their mounting ahead of that early return makes them available on single-page and multi-page previews alike without duplicating the controls across the seven print modules. `tests/e2e/readiness-card.contract.spec.ts` verifies the controls across all nine filing types, and `TEST-INDEX.md` records the expanded contract.

@@ -13,7 +13,9 @@ import { extractPdfText } from './support/pdf-extract';
 // the collapsed-by-default / manual-review summary when automatic checks
 // pass, a retained hand toggle across a same-route rerender that resets on
 // fresh Preview entry, canonical jump-link routing for issue rows, and no
-// trace of the card in court output.
+// trace of the card in court output. Milestone 54's explicitly authorized side
+// edit also pins the Preview & Export banner's filing-level shell controls for
+// every filing type, including previews too short to need the page navigator.
 
 type FilingKey = 'guardian' | 'simplified' | 'annual' | 'finalAccounting' | 'trustAccounting'
   | 'planSimplified' | 'planAnnual' | 'planInitial' | 'planMinor';
@@ -61,6 +63,11 @@ for (const { key, createFiling } of CONFIGS) {
 
       await expect(card(page)).toHaveCount(1);
       await expect(page.locator('.readiness-panel')).toHaveCount(1);
+      const previewShellActions = page.locator('.print-preview-banner [data-preview-shell-actions] .pv-shell-actions');
+      await expect(previewShellActions).toHaveCount(1);
+      await expect(previewShellActions).toContainText('All Filings');
+      await expect(previewShellActions.locator('[data-shell-action="toggle-theme"]')).toBeVisible();
+      await expect(previewShellActions.locator('[data-shell-action="toggle-help"]')).toBeVisible();
       await expect(card(page)).toHaveAttribute('data-readiness-filing', key);
       const tags = await card(page).evaluate((el) => ({ self: el.tagName, first: el.firstElementChild?.tagName }));
       expect(tags).toEqual({ self: 'DETAILS', first: 'SUMMARY' });

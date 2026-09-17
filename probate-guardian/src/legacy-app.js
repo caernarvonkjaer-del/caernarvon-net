@@ -1715,6 +1715,24 @@ function initPrintPager(options={}){
   const cont=document.getElementById('print-doc-container');
   if(!cont)return;
   const pages=pvPages();
+  // The filing-level shell actions belong to the Preview & Export banner,
+  // regardless of whether the generated filing needs a multi-page pager.
+  // This must run before the single-page early return below; otherwise those
+  // previews lose All Filings, theme, and Help entirely.
+  const destination=document.querySelector('[data-preview-shell-actions]');
+  const headerActions=document.querySelector('.schedule-page > h1 .form-header-actions, .schedule-page h1 .form-header-actions');
+  if(headerActions&&destination&&!destination.querySelector('.pv-shell-actions')){
+    headerActions.classList.remove('form-header-actions');
+    headerActions.classList.add('pv-shell-actions');
+    destination.appendChild(headerActions);
+  }else if(destination&&!destination.querySelector('.pv-shell-actions')){
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const helpOpen=typeof window.isHelpPanelOpen==='function'&&window.isHelpPanelOpen();
+    const shellActions=document.createElement('div');
+    shellActions.className='pv-shell-actions';
+    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
+    destination.appendChild(shellActions);
+  }
   if(pages.length<2)return;                       // nothing to page through
   const existing=document.getElementById('pv-bar');
   if(existing){
@@ -1747,20 +1765,6 @@ function initPrintPager(options={}){
         <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
       </span>
     </span>`;
-  const destination=document.querySelector('[data-preview-shell-actions]');
-  const headerActions=document.querySelector('.schedule-page > h1 .form-header-actions, .schedule-page h1 .form-header-actions');
-  if(headerActions&&destination&& !destination.querySelector('.pv-shell-actions')){
-    headerActions.classList.remove('form-header-actions');
-    headerActions.classList.add('pv-shell-actions');
-    destination.appendChild(headerActions);
-  }else if(destination&&!destination.querySelector('.pv-shell-actions')){
-    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-    const helpOpen=typeof window.isHelpPanelOpen==='function'&&window.isHelpPanelOpen();
-    const shellActions=document.createElement('div');
-    shellActions.className='pv-shell-actions';
-    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
-    destination.appendChild(shellActions);
-  }
   cont.parentNode.insertBefore(bar,cont);
   pvApply();
 }
