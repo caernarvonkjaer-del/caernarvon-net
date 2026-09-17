@@ -1159,18 +1159,18 @@ is included only when its own `scope` (`'circuit-6'`) matches the
 lookup — which also means a future circuit-level group (the helpful-links
 task below) is picked up automatically. The content-corrections test was
 updated to check for this new mechanism rather than the deleted function's
-name. **Flagged, not resolved:** this is a *different* exposure than 47B's,
-not merely a mechanical substitute — 47B gated the group by the counties on
-the user's own filings (a filer outside Pinellas/Pasco never saw it); the
-circuit selector gates it by the user's own *browsing choice*, so a filer
-whose filings are entirely in, say, the 13th Circuit can now see the AO
-2024-025 link by manually selecting the Sixth Circuit from the dropdown.
-Nothing in the UI asserts the order applies to their filing, and it remains
-inside the panel's own third-party disclaimer either way — but whether that
-satisfies `AGENTS.md` §5's intent is a judgment call for a qualified
-reviewer, not settled here, per §8's "flag for a qualified person" rule.
-Both the code comment (`resources.js`) and the test comment
-(`content-corrections.spec.js`) record this explicitly.
+name. **Flagged, then reviewed and accepted by Alan (2026-09-16):** this is
+a *different* exposure than 47B's, not merely a mechanical substitute —
+47B gated the group by the counties on the user's own filings (a filer
+outside Pinellas/Pasco never saw it); the circuit selector gates it by the
+user's own *browsing choice*, so a filer whose filings are entirely in,
+say, the 13th Circuit can see the AO 2024-025 link by manually selecting
+the Sixth Circuit from the dropdown. Nothing in the UI asserts the order
+applies to their filing, and it remains inside the panel's own third-party
+disclaimer either way. Raised per `AGENTS.md` §8's "flag for a qualified
+person" rule; Alan reviewed it and confirmed this is acceptable as shipped
+— not an open item. The code comment (`resources.js`) and the test comment
+(`content-corrections.spec.js`) have been updated to match.
 
 **10. County ordering — kept alphabetical everywhere.** No code change:
 this was already the implementation (`countiesForCircuit()`'s

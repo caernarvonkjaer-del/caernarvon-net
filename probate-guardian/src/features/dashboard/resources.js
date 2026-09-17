@@ -2583,6 +2583,11 @@ export function groupsForCircuit(circuitNum = 6) {
   // mechanism than 47B's filing-county gate, but the same guarantee AGENTS.md
   // section 5 requires: never shown unconditionally, only when the SELECTED
   // circuit is 6, and always inside this panel's own third-party disclaimer.
+  // Gated by the user's own browsing choice rather than 47B's filing-county
+  // gate -- a filer whose filings are outside the Sixth Circuit can still
+  // see this by selecting it manually. Raised to and accepted by Alan
+  // (2026-09-16, see MILESTONE-53-PROPOSAL.md's Milestone 54 appendix); not
+  // an open item.
   // See tests/unit/content-corrections.spec.js's "AO 2024-025 removal guard".
   const circuitGroup = RESOURCE_GROUPS.find(g => g.scope === `circuit-${cNum}`);
   if (circuitGroup && !result.includes(circuitGroup)) {
