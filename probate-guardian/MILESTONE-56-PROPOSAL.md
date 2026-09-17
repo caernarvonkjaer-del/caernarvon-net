@@ -999,14 +999,34 @@ The guard asserts, per entry:
    about annotation multiplicity beyond "at least one".
 4. The named `file` **exists**.
 5. The evidence — an action attribute, control marker or selector, *never* a
-   prose label — is found. Each entry names **either** a single canonical
-   `pattern` **or** an explicit `evidence: [...]` list, and the guard requires
-   **each listed pattern to match at least once** in its file. The first
-   draft's "exactly once unless documented otherwise" is dropped: it is brittle
-   for a control rendered from a shared helper or repeated across templates,
-   and it converts an ordinary refactor into a red test for no safety gain.
-   Where a genuinely unique marker exists, an entry may opt into
-   `expectCount: 1`.
+   prose label — is found **at every surface the guide claims the control
+   appears on**. An entry names a single `pattern` only when the control
+   renders in exactly one place; otherwise it names an
+   `evidence: [{ file, pattern }, …]` list with **one entry per rendering
+   surface**, and **every listed entry must match** (at least once in its own
+   file). A missing entry fails the test and names the surface.
+
+   **"One canonical site" is not acceptable, and an earlier draft wrongly
+   offered it as an alternative to the list.** The failure it permits is
+   exactly the recurrence this guard exists for: if the Preview banner's Help
+   button disappeared while the dashboard's remained, an at-least-one-source
+   check stays green and the guide keeps promising a control that is gone from
+   the page it is documented on. That is not hypothetical — the Preview banner
+   controls are the newest and least-settled markup in this set, added days
+   before this milestone was written, which makes them the likeliest to
+   regress and the least useful to cover loosely.
+
+   The first draft's *"exactly once unless documented otherwise"* stays
+   dropped, for the reason it was dropped: it is brittle for a control rendered
+   from a shared helper and turns an ordinary refactor red for no safety gain.
+   The rule is per-file at-least-once, across a complete list of files. Where a
+   genuinely unique marker exists, an entry may still opt into `expectCount: 1`.
+
+   **Known limit, named rather than papered over:** the list catches a surface
+   that *disappears*, not a surface that is *added*. If a fourth place starts
+   rendering the Help button, nothing here notices. Registering a control
+   freezes the surfaces known at registration time; keeping the list current is
+   a human obligation, the same one `window-bridge-allowlist.json` carries.
 6. `label` is **advisory metadata, not an assertion** — it exists so a human
    reading the registry knows which control an ID refers to. The first draft
    said the label should appear "in proximity to the marker, where practical",
@@ -1083,9 +1103,9 @@ reason.**
 | --- | --- | --- |
 | `signature-tab-draw` | Signature Stamp → Draw tab | `data-sig-tab="draw"` in `src/core/signature/signature-pad.js` |
 | `signature-tab-upload` | Signature Stamp → Upload tab | `data-sig-tab="upload"`, same file |
-| `shell-all-filings` | All Filings (shell + Preview banner) | `data-shell-action="dashboard"` — appears in `router.js`, `dashboard/index.js` and `legacy-app.js`'s Preview banner, so this entry needs `evidence: [...]` or one canonical site, **not** `expectCount: 1` |
-| `shell-theme-toggle` | Theme toggle | `data-shell-action="toggle-theme"` / `id="theme-toggle-btn"` |
-| `shell-help` | "?" Help button | `data-shell-action="toggle-help"` / `id="help-toggle-btn"` |
+| `shell-all-filings` | All Filings (filing shell + Preview banner) | `data-shell-action="dashboard"` in **both** `src/core/navigation/router.js` and `src/legacy-app.js` (Preview banner). **Two sites, not three** — the dashboard has no All Filings button because it *is* All Filings |
+| `shell-theme-toggle` | Theme toggle | `data-shell-action="toggle-theme"` in **all three**: `router.js`, `src/features/dashboard/index.js`, `legacy-app.js` (Preview banner) |
+| `shell-help` | "?" Help button | `data-shell-action="toggle-help"` in **all three**: `router.js`, `dashboard/index.js`, `legacy-app.js` (Preview banner) |
 | `dashboard-report-bug` | Report a Bug | `data-feedback-open="bug"` in `src/features/dashboard/index.js` |
 | `dashboard-comment-card` | Comment Card | the Pinellas GovQA `href` in `src/features/dashboard/index.js` |
 | `annotation-note-color` | Note color | `'Note color'` as an `aria-label`/`title` in `src/core/pdf/pdf-annotate.js` |
@@ -1173,6 +1193,14 @@ the first draft did:
    to the guide → red. Revert.
 4. **Part 2, orphaned registry entry:** add a registry entry no annotation
    references → red. Revert.
+5. **Part 2, one surface of a multi-surface control:** remove
+   `data-shell-action="toggle-help"` from **the Preview banner only**
+   (`legacy-app.js:1733`), leaving the dashboard and filing-shell copies
+   intact → red, naming `shell-help` **and the specific file**. Revert. This is
+   the injection that distinguishes the required-evidence-list rule from the
+   "one canonical site" version that preceded it: under the old rule this
+   change was green, and the guide would have gone on documenting a Help button
+   that no longer rendered on the page it describes.
 
 A gate that cannot fail is not evidence — and a gate that only fails on the
 easy case is worse, because it reads as evidence while proving less than it
