@@ -117,7 +117,8 @@ filing.
 | 56D — Correct what blocks an export | **Low** (doc) | Attorney email enforcement; sidebar completion includes date order | A filer who believes the guide plans the wrong work |
 | 56E — Correct the controls that changed | **Low** (doc) | Signature tabs, "?" behaviour, Preview banner, annotation toolbar, dashboard toolbar | Everyday friction; the filer discovers the truth immediately |
 | 56F — Rewrite Helpful Resources | **Low** (doc) | The largest single rewrite: circuit selector, 67 counties, accordion behaviour, stale link | Large but self-contained; wrong rather than dangerous |
-| 56G — Refresh the stale screenshots | **Low** (doc) | Five images that show retired UI | Last: several depend on 56E/56F landing first |
+| 56G — Refresh the stale screenshots | **Low** (doc) | Five images that show retired UI | Depends on 56E/56F landing first |
+| 56H — Guard against this recurring | **Low** | A two-part drift guard: a retired-term scan and a declared-control check | **Last.** Seeded from the corrections above, so it must not land before them |
 
 ---
 
@@ -659,6 +660,140 @@ text corrected in 56E/56F.
 
 ---
 
+## 56H — Guard Against This Recurring
+
+**Risk: Low.** Test-only; no application code, no guide prose beyond
+annotations. **Lands last** — see Sequencing.
+
+### Files
+
+`tests/unit/user-guide-drift-guard.spec.js` (new), `help/index.html`
+(annotations only, in the sections 56E/56F already touch), `TEST-INDEX.md`.
+
+### Background
+
+Eleven simultaneous staleness findings is not eleven mistakes; it is one
+missing gate. `test-index-guard.spec.js` polices the test index,
+`window-bridge.spec.js` polices the bridge, `native-dialog-guard.spec.js`
+polices native dialogs — and nothing at all fails when `help/index.html`
+describes a control the app does not have. Milestones 54 and 55 each shipped
+correctly and each left the guide behind, because nothing in either one's gate
+could notice.
+
+**Why this was originally scoped out, and what changed.** The first draft of
+this document put a drift guard under "Deliberately out of scope", on the
+grounds that matching prose to UI is fuzzy and a naive scan over an 11.8 MB
+document would produce false positives faster than anyone would tolerate. That
+objection is correct **about the naive design** and is what the design below
+avoids. It is included at Alan's direction, with the fuzzy half deliberately
+left out rather than attempted badly.
+
+**The scope decision that makes this tractable: one direction only.** The
+guard asserts that **the guide does not claim a control the app lacks**. It
+does *not* assert the converse — that every app control is documented. The
+first is a correctness property with a decidable answer; the second is a
+completeness judgment with no mechanical answer, and building a gate on it is
+how you get a test nobody can keep green. Every one of this milestone's eleven
+findings is in the first category.
+
+### Steps
+
+**H1 — Part 1: the retired-term scan (zero-tolerance).** Model:
+`native-dialog-guard.spec.js` (50G-3) — a plain content scan with no fixture
+file, because the target is "this string must not appear", not "these
+occurrences are permitted". Seed it from this milestone's own corrections:
+
+| Retired term | Retired by | Would have caught |
+| --- | --- | --- |
+| `Download PDF guide` | 56E / 56A | Finding 3 |
+| `2019-005` | 56C | Finding 8 |
+| `unencrypted fallback` | 56B | Finding 11 |
+| `Draw / Type / Upload` | 56E | Finding 1 |
+| `no hidden copy elsewhere` | 56B | Finding 10 |
+
+Each entry carries a one-line comment naming the milestone that retired it, so
+the list reads as a history rather than as a pile of magic strings. **It
+ratchets:** a future milestone that retires a control adds its string here in
+the same commit, and the guide can never quietly reacquire it.
+
+Four of the eleven findings would have been caught on the day they appeared, by
+roughly twenty lines of test.
+
+**H2 — Part 2: the declared-control check (ratchet).** Model:
+`window-bridge-allowlist.json` (42C) — a declared surface, policed. The guide
+annotates the controls it names:
+
+```html
+<code data-app-control="Report a Bug">Report a Bug</code>
+```
+
+The guard extracts every `data-app-control="…"` value and asserts each appears
+as a literal string somewhere in `src/`. A control the guide names and the app
+no longer renders fails the test, by name.
+
+**False positives are impossible by construction, which is the whole point:**
+only annotated claims are asserted, so unannotated prose — court form names,
+statutory references, ordinary English that happens to collide with a UI
+string — is never scanned. The guard's coverage is exactly what someone chose
+to declare, and it grows as sections are touched rather than requiring the
+whole 11.8 MB document to be annotated up front.
+
+**H3 — Annotate as part of 56E/56F, not as a separate pass.** The sections
+those two rewrite are precisely the ones whose control names just proved
+fragile. Annotating them while they are already open costs almost nothing;
+annotating the rest of the guide is not required for this sub-delivery to be
+useful and should not be attempted here.
+
+**H4 — Strip embedded images before scanning.** `help/index.html` is 11.8 MB
+almost entirely because screenshots are embedded as `data:` URIs. Strip those
+payloads before either scan: it keeps the test fast and stops a base64 blob
+from coincidentally matching a retired term.
+
+**H5 — Use a narrow regex for the annotation extraction, deliberately.**
+Milestone 53D replaced a regex with an AST parser, so the contrast is worth
+stating rather than looking like a lapse: 53D was parsing **arbitrary
+JavaScript**, where comments, strings and nested braces make text scanning
+unsound. Here the input format is **one attribute this milestone defines**, on
+a fixed shape, in a document this repository controls. A narrow regex over a
+format you own is the right tool; a regex over a language you do not own is
+not. If the annotation format ever grows beyond a flat attribute value, that
+judgment should be revisited.
+
+**H6 — Red-first.** Before 56B–56F land, the Part 1 scan must be **red**
+against the current guide, naming the retired terms it finds. That is the
+proof it works, and it is only available before the corrections. Capture that
+output and record it in the commit message; after the corrections it is green
+and can never demonstrate itself again.
+
+**H7 — `TEST-INDEX.md`** row per `AGENTS.md` §7; `test-index-guard` green.
+
+### Verification
+
+`npx vitest run tests/unit/user-guide-drift-guard.spec.js`. Both halves must be
+shown to fail on purpose before they count, per this repository's fault-
+injection convention (51D, 53B's B12):
+
+1. Add a retired term back to the guide in a scratch edit → Part 1 red, naming
+   it. Revert.
+2. Annotate a control that does not exist (`data-app-control="Download PDF
+   guide"`) → Part 2 red, naming it. Revert.
+
+A gate that cannot fail is not evidence.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+- **Test Coverage & Index:** one new unit spec plus its row. No fixture file,
+  matching 50G-3's reasoning — the retired list is small, self-documenting, and
+  belongs next to the assertion that uses it.
+- **Data Model / Export-Import / Security / Legal:** N/A — test-only.
+- **UI/UX Consistency:** the annotations are invisible to readers; they add an
+  attribute to existing markup and change no rendered text.
+- **Sequencing:** see below. This is 50G-3's lesson repeated: a guard seeded
+  before the corrections it describes would need editing on every commit of
+  them.
+
+---
+
 ## Sequencing and concurrency
 
 - **56A is independent of everything else** and can land first or last. It is
@@ -667,6 +802,14 @@ text corrected in 56E/56F.
   rewrites.
 - **56F before 56G** — the resources screenshot depends on it.
 - **56B, 56C, 56D are independent** of each other and of everything else.
+- **56H lands last, after every correction it is seeded from.** Not a
+  preference: its retired-term list is drawn from 56B/56C/56E, so seeding it
+  first would make it red against the uncorrected guide and force an edit to
+  the guard on every one of those commits. This is the same sequencing note
+  Milestone 50G recorded for its own guard ("land 50G-3's guard **last**, not
+  first"). The one exception is H6's red-first capture, which must happen
+  **before** the corrections land — run the scan, record that it names the
+  retired terms, then let the corrections turn it green.
 - All doc sub-deliveries edit **the same file**, `help/index.html`. Landing two
   of them concurrently from different sessions will conflict. They are line-
   scoped and far apart, so a conflict is resolvable, but the cheaper rule is to
@@ -692,6 +835,9 @@ text corrected in 56E/56F.
 | Guide's Pinellas clerk URL after 56F | Matches `resources.js`'s entry exactly |
 | Every URL the guide reproduces, after 56F | Matches the app's entry for the same destination |
 | `tests/unit/content-corrections.spec.js` | Passes throughout — it governs `src/`, not `help/`, and nothing here should change that |
+| 56H Part 1, run **before** 56B/56C/56E land (H6) | **Red**, naming the retired terms it finds in the current guide |
+| 56H Part 1, after those corrections | Green; red again under H6's fault injection (a retired term added back) |
+| 56H Part 2 | Every `data-app-control` value resolves to a literal string in `src/`; red under fault injection (an annotation naming a control that does not exist) |
 | Full unit suite | Green at each sub-delivery |
 | `MILESTONE-56-PROPOSAL.md` | Amended in place with a dated "Landed" note per sub-delivery, per repo convention |
 
@@ -703,15 +849,20 @@ Per sub-delivery, the **Verification** block is the lite gate (`AGENTS.md`
 §1). No sub-delivery here warrants a full regression on its own: 56A is an
 isolated deletion with a detector, and 56B–56G do not touch `src/` at all.
 
-**The honest limitation, stated rather than papered over:** there is no
-automated gate on guide prose. `test-index-guard` polices the test index and
-`content-corrections.spec.js` polices `src/` for the AO string, but nothing
-fails when `help/index.html` describes a control that no longer exists — which
-is precisely how eleven of these accumulated. Every correction here is verified
-by reading the shipped source it describes, and that is the whole gate. If this
-recurs, the thing worth building is a guard that extracts the control names the
-guide claims and checks them against the source — noted under out of scope
-below, because it is a real milestone, not a step in this one.
+**The limitation this milestone starts closing.** Until 56H, there is no
+automated gate on guide prose at all: `test-index-guard` polices the test
+index and `content-corrections.spec.js` polices `src/` for the AO string, but
+nothing fails when `help/index.html` describes a control that no longer
+exists — which is precisely how eleven of these accumulated at once. So
+56B–56G are each verified by reading the shipped source they describe, and
+that reading is the whole gate for them.
+
+56H then makes the *next* eleven cheaper to catch, without pretending to solve
+the general problem: its retired-term scan would have caught four of these on
+the day they appeared, and its declared-control check ratchets over whatever
+the guide chooses to annotate. What it deliberately does not do is assert that
+the app's controls are all documented — see 56H's scope note, and the
+out-of-scope entry below for the half that remains genuinely unsolved.
 
 ---
 
@@ -719,12 +870,20 @@ below, because it is a real milestone, not a step in this one.
 
 Named here so they are not rediscovered as omissions:
 
-- **A guide-versus-app drift guard.** The obvious response to eleven
-  simultaneous staleness findings is a test that fails when the guide describes
-  a control the app does not have. It is genuinely worth doing and it is not
-  this milestone: matching prose to UI is a fuzzy problem, a naive string scan
-  over an 11.8 MB document will produce false positives faster than anyone will
-  tolerate, and designing it properly is its own scoping exercise.
+- **The reverse drift direction: app controls the guide never documents.**
+  56H asserts the guide does not claim controls the app lacks. The converse —
+  every control the app ships is described somewhere — is not gated and is not
+  attempted. It has no decidable mechanical answer (what counts as
+  "documented"? a mention, a section, a screenshot?), and a gate built on it
+  would be either trivially satisfiable or permanently red. Finding 9 (the
+  dashboard toolbar's four undocumented controls) is in this category, which is
+  why it was found by a human review rather than by a scan, and why a future
+  recurrence of *that* shape will be too.
+- **Annotating the whole guide.** 56H's declared-control check covers what
+  56E/56F annotate while they are already editing those sections. Sweeping the
+  remaining sections is a mechanical follow-up someone can do incrementally; it
+  is not required for the guard to earn its place and would balloon this
+  milestone's diff for no additional guarantee.
 - **Re-wiring a PDF guide.** See Decision 3. If wanted, it should generate from
   `help/index.html`, not from a second copy of the prose.
 - **The guide's own structure, tone, or completeness.** This milestone corrects
