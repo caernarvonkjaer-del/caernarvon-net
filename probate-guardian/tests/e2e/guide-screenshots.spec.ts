@@ -6,10 +6,11 @@ import { freshStartNoPassword, createWard } from './support/target';
 // Milestone 56G: capture harness for help/index.html's figures.
 //
 // NOT part of the regression suite -- it asserts nothing about behaviour and
-// writes files. It is skipped unless PG_CAPTURE=1, so a full `npx playwright
-// test` run never executes it. It lives in the repo rather than in a scratch
-// directory so a future re-shoot reproduces the same conditions, which is the
-// whole point of G1's pinned capture table:
+// writes files. Unless PG_CAPTURE=1 it registers no tests at all, so a full
+// `npx playwright test` run never executes it (see the gating note below). It
+// lives in the repo rather than in a scratch directory so a future re-shoot
+// reproduces the same conditions, which is the whole point of G1's pinned
+// capture table:
 //
 //   Target      web (dist/web) -- what a filer actually receives, NOT the
 //               `source` target, which serves raw source from disk per request
@@ -25,13 +26,29 @@ import { freshStartNoPassword, createWard } from './support/target';
 
 const OUT = process.env.PG_CAPTURE_DIR || path.join(process.cwd(), '.guide-shots');
 const WARD = 'Eleanor Marie Whitfield';
+const CAPTURING = process.env.PG_CAPTURE === '1';
 
-test.skip(process.env.PG_CAPTURE !== '1', 'capture harness; set PG_CAPTURE=1');
-test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, colorScheme: 'light' });
+// Gated by DEFINING nothing rather than by test.skip(). The suite's
+// skip-classification-audit.spec.ts (Milestone 31, Phase 0.3) requires every
+// dynamic skip to go through target-profile.ts's three classified helpers --
+// skipExpectedTargetExclusion / skipEnvironmentLimitation / skipTemporaryGap
+// -- so a skip reason is always machine-classifiable. None of the three
+// describes this file: it is not a target exclusion, not an environment
+// limitation, and not a temporary gap. It is a capture harness that is not a
+// test at all. So it registers zero tests in an ordinary run instead of three
+// unclassifiable skips, which is also the more honest report -- these were
+// never tests waiting to be enabled.
+//
+// (An earlier revision did call test.skip() here and the audit caught it in
+// the closing full-suite run, which is the audit working exactly as intended.)
+const capture = CAPTURING ? test : (() => {}) as unknown as typeof test;
 
-test.beforeAll(() => fs.mkdirSync(OUT, { recursive: true }));
+if (CAPTURING) {
+  test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, colorScheme: 'light' });
+  test.beforeAll(() => fs.mkdirSync(OUT, { recursive: true }));
+}
 
-test('capture: signature Draw tab and applied stamp', async ({ page }) => {
+capture('capture: signature Draw tab and applied stamp', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
   await page.evaluate(() => (window as any).navigate('/d1'));
@@ -66,7 +83,7 @@ test('capture: signature Draw tab and applied stamp', async ({ page }) => {
   await panel.screenshot({ path: path.join(OUT, 'signature-applied.jpg'), quality: 82, type: 'jpeg' });
 });
 
-test('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page }) => {
+capture('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
   await page.evaluate(() => (window as any).navigate('/dashboard'));
@@ -111,7 +128,7 @@ test('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page 
 // existing figures shows a BLOCKED preview whose banner has none of them, so
 // either that image predates the change or the blocked state genuinely lacks
 // them. Report which, rather than guessing.
-test('probe: does a blocked preview carry the shell actions?', async ({ page }) => {
+capture('probe: does a blocked preview carry the shell actions?', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
   await page.evaluate(() => (window as any).navigate('/print'));
