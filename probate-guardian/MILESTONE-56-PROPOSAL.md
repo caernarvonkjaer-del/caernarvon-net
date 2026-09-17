@@ -6,8 +6,28 @@
 `AGENTS.md` §2, this is a proposal only; nothing here should be started until
 Alan explicitly approves a specific sub-delivery by name. Approval of one
 sub-delivery does not authorize the others. Every sub-delivery here is
-independently approvable and independently revertible; none is a prerequisite
-for another.
+independently approvable and independently revertible.
+
+**They are not all independent of each other**, and an earlier draft of this
+line wrongly said "none is a prerequisite for another" — the sub-deliveries
+below contradict it in two places. The actual graph:
+
+```text
+56A ──────── independent (the only code change)
+
+56B ─┐
+56C ─┤
+56D ─┼────── independent of each other
+56E ─┤              │
+56F ─┘              │
+                    ↓
+56G ──────── needs 56E + 56F (it re-shoots what they rewrite)
+56H ──────── needs 56B + 56C + 56E (its retired-term list is seeded from
+             their corrections) and annotates what 56E + 56F leave behind
+```
+
+If a dependent sub-delivery is approved without its prerequisites, stop and say
+so rather than working around it.
 
 **Numbering note — 26 was checked and is NOT free.** This work was initially
 asked for as "MS 26"; Alan corrected it to 56 in the same session. Recorded
@@ -33,7 +53,7 @@ replaced wholesale, mis-states what the "?" button does, understates which
 fields block an export, names a superseded administrative order, overstates
 the app's privacy guarantee, and — most seriously — tells filers to keep an
 Excel export as their fallback against a lost master password when four of the
-seven filing types have no Excel export at all. This milestone corrects the
+app's nine filing types have no Excel export at all. This milestone corrects the
 guide against the shipped app, and deletes one orphaned function found while
 verifying it.
 
@@ -81,9 +101,9 @@ source, not against the milestone documents that produced it:
 | "?" behaves differently inside a filing | `openUserGuideForCurrentPage()`'s own doc comment: *"'?' while a filing is open: skip the Help panel, jump straight to the manual page for wherever the filer actually is"*; `openUserGuide()` uses `window.open(url,'_blank','noopener')` |
 | The panel button is "View User Guide" | `src/legacy-app.js:296` |
 | Preview carries All Filings / theme / Help | `src/legacy-app.js:1721` — *"previews lose All Filings, theme, and Help entirely"* is the comment on the code that prevents exactly that |
-| Attorney email enforcement, all four variants | `annual-accounting/index.js:1468` and `simplified-accounting/index.js:714` (unconditional); `plan-annual/index.js:785` (`if(d.attorney)`); `plan-initial/index.js:687-694` (gated on any attorney field being started) |
+| Attorney email enforcement, all four variants | `annual-accounting/index.js:1468` and `simplified-accounting/index.js:714` (unconditional); `plan-annual/index.js:785` (`if(d.attorney)`); `plan-initial/index.js:687-694` (gated on four specific fields -- NOT phone/email/address) |
 | Annotation toolbar has note colour and delete | `src/core/pdf/pdf-annotate.js:100-106` — `aria-label`/`title` of "Note color" and "Delete note" |
-| Sidebar completion now includes date order | Milestone 55B threaded `checkDateOrder()` into `computeNavChecks()` at four sites (`src/legacy-app.js:6731, 6898, 6960`) |
+| Sidebar completion now includes date order | Milestone 55B added date-order checks to `computeNavChecks()` via a local `datesOrdered()` helper written to mirror `checkDateOrder()`'s tolerance (`src/legacy-app.js:6738`, applied at `:6898, 6960`). It **mirrors** that rule rather than calling it — `legacy-app.js` never calls `checkDateOrder()`; its only two mentions of the name are comments |
 | Dashboard has Report a Bug and Comment Card | `src/features/dashboard/index.js:64-65` |
 | Plans have no Excel export | Only `annual-accounting`, `guardian-inventory` and `simplified-accounting` have an `excel.js`; all four `plan-*` features have none |
 | Pinellas clerk link is stale | Guide: `mypinellasclerk.gov/Home/Probate-Mental-Health#49273-guardianships`; app: `mypinellasclerk.gov/Guardianship` |
@@ -251,9 +271,16 @@ Three things are wrong with that, in ascending order of seriousness:
 2. It is not restorable. Nothing in the app reconstructs a case from an
    `.xlsx`; the import path fills a filing's fields, which is not the same
    thing.
-3. **Four of the seven filing types have no Excel export at all.** Only
-   `annual-accounting`, `guardian-inventory` and `simplified-accounting` ship an
-   `excel.js`. Every Plan type — Initial, Annual, Minors, Simplified — has
+3. **Four of the app's nine filing types have no Excel export at all.** The
+   count matters and an earlier draft got it wrong by conflating filing types
+   with feature modules. `src/core/filing/filing-descriptor.js` defines **nine**
+   filing types — `guardian`, `simplified`, `annual`, `finalAccounting`,
+   `trustAccounting`, `planSimplified`, `planAnnual`, `planInitial`,
+   `planMinor` — implemented by **seven** feature modules, because
+   `annual-accounting` serves the Annual/Final/Trust trio from one engine. Excel
+   export exists for **five** types (Initial Inventory, Simplified, Annual,
+   Final, Trust), via the three modules that ship an `excel.js`. Every Plan
+   type — Initial, Annual, Minors, Simplified — has
    none. A Plan filer who reads `:769`, chooses the encrypted option because the
    guide told them they had a fallback, and then loses the password, has lost
    the case file with no recourse. The advice fails precisely when it is relied
@@ -269,6 +296,18 @@ also holds, on the device:
   cleared after a successful `.sav` write (Milestone 52B).
 - Launch preferences and a remembered file handle in IndexedDB
   (Milestone 52C).
+- **Cross-tab coordination state in `localStorage`** — key
+  `pg-tab-heartbeats-v1` (`src/tab-coordination.js:4,55`). This one was missing
+  from the first draft of this list and is the most load-bearing omission,
+  because of *what* it holds: `normalizeTabState()`
+  (`src/tab-state.js:8-20`) puts the active **ward ID, ward name, case number
+  and filing type** in it. It is short-lived coordination metadata rather than a
+  backup — but it is case-identifying data stored outside the `.sav`, and
+  unlike the recovery snapshot it is **plain `localStorage` regardless of the
+  case's encryption mode**. A filer who chose the encrypted option still has a
+  ward name and case number sitting in cleartext on the device. Any corrected
+  privacy paragraph that inventories on-device storage and omits this is wrong
+  in the same way the original was.
 - The theme preference in `localStorage`.
 
 The claim worth making — and the one that is actually true — is that this
@@ -398,7 +437,7 @@ milestone text:
 | Annual / Final / Trust Accounting | **Unconditional** | `annual-accounting/index.js:1468` |
 | Simplified Accounting | **Unconditional** | `simplified-accounting/index.js:714` |
 | Annual Plan | Required **when an attorney name is entered** | `plan-annual/index.js:785` — `if(d.attorney)` |
-| Initial Plan | Required **once any attorney field is started**; a completely blank attorney card remains valid | `plan-initial/index.js:687-694` — gated on `attorney_name \|\| attorney_bar \|\| attorney_signatureDate \|\| signatureState!=='none'` |
+| Initial Plan | Required once **the attorney name, bar number, signature date, or a signature state other than Unsigned** is set. Phone, email and address alone do **not** trigger it, and a completely blank attorney card remains valid | `plan-initial/index.js:687-694` — gated on `attorney_name \|\| attorney_bar \|\| attorney_signatureDate \|\| signatureState!=='none'` |
 | Simplified Annual Plan, Annual Plan — Minors | Unchanged | no `attorney_email` requirement |
 
 The Initial Plan's conditionality is the one worth spelling out in the guide:
@@ -409,8 +448,18 @@ reads "attorney email is required" flatly will think they need an attorney.
 `:257` currently frames the section indicators as tracking missing answers.
 They also turn incomplete when reporting-period, GID, signature, preparer,
 attorney or certification dates violate the same ordering rules that block the
-export — `computeNavChecks()` calls `checkDateOrder()` directly
-(`src/legacy-app.js:6731, 6898, 6960`). This affects five filing families.
+export. This affects five filing families.
+
+**State the mechanism accurately if the guide states it at all.**
+`computeNavChecks()` does **not** call `checkDateOrder()`; `legacy-app.js`
+never calls it, and the only two occurrences of that name in the file are
+comments. 55B instead defines a local `datesOrdered()` helper
+(`src/legacy-app.js:6738`) written to mirror `checkDateOrder()`'s blank-
+tolerance, and applies it at the sites around `:6898` and `:6960`. The
+**user-facing claim is still true** — the sidebar and the export blocker now
+agree about date order — but the guide should describe the agreement, not the
+plumbing, and this document should not assert a call that does not exist. An
+earlier draft did.
 
 ### Steps
 
@@ -638,14 +687,39 @@ At least five images show retired UI:
 
 ### Steps
 
-**G1.** Capture against the current build in a real browser, using the same
-target the e2e suite uses (`vite preview`, the `source` target), so no image
-can show a state the app cannot produce.
+**G1 — Capture conditions, pinned.** "Capture against the current build" was
+self-contradictory in the first draft: the `source` target is
+`vite preview --outDir .`, which serves **raw source from disk**, not a build.
+Pick one and name it. Either is defensible — the `source` target for fidelity
+to what the e2e suite exercises, or a fresh `npm run build:web` served by the
+`web` target for fidelity to what a user receives — but the choice must be
+recorded in the commit, because it determines whether the screenshots show the
+bundled app or the development one.
+
+Each replacement image is reproducible only if these are fixed and written
+down alongside it:
+
+| Dimension | Requirement |
+| --- | --- |
+| Browser / target | Chromium, and which Playwright target (`source` or `web`) — stated, not implied |
+| Viewport | One fixed size for all images, so figures do not shift scale between sections |
+| Theme | Light unless the figure is specifically about dark mode; the guide should not mix without reason |
+| Route + UI state | The exact route and the interaction state (panel open, note selected, accordion expanded) per image |
+| Fixture data | Synthetic ward names, case numbers and dates, named in the commit so a re-shoot reproduces them |
+| Personal data | **Confirm no real ward, case, attorney or filer data appears in any captured pixel.** These are court filings; a screenshot is a disclosure |
+| Format / size | The encoding and a per-image size target, since these embed as `data:` URIs into an already-11.8 MB file |
+| Supersession | Which existing figure each new image replaces, so none is orphaned and no caption points at a removed one |
+
 **G2.** Replace the images and update every caption that names a removed
 control.
+
 **G3.** Check the file size after replacement. The guide is already 11.8 MB
 with images embedded; if the refresh grows it materially, say so rather than
 letting it drift silently.
+
+**G4.** Render the guide after embedding and look at it. A `data:` URI can be
+syntactically valid, correctly referenced, and still display as a broken image
+or at the wrong scale; nothing in this milestone's tooling would notice.
 
 ### Verification
 
@@ -689,12 +763,24 @@ avoids. It is included at Alan's direction, with the fuzzy half deliberately
 left out rather than attempted badly.
 
 **The scope decision that makes this tractable: one direction only.** The
-guard asserts that **the guide does not claim a control the app lacks**. It
-does *not* assert the converse — that every app control is documented. The
-first is a correctness property with a decidable answer; the second is a
-completeness judgment with no mechanical answer, and building a gate on it is
-how you get a test nobody can keep green. Every one of this milestone's eleven
-findings is in the first category.
+guard addresses **the guide claiming a control the app lacks**. It does *not*
+assert the converse — that every app control is documented. The first has a
+decidable answer against named evidence; the second is a completeness
+judgment with no mechanical answer, and building a gate on it is how you get a
+test nobody can keep green. **Ten of this milestone's eleven findings are in
+the first category; finding 9 (the dashboard toolbar's four undocumented
+controls) is in the second**, which is exactly why a human review caught it and
+why a future recurrence of that shape will need one too. An earlier draft of
+this section said "every one of the eleven", which was wrong.
+
+**What this guard is, stated precisely, because the first draft overstated
+it.** 56H is a **source-markup sentinel**, not proof that a control renders.
+It checks that the guide's claims still correspond to identifiable markup in
+the source it names. Runtime evidence — that a control actually appears and
+works — comes from the Playwright contracts, which already exist and are not
+replaced by this. The first draft of H2 claimed the guard proved "a control
+the guide names and the app no longer renders fails the test." It did not and
+could not, for the reason 56H's own design section now records.
 
 ### Steps
 
@@ -716,69 +802,176 @@ the list reads as a history rather than as a pile of magic strings. **It
 ratchets:** a future milestone that retires a control adds its string here in
 the same commit, and the guide can never quietly reacquire it.
 
-Four of the eleven findings would have been caught on the day they appeared, by
-roughly twenty lines of test.
+**Five** of the eleven findings would have been caught on the day they
+appeared — 1, 3, 8, 10 and 11, one per row above — by roughly twenty lines of
+test. (An earlier draft said four; the table has always had five rows.)
 
-**H2 — Part 2: the declared-control check (ratchet).** Model:
-`window-bridge-allowlist.json` (42C) — a declared surface, policed. The guide
-annotates the controls it names:
+**H2 — Part 2: the declared-control check, keyed on stable IDs and exact
+evidence.** Model: `window-bridge-allowlist.json` (42C) — a declared surface,
+policed.
+
+**Why the first design of this step was unsound, recorded so it is not
+retried.** It annotated the guide with the control's *visible label*
+(`data-app-control="Report a Bug"`) and asserted that label appeared "as a
+literal string somewhere in `src/`". That proves almost nothing, and the
+counter-example is already in this repository: **`Print Preview` occurs nine
+times across `src/`, every one of them inside a comment**
+(`readiness-config.js:598`, `pdf-annotate.js:111`, `pdf-preview.js:280,291`,
+and more). A `data-app-control="Print Preview"` annotation would pass on
+comment text alone. The same hole swallows in-app help prose, dead code, an
+unrelated control that happens to share a word, and a constant that is no
+longer rendered. It also fails in the other direction — a control that
+genuinely exists can be icon-only with its label in an `aria-label`,
+assembled by interpolation, HTML-entity encoded, produced by a shared helper,
+or visually renamed while keeping a stable action attribute. **Label equality
+is the wrong contract in both directions.**
+
+**The contract instead: a stable ID, plus the exact marker that renders it.**
+The guide annotates with an identifier, not a label:
 
 ```html
-<code data-app-control="Report a Bug">Report a Bug</code>
+<span class="ui" data-app-control="signature-tab-upload">Upload</span>
 ```
 
-The guard extracts every `data-app-control="…"` value and asserts each appears
-as a literal string somewhere in `src/`. A control the guide names and the app
-no longer renders fails the test, by name.
+and the spec carries a registry mapping each ID to the precise evidence:
 
-**False positives are impossible by construction, which is the whole point:**
-only annotated claims are asserted, so unannotated prose — court form names,
-statutory references, ordinary English that happens to collide with a UI
-string — is never scanned. The guard's coverage is exactly what someone chose
-to declare, and it grows as sections are touched rather than requiring the
-whole 11.8 MB document to be annotated up front.
+```js
+const GUIDE_CONTROLS = {
+  'signature-tab-upload': {
+    file: 'src/core/signature/signature-pad.js',
+    pattern: /data-sig-tab="upload"/,
+    label: 'Upload',
+  },
+  'dashboard-report-bug': {
+    file: 'src/features/dashboard/index.js',
+    pattern: /data-feedback-open="bug"/,
+    label: 'Report a Bug',
+  },
+};
+```
 
-**H3 — Annotate as part of 56E/56F, not as a separate pass.** The sections
-those two rewrite are precisely the ones whose control names just proved
-fragile. Annotating them while they are already open costs almost nothing;
-annotating the rest of the guide is not required for this sub-delivery to be
-useful and should not be attempted here.
+The guard asserts, per entry:
+
+1. Every `data-app-control` value in the guide is a **registered** ID.
+2. Every registered ID is **annotated** at least once in the guide (a registry
+   entry with no claim is dead weight and should be deleted).
+3. IDs are **unique**.
+4. The named `file` **exists**.
+5. The `pattern` — an action attribute, a control marker, a selector, *not* a
+   prose label — occurs **in that file**, and occurs **exactly once** unless the
+   entry explicitly documents a higher count.
+6. Where practical, the `label` still appears in proximity to the marker, so a
+   silent rename is visible.
+
+That is what makes the ID indirection load-bearing rather than decorative: the
+guide is free to call the control whatever reads best, and the guard still
+tracks the thing that actually renders it.
+
+**H2a — Decision required from Alan: sentinel only, or a two-way contract?**
+Even with exact markers, this remains a **source scan**. It cannot prove the
+matched markup is reachable — dead markup carrying a matching attribute passes.
+The stronger design adds the same ID to the application's own control:
+
+```
+guide  data-app-control="dashboard-report-bug"
+                    ↕ exact match
+app    data-guide-control="dashboard-report-bug"
+```
+
+which turns a scan into a genuine two-way contract and makes the pattern
+registry unnecessary. **The cost is that 56H stops being test-only** and starts
+adding attributes to rendered application markup — small, low-risk, but real
+app surface with its own review, and `AGENTS.md` §8 consequences this
+sub-delivery currently declares N/A. **Recommendation: take the sentinel now
+(it closes the observed failure mode) and treat the two-way contract as a
+separate, later decision** — but this is Alan's call, not the executor's, and
+it should be answered before 56H starts rather than discovered during it.
+
+**H2b — What 56H does NOT detect.** Stated plainly so the guard is not trusted
+past its evidence:
+
+- A control the app has and the guide never mentions (finding 9's direction).
+- A behavioural explanation that is wrong while the control exists.
+- A conditional validation rule described incorrectly (56D's whole subject).
+- A stale screenshot.
+- A legal or privacy statement that is false but syntactically plausible
+  (56B and 56C's whole subject).
+- Dead application markup that still carries a matching identifier.
+
+Six of the eleven findings sit outside what 56H can ever catch. That is not an
+argument against it; it is the reason 56B–56G are hand-verified and the reason
+the Verification plan says the reading *is* the gate for them.
+
+**H3 — 56H adds its own annotations, after 56E/56F land.** The first draft
+split this — listing the annotations under 56H's Files while instructing
+56E/56F to add them — which is incoherent under a model where each
+sub-delivery is separately approved and separately revertible: approving 56E
+would not authorize 56H's markup, and reverting 56H would strand attributes in
+sections it never owned. 56H alone adds the attributes, to whatever 56E/56F
+have by then corrected. Annotating the rest of the guide is not required for
+this sub-delivery to be useful and should not be attempted here.
 
 **H4 — Strip embedded images before scanning.** `help/index.html` is 11.8 MB
 almost entirely because screenshots are embedded as `data:` URIs. Strip those
 payloads before either scan: it keeps the test fast and stops a base64 blob
 from coincidentally matching a retired term.
 
-**H5 — Use a narrow regex for the annotation extraction, deliberately.**
-Milestone 53D replaced a regex with an AST parser, so the contrast is worth
-stating rather than looking like a lapse: 53D was parsing **arbitrary
-JavaScript**, where comments, strings and nested braces make text scanning
-unsound. Here the input format is **one attribute this milestone defines**, on
-a fixed shape, in a document this repository controls. A narrow regex over a
-format you own is the right tool; a regex over a language you do not own is
-not. If the annotation format ever grows beyond a flat attribute value, that
-judgment should be revisited.
+**H5 — Use a narrow regex for the annotation extraction, deliberately; the
+source-side evidence is a different matter.** Milestone 53D replaced a regex
+with an AST parser, so the contrast is worth stating rather than looking like a
+lapse. Extracting `data-app-control="…"` is a regex over **one attribute this
+milestone defines**, on a fixed shape, in a document this repository controls —
+the right tool. The registry's `pattern` side is *not* the same thing: it
+matches markup inside real source files, so it inherits the weakness 53D
+documented. That is precisely why H2 requires an **action attribute or control
+marker with an exact occurrence count**, rather than a label: a distinctive
+`data-sig-tab="upload"` is checkable by text in a way that the word "Upload" is
+not. Where a control has no such marker, the honest options are to add one to
+the app (see H2a) or to leave that control unregistered — **not** to fall back
+to matching its label.
 
-**H6 — Red-first.** Before 56B–56F land, the Part 1 scan must be **red**
-against the current guide, naming the retired terms it finds. That is the
-proof it works, and it is only available before the corrections. Capture that
-output and record it in the commit message; after the corrections it is green
-and can never demonstrate itself again.
+**H6 — Non-vacuity comes from fault injection, not from a historical red
+run.** The first draft required the Part 1 scan to be run red against the
+uncorrected guide before 56B/56C/56E landed. That conflicts with this
+milestone's own approval model: 56H lands last and is separately approved, so
+requiring its test to exist and run during 56B means doing unapproved 56H work
+inside another sub-delivery. Dropped. Two things replace it, and together they
+are stronger:
+
+- **The red evidence is already captured, at proposal time.** Every seeded
+  term was confirmed present in the current guide before this document was
+  written: `Download PDF guide` ×1, `2019-005` ×1, `unencrypted fallback` ×1,
+  `Draw / Type / Upload` ×2, `no hidden copy elsewhere` ×1. That is the
+  "it would have caught these" claim, evidenced, with no sequencing
+  entanglement. Re-run the counts at execution time rather than trusting them.
+- **The fault injections below are the live gate**, and unlike a historical red
+  run they remain repeatable forever.
 
 **H7 — `TEST-INDEX.md`** row per `AGENTS.md` §7; `test-index-guard` green.
 
 ### Verification
 
-`npx vitest run tests/unit/user-guide-drift-guard.spec.js`. Both halves must be
-shown to fail on purpose before they count, per this repository's fault-
-injection convention (51D, 53B's B12):
+`npx vitest run tests/unit/user-guide-drift-guard.spec.js`, plus
+`test-index-guard`. Both halves must be shown to fail on purpose before they
+count, per this repository's fault-injection convention (51D, 53B's B12) —
+four injections, because the registry design has more ways to be vacuous than
+the first draft did:
 
-1. Add a retired term back to the guide in a scratch edit → Part 1 red, naming
-   it. Revert.
-2. Annotate a control that does not exist (`data-app-control="Download PDF
-   guide"`) → Part 2 red, naming it. Revert.
+1. **Part 1:** add a retired term back to the guide in a scratch edit → red,
+   naming the term. Revert.
+2. **Part 2, marker removed:** delete or alter the real control marker in the
+   app (e.g. change `data-sig-tab="upload"`) → red, naming the ID and the file.
+   Revert. **This is the injection that matters most**: it is the one the first
+   draft's label-matching design would have survived, because the word "Upload"
+   would still have been somewhere in `src/`.
+3. **Part 2, unregistered annotation:** add `data-app-control="not-a-real-id"`
+   to the guide → red. Revert.
+4. **Part 2, orphaned registry entry:** add a registry entry no annotation
+   references → red. Revert.
 
-A gate that cannot fail is not evidence.
+A gate that cannot fail is not evidence — and a gate that only fails on the
+easy case is worse, because it reads as evidence while proving less than it
+appears to.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
@@ -838,7 +1031,7 @@ A gate that cannot fail is not evidence.
 | 56H Part 1, run **before** 56B/56C/56E land (H6) | **Red**, naming the retired terms it finds in the current guide |
 | 56H Part 1, after those corrections | Green; red again under H6's fault injection (a retired term added back) |
 | 56H Part 2 | Every `data-app-control` value resolves to a literal string in `src/`; red under fault injection (an annotation naming a control that does not exist) |
-| Full unit suite | Green at each sub-delivery |
+| Test runs | Per the table in the Verification plan — **not** a full unit suite per sub-delivery, which an earlier draft wrongly required |
 | `MILESTONE-56-PROPOSAL.md` | Amended in place with a dated "Landed" note per sub-delivery, per repo convention |
 
 ---
@@ -848,6 +1041,19 @@ A gate that cannot fail is not evidence.
 Per sub-delivery, the **Verification** block is the lite gate (`AGENTS.md`
 §1). No sub-delivery here warrants a full regression on its own: 56A is an
 isolated deletion with a detector, and 56B–56G do not touch `src/` at all.
+
+**What to actually run, per sub-delivery.** An earlier draft's acceptance
+criteria demanded the full unit suite at every sub-delivery, which contradicts
+both this section and the standing preference for targeted runs — and would
+mean running 914 unit tests to certify a paragraph of prose:
+
+| Sub-delivery | Run |
+| --- | --- |
+| 56A | Its dead-code detector (red→green) plus `npm run build` |
+| 56B–56F | No test run. These touch `help/` only; the gate is reading the source each claim describes, plus viewing the rendered guide |
+| 56G | Rendered-guide inspection; the targeted spec for any behaviour a new screenshot depicts, where one exists |
+| 56H | The new drift-guard spec, its four fault injections, and `test-index-guard` |
+| Milestone close | One full unit run, if wanted, to confirm the accumulated state — not per sub-delivery |
 
 **The limitation this milestone starts closing.** Until 56H, there is no
 automated gate on guide prose at all: `test-index-guard` polices the test
