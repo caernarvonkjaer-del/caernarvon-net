@@ -2,11 +2,59 @@
 
 ## Status
 
-**Draft — not an authorization to implement anything below.** Per
-`AGENTS.md` §2, this is a proposal only; nothing here should be started until
-Alan explicitly approves a specific sub-delivery by name. Approval of one
-sub-delivery does not authorize the others. Every sub-delivery here is
-independently approvable and independently revertible.
+**Landed in full, 2026-09-17.** Alan approved the whole milestone ("Execute
+MS 56"), answering the three open questions up front: 56G triaged aggressively
+rather than re-shot in kind, JPEG kept over G1's literal PNG with the 150 KB
+cap intact, and a full unit + e2e run at close. All eight sub-deliveries are on
+`master`:
+
+| Sub-delivery | Commit | Verification |
+| --- | --- | --- |
+| 56A — Delete dead `exportHelpGuideAsPDF()` | `e3556e1` | Red-first detector (both assertions red, each naming its target), green after; `npm run build` clean; 229 deletions |
+| 56B — Excel-as-backup and the privacy claim | `44062b3` | Read against all seven sources incl. the two the first draft omitted (`tab-coordination.js`, `tab-state.js`); no dangling anchors |
+| 56C — The administrative order | `7be6eab` | Read against `help-content.js` + `resources.js`; `content-corrections.spec.js` green; `2019-005` → 0 |
+| 56D — What blocks an export | `728d556` | All four attorney-email rules re-derived at the validator; `datesOrdered()` re-located to `:6509` after 56A's shift |
+| 56E — The controls that changed | `74bc4ae` | Six surfaces against named source lines; E8's new `/print` case fault-injected; `user-guide-wiring` 6/6 |
+| 56F — Rewrite Helpful Resources | `b4f06bf` | Every remaining URL cross-checked against `RESOURCE_GROUPS`, not just the Pinellas one; 88 groups / 317 links counted from the module |
+| 56G — Screenshot triage and re-shoot | `3a5a17c` | G0 decision per figure; captures asserted before shooting; browser render check — 83 images, 0 broken; 11.8 MB → 11.4 MB |
+| 56H — Drift guard | `3dfed38` + this | Red-first (11 IDs named), 19/19 green, five fault injections all red |
+
+**Three things the execution found that this document had wrong**, recorded
+because the pattern is the same one the milestone exists to correct — a written
+claim trusted instead of re-derived:
+
+1. **56G's figure list was wrong in both directions.** The "Draw tab" and
+   "applied stamp" figures *also* showed the retired Type tab (three stale
+   signature figures, not one), while "Print Preview page with toolbar" — named
+   here as stale — already carried All Filings / theme / Help and was kept. The
+   figure that actually demonstrated the claim was "required fields still
+   missing", which this document never named. Found by looking at the images
+   rather than their alt text.
+2. **H3a's table under-counted two controls.** `data-feedback-open="bug"` and
+   the GovQA link render on **two** surfaces — the dashboard toolbar *and*
+   `legacy-app.js`'s Start New Form page — not one. This is precisely the "a
+   surface was *added*" case 56H names as undetectable, surfacing during 56H's
+   own construction.
+3. **`data-shell-action="toggle-help"` is in four files, not three.**
+   `index.html:117` is the Help panel's own close "×", which shares the action
+   but is a different control. `shell-help` therefore keys on
+   `id="help-toggle-btn"`, which matches exactly the three "?" buttons.
+
+**A verified answer to a question this document left open.** A probe against a
+deliberately blocked `/print` confirmed the banner still carries All Filings,
+the theme toggle and `help-toggle-btn`, so 56E's "every filing type" wording
+holds for the blocked state too — stated as verified rather than assumed.
+
+The original proposal follows, unchanged except for this status block and the
+per-sub-delivery Landed markers.
+
+---
+
+**Original status (superseded):** Draft — not an authorization to implement
+anything below. Per `AGENTS.md` §2, this was a proposal only; nothing was to be
+started until Alan explicitly approved a specific sub-delivery by name.
+Approval of one sub-delivery did not authorize the others. Every sub-delivery
+here is independently approvable and independently revertible.
 
 **They are not all independent of each other**, and an earlier draft of this
 line wrongly said "none is a prerequisite for another" — the sub-deliveries
@@ -175,7 +223,7 @@ actually produce.
 
 ---
 
-## 56A — Delete Dead `exportHelpGuideAsPDF()`
+## 56A — Delete Dead `exportHelpGuideAsPDF()` — **Landed `e3556e1`, 2026-09-17**
 
 **Risk: Low.** Pure deletion of an unreferenced function. The only code change
 in this milestone.
@@ -247,7 +295,7 @@ The detector red → green is the gate. Additionally: `npm run build` clean, and
 
 ---
 
-## 56B — Correct the Two Claims That Could Cost a Filer Data
+## 56B — Correct the Two Claims That Could Cost a Filer Data — **Landed `44062b3`, 2026-09-17**
 
 **Risk: Low** (documentation), **highest cost if left wrong.**
 
@@ -370,7 +418,7 @@ cannot find.
 
 ---
 
-## 56C — Correct the Court-Facing Administrative Order
+## 56C — Correct the Court-Facing Administrative Order — **Landed `7be6eab`, 2026-09-17**
 
 **Risk: Low** (documentation), **court-facing.**
 
@@ -435,7 +483,7 @@ rather than assuming the boundary.
 
 ---
 
-## 56D — Correct What Blocks an Export
+## 56D — Correct What Blocks an Export — **Landed `728d556`, 2026-09-17**
 
 **Risk: Low** (documentation).
 
@@ -511,7 +559,7 @@ filing still exports.
 
 ---
 
-## 56E — Correct the Controls That Changed
+## 56E — Correct the Controls That Changed — **Landed `74bc4ae`, 2026-09-17**
 
 **Risk: Low** (documentation).
 
@@ -641,7 +689,7 @@ confirm all three controls are present.
 
 ---
 
-## 56F — Rewrite Helpful Resources
+## 56F — Rewrite Helpful Resources — **Landed `b4f06bf`, 2026-09-17**
 
 **Risk: Low** (documentation). The largest single rewrite here.
 
@@ -739,7 +787,7 @@ is fixing, and fixing one instance of it is not fixing it.
 
 ---
 
-## 56G — Refresh the Stale Screenshots
+## 56G — Refresh the Stale Screenshots — **Landed `3a5a17c`, 2026-09-17**
 
 **Risk: Low** (documentation). Sequenced last.
 
@@ -834,7 +882,7 @@ text corrected in 56E/56F.
 
 ---
 
-## 56H — Guide Retired-Term and Declared-Control Sentinel
+## 56H — Guide Retired-Term and Declared-Control Sentinel — **Landed `3dfed38`, 2026-09-17**
 
 **Risk: Low.** Test-only; no application code, no guide prose beyond
 annotations. **Lands last** — see Sequencing.
