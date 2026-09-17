@@ -151,7 +151,6 @@ interface Window {
   emptyPlanResidence: any;
   emptyRowAnnual: any;
   encryptJSON: any;
-  enforceDateRanges: any;
   ensureFragment: any;
   ensureGuardianFeatureReady: any;
   ensureTemplate: any;
@@ -160,7 +159,6 @@ interface Window {
   errorRoute: any;
   esc: any;
   excelCapacityPanel: any;
-  ExcelEngine: any;
   exportActivityLog: any;
   exportCaseFileZip: any;
   exportGuardianDataZip: any;
@@ -198,7 +196,6 @@ interface Window {
   getCurrentLockedWardId: any;
   getCurrentPage: any;
   getCurrentPageKey: any;
-  getExcelJS: any;
   getFieldDraftDisplay: any;
   getFieldDraftIssueMessages: any;
   getFieldDraftIssues: any;
@@ -450,7 +447,6 @@ interface Window {
   unloadWard: any;
   unmergeParty: any;
   updateCarrySourcePicker: any;
-  updateConvertNote: any;
   updateConvertNotePreview: any;
   updateConvertTargetOptions: any;
   updateHelpContext: any;

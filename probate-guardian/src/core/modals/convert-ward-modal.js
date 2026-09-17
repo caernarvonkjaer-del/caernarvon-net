@@ -68,10 +68,11 @@ export function updateConvertTargetOptions() {
   targetSel.innerHTML = targets
     .map((t) => `<option value="${t}">${inventoryTypes[t]?.name || t}</option>`)
     .join('');
-  // Milestone 42E: this used to call window.updateConvertNote(), which has
-  // never existed -- the note preview was dead and changing the target did
-  // nothing. legacy-app.js's updateConvertNotePreview()/describeConversion()
-  // are the real ones (the same text the post-conversion alert reuses).
+  // Milestone 42E: this used to call an `updateConvertNote()` window-global,
+  // which has never existed -- the note preview was dead and changing the
+  // target did nothing. legacy-app.js's
+  // updateConvertNotePreview()/describeConversion() are the real ones (the
+  // same text the post-conversion alert reuses).
   const preview = () => window.updateConvertNotePreview?.(ward.inventoryType, targetSel.value);
   targetSel.onchange = preview;
   preview();

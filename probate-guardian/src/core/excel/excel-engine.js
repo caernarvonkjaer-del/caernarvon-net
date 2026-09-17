@@ -185,7 +185,8 @@ export async function saveWorkbookFile(workbook, filename) {
   }
 }
 
-// Milestone 51E deleted a `window.ExcelEngine = { ...16 helpers }` bridge from
-// here. It was assigned and never read -- the only other references were its
-// generated typing and its allowlist entry. Every consumer of this module reaches
-// it by ES import instead, which is the direction 42C/42E moved the codebase.
+// Milestone 51E deleted an `ExcelEngine` bridge (`window` held it as
+// `{ ...16 helpers }`) from here. It was assigned and never read -- the only
+// other references were its generated typing and its allowlist entry. Every
+// consumer of this module reaches it by ES import instead, which is the
+// direction 42C/42E moved the codebase.

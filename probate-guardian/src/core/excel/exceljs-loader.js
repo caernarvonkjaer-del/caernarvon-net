@@ -16,6 +16,6 @@ export async function getExcelJS() {
   });
 }
 
-// Milestone 51E deleted `window.getExcelJS = getExcelJS` from here. The ES export
-// above is live -- all three feature excel.js files import it -- but no code ever
-// read the global.
+// Milestone 51E deleted the `getExcelJS` window-global assignment from here.
+// The ES export above is live -- all three feature excel.js files import it --
+// but no code ever read the global.
