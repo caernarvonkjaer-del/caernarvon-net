@@ -1,30 +1,57 @@
-# Milestone 55: PDF Annotation Preview Integrity — Scoping & Execution Proposal
+# Milestone 55: Preview, Signature, and Validation Parity Fixes — Scoping & Execution Proposal
 
 ## Status
 
 **Draft — not an authorization to implement.** Per `AGENTS.md` §2, this
 document is a proposal only. Nothing below should be started until Alan
-explicitly approves the named sub-delivery. Approval of 55A would authorize
-only 55A; any later sub-delivery added to this milestone would require its own
-explicit approval.
+explicitly approves a named sub-delivery by name. Approval of one
+sub-delivery authorizes only that one; every other sub-delivery, including
+ones listed after it here, requires its own explicit approval.
 
 **Numbering note.** Milestone 55 was confirmed unused on 2026-09-16 by
 searching `src/`, `tests/`, project Markdown, and `git log` for Milestone 55,
 `MILESTONE-55`, and `55A` references.
 
+**Title note (2026-09-16).** This document started as a single PDF-annotation
+fix (55A) and grew, one user-reported issue at a time, to cover navigation
+parity, signature capture, and attorney-field validation as well — unrelated
+areas that happen to share this milestone number because they were reported
+in the same session, not because they share a root cause or a dependency.
+The title above was renamed from "PDF Annotation Preview Integrity" to match
+what the document actually now contains, per a code-review finding that the
+old title was stale. **This is a container for four independent fixes, not
+one coherent piece of work** — read "the order listed" below as reporting
+order and rough sequencing convenience, not a required execution sequence:
+any sub-delivery may be approved and landed before or without any other. The
+one real ordering constraint is a file-level one, noted under 55B and 55D
+below, not a priority ranking.
+
 ---
 
 ## Ordered Issue Register
 
-| Order | Sub-delivery | Issue | Status | Risk |
+| Order reported | Sub-delivery | Issue | Status | Risk |
 | --- | --- | --- | --- | --- |
-| **1** | **55A** | FreeText note color picker and delete control render as artifacts over the visible PDF | Proposed | Low–medium |
-| **2** | **55B** | Sidebar/nav-check section markers show green while the real export validator still blocks on a date-order rule they never apply | Proposed | Medium |
-| **3** | **55C** | Signature Stamp capture widget's "Type" tab — global removal | Proposed | Low |
-| **4** | **55D** | Attorney "Primary Email (e-filing)" renders a required asterisk that no validator enforces, in four filing types | Proposed | Low–medium |
+| 1 | **55A** | FreeText note color picker and delete control render as artifacts over the visible PDF | Corrected — still needs Alan's FreeText-only vs. FreeText+Highlight decision before it is approvable | Low–medium |
+| 2 | **55B** | Sidebar/nav-check section markers show green while the real export validator still blocks on a date-order rule they never apply | Corrected — full 23-site inventory and a runtime test venue now in place; the 10-of-23 scope split (fix now vs. named-open-gap) is stated explicitly and approvable as scoped | Medium |
+| 3 | **55C** | Signature Stamp capture widget's "Type" tab — global removal | Corrected — the deleted regression is now replaced with a real contract test; approvable as scoped | Low |
+| 4 | **55D** | Attorney "Primary Email (e-filing)" renders a required asterisk that no validator enforces, in four filing types | Corrected — data-model/factory work added to scope, per-engine policy table replaces the false uniform-rule claim; **still needs Alan's choice of Option A/B/C** before it is approvable | Medium |
 
-Each sub-delivery is independently approvable, in the order listed. Approving
-one does not authorize any other, including ones listed after it here.
+"Order reported" is the sequence these were raised in this session, kept for
+traceability. It is not an execution order and not a priority ranking; treat
+each row as independently approvable once its own status above says so.
+
+**Correction record (2026-09-16, same day as authoring):** an independent
+code review of this document, verified point-by-point against the actual
+source before accepting any of it, found 55B and 55D contained real,
+confirmed factual errors serious enough to block approval, and 55A and 55C
+needed tightening before either was truly ready. Every specific, checkable
+claim in that review was independently re-verified against the source before
+being accepted — CSV rows, factory contents, validator line numbers, call
+counts, and existing test behavior were all read directly, not taken on
+either party's word. All four findings held up exactly as reported. Both
+problem sub-deliveries are rewritten in place below; the rewrites are the
+corrections, not a promise of a future pass.
 
 ---
 
@@ -69,12 +96,43 @@ The save path is separate: `AnnotationSession.saveAnnotatedBytes()` calls
 than taking a screenshot of the DOM overlay. The controls therefore affect the
 live preview, not the saved PDF's page content. 55A must preserve that boundary.
 
+### Decision needed from Alan: FreeText-only, or FreeText and Highlight
+
+**Correction (code review, 2026-09-16):** this document originally scoped
+"the two supported editor types, FreeText and Highlight" as one contract, but
+designed and styled only the FreeText toolbar. That is not a documentation
+gap; it is a real, separate problem — confirmed directly in
+`lib/pdfjs/pdf.mjs`: FreeText's toolbar uses `class BasicColorPicker`
+(`input.className = 'basicColorPicker'`, a single native `<input
+type="color">`), while Highlight's uses a structurally different `class
+ColorPicker` (`#mainHighlightColorPicker`, a dropdown of swatch buttons with
+its own keyboard manager, `.colorPicker` DOM, and `data-l10n-id`-driven
+labels per swatch). A generic decorator built for `.basicColorPicker` would
+not style Highlight's dropdown at all, and reusing the FreeText "Delete note"
+label on a Highlight control would mislabel it.
+
+The **user-observed defect is FreeText-only** — the repro is "selecting or
+committing an **Add Note** annotation," and Add Note is the FreeText editor;
+nothing in the report describes a Highlight-toolbar artifact.
+
+| Option | Effect |
+| --- | --- |
+| **A — Narrow 55A to FreeText only (recommended)** | Scope, implementation, and regression below all apply to `.basicColorPicker`/FreeText's toolbar only, matching the actual reported defect. Highlight's toolbar is out of scope and named as a candidate follow-up, not assumed fine. |
+| **B — Cover both editors** | Requires inventorying `ColorPicker`'s `.colorPicker` swatch-dropdown structure and keyboard behavior (not done in this document), role-specific accessible labels (a Highlight control is not a "note"), and its own regression test with its own red/green evidence. Materially larger than what is designed below. |
+
+**The rest of this section assumes Option A** (FreeText only) unless Alan
+selects Option B, in which case the Scope, Implementation design, and
+Required regression test below need a second pass for Highlight's `ColorPicker`
+before this sub-delivery is execution-ready.
+
 ### Scope
 
 55A will:
 
-1. restore the minimal PDF.js toolbar layout and visibility contract required
-   by the two supported editor types, FreeText and Highlight;
+1. restore the minimal PDF.js toolbar layout and visibility contract for the
+   **FreeText editor's toolbar only** (`.basicColorPicker`/`BasicColorPicker`) —
+   see the Decision above; Highlight's separate `ColorPicker` dropdown is not
+   inventoried or styled by this sub-delivery as written;
 2. keep all new styling scoped beneath `.annotationEditorLayer`;
 3. give the generated FreeText color and delete controls accessible names;
 4. use the application's semantic tokens and existing SVG icon system;
@@ -140,6 +198,24 @@ accessibility defect.
 - `.deleteButton`: `aria-label="Delete note"`, `title="Delete note"`, and the
   existing `ic('trash', 14)` decorative SVG.
 
+**Correction (code review, 2026-09-16): how an ES module reaches `ic()` was
+unspecified.** `ic()` is defined only as a bare top-level `function ic(n,
+size)` in `legacy-app.js` (a classic script) — there is no separate
+importable icon module, and `pdf-annotate.js` currently has zero imports and
+zero existing use of `ic(`. Because a classic script's top-level function
+declarations become real `window` properties automatically, `window.ic` is
+reachable, and this exact pattern is already established in three other ES
+modules (`form-fields.js`, `router.js`, `dashboard/resources.js`), all using
+the same guard:
+
+```js
+const trashIcon = typeof window.ic === 'function' ? window.ic('trash', 14) : '';
+```
+
+`pdf-annotate.js` must use the identical guarded form, with a plain-text or
+empty fallback if `window.ic` is ever unavailable (e.g. a future load-order
+change) rather than assuming it always exists.
+
 Because PDF.js creates the toolbar asynchronously after editor selection, the
 session may use one layer-scoped `MutationObserver` per page. The observer must:
 
@@ -185,6 +261,17 @@ actual preview and FreeText editor:
 Use computed styles and bounding boxes rather than a pixel screenshot as the
 primary gate. This makes the regression identify the structural failure that
 caused the screenshot while remaining stable across browser font rendering.
+
+**Correction (code review, 2026-09-16): forced-colors was an acceptance
+criterion with no test or manual step behind it.** The Acceptance criteria
+below state "Light, dark, and forced-colors modes retain visible borders and
+focus states," but neither the ten steps above nor the Verification gate
+exercised `forced-colors: active` at all — an unverifiable promise. Add:
+
+11. With the browser/OS forced-colors mode active (Chromium:
+    `page.emulateMedia({ forcedColors: 'active' })`), repeat step 3 and
+    assert the toolbar and its two controls still have a visible border or
+    outline via computed style, not just that they render without throwing.
 
 ### Red/green evidence requirement
 
@@ -319,21 +406,25 @@ matters:
   path to ever disagree with the validator on this field, so it reports
   "complete" on a filing that is not.
 
-**This is not one filing type's bug.** `computeNavChecks()` in `legacy-app.js`
-hand-writes a presence-only nav-check per filing type, entirely independent of
-each feature's own validator, for every filing type except Guardian Inventory
-(whose branch derives its checks directly from `validate()`'s real errors,
-mapped to section keys via `errorRoute()` — architecturally immune to this
-class of drift by construction; confirmed by reading that branch, not
-assumed). Every `checkDateOrder()` call across the other 7 filing types was
-checked against its filing type's own nav-check branch. Two date-order
-relationships recur, and every site below was confirmed present in both the
-validator (with its exact `allowSameDay` flag) and the nav-check (as a
-presence-only check with no ordering):
+**This is not one filing type's bug, and it is bigger than first inventoried
+here.** `computeNavChecks()` in `legacy-app.js` hand-writes a presence-only
+nav-check per filing type, entirely independent of each feature's own
+validator, for every filing type except Guardian Inventory (whose branch
+derives its checks directly from `validate()`'s real errors, mapped to
+section keys via `errorRoute()` — architecturally immune to this class of
+drift by construction; confirmed by reading that branch, not assumed).
+
+**Correction (code review, 2026-09-16): the first version of this section
+said "ten confirmed sites." An independent, line-by-line recount of every
+`checkDateOrder()` call across the other 7 filing types found 23, not 10 —
+8 Cover-level pairs and 15 signature/certification pairs — and the first
+version's signature/certification table silently dropped five of the
+fifteen.** The full inventory, corrected:
 
 **Cover: Reporting Period From must be strictly before Reporting Period To
 (`allowSameDay:false`), and (where the field exists) GID must be on or before
-Reporting Period From (`allowSameDay:true`):**
+Reporting Period From (`allowSameDay:true`) — 8 calls, all with an existing
+presence-tracking nav-check key to extend:**
 
 | Filing type | Nav-check key | Validator call |
 | --- | --- | --- |
@@ -344,20 +435,34 @@ Reporting Period From (`allowSameDay:true`):**
 | Plan Minor | `pm-cover` | `plan-minor/index.js:446` (no `gid` field in this filing type) |
 
 **Signature/certification date must be on or after Reporting Period To
-(`allowSameDay:true` at every site):**
+(`allowSameDay:true` at every site) — 15 calls. Ten have an existing
+presence-tracking nav-check key to extend; five have no nav-check key at all
+for that specific field, so ordering cannot be attached without first adding
+presence-tracking that does not exist today:**
 
-| Filing type | Nav-check key | Role | Validator call |
-| --- | --- | --- | --- |
-| Annual/Final/Trust | `a-p3` | Guardian | `annual-accounting/index.js:1439` |
-| Annual/Final/Trust | `a-p4` | Preparer | `annual-accounting/index.js:1459` |
-| Annual/Final/Trust | `a-p5` | Attorney | `annual-accounting/index.js:1480` |
-| Annual/Final/Trust | `a-p10` | Certificate of Service | `annual-accounting/index.js:1487` |
-| Simplified Accounting | `s-p4` | Guardian | `simplified-accounting/index.js:704` |
-| Simplified Accounting | `s-p6` | Certificate of Service | `simplified-accounting/index.js:729` |
-| Plan Simplified | `ps-p3` | Guardian | `plan-simplified/index.js:392` |
-| Plan Annual | `pa-p11` | Guardian | `plan-annual/index.js:756` — **the reported defect** |
-| Plan Minor | `pm-p6` | Guardian | `plan-minor/index.js:493` |
-| Plan Minor | `pm-p7` | Attorney | `plan-minor/index.js:528` |
+| Filing type | Nav-check key | Role | Validator call | Has a key to extend? |
+| --- | --- | --- | --- | --- |
+| Annual/Final/Trust | `a-p3` | Guardian | `annual-accounting/index.js:1439` | Yes |
+| Annual/Final/Trust | `a-p4` | Preparer | `annual-accounting/index.js:1459` | Yes |
+| Annual/Final/Trust | `a-p5` | Attorney | `annual-accounting/index.js:1480` | Yes |
+| Annual/Final/Trust | `a-p10` | Certificate of Service | `annual-accounting/index.js:1487` | Yes |
+| Simplified Accounting | `s-p4` | Guardian | `simplified-accounting/index.js:704` | Yes |
+| Simplified Accounting | — | Attorney | `simplified-accounting/index.js:713` | **No — `s-p5` exists but tracks only bar/phone/street/cityStateZip, never `attorney_signatureDate`** |
+| Simplified Accounting | `s-p6` | Certificate of Service | `simplified-accounting/index.js:729` | Yes |
+| Plan Simplified | `ps-p3` | Guardian | `plan-simplified/index.js:392` | Yes |
+| Plan Simplified | — | Preparer | `plan-simplified/index.js:396` | **No — no `ps-` key exists for the preparer role at all** |
+| Plan Simplified | — | Attorney | `plan-simplified/index.js:400` | **No — no `ps-` key exists for the attorney role at all** |
+| Plan Annual | `pa-p11` | Guardian | `plan-annual/index.js:756` — **the reported defect** | Yes |
+| Plan Annual | — | Attorney | `plan-annual/index.js:760` | **No — no `pa-` key exists for the attorney role at all** |
+| Plan Minor | `pm-p6` | Guardian | `plan-minor/index.js:493` | Yes |
+| Plan Minor | — | Preparer | `plan-minor/index.js:524` | **No — `pm-p7` tracks `preparer_name` presence but never `preparer_signatureDate`** |
+| Plan Minor | `pm-p7` | Attorney | `plan-minor/index.js:528` | Yes |
+
+8 + 15 = 23 total `checkDateOrder()` calls across these 5 filing types,
+confirmed by grep against `src/features/*/index.js`, excluding
+`guardian-inventory/index.js`'s one call (`bondPeriodFrom`/`bondPeriodTo`,
+a different relationship on a validator-driven nav-check already immune to
+this bug class) and the function's own definition in `date-rules.js`.
 
 **Confirmed clean, not merely unexamined:**
 
@@ -388,6 +493,26 @@ already on `planAnnual`'s accepted `KNOWN_GAPS` list — that half of the
 picture was already known; the guardian-date half the screenshot actually
 shows was not.)
 
+**Correction (code review, 2026-09-16): the proposed test location cannot
+run the code under test.** The first version of this section proposed
+extending `checklist-export-parity.spec.js` with a runtime fixture ("build a
+fixture where the tracked field is present but out of order, assert the
+nav-check now reports incomplete"). That spec never executes
+`computeNavChecks()` — it slices the function's source into a string and
+regexes over the text (`sliceFunction`/`modelFields`, confirmed by reading
+the file); there is no mechanism there to evaluate the function against a
+real data fixture and read back a boolean. `computeNavChecks()` also
+references dozens of other globals (`D`, `activeInventoryType`, `PLAN_RIGHTS`,
+`annualReconcileState`, `errorRoute`, `validate`, and more), so a standalone
+extraction-and-`new Function()` harness (the technique
+`tests/unit/support/legacy-source-extract.js` uses for small, self-contained
+functions) would need to stub all of them to be safe, which is not a small
+undertaking. `tests/e2e/navigation-status.contract.spec.ts` already calls
+`w.computeNavChecks()` for real, inside the actual browser, at multiple
+points (confirmed: `navComplete: w.computeNavChecks().checks['pa-p5']` and
+five further calls) — that is the real, already-used venue for a runtime
+parity assertion, and is where 55B's regression belongs instead.
+
 ### Scope
 
 55B will:
@@ -396,27 +521,32 @@ shows was not.)
    `checkDateOrder()`'s own tolerant semantics (either side blank → no
    ordering failure, since a missing-field problem is the presence check's
    job, not this one's);
-2. apply it alongside the *existing* presence check at each of the ten
-   confirmed sites above — five Cover-level pairs, five signature/cert
-   pairs — using the exact `allowSameDay` value the real validator uses at
-   that site;
-3. extend `checklist-export-parity.spec.js` (or a new focused spec, decided
-   during implementation) with a regression that would have caught this: a
-   fixture where the tracked field is present but out of order, asserting
-   the nav-check now reports incomplete;
-4. update `TEST-INDEX.md` for whatever spec carries the new coverage.
+2. apply it alongside the *existing* presence check at each of the **ten**
+   sites in the tables above marked "Yes" (five Cover-level pairs, five
+   signature/cert pairs), using the exact `allowSameDay` value the real
+   validator uses at that site;
+3. add a runtime regression to `tests/e2e/navigation-status.contract.spec.ts`
+   (see "Why `checklist-export-parity.spec.js` did not already catch this"
+   above) that would have caught the reported defect: a fixture where the
+   tracked field is present but out of order, asserting
+   `computeNavChecks()`'s corresponding key is now `false` through the real
+   browser;
+4. update `TEST-INDEX.md` for the extended spec.
 
 55B will not:
 
-1. add nav-check presence-tracking for fields the sidebar does not track at
-   all today — `simplified-accounting`'s `s-p5` never tracks
-   `attorney_signatureDate`'s presence, and `ps-p3`/`pa-p11`/`pm-p7` have no
-   preparer- or attorney-specific key covering every role their own
-   validator checks. That is a missing-field gap, a different and broader
-   problem than the misapplied-rule gap this sub-delivery fixes, and already
-   partly catalogued by `checklist-export-parity.spec.js`'s own
-   `KNOWN_GAPS`. Naming it here so it is not lost, not fixing it as a
-   side effect;
+1. add nav-check presence-tracking for the **five** sites in the second
+   table above marked "No" — Simplified Accounting's attorney, Plan
+   Simplified's preparer and attorney, Plan Annual's attorney, and Plan
+   Minor's preparer. Each would need a brand-new tracked field added to its
+   filing type's nav-check branch before any ordering rule could even attach
+   to it — a missing-field gap, not a misapplied-rule gap, and a different,
+   larger piece of work than extending an existing check. Leaving these five
+   unresolved does mean the same green-sidebar/export-blocker discrepancy
+   this document reports for Plan Annual's guardian date persists,
+   unaddressed, for these five roles — stated plainly rather than implied by
+   omission, which is exactly the error the first version of this section
+   made;
 2. touch the readiness card's predicate rows (`readiness-config.js`) — it
    already surfaces this exact outstanding issue correctly via its
    validator-issue fallback, confirmed above, not merely assumed;
@@ -431,13 +561,20 @@ shows was not.)
    one confirmed defect. Recorded here as a follow-up worth its own
    milestone, not undertaken now.
 
+**If Alan wants the five gaps in "will not" #1 closed too**, that is a
+larger version of this same sub-delivery (add the missing nav-check keys,
+then apply ordering the same way) rather than a different one — worth an
+explicit decision before starting, since it roughly doubles the file/branch
+surface touched and needs its own presence-tracking design per role, not
+just a call to the ordering helper.
+
 ### Files in scope
 
 | File | Planned change |
 | --- | --- |
-| `src/legacy-app.js` | Add the shared date-order helper inside `computeNavChecks()`; apply it at the ten confirmed sites listed above, in their respective filing-type branches. |
-| `tests/unit/checklist-export-parity.spec.js` | Add the out-of-order-but-present regression fixture and assertion described above. |
-| `TEST-INDEX.md` | Extend the existing `checklist-export-parity.spec.js` row to record the new date-order regression scope. |
+| `src/legacy-app.js` | Add the shared date-order helper inside `computeNavChecks()`; apply it at the ten sites marked "Yes" above, in their respective filing-type branches. |
+| `tests/e2e/navigation-status.contract.spec.ts` | Add the out-of-order-but-present runtime regression fixture and assertion described above. |
+| `TEST-INDEX.md` | Extend the existing `navigation-status.contract.spec.ts` row to record the new date-order regression scope. |
 
 ### Implementation design
 
@@ -471,39 +608,46 @@ meant to convey.
 
 ### Required regression test
 
-Add to `checklist-export-parity.spec.js` (co-located with the existing
-`KNOWN_GAPS` guard it complements) or a new focused spec:
+Add to `tests/e2e/navigation-status.contract.spec.ts`, alongside its existing
+`w.computeNavChecks()` calls:
 
 1. For at least Plan Annual (the reported case) and one Cover-level pair
-   (e.g. Annual's `periodFrom`/`periodTo`): build a fixture where the
-   tracked field is present but chronologically out of order.
+   (e.g. Annual's `periodFrom`/`periodTo`): build a fixture, through the real
+   UI, where the tracked field is present but chronologically out of order.
 2. Assert the real validator reports the issue (already true; this pins it).
-3. Assert `computeNavChecks()`'s corresponding key is now also `false` — red
-   before the fix, green after, per this repo's red-first convention.
+3. Assert `w.computeNavChecks().checks['<key>']` for the affected key is now
+   also `false` — red before the fix, green after, per this repo's red-first
+   convention.
+
+A static complement in `checklist-export-parity.spec.js` may still be worth
+adding (e.g. asserting the new `datesOrdered(...)` calls are textually
+present in each affected branch), but it cannot substitute for the runtime
+assertion above — name it as a complement, not the regression, if added.
 
 ### Verification gate
 
 ```text
-npx vitest run tests/unit/checklist-export-parity.spec.js
-npx vitest run tests/unit/plan-annual-parity.spec.js tests/unit/plan-initial-parity.spec.js tests/unit/plan-minor-parity.spec.js tests/unit/plan-simplified-parity.spec.js
-npx playwright test tests/e2e/routes.spec.ts tests/e2e/navigation-status.contract.spec.ts
+npx playwright test tests/e2e/navigation-status.contract.spec.ts tests/e2e/routes.spec.ts
+npx vitest run tests/unit/checklist-export-parity.spec.js tests/unit/plan-annual-parity.spec.js tests/unit/plan-initial-parity.spec.js tests/unit/plan-minor-parity.spec.js tests/unit/plan-simplified-parity.spec.js
 ```
 
 `computeNavChecks()` is shared, hand-maintained, load-bearing logic touched by
-7 of 9 filing-type branches in one file — recommend a full `npm test` before
+5 of 9 filing-type branches in one file — recommend a full `npm test` before
 commit per `AGENTS.md` §1's "broad, cross-cutting, touches shared/core
 modules" criterion, and ask before running it.
 
 ### Acceptance criteria
 
-- Every one of the ten confirmed sites: presenting the tracked date(s) out of
-  order flips that section's sidebar marker from green to red, matching the
-  real validator's own judgment.
+- Every one of the ten sites marked "Yes" above: presenting the tracked
+  date(s) out of order flips that section's sidebar marker from green to
+  red, matching the real validator's own judgment.
 - A filing with every date in valid order is unaffected — no new false
   negatives introduced (the reported filing's other ten sections must not
   turn red).
 - Guardian Inventory, Plan Initial, and every field not named above are
   bit-for-bit unaffected.
+- The five sites marked "No" above remain exactly as broken as they are
+  today — not worse, not silently fixed as an unverified side effect.
 - `checklist-export-parity.spec.js`'s existing `KNOWN_GAPS` assertions are
   unaffected — this fix does not remove or add any field-name-level gap.
 - New regression is red against pre-fix `computeNavChecks()`, green after.
@@ -511,10 +655,11 @@ modules" criterion, and ask before running it.
 ### Risk and rollback
 
 Risk is **medium** — the change is small and mechanical, but
-`computeNavChecks()` gates the Next-button and sidebar dot for 7 filing types
-from one function, so a typo in one branch's condition risks that branch
-alone, not the others (each `checks` object is independent), but is still
-worth the full-suite gate above rather than the lite default.
+`computeNavChecks()` gates the Next-button and sidebar dot for the 5 filing
+types this sub-delivery touches, from one function, so a typo in one
+branch's condition risks that branch alone, not the others (each `checks`
+object is independent), but is still worth the full-suite gate above rather
+than the lite default.
 
 Rollback is limited to the `datesOrdered()` helper and its ten call sites in
 `legacy-app.js`, plus the new test assertions. No data model or persisted
@@ -525,8 +670,9 @@ shape change; no migration.
 1. **Data Model:** None.
 2. **Legacy Data Migration:** None — this reads existing fields already
    present in every `.sav` file; no new field, no reshape.
-3. **Test Coverage & Index:** New regression in `checklist-export-parity.spec.js`
-   (or a new file); update `TEST-INDEX.md` in the same commit.
+3. **Test Coverage & Index:** New runtime regression in
+   `tests/e2e/navigation-status.contract.spec.ts`; update `TEST-INDEX.md` in
+   the same commit.
 4. **Export/Import/Portability:** None — export behavior itself (what the
    real validator blocks on) is unchanged; only the sidebar's agreement with
    it improves.
@@ -540,10 +686,17 @@ shape change; no migration.
 
 ### Dependency and sequencing
 
-No dependency on 55A, 55C, or 55D. Touches `legacy-app.js`, which is a large,
-frequently-edited shared file — sync with `master` and re-check `git log`
-before starting, per `AGENTS.md` §1, and coordinate at file level with any
-other agent mid-edit there rather than assuming the overlap is harmless.
+No logical dependency on 55A or 55C. **File-level overlap with 55D, not a
+priority ordering**: both this sub-delivery and 55D touch
+`legacy-app.js`/`computeNavChecks()` and `TEST-INDEX.md`, and 55D's scope (if
+Option A there proceeds) adds its own nav-check keys to some of the same
+filing-type branches this sub-delivery edits. Land one fully before starting
+the other, or coordinate at the branch level within `computeNavChecks()` if
+both are approved close together — per `AGENTS.md` §1, check `git log`/`git
+diff` for real overlap at the time work starts rather than assuming this
+document's snapshot still holds. `legacy-app.js` is also a large,
+frequently-edited shared file independent of 55D — sync with `master` and
+re-check before starting regardless.
 
 ---
 
@@ -608,13 +761,16 @@ the latter.
 1. remove the Type tab button, panel, and all Type-specific logic from
    `mountSignaturePad()`, leaving Draw and Upload as the only two capture
    methods;
-2. remove the now-meaningless long-typed-name regression from
-   `tests/e2e/signature-capture.contract.spec.ts`;
+2. **replace** the now-meaningless long-typed-name regression in
+   `tests/e2e/signature-capture.contract.spec.ts` with a new contract test
+   for the trimmed widget (see Required regression test below) — not a bare
+   deletion;
 3. confirm no other test or code path references `data-sig-tab="type"`,
    `data-sig-panel="type"`, `#sig-pad-typed-name`, or `renderTypedPreview`
    before removal, and again after, as the actual gate that the removal is
    total;
-4. update `TEST-INDEX.md` for the trimmed contract spec.
+4. add a `TEST-INDEX.md` row description of the new contract test (see
+   correction below — nothing currently needs removing from that row).
 
 55C will not:
 
@@ -634,8 +790,8 @@ the latter.
 | File | Planned change |
 | --- | --- |
 | `src/core/signature/signature-pad.js` | Remove the Type tab button, panel, `typeInput`/`typePreview` lookups, `renderTypedPreview()` and its constants, the `input` listener, and both `activeTab === 'type'` branches in the Apply handler. |
-| `tests/e2e/signature-capture.contract.spec.ts` | Remove the long-typed-name regression test (`:126-172`) and its Milestone 50F comment block. |
-| `TEST-INDEX.md` | Update the `signature-capture.contract.spec.ts` row to drop the Type-tab-specific coverage it currently describes. |
+| `tests/e2e/signature-capture.contract.spec.ts` | Replace the long-typed-name regression test (`:126-172`) and its Milestone 50F comment block with the new contract test described below. |
+| `TEST-INDEX.md` | Add a description of the new contract test to the existing `signature-capture.contract.spec.ts` row (see correction below). |
 
 No CSS removal is required as part of this scope: `src/styles/forms.css`'s
 `.signature-pad-*` selectors are shared structurally by all three tabs/panels
@@ -645,16 +801,36 @@ document.
 
 ### Required regression test
 
-No new regression is needed for a removal; the gate is negative-space
-verification:
+**Correction (code review, 2026-09-16): "no new regression is needed for a
+removal" was the wrong standard.** A pure negative-space grep proves the code
+is gone; it does not prove the widget still behaves correctly afterward, and
+it is the only thing left once the one existing Type-tab test is deleted
+rather than replaced. Add a real contract test to
+`tests/e2e/signature-capture.contract.spec.ts`, replacing the deleted one, in
+at least one role/filing type:
 
-1. `grep -rn "data-sig-tab=\"type\"\|data-sig-panel=\"type\"\|sig-pad-typed-name\|renderTypedPreview" src/ tests/` returns nothing after the change.
-2. Manual pass: open the Signature Stamp capture widget for at least one
-   role (e.g. Guardian on any Plan type) and confirm exactly two tabs, Draw
-   and Upload, with Draw active by default and no visual or layout gap left
-   by the removed middle tab.
-3. Confirm Draw and Upload still apply, clear, and validate correctly —
-   this sub-delivery must not regress the two capture methods it keeps.
+1. Open the Signature Stamp capture widget and assert exactly two elements
+   match `[data-sig-tab]` (Draw, Upload) and none matches
+   `[data-sig-tab="type"]`.
+2. Assert no element matches `[data-sig-panel="type"]` or
+   `#sig-pad-typed-name` anywhere in the DOM.
+3. Assert the Draw tab is selected by default (`aria-selected="true"` on
+   `[data-sig-tab="draw"]`, its panel not `hidden`).
+4. Draw a signature and apply it; assert `signatureImage` is set (the
+   existing Draw-path assertion pattern this spec already uses elsewhere).
+5. Switch to Upload, upload a valid PNG, and apply it; assert
+   `signatureImage` updates (the existing Upload-path assertion pattern this
+   spec already uses elsewhere).
+
+Steps 4–5 are not new capability tests — Draw and Upload are already covered
+elsewhere in this spec — but re-asserting them here in the same test as
+steps 1–3 is what proves the *trimmed* widget, not just its markup, still
+works end to end.
+
+The negative-space grep from the first version of this section is still
+useful as a source-level complement, not a replacement:
+
+`grep -rn "data-sig-tab=\"type\"\|data-sig-panel=\"type\"\|sig-pad-typed-name\|renderTypedPreview" src/ tests/` returns nothing after the change.
 
 ### Verification gate
 
@@ -675,7 +851,9 @@ a full `npm test` is not required by default per `AGENTS.md` §1.
   shared-implementation argument alone).
 - No dead reference to the Type tab remains anywhere in `src/` or `tests/`.
 - Draw and Upload continue to apply, validate, and clear exactly as before.
-- `TEST-INDEX.md` reflects the trimmed contract spec.
+- The new contract test (not a deletion) replaces the removed Type-tab
+  regression, and `TEST-INDEX.md`'s `signature-capture.contract.spec.ts` row
+  describes it.
 
 ### Risk and rollback
 
@@ -694,9 +872,13 @@ test-index row.
 2. **Legacy Data Migration:** None — see "will not" above; existing stored
    images are unaffected and their capture method is not recoverable or
    relevant.
-3. **Test Coverage & Index:** Remove the Type-tab regression from
-   `signature-capture.contract.spec.ts`; update its `TEST-INDEX.md` row in
-   the same commit.
+3. **Test Coverage & Index:** Replace the Type-tab regression in
+   `signature-capture.contract.spec.ts` with the new contract test above;
+   its current `TEST-INDEX.md` row does not mention Type-tab coverage today
+   (checked directly — it describes the 39-B/39-C tri-state rollout and the
+   Upload background-transparency fix, nothing about Draw/Type/Upload
+   specifically), so this is an addition to that row, not a correction of
+   one.
 4. **Export/Import/Portability:** None — the produced PNG's format and the
    PDF-stamping path are unchanged regardless of capture method.
 5. **Security & Sensitivity:** None new. If anything, marginally reduces
@@ -735,10 +917,71 @@ asterisk.
 
 ### Confirmed diagnosis
 
-Two separate things are true here, and they should not be conflated:
+**Correction (code review, 2026-09-16): this section's original diagnosis had
+three confirmed factual errors, one of which is a data-governance violation
+serious enough to have blocked approval on its own.** Each is verified
+directly against the repository below, not asserted from the earlier
+write-up.
 
-**1. A confirmed, unambiguous defect: the required asterisk on Primary Email
-is not backed by any validator rule, in four filing types.**
+**Error 1 — the data-model claim was false.** The original text stated
+"`attorney_email` already exists in all six filing types' data model." Direct
+check of `probate-guardian-data-model.csv`: `attorney_email`/`attorney.email`
+is documented for exactly **two** filing types —
+`guardian_inventory` (CSV row 287, `attorney.email`) and `plan_minor` (row
+554, `attorney_email`). It has **no row at all** for `annual`, `simplified`,
+`plan_annual`, or `plan_initial` — the four engines this sub-delivery
+proposed changing. Per `AGENTS.md` §3 (Data Model & Schema Governance), the
+CSV is the canonical source of truth; adding requiredness to a field
+necessarily changes its documented contract and requires a corresponding CSV
+row and a clean `npm run verify:data-model` run, neither of which this
+document previously scoped.
+
+**Error 2 — the four affected blank-data factories were never checked.**
+None of `emptyDataAnnual()`, `emptyDataSimplified()`, `emptyDataPlanAnnual()`,
+or `emptyDataPlanInitial()` (all in `src/core/state.js`) initializes
+`attorney_email` — confirmed by reading each factory in full. Each does
+initialize `attorney_bar`/`attorney_barNumber`, `attorney_phone`,
+`attorney_street`, `attorney_cityStateZip`, and the signature-state fields
+for the attorney card, but not email. A brand-new ward of any of these four
+types has `d.attorney_email === undefined` until a filer types into the
+field — which works today by accident of JavaScript's loose typing, not by
+design, and would need to be corrected as part of formalizing this field.
+
+**Error 3 — "not required in any of the nine filing types" was false, and
+the real picture is four different policies, not one.** Direct check of each
+validator:
+
+| Filing type | Attorney card's actual current policy | Source |
+| --- | --- | --- |
+| Annual/Final/Trust | Bar Number, Phone, Street, City/State/Zip are **unconditionally required** — no gate at all. Attorney name is never required. | `annual-accounting/index.js:1463-1466` |
+| Simplified Accounting | Attorney name is **unconditionally required** at Cover; Bar Number, Phone, Street, City/State/Zip are **unconditionally required** at Part V — no gate. | `simplified-accounting/index.js:663` (name), `:709-712` (contact fields) |
+| Plan Annual | **Nothing on the attorney card is required, ever**, regardless of whether a name is present or what signature state is chosen — the only sub-delivery where the original "never any requiredness" description is actually accurate. | `plan-annual/index.js`'s own comment at the attorney block |
+| Plan Initial | An **"attorney information started" predicate**: `if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none'))` — only once any one of those is present does attorney name become required and does `checkSignatureState()` run. Explicitly documented as protecting a legal exemption: "pro se filers and Guardian Advocates (Ch. 393, exempt from attorney representation under Fla. Prob. R. 5.030) must be able to export without an attorney." | `plan-initial/index.js:675-694` |
+
+So the actual gap this sub-delivery reports — Primary Email carrying a
+required asterisk that nothing enforces — is real and confirmed in all four
+engines (below), but the claim that surrounded it ("nothing about the
+attorney card is required anywhere") was true for only one of the four, and
+a naive uniform fix built on that false premise would have been wrong for
+the other three:
+
+- In **Annual** and **Simplified**, gating `attorney_email` behind
+  `has(d.attorney)` while its sibling fields (bar, phone, street,
+  city/state/zip) stay unconditionally required in the same block would
+  introduce a *new*, unexplained inconsistency — one field on the card
+  optional-until-named, four others always required.
+- In **Plan Initial**, a bare `has(d.attorney)` gate is not equivalent to the
+  existing "started" predicate: `attorney_bar` alone (no name) already
+  triggers "started" under the real predicate, so an email requirement
+  keyed on a different condition than the one already gating the rest of
+  the card would drift the moment either changes, and any implementation
+  must ensure it does not accidentally narrow the documented pro se/Guardian
+  Advocate exemption.
+- Only **Plan Annual** matches the original "gate on `has(d.attorney)`"
+  framing cleanly, precisely because it is the one engine with no other
+  requiredness on the card to be inconsistent with.
+
+The asterisk-only fields, confirmed unchanged from the original diagnosis:
 `inpS(id, label, value, required, type)`'s fourth argument sets
 `renderFormField()`'s `required` flag, whose only effects are a `<span
 class="req">*</span>` marker and an inert `data-field-required="true"`
@@ -753,157 +996,189 @@ attorney email field is passed `required: true` (rendering the asterisk) in:
 | Simplified Accounting | `simplified-accounting/index.js:537` |
 
 None of these four validators contains a `req(...)` call (or any other
-requiredness check) on `attorney_email` — confirmed by grep across all four
-files, zero matches. A filer can leave Primary Email blank forever; nothing
-in the sidebar, the readiness card, or the export blocker will ever flag it.
-Two other filing types with the same field, Plan Simplified and Plan Minor,
-render it *without* the required flag (`plan-simplified/index.js:323`,
-`plan-minor/index.js:422`) — internally consistent with their own equally
-unenforced validators, and further evidence the asterisk on the other four is
-the anomaly, not the norm.
-
-**2. A separate, broader question this document does not resolve: should
-naming an attorney make their other contact fields required at all?**
-`plan-annual/index.js`'s own comment at the attorney block states this is
-deliberate, Milestone 39-C policy: "the attorney card has never had any
-requiredness of its own ('Leave blank if no attorney is involved')" — only
-the attorney's printed *name* becomes conditionally required, and only
-through `checkSignatureState()`'s `name` parameter when a signature choice
-other than Unsigned is made. Bar number, phone, street, city/state/zip are
-not required in any of the nine filing types today, by design, regardless of
-whether a name is present or what signature state is chosen. Whether that
-policy should change — so that typing an attorney's name obligates the rest
-of the card, independent of signature state — is a product decision, not a
-defect this document can resolve unilaterally.
+requiredness check) on `attorney_email` specifically — confirmed by grep
+across all four files, zero matches for that field, even where sibling
+fields are unconditionally required. Two other filing types with the same
+field, Plan Simplified and Plan Minor, render it *without* the required flag
+(`plan-simplified/index.js:323`, `plan-minor/index.js:422`) — internally
+consistent with their own equally unenforced validators.
 
 ### Decision needed from Alan
 
-**Recommendation: fix (1) now; treat (2) as a separate decision, not bundled
-into this sub-delivery.** The narrow fix — make the four validators actually
-require `attorney_email` once an attorney is named, matching what their own
-forms already visually promise — is small, contained, and resolves an
-internal inconsistency no reasonable reading of the current UI would accept
-("the app tells me this is required" while genuinely enforcing nothing). The
-broader question (2) changes real behavior for every filing type that
-currently allows a named-but-incomplete attorney to export cleanly, and
-deserves its own explicit yes/no rather than being decided as a side effect
-of fixing the asterisk.
+Given the four genuinely different per-engine policies above, this is not a
+single yes/no. **This document does not recommend Option A as a default any
+longer** — the original recommendation rested on the now-corrected premise
+that a single `has(d.attorney)` rule would be a small, uniform, low-risk
+change; it is not, and Plan Initial's documented legal exemption raises the
+stakes of getting the gating condition exactly right past what a proposal
+document should decide alone.
 
 | Option | Effect |
 | --- | --- |
-| **A — Enforce the asterisk (recommended)** | Add `req(d.attorney_email, ...)` gated on `has(d.attorney)` to the four validators named above, and the matching nav-check presence key. Primary Email becomes actually required exactly where the UI already claims it is. |
-| **B — Remove the asterisk instead** | Drop `required: true` from the four `inpS('attorney_email', ...)` calls, making the UI honest about the field being optional, matching Plan Simplified/Plan Minor's existing treatment. |
-| **C — Expand to the full card (out of scope for 55D as written)** | Make bar number, phone, street, city/state/zip also conditionally required once an attorney is named, across all nine filing types. This is question (2) above — named, not decided, not sized here. |
+| **A — Enforce the asterisk, per-engine** | Add CSV rows for `attorney_email` in `annual`, `simplified`, `plan_annual`, `plan_initial`; initialize it in all four blank-data factories; require it in each engine using **that engine's own existing gating shape** (unconditional in Annual/Simplified, matching their sibling fields; `has(d.attorney)`-equivalent in Plan Annual, the one engine where that framing is actually clean; the exact existing "started" predicate in Plan Initial, not a different condition). Requires `npm run verify:data-model` clean and per-engine tests, not one shared fixture. |
+| **B — Remove the asterisk instead** | Drop `required: true` from the four `inpS('attorney_email', ...)` calls, matching Plan Simplified/Plan Minor's existing, internally-consistent treatment. No CSV, factory, or validator change needed. Smaller and lower-risk than Option A, at the cost of making Primary Email look less encouraged than Bar Number/Phone/Street/City-State-Zip in Annual and Simplified, where those ARE required and email alone would remain visibly optional. |
+| **C — Expand to the full card** | Make bar/phone/street/city-state-zip also conditionally required once an attorney is named, in Plan Annual and Plan Initial specifically (Annual and Simplified already require them). A larger behavior and policy change than either A or B, and the most direct answer to "should naming an attorney obligate the rest of the card" — named, not sized here. |
 
-### Scope (Option A, pending Alan's confirmation)
+### Scope (pending Alan's choice of option)
 
-55D will, if Option A is confirmed:
+55D will, once an option is confirmed:
 
-1. add `req(d.attorney_email, ...)` (gated on `has(d.attorney)`, matching
-   the existing conditional-attorney pattern each of these validators
-   already uses for the attorney's signature state) to `validateAnnual()`,
-   `validatePlanAnnual()`, `validatePlanInitial()`, and
-   `validateSimplified()`;
-2. add the matching presence key to each filing type's `computeNavChecks()`
-   branch, gated the same way, so the sidebar agrees with the newly-real
-   requirement rather than reopening the exact class of gap 55B fixes;
-3. add or extend regression coverage proving a named attorney with no email
-   now blocks export, and that no attorney named still exports cleanly with
-   email blank.
+1. if Option A: add the missing CSV rows (`annual`, `simplified`,
+   `plan_annual`, `plan_initial`), run `npm run verify:data-model` clean,
+   initialize `attorney_email` in all four blank-data factories in
+   `src/core/state.js`, and add the requiredness rule to each of the four
+   validators **in that engine's own existing gating shape**, per the table
+   above — not one shared `has(d.attorney)` call reused four times;
+2. if Option A: add the matching presence key to each affected filing type's
+   `computeNavChecks()` branch, gated identically to its validator, so the
+   sidebar agrees with the newly-real requirement rather than reopening the
+   exact class of gap 55B addresses;
+3. if Option B: drop the four `required: true` flags — no CSV, factory, or
+   validator work;
+4. either way: add or extend regression coverage for the four affected
+   engines specifically (not just Plan Annual and Plan Initial, which is
+   what the original version of this section actually tested) — Annual and
+   Simplified need their own fixtures given their unconditional-requirement
+   shape differs from Plan Annual/Plan Initial's conditional one.
 
 55D will not, regardless of which option is chosen:
 
-1. resolve Option C — recorded as a named, open question, not attempted;
+1. resolve Option C unless it is the one explicitly selected;
 2. touch Plan Simplified or Plan Minor, which are already internally
    consistent and out of scope for this specific mismatch;
-3. change any other attorney field's requiredness (bar, phone, street,
-   city/state/zip) — that is exactly Option C.
+3. change any other attorney field's requiredness under Option A or B — that
+   is exactly Option C;
+4. narrow Plan Initial's documented pro se/Guardian Advocate exemption as a
+   side effect of whatever gating condition is chosen — the exemption's
+   existing "started" predicate is the one this sub-delivery must match,
+   not redesign.
 
-### Files in scope (Option A)
+### Files in scope (Option A; Option B touches only the four `inpS(...)` call sites)
 
-| File | Planned change |
+| File | Planned change (Option A) |
 | --- | --- |
-| `src/features/annual-accounting/index.js` | Add gated `req(d.attorney_email, ...)`. |
-| `src/features/plan-annual/index.js` | Add gated `req(d.attorney_email, ...)`. |
-| `src/features/plan-initial/index.js` | Add gated `req(d.attorney_email, ...)`. |
-| `src/features/simplified-accounting/index.js` | Add gated `req(d.attorney_email, ...)`. |
-| `src/legacy-app.js` | Add the matching gated presence key to each of the four filing types' `computeNavChecks()` branches. |
-| `tests/unit/checklist-export-parity.spec.js` or per-type parity specs | New regression fixture; update `KNOWN_GAPS` if `attorney_email` was already listed for any of the four (needs a fresh check at implementation time — not confirmed either way here). |
+| `probate-guardian-data-model.csv` | Add `attorney_email` rows for `annual`, `simplified`, `plan_annual`, `plan_initial`. |
+| `src/core/state.js` | Initialize `attorney_email:''` in `emptyDataAnnual()`, `emptyDataSimplified()`, `emptyDataPlanAnnual()`, `emptyDataPlanInitial()`. |
+| `src/features/annual-accounting/index.js` | Add **unconditional** `req(d.attorney_email, ...)`, alongside its existing unconditional bar/phone/street/cityStateZip requirements. |
+| `src/features/simplified-accounting/index.js` | Add **unconditional** `req(d.attorney_email, ...)`, alongside its existing unconditional requirements. |
+| `src/features/plan-annual/index.js` | Add `req(d.attorney_email, ...)` gated on `has(d.attorney)` — the one engine where this framing is clean. |
+| `src/features/plan-initial/index.js` | Add the email requirement **inside the existing "started" `if` block** (`:685`), using the same condition already gating attorney name and signature state — not a new, separately-evaluated condition. |
+| `src/legacy-app.js` | Add the matching, identically-gated presence key to each of the four filing types' `computeNavChecks()` branches. |
+| `tests/unit/checklist-export-parity.spec.js` or per-type parity specs | New regression fixtures per engine; update `KNOWN_GAPS` if `attorney_email` was already listed for any of the four (check fresh at implementation time). |
 | `TEST-INDEX.md` | Update affected rows. |
 
 ### Required regression test
 
-1. A fixture with `d.attorney` set (name present), `d.attorney_email` blank,
-   for each of the four filing types: confirm the real validator now blocks,
-   red before the fix, green after.
-2. A fixture with `d.attorney` blank entirely: confirm no attorney-email
-   requirement is introduced when no attorney is named at all, in all four
-   and in the two already-consistent types (Plan Simplified, Plan Minor)
-   unaffected.
-3. Sidebar parity: the newly-added nav-check key agrees with the validator
-   for both fixtures above.
+1. **Annual and Simplified** (unconditional shape): a fixture with
+   `d.attorney_email` blank and every other attorney field filled: confirm
+   the real validator now blocks on email specifically, red before the fix,
+   green after — proving the new rule, not just that the existing
+   unconditional bar/phone/street/cityStateZip rules still work.
+2. **Plan Annual** (conditional-on-name shape): a fixture with `d.attorney`
+   set and `d.attorney_email` blank: confirm the validator now blocks; a
+   fixture with `d.attorney` blank entirely: confirm no email requirement is
+   introduced.
+3. **Plan Initial** (matches the "started" predicate): a fixture where only
+   `d.attorney_bar` is set (name blank, matching the predicate's own
+   already-tested "started via bar number alone" case) and email blank:
+   confirm the requirement fires; a fixture with the whole card blank:
+   confirm the pro se/Guardian Advocate exemption still exports cleanly,
+   unchanged.
+4. Plan Simplified and Plan Minor: confirm both remain completely
+   unaffected by any of the above.
+5. Sidebar parity: each newly-added nav-check key agrees with its engine's
+   validator for every fixture above.
+6. `npm run verify:data-model` passes clean against the new CSV rows.
 
 ### Verification gate
 
 ```text
+npm run verify:data-model
 npx vitest run tests/unit/checklist-export-parity.spec.js tests/unit/plan-annual-parity.spec.js tests/unit/plan-initial-parity.spec.js
 npx playwright test tests/e2e/routes.spec.ts
 ```
 
 Recommend a full `npm test` before commit given this changes real export
-behavior (a filing that exports cleanly today may not once this lands) —
-per `AGENTS.md` §1, ask before running it.
+behavior for four different engines in four different ways (a filing that
+exports cleanly today may not once this lands) — per `AGENTS.md` §1, ask
+before running it.
 
 ### Acceptance criteria
 
 - A named attorney with no Primary Email now blocks export in all four
-  affected filing types, with a sidebar marker that agrees.
-- A filing with no attorney named at all is completely unaffected in all six
-  filing types that have this field.
+  affected filing types, using each engine's own existing gating shape, with
+  a sidebar marker that agrees.
+- A filing with no attorney named at all is completely unaffected in Plan
+  Annual and Plan Initial (the two conditional engines); Annual and
+  Simplified's existing unconditional requirements are unaffected in shape,
+  only extended to cover email too.
+- Plan Initial's pro se/Guardian Advocate exemption still exports cleanly
+  with the entire attorney card blank — explicitly tested, not assumed.
 - Plan Simplified and Plan Minor are untouched.
-- No new gap or false parity-pass is introduced in
-  `checklist-export-parity.spec.js`.
+- `npm run verify:data-model` passes; no new gap or false parity-pass is
+  introduced in `checklist-export-parity.spec.js`.
 
 ### Risk and rollback
 
-Risk is **low–medium**: this is the one sub-delivery in this milestone that
-changes real export-blocking behavior for existing filings (a Plan Annual,
-Plan Initial, Annual, or Simplified Accounting filing with a named attorney
-and no email, previously exportable, will no longer be until Option A lands
-and the filer supplies one). State this plainly in the commit message, per
-this repo's convention for behavior changes buried in what could look like a
-pure bugfix.
+Risk is **medium**, raised from the original "low–medium" now that the real
+scope is known: this sub-delivery changes real export-blocking behavior for
+existing filings across four different engines with four different gating
+shapes, touches the data-model CSV (governance-gated per `AGENTS.md` §3),
+and touches four blank-data factories. State the behavior change plainly in
+the commit message, per this repo's convention for changes buried in what
+could look like a pure bugfix.
 
-Rollback is limited to the four `req()` additions, the four nav-check
-additions, and the new test fixtures.
+Rollback is limited to the CSV rows, the four factory initializations, the
+four `req()` additions (in three different shapes), the four nav-check
+additions, and the new test fixtures — more moving parts than the original
+version of this section implied, but still fully self-contained to this
+sub-delivery.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
-1. **Data Model:** None — no field added, removed, or reshaped;
-   `attorney_email` already exists in all six filing types' data model.
-2. **Legacy Data Migration:** Not a migration concern, but real: an existing
-   `.sav` file with a named attorney and no email, valid under today's rules,
-   becomes an incomplete filing under Option A. No data changes; the filer's
-   next Preview & Export simply now reports it. Worth a one-line note in
-   release communication, not a code migration.
-3. **Test Coverage & Index:** New fixtures per Verification above; update
-   `TEST-INDEX.md` in the same commit.
+1. **Data Model:** **Not N/A — directly implicated**, corrected from the
+   original "None." `attorney_email` needs a new CSV row in four filing
+   types it is not currently documented for at all; `npm run verify:data-model`
+   must pass clean before this lands, per `AGENTS.md` §3.
+2. **Legacy Data Migration:** Two real, distinct concerns, not one: (a) an
+   existing `.sav` file with a named attorney and no email, valid under
+   today's rules, becomes an incomplete filing under Option A — no data
+   changes, the filer's next Preview & Export simply now reports it; (b) a
+   ward created **before** the four factories are updated has
+   `attorney_email === undefined` rather than `''` — confirm this reads
+   identically to an empty string everywhere the new `req()`/nav-check calls
+   touch it (JavaScript's own looseness likely makes this a non-issue, but
+   it must be checked, not assumed, given `AGENTS.md` §3's explicit-tristate
+   discipline for this exact class of field).
+3. **Test Coverage & Index:** New per-engine fixtures per Verification
+   above — the original version's single shared fixture undertested this;
+   update `TEST-INDEX.md` in the same commit.
 4. **Export/Import/Portability:** Directly implicated — this changes which
-   filings the real export gate accepts. See risk note above.
+   filings the real export gate accepts, differently in four engines. See
+   risk note above.
 5. **Security & Sensitivity:** None.
 6. **UI/UX Consistency:** Resolves an existing inconsistency (asterisk
-   promises a rule that isn't enforced) rather than introducing one.
-7. **Legal/Compliance Framing:** An attorney of record's contact email
-   supports e-filing service and correspondence; requiring it once the
-   attorney is named is defensible on that basis, but this document does not
-   assert it is legally mandatory for every filing type equally — that
-   judgment, and Option C's broader version of it, belongs to Alan.
+   promises a rule that isn't enforced) rather than introducing one, but
+   only if each engine's fix matches its own existing pattern — an
+   inconsistent implementation (e.g. gating Annual's email while its bar/
+   phone/street/cityStateZip stay unconditional) would trade one
+   inconsistency for another.
+7. **Legal/Compliance Framing:** Directly implicated, more than the original
+   version of this section reflected. An attorney of record's contact email
+   supports e-filing service and correspondence, defensible grounds for
+   requiring it once an attorney is meaningfully included — but Plan
+   Initial's attorney-card gate exists specifically to protect a documented
+   statutory exemption (pro se filers and Ch. 393 Guardian Advocates under
+   Fla. Prob. R. 5.030). Any implementation must be verified, not assumed,
+   to leave that exemption's export path exactly as unblocked as it is
+   today. This judgment, and Option C's broader version of it, belongs to
+   Alan, with the added weight this correction surfaces.
 
 ### Dependency and sequencing
 
-Depends on 55B only insofar as both touch `computeNavChecks()` — if 55B
-lands first, 55D's nav-check additions should follow its pattern (the
-`datesOrdered()` helper is unrelated, but the file-level proximity means
-checking `git log`/`git diff` before starting either is required per
-`AGENTS.md` §1, not merely advisable). No dependency on 55A or 55C.
+No logical dependency on 55A or 55C. **File-level overlap with 55B, not a
+priority ordering** — see 55B's own "Dependency and sequencing" for the
+shared-file detail; the same coordination applies here in reverse. Land one
+of 55B/55D fully before starting the other, or coordinate at the
+`computeNavChecks()` branch level if both are approved close together.
 
