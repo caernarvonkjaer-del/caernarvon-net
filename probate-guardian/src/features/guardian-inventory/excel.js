@@ -506,7 +506,23 @@ function parseInitialInventoryWorkbook(wb){
   const rawv=(sheet,addr)=>sheet?unwrapCellValue(sheet.getCell(addr).value):null;
   const txt=(s,a)=>s?readCellText(s.getCell(a)):'';
   const num=(s,a)=>Number(rawv(s,a))||0;
-  const dt=(s,a)=>{const v=rawv(s,a);if(!v)return null;if(v instanceof Date)return v.toISOString().substring(0,10);if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}return typeof v==='string'?v.substring(0,10):null;};
+  // Mirrors annual-accounting/excel.js's gcDate(): a date cell may come back
+  // as a real Date, an Excel serial number, an ISO string, or US-format text
+  // (this app's own fmtD() writes 'MM/DD/YYYY' — see doSaveExcel() above —
+  // so re-importing a file this app just exported used to hand back
+  // '10/01/2026' verbatim, 10 characters unchanged but not the ISO
+  // 'YYYY-MM-DD' every date field elsewhere expects).
+  const dt=(s,a)=>{
+    const v=rawv(s,a);
+    if(v==null||v==='')return null;
+    if(v instanceof Date)return v.toISOString().substring(0,10);
+    if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}
+    const str=String(v).trim();
+    let m=str.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return `${m[1]}-${m[2]}-${m[3]}`;
+    m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/); if(m){const yy=+m[3];return `${yy<50?2000+yy:1900+yy}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;}
+    return null;
+  };
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
   const triState=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return 'Yes';if(t==='no')return 'No';return '';};
   const pct=(s,a)=>Math.round(num(s,a)*100*1e6)/1e6;

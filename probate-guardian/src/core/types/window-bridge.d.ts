@@ -17,8 +17,6 @@ interface Window {
   _dirtySinceExport: any;
   _lastAutoSavedAt: any;
   _lastExportAt: any;
-  _launchStateResolved: any;
-  _openedFileAtLaunch: any;
   _saveTimer: any;
   _securityMode: any;
   _templateCache: any;
@@ -67,9 +65,9 @@ interface Window {
   caseFile: any;
   caseNumberOf: any;
   casesGroupingWards: any;
-  checkSessionRestoreCacheAtLaunch: any;
   chkP: any;
   clearAllData: any;
+  clearLastPosition: any;
   clearPartyCompareSelection: any;
   clearSessionRestoreCache: any;
   closedFilingDrift: any;
@@ -264,6 +262,7 @@ interface Window {
   loadFragment: any;
   loadGuardianFeature: any;
   loadGuardianPdf: any;
+  loadLastPosition: any;
   loadPersistedCaseFileHandle: any;
   loadPlanAnnualFeature: any;
   loadPlanAnnualPdf: any;
@@ -376,7 +375,6 @@ interface Window {
   resolvePaintTheme: any;
   resolveParty: any;
   restoreBackupSavFile: any;
-  resumeCaseOnDeviceAtLaunch: any;
   runFieldWriteSideEffects: any;
   runRememberedHandleOperation: any;
   sanitizeDecimal: any;

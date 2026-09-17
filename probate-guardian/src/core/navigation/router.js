@@ -2,6 +2,7 @@
 import { getCaseFile } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 import { resetReadinessCardState } from '../filing/readiness-card.js';
+import { saveLastPosition } from '../persistence/recovery-cache.js';
 
 let _currentPage = '/dashboard';
 
@@ -100,6 +101,7 @@ export async function renderPage(page) {
   }
 
   if (typeof document === 'undefined') return;
+  saveLastPosition(page, getCaseFile().activeWardId);
   const el = document.getElementById('main-content');
   if (!el) return;
 

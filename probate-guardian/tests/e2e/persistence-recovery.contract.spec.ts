@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   gotoApp, startNewCase, chooseNoPassword, chooseEncrypted,
   createWard, fillMinimalValidGuardianWard, exportAndCapture,
-  autoAcceptDynDialogs, acceptDynDialog,
+  acceptDynDialog,
 } from './support/target';
 
 // Milestone 33, Phase 2.4 -- Migration Sequence step 3. The persistence
@@ -19,9 +19,10 @@ import {
 // case-file format, and there is nothing left to migrate from or to.
 //
 // This is additive to case-file-roundtrip.spec.ts (normal + encrypted
-// save/open, corruption handling), recovery-cache.spec.ts (unencrypted
-// restore/decline/clear), and ward-lock.spec.ts (multi-tab lock contention)
-// -- none of those are duplicated here.
+// save/open, corruption handling), recovery-cache.spec.ts (a successful save
+// clears the lock-recovery cache; the last-position marker), unlock.spec.ts
+// (unencrypted lock/unlock before any .sav exists), and ward-lock.spec.ts
+// (multi-tab lock contention) -- none of those are duplicated here.
 
 async function forceCacheWrite(page: import('@playwright/test').Page) {
   await page.evaluate(() => (window as any).flushPendingSave());
@@ -114,11 +115,13 @@ test.describe('Persistence and recovery contract', () => {
     expect(draft).toBeFalsy();
   });
 
-  test('encrypted recovery-cache restore, including a wrong password', async ({ page }) => {
-    // recovery-cache.spec.ts only ever exercises the unencrypted branch of
-    // checkSessionRestoreCacheAtLaunch() -- the encrypted branch (a native
-    // prompt() for the password, plus the documented wrong-password alert
-    // that leaves the cache in place) is untested anywhere.
+  test('an encrypted case with no .sav yet survives an auto-lock, wrong password rejected first', async ({ page }) => {
+    // The Milestone 57 review removed the cross-session encrypted restore
+    // this test used to cover (checkSessionRestoreCacheAtLaunch() --
+    // see recovery-cache.js's file header for why). What lockApp() still
+    // does -- same-tab recovery of a case that has never been saved to a
+    // .sav file yet -- is covered unencrypted by unlock.spec.ts; this is
+    // its encrypted-mode counterpart, including a wrong password first.
     const password = 'recovery-cache-password-77';
     await gotoApp(page);
     await startNewCase(page);
@@ -126,26 +129,17 @@ test.describe('Persistence and recovery contract', () => {
     await createWard(page, 'Encrypted Recovery Ward');
     await forceCacheWrite(page);
 
-    // A single watcher per attempt, not two -- its promptValue is fixed for
-    // its whole lifetime, so the wrong-password attempt and the real one
-    // below each need their own, stopped before the next is armed. Three
-    // dialogs fire on the failed attempt: the "unsaved work" restore-offer
-    // confirmModal(), the password promptModal(), then the wrong-password
-    // alertModal() -- left open, that alert would block the page like its
-    // native ancestor did, so it must be accepted too.
-    let dialogs = autoAcceptDynDialogs(page, { promptValue: 'wrong-password' });
-    await gotoApp(page);
-    await expect(page.locator('#startup-choice-overlay')).toHaveClass(/show/); // failed restore falls through
-    await expect.poll(() => dialogs.messages.length).toBe(3);
-    await dialogs.stop();
+    await page.evaluate(() => { void (window as any).lockApp(); });
+    await expect(page.locator('#unlock-overlay')).toHaveClass(/show/);
+    await page.fill('#unlock-password', 'wrong-password');
+    await page.click('#unlock-submit-btn');
+    await expect(page.locator('#unlock-overlay')).toHaveClass(/show/); // still locked
+    await expect(page.locator('#unlock-error')).toBeVisible();
 
-    // Cache left in place -- the offer repeats on the next launch.
-    dialogs = autoAcceptDynDialogs(page, { promptValue: password });
-    await gotoApp(page);
-    await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+    await page.fill('#unlock-password', password);
+    await page.click('#unlock-submit-btn');
+    await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
     await expect(page.locator('#ward-selector')).toHaveValue('');
-    await expect.poll(() => dialogs.messages.length).toBe(3);
-    await dialogs.stop();
     await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
     await expect(page.locator('#ward-selector')).toHaveValue('Encrypted Recovery Ward');
   });

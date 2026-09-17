@@ -2671,21 +2671,19 @@ async function saveData(){
     window.commitStoredDateDrafts?.(activeWard,window.setPath);
     activeWard.lastModified=new Date().toISOString();
   }
-  // Best-effort local resume snapshot; successful .sav writes refresh it.
-  // See SESSION-RESTORE CACHE. Awaited so callers that depend on
-  // it having landed before acting further (lockApp() wiping memory,
-  // beforeunload) aren't racing an in-flight IndexedDB write.
+  // Best-effort local resume snapshot, used only by lockApp() when the app
+  // auto-locks before any .sav has ever been saved (see recovery-cache.js's
+  // file header); a successful .sav write clears it. Awaited so callers
+  // that depend on it having landed before acting further (lockApp() wiping
+  // memory, beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport){
     const cached=await saveSessionRestoreCache();
     if(!cached)showSaveError();
     else hideSaveError();
   }
-  // No "last saved" stamp here: the session-restore cache is explicitly not a
-  // backup (checkSessionRestoreCacheAtLaunch() re-marks restored state dirty
-  // because "this state has never actually landed in a .sav file"), and at
-  // this point no handle has been checked, no permission verified, and no
-  // write attempted. writeCaseToHandle() records the save once it has
-  // actually written one.
+  // No "last saved" stamp here: at this point no handle has been checked,
+  // no permission verified, and no write attempted. writeCaseToHandle()
+  // records the save once it has actually written one.
   const handle=await loadCaseFileHandle();
   if(!handle)return;
   try{
@@ -3009,9 +3007,7 @@ let _launchStateResolved=false;
 let _openedFileAtLaunch=false; // set by loadCaseFileAtLaunch() on success; initApp() lands on the dashboard instead of the default page when this is true
 let _startupChoiceResolve=null;
 async function promptOpenOrStartAtLaunch(){
-  // A local snapshot may be newer than a remembered .sav handle. Let the
-  // filer choose it before any silent file reopen can replace unsaved edits.
-  if(!(await _sessionCacheGet()) && await trySilentReopen())return;
+  if(await trySilentReopen())return;
   document.getElementById('startup-newcase-btn').style.display='';
   const linkEl=document.getElementById('startup-newcase-link');
   if(linkEl)linkEl.style.display='none';
@@ -3027,27 +3023,10 @@ function _resolveStartupChoice(){
   const resolve=_startupChoiceResolve;_startupChoiceResolve=null;
   if(resolve)resolve();
 }
-async function resumeCaseOnDeviceAtLaunch(){
-  const overlay=document.getElementById('startup-choice-overlay');
-  overlay.classList.remove('show');
-  try{
-    if(await checkSessionRestoreCacheAtLaunch({confirmRestore:false})){
-      _resolveStartupChoice();
-      return;
-    }
-    const status=document.getElementById('startup-file-status');
-    if(status){
-      status.textContent='No local filing could be opened. You can try again or open a .sav backup.';
-      status.style.display='block';
-    }
-  }finally{
-    if(_startupChoiceResolve)overlay.classList.add('show');
-  }
-}
-window.resumeCaseOnDeviceAtLaunch=resumeCaseOnDeviceAtLaunch;
 async function startNewWardAtLaunch(){
   _resolveStartupChoice();
   try{ await forgetPersistedCaseFileHandle(); }catch(e){}
+  try{ window.clearLastPosition?.(); }catch(e){}
 }
 const startNewCaseAtLaunch = startNewWardAtLaunch;
 window.startNewWardAtLaunch = startNewWardAtLaunch;
@@ -7941,25 +7920,45 @@ function renderCopyrightNotice(){
 
 async function initApp(){
   renderCopyrightNotice();
-  // Resolve recovery or file selection before the unlock flow.
-  // A neutral startup action lets the user request local recovery without
-  // announcing that protected filing data exists on a shared device.
+  // Resolve file selection before the unlock flow.
   await promptOpenOrStartAtLaunch();
   await ensureUnlocked(); // blocks until a valid master-password key is in memory
   await loadGuardianData();
   if(caseFile.wards.length)await saveSessionRestoreCache();
   await autoLoadTemplates();
 
+  // pg-last-position (recovery-cache.js) carries no case data, just the
+  // route/ward the filer was last on -- so it is only meaningful once an
+  // existing case has actually been loaded (_openedFileAtLaunch), and only
+  // if that ward still exists in it.
+  const lastPosition=_openedFileAtLaunch?window.loadLastPosition?.():null;
+  let positionApplies=false;
+  if(lastPosition&&lastPosition.route){
+    if(lastPosition.wardId){
+      if(caseFile.wards.some(w=>w.wardId===lastPosition.wardId)){
+        caseFile.activeWardId=lastPosition.wardId;
+        positionApplies=true;
+      }
+    }else{
+      positionApplies=true;
+    }
+  }
+
   const activeWard=getActiveWard();
   if(activeWard){
     const ok = await activateWard(activeWard);
     if (!ok) {
       window.location.hash = '/dashboard';
+      positionApplies=false;
     }
   }
 
   updateSidebar();
-  if(_openedFileAtLaunch || !caseFile.activeWardId)window.location.hash='/dashboard'; // opened an existing case or blocked — land on All Wards, not wherever it was last saved mid-edit
+  if(positionApplies){
+    window.location.hash=lastPosition.route;
+  }else if(_openedFileAtLaunch || !caseFile.activeWardId){
+    window.location.hash='/dashboard'; // opened an existing case with no remembered position — land on All Wards
+  }
   handleHash();
   await loadAutoExportPrefs();
   setupAutoExportTimer();

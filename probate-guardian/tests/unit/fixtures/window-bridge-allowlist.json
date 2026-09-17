@@ -711,23 +711,15 @@
     },
     {
       "file": "src/core/persistence/recovery-cache.js",
-      "name": "_dirtySinceExport"
-    },
-    {
-      "file": "src/core/persistence/recovery-cache.js",
-      "name": "_launchStateResolved"
-    },
-    {
-      "file": "src/core/persistence/recovery-cache.js",
-      "name": "_openedFileAtLaunch"
-    },
-    {
-      "file": "src/core/persistence/recovery-cache.js",
-      "name": "checkSessionRestoreCacheAtLaunch"
+      "name": "clearLastPosition"
     },
     {
       "file": "src/core/persistence/recovery-cache.js",
       "name": "clearSessionRestoreCache"
+    },
+    {
+      "file": "src/core/persistence/recovery-cache.js",
+      "name": "loadLastPosition"
     },
     {
       "file": "src/core/persistence/recovery-cache.js",
@@ -1180,10 +1172,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "removePlanGuardian"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "resumeCaseOnDeviceAtLaunch"
     },
     {
       "file": "src/legacy-app.js",

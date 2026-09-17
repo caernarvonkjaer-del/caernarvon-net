@@ -2,18 +2,20 @@ import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, exportAndCapture, acceptDynDialog } from './support/target';
 
 // Milestone 52B: buildCaseFileBlob()/importSavArchiveOrWard() (case-file.js)
-// and saveSessionRestoreCache()/checkSessionRestoreCacheAtLaunch()
-// (recovery-cache.js) each independently encrypted/decrypted the same four
-// fields -- guardian info, parties, cases, dismissedPartyPairs -- with one
-// real asymmetry: case-file.js already tolerated a corrupted parties/cases/
-// partyDismissals blob (warn and fall back to []), while recovery-cache.js
-// had no per-field guard, so the same corruption there aborted the entire
-// session-restore. Both now share encryptCaseFileCore()/
-// decryptCaseFileCore() in case-file.js, and recovery-cache.js is the one
-// brought up to the tolerant standard. Neither existing .sav round-trip
-// spec (case-file-roundtrip.spec.ts, backup-restore-sav.spec.ts) populates
-// parties/cases/dismissedPartyPairs at all -- this file closes that gap and
-// is the regression test for the behavior change.
+// round-trips four fields -- guardian info, parties, cases,
+// dismissedPartyPairs -- through encryptCaseFileCore()/decryptCaseFileCore().
+// Neither existing .sav round-trip spec (case-file-roundtrip.spec.ts,
+// backup-restore-sav.spec.ts) populates parties/cases/dismissedPartyPairs at
+// all -- this file closes that gap.
+//
+// This used to also cover recovery-cache.js's own independent
+// encrypt/decrypt of the same four fields via its cross-session
+// "checkSessionRestoreCacheAtLaunch()" restore. That flow, and its storage
+// of parties/cases/dismissedPartyPairs, was removed in the Milestone 57
+// review (see recovery-cache.js's file header) -- the session cache now
+// stores only what lockApp()'s same-tab auto-lock recovery actually reads
+// back (wards + guardian name/email), so there is nothing left there for
+// this file to round-trip.
 
 async function seedCoreFields(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
@@ -61,79 +63,6 @@ test.describe('Case-file core fields (parties/cases/dismissedPartyPairs) round-t
     expect(restored.parties).toEqual(seeded.parties);
     expect(restored.cases).toEqual(seeded.cases);
     expect(restored.dismissedPartyPairs).toEqual(seeded.dismissedPartyPairs);
-  });
-
-  test('survive a session-restore cache save and restore', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Cache Core Fields Ward', 'guardian');
-    const seeded = await seedCoreFields(page);
-    await page.evaluate(() => (window as any).flushPendingSave());
-
-    await page.reload();
-    await acceptDynDialog(page); // checkSessionRestoreCacheAtLaunch()'s confirmModal()
-    await acceptDynDialog(page); // trailing "Restored N form(s)..." alertModal()
-
-    const restored = await page.evaluate(() => ({
-      parties: (window as any).caseFile.parties,
-      cases: (window as any).caseFile.cases,
-      dismissedPartyPairs: (window as any).caseFile.dismissedPartyPairs,
-    }));
-    expect(restored.parties).toEqual(seeded.parties);
-    expect(restored.cases).toEqual(seeded.cases);
-    expect(restored.dismissedPartyPairs).toEqual(seeded.dismissedPartyPairs);
-  });
-
-  test('a corrupted parties field in the session-restore cache no longer aborts the whole restore', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Corruption Recovery Ward', 'guardian');
-    await seedCoreFields(page);
-    await page.evaluate(() => (window as any).flushPendingSave());
-
-    // Mangle just the `parties` ciphertext in the IndexedDB record directly
-    // -- same db/store/key saveSessionRestoreCache() itself writes to
-    // (pg-session-cache / snapshot / 'current').
-    await page.evaluate(() => new Promise<void>((resolve, reject) => {
-      const req = indexedDB.open('pg-session-cache', 1);
-      req.onerror = () => reject(req.error);
-      req.onsuccess = () => {
-        const db = req.result;
-        const tx = db.transaction('snapshot', 'readwrite');
-        const store = tx.objectStore('snapshot');
-        const getReq = store.get('current');
-        getReq.onerror = () => reject(getReq.error);
-        getReq.onsuccess = () => {
-          const record = getReq.result;
-          record.parties = 'not-valid-ciphertext';
-          const putReq = store.put(record, 'current');
-          putReq.onerror = () => reject(putReq.error);
-          putReq.onsuccess = () => resolve();
-        };
-      };
-    }));
-
-    // Deliberately not page.reload(): the app's own beforeunload handler
-    // calls flushPendingSave() -> saveSessionRestoreCache() with the
-    // still-good in-memory data, which would silently overwrite the
-    // corruption just written above before the next load ever reads it.
-    // checkSessionRestoreCacheAtLaunch() is bridged onto window and safe to
-    // call directly -- it doesn't care whether "launch" is literal.
-    const restorePromise = page.evaluate(() => (window as any).checkSessionRestoreCacheAtLaunch());
-    await acceptDynDialog(page); // confirmModal() offering to restore
-    await acceptDynDialog(page); // "Restored N form(s)..." -- must still appear
-    const restoreOk = await restorePromise;
-
-    // Before Milestone 52B, decryptJSONWithKey() throwing on the corrupted
-    // `parties` field propagated to checkSessionRestoreCacheAtLaunch()'s
-    // outer catch, which aborts the ENTIRE restore ("Could not restore the
-    // previous session...") -- the ward and guardian info would have been
-    // lost right along with the one bad field. Now only parties resets.
-    expect(restoreOk, 'checkSessionRestoreCacheAtLaunch() reports success, not the all-or-nothing failure').toBe(true);
-    const state = await page.evaluate(() => ({
-      wardCount: (window as any).caseFile.wards.length,
-      parties: (window as any).caseFile.parties,
-    }));
-    expect(state.wardCount, 'ward survives the restore despite the corrupted parties field').toBeGreaterThan(0);
-    expect(state.parties, 'parties falls back to empty rather than aborting the whole restore').toEqual([]);
   });
 
   // Milestone 54: selectedCircuit is case-scoped state, but it deliberately

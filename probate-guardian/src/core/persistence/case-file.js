@@ -14,7 +14,7 @@ import {
   forgetPersistedCaseFileHandle,
   markCaseOpenedBefore,
 } from './launch-preferences.js';
-import { saveSessionRestoreCache } from './recovery-cache.js';
+import { clearSessionRestoreCache } from './recovery-cache.js';
 import { getCaseFile, getTemplateCache } from '../state.js';
 import { windowBackedRef } from './window-backed-ref.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
@@ -390,7 +390,7 @@ export async function exportCaseFileZip() {
       markCaseOpenedBefore();
     }
     setDirtySinceExport(false);
-    await saveSessionRestoreCache();
+    await clearSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
     if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {
@@ -447,7 +447,7 @@ export async function writeCaseToHandle(handle, viaTimer) {
     window.hideSaveError();
   }
   setDirtySinceExport(false);
-  await saveSessionRestoreCache();
+  await clearSessionRestoreCache();
   hideAutoExportReminder();
   await refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
@@ -665,12 +665,9 @@ function sanitizeObjectData(obj) {
   return obj;
 }
 
-// Milestone 52B: the decode pipeline for one encrypted ward record, shared
-// by importSavArchiveOrWard() below and recovery-cache.js's
-// checkSessionRestoreCacheAtLaunch(). Deliberately has no try/catch of its
-// own -- the two callers wrap it differently (one re-throws a specific
-// per-ward message, the other relies on its outer catch), and that
-// difference is intentional, not an inconsistency to also merge here.
+// Milestone 52B: the decode pipeline for one encrypted ward record, used by
+// importSavArchiveOrWard() below. Deliberately has no try/catch of its own
+// -- the caller wraps it to re-throw a specific per-ward message.
 export async function decodeWardRecord(encoded, key) {
   return migratePlanTriState(sanitizeObjectData(await decryptJSONWithKey(encoded, key)));
 }
@@ -903,7 +900,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
     }
 
     setDirtySinceExport(false);
-    await saveSessionRestoreCache();
+    await clearSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
     if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {
