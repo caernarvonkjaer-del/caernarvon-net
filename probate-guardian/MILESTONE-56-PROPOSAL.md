@@ -591,6 +591,40 @@ and disappears, and that it is not part of the document.
 **E7.** `:635` — add Report a Bug, Comment Card (external, new tab), theme
 toggle and Help.
 
+**E8 — Correct the stale Playwright comment and close the coverage gap this
+sub-delivery exposes.** `tests/e2e/user-guide-wiring.spec.ts:60-65` carries a
+comment asserting the opposite of current behaviour:
+
+> "No '/print' case: Print Preview renders its own toolbar … so there is **no
+> '?' button on that page at all** — 'preview' stays in `USER_GUIDE_ANCHORS`
+> as harmless, forward-compatible data, but **nothing currently triggers it**."
+
+That was true when written and the Preview-banner side task made it false:
+`legacy-app.js:1733` renders `id="help-toggle-btn"` into the Preview banner. So
+the `/print` → `preview` anchor is now live **and untested**, and the spec
+actively documents the wrong behaviour to the next reader.
+
+56E updates the comment and adds the missing `['/print', 'preview']` case. If
+the spec's documented scope changes as a result, its `TEST-INDEX.md` row goes
+with it (`AGENTS.md` §7). This is the one place where a documentation
+sub-delivery earns a test change, and it should not be deferred to 56H — 56H
+is a source scan and would never have seen it.
+
+**E9 — State the "?" rule by its actual predicate.** The branch is not
+"dashboard versus filing" as a route concept. `src/shell-events.js:29-32`:
+
+```js
+case 'toggle-help':
+  if (window.caseFile?.activeWardId) window.openUserGuideForCurrentPage?.();
+  else window.toggleHelpPanel();
+```
+
+It turns on **whether a ward is active**. That is why Preview's "?" opens the
+standalone guide (a ward is active there) and the dashboard's opens the panel
+(none is). The guide's user-facing wording can stay in plain terms — "on the
+dashboard… inside a filing…" — but it should be written from this rule, since
+it is the one that predicts Preview correctly.
+
 ### Verification
 
 Each of the seven against its named source line. E3 and E5 are worth
@@ -666,10 +700,17 @@ app now ships 88 groups and several hundred links. Keeping even a
 56H cannot catch it (a URL is not a control marker).
 
 So: `:800-832` describes the circuit selector and directs the reader to the
-app's live panel as the authoritative directory. **The one part worth keeping
-inline is the Florida/federal statewide group** — the E-Filing Portal, Chapter
-744, the Abuse Hotline, SSA/VA — because it does not vary by circuit or county
-and is genuinely useful to have on the page.
+app's live panel as the authoritative directory.
+
+**The statewide group goes too, and an earlier draft was wrong to keep it.**
+"Does not vary by circuit" is not "does not change" — portal, agency and
+statutory URLs drift like any others, and a nine-link statewide list is the
+same duplicate-maintenance liability at smaller scale, with the same absence of
+any gate to catch it. Describe the statewide *categories* in prose and point at
+the live panel. **The only links that stay inline are those serving as
+authoritative citations for a substantive statement the guide makes** — the
+kind of reference a reader needs in order to verify a claim, not a directory
+they could browse in the app.
 
 **F3.** Correct the Pinellas clerk link **if it survives F2.** If F2 removes
 the reproduced county list as specified, this correction disappears with it —
@@ -744,14 +785,16 @@ deleting a figure nobody needs is not a packaging decision; it is just
 removing a maintenance liability.
 
 **G1 — Capture conditions, pinned** (for whatever survives G0). "Capture
-against the current build" was
-self-contradictory in the first draft: the `source` target is
-`vite preview --outDir .`, which serves **raw source from disk**, not a build.
-Pick one and name it. Either is defensible — the `source` target for fidelity
-to what the e2e suite exercises, or a fresh `npm run build:web` served by the
-`web` target for fidelity to what a user receives — but the choice must be
-recorded in the commit, because it determines whether the screenshots show the
-bundled app or the development one.
+against the current build" was self-contradictory in the first draft: the
+`source` target is `vite preview --outDir .`, which serves **raw source from
+disk**, not a build. A later draft left the choice to the executor, which is
+the same deferral in a different place.
+
+**Pinned: a fresh `npm run build:web`, served through the `web` target.** The
+guide shows a filer what *they* will see, and what they receive is the built
+app — so build-time differences (bundling, asset rewriting, the single-file
+inlining this project does) belong in the picture. The `source` target is right
+for the e2e suite, which is testing behaviour, and wrong here.
 
 Each replacement image is reproducible only if these are fixed and written
 down alongside it:
@@ -759,12 +802,12 @@ down alongside it:
 | Dimension | Requirement |
 | --- | --- |
 | Browser / target | Chromium, and which Playwright target (`source` or `web`) — stated, not implied |
-| Viewport | One fixed size for all images, so figures do not shift scale between sections |
-| Theme | Light unless the figure is specifically about dark mode; the guide should not mix without reason |
+| Viewport | **1280x800, deviceScaleFactor 1**, for every image — one fixed size so figures do not shift scale between sections. A cropped figure is cropped from this, not captured at a different size |
+| Theme | **Light**, unless the figure is specifically about dark mode; the guide should not mix without reason |
 | Route + UI state | The exact route and the interaction state (panel open, note selected, accordion expanded) per image |
 | Fixture data | Synthetic ward names, case numbers and dates, named in the commit so a re-shoot reproduces them |
 | Personal data | **Confirm no real ward, case, attorney or filer data appears in any captured pixel.** These are court filings; a screenshot is a disclosure |
-| Format / size | The encoding and a per-image size target, since these embed as `data:` URIs into an already-11.8 MB file |
+| Format / size | **PNG, and no single embedded image over 150 KB** after encoding. These become `data:` URIs in an already-11.8 MB file, and base64 adds roughly a third. An image that cannot meet the cap should be cropped harder (G0) rather than shipped large |
 | Supersession | Which existing figure each new image replaces, so none is orphaned and no caption points at a removed one |
 
 **G2.** Replace the images and update every caption that names a removed
@@ -824,11 +867,18 @@ guard addresses **the guide claiming a control the app lacks**. It does *not*
 assert the converse — that every app control is documented. The first has a
 decidable answer against named evidence; the second is a completeness
 judgment with no mechanical answer, and building a gate on it is how you get a
-test nobody can keep green. **Ten of this milestone's eleven findings are in
-the first category; finding 9 (the dashboard toolbar's four undocumented
-controls) is in the second**, which is exactly why a human review caught it and
-why a future recurrence of that shape will need one too. An earlier draft of
-this section said "every one of the eleven", which was wrong.
+test nobody can keep green.
+
+**Do not assign finding counts to this category at all.** Two earlier drafts
+tried — "every one of the eleven", then "ten of the eleven" — and both were
+wrong, the second incoherently so, since the same section concedes six of the
+eleven are undetectable here. The findings are not one shape: some are missing
+controls, some are wrong behavioural descriptions, some are false factual
+claims about privacy or Excel, one (finding 9) is the reverse direction
+entirely. **What 56H provides is two narrow checks, stated without reference to
+the eleven:** exact-match regression on five retired terms, and existence
+evidence for controls someone explicitly annotated. Everything else in this
+milestone is hand-verified, and stays that way.
 
 **What this guard is, stated precisely, because the first draft overstated
 it.** 56H is a **source-markup sentinel**, not proof that a control renders.
@@ -892,7 +942,11 @@ rendered.
 > **A correction to this section's own first draft, kept because the mistake is
 > instructive.** It cited `Print Preview` as occurring "nine times across
 > `src/`, every one of them inside a comment." **That is false.** It occurs
-> **50** times, and many are live markup — nav-link labels
+> **51 times across 22 files in `src/`** — 50 of them in `.js` (21 files) plus
+> one in `src/styles/print.css`. A first correction said "50" without stating
+> that it had filtered to `--include=*.js`, which is how the same string
+> produced two different counts in two reviews; the scope is now stated so it
+> cannot happen a third time. Many occurrences are live markup — nav-link labels
 > (`annual-accounting/index.js:339`, `guardian-inventory/index.js:263`),
 > a visually-hidden `<h1>` (`guardian-inventory/print.js:52`), alert copy
 > (`pdf-preview.js:464`). The claim came from running `grep … | head -4`,
@@ -982,6 +1036,15 @@ proof where it already lives: the Playwright contracts, which actually render
 the app and can see whether a control exists. 56H is a cheap static tripwire in
 front of them, not a replacement for them.
 
+**But do not overstate that backstop, as an earlier draft did.** Runtime
+coverage exists for some registered controls (signature tabs, the Preview
+banner controls, the annotation toolbar) and **not** for others — Report a Bug
+and Comment Card have no direct browser coverage today. So the honest statement
+is: where a Playwright contract exists, it is the runtime evidence and 56H is
+redundant to it; where none exists, **nothing proves the control renders**, and
+56H's passing says only that the marker is still in the source. Registering a
+control does not create runtime coverage for it.
+
 With this resolved, 56H has no open decisions and is execution-ready on the
 same terms as its siblings — approval by name.
 
@@ -1005,9 +1068,50 @@ split this — listing the annotations under 56H's Files while instructing
 56E/56F to add them — which is incoherent under a model where each
 sub-delivery is separately approved and separately revertible: approving 56E
 would not authorize 56H's markup, and reverting 56H would strand attributes in
-sections it never owned. 56H alone adds the attributes, to whatever 56E/56F
-have by then corrected. Annotating the rest of the guide is not required for
-this sub-delivery to be useful and should not be attempted here.
+sections it never owned. 56H alone adds the attributes.
+
+**H3a — The required initial coverage set, enumerated. This is not optional.**
+Saying 56H annotates "whatever 56E/56F have by then corrected" defines no
+scope at all: an executor could annotate the two controls used as examples in
+this document, watch every assertion pass, and truthfully report the
+sub-delivery complete. A guard whose coverage is chosen by whoever implements
+it is a guard that certifies its own convenience. **56H is not done until
+every row below is registered and annotated, or explicitly excluded with a
+reason.**
+
+| ID | Control | Expected evidence (re-derive at execution time) |
+| --- | --- | --- |
+| `signature-tab-draw` | Signature Stamp → Draw tab | `data-sig-tab="draw"` in `src/core/signature/signature-pad.js` |
+| `signature-tab-upload` | Signature Stamp → Upload tab | `data-sig-tab="upload"`, same file |
+| `shell-all-filings` | All Filings (shell + Preview banner) | `data-shell-action="dashboard"` — appears in `router.js`, `dashboard/index.js` and `legacy-app.js`'s Preview banner, so this entry needs `evidence: [...]` or one canonical site, **not** `expectCount: 1` |
+| `shell-theme-toggle` | Theme toggle | `data-shell-action="toggle-theme"` / `id="theme-toggle-btn"` |
+| `shell-help` | "?" Help button | `data-shell-action="toggle-help"` / `id="help-toggle-btn"` |
+| `dashboard-report-bug` | Report a Bug | `data-feedback-open="bug"` in `src/features/dashboard/index.js` |
+| `dashboard-comment-card` | Comment Card | the Pinellas GovQA `href` in `src/features/dashboard/index.js` |
+| `annotation-note-color` | Note color | `'Note color'` as an `aria-label`/`title` in `src/core/pdf/pdf-annotate.js` |
+| `annotation-note-delete` | Delete note | `'Delete note'`, same file |
+| `sidebar-circuit-select` | Judicial Circuit selector | `id="sidebar-circuit-select"` / `data-action="change-circuit"` |
+
+**Two entries that need a judgement call, named rather than left to be
+discovered:**
+
+- **"View User Guide"** (the Help panel's button) — 56E corrects its label, so
+  it belongs in scope, but its markup should be located before a registry entry
+  is written; if it has no stable attribute, it is an **exclusion**, not a
+  label match.
+- **Preview's banner controls** are the *same three IDs* as the shell's
+  (`shell-all-filings`, `shell-theme-toggle`, `shell-help`), because
+  `legacy-app.js:1733` renders the identical `data-shell-action` attributes.
+  They are not separate controls and must not get separate IDs.
+
+**Exclusions are a first-class outcome.** A control with no stable marker is
+**excluded and listed as excluded, with the reason** — per H5, adding a marker
+to application code is out of scope for this test-only sub-delivery. An honest
+"excluded: no stable selector" is worth more than a label match that passes for
+the wrong reason.
+
+Annotating guide sections *beyond* this set is not required and should not be
+attempted here.
 
 **H4 — Strip embedded images before scanning.** `help/index.html` is 11.8 MB
 almost entirely because screenshots are embedded as `data:` URIs. Strip those
@@ -1022,11 +1126,14 @@ milestone defines**, on a fixed shape, in a document this repository controls �
 the right tool. The registry's `pattern` side is *not* the same thing: it
 matches markup inside real source files, so it inherits the weakness 53D
 documented. That is precisely why H2 requires an **action attribute or control
-marker with an exact occurrence count**, rather than a label: a distinctive
-`data-sig-tab="upload"` is checkable by text in a way that the word "Upload" is
-not. Where a control has no such marker, the honest options are to add one to
-the app (see H2a) or to leave that control unregistered — **not** to fall back
-to matching its label.
+marker**, rather than a label: a distinctive `data-sig-tab="upload"` is
+checkable by text in a way that the word "Upload" is not. (An earlier draft
+said "with an exact occurrence count" here, which contradicts H2's revised
+at-least-once rule and its opt-in `expectCount`. H2 governs.) Where a control
+has no such marker, the only option in this sub-delivery is to **leave it
+excluded and say so** — adding a marker to application code is a code change
+outside 56H's test-only scope and would need separate approval, and falling
+back to matching its label is what this whole step exists to prevent.
 
 **H6 — Non-vacuity comes from fault injection, not from a historical red
 run.** The first draft required the Part 1 scan to be run red against the
@@ -1125,7 +1232,7 @@ appears to.
 | `grep -n "Download PDF guide" help/index.html` after 56E | No output |
 | `grep -n "2019-005" help/index.html` after 56C | No output |
 | `grep -n "unencrypted fallback" help/index.html` after 56B | No output |
-| Guide's Pinellas clerk URL after 56F | Matches `resources.js`'s entry exactly |
+| Guide's county-directory URLs after 56F | **Absent.** Neither the stale Pinellas URL nor its current replacement should appear — 56F removes the reproduced directory rather than correcting it in place |
 | Every URL the guide reproduces, after 56F | Matches the app's entry for the same destination |
 | `tests/unit/content-corrections.spec.js` | Passes throughout — it governs `src/`, not `help/`, and nothing here should change that |
 | 56H Part 1 | Green after 56B/56C/56E; red under injection 1 (a retired term added back), naming the term |
