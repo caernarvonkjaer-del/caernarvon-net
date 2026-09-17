@@ -114,8 +114,8 @@ export function removeLightBackground(pixels, threshold = DEFAULT_BACKGROUND_LUM
  * so redrawing and re-exporting via toDataURL() cannot carry it forward.
  *
  * `stripBackground` runs the luminance-threshold pass above before export
- * -- Upload mode only (Draw/Type canvases are transparent by construction,
- * never filled before drawing, so they need no such pass; see
+ * -- Upload mode only (the Draw canvas is transparent by construction,
+ * never filled before drawing, so it needs no such pass; see
  * `removeLightBackground()`'s own doc comment for this heuristic's limits).
  */
 function drawToCanvas(source, naturalWidth, naturalHeight, { stripBackground = false } = {}) {
@@ -165,8 +165,13 @@ function attachDrawing(canvas) {
 }
 
 /**
- * Mounts the capture UI (Draw / Type / Upload tabs + Apply/Clear) into
- * `container`. `onApply(dataUrl)` fires once with a validated base64 PNG;
+ * Mounts the capture UI (Draw / Upload tabs + Apply/Clear) into `container`.
+ * Milestone 55C: the "Type" tab (type a name, rendered onto the stamp canvas
+ * in a cursive font) was removed globally -- this is the one shared
+ * implementation every signature-capable role in every filing type mounts
+ * through (see `signature-state-control.js`'s `mountSignatureStateControls()`,
+ * its only caller), so the removal applies everywhere at once. `onApply(dataUrl)`
+ * fires once with a validated base64 PNG;
  * `onCancel()` fires if the filer dismisses without applying. Returns a
  * `{ destroy() }` handle for the caller's own mount/unmount lifecycle
  * (mirrors this app's other dynamically-mounted widgets, e.g.
@@ -180,17 +185,11 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
     <div class="signature-pad" role="group" aria-label="Signature stamp capture">
       <div class="signature-pad-tabs" role="tablist">
         <button type="button" class="btn btn-sm btn-outline-secondary" role="tab" aria-selected="true" data-sig-tab="draw">Draw</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" role="tab" aria-selected="false" data-sig-tab="type">Type</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" role="tab" aria-selected="false" data-sig-tab="upload">Upload</button>
       </div>
       <div class="signature-pad-panel" data-sig-panel="draw">
         <canvas width="${CANVAS_W}" height="${CANVAS_H}" class="signature-pad-canvas" aria-label="Draw your signature"></canvas>
         <div class="signature-pad-actions"><button type="button" class="btn btn-sm btn-outline-secondary" data-sig-action="clear-draw">Clear</button></div>
-      </div>
-      <div class="signature-pad-panel" data-sig-panel="type" hidden>
-        <label class="form-label" for="sig-pad-typed-name">Type your name</label>
-        <input type="text" id="sig-pad-typed-name" class="form-control" maxlength="80">
-        <canvas width="${CANVAS_W}" height="${CANVAS_H}" class="signature-pad-canvas signature-pad-canvas-preview" aria-hidden="true"></canvas>
       </div>
       <div class="signature-pad-panel" data-sig-panel="upload" hidden>
         <input type="file" accept="image/png,image/jpeg" class="form-control" data-sig-upload>
@@ -206,8 +205,6 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
 
   const drawCanvas = container.querySelector('[data-sig-panel="draw"] canvas');
   attachDrawing(drawCanvas);
-  const typeInput = container.querySelector('#sig-pad-typed-name');
-  const typePreview = container.querySelector('[data-sig-panel="type"] canvas');
   const uploadInput = container.querySelector('[data-sig-upload]');
   const uploadPreview = container.querySelector('[data-sig-panel="upload"] canvas');
   const errorEl = container.querySelector('.signature-pad-error');
@@ -215,33 +212,6 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
   let uploadedDataUrl = null;
 
   const showError = (msg) => { errorEl.textContent = msg; errorEl.hidden = !msg; };
-
-  // Milestone 50F: a long typed name at the fixed base size overflowed the
-  // canvas and was clipped at both edges -- canvas fillText() neither shrinks
-  // nor wraps on its own. Apply reuses this exact canvas (see the 'type'
-  // branch below), so a clipped preview became a clipped stamp on the filed
-  // PDF. Shrink to fit first; maxWidth on fillText is a second, independent
-  // guard in case a font metric quirk leaves the loop's estimate short.
-  const TYPE_MAX_FONT_PX = Math.round(CANVAS_H * 0.4);
-  const TYPE_MIN_FONT_PX = 12; // below this a cursive signature stops being legible; condense, never refuse
-  const renderTypedPreview = () => {
-    const ctx = typePreview.getContext('2d');
-    ctx.clearRect(0, 0, typePreview.width, typePreview.height);
-    const name = typeInput.value.trim();
-    if (!name) return;
-    const maxWidth = typePreview.width * 0.92; // leave a visual margin on both sides
-    let size = TYPE_MAX_FONT_PX;
-    ctx.font = `${size}px cursive`;
-    while (ctx.measureText(name).width > maxWidth && size > TYPE_MIN_FONT_PX) {
-      size -= 2;
-      ctx.font = `${size}px cursive`;
-    }
-    ctx.fillStyle = '#0b1a33';
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'center';
-    ctx.fillText(name, typePreview.width / 2, typePreview.height / 2, maxWidth);
-  };
-  typeInput.addEventListener('input', renderTypedPreview, { signal });
 
   uploadInput.addEventListener('change', () => {
     const file = uploadInput.files?.[0];
@@ -288,7 +258,6 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
   container.querySelector('[data-sig-action="apply"]').addEventListener('click', () => {
     let dataUrl, sourceCanvas;
     if (activeTab === 'draw') { sourceCanvas = drawCanvas; dataUrl = drawCanvas.toDataURL('image/png'); }
-    else if (activeTab === 'type') { renderTypedPreview(); sourceCanvas = typePreview; dataUrl = typePreview.toDataURL('image/png'); }
     else { sourceCanvas = uploadPreview; dataUrl = uploadedDataUrl; }
     if (!dataUrl) { showError('Add a signature before applying.'); return; }
     // A blank canvas (nothing drawn/typed, or Clear was just pressed) still
@@ -298,7 +267,6 @@ export function mountSignaturePad(container, { onApply, onCancel } = {}) {
     // rather than "successfully" signing with an invisible image.
     if (sourceCanvas && !canvasHasVisibleContent(sourceCanvas)) {
       const emptyMessage = activeTab === 'draw' ? 'Draw a signature before applying -- the canvas is blank.'
-        : activeTab === 'type' ? 'Type a name before applying -- nothing is visible yet.'
         : 'The uploaded image appears blank.';
       showError(emptyMessage);
       return;

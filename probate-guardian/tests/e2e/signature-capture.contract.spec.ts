@@ -123,52 +123,78 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     expect(paintedImage).toBe(true);
   });
 
-  // Milestone 50F. renderTypedPreview() drew at a fixed font size with no
-  // measureText() check, so a long typed name overflowed the 600x180 canvas
-  // and was clipped at both edges -- and Apply reuses that same canvas
-  // (typePreview.toDataURL()), so the clipping was baked into the stored
-  // signatureImage, not just the on-screen preview. Asserts on the STORED
-  // PNG deliberately, since that is the artefact the PDF engine stamps onto
-  // the filed document -- a preview-only assertion would have passed against
-  // the original bug too.
-  test('Signature Stamp: a long typed name is condensed to fit, not clipped -- checked on the stored stamp, not just the preview', async ({ page }) => {
+  // Milestone 55C: the Type tab (type a name, rendered onto the stamp canvas
+  // in a cursive font) was removed globally from mountSignaturePad() -- the
+  // one shared implementation every signature-capable role in every filing
+  // type mounts through. Replaces the deleted Milestone 50F long-typed-name
+  // regression (that feature no longer exists to regress); "no new
+  // regression for a removal" was the wrong standard -- this proves the
+  // trimmed widget still behaves correctly, not just that the code is gone.
+  test('Signature Stamp: exactly Draw and Upload remain, Draw is the default, and both still apply', async ({ page }) => {
     await freshStartNoPassword(page);
-    await createWard(page, 'Sig Long Type Ward', 'planSimplified');
+    await createWard(page, 'Sig Trimmed Tabs Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
     await page.waitForTimeout(200);
-    await page.locator('[data-sig-tab="type"]').first().click();
+    const pad = page.locator('.signature-pad');
+    await expect(pad).toBeVisible();
 
-    const longName = 'Bartholomew Fitzgerald-Montgomery III';
-    await page.fill('#sig-pad-typed-name', longName);
-    await page.waitForTimeout(200);
-    await page.locator('[data-sig-action="apply"]').click();
+    await expect(pad.locator('[data-sig-tab]')).toHaveCount(2);
+    await expect(pad.locator('[data-sig-tab="draw"]')).toHaveCount(1);
+    await expect(pad.locator('[data-sig-tab="upload"]')).toHaveCount(1);
+    await expect(pad.locator('[data-sig-tab="type"]')).toHaveCount(0);
+    await expect(pad.locator('[data-sig-panel="type"]')).toHaveCount(0);
+    await expect(pad.locator('#sig-pad-typed-name')).toHaveCount(0);
 
+    await expect(pad.locator('[data-sig-tab="draw"]')).toHaveAttribute('aria-selected', 'true');
+    await expect(pad.locator('[data-sig-panel="draw"]')).not.toBeHidden();
+
+    // Draw still applies.
+    const canvas = pad.locator('[data-sig-panel="draw"] canvas');
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('signature canvas not visible');
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
+    await page.mouse.up();
+    await pad.locator('[data-sig-action="apply"]').click();
     await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+  });
 
-    // Scan the stored PNG's left-most and right-most pixel columns for any
-    // non-transparent ink -- the signature line of a clipped rendering.
-    const edges = await page.evaluate(async () => {
-      const src = (window as any).D.planGuardians[0].signatureImage as string;
-      const img = new Image();
-      await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = src; });
+  test('Signature Stamp: Upload still applies after the Type tab removal (Simplified Accounting)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'Sig Trimmed Upload Ward');
+    await fillMinimalValidSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.locator('[data-signature-state-group="guardians.0"]').waitFor({ state: 'visible' });
+
+    await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
+    await page.waitForTimeout(200);
+    const pad = page.locator('[data-signature-state-group="guardians.0"] .signature-pad');
+    await expect(pad.locator('[data-sig-tab]')).toHaveCount(2);
+    await expect(pad.locator('[data-sig-tab="type"]')).toHaveCount(0);
+
+    await pad.locator('[data-sig-tab="upload"]').click();
+    await expect(pad.locator('[data-sig-panel="upload"]')).not.toBeHidden();
+
+    // A minimal 2x2 PNG, dark ink on white -- exercises the same
+    // upload+background-strip path Milestone 39-C's own rollout test uses.
+    const buffer = await page.evaluate(async () => {
       const c = document.createElement('canvas');
-      c.width = img.naturalWidth;
-      c.height = img.naturalHeight;
+      c.width = 2; c.height = 2;
       const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      const data = ctx.getImageData(0, 0, c.width, c.height).data;
-      let left = 0, right = 0;
-      for (let y = 0; y < c.height; y++) {
-        if (data[(y * c.width) * 4 + 3] > 0) left++;
-        if (data[(y * c.width + c.width - 1) * 4 + 3] > 0) right++;
-      }
-      return { left, right };
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 2, 2);
+      ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 1, 1);
+      const blob: Blob = await new Promise((resolve) => c.toBlob((b) => resolve(b!), 'image/png'));
+      return Array.from(new Uint8Array(await blob.arrayBuffer()));
     });
-    expect(edges.left, 'no ink touching the left edge').toBe(0);
-    expect(edges.right, 'no ink touching the right edge').toBe(0);
+    await page.setInputFiles('[data-signature-state-group="guardians.0"] [data-sig-upload]', {
+      name: 'upload.png', mimeType: 'image/png', buffer: Buffer.from(buffer),
+    });
+    await pad.locator('[data-sig-action="apply"]').click();
+    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
   });
 });
 
