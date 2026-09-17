@@ -2,11 +2,36 @@
 
 ## Status
 
-**Draft — not an authorization to implement.** Per `AGENTS.md` §2, this
-document is a proposal only. Nothing below should be started until Alan
-explicitly approves a named sub-delivery by name. Approval of one
-sub-delivery authorizes only that one; every other sub-delivery, including
-ones listed after it here, requires its own explicit approval.
+**Landed in full, 2026-09-16–17.** Alan approved each sub-delivery
+individually, per `AGENTS.md` §2's per-sub-delivery gating — this was never
+approved or executed as one unit. All four are on `master`:
+
+| Sub-delivery | Commit(s) | Verification |
+| --- | --- | --- |
+| 55A — Contain and style the PDF.js FreeText editor toolbar | `d029ceb` | Probe-verified both directions (decorator disabled → red on accessible-name assertions; toolbar flex layout disabled → red on containment); `tests/e2e/pdf-annotate.spec.ts` 19/19; unit 914/914; vite build clean |
+| 55B — Sidebar agrees with the export validator's date-order rules | `ea41521` | Red-first (6 of 7 new tests failed exactly as expected — the reported Plan Annual case and both Borrowed-key cases among them — restored to green); `navigation-status.contract.spec.ts` 67/67; the 4 affected parity specs + `checklist-export-parity.spec.js` 144/144 combined; `routes.spec.ts` 23/23 |
+| 55C — Remove the Signature Stamp widget's "Type" tab, globally | `70e2e28` | Red-first (2 new tests failed exactly as expected — 3 tabs found instead of 2 — restored to green); `signature-capture.contract.spec.ts` + `signature-stamp-reuse.spec.ts` 40/40; `tests/unit/signature-capture.spec.js` 27/27; unit 914/914; vite build clean; grep for every Type-tab identifier across `src/` and `tests/` returns nothing |
+| 55D — Enforce `attorney_email` exactly where the UI already required it | `d6b8914`, `c103b06` | Red-first (5 of 8 new e2e tests failed exactly as expected, restored to green); `navigation-status.contract.spec.ts` 75/75, `routes.spec.ts` 23/23; `verify:data-model` clean (918 rows); unit 914/914. Follow-up commit `c103b06` fixed two attorney_email fixture gaps the full e2e run surfaced immediately after 55D landed (all 8 affected spec files + `signature-capture.contract.spec.ts` 132/132 afterward) |
+
+**Closing regression.** No single full-suite run was recorded immediately
+after 55D landed — each sub-delivery's own targeted verification is in the
+table above. The first full-suite close covering all of Milestone 55's
+changes came from Milestone 56's own execution (see `MS-56-findings.md`):
+unit **935/935**, e2e **599 passed, 6 skipped, 0 failed**. (That document
+also records that the first attempt at that run silently misreported a real
+failure — unrelated to Milestone 55's own changes — by piping Playwright's
+output through `tail`, discarding its exit code; corrected before the number
+above was accepted.)
+
+The original Draft text is kept below as the historical proposal. Per
+`AGENTS.md` §2 it was a proposal only until the approvals above; nothing in
+it should be read as authorizing anything further.
+
+**Original status (historical):** Draft — not an authorization to implement.
+Per `AGENTS.md` §2, this document is a proposal only. Nothing below should be
+started until Alan explicitly approves a named sub-delivery by name. Approval
+of one sub-delivery authorizes only that one; every other sub-delivery,
+including ones listed after it here, requires its own explicit approval.
 
 **Numbering note.** Milestone 55 was confirmed unused on 2026-09-16 by
 searching `src/`, `tests/`, project Markdown, and `git log` for Milestone 55,
