@@ -32,10 +32,10 @@ below, not a priority ranking.
 
 | Order reported | Sub-delivery | Issue | Status | Risk |
 | --- | --- | --- | --- | --- |
-| 1 | **55A** | FreeText note color picker and delete control render as artifacts over the visible PDF | Corrected (round 2) — CSS re-scoped to `.freeTextEditor`, icon fallback fixed, forced-colors test added; still needs Alan's FreeText-only vs. FreeText+Highlight decision before it is approvable | Low–medium |
-| 2 | **55B** | Sidebar/nav-check section markers show green while the real export validator still blocks on a date-order rule they never apply | Corrected (round 2) — all 23 validator relationships (25 `datesOrdered()` additions) now in scope, none deferred; two attachments are a named, deliberate labeling trade-off (see section), not a technical limitation | Medium |
-| 3 | **55C** | Signature Stamp capture widget's "Type" tab — global removal | Corrected — regression replaced rather than deleted; test-count wording aligned with acceptance criteria (one Plan, one Accounting type) | Low |
-| 4 | **55D** | Attorney "Primary Email (e-filing)" renders a required asterisk that no validator enforces, in four filing types | Corrected (round 2) — Plan Annual's policy table fixed (signature-state choice does conditionally require attorney fields; the original "nothing, ever" claim was itself wrong), CSV identifiers corrected to `annual_accounting`/`simplified_accounting`, Option B's `inpD()` site and regression plan added, Option C marked as needing its own scoping pass, verification gate now names Annual/Simplified coverage and the browser parity spec; **still needs Alan's choice of Option A/B** before it is approvable | Medium |
+| 1 | **55A** | FreeText note color picker and delete control render as artifacts over the visible PDF | **Alan chose FreeText-only, 2026-09-16 — approvable as scoped.** | Low–medium |
+| 2 | **55B** | Sidebar/nav-check section markers show green while the real export validator still blocks on a date-order rule they never apply | Corrected (round 2) — all 23 validator relationships (25 `datesOrdered()` additions) now in scope, none deferred; two attachments are a named, deliberate labeling trade-off (see section), not a technical limitation; approvable as scoped | Medium |
+| 3 | **55C** | Signature Stamp capture widget's "Type" tab — global removal | Corrected — regression replaced rather than deleted; test-count wording aligned with acceptance criteria (one Plan, one Accounting type); approvable as scoped | Low |
+| 4 | **55D** | Attorney "Primary Email (e-filing)" renders a required asterisk that no validator enforces, in four filing types | **Alan chose Option A (enforce it, per-engine), 2026-09-16 — approvable as scoped.** | Medium |
 
 "Order reported" is the sequence these were raised in this session, kept for
 traceability. It is not an execution order and not a priority ranking; treat
@@ -106,7 +106,7 @@ The save path is separate: `AnnotationSession.saveAnnotatedBytes()` calls
 than taking a screenshot of the DOM overlay. The controls therefore affect the
 live preview, not the saved PDF's page content. 55A must preserve that boundary.
 
-### Decision needed from Alan: FreeText-only, or FreeText and Highlight
+### Decision: FreeText-only — resolved by Alan, 2026-09-16
 
 **Correction (code review, 2026-09-16):** this document originally scoped
 "the two supported editor types, FreeText and Highlight" as one contract, but
@@ -127,13 +127,13 @@ nothing in the report describes a Highlight-toolbar artifact.
 
 | Option | Effect |
 | --- | --- |
-| **A — Narrow 55A to FreeText only (recommended)** | Scope, implementation, and regression below all apply to `.basicColorPicker`/FreeText's toolbar only, matching the actual reported defect. Highlight's toolbar is out of scope and named as a candidate follow-up, not assumed fine. |
-| **B — Cover both editors** | Requires inventorying `ColorPicker`'s `.colorPicker` swatch-dropdown structure and keyboard behavior (not done in this document), role-specific accessible labels (a Highlight control is not a "note"), and its own regression test with its own red/green evidence. Materially larger than what is designed below. |
+| **A — Narrow 55A to FreeText only (chosen)** | Scope, implementation, and regression below all apply to `.basicColorPicker`/FreeText's toolbar only, matching the actual reported defect. Highlight's toolbar is out of scope and named as a candidate follow-up, not assumed fine. |
+| **B — Cover both editors (not chosen)** | Requires inventorying `ColorPicker`'s `.colorPicker` swatch-dropdown structure and keyboard behavior (not done in this document), role-specific accessible labels (a Highlight control is not a "note"), and its own regression test with its own red/green evidence. Materially larger than what is designed below. |
 
-**The rest of this section assumes Option A** (FreeText only) unless Alan
-selects Option B, in which case the Scope, Implementation design, and
-Required regression test below need a second pass for Highlight's `ColorPicker`
-before this sub-delivery is execution-ready.
+**Alan selected Option A, FreeText-only, 2026-09-16.** The rest of this
+section is written for FreeText only and is execution-ready on that basis;
+Highlight's `ColorPicker` toolbar remains a separate, unscoped, not-yet
+proposed follow-up if it is ever wanted.
 
 ### Scope
 
@@ -141,9 +141,11 @@ before this sub-delivery is execution-ready.
 
 1. restore the minimal PDF.js toolbar layout and visibility contract for the
    **FreeText editor's toolbar only** (`.basicColorPicker`/`BasicColorPicker`) —
-   see the Decision above; Highlight's separate `ColorPicker` dropdown is not
-   inventoried or styled by this sub-delivery as written;
-2. keep all new styling scoped beneath `.annotationEditorLayer`;
+   per the Decision above; Highlight's separate `ColorPicker` dropdown is not
+   inventoried or styled by this sub-delivery;
+2. keep all new styling scoped beneath `.freeTextEditor` specifically, not
+   the broader `.annotationEditorLayer` (see Implementation design §A for
+   why that distinction is load-bearing, not stylistic);
 3. give the generated FreeText color and delete controls accessible names;
 4. use the application's semantic tokens and existing SVG icon system;
 5. add a browser regression that detects both the red-swatch artifact and the
@@ -162,9 +164,9 @@ before this sub-delivery is execution-ready.
 
 | File | Planned change |
 | --- | --- |
-| `src/styles/print.css` | Add the minimal, layer-scoped editor-toolbar layout, hidden-state, theme, focus, color-picker, divider, and button rules. Update the existing scoped-port comment so it no longer claims the active toolbar is intentionally absent. |
-| `src/core/pdf/pdf-annotate.js` | Decorate dynamically created toolbar controls with stable accessible names and the existing `trash` SVG; own and disconnect any observer used to detect those controls. |
-| `tests/e2e/pdf-annotate.spec.ts` | Add the toolbar visibility, containment, layout, accessibility, color-change, and no-artifact regression. |
+| `src/styles/print.css` | Add the minimal, `.freeTextEditor`-scoped editor-toolbar layout, hidden-state, theme, focus, color-picker, divider, and button rules. Update the existing scoped-port comment so it no longer claims the active toolbar is intentionally absent. |
+| `src/core/pdf/pdf-annotate.js` | Decorate dynamically created toolbar controls with stable accessible names and the existing `trash` SVG (with a visible text fallback, not an empty string, if `window.ic` is ever unavailable); own and disconnect any observer used to detect those controls. |
+| `tests/e2e/pdf-annotate.spec.ts` | Add the toolbar visibility, containment, layout, accessibility, color-change, no-artifact, and forced-colors regression. |
 | `TEST-INDEX.md` | Extend the existing `pdf-annotate.spec.ts` description to record 55A's toolbar regression scope. |
 
 No new test file is expected. If implementation evidence shows that a separate
@@ -1111,65 +1113,54 @@ field, Plan Simplified and Plan Minor, render it *without* the required flag
 (`plan-simplified/index.js:323`, `plan-minor/index.js:422`) — internally
 consistent with their own equally unenforced validators.
 
-### Decision needed from Alan
+### Decision: Option A — resolved by Alan, 2026-09-16
 
-Given the four genuinely different per-engine policies above, this is not a
-single yes/no. **This document does not recommend Option A as a default any
-longer** — the original recommendation rested on the now-corrected premise
-that a single `has(d.attorney)` rule would be a small, uniform, low-risk
-change; it is not, and Plan Initial's documented legal exemption raises the
-stakes of getting the gating condition exactly right past what a proposal
-document should decide alone.
+Given the four genuinely different per-engine policies above, this was not a
+single yes/no.
 
 | Option | Effect |
 | --- | --- |
-| **A — Enforce the asterisk, per-engine** | Add CSV rows for `attorney_email` in `annual_accounting`, `simplified_accounting`, `plan_annual`, `plan_initial`; initialize it in all four blank-data factories; require it in each engine using **that engine's own existing gating shape** (unconditional in Annual/Simplified, matching their sibling fields; `has(d.attorney)` in Plan Annual, co-existing with its separate signature-state-triggered name requirement rather than replacing it; the exact existing "started" predicate in Plan Initial, not a different condition). Requires `npm run verify:data-model` clean and per-engine tests, not one shared fixture. Immediately actionable — sized below. |
-| **B — Remove the asterisk instead** | Drop `required: true` from three `inpS('attorney_email', ...)` calls (Plan Annual, Plan Initial, Simplified Accounting) and the equivalent flag on Annual Accounting's **`inpD(...)`** call — a different rendering function with a different argument shape (label, value, an inline `onchange` string, required, type — no `id` parameter), confirmed by reading `annual-accounting/index.js:686`; "four `inpS()` calls" in an earlier draft of this option was wrong for that one site. Matches Plan Simplified/Plan Minor's existing, internally-consistent treatment. No CSV, factory, or validator change needed. Smaller and lower-risk than Option A, at the cost of making Primary Email look less encouraged than Bar Number/Phone/Street/City-State-Zip in Annual and Simplified, where those ARE required and email alone would remain visibly optional. Immediately actionable — sized below. |
-| **C — Expand to the full card** | Make bar/phone/street/city-state-zip also conditionally required once an attorney is named, in Plan Annual and Plan Initial specifically (Annual and Simplified already require them). A larger behavior and policy change than either A or B, and the most direct answer to "should naming an attorney obligate the rest of the card." **Not immediately actionable if selected** — it needs its own scoping pass (which fields, which exact gating condition per engine, CSV/factory work of its own) before it could be executed; selecting it here means asking for that follow-up proposal, not authorizing work today. |
+| **A — Enforce the asterisk, per-engine (chosen)** | Add CSV rows for `attorney_email` in `annual_accounting`, `simplified_accounting`, `plan_annual`, `plan_initial`; initialize it in all four blank-data factories; require it in each engine using **that engine's own existing gating shape** (unconditional in Annual/Simplified, matching their sibling fields; `has(d.attorney)` in Plan Annual, co-existing with its separate signature-state-triggered name requirement rather than replacing it; the exact existing "started" predicate in Plan Initial, not a different condition). Requires `npm run verify:data-model` clean and per-engine tests, not one shared fixture. |
+| **B — Remove the asterisk instead (not chosen)** | Drop `required: true` from three `inpS('attorney_email', ...)` calls (Plan Annual, Plan Initial, Simplified Accounting) and the equivalent flag on Annual Accounting's **`inpD(...)`** call — a different rendering function with a different argument shape (label, value, an inline `onchange` string, required, type — no `id` parameter), confirmed by reading `annual-accounting/index.js:686`. Matches Plan Simplified/Plan Minor's existing, internally-consistent treatment. |
+| **C — Expand to the full card (not chosen; would have needed its own scoping pass)** | Make bar/phone/street/city-state-zip also conditionally required once an attorney is named, in Plan Annual and Plan Initial specifically. The most direct answer to "should naming an attorney obligate the rest of the card," but not sized in this document. |
 
-### Scope (pending Alan's choice of option)
+**Alan selected Option A, 2026-09-16.** This sub-delivery is execution-ready
+on that basis, per the corrected Scope, Files in scope, and Verification
+gate below — all already written for Option A.
 
-55D will, once Option A or B is confirmed (Option C requires a follow-up
-scoping pass first, per the table above):
+### Scope
 
-1. if Option A: add the missing CSV rows (`annual_accounting`,
-   `simplified_accounting`, `plan_annual`, `plan_initial`), run `npm run
-   verify:data-model` clean, initialize `attorney_email` in all four
-   blank-data factories in `src/core/state.js`, and add the requiredness
-   rule to each of the four validators **in that engine's own existing
-   gating shape**, per the table above — not one shared `has(d.attorney)`
-   call reused four times;
-2. if Option A: add the matching presence key to each affected filing type's
+55D will:
+
+1. add the missing CSV rows (`annual_accounting`, `simplified_accounting`,
+   `plan_annual`, `plan_initial`), run `npm run verify:data-model` clean,
+   initialize `attorney_email` in all four blank-data factories in
+   `src/core/state.js`, and add the requiredness rule to each of the four
+   validators **in that engine's own existing gating shape**, per the table
+   above — not one shared `has(d.attorney)` call reused four times;
+2. add the matching presence key to each affected filing type's
    `computeNavChecks()` branch, gated identically to its validator, so the
    sidebar agrees with the newly-real requirement rather than reopening the
    exact class of gap 55B addresses;
-3. if Option B: drop the required flag at all four sites — three `inpS(...)`
-   calls and Annual Accounting's differently-shaped `inpD(...)` call — no
-   CSV, factory, or validator work; add the regression test in "Required
-   regression test" below proving both halves of the claim (asterisk gone,
-   validator behavior unchanged);
-4. either way: add or extend regression coverage for the four affected
-   engines specifically (not just Plan Annual and Plan Initial, which is
-   what an earlier draft of this section actually tested) — Annual and
-   Simplified need their own fixtures given their unconditional-requirement
-   shape differs from Plan Annual/Plan Initial's conditional one.
+3. add regression coverage for the four affected engines specifically — not
+   just Plan Annual and Plan Initial, which is what an earlier draft of this
+   section actually tested — since Annual and Simplified's
+   unconditional-requirement shape differs from Plan Annual/Plan Initial's
+   conditional one and needs its own fixtures.
 
-55D will not, regardless of which option is chosen:
+55D will not:
 
-1. resolve Option C's scoping pass as part of this sub-delivery, even if C
-   is the one selected — see the table above;
+1. implement Option B or C — both declined; see the table above;
 2. touch Plan Simplified or Plan Minor, which are already internally
    consistent and out of scope for this specific mismatch;
-3. change any other attorney field's requiredness under Option A or B — that
-   is exactly Option C;
+3. change any other attorney field's requiredness (bar, phone, street,
+   city/state/zip) — that would be Option C's territory, not this one's;
 4. narrow Plan Initial's documented pro se/Guardian Advocate exemption as a
-   side effect of whatever gating condition is chosen — the exemption's
-   existing "started" predicate is the one this sub-delivery must match,
-   not redesign.
+   side effect of the new email requirement — the exemption's existing
+   "started" predicate is the one this sub-delivery must match, not
+   redesign.
 
 ### Files in scope
-
-**Option A:**
 
 | File | Planned change |
 | --- | --- |
@@ -1185,13 +1176,7 @@ scoping pass first, per the table above):
 | `tests/unit/checklist-export-parity.spec.js` | Update `KNOWN_GAPS` if `attorney_email` was already listed for any of the four (check fresh at implementation time). |
 | `TEST-INDEX.md` | Update affected rows. |
 
-**Option B:** the four call sites named in the Decision table above only —
-three `inpS(...)` and one `inpD(...)` — plus a new regression test (below),
-no other file.
-
 ### Required regression test
-
-**If Option A:**
 
 1. **Annual and Simplified** (unconditional shape): a fixture with
    `d.attorney_email` blank and every other attorney field filled: confirm
@@ -1223,18 +1208,7 @@ no other file.
    nav-check key agrees with its engine's validator for every fixture above.
 6. `npm run verify:data-model` passes clean against the new CSV rows.
 
-**If Option B:**
-
-1. For each of the four call sites: assert the rendered field no longer
-   carries `<span class="req">*</span>` or `data-field-required="true"`.
-2. For each of the four validators: assert `attorney_email` blank still
-   produces zero validation issues — the same behavior as before this
-   change, proving the removal is cosmetic-only and does not silently mask
-   an enforcement path that existed elsewhere.
-
 ### Verification gate
-
-**Option A:**
 
 ```text
 npm run verify:data-model
@@ -1247,27 +1221,12 @@ is the only venue that actually executes `computeNavChecks()` (55B's own
 correction applies identically here); an earlier draft of this gate omitted
 it along with any Annual/Simplified-specific test at all.
 
-**Option B:**
-
-```text
-npx playwright test tests/e2e/signature-capture.contract.spec.ts tests/e2e/routes.spec.ts
-```
-
-(or wherever the new cosmetic-removal + unchanged-validation test from above
-actually lands — a smaller, contained check matching Option B's smaller
-scope).
-
-Recommend a full `npm test` before commit if Option A is chosen, given it
-changes real export behavior for four different engines in four different
-ways (a filing that exports cleanly today may not once this lands) — per
-`AGENTS.md` §1, ask before running it. Option B needs no such recommendation;
-it changes no validator behavior.
+Recommend a full `npm test` before commit, given this changes real export
+behavior for four different engines in four different ways (a filing that
+exports cleanly today may not once this lands) — per `AGENTS.md` §1, ask
+before running it.
 
 ### Acceptance criteria
-
-**The remainder of this section (Acceptance criteria through Cross-cutting
-ramifications) describes Option A specifically; Option B's much smaller
-criteria are the two regression-test points above, satisfied or not.**
 
 - A named attorney with no Primary Email now blocks export in all four
   affected filing types, using each engine's own existing gating shape, with
@@ -1340,8 +1299,8 @@ sub-delivery.
    statutory exemption (pro se filers and Ch. 393 Guardian Advocates under
    Fla. Prob. R. 5.030). Any implementation must be verified, not assumed,
    to leave that exemption's export path exactly as unblocked as it is
-   today. This judgment, and Option C's broader version of it, belongs to
-   Alan, with the added weight this correction surfaces.
+   today. Alan weighed this and chose Option A over the narrower Option B
+   and the broader, unscoped Option C, 2026-09-16.
 
 ### Dependency and sequencing
 
