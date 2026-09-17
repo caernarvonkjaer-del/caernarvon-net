@@ -14,7 +14,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
   // Generated from RESOURCE_GROUPS itself (every link's hostname, deduped and
   // sorted) rather than retyped by hand, so this allowlist and the data it
   // checks can never drift apart -- see the Milestone 54 helpful-links
-  // wiring task in MILESTONE-53-PROPOSAL.md's appendix.
+  // wiring task in MILESTONE-54-PROPOSAL.md's Appendix: Change record.
   const EXPECTED_HOSTS = new Set([
     '2ndcircuit.leoncountyfl.gov',
     'alachuacounty.us',
@@ -424,7 +424,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
     const pinellas = RESOURCE_GROUPS.find(group => group.id === 'pinellas');
     // URL updated to the more specific search path as part of the follow-up
     // that added a Court Records link to every county -- see
-    // MILESTONE-53-PROPOSAL.md's Milestone 54 appendix.
+    // MILESTONE-54-PROPOSAL.md's Appendix: Change record.
     expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-court-records', url: 'https://courtrecords.mypinellasclerk.gov/MyCr/Cases/Search' }));
     expect(pinellas.links).toContainEqual(expect.objectContaining({ id: 'pinellas-guardian-association', url: 'https://guardianassociation.org/' }));
   });

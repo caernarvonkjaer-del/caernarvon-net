@@ -2586,7 +2586,7 @@ export function groupsForCircuit(circuitNum = 6) {
   // Gated by the user's own browsing choice rather than 47B's filing-county
   // gate -- a filer whose filings are outside the Sixth Circuit can still
   // see this by selecting it manually. Raised to and accepted by Alan
-  // (2026-09-16, see MILESTONE-53-PROPOSAL.md's Milestone 54 appendix); not
+  // (2026-09-16, see MILESTONE-54-PROPOSAL.md's Appendix: Change record); not
   // an open item.
   // See tests/unit/content-corrections.spec.js's "AO 2024-025 removal guard".
   const circuitGroup = RESOURCE_GROUPS.find(g => g.scope === `circuit-${cNum}`);

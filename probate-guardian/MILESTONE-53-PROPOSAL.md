@@ -12,9 +12,22 @@ sub-delivery does not authorize the others. 53A is a prerequisite for 53B;
 `*.md`, and `git log --grep=53` on 2026-09-16 at `73496e8`. The only hits for
 the string "53" are unrelated commit hashes and Milestone 40-era SHAs.
 
-**Concurrent work.** Antigravity is writing Milestone 54 (dashboard "helpful
-links" handling) on this same tree. Its uncommitted working-tree footprint
-as observed on 2026-09-16 was `MILESTONE-54-PROPOSAL.md`,
+**Concurrency note, refreshed 2026-09-16 (current HEAD `55a3d5e`).** The
+paragraph below described Milestone 54 as Antigravity's in-flight,
+uncommitted work; that is now stale — Milestone 54 (circuit selector,
+per-county Helpful Links, and the code review that preceded it) landed in
+full and is closed. See `MILESTONE-54-PROPOSAL.md` for its status and change
+record. No file Milestone 54 touched overlaps any file 53A–D touch (confirmed
+against the actual landed diff, not the snapshot below), so the substance of
+this document's premise is unaffected — only this paragraph's tense was
+wrong. Left below for its historical record of what was true when this
+document was first drafted (`de72b6f`, 21:21:57 on 2026-09-16 — before
+Milestone 54 or its own follow-up commits landed).
+
+**Concurrent work (historical, as observed while drafting this document).**
+Antigravity is writing Milestone 54 (dashboard "helpful links" handling) on
+this same tree. Its uncommitted working-tree footprint as observed on
+2026-09-16 was `MILESTONE-54-PROPOSAL.md`,
 `probate-guardian-data-model.csv`, `src/core/persistence/case-file.js`,
 `src/core/persistence/recovery-cache.js`, `src/core/state.js`,
 `src/features/dashboard/index.js`, `src/features/dashboard/resources.js`,
@@ -22,7 +35,16 @@ and `src/styles/shell.css` — broader than the last dashboard-resources
 commit (`7e9596e`) but still **no file 53 touches**. The one file both are
 likely to edit is `TEST-INDEX.md` (each adds rows); that is a trivial
 line-level merge, not a correctness risk. See "Sequencing and concurrency"
-for the sync rule anyway — 54's footprint may grow before 53 starts.
+for the sync rule anyway — re-verify actual overlap at the time 53 actually
+starts rather than trusting either snapshot.
+
+**Execution environment note.** Every shell command in this document (`grep`,
+`sed`, `ls`, heredoc commit messages, `npm run …`) is POSIX/Bash syntax,
+intended to run through a Bash-capable tool (Git Bash or equivalent), not
+raw Windows PowerShell — `npm` resolves cleanly there but a plain PowerShell
+session blocks `npm.ps1` by default. This is a documentation note, not an
+execution blocker: an agent with Bash-tool access runs these exactly as
+written.
 
 ---
 
@@ -537,23 +559,43 @@ local alias (`annual:431-432` `gcv`/`gcStr`; `guardian:493-494`
 `node scripts/audit-window-bridge.mjs` (summary mode) and
 `npx vitest run tests/unit/window-bridge.spec.js` — both must be clean
 *before* 53B touches anything, so any drift in the generated files is
-attributable.
+attributable. Also run `npm run check:types` now and save its full output
+verbatim — this is the baseline the Verification section's type-check step
+compares against later; "unchanged" is not demonstrable without a captured
+"before" to diff. (As of this writing the baseline is 10 pre-existing
+errors, in `src/core/filing/readiness-card.js`, `src/core/ui/dialogs.js`,
+`src/core/validation/validation-adapter.js`, and
+`tests/e2e/support/supplemental-pdf-fixture.ts` — none in a file 53B
+touches. Re-run it at B0 time rather than trusting this count; the tree may
+have drifted.)
 
-**B1. Capture the pre-move baseline for the import gate (B8's "before").**
-Before changing any source: run the four existing Excel round-trip e2e specs
-and record pass/fail; then run the new
-`excel-import-cell-shapes.spec.ts` (B8) against **current** code — it must
-pass against the legacy implementation first, or it is testing the wrong
-thing.
+**B1. Read B7 and B8 now, out of their step order, before writing anything.**
+Both are written below as the target *content* of files this step creates —
+the shape-matrix table (B7) and the e2e spec's cell-shape table (B8) — not
+as work that happens later. Concretely, in this order:
 
-**B2. Write the shape matrix (B7) against the legacy implementation and
-confirm green.** Use `extractLegacyFunction()` from
-`tests/unit/support/legacy-source-extract.js` for all three names, compose
-them with `new Function(fmtSrc + unwrapSrc + readSrc + '; return { fmtDate,
-unwrapCellValue, readCellText };')()`, and run the matrix. Every expected
-value in the matrix is a **literal**, not a computed comparison — this run
-proves the literals describe shipped behavior. (Milestone 52L built this
-extraction helper for exactly this use.)
+1. Write `tests/e2e/excel-import-cell-shapes.spec.ts` per B8's design (the
+   six cell shapes, addresses, and expected values in B8's list below) and
+   confirm it passes against the **current, unmoved** `legacy-app.js`
+   implementation — it must pass against the legacy code first, or it is
+   testing the wrong thing.
+2. Write `tests/unit/cell-reader.spec.js`'s shape matrix per B7's tables
+   below, using `extractLegacyFunction()` from
+   `tests/unit/support/legacy-source-extract.js` for all three names,
+   composed with `new Function(fmtSrc + unwrapSrc + readSrc + '; return {
+   fmtDate, unwrapCellValue, readCellText };')()` (Milestone 52L built this
+   extraction helper for exactly this use), and confirm it is green against
+   that legacy extraction. Every expected value in the matrix is a
+   **literal**, not a computed comparison — this run proves the literals
+   describe shipped behavior, before anything moves.
+3. Run the four existing Excel round-trip e2e specs and record pass/fail —
+   this is the "before" the Verification section's regression list compares
+   against.
+
+Only after all three are green against the legacy code does B3 (create the
+new module) begin. B7 and B8 below describe what these files' *final* form
+looks like after B4–B7 switch their adapter to the ES import — read them now
+for content, come back to them for that later switch.
 
 **B3. Create `src/core/excel/cell-reader.js`.** Module header: what it is
 (the Excel *import*-direction readers; the parse-side counterpart of
@@ -583,7 +625,7 @@ three named exports exist and are functions (a guard against a fourth
 "helpful" export slipping in later).
 
 **B7. The shape matrix** (`tests/unit/cell-reader.spec.js`) — switch the
-B2 adapter to `import { fmtDate, unwrapCellValue, readCellText } from
+B1-step-2 adapter to `import { fmtDate, unwrapCellValue, readCellText } from
 '../../src/core/excel/cell-reader.js'` and delete the extraction adapter in
 the same commit; the spec's final form must not depend on `legacy-app.js`.
 The matrix is derived from the bodies at `legacy-app.js:1211-1238`, one row
@@ -660,10 +702,25 @@ is the only check that would catch a copy living in an inline `<script>` in
 
 **B10. Rewrite `excel-engine.js:54-79`**, then `node
 scripts/audit-window-bridge.mjs --declare`, then `git diff
-src/core/types/window-bridge.d.ts` — the diff must be exactly the removal
-of `readCellText: any;`. If it is not, either the new comment still contains
-the token `window.readCellText` (fix the comment — a comment should not
-manufacture a phantom bridge entry) or the tree was not quiet at B0.
+src/core/types/window-bridge.d.ts`. The expected diff depends on whether
+53D has already landed — check this document's own landed-notes table
+before running this step:
+
+- **53D not yet landed:** the diff must be exactly the removal of
+  `readCellText: any;` — the only trace of the phantom-comment artifact
+  (finding 3). If it is not, either the new comment still contains the
+  token `window.readCellText` (fix the comment — a comment should not
+  manufacture a phantom bridge entry) or the tree was not quiet at B0.
+- **53D already landed:** its destructure-consumer pass now sees the real
+  consumers — `readCellText` (all three feature `excel.js` files) and
+  `unwrapCellValue` (`annual-accounting`, `guardian-inventory`, but not
+  `simplified-accounting` — confirmed by grep, `simplified-accounting/excel.js`
+  destructures `readCellText` only) — so the diff must remove exactly those
+  two entries, `readCellText: any;` and `unwrapCellValue: any;`, and nothing
+  else. `fmtDate` is never destructured directly by any feature file (only
+  `readCellText` calls it internally, before the move), so it does not
+  appear as a D1-detected consumer either way. If the diff shows anything
+  else, the tree was not quiet at B0.
 
 **B11. `TEST-INDEX.md`.** Three rows touched, one added. On the coverage
 axis: `TEST-INDEX.md:218` defines `xlsx-export` as "Generated .xlsx
@@ -702,10 +759,11 @@ Lite gate (run by the executor, no approval needed):
    all-schedules-at-capacity round-trip. These prove each feature's *wiring*
    to the moved functions; B8 proves the functions.
 3. The fault-injection record from B12, in the commit message.
-4. `npm run check:types` — unchanged result expected. Note `tsconfig.json`'s
-   `include` does not cover `src/core/excel/`, so the new module is not
-   type-checked; that is the status quo for `excel-engine.js` and
-   `excel-capacity.js` too and is not changed here (see out of scope).
+4. `npm run check:types` — diff the output against B0's captured baseline;
+   expect zero difference. Note `tsconfig.json`'s `include` does not cover
+   `src/core/excel/`, so the new module is not type-checked; that is the
+   status quo for `excel-engine.js` and `excel-capacity.js` too and is not
+   changed here (see out of scope).
 
 Full gate (with Alan's go-ahead per B13): `npm test`.
 
@@ -732,10 +790,15 @@ Full gate (with Alan's go-ahead per B13): `npm test`.
   `readCellText` still stringifies and trims, and every importer still
   passes the assembled object through `sanitizeObjectData` /
   `sanitizeObjectDataInPlace` afterward (`guardian:471`, `annual:689`,
-  `simplified:402`). The threat model — a hostile `.xlsx`
-  reaching the parser — is addressed upstream by `validateImportFile` and
-  `assertWorkbookWithinLimits`, neither of which 53B touches. No new stored
-  data.
+  `simplified:402`). The threat model — a hostile `.xlsx` reaching the
+  parser — is **partially mitigated**, not "addressed," upstream:
+  `validateImportFile` checks file size and ZIP signature before parsing,
+  but `assertWorkbookWithinLimits` takes an already-fully-parsed `workbook`
+  object as its argument, so ExcelJS has parsed the complete file before
+  the sheet/row-count limits ever run — a small, valid-ZIP workbook crafted
+  to exploit the parser itself is not stopped pre-parse. 53B does not
+  change this exposure in either direction; it moves code that runs
+  strictly after both existing checks. No new stored data.
 - **UI/UX Consistency:** N/A. No user-visible change; the import progress
   text and readiness behavior are downstream of unchanged values.
 - **Legal/Compliance:** the values these functions produce become the
@@ -773,9 +836,17 @@ is a rename.
 ### Steps
 
 **C1.** Replace the declaration at `:344` with
-`import { fmtDate } from '../../core/excel/cell-reader.js';` and
-`export { fmtDate as fmtD };` — keeping the exported name so the
-`date-truncation-helpers.spec.js:6` import is unaffected. Verified
+`import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';` and
+`export { fmtD };` — **not** `import { fmtDate } from …; export { fmtDate as
+fmtD };`, which was this step's first draft and is a real bug: `export {
+fmtDate as fmtD }` only renames the *external* export, it creates no local
+`fmtD` binding, so the bare `fmtD(...)` calls at `:614`, `:627`, `:660`
+(confirmed — all three call the unqualified name, not `fmtDate(...)`) would
+throw `ReferenceError: fmtD is not defined`. Importing under the alias
+directly (`import { fmtDate as fmtD } from …`) creates the local `fmtD`
+binding those three call sites need, and re-exporting that same local
+binding keeps `date-truncation-helpers.spec.js:6`'s import unaffected.
+Verified
 consumers of the export: `index.js` itself (`:614`, `:627`, `:660`) and that
 spec — nothing else. `print.js` imports only `validateAnnual` from
 `index.js` (`print.js:13`), and `pdf-model.js:49` declares its **own** local
@@ -818,41 +889,170 @@ taking it.
 
 ## 53D — Teach the Bridge Audit to See `const { … } = window` (optional)
 
-**Risk: Low.** Governance tooling only; no runtime code. Own approval.
-Independent of 53A–C.
+**Risk: Low.** Governance/dev tooling only; no runtime code. Own approval.
+Independent of 53A–C. **Revised 2026-09-16 after a review found the
+original design unsound** — see "Why the design changed" below; the
+regex-based D1 originally here is not carried forward.
 
 ### Files
 
-`scripts/audit-window-bridge.mjs` (`:78-88`), `src/core/types/window-bridge.d.ts`
-(regenerated), `tests/unit/window-bridge.spec.js` (possibly a new case).
+`scripts/audit-window-bridge.mjs` (new consumer pass),
+`src/core/types/window-bridge.d.ts` (regenerated),
+`tests/unit/window-bridge.spec.js` (new fixture-based test block),
+`package.json`/`package-lock.json` (**new devDependency: `acorn`** — see
+"Why the design changed").
 
 ### Background
 
-Finding 3: the consumer scan matches only `window.X`. Every feature
-`excel.js` and `index.js` — and `dashboard/index.js:12-19`, per Milestone
-52's Decision 1 — reaches legacy functions by destructuring, which the audit
-does not see. The generated `.d.ts`, whose stated purpose is to let
-`tsc --noEmit` check "modules that reach through window," therefore omits
-every destructured name. And a consumer can hide from a "who still uses
-this global?" question, which is precisely the question 53B had to answer
-by hand.
+Finding 3: the consumer scan matches only `window.X` member access. Every
+feature `excel.js` and `index.js` — and `dashboard/index.js:12-19`, per
+Milestone 52's Decision 1 — reaches legacy functions by destructuring
+(`const { … } = window`), which the audit does not see. The generated
+`.d.ts`, whose stated purpose is to let `tsc --noEmit` check "modules that
+reach through window," therefore omits every destructured name. And a
+consumer can hide from a "who still uses this global?" question, which is
+precisely the question 53B had to answer by hand.
+
+### Why the design changed
+
+The original D1 proposed a second regex —
+`const\s*\{([^}]*)\}\s*=\s*window\b`, split on commas, strip aliases/defaults
+— on top of the existing `\bwindow\.([A-Za-z_$][\w$]*)/g` member-access
+scan. A review confirmed this would misfire on real code already in this
+repository: `annual-accounting/index.js:56-67` and
+`guardian-inventory/index.js:18-30` both have a multi-line `//` comment
+**inside** the destructure's braces — one of them (`guardian-inventory`)
+literally spells out `toggleSsnReveal` in prose, not as a binding. A
+comma-split with no comment-stripping either manufactures a garbage
+"consumer name" out of comment text or silently absorbs a real name into
+the wrong token; it is the same class of false-positive risk finding 3
+already identified in the existing `window.X` scan, being reintroduced in a
+structurally harder spot (multi-line, nested braces, commas inside default
+expressions) with no way to bound it by inspection the way "the regex is
+anchored to line-start" bounds the assignment scan.
+
+The instinct to reach for a real parser instead of a sharper regex was
+right, but "use the TypeScript compiler API, it's already available" turned
+out to be false and worth recording so it is not repeated: this repository
+pins `"typescript": "^7.0.2"` — the new native/Go-ported compiler — and its
+npm package's default export is `./lib/version.cjs`, exposing exactly two
+names, `version` and `versionMajorMinor`. Verified directly: `require('typescript')`
+in this repo's own `node_modules` returns an object with no
+`createSourceFile`, `forEachChild`, or any AST-node type guard. There is a
+lower-level scanner/AST surface under `typescript/unstable/ast` and sibling
+`unstable/*` subpaths, but it is explicitly marked unstable (no semver
+guarantee across patch releases) and exposes token/scanner primitives, not
+a parse-and-walk convenience API — building on it would mean writing the
+same kind of hand-rolled bracket/comma tracking this section exists to
+retire, just on top of correct tokens instead of raw text. No other JS
+parser (`acorn`, `espree`, `@babel/parser`, `esprima`) exists anywhere in
+`node_modules`, including transitively through Vite/Rollup — confirmed by
+search, not assumed.
+
+**Decision (Alan, 2026-09-16): add `acorn` as a new devDependency.** It is
+small (~150KB), has zero dependencies of its own, is one of the most widely
+used and stable JS parsers in the ecosystem, and produces a real ESTree AST
+— `ObjectPattern` nodes for destructuring — that a ~20-line hand-written
+recursive visitor can walk without needing the separate `acorn-walk`
+package. This is a real, if small, addition to the project's dependency
+footprint for a script that currently has zero; it is called out explicitly
+here rather than folded in silently, matching this document's own
+convention for the C1 fix and the security-wording change below.
 
 ### Steps
 
-**D1.** In `auditWindowBridge()`, add a second consumer pass that matches
-`const\s*\{([^}]*)\}\s*=\s*window\b` (multi-line — the destructure blocks
-span several lines), splits the captured list on commas, strips
-`name: alias` renames and defaults, and records each name as a consumer of
-that file under the same `PLATFORM` exclusion.
+**D1 (revised).** Add `acorn` to `devDependencies`. In
+`auditWindowBridge()`, add a second consumer pass, per file:
+
+```js
+import { parse } from 'acorn';
+
+// Generic ESTree walk -- acorn ships a parser, not a walker; the tree is
+// plain nested objects/arrays keyed by `type`, so a short recursive visit
+// covers every node shape without a second dependency (acorn-walk).
+function walkAst(node, visit) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) { for (const n of node) walkAst(n, visit); return; }
+  if (typeof node.type === 'string') visit(node);
+  for (const key in node) {
+    if (key === 'type' || key === 'start' || key === 'end') continue;
+    const value = node[key];
+    if (value && typeof value === 'object') walkAst(value, visit);
+  }
+}
+
+function findWindowDestructureConsumers(source) {
+  let ast;
+  try {
+    ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module' });
+  } catch {
+    // A file this parses can't handle isn't this pass's problem -- the
+    // existing window.X member-access scan still covers it independently.
+    return [];
+  }
+  const names = new Set();
+  walkAst(ast, (node) => {
+    if (
+      node.type !== 'VariableDeclarator' ||
+      !node.init || node.init.type !== 'Identifier' || node.init.name !== 'window' ||
+      !node.id || node.id.type !== 'ObjectPattern'
+    ) return;
+    for (const prop of node.id.properties) {
+      if (prop.type !== 'Property' || prop.computed) continue; // skips
+        // `...rest` (RestElement -- not a named consumer of one property)
+        // and `{ [dynamicKey]: x }` (not a static name; out of scope, same
+        // as the existing window.X scan's own limits).
+      if (prop.key.type === 'Identifier') names.add(prop.key.name);
+      else if (prop.key.type === 'Literal' && typeof prop.key.value === 'string') names.add(prop.key.value);
+    }
+  });
+  return [...names];
+}
+```
+
+Record each name `findWindowDestructureConsumers()` returns as a consumer of
+that file, under the same `PLATFORM` exclusion the existing pass uses. This
+correctly handles every case the regex design could not, by construction
+rather than by added special-casing: comments and string/template-literal
+contents are never visited (acorn tokenizes them out before the AST exists
+at all — they are not nodes), `prop.key.name` is the real `window` property
+name regardless of a `foo: bar` alias or a `foo = default` (`AssignmentPattern`
+as `prop.value`, which never affects `prop.key`) or nested destructuring
+(`foo: { bar }` — `prop.value` is itself an `ObjectPattern`, still doesn't
+affect `prop.key`), `VariableDeclarator` is matched regardless of the
+enclosing declaration's `const`/`let`/`var` keyword, and formatting/line
+breaks are irrelevant to a parsed tree.
 
 **D2.** Regenerate the declaration (`--declare`). Expect a **large** additive
 diff in `window-bridge.d.ts` — every legacy function destructured anywhere
 in `src/` — and no change to the allow-list (it tracks assignments, which
 D1 does not touch).
 
-**D3.** Add a case to `window-bridge.spec.js` asserting that a known
-destructured-only name (after 53B: `capitalizeImportedFields`, which no
-module reads as `window.capitalizeImportedFields`) appears in the audit's
+**D3.** Add a dedicated parser-fixture test block to `window-bridge.spec.js`
+(or a new `tests/unit/audit-window-bridge-destructure.spec.js`, matching
+whichever this repo's convention prefers by the time this lands), feeding
+`findWindowDestructureConsumers()` literal source strings and asserting the
+exact returned name array for each — the shape-matrix convention 53B's B7
+already uses, applied here. At minimum, one fixture per case that broke the
+original regex design, plus the standard shapes:
+
+| Fixture source | Expected consumer names |
+| --- | --- |
+| `` const { esc, ic } = window; `` | `['esc', 'ic']` |
+| `` const {\n  esc,\n  // comment\n  ic,\n} = window; `` (multi-line, trailing comment) | `['esc', 'ic']` — comment text never enters the result |
+| `` const {\n  esc,\n  // Milestone 51C dropped \`toggleSsnReveal\` from this list\n  // -- destructured but never called here.\n  ic,\n} = window; `` (the exact shape found in `annual-accounting/index.js:56-67` and `guardian-inventory/index.js:18-30`, including a decoy identifier named in prose) | `['esc', 'ic']` — `toggleSsnReveal` does **not** appear; this is the regression case for the original bug |
+| `` const { foo: bar } = window; `` (alias) | `['foo']` — the `window` property name, not the local binding |
+| `` const { foo = 1 } = window; `` (default) | `['foo']` |
+| `` const { foo = fn(1, 2, 3) } = window; `` (default expression containing commas) | `['foo']` — the commas inside the default never split the property list |
+| `` const { foo: { bar } } = window; `` (nested destructuring) | `['foo']` |
+| `` let { foo } = window; `` / `` var { foo } = window; `` | `['foo']` for each |
+| `` const s = "const { fake } = window"; `` (string literal containing the pattern as text) | `[]` — never a real declaration |
+| `` const { ...rest } = window; `` (rest element) | `[]` — not a named single-property consumer |
+| `` const { [dynamicKey]: x } = window; `` (computed key) | `[]` — not a static name, same limit the existing `window.X` scan has |
+
+Also keep the existing audit-level assertion: a known destructured-only name
+(after 53B: `capitalizeImportedFields`, which no module reads as
+`window.capitalizeImportedFields`) appears in `auditWindowBridge()`'s
 `consumers`. Red before D1, green after.
 
 **D4.** Optionally, a `consumers` diff before/after 53B becomes a
@@ -862,16 +1062,21 @@ the text-search inventory in this document, which is sufficient but manual.
 
 ### Verification
 
-`npx vitest run tests/unit/window-bridge.spec.js`, `npm run check:types`
-(expect no new errors — every added name is `any`).
+`npx vitest run tests/unit/window-bridge.spec.js` (including the new
+fixture block), `npm run check:types` (expect no new errors — every added
+`.d.ts` name is `any`), and confirm `npm ls acorn` resolves to exactly one
+version with no peer-dependency warnings.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
-N/A across the board — this touches no application code. **Sequencing
-note:** it regenerates the same `.d.ts` that 53B regenerates. Land it either
-strictly before 53B or strictly after; never interleave, per the "regenerate
-from merged source, never hand-merge a generated file" rule Milestones 51
-and 52 both record.
+N/A for application code — this touches no runtime `src/` behavior.
+**Dependency footprint:** one new devDependency (`acorn`), called out
+explicitly rather than folded in silently — see "Why the design changed."
+**Sequencing note:** it regenerates the same `.d.ts` that 53B regenerates.
+Land it either strictly before 53B or strictly after; never interleave, per
+the "regenerate from merged source, never hand-merge a generated file" rule
+Milestones 51 and 52 both record. If it lands **before** 53B, see 53B's B10
+step for the resulting change to that step's expected diff.
 
 ---
 
@@ -883,14 +1088,13 @@ and 52 both record.
   created" and "legacy deleted" — that state has two live implementations.
 - **53C after 53B**; **53D before or after 53B**, never interleaved with it
   (both regenerate `window-bridge.d.ts`).
-- **Milestone 54 (Antigravity, concurrent).** No shared source file based on
-  the last dashboard-resources commit (`7e9596e`). Both will touch
-  `TEST-INDEX.md`. Per `AGENTS.md` §1: sync before each sub-delivery,
-  re-check `git log`, and verify actual file overlap at the time work starts
-  rather than trusting this snapshot. If 54 turns out to touch
-  `src/legacy-app.js`, note that 53B's edits are confined to `:970-978` and
-  `:1202-1238` (pre-53A numbering) — a conflict is unlikely but if one
-  occurs, take both sides; the regions are unrelated.
+- **Milestone 54 — landed, no longer concurrent.** See the Status section's
+  refreshed concurrency note. Confirmed no overlap with any file 53A–D
+  touch. `TEST-INDEX.md` is the one file both milestones edited; that has
+  already resolved as a normal sequence of row additions, not a conflict.
+  Per `AGENTS.md` §1, still re-check `git log`/`git status` immediately
+  before 53 actually starts — this document may not be the last thing to
+  land on `master` before then either.
 - **Milestone 51's generated-file rule applies:** a conflict in
   `window-bridge.d.ts` has no correct manual resolution. Regenerate from
   merged source.
@@ -903,16 +1107,17 @@ and 52 both record.
 | --- | --- |
 | `git grep -nE '^(async )?function (fmtDate|fmtDateCard|unwrapCellValue|readCellText)\(' src/legacy-app.js` after 53B | No output |
 | `node scripts/audit-window-bridge.mjs --json` after 53B, `assignments` | Byte-identical to before 53A (no global was ever explicitly assigned) |
-| `git diff src/core/types/window-bridge.d.ts` for the 53B commit | Exactly one line removed: `  readCellText: any;` |
-| `tests/unit/cell-reader.spec.js` shape matrix (B7) | Green against the legacy extract before the move (B2), green against the ES import after; red under both B12 faults |
+| `git diff src/core/types/window-bridge.d.ts` for the 53B commit | See B10: exactly one line removed (`readCellText: any;`) if 53D has not landed; exactly two (`readCellText: any;` and `unwrapCellValue: any;`) if it has |
+| `tests/unit/cell-reader.spec.js` shape matrix (B7) | Green against the legacy extract before the move (B1, step 2), green against the ES import after; red under both B12 faults |
 | `tests/e2e/excel-import-cell-shapes.spec.ts` (B8) | Green before and after 53B; red under both B12 faults; each of the six cell shapes lands in `window.D` as the table specifies |
 | Runtime `['fmtDate','fmtDateCard','unwrapCellValue','readCellText'].filter(n => n in window)` (B9) | `[]` |
 | Export → re-import round-trip, all three Excel types (`simplified-mount`, `annual-mount`, `guardian-inventory-mount`) | Pass, unchanged |
 | 52K's all-schedules-at-capacity round-trip (`guardian-inventory-excel-schedule-layout`) | Pass, unchanged — including the pre-existing `wardPercent` behavior it documents (53B must not mask or fix it) |
 | `tests/unit/date-truncation-helpers.spec.js` | Five copies still found (one relocated), all five still guard `Date` before `String(`; `fmtDate` now also behaviorally tested |
-| `npm run check:types` | Same result as before 53 |
+| `npm run check:types` | Byte-identical to B0's captured baseline (10 pre-existing errors as of this writing — see B0; re-verify at execution time) |
 | 53C only: `expect(fmtD).toBe(fmtDate)` | True — a re-export, not a copy |
 | 53D only: audit `consumers` lists `capitalizeImportedFields` | Present, with the three feature `excel.js` files as its consumers |
+| 53D only: `findWindowDestructureConsumers()` fixture table (D3) | Every row matches its expected name array exactly, including the comment-decoy and string-literal false-positive cases |
 | `MILESTONE-53-PROPOSAL.md` | Amended in place with a dated "Landed" note per sub-delivery, per repo convention |
 
 ---
@@ -994,287 +1199,17 @@ Named here so they are not rediscovered as omissions:
 
 ---
 
-## Appendix: Milestone 54 code review, applied 2026-09-16 (recorded here at Alan's direction)
+## Milestone 54's change record — moved out of this document
 
-**Scope note, stated plainly because it doesn't match this document's own
-title.** Everything below concerns Milestone 54 (the dashboard Judicial
-Circuit selector and Helpful Links accordions, `src/features/dashboard/`
-and `src/core/persistence/`) — none of it touches the cell-reader cluster
-`legacy-app.js`/`src/core/excel/` this document is otherwise about, and it
-shares no file with 53A/53B/53C/53D above. It is recorded here, not in
-`MILESTONE-54-PROPOSAL.md`, because Alan asked for it here specifically.
-Anyone reconciling the two documents later should treat this appendix as
-Milestone 54's change record and `MILESTONE-54-PROPOSAL.md` as its design
-proposal — the same split 47/48/49 already use between a proposal and the
-commits that actually landed it, just carried by a different file this one
-time.
-
-### Defects found in Milestone 54's working-tree implementation and fixed
-
-Found during code review of the (uncommitted, then-unapproved) 54A–54C
-implementation Antigravity staged in the working tree; fixed directly since
-they were unambiguous bugs, not scope decisions. All six are in files
-Milestone 54 already owns; none touch anything Milestone 53 does.
-
-1. **Merge-import clobbered the selected circuit (`src/core/persistence/case-file.js`,
-   `decryptCaseFileCore()`).** Defaulted a missing/unreadable
-   `selectedCircuit` to `6` unconditionally, so `importSavArchiveOrWard()` —
-   which **merges** into the current `caseFile` rather than replacing it —
-   overwrote an already-selected circuit to `6` on every import of an
-   archive that predates this milestone, including a plain backup restore.
-   **First fix (superseded within this same pass — see design decision 8
-   below):** the decode returned `null` for absent/invalid instead, so the
-   caller's own `if (importedSelectedCircuit)` guard actually guarded.
-   **Verified red-first**, not just asserted: temporarily reverted the
-   one-line fix and re-ran the new e2e test — `Expected: 12, Received: 6`
-   (the first attempt at this confirmation showed a false pass, traced to a
-   leftover `vite preview` server reused across two back-to-back
-   `playwright test` invocations rather than the fix itself; a second run
-   against a verified cold server reproduced the failure). Green after
-   restoring the fix. **Then superseded, same day:** decision 8 moved
-   `selectedCircuit` out of `encryptCaseFileCore()`/`decryptCaseFileCore()`
-   entirely, into the `appState` blob, which the merge-import path never
-   reads for anything — removing the write path this bug depended on
-   rather than gating it. The regression test below was simplified to match
-   (no more zip-stripping needed; the guarantee is now unconditional).
-   Recorded both because the *finding* (a merge path must not clobber this
-   field) and the *first fix* were both real and red-first-verified, even
-   though the code that fix touched was later deleted outright.
-2. **Keyboard focus lost on circuit change (`src/features/dashboard/index.js`,
-   `renderSidebarResources()`).** The `change` handler replaced
-   `sidebarResources.innerHTML` synchronously, destroying the `<select>` the
-   user was mid-interaction with — a closed `<select>` fires `change` on
-   every arrow-key press in Chromium, so keyboard selection worked for
-   exactly one keystroke. Fixed: re-focus `#sidebar-circuit-select` after
-   the re-render (same node re-queried from the still-attached
-   `sidebarResources` container). Not separately covered by a new automated
-   test in this pass — flagged below as the one item still worth a
-   dedicated e2e case.
-3. **Polymorphic `resourcesPanelHTML()` signature (`src/features/dashboard/resources.js`).**
-   The function type-sniffed its second argument
-   (`selectedCircuitOrHelpers`) to distinguish a Milestone 47B-style helpers
-   object from a Milestone 54-style circuit number, so any call could be
-   silently coerced into the wrong branch by a wrong-shaped second argument.
-   Fixed: one signature, `resourcesPanelHTML(groups, { selectedCircuit, esc,
-   ic })`. Every call site (`index.js`, both spec files) updated in the same
-   change; one new unit test added confirming `groups === undefined` still
-   derives from `selectedCircuit` via `groupsForCircuit()`.
-4. **Loose county-to-group matching (`resources.js`, `groupsForCircuit()`).**
-   Matched `g.scope === county || g.heading.startsWith(county)` — the
-   `startsWith` half was unneeded (every real group's `scope` already equals
-   its `FL_COUNTY_CIRCUIT` key) and could in principle match a county whose
-   name prefixes another's. Fixed: `scope` match only.
-5. **Always-true guard writing the zip entry (`case-file.js`,
-   `buildCaseFileBlob()`).** `if (core.selectedCircuit) zip.file(...)` —
-   `core.selectedCircuit` is always a populated encrypted string at that
-   point (produced by `encryptCaseFileCore()`'s own `|| 6` default), so the
-   condition could never be false. Fixed: write unconditionally, matching
-   the three sibling `zip.file(...)` calls immediately above it.
-6. **Empty accordion rendered no content (`resources.js`,
-   `resourcesPanelHTML()`).** A county with no defined links rendered a bare
-   `<div class="sidebar-resource-empty"></div>` even though the CSS styles
-   that class as visible italic copy — expanding it showed nothing. Fixed:
-   the div now carries "No county-specific links yet — see Florida below."
-   Existing spec assertion for the old empty markup updated to match.
-
-**Verification after all six fixes:** full unit suite `npx vitest run` —
-78 files / 851 tests, all passing (one net new test, item 1's regression
-case). `tests/e2e/case-file-core-fields-roundtrip.spec.ts` — 4/4 passing,
-including the new case. `tests/e2e/routes.spec.ts` — run separately;
-confirm and record its result before this appendix's fixes are considered
-verified, per this repository's own rule that a claimed pass is not
-verification until it has actually been run in this session.
-
-### Design decisions — asked, answered, and implemented (2026-09-16)
-
-Three questions were put to Alan as choices; all three were answered and
-then implemented in the working tree, not merely recorded. Superseding the
-"still open" framing this section originally had.
-
-**8. Where `caseFile.selectedCircuit` persists — moved to the `appState`
-blob.** Chosen over the original CSV-row + dedicated `.enc` zip-entry
-design (which widened the four-field `encryptCaseFileCore()`/
-`decryptCaseFileCore()` fan-out Milestone 52B had just consolidated) and
-over `localStorage` (which would not travel with an exported `.sav`).
-Implemented:
-
-- `encryptCaseFileCore()`/`decryptCaseFileCore()` (`case-file.js`) reverted
-  to their pre-54 four-field shape — `selectedCircuit` removed from both.
-- `buildCaseFileBlob()`'s `appStateBlob` object gained
-  `selectedCircuit: caseFile.selectedCircuit || 6` alongside
-  `walkthroughCompleted`/`recentWards`/etc. (case-scoped, not launch-scoped,
-  hence sourced from `caseFile` rather than `loadAppState()` like its
-  siblings — commented in place).
-- `legacy-app.js`'s `loadCaseFileFromZip()` (the **full .sav open** path)
-  reads it back inside the existing `if(manifest.appState)` block and sets
-  `caseFile.selectedCircuit`, clamped to 1–20 with a fallback to 6.
-- `importSavArchiveOrWard()` (the **merge** path — Open Backup/Restore/
-  Import) does not read `manifest.appState` for anything, including this,
-  and now never did for `selectedCircuit` either — this is what makes the
-  original clobber bug (defect 1, above) structurally impossible rather
-  than patched: there is no longer a write path from a merge-import to
-  `caseFile.selectedCircuit` at all.
-- `recovery-cache.js`'s `saveSessionRestoreCache()`/
-  `checkSessionRestoreCacheAtLaunch()` (crash recovery) likewise no longer
-  carry it, matching every other `appState` field — none of which survive
-  crash recovery either.
-- The `probate-guardian-data-model.csv` row added for 54A was removed
-  (`npm run verify:data-model`: back to 914 rows, clean) — `appState` blob
-  fields have never had CSV rows, matching `walkthroughCompleted` etc.
-- `tests/e2e/case-file-core-fields-roundtrip.spec.ts`'s regression test
-  (defect 1, above) was simplified accordingly: it no longer needs to
-  strip a zip entry to prove the point, since the guarantee is now
-  unconditional — importing *any* archive, regardless of what circuit data
-  it itself carries, must never change the current session's selection.
-
-**9. Decision D4's fate — its intent survives as the selector's *default*,
-not as a filter.** `groupsForCounties()` (which filtered which of a fixed
-four groups to show, based on the filing's county) is deleted. In its
-place, `resources.js` exports `deriveDefaultCircuit(counties)`: tallies the
-circuits implied by the user's filings' counties (via the existing
-`circuitForCounty()` in `circuit-lookup.js`) and returns the most common one
-(ties broken toward the lower circuit number), or `null` if no filing has a
-resolvable county. `dashboard/index.js`'s `renderSidebarResources()` now
-computes `cf?.selectedCircuit ?? deriveDefaultCircuit(counties) ?? 6` —
-a manual selection (a concrete number on `caseFile.selectedCircuit`, set
-only by the `<select>`'s `change` handler) always wins; absent one, the
-default tracks the filings live rather than sitting at a fixed 6. This also
-resolves the dead-code item the original punch list flagged: there is no
-longer an unused `groupsForCounties()` sitting next to its replacement.
-`tests/unit/dashboard-resources.spec.js`'s old "groupsForCounties policy
-(Decision D4)" block was replaced with a `deriveDefaultCircuit` block
-covering the empty/no-match case, single-county resolution, multi-filing
-plurality, and the tie-break rule.
-
-**A gating mechanism this deletion touched, found and fixed in the same
-pass.** `groupsForCounties()` was also the AO 2024-025 compliance gate
-`tests/unit/content-corrections.spec.js` pins (Milestone 36-5/47B, per
-`AGENTS.md` §5's county-gating rule: a circuit-specific administrative
-order must never be shown as a statewide requirement). Deleting it without
-adjustment would have left the Sixth Circuit's resource group — and the AO
-2024-025 link inside it — rendering unconditionally. It does not: the group
-is included only when its own `scope` (`'circuit-6'`) matches the
-*selected* circuit, generalized in `groupsForCircuit()` from a hardcoded
-`cNum === 6` check to a `RESOURCE_GROUPS.find(g => g.scope === \`circuit-${cNum}\`)`
-lookup — which also means a future circuit-level group (the helpful-links
-task below) is picked up automatically. The content-corrections test was
-updated to check for this new mechanism rather than the deleted function's
-name. **Flagged, then reviewed and accepted by Alan (2026-09-16):** this is
-a *different* exposure than 47B's, not merely a mechanical substitute —
-47B gated the group by the counties on the user's own filings (a filer
-outside Pinellas/Pasco never saw it); the circuit selector gates it by the
-user's own *browsing choice*, so a filer whose filings are entirely in,
-say, the 13th Circuit can see the AO 2024-025 link by manually selecting
-the Sixth Circuit from the dropdown. Nothing in the UI asserts the order
-applies to their filing, and it remains inside the panel's own third-party
-disclaimer either way. Raised per `AGENTS.md` §8's "flag for a qualified
-person" rule; Alan reviewed it and confirmed this is acceptable as shipped
-— not an open item. The code comment (`resources.js`) and the test comment
-(`content-corrections.spec.js`) have been updated to match.
-
-**10. County ordering — kept alphabetical everywhere.** No code change:
-this was already the implementation (`countiesForCircuit()`'s
-`.sort((a, b) => a.localeCompare(b))`), so Pasco sorting before Pinellas in
-the Sixth Circuit is confirmed deliberate, not an oversight.
-
-**Verification after all three decisions' implementation:** full unit
-suite `npx vitest run` — 78 files / 852 tests, all passing (one net new
-test versus the six-defects pass: the import-clobber regression stayed at
-one test, simplified; the `deriveDefaultCircuit` block added six covering
-the old `groupsForCounties` block's five). `npm run verify:data-model` —
-914 rows, clean (back to the pre-54A count). `npx tsc --noEmit` — no new
-errors in any touched file (the pre-existing failures elsewhere are
-unrelated to Milestone 54 and predate this session).
-`tests/e2e/case-file-core-fields-roundtrip.spec.ts` — 4/4.
-`tests/e2e/routes.spec.ts` — 23/23, including "helpful resources panel is
-visible on dashboard, hidden inside filings, and restored on return," which
-exercises `resourcesPanelHTML()`/`groupsForCircuit()`/`deriveDefaultCircuit()`
-end to end through a real browser. All commands actually run in this
-session; none of these numbers are asserted from memory.
-
-**Net effect on the working tree versus what Antigravity staged.** Every
-fix and decision above was applied directly to the same uncommitted
-working-tree files Milestone 54's implementation already occupied — nothing
-here has been committed, and the whole tree remains gated on Alan's
-approval per `AGENTS.md` §2, same as before this appendix. One file ended up net-unchanged from `origin/master` despite being edited
-along the way: `probate-guardian-data-model.csv` (54A added the
-`selectedCircuit` row, decision 8 removed it again once the field moved to
-the `appState` blob). `git status` reflects only files that still differ
-from `origin/master`.
-
-### New task: wire `MILESTONE-54-HELPFUL-LINKS.md` into `RESOURCE_GROUPS` — Landed `3e38f78`, 2026-09-16
-
-Added at Alan's direction, **gated on Milestone 54's circuit-selector
-structure landing and working first** — this task assumes `groupsForCircuit()`,
-the stub-group shape (`{ id, heading, scope, links: [] }` for a county with
-no data), and the fixes above are already in place and approved, since it
-is meaningless to wire real link data into stub groups that might still
-change shape.
-
-`MILESTONE-54-HELPFUL-LINKS.md` (Alan's own research, confirmed not
-AI-fabricated) is a county-by-county and circuit-by-circuit link catalog
-covering all 67 Florida counties and all 20 judicial circuits, prepared as
-the data source for populating every county's accordion beyond the
-currently-hardcoded Pinellas/Pasco/Sixth-Circuit/Florida groups in
-`RESOURCE_GROUPS`.
-
-**What "wiring it in" means concretely:**
-
-- Parse `MILESTONE-54-HELPFUL-LINKS.md`'s circuit map and per-county link
-  tables into `RESOURCE_GROUPS` entries matching the existing shape (`id`,
-  `heading`, `scope`, `links: [{ id, label, description, url }]`), reusing
-  its own "Suggested standard county/circuit descriptions" where a
-  county-specific description wasn't given.
-- Every added `url` must be `https:` and added to
-  `dashboard-resources.spec.js`'s `EXPECTED_HOSTS` allowlist — that spec
-  already asserts every `RESOURCE_GROUPS` link's host is on the allowlist,
-  so this is not optional scaffolding, it is the existing test gate.
-  67 counties' worth of new hostnames is a large, mechanical addition to
-  that Set; generate it from the same source rather than retyping it by
-  hand, so the two lists can't drift.
-- `RESOURCE_GROUPS`'s existing `Object.freeze()` wrapping (group and link
-  level) must cover every newly-added group and link the same way the
-  current ones are covered — `dashboard-resources.spec.js`'s "RESOURCE_GROUPS
-  and link collections are frozen" test already checks this and will catch
-  an unfrozen addition.
-- Circuit-level groups (the "Sixth Judicial Circuit" pattern, `scope:
-  'circuit-N'`) should be added for every circuit `MILESTONE-54-HELPFUL-LINKS.md`
-  gives one for, not only the Sixth. **Already generalized, not still
-  needed:** `groupsForCircuit()`'s circuit-level lookup no longer hardcodes
-  `cNum === 6` — fixed during this appendix's own defect/decision pass
-  (it was also the AO 2024-025 compliance gate, see decision 9 above) to
-  `RESOURCE_GROUPS.find(g => g.scope === \`circuit-${cNum}\`)`. A new
-  `scope: 'circuit-N'` group is picked up automatically; no `resources.js`
-  change needed for this part.
-- Once real data exists for a county, `countiesForCircuit()` /
-  `groupsForCircuit()` should no longer need the empty-stub fallback for
-  that county — a good acceptance check is that the number of stub
-  (`links: []`) groups an expanded circuit's `groupsForCircuit()` call
-  produces drops to zero.
-- Update `TEST-INDEX.md`'s row for `dashboard-resources.spec.js` and add
-  whatever new assertions make sense for the expanded catalog (at minimum:
-  link-id uniqueness and the host allowlist, both already generic over
-  `RESOURCE_GROUPS` and needing no new test code — just the data).
-
-**Not scoped here:** deciding *which* circuits/counties to prioritize if
-not all 67 land in one pass, or resolving `MILESTONE-54-HELPFUL-LINKS.md`'s
-own noted placeholder choices (e.g. pointing both "Clerk — Guardianships"
-and "Court Records" at the same landing page where no deep link was found)
-— those are content decisions for whoever executes this task, working from
-that document's own stated research notes.
-
-**Landed, all 67/20 in one pass.** All 67 counties and all 20 circuits went
-in together — the source document had complete coverage, so there was no
-partial-rollout decision to make. `MILESTONE-54-HELPFUL-LINKS.md`'s
-placeholder note (single combined Clerk link rather than separate
-Guardianships/Court-Records items, except where the source gave a verified
-deep link) was taken as written: one combined "Clerk — Probate &
-Guardianship" link per generic county, matching the source table's own
-single Clerk column; Pasco's verified separate Court Records link was added
-as its own item, matching Pinellas's existing pattern. Three circuits (1,
-11, 14) got only their probate/guardianship-information link, not an
-administrative-orders one, because the source document explicitly found no
-stable AO index for those rather than inventing a URL — taken as-is, per its
-own instruction. See `3e38f78`'s commit message for full verification
-detail (88 groups, 250 links, zero empty stubs across any circuit, visually
-confirmed in a real browser for two circuits).
+This document previously carried an appendix covering Milestone 54's
+pre-landing code review, three design decisions, and the
+`MILESTONE-54-HELPFUL-LINKS.md` wiring task — none of which touch the
+cell-reader cluster this document is about, and none of which shared a file
+with 53A/53B/53C/53D. It was recorded here originally only because Alan
+asked for it here specifically, while this document was mid-draft on the
+same tree as Milestone 54's own in-flight work. A review of this document
+flagged that arrangement as a scope-boundary hazard: a reader approving one
+of 53's sub-deliveries could mistake unrelated Milestone 54 content for
+part of 53's own approval surface. **Moved to `MILESTONE-54-PROPOSAL.md`'s
+own "Appendix: Change record" section, 2026-09-16, content unchanged.** See
+that document for the full account.

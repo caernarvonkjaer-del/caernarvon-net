@@ -36,8 +36,8 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
     // applies to their filing, and it is inside the panel's disclaimer either
     // way. Raised per AGENTS.md section 8's "flag for a qualified person"
     // rule; Alan reviewed it (2026-09-16) and confirmed this is acceptable
-    // as shipped -- not an open item. Recorded in MILESTONE-53-PROPOSAL.md's
-    // Milestone 54 appendix.
+    // as shipped -- not an open item. Recorded in MILESTONE-54-PROPOSAL.md's
+    // Appendix: Change record.
     const ALLOWED_FILES = new Set(['features/dashboard/resources.js']);
 
     it('ensures no circuit-specific Administrative Order 2024-025 appears in src/ outside the one documented exception', () => {
