@@ -748,6 +748,11 @@ export function validateSimplified(){
     sectionLabel: 'Part VI', roleLabel: 'Attorney',
     filingType:T, datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
+  (d.remuneration || []).forEach((r, i) => {
+    if (!r || (!r.guardian && !r.type && !r.amount && !r.description)) return;
+    req(r.guardian, `Part VII — Line ${i + 1} — Guardian Name`, `remuneration.${i}.guardian`);
+    req(r.type, `Part VII — Line ${i + 1} — Type`, `remuneration.${i}.type`);
+  });
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

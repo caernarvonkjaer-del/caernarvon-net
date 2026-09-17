@@ -1362,7 +1362,7 @@ function pagePart10Annual(){
   <h1>Part X — Guardian Attorney Certificate of Service</h1>
   <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",false,'date')}</div>
+    <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
     <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
     <div class="col-12">${yesNoRadioAnnualHTML('certNoRecipients','No recipients are required for this certificate.',d.certNoRecipients||'','certNoRecipients',false,'','/p10')}</div>
     <div class="col-12"><div class="form-text">This records the filer’s selection; it does not determine who must be served. Recipient 1 is required unless Yes is selected.</div></div>
@@ -1571,6 +1571,7 @@ export function validateAnnual(){
   checkRows(d.schB2,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-2','schB2');
   checkRows(d.schB3,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-3','schB3');
   checkRows(d.schB4,[['checkNo','Check #'],['datePaid','Date Paid'],['category','Category'],['payee','Payee'],['amount','Amount']],'Schedule B-4','schB4');
+  checkRows(d.remuneration,[['guardian','Guardian Name'],['type','Type'],['amount','Amount']],'Part XI — Remuneration','remuneration');
   (d.schB4Accounts||[]).forEach((a,i)=>{
     req(a.bankName,`Schedule B-4 — Bank account ${i+1} — Bank Name`,`schB4Accounts.${i}.bankName`);
     req(a.accountNo,`Schedule B-4 — Bank account ${i+1} — Account Number`,`schB4Accounts.${i}.accountNo`);

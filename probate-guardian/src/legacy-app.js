@@ -6602,6 +6602,7 @@ function computeNavChecks(){
   } else if(activeInventoryType==='simplified'){
     const filled=v=>v!==''&&v!==null&&v!==undefined;
     const hasAny=(...vals)=>vals.some(v=>filled(v));
+    const rowHasAnyData=r=>Object.entries(r||{}).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
     const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.email)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
     const checks={
       's-cover':D.eligDepository==='Yes'&&D.eligOnlyTransactions==='Yes'&&filled(D.wardName)&&filled(D.caseNumber)&&filled(D.ssn)&&filled(D.gid)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.attorney)&&filled(D.typeOfGuardianship)&&filled(D.county)&&filled(D.amendedForm)
@@ -6615,7 +6616,7 @@ function computeNavChecks(){
         &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
       's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name)
         &&datesOrdered(D.periodTo,D.certServiceDate,true),
-      's-p7':D.remuneration.some(r=>filled(r.guardian)&&filled(r.type)),
+      's-p7':(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type))),
     };
     const incomplete={
       's-cover':!checks['s-cover']&&hasAny(D.wardName,D.caseNumber,D.ssn,D.gid,D.periodFrom,D.periodTo,D.guardian,D.attorney,D.typeOfGuardianship,D.county),
@@ -6629,8 +6630,9 @@ function computeNavChecks(){
     return {checks,incomplete};
   } else if(formEngine(activeInventoryType)==='annual'){
     const filled=v=>v!==''&&v!==null&&v!==undefined;
+    const hasAny=(...vals)=>vals.some(v=>filled(v));
     const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip);
-    const rowHasAnyData=r=>Object.entries(r).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
+    const rowHasAnyData=r=>Object.entries(r||{}).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
     // "I verify there are no X to report" (scheduleEmptyHTMLAnnual()) is an
     // affirmative answer, not a blank -- an empty schedule the guardian has
     // explicitly confirmed is complete, exactly as it already is for
@@ -6660,9 +6662,9 @@ function computeNavChecks(){
       'a-p9':D.bondWaived==='Yes'||(filled(D.bondAmount)&&filled(D.bondingCompany)),
       'a-p10':filled(D.certDate)
         &&(D.certNoRecipients==='Yes'||(filled(D.certRecipients?.[0]?.name)
-          &&(D.certRecipients||[]).slice(1).every(r=>!hasAny(r.name,r.line2,r.line3,r.line4)||filled(r.name))))
+          &&(D.certRecipients||[]).slice(1).every(r=>!rowHasAnyData(r)||filled(r.name))))
         &&datesOrdered(D.periodTo,D.certDate,true),
-      'a-p11':verifiedEmpty('remuneration')||D.remuneration.some(r=>r.guardian||r.type||r.amount),
+      'a-p11':verifiedEmpty('remuneration')||(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type)&&filled(r.amount))),
       'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount'],'scha'),
       'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount'],'schb1'),
       'a-schb2':rowsComplete(D.schB2,['bankAcct','checkNo','datePaid','payee','amount'],'schb2'),
