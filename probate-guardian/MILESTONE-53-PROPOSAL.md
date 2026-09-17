@@ -2,11 +2,75 @@
 
 ## Status
 
-**Draft — not an authorization to implement anything below.** Per
-`AGENTS.md` §2, this is a proposal only; nothing here should be started until
-Alan explicitly approves a specific sub-delivery by name. Approval of one
-sub-delivery does not authorize the others. 53A is a prerequisite for 53B;
-53C and 53D are optional and independently approvable.
+**Landed in full, 2026-09-16.** Alan approved the whole milestone ("Execute
+MS 53 in dependency order then alpha order"), which is 53A → 53B, then 53C and
+53D. All four sub-deliveries are on `master`:
+
+| Sub-delivery | Commit | Verification |
+| --- | --- | --- |
+| 53A — Delete dead `fmtDateCard` | `086cf54` | Red-first detector (red naming `fmtDateCard`, green after); `date-truncation-helpers` + `window-bridge` unaffected; 14 deletions, 0 additions |
+| 53B — Move the cluster to `cell-reader.js` | `01630fa` | 36-row shape matrix green against the EXTRACTED LEGACY bodies before the move, then flipped to the ES import; new e2e import gate green pre-move; **both B12 faults confirmed red**; `.d.ts` diff exactly one line; `check:types` byte-identical to baseline; e2e 39/39 |
+| 53C — `fmtD` adopts core `fmtDate` | `261261a` | `expect(fmtD).toBe(fmtDate)`; unit 50/50; e2e 18/18; rendered sworn statement read in a real browser |
+| 53D — AST-based bridge audit | `e0d99be` | 16-row parser fixture table; 39 names added to the `.d.ts`, none removed; allow-list untouched; `check:types` unchanged |
+
+**Closing regression:** full unit suite **79 files / 914 tests, all passing**,
+run at the end of the milestone rather than per sub-delivery.
+`npm run verify:data-model`: 914 rows, clean, and unchanged — correct for a
+milestone that moved code without touching a single persisted shape. The
+production Vite build also succeeds (124 modules transformed), which is the
+check that the three feature modules' new `import` of `cell-reader.js`
+resolves in a real bundle and not only under vitest's resolver.
+
+**Full e2e suite — deliberately not certified here, and why.** A run was
+started at the end of this milestone but is not recorded as its closing gate:
+a separate authorized side task (Codex, Preview-and-Export card controls,
+documented in `MILESTONE-54-PROPOSAL.md`) began editing the working tree
+mid-run. Playwright's default `source` target is
+`vite preview --outDir .`, which serves source **from disk per request** rather
+than a frozen build, so a run spanning those edits is testing a mixture of
+trees and can neither confirm nor impeach this milestone honestly. Per-sub-delivery
+e2e evidence above stands on its own — each was run against a stable tree at
+the time: 39/39 for 53B (the new import gate plus all four Excel round-trips,
+which were 37/37 before the move), 18/18 for 53C. The full-suite run should be
+repeated once that side task has landed, and its result recorded then.
+
+**What the execution found that the plan did not predict.** Recorded here
+rather than only in commit messages, per this repository's convention:
+
+1. **53C's C1 snippet, as originally written, was a runtime bug** — caught in
+   review before execution, not by a failing test. `export { fmtDate as fmtD }`
+   renames only the external export and creates no local `fmtD` binding, so
+   the three bare `fmtD(...)` call sites in the attestation and the
+   preparer/attorney statements would have thrown `ReferenceError`. Fixed to
+   `import { fmtDate as fmtD }`; the wrong form is recorded in 53C's own
+   section so it is not reintroduced.
+2. **53D's original regex design was unsound and was replaced outright.** See
+   53D's "Why the design changed." The premise that TypeScript's compiler API
+   was available turned out to be false — typescript@7 is the native port and
+   exports only `version`/`versionMajorMinor` — so `acorn` was added as a
+   devDependency instead, on Alan's explicit decision.
+3. **B12's Date-guard fault injection reproduced the real bug the guard
+   exists to prevent**, through a real browser import: expected
+   `"2026-03-15"`, received `"Sat Mar 14"` — wrong format *and* off by a day.
+   That is the strongest evidence in this milestone that the gate is not
+   vacuous, and it is exactly the failure `656cccf` fixed.
+4. **The `readCellText` entry in `window-bridge.d.ts` was confirmed to be a
+   comment artifact**, as finding 3 predicted: rewriting `excel-engine.js`'s
+   header to drop the literal token `window.readCellText` made it vanish, with
+   no code change to any consumer. Once 53D landed, the parser-aware audit
+   independently reported zero consumers for all four names — a mechanical
+   confirmation of the hand-done text-search inventory 53B relied on (D4's
+   purpose, obtained in the only direction that works given the landing order).
+
+The original Draft text is kept below as the historical proposal. Per
+`AGENTS.md` §2 it was a proposal only until the approval above; nothing in it
+should be read as authorizing anything further.
+
+**Original status (historical):** Draft — not an authorization to implement
+anything below. Per `AGENTS.md` §2, this is a proposal only; nothing here
+should be started until Alan explicitly approves a specific sub-delivery by
+name. Approval of one sub-delivery does not authorize the others. 53A is a
+prerequisite for 53B; 53C and 53D are optional and independently approvable.
 
 **Numbering note.** 53 is free — checked against `src/`, `tests/`, every
 `*.md`, and `git log --grep=53` on 2026-09-16 at `73496e8`. The only hits for
@@ -169,10 +233,10 @@ separated so each can be approved, executed, and reverted on its own.
 
 | Sub-delivery | Risk | What it is | Relation |
 | --- | --- | --- | --- |
-| 53A — Delete dead `fmtDateCard` | **Low** | One dead function, red-first dead-code detector | Prerequisite for 53B: it is the only other `fmtDate` caller in `legacy-app.js` |
-| 53B — Move the cluster to `src/core/excel/cell-reader.js` | **Medium** | The milestone. Three functions move, three consumers switch to `import`, three globals go | Requires 53A landed. Independent of 53C/53D |
-| 53C — Annual Accounting's `fmtD` adopts core `fmtDate` | **Low** (optional) | One character-identical twin removed | Requires 53B. Own approval |
-| 53D — Teach the bridge audit to see `const {…} = window` | **Low** (optional) | Governance: closes the blind spot finding 3 describes | Independent of 53A–C. Own approval. Regenerates `window-bridge.d.ts` |
+| 53A — Delete dead `fmtDateCard` (**landed `086cf54`**) | **Low** | One dead function, red-first dead-code detector | Prerequisite for 53B: it is the only other `fmtDate` caller in `legacy-app.js` |
+| 53B — Move the cluster to `src/core/excel/cell-reader.js` (**landed `01630fa`**) | **Medium** | The milestone. Three functions move, three consumers switch to `import`, three globals go | Requires 53A landed. Independent of 53C/53D |
+| 53C — Annual Accounting's `fmtD` adopts core `fmtDate` (**landed `261261a`**) | **Low** (optional) | One character-identical twin removed | Requires 53B. Own approval |
+| 53D — Teach the bridge audit to see `const {…} = window` (**landed `e0d99be`**) | **Low** (optional) | Governance: closes the blind spot finding 3 describes | Independent of 53A–C. Own approval. Regenerates `window-bridge.d.ts` |
 
 Recommended execution order: **53A → 53B**, then 53C and 53D in either
 order if approved. 53D can also run first or concurrently — see Sequencing.
@@ -266,7 +330,7 @@ contains only the move.
 
 ---
 
-## 53A — Delete Dead `fmtDateCard`
+## 53A — Delete Dead `fmtDateCard` — **Landed `086cf54`, 2026-09-16**
 
 **Risk: Low.** Pure deletion of an unreferenced function.
 
@@ -499,7 +563,7 @@ one this plan describes (A0's single-match requirement, A1, A6). Every
 
 ---
 
-## 53B — Move the Cluster to `src/core/excel/cell-reader.js`
+## 53B — Move the Cluster to `src/core/excel/cell-reader.js` — **Landed `01630fa`, 2026-09-16**
 
 **Risk: Medium.** Changes which code runs on the Excel *import* path for all
 three Excel-capable filing types (Annual/Final/Trust Accounting, Verified
@@ -812,7 +876,7 @@ Full gate (with Alan's go-ahead per B13): `npm test`.
 
 ---
 
-## 53C — Annual Accounting's `fmtD` Adopts Core `fmtDate` (optional)
+## 53C — Annual Accounting's `fmtD` Adopts Core `fmtDate` — **Landed `261261a`, 2026-09-16**
 
 **Risk: Low.** Removes one character-identical duplicate. Own approval.
 
@@ -887,7 +951,7 @@ taking it.
 
 ---
 
-## 53D — Teach the Bridge Audit to See `const { … } = window` (optional)
+## 53D — Teach the Bridge Audit to See `const { … } = window` — **Landed `e0d99be`, 2026-09-16**
 
 **Risk: Low.** Governance/dev tooling only; no runtime code. Own approval.
 Independent of 53A–C. **Revised 2026-09-16 after a review found the
