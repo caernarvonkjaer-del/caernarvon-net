@@ -10,8 +10,11 @@
    fails badly as plain text on a dark surface (as low as 1.5:1) — those get
    a lighter tint instead. NONE of this reaches the court-document or PDF
    output paths: verified zero of these custom properties are referenced by
-   #print-doc-container or exportHelpGuideAsPDF()
-   rule — those are independently hardcoded and immune to theme changes. */
+   #print-doc-container or by any rule the PDF export path renders — those are
+   independently hardcoded and immune to theme changes. (This sentence used to
+   name a second path, a dead PDF-guide exporter in legacy-app.js that
+   Milestone 56A deleted; the claim now rests on #print-doc-container and the
+   live PDF export alone.) */
 :root{
   /* Brand — deep court maroon. Used as an accent, never as a flood fill. */
   --brand:#820024;--brand-600:#6b001e;--brand-700:#540017;
