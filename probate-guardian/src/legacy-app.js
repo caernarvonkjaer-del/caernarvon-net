@@ -976,20 +976,6 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'
 // off-by-one date is not cosmetic. Guarded across all five Group A copies of
 // this rule; see tests/unit/date-truncation-helpers.spec.js.
 function fmtDate(s){const v=s instanceof Date?s.toISOString():s;return v?String(v).substring(0,10):'';}
-// Dashboard-card-only variant: treats an implausible year (e.g. the
-// "0002-05-10" a native <input type="date"> would happily store if a
-// user typed "2" into the year segment and tabbed away -- see the
-// document-level 'change' guard further down that now blocks this going
-// forward) the same as a missing date, so a summary card degrades to
-// "?" instead of displaying obvious garbage. Left as its own function
-// rather than changed in fmtDate() itself, which prints elsewhere
-// (forms, print preview, exports) where a bad value should stay visible
-// so the filer notices and fixes it before filing, not get hidden.
-function fmtDateCard(s){
-  const d=fmtDate(s);
-  const y=+d.slice(0,4);
-  return (d&&(y<1900||y>new Date().getFullYear()+30))?'':d;
-}
 
 // Neutralizes formula/CSV injection: a cell value starting with =, +, -, or @
 // would otherwise be interpreted as a formula by Excel/Sheets when the
