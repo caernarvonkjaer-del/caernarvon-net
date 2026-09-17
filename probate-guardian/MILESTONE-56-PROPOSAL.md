@@ -22,8 +22,8 @@ below contradict it in two places. The actual graph:
 56F ─┘              │
                     ↓
 56G ──────── needs 56E + 56F (it re-shoots what they rewrite)
-56H ──────── needs 56B + 56C + 56E (its retired-term list is seeded from
-             their corrections) and annotates what 56E + 56F leave behind
+56H ──────── needs 56B + 56C + 56E (retired-term list seeded from their
+             corrections) AND 56F (it annotates what E and F leave behind)
 ```
 
 If a dependent sub-delivery is approved without its prerequisites, stop and say
@@ -138,7 +138,7 @@ filing.
 | 56E — Correct the controls that changed | **Low** (doc) | Signature tabs, "?" behaviour, Preview banner, annotation toolbar, dashboard toolbar | Everyday friction; the filer discovers the truth immediately |
 | 56F — Rewrite Helpful Resources | **Low** (doc) | The largest single rewrite: circuit selector, 67 counties, accordion behaviour, stale link | Large but self-contained; wrong rather than dangerous |
 | 56G — Refresh the stale screenshots | **Low** (doc) | Five images that show retired UI | Depends on 56E/56F landing first |
-| 56H — Guard against this recurring | **Low** | A two-part drift guard: a retired-term scan and a declared-control check | **Last.** Seeded from the corrections above, so it must not land before them |
+| 56H — Retired-term and declared-control sentinel | **Low** | A two-part static tripwire: a retired-term scan and a declared-control check | **Last.** Seeded from the corrections above, so it must not land before them |
 
 ---
 
@@ -291,9 +291,12 @@ case lives in the .sav file you choose; **the app keeps no hidden copy
 elsewhere**." The `.sav` is the authoritative durable record, but the browser
 also holds, on the device:
 
-- A full-case IndexedDB recovery snapshot (`pg-session-cache`) while changes
-  are unsaved, written in the case's own encrypted-or-plain mode, normally
-  cleared after a successful `.sav` write (Milestone 52B).
+- An **unsaved-case** IndexedDB recovery snapshot (`pg-session-cache`) while
+  changes are unsaved, written in the case's own encrypted-or-plain mode,
+  normally cleared after a successful `.sav` write (Milestone 52B). Not
+  "full-case": it deliberately omits `appState` fields, `selectedCircuit`
+  among them, as `recovery-cache.js:138-142` records in place. The corrected
+  guide text should not promise crash recovery restores everything.
 - Launch preferences and a remembered file handle in IndexedDB
   (Milestone 52C).
 - **Cross-tab coordination state in `localStorage`** — key
@@ -302,7 +305,11 @@ also holds, on the device:
   because of *what* it holds: `normalizeTabState()`
   (`src/tab-state.js:8-20`) puts the active **ward ID, ward name, case number
   and filing type** in it. It is short-lived coordination metadata rather than a
-  backup — but it is case-identifying data stored outside the `.sav`, and
+  backup — but "short-lived" describes **operational freshness, not guaranteed
+  deletion**: entries older than the heartbeat TTL are filtered only when some
+  other tab performs a write (`tab-coordination.js:50-56`), so after a crash a
+  stale entry can physically remain in `localStorage` until that happens. It is
+  case-identifying data stored outside the `.sav`, and
   unlike the recovery snapshot it is **plain `localStorage` regardless of the
   case's encryption mode**. A filer who chose the encrypted option still has a
   ward name and case number sitting in cleartext on the device. Any corrected
@@ -334,9 +341,21 @@ honest mitigation is saving the `.sav` and keeping the password safe.
 ### Verification
 
 No automated gate covers guide prose. Verification is a read-through against
-the three source facts (the `excel.js` inventory, `recovery-cache.js`,
-`launch-preferences.js`), plus confirming the corrected text does not claim a
-capability that `grep` cannot find.
+**every** source this sub-delivery's claims rest on — and the first draft's
+list omitted the two that carry the finding it calls most important:
+
+- the `excel.js` inventory across `src/features/*/` (which filings have an
+  export), and `filing-descriptor.js` (how many filing types there are);
+- `src/core/persistence/recovery-cache.js` — what the snapshot holds **and
+  what it deliberately omits** (`:138-142`);
+- `src/core/persistence/launch-preferences.js`;
+- **`src/tab-coordination.js`** — the key, the write, and the TTL-on-write
+  filtering (`:4, 50-56`);
+- **`src/tab-state.js`** — `normalizeTabState()`'s payload fields (`:8-20`),
+  which is where "ward name and case number" is actually established.
+
+Plus confirming the corrected text does not claim a capability that `grep`
+cannot find.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
@@ -634,12 +653,27 @@ Two specific staleness items inside `:800-832`:
 **F1.** Rewrite `:685-687` around the selector: what it is, the derived
 default and its fallback, that a manual choice persists with the case, and
 what the panel then shows.
-**F2.** Rewrite `:800-832` so it no longer claims to mirror the app's
-directory. Either present the reproduced links explicitly as a **Sixth Circuit
-example** — stating that every other circuit's counties are available in the
-app — or replace the enumeration with a description plus the statewide list,
-which is the part that genuinely does not vary.
-**F3.** Correct the Pinellas clerk link.
+**F2 — Stop reproducing the county directory in the guide at all.** The first
+draft offered a choice here: relabel the reproduced links as a "Sixth Circuit
+example", or replace the enumeration with a description. **The choice is
+resolved in favour of the second**, because the first recreates the very
+problem this milestone exists to fix. A county directory copied into the guide
+is a second source of truth that must be maintained in lockstep with
+`RESOURCE_GROUPS` — and the Pinellas link in F3 is the proof that lockstep does
+not hold: it drifted while nobody noticed, in a list of *four* counties. The
+app now ships 88 groups and several hundred links. Keeping even a
+"representative sample" guarantees the same divergence at a larger scale, and
+56H cannot catch it (a URL is not a control marker).
+
+So: `:800-832` describes the circuit selector and directs the reader to the
+app's live panel as the authoritative directory. **The one part worth keeping
+inline is the Florida/federal statewide group** — the E-Filing Portal, Chapter
+744, the Abuse Hotline, SSA/VA — because it does not vary by circuit or county
+and is genuinely useful to have on the page.
+
+**F3.** Correct the Pinellas clerk link **if it survives F2.** If F2 removes
+the reproduced county list as specified, this correction disappears with it —
+which is the point. Verify it is gone rather than fixing it in place.
 **F4.** Document the mutually-exclusive accordion behaviour.
 **F5.** Keep the third-party disclaimer statement; it is still accurate and
 still matters.
@@ -687,7 +721,30 @@ At least five images show retired UI:
 
 ### Steps
 
-**G1 — Capture conditions, pinned.** "Capture against the current build" was
+**G0 — Triage before capture: keep, replace, or delete.** Recapturing every
+stale image is the obvious move and is probably not the right one. Each figure
+gets an explicit decision first, recorded with its reason:
+
+- **Delete** where prose is clearer and more durable. A screenshot of a
+  toolbar is a picture of a row of labels — it goes stale every time a button
+  moves, and this milestone is the second time that has happened. Toolbars are
+  exactly the content that should be described, not photographed.
+- **Replace, tightly cropped** where the image genuinely carries information
+  prose cannot — a signature panel's layout, an annotation toolbar attached to
+  a selected note. Crop to the control in question rather than re-shooting a
+  full page.
+- **Keep** where the figure is still accurate; not every image is stale, and
+  re-shooting a correct one adds bytes and risk for nothing.
+
+Two things follow from doing this first. It attacks the 11.8 MB problem from
+the only direction that helps — fewer and smaller images, rather than the same
+number re-encoded — and it shrinks the recurring drift surface permanently
+instead of resetting it. The out-of-scope note about file size stands, but
+deleting a figure nobody needs is not a packaging decision; it is just
+removing a maintenance liability.
+
+**G1 — Capture conditions, pinned** (for whatever survives G0). "Capture
+against the current build" was
 self-contradictory in the first draft: the `source` target is
 `vite preview --outDir .`, which serves **raw source from disk**, not a build.
 Pick one and name it. Either is defensible — the `source` target for fidelity
@@ -734,7 +791,7 @@ text corrected in 56E/56F.
 
 ---
 
-## 56H — Guard Against This Recurring
+## 56H — Guide Retired-Term and Declared-Control Sentinel
 
 **Risk: Low.** Test-only; no application code, no guide prose beyond
 annotations. **Lands last** — see Sequencing.
@@ -813,14 +870,39 @@ policed.
 **Why the first design of this step was unsound, recorded so it is not
 retried.** It annotated the guide with the control's *visible label*
 (`data-app-control="Report a Bug"`) and asserted that label appeared "as a
-literal string somewhere in `src/`". That proves almost nothing, and the
-counter-example is already in this repository: **`Print Preview` occurs nine
-times across `src/`, every one of them inside a comment**
-(`readiness-config.js:598`, `pdf-annotate.js:111`, `pdf-preview.js:280,291`,
-and more). A `data-app-control="Print Preview"` annotation would pass on
-comment text alone. The same hole swallows in-app help prose, dead code, an
-unrelated control that happens to share a word, and a constant that is no
-longer rendered. It also fails in the other direction — a control that
+literal string somewhere in `src/`". A label can be present in `src/` for
+reasons that have nothing to do with a control rendering — and this repository
+supplies a verified example of exactly that.
+
+**The worked example: prose keeps a label alive after its control is gone.**
+`src/features/help/help-content.js:175` and `:179` contain, as ordinary
+sentences inside the in-app Help panel:
+
+> "Use the **Save Backup (.sav)** button to download an encrypted backup…"
+> "Use **Open Backup (.sav)** to restore from a backup file…"
+
+Those strings live in help *prose*, not in the buttons' own markup. If the Save
+Backup control were removed from the toolbar tomorrow, `help-content.js:175`
+alone would keep the literal text "Save Backup" in `src/`, and a label scan
+would pass while the control no longer existed. The same hole swallows
+comments, dead code (this milestone deletes ~200 lines of it in 56A, prose
+included), an unrelated control sharing a word, and a constant no longer
+rendered.
+
+> **A correction to this section's own first draft, kept because the mistake is
+> instructive.** It cited `Print Preview` as occurring "nine times across
+> `src/`, every one of them inside a comment." **That is false.** It occurs
+> **50** times, and many are live markup — nav-link labels
+> (`annual-accounting/index.js:339`, `guardian-inventory/index.js:263`),
+> a visually-hidden `<h1>` (`guardian-inventory/print.js:52`), alert copy
+> (`pdf-preview.js:464`). The claim came from running `grep … | head -4`,
+> seeing four comment hits, and generalising from a truncated sample — the
+> precise error this milestone exists to correct in a document, committed while
+> correcting one. `Print Preview` is in fact a *poor* example, because it is a
+> real live label that would legitimately pass. The `Save Backup` case above is
+> verified and actually demonstrates the failure.
+
+It also fails in the other direction — a control that
 genuinely exists can be icon-only with its label in an `aria-label`,
 assembled by interpolation, HTML-entity encoded, produced by a shared helper,
 or visually renamed while keeping a stable action attribute. **Label equality
@@ -852,40 +934,56 @@ const GUIDE_CONTROLS = {
 
 The guard asserts, per entry:
 
-1. Every `data-app-control` value in the guide is a **registered** ID.
-2. Every registered ID is **annotated** at least once in the guide (a registry
-   entry with no claim is dead weight and should be deleted).
-3. IDs are **unique**.
+1. Every `data-app-control` value in the guide resolves to a **registered** ID.
+2. Every registered ID is **annotated at least once** in the guide — a registry
+   entry no claim references is dead weight and should be deleted.
+3. **Annotations may repeat; registry keys cannot.** The same control is often
+   documented in more than one place (a section and the Quick Reference), so
+   repeated `data-app-control` values are expected and legal. "IDs are unique"
+   in the first draft was ambiguous between these two and is replaced by this
+   pair: object keys are unique by construction, and the guard asserts nothing
+   about annotation multiplicity beyond "at least one".
 4. The named `file` **exists**.
-5. The `pattern` — an action attribute, a control marker, a selector, *not* a
-   prose label — occurs **in that file**, and occurs **exactly once** unless the
-   entry explicitly documents a higher count.
-6. Where practical, the `label` still appears in proximity to the marker, so a
-   silent rename is visible.
+5. The evidence — an action attribute, control marker or selector, *never* a
+   prose label — is found. Each entry names **either** a single canonical
+   `pattern` **or** an explicit `evidence: [...]` list, and the guard requires
+   **each listed pattern to match at least once** in its file. The first
+   draft's "exactly once unless documented otherwise" is dropped: it is brittle
+   for a control rendered from a shared helper or repeated across templates,
+   and it converts an ordinary refactor into a red test for no safety gain.
+   Where a genuinely unique marker exists, an entry may opt into
+   `expectCount: 1`.
+6. `label` is **advisory metadata, not an assertion** — it exists so a human
+   reading the registry knows which control an ID refers to. The first draft
+   said the label should appear "in proximity to the marker, where practical",
+   which is not mechanically testable and would have been either unenforced or
+   arbitrarily enforced. An entry that genuinely wants label coverage may add
+   an explicit `labelPattern` matched against the same file; absent that, the
+   guard makes no claim about the label at all.
 
 That is what makes the ID indirection load-bearing rather than decorative: the
 guide is free to call the control whatever reads best, and the guard still
 tracks the thing that actually renders it.
 
-**H2a — Decision required from Alan: sentinel only, or a two-way contract?**
-Even with exact markers, this remains a **source scan**. It cannot prove the
-matched markup is reachable — dead markup carrying a matching attribute passes.
-The stronger design adds the same ID to the application's own control:
+**H2a — Sentinel only. Decision made; the two-way contract is rejected, not
+deferred.** An earlier draft left this open for Alan to choose between the
+source-scan sentinel and adding a matching `data-guide-control="<id>"` to the
+application's own markup, calling the latter a "genuine two-way contract".
+**That framing was wrong and the option is dropped.** An attribute in app
+markup is still only *markup*: dead or unreachable markup carrying the ID
+passes exactly as dead source carrying a `pattern` does. It would add
+permanent coupling to production templates — and move 56H out of test-only,
+with the `AGENTS.md` §8 consequences that brings — **without removing the
+limitation it was supposed to remove.** Paying app surface for no additional
+guarantee is the wrong trade.
 
-```
-guide  data-app-control="dashboard-report-bug"
-                    ↕ exact match
-app    data-guide-control="dashboard-report-bug"
-```
+The limitation is instead handled by naming it (H2b) and by leaving runtime
+proof where it already lives: the Playwright contracts, which actually render
+the app and can see whether a control exists. 56H is a cheap static tripwire in
+front of them, not a replacement for them.
 
-which turns a scan into a genuine two-way contract and makes the pattern
-registry unnecessary. **The cost is that 56H stops being test-only** and starts
-adding attributes to rendered application markup — small, low-risk, but real
-app surface with its own review, and `AGENTS.md` §8 consequences this
-sub-delivery currently declares N/A. **Recommendation: take the sentinel now
-(it closes the observed failure mode) and treat the two-way contract as a
-separate, later decision** — but this is Alan's call, not the executor's, and
-it should be answered before 56H starts rather than discovered during it.
+With this resolved, 56H has no open decisions and is execution-ready on the
+same terms as its siblings — approval by name.
 
 **H2b — What 56H does NOT detect.** Stated plainly so the guard is not trusted
 past its evidence:
@@ -1000,9 +1098,11 @@ appears to.
   first would make it red against the uncorrected guide and force an edit to
   the guard on every one of those commits. This is the same sequencing note
   Milestone 50G recorded for its own guard ("land 50G-3's guard **last**, not
-  first"). The one exception is H6's red-first capture, which must happen
-  **before** the corrections land — run the scan, record that it names the
-  retired terms, then let the corrections turn it green.
+  first"). **No exception:** an earlier draft carved one out for a red-first
+  run before the corrections landed, which H6 has since dropped as
+  incompatible with this milestone's own approval model. The red evidence was
+  captured at proposal time instead, and the fault injections are the live
+  gate.
 - All doc sub-deliveries edit **the same file**, `help/index.html`. Landing two
   of them concurrently from different sessions will conflict. They are line-
   scoped and far apart, so a conflict is resolvable, but the cheaper rule is to
@@ -1028,9 +1128,8 @@ appears to.
 | Guide's Pinellas clerk URL after 56F | Matches `resources.js`'s entry exactly |
 | Every URL the guide reproduces, after 56F | Matches the app's entry for the same destination |
 | `tests/unit/content-corrections.spec.js` | Passes throughout — it governs `src/`, not `help/`, and nothing here should change that |
-| 56H Part 1, run **before** 56B/56C/56E land (H6) | **Red**, naming the retired terms it finds in the current guide |
-| 56H Part 1, after those corrections | Green; red again under H6's fault injection (a retired term added back) |
-| 56H Part 2 | Every `data-app-control` value resolves to a literal string in `src/`; red under fault injection (an annotation naming a control that does not exist) |
+| 56H Part 1 | Green after 56B/56C/56E; red under injection 1 (a retired term added back), naming the term |
+| 56H Part 2 | Every annotation resolves to a registered ID, every registered ID is annotated, each entry's evidence pattern matches in its named file; red under injections 2-4, of which **removing the real control marker** is the one the rejected label design would have survived |
 | Test runs | Per the table in the Verification plan — **not** a full unit suite per sub-delivery, which an earlier draft wrongly required |
 | `MILESTONE-56-PROPOSAL.md` | Amended in place with a dated "Landed" note per sub-delivery, per repo convention |
 
@@ -1064,7 +1163,7 @@ exists — which is precisely how eleven of these accumulated at once. So
 that reading is the whole gate for them.
 
 56H then makes the *next* eleven cheaper to catch, without pretending to solve
-the general problem: its retired-term scan would have caught four of these on
+the general problem: its retired-term scan would have caught five of these on
 the day they appeared, and its declared-control check ratchets over whatever
 the guide chooses to annotate. What it deliberately does not do is assert that
 the app's controls are all documented — see 56H's scope note, and the
@@ -1086,7 +1185,7 @@ Named here so they are not rediscovered as omissions:
   why it was found by a human review rather than by a scan, and why a future
   recurrence of *that* shape will be too.
 - **Annotating the whole guide.** 56H's declared-control check covers what
-  56E/56F annotate while they are already editing those sections. Sweeping the
+  56H annotates after 56E/56F land -- see H3, which owns that markup. Sweeping the
   remaining sections is a mechanical follow-up someone can do incrementally; it
   is not required for the guard to earn its place and would balloon this
   milestone's diff for no additional guarantee.
