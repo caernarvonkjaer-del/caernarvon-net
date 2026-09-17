@@ -1817,5 +1817,12 @@ Named here so they are not rediscovered as omissions:
   them here or elsewhere. See `MILESTONE-51-PROPOSAL.md`'s 51H/51I sections
   for the fix, root cause, and verification.
 - **The formula-injection sanitizer tab/CR gap** Milestone 51 also parked —
-  a security judgment for a qualified reviewer, unrelated to duplication,
-  and explicitly not decided by either milestone document.
+  **stale entry, resolved before this document's own ink was dry.** This
+  was written at 21:21:57 on 2026-09-15 (`de72b6f`), copying forward
+  Milestone 51's then-still-open framing. ~80 minutes later, `6f0967f`
+  (22:42:31 the same day) widened the sanitizer to OWASP's complete set in
+  both `legacy-app.js` and `excel-engine.js`, "each decided by Alan" per
+  that commit's own message, researched and verified (`excel-engine.spec.js`
+  pins both implementations equal). See `MILESTONE-51-PROPOSAL.md`'s
+  "Resolved after 51 closed" section for the full account. Nothing left
+  open here.
