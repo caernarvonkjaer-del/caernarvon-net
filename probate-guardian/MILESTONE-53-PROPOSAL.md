@@ -21,18 +21,24 @@ production Vite build also succeeds (124 modules transformed), which is the
 check that the three feature modules' new `import` of `cell-reader.js`
 resolves in a real bundle and not only under vitest's resolver.
 
-**Full e2e suite — deliberately not certified here, and why.** A run was
-started at the end of this milestone but is not recorded as its closing gate:
-a separate authorized side task (Codex, Preview-and-Export card controls,
-documented in `MILESTONE-54-PROPOSAL.md`) began editing the working tree
-mid-run. Playwright's default `source` target is
-`vite preview --outDir .`, which serves source **from disk per request** rather
-than a frozen build, so a run spanning those edits is testing a mixture of
-trees and can neither confirm nor impeach this milestone honestly. Per-sub-delivery
-e2e evidence above stands on its own — each was run against a stable tree at
-the time: 39/39 for 53B (the new import gate plus all four Excel round-trips,
-which were 37/37 before the move), 18/18 for 53C. The full-suite run should be
-repeated once that side task has landed, and its result recorded then.
+**Full e2e suite: 580 passed, 6 skipped, 0 failed** (20.5 min, exit 0) — run
+to completion at the end of this milestone. The pre-53 baseline earlier the
+same day was 576 passed / 6 skipped, and the difference is accounted for: this
+milestone added two tests (`excel-import-cell-shapes.spec.ts`'s import gate and
+its runtime globals-gone assertion), with the remainder from an authorized
+concurrent side task (Codex, Preview-and-Export card controls, documented in
+`MILESTONE-54-PROPOSAL.md`).
+
+Recorded with one caveat stated rather than buried: that side task was editing
+the working tree while this run was in flight, and Playwright's default
+`source` target is `vite preview --outDir .`, which serves source **from disk
+per request** rather than from a frozen build — so the run spans more than one
+tree state. Its edits landing inside the window were comment rewrites (and its
+own spec/doc files), which are behavior-neutral, and the suite came back fully
+green, so the result stands. The per-sub-delivery e2e evidence above was each
+gathered against a stable tree regardless: 39/39 for 53B (the new import gate
+plus all four Excel round-trips, which were 37/37 before the move), 18/18 for
+53C.
 
 **What the execution found that the plan did not predict.** Recorded here
 rather than only in commit messages, per this repository's convention:
