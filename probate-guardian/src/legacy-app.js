@@ -6791,7 +6791,7 @@ function computeNavChecks(){
         &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
       's-p4':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
         &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
-      's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
+      's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
         &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
       's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name)
         &&datesOrdered(D.periodTo,D.certServiceDate,true),
@@ -6830,7 +6830,7 @@ function computeNavChecks(){
         &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
       'a-p4':filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip)
         &&datesOrdered(D.periodTo,D.preparer.signatureDate,true),
-      'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
+      'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
         &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
       // Complete when the two lines agree, or the difference is explained.
       'a-p67':(()=>{const r=annualReconcileState(t);return !r.outOfBalance||r.explained;})(),
@@ -6964,9 +6964,14 @@ function computeNavChecks(){
       // MILESTONE-55-PROPOSAL.md's 55B section for the labeling trade-off).
       // This is also the reported defect: the screenshot's "Signatures —
       // Guardian date signed must be on or after Reporting Period To" issue.
+      // Milestone 55D: attorney email requiredness is gated on the same
+      // bare `D.attorney` truthiness the validator uses -- a blank
+      // attorney card is unaffected, matching validatePlanAnnual()'s
+      // `if(d.attorney)req(d.attorney_email,...)`.
       'pa-p11':filled(g0.name)&&filled(g0.signatureDate)
         &&datesOrdered(D.periodTo,g0.signatureDate,true)
-        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)
+        &&(!D.attorney||filled(D.attorney_email)),
     };
     const incomplete={
       'pa-cover':!checks['pa-cover']&&hasAny(D.wardName,D.caseNumber,D.gid,D.periodFrom,D.periodTo,D.guardian,D.wardLiving,D.residenceAddress),
@@ -7044,7 +7049,21 @@ function computeNavChecks(){
         &&filled(D.committeeIncorporated)&&(D.committeeIncorporated!=='No'||filled(D.committeeExplain)),
       'pi-p9':anyOf(D.certIncapacitatedNoCopy,D.certMinorNoCopy,D.certConsulted,D.certRecognizeRights,D.certNoRestriction,D.certProvidesCare)
         &&filled(g0.name)&&filled(g0.signatureDate),
-      'pi-p10':filled(D.attorney_name)&&filled(D.attorney_signatureDate),
+      // Milestone 55D (Error 4): this key was unconditional -- a completely
+      // blank attorney card (the pro se/Guardian Advocate exemption
+      // Milestone 35-3 protects) already showed incomplete here, directly
+      // contradicting validatePlanInitial(), which requires nothing until
+      // its own "started" predicate trips. Replaced outright, not merely
+      // extended with an email condition, which would have kept the
+      // pre-existing bug: gated on the identical "started" predicate the
+      // validator uses (attorney_bar alone, no name, already counts), with
+      // name, the new email requirement, and a signature date all inside
+      // that one gate -- matching the same presence-only approximation of
+      // signature completeness every other nav-check key in this file
+      // uses (full tri-state completeness is the validator's job via
+      // checkSignatureState(), not this sidebar's).
+      'pi-p10':!(D.attorney_name||D.attorney_bar||D.attorney_signatureDate||(D.attorney_signatureState&&D.attorney_signatureState!=='none'))
+        ||(filled(D.attorney_name)&&filled(D.attorney_email)&&filled(D.attorney_signatureDate)),
     };
     const incomplete={
       'pi-cover':!checks['pi-cover']&&hasAny(D.wardName,D.caseNumber,D.inceptionDate,D.lettersSignedDate,D.guardianNames,D.wardLiving,D.residenceAddress),
@@ -7057,7 +7076,7 @@ function computeNavChecks(){
       'pi-p7':!checks['pi-p7']&&anyOf(D.mentalAlzheimers,D.physMobility,D.usesGlasses,D.mentalNone,D.physNone),
       'pi-p8':!checks['pi-p8']&&anyOf(D.q11NoDirectives,D.q11Executed,D.committeeIncorporated,D.needsGlasses,D.needsNone),
       'pi-p9':!checks['pi-p9']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.ssn),
-      'pi-p10':!checks['pi-p10']&&hasAny(D.attorney_name,D.attorney_signatureDate,D.attorney_bar),
+      'pi-p10':!checks['pi-p10']&&hasAny(D.attorney_name,D.attorney_signatureDate,D.attorney_bar,D.attorney_email),
     };
     return {checks,incomplete};
   } else if(activeInventoryType==='planMinor'){

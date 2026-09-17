@@ -138,11 +138,12 @@ describe('checklist and export validator field parity', () => {
     // (attorney_/preparer_ signatureState/signatureImage) extend the same
     // pre-existing, already-accepted gap these attorney/preparer date
     // fields represent -- computeNavChecks()'s sidebar section-check never
-    // tracked attorney_signatureDate either. `attorney` (planAnnual only) is
-    // new too: checkSignatureState()'s own `name` argument for that role
-    // (see plan-annual/index.js) is the first reference to the bare
-    // `d.attorney` field inside validatePlanAnnual()'s body.
-    planAnnual: ['attorney', 'attorney_signatureImage', 'attorney_signatureState'],
+    // tracked attorney_signatureDate either.
+    // Milestone 55D closed the `attorney` gap this list used to carry:
+    // pa-p11 now references bare `D.attorney` directly (via
+    // `&&(!D.attorney||filled(D.attorney_email))`), so it is no longer
+    // invisible to computeNavChecks().
+    planAnnual: ['attorney_signatureImage', 'attorney_signatureState'],
     // Milestone 55B closed both of this filing type's gaps -- ps-p3 now
     // references both attorney_signatureDate and preparer_signatureDate
     // (the two "Borrowed" relationships attached to the guardian's own key).
@@ -156,7 +157,11 @@ describe('checklist and export validator field parity', () => {
     // Milestone 55B additionally closed `preparer_signatureDate` (pm-p7 now
     // references it via the new date-order check).
     planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureImage', 'preparer_signatureState'],
-    planInitial: ['attorney_signatureImage', 'attorney_signatureState'],
+    // Milestone 55D closed the `attorney_signatureState` gap this list used
+    // to carry: the rewritten pi-p10 now references `D.attorney_signatureState`
+    // directly in its "started" predicate (mirroring the validator's own
+    // gate), so it is no longer invisible to computeNavChecks().
+    planInitial: ['attorney_signatureImage'],
     // Milestone 39-C: `attorney`/`attorney_signatureState`/`attorney_signatureImage`
     // are new here for the same reason as planAnnual's own `attorney` entry
     // above -- d.attorney is never independently required anywhere in

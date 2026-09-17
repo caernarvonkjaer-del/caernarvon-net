@@ -188,6 +188,7 @@ export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> 
       federalIncomeTax: '0',
       attorney_barNumber: '123456',
       attorney_phone: '555-555-5557',
+      attorney_email: 'attorney@example.com', // Milestone 55D: now required
       attorney_street: '123 Main St',
       attorney_cityStateZip: 'Clearwater, FL 33755',
       certServiceDate: '2027-01-05',
@@ -448,6 +449,7 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
       attorney: 'Sample Attorney',
       attorney_bar: '123456',
       attorney_phone: '555-555-5555',
+      attorney_email: 'attorney@example.com', // Milestone 55D: now required
       attorney_street: '123 Main St',
       attorney_cityStateZip: 'Clearwater, FL 33755',
       attorney_signatureDate: '2027-01-05',

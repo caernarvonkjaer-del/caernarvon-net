@@ -148,7 +148,7 @@ export function emptyDataSimplified() {
     serviceCharges:'',
     federalIncomeTax:'',
     guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''}],
-    attorney_barNumber:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
+    attorney_barNumber:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:'',
@@ -276,7 +276,7 @@ export function emptyDataPlanAnnual() {
     certRecognizeRights:false, certRightsChangedExplain:'',
     // Guardians (form provides three signature blocks) + attorney
     planGuardians:[{name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''}],
-    attorney_signatureDate:'', attorney_bar:'', attorney_phone:'',
+    attorney_signatureDate:'', attorney_bar:'', attorney_phone:'', attorney_email:'',
     attorney_street:'', attorney_cityStateZip:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:''
@@ -352,7 +352,7 @@ export function emptyDataPlanInitial() {
     certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
     // Guardians (form provides up to four signature blocks) + attorney
     planGuardians:[{name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''}],
-    attorney_name:'', attorney_bar:'', attorney_phone:'',
+    attorney_name:'', attorney_bar:'', attorney_phone:'', attorney_email:'',
     attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:''
@@ -426,7 +426,7 @@ export function emptyDataAnnual() {
     // Part IV – preparer
     preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
     // Part V – attorney
-    attorney_bar:'', attorney_phone:'', attorney_street:'', attorney_cityStateZip:'',
+    attorney_bar:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_county:'', attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:'',

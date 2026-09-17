@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog,
   fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard,
+  fillMinimalValidPlanInitialWard,
 } from './support/target';
 import type { ValidatorIssue } from './support/window-api';
 
@@ -1146,5 +1147,170 @@ test.describe('Milestone 55B: sidebar date-order agrees with the export blocker'
     await fillMinimalValidPlanAnnualWard(page);
     const stillComplete = await page.evaluate(() => (window as any).computeNavChecks().checks['pa-p11']);
     expect(stillComplete, 'a filing with every date already in order must not be flipped by this fix').toBe(true);
+  });
+});
+
+// Milestone 55D. Attorney "Primary Email (e-filing)" rendered a required
+// asterisk in four filing types (Annual, Simplified Accounting, Plan Annual,
+// Plan Initial) that no validator enforced. Alan chose Option A: enforce it,
+// per-engine, using each engine's own existing gating shape -- unconditional
+// in Annual/Simplified (matching their sibling bar/phone/street/cityStateZip
+// fields), bare `d.attorney` truthiness in Plan Annual (co-existing with its
+// separate signature-state-triggered name rule), and the exact "started"
+// predicate in Plan Initial (not a new, separately-evaluated condition,
+// which could accidentally narrow the Milestone 35-3 pro se/Guardian
+// Advocate exemption). Plan Initial's own sidebar key, pi-p10, additionally
+// needed replacing outright (Error 4): it was unconditional before this fix,
+// so a blank attorney card already showed incomplete in the sidebar despite
+// the validator requiring nothing -- the same class of defect 55B fixes,
+// inverted.
+test.describe('Milestone 55D: attorney email is required exactly where the UI already promised it is', () => {
+  test('Annual Accounting: blank email blocks (unconditional, matching its sibling fields)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email Annual Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+
+    const baseline = await page.evaluate(() => (window as any).computeNavChecks().checks['a-p5']);
+    expect(baseline).toBe(true);
+
+    const blankEmail = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_email = '';
+      return {
+        navComplete: w.computeNavChecks().checks['a-p5'],
+        blocked: w.validateAnnual().some((m: ValidatorIssue) => m.message.includes('Attorney Email')),
+      };
+    });
+    expect(blankEmail.blocked, 'export must now block on the blank attorney email').toBe(true);
+    expect(blankEmail.navComplete, 'a-p5 never tracked attorney_email before this fix').toBe(false);
+  });
+
+  test('Simplified Accounting: blank email blocks (unconditional, matching its sibling fields)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'Attorney Email Simplified Ward');
+    await fillMinimalValidSimplifiedWard(page);
+
+    const baseline = await page.evaluate(() => (window as any).computeNavChecks().checks['s-p5']);
+    expect(baseline).toBe(true);
+
+    const blankEmail = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_email = '';
+      return {
+        navComplete: w.computeNavChecks().checks['s-p5'],
+        blocked: w.validateSimplified().some((m: ValidatorIssue) => m.message.includes('Attorney Email')),
+      };
+    });
+    expect(blankEmail.blocked).toBe(true);
+    expect(blankEmail.navComplete).toBe(false);
+  });
+
+  test('Plan Annual: reported screenshot state -- attorney named, Unsigned selected, email blank now blocks', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email PA Ward', 'planAnnual');
+    await fillMinimalValidPlanAnnualWard(page);
+
+    // Unsigned itself requires nothing else on this card -- confirming the
+    // email requirement fires purely from the attorney being named, not
+    // from any signature-state side effect.
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney = 'David R. Coleman, Esq.';
+      w.D.attorney_signatureState = 'none';
+      w.D.attorney_email = '';
+      return {
+        navComplete: w.computeNavChecks().checks['pa-p11'],
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('Attorney email is required')),
+      };
+    });
+    expect(state.blocked, 'export must block on the named-but-emailless attorney').toBe(true);
+    expect(state.navComplete).toBe(false);
+  });
+
+  test('Plan Annual: attorney card left entirely blank is unaffected', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email PA Blank Ward', 'planAnnual');
+    await fillMinimalValidPlanAnnualWard(page);
+
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney = ''; w.D.attorney_email = ''; w.D.attorney_signatureDate = ''; w.D.attorney_signatureState = '';
+      return {
+        navComplete: w.computeNavChecks().checks['pa-p11'],
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('Attorney email is required')),
+      };
+    });
+    expect(state.blocked, 'no attorney named means no email requirement').toBe(false);
+    expect(state.navComplete).toBe(true);
+  });
+
+  test('Plan Initial: attorney "started" via bar number alone (no name) now also requires email', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email PI Started Ward', 'planInitial');
+    await fillMinimalValidPlanInitialWard(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_name = ''; w.D.attorney_email = ''; w.D.attorney_signatureDate = ''; w.D.attorney_signatureState = '';
+      w.D.attorney_bar = '12345';
+    });
+
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        navComplete: w.computeNavChecks().checks['pi-p10'],
+        blocked: w.validatePlanInitial().some((m: ValidatorIssue) => m.message.includes('Attorney Certification — Attorney email is required')),
+      };
+    });
+    expect(state.blocked, 'bar number alone counts as "started" per the existing predicate').toBe(true);
+    expect(state.navComplete).toBe(false);
+  });
+
+  test('Plan Initial: pro se/Guardian Advocate exemption -- attorney card entirely blank still exports cleanly, and pi-p10 agrees (Error 4, red-first)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email PI Exempt Ward', 'planInitial');
+    await fillMinimalValidPlanInitialWard(page);
+
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_name = ''; w.D.attorney_bar = ''; w.D.attorney_email = '';
+      w.D.attorney_signatureDate = ''; w.D.attorney_signatureState = '';
+      return {
+        navComplete: w.computeNavChecks().checks['pi-p10'],
+        blockedOnAttorney: w.validatePlanInitial().some((m: ValidatorIssue) => m.message.includes('Attorney Certification')),
+      };
+    });
+    // This is Error 4's own regression: before the pi-p10 replacement, this
+    // exact fixture (a blank attorney card) reported navComplete: false --
+    // the sidebar disagreeing with the validator's own pro se exemption,
+    // present before Milestone 55D touched anything. Probe-verified
+    // directly against the pre-fix pi-p10 (unconditional
+    // filled(name)&&filled(signatureDate)) to confirm this was really red,
+    // not assumed.
+    expect(state.blockedOnAttorney, 'pro se/Guardian Advocate exemption: no attorney fields required at all').toBe(false);
+    expect(state.navComplete, 'pi-p10 must agree with the exemption on a blank card').toBe(true);
+  });
+
+  test('Plan Simplified is unaffected', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email PS Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    const psBaseline = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney = 'Jordan Reyes, Esq.'; w.D.attorney_email = '';
+      return w.validatePlanSimplified().some((m: ValidatorIssue) => m.message.toLowerCase().includes('email'));
+    });
+    expect(psBaseline, 'Plan Simplified never required attorney_email and this sub-delivery does not add it there').toBe(false);
+  });
+
+  test('Plan Minor is unaffected', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Attorney Email PM Ward', 'planMinor');
+    await fillMinimalValidPlanMinorWard(page);
+    const pmBaseline = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_name = 'Jordan Reyes, Esq.'; w.D.attorney_email = '';
+      return w.validatePlanMinor().some((m: ValidatorIssue) => m.message.toLowerCase().includes('email'));
+    });
+    expect(pmBaseline, 'Plan Minor never required attorney_email and this sub-delivery does not add it there').toBe(false);
   });
 });

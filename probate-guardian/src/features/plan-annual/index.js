@@ -776,6 +776,13 @@ export function validatePlanAnnual(){
     sectionLabel: 'Signatures', roleLabel: 'Attorney',
     filingType:T, namePath:'attorney', datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
+  // Milestone 55D: attorney_email already rendered a required asterisk
+  // (inpS(...,true,'email')) with no matching rule here. Unlike bar/phone/
+  // street/cityStateZip (never required, per the comment above), this is a
+  // new requirement -- gated on bare `d.attorney` truthiness, co-existing
+  // with (not replacing) checkSignatureState()'s own signature-state-keyed
+  // name requirement just above. A blank attorney card is unaffected.
+  if(d.attorney)req(d.attorney_email,'Signatures — Attorney email is required','attorney_email');
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

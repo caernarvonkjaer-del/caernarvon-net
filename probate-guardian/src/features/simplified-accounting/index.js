@@ -708,6 +708,10 @@ export function validateSimplified(){
   });
   req(d.attorney_barNumber,'Part V — Attorney Bar Number','attorney_barNumber');
   req(d.attorney_phone,'Part V — Attorney Phone Number','attorney_phone');
+  // Milestone 55D: attorney_email already rendered a required asterisk
+  // (inpS(...,true,'email')) with no matching rule here -- confirmed by
+  // grep, zero requiredness of any kind on this field before this line.
+  req(d.attorney_email,'Part V — Attorney Email','attorney_email');
   req(d.attorney_street,'Part V — Attorney Street Address','attorney_street');
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip','attorney_cityStateZip');
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{

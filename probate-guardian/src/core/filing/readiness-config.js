@@ -507,7 +507,7 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
     'signatures.certifications': ['certIncapacitatedNoCopy'],
     'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
     'signatures.guardian1.contact': ['planGuardians[].street', 'planGuardians[].phone', 'planGuardians[].ssn'],
-    'signatures.attorney': ['attorney_name', 'attorney_signatureDate', 'attorney_signatureImage'],
+    'signatures.attorney': ['attorney_name', 'attorney_signatureDate', 'attorney_signatureImage', 'attorney_email'],
   },
   planMinor: {
     'cover.amendedForm': ['amendedForm'],

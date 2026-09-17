@@ -224,6 +224,7 @@ describe('Plan Initial: Milestone 39-C tri-state signature parity', () => {
   test('Attorney with Signature Stamp applied (name and image present) validates and exports cleanly', () => {
     const fixture = withOverrides(BASELINE, {
       attorney_name: 'Sam Attorney',
+      attorney_email: 'sam.attorney@example.com', // Milestone 55D: now required once attorney info is "started"
       attorney_signatureState: 'stamp',
       attorney_signatureImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     });

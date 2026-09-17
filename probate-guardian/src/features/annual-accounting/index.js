@@ -1462,6 +1462,10 @@ export function validateAnnual(){
   }));
   req(d.attorney_bar,'Part V — Attorney Bar Number','attorney_bar');
   req(d.attorney_phone,'Part V — Attorney Phone','attorney_phone');
+  // Milestone 55D: attorney_email already rendered a required asterisk
+  // (inpD(...,true,'email')) with no matching rule here -- confirmed by
+  // grep, zero requiredness of any kind on this field before this line.
+  req(d.attorney_email,'Part V — Attorney Email','attorney_email');
   req(d.attorney_street,'Part V — Attorney Street','attorney_street');
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip','attorney_cityStateZip');
   // Milestone 39-C: replaces the old unconditional

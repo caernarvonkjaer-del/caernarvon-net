@@ -684,6 +684,14 @@ export function validatePlanInitial(){
   // preserving the pro se exemption.
   if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
     req(d.attorney_name,'Attorney Certification — Attorney name is required','attorney_name');
+    // Milestone 55D: attorney_email already rendered a required asterisk
+    // (inpS(...,true,'email')) with no matching rule anywhere -- confirmed
+    // by grep. Added inside this same "started" gate, not a new,
+    // separately-evaluated condition: attorney_bar alone (no name) already
+    // trips this block, so keying email on a different test than name/date/
+    // image would drift the moment either changes, and could narrow the
+    // pro se/Guardian Advocate exemption above by accident.
+    req(d.attorney_email,'Attorney Certification — Attorney email is required','attorney_email');
     errs.push(...checkSignatureState({
       state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
       date: d.attorney_signatureDate,
