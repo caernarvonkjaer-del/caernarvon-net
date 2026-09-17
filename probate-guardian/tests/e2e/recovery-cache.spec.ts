@@ -67,7 +67,14 @@ test.describe('recovery-cache (position memory + save clears the lock-recovery c
     await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
     await page.click('[data-startup-action="start-new-ward"]');
 
-    const marker = await page.evaluate(() => localStorage.getItem('pg-last-position'));
-    expect(marker).toBeNull();
+    // Polled, not read once. startNewWardAtLaunch() (legacy-app.js) resolves
+    // the startup choice, then `await`s forgetPersistedCaseFileHandle() before
+    // it calls clearLastPosition() -- so the clear lands a tick or two after
+    // the click, and a synchronous read here saw the previous session's
+    // marker still in place. The feature works; the assertion was racing it.
+    // Every other assertion in this test already polls; this one did not,
+    // because the spec was hand-edited and never executed (the Milestone 57
+    // review had no Chromium available -- see MILESTONE-57-REVIEW-HANDOFF.md).
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('pg-last-position'))).toBeNull();
   });
 });
