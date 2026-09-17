@@ -58,11 +58,16 @@ test.describe('user guide wiring', () => {
     ['/b2', 'inventory-b'],
     ['/c4', 'inventory-c'],
     ['/d5', 'inventory-d'],
-    // No '/print' case: Print Preview renders its own toolbar (Save as PDF /
-    // Save as Excel / Print / E-Filing Portal) instead of the standard
-    // topnav-actions bar, so there is no "?" button on that page at all --
-    // 'preview' stays in USER_GUIDE_ANCHORS as harmless, forward-compatible
-    // data, but nothing currently triggers it.
+    // Milestone 56E: '/print' is now a live case, and this comment used to say
+    // the opposite. Print Preview does render its own toolbar (Save as PDF /
+    // Save as Excel / Print / E-Filing Portal) rather than the standard
+    // topnav-actions bar, which is why there was once no "?" button there and
+    // why 'preview' sat in USER_GUIDE_ANCHORS as unreachable data. The
+    // Preview-banner work changed that: legacy-app.js now moves the filing's
+    // shell actions into the Preview & Export banner -- All Filings, theme and
+    // help-toggle-btn -- for every filing type, single-page previews included.
+    // So the anchor is reachable, and was untested until this row existed.
+    ['/print', 'preview'],
   ];
   test('Guardian Inventory: "?" jumps to the matching schedule-group anchor per page, skipping the panel', async ({ page, context }) => {
     await freshStartNoPassword(page);
