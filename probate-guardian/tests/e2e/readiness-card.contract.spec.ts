@@ -145,7 +145,15 @@ test.describe('automatic failures and routing', () => {
     })).toContain('wardName');
   });
 
-  test('Plan Annual: a failed predicate opens the card and shows as pending; predicate rows carry no link', async ({ page }) => {
+  // Milestone 57 follow-up 6f2ef12 gave every plan-family predicate id a real
+  // route/path via PLAN_PREDICATE_ROUTES (readiness-config.js), restoring "Go
+  // to field" for Plan filings the same way Guardian/Accounting's predicates()
+  // already supplied theirs. efdd45a updated the UNIT test for that and missed
+  // this e2e contract, which went on asserting the old "predicate rows carry no
+  // link" behaviour -- it was red on master before the Milestone 57 revert and
+  // is fixed here rather than carried forward. readiness-card.js's jumpLink()
+  // still suppresses the link for a row that already passed (row.ok === true).
+  test('Plan Annual: a failed predicate opens the card, shows as pending, and offers a jump link', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Readiness Predicate Ward', 'planAnnual');
     await fillMinimalValidPlanAnnualWard(page);
@@ -157,7 +165,7 @@ test.describe('automatic failures and routing', () => {
     await expect(card(page).locator('.validation-title')).toContainText('1 item outstanding');
     const row = card(page).locator('.readiness-row', { hasText: 'Guardian address, phone and SSN/EIN provided' });
     await expect(row.locator('.readiness-mark')).toHaveClass(/pending/);
-    await expect(row.locator('[data-form-action="jump-to-field"]')).toHaveCount(0);
+    await expect(row.locator('[data-form-action="jump-to-field"]')).toHaveCount(1);
     await expect(card(page).locator('[data-readiness-id="signatures.guardian1.contact"]')).toHaveCount(1);
   });
 });

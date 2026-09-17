@@ -1,6 +1,5 @@
 // Milestone 26: Declarative Schedule & Repeatable Group Definitions
 // Centralizes row factories, constraints, party ID lockstep sync, and calculation hooks.
-import { newSchB4Id } from '../filing/schb4-accounts.js';
 
 export const SCHEDULE_SCHEMAS = {
   // Parties & Service
@@ -63,7 +62,7 @@ export const SCHEDULE_SCHEMAS = {
     max: Infinity,
   },
   schB4: {
-    factory: () => ({ id: newSchB4Id(), bankAccountId: '', bankAcct: '', checkNo: '', datePaid: '', payee: '', description: '', category: '', amount: '' }),
+    factory: () => ({ bankAcct: '', checkNo: '', datePaid: '', payee: '', description: '', category: '', amount: '' }),
     label: 'Schedule B-4 General Disbursement',
     floor: 0,
     max: Infinity,
@@ -201,7 +200,6 @@ export function duplicateCollectionRow(collectionKey, index, data = (typeof wind
   }
 
   const clone = JSON.parse(JSON.stringify(list[index]));
-  if (collectionKey === 'schB4') clone.id = newSchB4Id();
   list.splice(index + 1, 0, clone);
 
   if (schema.syncPartyIds) {

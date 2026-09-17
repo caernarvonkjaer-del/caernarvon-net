@@ -39,7 +39,6 @@ export function isBlankScheduleEntry(key, entry, registry = (typeof window !== '
   if (!template || !entry || typeof entry !== 'object') return false;
   const blank = template();
   for (const k of new Set([...Object.keys(blank), ...Object.keys(entry)])) {
-    if (key === 'schB4' && k === 'id') continue; // opaque identity is not user content
     if (entry[k] !== blank[k]) return false;
   }
   return true;

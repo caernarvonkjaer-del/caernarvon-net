@@ -1,14 +1,23 @@
 import { describe, expect, test } from 'vitest';
 import { readRepoSource, sliceBalancedFunction } from './support/legacy-source-extract.js';
 
-// Milestone 57 review: Guardian Inventory's Excel export writes dates as
-// 'MM/DD/YYYY' text (fmtD(), doSaveExcel()) but its importer's dt() only
-// handled a Date object or an Excel serial number -- a string (exactly what
-// re-opening the app's own exported file hands back) fell through to
-// `v.substring(0,10)`, i.e. '10/01/2026' unchanged, and got stored where
-// every other date field expects ISO 'YYYY-MM-DD'. Annual Accounting's own
-// importer (gcDate() in excel.js) already normalized both formats; dt() is
-// fixed here to do the same.
+// Milestone 57 review: Guardian Inventory's importer dt() only handled a Date
+// object or an Excel serial number. A date string fell through to
+// `v.substring(0,10)` -- '10/01/2026' unchanged -- and got stored where every
+// other date field expects ISO 'YYYY-MM-DD'. Annual Accounting's own importer
+// (gcDate() in excel.js) already normalized both formats; dt() was fixed to
+// do the same.
+//
+// The REVERT OF MILESTONE 57 reframes this fix without invalidating it. 57F
+// had changed the exporter to write 'MM/DD/YYYY', which is what turned a
+// latent importer weakness into a live round-trip bug: the app could not read
+// its own output. Reverting 57F restores the ISO exporter, so that specific
+// bug is gone by another route. dt()'s tolerance is kept anyway, because it is
+// strictly more permissive than the exporter and costs nothing -- a workbook
+// touched by Excel, produced by a clerk, or exported by an older build can
+// still hand back US-format text. What is NOT claimed any more is that this
+// fixes a live self-round-trip defect; the first test below now pins the
+// reverted ISO exporter rather than 57F's MM/DD/YYYY one.
 //
 // Neither closure is exported (both are local to doSaveExcel()/
 // parseInitialInventoryWorkbook() in guardian-inventory/excel.js, matching
@@ -35,12 +44,15 @@ function loadDt() {
 }
 
 describe('Guardian Inventory Excel date round-trip (gid, dateFiled, actionDate, dateCreated)', () => {
-  test('fmtD() writes MM/DD/YYYY for an ISO date', () => {
+  // Pins the exporter format so a future change to it is a deliberate,
+  // visible decision rather than a silent one -- which is exactly how 57F
+  // broke the round-trip.
+  test('fmtD() writes ISO, matching the reverted (pre-57F) exporter', () => {
     const fmtD = loadFmtD();
-    expect(fmtD('2026-10-01')).toBe('10/01/2026');
+    expect(fmtD('2026-10-01')).toBe('2026-10-01');
   });
 
-  test('dt() reads its own MM/DD/YYYY export back as ISO -- the reported regression', () => {
+  test('dt() reads whatever fmtD() just wrote back as ISO -- the round-trip itself', () => {
     const fmtD = loadFmtD();
     const dt = loadDt();
     const exported = fmtD('2026-10-01');

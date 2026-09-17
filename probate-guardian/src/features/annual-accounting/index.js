@@ -19,8 +19,6 @@ import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
-import { missingScheduleEvidence } from '../../core/filing/schedule-evidence.js';
-import { newSchB4Id } from '../../core/filing/schb4-accounts.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -269,18 +267,6 @@ function bindEvents(container) {
       case 'remove-row': await removeAnnualRow(collection, index, control.dataset.route); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
-      case 'add-b4-account':
-        (window.D.schB4Accounts ||= []).push({ id: newSchB4Id(), bankName: '', accountNo: '' });
-        autoSave(); navigate('/schb4'); break;
-      case 'remove-b4-account': {
-        const account = window.D.schB4Accounts?.[index];
-        if (!account) break;
-        const linked = (window.D.schB4 || []).filter(row => row.bankAccountId === account.id).length;
-        if (!(await confirmModal(`Remove ${account.bankName || 'this bank account'}? ${linked} linked disbursement(s) will remain but become unassigned.`))) break;
-        window.D.schB4Accounts.splice(index, 1);
-        (window.D.schB4 || []).forEach(row => { if (row.bankAccountId === account.id) row.bankAccountId = ''; });
-        autoSave(); navigate('/schb4'); break;
-      }
     }
   }, options);
 }
@@ -600,9 +586,6 @@ function pagePart2Annual(){
   </div>
   <div class="row g-2">
     <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",false,'number')}</div>
-    <div class="col-12">${yesNoRadioAnnualHTML('trustAccountingFiled','Is a trust accounting being filed or required for this ward?',d.trustAccountingFiled||'','trustAccountingFiled',false,'','/p2')}</div>
-    ${d.trustAccountingFiled==='Yes'?`<div class="col-md-4">${inpD('Value of Trust Assets',d.trustAssetsValue,"D.trustAssetsValue=this.value",true,'number')}</div>`:''}
-    <div class="col-12"><p class="form-text">The estate audit fee above does not include this trust value. Confirm any separate trust-accounting fee with the Clerk. The official Excel template has no field for this answer; use the PDF to include it.</p></div>
   </div>
   ${pageNavAnnual('/summary','/p3')}
   </div>`;
@@ -859,13 +842,6 @@ function pageSchB3Annual(){
 // ── Schedule B-4 — Other Disbursements ───────────────────
 function pageSchB4Annual(){
   const d=window.D; const t=calcTotalsAnnual();
-  const accounts=d.schB4Accounts||[];
-  const accountOptions=accounts.map(a=>({value:a.id,label:`${a.bankName||'Unnamed bank'} — ${a.accountNo||'account # needed'}`}));
-  const accountCards=accounts.map((a,i)=>`<div class="entry-card mb-2"><div class="entry-card-body"><div class="row g-2 align-items-end">
-    <div class="col-md-5">${inpD('Bank Name',a.bankName,`D.schB4Accounts[${i}].bankName=this.value`,true)}</div>
-    <div class="col-md-5">${inpD('Account Number',a.accountNo,`D.schB4Accounts[${i}].accountNo=this.value`,true)}</div>
-    <div class="col-md-2"><button type="button" class="btn btn-outline-danger btn-sm" data-annual-action="remove-b4-account" data-index="${i}">Remove account</button></div>
-  </div></div></div>`).join('');
   // Category summary
   const cats={};
   DISB_CATS.forEach(c=>cats[c]=0);
@@ -875,7 +851,6 @@ function pageSchB4Annual(){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schB4.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       ${entryCardHeaderAnnual(`Line ${i+1}`,'schB4',i,'/schb4')}
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-12">${selD('Bank Account',r.bankAccountId||'',`D.schB4[${i}].bankAccountId=this.value`,accountOptions,accounts.length>0)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB4[${i}].checkNo=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB4[${i}].datePaid=this.value`,true,'date')}</div>
         <div class="col-md-3">${selD('Category',r.category,`D.schB4[${i}].category=this.value`,DISB_CATS,true)}</div>
@@ -893,7 +868,6 @@ function pageSchB4Annual(){
   return `<div class="schedule-page">
   <h1>Schedule B-4 — All Other Disbursements</h1>
   <div class="schedule-instructions">Receipts, checks, and substantiating papers need not be filed with the court but shall be made available for inspection. List disbursements in check number order. If category is "Other," provide details in payee field.</div>
-  <div class="summary-box mb-3"><h2 class="subsection-heading">Disbursement Bank Accounts</h2><p>Enter each bank and account number once, then assign each disbursement below. Removing an account does not remove its transactions.</p>${accountCards}<button type="button" class="btn btn-outline-primary btn-sm" data-annual-action="add-b4-account">+ Add Bank Account</button></div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB4" data-route="/schb4">+ Add Entry</button>
   <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td" data-annual-total="schB4">${fmtAnnual(t.schB4)}</div></div></div></div>
@@ -1320,22 +1294,14 @@ function pagePart9Annual(){
         <h2 class="subsection-heading">Surety Bond &amp; Guardian Info</h2>
         <div class="row g-2 mb-2">
           <div class="col-md-6">${selD("Guardian's Relationship to Ward",d.guardianRelationship,"D.guardianRelationship=this.value",GUARDIAN_REL)}</div>
+          <div class="col-md-6">${inpD('Restricted Depository Receipt Date',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",false,'date')}</div>
         </div>
-        ${yesNoRadioAnnualHTML('bondWaived','Was the bond waived by court order?',d.bondWaived||'','bondWaived',false,'','/p9')}
-        ${yesNoRadioAnnualHTML('restrictedDepository','Are cash or intangible assets held in a restricted depository?',d.restrictedDepository||'','restrictedDepository',false,'','/p9')}
-        <div class="${d.restrictedDepository==='Yes'?'':'d-none'} row g-2 mb-2">
-          <div class="col-md-6">${inpD('Date of Most Recent Restricted Depository Receipt',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",false,'date')}</div>
-        </div>
-        <div class="${d.bondWaived==='Yes'?'d-none':''}">
-        <!-- 57A renders the relationship above and the receipt date under its explicit answer. -->
         <div class="row g-2">
           <div class="col-md-6">${inpD('Bond Amount',d.bondAmount,"D.bondAmount=this.value",false,'number')}</div>
           <div class="col-md-6">${inpD('Name of Bonding Company',d.bondingCompany,"D.bondingCompany=this.value")}</div>
           <div class="col-md-6">${inpD('Bond Period From',d.bondPeriodFrom,"D.bondPeriodFrom=this.value",false,'date')}</div>
           <div class="col-md-6">${inpD('Bond Period To',d.bondPeriodTo,"D.bondPeriodTo=this.value",false,'date')}</div>
         </div>
-        </div>
-        ${d.bondWaived==='Yes'?'<p class="form-text mb-0">Bond amount, term, and surety details are retained but not required while the waiver is selected.</p>':''}
       </div>
     </div>
   </div>
@@ -1364,16 +1330,13 @@ function pagePart10Annual(){
   <div class="row g-2 mb-3">
     <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
     <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
-    <div class="col-12">${yesNoRadioAnnualHTML('certNoRecipients','No recipients are required for this certificate.',d.certNoRecipients||'','certNoRecipients',false,'','/p10')}</div>
-    <div class="col-12"><div class="form-text">This records the filer’s selection; it does not determine who must be served. Recipient 1 is required unless Yes is selected.</div></div>
+    <div class="col-12"><div style="color:var(--danger-text);font-size:.75rem;font-weight:600;margin-top:.25rem;">* Recipient 1 name is required</div></div>
   </div>
-  <div class="${d.certNoRecipients==='Yes'?'d-none':''}">
-    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-    <div class="row g-3 card-grid-2col mb-3">
-      ${cards}
-    </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>
+  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
+  <div class="row g-3 card-grid-2col mb-3">
+    ${cards}
   </div>
+  <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
@@ -1445,12 +1408,6 @@ export function validateAnnual(){
   req(d.filingType,'Part I — Filing Type','filingType');
   req(d.amendedForm,'Part I — Amended Form?','amendedForm');
   req(d.startingBalance,'Part II — Starting Balance','startingBalance');
-  if(d.trustAccountingFiled==='Yes'){
-    const value=String(d.trustAssetsValue??'').trim();
-    if(value===''||!Number.isFinite(Number(value))||Number(value)<0){
-      errs.push(issue('Part II — Enter a nonnegative value of trust assets when trust accounting is Yes.','trustAssetsValue'));
-    }
-  }
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Part I',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
     filingType:T,laterPath:'periodTo',
@@ -1550,14 +1507,7 @@ export function validateAnnual(){
     filingType:T, namePath:'attorney', datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
 
-  const rowHasAnyData=r=>Object.entries(r).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
-  if(d.certNoRecipients!=='Yes'){
-    (d.certRecipients||[]).slice(1).forEach((r,i)=>{
-      if(!rowHasAnyData(r))return;
-      const path=`certRecipients.${i+1}`;
-      req(r.name,`Part X — Recipient ${i+2} Name`,`${path}.name`);
-    });
-  }
+  const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
   const checkRows=(rows,fields,schedLabel,collection)=>{
     (rows||[]).forEach((r,i)=>{
       if(!rowHasAnyData(r))return;
@@ -1572,14 +1522,6 @@ export function validateAnnual(){
   checkRows(d.schB3,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-3','schB3');
   checkRows(d.schB4,[['checkNo','Check #'],['datePaid','Date Paid'],['category','Category'],['payee','Payee'],['amount','Amount']],'Schedule B-4','schB4');
   checkRows(d.remuneration,[['guardian','Guardian Name'],['type','Type'],['amount','Amount']],'Part XI — Remuneration','remuneration');
-  (d.schB4Accounts||[]).forEach((a,i)=>{
-    req(a.bankName,`Schedule B-4 — Bank account ${i+1} — Bank Name`,`schB4Accounts.${i}.bankName`);
-    req(a.accountNo,`Schedule B-4 — Bank account ${i+1} — Account Number`,`schB4Accounts.${i}.accountNo`);
-  });
-  if ((d.schB4Accounts||[]).length) (d.schB4||[]).forEach((r,i)=>{
-    if (!r.bankAccountId || !(d.schB4Accounts||[]).some(a=>a.id===r.bankAccountId))
-      errs.push(issue(`Schedule B-4 — Line ${i+1} — Bank Account is required`,`schB4.${i}.bankAccountId`));
-  });
   checkRows(d.schC,[['description','Description'],['date','Date of Adjustment']],'Schedule C','schC');
   (d.schC||[]).forEach((r,i)=>{
     if(!rowHasAnyData(r))return;
@@ -1601,10 +1543,6 @@ export function validateAnnual(){
   });
   checkRows(d.schF1,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-1','schF1');
   checkRows(d.schF2,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-2','schF2');
-  missingScheduleEvidence(d,T).forEach(key=>{
-    const label=key.replace(/^sch/, 'Schedule ').replace(/([A-F])(\d)/, '$1-$2');
-    errs.push(issue(`${label} — Upload an eligible PDF or confirm that supporting records will be filed or retained separately.`,`scheduleDocs.${key}`));
-  });
   req(d.trusts?.[0]?.hasTrust,'Part VIII — Does the Ward have one or more Trusts?','trusts.0.hasTrust');
   if(d.trusts?.[0]?.hasTrust==='Yes'){
     (d.trusts||[]).filter(t=>Object.entries(t||{}).some(([key,value])=>key!=='hasTrust'&&value!==''&&value!=null)).forEach((t,i)=>{
@@ -1631,15 +1569,7 @@ export function validateAnnual(){
       +fmtAnnual(_rec.diff)+'): correct the schedules or explain the difference','reconcileExplanation'));
   }
 
-  // A selected waiver is a filer-entered court-order fact. The retained
-  // surety values must not become export blockers until the answer changes
-  // back, at which point this same validator exposes them again.
-  return errs.filter((entry)=>{
-    const message=String(entry?.message||entry||'');
-    if(d.bondWaived==='Yes'&&message.startsWith('Part IX'))return false;
-    if(d.certNoRecipients==='Yes'&&message.startsWith('Part X')&&message.includes('Recipient'))return false;
-    return true;
-  });
+  return errs;
 }
 // Milestone 33, Phase 2.3: legacy-app.js's shared updateCurrentScheduleNextButton()
 // only itemizes the disabled-Next guidance panel when window.validate<Type> is a

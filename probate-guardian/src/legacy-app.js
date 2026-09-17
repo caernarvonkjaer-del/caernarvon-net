@@ -4009,7 +4009,7 @@ function emptyRowAnnual(type){
     case 'schB1': return {bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
     case 'schB2': return {bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
     case 'schB3': return {bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
-    case 'schB4': return {id:window.newSchB4Id(),bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''};
+    case 'schB4': return {checkNo:'',datePaid:'',category:'',payee:'',amount:''};
     case 'schC':  return {description:'',date:'',gain:'',loss:''};
     case 'schD1': return {description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''};
     case 'schD2': return {description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''};
@@ -4865,7 +4865,7 @@ function describeConversion(srcType,destType){
   // cert recipients once carryOverAccountingToAccounting() started carrying
   // them for this exact pair.
   if(formEngine(srcType)==='annual'&&formEngine(destType)==='annual'&&srcType!==destType){
-    return `The ward's name, case number, guardian, and attorney details are carried over. Starting Balance is set to this filing's ending net assets, and certificate-of-service recipients are carried too. Review the certificate-of-service answer for this new filing; a prior "No recipients required" attestation is not carried over. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
+    return `The ward's name, case number, guardian, and attorney details are carried over. Starting Balance is set to this filing's ending net assets, and certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
   }
   if(carrySourcesFor(destType).includes(srcType)){
     return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, and guardian contact details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
@@ -4956,10 +4956,6 @@ function convertGuardianExtrasToAnnual(src,dest){
     dest.certRecipients[i]={name:r.name||'',line2:r.address||'',line3:r.cityStateZip||'',line4:''};
   });
   if(sa.barNumber&&!dest.attorney_bar)dest.attorney_bar=sa.barNumber;
-  // Milestone 57B: An Initial Inventory service-waiver attestation does not
-  // excuse service on an Annual Accounting a year later. Explicitly reset
-  // certNoRecipients to unanswered so the filer makes a conscious attestation.
-  dest.certNoRecipients = '';
 }
 
 // Everything that has a genuine counterpart on the Simplified Accounting.
@@ -5625,10 +5621,8 @@ function emptyDataGuardian(){
     guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}],
     preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''},
     attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''},
-    // 57A: explicit tri-state answers retain the court-order/depository
-    // choices without treating old blank filings as a negative response.
-    bondWaived:'',restrictedDepository:'',bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaivedDate:'',
-    serviceNoRecipients:'',serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
+    bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaivedDate:'',
+    serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
     serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureState:'',signatureImage:''},
     // Witnesses present during the physical inventory of the ward's personal
     // effects. Optional (not export-blocking) -- the Cover page reminder
@@ -5883,8 +5877,8 @@ function yesNoCheckboxD(label,val,setter,reqOrRoute=false){
   const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
   return yesNoRadioHTML(path||label,label,val,path,req,route);
 }
-function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey='',route=''){
-  return yesNoRadioHTML(id,label,val,path,req,route,'annual',tooltipKey);
+function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey=''){
+  return yesNoRadioHTML(id,label,val,path,req,'','annual',tooltipKey);
 }
 
 // Inline radio group. Also used later for the Annual/Initial plans' 3-way
@@ -6255,7 +6249,7 @@ const BLANK_SCHEDULE_ENTRY = {
   schB1:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
   schB2:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
   schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB4:()=>({bankAccountId:'',bankAcct:'',checkNo:'',datePaid:'',category:'',payee:'',description:'',amount:''}),
+  schB4:()=>({checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
   schC:()=>({description:'',date:'',gain:'',loss:''}),
   schD1:()=>({description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
   schD2:()=>({description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
@@ -6381,24 +6375,6 @@ function normalizeWardData(d){
   migrateBoolean(d,'hasSafeDepositBox');
   migrateBoolean(d,'safeDepositBoxFiled');
   migrateBoolean(d,'amendedForm','isAmended');
-  // Milestone 57A migration: legacy data has an Inventory-only waived-order
-  // date and an Annual-only restricted-depository receipt date, but no
-  // explicit answer. A nonblank dependent date is reliable affirmative
-  // evidence; an absent date stays unanswered rather than being guessed No.
-  // Current explicit answers always win, including an explicit No with an
-  // intentionally retained (hidden) dependent date.
-  const migrateTriStateFromDate=(field,dateField)=>{
-    if(d[field]===true)d[field]='Yes';
-    else if(d[field]===false)d[field]='No';
-    else if(d[field]!=='Yes'&&d[field]!=='No')d[field]=d[dateField]?'Yes':'';
-  };
-  if(Object.prototype.hasOwnProperty.call(d,'bondWaivedDate'))migrateTriStateFromDate('bondWaived','bondWaivedDate');
-  if(Object.prototype.hasOwnProperty.call(d,'restrictedDepositoryReceiptDate')){
-    // Annual Accounting never had a waiver-date field, so its legacy waiver
-    // answer remains deliberately unanswered rather than inferred.
-    if(d.bondWaived!==true&&d.bondWaived!==false&&d.bondWaived!=='Yes'&&d.bondWaived!=='No')d.bondWaived='';
-    migrateTriStateFromDate('restrictedDepository','restrictedDepositoryReceiptDate');
-  }
   if(d.benefits&&typeof d.benefits==='object'){
     Object.keys(d.benefits).forEach(k=>{
       const b=d.benefits[k];
@@ -6410,7 +6386,6 @@ function normalizeWardData(d){
   }
   const q7Keys=['q7SocialSecurity','q7Ssdi','q7Hmo','q7Ssi','q7StateSupplement','q7InstitutionalCare','q7SupplementalIns','q7Pension','q7Medicare','q7Medicaid','q7Va','q7Trusts','q7PendingBenefits'];
   q7Keys.forEach(k=>migrateBoolean(d,k));
-  window.normalizeSchB4Accounts?.(d);
   return d;
 }
 window.normalizeWardData=normalizeWardData;
@@ -6714,7 +6689,7 @@ function computeNavChecks(){
     const checks={
       'a-p1':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.gid)&&filled(D.guardian)&&filled(D.county)&&filled(D.filingType)
         &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
-      'a-p2':filled(D.startingBalance)&&(D.trustAccountingFiled!=='Yes'||(filled(D.trustAssetsValue)&&Number.isFinite(Number(D.trustAssetsValue))&&Number(D.trustAssetsValue)>=0)),
+      'a-p2':filled(D.startingBalance),
       'a-p3':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
         &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
       'a-p4':filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip)
@@ -6726,19 +6701,15 @@ function computeNavChecks(){
       // Part VIII is satisfied either by naming a trust or by certifying there
       // are none, matching the verifiedEmpty pattern the other Annual checks use.
       'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name),
-      'a-p9':D.bondWaived==='Yes'||(filled(D.bondAmount)&&filled(D.bondingCompany)),
-      'a-p10':filled(D.certDate)
-        &&(D.certNoRecipients==='Yes'||(filled(D.certRecipients?.[0]?.name)
-          &&(D.certRecipients||[]).slice(1).every(r=>!rowHasAnyData(r)||filled(r.name))))
+      'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany),
+      'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name)
         &&datesOrdered(D.periodTo,D.certDate,true),
       'a-p11':verifiedEmpty('remuneration')||(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type)&&filled(r.amount))),
       'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount'],'scha'),
       'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount'],'schb1'),
       'a-schb2':rowsComplete(D.schB2,['bankAcct','checkNo','datePaid','payee','amount'],'schb2'),
       'a-schb3':rowsComplete(D.schB3,['bankAcct','checkNo','datePaid','payee','amount'],'schb3'),
-      'a-schb4':rowsComplete(D.schB4,['checkNo','datePaid','category','payee','amount'],'schb4')
-        &&(D.schB4Accounts||[]).every(a=>filled(a.bankName)&&filled(a.accountNo))
-        &&(!(D.schB4Accounts||[]).length||(D.schB4||[]).every(r=>(D.schB4Accounts||[]).some(a=>a.id===r.bankAccountId))),
+      'a-schb4':rowsComplete(D.schB4,['checkNo','datePaid','category','payee','amount'],'schb4'),
       'a-schc':verifiedEmpty('schc')||((D.schC||[]).length>0&&(D.schC||[]).every(r=>rowHasAnyData(r)&&filled(r.description)&&filled(r.date)&&(filled(r.gain)||filled(r.loss)))),
       'a-schd1':rowsComplete(D.schD1,['description','accountNo','restricted','type','fullAmount','wardPct'],'schd1'),
       'a-schd2':rowsComplete(D.schD2,['description','residence','income','fullValue','wardPct','carryingValue'],'schd2'),
@@ -6749,10 +6720,6 @@ function computeNavChecks(){
       'a-schf1':rowsComplete(D.schF1,['description','bank','accountNo','courtOrderDate','salePrice'],'schf1'),
       'a-schf2':rowsComplete(D.schF2,['description','bank','accountNo','courtOrderDate','salePrice'],'schf2'),
     };
-    Object.keys(checks).filter(key=>key.startsWith('a-sch')).forEach(key=>{
-      const scheduleKey=key.slice(2).replace(/^sch/, 'sch');
-      if(window.scheduleEvidenceState&&!window.scheduleEvidenceState(D,activeInventoryType,scheduleKey).satisfied)checks[key]=false;
-    });
     const incomplete={
       'a-p1':!checks['a-p1'],
       'a-p2':!checks['a-p2']&&filled(D.startingBalance),
@@ -7093,7 +7060,7 @@ function updateCurrentScheduleNextButton(){
   const route=(typeof currentPage==='string'?currentPage:'').split('?')[0];
   const disabled=isScheduleIncomplete(route);
   btn.disabled=disabled;
-  btn.title=disabled?'Complete this section, including its supporting PDF or explicit records-handled-separately choice, before continuing.':'';
+  btn.title=disabled?'Add at least one item, or check the box verifying there are none, before continuing.':'';
   const guidanceContainer=document.getElementById('page-local-guidance');
   if(guidanceContainer&&typeof window.renderLocalSectionGuidance==='function'){
     let rawErrors=[];
@@ -7564,12 +7531,6 @@ function updateScheduleComment(scheduleKey,value){
   getScheduleDocSlot(scheduleKey).comment=value;
   autoSave();
 }
-function setScheduleEvidenceOverride(scheduleKey,checked){
-  getScheduleDocSlot(scheduleKey).evidenceOverride=checked===true;
-  autoSave();
-  renderPage(currentPage);
-}
-window.setScheduleEvidenceOverride=setScheduleEvidenceOverride;
 
 function renderScheduleDocsSection(scheduleKey){
   const slot=getScheduleDocSlot(scheduleKey);
@@ -7578,9 +7539,8 @@ function renderScheduleDocsSection(scheduleKey){
   const [pf,pt]=period.split('__');
   const fmtPf=pf?formatDisplayDate(pf)||pf:'';
   const fmtPt=pt?formatDisplayDate(pt)||pt:'';
-  const periodLabel=String(activeInventoryType||'').startsWith('plan')?'plan period':'accounting period';
   const periodNote=activeInventoryType==='guardian'?''
-    :(fmtPf||fmtPt?` — ${periodLabel} ${fmtPf||'?'} to ${fmtPt||'?'}`:` — set the ${periodLabel} on the Cover page to file these by year`);
+    :(fmtPf||fmtPt?` — accounting period ${fmtPf||'?'} to ${fmtPt||'?'}`:' — set the accounting period on the Cover page to file these by year');
   const filesHtml=slot.files.length?slot.files.map((f,i)=>{
     const status=f.technicalStatus||'pending';
     const warnings=Array.isArray(f.technicalWarnings)?f.technicalWarnings:[];
@@ -7599,19 +7559,12 @@ function renderScheduleDocsSection(scheduleKey){
       <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove supporting document ${esc(f.name)}" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
     </div>`;}).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${activeInventoryType==='guardian'?'':' for this period'}.</div>`;
   const inputId=`sched-doc-input-${scheduleKey}`;
-  const evidence=window.scheduleEvidenceState?.(window.D,activeInventoryType,scheduleKey);
-  const evidenceControl=evidence?.applies&&evidence.entered?`
-    <div class="form-check mt-2">
-      <input class="form-check-input" type="checkbox" id="sched-evidence-${esc(scheduleKey)}" data-form-change="schedule-evidence-override" data-schedule-key="${esc(scheduleKey)}" ${slot.evidenceOverride===true?'checked':''}>
-      <label class="form-check-label" for="sched-evidence-${esc(scheduleKey)}">Continue without an uploaded PDF for this schedule; I will file or retain supporting records separately as directed.</label>
-    </div>`:'';
   return `<div class="schedule-docs-section no-print">
     <h2>Supporting Documents${periodNote}</h2>
     <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.</p>
     <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for ${esc(scheduleKey)}" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload PDF(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
-    ${evidenceControl}
     <h2 class="mt">Comments</h2>
     <textarea class="form-control" rows="3" aria-label="Comments about ${esc(scheduleKey)}" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>
   </div>`;
@@ -7924,7 +7877,6 @@ async function initApp(){
   await promptOpenOrStartAtLaunch();
   await ensureUnlocked(); // blocks until a valid master-password key is in memory
   await loadGuardianData();
-  if(caseFile.wards.length)await saveSessionRestoreCache();
   await autoLoadTemplates();
 
   // pg-last-position (recovery-cache.js) carries no case data, just the

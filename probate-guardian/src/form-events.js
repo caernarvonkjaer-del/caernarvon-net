@@ -124,9 +124,6 @@ document.addEventListener('change', (event) => {
     window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
   }
-  if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-evidence-override') {
-    window.setScheduleEvidenceOverride(control.dataset.scheduleKey, control.checked);
-  }
   if (control instanceof HTMLSelectElement && boundPath(control)) {
     writeDraftValue(control, { event });
     finalizeFieldValue(control, { event });

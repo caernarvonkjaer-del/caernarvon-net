@@ -112,13 +112,10 @@ export function summarizeSupplementTotals(files, limits = SUPPLEMENTAL_PDF_LIMIT
 
 export function resolveActiveDocPeriod(sourceData) {
   if (!sourceData || typeof sourceData !== 'object') return 'initial';
-  // Inventory uploads follow the inventory year; accounting and plan uploads
-  // follow their reporting dates, matching getScheduleDocSlot() on the form.
-  if (sourceData.inventoryType === 'guardian') return sourceData.activeYearKey || 'initial';
+  if (sourceData.activeYearKey) return sourceData.activeYearKey;
   if (sourceData.periodFrom || sourceData.periodTo) {
     return `${sourceData.periodFrom || ''}__${sourceData.periodTo || ''}`;
   }
-  if (sourceData.activeYearKey) return sourceData.activeYearKey;
   return 'initial';
 }
 

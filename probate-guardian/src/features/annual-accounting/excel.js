@@ -16,7 +16,6 @@ import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js'
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { alertModal } from '../../core/ui/dialogs.js';
-import { newSchB4Id, sortedSchB4Rows } from '../../core/filing/schb4-accounts.js';
 
 const {
   renderPage, ensureTemplate, calcTotalsAnnual,
@@ -36,74 +35,12 @@ const ANNUAL_P67_CELLS = {
   explanation: null  // cell for the written explanation of a difference
 };
 
-// Milestone 57 review: the bundled workbook actually has 18 B-4 check-
-// register pages, not the one (p2) this app used to write to -- 'SCH B-4
-// OTHER DISB p2' through 'p19', each with its own blank BANK:/ACCOUNT
-// NUMBER # header at C6/H6 (verified against the live template's XML, incl.
-// shared-string labels 280/535). Their row spans aren't uniform (p2 has
-// less room, having just followed the SUMMARY page; p8/p12/p16 similarly
-// have slightly more room than their own follow-on pages), and the court's
-// own item numbering inside the template groups them into exactly 4 blocks
-// with a reset at p8, p12, and p16 -- i.e. room for 4 distinct bank
-// accounts, each getting its own run of pages. One account's disbursements
-// fill its block's pages in order; the header is written once, on the
-// block's first page only.
-export const SCH_B4_ACCOUNT_BLOCKS=[
-  [{sheet:'SCH B-4 OTHER DISB p2',first:20,last:44},{sheet:'SCH B-4 OTHER DISB p3',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p4',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p5',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p6',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p7',first:8,last:34}],
-  [{sheet:'SCH B-4 OTHER DISB p8',first:8,last:37},{sheet:'SCH B-4 OTHER DISB p9',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p10',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p11',first:8,last:34}],
-  [{sheet:'SCH B-4 OTHER DISB p12',first:8,last:37},{sheet:'SCH B-4 OTHER DISB p13',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p14',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p15',first:8,last:34}],
-  [{sheet:'SCH B-4 OTHER DISB p16',first:8,last:38},{sheet:'SCH B-4 OTHER DISB p17',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p18',first:8,last:34},{sheet:'SCH B-4 OTHER DISB p19',first:8,last:34}],
-];
-
-function schB4BlockCapacity(block){
-  return block.reduce((sum,page)=>sum+(page.last-page.first+1),0);
-}
-
-// Groups schB4 rows by account (schB4Accounts[] order = block order) and
-// checks each account's row count against its assigned block's real page
-// capacity, instead of the old flat "more than one account -> block
-// everything" rule. An empty schB4Accounts[] (legacy filings, or a filer
-// who never split B-4 into accounts) falls back to one unlabeled group
-// using the first block, exactly like the app's pre-57D behavior -- except
-// now that group also gets p3-p7's overflow room instead of being capped
-// at p2's 25 rows alone.
-export function planSchB4Export(schB4, schB4Accounts){
-  const accounts=schB4Accounts||[];
-  const rows=schB4||[];
-  if(accounts.length>SCH_B4_ACCOUNT_BLOCKS.length){
-    return {ok:false,message:`This Excel template supports up to ${SCH_B4_ACCOUNT_BLOCKS.length} Schedule B-4 bank accounts; this filing has ${accounts.length}. Export PDF instead — it identifies the bank and account on every transaction.`};
-  }
-  const byAccount=new Map(accounts.map(a=>[a.id,[]]));
-  const unassigned=[];
-  for(const r of rows){
-    if(r.bankAccountId&&byAccount.has(r.bankAccountId))byAccount.get(r.bankAccountId).push(r);
-    else unassigned.push(r);
-  }
-  if(unassigned.length&&accounts.length){
-    return {ok:false,message:'Some Schedule B-4 disbursements are not assigned to a bank account. Assign every disbursement to an account (Schedule B-4) before exporting to Excel.'};
-  }
-  const groups=accounts.map((account,i)=>({bankName:account.bankName||'',accountNo:account.accountNo||'',rows:byAccount.get(account.id)||[],block:SCH_B4_ACCOUNT_BLOCKS[i]}));
-  if(!accounts.length&&unassigned.length)groups.push({bankName:'',accountNo:'',rows:unassigned,block:SCH_B4_ACCOUNT_BLOCKS[0]});
-  for(const g of groups){
-    const cap=schB4BlockCapacity(g.block);
-    if(g.rows.length>cap){
-      return {ok:false,message:`Schedule B-4${g.bankName?` account "${g.bankName}"`:''} has ${g.rows.length} disbursements, more than this Excel template's ${cap}-row page allotment for it. Export PDF instead — it includes every entry.`};
-    }
-  }
-  return {ok:true,groups};
-}
-
 export const ANNUAL_EXCEL_CAPS={
   schA:{cap:50,label:'Schedule A — Income',route:'/scha'}, // 20 on p1 + 30 on p2 (SCH A INCOME p2)
   schB1:{cap:24,label:'Schedule B-1 — Attorney Fees',route:'/schb1'},
   schB2:{cap:24,label:'Schedule B-2 — Guardian Fees',route:'/schb2'},
   schB3:{cap:24,label:'Schedule B-3 — Other Court-Ordered Disbursements',route:'/schb3'},
-  // A flat backstop only -- planSchB4Export() above enforces the real,
-  // per-account block capacity. This is the sum of every block's rows
-  // (160+111+111+112), so no realistic filing ever reaches it through this
-  // generic length check; it exists so a schB4 array that somehow bypassed
-  // planSchB4Export() still can't silently overflow the template.
-  schB4:{cap:494,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
+  schB4:{cap:25,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
   schC:{cap:6,label:'Schedule C — Capital Adjustments',route:'/schc'},
   schD1:{cap:11,label:'Schedule D-1 — Cash Assets',route:'/schd1'},
   schD2:{cap:8,label:'Schedule D-2 — Real Estate',route:'/schd2'},
@@ -119,11 +56,6 @@ export async function doSaveExcel(){
   const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';
   const capacityIssues = getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS);
-  const sb4Plan = planSchB4Export(window.D.schB4, window.D.schB4Accounts);
-  if (!sb4Plan.ok) {
-    await alertModal(sb4Plan.message);
-    return;
-  }
   const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
@@ -160,7 +92,7 @@ export async function doSaveExcel(){
     // it was: its type preservation (a short numeric input stays a number, so
     // setCell writes a numeric cell) is why this is not merged with
     // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
-    const fD=s=>{const v=s instanceof Date?s.toISOString():s;const iso=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(iso)?`${iso.slice(5,7)}/${iso.slice(8,10)}/${iso.slice(0,4)}`:(v||'');};
+    const fD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
 
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
@@ -168,15 +100,6 @@ export async function doSaveExcel(){
     const ExcelJS = await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
-
-    // The bundled court workbook repeats named-formula headers on schedule
-    // pages. Replace only those two verified formula cells with literal filing
-    // values, avoiding #NAME? in readers that do not calculate defined names.
-    workbook.worksheets.forEach(ws => ws.getRow(2).eachCell(cell => {
-      const formula = cell.value?.formula;
-      if (formula === 'Name_of_Ward') setCell(ws, cell.address, inv.wardName || '');
-      if (formula === 'Case_Number') setCell(ws, cell.address, inv.caseNumber || '');
-    }));
 
     // PART I
     const p1=workbook.getWorksheet('PART I');
@@ -301,22 +224,11 @@ export async function doSaveExcel(){
       });
     }
 
-    // Schedule B-4: each planSchB4Export() group fills one account block
-    // (SCH_B4_ACCOUNT_BLOCKS) in page order; the bank/account header is
-    // written once, on the block's first page only.
-    for(const g of sb4Plan.groups){
-      const sorted=sortedSchB4Rows(g.rows);
-      let idx=0;
-      g.block.forEach((page,pageIdx)=>{
-        const ws=workbook.getWorksheet(page.sheet);
-        if(!ws)return;
-        if(pageIdx===0){setCell(ws,'C6',g.bankName); setCell(ws,'H6',g.accountNo);}
-        ws.getColumn('I').width=Math.max(ws.getColumn('I').width||0,18);
-        for(let row=page.first;row<=page.last&&idx<sorted.length;row++,idx++){
-          const r=sorted[idx];
-          setCell(ws,`C${row}`,r.checkNo||''); setCell(ws,`D${row}`,fD(r.datePaid)); setCell(ws,`E${row}`,r.category||''); setCell(ws,`G${row}`,r.payee||''); setCell(ws,`I${row}`,nv(r.amount));
-          ws.getCell(`I${row}`).numFmt='$#,##0.00';
-        }
+    // Schedule B-4 — other disbursements (write to pages p2-p3 only)
+    const sb4p2=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
+    if(sb4p2){
+      inv.schB4.forEach((r,i)=>{
+        if(i<25){const row=20+i; setCell(sb4p2,`C${row}`,r.checkNo||''); setCell(sb4p2,`D${row}`,fD(r.datePaid)); setCell(sb4p2,`E${row}`,r.category||''); setCell(sb4p2,`G${row}`,r.payee||''); setCell(sb4p2,`I${row}`,nv(r.amount));}
       });
     }
 
@@ -435,15 +347,11 @@ export async function doSaveExcel(){
     const p9=workbook.getWorksheet('PART IX ');
     if(p9){
       setCell(p9,'G8',inv.guardianRelationship||'');
-      // The official workbook has a restricted-depository receipt-date cell,
-      // not a separate Yes/No field. Preserve legacy unanswered values, but
-      // do not print a retained date after an explicit No.
-      setCell(p9,'G9',fD(inv.restrictedDepository === 'No' ? '' : inv.restrictedDepositoryReceiptDate));
-      const bondIsWaived=inv.bondWaived==='Yes';
-      setCell(p9,'H20',bondIsWaived?'':nv(inv.bondAmount));
-      setCell(p9,'E21',bondIsWaived?'':fD(inv.bondPeriodFrom));
-      setCell(p9,'G21',bondIsWaived?'':fD(inv.bondPeriodTo));
-      setCell(p9,'D22',bondIsWaived?'':(inv.bondingCompany||''));
+      setCell(p9,'G9',fD(inv.restrictedDepositoryReceiptDate));
+      setCell(p9,'H20',nv(inv.bondAmount));
+      setCell(p9,'E21',fD(inv.bondPeriodFrom));
+      setCell(p9,'G21',fD(inv.bondPeriodTo));
+      setCell(p9,'D22',inv.bondingCompany||'');
     }
 
     // Part X — cert of service. Recipients (B/I column anchors, rows
@@ -454,7 +362,7 @@ export async function doSaveExcel(){
     // real value cell is G25 (anchor of G25:I25), not H25.
     const p10=workbook.getWorksheet('PART X');
     if(p10){
-      const r=inv.certNoRecipients==='Yes'?[]:inv.certRecipients;
+      const r=inv.certRecipients;
       setCell(p10,'B11',r[0]&&r[0].name||''); setCell(p10,'B12',r[0]&&r[0].line2||''); setCell(p10,'B13',r[0]&&r[0].line3||''); setCell(p10,'B14',r[0]&&r[0].line4||'');
       setCell(p10,'I11',r[1]&&r[1].name||''); setCell(p10,'I12',r[1]&&r[1].line2||''); setCell(p10,'I13',r[1]&&r[1].line3||''); setCell(p10,'I14',r[1]&&r[1].line4||'');
       setCell(p10,'B17',r[2]&&r[2].name||''); setCell(p10,'B18',r[2]&&r[2].line2||''); setCell(p10,'B19',r[2]&&r[2].line3||''); setCell(p10,'B20',r[2]&&r[2].line4||'');
@@ -639,28 +547,14 @@ export async function importExcel(input){
         if(rowHasData(bankAcct,checkNo,payee,amt))D.schB3.push({bankAcct,checkNo,datePaid:gcDate(sb3,`F${row}`),payee,courtOrderDate:gcDate(sb3,`H${row}`),amount:amt});
       }
 
-      // Schedule B-4 — reads all four account blocks (SCH_B4_ACCOUNT_BLOCKS),
-      // inverse of doSaveExcel()'s writer: one account per block, read from
-      // its first page's header, with that block's pages read in order for
-      // its disbursements.
+      // Schedule B-4 — the check-register page (p2) is this app's only
+      // input surface for it; pages 3+ exist in the real template for
+      // overflow beyond 25 entries, matching ANNUAL_EXCEL_CAPS.schB4.
+      const sb4=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
       D.schB4=[];
-      D.schB4Accounts=[];
-      for(const block of SCH_B4_ACCOUNT_BLOCKS){
-        const headerSheet=workbook.getWorksheet(block[0].sheet);
-        const bank=gcStr(headerSheet,'C6'), number=gcStr(headerSheet,'H6');
-        let accountId='';
-        if(bank||number){
-          accountId=newSchB4Id();
-          D.schB4Accounts.push({id:accountId,bankName:bank,accountNo:number});
-        }
-        for(const page of block){
-          const ws=workbook.getWorksheet(page.sheet);
-          if(!ws)continue;
-          for(let row=page.first;row<=page.last;row++){
-            const checkNo=gcStr(ws,`C${row}`),payee=gcStr(ws,`G${row}`),amt=gcNum(ws,`I${row}`);
-            if(rowHasData(checkNo,payee,amt))D.schB4.push({id:newSchB4Id(),bankAccountId:accountId,checkNo,datePaid:gcDate(ws,`D${row}`),category:gcStr(ws,`E${row}`),payee,amount:amt});
-          }
-        }
+      if(sb4)for(let row=20;row<=44;row++){
+        const checkNo=gcStr(sb4,`C${row}`),payee=gcStr(sb4,`G${row}`),amt=gcNum(sb4,`I${row}`);
+        if(rowHasData(checkNo,payee,amt))D.schB4.push({checkNo,datePaid:gcDate(sb4,`D${row}`),category:gcStr(sb4,`E${row}`),payee,amount:amt});
       }
 
       // Schedule C — capital adjustments
@@ -761,7 +655,6 @@ export async function importExcel(input){
       if(p9){
         D.guardianRelationship=gcStr(p9,'G8')||D.guardianRelationship;
         D.restrictedDepositoryReceiptDate=gcDate(p9,'G9');
-        D.restrictedDepository=D.restrictedDepositoryReceiptDate?'Yes':'';
         D.bondAmount=gcNum(p9,'H20');
         D.bondPeriodFrom=gcDate(p9,'E21');
         D.bondPeriodTo=gcDate(p9,'G21');

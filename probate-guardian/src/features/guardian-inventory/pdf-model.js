@@ -551,15 +551,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'Table',
         title: 'Schedule D-4: Guardian Bond',
         items: [
-          { label: 'Bond Waived by Court Order?', value: triText(d.bondWaived) },
-          { label: 'Restricted Depository?', value: triText(d.restrictedDepository) },
-          ...(triIsYes(d.bondWaived) ? [
-            { label: 'Date of Bond-Waiver Order', value: fmtDate(d.bondWaivedDate) },
-          ] : [
-            { label: 'Bond Amount', value: fmt(d.bondAmount) },
-            { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },
-            { label: 'Bonding Company', value: d.bondingCompany || '' },
-          ]),
+          { label: 'Bond Amount', value: fmt(d.bondAmount) },
+          { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },
+          { label: 'Bonding Company', value: d.bondingCompany || '' },
         ],
       },
     ],
@@ -567,7 +561,6 @@ export function buildVerifiedInventoryModel(D, options = {}) {
 
   // 17. Part VI: Certificate of Service (D-5)
   const serviceAttorney = d.serviceAttorney || {};
-  const serviceRecipients = (d.serviceRecipients || []).filter(r => r && (r.name || r.address || r.cityStateZip));
   sections.push({
     id: 'd5',
     title: 'Part VI — CERTIFICATE OF SERVICE',
@@ -579,24 +572,22 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: d.serviceNoRecipients === 'Yes'
-          ? 'The filer selected that no recipients are listed on this Certificate of Service.'
-          : `I certify that a copy of this Verified Initial Inventory was served on ${fmtDate(d.serviceDate) || 'the date indicated below'} to the following persons:`,
+        text: `I certify that a copy of this Verified Initial Inventory was served on ${fmtDate(d.serviceDate) || 'the date indicated below'} to the following persons:`,
       },
-      ...(d.serviceNoRecipients === 'Yes' ? [] : serviceRecipients.length ? [
+      ...(d.serviceRecipients && d.serviceRecipients.length ? [
         {
           type: 'table',
           tag: 'Table',
           title: 'Service Recipients',
           headers: ['Recipient Name', 'Address', 'Date Served'],
-          rows: serviceRecipients.map(r => [r.name || '', composePdfAddress(r.address, r.cityStateZip), fmtDate(r.dateServed || d.serviceDate)]),
+          rows: d.serviceRecipients.map(r => [r.name || '', composePdfAddress(r.address, r.cityStateZip), fmtDate(r.dateServed || d.serviceDate)]),
           colWidths: [35, 45, 20],
         }
       ] : [
         {
           type: 'notice',
           tag: 'P',
-          text: 'No service recipients listed.',
+          text: 'None listed.',
         }
       ]),
       {

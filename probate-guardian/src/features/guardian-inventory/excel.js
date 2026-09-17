@@ -103,7 +103,7 @@ export async function doSaveExcel(){
     // it was: its type preservation (a short numeric input stays a number, so
     // setCell writes a numeric cell) is why this is not merged with
     // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
-    const fmtD=s=>{const v=s instanceof Date?s.toISOString():s;const iso=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(iso)?`${iso.slice(5,7)}/${iso.slice(8,10)}/${iso.slice(0,4)}`:(v||'');};
+    const fmtD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
     // Milestone 51D: this is the canonical tri-state Excel writer for this app,
     // and it stays local deliberately. core/excel/excel-engine.js used to export a
     // yesNo(bool) under the SAME NAME that returned 'No' for '', null and
@@ -127,15 +127,6 @@ export async function doSaveExcel(){
     const ExcelJS = await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
-
-    // Milestone 57F: The court workbook repeats named-formula headers on schedule
-    // pages. Replace verified formula cells with literal filing values to avoid #NAME?
-    // in readers that do not calculate defined names.
-    workbook.worksheets.forEach(ws => ws.getRow(2).eachCell(cell => {
-      const formula = cell.value?.formula;
-      if (formula === 'Name_of_Ward') setCell(ws, cell.address, inv.wardName || '');
-      if (formula === 'Case_Number') setCell(ws, cell.address, inv.caseNumber || '');
-    }));
 
     const si=workbook.getWorksheet('SUMMARY I ');
     if(si){
@@ -425,23 +416,20 @@ export async function doSaveExcel(){
 
     const p5=workbook.getWorksheet('PART V');
     if(p5){
-      const bondIsWaived=inv.bondWaived==='Yes';
-      setCell(p5,'B26',bondIsWaived?'':(inv.bondAmount||''));
-      setCell(p5,'D27',bondIsWaived?'':fmtD(inv.bondPeriodFrom));
-      setCell(p5,'F27',bondIsWaived?'':fmtD(inv.bondPeriodTo));
-      setCell(p5,'D28',bondIsWaived?'':(inv.bondingCompany||''));
-      // The official workbook has a waiver-date cell but no Yes/No control.
-      // Do not write a retained date when the filer has explicitly answered No.
-      setCell(p5,'G15',inv.bondWaived === 'No' ? '' : (inv.bondWaivedDate||''));
+      setCell(p5,'B26',inv.bondAmount||'');
+      setCell(p5,'D27',fmtD(inv.bondPeriodFrom));
+      setCell(p5,'F27',fmtD(inv.bondPeriodTo));
+      setCell(p5,'D28',inv.bondingCompany||'');
+      setCell(p5,'G15',inv.bondWaivedDate||'');
     }
 
     const p6=workbook.getWorksheet('PART VI');
-    if(p6){
-      const recs=inv.serviceNoRecipients==='Yes'?[]:inv.serviceRecipients;
-      setCell(p6,'B13',recs[0]?.name||'');setCell(p6,'B14',recs[0]?.address||'');setCell(p6,'B15',recs[0]?.cityStateZip||'');
-      setCell(p6,'H13',recs[1]?.name||'');setCell(p6,'H14',recs[1]?.address||'');setCell(p6,'H15',recs[1]?.cityStateZip||'');
-      setCell(p6,'B19',recs[2]?.name||'');setCell(p6,'B20',recs[2]?.address||'');setCell(p6,'B21',recs[2]?.cityStateZip||'');
-      setCell(p6,'H19',recs[3]?.name||'');setCell(p6,'H20',recs[3]?.address||'');setCell(p6,'H21',recs[3]?.cityStateZip||'');
+    if(p6&&inv.serviceRecipients.length){
+      const recs=inv.serviceRecipients;
+      if(recs[0]){setCell(p6,'B13',recs[0].name||'');setCell(p6,'B14',recs[0].address||'');setCell(p6,'B15',recs[0].cityStateZip||'');}
+      if(recs[1]){setCell(p6,'H13',recs[1].name||'');setCell(p6,'H14',recs[1].address||'');setCell(p6,'H15',recs[1].cityStateZip||'');}
+      if(recs[2]){setCell(p6,'B19',recs[2].name||'');setCell(p6,'B20',recs[2].address||'');setCell(p6,'B21',recs[2].cityStateZip||'');}
+      if(recs[3]){setCell(p6,'H19',recs[3].name||'');setCell(p6,'H20',recs[3].address||'');setCell(p6,'H21',recs[3].cityStateZip||'');}
       setCell(p6,'G24',fmtD(inv.serviceDate));
       setCell(p6,'G26',fmtD(inv.serviceAttorney.signatureDate));
       setCell(p6,'J27',inv.serviceAttorney.name||'');
@@ -546,7 +534,7 @@ function parseInitialInventoryWorkbook(wb){
     guardians:(()=>{const p3=ws('PART III');const gs=[];for(let i=0;i<3;i++){const b=7+i*6;const name=txt(p3,`F${b+1}`);if(!name&&i>0)continue;gs.push({signatureDate:dt(p3,`D${b}`),name,ssnEin:txt(p3,`B${b+2}`),streetAddress:txt(p3,`F${b+2}`),phone:txt(p3,`B${b+4}`),cityStateZip:txt(p3,`F${b+4}`)});}return gs.length?gs:[mk.guardian()];})(),
     preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G12'),name:txt(p4,'I12'),ssnEin:txt(p4,'B14'),streetAddress:txt(p4,'I14'),phone:txt(p4,'B16'),cityStateZip:txt(p4,'I16')};})(),
     attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G25'),filingDate:dt(p4,'G26'),name:txt(p4,'I25'),barNumber:txt(p4,'B27'),streetAddress:txt(p4,'I27'),phone:txt(p4,'B29'),cityStateZip:txt(p4,'I29')};})(),
-    bondAmount:txt(ws('PART V'),'B26'),bondPeriodFrom:dt(ws('PART V'),'D27'),bondPeriodTo:dt(ws('PART V'),'F27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:txt(ws('PART V'),'G15'),bondWaived:txt(ws('PART V'),'G15')?'Yes':'',
+    bondAmount:txt(ws('PART V'),'B26'),bondPeriodFrom:dt(ws('PART V'),'D27'),bondPeriodTo:dt(ws('PART V'),'F27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:txt(ws('PART V'),'G15'),
     serviceRecipients:(()=>{const p6=ws('PART VI');const all=[{name:txt(p6,'B13'),address:txt(p6,'B14'),cityStateZip:txt(p6,'B15')},{name:txt(p6,'H13'),address:txt(p6,'H14'),cityStateZip:txt(p6,'H15')},{name:txt(p6,'B19'),address:txt(p6,'B20'),cityStateZip:txt(p6,'B21')},{name:txt(p6,'H19'),address:txt(p6,'H20'),cityStateZip:txt(p6,'H21')}];const filtered=all.filter(r=>r.name||r.address||r.cityStateZip);return filtered.length>0?filtered:[mk.recipient()];})(),
     serviceDate:dt(ws('PART VI'),'G24'),
     serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G26'),name:txt(p6,'J27'),barNumber:txt(p6,'J29'),streetAddress:txt(p6,'J28'),phone:txt(p6,'B30'),cityStateZip:txt(p6,'J30')};})()

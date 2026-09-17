@@ -9,7 +9,6 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 // and the export gate ran two separate copies of the same court-facing rule.
 import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
-import { missingScheduleEvidence } from '../../core/filing/schedule-evidence.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
@@ -1119,15 +1118,8 @@ function pageD4(){
     <div class="col-12 col-lg-6">
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Surety Bond Details</h2>
-        ${yesNoRadioHTML('bondWaived','Was the bond waived by court order?',D.bondWaived||'','bondWaived',false,'/d4')}
-        <div class="mb-2">${yesNoRadioHTML('restrictedDepository','Are cash or intangible assets held in a restricted depository?',D.restrictedDepository||'','restrictedDepository',false,'/d4')}</div>
-        <div class="${D.bondWaived==='Yes'?'':'d-none'}">
-          ${formRow(col(6,optLabel('Date of bond-waiver order')+dateInput('bondWaivedDate')),col(6,'<p class="form-text mb-2">Bond amount, term, and surety details are retained but not required while the waiver is selected.</p>'))}
-        </div>
-        <div class="${D.bondWaived==='Yes'?'d-none':''}">
         ${formRow(col(4,reqLabel('Bond Amount')+textInput('bondAmount','e.g., $50,000')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
-        ${formRow(col(6,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')))}
-        </div>
+        ${formRow(col(6,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')),col(6,optLabel('If bond waived – date of order')+textInput('bondWaivedDate')))}
       </div>
     </div>
   </div>
@@ -1140,21 +1132,17 @@ function pageD5(){
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header"><span>Recipient ${i+1}</span>${removeBtn}</div>
       <div class="entry-card-body">
-        ${formRow(col(12,(i===0?reqLabel:optLabel)('Name')+textInput(`serviceRecipients.${i}.name`,'','name')))}
-        ${formRow(col(12,(i===0?reqLabel:optLabel)('Street Address')+textInput(`serviceRecipients.${i}.address`,'','address')))}
-        ${formRow(col(12,(i===0?reqLabel:optLabel)('City / State / Zip')+textInput(`serviceRecipients.${i}.cityStateZip`,'','zip')))}
+        ${formRow(col(12,reqLabel('Name')+textInput(`serviceRecipients.${i}.name`,'','name')))}
+        ${formRow(col(12,reqLabel('Street Address')+textInput(`serviceRecipients.${i}.address`,'','address')))}
+        ${formRow(col(12,reqLabel('City / State / Zip')+textInput(`serviceRecipients.${i}.cityStateZip`,'','zip')))}
       </div>
     </div></div>`;
   }).join('');
   const addBtn2=D.serviceRecipients.length<4?`<button class="btn btn-outline-secondary btn-sm mb-4 no-print" data-inventory-action="add-recipient">+ Add Recipient</button>`:'';
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
-  ${yesNoRadioHTML('serviceNoRecipients','No recipients are required for this certificate.',D.serviceNoRecipients||'','serviceNoRecipients',false,'/d5')}
-  <p class="form-text">This records the filer’s selection; it does not determine who must be served. Recipient 1 is required unless Yes is selected.</p>
-  <div class="${D.serviceNoRecipients==='Yes'?'d-none':''}">
-    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-    <div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}
-  </div>
+  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
+  <div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">
     <div class="entry-card-body">
@@ -1214,10 +1202,6 @@ export function validateGuardian(){
       push(`${route} — Add at least one entry, or check the box verifying there are none, before this schedule counts as complete.`,`scheduleNoItems.${key}`);
     }
   });
-  missingScheduleEvidence(d,'guardian').forEach(key=>{
-    const label=`${key[0].toUpperCase()}-${key.slice(1)}`;
-    push(`${label} — Upload an eligible PDF or confirm that supporting records will be filed or retained separately.`,`scheduleDocs.${key}`);
-  });
   // Row paths: `<collection>.<index>.<field>`. Schedule B-2's vehicle
   // sub-fields are raw inputs with no data-bind -- their only focusable
   // selector is the literal element id (see renderB2Fields()).
@@ -1273,23 +1257,7 @@ export function validateGuardian(){
   d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`,k=`serviceRecipients.${i}`;req(r.name,`${p} — Name`,`${k}.name`);req(r.address,`${p} — Address`,`${k}.address`);req(r.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
   if(!d.serviceDate)push('D-5 — Service Date is required.','serviceDate');
   req(d.serviceAttorney.name,'D-5 Attorney — Name','serviceAttorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number','serviceAttorney.barNumber');req(d.serviceAttorney.phone,'D-5 Attorney — Phone','serviceAttorney.phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address','serviceAttorney.streetAddress');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip','serviceAttorney.cityStateZip');
-  // A selected waiver is a filer-entered fact the app cannot independently
-  // verify. Hide the retained bond fields and omit their blockers while the
-  // waiver is selected; changing the answer restores the original checks.
-  return errors.filter((entry)=>{
-    const message=String(entry?.message||entry||'');
-    if(d.bondWaived==='Yes'&&message.startsWith('D-4'))return false;
-    if(d.serviceNoRecipients==='Yes'&&message.startsWith('D-5 Recipient'))return false;
-    // Recipient 1 is required unless the filer expressly selected none.
-    // Additional cards are optional only while wholly blank; a partial card
-    // must be completed before it can appear in court output.
-    const recipientMatch=message.match(/^D-5 Recipient (\d+)/);
-    if(d.serviceNoRecipients!=='Yes'&&recipientMatch){
-      const recipient=d.serviceRecipients?.[Number(recipientMatch[1])-1];
-      if(Number(recipientMatch[1])>1&&!recipient?.name&&!recipient?.address&&!recipient?.cityStateZip)return false;
-    }
-    return true;
-  });
+  return errors;
 }
 
 // ═══════════════════════════════════════════════════════
