@@ -2,8 +2,10 @@
 
 ## Status
 
-**Draft.** Per `AGENTS.md` §2 nothing here is authorized until Alan approves a
-named sub-delivery. This document does not replace
+**Draft — but no longer blocked on decisions.** All five design questions are
+settled (Decision 1 below, and Decisions 2–5 near the end), so **57C-R is
+execution-ready and needs only approval by name.** Per `AGENTS.md` §2 nothing
+here is authorized until Alan gives it. This document does not replace
 `MILESTONE-57-PROPOSAL.md` — that one records what was originally asked for,
 and `MILESTONE-57-REVIEW-HANDOFF.md` records the review verdict and the B-4
 template research. Both are still current inputs. This is the third document:
@@ -119,35 +121,64 @@ not by hand-listing the three type keys** — `efdd45a` had to fix exactly that
 re-enumeration in the first attempt, and `filing-type-enumeration-guard.spec.js`
 exists to catch it.
 
-### Trigger points
+### Trigger point — one per family, on mount
 
-Two single dispatch sites, both already central:
+**Decision D3 makes this a render-time check, not an Add-button hook.** The
+modal fires when the filer lands on a financial schedule that has rows and no
+acknowledgement for the current period, however those rows arrived.
 
-| Family | Site | Action |
-| --- | --- | --- |
-| Guardian Inventory | `src/features/guardian-inventory/index.js:172` | `case 'add-entry': addEntry(control.dataset.schedule)` |
-| Annual family | `src/features/annual-accounting/index.js:263` | `case 'add-row': addAnnualRow(collection, control.dataset.route)` |
+| Family | Site |
+| --- | --- |
+| Guardian Inventory | `src/features/guardian-inventory/index.js:95` — `export async function mount(container, page)` |
+| Annual family | `src/features/annual-accounting/index.js:100` — `export async function mount(container, page)` |
 
-Re-derive both line numbers at execution time.
+Both already switch on `page` to pick a schedule renderer, so the route → schedule
+key mapping this needs is the one they already perform. Re-derive both line
+numbers at execution time.
+
+**This replaces the two Add-button dispatch sites an earlier draft named**
+(`guardian-inventory/index.js:172`'s `add-entry` and
+`annual-accounting/index.js:263`'s `add-row`). Hooking `mount()` is both
+simpler — one trigger per family instead of two, and no second mechanism for
+imports — and strictly more complete: it catches a schedule populated by Excel
+import or by *New Filing from Existing*, neither of which passes through an Add
+button. That hole is the reason D3 was asked.
+
+The cost, stated rather than discovered: the modal now interrupts **navigation**
+rather than an action the filer just took. Combined with D4 (a non-yes does not
+block), landing on a populated unacknowledged schedule shows the modal, and
+dismissing it lets the page render normally — the modal simply returns next
+visit. That is intended: it recurs until acknowledged. It also means the modal
+must not fire on a schedule with no rows, or every fresh filing would greet the
+filer with 25 dialogs.
 
 ### Steps
 
-**C1.** Add the acknowledgement field to the data model and to
-`probate-guardian-data-model.csv`, with a row per schedule in the same shape the
-`scheduleDocs` rows use. Decide the storage shape first (Open Decision A).
+**C1.** Add `D.scheduleDocsAck` to the data model and to
+`probate-guardian-data-model.csv`, period-nested per D2/D3, following the row
+shape the existing `scheduleDocs.<key>[periodKey]…` rows use. Note that
+`ecabe69`'s follow-up (`8987467`) removed 38 stale rows the first attempt left
+behind — do not reintroduce a row for a field this design does not ship.
 
-**C2.** Add the modal. `confirmModal({ title, message, confirmLabel,
-cancelLabel })` from `src/core/ui/dialogs.js` — it resolves `true` on confirm
-and `false` on Cancel or Escape. Wording should say what the filer is
-acknowledging, not just warn: that supporting documentation for this schedule
-is required, that the app does not collect it for them, and that they can
-attach it in this schedule's Supporting Documents section. **No native
-`confirm()`** — `native-dialog-guard.spec.js` (50G-3) forbids it.
+**C2.** Add a pure state module — which schedules are in scope for a filing
+type, whether a given schedule is populated, and whether it is acknowledged for
+the active period. Pure and exported, so C6 can unit-test it without a browser.
+Derive the family from `filing-descriptor.js`'s
+`resolveDescriptorForInventoryType(...).engineId`; do **not** hand-list
+`annual` / `finalAccounting` / `trustAccounting`.
 
-**C3.** Wire both dispatch sites: on adding a row to a financial schedule whose
-acknowledgement is not yet recorded, show the modal and record the answer.
+**C3.** Add the modal. `confirmModal({ title, message, confirmLabel,
+cancelLabel })` from `src/core/ui/dialogs.js:103`. Wording should state what the
+filer is confirming, not warn that something was refused (see D5): that
+supporting documentation for this schedule is expected, that the app does not
+collect it for them, and that they can attach it in this schedule's Supporting
+Documents section. **No native `confirm()`** — `native-dialog-guard.spec.js`
+(50G-3) forbids it outright.
 
-**C4.** Handle the non-click paths (Open Decision C).
+**C4.** Hook both `mount()` functions: after the schedule renders, if the route
+maps to a financial schedule that has rows and no acknowledgement for the
+active period, show the modal and record a yes. A no leaves the page working
+and the flag unset (D5). Guard against firing on an empty schedule.
 
 **C5.** `normalizeWardData()` (`src/legacy-app.js:6351`) gives every legacy
 `.sav` a defined value for the new field, so an old case file does not read as
@@ -157,9 +188,15 @@ acknowledgement is not yet recorded, show the modal and record the answer.
 - A unit spec for the acknowledgement state model — which schedules are in
   scope per family, derived from the descriptor registry rather than a hand
   list; what an un-normalized legacy shape resolves to.
-- An e2e spec: the modal appears on the first row added to a financial
-  schedule, does **not** appear on the second row, does **not** appear on a
-  narrative Plan page, and survives a `.sav` round-trip.
+- An e2e spec: the modal appears on landing on a populated financial schedule,
+  does **not** appear once acknowledged, does **not** appear on an empty
+  schedule, does **not** appear on a narrative Plan page, returns after a
+  dismissal (D5), appears for a schedule populated by **Excel import** rather
+  than by the Add button (D4 — the hole this design exists to close), and
+  survives a `.sav` round-trip.
+- A period test: acknowledge, roll the filing to a new period, and confirm the
+  modal returns (D3) — the assertion that proves the period key is wired to
+  `resolveActiveDocPeriod()` and not to something that merely looks stable.
 - **A regression assertion that this changes nothing about validation or
   navigation:** export a filing with populated schedules and no acknowledgement
   and confirm it still exports, and that `computeNavChecks()` is unchanged.
@@ -191,33 +228,49 @@ here, and the environment that produced it could not run Playwright at all.
 
 ---
 
-## Open decisions — these need Alan before C1 starts
+## Decisions 2–5 — all settled, 2026-09-17
 
-**A. Where does the acknowledgement live?**
-Either a new top-level `D.scheduleDocsAck = { <key>: true }`, or a flag inside
-the existing `scheduleDocs[<key>]` structure. The existing structure is already
-**period-scoped** (`resolveActiveDocPeriod(data)`), which forces question B.
-A flat top-level object is simpler and period-independent.
+**D2 — Storage: a new flat field on the ward.**
+`D.scheduleDocsAck`, not a flag inside `scheduleDocs`. One place to look, and
+it round-trips with the `.sav` because it rides in `D`.
 
-**B. Does the acknowledgement reset for a new reporting period?**
-"Once per schedule" is unambiguous within one filing. When a case rolls into a
-new year via *New Year*, the supporting-documentation obligation arguably
-recurs — a fresh period is a fresh set of receipts. Resetting means asking
-again each year; not resetting means asking once in the life of the case.
+**D3 — The acknowledgement resets each reporting period.** A new period is a
+new set of receipts and bank statements, so the obligation genuinely recurs.
 
-**C. What about schedules populated without clicking Add?**
-An Excel import fills schedules directly, and *New Filing from Existing* can
-carry rows forward. Neither passes through `add-entry` / `add-row`, so the
-modal never fires and the schedule ends up populated but unacknowledged.
-Options: accept it (the gate is advisory, not a blocker); check on schedule
-page render instead of on add; or fire once after an import completes.
+> **These two interact, and the interaction is the design.** A *flat* field
+> that *resets per period* must itself carry a period dimension, so the shape
+> is nested by period, not by schedule alone:
+>
+> ```js
+> D.scheduleDocsAck = { [periodKey]: { a1: true, schB1: true } }
+> ```
+>
+> `periodKey` must come from **`resolveActiveDocPeriod(data)`**
+> (`src/core/pdf/supplemental-pdf.js:113`) — the same resolver `scheduleDocs`
+> already uses (`activeYearKey`, else `periodFrom__periodTo`, else
+> `'initial'`). Deriving it any other way lets an acknowledgement drift out of
+> alignment with the uploads it refers to, which would be invisible until a
+> filer was asked again for a period they had already confirmed, or not asked
+> for one they hadn't.
 
-**D. What happens on Cancel?**
-`confirmModal` resolves `false` on Cancel *and* on Escape. Either the row is
-not added — which makes the modal a genuine gate and risks a filer who pressed
-Escape wondering why nothing happened — or the row is added and the modal
-re-appears next time. The phrase "before proceeding" suggests the former;
-the Escape behaviour argues for care in the wording either way.
+**D4 — Populated-schedule detection is on mount, not on Add.** See *Trigger
+point* above. One hook per family; catches Excel import and *New Filing from
+Existing*.
+
+**D5 — A non-yes does not block.** The filer keeps whatever they were doing and
+the schedule stays unacknowledged, so the modal returns on the next visit. This
+is deliberate: `confirmModal` resolves `false` on **Escape** as well as Cancel,
+so a blocking design would let a stray keypress silently discard a deliberate
+action with nothing on screen to explain it. The obligation still gets in front
+of the filer — repeatedly, until acknowledged — which is what the modal is for.
+
+The copy should suit that: an acknowledgement the filer is being asked to
+confirm, not a warning that something has been refused.
+
+**Consequence for C6's regression test.** With D5, *nothing about export or
+navigation changes whether or not the filer ever says yes*. That makes the
+"this changes nothing" assertion easy to write and cheap to keep — which is
+exactly the property the first attempt lacked.
 
 ---
 
