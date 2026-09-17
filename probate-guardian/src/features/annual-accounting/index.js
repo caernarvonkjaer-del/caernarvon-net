@@ -7,6 +7,15 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 // (remuneration-filtering comment included), so the print-page capacity panel
 // and the export gate ran two separate copies of the same court-facing rule.
 import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
+// Milestone 53C: fmtD was a character-identical twin of the fmtDate Milestone
+// 53B moved into cell-reader.js (Milestone 51's audit grouped the two as "A1"
+// and left them only because they sat on opposite sides of the script
+// boundary). Imported under the local name fmtD -- NOT
+// `import { fmtDate } ... ; export { fmtDate as fmtD }`, which would re-export
+// correctly but leave no local fmtD binding for this file's own call sites --
+// and re-exported below, since print.js and date-truncation-helpers.spec.js
+// both reach it by that name.
+import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
@@ -340,8 +349,10 @@ export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const 
 // under-penalties-of-perjury attestation's "from X through Y". Without it,
 // String(dateObj).substring(0,10) gives "Tue May 19" for a 2026-05-20T00:00:00Z
 // date -- wrong format and a day early, inside a sworn statement. See
-// tests/unit/date-truncation-helpers.spec.js.
-export function fmtD(s){const v=s instanceof Date?s.toISOString():s;return v?String(v).substring(0,10):'';}
+// tests/unit/date-truncation-helpers.spec.js. Milestone 53C: the guard now
+// lives in cell-reader.js's fmtDate (imported above as fmtD); this is a
+// re-export of that one function object, not a second copy.
+export { fmtD };
 // securitySanitize: this family's plain free-text fields keep running
 // legacy-app.js's validateSecurityInput() on blur (see the option's own
 // comment in form-fields.js) -- the behavior of the retired

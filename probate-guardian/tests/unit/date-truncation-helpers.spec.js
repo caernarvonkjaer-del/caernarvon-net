@@ -59,6 +59,16 @@ describe('Group A date-truncation helpers: Date objects', () => {
     expect(fmtDate(0)).toBe('');
     expect(fmtDate('abc')).toBe('abc');
   });
+
+  // Milestone 53C: annual-accounting's fmtD is a RE-EXPORT of cell-reader.js's
+  // fmtDate, not a second implementation. Object identity is the strongest
+  // available assertion of that -- two separately-declared copies could pass
+  // every behavioural test above and still drift later; the same function
+  // object cannot. This is what replaces the source scan for a fmtD body in
+  // annual-accounting/index.js, which no longer has one.
+  test('fmtD IS fmtDate -- a re-export, not a copy', () => {
+    expect(fmtD).toBe(fmtDate);
+  });
 });
 
 // A source scan, because four of the five copies cannot be imported: one is a
@@ -71,7 +81,12 @@ describe('Group A date-truncation helpers: every copy carries the Date guard', (
     // Milestone 53B moved this copy out of legacy-app.js (a classic script) into
     // an ES module; the guard it carries is unchanged.
     { file: 'src/core/excel/cell-reader.js', name: 'fmtDate' },
-    { file: 'src/features/annual-accounting/index.js', name: 'fmtD' },
+    // Milestone 53C deleted annual-accounting/index.js's fmtD declaration: it is
+    // now a re-export of the cell-reader.js copy above, so there is no body here
+    // to scan and scanning for one would fail. The identity assertion in the
+    // behavioural block above is what covers it instead -- and it is strictly
+    // stronger, since it proves the same function object rather than a
+    // separately-guarded lookalike.
     { file: 'src/features/annual-accounting/excel.js', name: 'fD' },
     { file: 'src/features/guardian-inventory/excel.js', name: 'fmtD' },
     { file: 'src/features/simplified-accounting/excel.js', name: 'fmtD' },
