@@ -106,13 +106,30 @@ describe('summary and open-by-default rule', () => {
 });
 
 describe('routing', () => {
-  it('issue-derived rows with a route delegate to the shared jump-to-field handler; readiness-only rows render no link', () => {
+  it('issue-derived rows with a route delegate to the shared jump-to-field handler', () => {
     const issue = createRequiredIssue({ filingType: 'guardian', path: 'wardName', route: '/', message: 'Cover — Name of Ward is required' });
     const html = renderReadinessCard({ filingType: 'guardian', data: { wardId: 'w1' }, validationIssues: [issue] });
     expect(html).toContain('data-form-action="jump-to-field" data-route="/" data-jump-path="wardName"');
+  });
 
+  // PLAN_PREDICATE_ROUTES (readiness-config.js) maps every plan-family
+  // predicate id to a real route/path, restoring "Go to field" for Plan
+  // filings the same way Guardian/Accounting's own predicates() already
+  // supply theirs -- a failing predicate row now delegates to jump-to-field
+  // just like an issue-derived row does, not "readiness-only, no link" as
+  // this repo's older behavior had it.
+  it('a failing plan predicate row also delegates to jump-to-field, via its PLAN_PREDICATE_ROUTES mapping', () => {
     const plan = renderReadinessCard({ data: { ...READY_PLAN, wardName: '' } });
-    expect(plan).not.toContain('jump-to-field');
+    expect(plan).toContain('data-form-action="jump-to-field" data-route="/" data-jump-path="wardName"');
+  });
+
+  it('a passing predicate row (ok: true) never carries a jump link even when a route is mapped for its id', () => {
+    const plan = renderReadinessCard({ data: READY_PLAN });
+    // cover.wardCaseCounty passes here (wardName/caseNumber/county all set)
+    // and maps to route '/' path 'wardName' in PLAN_PREDICATE_ROUTES --
+    // readiness-card.js's jumpLink() must still suppress the link for a row
+    // that already passed (row.ok === true).
+    expect(plan).not.toContain('data-jump-path="wardName"');
   });
 
   it('issues outside the card scope (supplemental, capacity, technical, security, hidden identity) render no row', () => {

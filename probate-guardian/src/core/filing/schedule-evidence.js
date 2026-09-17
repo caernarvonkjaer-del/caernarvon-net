@@ -1,4 +1,5 @@
 import { isFilingEligibleSupplement, resolveActiveDocPeriod } from '../pdf/supplemental-pdf.js';
+import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 
 // These are the financial schedules with an entry collection and an upload
 // section. Narrative plan pages intentionally have no evidence gate.
@@ -16,9 +17,15 @@ export const FINANCIAL_SCHEDULE_COLLECTIONS = Object.freeze({
   }),
 });
 
+// Derived from filing-descriptor.js's engineId rather than re-listing
+// individual filing-type keys here (annual/finalAccounting/trustAccounting
+// all share engineId 'annual') -- see filing-type-enumeration-guard.spec.js,
+// which fails any file outside filing-descriptor.js that hand-enumerates
+// 4+ distinct keys.
 export function scheduleEvidenceFamily(inventoryType) {
-  if (inventoryType === 'guardian') return 'guardian';
-  if (['annual', 'finalAccounting', 'trustAccounting'].includes(inventoryType)) return 'annual';
+  const engineId = resolveDescriptorForInventoryType(inventoryType)?.engineId;
+  if (engineId === 'guardian') return 'guardian';
+  if (engineId === 'annual') return 'annual';
   return '';
 }
 

@@ -1183,11 +1183,19 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "resumeCaseOnDeviceAtLaunch"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "SCHEDULE_NAV_KEYS"
     },
     {
       "file": "src/legacy-app.js",
       "name": "setAccountingFilingType"
+    },
+    {
+      "file": "src/legacy-app.js",
+      "name": "setScheduleEvidenceOverride"
     },
     {
       "file": "src/legacy-app.js",
@@ -1211,7 +1219,23 @@
     },
     {
       "file": "src/main.js",
+      "name": "missingScheduleEvidence"
+    },
+    {
+      "file": "src/main.js",
       "name": "navigate"
+    },
+    {
+      "file": "src/main.js",
+      "name": "newSchB4Id"
+    },
+    {
+      "file": "src/main.js",
+      "name": "normalizeSchB4Accounts"
+    },
+    {
+      "file": "src/main.js",
+      "name": "scheduleEvidenceState"
     }
   ]
 }
