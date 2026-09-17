@@ -571,6 +571,28 @@ test.describe('routes', () => {
     expect(errors).toEqual([]);
   });
 
+  // A real click on a Summary page's Section Completion link, not the direct
+  // window.navigate() call the test above uses -- summary-renderer.js's
+  // navigation links are <a href="#">, and the shared click handler used to
+  // call window.navigate() without calling event.preventDefault(). The
+  // anchor's own default action then also ran, setting location.hash to ""
+  // (from href="#") right behind it, which queued a second, later hashchange
+  // that found no matching route and fell back to Cover -- so every summary
+  // link appeared to navigate, then silently bounced back to the cover a
+  // beat later. Reported live via screenshots of Plan Minor's and Guardian
+  // Inventory's Summary pages, both built on this one shared renderer.
+  test('Summary page: clicking a real Section Completion link navigates there and stays, instead of bouncing back to Cover', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).addWard('Summary Link Ward', 'planMinor'));
+    await page.evaluate(() => (window as any).navigate('/summary'));
+
+    const main = page.locator('#main-content');
+    await main.getByRole('link', { name: 'Prior Residences' }).click();
+
+    await expect(page.locator('#main-content h1')).toContainText('2. Residences During the Preceding 12 Months');
+    expect(await page.evaluate(() => (window as any).currentPage)).toBe('/p2');
+  });
+
   test('form fields in dark mode use light gray background with black font', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Dark Theme Form Ward', 'simplified'));

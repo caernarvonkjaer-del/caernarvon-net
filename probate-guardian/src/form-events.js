@@ -45,7 +45,16 @@ document.addEventListener('click', (event) => {
     case 'filing-sync-closed': window.doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index); break;
     case 'filing-sync-closed-all': window.doFilingSyncClosed(); break;
     case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'navigate': window.navigate(actionElement.dataset.route); break;
+    // summary-renderer.js's Section Completion / footer links are <a href="#">
+    // (not <button>, so they read as links, not controls). Without this, the
+    // anchor's own default action also fires right after window.navigate()
+    // starts rendering the target page: it sets location.hash to "" (from
+    // href="#"), which queues a second, later hashchange that finds no
+    // matching route and falls back to Cover -- so every summary-page link
+    // appeared to navigate, then silently bounced back to the cover a beat
+    // later. Every other data-form-action target is a real <button>, which
+    // has no default action to prevent.
+    case 'navigate': event.preventDefault(); window.navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
     case 'party-clear-compare': window.clearPartyCompareSelection(); break;
     // The two checkbox actions read the box's own state: a click on a checkbox
