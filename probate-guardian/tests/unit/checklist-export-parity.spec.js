@@ -123,6 +123,16 @@ describe('checklist and export validator field parity', () => {
   // Fields the export validator requires that the section checks never read.
   // Every entry is a real gap, not an exemption -- shrink this list, never
   // grow it, as 35-4 reconciles each filing type.
+  //
+  // Milestone 55B closed the `attorney_signatureDate`/`preparer_signatureDate`
+  // gaps below (planAnnual, planSimplified, planMinor): computeNavChecks()'s
+  // sidebar branches now reference those fields for the first time, via the
+  // new datesOrdered() date-order checks attached to pa-p11/ps-p3/pm-p7. This
+  // spec's own field-name-presence detection is what surfaced that the fix
+  // landed -- it cannot prove the *rule* applied to the field matches the
+  // validator's (that is what 55B's real regression, in
+  // navigation-status.contract.spec.ts, is for), only that the name is no
+  // longer invisible to this static check the way it was before.
   const KNOWN_GAPS = {
     // Milestone 39-C: the new tri-state signature control's own fields
     // (attorney_/preparer_ signatureState/signatureImage) extend the same
@@ -132,15 +142,20 @@ describe('checklist and export validator field parity', () => {
     // new too: checkSignatureState()'s own `name` argument for that role
     // (see plan-annual/index.js) is the first reference to the bare
     // `d.attorney` field inside validatePlanAnnual()'s body.
-    planAnnual: ['attorney', 'attorney_signatureDate', 'attorney_signatureImage', 'attorney_signatureState'],
-    planSimplified: ['attorney_signatureDate', 'preparer_signatureDate'],
+    planAnnual: ['attorney', 'attorney_signatureImage', 'attorney_signatureState'],
+    // Milestone 55B closed both of this filing type's gaps -- ps-p3 now
+    // references both attorney_signatureDate and preparer_signatureDate
+    // (the two "Borrowed" relationships attached to the guardian's own key).
+    planSimplified: [],
     // Milestone 40C-E closed four of this list's gaps: `ucn`/`ref` (the Cover's
     // case identity, either one satisfying it), `amendedForm` (which must be
     // ANSWERED, not merely non-blank) and `amendedVersion` (required when
     // Amended Form is Yes) are now all in pm-cover's own sidebar rule, so they
     // are no longer accepted omissions. The signature-field entries remain --
     // they are the same pre-existing gap the comment above describes.
-    planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState'],
+    // Milestone 55B additionally closed `preparer_signatureDate` (pm-p7 now
+    // references it via the new date-order check).
+    planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureImage', 'preparer_signatureState'],
     planInitial: ['attorney_signatureImage', 'attorney_signatureState'],
     // Milestone 39-C: `attorney`/`attorney_signatureState`/`attorney_signatureImage`
     // are new here for the same reason as planAnnual's own `attorney` entry

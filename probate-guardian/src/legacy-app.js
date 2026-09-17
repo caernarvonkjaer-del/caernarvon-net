@@ -6728,6 +6728,15 @@ function bindForms(){
 // The split exists so the dashboard can compute a ward's filing progress
 // WITHOUT that ward being the active one — see getWardProgress().
 function computeNavChecks(){
+  // Milestone 55B: mirrors checkDateOrder()'s own tolerance (src/core/
+  // validation/date-rules.js) -- a blank date on either side is the
+  // presence check's problem, not this one's, so it reports "in order"
+  // rather than manufacturing a second, redundant failure. That
+  // blank-tolerance is also what makes it safe to attach to a key that
+  // does not otherwise track the specific date's presence at all (see the
+  // "Borrowed" sites below): a role with no data yet never flips this false.
+  const datesOrdered=(earlier,later,allowSameDay=true)=>
+    !earlier||!later||(allowSameDay?later>=earlier:later>earlier);
   if(activeInventoryType==='guardian'){
     // Milestone 40H-A: window.validateGuardian is assigned only once the
     // Guardian Inventory feature bundle lazy-loads, so this branch can run
@@ -6775,12 +6784,17 @@ function computeNavChecks(){
     const hasAny=(...vals)=>vals.some(v=>filled(v));
     const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.email)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
     const checks={
-      's-cover':D.eligDepository==='Yes'&&D.eligOnlyTransactions==='Yes'&&filled(D.wardName)&&filled(D.caseNumber)&&filled(D.ssn)&&filled(D.gid)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.attorney)&&filled(D.typeOfGuardianship)&&filled(D.county)&&filled(D.amendedForm),
+      's-cover':D.eligDepository==='Yes'&&D.eligOnlyTransactions==='Yes'&&filled(D.wardName)&&filled(D.caseNumber)&&filled(D.ssn)&&filled(D.gid)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.attorney)&&filled(D.typeOfGuardianship)&&filled(D.county)&&filled(D.amendedForm)
+        &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
       's-p2':filled(D.startingBalance)&&filled(D.interestIncome)&&filled(D.depositsSettlement)&&filled(D.serviceCharges)&&filled(D.federalIncomeTax),
-      's-p3':filled(D.periodFrom)&&filled(D.periodTo),
-      's-p4':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g)),
-      's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip),
-      's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name),
+      's-p3':filled(D.periodFrom)&&filled(D.periodTo)
+        &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
+      's-p4':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
+        &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
+      's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
+      's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name)
+        &&datesOrdered(D.periodTo,D.certServiceDate,true),
       's-p7':D.remuneration.some(r=>filled(r.guardian)&&filled(r.type)),
     };
     const incomplete={
@@ -6809,18 +6823,23 @@ function computeNavChecks(){
     const rowsStarted=(rows,fields)=>(rows||[]).some(r=>rowHasAnyData(r));
     const t=calcTotalsAnnual();
     const checks={
-      'a-p1':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.gid)&&filled(D.guardian)&&filled(D.county)&&filled(D.filingType),
+      'a-p1':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.gid)&&filled(D.guardian)&&filled(D.county)&&filled(D.filingType)
+        &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
       'a-p2':filled(D.startingBalance),
-      'a-p3':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g)),
-      'a-p4':filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip),
-      'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate),
+      'a-p3':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
+        &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
+      'a-p4':filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip)
+        &&datesOrdered(D.periodTo,D.preparer.signatureDate,true),
+      'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
       // Complete when the two lines agree, or the difference is explained.
       'a-p67':(()=>{const r=annualReconcileState(t);return !r.outOfBalance||r.explained;})(),
       // Part VIII is satisfied either by naming a trust or by certifying there
       // are none, matching the verifiedEmpty pattern the other Annual checks use.
       'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name),
       'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany),
-      'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name),
+      'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name)
+        &&datesOrdered(D.periodTo,D.certDate,true),
       'a-p11':verifiedEmpty('remuneration')||D.remuneration.some(r=>r.guardian||r.type||r.amount),
       'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount'],'scha'),
       'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount'],'schb1'),
@@ -6869,13 +6888,23 @@ function computeNavChecks(){
       &&(!D.q8Other||filled(D.q8OtherText))
       &&!(D.q8None&&(D.q8DNR||D.q8LivingWill||D.q8Surrogate||D.q8POA||D.q8Other));
     const checks={
-      'ps-cover':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.county)&&filled(D.periodFrom)&&filled(D.periodTo),
+      'ps-cover':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.county)&&filled(D.periodFrom)&&filled(D.periodTo)
+        &&datesOrdered(D.periodFrom,D.periodTo,false),
       'ps-p2':filled(D.q1Residences)&&filled(D.q2BestPlacement)&&filled(D.q3MedicalTreatment)&&filled(D.q4Diagnosis)
         &&filled(D.q5SocialServices)&&filled(D.q6Interaction)
         &&filled(D.q7RestoreRights)&&(D.q7RestoreRights!=='Yes'||filled(D.q7RestoreExplain))
         &&q8Answered
         &&filled(D.q9Remuneration)&&(D.q9Remuneration!=='Yes'||filled(D.q9RemunerationExplain)),
-      'ps-p3':filled(g0.name)&&filled(g0.signatureDate),
+      // Milestone 55B: the guardian date-order check here is an exact fit --
+      // this key already labels the guardian's own signature. Preparer and
+      // attorney are "Borrowed": neither role has its own key in this filing
+      // type, so their date-order checks attach here too rather than being
+      // silently left unresolved (see MILESTONE-55-PROPOSAL.md's 55B section
+      // for the labeling trade-off this accepts).
+      'ps-p3':filled(g0.name)&&filled(g0.signatureDate)
+        &&datesOrdered(D.periodTo,g0.signatureDate,true)
+        &&datesOrdered(D.periodTo,D.preparer_signatureDate,true)
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
     };
     const incomplete={
       'ps-cover':!checks['ps-cover']&&hasAny(D.wardName,D.caseNumber,D.periodFrom,D.periodTo),
@@ -6896,7 +6925,8 @@ function computeNavChecks(){
     const checks={
       'pa-cover':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.county)&&filled(D.gid)
         &&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.wardLiving)
-        &&filled(D.residenceAddress)&&filled(D.residenceCityStateZip),
+        &&filled(D.residenceAddress)&&filled(D.residenceCityStateZip)
+        &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
       'pa-p2':res.length>0&&res.every(r=>filled(r.name)),
       'pa-p3':anyOf(D.q2NoMove,D.q2WithinCounty,D.q2WithinCircuit,D.q2OutsideApproved,D.q2OutsideVenuePetition)
         &&anyOf(D.q3SettingALF,D.q3SettingGroupHome,D.q3SettingIntermediate,D.q3SettingPrivate,
@@ -6927,7 +6957,16 @@ function computeNavChecks(){
       'pa-p9':(!!D.q10NoDirectives!==!!D.q10Executed)&&(!D.q10ExecOther||filled(D.q10ExecOtherText)),
       'pa-p10':D.q11NoRemuneration?filled(D.q11NoRemunerationName)
                                   :hasAny(D.q11ReceivedName,D.q11Amount,D.q11From),
-      'pa-p11':filled(g0.name)&&filled(g0.signatureDate),
+      // Milestone 55B: guardian date-order is an exact fit (this key already
+      // labels the guardian's signature); attorney is "Borrowed" -- no
+      // attorney-specific key exists in this filing type, so its date-order
+      // check attaches here rather than being silently left unresolved (see
+      // MILESTONE-55-PROPOSAL.md's 55B section for the labeling trade-off).
+      // This is also the reported defect: the screenshot's "Signatures —
+      // Guardian date signed must be on or after Reporting Period To" issue.
+      'pa-p11':filled(g0.name)&&filled(g0.signatureDate)
+        &&datesOrdered(D.periodTo,g0.signatureDate,true)
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
     };
     const incomplete={
       'pa-cover':!checks['pa-cover']&&hasAny(D.wardName,D.caseNumber,D.gid,D.periodFrom,D.periodTo,D.guardian,D.wardLiving,D.residenceAddress),
@@ -7048,7 +7087,8 @@ function computeNavChecks(){
         &&filled(D.guardianName)&&filled(D.q1ResidenceName)&&filled(D.q1Street)
         &&(filled(D.ucn)||filled(D.ref))
         &&isAnswered(D.amendedForm)
-        &&(String(D.amendedForm??'').trim().toLowerCase()!=='yes'||filled(D.amendedVersion)),
+        &&(String(D.amendedForm??'').trim().toLowerCase()!=='yes'||filled(D.amendedVersion))
+        &&datesOrdered(D.periodFrom,D.periodTo,false),
       'pm-p2':true,
       // Same fix as pi-p5 above: an empty table shouldn't read as complete
       // before any provider has actually been entered.
@@ -7059,8 +7099,15 @@ function computeNavChecks(){
         &&anyOf(D.q5NoUnmetNeeds,D.q5DoesNotCareToSocialize,D.q5UnmetNeeds,D.q5Other)
         &&(!D.q5Other||filled(D.q5Explain)),
       'pm-p6':anyOf(D.certIncapacitated,D.certMinor,D.certConsulted,D.certNoRestriction,D.certProvidesCare,D.certPhysicianAttached)
-        &&filled(g0.name)&&filled(g0.signatureDate),
-      'pm-p7':filled(D.preparer_name)&&filled(D.attorney_name)&&filled(D.attorney_signatureDate),
+        &&filled(g0.name)&&filled(g0.signatureDate)
+        &&datesOrdered(D.periodTo,g0.signatureDate,true),
+      // Milestone 55B: pm-p7 already labels "Preparer & Attorney" combined
+      // (its validator sectionLabel), so both date-order checks are exact
+      // fits here -- not a labeling trade-off the way Plan Simplified's and
+      // Plan Annual's Borrowed sites are.
+      'pm-p7':filled(D.preparer_name)&&filled(D.attorney_name)&&filled(D.attorney_signatureDate)
+        &&datesOrdered(D.periodTo,D.preparer_signatureDate,true)
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
     };
     const incomplete={
       'pm-cover':!checks['pm-cover']&&hasAny(D.wardName,D.county,D.periodFrom,D.periodTo,D.guardianName,D.q1ResidenceName),

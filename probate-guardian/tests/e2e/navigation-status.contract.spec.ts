@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog } from './support/target';
+import {
+  freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog,
+  fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard,
+} from './support/target';
 import type { ValidatorIssue } from './support/window-api';
 
 // Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
@@ -949,5 +952,199 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       };
     });
     expect(amendedYesNoVersion).toEqual({ navComplete: false, blocked: true });
+  });
+});
+
+// Milestone 55B. computeNavChecks() hand-writes a presence-only nav-check
+// per filing type, entirely independent of each feature's own validator, for
+// every filing type except Guardian Inventory (whose branch derives its
+// checks directly from validate()'s real errors). Twenty-three
+// checkDateOrder() relationships across five filing types had a
+// presence-only sidebar counterpart with no idea what date ordering the real
+// validator enforces -- a filing could show every section green while
+// Preview & Export still blocked on a signature or certification dated
+// before the period it certifies. This is the runtime venue (not
+// checklist-export-parity.spec.js, which only slices computeNavChecks()'s
+// source into text and can never execute it) -- covering at least one
+// Exact-fit relationship per filing type, plus both Borrowed keys
+// specifically, since those are the ones this milestone's own review caught
+// being silently left unresolved in an earlier draft.
+test.describe('Milestone 55B: sidebar date-order agrees with the export blocker', () => {
+  test('Plan Annual: reported case -- guardian signed before the reporting period ended', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Order Parity PA Ward', 'planAnnual');
+    await fillMinimalValidPlanAnnualWard(page);
+
+    // Baseline: the fixture's dates are already in order.
+    const baseline = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        navComplete: w.computeNavChecks().checks['pa-p11'],
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('Guardian date signed must be on or after')),
+      };
+    });
+    expect(baseline).toEqual({ navComplete: true, blocked: false });
+
+    // Push the guardian's signature date before periodTo -- the exact
+    // reported defect.
+    const outOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.planGuardians[0].signatureDate = '2020-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['pa-p11'],
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('Guardian date signed must be on or after')),
+      };
+    });
+    expect(outOfOrder.blocked, 'export must block on the out-of-order guardian date').toBe(true);
+    expect(outOfOrder.navComplete, 'sidebar must not call Signatures complete while export blocks on it').toBe(false);
+  });
+
+  test('Plan Annual: Borrowed attorney date also flips the guardian-labeled key (named trade-off, not a gap)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Order Parity PA Attorney Ward', 'planAnnual');
+    await fillMinimalValidPlanAnnualWard(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney = 'Jordan Reyes, Esq.';
+      w.D.attorney_signatureDate = '2020-01-01';
+    });
+
+    const state = await page.evaluate(() => {
+      const w = window as any;
+      return {
+        navComplete: w.computeNavChecks().checks['pa-p11'],
+        blocked: w.validatePlanAnnual().some((m: ValidatorIssue) => m.message.includes('Attorney date signed must be on or after')),
+      };
+    });
+    expect(state.blocked, 'export must block on the out-of-order attorney date').toBe(true);
+    // pa-p11 is the guardian's own key -- borrowed for the attorney's date
+    // because Plan Annual has no attorney-specific key at all. This is the
+    // accepted, named trade-off (a preparer/attorney-only problem shows as
+    // "Signatures incomplete" rather than pointing at the specific role),
+    // not a bug: the point of this test is that the key genuinely flips,
+    // closing the reported defect class, not that the label is precise.
+    expect(state.navComplete).toBe(false);
+  });
+
+  test('Plan Simplified: Borrowed preparer and attorney dates both flip the guardian-labeled ps-p3', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Order Parity PS Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+
+    const baseline = await page.evaluate(() => (window as any).computeNavChecks().checks['ps-p3']);
+    expect(baseline).toBe(true);
+
+    const preparerOutOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.preparer_name = 'Sam Okafor';
+      w.D.preparer_signatureDate = '2020-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['ps-p3'],
+        blocked: w.validatePlanSimplified().some((m: ValidatorIssue) => m.message.includes('Preparer date signed must be on or after')),
+      };
+    });
+    expect(preparerOutOfOrder.blocked, 'export must block on the out-of-order preparer date').toBe(true);
+    expect(preparerOutOfOrder.navComplete).toBe(false);
+
+    // Reset, then confirm the attorney side independently flips the same key.
+    await page.evaluate(() => { (window as any).D.preparer_signatureDate = ''; });
+    const attorneyOutOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney = 'Jordan Reyes, Esq.';
+      w.D.attorney_signatureDate = '2020-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['ps-p3'],
+        blocked: w.validatePlanSimplified().some((m: ValidatorIssue) => m.message.includes('Attorney date signed must be on or after')),
+      };
+    });
+    expect(attorneyOutOfOrder.blocked, 'export must block on the out-of-order attorney date').toBe(true);
+    expect(attorneyOutOfOrder.navComplete).toBe(false);
+  });
+
+  test('Annual Accounting: attorney signature date (Exact-fit a-p5) and Cover period order (a-p1)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Order Parity Annual Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+
+    const baseline = await page.evaluate(() => {
+      const w = window as any;
+      return { p1: w.computeNavChecks().checks['a-p1'], p5: w.computeNavChecks().checks['a-p5'] };
+    });
+    expect(baseline).toEqual({ p1: true, p5: true });
+
+    const attorneyOutOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_signatureDate = '2020-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['a-p5'],
+        blocked: w.validateAnnual().some((m: ValidatorIssue) => m.message.includes('Attorney Signature Date must be on or after')),
+      };
+    });
+    expect(attorneyOutOfOrder.blocked).toBe(true);
+    expect(attorneyOutOfOrder.navComplete).toBe(false);
+
+    const coverOutOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.periodFrom = '2027-01-01'; w.D.periodTo = '2026-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['a-p1'],
+        blocked: w.validateAnnual().some((m: ValidatorIssue) => m.message.includes('Accounting Period To must be on or after')),
+      };
+    });
+    expect(coverOutOfOrder.blocked).toBe(true);
+    expect(coverOutOfOrder.navComplete).toBe(false);
+  });
+
+  test('Simplified Accounting: attorney signature date (Exact-fit s-p5) is a real, previously-untracked field', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createSimplifiedWard(page, 'Date Order Parity Simplified Ward');
+    await fillMinimalValidSimplifiedWard(page);
+
+    const baseline = await page.evaluate(() => (window as any).computeNavChecks().checks['s-p5']);
+    expect(baseline).toBe(true);
+
+    const outOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_signatureDate = '2020-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['s-p5'],
+        blocked: w.validateSimplified().some((m: ValidatorIssue) => m.message.includes('Signature Date must be on or after')),
+      };
+    });
+    expect(outOfOrder.blocked, 'export must block on the out-of-order attorney date').toBe(true);
+    expect(outOfOrder.navComplete, 's-p5 never tracked attorney_signatureDate before this fix').toBe(false);
+  });
+
+  test('Plan Minor: preparer and attorney dates both flip the already-combined pm-p7 (Exact fit, not Borrowed)', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Order Parity PM Ward', 'planMinor');
+    await fillMinimalValidPlanMinorWard(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.preparer_name = 'Sam Okafor';
+      w.D.attorney_name = 'Jordan Reyes, Esq.';
+    });
+
+    const baseline = await page.evaluate(() => (window as any).computeNavChecks().checks['pm-p7']);
+    expect(baseline).toBe(true);
+
+    const attorneyOutOfOrder = await page.evaluate(() => {
+      const w = window as any;
+      w.D.attorney_signatureDate = '2020-01-01';
+      return {
+        navComplete: w.computeNavChecks().checks['pm-p7'],
+        blocked: w.validatePlanMinor().some((m: ValidatorIssue) => m.message.includes('Attorney signature date must be on or after')),
+      };
+    });
+    expect(attorneyOutOfOrder.blocked).toBe(true);
+    expect(attorneyOutOfOrder.navComplete).toBe(false);
+  });
+
+  test('every date in valid order leaves all five filing types unaffected', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Date Order Parity Control Ward', 'planAnnual');
+    await fillMinimalValidPlanAnnualWard(page);
+    const stillComplete = await page.evaluate(() => (window as any).computeNavChecks().checks['pa-p11']);
+    expect(stillComplete, 'a filing with every date already in order must not be flipped by this fix').toBe(true);
   });
 });
