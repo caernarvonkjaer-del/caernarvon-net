@@ -52,6 +52,7 @@ This organization organizes projects across three standardized archetypes:
   - **Recommend, then ask, for complex changes**: before commit/push, recommend a full regression run (`npm test`) with reasons if the change is broad, cross-cutting, or touches shared/core modules — never run it without explicit go-ahead.
   - **Skip tests** for documentation-only changes.
 - **Portable Paths**: Prefer repo-relative paths over absolute ones — contributors use different machines/OSes. On Windows, use forward slashes in tool/search arguments; backslashes can be misread as escapes.
+- **Python Invocation on Windows**: Invoke Python as `python` (or `py`), never `python3`. On this org's Windows dev machines, `python3` resolves to a Microsoft Store "App Execution Alias" stub, not the real interpreter — it exits with `Python was not found; run without arguments to install from the Microsoft Store...` even though Python is genuinely installed and on PATH as `python`. This applies to any Archetype 2 (Python Data & Document Pipeline) work and to any tool/skill that shells out to Python from this machine; it does not apply to Linux/macOS end-user instructions (e.g. `HOW-TO-RUN.txt`'s Linux section), where `python3` is the correct, standard command.
 - **Verify Commit Citations**: Never cite a commit SHA or reference without directly checking it via `git log`/`git rev-parse` in tool output first.
 
 ---
