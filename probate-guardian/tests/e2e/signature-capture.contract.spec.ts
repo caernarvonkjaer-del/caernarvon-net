@@ -405,6 +405,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await page.evaluate((img) => {
       const d = (window as any).D;
       d.attorney = 'Sample Attorney';
+      d.attorney_email = 'attorney@example.com'; // Milestone 55D: now required once an attorney is named
       d.attorney_signatureState = 'stamp';
       d.attorney_signatureImage = img;
     }, SAMPLE_PNG);

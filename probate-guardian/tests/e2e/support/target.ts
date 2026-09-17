@@ -383,6 +383,7 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
       committeeIncorporated: 'Yes',
       certConsulted: true,
       attorney_name: 'Sample Attorney',
+      attorney_email: 'attorney@example.com', // Milestone 55D: now required once attorney info is "started"
       attorney_signatureDate: '2026-01-12',
     });
     d.planGuardians = [
