@@ -28,6 +28,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse } from 'acorn';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -46,6 +47,85 @@ const PLATFORM = new Set(['location', 'document', 'addEventListener', 'removeEve
   'ResizeObserver', 'MutationObserver', 'IntersectionObserver', 'AbortController', 'DOMParser', 'XMLSerializer',
   'caches', 'ServiceWorkerRegistration', 'PDFLib', 'undefined', 'Uint8Array', 'ArrayBuffer', 'Symbol', 'Reflect',
   'Proxy', 'globalThis', 'window']);
+
+// ── Milestone 53D: the destructure consumer pass ────────────────────────────
+//
+// The `window.X` scan below is member-access only, so it never saw
+// `const { esc, ic } = window` -- which is how every feature excel.js/index.js
+// and dashboard/index.js actually reach legacy functions. Those consumers were
+// invisible to the audit, and therefore missing from the generated .d.ts whose
+// whole job is to let `tsc --noEmit` check modules that reach through window.
+//
+// This is done with a real parser, not a second regex. The first design for
+// this pass matched `const\s*\{([^}]*)\}\s*=\s*window\b` and split the capture
+// on commas; a review found it would misfire on code already in this repo --
+// annual-accounting/index.js and guardian-inventory/index.js both carry a
+// multi-line `//` comment INSIDE the destructure braces, one of which spells
+// out an identifier (`toggleSsnReveal`) in prose that a comma-split would
+// happily record as a consumer. Comments, string contents, aliases, defaults
+// (including defaults containing commas), nested patterns and formatting are
+// all handled here by construction rather than by accumulating special cases,
+// because acorn tokenizes comments and strings out before an AST exists.
+//
+// TypeScript's compiler API was considered first and is NOT available: this
+// repo pins typescript@7 (the native/Go port), whose npm package exports only
+// `version` and `versionMajorMinor` -- no createSourceFile, no node type
+// guards. acorn is a dedicated devDependency for this one pass.
+
+/**
+ * Visit every AST node. acorn ships a parser, not a walker; ESTree nodes are
+ * plain nested objects/arrays keyed by `type`, so this short recursion covers
+ * every node shape without pulling in acorn-walk as a second dependency.
+ */
+function walkAst(node, visit) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    for (const child of node) walkAst(child, visit);
+    return;
+  }
+  if (typeof node.type === 'string') visit(node);
+  for (const key in node) {
+    if (key === 'type' || key === 'start' || key === 'end') continue;
+    const value = node[key];
+    if (value && typeof value === 'object') walkAst(value, visit);
+  }
+}
+
+/**
+ * Names destructured directly off `window` in one source file.
+ *
+ * Returns the PROPERTY read off window, not the local binding: for
+ * `const { foo: bar } = window` that is `foo`. Skips `...rest` (not a named
+ * single-property consumer) and computed keys (not a static name -- the same
+ * limit the member-access scan has).
+ *
+ * Exported for tests/unit/window-bridge.spec.js's fixture table.
+ */
+export function findWindowDestructureConsumers(source) {
+  let ast;
+  try {
+    ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module' });
+  } catch {
+    // A file this cannot parse is not this pass's problem -- the member-access
+    // scan still covers it independently, and a genuinely broken file fails
+    // the build elsewhere.
+    return [];
+  }
+  const names = new Set();
+  walkAst(ast, (node) => {
+    if (
+      node.type !== 'VariableDeclarator'
+      || !node.init || node.init.type !== 'Identifier' || node.init.name !== 'window'
+      || !node.id || node.id.type !== 'ObjectPattern'
+    ) return;
+    for (const prop of node.id.properties) {
+      if (prop.type !== 'Property' || prop.computed) continue;
+      if (prop.key.type === 'Identifier') names.add(prop.key.name);
+      else if (prop.key.type === 'Literal' && typeof prop.key.value === 'string') names.add(prop.key.value);
+    }
+  });
+  return [...names];
+}
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -75,15 +155,22 @@ export function auditWindowBridge(projectRoot = root) {
       assignedBy.get(m[1]).add(name);
     }
   }
+  const recordConsumer = (prop, name) => {
+    if (PLATFORM.has(prop)) return;
+    if (assignedBy.get(prop)?.has(name)) return;
+    if (!consumers.has(prop)) consumers.set(prop, new Set());
+    consumers.get(prop).add(name);
+  };
   for (const file of files) {
     const source = fs.readFileSync(file, 'utf8');
     const name = rel(file);
+    // Member access: window.X
     for (const m of source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)/g)) {
-      const prop = m[1];
-      if (PLATFORM.has(prop)) continue;
-      if (assignedBy.get(prop)?.has(name)) continue;
-      if (!consumers.has(prop)) consumers.set(prop, new Set());
-      consumers.get(prop).add(name);
+      recordConsumer(m[1], name);
+    }
+    // Destructuring: const { X, Y: z } = window  (Milestone 53D)
+    for (const prop of findWindowDestructureConsumers(source)) {
+      recordConsumer(prop, name);
     }
   }
   const shadowed = assignments

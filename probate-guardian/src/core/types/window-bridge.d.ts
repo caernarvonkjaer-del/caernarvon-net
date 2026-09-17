@@ -35,11 +35,13 @@ interface Window {
   addSignatureImage: any;
   addToRecentlyOpened: any;
   addWard: any;
+  afterChange: any;
   alertModal: any;
   announceStatus: any;
   annualReconcileState: any;
   applyAccountingFilingType: any;
   applyZipLimit: any;
+  assertWorkbookWithinLimits: any;
   attachFormHeaderActions: any;
   auditLog: any;
   autoSave: any;
@@ -47,12 +49,16 @@ interface Window {
   backfillWardPartyIdentity: any;
   backupAllWardsNow: any;
   beginRecordingExport: any;
+  bindForms: any;
   BLANK_CARD_COLLECTIONS: any;
   BLANK_SCHEDULE_ENTRY: any;
+  browserRecommendationNotice: any;
   buildCaseFileBlob: any;
   buildSingleWardExportBlob: any;
   calc: any;
+  calcTotals: any;
   calcTotalsAnnual: any;
+  capitalizeImportedFields: any;
   carryOverFieldsForAccounting: any;
   carryOverFieldsForPlan: any;
   carrySourcesFor: any;
@@ -62,6 +68,7 @@ interface Window {
   caseNumberOf: any;
   casesGroupingWards: any;
   checkSessionRestoreCacheAtLaunch: any;
+  chkP: any;
   clearAllData: any;
   clearPartyCompareSelection: any;
   clearSessionRestoreCache: any;
@@ -82,6 +89,7 @@ interface Window {
   confirmStartNewYear: any;
   convertSourceItems: any;
   convertTargetsFor: any;
+  countyAutocompleteHTML: any;
   countyDriftWarnings: any;
   countyInputS: any;
   countyOf: any;
@@ -146,9 +154,12 @@ interface Window {
   enforceDateRanges: any;
   ensureFragment: any;
   ensureGuardianFeatureReady: any;
+  ensureTemplate: any;
   ensureWardPartyForFiling: any;
   enterDashboardEditingFocus: any;
   errorRoute: any;
+  esc: any;
+  excelCapacityPanel: any;
   ExcelEngine: any;
   exportActivityLog: any;
   exportCaseFileZip: any;
@@ -178,6 +189,7 @@ interface Window {
   formatRelativeTime: any;
   formatSafeTitleCase: any;
   formatSSN: any;
+  formDisplayName: any;
   formEngine: any;
   generateSaltB64: any;
   getActiveSignatureImage: any;
@@ -191,6 +203,7 @@ interface Window {
   getFieldDraftIssueMessages: any;
   getFieldDraftIssues: any;
   getHtml2Pdf: any;
+  getImportProgressEl: any;
   getLastExportAt: any;
   getOrCreateCaseForWard: any;
   getPartyIdForSlot: any;
@@ -200,7 +213,10 @@ interface Window {
   getSignatureImageById: any;
   getWardFileName: any;
   getWardFileStem: any;
+  getWardHeadlineTotal: any;
   getWardPriorYears: any;
+  getWardProgress: any;
+  guardianHasAnyData: any;
   handleBackupImportChange: any;
   handleRememberedFileFailure: any;
   handleScheduleDocUpload: any;
@@ -211,6 +227,7 @@ interface Window {
   hideAutoExportReminder: any;
   hideCountyDropdown: any;
   hideSaveError: any;
+  highlightErrors: any;
   hydrateCountyFromWardParty: any;
   hydrateFromParty: any;
   ic: any;
@@ -223,6 +240,7 @@ interface Window {
   INITIAL_ADLS: any;
   initializeEmptyData: any;
   initPrintPager: any;
+  inpS: any;
   INVENTORY_TYPE_META: any;
   INVENTORY_TYPES: any;
   isAffirmative: any;
@@ -236,6 +254,7 @@ interface Window {
   isPartyPairDismissed: any;
   isScheduleIncomplete: any;
   issueMessage: any;
+  linkAccordions: any;
   linkLabelsToInputs: any;
   listSignatureImages: any;
   loadAndRenderActivityLog: any;
@@ -269,6 +288,7 @@ interface Window {
   mk: any;
   mountDashboardFeature: any;
   moveTo: any;
+  n: any;
   namesNearlyMatch: any;
   navigate: any;
   nextWalkthroughStep: any;
@@ -292,11 +312,14 @@ interface Window {
   openUserGuideForCurrentPage: any;
   openWardFileAtLaunch: any;
   pageActivityLog: any;
+  pageIntroRow: any;
   pageInventorySelector: any;
+  pageNavS: any;
   pagePartyManagement: any;
   PAGES_GUARDIAN: any;
   partyForSignaturePath: any;
   PBKDF2_ITERATIONS: any;
+  pct: any;
   PG_APP_VERSION: any;
   pgHasUnsavedChanges: any;
   PGSupplementalPdf: any;
@@ -306,6 +329,8 @@ interface Window {
   PLAN_BENEFITS: any;
   PLAN_RIGHT_STATES: any;
   PLAN_RIGHTS: any;
+  planCheckGroup: any;
+  planQ: any;
   prepareFilingOutput: any;
   printCurrentFilingPdf: any;
   promptModal: any;
@@ -313,6 +338,8 @@ interface Window {
   pvSelect: any;
   pvStep: any;
   queueAllScheduleDocValidations: any;
+  r2: any;
+  radioP: any;
   readRememberedFile: any;
   readRoleFields: any;
   readStoredTheme: any;
@@ -336,6 +363,7 @@ interface Window {
   renderPartyDirectoryRows: any;
   renderPartyManagementBody: any;
   renderRadioGroupField: any;
+  renderScheduleDocsSection: any;
   renderSelectField: any;
   renderTextareaField: any;
   renderYearManagerBody: any;
@@ -355,6 +383,7 @@ interface Window {
   sanitizeNegativeAmounts: any;
   sanitizeNonNegativeDecimal: any;
   sanitizeObjectData: any;
+  sanitizeObjectDataInPlace: any;
   sanitizeStoredText: any;
   saveAppState: any;
   saveAutoExportIntervalPref: any;
@@ -377,14 +406,17 @@ interface Window {
   setupAutoExportTimer: any;
   setupFallbackSaveReminder: any;
   setupLastSavedTicker: any;
+  showAddWardModal: any;
   showAddWardModalForType: any;
   showAutoExportReminder: any;
   showConvertWardModal: any;
   showModal: any;
   showPickCaseModal: any;
   showPickPartyModal: any;
+  showPriorYearsModal: any;
   showRenameWardModal: any;
   showSaveError: any;
+  showStartNewYearModal: any;
   showWardLockedModal: any;
   showYearManagerModal: any;
   silentAutoExport: any;
@@ -413,6 +445,8 @@ interface Window {
   tooltip: any;
   triggerImportZip: any;
   triggerOpenBackupSav: any;
+  txtP: any;
+  typeIcon: any;
   unloadWard: any;
   unmergeParty: any;
   updateCarrySourcePicker: any;
@@ -436,6 +470,7 @@ interface Window {
   validateSimplified: any;
   validateWardBackupOverwrite: any;
   validationIssue: any;
+  validationPanel: any;
   wardCountyMergeConflict: any;
   wardPartyCounty: any;
   wardPartyForFiling: any;
@@ -444,4 +479,8 @@ interface Window {
   writeRoleFields: any;
   writeStoredTheme: any;
   X: any;
+  yesNoCheckboxD: any;
+  yesNoCheckboxS: any;
+  yesNoRadioAnnualHTML: any;
+  yesNoRadioHTML: any;
 }

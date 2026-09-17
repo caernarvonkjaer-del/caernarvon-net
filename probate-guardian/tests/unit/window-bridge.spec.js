@@ -14,7 +14,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { auditWindowBridge, renderWindowDeclaration, DECLARATION_PATH } from '../../scripts/audit-window-bridge.mjs';
+import { auditWindowBridge, renderWindowDeclaration, DECLARATION_PATH, findWindowDestructureConsumers } from '../../scripts/audit-window-bridge.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allowlist = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'unit', 'fixtures', 'window-bridge-allowlist.json'), 'utf8'));
@@ -55,5 +55,70 @@ describe('window.* bridge inventory', () => {
     const triple = [...byName].filter(([, mods]) => mods.length > 1).map(([n, mods]) => `${n} <- ${mods.join(', ')}`);
     const known = allowlist.knownTripleDefinitions || [];
     expect(triple.filter((t) => !known.includes(t))).toEqual([]);
+  });
+
+  it('sees consumers that only ever destructure off window (Milestone 53D)', () => {
+    // capitalizeImportedFields is read by all three feature excel.js files and
+    // by nothing as `window.capitalizeImportedFields`, so before 53D taught the
+    // audit to parse destructuring it was invisible here -- and therefore
+    // missing from the generated .d.ts. This assertion was red before D1.
+    const entry = audit.consumers.find((c) => c.name === 'capitalizeImportedFields');
+    expect(entry, 'capitalizeImportedFields must appear as a consumed bridge name').toBeTruthy();
+    expect(entry.files).toEqual(
+      expect.arrayContaining([
+        'src/features/annual-accounting/excel.js',
+        'src/features/guardian-inventory/excel.js',
+        'src/features/simplified-accounting/excel.js',
+      ]),
+    );
+  });
+});
+
+// Milestone 53D: the destructure pass is AST-based (acorn), not a second
+// regex. The first design for it comma-split the text between the braces,
+// which would have misfired on code already in this repo -- both
+// annual-accounting/index.js and guardian-inventory/index.js carry a multi-line
+// comment INSIDE the destructure braces, one of which names an identifier
+// (toggleSsnReveal) in prose that a text split would record as a real consumer.
+// Each row below is a shape that broke, or would break, a text-based parser.
+describe('findWindowDestructureConsumers: the parser, case by case', () => {
+  const CASES = [
+    ['a simple destructure', 'const { esc, ic } = window;', ['esc', 'ic']],
+    [
+      'a multi-line destructure with a trailing comment',
+      'const {\n  esc,\n  // just a note\n  ic,\n} = window;',
+      ['esc', 'ic'],
+    ],
+    [
+      'the real shape: a comment inside the braces naming an identifier in prose',
+      'const {\n  esc,\n  // Milestone 51C dropped `toggleSsnReveal` from this list --\n  // destructured but never called here.\n  ic,\n} = window;',
+      ['esc', 'ic'],
+    ],
+    ['an alias', 'const { foo: bar } = window;', ['foo']],
+    ['a default', 'const { foo = 1 } = window;', ['foo']],
+    ['a default expression containing commas', 'const { foo = fn(1, 2, 3) } = window;', ['foo']],
+    ['nested destructuring', 'const { foo: { bar } } = window;', ['foo']],
+    ['a let declaration', 'let { foo } = window;', ['foo']],
+    ['a var declaration', 'var { foo } = window;', ['foo']],
+    ['a string literal that merely looks like one', 'const s = "const { fake } = window";', []],
+    ['a rest element', 'const { ...rest } = window;', []],
+    ['a computed key', 'const k = "x"; const { [k]: v } = window;', []],
+    ['a destructure of something other than window', 'const { foo } = notWindow;', []],
+    ['a quoted property name', 'const { "foo": bar } = window;', ['foo']],
+    ['a destructure inside a function body', 'function f(){ const { foo } = window; return foo; }', ['foo']],
+    ['unparseable source', 'const { = = = ;', []],
+  ];
+
+  it.each(CASES)('%s', (_label, source, expected) => {
+    expect(findWindowDestructureConsumers(source).sort()).toEqual([...expected].sort());
+  });
+
+  it('does not invent a consumer from the prose inside a real repo file', () => {
+    const source = fs.readFileSync(path.join(root, 'src', 'features', 'guardian-inventory', 'index.js'), 'utf8');
+    const names = findWindowDestructureConsumers(source);
+    expect(names).toContain('esc');
+    // Named only in a comment inside the braces -- Milestone 51C removed the
+    // actual binding. A comma-splitting parser records it; a real one cannot.
+    expect(names).not.toContain('toggleSsnReveal');
   });
 });
