@@ -160,6 +160,34 @@ section is written for FreeText only and is execution-ready on that basis;
 Highlight's `ColorPicker` toolbar remains a separate, unscoped, not-yet
 proposed follow-up if it is ever wanted.
 
+**Option B landed 2026-09-18, on Alan's instruction ("Implement 55A option B
+now").** Between the two dates a filer reported the Highlight artifact this
+Decision had named as a risk — a selected highlight left dashes on the court
+document and extended the page — which was fixed generically on
+`.annotationEditorLayer .editToolbar` (commit `533c97c`) to contain every
+editor type, without styling any of them. Option B is the appearance half:
+
+- `src/styles/print.css` gained a `.highlightEditor`-scoped section, written
+  to this subsection's own instruction that Option B needs equivalent
+  editor-scoped rules for `ColorPicker`'s dropdown structure rather than a
+  widened selector reusing FreeText's. It also defines
+  `--editor-toolbar-vert-offset`, which `EditorToolbar.render()` reads as an
+  inline style on any editor with a non-null `toolbarPosition` — Highlight
+  has one, FreeText does not — and which was silently resolving to
+  `top: auto`.
+- `src/core/pdf/pdf-annotate.js` gained `decorateHighlightToolbar()`:
+  "Highlight color" / "Delete highlight" plus per-swatch names, resolving
+  this Decision's own point that reusing FreeText's "note" wording would
+  mislabel a highlight control.
+- `tests/e2e/highlight-toolbar-style.spec.ts` is Option B's own regression,
+  with the red/green evidence this Decision required: the three Highlight
+  cases failed before the change while the Add Note guard passed unchanged.
+
+Still not done, and still not proposed: matching Highlight's keyboard
+behaviour to the app's own dialog conventions (pdf.js's `ColorPicker` brings
+its own arrow-key/Escape handling, which is left exactly as upstream wrote
+it).
+
 ### Scope
 
 55A will:

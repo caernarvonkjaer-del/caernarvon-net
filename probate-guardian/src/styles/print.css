@@ -130,7 +130,16 @@
    forced-colors branch (this port already declines forced-colors support
    generally, per the exclusions listed above). */
 .pdf-page{--total-scale-factor:1.5;--scale-round-x:1px;--scale-round-y:1px;}
-:root{--outline-width:2px;--freetext-padding:2px;--outline-color:#0060df;--outline-around-color:#f0f0f4;--outline-around-width:1px;}
+/* --editor-toolbar-vert-offset (upstream default 6px) is read by
+   EditorToolbar.render() (pdf.mjs) as an INLINE style on any editor whose
+   `toolbarPosition` getter returns a point -- Highlight's does, FreeText's
+   returns null. An undefined custom property inside that inline
+   `top: calc(...% + var(--editor-toolbar-vert-offset))` is invalid at
+   computed-value time, which drops the whole declaration to `top:auto`:
+   the swatch/delete toolbar then sat on top of the highlighted words
+   instead of just below where the highlight ends. Defining it affects
+   Highlight only, for that reason. */
+:root{--outline-width:2px;--freetext-padding:2px;--outline-color:#0060df;--outline-around-color:#f0f0f4;--outline-around-width:1px;--editor-toolbar-vert-offset:6px;}
 .annotationEditorLayer{position:absolute;inset:0;background:transparent;font-size:calc(100px * var(--total-scale-factor));transform-origin:0 0;cursor:auto;z-index:2;}
 .annotationEditorLayer.disabled{pointer-events:none;}
 .annotationEditorLayer.freetextEditing{cursor:text;}
@@ -182,10 +191,10 @@
    third one cannot reintroduce this a third time. 55A's `.freeTextEditor`
    rules below still layer on top and keep winning on specificity where they
    overlap; annotation-toolbar-containment.spec.ts asserts the contract for
-   Highlight AND that FreeText is unchanged. Appearance beyond containment --
-   Highlight's ColorPicker swatch dropdown in particular -- is deliberately
-   still not styled here; this makes the chrome behave, it does not make it
-   pretty. */
+   Highlight AND that FreeText is unchanged. These rules make the chrome
+   behave; they do not make it look like anything. Highlight's appearance --
+   its ColorPicker swatch dropdown in particular -- is styled further down,
+   under "Milestone 55A Option B", which landed after this. */
 /* pointer-events:auto because `.annotationEditorLayer .highlightEditor` sets
    pointer-events:none (so a highlight never intercepts clicks on the page
    beneath it) and a child toolbar would inherit that -- leaving it visible but
@@ -209,6 +218,62 @@
 @media (forced-colors:active){
   .freeTextEditor .editToolbar{border:1px solid CanvasText;forced-color-adjust:none;}
   .freeTextEditor .deleteButton,.freeTextEditor .basicColorPicker{border:1px solid CanvasText;}
+}
+
+/* ── Milestone 55A Option B: Highlight per-editor toolbar ────────────────
+   55A's Decision chose Option A (FreeText only) and named Option B --
+   covering Highlight too -- as the follow-up it was deliberately deferring.
+   The 2026-09-18 containment fix above then made Highlight's toolbar behave
+   (absolute, unscaled, no stray marks on the filing) without making it look
+   like anything: no surface, no border, no shadow, a blank delete button,
+   and no rule for the swatch dropdown's own `hidden` class, so choosing a
+   color left the swatch list sitting open on the court document.
+   This section is that follow-up.
+
+   The rules are `.highlightEditor`-scoped rather than folded into the
+   `.annotationEditorLayer` block above, exactly as 55A's Implementation
+   design §A requires: the two toolbars are different components. FreeText's
+   BasicColorPicker is one native `<input type="color">`; Highlight's
+   ColorPicker is a `<button class="colorPicker"><span class="swatch">` that
+   appends its own `<div class="dropdown" role="listbox">` of swatch buttons
+   INSIDE that button when opened. Widening 55A's selectors would have
+   styled neither correctly. The chrome declarations are deliberately
+   duplicated from the FreeText block rather than shared, so that the two
+   toolbars can be matched by eye today without either one becoming able to
+   regress the other.
+
+   Positioning differs from FreeText for the same structural reason: pdf.mjs
+   writes an inline `inset-inline-end`/`top` pair onto a Highlight toolbar
+   (FreeText gets neither -- its toolbarPosition is null), so `left` is
+   released back to `auto` here and the box is sized to its content; leaving
+   the generic `left:0` in force would stretch the toolbar between both
+   edges of the highlight. */
+.highlightEditor .editToolbar{left:auto;width:-moz-fit-content;width:fit-content;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xs);padding:.15rem .3rem;box-shadow:var(--sh-2);z-index:3;}
+.highlightEditor .editToolbar .buttons{display:flex;align-items:center;gap:.3rem;}
+.highlightEditor .divider{width:1px;height:18px;background:var(--line);margin:0 .15rem;}
+.highlightEditor .colorPicker{position:relative;display:flex;align-items:center;justify-content:center;gap:.2rem;width:auto;height:26px;padding:0 .25rem;border:none;border-radius:var(--r-xs);background:none;color:var(--ink);cursor:pointer;}
+.highlightEditor .colorPicker>.swatch{flex:0 0 auto;width:16px;height:16px;border:1px solid var(--line);border-radius:100%;box-sizing:border-box;forced-color-adjust:none;}
+/* A caret drawn in CSS rather than upstream's mask-image: pdf.js's own
+   toolbarButton-menuArrow.svg lives in the web/ viewer assets this app
+   doesn't vendor, and a missing mask silently renders nothing at all. */
+.highlightEditor .colorPicker::after{content:"";flex:0 0 auto;width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4px solid currentColor;}
+.highlightEditor .colorPicker[aria-expanded="true"]{background:var(--line-2);}
+.highlightEditor .colorPicker[aria-expanded="true"]::after{rotate:180deg;}
+.highlightEditor .colorPicker .dropdown{position:absolute;inset-block-start:calc(100% + 4px);inset-inline-start:50%;translate:-50% 0;display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.3rem;border:1px solid var(--line);border-radius:var(--r-xs);background:var(--surface);box-shadow:var(--sh-2);z-index:4;}
+/* hideDropdown() only toggles this class; without a rule the swatch list
+   stays open over the filing after a color is chosen. */
+.highlightEditor .colorPicker .dropdown.hidden{display:none;}
+.highlightEditor .colorPicker .dropdown button{display:flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;border:none;border-radius:var(--r-xs);background:none;cursor:pointer;}
+.highlightEditor .colorPicker .dropdown button>.swatch{width:16px;height:16px;border:1px solid var(--line);border-radius:100%;box-sizing:border-box;outline-offset:2px;forced-color-adjust:none;}
+.highlightEditor .colorPicker .dropdown button:focus-visible{outline:none;}
+.highlightEditor .colorPicker .dropdown button:is([aria-selected="true"],:hover,:active,:focus-visible)>.swatch{outline:2px solid var(--outline-color);}
+.highlightEditor .deleteButton{display:flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;border:none;border-radius:var(--r-xs);background:none;color:var(--ink);cursor:pointer;font-size:12px;}
+.highlightEditor .deleteButton svg{width:14px;height:14px;}
+.highlightEditor .deleteButton:hover,.highlightEditor .colorPicker:hover{background:var(--line-2);}
+.highlightEditor .deleteButton:focus-visible,.highlightEditor .colorPicker:focus-visible{outline:2px solid var(--outline-color);outline-offset:1px;}
+@media (forced-colors:active){
+  .highlightEditor .editToolbar,.highlightEditor .colorPicker .dropdown{border:1px solid CanvasText;forced-color-adjust:none;}
+  .highlightEditor .deleteButton,.highlightEditor .colorPicker{border:1px solid CanvasText;}
 }
 .pdf-page svg.highlightOutline.selected .mainOutline{stroke:var(--outline-around-color);stroke-width:calc(var(--outline-width) + 2 * var(--outline-around-width));}
 .pdf-page svg.highlightOutline.selected .secondaryOutline{stroke:var(--outline-color);stroke-width:var(--outline-width);}

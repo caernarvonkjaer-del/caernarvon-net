@@ -108,6 +108,49 @@ function decorateFreeTextToolbar(toolbarEl) {
   }
 }
 
+// Milestone 55A Option B: Highlight's toolbar needs its own decorator, not a
+// widened version of the one above. 55A's Decision is explicit about why --
+// `ColorPicker` (Highlight) and `BasicColorPicker` (FreeText) are different
+// components with different DOM, and 55A's "Note color"/"Delete note" wording
+// would mislabel a highlight for anyone reading the page with a screen
+// reader. The swatch list is built lazily, the first time the button is
+// clicked, which is why its options are decorated here on the same
+// re-scan-everything pass rather than at toolbar-creation time.
+//
+// The names come from pdf.js's own palette keys (`highlightColors`, passed in
+// below), which arrive lowercase on each option's `title`; nullL10n means the
+// `data-l10n-id` that would normally localize them never resolves.
+const HIGHLIGHT_COLOR_LABELS = Object.freeze({
+  yellow: 'Yellow', green: 'Green', blue: 'Blue', pink: 'Pink', red: 'Red',
+});
+
+function decorateHighlightToolbar(toolbarEl) {
+  const colorPicker = toolbarEl.querySelector('.colorPicker');
+  if (colorPicker && !colorPicker.hasAttribute('aria-label')) {
+    colorPicker.setAttribute('aria-label', 'Highlight color');
+    colorPicker.setAttribute('title', 'Highlight color');
+  }
+  const dropdown = toolbarEl.querySelector('.colorPicker .dropdown');
+  if (dropdown && !dropdown.hasAttribute('aria-label')) {
+    // renderMainDropdown() points at a viewer-only label element that does
+    // not exist here; the per-editor dropdown is left with no name at all.
+    dropdown.setAttribute('aria-label', 'Highlight color');
+  }
+  for (const option of toolbarEl.querySelectorAll('.colorPicker .dropdown button[data-color]')) {
+    if (option.hasAttribute('aria-label')) continue;
+    const key = (option.getAttribute('title') || '').trim().toLowerCase();
+    const label = HIGHLIGHT_COLOR_LABELS[key] || option.getAttribute('data-color') || 'Color';
+    option.setAttribute('aria-label', label);
+    option.setAttribute('title', label);
+  }
+  const deleteButton = toolbarEl.querySelector('.deleteButton');
+  if (deleteButton && !deleteButton.hasAttribute('aria-label')) {
+    deleteButton.setAttribute('aria-label', 'Delete highlight');
+    deleteButton.setAttribute('title', 'Delete highlight');
+    deleteButton.innerHTML = typeof window.ic === 'function' ? window.ic('trash', 14) : 'Delete';
+  }
+}
+
 // Owns one Print Preview's annotation-editor lifecycle: one UIManager shared
 // across every rendered page's own AnnotationEditorLayer, matching how
 // pdf.js's own multi-page viewer wires this (confirmed via
@@ -225,6 +268,7 @@ export class AnnotationSession {
     // already-decorated toolbar a no-op, so this stays cheap.
     const toolbarObserver = new MutationObserver(() => {
       div.querySelectorAll('.freeTextEditor .editToolbar').forEach(decorateFreeTextToolbar);
+      div.querySelectorAll('.highlightEditor .editToolbar').forEach(decorateHighlightToolbar);
     });
     toolbarObserver.observe(div, { childList: true, subtree: true });
     this.layers.set(pageIndex, { layer, div, drawLayer: layer.drawLayer, toolbarObserver });
