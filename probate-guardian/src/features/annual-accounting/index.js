@@ -24,6 +24,7 @@ import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '.
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { confirmModal } from '../../core/ui/dialogs.js';
+import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js';
 // Milestone 41-3: same structural story as its sibling Simplified
 // Accounting, confirmed by reading the real markup. Only
 // renderReportingPeriodFields() applies: wardName has no column wrapper
@@ -147,6 +148,11 @@ export async function mount(container, page) {
     }));
   }
   if (page === '/print') await _printModule.mountPreview();
+  // Milestone 57C-R -- see guardian-inventory/index.js's note on why this is a
+  // floating call and must not be awaited. window.D.inventoryType rather than
+  // a literal, because this one module serves annual, finalAccounting and
+  // trustAccounting.
+  void promptScheduleAckIfNeeded(window.D, window.D?.inventoryType || 'annual', page, confirmModal).catch(() => {});
 }
 
 export function dispose(container) {

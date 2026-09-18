@@ -1,3 +1,5 @@
+import { confirmModal } from '../../core/ui/dialogs.js';
+import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js';
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
@@ -147,6 +149,14 @@ export async function mount(container, page) {
   // before it (Milestone 19-3).
   if (page === '/print') await _printModule.mountPreview();
   initPrintPager();
+  // Milestone 57C-R. Deliberately NOT awaited. confirmModal() resolves only
+  // when the filer answers, so awaiting it here would make mount() -- and
+  // therefore navigate() -- hang until the dialog is dismissed, wedging the
+  // router on a prompt that is supposed to be advisory. Caught by
+  // schedule-doc-ack.spec.ts, where three cases timed out inside navigate()
+  // before this was a floating call. Detection is on the DATA, not on the Add
+  // button, so rows from an Excel import or New Filing from Existing count.
+  void promptScheduleAckIfNeeded(window.D, 'guardian', page, confirmModal).catch(() => {});
 }
 
 export function dispose(container) {

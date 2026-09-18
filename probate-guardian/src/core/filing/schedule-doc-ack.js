@@ -140,6 +140,63 @@ export function needsScheduleAck(data, inventoryType, route) {
 }
 
 /**
+ * The mount() hook, shared so the two feature modules cannot drift apart.
+ *
+ * Fires at most one modal per navigation, only for a populated schedule the
+ * filer has not yet acknowledged for this period. A non-yes records nothing
+ * and blocks nothing -- the page has already rendered and stays usable, and
+ * the question returns on the next visit. `confirmModal` resolves false on
+ * Escape as well as Cancel, which is exactly why a refusal must not discard
+ * anything: a stray keypress would otherwise silently undo a deliberate act
+ * with nothing on screen to explain it.
+ *
+ * @param {object} data active ward data (`window.D`)
+ * @param {string} inventoryType
+ * @param {string} route the page just mounted, e.g. '/a1'
+ * @param {(opts: object) => Promise<boolean>} confirmFn injected for testing
+ * @returns {Promise<boolean>} whether an acknowledgement was recorded
+ */
+let promptInFlight = false;
+
+export async function promptScheduleAckIfNeeded(data, inventoryType, route, confirmFn) {
+  // Re-entrancy guard. The caller does not await this (see the feature
+  // modules' notes on why awaiting it wedges the router), and a single filer
+  // action can re-render a page more than once -- addEntry() ends with
+  // renderPage(), and mount() itself triggers further work. Without this, two
+  // mounts in quick succession stack two dialogs on top of each other, which
+  // schedule-doc-ack.spec.ts caught as a strict-mode violation resolving to
+  // two overlays. One question at a time; a mount that arrives while a prompt
+  // is open simply does nothing, and the next navigation asks again if the
+  // schedule is still unacknowledged.
+  if (promptInFlight) return false;
+  if (!needsScheduleAck(data, inventoryType, route)) return false;
+  const key = scheduleKeyForRoute(inventoryType, route);
+  const label = String(key).replace(/^sch/i, '').toUpperCase();
+  promptInFlight = true;
+  let confirmed = false;
+  try {
+    confirmed = await confirmFn({
+      title: 'Supporting documentation',
+      message: `You have entered items on Schedule ${label}.\n\n`
+        + 'The court expects supporting documentation for these entries — statements, receipts, '
+        + 'invoices or similar records. Probate Guardian does not collect or file that for you.\n\n'
+        + "You can attach PDFs in this schedule's Supporting Documents section, or keep them and "
+        + 'file them separately, whichever your circuit requires.',
+      confirmLabel: 'I understand',
+      cancelLabel: 'Not now',
+    });
+  } finally {
+    promptInFlight = false;
+  }
+  if (!confirmed) return false;
+  recordScheduleAck(data, inventoryType, key);
+  return true;
+}
+
+/** Test seam: clears the in-flight guard between cases. */
+export function __resetScheduleAckPrompt() { promptInFlight = false; }
+
+/**
  * Legacy `.sav` migration. A case file written before 57C-R has no
  * scheduleDocsAck at all; one written by a future build might have a
  * non-object there. Either way the filer has acknowledged nothing, which is
