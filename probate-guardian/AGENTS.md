@@ -60,6 +60,11 @@ This organization organizes projects across three standardized archetypes:
 ## 2. Choice-Driven Prompts & Case-by-Case Overrides
 
 - **Choice-Driven Prompts**: For trade-offs, scope ambiguities, test-suite runs, schema migrations, or other deviations from baseline, present clear choice-driven options (numbered, with a recommended one) and each option's concrete implications.
+- **Ask at the moment the decision is identified — not later, and not bundled.** The instant a decision surfaces that is the requester's to make, put it as a choice. Do not carry it forward to the end of the task, fold it into a summary, bury it in prose, or answer it yourself and mention the assumption afterwards. A decision surfaced late has usually already been silently made by the work built on top of it, and unwinding that costs more than the question ever would have.
+  - This applies to decisions found **mid-execution**, not just at scoping. Finding one is a reason to stop and ask, not a reason to pick the plausible option and keep going.
+  - It applies to a decision the requester **already answered** when new information changes what that answer costs. If an option was chosen on a stated trade-off and the trade-off turns out to be different, re-present it — the earlier answer was given against facts that no longer hold.
+  - Where a choice is genuinely blocking, say so and stop. Where it is not, the other work can continue while the question stands, but the question still goes out immediately.
+  - Prose paragraphs describing options are not choices. Use the same numbered, recommended, consequence-labelled form as any other choice-driven prompt, so answering is one selection rather than an essay.
 - **User-Approved Overrides**: An explicit user selection overrides baseline rules for that task/session only — baseline resumes immediately after.
 - **Proposal & Milestone Gating**:
   - A `MILESTONE-*-PROPOSAL.md` marked **Draft**, or stating it authorizes no change, is a proposal, not a work order.
