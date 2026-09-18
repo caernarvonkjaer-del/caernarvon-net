@@ -160,6 +160,42 @@
    as a small blank mark -- both inheriting the annotation layer's scaled
    100px font-size base with no override, which is why they appeared widely
    separated but aligned at the same horizontal origin. */
+/* ── Generic per-editor toolbar containment (reported 2026-09-18) ─────────
+   Every pdf.js annotation editor builds its own `.editToolbar` through the
+   same EditorToolbar component, and this stylesheet's scoped-down copy of the
+   upstream annotation-editor CSS omitted the rules that contain it. Milestone
+   55A restored them for `.freeTextEditor` only -- a deliberate scope call at
+   the time, because the defect then reported was FreeText-only. Highlight has
+   the identical omission and it surfaced the moment a filer used it:
+
+     .editToolbar   position:static  388x450  font-size:150px  display:block
+     button.colorPicker    16x6      empty    -- rendered as a dash
+     div.divider          388x0               -- rendered as a hairline
+     button.deleteButton   16x6      empty    -- rendered as a dash
+
+   `position:static` is the serious half: the toolbar took part in page layout
+   and added ~450px of empty space below the filing. The rest rendered as
+   marks across a court document.
+
+   These rules are therefore keyed on `.annotationEditorLayer .editToolbar`,
+   not on an editor class, so ANY editor type is contained by default and a
+   third one cannot reintroduce this a third time. 55A's `.freeTextEditor`
+   rules below still layer on top and keep winning on specificity where they
+   overlap; annotation-toolbar-containment.spec.ts asserts the contract for
+   Highlight AND that FreeText is unchanged. Appearance beyond containment --
+   Highlight's ColorPicker swatch dropdown in particular -- is deliberately
+   still not styled here; this makes the chrome behave, it does not make it
+   pretty. */
+/* pointer-events:auto because `.annotationEditorLayer .highlightEditor` sets
+   pointer-events:none (so a highlight never intercepts clicks on the page
+   beneath it) and a child toolbar would inherit that -- leaving it visible but
+   dead, which is a worse defect than the one being fixed. */
+.annotationEditorLayer .editToolbar{position:absolute;top:-34px;left:0;z-index:2;display:flex;align-items:center;gap:.15rem;font:400 13px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;white-space:nowrap;pointer-events:auto;}
+.annotationEditorLayer .editToolbar.hidden{display:none;}
+.annotationEditorLayer .editToolbar .buttons{display:flex;align-items:center;gap:.3rem;}
+.annotationEditorLayer .editToolbar .divider{flex:0 0 1px;width:1px;height:18px;background:var(--line);margin:0 .15rem;}
+.annotationEditorLayer .editToolbar :is(button,input){font:inherit;min-width:26px;min-height:26px;}
+
 .freeTextEditor{position:relative;}
 .freeTextEditor .editToolbar{position:absolute;top:-34px;left:0;display:flex;align-items:center;gap:.15rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xs);padding:.15rem .3rem;font-size:14px;line-height:1;box-shadow:var(--sh-2);z-index:3;white-space:nowrap;}
 .freeTextEditor .editToolbar.hidden{display:none;}
