@@ -34,7 +34,7 @@ suite expected to export. The second half meant the sidebar reported sections
 incomplete, which broke the navigation/status contract on its own — 9 failures
 before anything else was considered. The wiring was *correct*, and in the 1:1
 sidebar/export parity the milestone claimed. The tests failed because the
-product's behaviour changed, which made it a policy question rather than a
+product's behavior changed, which made it a policy question rather than a
 defect.
 
 **That policy question has now been answered** (Decision 1 below), and the
@@ -297,7 +297,7 @@ fits the app's existing mechanisms:
 The first attempt's e2e specs were, in the review's own words, *"edited by hand
 and not run"*, because Playwright Chromium was unavailable in that environment.
 That single gap produced at least three separate defects found here:
-`readiness-card.contract.spec.ts` asserting behaviour a sibling commit had
+`readiness-card.contract.spec.ts` asserting behavior a sibling commit had
 already changed, `recovery-cache.spec.ts` asserting synchronously against an
 async clear, and the 46 failures themselves going undetected through landing and
 three repair commits.

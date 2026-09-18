@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 // coverage for it.
 //
 // It also cannot see: a control the app has and the guide never mentions; a
-// behavioural explanation that is wrong while the control exists; a
+// behavioral explanation that is wrong while the control exists; a
 // conditional validation rule described incorrectly; a stale screenshot; a
 // legal or privacy claim that is false but syntactically plausible; or dead
 // application markup that still carries a matching identifier. Six of the

@@ -16,7 +16,7 @@ import {
 // with renderPage(getCurrentPage()), so adding a row re-runs mount() and the
 // prompt fires IMMEDIATELY. The filer is asked the moment the schedule becomes
 // populated, which is both better than waiting for a later visit and closer to
-// how the behaviour was specified. An earlier draft of this spec assumed the
+// how the behavior was specified. An earlier draft of this spec assumed the
 // prompt waited for a re-entry and failed on every case.
 //
 // Read src/core/filing/schedule-doc-ack.js's header for why this feature

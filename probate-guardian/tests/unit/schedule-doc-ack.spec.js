@@ -24,7 +24,7 @@ import { readRepoSource, sliceBalancedFunction, LEGACY_APP } from './support/leg
 // validateGuardian()/validateAnnual() and computeNavChecks(), which made no
 // filing ever "clean" and cost 46 e2e failures across 16 specs. This module
 // must never do that, and a source scan is what keeps it honest -- a
-// behavioural test would pass right up until someone added the import.
+// behavioral test would pass right up until someone added the import.
 
 const guardianData = (over = {}) => ({ inventoryType: 'guardian', scheduleA1: [], scheduleB1: [], ...over });
 const annualData = (over = {}) => ({ inventoryType: 'annual', schA: [], schB1: [], ...over });

@@ -5,7 +5,7 @@ import { freshStartNoPassword, createWard } from './support/target';
 
 // Milestone 56G: capture harness for help/index.html's figures.
 //
-// NOT part of the regression suite -- it asserts nothing about behaviour and
+// NOT part of the regression suite -- it asserts nothing about behavior and
 // writes files. Unless PG_CAPTURE=1 it registers no tests at all, so a full
 // `npx playwright test` run never executes it (see the gating note below). It
 // lives in the repo rather than in a scratch directory so a future re-shoot

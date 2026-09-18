@@ -150,7 +150,7 @@ test.describe('automatic failures and routing', () => {
   // to field" for Plan filings the same way Guardian/Accounting's predicates()
   // already supplied theirs. efdd45a updated the UNIT test for that and missed
   // this e2e contract, which went on asserting the old "predicate rows carry no
-  // link" behaviour -- it was red on master before the Milestone 57 revert and
+  // link" behavior -- it was red on master before the Milestone 57 revert and
   // is fixed here rather than carried forward. readiness-card.js's jumpLink()
   // still suppresses the link for a row that already passed (row.ok === true).
   test('Plan Annual: a failed predicate opens the card, shows as pending, and offers a jump link', async ({ page }) => {
