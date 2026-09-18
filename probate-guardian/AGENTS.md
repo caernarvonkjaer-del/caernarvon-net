@@ -65,6 +65,7 @@ This organization organizes projects across three standardized archetypes:
   - It applies to a decision the requester **already answered** when new information changes what that answer costs. If an option was chosen on a stated trade-off and the trade-off turns out to be different, re-present it — the earlier answer was given against facts that no longer hold.
   - Where a choice is genuinely blocking, say so and stop. Where it is not, the other work can continue while the question stands, but the question still goes out immediately.
   - Prose paragraphs describing options are not choices. Use the same numbered, recommended, consequence-labelled form as any other choice-driven prompt, so answering is one selection rather than an essay.
+- **Explaining the options**: every option's implication is stated as what the requester or a filer would observe, not as a mechanism — see Section 12.
 - **User-Approved Overrides**: An explicit user selection overrides baseline rules for that task/session only — baseline resumes immediately after.
 - **Proposal & Milestone Gating**:
   - A `MILESTONE-*-PROPOSAL.md` marked **Draft**, or stating it authorizes no change, is a proposal, not a work order.
@@ -213,3 +214,55 @@ own domain root), use the **portable** build, not the web build:
    Confirm the zip actually contains the subdirectories (`lib/`, `icons/`,
    `fragments/`, `help/`, `src/`), not just top-level files, before treating
    the package as done.
+
+---
+
+## 12. Explaining Defects, Fixes & Decisions
+
+**Lead with what a filer would observe. Then the mechanism.** A defect, a fix
+or a trade-off described only in property names, selectors, function names or
+inheritance rules does not tell the reader whether it matters, whether the fix
+is right, or what it costs the person using the app. The observable
+consequence answers all three, and it is also what makes the mechanism worth
+reading afterwards.
+
+This applies to chat, commit messages, milestone proposals, review handoffs
+and `TEST-INDEX.md` rows alike. It is not a request for less detail — detail
+is welcome, and welcome in depth. It is a request for the detail to arrive
+*after* the reader knows what is at stake.
+
+**A real example, kept because it is the one that prompted this rule
+(2026-09-18).**
+
+Badly formed:
+
+> `.highlightEditor` sets `pointer-events: none` so a highlight doesn't
+> intercept clicks on the page beneath it — and a child toolbar inherits that.
+> Contained but dead would have been worse than scattered. Added
+> `pointer-events: auto`.
+
+The requester's response was "this means almost nothing to me," and he was
+right: every noun in it is an implementation detail, and nothing in it says
+what would have gone wrong for anybody.
+
+The same fix, correctly explained:
+
+> When you select a highlight, a small toolbar appears beside it with a color
+> swatch and a delete button. Highlights are set to ignore mouse clicks so that
+> clicking highlighted text still reaches the page underneath — and the toolbar
+> inside inherits that. The toolbar would have looked right and done nothing
+> when clicked: a delete button that doesn't delete.
+
+**In practice:**
+
+- Open with one sentence a non-engineer could act on. *What breaks, for whom,
+  when.*
+- A verdict is not an explanation. "57B: incomplete/unsafe conversion" names a
+  judgment without naming a symptom; say what a filer loses or sees.
+- An invariant is not an explanation either. "This must never gate export"
+  becomes "a guardian who has entered a bank account but not yet attached a
+  statement can still produce and file the document."
+- Numbers over adjectives where they exist: "extended the page by ~450px" beats
+  "caused a layout problem."
+- If a sentence would read identically to someone who had never used this app,
+  it is probably mechanism-only — rewrite it.
