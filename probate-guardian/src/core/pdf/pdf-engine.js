@@ -35,7 +35,15 @@ import { readPngDimensions, base64ToBytes } from '../images/png-dimensions.js';
 // pass for a real caption if it ever escaped the draft path.
 const MISSING_COUNTY_CAPTION = 'COUNTY NOT SELECTED — COURT CAPTION INCOMPLETE';
 
+// A value may be an array of pre-split lines (composePdfAddressLines()), in
+// which case it is sanitized element-wise and stays an array: the caller chose
+// those line breaks and the renderer must not collapse them. Every consumer of
+// this function has to be correct for both shapes.
 function sanitizeDisplayValue(label, value) {
+  if (Array.isArray(value)) {
+    const lines = value.map((line) => sanitizeDisplayValue(label, line)).filter(Boolean);
+    return lines.length ? lines : '';
+  }
   if (!value) return '';
   const l = String(label || '').toLowerCase();
   if (l.includes('ssn') || l.includes('social security') || l.includes('taxpayer id') || /\btin\b/.test(l)) {
@@ -422,16 +430,6 @@ export async function generateCourtFormPdf(model, options = {}) {
     return false;
   };
 
-  const formatMailingAddress = (value) => {
-    const text = String(value || '').trim();
-    if (!text) return [];
-    const parts = text.split(/,\s*/).map(part => part.trim()).filter(Boolean);
-    if (parts.length < 2) return [text];
-    const last = parts.pop();
-    const stateZip = parts.pop();
-    return [...parts, stateZip ? `${stateZip}, ${last}` : last];
-  };
-
   // Reported 2026-09-18, with a screenshot of Simplified Annual Accounting's
   // Part IV: a guardian's address ran past the right margin of the court
   // document and collided with its own label --
@@ -454,17 +452,15 @@ export async function generateCourtFormPdf(model, options = {}) {
   //      uniformly for the whole block so the values still line up.
   //   2. the value was drawn as one unwrapped string with no width at all, so
   //      anything longer than the remaining ~128pt simply continued into the
-  //      margin. Values now wrap, addresses breaking on their own comma
-  //      boundaries first, via the same formatMailingAddress() the grid path
-  //      uses.
+  //      margin. Values now wrap to their column.
   //
-  // A value whose wrapped lines still will not fit beside its label drops
-  // onto its own line underneath and takes the full width from the label's
-  // column to the margin -- the same label-above/value-below shape the
-  // `fields` grid path already uses, and roughly twice the room. With real
-  // Florida addresses that branch is the exception, not the rule; it exists
-  // so an unusually long label or value degrades into a readable stack
-  // instead of back into the margin.
+  // An ARRAY value is a structured, already-split value -- an address, whose
+  // components are discrete stored fields (composePdfAddressLines()). Those
+  // print as a postal block: the label on its own line, then the delivery
+  // line, any secondary unit, and the city/state/ZIP line indented beneath
+  // it, reading the way an envelope does and taking the full column width. A
+  // plain string sits beside its label as before, and drops into the same
+  // block shape only if it will not fit there.
   //
   // Measuring here, before the block is drawn, rather than inline at draw
   // time is what lets the block reserve real height for a wrapped address.
@@ -506,13 +502,11 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.setFont('PGSans', 'normal');
     doc.setFontSize(7.5);
     const entries = rows.map(({ label, value }) => {
-      // An address breaks on its own comma boundaries before any width-based
-      // wrapping, so a street is never split away from its number and a city
-      // is never split from its state.
-      const desired = String(label).toLowerCase().includes('address')
-        ? formatMailingAddress(value)
-        : [String(value)];
-      if (desired.every((line) => doc.getTextWidth(line) <= besideW)) {
+      // A structured value keeps the line breaks its caller chose; a plain
+      // string is one run that may still need wrapping.
+      const structured = Array.isArray(value);
+      const desired = structured ? value : [String(value)];
+      if (!structured && desired.every((line) => doc.getTextWidth(line) <= besideW)) {
         return { label, valueX, lines: desired, below: false, height: Math.max(1, desired.length) * DETAIL_LINE_H };
       }
       const lines = desired.flatMap((line) => doc.splitTextToSize(line, belowW));
@@ -887,7 +881,12 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           const val = sanitizeDisplayValue(item.label, item.value);
-          const valueLines = doc.splitTextToSize(String(val || ''), valueMaxW);
+          // No key-value item carries a pre-split value today, but the helper
+          // above can return one, and String(['a','b']) would quietly produce
+          // "a,b". Join deliberately rather than leave that to chance.
+          const valueLines = Array.isArray(val)
+            ? val.flatMap((line) => doc.splitTextToSize(line, valueMaxW))
+            : doc.splitTextToSize(String(val || ''), valueMaxW);
           return { labelLines, valueLines, lines: Math.max(labelLines.length, valueLines.length, 1) };
         };
 
@@ -1244,13 +1243,15 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           // A cell may be an array of pre-split lines -- a multi-part mailing
-          // address whose components are already discrete fields, so there is
-          // no comma-string for formatMailingAddress() to reverse-engineer.
-          // Each element is forced onto its own line and still word-wrapped to
-          // the column, the same flatMap-over-known-lines shape the
-          // signature-block renderer already uses. Without this, the caller's
-          // only option was to join the parts into one string, which got a
-          // single generic wrap pass and overflowed the right margin.
+          // address whose components are already discrete stored fields
+          // (composePdfAddressLines()). Each element is forced onto its own
+          // line and still word-wrapped to the column, the same
+          // flatMap-over-known-lines shape the signature-block renderer uses.
+          // Without this, the caller's only option was to join the parts into
+          // one string, which got a single generic wrap pass and overflowed
+          // the right margin. Milestone 40E added this branch and converted
+          // the two Certificate of Service call sites it audited; the rest of
+          // the address call sites kept passing joined strings until 2026-09-18.
           if (Array.isArray(cellData)) {
             const arrLines = cellData
               .filter((line) => line !== null && line !== undefined && String(line) !== '')
@@ -1604,8 +1605,13 @@ export async function generateCourtFormPdf(model, options = {}) {
               // contentWidth/cols wide; subtract 4pt for left padding.
               const fieldMaxW = colW - 4;
               const fVal = sanitizeDisplayValue(field.label, field.value);
-              const fieldLines = String(field.label || '').toLowerCase().includes('address')
-                ? formatMailingAddress(fVal).flatMap(line => doc.splitTextToSize(line, fieldMaxW))
+              // A structured value (composePdfAddressLines()) keeps the line
+              // breaks its caller chose and each is still wrapped to the
+              // column. This path used to infer an address's breaks from its
+              // commas instead, which silently gave up on any address whose
+              // filer omitted one.
+              const fieldLines = Array.isArray(fVal)
+                ? fVal.flatMap((line) => doc.splitTextToSize(line, fieldMaxW))
                 : doc.splitTextToSize(String(fVal), fieldMaxW);
               doc.text(fieldLines, fx, rowY + 9);
               writeMarkedContentEnd(doc);

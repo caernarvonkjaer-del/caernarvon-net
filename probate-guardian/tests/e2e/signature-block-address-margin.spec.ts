@@ -44,7 +44,7 @@ const EDGE_TOLERANCE_PT = 1;
 const LONG_STREET = '88 Snell Isle Blvd NE';
 const LONG_CITY_STATE_ZIP = 'St. Petersburg, FL 33704';
 
-async function openSimplifiedPreview(page: Page) {
+async function openSimplifiedPreview(page: Page, cityStateZip: string = LONG_CITY_STATE_ZIP) {
   await freshStartNoPassword(page);
   await createSimplifiedWard(page, 'Address Margin Ward');
   await fillMinimalValidSimplifiedWard(page);
@@ -57,7 +57,7 @@ async function openSimplifiedPreview(page: Page) {
       g.residenceCityStateZip = csz;
     }
     (window as any).autoSave();
-  }, [LONG_STREET, LONG_CITY_STATE_ZIP]);
+  }, [LONG_STREET, cityStateZip]);
   await page.evaluate(() => (window as any).flushPendingSave());
   await page.evaluate(() => (window as any).navigate('/print'));
   await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 30000 });
@@ -76,7 +76,7 @@ async function openSimplifiedPreview(page: Page) {
  */
 function measureInkOnRowsContaining(page: Page, needle: string) {
   return page.evaluate(([text, pageW]) => {
-    const results: Array<{ page: number; yTop: number; yBot: number; rightPt: number; clearBeforeValuePt: number; labelOnRow: boolean }> = [];
+    const results: Array<{ page: number; yTop: number; yBot: number; rightPt: number; clearBeforeValuePt: number }> = [];
     const pages = [...document.querySelectorAll('#print-doc-container .pdf-page')];
     pages.forEach((host, idx) => {
       const canvas = host.querySelector('canvas') as HTMLCanvasElement | null;
@@ -116,32 +116,60 @@ function measureInkOnRowsContaining(page: Page, needle: string) {
         // on the row instead. That passed on the broken renderer -- the gap
         // between two words of the address was wide enough to satisfy it --
         // so it proved nothing. Measure at the boundary, not the row.
+        //
+        // Anchor on the value's own first inked pixel rather than on the span
+        // origin: a glyph's antialiasing bleeds a fraction of a point to the
+        // left of its origin, which reads as "no clear space" if probed there.
         const valueLeftPx = (r.left - hr.left) / domPerPt * pxPerPt;
+        let inkStart = Math.max(0, Math.floor(valueLeftPx - (1.5 * pxPerPt)));
+        while (inkStart < canvas.width && !inked[inkStart]) inkStart++;
         let clearPx = 0;
-        for (let x = Math.floor(valueLeftPx - (0.5 * pxPerPt)); x >= 0 && !inked[x]; x--) {
+        for (let x = inkStart - 1; x >= 0 && !inked[x]; x--) {
           clearPx++;
           if (clearPx > 20 * pxPerPt) break;
         }
-        // Does the label share this row, or did the value drop onto its own
-        // line below it? Span positions are reliable; widths are not.
-        const labelOnRow = [...host.querySelectorAll('.textLayer span')].some((s) => {
-          if (!/Address:/.test(s.textContent || '')) return false;
-          const lr = s.getBoundingClientRect();
-          const mid = ((lr.top + lr.bottom) / 2 - hr.top) / domPerPt;
-          return mid >= yTop - 1 && mid <= yBot + 1;
-        });
         results.push({
           page: idx + 1,
           yTop: Math.round(yTop * 10) / 10,
           yBot: Math.round(yBot * 10) / 10,
           rightPt: rightmost < 0 ? 0 : Math.round(((rightmost + 1) / pxPerPt) * 10) / 10,
           clearBeforeValuePt: Math.round((clearPx / pxPerPt) * 10) / 10,
-          labelOnRow,
         });
       }
     });
     return results;
   }, [needle, PAGE_W_PT] as const);
+}
+
+/**
+ * The "Residence Address" block: its label and the two value lines beneath it.
+ * Span positions are accurate even though span widths are not, so this reads
+ * position only.
+ */
+function readAddressBlock(page: Page, street: string, cityStateZip: string) {
+  return page.evaluate(([streetText, cszText, pageW]) => {
+    type Run = { text: string; mid: number; left: number };
+    const runs: Run[] = [];
+    for (const host of document.querySelectorAll('#print-doc-container .pdf-page')) {
+      const hr = host.getBoundingClientRect();
+      if (!hr.width) continue;
+      const k = hr.width / (pageW as number);
+      for (const s of host.querySelectorAll('.textLayer span')) {
+        const text = (s.textContent || '').trim();
+        if (!text) continue;
+        const r = s.getBoundingClientRect();
+        runs.push({ text, mid: ((r.top + r.bottom) / 2 - hr.top) / k, left: (r.left - hr.left) / k });
+      }
+    }
+    const label = runs.find((run) => run.text.startsWith('Residence Address:')) || null;
+    // Take the lines belonging to THIS label, not the mailing block above it.
+    const after = label ? runs.filter((run) => run.mid > label.mid) : runs;
+    return {
+      label,
+      street: after.find((run) => run.text.includes(streetText as string)) || null,
+      city: after.find((run) => run.text.includes(cszText as string)) || null,
+    };
+  }, [street, cityStateZip, PAGE_W_PT] as const);
 }
 
 test.describe('signature-block addresses stay inside the margin (reported 2026-09-18)', () => {
@@ -165,45 +193,55 @@ test.describe('signature-block addresses stay inside the margin (reported 2026-0
     test.setTimeout(150_000);
     await openSimplifiedPreview(page);
 
-    // Only rows where the label and value share a line can collide. If a
-    // value has dropped onto its own line below the label there is nothing
-    // here to check, and the wrap case covers that shape instead.
-    const rows = (await measureInkOnRowsContaining(page, LONG_STREET)).filter((r) => r.labelOnRow);
-    expect(rows.length, 'no row found with an address label and its value side by side').toBeGreaterThan(0);
+    const rows = await measureInkOnRowsContaining(page, LONG_STREET);
+    expect(rows.length, 'no address rows found to measure').toBeGreaterThan(0);
 
-    // 2pt of clear space before the value begins. The renderer reserves 6pt;
-    // a collision leaves none at all. Verified to fail on the pre-fix engine.
+    // Clear space immediately left of where the value starts. The postal-block
+    // layout satisfies this structurally -- the label is on its own line above
+    // -- but the assertion is the property, not the mechanism, so a regression
+    // back to a colliding side-by-side shape still fails here. Verified red on
+    // the pre-fix engine, where it measured 0.
     const collided = rows.filter((r) => r.clearBeforeValuePt < 2);
     expect(collided, `label ink runs into value ink: ${JSON.stringify(collided, null, 1)}`).toEqual([]);
   });
 
-  test('a long address wraps onto its own second line rather than being clipped', async ({ page }) => {
+  test('an address prints as a postal block under its own label', async ({ page }) => {
     test.setTimeout(150_000);
     await openSimplifiedPreview(page);
 
-    // Wrapping must not cost the reader any of the address: both halves have
-    // to appear, on separate lines, since neither fits beside the other.
-    // Span positions are accurate even though span widths are not.
-    const lines = await page.evaluate(([street, csz]) => {
-      const out: Array<{ text: string; mid: number }> = [];
-      for (const host of document.querySelectorAll('#print-doc-container .pdf-page')) {
-        const hr = host.getBoundingClientRect();
-        if (!hr.width) continue;
-        const k = hr.width / 612;
-        for (const s of host.querySelectorAll('.textLayer span')) {
-          const t = (s.textContent || '').trim();
-          if (!t.includes(street) && !t.includes(csz)) continue;
-          const r = s.getBoundingClientRect();
-          out.push({ text: t, mid: ((r.top + r.bottom) / 2 - hr.top) / k });
-        }
-      }
-      return out;
-    }, [LONG_STREET, LONG_CITY_STATE_ZIP] as const);
+    const block = await readAddressBlock(page, LONG_STREET, LONG_CITY_STATE_ZIP);
+    expect(block.label, 'no "Residence Address:" label found').toBeTruthy();
+    expect(block.street, 'street line missing from the filing').toBeTruthy();
+    expect(block.city, 'city/state/zip line missing from the filing').toBeTruthy();
 
-    const streetLine = lines.find((l) => l.text.includes(LONG_STREET));
-    const cityLine = lines.find((l) => l.text.includes(LONG_CITY_STATE_ZIP));
-    expect(streetLine, 'street line missing from the filing').toBeTruthy();
-    expect(cityLine, 'city/state/zip line missing from the filing').toBeTruthy();
-    expect(Math.abs(cityLine!.mid - streetLine!.mid), 'the address did not wrap onto a second line').toBeGreaterThan(2);
+    // Standard US form: label, then delivery line, then city/state/ZIP, each
+    // on its own line and in that order.
+    expect(block.street!.mid, 'the delivery line is not under its label').toBeGreaterThan(block.label!.mid + 2);
+    expect(block.city!.mid, 'city/state/ZIP is not under the delivery line').toBeGreaterThan(block.street!.mid + 2);
+
+    // Indented under the label rather than hanging off in the old value
+    // column, so the block reads as one address.
+    expect(block.street!.left).toBeGreaterThan(block.label!.left);
+    expect(block.street!.left - block.label!.left, 'the block is indented too far to read as a unit').toBeLessThan(20);
+    expect(Math.abs(block.city!.left - block.street!.left), 'block lines are not flush with each other').toBeLessThan(1);
+  });
+
+  test('the street stays on its own line when the filer omits the city comma', async ({ page }) => {
+    test.setTimeout(150_000);
+    // The regression the structural composer exists for. The old code joined
+    // the stored fields with a comma and split them back apart on commas, so
+    // this input collapsed the whole address onto one line.
+    const noComma = 'St. Petersburg FL 33704';
+    await openSimplifiedPreview(page, noComma);
+
+    const block = await readAddressBlock(page, LONG_STREET, noComma);
+    expect(block.street, 'street line missing from the filing').toBeTruthy();
+    expect(block.city, 'city/state/zip line missing from the filing').toBeTruthy();
+    expect(block.city!.mid - block.street!.mid, 'street and city collapsed onto one line').toBeGreaterThan(2);
+
+    // And the collapsed single line was what overflowed, so check the ink too.
+    const rows = await measureInkOnRowsContaining(page, LONG_STREET);
+    const overflowing = rows.filter((r) => r.rightPt > RIGHT_EDGE_PT + EDGE_TOLERANCE_PT);
+    expect(overflowing, `real ink past the right margin: ${JSON.stringify(overflowing, null, 1)}`).toEqual([]);
   });
 });

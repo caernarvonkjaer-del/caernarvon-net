@@ -5,7 +5,7 @@
 import { yesNoText, triStateText } from '../../core/form/form-contract.js';
 import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
-import { composePdfAddress } from '../../core/pdf/address-format.js';
+import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
@@ -256,7 +256,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule A-1: Real Property Assets',
     'Schedule A-1: Real Property',
     ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?'],
-    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddress(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
+    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
@@ -272,7 +272,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule A-2: Debts on Real Property',
     'Schedule A-2: Debts on Real Property',
     ['Lender Name', 'Lender Address', 'Related Property Description', 'Full Debt Balance'],
-    (d.scheduleA2 || []).map(r => [r.lenderName || '', composePdfAddress(r.lenderAddress, r.lenderCityStateZip), r.relatedProperty || '', fmt(r.fullDebtBalance)]),
+    (d.scheduleA2 || []).map(r => [r.lenderName || '', composePdfAddressLines(r.lenderAddress, r.lenderCityStateZip), r.relatedProperty || '', fmt(r.fullDebtBalance)]),
     'Schedule A-2 Total (Full Debt Balance)',
     totalA2,
     'debts on real property',
@@ -295,7 +295,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-1: Cash & Financial Accounts',
     'Schedule B-1: Cash & Financial Accounts',
     ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount', 'Restricted?', 'Restricted Amt'],
-    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), triText(r.restricted, r.isRestricted), triIsYes(r.restricted, r.isRestricted) ? fmt(r.fullAssetAmount) : '—']),
+    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), triText(r.restricted, r.isRestricted), triIsYes(r.restricted, r.isRestricted) ? fmt(r.fullAssetAmount) : '—']),
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
@@ -310,7 +310,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-2: Personal Property Assets',
     'Schedule B-2: Personal Property',
     ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'In Safe Deposit Box?'],
-    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddress(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.inSafeDepositBox)]),
+    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.inSafeDepositBox)]),
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
@@ -324,7 +324,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-3: Intangible & Other Personal Property',
     'Schedule B-3: Intangible & Other Personal Property',
     ['Description', 'Custodian / Address', 'Full Value', "Ward's %", "Ward's Value", 'Restricted?', 'In Safe Deposit Box?'],
-    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddress(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox)]),
+    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox)]),
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
     'intangible personal property assets',
@@ -399,7 +399,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule C-4: Trusts',
     'Schedule C-4: Trusts',
     ['Trust Name', 'Trustee Name & Address', 'Date Created', 'Trust Amount / Value'],
-    (d.scheduleC4 || []).map(r => [r.trustName || '', composePdfAddress(r.trusteeName, r.trusteeAddress), fmtDate(r.dateCreated), fmt(r.trustAmount)]),
+    (d.scheduleC4 || []).map(r => [r.trustName || '', composePdfAddressLines(r.trusteeName, r.trusteeAddress), fmtDate(r.dateCreated), fmt(r.trustAmount)]),
     'Schedule C-4 Total',
     totalC4,
     'trusts',
@@ -413,7 +413,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule C-5: Joint / Other Property',
     'Schedule C-5: Joint / Other Property',
     ['Asset Description', 'Owner Name & Address', 'Relationship to Ward', 'Total Asset Value'],
-    (d.scheduleC5 || []).map(r => [r.assetDescription || '', composePdfAddress(r.ownerName, r.ownerAddress), r.relationshipToWard || '', fmt(r.totalAssetValue)]),
+    (d.scheduleC5 || []).map(r => [r.assetDescription || '', composePdfAddressLines(r.ownerName, r.ownerAddress), r.relationshipToWard || '', fmt(r.totalAssetValue)]),
     'Schedule C-5 Total',
     totalC5,
     'joint or other property assets',
@@ -443,7 +443,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signatureImage: g.signatureImage || '',
     fields: [
       [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: maskSSN(g.ssnEin || '') }],
-      [{ label: 'Address', value: composePdfAddress(g.streetAddress, g.cityStateZip) }],
+      [{ label: 'Address', value: composePdfAddressLines(g.streetAddress, g.cityStateZip) }],
     ],
   }));
 
@@ -460,7 +460,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signatureImage: preparer.signatureImage || '',
     fields: [
       [{ label: 'Phone', value: preparer.phone || '' }, { label: 'SSN/EIN', value: maskSSN(preparer.ssnEin || '') }],
-      [{ label: 'Address', value: composePdfAddress(preparer.streetAddress, preparer.cityStateZip) }],
+      [{ label: 'Address', value: composePdfAddressLines(preparer.streetAddress, preparer.cityStateZip) }],
     ],
   };
 
@@ -490,7 +490,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Phone': attorney.phone || '',
     'Primary Email': attorney.email || '',
     ...(attorney.secondaryEmail ? { 'Secondary Email': attorney.secondaryEmail } : {}),
-    'Address': composePdfAddress(attorney.streetAddress, attorney.cityStateZip),
+    'Address': composePdfAddressLines(attorney.streetAddress, attorney.cityStateZip),
   };
 
   sections.push({
@@ -580,7 +580,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           tag: 'Table',
           title: 'Service Recipients',
           headers: ['Recipient Name', 'Address', 'Date Served'],
-          rows: d.serviceRecipients.map(r => [r.name || '', composePdfAddress(r.address, r.cityStateZip), fmtDate(r.dateServed || d.serviceDate)]),
+          rows: d.serviceRecipients.map(r => [r.name || '', composePdfAddressLines(r.address, r.cityStateZip), fmtDate(r.dateServed || d.serviceDate)]),
           colWidths: [35, 45, 20],
         }
       ] : [
@@ -603,7 +603,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         fields: [
           [{ label: 'Florida Bar #', value: serviceAttorney.barNumber || '' }, { label: 'Phone', value: serviceAttorney.phone || '' }],
           [{ label: 'Primary Email', value: serviceAttorney.email || attorney.email || '' }],
-          [{ label: 'Address', value: composePdfAddress(serviceAttorney.streetAddress, serviceAttorney.cityStateZip) }],
+          [{ label: 'Address', value: composePdfAddressLines(serviceAttorney.streetAddress, serviceAttorney.cityStateZip) }],
         ],
       },
     ],

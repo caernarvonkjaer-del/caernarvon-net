@@ -3,7 +3,7 @@
 
 import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
-import { composePdfAddress } from '../../core/pdf/address-format.js';
+import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
@@ -175,8 +175,8 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         'Phone': g.phone || '',
         'SSN/EIN': maskSSN(g.ssn || ''),
         'Email': g.email || '',
-        'Mailing Address': composePdfAddress(g.mailingStreet, g.mailingCityStateZip),
-        'Residence Address': composePdfAddress(g.residenceStreet, g.residenceCityStateZip),
+        'Mailing Address': composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip),
+        'Residence Address': composePdfAddressLines(g.residenceStreet, g.residenceCityStateZip),
       },
     };
   });
@@ -228,7 +228,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           'Phone': d.attorney_phone || '',
           'Primary Email': d.attorney_email || '',
           ...(d.attorney_secondaryEmail ? { 'Secondary Email': d.attorney_secondaryEmail } : {}),
-          'Address': composePdfAddress(d.attorney_street, d.attorney_cityStateZip),
+          'Address': composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip),
         },
       },
     ],
@@ -300,7 +300,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           'Florida Bar #': d.certAttyBarNumber || d.attorney_barNumber || '',
           'Phone': d.certAttyPhone || d.attorney_phone || '',
           'Primary Email': d.attorney_email || '',
-          'Address': composePdfAddress(d.certAttyStreet || d.attorney_street, d.certAttyCityStateZip || d.attorney_cityStateZip),
+          'Address': composePdfAddressLines(d.certAttyStreet || d.attorney_street, d.certAttyCityStateZip || d.attorney_cityStateZip),
         },
       },
     ],

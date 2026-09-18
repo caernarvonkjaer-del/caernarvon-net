@@ -4,7 +4,7 @@
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
-import { composePdfAddress } from '../../core/pdf/address-format.js';
+import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export const DISB_CATS = [
@@ -246,8 +246,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
         'Phone': g.phone || '',
         'SSN / EIN': maskSSN(g.ssn || ''),
         'Email': g.email || '',
-        'Mailing Address': composePdfAddress(g.mailingStreet, g.mailingCityStateZip),
-        'Residence / Office': composePdfAddress(g.officeStreet, g.officeCityStateZip),
+        'Mailing Address': composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip),
+        'Residence / Office': composePdfAddressLines(g.officeStreet, g.officeCityStateZip),
       },
     };
   });
@@ -298,7 +298,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         details: {
           'Phone': p.phone || '',
           'SSN / EIN': maskSSN(p.ssn || ''),
-          'Address': composePdfAddress(p.street, p.cityStateZip),
+          'Address': composePdfAddressLines(p.street, p.cityStateZip),
         },
       },
     ],
@@ -334,7 +334,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           'Phone': d.attorney_phone || '',
           'Primary Email': d.attorney_email || '',
           ...(d.attorney_secondaryEmail ? { 'Secondary Email': d.attorney_secondaryEmail } : {}),
-          'Address': composePdfAddress(d.attorney_street, d.attorney_cityStateZip),
+          'Address': composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip),
         },
       },
     ],
@@ -1002,7 +1002,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
       'Phone': d.attorney_phone || '',
       'Primary Email': d.attorney_email || '',
-      'Address': composePdfAddress(d.attorney_street, d.attorney_cityStateZip),
+      'Address': composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip),
     },
   });
 
