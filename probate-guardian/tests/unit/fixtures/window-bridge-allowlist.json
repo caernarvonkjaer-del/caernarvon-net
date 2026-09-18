@@ -1203,6 +1203,18 @@
     },
     {
       "file": "src/main.js",
+      "name": "needsScheduleAck"
+    },
+    {
+      "file": "src/main.js",
+      "name": "recordScheduleAck"
+    },
+    {
+      "file": "src/main.js",
+      "name": "normalizeScheduleDocsAck"
+    },
+    {
+      "file": "src/main.js",
       "name": "markFilingRevisionChanged"
     },
     {

@@ -44,6 +44,7 @@ import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
 import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
+import { needsScheduleAck, recordScheduleAck, normalizeScheduleDocsAck } from './core/filing/schedule-doc-ack.js';
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
 if (typeof window !== 'undefined') {
@@ -69,6 +70,13 @@ if (typeof window !== 'undefined') {
   // third copy this file used to add was removed in Milestone 42E.
   window.markFilingRevisionChanged = markFilingRevisionChanged;
   window.isOutputAcknowledgedFor = isOutputAcknowledgedFor;
+  // Milestone 57C-R. legacy-app.js is a classic script with no imports, so
+  // normalizeWardData() reaches the acknowledgement migration through here.
+  // These are advisory only -- nothing on this line participates in whether a
+  // filing can be exported or in what the sidebar reports.
+  window.needsScheduleAck = needsScheduleAck;
+  window.recordScheduleAck = recordScheduleAck;
+  window.normalizeScheduleDocsAck = normalizeScheduleDocsAck;
   // Milestone 38D/44B: a fresh module load already starts with no
   // acknowledgement (in-memory only, never persisted) -- this is defense in
   // depth for bfcache restores, where the page can become visible again

@@ -287,10 +287,12 @@ interface Window {
   n: any;
   namesNearlyMatch: any;
   navigate: any;
+  needsScheduleAck: any;
   nextWalkthroughStep: any;
   normalizeCountyName: any;
   normalizePartyName: any;
   normalizePlanGuardians: any;
+  normalizeScheduleDocsAck: any;
   normalizeWardData: any;
   notifyProbateGuardianTabStateChanged: any;
   onCarrySourceChange: any;
@@ -340,6 +342,7 @@ interface Window {
   readRoleFields: any;
   readStoredTheme: any;
   reconcileSlotWithParty: any;
+  recordScheduleAck: any;
   referenceCountForParty: any;
   refreshAutoSaveArmedStatus: any;
   refreshWardInfoCard: any;

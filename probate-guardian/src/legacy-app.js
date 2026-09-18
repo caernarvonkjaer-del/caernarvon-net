@@ -6350,6 +6350,11 @@ function isRestrictedAnswer(entry){
 
 function normalizeWardData(d){
   if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;
+  // Milestone 57C-R: give every loaded ward a well-formed scheduleDocsAck.
+  // A .sav written before 57C-R has none at all; an unexpected shape must not
+  // read as "already acknowledged", since that would silently retire a prompt
+  // the filer never saw.
+  try{ window.normalizeScheduleDocsAck?.(d); }catch(e){}
   const migrateBoolean=(obj,field,legacyField=null)=>{
     if(!obj||typeof obj!=='object')return;
     const current=obj[field];
