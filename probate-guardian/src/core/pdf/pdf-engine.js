@@ -432,6 +432,101 @@ export async function generateCourtFormPdf(model, options = {}) {
     return [...parts, stateZip ? `${stateZip}, ${last}` : last];
   };
 
+  // Reported 2026-09-18, with a screenshot of Simplified Annual Accounting's
+  // Part IV: a guardian's address ran past the right margin of the court
+  // document and collided with its own label --
+  // "Residence Addre[ss]88 Snell Isle Blvd NE, St. Petersburg, FL 33704".
+  //
+  // The `signature-block` renderer has two layouts. The `fields` grid was
+  // given wrapping earlier (see its own comment about not overflowing into
+  // the right margin); the legacy `details` stack below it never was, which
+  // is why that earlier fix looked complete while four filing types stayed
+  // broken -- annual, final and trust accounting (all three share
+  // annual-accounting/pdf-model.js) plus simplified accounting. Those are
+  // exactly the filing types that print a guardian address through
+  // `details`.
+  //
+  // Two independent causes, both addressed here:
+  //   1. the value was drawn at a hardcoded 60pt to the right of its label,
+  //      and "Residence Address: " is about 74pt wide at 7.5pt bold -- so the
+  //      value began roughly 14pt on top of the end of its own label. The
+  //      value column is now placed past the widest label actually present,
+  //      uniformly for the whole block so the values still line up.
+  //   2. the value was drawn as one unwrapped string with no width at all, so
+  //      anything longer than the remaining ~128pt simply continued into the
+  //      margin. Values now wrap, addresses breaking on their own comma
+  //      boundaries first, via the same formatMailingAddress() the grid path
+  //      uses.
+  //
+  // A value whose wrapped lines still will not fit beside its label drops
+  // onto its own line underneath and takes the full width from the label's
+  // column to the margin -- the same label-above/value-below shape the
+  // `fields` grid path already uses, and roughly twice the room. With real
+  // Florida addresses that branch is the exception, not the rule; it exists
+  // so an unusually long label or value degrades into a readable stack
+  // instead of back into the margin.
+  //
+  // Measuring here, before the block is drawn, rather than inline at draw
+  // time is what lets the block reserve real height for a wrapped address.
+  // The old loop advanced a flat 11pt per key regardless; a two-line address
+  // would otherwise have been drawn straight through the heading of the next
+  // Part.
+  //
+  // A note on measurement, because it cost a wrong diagnosis once: pdf.js's
+  // text-layer spans over-report width by about 16% here (it measures a
+  // substitute face and corrects with a transform), so a test that measures
+  // the DOM will claim overflow that no ink actually commits. Verified by
+  // scanning the rendered canvas: "Residence Address:" puts down 71.3pt of
+  // ink, against doc.getTextWidth()'s 74.2pt for the same string plus its
+  // trailing space. jsPDF's own metrics are the trustworthy ones and are
+  // what this layout uses directly.
+  const DETAIL_LABEL_X = margin + 280;
+  const DETAIL_VALUE_X = margin + 340; // the column this stack has always used
+  const DETAIL_LINE_H = 11;
+  const DETAIL_WRAP_LINE_H = 10;
+  const DETAIL_VALUE_DROP = 9;
+  const DETAIL_INDENT = 6;
+  const DETAIL_GUTTER_PAD = 6; // clear space between a label and its value
+  const DETAIL_EDGE_SLACK = 2; // never commit ink to the last 2pt of the box
+  const planDetailStack = (details) => {
+    const rows = Object.keys(details)
+      .map((label) => ({ label, value: sanitizeDisplayValue(label, details[label]) }))
+      .filter((row) => row.value);
+    if (!rows.length) return { entries: [], height: 0 };
+    const rightEdge = pageWidth - margin - DETAIL_EDGE_SLACK;
+    doc.setFont('PGSans', 'bold');
+    doc.setFontSize(7.5);
+    const widestLabel = rows.reduce((w, row) => Math.max(w, doc.getTextWidth(`${row.label}: `)), 0);
+    // One column for the whole block, not one per row: a court form's details
+    // read as a column, and per-row placement would leave them ragged.
+    const valueX = Math.max(DETAIL_VALUE_X, DETAIL_LABEL_X + widestLabel + DETAIL_GUTTER_PAD);
+    const besideW = rightEdge - valueX;
+    const belowX = DETAIL_LABEL_X + DETAIL_INDENT;
+    const belowW = rightEdge - belowX;
+    doc.setFont('PGSans', 'normal');
+    doc.setFontSize(7.5);
+    const entries = rows.map(({ label, value }) => {
+      // An address breaks on its own comma boundaries before any width-based
+      // wrapping, so a street is never split away from its number and a city
+      // is never split from its state.
+      const desired = String(label).toLowerCase().includes('address')
+        ? formatMailingAddress(value)
+        : [String(value)];
+      if (desired.every((line) => doc.getTextWidth(line) <= besideW)) {
+        return { label, valueX, lines: desired, below: false, height: Math.max(1, desired.length) * DETAIL_LINE_H };
+      }
+      const lines = desired.flatMap((line) => doc.splitTextToSize(line, belowW));
+      return {
+        label,
+        valueX: belowX,
+        lines,
+        below: true,
+        height: DETAIL_VALUE_DROP + (Math.max(1, lines.length) * DETAIL_WRAP_LINE_H) + 2,
+      };
+    });
+    return { entries, height: entries.reduce((h, entry) => h + entry.height, 0) };
+  };
+
   const loadImageSize = (dataUrl) => new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve({ width: image.naturalWidth || image.width, height: image.naturalHeight || image.height });
@@ -1361,7 +1456,13 @@ export async function generateCourtFormPdf(model, options = {}) {
         const fieldRows = Array.isArray(block.fields) ? block.fields : null;
         const FIELD_ROW_H = 28;
         const baseSigHeight = isWetSignature ? 58 : 64;
-        const sigHeight = fieldRows ? baseSigHeight + 4 + (fieldRows.length * FIELD_ROW_H) : baseSigHeight;
+        // The legacy `details` stack is laid out up front so this block can
+        // reserve height for a wrapped address -- see planDetailStack().
+        const detailLayout = (!fieldRows && block.details) ? planDetailStack(block.details) : null;
+        const detailHeight = detailLayout ? 28 + detailLayout.height + 4 : 0;
+        const sigHeight = fieldRows
+          ? baseSigHeight + 4 + (fieldRows.length * FIELD_ROW_H)
+          : Math.max(baseSigHeight, detailHeight);
         checkPageSpace(sigHeight + 10, sec.title);
 
         const sigPartNode = structureTree.addStructureElement({
@@ -1511,30 +1612,36 @@ export async function generateCourtFormPdf(model, options = {}) {
             }
             rowY += FIELD_ROW_H;
           }
-        } else if (block.details) {
+        } else if (detailLayout) {
           // Legacy flat details stack (right column) -- kept for backward
           // compatibility with any caller not yet migrated to `fields`.
-          const detailKeys = Object.keys(block.details);
+          // Column positions and line wrapping were resolved by
+          // planDetailStack() above; see its comment for the reported
+          // margin-overflow/label-collision defect this shape fixes.
           let detailY = curY + 28;
-          for (const k of detailKeys) {
-            const val = sanitizeDisplayValue(k, block.details[k]);
-            if (val) {
-              const detailNode = structureTree.addStructureElement({
-                tag: 'P',
-                pageNumber: pageNum,
-                isLeaf: true,
-                parent: sigPartNode,
-              });
-              writeMarkedContentStart(doc, 'P', detailNode.mcid);
-              doc.setFont('PGSans', 'bold');
-              doc.setFontSize(7.5);
-              doc.setTextColor(70, 80, 95);
-              doc.text(`${k}: `, margin + 280, detailY);
-              doc.setFont('PGSans', 'normal');
-              doc.text(String(val), margin + 340, detailY);
-              writeMarkedContentEnd(doc);
-              detailY += 11;
-            }
+          for (const entry of detailLayout.entries) {
+            const detailNode = structureTree.addStructureElement({
+              tag: 'P',
+              pageNumber: pageNum,
+              isLeaf: true,
+              parent: sigPartNode,
+            });
+            writeMarkedContentStart(doc, 'P', detailNode.mcid);
+            doc.setFont('PGSans', 'bold');
+            doc.setFontSize(7.5);
+            doc.setTextColor(70, 80, 95);
+            doc.text(`${entry.label}: `, DETAIL_LABEL_X, detailY);
+            doc.setFont('PGSans', 'normal');
+            // Drawn line by line rather than handing jsPDF the array, so the
+            // spacing between lines is exactly what the height reservation
+            // above was computed from.
+            const firstLineY = detailY + (entry.below ? DETAIL_VALUE_DROP : 0);
+            const lineStep = entry.below ? DETAIL_WRAP_LINE_H : DETAIL_LINE_H;
+            entry.lines.forEach((line, lineIdx) => {
+              doc.text(line, entry.valueX, firstLineY + (lineIdx * lineStep));
+            });
+            writeMarkedContentEnd(doc);
+            detailY += entry.height;
           }
         }
 
