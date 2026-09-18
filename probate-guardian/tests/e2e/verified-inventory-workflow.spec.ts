@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 // Milestone 43D: split from one mega-test covering six unrelated concerns
 // (label associations, guided-tour absence, case-number normalization, the
@@ -124,6 +125,7 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await page.evaluate(() => (window as any).navigate('/b2'));
 
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const descField = page.locator('#b2-description-0');
     await expect(descField).toBeVisible();

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createWard, freshStartNoPassword } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', () => {
   test('forgiving date normalization and invalid date retention', async ({ page }) => {
@@ -50,6 +51,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     const addBtn = page.locator('[data-inventory-action="add-entry"][data-schedule="a2"]');
     await expect(addBtn).toBeVisible();
     await addBtn.click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     // Fill account number: "CHK-104A/2026-USAA"
     const acctInput = page.locator('[data-field-path="scheduleA2.0.accountNumber"]');
@@ -90,6 +92,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
 
     // Add an entry with empty required fields to test field-level jump links
     await addBtn.click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     // Check guidance has jump links
     const jumpBtn = page.locator('[data-form-action="jump-to-field"]').first();

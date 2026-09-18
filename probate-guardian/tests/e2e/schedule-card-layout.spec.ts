@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createSimplifiedWard, createWard, freshStartNoPassword } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 test('schedule entry cards use responsive two-column flow', async ({ page }) => {
   await freshStartNoPassword(page);
@@ -221,6 +222,7 @@ test('Schedule B-4 Category aligns with its primitive-built row-mates (reported 
     (window as any).D.schB4 = [{}];
     (window as any).navigate('/schb4');
   });
+  await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
   await page.setViewportSize({ width: 1280, height: 900 });
 
   const row = page.locator('.entry-card-body .row.g-2').first();

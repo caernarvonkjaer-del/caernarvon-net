@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, acceptDynDialog } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 import { skipEnvironmentLimitation } from './support/target-profile';
 
 // Milestone 33, Phase 2.2 -- Migration Sequence step 3. Organized by field
@@ -31,6 +32,7 @@ test.describe('Form entry contract', () => {
     await createWard(page, 'Paste Entry Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/a2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a2"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const pasteText = "Trustee's note (SNT-2024-778) c/o USAA LLC";
     await page.evaluate((text) => navigator.clipboard.writeText(text), pasteText);
@@ -57,6 +59,7 @@ test.describe('Form entry contract', () => {
     await createWard(page, 'Composition Entry Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/a2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a2"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const notesInput = page.locator('[data-field-path="scheduleA2.0.notes"]');
     await expect(notesInput).toBeVisible();

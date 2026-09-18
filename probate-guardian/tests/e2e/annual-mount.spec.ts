@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 // Annual Accounting is the sixth feature extraction (Milestone 7 of
 // INDEX-SPLIT-PLAN.md) -- the largest yet, and the second Plan/Accounting
@@ -173,6 +174,7 @@ test.describe('annual-accounting feature module', () => {
     // Add Income in Schedule A
     await page.evaluate(() => (window as any).navigate('/scha'));
     await page.locator('#main-content [data-annual-action="add-row"][data-collection="schA"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const payerInput = page.locator('#main-content [data-annual-path="schA.0.payer"]');
     await payerInput.fill('Social Security Administration');
     const descInput = page.locator('#main-content [data-annual-path="schA.0.description"]');
@@ -236,6 +238,7 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'Rapid Date Entry Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/schb2'));
     await page.locator('[data-annual-action="add-row"][data-collection="schB2"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     // Model the reported fast/paste-like sequence: all four fields emit input
     // in one turn, then navigation begins before any individual blur handler
@@ -276,6 +279,7 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'Apostrophe Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/schc'));
     await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const descInput = page.locator('[data-annual-path="schC.0.description"]');
     await descInput.fill("Sale of ward's homestead");
@@ -296,6 +300,7 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'F1 Live Total Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/schf1'));
     await page.locator('[data-annual-action="add-row"][data-collection="schF1"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const totalCell = page.locator('[data-annual-total="schF1"]');
     await expect(totalCell).toHaveText('0.00');

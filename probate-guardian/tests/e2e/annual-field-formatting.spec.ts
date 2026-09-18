@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 // Regression coverage for two Annual Accounting field-level bugs, both
 // isolated to inpD() (this feature's own field-rendering helper -- every
@@ -49,6 +50,7 @@ test.describe('Annual Accounting field formatting', () => {
 
     await page.evaluate(() => (window as any).navigate('/sche'));
     await page.locator('[data-annual-action="add-row"][data-collection="schE"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const bankInput = page.locator('input[data-annual-path^="schE."][data-annual-path$=".bankName"]').first();
     await bankInput.fill('xxxx1234 suncoast bank');
     await bankInput.blur();
@@ -69,6 +71,7 @@ test.describe('Annual Accounting on the shared write path', () => {
     await createWard(page, 'Single Writer Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/scha'));
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const payer = page.locator('[data-annual-path="schA.0.payer"]');
     await payer.waitFor({ state: 'visible' });
 
@@ -91,6 +94,7 @@ test.describe('Annual Accounting on the shared write path', () => {
     await createWard(page, 'Signed Decimal Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/schc'));
     await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const loss = page.locator('[data-annual-path="schC.0.loss"]');
     await loss.waitFor({ state: 'visible' });
 
@@ -112,6 +116,7 @@ test.describe('Annual Accounting on the shared write path', () => {
     await createWard(page, 'Live Filter Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/scha'));
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const amount = page.locator('[data-annual-path="schA.0.amount"]');
     await amount.waitFor({ state: 'visible' });
 
@@ -153,6 +158,7 @@ test.describe('Annual Accounting on the shared write path', () => {
     await createWard(page, 'Security Sanitize Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/schc'));
     await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const description = page.locator('[data-annual-path="schC.0.description"]');
     await description.waitFor({ state: 'visible' });
 

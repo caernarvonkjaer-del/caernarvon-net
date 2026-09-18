@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 // Milestone 43B: replaces tests/unit/guardian-inventory-yes-no-radio.spec.js's
 // "Schedule A-1, B-1, B-2, B-3 use yesNoRadioHTML for binary questions" test,
@@ -36,6 +37,7 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
       }
       if (f.schedule) {
         await page.evaluate((schedule) => (window as any).addEntry(schedule), f.schedule);
+        await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
       }
 
       const fieldset = page.locator(`fieldset[data-yes-no-group="${f.path}"]`);

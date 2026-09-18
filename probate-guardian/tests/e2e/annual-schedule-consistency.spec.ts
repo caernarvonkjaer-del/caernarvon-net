@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { dismissScheduleDocPrompt } from './support/target';
 
 // Two Annual Accounting behaviours that Guardian Inventory already had and
 // Annual didn't, closed as one consistency pass:
@@ -132,6 +133,7 @@ test.describe('annual accounting schedule consistency', () => {
 
     // Schedules start with no rows at all, so add one before typing in it.
     await page.locator('[data-annual-action="add-row"][data-collection="schB1"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const amount = page.locator('input[data-annual-path^="schB1."][data-annual-path$=".amount"]').first();
     await amount.fill('1250.50');
     await expect(total, 'Schedule B-1 total should follow the row being typed in').toHaveText('1,250.50');
@@ -145,6 +147,7 @@ test.describe('annual accounting schedule consistency', () => {
     const schATotal = page.locator('[data-annual-total="schA"]');
     await expect(schATotal).toHaveText('0.00');
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     await page.locator('input[data-annual-path^="schA."][data-annual-path$=".amount"]').first().fill('750');
     await expect(schATotal).toHaveText('750.00');
   });

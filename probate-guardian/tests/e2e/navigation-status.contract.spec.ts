@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog,
   fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard,
-  fillMinimalValidPlanInitialWard,
+  fillMinimalValidPlanInitialWard, dismissScheduleDocPrompt,
 } from './support/target';
 import type { ValidatorIssue } from './support/window-api';
 
@@ -269,6 +269,7 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     // link with a real focusable target appears.
     await expect(page.locator('#page-next-btn')).toBeDisabled();
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const expectedCount = await page.evaluate(() => {
       const raw = (window as any).validateGuardian();
@@ -316,6 +317,7 @@ test.describe('Guardian Inventory navigation/status contract', () => {
       await createWard(page, `Guardian ${key.toUpperCase()} Guidance Ward`, 'guardian');
       await page.evaluate((r) => (window as any).navigate(r), route);
       await page.locator(`[data-inventory-action="add-entry"][data-schedule="${key}"]`).click();
+      await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
       const expectedCount = await page.evaluate((r) => {
         const raw = (window as any).validateGuardian();
@@ -342,6 +344,7 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await createWard(page, 'Guardian B-2 Vehicle Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/b2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
+    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     // renderB2Fields() renders Year/Make/Model/VIN/Odometer as raw inputs
     // with no data-bind at all once a row is marked a vehicle -- their only
     // focusable selector is the input's own literal id.

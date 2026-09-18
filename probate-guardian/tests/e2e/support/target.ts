@@ -705,3 +705,36 @@ export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?
   })();
   return { stop: () => { stopped = true; return loop; }, messages };
 }
+
+/**
+ * Milestone 57C-R: dismiss the supporting-documentation acknowledgement if it
+ * is showing, and do nothing if it is not.
+ *
+ * Adding a row to a financial schedule now raises an advisory modal (see
+ * src/core/filing/schedule-doc-ack.js). That is intended behaviour, but it
+ * lands in front of specs that populate a schedule to test something else
+ * entirely -- 18 of them, all failing the same way, with the overlay
+ * intercepting the next click. Those specs call this immediately after the
+ * row-adding action.
+ *
+ * Dismiss rather than accept, deliberately: accepting would write an
+ * acknowledgement into the ward data and quietly change what the spec is
+ * carrying, while Cancel records nothing (Decision 5). It is also safe to call
+ * when no prompt appeared, so a spec that later stops triggering one does not
+ * break -- it just becomes a no-op.
+ *
+ * The prompt itself is covered by schedule-doc-ack.spec.ts, which does NOT use
+ * this helper. Suppressing it everywhere would leave nothing asserting it
+ * still fires.
+ */
+export async function dismissScheduleDocPrompt(page: Page): Promise<boolean> {
+  const cancel = page.locator(`${DYN_DIALOG} [data-dyn-action="cancel"]`);
+  try {
+    await cancel.waitFor({ state: 'visible', timeout: 1500 });
+  } catch {
+    return false; // no prompt -- nothing to do
+  }
+  await cancel.click();
+  await page.locator(DYN_DIALOG).waitFor({ state: 'hidden' }).catch(() => {});
+  return true;
+}
