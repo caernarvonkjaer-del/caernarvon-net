@@ -573,6 +573,76 @@ one thing in the file that is positional. Anything keyed by sheet index —
 print areas, custom views, `_xlnm.*` names — needs re-basing whenever sheets
 are inserted.
 
+**D13 — FIXED 2026-09-19, authorized by Alan. The caption/box defect was not
+one bug. It was a class, in all three filing types, and the worst instance
+filed wrong money.**
+
+Found while verifying 57A's premises. D11 fixed one instance; a mechanical
+audit of every `setCell()` target against the templates found 48 suspect
+sites, of which 26 were real.
+
+**The worst: Simplified's Part II accounting summary.** Every figure was
+written one row below its Line, so each landed on the next Line's row, and the
+two that fell on the total rows overwrote the `Total Income` and
+`Total Disbursements` captions *and* fell outside the workbook's own
+`SUM(G22:G23)` / `SUM(G27:G28)` ranges. A filing reporting 100,000 opening,
+2,200 in settlement deposits and 4,400 in federal income tax was filed as:
+
+| Line | Should be | Was filed |
+| --- | --: | --: |
+| 1 Starting Balance | 100,000 | *blank* |
+| 2 Interest Income | 11 | *blank* |
+| 3 Deposits per Settlement | 2,200 | 11 |
+| 4 Total Income | 2,211 | 11 |
+| 5 Service Charges | 33 | *blank* |
+| 6 Federal Income Tax | 4,400 | 33 |
+| 7 Total Disbursements | 4,433 | 33 |
+| 8 Remaining Assets On Hand | 97,778 | **−22** |
+
+The starting balance did not merely go missing: `H20` sits inside the merged
+`B20:I20`, so ExcelJS redirected it onto the printed `Income` banner.
+
+**Initial Inventory.** PART IV's preparer and attorney block writes its values
+onto the caption row instead of the box beneath it — twelve labels destroyed,
+twelve boxes empty. PART V wrote the bond amount over `Bond Amount` and the
+dates over `From:` and `To:`, on the page the court uses to check the surety
+bond. PART VI had the bar number and the street address on each other's cells.
+Two further consequences: the attorney's **signature date never survived a
+round trip** (written to a caption, read back as the word "Date"), and the
+form's two distinct dates — `C21` on the notification line, `G26` beside the
+signature — were collapsed onto one.
+
+**Annual.** `relatedCaseNumbers` was written to `I12`, inside the merged
+`H12:J12`, replacing the prompt *"List case number(s) here:"*. Six redundant
+literals over `=From_Date`/`=To_Date` were removed: same value, but they
+replaced live propagation with a snapshot.
+
+**Why the suites never caught any of it.** Every importer read the same wrong
+cell as its exporter. The round trips confirmed the app agreed with itself.
+This is the concrete case behind `AGENTS.md` §14's rule that a formula or a
+placement is verified by reading the **exported file**, never by re-importing.
+
+Guarded two ways: `tests/unit/excel-write-targets.spec.js` classifies every
+write target against the template (label / formula / covered-by-merge, with a
+dropdown validation distinguishing a default from a caption) and carries an
+explicit, reasoned exceptions list; `tests/e2e/excel-form-field-placement.spec.ts`
+proves the result in the exported file. Both fault-injected.
+
+**Three writes kept deliberately, and they are open questions, not oversights.**
+Each overwrites something the court's form supplies, and removing it would
+discard a field the filer can edit:
+
+- `PART IX` `E21`/`G21` — the form derives the **bond period** from the
+  accounting period (`=From_Date`/`=To_Date`), but the app lets a filer enter a
+  bond period of its own. **Does Pinellas accept a bond period different from
+  the accounting period?** If not, the app's fields should go.
+- `PART II, III` `F25` — the form links Guardian #1's name to PART I by
+  formula; the app keeps `guardians[0].name` separately. **Should they be one
+  field?**
+
+**Filings already submitted** carry the old placement. The app cannot detect an
+affected file after the fact.
+
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
 clearable acknowledgement at output rather than hard-blocking. Chosen for

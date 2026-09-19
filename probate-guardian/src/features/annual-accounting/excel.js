@@ -183,7 +183,11 @@ export async function doSaveExcel(){
       setCell(p1,'D20',inv.guardian); setCell(p1,'D21',inv.attorney);
       setCell(p1,'D22',inv.typeOfGuardianship);
       setCell(p1,'J6',inv.amendedForm); setCell(p1,'H4',filingDescriptor?.filingTypeValue||inv.filingType);
-      setCell(p1,'I12',inv.relatedCaseNumbers);
+      // I12 sits inside the merged H12:J12, which holds the printed prompt
+      // "List case number(s) here:" -- ExcelJS redirects a write on a merged
+      // member to its master, so this used to replace that prompt. The box is
+      // the row beneath.
+      setCell(p1,'I13',inv.relatedCaseNumbers);
       setCell(p1,'D23',inv.county||'');
     }
 
@@ -194,7 +198,9 @@ export async function doSaveExcel(){
       const g1=inv.guardians[0]||{};
       const g2=inv.guardians[1]||{};
       const g3=inv.guardians[2]||{};
-      setCell(p23,'C22',fD(inv.periodFrom)); setCell(p23,'F22',fD(inv.periodTo));
+      // C22/F22 are the workbook's own =From_Date/=To_Date, fed by PART I's
+      // E18/H18 which are written above, so writing the same values here as
+      // literals only replaced live propagation with a snapshot.
       // Guardian 1
       setCell(p23,'D25',fD(g1.signatureDate)); setCell(p23,'F25',g1.name||'');
       setCell(p23,'B27',g1.ssn||''); setCell(p23,'B29',g1.phone||''); setCell(p23,'B31',g1.email||'');
@@ -220,13 +226,13 @@ export async function doSaveExcel(){
     const p45=workbook.getWorksheet('PART IV, V');
     if(p45){
       const p=inv.preparer;
-      setCell(p45,'D11',fD(inv.periodFrom)); setCell(p45,'J11',fD(inv.periodTo));
+      // D11/J11 and D26/J26 below are =From_Date/=To_Date -- see PART II, III.
       // Signature date columns: D is inside the merged "Preparer's/Attorney
       // Signature" label cell (B:G); the real Date value lives at H.
       setCell(p45,'J15',p.name||''); setCell(p45,'H15',fD(p.signatureDate));
       setCell(p45,'B17',p.ssn||''); setCell(p45,'B19',p.phone||'');
       setCell(p45,'J17',p.street||''); setCell(p45,'J19',p.cityStateZip||'');
-      setCell(p45,'D26',fD(inv.periodFrom)); setCell(p45,'J26',fD(inv.periodTo));
+
       setCell(p45,'H31',fD(inv.attorney_signatureDate));
       setCell(p45,'B33',inv.attorney_bar||''); setCell(p45,'B35',inv.attorney_phone||'');
       setCell(p45,'J33',inv.attorney_street||''); setCell(p45,'J35',inv.attorney_cityStateZip||'');
@@ -582,7 +588,7 @@ export async function importExcel(input){
         // filing blank rather than acquiring Pinellas. An explicit workbook
         // county is preserved exactly.
         D.county=gcStr(p1,'D23')||'';
-        D.relatedCaseNumbers=gcStr(p1,'I12');
+        D.relatedCaseNumbers=gcStr(p1,'I13');
       }
 
       // PART II, III — starting balance carries no cell of its own here

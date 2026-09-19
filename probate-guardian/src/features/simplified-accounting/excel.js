@@ -118,20 +118,46 @@ export async function doSaveExcel(){
       setCell(p1,'G2',inv.county||'');
       setCell(p1,'I5',inv.amendedForm||'');
       const t=calcTotals();
-      setCell(p1,'H20',n(inv.startingBalance));
-      setCell(p1,'G23',n(inv.interestIncome));
-      setCell(p1,'G24',n(inv.depositsSettlement));
-      setCell(p1,'G28',n(inv.serviceCharges));
-      setCell(p1,'G29',n(inv.federalIncomeTax));
+      // Part II's accounting summary. Each Line's figure goes in that Line's
+      // own row, and the workbook adds them up itself:
+      //
+      //   Line 1  Starting Balance          H19
+      //   Line 2  Interest Income           G22 -.
+      //   Line 3  Deposits per Settlement   G23 -+-> H24 =SUM(G22:G23)
+      //   Line 5  Service Charges           G27 -.
+      //   Line 6  Federal Income Tax        G28 -+-> H29 =SUM(G27:G28)
+      //   Line 8  Remaining Assets              H31 =H19+H24-H29
+      //
+      // Every one of these used to be written one row low, which did far more
+      // than misplace them. Line 1 never reached the form at all (the balance
+      // landed on the "Income" banner), Line 3 received Line 2's figure, and
+      // the two figures that fell on the total rows -- deposits and federal
+      // income tax -- overwrote the "Total Income" and "Total Disbursements"
+      // labels AND never entered the sums, because the workbook's own SUM
+      // ranges stop at G23 and G28. A filing reporting 100,000 opening,
+      // 2,200 in deposits and 4,400 in tax was filed with a blank Line 1,
+      // Total Income of 11, Total Disbursements of 33, and Remaining Assets
+      // On Hand of -22 instead of 97,778.
+      //
+      // The SUM ranges are the authority for these addresses (AGENTS.md
+      // section 13), and the totals stay formula-driven -- the app writes the
+      // five inputs and nothing else.
+      setCell(p1,'H19',n(inv.startingBalance));
+      setCell(p1,'G22',n(inv.interestIncome));
+      setCell(p1,'G23',n(inv.depositsSettlement));
+      setCell(p1,'G27',n(inv.serviceCharges));
+      setCell(p1,'G28',n(inv.federalIncomeTax));
     }
 
     const p34=workbook.getWorksheet('PARTS III, IV');
     if(p34){
-      setCell(p34,'C10',fmtD(inv.periodFrom));
-      setCell(p34,'F10',fmtD(inv.periodTo));
+      // The period and the guardian's name are NOT written here. C10, F10 and
+      // F15 already hold the workbook's own formulas pulling them from
+      // PARTS I, II (E13, H13 and D16 -- the cells written above), so writing
+      // literals over them replaced live propagation with a snapshot and, on
+      // C10/F10, destroyed it for every later edit. AGENTS.md section 13.
       const g1=inv.guardians[0]||{};
       setCell(p34,'D15',fmtD(g1.signatureDate));
-      setCell(p34,'F15',g1.name||'');
       setCell(p34,'B17',g1.ssn||'');
       setCell(p34,'B19',g1.phone||'');
       setCell(p34,'B21',g1.email||'');
@@ -167,10 +193,12 @@ export async function doSaveExcel(){
 
     const p56=workbook.getWorksheet('PARTS V, VI ');
     if(p56){
-      setCell(p56,'C12',fmtD(inv.periodFrom));
-      setCell(p56,'J12',fmtD(inv.periodTo));
-      setCell(p56,'B17','/s/');
-      setCell(p56,'J17',inv.attorney||'');
+      // The period, the attorney's name and the '/s/' marks are the
+      // workbook's own. D12/J12 and J17/J41 carry formulas pulling from
+      // PARTS I, II -- the form even labels them "[linked to Part I]" -- and
+      // B17/B41 ship with '/s/' already in them. Writing the period to C12 was
+      // worse than redundant: C12 sits inside the merged B11:C12, so ExcelJS
+      // redirected it to B11 and it landed on the printed "from" label.
       setCell(p56,'B19',inv.attorney_barNumber||'');
       setCell(p56,'B21',inv.attorney_phone||'');
       setCell(p56,'J19',inv.attorney_street||'');
@@ -192,8 +220,8 @@ export async function doSaveExcel(){
         setCell(p56,`${col}34`,ri.line2||'');
         setCell(p56,`${col}35`,ri.line3||'');
       });
-      setCell(p56,'B41','/s/');
-      setCell(p56,'J41',inv.attorney||'');
+      // B41 already reads '/s/' and J41 is the "[linked to Part I]" formula --
+      // see the note above the Part V signature block.
       setCell(p56,'H41',fmtD(inv.certAttySignDate||inv.attorney_signatureDate));
       setCell(p56,'B43',inv.certAttyBarNumber||inv.attorney_barNumber||'');
       setCell(p56,'B45',inv.certAttyPhone||inv.attorney_phone||'');
@@ -278,11 +306,15 @@ export async function importExcel(input){
         // workbook with no county leaves the filing blank.
         window.D.county=gc('G2')||'';
         window.D.amendedForm=gc('I5');
-        window.D.startingBalance=gc('H20');
-        window.D.interestIncome=gc('G23');
-        window.D.depositsSettlement=gc('G24');
-        window.D.serviceCharges=gc('G28');
-        window.D.federalIncomeTax=gc('G29');
+        // Part II's five inputs, at the addresses the workbook's own SUM
+        // ranges define -- see the note beside the writer. Both sides read one
+        // row low together, which is why the round trip looked clean while
+        // every figure on the filed accounting was wrong.
+        window.D.startingBalance=gc('H19');
+        window.D.interestIncome=gc('G22');
+        window.D.depositsSettlement=gc('G23');
+        window.D.serviceCharges=gc('G27');
+        window.D.federalIncomeTax=gc('G28');
       }
 
       // PARTS III, IV — Guardians
@@ -291,7 +323,11 @@ export async function importExcel(input){
         const gc34=(addr)=>readCellText(p34.getCell(addr));
         const g1=window.D.guardians[0]||{};
         g1.signatureDate=gc34('D15').substring(0,10);
-        g1.name=gc34('F15');
+        // F15 is the workbook's own formula pulling Guardian #1's name from
+        // PARTS I, II D16 -- the court's form treats the two as one name and
+        // the exporter no longer writes over it, so this takes the value from
+        // the cell that actually backs it rather than from a cached result.
+        g1.name=window.D.guardian||'';
         g1.ssn=gc34('B17');
         g1.phone=gc34('B19');
         g1.email=gc34('B21');

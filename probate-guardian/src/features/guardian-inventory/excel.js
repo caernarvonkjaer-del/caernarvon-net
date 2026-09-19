@@ -403,26 +403,44 @@ export async function doSaveExcel(){
 
     const p4=workbook.getWorksheet('PART IV');
     if(p4){
-      setCell(p4,'G12',fmtD(inv.preparer.signatureDate));
-      setCell(p4,'I12',inv.preparer.name||'');
-      setCell(p4,'B14',inv.preparer.ssnEin||'');
-      setCell(p4,'I14',inv.preparer.streetAddress||'');
-      setCell(p4,'B16',inv.preparer.phone||'');
-      setCell(p4,'I16',inv.preparer.cityStateZip||'');
-      setCell(p4,'G25',fmtD(inv.attorney.signatureDate));
-      setCell(p4,'G26',fmtD(inv.attorney.filingDate));
-      setCell(p4,'I25',inv.attorney.name||'');
-      setCell(p4,'B27',inv.attorney.barNumber||'');
-      setCell(p4,'I27',inv.attorney.streetAddress||'');
-      setCell(p4,'B29',inv.attorney.phone||'');
-      setCell(p4,'I29',inv.attorney.cityStateZip||'');
+      // PART IV's signature blocks put each caption in one row and its input
+      // box in the row BENEATH it -- "Preparer's Name" is the merged I12:K12,
+      // the box for it is I13:K13. Every field here used to be written to the
+      // caption row, so a filed inventory had twelve printed labels replaced
+      // by values and twelve empty boxes underneath them.
+      setCell(p4,'G13',fmtD(inv.preparer.signatureDate));
+      setCell(p4,'I13',inv.preparer.name||'');
+      setCell(p4,'B15',inv.preparer.ssnEin||'');
+      setCell(p4,'I15',inv.preparer.streetAddress||'');
+      setCell(p4,'B17',inv.preparer.phone||'');
+      setCell(p4,'I17',inv.preparer.cityStateZip||'');
+      // The attorney block has two different dates on the form: C21 is the
+      // "Date:" on the notification line above, G26 the one beside "Attorney
+      // Signature". The signature date used to go to the G25 caption and the
+      // filing date to G26, so the signature date never appeared at all and
+      // never survived a round trip.
+      setCell(p4,'C21',fmtD(inv.attorney.filingDate));
+      setCell(p4,'G26',fmtD(inv.attorney.signatureDate));
+      // I26 is the workbook's own formula pulling the attorney's name from
+      // SUMMARY I D24 -- the form links the two -- so the app writes that cell
+      // and leaves this one alone (AGENTS.md section 13).
+      setCell(p4,'B28',inv.attorney.barNumber||'');
+      setCell(p4,'I28',inv.attorney.streetAddress||'');
+      setCell(p4,'B30',inv.attorney.phone||'');
+      setCell(p4,'I30',inv.attorney.cityStateZip||'');
     }
 
     const p5=workbook.getWorksheet('PART V');
     if(p5){
-      setCell(p5,'B26',inv.bondAmount||'');
-      setCell(p5,'D27',fmtD(inv.bondPeriodFrom));
-      setCell(p5,'F27',fmtD(inv.bondPeriodTo));
+      // The bond block's captions are in column B (and D27/F27's "From:" and
+      // "To:"); the boxes are to their right. All three of these used to be
+      // written onto the captions, so a filed inventory read a bare number
+      // where "Bond Amount" belongs, dates where "From:" and "To:" belong, and
+      // had all three bond boxes empty -- on the page the court uses to check
+      // the surety bond.
+      setCell(p5,'G26',inv.bondAmount||'');
+      setCell(p5,'E27',fmtD(inv.bondPeriodFrom));
+      setCell(p5,'G27',fmtD(inv.bondPeriodTo));
       setCell(p5,'D28',inv.bondingCompany||'');
       setCell(p5,'G15',inv.bondWaivedDate||'');
     }
@@ -434,13 +452,18 @@ export async function doSaveExcel(){
       if(recs[1]){setCell(p6,'H13',recs[1].name||'');setCell(p6,'H14',recs[1].address||'');setCell(p6,'H15',recs[1].cityStateZip||'');}
       if(recs[2]){setCell(p6,'B19',recs[2].name||'');setCell(p6,'B20',recs[2].address||'');setCell(p6,'B21',recs[2].cityStateZip||'');}
       if(recs[3]){setCell(p6,'H19',recs[3].name||'');setCell(p6,'H20',recs[3].address||'');setCell(p6,'H21',recs[3].cityStateZip||'');}
-      setCell(p6,'G24',fmtD(inv.serviceDate));
-      setCell(p6,'G26',fmtD(inv.serviceAttorney.signatureDate));
-      setCell(p6,'J27',inv.serviceAttorney.name||'');
-      setCell(p6,'J29',inv.serviceAttorney.barNumber||'');
-      setCell(p6,'J28',inv.serviceAttorney.streetAddress||'');
-      setCell(p6,'B30',inv.serviceAttorney.phone||'');
-      setCell(p6,'J30',inv.serviceAttorney.cityStateZip||'');
+      // Same caption-above-box shape as PART IV. The recipient blocks above
+      // were already right; the certificate's own fields were not. The bar
+      // number was the odd one out -- it went to J29, the street address's
+      // box, while the street address went to the J28 caption.
+      setCell(p6,'G25',fmtD(inv.serviceDate));
+      setCell(p6,'G27',fmtD(inv.serviceAttorney.signatureDate));
+      // J27 is the workbook's formula for the attorney's name, from
+      // SUMMARY I D24, exactly as on PART IV.
+      setCell(p6,'B29',inv.serviceAttorney.barNumber||'');
+      setCell(p6,'J29',inv.serviceAttorney.streetAddress||'');
+      setCell(p6,'B31',inv.serviceAttorney.phone||'');
+      setCell(p6,'J31',inv.serviceAttorney.cityStateZip||'');
     }
 
     // The court's workbook ships every printed page of every schedule, and the
@@ -550,12 +573,17 @@ function parseInitialInventoryWorkbook(wb){
     scheduleC4:readRows(SCHEDULE_C4_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`I${r}`);if(!name&&!val)return null;return{trustName:name,trusteeName:txt(s,`C${r+1}`),trusteeAddress:txt(s,`C${r+2}`),trusteeCityStateZip:txt(s,`C${r+3}`),dateCreated:dt(s,`E${r}`),accountNumber:txt(s,`F${r}`),trustType:txt(s,`H${r}`)||'Pooled',trustAmount:val,wardPercent:pct(s,`J${r}`)}}),
     scheduleC5:readRows(SCHEDULE_C5_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerAddress:txt(s,`C${r+1}`),ownerName:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),
     guardians:(()=>{const p3=ws('PART III');const gs=[];for(let i=0;i<3;i++){const b=7+i*6;const name=txt(p3,`F${b+1}`);if(!name&&i>0)continue;gs.push({signatureDate:dt(p3,`D${b}`),name,ssnEin:txt(p3,`B${b+2}`),streetAddress:txt(p3,`F${b+2}`),phone:txt(p3,`B${b+4}`),cityStateZip:txt(p3,`F${b+4}`)});}return gs.length?gs:[mk.guardian()];})(),
-    preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G12'),name:txt(p4,'I12'),ssnEin:txt(p4,'B14'),streetAddress:txt(p4,'I14'),phone:txt(p4,'B16'),cityStateZip:txt(p4,'I16')};})(),
-    attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G25'),filingDate:dt(p4,'G26'),name:txt(p4,'I25'),barNumber:txt(p4,'B27'),streetAddress:txt(p4,'I27'),phone:txt(p4,'B29'),cityStateZip:txt(p4,'I29')};})(),
-    bondAmount:txt(ws('PART V'),'B26'),bondPeriodFrom:dt(ws('PART V'),'D27'),bondPeriodTo:dt(ws('PART V'),'F27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:txt(ws('PART V'),'G15'),
+    // The same input-box addresses doSaveExcel() writes. Both sides used to
+    // read and write the caption row instead, together, which is why the
+    // round trip agreed with itself while the filed form was wrong.
+    preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G13'),name:txt(p4,'I13'),ssnEin:txt(p4,'B15'),streetAddress:txt(p4,'I15'),phone:txt(p4,'B17'),cityStateZip:txt(p4,'I17')};})(),
+    // name comes from SUMMARY I D24, the cell the form's own I26 formula
+    // reads, rather than from a formula cell's cached result.
+    attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G26'),filingDate:dt(p4,'C21'),name:txt(si,'D24'),barNumber:txt(p4,'B28'),streetAddress:txt(p4,'I28'),phone:txt(p4,'B30'),cityStateZip:txt(p4,'I30')};})(),
+    bondAmount:txt(ws('PART V'),'G26'),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:txt(ws('PART V'),'G15'),
     serviceRecipients:(()=>{const p6=ws('PART VI');const all=[{name:txt(p6,'B13'),address:txt(p6,'B14'),cityStateZip:txt(p6,'B15')},{name:txt(p6,'H13'),address:txt(p6,'H14'),cityStateZip:txt(p6,'H15')},{name:txt(p6,'B19'),address:txt(p6,'B20'),cityStateZip:txt(p6,'B21')},{name:txt(p6,'H19'),address:txt(p6,'H20'),cityStateZip:txt(p6,'H21')}];const filtered=all.filter(r=>r.name||r.address||r.cityStateZip);return filtered.length>0?filtered:[mk.recipient()];})(),
-    serviceDate:dt(ws('PART VI'),'G24'),
-    serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G26'),name:txt(p6,'J27'),barNumber:txt(p6,'J29'),streetAddress:txt(p6,'J28'),phone:txt(p6,'B30'),cityStateZip:txt(p6,'J30')};})()
+    serviceDate:dt(ws('PART VI'),'G25'),
+    serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G27'),name:txt(si,'D24'),barNumber:txt(p6,'B29'),streetAddress:txt(p6,'J29'),phone:txt(p6,'B31'),cityStateZip:txt(p6,'J31')};})()
   };
   capitalizeImportedFields(inv);
   return inv;
