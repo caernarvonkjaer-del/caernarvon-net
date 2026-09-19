@@ -266,3 +266,63 @@ The same fix, correctly explained:
   "caused a layout problem."
 - If a sentence would read identically to someone who had never used this app,
   it is probably mechanism-only — rewrite it.
+
+---
+
+## 13. The Court's Own Forms Are the Calculation Authority
+
+The three embedded workbooks in `templates/` are not just an export target.
+They are the **Pinellas County Clerk's own instruments**, and where they define
+a calculation, a threshold, a fee, or which schedules roll into a total, that
+definition is **authoritative** and this app's job is to match it — not to
+improve on it, infer around it, or re-derive it from statute.
+
+**Before proposing, designing, or changing any calculation, read the
+template.** Decode it and look. The workbooks are base64 in
+`templates/{annual,guardian,simplified}-template.js`; unzip and read
+`xl/workbook.xml`, `xl/sharedStrings.xml` and the sheet XML. Formulas and
+defined names are right there. Several hours of Milestone 57 were spent
+holding items open for authority that was sitting in the spreadsheet the whole
+time:
+
+- **57E-2** was deferred indefinitely "pending a documented fee formula". The
+  audit fee schedules are printed in the workbooks (annual `PART II, III` rows
+  13-17; guardian `PART V` rows 7-9) and were already implemented exactly.
+  There is no trust-asset fee to formulate — that premise was invented, not
+  read.
+- **"Does Schedule C belong in the audit-fee base?"** looked like a question
+  for the Clerk. `SUMMARY I` B39 — the row literally captioned "VERIFIED
+  INITIAL INVENTORY OF GUARDIAN" — computes `H32+H38`, Schedules A and B only,
+  and `SUMMARY II` presents Schedule C as "Other Financial Information" with
+  no roll-up. Answered, in the file, in minutes.
+- **57F** proposed writing ward name and case number onto 54 worksheets. Those
+  sheets already pull them by formula from `Name_of_Ward` / `Case_Number`,
+  defined as `'PART I'!$C$5` / `$I$5`. Doing the "fix" would have destroyed
+  the propagation it was meant to create.
+
+**Push back on any change that alters how a calculation is performed.** Not
+"raise it afterwards" — refuse to build it until the template has been checked
+and the divergence is either disproved or consciously accepted by Alan, by
+name, with the reason recorded. This applies to:
+
+- fee tiers, thresholds, and the values they are compared against;
+- which schedules feed a total, and the sign of each;
+- bond and audit-fee bases;
+- rounding, percentage handling, and ward-share apportionment;
+- anything that changes a number a filer submits to the court.
+
+A calculation change that matches the template needs no permission. A
+calculation change that diverges from it is a **legal-accuracy defect by
+default**, whatever the reasoning behind it, because the filing is measured
+against the Clerk's form and not against ours.
+
+**Never write into a formula cell.** Where the workbook computes something —
+`SCH B-4 OTHER DISB SUMMARY p1`'s category totals, `SUMMARY I`'s roll-ups, the
+54 propagated headers — the app writes the inputs and leaves the formula
+alone. Overwriting a formula with a literal is how Milestone 57D became a
+critical regression, and it is silent: the file still opens, and the number is
+simply wrong from then on.
+
+**When a proposal and the template disagree, the template wins and the
+proposal is the thing that gets corrected.** Say so plainly and amend the
+document; do not build to a spec the court's own form contradicts.

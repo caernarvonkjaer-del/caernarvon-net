@@ -8,11 +8,17 @@ prompt interrupts. Full suite green at the time: 607 passed, 6 skipped, 0
 failed. See the dated note on the 57C-R section below for what actually
 shipped and how it differs from the design here.
 
-**No further 57 work is authorized as of 2026-09-19.** Alan's instruction that
-day was to close what was closeable and start nothing new. 57G and the
-trust-question item are closed (see the table below); D6 and D7 settle the
-design questions for 57A and 57B so those are not re-litigated later, but
-neither is approved to build.
+**No 57 work is authorized as of 2026-09-19, but everything left is now
+decided and scoped.** 57G, 57E-2 and the trust-question item are closed;
+D6-D9 settle the open design questions; 57A and 57B have designs, and 57D,
+57E-1 and 57F have scopes. Nothing below is approved to build — per
+`AGENTS.md` §2 that still needs Alan's word, by name, per item.
+
+Two of the remaining items shrank to almost nothing once the court's own
+workbooks were read rather than the proposal: **57E-1 is already built** and
+closer to the form than it proposed, and **57F's Excel half would have
+destroyed the template's own header propagation.** That pattern is now
+`AGENTS.md` §13.
 
 **The rest of Milestone 57 is still unscoped and unauthorized.** All five of
 this document's design questions were settled before 57C-R was built
@@ -327,10 +333,10 @@ fits the app's existing mechanisms:
 | --- | --- | --- |
 | 57A | Defective validation | Bond-waived / restricted-depository tri-states. `bondWaived` and `restrictedDepository` already exist pre-57 (Guardian and Annual respectively) and are now documented in the data model. **Design decision settled — see D6 below.** Still needs a design and approval by name before any work starts |
 | 57B | Incomplete / unsafe conversion | Certificate of Service recipient rules. **Design decision settled — see D7 below.** Still needs a design and approval by name before any work starts |
-| 57D | Critical Excel regression, since fixed then reverted | **The template research survives and is the valuable part**: the B-4 workbook has 18 register pages in 4 account blocks with verified row capacities — see `MILESTONE-57-REVIEW-HANDOFF.md` |
-| 57E-1 | Poorly integrated | Trust-accounting capture. Still unscoped |
+| 57D | Critical Excel regression, since fixed then reverted. **Scope settled — see D8 and the 57D scope below.** Not authorized | **The template research survives and is the valuable part**: the B-4 workbook has 18 register pages in 4 account blocks with verified row capacities — see `MILESTONE-57-REVIEW-HANDOFF.md` |
+| 57E-1 | Poorly integrated | Trust-accounting capture. **Scoped 2026-09-19 — almost all of it is already on master and closer to the court form than 57E-1 proposed.** One gap survives, settled by D9. See the 57E-1 scope below |
 | 57E-2 | **CLOSED 2026-09-19 — premise incorrect** | Not deferred, closed. The audit fee schedules are defined in the court's own workbooks (Annual `PART II, III` rows 13-17; Inventory `PART V` rows 7-9) and the app already implements both exactly — `annual-accounting/totals.js:45-49` and `legacy-app.js:6341`. There is no separate trust-asset fee to formulate; the tiers key on estate or inventory value, which is why its formula could never be found. Simplified Accounting has no fee schedule at all. The one real question it surfaced — whether Schedule C belongs in the Inventory's fee base — is answered **no** by the court's own workslips: `SUMMARY I` B39 ("VERIFIED INITIAL INVENTORY OF GUARDIAN") is `H32 + H38`, Schedules A and B only, while `SUMMARY II` presents Schedule C as "Other Financial Information" with no grand total and no roll-up. The app matches. See `MILESTONE-57-PROPOSAL.md` §57E for the full table |
-| 57F | Round-trip defect fixed; PDF claim unverified | The PDF period-date fix was never render-tested. The Guardian date round-trip fix survives the revert as defensive robustness |
+| 57F | Round-trip defect fixed; PDF claim unverified. **Scoped 2026-09-19 — the Excel-header half is a misdiagnosis that would destroy the template's own propagation.** See the 57F scope below | The PDF period-date fix was never render-tested. The Guardian date round-trip fix survives the revert as defensive robustness |
 | 57G | **CLOSED 2026-09-19 — no defect, verified** | Annual Plan terminology. Not closed on the review's word: re-audited against master. `filing-descriptor.js`'s `planAnnual` entry carries `displayName: 'Annual Guardianship Plan'`, `documentTitle: 'ANNUAL GUARDIANSHIP PLAN'` and `filenameStem: 'Annual-Guardianship-Plan'`, and every one of the nine audited surfaces derives from those three strings through `resolveDescriptorForInventoryType()`. The word "Accounting" does not appear anywhere in `src/features/plan-annual/`, and nowhere in `src/` is the string "Annual Accounting" bound to `planAnnual`. Surface 6 (Excel worksheet titles) does not exist for this filing type at all — `capabilities.excel` is `false`. Reopen only against a specific sighting |
 | Trust-question consistency | **CLOSED 2026-09-19 — unspecified** | Named once, in one line of `MILESTONE-57-REVIEW-HANDOFF.md`'s "Not started" paragraph, and specified nowhere in any of the three 57 documents. Nobody can act on it as written. Reopen if whoever raised it can say which question, in which filing type, was inconsistent with what |
 | 57H | Privacy / product-design regression | Reverted. Its replacement — the `pg-last-position` marker — is live and documented in the user guide |
@@ -373,6 +379,147 @@ asserting a legal conclusion on the filer's behalf, which is exactly the line
 the 57B attestation wording was written to stay on the right side of. A
 review flag was rejected as the weaker form of the same thing — easy to click
 past, and the app has still pre-filled the answer.
+
+---
+
+## Decisions 8–9 — settled 2026-09-19
+
+**D8 — 57D exports the full multi-account layout: 4 accounts, 494 rows.** The
+template is built for it and says so on its own summary sheet ("SUMMARY OF
+PAGES 1 TO 18 FOR ALL ACCOUNTS BY CATEGORY"). Anything less leaves a filing
+with two bank accounts unrepresentable, which is the actual reported problem;
+the 160-row single-account option would have raised the ceiling without fixing
+that. This is the largest and highest-risk item left in Milestone 57 and is
+the shape the reverted attempt broke — see the scope below, and `AGENTS.md`
+§13 on not writing into formula cells.
+
+**D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
+`hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
+clearable acknowledgement at output rather than hard-blocking. Chosen for
+consistency with 57A rather than on its own merits — two adjacent
+"affirmative but empty" states should not behave differently. Uses
+`output-authorization.js`, not a second mechanism.
+
+---
+
+## 57D — Schedule B-4 Multi-Account Export (scope, 2026-09-19)
+
+**Not authorized.** Implements **D8**. Full template research and the verified
+block map are in `MILESTONE-57-REVIEW-HANDOFF.md` §3/§3b — read those first;
+every capacity below was re-derived from the workbook on 2026-09-19.
+
+### State on master
+
+`excel.js` writes B-4 to `SCH B-4 OTHER DISB p2` only, rows 20-44, capped at
+25 entries (`if(i<25)`), columns C/D/E/G/I; `importExcel()` reads the same
+range; `ANNUAL_EXCEL_CAPS.schB4.cap` is 25. The app reaches **25 of the
+template's 494 rows**. Two bank accounts cannot be represented at all. The
+comment at the write site says "write to pages p2-p3 only" and is stale — it
+only ever writes p2.
+
+### Scope
+
+1. `schB4Accounts[]` on the ward: bank name, account number, and an **opaque
+   immutable id** from `crypto.randomUUID()` with the same fallback
+   `createSupplementalFileId()` uses. Never derive the id from index, name or
+   account number — renaming an account must not orphan its disbursements.
+2. Per-disbursement `bankAccountId`, assigned by dropdown.
+3. Deleting an account **unassigns** its disbursements (`bankAccountId: ''`)
+   and never deletes a financial entry.
+4. Legacy `bankAcct` strings migrate to a matching account on exact match;
+   otherwise the row stays explicitly unassigned for the filer to resolve.
+5. Export: group by account in `schB4Accounts[]` order, one account per block,
+   writing each group across its block's pages and the account header once on
+   the block's first page. Import: the inverse, one account per block, created
+   only where that block's header has content.
+6. Capacity: block only when there are **more than 4 accounts**, or when one
+   account's rows exceed **its own block's** capacity — and name the account
+   in the message. A filing that fits must never be blocked.
+7. No-accounts filings fall back to a single unlabelled group on block 1,
+   which is today's behaviour with 160 rows instead of 25.
+
+### The block map (verified)
+
+| Block | Pages (row ranges) | Capacity |
+| --: | --- | --: |
+| 1 | p2 (20-44), p3-p7 (8-34 each) | 160 |
+| 2 | p8 (8-37), p9-p11 (8-34 each) | 111 |
+| 3 | p12 (8-37), p13-p15 (8-34 each) | 111 |
+| 4 | p16 (8-38), p17-p19 (8-34 each) | 112 |
+
+Blocks start where the pre-printed Line # restarts at 1 — p2, p8, p12, p16.
+p2 is the outlier at 25 rows because its column header sits at row 15 rather
+than row 7, an instructions block pushing it down.
+
+Account header cells: the label `ACCOUNT NUMBER #:` is the merged `B6:C6` and
+its **value cell is the merged `D6:F6`**; the label `BANK:` is at `J5`. The
+research's "C6/H6" is wrong — `H6` is `INSTRUCTIONS` on p2 and `Line #`
+elsewhere. **The bank-name value cell right of `J5` is still unconfirmed and
+must be pinned before anything writes to it.**
+
+### The trap that made this a critical regression last time
+
+`SCH B-4 OTHER DISB SUMMARY p1` is **formula-driven**: its 18 category rows
+sum the `AK` column across every register page and B28 totals them. The app
+writes the registers and **must not write the summary** — it recalculates
+itself. See `AGENTS.md` §13.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+Data model (new collection plus a per-row field); `.sav` round trip and the
+legacy `bankAcct` migration; Excel export **and** import; `ANNUAL_EXCEL_CAPS`;
+the capacity-issue surface shared with other schedules; PDF (decide explicitly
+whether the PDF gains account attribution or stays as-is — do not let it
+diverge silently); `TEST-INDEX.md`. Applies to all three filing types sharing
+`engineId: 'annual'`, not just Annual Accounting.
+
+---
+
+## 57E-1 — Trust Capture (scope, 2026-09-19)
+
+**Not authorized.** Implements **D9**. Almost all of the original 57E-1 is
+**already on master and closer to the court form than 57E-1 proposed** —
+`PART VIII` capture for three trusts (`createdAfterGID`, name, trustee,
+account number, date created, type, ward's %, ward's amount), Excel read and
+write at verified merge anchors, and the UI including the court's own "#1.
+Does the Ward have one or more Trusts?". 57E-1's proposed tri-state duplicates
+`hasTrust`, its single `trustAssetsValue` duplicates the per-trust
+`wardAmount`, and its manual fee advisory would describe a trust-asset fee
+that does not exist (see 57E-2, closed).
+
+**Scope is therefore one thing only:** `hasTrust: 'Yes'` with every trust
+field blank currently exports silently. Add the D9 acknowledgement through
+`output-authorization.js`, 1:1 with a sidebar issue. Nothing else in Part VIII
+changes.
+
+---
+
+## 57F — Export Fidelity (scope, 2026-09-19)
+
+**Not authorized.** Two unrelated pieces; the second is a misdiagnosis.
+
+**(a) PDF period-end clipping — verify before fixing.** Claimed fixed in the
+reverted attempt but only ever source-read, never render-tested. Render an
+Annual Accounting preview against master and measure whether the four-digit
+year in the period-end date is actually clipped. One session, read-only, and
+it either produces a reproduction to fix or closes the item. Measure the
+rendered canvas, not the pdf.js text layer — see
+`tests/e2e/signature-block-address-margin.spec.ts`'s header for why.
+
+**(b) Excel header propagation — do NOT build as written.** 57F asks to extend
+ward-name/case-number writing from `PART I` to every schedule sheet. **54 of
+the annual template's 58 sheets already pull both by formula** from the
+defined names `Name_of_Ward` (`'PART I'!$C$5`) and `Case_Number`
+(`'PART I'!$I$5`), which are exactly the two cells the app writes. Writing
+literals into those 54 sheets would overwrite the formulas and destroy the
+propagation the item was meant to create.
+
+If the reported symptom is real, the cause is different: neither ExcelJS nor
+this app sets `fullCalcOnLoad`/`calcProperties`, so a viewer that does not
+auto-recalculate can show blanks where cached formula values were dropped on
+save. **Scope: reproduce first** — export an annual accounting, open it, look
+at a second sheet's header. If blank, the fix is a workbook calc property. If
+populated, close the item.
 
 ---
 
