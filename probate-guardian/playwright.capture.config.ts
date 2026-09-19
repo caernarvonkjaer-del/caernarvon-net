@@ -1,3 +1,8 @@
+// MUST be first: it pins PG_TARGET/PG_BROWSER, which the import below reads at
+// evaluation time to choose baseURL and webServer. Reordering these two lines
+// silently reverts the capture harness to the `source` target. See the module
+// for the full account.
+import './tests/capture/pin-web-target';
 import { defineConfig } from '@playwright/test';
 import baseConfig from './playwright.config';
 
