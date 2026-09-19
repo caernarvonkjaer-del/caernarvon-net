@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword } from './support/target';
+import { freshStartNoPassword, fillMinimalValidGuardianWard } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
 import { expectedPdfMetadataTitle } from './support/filing-matrix';
 
@@ -15,7 +15,19 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     await page.locator('[data-modal-action="add-ward"]').click();
     await expect(page.locator('#addWardModal')).toBeHidden();
 
-    // 2. Set up full Verified Initial Inventory mock state
+    // 2. Set up full Verified Initial Inventory mock state.
+    //
+    // The base layer is the shared helper, not this file's literal. This test
+    // builds its PDF from window.D, and its own fixture answers only the
+    // fields it asserts on -- so as the court's required fields grow, the
+    // "full" state drifts into a document no filer could actually submit
+    // while every structural assertion here keeps passing. Milestone 57A was
+    // the first instance: the fixture below sets a bond amount and a bonding
+    // company but never says whether the bond was waived.
+    //
+    // The helper runs first and the fixture layers over it, so every value
+    // this test names still wins; it only fills what the test is silent on.
+    await fillMinimalValidGuardianWard(page);
     await page.evaluate(() => {
       Object.assign((window as any).D, {
         wardName: 'Harold Thomas Bennett',
