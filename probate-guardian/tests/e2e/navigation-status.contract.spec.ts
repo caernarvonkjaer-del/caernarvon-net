@@ -1317,3 +1317,83 @@ test.describe('Milestone 55D: attorney email is required exactly where the UI al
     expect(pmBaseline, 'Plan Minor never required attorney_email and this sub-delivery does not add it there').toBe(false);
   });
 });
+
+// ── Milestone 57: Simplified Part V / Part VI signature parity ────────────
+//
+// The defect: select "/s/ Signed" on either attorney card, leave the date
+// blank, and every sidebar marker turns green -- then Print Preview refuses
+// the export. s-p5 reached attorney_signatureDate only through datesOrdered(),
+// which is deliberately blank-tolerant, and s-p6 never looked at the
+// certificate attorney's signature at all, while validateSimplified() ran the
+// full three-state machine for both.
+//
+// These drive the real sidebar against the real validator across the whole
+// finite domain rather than sampling it -- three explicit states, both legacy
+// blank-state inferences, and an unrecognized value. The assertion is
+// agreement: whatever the export gate says, the sidebar must say too.
+// tests/unit/signature-completeness.spec.js pins the rule itself; this pins
+// that the sidebar is actually wired to it.
+test.describe('Milestone 57: Simplified attorney signature parity, Parts V and VI', () => {
+  type SigCase = { label: string; state: string; date: string; image: string; complete: boolean };
+
+  // periodTo on the shared fixture is 2026-12-31, and s-p5 also date-orders
+  // the signature against it, so every "has a date" case uses a date after
+  // the period closes -- otherwise a case would fail for date order rather
+  // than for the signature rule under test.
+  const SIGNED_DATE = '2027-01-05';
+  const STAMP_IMAGE = 'data:image/png;base64,iVBORw0KGgo=';
+
+  const CASES: SigCase[] = [
+    { label: 'explicit none',              state: 'none',      date: '',          image: '',          complete: true },
+    { label: 'legacy blank, no date',      state: '',          date: '',          image: '',          complete: true },
+    { label: 'legacy blank, with date',    state: '',          date: SIGNED_DATE, image: '',          complete: true },
+    { label: 'typed, date present',        state: 'typed',     date: SIGNED_DATE, image: '',          complete: true },
+    { label: 'typed, NO date',             state: 'typed',     date: '',          image: '',          complete: false },
+    { label: 'stamp, image present',       state: 'stamp',     date: '',          image: STAMP_IMAGE, complete: true },
+    { label: 'stamp, NO image',            state: 'stamp',     date: '',          image: '',          complete: false },
+    { label: 'unrecognized state',         state: 'notarized', date: SIGNED_DATE, image: STAMP_IMAGE, complete: false },
+  ];
+
+  const PARTS = [
+    { part: 'Part V',  navKey: 's-p5', statePath: 'attorney_signatureState',   datePath: 'attorney_signatureDate', imagePath: 'attorney_signatureImage' },
+    { part: 'Part VI', navKey: 's-p6', statePath: 'certAttySignatureState',    datePath: 'certAttySignDate',       imagePath: 'certAttySignatureImage' },
+  ];
+
+  for (const { part, navKey, statePath, datePath, imagePath } of PARTS) {
+    test(`${part}: the sidebar and the export gate agree across all eight signature states`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createSimplifiedWard(page, `Signature Parity ${part} Ward`);
+      await fillMinimalValidSimplifiedWard(page);
+
+      const results = await page.evaluate(({ cases, navKey, statePath, datePath, imagePath, part }) => {
+        const w = window as any;
+        return cases.map((c: any) => {
+          w.D[statePath] = c.state;
+          w.D[datePath] = c.date;
+          w.D[imagePath] = c.image;
+          const issues = w.validateSimplified()
+            .filter((i: any) => String(i.message).startsWith(`${part} —`) && /signature|date signed|stamp/i.test(String(i.message)));
+          return {
+            label: c.label,
+            expected: c.complete,
+            navComplete: w.computeNavChecks().checks[navKey],
+            blocked: issues.length > 0,
+            messages: issues.map((i: any) => String(i.message)),
+          };
+        });
+      }, { cases: CASES, navKey, statePath, datePath, imagePath, part });
+
+      const disagreements = results.filter((r) => r.navComplete !== !r.blocked);
+      expect(
+        disagreements.map((r) => `${r.label}: sidebar ${r.navComplete ? 'complete' : 'incomplete'} vs export ${r.blocked ? 'blocked' : 'clean'}`),
+        `${part}: the sidebar disagrees with the export gate`,
+      ).toEqual([]);
+
+      const wrong = results.filter((r) => r.navComplete !== r.expected);
+      expect(
+        wrong.map((r) => `${r.label}: expected ${r.expected ? 'complete' : 'incomplete'}, got the opposite${r.messages.length ? ` (${r.messages[0]})` : ''}`),
+        `${part}: a signature state is judged wrongly`,
+      ).toEqual([]);
+    });
+  }
+});

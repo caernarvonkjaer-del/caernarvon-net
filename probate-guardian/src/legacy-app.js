@@ -6654,6 +6654,19 @@ function computeNavChecks(){
     const hasAny=(...vals)=>vals.some(v=>filled(v));
     const rowHasAnyData=r=>Object.entries(r||{}).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
     const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.email)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
+    // Milestone 57, Simplified parity gap. The same rule validateSimplified()
+    // applies, not a second reading of it: a boolean reimplementation of the
+    // signature states is how the sidebar and the export gate drifted apart
+    // here in the first place. Neither call passes a name, matching the
+    // validator -- the attorney's printed name is required at Cover, and
+    // duplicating it here would report the same blank field twice.
+    //
+    // A missing bridge resolves to INCOMPLETE, never complete. The same
+    // reasoning as the guardian branch's `return null` above: a fabricated
+    // pass would tell a filer they are ready to file when nothing has
+    // actually been checked, which is worse than a section that reads red.
+    const sigComplete=(state,date,image)=>typeof window.isSignatureComplete==='function'
+      &&window.isSignatureComplete({state,date,image});
     const checks={
       's-cover':D.eligDepository==='Yes'&&D.eligOnlyTransactions==='Yes'&&filled(D.wardName)&&filled(D.caseNumber)&&filled(D.ssn)&&filled(D.gid)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.attorney)&&filled(D.typeOfGuardianship)&&filled(D.county)&&filled(D.amendedForm)
         &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
@@ -6663,9 +6676,11 @@ function computeNavChecks(){
       's-p4':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
         &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
       's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
-        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
+        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)
+        &&sigComplete(D.attorney_signatureState,D.attorney_signatureDate,D.attorney_signatureImage),
       's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name)
-        &&datesOrdered(D.periodTo,D.certServiceDate,true),
+        &&datesOrdered(D.periodTo,D.certServiceDate,true)
+        &&sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage),
       's-p7':(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type))),
     };
     const incomplete={

@@ -172,6 +172,15 @@ describe('checklist and export validator field parity', () => {
     // `certAttySignatureImage` are new because Part X's attorney card had no
     // requiredness of any kind before this (also confirmed during the 39-C
     // inventory audit) -- computeNavChecks() never tracked it either.
+    // Milestone 57: this filing type was absent from VALIDATORS entirely, so
+    // the assertion never ran for it and its gaps were never recorded. It
+    // enters the list with NO gaps rather than five new ones: s-p5 and s-p6
+    // now evaluate signature completeness through the same rule
+    // validateSimplified() uses (window.isSignatureComplete), which reaches
+    // attorney_signatureState/Image and certAttySignDate/SignatureState/
+    // SignatureImage. An entry appearing here later means the two have drifted
+    // apart again.
+    simplified: [],
     annual: ['amendedForm', 'attorney', 'attorney_signatureImage', 'attorney_signatureState', 'certAttySignDate', 'certAttySignatureImage', 'certAttySignatureState'],
   };
 
@@ -185,6 +194,11 @@ describe('checklist and export validator field parity', () => {
   };
 
   const VALIDATORS = {
+    // Milestone 57: `simplified` was in BRANCH_MARKERS but never in this map,
+    // so the assertion had never once run for that filing type -- which is
+    // why its Part V / Part VI signature gaps went unrecorded while Annual
+    // carried the identical fields as KNOWN_GAPS entries above.
+    simplified: ['simplified-accounting', 'export function validateSimplified('],
     planInitial: ['plan-initial', 'export function validatePlanInitial('],
     planAnnual: ['plan-annual', 'export function validatePlanAnnual('],
     planSimplified: ['plan-simplified', 'export function validatePlanSimplified('],

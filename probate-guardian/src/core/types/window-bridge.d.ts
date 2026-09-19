@@ -248,6 +248,7 @@ interface Window {
   isOutputAcknowledgedFor: any;
   isPartyPairDismissed: any;
   isScheduleIncomplete: any;
+  isSignatureComplete: any;
   issueMessage: any;
   linkAccordions: any;
   linkLabelsToInputs: any;

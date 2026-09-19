@@ -14,6 +14,12 @@ import './core/form/schedule-definitions.js';
 // it first (previously only guardian-inventory/index.js and
 // annual-accounting/index.js did).
 import './core/status/section-status.js';
+// Milestone 57, Simplified parity gap: imported for its window bridge, not
+// for anything main.js calls. computeNavChecks() needs window.isSignatureComplete
+// while rendering dashboard progress for filings that have never been opened,
+// so it cannot come from a lazily-loaded feature module -- every other
+// importer of signature-state.js is one.
+import './core/validation/signature-state.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

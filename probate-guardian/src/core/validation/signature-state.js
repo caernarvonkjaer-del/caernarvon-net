@@ -71,3 +71,56 @@ export function inferLegacySignatureState(state, date) {
   if (has(state)) return state;
   return has(date) ? SIGNATURE_STATES.TYPED : SIGNATURE_STATES.NONE;
 }
+
+/**
+ * The same rule as `checkSignatureState()`, answered as a boolean.
+ *
+ * Milestone 57, Simplified parity gap. `computeNavChecks()`'s sidebar rules
+ * used to test signature fields by presence -- `s-p5` reached
+ * `attorney_signatureDate` only through the deliberately blank-tolerant
+ * `datesOrdered()`, and `s-p6` never looked at the certificate attorney's
+ * signature at all. So a filer could select "/s/ Signed", leave the date
+ * blank, watch Part V and Part VI turn green, and be refused at Print
+ * Preview. The sidebar and the export gate disagreed because they were two
+ * rules over the same data.
+ *
+ * This is deliberately `checkSignatureState(...).length === 0` rather than a
+ * second reading of the same states: a boolean reimplementation is exactly
+ * how the two drifted apart in the first place. Whatever the validator
+ * accepts, this accepts.
+ *
+ * `state` may be raw or already inferred -- `inferLegacySignatureState()` is
+ * idempotent on a value it has already resolved, so the caller does not have
+ * to know which it holds. Pass `name` only where the validator passes it;
+ * omitting it skips the printed-name check exactly as the validator's own
+ * `name !== undefined` guard does.
+ */
+/**
+ * @param {{ state?: any, name?: any, date?: any, image?: any }} [args]
+ * @returns {boolean}
+ */
+export function isSignatureComplete({ state, name, date, image } = {}) {
+  return checkSignatureState({
+    state: inferLegacySignatureState(state, date),
+    name,
+    date,
+    image,
+    sectionLabel: '',
+    roleLabel: '',
+    // Explicitly undefined rather than omitted: checkSignatureState() reads
+    // filingType to decide between structured issues and the pre-42F bare
+    // strings, and this caller wants neither -- it counts them.
+    filingType: undefined,
+  }).length === 0;
+}
+
+// Bridged for legacy-app.js, which is a classic script and cannot import.
+// The assignment lives here (the pattern core/filing/output-preflight.js
+// already uses for window.prepareFilingOutput) and src/main.js imports this
+// module eagerly, so the global exists before any feature bundle loads --
+// computeNavChecks() runs for dashboard filings that have never been opened,
+// and a rule reached through a lazily-loaded feature module would be absent
+// exactly when the dashboard needs it.
+if (typeof window !== 'undefined') {
+  window.isSignatureComplete = isSignatureComplete;
+}
