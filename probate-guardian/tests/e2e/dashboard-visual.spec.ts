@@ -33,6 +33,7 @@ async function setUpDashboard(page: Page) {
     const dateString = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
     const dueSoonPeriodEnd = new Date();
     dueSoonPeriodEnd.setDate(dueSoonPeriodEnd.getDate() - 82);
+    wards[0].gid = dateString(dueSoonPeriodEnd);
     wards[0].dashboardWorkflow = { status: 'disapproved-needs-correction', assigneeName: 'Morgan Lee' };
     wards[1].periodTo = dateString(dueSoonPeriodEnd);
     wards[1].dashboardWorkflow = { status: 'draft', assigneeName: 'Morgan Lee' };
@@ -111,14 +112,56 @@ test('dashboard hides the retired assignment filter and keeps search, at a stabl
   await page.screenshot({ path: testInfo.outputPath('milestone-15-light-1366x768.png'), fullPage: false });
 });
 
-test('mobile viewport collapses the sidebar and renders a scrollable triage row', async ({ page }, testInfo) => {
+test('mobile viewport collapses the sidebar and maintains triage control containment and reachability', async ({ page }, testInfo) => {
   const main = await setUpDashboard(page);
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.waitForFunction(() => document.querySelector('.sidebar')?.getBoundingClientRect().right <= 1);
+  await page.waitForFunction(() => {
+    const sidebar = document.querySelector('.sidebar');
+    return sidebar ? sidebar.getBoundingClientRect().right <= 1 : false;
+  });
+
+  const firstRow = main.locator('.dashboard-triage-row').first();
+  await firstRow.scrollIntoViewIfNeeded();
+
+  const selectors = [
+    '.dashboard-priority-badge',
+    '.dashboard-triage-actions',
+    '[data-dashboard-action="open-ward"]',
+    '[data-dashboard-action="backup"]',
+  ];
+
+  for (const selector of selectors) {
+    const locator = firstRow.locator(selector);
+    await expect(locator, `mobile first row ${selector} is visible`).toBeVisible();
+    await locator.scrollIntoViewIfNeeded();
+
+    const hitTest = await locator.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const hitElement = document.elementFromPoint(centerX, centerY);
+      return {
+        width: rect.width,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        inViewportX: rect.left >= -1 && rect.right <= window.innerWidth + 1,
+        inViewportY: rect.top >= -1 && rect.bottom <= window.innerHeight + 1,
+        isHit: hitElement ? (el === hitElement || el.contains(hitElement)) : false,
+      };
+    });
+
+    expect(hitTest.width, `${selector} width > 0`).toBeGreaterThan(0);
+    expect(hitTest.height, `${selector} height > 0`).toBeGreaterThan(0);
+    expect(hitTest.inViewportX, `${selector} contained in viewport X`).toBe(true);
+    expect(hitTest.inViewportY, `${selector} contained in viewport Y`).toBe(true);
+    expect(hitTest.isHit, `${selector} un-obscured elementFromPoint hit`).toBe(true);
+  }
+
   await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-light-390x844.png'), fullPage: false });
-  await main.locator('.dashboard-triage-row').first().scrollIntoViewIfNeeded();
-  await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-row-light-390x844.png'), fullPage: false });
 });
 
 test('dashboard action buttons share identical horizontal positions on rows with and without prior years', async ({ page }) => {

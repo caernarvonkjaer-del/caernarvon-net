@@ -270,27 +270,35 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
 
         await w.addWard('Audit Ward B', 'guardian');
         const wardB = w.caseFile.wards.find((wd: any) => wd.wardId !== wardAId);
+        const wardBId = wardB?.wardId;
         if (wardB) {
           await w.switchWard(wardB.wardId);
           await w.auditLog('WARD_B_EVENT', 'ward B entry');
         }
 
+        const unfilteredEntries = await w.loadAuditLogEntries();
+
         // Single-ward export for ward A -- should NOT include ward B's entries
         const blobA = await w.buildSingleWardExportBlob(wardAId);
         const zipA = await w.JSZip.loadAsync(blobA);
         const auditStr = await zipA.file('auditLog.enc').async('string');
-        const entries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
+        const exportedEntries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
         return {
           wardAId,
-          entryCount: entries.length,
-          allMatchWardA: entries.every((e: any) => e.wardId === wardAId),
-          hasWardBEntry: entries.some((e: any) => e.eventType === 'WARD_B_EVENT'),
+          wardBId,
+          unfilteredEntries,
+          exportedEntries,
         };
       });
 
-      expect(result.entryCount).toBeGreaterThanOrEqual(1);
-      expect(result.allMatchWardA).toBe(true);
-      expect(result.hasWardBEntry).toBe(false);
+      expect(result.wardBId).toBeTruthy();
+      expect(result.wardBId).not.toBe(result.wardAId);
+      expect(result.unfilteredEntries.some((e: any) => e.eventType === 'WARD_A_EVENT' && e.wardId === result.wardAId)).toBe(true);
+      expect(result.unfilteredEntries.some((e: any) => e.eventType === 'WARD_B_EVENT' && e.wardId === result.wardBId)).toBe(true);
+      expect(result.exportedEntries.length).toBeGreaterThanOrEqual(1);
+      expect(result.exportedEntries.every((e: any) => e.wardId === result.wardAId)).toBe(true);
+      expect(result.exportedEntries.some((e: any) => e.eventType === 'WARD_A_EVENT' && e.wardId === result.wardAId)).toBe(true);
+      expect(result.exportedEntries.some((e: any) => e.eventType === 'WARD_B_EVENT' || e.wardId === result.wardBId)).toBe(false);
     } finally {
       await context.close();
     }
@@ -346,7 +354,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
     await chooseNoPassword(page);
     await createWard(page, 'Bulk Ward Alpha');
     await page.evaluate(async () => {
-      (window as any).alert = () => {};
+      (window as any).alert = () => { };
       await (window as any).addWard('Bulk Ward Beta', 'simplified');
     });
 
@@ -393,7 +401,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
           isSameEntry: async () => false,
-          createWritable: async () => ({ write: async () => {}, close: async () => {} })
+          createWritable: async () => ({ write: async () => { }, close: async () => { } })
         };
         w.finishSingleWardExport(mockHandle, ward);
 

@@ -5980,7 +5980,7 @@ async function mountPlanAnnualNav(container){
 function planQ(num,title,body,intro){
   return `<div class="plan-question">
     <div class="plan-question-num">Question ${num}</div>
-    <h3 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h3>
+    <h2 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>
     ${intro?`<div class="plan-field-hint" style="margin-bottom:.7rem;">${intro}</div>`:''}
     ${body}
   </div>`;

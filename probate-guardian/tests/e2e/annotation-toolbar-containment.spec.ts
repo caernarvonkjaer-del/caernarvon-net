@@ -73,18 +73,19 @@ test.describe('annotation editor toolbars stay contained (reported 2026-09-18)',
     const after = await pageHeight(page);
     expect(after, `page grew ${after - before}px when a highlight was selected`).toBe(before);
 
-    const toolbar = await page.evaluate(() => {
-      const tb = document.querySelector('.highlightEditor .editToolbar');
-      if (!tb) return null;
+    const highlightToolbar = page.locator('.highlightEditor .editToolbar');
+    await expect(highlightToolbar).toBeVisible();
+    await expect(highlightToolbar.locator('.colorPicker')).toBeVisible();
+    await expect(highlightToolbar.locator('.deleteButton')).toBeVisible();
+
+    const toolbar = await highlightToolbar.evaluate((tb) => {
       const r = tb.getBoundingClientRect();
       const cs = getComputedStyle(tb);
       return { h: Math.round(r.height), position: cs.position, fontSize: parseFloat(cs.fontSize) };
     });
-    if (toolbar) {
-      expect(toolbar.position, 'a static toolbar takes up page layout').toBe('absolute');
-      expect(toolbar.h, 'toolbar is chrome, not a 450px block').toBeLessThan(80);
-      expect(toolbar.fontSize, 'must not inherit the scaled annotation-layer font').toBeLessThan(30);
-    }
+    expect(toolbar.position, 'a static toolbar takes up page layout').toBe('absolute');
+    expect(toolbar.h, 'toolbar is chrome, not a 450px block').toBeLessThan(80);
+    expect(toolbar.fontSize, 'must not inherit the scaled annotation-layer font').toBeLessThan(30);
   });
 
   test('no annotation control renders as a stray sliver over the filing', async ({ page }) => {
@@ -95,12 +96,20 @@ test.describe('annotation editor toolbars stay contained (reported 2026-09-18)',
     await page.waitForTimeout(400);
     await highlightSomeText(page);
 
+    const highlightToolbar = page.locator('.highlightEditor .editToolbar');
+    await expect(highlightToolbar).toBeVisible();
+    await expect(highlightToolbar.locator('.colorPicker')).toBeVisible();
+    await expect(highlightToolbar.locator('.deleteButton')).toBeVisible();
+
+    const controls = await page.locator('.highlightEditor .editToolbar button, .highlightEditor .editToolbar input').all();
+    expect(controls.length, 'expected toolbar controls to be present').toBeGreaterThanOrEqual(2);
+
     // The dashes were empty 16x6 buttons. Any visible control in an editor
     // toolbar should be a real, clickable size -- nothing that reads as a
     // mark on the court document.
     const slivers = await page.evaluate(() => {
       const out: Array<{ cls: string; w: number; h: number }> = [];
-      for (const c of document.querySelectorAll('.annotationEditorLayer .editToolbar button, .annotationEditorLayer .editToolbar input')) {
+      for (const c of document.querySelectorAll('.editToolbar button, .editToolbar input')) {
         const r = c.getBoundingClientRect();
         if (r.width === 0 && r.height === 0) continue; // genuinely hidden is fine
         if (r.height < 12 || r.width < 12) out.push({ cls: (c.className || '').toString(), w: Math.round(r.width), h: Math.round(r.height) });
@@ -113,26 +122,34 @@ test.describe('annotation editor toolbars stay contained (reported 2026-09-18)',
   test('FreeText stays correct -- the generic rules must not regress Milestone 55A', async ({ page }) => {
     test.setTimeout(120_000);
     await openPreview(page);
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await page.locator('[data-annotate-action="toggle"]').click();
     const before = await pageHeight(page);
 
-    await page.locator('[data-annotate-action="note"]').click();
-    const pageEl = page.locator('#print-doc-container .pdf-page').first();
-    const box = await pageEl.boundingBox();
-    if (box) await page.mouse.click(box.x + box.width / 2, box.y + 120);
-    await page.waitForTimeout(800);
+    const noteBtn = page.locator('[data-annotate-action="note"]');
+    await noteBtn.click();
+    await pdfPage.click({ position: { x: 80, y: 80 } });
+    await page.keyboard.type('FreeText containment note');
+    await noteBtn.click(); // commit note
+    const note = pdfPage.locator('.freeTextEditor').first();
+    await expect(note).toHaveCount(1);
+    await noteBtn.click(); // re-enable mode
+    const noteBox = (await note.boundingBox())!;
+    await page.mouse.click(noteBox.x + noteBox.width / 2, noteBox.y + noteBox.height / 2);
+    await expect(note).toHaveClass(/selectedEditor/);
 
     expect(await pageHeight(page), 'adding a note must not resize the page').toBe(before);
 
-    const tb = await page.evaluate(() => {
-      const el = document.querySelector('.freeTextEditor .editToolbar');
-      if (!el) return null;
+    const freeTextToolbar = page.locator('.freeTextEditor .editToolbar');
+    await expect(freeTextToolbar).toBeVisible();
+    await expect(freeTextToolbar.locator('input.basicColorPicker')).toBeVisible();
+    await expect(freeTextToolbar.locator('.deleteButton')).toBeVisible();
+
+    const tb = await freeTextToolbar.evaluate((el) => {
       const cs = getComputedStyle(el);
       return { position: cs.position, display: cs.display, fontSize: parseFloat(cs.fontSize) };
     });
-    if (tb) {
-      expect(tb.position).toBe('absolute');
-      expect(tb.fontSize).toBeLessThan(30);
-    }
+    expect(tb.position).toBe('absolute');
+    expect(tb.fontSize).toBeLessThan(30);
   });
 });

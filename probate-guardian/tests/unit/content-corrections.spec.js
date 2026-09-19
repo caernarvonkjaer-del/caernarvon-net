@@ -94,40 +94,11 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
   // watched it fail, restored it). Deleted here rather than left as a
   // second, weaker copy.
 
-  describe('Supporting Documents accounting period date formatting', () => {
-    // Milestone 43D: this test used to also assert formatDisplayDate()'s
-    // own YYYY-MM-DD -> MM/DD/YYYY conversion directly (fmtPf/fmtPt), which
-    // is already covered by date-parser.spec.js's own formatDisplayDate
-    // suite -- trimmed here to its own distinct, otherwise-uncovered
-    // concern: the accounting-period note string legacy-app.js builds
-    // around that formatted output (also module-private, no export, same
-    // reachability gap as Part VIII above -- kept as a hand-reimplemented
-    // sanity check since no real function exists to import, unlike the
-    // date-formatting half this trimmed away).
-    it('builds the accounting-period note from already-formatted dates', () => {
-      const fmtPf = '01/01/2027';
-      const fmtPt = '12/31/2027';
+  // Accounting period note formatting in Supporting Documents is tested
+  // against the real production UI and rendered DOM in
+  // tests/e2e/schedule-docs-period-key.spec.ts. Hand-copied local duplicates
+  // removed.
 
-      const activeInventoryType = 'annual';
-      const periodNote = activeInventoryType === 'guardian' ? ''
-        : (fmtPf || fmtPt ? ` — accounting period ${fmtPf || '?'} to ${fmtPt || '?'}` : ' — set the accounting period on the Cover page to file these by year');
-
-      expect(periodNote).toBe(' — accounting period 01/01/2027 to 12/31/2027');
-    });
-
-    it('falls back gracefully when dates are missing or partial', () => {
-      const period = '__';
-      const [pf, pt] = period.split('__');
-      const fmtPf = pf ? formatDisplayDate(pf) || pf : '';
-      const fmtPt = pt ? formatDisplayDate(pt) || pt : '';
-
-      const activeInventoryType = 'annual';
-      const periodNote = activeInventoryType === 'guardian' ? ''
-        : (fmtPf || fmtPt ? ` — accounting period ${fmtPf || '?'} to ${fmtPt || '?'}` : ' — set the accounting period on the Cover page to file these by year');
-
-      expect(periodNote).toBe(' — set the accounting period on the Cover page to file these by year');
-    });
-  });
 
   describe('Clerk filing instructions in Simplified Plan PDF model', () => {
     it('provides generic statewide instructions rather than hardcoded county clerk addresses', () => {
