@@ -20,12 +20,9 @@ closer to the form than it proposed, and **57F's Excel half would have
 destroyed the template's own header propagation.** That pattern is now
 `AGENTS.md` §13.
 
-**The rest of Milestone 57 is still unscoped and unauthorized.** All five of
-this document's design questions were settled before 57C-R was built
-(Decision 1 below, and Decisions 2–5 near the end), but those decisions were
-about 57C-R only. Every remaining item in "The rest of Milestone 57" needs its
-own decision first. Per `AGENTS.md` §2 nothing there is authorized until Alan
-gives it by name. This document does not replace
+Decisions 1–5 were settled before 57C-R was built and are about 57C-R only;
+**D6–D9, near the end, are the ones that govern what is left.** This document
+does not replace
 `MILESTONE-57-PROPOSAL.md` — that one records what was originally asked for,
 and `MILESTONE-57-REVIEW-HANDOFF.md` records the review verdict and the B-4
 template research. Both are still current inputs. This is the third document:
