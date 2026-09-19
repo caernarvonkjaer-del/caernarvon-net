@@ -1,27 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// Milestone 31, Phase 0.3: every dynamic skip in the E2E suite must go
-// through one of target-profile.ts's three classified helpers
+// Milestone 31, Phase 0.3 / Milestone 59B: every dynamic skip in the E2E
+// suite must go through one of target-profile.ts's three classified helpers
 // (skipExpectedTargetExclusion / skipEnvironmentLimitation /
 // skipTemporaryGap) rather than calling test.skip() directly, so a skip
 // reason is always both human-readable and machine-classifiable. This is a
 // static source audit, not a runtime check -- it fails if a future spec adds
 // a bare test.skip() call instead of using the helpers.
+//
+// In Milestone 59B, this audit moved from Playwright to Vitest so that a pure
+// filesystem policy scan does not incur browser runner overhead. It scans
+// `tests/e2e/*.spec.ts`.
 
-const specsDir = path.resolve(import.meta.dirname);
+const e2eDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'e2e');
 
-// A file listed here is allowed to call test.skip() directly. Only this
-// file's own name is present, and only because its prose describing the
-// banned pattern contains the literal substring it's scanning for -- it has
-// no real test.skip() calls of its own. Every actual former use has been
-// migrated (ward-lock.spec.ts, offline.spec.ts, feature-load-failure.spec.ts,
-// tab-and-update.spec.ts). Add another entry only with a documented reason a
-// classified helper genuinely cannot express -- not as a migration shortcut.
-const ALLOWLIST: readonly string[] = ['skip-classification-audit.spec.ts'];
-
-function withoutJsComments(source: string): string {
+function withoutJsComments(source) {
   let result = '';
   let quote = '';
   let lineComment = false;
@@ -52,14 +48,13 @@ function withoutJsComments(source: string): string {
 }
 
 test('no spec calls test.skip() directly outside the classified skip helpers', () => {
-  const specFiles = fs.readdirSync(specsDir, { withFileTypes: true })
+  const specFiles = fs.readdirSync(e2eDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.spec.ts'))
     .map((entry) => entry.name);
 
-  const offenders: string[] = [];
+  const offenders = [];
   for (const name of specFiles) {
-    if (ALLOWLIST.includes(name)) continue;
-    const source = withoutJsComments(fs.readFileSync(path.join(specsDir, name), 'utf8'));
+    const source = withoutJsComments(fs.readFileSync(path.join(e2eDir, name), 'utf8'));
     if (/\btest\.skip\(/.test(source)) offenders.push(name);
   }
 

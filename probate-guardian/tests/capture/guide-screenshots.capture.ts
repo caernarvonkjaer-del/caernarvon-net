@@ -1,16 +1,13 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard } from '../e2e/support/target';
 
-// Milestone 56G: capture harness for help/index.html's figures.
+// Milestone 56G / 59B: capture harness for help/index.html's figures.
 //
-// NOT part of the regression suite -- it asserts nothing about behavior and
-// writes files. Unless PG_CAPTURE=1 it registers no tests at all, so a full
-// `npx playwright test` run never executes it (see the gating note below). It
-// lives in the repo rather than in a scratch directory so a future re-shoot
-// reproduces the same conditions, which is the whole point of G1's pinned
-// capture table:
+// NOT part of the regression suite -- it is dedicated documentation tooling
+// discovered exclusively via playwright.capture.config.ts and invoked via
+// `npm run capture:guide`. It reproduces G1's pinned capture table:
 //
 //   Target      web (dist/web) -- what a filer actually receives, NOT the
 //               `source` target, which serves raw source from disk per request
@@ -22,33 +19,15 @@ import { freshStartNoPassword, createWard } from './support/target';
 //   Format      JPEG q82, each under 150 KB after encoding (these become
 //               data: URIs in an already-oversized file and base64 adds ~1/3)
 //
-// Run: PG_TARGET=web PG_CAPTURE=1 npx playwright test tests/e2e/guide-screenshots.spec.ts
+// Run: npm run capture:guide
 
 const OUT = process.env.PG_CAPTURE_DIR || path.join(process.cwd(), '.guide-shots');
 const WARD = 'Eleanor Marie Whitfield';
-const CAPTURING = process.env.PG_CAPTURE === '1';
 
-// Gated by DEFINING nothing rather than by test.skip(). The suite's
-// skip-classification-audit.spec.ts (Milestone 31, Phase 0.3) requires every
-// dynamic skip to go through target-profile.ts's three classified helpers --
-// skipExpectedTargetExclusion / skipEnvironmentLimitation / skipTemporaryGap
-// -- so a skip reason is always machine-classifiable. None of the three
-// describes this file: it is not a target exclusion, not an environment
-// limitation, and not a temporary gap. It is a capture harness that is not a
-// test at all. So it registers zero tests in an ordinary run instead of three
-// unclassifiable skips, which is also the more honest report -- these were
-// never tests waiting to be enabled.
-//
-// (An earlier revision did call test.skip() here and the audit caught it in
-// the closing full-suite run, which is the audit working exactly as intended.)
-const capture = CAPTURING ? test : (() => {}) as unknown as typeof test;
+test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, colorScheme: 'light' });
+test.beforeAll(() => fs.mkdirSync(OUT, { recursive: true }));
 
-if (CAPTURING) {
-  test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, colorScheme: 'light' });
-  test.beforeAll(() => fs.mkdirSync(OUT, { recursive: true }));
-}
-
-capture('capture: signature Draw tab and applied stamp', async ({ page }) => {
+test('capture: signature Draw tab and applied stamp', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
   await page.evaluate(() => (window as any).navigate('/d1'));
@@ -70,20 +49,21 @@ capture('capture: signature Draw tab and applied stamp', async ({ page }) => {
 
   // Draw a stroke on the canvas, then apply, and shoot the applied state.
   const canvas = page.locator('canvas').first();
+  await expect(canvas).toBeVisible();
   const box = await canvas.boundingBox();
-  if (box) {
-    await page.mouse.move(box.x + 30, box.y + box.height * 0.6);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.25);
-    await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7);
-    await page.mouse.up();
-  }
+  expect(box).not.toBeNull();
+  if (!box) throw new Error('Canvas bounding box is null');
+  await page.mouse.move(box.x + 30, box.y + box.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.25);
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.7);
+  await page.mouse.up();
   await page.getByRole('button', { name: /Apply Signature/i }).first().click();
   await page.waitForTimeout(400);
   await panel.screenshot({ path: path.join(OUT, 'signature-applied.jpg'), quality: 82, type: 'jpeg' });
 });
 
-capture('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page }) => {
+test('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
   await page.evaluate(() => (window as any).navigate('/dashboard'));
@@ -128,7 +108,7 @@ capture('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ pa
 // existing figures shows a BLOCKED preview whose banner has none of them, so
 // either that image predates the change or the blocked state genuinely lacks
 // them. Report which, rather than guessing.
-capture('probe: does a blocked preview carry the shell actions?', async ({ page }) => {
+test('probe: does a blocked preview carry the shell actions?', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
   await page.evaluate(() => (window as any).navigate('/print'));
@@ -158,4 +138,36 @@ capture('probe: does a blocked preview carry the shell actions?', async ({ page 
     type: 'jpeg',
     clip: { x: 270, y: 0, width: 1010, height: 560 },
   });
+});
+
+test.afterAll(() => {
+  const expectedFiles = [
+    'signature-draw.jpg',
+    'signature-applied.jpg',
+    'dashboard.jpg',
+    'resources.jpg',
+    'help-panel.jpg',
+    'preview-blocked.jpg',
+    'blocked-preview-probe.json',
+  ];
+
+  const actualFiles = fs.readdirSync(OUT).filter((f) => fs.statSync(path.join(OUT, f)).isFile());
+  expect(new Set(actualFiles), 'Expected exact output inventory without unexpected files').toEqual(new Set(expectedFiles));
+
+  for (const file of expectedFiles) {
+    const filePath = path.join(OUT, file);
+    expect(fs.existsSync(filePath), `Expected capture output ${file} to exist`).toBe(true);
+    if (file.endsWith('.jpg')) {
+      const stat = fs.statSync(filePath);
+      expect(stat.size, `Expected ${file} to be nonzero size`).toBeGreaterThan(0);
+      expect(stat.size, `Expected ${file} to be <= 150 KiB (153,600 bytes)`).toBeLessThanOrEqual(153600);
+    }
+  }
+
+  const probePath = path.join(OUT, 'blocked-preview-probe.json');
+  const probe = JSON.parse(fs.readFileSync(probePath, 'utf8'));
+  expect(probe).toHaveProperty('blockedBannerHasAllFilings');
+  expect(probe).toHaveProperty('blockedBannerHasTheme');
+  expect(probe).toHaveProperty('blockedBannerHasHelp');
+  expect(probe).toHaveProperty('previewBlocked');
 });

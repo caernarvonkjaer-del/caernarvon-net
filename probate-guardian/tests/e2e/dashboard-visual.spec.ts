@@ -53,7 +53,7 @@ async function setUpDashboard(page: Page) {
 
 for (const theme of ['light', 'dark'] as const) {
   for (const viewport of VIEWPORTS) {
-    test(`dashboard remains coherent at ${theme} ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }, testInfo) => {
+    test(`dashboard remains coherent at ${theme} ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
       const main = await setUpDashboard(page);
 
       await page.evaluate((nextTheme) => { document.documentElement.dataset.theme = nextTheme; }, theme);
@@ -95,24 +95,19 @@ for (const theme of ['light', 'dark'] as const) {
       expect(queueOverflow, `${theme} ${viewport.name} triage queue does not scroll horizontally`).toBe(true);
       await expect(main.locator('.dashboard-triage-header')).toContainText('Judge');
       await expect(main.locator('.dashboard-triage-header')).not.toContainText('Assignment');
-      await page.screenshot({
-        path: testInfo.outputPath(`milestone-15-${theme}-${viewport.name}-${viewport.width}x${viewport.height}.png`),
-        fullPage: false,
-      });
     });
   }
 }
 
-test('dashboard hides the retired assignment filter and keeps search, at a stable desktop size', async ({ page }, testInfo) => {
+test('dashboard hides the retired assignment filter and keeps search, at a stable desktop size', async ({ page }) => {
   const main = await setUpDashboard(page);
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 1366, height: 768 });
   await expect(main.locator('#dashboard-assignment-filter')).toHaveCount(0);
   await expect(main.locator('#dashboard-search')).toHaveCount(1);
-  await page.screenshot({ path: testInfo.outputPath('milestone-15-light-1366x768.png'), fullPage: false });
 });
 
-test('mobile viewport collapses the sidebar and maintains triage control containment and reachability', async ({ page }, testInfo) => {
+test('mobile viewport collapses the sidebar and maintains triage control containment and reachability', async ({ page }) => {
   const main = await setUpDashboard(page);
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -160,8 +155,6 @@ test('mobile viewport collapses the sidebar and maintains triage control contain
     expect(hitTest.inViewportY, `${selector} contained in viewport Y`).toBe(true);
     expect(hitTest.isHit, `${selector} un-obscured elementFromPoint hit`).toBe(true);
   }
-
-  await page.screenshot({ path: testInfo.outputPath('milestone-15-mobile-light-390x844.png'), fullPage: false });
 });
 
 test('dashboard action buttons share identical horizontal positions on rows with and without prior years', async ({ page }) => {

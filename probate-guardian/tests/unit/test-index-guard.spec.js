@@ -1,7 +1,7 @@
 // TEST-INDEX.md is kept in sync by hand (AGENTS.md section 7). This spec is
 // the guard: every spec file has exactly one row, and every row names a
 // file that exists. Same self-auditing shape as
-// tests/e2e/skip-classification-audit.spec.ts.
+// tests/unit/skip-classification-audit.spec.js.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
