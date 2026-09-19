@@ -8,19 +8,18 @@ prompt interrupts. Full suite green at the time: 607 passed, 6 skipped, 0
 failed. See the dated note on the 57C-R section below for what actually
 shipped and how it differs from the design here.
 
-**Updated 2026-09-19, end of day. Four items remain; everything else is
-landed or closed.**
+**Updated 2026-09-19, end of day. Two items remain to build, plus one
+intermittent test; everything else is landed or closed.**
 
 | Still open | State |
 | --- | --- |
-| **57B** | Certificate-of-service recipient rules. Designed (D7), not built. Both attestation fields are new — neither exists in `src/` |
-| **57E-1** | One gap: `hasTrust: 'Yes'` with every trust field blank exports silently. Scoped (D9), not built |
-| **57F(a)** | PDF period-end clipping. Claimed fixed in the reverted attempt but only ever source-read, never render-tested. Unverified either way |
-| `routes.spec.ts:84` | Order-dependent e2e failure; passes in isolation. Under diagnosis |
+| **57B** | Certificate-of-service recipient rules. **Execution-ready — see the 57B section.** Not authorized |
+| **57E-1** | `hasTrust: 'Yes'` with every trust field blank exports silently. **Execution-ready — see the 57E-1 section.** Not authorized |
+| `routes.spec.ts:84` | Intermittent, **not** order-dependent, and not diagnosed — see the note at the end of this document |
 
 Landed this day: **57A** (`4ad465b`), **57D** in full, **57F(b)**, and
-**D10–D15**. Closed as premise-incorrect or unspecified: **57G**, **57E-2**,
-the trust-question item. **57C-R** landed 2026-09-18. Nothing still open is
+**D10–D15**. Closed as premise-incorrect, unspecified, or not worth chasing:
+**57G**, **57E-2**, **57F(a)**, the trust-question item. **57C-R** landed 2026-09-18. Nothing still open is
 approved to build — per `AGENTS.md` §3 that needs Alan's word, by name, per
 item.
 
@@ -343,7 +342,7 @@ fits the app's existing mechanisms:
 | 57D | Critical Excel regression, since fixed then reverted. **Scope settled — see D8 and the 57D scope below.** Not authorized | **The template research survives and is the valuable part**: the B-4 workbook has 18 register pages in 4 account blocks with verified row capacities — see `MILESTONE-57-REVIEW-HANDOFF.md` |
 | 57E-1 | Poorly integrated | Trust-accounting capture. **Scoped 2026-09-19 — almost all of it is already on master and closer to the court form than 57E-1 proposed.** One gap survives, settled by D9. See the 57E-1 scope below |
 | 57E-2 | **CLOSED 2026-09-19 — premise incorrect** | Not deferred, closed. The audit fee schedules are defined in the court's own workbooks (Annual `PART II, III` rows 13-17; Inventory `PART V` rows 7-9) and the app already implements both exactly — `annual-accounting/totals.js:45-49` and `legacy-app.js:6341`. There is no separate trust-asset fee to formulate; the tiers key on estate or inventory value, which is why its formula could never be found. Simplified Accounting has no fee schedule at all. The one real question it surfaced — whether Schedule C belongs in the Inventory's fee base — is answered **no** by the court's own workslips: `SUMMARY I` B39 ("VERIFIED INITIAL INVENTORY OF GUARDIAN") is `H32 + H38`, Schedules A and B only, while `SUMMARY II` presents Schedule C as "Other Financial Information" with no grand total and no roll-up. The app matches. See `MILESTONE-57-PROPOSAL.md` §57E for the full table |
-| 57F | Round-trip defect fixed; PDF claim unverified. **Scoped 2026-09-19 — the Excel-header half is a misdiagnosis that would destroy the template's own propagation.** See the 57F scope below | The PDF period-date fix was never render-tested. The Guardian date round-trip fix survives the revert as defensive robustness |
+| 57F | **CLOSED 2026-09-19.** (b) landed — the real cause was `saveWorkbookFile()` wiping every defined name, not the header-writing 57F proposed, which would have destroyed the template's own propagation. (a) closed unchased per Alan: never reproduced, never render-tested, reopen only on a direct sighting | The Guardian date round-trip fix survives the revert as defensive robustness |
 | 57G | **CLOSED 2026-09-19 — no defect, verified** | Annual Plan terminology. Not closed on the review's word: re-audited against master. `filing-descriptor.js`'s `planAnnual` entry carries `displayName: 'Annual Guardianship Plan'`, `documentTitle: 'ANNUAL GUARDIANSHIP PLAN'` and `filenameStem: 'Annual-Guardianship-Plan'`, and every one of the nine audited surfaces derives from those three strings through `resolveDescriptorForInventoryType()`. The word "Accounting" does not appear anywhere in `src/features/plan-annual/`, and nowhere in `src/` is the string "Annual Accounting" bound to `planAnnual`. Surface 6 (Excel worksheet titles) does not exist for this filing type at all — `capabilities.excel` is `false`. Reopen only against a specific sighting |
 | Trust-question consistency | **CLOSED 2026-09-19 — unspecified** | Named once, in one line of `MILESTONE-57-REVIEW-HANDOFF.md`'s "Not started" paragraph, and specified nowhere in any of the three 57 documents. Nobody can act on it as written. Reopen if whoever raised it can say which question, in which filing type, was inconsistent with what |
 | 57H | Privacy / product-design regression | Reverted. Its replacement — the `pg-last-position` marker — is live and documented in the user guide |
@@ -858,38 +857,121 @@ that fits produces both. Neither should be reachable by accident.
 
 ---
 
-## 57E-1 — Trust Capture (scope, 2026-09-19)
+## 57E-1 - Trust Capture (EXECUTION-READY 2026-09-19)
 
-**Not authorized.** Implements **D9**. Almost all of the original 57E-1 is
-**already on master and closer to the court form than 57E-1 proposed** —
-`PART VIII` capture for three trusts (`createdAfterGID`, name, trustee,
-account number, date created, type, ward's %, ward's amount), Excel read and
-write at verified merge anchors, and the UI including the court's own "#1.
-Does the Ward have one or more Trusts?". 57E-1's proposed tri-state duplicates
-`hasTrust`, its single `trustAssetsValue` duplicates the per-trust
-`wardAmount`, and its manual fee advisory would describe a trust-asset fee
-that does not exist (see 57E-2, closed).
+**Not authorized.** Implements **D9**. Re-derived against `master` on
+2026-09-19; the state below is what the code does today, not what the original
+57E-1 proposed.
 
-**Scope is therefore one thing only:** `hasTrust: 'Yes'` with every trust
-field blank currently exports silently. Add the D9 acknowledgement through
-`output-authorization.js`, 1:1 with a sidebar issue. Nothing else in Part VIII
-changes.
+### What a filer can do today that they should not
+
+Answer **"#1. Does the Ward have one or more Trusts?"** with **Yes**, fill in
+nothing else, and export. The filed Annual Accounting then tells the Clerk the
+ward has trusts and names none - no trustee, no account number, no value. Part
+VIII shows three blank trust cards and the export is clean.
+
+### State on master (verified 2026-09-19)
+
+Almost all of the original 57E-1 is already built, and closer to the court form
+than 57E-1 proposed: `PART VIII` captures three trusts (`hasTrust`,
+`createdAfterGID`, `name`, `trustee`, `accountNo`, `dateCreated`, `trustType`,
+`wardPct`, `wardAmount` - `src/core/state.js:453`), the Excel writer and reader
+work at verified merge anchors, and the UI asks the court's own question.
+57E-1's proposed tri-state duplicates `hasTrust`, its single `trustAssetsValue`
+duplicates the per-trust `wardAmount`, and its manual fee advisory would
+describe a trust-asset fee that does not exist (57E-2, closed).
+
+The gap is one branch in `validateAnnual()`
+(`src/features/annual-accounting/index.js:1645-1650`). The question itself is
+required - that part is right - but the branch then filters trust rows to those
+with some non-`hasTrust` content and requires `createdAfterGID` on each. **When
+every trust row is blank the filter yields nothing and the loop body never
+runs**, so an affirmative with no trusts produces no issue at all.
+
+**This is already a live readiness/export parity break, not one 57E-1 would
+introduce.** The sidebar rule `a-p8` (`src/legacy-app.js:6711`) is
+`verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name)` -
+it requires a trust *name*. So today the sidebar marks Part VIII incomplete
+while the export validator finds nothing wrong: the exact disagreement
+`tests/unit/checklist-export-parity.spec.js` exists to prevent. Check its
+`KNOWN_GAPS` before starting - an `annual` entry covering this is what this
+work should delete.
+
+### Scope - one validator branch, nothing else
+
+Add the missing issue in the `hasTrust === 'Yes'` branch: when **no** trust row
+carries any content, require Trust 1's name. Nothing in Part VIII's UI, Excel
+writer, reader, PDF or data model changes. No new field, so no
+`probate-guardian-data-model.csv` row (§4) and no `.sav` migration (§8 #2).
+
+**It must stay bypassable.** Per D9 this offers a clearable acknowledgement at
+output rather than hard-blocking, matching 57A's unanswered half. That is the
+default and needs no registry work: routed through the ordinary
+`createRequiredIssue` path the code becomes `annual.trusts.0.name.required`,
+falls through to `validation.legacy-unmapped`, which is `bypassable: true`, and
+`authorizeFilingOutput()` returns `acknowledgement-required`. **Do not add a
+literal `issue-registry.js` key** - that is what would make it a hard block,
+which is what 57A's *other* half needed and this one must not have.
+
+### Steps
+
+1. In `validateAnnual()`, inside the existing `hasTrust === 'Yes'` branch,
+   detect the all-blank case (the same `Object.entries` predicate the filter
+   already uses, applied across every row rather than per row) and `req()`
+   Trust 1's name. Keep the existing message shape - `Part VIII - Trust 1 -
+   Name` - so `errorRoute()` buckets it onto the page's own key.
+2. Confirm `a-p8` and the validator now agree in both directions. `a-p8`
+   already requires a name, so this closes the gap rather than widening it;
+   re-run the parity guard and delete any `KNOWN_GAPS` entry it makes stale.
+3. Fixture audit (§8 #3): `MINIMAL_VALID_ANNUAL` in
+   `tests/e2e/support/fixtures.ts` sets `trusts: [{hasTrust: 'No', ...}]`, so
+   it is unaffected - but any fixture answering `'Yes'` with blank rows will
+   now be caught by `expectFileableFixture()`, which is the intended effect.
+
+### Verification
+
+Red-first (§2), red for the stated reason: with the change stashed, a filing
+with `hasTrust: 'Yes'` and three blank trust rows must produce **zero** issues
+from `validateAnnual()` - that absence is the bug. Then green. Unit coverage
+for: all-blank `'Yes'` raises it; one populated row does not; `'No'` does not;
+`''` still raises the existing unanswered issue; and the issue is
+`bypassable !== false`, since a hard block here would contradict D9.
+`TEST-INDEX.md` row in the same commit (§7).
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+Data model: none. Legacy `.sav`: none. Export/import: none - validation only.
+Readiness/export parity: **directly implicated, and improved**. Security: none.
+UI: none. Legal framing: the app records that the filer said trusts exist and
+did not describe them; it does not decide whether that is permissible.
 
 ---
 
 ## 57F — Export Fidelity (scope, 2026-09-19)
 
-Two unrelated pieces. **(a) is still open and unverified; (b) landed
-2026-09-19** — see below, and note that the cause was neither what 57F claimed
-nor what this section first guessed.
+Two unrelated pieces. **(a) is CLOSED and (b) landed**, both 2026-09-19 — and
+note for (b) that the cause was neither what 57F claimed nor what this section
+first guessed.
 
-**(a) PDF period-end clipping — verify before fixing.** Claimed fixed in the
-reverted attempt but only ever source-read, never render-tested. Render an
-Annual Accounting preview against master and measure whether the four-digit
-year in the period-end date is actually clipped. One session, read-only, and
-it either produces a reproduction to fix or closes the item. Measure the
-rendered canvas, not the pdf.js text layer — see
-`tests/e2e/signature-block-address-margin.spec.ts`'s header for why.
+**(a) PDF period-end clipping — CLOSED 2026-09-19 by Alan. Do not chase it.**
+
+The claim was that the four-digit year in an Annual Accounting's period-end
+date renders clipped. It was "fixed" in the reverted attempt by reading the
+source only; it has never been reproduced, never render-tested, and no one has
+reported seeing it. This section previously asked for a session to go and
+measure it.
+
+**Alan's instruction: ignore this unless it is directly observed during
+testing.** A defect nobody can produce is not worth a session of hunting, and
+carrying it as an open item invites each new agent to re-derive the same
+nothing. It is closed on that basis — not because it was disproved.
+
+So: no investigation, no speculative fix, no re-opening this row because it
+looks unresolved. If a period-end year is ever actually seen clipped in a
+rendered PDF, reopen it then, with the sighting attached. Whoever does should
+measure the rendered canvas and not the pdf.js text layer — see
+`tests/e2e/signature-block-address-margin.spec.ts`'s header for why that
+distinction matters.
 
 **(b) Excel header propagation — do NOT build as written.** 57F asks to extend
 ward-name/case-number writing from `PART I` to every schedule sheet. **54 of
@@ -1049,64 +1131,154 @@ enumerates types by hand.
 
 ---
 
-## 57B — Certificate of Service Recipient Rules (design, 2026-09-19)
+## 57B - Certificate of Service Recipient Rules (EXECUTION-READY 2026-09-19)
 
-**Not authorized.** Implements **D7**.
+**Not authorized.** Implements **D7**, **D16** and **D17**. Re-derived against
+`master` on 2026-09-19.
 
-### State on master
+### What a filer can do today that they should not
 
-`certNoRecipients` and `serviceNoRecipients` **do not exist** anywhere in
-`src/` or in the data model — unlike 57A's fields, not even as documentation.
-Both attestations are new. The two conversion functions they must hook into do
-exist and are untouched by the revert: `convertGuardianExtrasToAnnual()`
-(`src/legacy-app.js:4940`) and `convertToSimplified()` (`:4966`), both called
-from `:5077`/`:5079`.
+Two things, in opposite directions:
+
+1. **On an accounting**, list a second service recipient, type only their name,
+   and export. The filed certificate shows a half-addressed recipient and
+   nothing objects - `validateAnnual()` and `validateSimplified()` check
+   **only** `certRecipients[0].name` and never look at rows 2-4 at all.
+2. **On an Initial Inventory**, click "+ Add Recipient" by accident and be
+   blocked from exporting until the empty card is filled in or removed -
+   `validateGuardian()` requires name, street and city/state/zip on *every* row.
+
+And on all three, a filer who genuinely has no one to serve cannot say so. They
+either leave Recipient 1 blank and are blocked, or invent an entry.
+
+### State on master (verified 2026-09-19)
+
+- `certNoRecipients` and `serviceNoRecipients` exist **nowhere** - not in
+  `src/`, not in `probate-guardian-data-model.csv`. Both attestations are new.
+- Validation today:
+
+  | Family | Rule | Site |
+  | --- | --- | --- |
+  | Initial Inventory | every `serviceRecipients` row needs name + address + cityStateZip | `features/guardian-inventory/index.js:1286` |
+  | Annual | `certRecipients[0].name` only | `features/annual-accounting/index.js:1594` |
+  | Simplified | `certRecipients[0].name` only | `features/simplified-accounting/index.js:738` |
+
+- **Nav checks differ structurally, and this is the trap.** The Initial
+  Inventory does not hand-write its checks: `computeNavChecks()` runs
+  `validate()` and buckets each error onto a route key via `errorRoute()`
+  (`src/legacy-app.js:6638-6652`), so a new issue prefixed `D-5 - ` lands on
+  `d5` **with no nav edit at all**. Annual (`a-p10`, `:6721`) and Simplified
+  (`s-p6`, `:6667`) are hand-written and must be edited in lockstep or
+  `checklist-export-parity.spec.js` fires - which is how the first 57 attempt
+  broke the navigation contract. See the architecture note at the end of this
+  document for why unifying the two models is a separate job.
+- **Four conversion paths, not the two the earlier draft named** - dispatcher at
+  `src/legacy-app.js:5075-5082`: `convertGuardianSchedulesToAnnual` +
+  `convertGuardianExtrasToAnnual` (`:4902`, `:4940`), `convertToSimplified`
+  (`:4966`, two branches), and `convertSimplifiedToAnnual` (`:5018`).
+  annual->guardian and simplified->guardian map header fields only.
+- Excel import already behaves correctly and must not be "improved":
+  `guardian-inventory/excel.js:585` filters imported recipients to those with
+  content and falls back to one empty card - a blank `PART VI` becomes an empty
+  card, never an attestation.
+
+### Decisions this implements
+
+**D16 - the attestation is required only when no recipient is listed.** A filer
+who lists at least one recipient never sees the question; listing someone
+already answers it. A filer who lists none must answer before the filing
+exports. Rejected: asking on every filing, which would put a mandatory Yes/No
+in front of the majority of filers for whom the answer is self-evident - the
+same objection D6 weighed for 57A.
+
+**D17 - 57B's recipient rule applies to all three families.** Recipient 1
+complete satisfies validation; cards 2+ are optional; a partly-filled card
+blocks until completed or cleared. This **loosens** the Initial Inventory (an
+empty extra card stops blocking) and **tightens** both accountings (a
+half-filled card 2 stops exporting silently). One rule, three families.
 
 ### Scope
 
-1. Add the two attestation fields as tri-states with the filer-attestation
-   wording from `MILESTONE-57-PROPOSAL.md` §57B — the app records the filer's
-   assertion and does not determine legal necessity. **That wording is load
-   bearing and should not be paraphrased.**
-2. Recipient rules: selecting the attestation hides recipient cards without
-   deleting data; otherwise exactly one complete recipient satisfies
-   validation, and a partially-filled card 2+ blocks until completed or
-   cleared.
-3. Excel import asymmetry: a blank recipient section imports as unanswered
-   (`''`) and must **never** be inferred as "no recipients required".
-4. Per **D7**, conversion resets the attestation to `''` and raises a review
-   notice; recipient address cards migrate.
+1. **Two new tri-state fields**, `''` / `'Yes'` / `'No'` per §4, never coerced:
+   `serviceNoRecipients` (Initial Inventory, D-5) and `certNoRecipients` (Annual
+   family and Simplified). `probate-guardian-data-model.csv` rows in the same
+   commit; `npm run verify:data-model` must pass.
+2. **The attestation wording is load bearing and must be carried verbatim** from
+   `MILESTONE-57-PROPOSAL.md` §57B - *"No recipients are required for this
+   certificate (filer attestation - app does not determine legal necessity)"*.
+   Do not paraphrase, shorten, or re-voice it. It exists to keep the app on the
+   right side of asserting a legal conclusion for the filer (§8 #8).
+3. **Control**: reuse the Tier 1 primitive (§6), `yesNoRadioHTML()` in
+   `src/core/form/form-fields.js`, through each family's existing wrapper -
+   `yesNoCheckboxD()` (`legacy-app.js:5877`) for Annual, `yesNoCheckboxS()` for
+   Simplified. No new control.
+4. **Selecting Yes hides the recipient cards without deleting their data** (§4
+   non-destructive toggling); clearing it restores them.
+5. **Validation**, all three families, replacing the three divergent rules:
+   attestation `'Yes'` means recipient rows are ignored entirely; otherwise
+   Recipient 1 complete is required; a row 2+ with *some* fields filled must be
+   completed or cleared; a row 2+ entirely blank is ignored; and Recipient 1
+   blank **with** the attestation unanswered requires the answer.
+6. **Conversion reset (D7)**, inside each mapper, never in the dispatcher - a
+   caller-side reset is the shape that earned the review's "incomplete/unsafe"
+   verdict, because a fifth conversion path added later would inherit nothing.
+   All four paths reset the destination's attestation to `''`;
+   `serviceNoRecipients` never maps to `certNoRecipients` or the reverse.
+   Recipient address cards keep migrating exactly as they do now.
+7. **The "review notice" is the reset itself.** No bespoke banner: an unanswered
+   attestation on a filing with no recipients is already a validation issue by
+   rule 5, so it appears in the sidebar and readiness panel through machinery
+   that already exists. Confirmed by inspection - the conversion path raises no
+   notice of its own today, and adding one would be a second mechanism saying
+   what the first already says.
+8. **Excel import asymmetry**: a blank recipient section imports as `''`, never
+   as `'Yes'`. This is the §4 tri-state rule; the guardian reader already has
+   the right shape (above), so the work is to avoid adding inference.
 
-57B will **not** determine whether service is legally required, print a
-recipient list when the attestation is selected, or carry the attestation
-across conversion in any form — including as a pre-filled value with a flag.
+57B does **not** determine whether service is legally required, print a
+recipient list when the attestation is selected, or carry the attestation across
+a conversion in any form - including pre-filled with a flag.
 
-### Implementation design
+### Steps
 
-The reset belongs **inside** the two conversion functions, not in a caller. A
-caller-side reset is the shape that produced the review's "incomplete /
-unsafe" verdict: a second conversion path added later inherits nothing.
-
-The review notice should use the mechanism the app already has for
-"something needs your attention on this new filing" rather than a bespoke
-banner — check what the conversion path currently raises before adding one.
+1. CSV rows + `verify:data-model`.
+2. Fields in `emptyDataGuardian()`, `emptyDataAnnual()`, `emptyDataSimplified()`.
+3. The control on each of the three pages, wired to the Tier 1 primitive.
+4. Validators - one shared reader for the rule, not three copies. A row-2+
+   "started but incomplete" predicate already exists in spirit as
+   `rowHasAnyData`/`guardianHasAnyData`; reuse rather than re-invent.
+5. Nav checks for `a-p10` and `s-p6` only; the Inventory inherits parity through
+   `errorRoute()` provided the message keeps its `D-5 - ` prefix.
+6. Conversion resets in all four mappers.
+7. Fixture audit (§8 #3): `MINIMAL_VALID_GUARDIAN`, `MINIMAL_VALID_ANNUAL` and
+   `MINIMAL_VALID_SIMPLIFIED` in `tests/e2e/support/fixtures.ts` all list a
+   complete Recipient 1, so under D16 none needs the attestation - and
+   `expectFileableFixture()` will catch it if that stops being true.
 
 ### Verification
 
-Convert Inventory → Annual with `serviceNoRecipients: 'Yes'` → new filing has
-`certNoRecipients: ''`, a review notice, and migrated addresses. Same for
-Inventory → Simplified. One complete recipient passes; a half-filled second
-card blocks; the attestation clears the blocker and suppresses recipient
-printing in both PDF and Excel. A blank imported recipient section stays `''`.
-Readiness and export stay 1:1 throughout.
+Red-first (§2) per rule, each red for its stated reason: a half-filled
+Recipient 2 exports today and must stop; an empty extra card blocks the
+Inventory today and must stop; a converted filing carries the attestation
+forward (it will, once the field exists) and must not. Convert Inventory ->
+Annual with `serviceNoRecipients: 'Yes'` and assert the new filing's
+`certNoRecipients` is `''` with recipient addresses intact - then the same for
+the other three paths. `checklist-export-parity.spec.js` must pass without a new
+`KNOWN_GAPS` entry; needing one means the nav rules and validators disagree.
+`TEST-INDEX.md` rows in the same commit (§7).
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 
-Data model (new fields, both filing families); `.sav` round trip; **both**
-conversion paths plus the Simplified→Annual mirror at `:5018`, which must be
-checked for the same leak in reverse; Excel import/export; PDF recipient
-rendering; `TEST-INDEX.md`. Legal framing is directly implicated — this is a
-sworn attestation, and the wording is the filer's, not the app's.
+Data model: two new fields across three filing types. Legacy `.sav`: a file
+saved before this exists has neither field - it must read as `''` (unanswered),
+never inferred from an empty recipient list, which is the same one-way rule
+`dependent-question.js` enforces for 57A. **All four** conversion paths plus the
+Simplified->Annual mirror. Excel import and export; PDF recipient rendering (a
+selected attestation must suppress the recipient block rather than print an
+empty one). Readiness/export parity, hand-written for two families and derived
+for the third. `TEST-INDEX.md`. Legal framing is directly implicated: this is
+the filer's sworn assertion, in the filer's words, and the app neither makes nor
+checks it.
 
 ---
 
@@ -1122,3 +1294,87 @@ three repair commits.
 
 A hand-edited test that has never executed is not evidence. It is a guess with
 the syntax of evidence, which is worse, because it reads as covered.
+
+---
+
+## `routes.spec.ts:84` — intermittent, not order-dependent, not diagnosed
+
+Recorded 2026-09-19 so the next person does not start from the wrong premise.
+
+"helpful resources panel is visible on dashboard, hidden inside filings, and
+restored on return" fails occasionally in a full serial run and has never
+failed in any smaller one. **Its failure message has never been seen**, which
+is the whole difficulty: every attempt to capture it has passed.
+
+What has been ruled out, with runs rather than reasoning:
+
+| Hypothesis | Evidence against |
+| --- | --- |
+| A specific earlier spec leaks state | Specs 1-34 + routes: 229 passed. Specs 35-69 + routes: 317 passed. Neither half reproduces it |
+| A click lands between the two `renderSidebarResources()` calls in the dashboard `mount()` | Both calls, and all three render steps they wrap, are synchronous. A click cannot interleave inside one JS task |
+| It is the accordion assertions | Those were the *previous* cause, fixed in `dc5d1ad`. That fix was real |
+
+The misleading part of the history: `dc5d1ad` verified its fix with
+`-g "helpful resources panel"` — a single test in isolation, which is exactly
+the configuration where this passes. So the residual failure was never
+observed, and the item has looked resolved ever since.
+
+What is left is a genuine intermittent that needs roughly 550 preceding tests
+to appear, pointing at accumulated load rather than at any neighbour. Catching
+it means a full run with `--repeat-each`, or `trace: 'on'` for this spec so the
+artifact survives a pass. **Do not "fix" it from a theory** — every theory so
+far has been wrong, and the last one that looked right was right about a
+different bug.
+
+---
+
+## Architecture note: two ways of computing readiness, and why that matters
+
+Raised by Alan 2026-09-19 while 57B was being made execution-ready. Recorded
+here because it is real, it is bigger than 57B, and the order it is done in
+decides whether it helps or hurts.
+
+**The inconsistency.** There are two models for `computeNavChecks()`:
+
+| Filing type | Model |
+| --- | --- |
+| Initial Inventory | **Derived.** Runs `validate()` and buckets each error onto a route key via `errorRoute()` (`src/legacy-app.js:6638-6652`) |
+| Annual family, Simplified, all four Plans | **Hand-written.** A literal `checks` object per filing type, restating each rule in its own terms |
+
+The derived model is strictly better, and for one reason: it makes the 1:1
+readiness/export invariant (§4) **structural** rather than enforced after the
+fact. Under it, a sidebar section cannot disagree with the validator, because
+there is only one rule. The hand-written model needs
+`tests/unit/checklist-export-parity.spec.js` plus a `KNOWN_GAPS` allowlist to
+police a gap that the other model cannot open. That allowlist exists only
+because of this split, and every entry in it is a field the sidebar silently
+ignores.
+
+**It is feasible, not theoretical.** `errorRoute()` already resolves every
+family: `Part X` to `/p10`, `Parts VI & VII` to `/p67`, `D-5` to `/d5`,
+`Schedule B-1` to `/schb1`, plus a per-type table for the Plans. It is already
+called for all nine filing types by the validation panel's own "Go to section"
+links. The machinery is not missing.
+
+**The trap, and the reason this is not a free win.** The hand-written checks
+are in places *stricter* than their validators, and unifying would delete that
+strictness silently. The live example is in this document: `a-p8` requires a
+trust name while `validateAnnual()` does not, which is the 57E-1 gap. Converting
+Annual to the derived model **before** fixing that validator would not fix the
+disagreement - it would resolve it in the wrong direction, marking Part VIII
+complete whenever the validator is silent, and removing the only signal anyone
+currently gets that the export gate has a hole in it. A `KNOWN_GAPS` entry is a
+recorded disagreement; the derived model would make it an unrecorded one.
+
+So the order is: **make each validator complete first, then unify.** Every
+`KNOWN_GAPS` entry and every sidebar rule stricter than its validator has to be
+resolved deliberately - either the validator gains the rule, or the rule is
+consciously dropped - before that filing type can be converted. 57E-1 is one
+such resolution. There will be others.
+
+**Why it is not part of 57B.** 57B adds one field to three forms. This touches
+navigation for all nine filing types, the parity guard, and its allowlist. The
+first attempt at Milestone 57 was reverted largely because a scoped item reached
+into `computeNavChecks()` and broke nine navigation-status tests; folding an
+architectural change into a field addition is the same move. Scope it on its
+own, after the validators it depends on.
