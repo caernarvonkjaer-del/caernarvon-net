@@ -29,6 +29,11 @@ recorded here because this milestone's own Purpose forbids changing
 application behavior to make a test pass, and a production edit inside a
 test-integrity milestone should be visible rather than buried in a diff.
 
+**59C was split into 59C-0 … 59C-4 on 2026-09-19** after review, and a seventh
+false-confidence case was found during that review — `pdf-structure-tags.spec.ts`'s
+xref audit, which has never validated an offset. It is 59C-0 and is a
+prerequisite for 59C-2. See the 59C section.
+
 **59C and 59D remain subject to the original gate:** per `AGENTS.md` §3,
 neither may be implemented until the requester explicitly approves that named
 delivery, and approval of one delivery authorizes only that delivery. Before
@@ -91,6 +96,7 @@ E2E spec files, and the named helper modules. At `e1228fd`:
 | Single-filing audit filtering | Ward B creation and its audit event are inside `if (wardB)`; if Ward B does not exist, the exclusion assertion passes without establishing anything to exclude. | 59A |
 | Type contracts | `expect(Types).toBeDefined()` is redundant with module import, while the local `CaseFile` object test asserts values it assigned itself. `tests/unit/` is outside `tsconfig.json`'s include set, so that JSDoc annotation is not a compile-time contract. | 59A |
 | Accounting-period note | `content-corrections.spec.js` copies the production ternary and tests the copy. Production-driven coverage already exists in `schedule-docs-period-key.spec.ts`; the copied tests add false confidence. | 59A |
+| PDF xref audit | Found 2026-09-19, after 59A closed. `pdf-structure-tags.spec.ts` locates the xref table with `lastIndexOf('xref')`, which matches the `xref` inside `startxref` — positioned after the trailer, so the slice runs backwards and is empty. The validation loop never executes and the assertion passes unconditionally. Measured: `sectionLen: 0`. | 59C-0 |
 
 ### Confirmed organization and runtime opportunities
 
@@ -114,8 +120,8 @@ E2E spec files, and the named helper modules. At `e1228fd`:
 | --- | --- | --- | --- |
 | **59A** | Repair six false-confidence tests | Medium — test failures may reveal real product defects | First |
 | **59B** | Move non-regression tooling/audits and remove successful-run screenshot noise | Low | After 59A because both touch `dashboard-visual.spec.ts` and test-index descriptions |
-| **59C** | Consolidate artifact generation/parsers; remove avoidable waits; tune trace policy; benchmark parallelism | Medium–high — broad test-infrastructure surface | After 59A/59B |
-| **59D** | Add non-overlapping command tiers and document their semantics | Medium — CI/developer workflow contract | Last; consumes the measured suite partition from 59C |
+| **59C** | Split into 59C-0 … 59C-4; see the 59C section for the per-sub-delivery table | Low to Medium–high, per sub-delivery | After 59A/59B; the sub-deliveries are otherwise independent of each other except 59C-2 (needs 59C-0) and 59C-4 (needs 59C-1) |
+| **59D** | Add non-overlapping command tiers and document their semantics | Medium — CI/developer workflow contract | Last; consumes the measured suite partition from **59C-4** specifically, not all of 59C |
 
 59A and 59B have landed; see **Status** above for their commits. 59C and 59D
 are unauthorized, so the "Relation" column below describes the remaining
@@ -134,7 +140,11 @@ edit early.
 | --- | --- |
 | 59A | `tests/e2e/annotation-toolbar-containment.spec.ts`; `tests/e2e/highlight-toolbar-style.spec.ts`; `tests/e2e/page-structure.spec.ts`; `tests/e2e/dashboard-visual.spec.ts`; `tests/e2e/dashboard-backup.spec.ts`; `tests/unit/types-contract.spec.js`; a compile-time fixture under `tests/e2e/support/`; `tests/unit/content-corrections.spec.js`; `tests/e2e/schedule-docs-period-key.spec.ts` only if its existing focused assertions need strengthening; `TEST-INDEX.md` |
 | 59B | `tests/e2e/guide-screenshots.spec.ts` moved to `tests/capture/guide-screenshots.capture.ts`; a dedicated capture Playwright config/runner; `package.json`; `tests/e2e/skip-classification-audit.spec.ts` moved to `tests/unit/skip-classification-audit.spec.js`; `tests/e2e/dashboard-visual.spec.ts`; `tests/unit/test-index-guard.spec.js` if classification requires it; `TEST-INDEX.md` |
-| 59C | `tests/e2e/support/pdf-extract.ts`; `tests/e2e/support/xlsx-extract.ts`; a shared stream/artifact helper; their direct unit specs; the Excel/PDF specs consuming duplicated helpers; annotation/signature specs with fixed waits; `playwright.config.ts`; `TEST-INDEX.md` |
+| 59C-0 | `tests/e2e/pdf-structure-tags.spec.ts` |
+| 59C-1 | `playwright.config.ts`; `tests/baseline/milestone-59-runtime.json` |
+| 59C-2 | `tests/e2e/support/pdf-extract.ts`; `tests/e2e/support/xlsx-extract.ts`; a shared stream/artifact helper; their direct unit specs; the Excel/PDF specs consuming duplicated helpers; `TEST-INDEX.md` |
+| 59C-3 | `tests/e2e/signature-capture.contract.spec.ts` first, then the remaining wait-dependent annotation specs |
+| 59C-4 | `playwright.config.ts`; a project partition if one is adopted |
 | 59D | `package.json`; `scripts/run-e2e-profile.mjs` or a narrowly scoped tier runner if needed; `AGENTS.md` command reference; `TEST-INDEX.md` only if tests move or are rescoped |
 
 ---
@@ -299,7 +309,80 @@ authorize creating or approving new visual baselines.
 
 ## 59C — Runtime Performance, Shared Parsers, and Diagnostics
 
-### C1. Measure before changing
+**Split into five independently approvable deliveries (2026-09-19).** As
+originally written, 59C bundled artifact caching, parser consolidation, PDF
+loading, fixed waits, trace policy, and a parallelism experiment under one
+risk rating and one acceptance list. Those have different file surfaces and
+very different risk: the runner-policy work touches `playwright.config.ts` and
+nothing else, while the parser work touches most of the Excel and PDF specs.
+Bundling them delayed the cheap, low-risk half behind the expensive half for
+no reason. Each sub-delivery below is approved and executed on its own.
+
+| Sub-delivery | Scope | Risk | File surface | Depends on |
+| --- | --- | --- | --- | --- |
+| **59C-0** | Repair the vacuous xref audit | Low | `tests/e2e/pdf-structure-tags.spec.ts` | — |
+| **59C-1** | Baseline measurement + trace policy (C1, C6) | Low | `playwright.config.ts`; one committed measurements file | — |
+| **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 |
+| **59C-3** | Replace observable fixed waits (C5) | Medium | signature + annotation specs | — |
+| **59C-4** | Parallelism experiment (C7) | Medium | `playwright.config.ts`, possibly a project partition | 59C-1 |
+
+59C-0, 59C-1 and 59C-3 have no file overlap with each other and may run in any
+order, or concurrently across agents. 59C-2 must not start before 59C-0 — see
+below. 59C-4 needs 59C-1's baseline to have anything to compare against.
+
+The C1–C7 sections below keep their original numbering and sequence so that
+existing cross-references still resolve; each heading names the sub-delivery it
+belongs to. Two consequences: 59C-1 appears twice (C1 and C6) and 59C-2 three
+times (C2, C3, C4), and the sub-delivery numbers therefore do not read in order
+down the page. The table above is the authoritative grouping.
+
+### 59C-0. Repair the xref audit before consolidating anything onto it
+
+**This is a false-confidence repair of the kind 59A was created for, found
+after 59A closed. It is a prerequisite for 59C-2, not part of it.**
+
+`tests/e2e/pdf-structure-tags.spec.ts` claims to verify that "every xref offset
+must point to exact object header." It verifies nothing. It locates the table
+with:
+
+```js
+const xrefIndex = rawPdfString.lastIndexOf('xref');
+const trailerIndex = rawPdfString.lastIndexOf('trailer');
+const xrefSection = rawPdfString.slice(xrefIndex, trailerIndex);
+```
+
+`lastIndexOf('xref')` matches the `xref` inside the word `startxref`, which in
+a generated PDF sits *after* the trailer. The slice therefore runs backwards
+and returns empty. Measured on a real run of this spec:
+
+```text
+XREF_PROBE {"xrefIndex":172522,"trailerIndex":172387,"sectionLen":0,"lineCount":1}
+```
+
+An empty section yields one empty line; the validation loop starts at `i = 2`
+and never executes; `xrefErrors` is always `[]`; and `expect(xrefErrors)
+.toEqual([])` passes unconditionally. A corrupt xref table in a filed court
+PDF would not be caught by the test whose stated job is to catch it.
+
+`tests/e2e/pdf-form-specific.spec.ts` does it correctly — it follows the
+`startxref` pointer and asserts that the pointer lands on `xref`. That is the
+implementation to keep.
+
+**Why it must land before 59C-2:** C3 proposes replacing both copies with one
+shared PDF structural-audit helper. Do that first and one of two things
+happens — the broken copy is silently repaired by a refactor scoped as
+cleanup, leaving no record that xref integrity went unverified, or the dead
+implementation is chosen as the shared base and its vacuity is propagated to
+every caller behind a helper that looks authoritative. Repair it first, with
+its own red-first evidence, so the consolidation is a genuine no-op.
+
+**Red-first proof:** corrupt one xref offset in the generated PDF (or assert
+against a fixture with a known-bad offset). The repaired check must fail
+naming the object whose offset is wrong. The current check cannot fail at all,
+so confirm it passes against that same corrupted input *before* the repair —
+that is the evidence the test was vacuous rather than merely untested.
+
+### 59C-1 / C1. Measure before changing
 
 Capture a clean baseline from the same machine and commit:
 
@@ -313,7 +396,13 @@ Do not use the audit's 1.38 GB point-in-time observation as the formal
 baseline. Store only the compact measurements, never trace trees or generated
 court artifacts.
 
-### C2. Consolidate immutable artifact generation
+**Commit them to `tests/baseline/milestone-59-runtime.json`**, beside the
+existing `tests/baseline/milestone-13-*.json` files. The original text said
+"commit" without naming a destination, which leaves the executing agent to
+invent one or to record the numbers only in a commit message, where 59C-4
+cannot read them back.
+
+### 59C-2 / C2. Consolidate immutable artifact generation
 
 For sibling assertions that inspect byte-identical output, generate the
 artifact once:
@@ -332,7 +421,22 @@ mutation cases separate when they require a live page or different data.
 Do not cache across commits, targets, browsers, or differing fixtures. A cache
 key that can serve stale output is worse than the current runtime cost.
 
-### C3. Deduplicate and test the parsers
+**Accept the isolation cost explicitly.** Sharing one generated workbook
+across four tests means a single generation failure fails all four as a block
+rather than one, and the per-test independence that makes a failure easy to
+localize is gone. That is judged an acceptable trade for the four regenerations
+it removes, but it is a decision, not a side effect: if a shared-artifact group
+starts failing as a unit and the cause is hard to attribute, split it back.
+
+Verified call counts at the time of the split (each is a separate `test()`
+re-running the same export helper): `exportAnnual()` ×4 in
+`excel-defined-names.spec.ts`, `exportSimplified()` ×6 in
+`simplified-part1-identity-cells.spec.ts`, ×4 in
+`excel-blank-page-pruning.spec.ts`, ×6 in `guardian-blank-page-pruning.spec.ts`.
+Counting `waitForEvent('download')` instead gives a much lower number and is
+wrong — the download happens inside the helper.
+
+### 59C-2 / C3. Deduplicate and test the parsers
 
 1. Provide one shared readable-stream-to-`Buffer` helper.
 2. Extend `xlsx-extract.ts` (or a sibling support module) to own XML entity
@@ -340,14 +444,26 @@ key that can serve stale output is worse than the current runtime cost.
    sheet access needed by the current specs.
 3. Provide one PDF structural-audit helper for xref offsets and marked-content
    text operators instead of maintaining copies in `pdf-form-specific` and
-   `pdf-structure-tags`.
+   `pdf-structure-tags`. **Requires 59C-0 first.** The two copies are not
+   equivalent: `pdf-structure-tags`'s xref check is vacuous and must be
+   repaired on its own before either is used as the basis for a shared helper.
+   Build the helper from `pdf-form-specific`'s implementation, which follows
+   the `startxref` pointer.
+
+   `readAll()` is genuinely nine independent copies of the same
+   stream-to-`Buffer` helper (`excel-b4-multi-account`, `excel-blank-page-pruning`,
+   `excel-defined-names`, `excel-form-field-placement`, `excel-pruned-roundtrip`,
+   `filing-identity.contract`, `guardian-blank-page-pruning`,
+   `output-semantics.artifact`, `simplified-part1-identity-cells`) with nothing
+   in `support/`. That one is a true duplicate and consolidating it carries no
+   behavioral risk — do not let it inherit the PDF helper's precondition.
 4. Add direct tests for each helper using small fixtures that cover
    self-closing cells, attribute-order variation, shared strings, multiple
    xref subsections where supported, malformed input, and absent parts.
 5. Migrate consumers only after the helper tests are green; do not weaken
    their filing-specific assertions during consolidation.
 
-### C4. Load each PDF once per inspection
+### 59C-2 / C4. Load each PDF once per inspection
 
 Refactor `inspectPdf()` so input decoding and `pdfjsLib.getDocument()` happen
 once, then derive text and metadata from the same loaded document. Destroy or
@@ -355,7 +471,7 @@ clean up the PDF.js document/loading task in `finally` where the API permits.
 Update `filing-identity.contract.spec.ts` and other callers that separately
 request text and metadata from identical bytes.
 
-### C5. Replace observable fixed waits
+### 59C-3 / C5. Replace observable fixed waits
 
 Replace `waitForTimeout()` only where there is an observable completion
 condition: editor creation/selection, toolbar visibility, highlight SVG
@@ -363,7 +479,17 @@ creation, route re-render, model update, or dropdown closure. Preserve a fixed
 delay only when the product contract itself is time-based and document why.
 The replacement must wait for the actual state, not a new arbitrary timeout.
 
-### C6. Trace policy
+**Start with `signature-capture.contract.spec.ts`.** The suite holds 27
+`waitForTimeout()` calls and **19 of them are in that one file** — 70% of the
+problem in a single spec. The rest are thinly spread:
+`highlight-toolbar-style` and `annotation-toolbar-containment` at 3 each
+(already reduced by 59A/59B), then `verified-inventory-workflow` and
+`schedule-doc-ack` at 1 each. The original text named "annotation and signature
+specs" without that distribution, which invites spreading effort evenly across
+files where the return is not remotely even. If only one file is done, it is
+this one.
+
+### 59C-1 / C6. Trace policy
 
 Use an explicit policy such as:
 
@@ -375,7 +501,20 @@ Use an explicit policy such as:
 Do not describe Playwright trace data as standalone video; no video option is
 currently configured. Measure the disk effect after the policy change.
 
-### C7. Parallelism experiment, not assumed outcome
+### 59C-4 / C7. Parallelism experiment, not assumed outcome
+
+**Know the price before authorizing this.** The three-run stability gate below
+is the right bar, and it is expensive. Measured 2026-09-19: the E2E half alone
+is 25.6 minutes and a full `npm test` is roughly 72 minutes wall. Three
+consecutive complete source runs, plus 59C-1's baseline run, is on the order of
+four hours of machine time — spent on a question whose honest answer may well
+be "stay at `workers: 1`." That outcome is a valid result, not a failure, but
+it should be a priced decision rather than a surprise. This is the single most
+expensive item in Milestone 59 and the easiest to defer.
+
+The suite is currently **678 tests in 93 files**, all through one worker. (The
+"671" figure in the baseline section above was measured at `e1228fd`, before
+59A and 59B.)
 
 Keep PDF, Excel, service-worker, cross-tab, file-download, and other proven
 heavy/shared-resource specs serial. Trial 2–4 workers only for a measured
@@ -392,16 +531,51 @@ No higher worker count becomes the default unless:
 If those gates fail, retain `workers: 1` and record that result; the experiment
 is still complete.
 
-### 59C acceptance
+### 59C acceptance, per sub-delivery
 
+Each list below is the acceptance bar for that sub-delivery alone. None of
+them waits on the others.
+
+#### 59C-0
+
+- The xref check fails against a PDF with a deliberately corrupted offset, and
+  names the object whose offset is wrong.
+- The same corrupted input is shown to PASS before the repair, proving the
+  check was vacuous rather than merely untested.
+- `pdf-structure-tags.spec.ts` still passes against a well-formed PDF.
+
+#### 59C-1
+
+- `tests/baseline/milestone-59-runtime.json` exists and holds the measurements
+  C1 lists, in a form 59C-4 can read back.
+- Passing local runs no longer build gigabyte-scale trace trees by default.
+- The disk effect of the trace-policy change is measured, not asserted.
+
+#### 59C-2
+
+- 59C-0 has landed.
 - Identical court artifacts are not regenerated for sibling read-only
   inspections.
 - Shared parsers have direct tests and no filing-specific assertion is lost.
 - `inspectPdf()` performs one PDF.js load for combined text/metadata work.
-- Avoidable sleeps are replaced by observable waits.
-- Passing local runs do not build gigabyte-scale trace trees by default.
-- Before/after measurements quantify wall-time and disk changes.
-- Parallelism changes land only if the repeat-run gate passes.
+- The shared PDF structural helper is built on the implementation that follows
+  `startxref`, and each migrated caller's assertions are unchanged.
+
+#### 59C-3
+
+- `signature-capture.contract.spec.ts` is addressed first.
+- Every removed `waitForTimeout()` is replaced by a wait on an observable
+  state, not a shorter arbitrary delay.
+- Any retained fixed delay carries a written reason naming the time-based
+  product contract that justifies it.
+
+#### 59C-4
+
+- 59C-1's baseline exists.
+- A higher worker count becomes the default only if the three-run gate passes
+  in full; otherwise `workers: 1` is retained and the measured result recorded.
+- Either outcome closes the sub-delivery. "Stay serial, and here is the
+  evidence" is a completed 59C-4, not an abandoned one.
 
 ---
 
@@ -514,7 +688,11 @@ smallest relevant green set. Suggested minimums:
 | --- | --- |
 | 59A | repaired annotation, page-structure, dashboard-visual, dashboard-backup, schedule-doc-period, type-check, and test-index specs |
 | 59B | capture command smoke; moved skip audit; dashboard-visual; test-index guard; `playwright test --list` inventory |
-| 59C | direct parser/helper specs; every migrated Excel/PDF consumer; annotation/signature wait-dependent specs; repeated measured source runs for any worker change |
+| 59C-0 | `pdf-structure-tags.spec.ts`, red-first against a corrupted xref offset — including the pre-repair pass that proves the check was vacuous |
+| 59C-1 | one measured source run for the baseline; targeted reruns to confirm the trace policy took effect |
+| 59C-2 | direct parser/helper specs; every migrated Excel/PDF consumer |
+| 59C-3 | the signature and annotation specs whose waits changed |
+| 59C-4 | three consecutive complete source runs (≈4 hours with the baseline; see 59C-4) |
 | 59D | invoke each new command tier and record counts; verify the release runner's profile/build sequence without duplicated source execution |
 
 Because 59C and 59D are broad and cross-cutting, recommend a complete
@@ -544,8 +722,10 @@ The release tier is still a separate, longer authorization.
 
 Milestone 59 is complete only when:
 
-1. All six false-confidence findings have non-vacuous, production-connected
-   evidence with recorded red-first demonstrations.
+1. All **seven** false-confidence findings have non-vacuous,
+   production-connected evidence with recorded red-first demonstrations. Six
+   were repaired by 59A; the seventh (the xref audit) was found after 59A
+   closed and is 59C-0.
 2. Capture tooling and filesystem-only audits live in the appropriate runner
    without disappearing from documentation.
 3. Successful default runs stop writing uncompared screenshots and
