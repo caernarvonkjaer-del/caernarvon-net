@@ -1379,72 +1379,152 @@ into `computeNavChecks()` and broke nine navigation-status tests; folding an
 architectural change into a field addition is the same move. Scope it on its
 own, after the validators it depends on.
 
-### What "validators first" actually means — the enumerated work
+### What "validators first" actually means - the enumerated work
 
-Audited 2026-09-19, so this is a list rather than a principle. Three of the
-four items below are independent of unification and worth doing anyway.
+Audited 2026-09-19. **Revised the same day after review by Codex and
+Antigravity, both of whom were substantially right and are followed here.**
+The first version of this section overstated what a static identifier scan
+proves and understated the cost of the derived model. What follows is the
+corrected version; the corrections are recorded rather than quietly swapped,
+because the first version was committed and could have been acted on.
 
-**1. The parity guard does not cover Simplified Accounting at all — and there
-is a live gap behind the omission.**
+**1. Simplified Accounting is missing from the parity guard, and there is a
+real defect behind the omission - but it is not "five required fields."**
 
 `checklist-export-parity.spec.js` lists `simplified` in `BRANCH_MARKERS` but
-not in `VALIDATORS`, so the assertion never runs for that filing type. Adding
-it reveals five fields `validateSimplified()` requires that the sidebar never
-consults:
+not in `VALIDATORS`, so the assertion has never run for that filing type. That
+part stands, and adding it surfaces five identifiers.
 
-`attorney_signatureImage`, `attorney_signatureState`, `certAttySignDate`,
-`certAttySignatureImage`, `certAttySignatureState`
+**The five identifiers are not five independently required values.** Both
+sites go through `checkSignatureState()`
+(`src/core/validation/signature-state.js:47`), which normalizes an absent
+state to `NONE` and **returns no errors at all** for it. So:
 
-These are real blockers — `validateSimplified()` calls `checkSignatureState()`
-for both the Part V attorney and the Part VI certificate attorney
-(`features/simplified-accounting/index.js:726`, `:745`) — while `s-p5` checks
-only bar/phone/email/street/city and `s-p6` only service date, indicator and
-Recipient 1's name (`legacy-app.js:6665-6668`).
-
-**What a filer sees:** they complete Part VI, every sidebar marker turns green,
-and Print Preview refuses the export because the certificate attorney's
-signature date or state is missing — with nothing on the page naming the
-section. That is precisely the bug class this guard's own header describes,
-on the one filing type it forgot. Annual carries the identical fields as
-recorded `KNOWN_GAPS` entries; Simplified's went unrecorded because the
-assertion never ran. Milestone 39-C introduced the requirement (see the
-comment at `:739`); the guard was not extended with it.
-
-**2. The guard only measures one direction.** It computes
-*validator fields − sidebar fields* and compares that to `KNOWN_GAPS`. The
-reverse — sidebar stricter than validator — is never computed, and that is
-exactly the direction unification resolves by deleting the sidebar's rule.
-Running the mirror today gives 24 candidates:
-
-| Filing type | Fields the sidebar reads that its validator never does |
+| State | What is actually required |
 | --- | --- |
-| annual | `scheduleNoItems` |
-| planInitial | `mentalNone`, `physNone`, `q11Directives`, `q7Hmo`, `q7InstitutionalCare`, `q7Medicaid`, `q7Medicare`, `q7Pension`, `q7SocialSecurity`, `q7Ssdi`, `q7Ssi`, `q7StateSupplement`, `q7SupplementalIns`, `q7Va` |
-| planAnnual | `benefits`, `q3BenefitsNone`, `q3BenefitsOther`, `q3MedPrimary`, `q3MentalPsych`, `q3PersonalFacility`, `q3SocialFacility`, `q9NeedsGlasses`, `q9UsesGlasses` |
-| simplified, planSimplified, planMinor | none |
+| absent / `none` | nothing - an unsigned certification is valid under the current product rule |
+| `typed` | the date (and the printed name where that role does not already require it) |
+| `stamp` | the image |
 
-**Candidates, not defects.** Several are probably legitimate — a checkbox
-group the sidebar aggregates while the validator tests a derived value, or a
-"no items" affirmation with no validator equivalent. Each needs adjudicating
-before its filing type is converted: either the validator gains the rule, or
-the rule is consciously dropped and that is written down. What matters is that
-none of them can be converted *silently*.
+So the defect is not missing requiredness on five fields. It is that **`s-p5`
+and `s-p6` never evaluate the signature-state machine the validator uses.**
 
-**3. Name presence is not rule equivalence, and the known live case is
-invisible to both directions.** `a-p8` requires a trust *name*;
-`validateAnnual()` requires none. Both sides reference `d.trusts`, so no
-field-name method — the shipped guard's or the mirror above — can see it. It
-was found by hand. There is no way to enumerate this class mechanically; it
-needs each sidebar rule read against its validator. 57E-1 resolves this one.
-Assume others exist.
+And the scan missed part of it. `attorney_signatureDate` *does* appear in
+`s-p5` - but only inside `datesOrdered()`, which is deliberately blank
+tolerant (`!earlier||!later||...`, `legacy-app.js:6608`, whose own comment
+says that tolerance is what makes it safe to attach to a key that does not
+otherwise track the date's presence). **A typed signature with no date passes
+`s-p5` and is refused at export.** That is a rule-level divergence on a field
+present on both sides, which no identifier scan - the shipped guard's or the
+mirror below - can detect.
 
-**4. The 14 recorded `KNOWN_GAPS` entries close for free.** Under the derived
-model a field the validator requires necessarily reaches the sidebar, so
-`planAnnual` (2), `planMinor` (4), `planInitial` (1) and `annual` (7) resolve
-by construction. These are the win; items 1-3 are the price of collecting it.
+**The filer-facing description in the first version was also wrong.** Both
+calls pass `sectionLabel: 'Part V'` / `'Part VI'`
+(`features/simplified-accounting/index.js:726`, `:745`), so the issue message
+names the section and `errorRoute()` routes to it. Print Preview *does* say
+what is missing and where. The defect is that the sidebar says the section is
+complete when it is not - a contradiction between two surfaces, not a silent
+refusal.
 
-**Suggested order**, smallest risk first: add Simplified to the guard and close
-its five gaps (independent, live, cheap) → 57E-1 (closes the one known
-rule-level divergence) → adjudicate the 24 candidates per filing type →
-convert one filing type to the derived model and prove it against
-`navigation-status.contract.spec.ts` → convert the rest.
+**Scope, corrected:** add `simplified` to the guard, then fix the two
+behavioural rules - `s-p5` and `s-p6` must evaluate signature completeness
+through the shared helper rather than field presence. **Do not satisfy the
+guard by naming the five fields**, and do not add bare `req()` checks for the
+date or image: that would make an unsigned filing incomplete and collide
+directly with the pro se / Ch. 393 protection in AGENTS.md section 4. Required
+test cases, both Parts: unsigned; typed with and without a date; stamp with
+and without an image.
+
+**2. The reverse-direction scan is a search heuristic, not an enumeration.**
+
+The first version reported "24 candidates" as though each were an adjudication
+item. Two independent errors in that number, in opposite directions:
+
+- **Inflated.** The slice covered the whole filing branch including the
+  `incomplete` object, which no longer affects rendering at all -
+  `applyNavChecks()` keeps the parameter for back-compat and ignores it
+  (`legacy-app.js:7116-7120`). Fields occurring only there are dead.
+- **Deflated, on the correction.** Re-slicing to the `checks` object alone
+  drops the helper definitions that sit just above it, so `scheduleNoItems`
+  was mislabelled as dead when it is read by `verifiedEmpty()`
+  (`legacy-app.js:6693`), which `rowsComplete()` uses throughout the Annual
+  checks. Whole-branch gives 24, checks-only gives 13, and **both are wrong**.
+
+The conclusion to carry forward is the method's limit, not a number: identifier
+scanning finds candidates worth reading and cannot enumerate this class.
+Aliases, helper indirection and rule-level differences each defeat it.
+
+Reading the survivors, the substantive reverse-direction families are three:
+
+| Family | Where |
+| --- | --- |
+| Annual `scheduleNoItems` / remuneration | **Already scoped as MS 58D** - see below. Do not write a second fix |
+| Initial Plan Question 7 benefit selection | `q7*` identifiers in `planInitial` |
+| Annual Plan Part 4 insurance/benefit selection | `q3BenefitsNone`, `q3BenefitsOther` and neighbours in `planAnnual` |
+
+**Coordinate with MS 58D.** Its own text already states the Annual case
+precisely: *"Current sidebar logic requires either the explicit no-items
+declaration or complete rows, while `validateAnnual()` does not require
+either."* That is this reverse-direction defect, already scoped, with the
+files and tests listed. It is not available for this work to duplicate.
+
+**3. Rule equivalence needs review, but "no mechanical way" was too absolute.**
+
+The Annual trust case is real and remains the worked example: `a-p8`
+(`legacy-app.js:6711`) requires a trust name or a none declaration;
+`validateAnnual()` (`features/annual-accounting/index.js:1645`) requires
+neither. No field-name set can see it, because both sides reference
+`d.trusts`.
+
+But the first version's "there is no way to enumerate this class mechanically"
+overstates it. Where a rule's inputs form a **finite domain**, differential
+truth-table tests over generated fixtures can compare sidebar and validator
+across every combination mechanically. The signature-state machine in item 1
+is exactly such a domain - three states times date-present times image-present
+is twelve cases per role. That cannot prove equivalence of arbitrary
+JavaScript, but it is materially stronger than a manual read and should be the
+default wherever the inputs enumerate.
+
+**4. The 14 recorded `KNOWN_GAPS` entries do NOT close "for free."**
+
+This was the first version's worst claim. They close only once a derived
+readiness architecture exists, and the design has a blocker it did not name:
+
+- Feature validators are **lazily imported**.
+- `getWardProgress()` is **synchronous** and computes progress for every
+  filing on the dashboard, including ones never opened
+  (`legacy-app.js:7100-7114`).
+- So `validateSimplified` / `validatePlanAnnual` / the rest may not exist when
+  dashboard progress is computed.
+- The Initial Inventory already lives with this: its branch returns `null`
+  when `window.validateGuardian` is not yet loaded (`legacy-app.js:6625`),
+  with a comment explaining that a fabricated pass would be worse than no
+  reading. **Extending the derived model naively would extend that `null` to
+  most dashboard filings until each feature had been visited** - trading a
+  hand-maintained invariant for a dashboard that shows no progress.
+
+So conversion needs an architectural decision first, and the options are not
+equivalent:
+
+1. **Extract the pure validation rules into eagerly-available core modules**
+   (e.g. `src/core/validation/rules/`) so they can be evaluated synchronously
+   without the feature bundle. Cleanest, and the one to prefer.
+2. Eagerly load every feature module - bundle and startup cost, against the
+   lazy-loading this app deliberately does.
+3. Make dashboard progress asynchronous - a broader UI change with its own
+   render-ordering questions.
+
+It must also be verified that every validator section string routes to the
+correct nav key before that type is converted, not assumed from
+`errorRoute()`'s coverage.
+
+**Suggested order**, smallest risk first:
+
+1. Add `simplified` to the guard **and** fix the two behavioural signature
+   rules, with the twelve-case matrix above. Independent, live, cheap.
+2. 57E-1 - closes the one known rule-level divergence.
+3. Audit the three reverse-direction families, respecting MS 58D's ownership
+   of the Annual one.
+4. Resolve the lazy-validator / dashboard-progress architecture.
+5. Only then convert one filing type, proving it against
+   `navigation-status.contract.spec.ts`, before the rest.
