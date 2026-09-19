@@ -197,7 +197,15 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
           const p12Name = xlsx.sheetNames.find((s) => s.trim() === 'PARTS I, II') || 'PARTS I, II ';
           expect(xlsx.getCell(p12Name, 'C4')).toBe(wardName);
           expect(xlsx.getCell(p12Name, 'H4')).toBe(expectedCaseNumber);
-          expect(xlsx.getCell(p12Name, 'D17')).toBe('Sample Guardian');
+          // Milestone 57 D11: this used to expect the guardian's name at D17,
+          // which encoded the defect it was meant to guard against. The
+          // court's Part I puts "Guardian" on row 16 and "Type of
+          // Guardianship" on row 17, each with its value in the merged
+          // D<row>:I<row> beside it -- the whole block used to be written one
+          // row low. Both are asserted now, so a shift in either direction
+          // fails rather than swapping one right answer for another.
+          expect(xlsx.getCell(p12Name, 'D16'), 'D16 is the Guardian box').toBe('Sample Guardian');
+          expect(xlsx.getCell(p12Name, 'D17'), 'D17 is the Type of Guardianship box').toBe('Plenary');
         } else if (id === 'guardian') {
           const sum1Name = xlsx.sheetNames.find((s) => s.trim() === 'SUMMARY I') || 'SUMMARY I ';
           expect(xlsx.getCell(sum1Name, 'C7')).toBe(wardName);

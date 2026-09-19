@@ -11,6 +11,8 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 // and the export gate ran two separate copies of the same court-facing rule.
 import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
+import { createIssue } from '../../core/validation/issue-registry.js';
+import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
@@ -1129,7 +1131,11 @@ function pageD4(){
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Surety Bond Details</h2>
         ${formRow(col(4,reqLabel('Bond Amount')+textInput('bondAmount','e.g., $50,000')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
-        ${formRow(col(6,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')),col(6,optLabel('If bond waived – date of order')+textInput('bondWaivedDate')))}
+        ${formRow(col(12,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')))}
+        ${yesNoRadioHTML('bondWaived','Has the surety bond been waived by court order?',effectiveAnswer(D.bondWaived,D.bondWaivedDate),'bondWaived',true,'/d4')}
+        <div id="bond-waived-row" class="${triYes(effectiveAnswer(D.bondWaived,D.bondWaivedDate))?'':'d-none'}">
+          ${formRow(col(12,reqLabel('Date of the order waiving the bond')+textInput('bondWaivedDate')))}
+        </div>
       </div>
     </div>
   </div>
@@ -1249,6 +1255,19 @@ export function validateGuardian(){
     push('D-3 — Safe Deposit Box question must be answered (Yes or No).','hasSafeDepositBox');
   } else if (sdbIsYes(d.hasSafeDepositBox) && !sdbAnswered(d.safeDepositBoxFiled)) {
     push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).','safeDepositBoxFiled');
+  }
+  // Milestone 57A / D6. The court's form has no Yes/No for this -- it asks
+  // only for the order date -- so the answer never reaches the workbook. It
+  // exists so the app can tell "waived, date still missing" from "not
+  // waived", which a blank date alone cannot.
+  const bondWaiverState = dependentQuestionState(d.bondWaived, d.bondWaivedDate);
+  if (bondWaiverState === 'unanswered') {
+    push('D-4 — Please indicate whether the surety bond has been waived (Yes or No).','bondWaived');
+  } else if (bondWaiverState === 'missing-detail') {
+    errors.push(createIssue('filing.bond-waiver.incomplete', {
+      path:'bondWaivedDate', section:'D-4', label:'Date of the order waiving the bond',
+      message:'D-4 — The bond is marked waived, so the date of the order waiving it is required.',
+    }));
   }
   req(d.bondAmount,'D-4 — Bond Amount','bondAmount');if(!d.bondPeriodFrom)push('D-4 — Bond Period From is required.','bondPeriodFrom');if(!d.bondPeriodTo)push('D-4 — Bond Period To is required.','bondPeriodTo');req(d.bondingCompany,'D-4 — Bonding Company','bondingCompany');
   // Milestone 40C-C. Guardian Inventory was deliberately excluded from

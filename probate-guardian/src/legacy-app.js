@@ -5621,7 +5621,10 @@ function emptyDataGuardian(){
     guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}],
     preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''},
     attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''},
-    bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaivedDate:'',
+    // bondWaived is the tri-state ('', 'Yes', 'No') behind bondWaivedDate.
+    // A blank date alone could not distinguish "waived, date not entered"
+    // from "not waived" -- see core/validation/dependent-question.js.
+    bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaived:'',bondWaivedDate:'',
     serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
     serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureState:'',signatureImage:''},
     // Witnesses present during the physical inventory of the ward's personal
@@ -6706,7 +6709,15 @@ function computeNavChecks(){
       // Part VIII is satisfied either by naming a trust or by certifying there
       // are none, matching the verifiedEmpty pattern the other Annual checks use.
       'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name),
-      'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany),
+      // Milestone 57A: the restricted-depository question counts toward Part
+      // IX being complete, so the sidebar and the export validator agree on
+      // what this page still owes. tests/unit/checklist-export-parity.spec.js
+      // fails if they drift -- which is the discipline the reverted attempt
+      // broke. Answered means Yes or No; a legacy filing with a receipt date
+      // and no answer reads as Yes (core/validation/dependent-question.js).
+      'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany)
+        &&(D.restrictedDepository==='Yes'||D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate))
+        &&(D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate)),
       'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name)
         &&datesOrdered(D.periodTo,D.certDate,true),
       'a-p11':verifiedEmpty('remuneration')||(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type)&&filled(r.amount))),
@@ -7272,6 +7283,11 @@ function afterChange(path){
   // Conditional SDB field
   const sdbContainer=document.getElementById('sdb-filed-row');
   if(sdbContainer)sdbContainer.style.display=(D.hasSafeDepositBox==='Yes'||D.hasSafeDepositBox===true)?'':'none';
+  // Conditional bond-waiver date (Milestone 57A). Hidden, never cleared: a
+  // filer who answers Yes, types the order date, then switches to No must get
+  // the date back intact when they switch to Yes again.
+  const waivedContainer=document.getElementById('bond-waived-row');
+  if(waivedContainer)waivedContainer.style.display=(D.bondWaived==='Yes'||D.bondWaived===true||(!D.bondWaived&&String(D.bondWaivedDate||'').trim()))?'':'none';
 }
 
 function updateCalcFields(){

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { freshStartNoPassword } from './support/target';
+import { freshStartNoPassword, fillMinimalValidGuardianWard } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
 import { expectedPdfMetadataTitle } from './support/filing-matrix';
 import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-fixture';
@@ -39,7 +39,17 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     await page.locator('[data-modal-action="add-ward"]').click();
     await expect(page.locator('#addWardModal')).toBeHidden();
 
-    // 2. Set up full Verified Initial Inventory mock state
+    // 2. Set up full Verified Initial Inventory mock state.
+    //
+    // The shared helper goes first so this fixture only has to state what is
+    // DISTINCTIVE about the filing it renders, not re-derive what makes a
+    // filing pass validation. When Milestone 57A added a required bond-waiver
+    // answer, hand-built fixtures like this one silently stopped being
+    // export-ready and the PDF never rendered; the helper is the single place
+    // that definition lives, so it cannot drift out of one fixture at a time.
+    // Everything below overrides it -- the assertions here are about this
+    // document's own content.
+    await fillMinimalValidGuardianWard(page);
     await page.evaluate(() => {
       Object.assign((window as any).D, {
         wardName: 'Harold Thomas Bennett',

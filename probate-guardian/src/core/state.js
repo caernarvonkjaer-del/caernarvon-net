@@ -457,6 +457,10 @@ export function emptyDataAnnual() {
     ],
     // Part IX – Bond
     guardianRelationship:'Professional Guardian',
+    // restrictedDepository is the tri-state ('', 'Yes', 'No') behind the
+    // receipt date; see core/validation/dependent-question.js for why a date
+    // alone cannot stand in for the answer.
+    restrictedDepository:'',
     restrictedDepositoryReceiptDate:'',
     bondAmount:'', bondPeriodFrom:'', bondPeriodTo:'', bondingCompany:'',
     // Part X – Cert of Service

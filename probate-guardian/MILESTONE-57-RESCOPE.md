@@ -848,8 +848,46 @@ being frozen at export time.
 
 ## 57A — Bond Waived / Restricted Depository (design, 2026-09-19)
 
-**Not authorized.** Design written so that whoever builds it is not also
-deciding it. Implements **D6**.
+> **LANDED 2026-09-19**, authorized by Alan. Built as designed below, with the
+> design's own open question answered first.
+>
+> **The question the design asked, answered against the templates.** *"The
+> tri-state needs its own verified cells or a documented decision not to write
+> it."* Read with an XML parser: **neither court form carries the question.**
+> Initial Inventory PART V asks only *"If the surety bond has been waived, note
+> the date of the order"*; Annual PART IX asks only *"Date of most recent
+> Receipt of Cash Assets"*. So this is the documented decision **not to write
+> either answer** — inventing a cell would put text on a court form the Clerk
+> did not design (§13, §2). What reaches the workbook is what always did: the
+> date. `excel-write-targets.spec.js` enforces the absence by having no write
+> target for either field.
+>
+> **The premise check held.** Both CSV rows described fields that existed
+> nowhere in `src/`. They exist now, at the exact sources the CSV names, so
+> documentation and code agree without editing the CSV.
+>
+> Shipped: `src/core/validation/dependent-question.js` (the shared reader and
+> the D6 state machine), two registry codes
+> (`filing.bond-waiver.incomplete`, `filing.restricted-depository.incomplete`,
+> both `bypassable: false`), `bondWaived` on `emptyDataGuardian()`,
+> `restrictedDepository` on `emptyDataAnnual()`, a tri-state on each form
+> revealing its date only on Yes, and the legacy inference applied **where the
+> value is read** rather than migrated on load — so a stored `.sav` needs no
+> migration and an absent date never becomes "No".
+>
+> **Readiness stayed 1:1**, which is what the reverted attempt broke.
+> `computeNavChecks()`'s `a-p9` now counts the question, and
+> `checklist-export-parity.spec.js` caught the drift the moment it appeared —
+> it failed on the first run and was fixed before anything else. Guardian needs
+> no equivalent edit: its branch derives from `validateGuardian()`'s own
+> errors, so it is 1:1 by construction.
+>
+> Coverage: `tests/unit/dependent-question.spec.js` (17),
+> `tests/e2e/dependent-question-gate.spec.ts` (11), including that toggling
+> Yes→No→Yes keeps the date and that the sidebar's own rendered mark agrees
+> with the export gate.
+
+**Design as written, for the record.** Implements **D6**.
 
 ### The thing to check before writing a line of code
 

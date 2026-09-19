@@ -112,6 +112,10 @@ export async function fillMinimalValidGuardianWard(page: Page): Promise<void> {
       bondPeriodFrom: '2026-01-01',
       bondPeriodTo: '2027-01-01',
       bondingCompany: 'Sample Bonding Co',
+      // Milestone 57A added a required Yes/No for the bond waiver. A ward
+      // this helper builds is meant to be export-ready, so it has to answer
+      // it; 'No' needs no order date.
+      bondWaived: 'No',
       serviceDate: '2026-01-02',
     });
     d.scheduleNoItems = Object.fromEntries(
@@ -422,6 +426,10 @@ export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
       startingBalance: '10000',
       bondAmount: '5000',
       bondingCompany: 'Sample Bonding Co.',
+      // Milestone 57A added a required Yes/No for the restricted depository.
+      // This helper builds an export-ready filing, so it answers it; 'No'
+      // needs no receipt date.
+      restrictedDepository: 'No',
       certDate: '2026-12-31',
       schA: [{ payer: 'Social Security', description: 'Monthly benefit', bank: 'Sample Bank', accountNo: '1234', amount: '500' }],
       // Line 20 (starting balance + income - disbursements) won't equal

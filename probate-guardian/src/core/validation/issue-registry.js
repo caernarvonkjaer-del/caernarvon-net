@@ -11,6 +11,15 @@ const definitions = Object.freeze({
   'filing.identity.unknown': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'filing.identity.conflict': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'simplified.guardian.address-conflict': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: true },
+  // Milestone 57A / Decision 6. An UNANSWERED bond-waiver or restricted-
+  // depository question goes out through the ordinary validator path, which is
+  // bypassable -- the filer acknowledges that the filing reaches the clerk
+  // without stating it. These two are the other half: the filer said Yes and
+  // then left the date the court actually needs blank. That is a half-finished
+  // answer rather than an unstated one, so it blocks and cannot be
+  // acknowledged away.
+  'filing.bond-waiver.incomplete': { category: 'validation', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: true },
+  'filing.restricted-depository.incomplete': { category: 'validation', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: true },
   // Milestone 38D / 44B: Supplemental PDF boundary issues
   'supplemental.missing-data': { category: 'supplemental', bypassable: false, capabilities: PDF_CAPABILITIES, showInReadiness: false },
   'supplemental.decode-failed': { category: 'supplemental', bypassable: false, capabilities: PDF_CAPABILITIES, showInReadiness: false },

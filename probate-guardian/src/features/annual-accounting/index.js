@@ -26,6 +26,8 @@ import { renderSignatureStateControl, mountSignatureStateControls } from '../../
 import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
 import { b4AccountHeading, createBankAccountId } from '../../core/accounting/bank-accounts.js';
+import { createIssue } from '../../core/validation/issue-registry.js';
+import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
 
 // The court's workbook has one Schedule B-4 register block per bank account.
 // Read from the block map rather than written as a literal so the form and
@@ -1375,7 +1377,10 @@ function pagePart9Annual(){
         <h2 class="subsection-heading">Surety Bond &amp; Guardian Info</h2>
         <div class="row g-2 mb-2">
           <div class="col-md-6">${selD("Guardian's Relationship to Ward",d.guardianRelationship,"D.guardianRelationship=this.value",GUARDIAN_REL)}</div>
-          <div class="col-md-6">${inpD('Restricted Depository Receipt Date',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",false,'date')}</div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">${yesNoRadioAnnualHTML('restrictedDepository','Restricted depository?',effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate),'restrictedDepository',true,'restricted_depository')}</div>
+          ${triYes(effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate))?`<div class="col-md-6">${inpD('Date of Most Recent Receipt',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",true,'date')}</div>`:''}
         </div>
         <div class="row g-2">
           <div class="col-md-6">${inpD('Bond Amount',d.bondAmount,"D.bondAmount=this.value",false,'number')}</div>
@@ -1489,6 +1494,19 @@ export function validateAnnual(){
   req(d.filingType,'Part I — Filing Type','filingType');
   req(d.amendedForm,'Part I — Amended Form?','amendedForm');
   req(d.startingBalance,'Part II — Starting Balance','startingBalance');
+  // Milestone 57A / D6. PART IX asks only for the date of the most recent
+  // receipt, never whether a restricted depository applies, so this answer
+  // stays in the app and is not written to the workbook. It is what lets the
+  // app tell "applies, date still missing" from "does not apply".
+  const rdState = dependentQuestionState(d.restrictedDepository, d.restrictedDepositoryReceiptDate);
+  if (rdState === 'unanswered') {
+    errs.push(issue('Part IX — Please indicate whether a restricted depository applies (Yes or No).','restrictedDepository'));
+  } else if (rdState === 'missing-detail') {
+    errs.push(createIssue('filing.restricted-depository.incomplete', {
+      path:'restrictedDepositoryReceiptDate', section:'Part IX', label:'Date of Most Recent Receipt',
+      message:'Part IX — A restricted depository applies, so the date of the most recent receipt is required.',
+    }));
+  }
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Part I',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
     filingType:T,laterPath:'periodTo',
