@@ -20,6 +20,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
+import { setStatus, clearStatusNow } from '../../core/ui/transient-status.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -88,7 +89,7 @@ export async function doSavePdf(){
     return;
   }
   const stat=document.getElementById('export-status');
-  if(stat)stat.textContent='Generating PDF…';
+  setStatus(stat,'Generating PDF…');
   const stem=(window.D.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
   const filename=`${stem}_InitialInventory.pdf`;
 
@@ -102,7 +103,11 @@ export async function doSavePdf(){
     console.error('PDF export failed',e);
     await alertModal('PDF export failed: '+e.message);
   }finally{
-    if(stat)stat.textContent='';
+    // Immediate, not scheduled: the PDF action has no success
+    // message of its own to leave on screen. Going through setStatus still
+    // cancels any clear an earlier Excel export scheduled, so this element
+    // is never left with a timer belonging to a message that is gone.
+    clearStatusNow(stat);
   }
 }
 

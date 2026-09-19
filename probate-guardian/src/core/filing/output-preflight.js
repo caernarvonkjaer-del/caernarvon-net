@@ -4,6 +4,7 @@
 
 import { resolveFilingDescriptor } from './filing-descriptor.js';
 import { countyDriftWarnings } from '../case-county-drift.js';
+import { formDerivedOverwriteWarnings } from './form-derived-fields.js';
 import {
   commitStoredDateDrafts,
   formatDraftIssues,
@@ -37,7 +38,13 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     && typeof window.isOutputAcknowledgedFor === 'function'
     && window.isOutputAcknowledgedFor(target, identity.descriptor);
   const messages = acknowledged && structuredIssues.every(issue => issue.bypassable !== false) ? [] : rawMessages;
-  const advisories = countyDriftWarnings(target);
+  const advisories = [
+    ...countyDriftWarnings(target),
+    // Cells the court's form computes for itself that this filing overwrites
+    // with a different value. Advisory by decision, not by omission -- see
+    // form-derived-fields.js.
+    ...formDerivedOverwriteWarnings(target, identity.descriptor),
+  ];
 
   return {
     descriptor: identity.descriptor,

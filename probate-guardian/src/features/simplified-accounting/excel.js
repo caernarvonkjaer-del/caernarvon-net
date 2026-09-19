@@ -8,6 +8,7 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText } from '../../core/excel/cell-reader.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
+import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 
 const {
   renderPage, ensureTemplate, calcTotals, guardianHasAnyData,
@@ -81,7 +82,7 @@ export async function doSaveExcel(){
     if(p1){
       // Part I's identity block. Every label sits in column B and its value in
       // the merged D<row>:I<row> beside it. These addresses were read back out
-      // of the shipped workbook with an XML parser (AGENTS.md section 14);
+      // of the shipped workbook with an XML parser (AGENTS.md section 10);
       // every one of them used to be written one row too low, so the ward's
       // SSN printed over the "From" label, the case number under "Attorney for
       // Guardian", the attorney under "Guardian", the guardian under "Type of
@@ -155,7 +156,7 @@ export async function doSaveExcel(){
       // F15 already hold the workbook's own formulas pulling them from
       // PARTS I, II (E13, H13 and D16 -- the cells written above), so writing
       // literals over them replaced live propagation with a snapshot and, on
-      // C10/F10, destroyed it for every later edit. AGENTS.md section 13.
+      // C10/F10, destroyed it for every later edit. AGENTS.md section 5.
       const g1=inv.guardians[0]||{};
       setCell(p34,'D15',fmtD(g1.signatureDate));
       setCell(p34,'B17',g1.ssn||'');
@@ -262,20 +263,20 @@ export async function importExcel(input){
   const file=input.files[0];
   if(!file)return;
   const prog=getImportProgressEl(input);
-  if(prog)prog.textContent='Checking file…';
+  setStatus(prog,'Checking file…');
   const check=await validateImportFile(file,'xlsx');
   if(!check.ok){
-    if(prog)prog.textContent='✗ '+check.message;
+    setStatus(prog,'✗ '+check.message);
     input.value='';
     return;
   }
   const reader=new FileReader();
   reader.onerror=()=>{
-    if(prog)prog.textContent='✗ That file could not be read.';
+    setStatus(prog,'✗ That file could not be read.');
     input.value='';
   };
   reader.onload=async(e)=>{
-    if(prog)prog.textContent='Parsing Excel…';
+    setStatus(prog,'Parsing Excel…');
     try{
       // No template-cache write here — an imported file is extracted and
       // discarded, never retained (see the note above ensureTemplate()).
@@ -472,12 +473,12 @@ export async function importExcel(input){
       sanitizeObjectDataInPlace(window.D);
       autoSave();
       window.markFilingRevisionChanged?.('excel-import');
-      if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
-      setTimeout(()=>{if(prog)prog.textContent='';},3000);
+      setStatus(prog,'✓ Template loaded and data imported successfully.');
+      scheduleStatusClear(prog);
       renderPage(getCurrentPage());
     }catch(err){
       console.error('Simplified Accounting import failed:',err);
-      if(prog)prog.textContent='✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.');
+      setStatus(prog,'✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.'));
     }finally{
       input.value='';
     }

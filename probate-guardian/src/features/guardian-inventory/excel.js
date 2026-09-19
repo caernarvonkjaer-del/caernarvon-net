@@ -20,6 +20,7 @@ import {
   unusedGuardianContinuationSheets,
 } from '../../core/excel/guardian-inventory-pages.js';
 import { alertModal } from '../../core/ui/dialogs.js';
+import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 
 const {
   renderPage, ensureTemplate, saveData, navigate,
@@ -94,7 +95,7 @@ export async function doSaveExcel(){
     return;
   }
   const stat=document.getElementById('export-status');
-  if(stat)stat.textContent='Preparing Excel export…';
+  setStatus(stat,'Preparing Excel export…');
   try{
     const inv=window.D;
     const templateB64=await ensureTemplate('guardian');
@@ -123,7 +124,7 @@ export async function doSaveExcel(){
     // apart from a null-sheet guard, and routed text through the same
     // sanitizeForExcel() the shared version delegates to.
 
-    if(stat)stat.textContent='Loading template…';
+    setStatus(stat,'Loading template…');
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
@@ -423,7 +424,7 @@ export async function doSaveExcel(){
       setCell(p4,'G26',fmtD(inv.attorney.signatureDate));
       // I26 is the workbook's own formula pulling the attorney's name from
       // SUMMARY I D24 -- the form links the two -- so the app writes that cell
-      // and leaves this one alone (AGENTS.md section 13).
+      // and leaves this one alone (AGENTS.md section 5).
       setCell(p4,'B28',inv.attorney.barNumber||'');
       setCell(p4,'I28',inv.attorney.streetAddress||'');
       setCell(p4,'B30',inv.attorney.phone||'');
@@ -480,15 +481,15 @@ export async function doSaveExcel(){
     // exactly the entries it was written with.
     pruneSheets(workbook, unusedGuardianContinuationSheets(inv));
 
-    if(stat)stat.textContent='Writing file…';
+    setStatus(stat,'Writing file…');
     const stem=(inv.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
     await saveWorkbookFile(workbook, `${stem}_InitialInventory.xlsx`);
-    if(stat)stat.textContent='✓ Exported!';
+    setStatus(stat,'✓ Exported!');
   }catch(e){
     console.error(e);
-    if(stat)stat.textContent='❌ '+e.message;
+    setStatus(stat,'❌ '+e.message);
   }finally{
-    setTimeout(()=>{if(stat)stat.textContent='';},3000);
+    scheduleStatusClear(stat);
   }
 }
 
@@ -497,14 +498,14 @@ export async function importExcel(input){
   if(!file)return;
   const prog=getImportProgressEl(input);
   try{
-    if(prog)prog.textContent='Checking file…';
+    setStatus(prog,'Checking file…');
     const check=await validateImportFile(file,'xlsx');
-    if(!check.ok){if(prog)prog.textContent='✗ '+check.message;return;}
-    if(prog)prog.textContent='Reading file…';
+    if(!check.ok){setStatus(prog,'✗ '+check.message);return;}
+    setStatus(prog,'Reading file…');
     const buf=await file.arrayBuffer();
     const ExcelJS=await getExcelJS();
     const workbook=new ExcelJS.Workbook();
-    if(prog)prog.textContent='Parsing Excel…';
+    setStatus(prog,'Parsing Excel…');
     await workbook.xlsx.load(buf);
     assertWorkbookWithinLimits(workbook);
     // No template cache write here — see the note above ensureTemplate():
@@ -514,12 +515,12 @@ export async function importExcel(input){
     Object.assign(window.D,importedData);
     saveData();
     window.markFilingRevisionChanged?.('excel-import');
-    if(prog)prog.textContent='✓ Import complete!';
-    setTimeout(()=>{if(prog)prog.textContent='';},3000);
+    setStatus(prog,'✓ Import complete!');
+    scheduleStatusClear(prog);
     navigate('/');
   }catch(e){
     console.error('Initial Inventory import failed:',e);
-    if(prog)prog.textContent='✗ Import failed: '+(e&&e.message?e.message:'the file could not be parsed.');
+    setStatus(prog,'✗ Import failed: '+(e&&e.message?e.message:'the file could not be parsed.'));
   }finally{
     input.value='';
   }

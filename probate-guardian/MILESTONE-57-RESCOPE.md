@@ -8,11 +8,21 @@ prompt interrupts. Full suite green at the time: 607 passed, 6 skipped, 0
 failed. See the dated note on the 57C-R section below for what actually
 shipped and how it differs from the design here.
 
-**No 57 work is authorized as of 2026-09-19, but everything left is now
-decided and scoped.** 57G, 57E-2 and the trust-question item are closed;
-D6-D9 settle the open design questions; 57A and 57B have designs, and 57D,
-57E-1 and 57F have scopes. Nothing below is approved to build — per
-`AGENTS.md` §2 that still needs Alan's word, by name, per item.
+**Updated 2026-09-19, end of day. Four items remain; everything else is
+landed or closed.**
+
+| Still open | State |
+| --- | --- |
+| **57B** | Certificate-of-service recipient rules. Designed (D7), not built. Both attestation fields are new — neither exists in `src/` |
+| **57E-1** | One gap: `hasTrust: 'Yes'` with every trust field blank exports silently. Scoped (D9), not built |
+| **57F(a)** | PDF period-end clipping. Claimed fixed in the reverted attempt but only ever source-read, never render-tested. Unverified either way |
+| `routes.spec.ts:84` | Order-dependent e2e failure; passes in isolation. Under diagnosis |
+
+Landed this day: **57A** (`4ad465b`), **57D** in full, **57F(b)**, and
+**D10–D15**. Closed as premise-incorrect or unspecified: **57G**, **57E-2**,
+the trust-question item. **57C-R** landed 2026-09-18. Nothing still open is
+approved to build — per `AGENTS.md` §3 that needs Alan's word, by name, per
+item.
 
 Two of the remaining items shrank to almost nothing once the court's own
 workbooks were read rather than the proposal: **57E-1 is already built** and
@@ -328,7 +338,7 @@ fits the app's existing mechanisms:
 
 | Item | Review verdict | Note |
 | --- | --- | --- |
-| 57A | Defective validation | Bond-waived / restricted-depository tri-states. `bondWaived` and `restrictedDepository` already exist pre-57 (Guardian and Annual respectively) and are now documented in the data model. **Design decision settled — see D6 below.** Still needs a design and approval by name before any work starts |
+| 57A | Defective validation | **LANDED 2026-09-19 in `4ad465b`**, authorized by Alan by name and built to D6: an unanswered question rides the ordinary bypassable validator path, a `'Yes'` with its detail still blank is a hard block with its own registry key. Shared reader in `src/core/validation/dependent-question.js`; `computeNavChecks()` extended in the same commit so readiness and the export gate stay 1:1 |
 | 57B | Incomplete / unsafe conversion | Certificate of Service recipient rules. **Design decision settled — see D7 below.** Still needs a design and approval by name before any work starts |
 | 57D | Critical Excel regression, since fixed then reverted. **Scope settled — see D8 and the 57D scope below.** Not authorized | **The template research survives and is the valuable part**: the B-4 workbook has 18 register pages in 4 account blocks with verified row capacities — see `MILESTONE-57-REVIEW-HANDOFF.md` |
 | 57E-1 | Poorly integrated | Trust-accounting capture. **Scoped 2026-09-19 — almost all of it is already on master and closer to the court form than 57E-1 proposed.** One gap survives, settled by D9. See the 57E-1 scope below |
@@ -413,10 +423,16 @@ accounts will not fit; the PDF exports complete. This is the pattern
 `excel-capacity.js` already uses for over-capacity schedules, so it is a
 surface the app and its users already understand.
 
-Still open, and a question for Pinellas rather than for us: what the Clerk
-actually expects for a ward with five or more accounts — a supplemental
-register, combined accounts, or whether the PDF alone is an acceptable filing.
-Worth asking, but it does not block the work.
+**SETTLED 2026-09-19 by Alan — no question remains.** This paragraph asked
+what the Clerk expects for a ward with five or more accounts. It was written
+before the workbook was extended from the court's four account blocks to
+twelve, which is what the same day's work actually shipped; read against that,
+the threshold it worries about is the *thirteenth* account, not the fifth.
+
+Alan's answer: *"12 accounts is extreme edge case. I've never seen one."*
+Twelve blocks is past the point of practical concern, the withhold-and-name
+behaviour beyond it is already built and tested, and the Clerk does not need to
+be asked about a case that does not occur. Closed, not deferred.
 
 **D10 — SETTLED 2026-09-19, authorized by Alan: extend C-5 to the form's real
 third page. Initial Inventory blank-page pruning landed alongside it.**
@@ -536,11 +552,13 @@ form — precisely the failure mode `AGENTS.md` §5 exists for. It also means th
 period dates do not survive a round trip at all: both are read back from inside
 the same merge, so `periodFrom` and `periodTo` return the same value.
 
-**Filers who already submitted a Simplified workbook.** Anything exported
-before this fix carries the shifted block. Whether Pinellas wants those
-re-filed is the Clerk's call; the app cannot detect an affected file after the
-fact, because a corrected export and a stale one differ only in which cells
-hold which values.
+**Filers who already submitted a Simplified workbook — MOOT, confirmed
+2026-09-19.** Alan: this is a test/development system and **no filings have
+ever been submitted from it.** There is no affected workbook in the Clerk's
+hands and nothing to re-file. The paragraph this replaces worried that the app
+could not detect an affected file after the fact, which remains true and no
+longer matters. The severity of the defect is unchanged — it is about what the
+app *would* have filed.
 
 **D12 — FIXED 2026-09-19. A print area displaced by 57D's own twelve-account
 extension, found while fixing 57F(b). Self-inflicted, and it was shipping.**
@@ -640,8 +658,8 @@ discard a field the filer can edit:
   formula; the app keeps `guardians[0].name` separately. **Should they be one
   field?**
 
-**Filings already submitted** carry the old placement. The app cannot detect an
-affected file after the fact.
+**Filings already submitted — MOOT, confirmed 2026-09-19.** None exist; this
+is a test/development system. See the matching note under D11.
 
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
@@ -649,6 +667,68 @@ clearable acknowledgement at output rather than hard-blocking. Chosen for
 consistency with 57A rather than on its own merits — two adjacent
 "affirmative but empty" states should not behave differently. Uses
 `output-authorization.js`, not a second mechanism.
+
+---
+
+## Decisions 14–15 — settled 2026-09-19
+
+**D14 — the three form-derived cells: conform to the form, allow the overwrite,
+warn on it. FIXED the same day, authorized by Alan by name.**
+
+The annual template computes three cells for itself — `'PART IX '!E21`/`G21`
+(the bond period, `=From_Date` / `=To_Date`) and `'PART II, III'!F25`
+(Guardian #1, linked to PART I's Guardian) — and the app writes its own field
+over each. Both halves of that were defensible and neither was decided, so they
+sat in `excel-write-targets.spec.js`'s `ALLOWED` map as an open question.
+
+Alan's answer: keep the write, report the divergence. Dropping the write would
+silently discard something the filer typed; keeping it silently let a filing
+reach the clerk with a bond period that disagreed with its own accounting
+period, or two different names for the same guardian, while the on-screen form
+— which still showed the derived value — agreed with neither.
+
+> **LANDED.** `src/core/filing/form-derived-fields.js` raises an advisory per
+> divergent cell, joined into `prepareFilingOutput()`'s existing `advisories`
+> alongside `countyDriftWarnings()`, so it surfaces through the
+> `renderOutputAdvisories()` panel every print page already renders. Advisory,
+> never blocking: a bond written for a term other than the accounting year is
+> ordinary and the app has no standing to overrule it. Silent when the app's
+> field is blank — an unset field is not an overwrite, and warning there would
+> push the filer to fill in what the form would have derived. Annual family
+> only; the Initial Inventory's bond cells are genuine input boxes in its own
+> template. Formatting differences (whitespace, letter case, `Date` vs ISO
+> string) are not divergences, because a panel that cries wolf gets ignored.
+> 15 cases in `tests/unit/form-derived-fields.spec.js`; the three `ALLOWED`
+> entries now record the decision instead of the open question.
+
+**D15 — the export status line is owned centrally. FIXED 2026-09-19, authorized
+by Alan by name, across all filing types.**
+
+Found while diagnosing a pre-existing e2e failure, not part of any 57 item.
+
+What the filer saw: export a workbook, see "✓ Exported!", and watch it vanish a
+moment later with no sign the file was ever written. Each export and import
+ended with its own `setTimeout(() => el.textContent = '', 3000)` and nothing
+cancelled it, so the first action's timer was still armed when a second one
+finished within three seconds and wiped its message. A retry after a failed
+export is exactly that pattern, which is how
+`tests/e2e/vendor-loader-retry.spec.ts` caught it — and that test fails on
+`master` for this reason, not for the reason its own name suggests.
+`guardian-inventory/print.js` made it worse by clearing the shared
+`#export-status` outright in its own `finally`, so saving a PDF wiped the Excel
+export's confirmation immediately.
+
+> **LANDED.** `src/core/ui/transient-status.js` owns the element: any pending
+> clear is cancelled the moment anything else writes to it, so the only timer
+> that can fire is the one belonging to the message on screen. All four call
+> sites across the three filing families route through it, plus
+> `print.js`'s immediate clear. 6 cases in
+> `tests/unit/transient-status.spec.js`.
+>
+> **Noted, not fixed:** Annual and Simplified *exports* write no status at all
+> — no progress, and no confirmation on success; they surface a modal only on
+> failure. Only the Initial Inventory's export reports progress. That is a gap
+> in feedback rather than a defect, and it was not in scope here.
 
 ---
 
@@ -858,7 +938,7 @@ being frozen at export time.
 > the date of the order"*; Annual PART IX asks only *"Date of most recent
 > Receipt of Cash Assets"*. So this is the documented decision **not to write
 > either answer** — inventing a cell would put text on a court form the Clerk
-> did not design (§13, §2). What reaches the workbook is what always did: the
+> did not design (§5, §3). What reaches the workbook is what always did: the
 > date. `excel-write-targets.spec.js` enforces the absence by having no write
 > target for either field.
 >

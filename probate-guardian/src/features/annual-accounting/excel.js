@@ -21,6 +21,7 @@ import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import { planSchB4Export } from '../../core/excel/b4-export-plan.js';
 import { createBankAccountId } from '../../core/accounting/bank-accounts.js';
 import { alertModal } from '../../core/ui/dialogs.js';
+import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 
 const {
   renderPage, ensureTemplate, calcTotalsAnnual,
@@ -516,20 +517,20 @@ export async function doSaveExcel(){
 export async function importExcel(input){
   const file=input.files[0]; if(!file)return;
   const prog=getImportProgressEl(input);
-  if(prog)prog.textContent='Checking file…';
+  setStatus(prog,'Checking file…');
   const check=await validateImportFile(file,'xlsx');
   if(!check.ok){
-    if(prog)prog.textContent='✗ '+check.message;
+    setStatus(prog,'✗ '+check.message);
     input.value='';
     return;
   }
   const reader=new FileReader();
   reader.onerror=()=>{
-    if(prog)prog.textContent='✗ That file could not be read.';
+    setStatus(prog,'✗ That file could not be read.');
     input.value='';
   };
   reader.onload=async(e)=>{
-    if(prog)prog.textContent='Parsing Excel…';
+    setStatus(prog,'Parsing Excel…');
     try{
       // No template-cache write here — an imported file is extracted and
       // discarded, never retained (see the note above ensureTemplate()).
@@ -830,12 +831,12 @@ export async function importExcel(input){
       sanitizeObjectDataInPlace(D);
       autoSave();
       window.markFilingRevisionChanged?.('excel-import');
-      if(prog)prog.textContent='✓ Template loaded and data imported successfully.';
-      setTimeout(()=>{if(prog)prog.textContent='';},3000);
+      setStatus(prog,'✓ Template loaded and data imported successfully.');
+      scheduleStatusClear(prog);
       renderPage(getCurrentPage());
     }catch(err){
       console.error('Annual Accounting import failed:',err);
-      if(prog)prog.textContent='✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.');
+      setStatus(prog,'✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.'));
     }finally{
       input.value='';
     }

@@ -45,16 +45,17 @@ const ALLOWED = new Map([
   ['guardian|SUMMARY I |I8', 'amended form: dropdown default'],
   ['guardian|SUMMARY I |D26', 'safe deposit box: dropdown default'],
   ['guardian|SUMMARY I |H26', 'safe deposit box filed: dropdown default'],
-  // The court's form derives the bond period from the accounting period
-  // (=From_Date / =To_Date), but the app lets a filer enter a bond period of
-  // its own. Writing the filer's value keeps it visible; removing the write
-  // would silently discard a field they filled in. Flagged as an open
-  // question in MILESTONE-57-RESCOPE (D13) rather than decided here.
-  ['annual|PART IX |E21', 'bond period start: form derives it, app lets the filer set it'],
-  ['annual|PART IX |G21', 'bond period end: form derives it, app lets the filer set it'],
-  // Guardian #1's name. The form links it to PART I's Guardian by formula;
-  // the app keeps guardians[0].name as its own field. Same open question.
-  ['annual|PART II, III|F25', 'guardian 1 name: form links it to PART I D20'],
+  // The three cells the court's form computes for itself that the app writes
+  // a literal over. DECIDED 2026-09-19 (Alan, by name): conform to the form,
+  // allow the overwrite, warn on it. Removing the write would silently discard
+  // something the filer typed, so it stays -- but the divergence is no longer
+  // invisible: src/core/filing/form-derived-fields.js raises an advisory when
+  // the entered value differs from the one the form derives, and it surfaces
+  // on the print page through the existing renderOutputAdvisories() panel.
+  // See tests/unit/form-derived-fields.spec.js.
+  ['annual|PART IX |E21', 'bond period start: form derives it from the accounting period; overwrite allowed, advisory on divergence'],
+  ['annual|PART IX |G21', 'bond period end: form derives it from the accounting period; overwrite allowed, advisory on divergence'],
+  ['annual|PART II, III|F25', 'guardian 1 name: form links it to PART I; overwrite allowed, advisory on divergence'],
 ]);
 
 const dec = (s) => s.replace(/&apos;/g, "'").replace(/&quot;/g, '"')
