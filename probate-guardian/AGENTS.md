@@ -1,411 +1,238 @@
 # Agent Directives & Operational Rules
 
-This is the operating contract for anyone who commits to this repository —
-AI agents (Claude, Codex, Antigravity, or others) and human GitHub
-contributors alike. Probate Guardian produces Florida guardianship court
-filings, so data integrity and legal accuracy outweigh speed. Verify claims
-against the current codebase and authoritative sources rather than
-assumptions, scope changes deliberately, and defer to the requester on
-product, scope, and legal-interpretation calls. This document is the default
-contract for all work here; Section 2 covers deviations.
-
-## 0. Portfolio Archetype & Tech Stack Pinning (Approach A)
-
-This organization organizes projects across three standardized archetypes:
-
-- **Archetype 1 (Client-Side Static PWA)**: Vanilla ES Modules, Bootstrap, Web Crypto, client-side PDF/Excel generation.
-- **Archetype 2 (Python Data & Document Pipeline)**: Python 3.11+, Streamlit, PyMuPDF, OCR/LLM entity extraction, local crypto.
-- **Archetype 3 (Full-Stack Containerized Web App)**: React 19/TS/Vite/Tailwind frontend, FastAPI/SQLAlchemy/Alembic backend.
-
-### Pinned Stack for this Repository: Archetype 1 (Client-Side Static PWA)
-
-- **Runtime & Architecture**: Client-side transitional hybrid (classic script `legacy-app.js` + ES Modules in `src/main.js` and feature modules), native browser APIs.
-- **UI & Layout**: Vanilla JS + Bootstrap 5 CSS + custom styles. **No React, Vue, Svelte, or JSX.**
-- **Build & Dev Tooling**: Vite (dev server & bundle preview), Node.js (scripts & tooling).
-- **Testing Engine**: Vitest (unit testing) + Playwright (browser e2e specs). TypeScript (`tsc --noEmit`) checks a deliberately narrow slice — see **Type Check** below.
-- **Security & Crypto**: Web Crypto API (`SubtleCrypto` AES-GCM / PBKDF2), zero unencrypted cloud transmission.
-- **Document Generation**: `pdf-lib` / `pdfjs` client-side PDF compilation, `exceljs` spreadsheets.
-- **Persistence**: Local `.sav` JSON blobs (user-selectable AES-GCM encryption with password, or optional plaintext), single-source-of-truth CSV data dictionary.
-
-### Quick Command Reference
-
-- **Build / Dev Server**: `npm run dev`
-- **Lite Unit Test**: `npx vitest run tests/unit/<spec>.spec.js`
-- **Targeted E2E**: `npx playwright test tests/e2e/<spec>.spec.ts`
-- **Type Check**: `npm run check:types` — see Section 1 for when this applies.
-- **Data Model Verification**: `npm run verify:data-model`
-- **Full Regression (Ask First)**: `npm test`
+Operating contract for anyone who commits here — AI agents (Claude, Codex,
+Antigravity, others) and human contributors alike. Probate Guardian produces
+Florida guardianship court filings: **data integrity and legal accuracy
+outweigh speed.** Verify claims against the current codebase and
+authoritative sources, never assumptions — including a subagent's or
+reviewer's findings, and your own prior conclusions once new information
+surfaces. Scope changes deliberately; defer to the requester on product,
+scope, and legal-interpretation calls. This is the default contract; §3
+covers deviations.
 
 ---
 
-## 1. Git & Execution Discipline
+## 1. Quick Command & Tech Stack Reference
 
-- **Direct to Master**: Commit and push directly to `master`. Never create feature branches.
-- **Concurrent Collaboration**: Multiple agents and collaborators may work this tree, or push to `master`, at the same time.
-  - Sync with `master` before starting work.
-  - Check `git status`/`git log` before editing — don't assume a change you didn't make is stale or safe to overwrite.
-  - Commit only your own task's files; don't sweep in unrelated concurrent work unless asked.
-  - On a rejected push, pull/merge and resolve — never force-push over someone else's work.
-  - **Sub-delivery dependencies block parallelization, not just approval.** Before starting one sub-delivery of a split proposal alongside another agent's in-flight work, check its own **Relation** field — a stated prerequisite usually means real file-level overlap, not just doc-ordering. Precedent: Milestone 44 split 44A/44D/44B to one agent and 44C to another; 44C was blocked on 44B landing first because both touched the same four `plan-*/print.js` files and 44C's design consumed 44B's typed issue categories directly. Verify the actual file lists overlap before assuming a "wait" or "safe to parallelize" call.
-  - After another agent's sub-delivery lands, re-verify it directly (read the diff, re-run its tests) before building on it — a "Landed" status line in a proposal doc is a claim, not proof.
-- **Test Execution Gate**:
-  - **Lite by default**: run targeted specs selected from `TEST-INDEX.md` for what changed (e.g. `npx vitest run tests/unit/x.spec.js`, `npx playwright test tests/e2e/x.spec.ts`).
-  - **Type Check when in scope**: run `npm run check:types` whenever a change touches `src/core/types/`, `src/core/persistence/`, `src/core/navigation/`, or any `tests/e2e/support/*.ts` file — that's `tsconfig.json`'s actual `include` list, not the whole codebase. A file outside it can still get pulled into the checked program transitively (an included file importing it); if that happens and the file was never written with types in mind, add `// @ts-nocheck` with a one-line reason rather than retrofitting JSDoc nobody asked for.
-  - **Red-First Verification**: for a bug fix, `git stash push -- <the changed source file(s)>`, rerun the new/target test and confirm it fails for the *stated* reason (not just "fails"), `git stash pop`, rerun and confirm green. A test that passed without ever being seen to fail for the right reason hasn't been verified — it can't distinguish a real fix from a vacuously-true assertion.
-  - **Recommend, then ask, for complex changes**: before commit/push, recommend a full regression run (`npm test`) with reasons if the change is broad, cross-cutting, or touches shared/core modules — never run it without explicit go-ahead. A change relevant to Section 11's packaging (anything affecting what ships in `dist/portable`) should specifically recommend `npm run test:e2e:portable`, since the default targeted-spec pass never exercises that build.
+| Task | Command |
+| --- | --- |
+| Dev server | `npm run dev` |
+| Targeted unit spec | `npx vitest run tests/unit/<spec>.spec.js` |
+| Targeted e2e spec | `npx playwright test tests/e2e/<spec>.spec.ts` |
+| Type check (scoped — see §2) | `npm run check:types` |
+| Data model verification | `npm run verify:data-model` |
+| Portable-build e2e (packaging changes, §9) | `npm run test:e2e:portable` |
+| **Full regression — ask first (§2)** | `npm test` |
+
+**Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
+Vanilla ES Modules + classic script hybrid (`legacy-app.js` + `src/main.js`
+and feature modules) · Bootstrap 5 CSS, no framework (**no React/Vue/Svelte/
+JSX**) · Vite (dev/build) · Vitest (unit) + Playwright (e2e) · TypeScript
+(`tsc --noEmit`, checked scope only — §2) · Web Crypto (`SubtleCrypto`
+AES-GCM/PBKDF2), zero unencrypted cloud transmission · `pdf-lib`/`pdfjs` and
+`exceljs` for court output · local `.sav` JSON persistence (optional
+password encryption), `probate-guardian-data-model.csv` as schema
+single-source-of-truth.
+
+This org also runs Archetype 2 (Python 3.11+/Streamlit/PyMuPDF data
+pipelines) and Archetype 3 (React/FastAPI full-stack) projects elsewhere —
+irrelevant to this repo's code, but relevant to §2's Python note if you ever
+touch Archetype 2 tooling from this machine.
+
+---
+
+## 2. Git, Concurrency & Execution Discipline
+
+- **Direct to master.** Commit and push directly; never create feature branches.
+- **Concurrent tree.** Multiple agents/collaborators may edit or push at the same time.
+  - Sync with `master` before starting; `git status`/`git log` before editing — a change you didn't make is not stale by default.
+  - Commit **only your own task's files**; never sweep in unrelated concurrent work.
+  - Rejected push → pull/merge and resolve; never force-push over someone else's work.
+  - **A stated sub-delivery prerequisite usually means real file overlap, not doc-ordering** — verify the actual file lists before assuming "safe to parallelize." (Precedent: Milestone 44's 44C was genuinely blocked on 44B because both touched the same `plan-*/print.js` files and 44C consumed 44B's typed issue categories directly.)
+  - A "Landed" status line in a proposal doc is a claim, not proof — re-read the diff and re-run its tests before building on it.
+- **Test execution gate:**
+  - **Lite by default** — targeted specs from `TEST-INDEX.md` for what changed.
+  - **Type check when in scope** — run `check:types` if the change touches `src/core/types/`, `src/core/persistence/`, `src/core/navigation/`, or any `tests/e2e/support/*.ts` file (`tsconfig.json`'s real `include` list — not the whole repo). A file outside that list can still get pulled in transitively (an included file importing it); if so and it was never written with types in mind, add `// @ts-nocheck` with a one-line reason rather than retrofitting JSDoc nobody asked for (see §10, P5).
+  - **Red-first verification, required for bug fixes** — `git stash push -- <changed file(s)>`, rerun the new/target test, confirm it fails for the *stated* reason (not just "fails"), `git stash pop`, rerun and confirm green. A test never seen failing for the right reason is unverified — it can't tell a real fix from a vacuous assertion.
+  - **Full regression needs explicit go-ahead** — recommend `npm test` (with reasons) for broad/cross-cutting/shared-module changes; never run it unprompted. Packaging-relevant changes (§9) should specifically recommend `npm run test:e2e:portable`, which the default targeted pass never exercises.
   - **Skip tests** for documentation-only changes.
-- **Portable Paths**: Prefer repo-relative paths over absolute ones — contributors use different machines/OSes. On Windows, use forward slashes in tool/search arguments; backslashes can be misread as escapes.
-- **Python Invocation on Windows**: Invoke Python as `python` (or `py`), never `python3`. On this org's Windows dev machines, `python3` resolves to a Microsoft Store "App Execution Alias" stub — a real file on `PATH`, so naive detection (`shutil.which`, `where`) reports it as found, but running it just prints an install nag and exits non-zero. `python` is the genuine interpreter. This applies to Archetype 2 work and any tool/skill that shells out to Python from this machine; it does not apply to Linux/macOS end-user instructions (`HOW-TO-RUN.txt`'s Linux section), where `python3` is correct and standard. The general lesson — a `PATH` hit is not proof an executable actually runs — applies to any future interpreter-detection logic, not just this one case.
-- **Verify Commit Citations**: Never cite a commit SHA or reference without directly checking it via `git log`/`git rev-parse` in tool output first.
+- **Portable paths.** Prefer repo-relative paths. On Windows, forward slashes in tool/search args — backslashes can be misread as escapes.
+- **Python on Windows: use `python` or `py`, never `python3`.** `python3` resolves to a Microsoft Store alias stub — a real file, so `PATH` lookups (`shutil.which`, `where`) report it as found, but running it just prints an install nag and exits non-zero (see §10, P4). Doesn't apply to Linux/macOS end-user docs (`HOW-TO-RUN.txt`), where `python3` is correct. General lesson: a `PATH` hit is never proof an executable works — applies to any future interpreter-detection logic too.
+- **Commit messages** state what changed, the observable reason (§3's "lead with impact" rule applies here too), and the verification evidence (tests run, red-first result) — not just a summary of the diff.
+- **Verify commit citations** — never cite a SHA without checking it via `git log`/`git rev-parse` first.
 
 ---
 
-## 2. Choice-Driven Prompts & Case-by-Case Overrides
+## 3. Decision Gating & Communication Rules
 
-- **Choice-Driven Prompts**: For trade-offs, scope ambiguities, test-suite runs, schema migrations, or other deviations from baseline, present clear choice-driven options (numbered, with a recommended one) and each option's concrete implications.
-- **Ask at the moment the decision is identified — not later, and not bundled.** The instant a decision surfaces that is the requester's to make, put it as a choice. Don't carry it forward to the end of the task, fold it into a summary, bury it in prose, or answer it yourself and mention the assumption afterwards. A decision surfaced late has usually already been silently made by the work built on top of it, and unwinding that costs more than the question ever would have.
-  - This applies to decisions found **mid-execution**, not just at scoping. Finding one is a reason to stop and ask, not a reason to pick the plausible option and keep going.
-  - It applies to a decision the requester **already answered** when new information changes what that answer costs. If an option was chosen on a stated trade-off and the trade-off turns out to be different, re-present it.
-  - Where a choice is genuinely blocking, say so and stop. Where it is not, other work can continue while the question stands, but the question still goes out immediately.
-  - Prose paragraphs describing options are not choices. Use the same numbered, recommended, consequence-labelled form as any other choice-driven prompt.
-- **Explaining the options**: state each implication as what the requester or a filer would observe, not as a mechanism — see Section 12.
-- **User-Approved Overrides**: An explicit user selection overrides baseline rules for that task/session only — baseline resumes immediately after.
-- **Proposal & Milestone Gating**:
-  - A `MILESTONE-*-PROPOSAL.md` marked **Draft**, or stating it authorizes no change, is a proposal, not a work order.
-  - Don't implement any part of it until the requester explicitly approves that specific delivery by name.
-  - Approval of one sub-delivery in a split proposal does not authorize the others.
-  - If approval status is unclear — including from another session or agent — ask before implementing.
+**Choice-driven prompts.** For trade-offs, scope ambiguity, test-suite scope, schema migrations, or any deviation from baseline: numbered options, one recommended, each with its concrete implication stated as what the requester/filer would *observe* (see "Lead with impact," below) — not as a mechanism.
 
----
+- **Ask the instant a decision surfaces — mid-execution counts.** Don't carry it to a summary, bury it in prose, or silently pick the plausible option. A decision surfaced late has usually already been made by the work built on top of it.
+- **Re-ask an already-answered decision if its cost changed.** An answer was only ever valid against the trade-off it was given for.
+- **Blocking → stop and say so.** Non-blocking → keep working, but still ask immediately.
+- Prose describing options is not a choice-prompt; use the numbered/recommended/consequence form.
 
-## 3. Data Model & Schema Governance
+**Milestone & proposal draft gating.**
 
-- **Data Model Single Source of Truth**: Any change to persisted data shape (new/renamed field, min/max count, default, enum domain) must update `probate-guardian-data-model.csv` in the same commit, and pass `npm run verify:data-model`.
-- **Non-Destructive Toggling**: Hiding a section or unchecking a toggle (e.g. advance directives, co-guardians) must never delete entered data — re-checking must restore it. Deletions require an explicit user action.
-- **Explicit Tristate Binary Values**: Binary fields store `''` (unanswered), `'Yes'`, or `'No'`. Never default or coerce an unanswered field to `'No'`, at any stage.
-- **Collection Sizing & Shape Factories**:
-  - Guardian signature cards default to 1 (`initial_item_count: 1`) with explicit Add/Remove for co-guardians.
-  - Advance directive detail cards default to 0 (`initial_item_count: 0`), rendering only when the execution toggle is active.
-  - Always use form-specific row factories; never share generic factories across forms with differing schemas.
+- A `MILESTONE-*-PROPOSAL.md` marked **Draft**, or stating it authorizes no change, is a proposal — not a work order.
+- Never implement any part without the requester's explicit named approval of that specific delivery.
+- Approving one sub-delivery of a split proposal (e.g. 38A/B/C/D) authorizes only that one.
+- Approval status unclear (including from another session/agent) → ask before implementing.
 
----
+**User-approved overrides** apply for that task/session only; baseline resumes immediately after.
 
-## 4. Readiness vs. Export Validation Invariant
+**Explaining defects, fixes & decisions — lead with what a filer observes, then the mechanism.** A fix described only in property/selector/function names doesn't tell the reader whether it matters or what it costs a real user. This is not a request for *less* detail — for depth, keep going; just put the stakes first.
 
-- **The Parity Invariant**:
-  - Every `auto` readiness item must map 1-to-1 to an export validation error.
-  - A filing that passes export validation must never be blocked in the readiness panel.
-- **Strict `auto` vs. `manual` Separation**:
-  - `auto`: machine-verifiable data blockers (missing required fields, bad date order, incomplete grids).
-  - `manual`: unobservable procedural duties (attaching physical reports, serving parties, paying fees) — non-blocking, must never trigger `auto: false` or halt export.
-- **Pro Se Protection**: Never make attorney certification fields mandatory blockers on unrepresented or Chapter 393 Guardian Advocate filings. Skip attorney validation if no attorney is entered.
-- **Bypassable Output Acknowledgement**:
-  - After an affirmative override, court output generates faithfully — no draft watermarks, filename changes, or degraded formatting. Validation issues stay visible in the UI.
-  - Non-bypassable issues (data-integrity conflicts, format-capacity overflow, generation failures) are never overridden.
+> **Badly formed:** "`.highlightEditor` sets `pointer-events: none` so a highlight doesn't intercept clicks on the page beneath it — and a child toolbar inherits that. Added `pointer-events: auto`."
+> The requester's actual response: *"this means almost nothing to me"* — correctly; every noun is an implementation detail.
+>
+> **Correctly formed:** "When you select a highlight, a small toolbar appears beside it with a color swatch and a delete button. Highlights ignore mouse clicks so that clicking highlighted text still reaches the page underneath — the toolbar inherits that. The toolbar would have looked right and done nothing when clicked: a delete button that doesn't delete."
+
+In practice: open with one sentence a non-engineer could act on (*what breaks, for whom, when*). A verdict ("incomplete/unsafe conversion") is not an explanation — name the symptom. An invariant ("this must never gate export") is not an explanation either — say "a guardian who entered a bank account but hasn't attached a statement can still file." Prefer numbers to adjectives ("~450px" beats "a layout problem"). If a sentence would read identically to someone who's never used this app, it's mechanism-only — rewrite it.
 
 ---
 
-## 5. Legal Hierarchy & County Policy Gating
+## 4. Data Model, Tri-State & Schema Governance
 
-- **Authority Hierarchy**: Florida Statutes & Probate Rules > Circuit Administrative Orders > Clerk Workslips (`GD*.docx` internal audit guidelines).
-- **County Gating**: Circuit-specific requirements (e.g. 6th Circuit AO 2024-025 Disaster Plan, local service rules) gate via `src/core/filing/county-guidance.js` (Pinellas/Pasco only) — never shown as mandatory statewide requirements for other counties.
+- **Single source of truth**: any persisted-shape change (new/renamed field, min/max count, default, enum domain) updates `probate-guardian-data-model.csv` in the same commit and passes `npm run verify:data-model`.
+- **Non-destructive toggling**: hiding a section / unchecking a toggle never deletes entered data — re-checking restores it. Deletion requires an explicit user action.
+- **Tri-state, never coerced**: binary fields store `''` (unanswered) / `'Yes'` / `'No'`. Never default or coerce unanswered → `'No'`, at any stage.
+- **Collection factories**: guardian cards default to 1 (`initial_item_count: 1`, explicit Add/Remove for co-guardians); advance-directive cards default to 0, rendering only when the execution toggle is active. Always form-specific row factories — never share generic ones across forms with differing schemas.
 
----
+**Readiness vs. export validation invariant:**
 
-## 6. UI, DOM & Event Handling
-
-- **Form Event Binding (`data-form-path`)**:
-  - Text/date/select inputs read `event.target.value`; checkboxes read boolean `event.target.checked` (or tri-state string).
-  - Binary radio pairs write string `'Yes'`/`'No'` and must be wrapped in semantic `<fieldset>`/`<legend>`.
-- **`data-form-action` controls should be `<button>`, not `<a href="#">`.** A real incident: `summary-renderer.js` rendered Summary-page navigation links as `<a href="#" data-form-action="navigate">`. The shared dispatcher called `window.navigate()` on click but never `event.preventDefault()`, so the anchor's own default action for `href="#"` also fired right behind it, resetting the URL hash and silently bouncing every click back to the Cover page a moment later. It shipped because the one existing test called `window.navigate()` directly instead of clicking the link. Two rules follow: a control that doesn't need to be an openable/copyable link should be a `<button type="button">` (the sidebar nav already does this correctly); any exception that must render as a real anchor needs `event.preventDefault()` handled in the shared dispatcher. An e2e test asserting a UI affordance's behavior should drive the actual interaction (click), not call the underlying `window.*` function directly — that's the only way this class of bug gets caught.
-- **Dynamic Array Re-indexing**: Deleting an item requires a full DOM re-render of the card container to prevent stale `data-form-path` index bindings (e.g. `guardians.2.name` shifting to `guardians.1.name`). Deleting a guardian must cleanly unlink its `partyId`.
-- **Case Resolution Fallback**: Centralize case identification through `src/core/case-resolver.js`. For Plan Minor, always fall back across `ward.ucn || ward.ref || ''`.
-- **Vocabulary — `ward` means filing**: in code, `caseFile.wards[]`, `wardId`, `activeWardId`, `activateWard`, `switchWard`, `unloadWard` and the like refer to **one filing instance**, for historical reasons predating the Party model. The person is a `Party` (`src/core/party-resolver.js`; the ward's canonical county lives on that Party per Milestone 40C-1). New code should prefer `filing` terminology where practical (a new `filingId` parameter over a new `wardId` one) without renaming existing identifiers at sites not otherwise being touched.
+- Every `auto` readiness item maps 1-to-1 to a real export validation error; a filing that passes export must never show blocked in the readiness panel.
+- `auto` = machine-verifiable blockers (missing fields, bad date order, incomplete grids). `manual` = unobservable procedural duties (attaching reports, serving parties, paying fees) — non-blocking, must never flip `auto: false` or halt export.
+- **Pro se / Ch. 393 Guardian Advocate protection**: never make attorney-certification fields mandatory blockers on an unrepresented filing — skip attorney validation entirely if no attorney is entered.
+- **Bypassable output acknowledgement**: after an affirmative override, court output still generates faithfully (no watermark/filename/formatting degradation); issues stay visible in the UI. Non-bypassable issues (data-integrity conflicts, format-capacity overflow, generation failures) are never overridable.
 
 ---
 
-## 7. Test Suite & Index Governance
+## 5. Court Form Authority & Calculation Rules
 
-- **Test Index Sync (`TEST-INDEX.md`)**: Whenever you add, delete, rename, repurpose, or rescope a test file, update `TEST-INDEX.md` in the same commit.
+**Authority hierarchy**: Florida Statutes & Probate Rules > Circuit Administrative Orders > Clerk Workslips (`GD*.docx`). Circuit-specific rules (e.g. 6th Circuit AO 2024-025, local service rules) gate through `src/core/filing/county-guidance.js` (Pinellas/Pasco only) — never presented as mandatory statewide for other counties.
 
----
+**The three embedded workbooks in `templates/` are not an export target — they are the Pinellas County Clerk's own instruments.** Where they define a calculation, threshold, fee, or which schedules roll into a total, that is **authoritative**. Not to be improved on, inferred around, or re-derived from statute.
 
-## 8. Milestone & Feature Planning: Cross-Cutting Ramifications
-
-A `MILESTONE-*-PROPOSAL.md` (or any feature plan) must address the items
-below before it's treated as ready to execute — a plan silent on these
-isn't finished; find the answer while scoping, don't leave it for
-implementation or review to discover.
-
-- **Data Model**: Does this add, rename, or reshape persisted data? Name the exact `probate-guardian-data-model.csv` rows needed (Section 3), and check whether the collection they belong to is already fully expanded — one summary row does not mean it is.
-- **Legacy Data Migration**: Does this touch data that could already exist in a `.sav` file? State the migration/inference rule explicitly — a missing new field must never silently resolve to a value less complete than what already existed under today's rules.
-- **Fixture & Factory Audit**: A new required/blocking rule needs the same treatment as legacy migration above, aimed at tests instead of saved files: grep every `fillMinimalValid*Ward()`, `BASELINE`, and fixture factory for the filing type(s) touched, and add the new field wherever a sibling required field already appears. Milestone 55D added one new required field across four filing types and it took three separate rounds of discovery — two e2e ward fixtures, two unit-test fixtures, then two more e2e cases only found by running the full suite — because nothing prompted a systematic check up front. Doing the grep during scoping is one pass instead of three.
-- **Test Coverage & Index**: Name the actual new or changed test files the plan implies, not just "add coverage," and track the resulting `TEST-INDEX.md` update (Section 7) as part of the plan itself.
-- **Export/Import/Portability**: Does this interact with any existing export, import, or backup path (single-ward export, full case export, PDF/Excel export)? Check that path's actual code rather than assuming it carries new data along for free.
-- **Security & Sensitivity**: New stored data needs an explicit sensitivity classification and a stated threat model — what it actually protects against, and what it doesn't — never implying a stronger guarantee than the mechanism provides.
-- **UI/UX Consistency**: Prefer this app's existing patterns (card layout, label conventions, accessibility structure) over inventing a new one, and name the pattern being reused.
-- **Legal/Compliance Framing**: Never assert or resolve a legal-sufficiency question in a planning document — flag it for a qualified person to check, and be precise about what this app's own validation does and does not guarantee.
+- **Read the template before proposing/designing/changing any calculation.** Base64 in `templates/{annual,guardian,simplified}-template.js`; unzip and read `xl/workbook.xml`, `xl/sharedStrings.xml`, sheet XML (with a real parser — §10, P2). Milestone 57 lost hours holding items open for authority already sitting in the file: **57E-2** was deferred "pending a fee formula" that was already printed in the workbook (annual `PART II/III` rows 13-17; guardian `PART V` rows 7-9). **"Does Schedule C belong in the audit-fee base?"** — `SUMMARY I` B39 answers it directly (`=H32+H38`, Schedules A/B only). **57F** proposed writing ward name/case number onto 54 worksheets that already pull them by formula from defined names `Name_of_Ward`/`Case_Number` — the "fix" would have destroyed the propagation it meant to create.
+- **Push back on, don't defer, any change that alters a calculation** — fee tiers/thresholds, which schedules feed a total (and each one's sign), bond/audit-fee bases, rounding/percentage/apportionment, anything that changes a number a filer submits. Refuse to build it until checked against the template and any divergence is disproved or consciously accepted by Alan, by name, with the reason recorded. Matching the template needs no permission; diverging from it is a **legal-accuracy defect by default**.
+- **Never write into a formula cell.** The app writes inputs; the template's formulas compute totals. Overwriting one with a literal is silent — the file still opens, the number is just wrong forever after (this is how Milestone 57D became a critical regression).
+- **Verify a formula survived by reading the exported file, never by re-importing it** — the importer reads by address and evaluates nothing, so it agrees with a broken exporter perfectly (§10, P2 — this is exactly how two real corruptions survived a full test suite for their entire lives).
+- **When a proposal and the template disagree, the template wins** — say so plainly and correct the document.
 
 ---
 
-## 9. Form Architecture & 3-Tier Target Composition
+## 6. UI Component Tiers, DOM & Event Handling
 
-When scaffolding new forms or executing authorized milestone refactors, adhere to a 3-tier hierarchical component target:
+**3-tier form architecture** (scaffolding new forms / authorized refactors only):
 
 ```text
-Tier 1: Atomic Field Primitives (types, masks, formatting, validation attributes)
+Tier 1  Atomic Field Primitives (types, masks, formatting, validation attrs)
    ↓
-Tier 2: Centrally Managed Card Templates (identity, case header, attorney, demographics)
+Tier 2  Centrally Managed Card Templates (identity, case header, attorney, demographics)
    ↓
-Tier 3: Declarative Form Composition (pages assemble sequences of cards)
+Tier 3  Declarative Form Composition (pages assemble sequences of cards)
 ```
 
-- **Tier 1 (Field Primitives)**: Centralize atomic field renderers (text, date, currency, phone, masked SSN/EIN, tri-state radios) in `src/core/form/form-fields.js`. Prefer canonical primitives for new fields over writing raw, unadorned `<input>` tags.
-- **Tier 2 (Card Templates)**: Centralize common structural sections (e.g. Case Caption, Ward Demographics, Guardian & Attorney Information) as reusable card components consuming Tier 1 primitives.
-  - *Collection Grid Boundary*: Collection cards with divergent statutory schemas (e.g. accounting asset schedules vs. plan residence logs) must use **form-specific row factories** (Section 3) to prevent cross-form schema bleeding.
-- **Tier 3 (Form Composition)**: Form pages act as declarative orchestrators composing card templates and form-specific collections, keeping lifecycle logic (mount/dispose/nav) separate from DOM markup generation.
-- **Scope & Legacy Maintenance**: Existing forms contain legacy markup and specialized controls (e.g. `Plan Annual`, `Guardian Inventory`). Localized bug fixes and maintenance tasks to existing form views must not be blocked by, nor forced into, an unauthorized whole-form 3-tier refactor.
+- **Tier 1**: centralize in `src/core/form/form-fields.js` (text, date, currency, phone, masked SSN/EIN, tri-state radios) — prefer these over raw `<input>`.
+- **Tier 2**: reusable card components (Case Caption, Ward Demographics, Guardian & Attorney) consuming Tier 1. Collection cards with divergent statutory schemas (accounting schedules vs. plan residence logs) use **form-specific row factories** (§4) — never cross-form generic ones.
+- **Tier 3**: pages orchestrate cards; lifecycle (mount/dispose/nav) stays separate from markup generation.
+- **Legacy scope**: `Plan Annual`/`Guardian Inventory` and similar carry legacy markup — a localized fix must not be blocked by, or forced into, an unauthorized whole-form 3-tier refactor.
+
+**DOM & event handling:**
+
+- `data-form-path` inputs: text/date/select read `event.target.value`; checkboxes read boolean `event.target.checked` (or tri-state string); binary radio pairs write `'Yes'`/`'No'` inside a semantic `<fieldset>`/`<legend>`.
+- **`data-form-action` controls should be `<button>`, not `<a href="#">`.** A real incident (§10, P3): Summary-page links rendered as anchors, the shared dispatcher called `window.navigate()` without `event.preventDefault()`, and the anchor's own `href="#"` default action fired right behind it — silently bouncing every click back to Cover. Rule: use `<button type="button">` unless the control genuinely needs to be an openable/copyable link, in which case the dispatcher must call `preventDefault()`. Corollary: a UI-affordance e2e test must drive the real click, never call the underlying `window.*` function directly — that's the only way this bug class gets caught.
+- **Dynamic array re-indexing**: deleting an item needs a full re-render of the card container (stale `data-form-path` indices otherwise, e.g. `guardians.2.name` → `guardians.1.name`); deleting a guardian must cleanly unlink its `partyId`.
+- **Case resolution**: centralize through `src/core/case-resolver.js`; Plan Minor always falls back `ward.ucn || ward.ref || ''`.
+- **Vocabulary — `ward` means filing.** `caseFile.wards[]`, `wardId`, `activeWardId`, `activateWard`, `switchWard`, `unloadWard` all mean **one filing instance** (historical, predates the Party model). The person is a `Party` (`src/core/party-resolver.js`; canonical county lives there per Milestone 40C-1). Prefer `filing` terminology in new code without renaming untouched existing identifiers.
+
+**Design system:**
+
+- `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is authoritative. Semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`) — no arbitrary hex in component stylesheets, except token definitions themselves, vendor styles, print/court-output styles (hardcoded for print fidelity), embedded SVGs, and high-contrast overrides.
+- Light/Dark via `tokens.css` + a synchronous pre-paint script (`src/prepaint.js`) to avoid FOUC.
+- UI-only preferences (theme, display) live in `localStorage`, never `.sav`/case state (nothing sensitive; must be synchronously readable pre-paint, which encrypted/async case state can't guarantee) — see `src/core/theme-preference.js` (`pg-theme-v1`).
+- Icons via `icons.js`/`ic(name, size)`; any icon inside `<button>`/`<a>` needs an accessible name (`aria-label`, `title`, or visible text).
+- `.entry-card`/`.summary-box` with `cards.css`'s container queries for consistent multi-column layout.
 
 ---
 
-## 10. UI Styling & Design System Governance
+## 7. Test Suite & TEST-INDEX Governance
 
-- **Authoritative Styles**: `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is the authoritative source of truth for this repository's design system.
-- **Design Tokens**: Standardize UI colors on semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`). Avoid arbitrary hardcoded hex values in component stylesheets.
-  - *Allowed Exceptions*: Token definitions themselves, vendor styles, print/court-document output styles (which remain intentionally hardcoded for print fidelity), embedded SVG assets, and high-contrast accessibility overrides.
-- **Dark/Light Theme Engine**: Support both Light and Dark modes using `tokens.css`. Use a synchronous `<head>` pre-paint script (`src/prepaint.js`) to avoid theme flash (FOUC) on startup.
-- **UI Preference Persistence**: Theme and other pure UI-only display preferences (not case/filing data) belong in `localStorage`, never in `.sav`/case state — they carry nothing sensitive and must be readable synchronously before first paint, which an encrypted or async-loaded case file cannot guarantee. Theme follows this via `src/core/theme-preference.js` (key `pg-theme-v1`, read by `src/prepaint.js`).
-- **Iconography**: Use the lightweight SVG icon system (`icons.js` / `ic(name, size)`). When using icons inside interactive controls (`<button>`, `<a>`), always supply an accessible name via `aria-label`, `title`, or visible text.
-- **Card & Summary Anatomy**: Use standardized `.entry-card` and `.summary-box` classes with scoped container queries (`cards.css`) for consistent multi-column responsive layout across screens.
+- **`TEST-INDEX.md` sync is mandatory, same commit**: any test file add/delete/rename/repurpose/rescope updates its row. `tests/unit/test-index-guard.spec.js` enforces this mechanically — it fails on a spec with zero rows, more than one row, or a row naming a file that no longer exists.
+- **Red-first verification** (§2) is the required proof standard for any test claiming to catch a regression — a green test alone is not evidence.
 
 ---
 
-## 11. Packaging for External Hosting (DNN & Similar)
+## 8. Milestone Scoping & Cross-Cutting Checklist
 
-When the requester needs an installable package for a site they control
-outside this repo's own hosting (e.g. uploading to a DNN/DotNetNuke portal,
-or any host that serves this app from an arbitrary subfolder rather than its
-own domain root), use the **portable** build, not the web build:
+A `MILESTONE-*-PROPOSAL.md` (or any feature plan) must answer these during
+scoping — a plan silent on one of these isn't finished, and implementation or
+review discovering the gap costs more than asking would have:
 
-1. **Build it**: `npm run build` (builds both `dist/web` and `dist/portable`;
-   `npm run build:portable` alone is enough if only the package is needed).
-   `dist/web` is unsuitable for this purpose — `vite.config.js` hardcodes its
-   `base` to `/probate-guardian/`, so it only works mounted at exactly that
-   path. `dist/portable` uses a relative `base: './'`, so it works from any
-   folder a host puts it in. Treat `vite.config.js`'s top-of-file comment as
-   authoritative if this section and the code ever disagree.
-2. **Don't hand-pick files.** `dist/portable`'s contents are not fixed — Vite
-   content-hashes several filenames (`icon-192-<hash>.png`,
-   `manifest-<hash>.json`, the inlined bundle, etc.) and `vite.config.js`'s
-   `STATIC_COPY_TARGETS` list can gain or lose entries as the app evolves.
-   Always zip whatever `dist/portable` actually contains after a fresh build
-   — never reuse a file list or hashed filename from a previous package.
-3. **Zip the folder's *contents*, not the folder itself** — DNN (and most
-   static hosts) expect `index.html` at the root of the uploaded package, not
-   nested inside a `portable/` subfolder. On Windows, PowerShell's
-   `Compress-Archive` is more reliable for this than whatever `zip`/`7z`
-   happens to be on `PATH` (this machine's `zip` is a broken legacy build —
-   verify any zip tool actually recursed into subdirectories before trusting
-   it):
+1. **Data model** — exact `probate-guardian-data-model.csv` rows needed (§4); check the collection is already fully expanded (one summary row ≠ expanded).
+2. **Legacy data migration** — does this touch data that could exist in a `.sav` already? State the migration/inference rule explicitly; a missing new field must never silently resolve less complete than today's rules already produce.
+3. **Fixture & factory audit** — the test-fixture analog of #2: grep every `fillMinimalValid*Ward()`, `BASELINE`, and fixture factory for the touched filing type(s), and add any new required field wherever a sibling required field already appears. (Milestone 55D added one new field across four filing types and needed three separate discovery rounds — two e2e fixtures, two unit fixtures, two more e2e cases found only by the full suite — because this wasn't done up front.)
+4. **Test coverage & index** — name the actual new/changed test files, and track the `TEST-INDEX.md` update (§7) as part of the plan itself.
+5. **Export/import/portability** — does this touch any existing export/import/backup path? Check that path's real code; don't assume new data rides along for free.
+6. **Security & sensitivity** — explicit classification and threat model for new stored data — what it protects against, and what it doesn't, never implying more than the mechanism guarantees.
+7. **UI/UX consistency** — reuse this app's existing patterns (card layout, labels, a11y structure); name the pattern being reused.
+8. **Legal/compliance framing** — never assert or resolve a legal-sufficiency question in a planning doc; flag it for a qualified person, and be precise about what this app's validation does and doesn't guarantee.
+
+---
+
+## 9. Packaging & Portable Build Protocols
+
+For an installable package on a site this repo doesn't host (DNN/DotNetNuke, or any host serving from an arbitrary subfolder): use **`dist/portable`**, never `dist/web` (`vite.config.js` hardcodes `dist/web`'s base to `/probate-guardian/`; `dist/portable` uses relative `base: './'`). Treat `vite.config.js`'s top-of-file comment as authoritative if this section and the code disagree.
+
+1. **Build**: `npm run build` (both outputs; `build:portable` alone if only the package is needed).
+2. **Never hand-pick files.** Vite content-hashes several filenames and `STATIC_COPY_TARGETS` can gain/lose entries as the app evolves — always zip whatever `dist/portable` actually contains after a fresh build.
+3. **Zip the folder's contents, not the folder** — `index.html` must sit at the package root. On Windows, PowerShell's `Compress-Archive` beats whatever `zip`/`7z` is on `PATH` (this machine's `zip` is a broken legacy build — verify any tool actually recursed into subdirectories):
 
    ```powershell
    Compress-Archive -Path "dist\portable\*" -DestinationPath "<output>.zip" -Force
    ```
 
-4. **Verify before delivering.** Smoke-test the freshly built
-   `dist/portable/index.html` (it's designed to run via `file://`, matching
-   how a static host serves it) for console/page errors before zipping — a
-   throwaway Playwright script opening the file and checking
-   `page.on('pageerror'/'console')` for errors is enough; delete it after.
-   Confirm the zip actually contains the subdirectories (`lib/`, `icons/`,
-   `fragments/`, `help/`, `src/`), not just top-level files, before treating
-   the package as done. See Section 1's Test Execution Gate for when a full
-   `test:e2e:portable` pass is also warranted.
+4. **Verify before delivering.** Smoke-test `dist/portable/index.html` via `file://` for console/page errors (a throwaway Playwright script checking `page.on('pageerror'/'console')` is enough — delete it after). Confirm the zip contains `lib/`, `icons/`, `fragments/`, `help/`, `src/`, not just top-level files. Packaging-relevant changes should also recommend `npm run test:e2e:portable` (§2).
 
 ---
 
-## 12. Explaining Defects, Fixes & Decisions
+## 10. Technical Anti-Patterns & Post-Mortem Archive
 
-**Lead with what a filer would observe. Then the mechanism.** A defect, a fix
-or a trade-off described only in property names, selectors, function names or
-inheritance rules does not tell the reader whether it matters, whether the fix
-is right, or what it costs the person using the app. The observable
-consequence answers all three, and it is also what makes the mechanism worth
-reading afterwards.
+Quick-reference — full detail follows the table for P1/P2; P3–P6 are fully
+documented in their operational section (linked) and archived here only as
+an index entry, to avoid restating the same rule twice.
 
-This applies to chat, commit messages, milestone proposals, review handoffs
-and `TEST-INDEX.md` rows alike. It is not a request for less detail — detail
-is welcome, and welcome in depth. It is a request for the detail to arrive
-*after* the reader knows what is at stake.
+| # | Failure Mode | Trigger | Full Detail |
+| --- | --- | --- | --- |
+| P1 | Excel formula silently overwritten via a merged cell, a defined name, or a positional (`localSheetId`) index | Any write into the court-output workbooks | Below |
+| P2 | A regex over XML swallows a self-closing tag and attaches its attributes to the wrong element | Any XML/`.xlsx`/`.docx` inspection done with regex instead of a parser | Below |
+| P3 | `<a href="#">`'s native default action races a JS `navigate()` call and silently reverts it | Any `data-form-action` control rendered as a real anchor | §6 |
+| P4 | `python3` on Windows resolves to a Microsoft Store alias stub, not the real interpreter, even though `PATH` lookup finds it | Any subprocess Python invocation on this org's Windows machines | §2 |
+| P5 | `npm run check:types` rotted silently (10 uncaught errors, none real bugs) because it was never wired into the documented workflow | Any dormant, undocumented tooling script | §2 |
+| P6 | A new required/blocking validator rule breaks stale test fixtures in 2-3 unrelated locations, caught only by luck or a full-suite run | Any new requiredness rule added without a fixture grep | §8 |
 
-**A real example, kept because it is the one that prompted this rule
-(2026-09-18).**
+**P1 — Excel corruption, three mechanisms, none a direct write.** Check all three before touching an export:
 
-Badly formed:
+- **Merge.** ExcelJS redirects a write on any member of a merged range to the range's master cell. Simplified's period dates, written to `E14`/`H14` (both inside merged `D14:I14`), destroyed the `=H4` the Case Number box depended on.
+- **Defined name.** These workbooks propagate headers by *name* (`'SCH A INCOME p1'!D2` is literally `=Name_of_Ward`). Dropping the names on save left ~270 Annual cells reading `#NAME?`.
+- **Positional index.** `localSheetId` on a print area/custom view is a sheet *index*. Inserting sheets re-points it silently; 57D's twelve-account extension moved `PART XI`'s print area onto a register page, which then printed clipped.
 
-> `.highlightEditor` sets `pointer-events: none` so a highlight doesn't
-> intercept clicks on the page beneath it — and a child toolbar inherits that.
-> Contained but dead would have been worse than scattered. Added
-> `pointer-events: auto`.
+Both the merge and defined-name corruptions survived a full test suite for their **entire lives**, because the importer reads cells by address and evaluates nothing — it agrees with a broken exporter perfectly. Verify a formula survived by reading the *exported file*, never by re-importing it (§5).
 
-The requester's response was "this means almost nothing to me," and he was
-right: every noun in it is an implementation detail, and nothing in it says
-what would have gone wrong for anybody.
-
-The same fix, correctly explained:
-
-> When you select a highlight, a small toolbar appears beside it with a color
-> swatch and a delete button. Highlights are set to ignore mouse clicks so that
-> clicking highlighted text still reaches the page underneath — and the toolbar
-> inside inherits that. The toolbar would have looked right and done nothing
-> when clicked: a delete button that doesn't delete.
-
-**In practice:**
-
-- Open with one sentence a non-engineer could act on. *What breaks, for whom,
-  when.*
-- A verdict is not an explanation. "57B: incomplete/unsafe conversion" names a
-  judgment without naming a symptom; say what a filer loses or sees.
-- An invariant is not an explanation either. "This must never gate export"
-  becomes "a guardian who has entered a bank account but not yet attached a
-  statement can still produce and file the document."
-- Numbers over adjectives where they exist: "extended the page by ~450px" beats
-  "caused a layout problem."
-- If a sentence would read identically to someone who had never used this app,
-  it is probably mechanism-only — rewrite it.
-
----
-
-## 13. The Court's Own Forms Are the Calculation Authority
-
-The three embedded workbooks in `templates/` are not just an export target.
-They are the **Pinellas County Clerk's own instruments**, and where they define
-a calculation, a threshold, a fee, or which schedules roll into a total, that
-definition is **authoritative** and this app's job is to match it — not to
-improve on it, infer around it, or re-derive it from statute.
-
-**Before proposing, designing, or changing any calculation, read the
-template.** Decode it and look. The workbooks are base64 in
-`templates/{annual,guardian,simplified}-template.js`; unzip and read
-`xl/workbook.xml`, `xl/sharedStrings.xml` and the sheet XML. Formulas and
-defined names are right there. Several hours of Milestone 57 were spent
-holding items open for authority that was sitting in the spreadsheet the whole
-time:
-
-- **57E-2** was deferred indefinitely "pending a documented fee formula." The
-  audit fee schedules are printed in the workbooks (annual `PART II, III` rows
-  13-17; guardian `PART V` rows 7-9) and were already implemented exactly.
-  There is no trust-asset fee to formulate — that premise was invented, not
-  read.
-- **"Does Schedule C belong in the audit-fee base?"** looked like a question
-  for the Clerk. `SUMMARY I` B39 — the row literally captioned "VERIFIED
-  INITIAL INVENTORY OF GUARDIAN" — computes `H32+H38`, Schedules A and B only,
-  and `SUMMARY II` presents Schedule C as "Other Financial Information" with
-  no roll-up. Answered, in the file, in minutes.
-- **57F** proposed writing ward name and case number onto 54 worksheets. Those
-  sheets already pull them by formula from `Name_of_Ward` / `Case_Number`,
-  defined as `'PART I'!$C$5` / `$I$5`. Doing the "fix" would have destroyed
-  the propagation it was meant to create.
-
-**Push back on any change that alters how a calculation is performed.** Not
-"raise it afterwards" — refuse to build it until the template has been checked
-and the divergence is either disproved or consciously accepted by Alan, by
-name, with the reason recorded. This applies to:
-
-- fee tiers, thresholds, and the values they are compared against;
-- which schedules feed a total, and the sign of each;
-- bond and audit-fee bases;
-- rounding, percentage handling, and ward-share apportionment;
-- anything that changes a number a filer submits to the court.
-
-A calculation change that matches the template needs no permission. A
-calculation change that diverges from it is a **legal-accuracy defect by
-default**, whatever the reasoning behind it, because the filing is measured
-against the Clerk's form and not against ours.
-
-**Never write into a formula cell.** Where the workbook computes something —
-`SCH B-4 OTHER DISB SUMMARY p1`'s category totals, `SUMMARY I`'s roll-ups, the
-54 propagated headers — the app writes the inputs and leaves the formula
-alone. Overwriting a formula with a literal is how Milestone 57D became a
-critical regression, and it is silent: the file still opens, and the number is
-simply wrong from then on.
-
-**Three ways that has actually happened, none of them a direct write.** Check
-for all of them before touching an export:
-
-- **Through a merge.** ExcelJS redirects a write on any member of a merged
-  range to the range's master cell. Simplified's period dates were written to
-  `E14`/`H14`, both inside `D14:I14`, and destroyed the `=H4` the Case Number
-  box depends on. If a target cell is inside a merge, you are writing to the
-  master, whatever address you named.
-- **Through a defined name.** These workbooks propagate headers by *name* —
-  `'SCH A INCOME p1'!D2` is literally `=Name_of_Ward`. Dropping the names on
-  save left ~270 Annual cells reading `#NAME?`. A formula is only as intact as
-  what it refers to.
-- **Through a positional key.** `localSheetId` on a print area or custom view
-  is a sheet *index*. Inserting sheets re-points it silently; 57D's
-  twelve-account extension moved `PART XI`'s print area onto a register page,
-  which then printed clipped.
-
-**Verify a formula survived by reading the exported file, not by re-importing
-it.** The importer reads cells by address and never evaluates anything, so it
-agrees with a broken exporter perfectly — that is exactly why the Simplified
-Part I row shift and the defined-name strip both survived a full suite for
-their entire lives. See Section 14.
-
-**When a proposal and the template disagree, the template wins and the
-proposal is the thing that gets corrected.** Say so plainly and amend the
-document; do not build to a spec the court's own form contradicts.
-
----
-
-## 14. Parse Structured Formats With a Parser, Not a Regex
-
-When you inspect, verify or assert against XML — the `.xlsx` parts in
-`templates/*.js`, `.docx`, SVG, anything with a real grammar — **use a real
-parser**. Python's `xml.etree.ElementTree`, `JSZip` plus a DOM in a browser
-test, ExcelJS's own object model. Not a regex over the raw markup.
-
-This is a correctness rule, not a style preference, because the failure mode
-is silent and produces confident wrong answers rather than errors.
-
-**The concrete trap, which has now cost this repo twice in one session.**
-A spreadsheet cell may be self-closing. Given
+**P2 — the self-closing-tag trap.** Given
 
 ```xml
 <c r="C14" s="5"/><c r="D14"><f>H4</f><v>0</v></c>
 ```
 
-the natural-looking pattern `<c[^>]*r="([A-Z]+\d+)"[^>]*>(.*?)</c>` matches
-`r="C14"`, swallows the rest of that self-closing tag as if it were an opening
-tag, then scans forward to the *next* `</c>` — and reports D14's formula as
-living in C14. Every subsequent conclusion is drawn about the wrong cell.
+the natural-looking `<c[^>]*r="([A-Z]+\d+)"[^>]*>(.*?)</c>` matches `r="C14"`,
+swallows the rest of that self-closing tag as an opening tag, then scans to
+the *next* `</c>` — reporting D14's formula as living in C14. This produced
+two wrong findings in one session here: a set of Schedule B-4 total
+addresses off by a column (caught only because an e2e assertion failed
+against the real file), and a reported Simplified cover-page defect that
+didn't exist at all — the template was correct, and the real defect was
+elsewhere and would have been missed.
 
-That error produced two wrong findings here:
-
-- a set of Schedule B-4 total addresses that were off by a column, caught only
-  because an e2e assertion failed against the real file;
-- a reported defect in the Simplified workbook's cover page that did not
-  exist — the template was correct all along, and the real defect was
-  somewhere else entirely and would have been missed.
-
-**What this means in practice.**
-
-- Offline analysis of a template (scripts, scratch investigation) parses with
-  `xml.etree` or equivalent. If a throwaway script is worth trusting enough to
-  base a claim on, it is worth ten more lines to parse properly.
-- A finding derived from a regex over markup is **provisional** until
-  re-derived with a parser or confirmed against the real exported artifact.
-  Say so when reporting it, and do not write it into a milestone document as
-  established.
-- Prefer confirming against the **generated file** over the template where the
-  question is what a filer receives. The template says what the form intends;
-  only the export says what the app actually produces, and the two diverge —
-  that divergence is where the defects live.
-- Regex is fine for coarse, non-load-bearing work: counting sheets, finding
-  whether a name appears at all, locating a part to then parse. It is not fine
-  for anything that resolves to a cell address, a formula, or a value that
-  ends up in a filed document.
-
-The same reasoning applies to any format with a grammar: if the answer depends
-on structure, let something that understands the structure produce it.
+**Rule**: use a real parser for anything with a grammar — `xml.etree.ElementTree`, `JSZip` + a DOM in a browser test, ExcelJS's own object model. A regex-derived finding is **provisional** until re-derived with a parser or confirmed against the real exported artifact — say so when reporting it, and never write it into a milestone document as established. Regex is fine for coarse, non-load-bearing work (counting sheets, checking a name appears at all); never fine for anything resolving to a cell address, formula, or filed value. Prefer confirming against the **generated file** over the template where the question is what a filer receives — the two diverge, and that divergence is where defects live.
