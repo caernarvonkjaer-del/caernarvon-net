@@ -399,6 +399,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule C-4: Trusts',
     'Schedule C-4: Trusts',
     ['Trust Name', 'Trustee Name & Address', 'Date Created', 'Trust Amount / Value'],
+    // The trustee's NAME is deliberately passed as the first line, not as part
+    // of an address: this column is headed "Trustee Name & Address", so the
+    // name belongs on its own line above the address block rather than run
+    // into it with a comma. Confirmed by Alan, 2026-09-19. Same shape in C-5.
     (d.scheduleC4 || []).map(r => [r.trustName || '', composePdfAddressLines(r.trusteeName, r.trusteeAddress), fmtDate(r.dateCreated), fmt(r.trustAmount)]),
     'Schedule C-4 Total',
     totalC4,
@@ -413,6 +417,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule C-5: Joint / Other Property',
     'Schedule C-5: Joint / Other Property',
     ['Asset Description', 'Owner Name & Address', 'Relationship to Ward', 'Total Asset Value'],
+    // Owner's NAME on its own line above the address block -- see C-4 above;
+    // this column is likewise headed "Owner Name & Address".
     (d.scheduleC5 || []).map(r => [r.assetDescription || '', composePdfAddressLines(r.ownerName, r.ownerAddress), r.relationshipToWard || '', fmt(r.totalAssetValue)]),
     'Schedule C-5 Total',
     totalC5,
