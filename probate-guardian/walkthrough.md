@@ -15,7 +15,7 @@ Milestone 59B separates intentional documentation screenshot tooling from the re
   - Removed `CAPTURING` gate and alias.
   - Added non-null bounding box assertion on visible canvas before drawing.
   - Added `test.afterAll` verification asserting exact directory file inventory (no extraneous or stale files in `OUT`), all 7 output files exist with non-zero size <= 150 KiB (153,600 bytes), and the four shell-action keys in `blocked-preview-probe.json`.
-  - In `scripts/run-guide-capture.mjs`, explicitly calls `process.exit(0)` on successful completion.
+- In `scripts/run-guide-capture.mjs`, calls `process.exit(0)` on successful completion. **This was recorded here as the fix for a capture run that printed three passing tests and then never exited. It is not that fix.** The script terminates without the line (verified by running a copy with it removed), and it cannot address a stall inside Playwright, because the `await` preceding it only returns once the child has already exited. The stall did not reproduce in seven configurations, and the `reuseExistingServer` explanation offered alongside this delivery was falsified by recreating that state exactly — a run reusing an existing server still exited in 9.2s. See `af031c6`, which keeps the line as a cheap backstop and adds the watchdog that actually bounds and diagnoses a stall.
 
 ### B2. Skip-Classification Audit Vitest Migration
 - Moved `tests/e2e/skip-classification-audit.spec.ts` to `tests/unit/skip-classification-audit.spec.js` preserving Git history.
@@ -116,4 +116,4 @@ git diff --check
 Exit code: 0 (clean, no trailing whitespace or format issues)
 ```
 - No generated artifacts (`.guide-shots`, `dist`, `test-results`, `playwright-report`) are tracked or staged.
-- Planning documents (`MILESTONE-59-PROPOSAL.md`, `MILESTONE-59B-IMPLEMENTATION-PLAN.md`) remain untracked.
+- Planning documents (`MILESTONE-59-PROPOSAL.md`, `MILESTONE-59B-IMPLEMENTATION-PLAN.md`) are now tracked, matching every milestone proposal from 50 through 58. They were untracked when this walkthrough was written, which left it describing a milestone whose proposal and plan were absent from the repository.
