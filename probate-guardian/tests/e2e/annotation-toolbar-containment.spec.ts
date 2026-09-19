@@ -52,6 +52,10 @@ async function highlightSomeText(page: Page) {
     sel?.addRange(r);
     span.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
   });
+  // Retained deliberately (Milestone 59C-3): PDF.js creates its highlight
+  // editor asynchronously with no event or DOM flag marking completion, and
+  // this helper cannot assert on .highlightEditor because some callers expect
+  // none. Same reasoning as highlight-toolbar-style.spec.ts.
   await page.waitForTimeout(1200);
 }
 
@@ -63,6 +67,7 @@ test.describe('annotation editor toolbars stay contained (reported 2026-09-18)',
 
     await page.locator('[data-annotate-action="toggle"]').click();
     await page.locator('[data-annotate-action="highlight"]').click();
+    // Retained (59C-3): PDF.js highlight mode exposes no ready state.
     await page.waitForTimeout(400);
     await highlightSomeText(page);
 
@@ -93,6 +98,7 @@ test.describe('annotation editor toolbars stay contained (reported 2026-09-18)',
     await openPreview(page);
     await page.locator('[data-annotate-action="toggle"]').click();
     await page.locator('[data-annotate-action="highlight"]').click();
+    // Retained (59C-3): PDF.js highlight mode exposes no ready state.
     await page.waitForTimeout(400);
     await highlightSomeText(page);
 

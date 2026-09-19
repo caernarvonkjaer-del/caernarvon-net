@@ -46,6 +46,13 @@ async function highlightSomeText(page: Page) {
     sel?.addRange(r);
     span.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
   });
+  // Milestone 59C-3 retained this one deliberately. PDF.js's highlight editor
+  // is created asynchronously by its own annotation layer, which exposes no
+  // event or DOM flag for "the editor you just caused now exists" -- callers
+  // assert on .highlightEditor afterwards, but this helper cannot, because
+  // some callers legitimately expect zero editors. Converting it means
+  // reaching into PDF.js internals for a 6-test surface, which is 59C-2/PDF
+  // territory rather than a wait replacement.
   await page.waitForTimeout(1200);
 }
 
@@ -53,6 +60,8 @@ async function makeHighlight(page: Page) {
   await openPreview(page);
   await page.locator('[data-annotate-action="toggle"]').click();
   await page.locator('[data-annotate-action="highlight"]').click();
+  // Retained (59C-3): entering highlight mode is PDF.js-internal and surfaces
+  // no observable ready state. See the note in highlightSomeText().
   await page.waitForTimeout(400);
   await highlightSomeText(page);
   await expect(page.locator('.highlightEditor')).toHaveCount(1);
@@ -163,7 +172,13 @@ test.describe('Milestone 55A Option B: Highlight editor toolbar', () => {
       .evaluate((el) => getComputedStyle(el).fill);
 
     await options.nth(1).click(); // Green
-    await page.waitForTimeout(400);
+    // Milestone 59C-3: wait for the repaint this test is asserting, rather
+    // than sleeping 400ms and assuming it landed. The assertion below is kept
+    // unchanged for its failure message.
+    await expect
+      .poll(() => page.locator('#print-doc-container svg.highlight').first()
+        .evaluate((el) => getComputedStyle(el).fill))
+      .not.toBe(fillBefore);
 
     const fillAfter = await page.locator('#print-doc-container svg.highlight').first()
       .evaluate((el) => getComputedStyle(el).fill);

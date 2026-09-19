@@ -323,7 +323,7 @@ no reason. Each sub-delivery below is approved and executed on its own.
 | **59C-0** | Remove the vacuous xref audit — **LANDED `60ce947`** | Low | `tests/e2e/pdf-structure-tags.spec.ts` | — |
 | **59C-1** | Baseline measurement + trace policy (C1, C6) — **LANDED** | Low | `playwright.config.ts`; `tests/baseline/milestone-59-runtime.json` | — |
 | **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 |
-| **59C-3** | Replace observable fixed waits (C5) | Medium | signature + annotation specs | — |
+| **59C-3** | Replace observable fixed waits (C5) — **LANDED** | Medium | signature + annotation specs | — |
 | **59C-4** | Parallelism experiment (C7) | Medium | `playwright.config.ts`, possibly a project partition | 59C-1 |
 
 59C-0, 59C-1 and 59C-3 have no file overlap with each other and may run in any
@@ -596,13 +596,33 @@ them waits on the others.
 - The shared PDF structural helper is built on the implementation that follows
   `startxref`, and each migrated caller's assertions are unchanged.
 
-#### 59C-3
+#### 59C-3 — met
 
-- `signature-capture.contract.spec.ts` is addressed first.
-- Every removed `waitForTimeout()` is replaced by a wait on an observable
-  state, not a shorter arbitrary delay.
-- Any retained fixed delay carries a written reason naming the time-based
-  product contract that justifies it.
+- `signature-capture.contract.spec.ts` addressed first: **all 19** of its
+  fixed waits removed. Suite-wide **27 → 7**. ✔
+- Every removal is either provably redundant (12 sat immediately before an
+  auto-retrying locator call — `canvas.waitFor`, `expect(pad).toBeVisible()`,
+  a click — which already waits) or replaced by a poll on the state the test
+  depends on (7 sat before `page.evaluate(navigate('/print'))`, which waits
+  for nothing; they now poll `window.D`'s `signatureState` until the change
+  the handler is supposed to make has actually landed). ✔
+- Retained delays carry written reasons. ✔ Seven remain, in two groups:
+  - **Two prove an absence** — `verified-inventory-workflow` (no unprompted
+    auto-tour) and `schedule-doc-ack` (`expectNoDialog`). There is no positive
+    observable for "nothing happened"; both were already documented, and C5
+    explicitly preserves this case.
+  - **Five are PDF.js-internal** — highlight editor creation and highlight
+    mode expose no event or DOM flag for completion, and the shared helper
+    cannot assert on `.highlightEditor` because some callers expect none.
+    Deferred rather than forced, and now documented in place.
+
+**Runtime effect: essentially none, and that should be recorded.** The file
+went 93.7s → 92s across three consecutive runs (36 passed each time). Removing
+19 × 200 ms predicts ~3.8s and the observed ~1.7s is inside run-to-run noise.
+The waits were not what made this file slow; its 36 tests each drive a full
+filing. **The value delivered here is correctness, not speed** — the seven
+converted waits previously gave the export gate a fixed 200 ms to notice a
+model change, and now assert that it did.
 
 #### 59C-4
 

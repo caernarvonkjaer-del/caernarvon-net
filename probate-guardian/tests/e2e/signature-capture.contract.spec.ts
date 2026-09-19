@@ -42,7 +42,14 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200); // route re-render on change
+    // Milestone 59C-3: wait for the state this test depends on, not a fixed
+    // 200ms. What follows is page.evaluate(navigate(...)), which waits for
+    // nothing at all -- so the only thing standing between the click and the
+    // export gate reading window.D was a sleep long enough to cover the
+    // re-render. Polling the model asserts the handler actually ran.
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .toBe('none');
 
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
@@ -73,7 +80,6 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await expect(page.locator('.signature-pad')).toHaveCount(0);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const pad = page.locator('.signature-pad');
     await expect(pad).toBeVisible();
 
@@ -137,7 +143,6 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const pad = page.locator('.signature-pad');
     await expect(pad).toBeVisible();
 
@@ -171,7 +176,6 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await page.locator('[data-signature-state-group="guardians.0"]').waitFor({ state: 'visible' });
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const pad = page.locator('[data-signature-state-group="guardians.0"] .signature-pad');
     await expect(pad.locator('[data-sig-tab]')).toHaveCount(2);
     await expect(pad.locator('[data-sig-tab="type"]')).toHaveCount(0);
@@ -231,7 +235,6 @@ test.describe('Milestone 39-C: Upload background-transparency (luminance-thresho
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     await page.locator('[data-sig-tab="upload"]').click();
 
     const buffer = await buildSyntheticUploadPng(page);
@@ -277,7 +280,6 @@ test.describe('Milestone 39-C: Upload background-transparency (luminance-thresho
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     await page.locator('[data-sig-tab="upload"]').click();
     await page.setInputFiles('[data-sig-upload]', { name: 'upload.png', mimeType: 'image/png', buffer: await buildSyntheticUploadPng(page) });
 
@@ -343,7 +345,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .toBe('none');
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
@@ -363,7 +367,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
     await canvas.waitFor({ state: 'visible' });
     // page.mouse drag events don't reliably reach this canvas's pointer
@@ -442,7 +445,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .toBe('none');
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
@@ -462,7 +467,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await gotoGuardianPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
     await canvas.waitFor({ state: 'visible' });
     // page.mouse drag events don't reliably reach this canvas's pointer
@@ -536,7 +540,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .toBe('none');
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
@@ -556,7 +562,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await gotoGuardianPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
     await canvas.waitFor({ state: 'visible' });
     // page.mouse drag events don't reliably reach this canvas's pointer
@@ -647,7 +652,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.guardians[0].signatureState))
+      .toBe('none');
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
@@ -667,7 +674,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await gotoPage(page, '/p4', 'guardians.0');
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
     const box = await canvas.boundingBox();
     if (!box) throw new Error('signature canvas not visible');
@@ -735,7 +741,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.guardians[0].signatureState))
+      .toBe('none');
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
@@ -755,7 +763,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await gotoPage(page, '/p3', 'guardians.0');
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
     const box = await canvas.boundingBox();
     if (!box) throw new Error('signature canvas not visible');
@@ -846,7 +853,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
-    await page.waitForTimeout(200);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).D.guardians[0].signatureState))
+      .toBe('none');
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
 
@@ -865,7 +874,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await gotoPage(page, '/d1', 'guardians.0');
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     const canvas = page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas');
     await canvas.waitFor({ state: 'visible' });
     // Milestone 42: page.mouse-driven drag events do not reliably reach this
@@ -906,7 +914,6 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await gotoPage(page, '/d1', 'guardians.0');
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
-    await page.waitForTimeout(200);
     await page.locator('[data-signature-state-group="guardians.0"] .signature-pad-panel[data-sig-panel="draw"] canvas').waitFor({ state: 'visible' });
 
     // Nothing drawn at all -- the exact live-reported bug (2026-09-13):
