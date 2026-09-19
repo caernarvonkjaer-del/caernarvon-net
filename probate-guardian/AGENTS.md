@@ -323,6 +323,29 @@ alone. Overwriting a formula with a literal is how Milestone 57D became a
 critical regression, and it is silent: the file still opens, and the number is
 simply wrong from then on.
 
+**Three ways that has actually happened, none of them a direct write.** Check
+for all of them before touching an export:
+
+- **Through a merge.** ExcelJS redirects a write on any member of a merged
+  range to the range's master cell. Simplified's period dates were written to
+  `E14`/`H14`, both inside `D14:I14`, and destroyed the `=H4` the Case Number
+  box depends on. If a target cell is inside a merge, you are writing to the
+  master, whatever address you named.
+- **Through a defined name.** These workbooks propagate headers by *name* —
+  `'SCH A INCOME p1'!D2` is literally `=Name_of_Ward`. Dropping the names on
+  save left ~270 Annual cells reading `#NAME?`. A formula is only as intact as
+  what it refers to.
+- **Through a positional key.** `localSheetId` on a print area or custom view
+  is a sheet *index*. Inserting sheets re-points it silently; 57D's
+  twelve-account extension moved `PART XI`'s print area onto a register page,
+  which then printed clipped.
+
+**Verify a formula survived by reading the exported file, not by re-importing
+it.** The importer reads cells by address and never evaluates anything, so it
+agrees with a broken exporter perfectly — that is exactly why the Simplified
+Part I row shift and the defined-name strip both survived a full suite for
+their entire lives. See §14.
+
 **When a proposal and the template disagree, the template wins and the
 proposal is the thing that gets corrected.** Say so plainly and amend the
 document; do not build to a spec the court's own form contradicts.

@@ -153,9 +153,31 @@ export function percentValue(val) {
  * @returns {Promise<void>}
  */
 export async function saveWorkbookFile(workbook, filename) {
+  // The court's workbooks propagate their headers by defined name, not by
+  // cell reference: 'SCH A INCOME p1'!D2 is literally `=Name_of_Ward`. In the
+  // Annual template Name_of_Ward is named by 88 formulas, Case_Number by 86
+  // and Filing_Type by 86 -- roughly 270 cells across the workbook -- and the
+  // Guardian template's county and Yes/No dropdowns list their options by
+  // name too.
+  //
+  // This used to wipe every defined name before writing, so every one of those
+  // formulas resolved to #NAME? in the filed workbook and both dropdowns lost
+  // their lists. The strip had been here since the function was written, with
+  // no recorded reason; the likely motive was the template's `.wvu.` custom-
+  // view names, three of which point at #REF!. ExcelJS discards those on load
+  // anyway -- they never reach this model -- and writing with the remaining
+  // names produces a file ExcelJS reads back cleanly.
+  //
+  // So only the custom-view leftovers go. They are Excel's per-user saved-view
+  // metadata, meaningless in a filed form, and the only entries here that have
+  // ever been suspected of breaking the write.
+  //
+  // Print areas are NOT in this model -- ExcelJS keeps them on
+  // worksheet.pageSetup.printArea -- so they were never affected either way.
   try {
-    if (workbook.definedNames) {
-      workbook.definedNames.model = [];
+    const names = workbook.definedNames;
+    if (names && Array.isArray(names.model)) {
+      names.model = names.model.filter((entry) => !String(entry?.name || '').includes('.wvu.'));
     }
   } catch (e) {}
 

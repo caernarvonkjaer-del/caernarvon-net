@@ -542,6 +542,37 @@ re-filed is the Clerk's call; the app cannot detect an affected file after the
 fact, because a corrected export and a stale one differ only in which cells
 hold which values.
 
+**D12 — FIXED 2026-09-19. A print area displaced by 57D's own twelve-account
+extension, found while fixing 57F(b). Self-inflicted, and it was shipping.**
+
+A print area is stored as a defined name keyed by `localSheetId` — a
+**positional index** into the sheet list, not a name. Commit `6c434af`
+inserted 32 register sheets ahead of `PART XI`, whose print area kept saying
+`localSheetId="57"`. Index 57 had become `SCH B-4 OTHER DISB p48`.
+
+Not dormant, and not hidden by the defined-name strip: ExcelJS reads print
+areas into `worksheet.pageSetup`, which the exporter never touched. So every
+Annual workbook exported since that commit gave a B-4 register page a print
+area of `A1:G32` — clipping columns H and I and the last rows of its own
+register — and left `PART XI` with none.
+
+Fixed by `scripts/fix-annual-print-area.py`, which repoints it at index 89 and
+fails loudly if its patch does not match exactly once. `--check` verifies every
+print area against sheet order.
+
+Guarded by `tests/unit/template-print-areas.spec.js` across all three
+templates. It has to be a **template** guard: ExcelJS regenerates each print
+area from `pageSetup` on write, so an export-level self-consistency check
+passes even on the broken template — it is consistently wrong. That was
+confirmed by fault injection, not assumed.
+
+**The general lesson, worth applying to any future template surgery.**
+`scripts/extend-annual-b4-blocks.py` verified sheet content, ids, page labels
+and every category total, and still missed this, because `localSheetId` is the
+one thing in the file that is positional. Anything keyed by sheet index —
+print areas, custom views, `_xlnm.*` names — needs re-basing whenever sheets
+are inserted.
+
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
 clearable acknowledgement at output rather than hard-blocking. Chosen for
@@ -698,7 +729,9 @@ changes.
 
 ## 57F — Export Fidelity (scope, 2026-09-19)
 
-**Not authorized.** Two unrelated pieces; the second is a misdiagnosis.
+Two unrelated pieces. **(a) is still open and unverified; (b) landed
+2026-09-19** — see below, and note that the cause was neither what 57F claimed
+nor what this section first guessed.
 
 **(a) PDF period-end clipping — verify before fixing.** Claimed fixed in the
 reverted attempt but only ever source-read, never render-tested. Render an
@@ -716,12 +749,30 @@ defined names `Name_of_Ward` (`'PART I'!$C$5`) and `Case_Number`
 literals into those 54 sheets would overwrite the formulas and destroy the
 propagation the item was meant to create.
 
-If the reported symptom is real, the cause is different: neither ExcelJS nor
-this app sets `fullCalcOnLoad`/`calcProperties`, so a viewer that does not
-auto-recalculate can show blanks where cached formula values were dropped on
-save. **Scope: reproduce first** — export an annual accounting, open it, look
-at a second sheet's header. If blank, the fix is a workbook calc property. If
-populated, close the item.
+**(b) RESOLVED 2026-09-19 — the real cause found and fixed.** The symptom was
+real and the diagnosis above was still not right. `saveWorkbookFile()` wiped
+**every defined name** before writing, with no recorded reason, and those
+formulas name their source rather than referencing it: `'SCH A INCOME p1'!D2`
+is literally `=Name_of_Ward`. Measured against the shipped template,
+`Name_of_Ward` is named by **88** formulas, `Case_Number` by **86** and
+`Filing_Type` by **86** — roughly 270 cells that resolved to `#NAME?` in every
+filed Annual workbook. The Guardian template's county and Yes/No dropdowns
+list their options by name too, so both lost their lists.
+
+The original motive was probably the template's `.wvu.` custom-view names,
+three of which point at `#REF!`. ExcelJS discards those on load, so they never
+reached the model being wiped; writing with the remaining names produces a
+file ExcelJS reads back cleanly. Only the custom-view leftovers are dropped
+now.
+
+Print areas were never part of this — ExcelJS keeps them on
+`worksheet.pageSetup`, not in the defined-names model — but chasing it turned
+up a separate live defect, recorded as **D12** below.
+
+The original 57F(b) remains the wrong fix for the right symptom: writing
+literals into those 54 sheets would have overwritten the very formulas that
+carry the header, and the propagation would have appeared to work while
+being frozen at export time.
 
 ---
 
