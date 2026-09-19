@@ -15,6 +15,7 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
+import { planB4PagesToKeep, pruneB4RegisterPages } from '../../core/excel/b4-register-pages.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
@@ -34,6 +35,19 @@ const ANNUAL_P67_CELLS = {
   line30: null,      // e.g. 'I30' — net assets from the Schedule D listings
   explanation: null  // cell for the written explanation of a difference
 };
+
+// Schedule B-4's account blocks, verified against the embedded template on
+// 2026-09-19 by reading where the pre-printed Line # restarts at 1. Each block
+// is one bank account; its first page carries the BANK: / ACCOUNT NUMBER #:
+// header. Capacities are the count of pre-printed register rows, which is why
+// they are uneven -- p2 holds 25 rather than 30 because an instructions block
+// pushes its column header from row 7 down to row 15.
+export const SCH_B4_ACCOUNT_BLOCKS = Object.freeze([
+  Object.freeze({ account: 1, pages: Object.freeze([2, 3, 4, 5, 6, 7]), capacity: 160 }),
+  Object.freeze({ account: 2, pages: Object.freeze([8, 9, 10, 11]), capacity: 111 }),
+  Object.freeze({ account: 3, pages: Object.freeze([12, 13, 14, 15]), capacity: 111 }),
+  Object.freeze({ account: 4, pages: Object.freeze([16, 17, 18, 19]), capacity: 112 }),
+]);
 
 export const ANNUAL_EXCEL_CAPS={
   schA:{cap:50,label:'Schedule A — Income',route:'/scha'}, // 20 on p1 + 30 on p2 (SCH A INCOME p2)
@@ -385,6 +399,16 @@ export async function doSaveExcel(){
         setCell(p11,`I${row}`,nv(r.amount));
       });
     }
+
+    // Schedule B-4 ships one register page per printed page of the court's
+    // form. Without this, a filing with three disbursements still carries
+    // every unused page into the exported workbook -- the court's own
+    // instructions say "Remove any blank pages", so do it for the filer.
+    // pruneB4RegisterPages() rebuilds the summary's eighteen category totals
+    // in the same operation, because those name every register page
+    // explicitly and would otherwise resolve to #REF!.
+    const b4UsedPages = (inv.schB4 || []).length ? [SCH_B4_ACCOUNT_BLOCKS[0].pages[0]] : [];
+    pruneB4RegisterPages(workbook, planB4PagesToKeep(b4UsedPages, SCH_B4_ACCOUNT_BLOCKS));
 
     const wardFile=(inv.wardName||'Accounting').replace(/[^a-z0-9]/gi,'_');
     const formSlug=formDisplayName(inv.inventoryType).replace(/[^a-z0-9]/gi,'');
