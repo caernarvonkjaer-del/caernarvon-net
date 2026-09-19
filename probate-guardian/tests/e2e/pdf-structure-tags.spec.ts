@@ -166,27 +166,24 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
       const parentTreeObjMatch = rawPdfString.match(parentTreeRegex);
       const parentTreeObj = parentTreeObjMatch ? parentTreeObjMatch[0] : '';
 
-      // Check xref table integrity: every xref offset must point to exact object header
-      const xrefIndex = rawPdfString.lastIndexOf('xref');
-      const trailerIndex = rawPdfString.lastIndexOf('trailer');
-      const xrefSection = rawPdfString.slice(xrefIndex, trailerIndex);
-      const xrefLines = xrefSection.split('\n');
-      const xrefErrors = [];
-      let currentObjId = 0;
-      for (let i = 2; i < xrefLines.length; i++) {
-        const line = xrefLines[i].trim();
-        if (!line) continue;
-        currentObjId++;
-        const parts = line.split(' ');
-        if (parts.length >= 3 && parts[2] === 'n') {
-          const offset = parseInt(parts[0], 10);
-          const atOffset = rawPdfString.slice(offset, offset + 30);
-          const expected = `${currentObjId} 0 obj`;
-          if (!atOffset.startsWith(expected)) {
-            xrefErrors.push({ objId: currentObjId, expected, actual: atOffset });
-          }
-        }
-      }
+      // Milestone 59C-0: this test's own xref audit was removed, not repaired.
+      //
+      // It located the table with rawPdfString.lastIndexOf('xref'), which
+      // matches the 'xref' inside the word 'startxref' -- positioned after the
+      // trailer, so the slice ran backwards and returned ''. The loop below it
+      // started at i = 2 over a single empty line and never executed, leaving
+      // xrefErrors permanently [] and its assertion permanently true. Measured
+      // before removal: sectionLen 0, and the assertion still passed against a
+      // PDF with a deliberately corrupted offset.
+      //
+      // Slice 19D below owns xref integrity for this filing type and does it
+      // correctly: it follows the startxref pointer, guards against an empty
+      // parse with `totalObjectsInXref > 50`, and asserts every offset
+      // resolves. Verified to actually fail on that same corrupted offset
+      // (validOffsets 345 of 346). Nothing was lost here.
+      //
+      // 59C-2 unifies 19D's implementation with the equivalent one in
+      // pdf-form-specific.spec.ts into a single shared helper.
 
       return {
         rawPdfString,
@@ -198,7 +195,6 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         metadataId,
         metadataObj,
         parentTreeObj,
-        xrefErrors,
         fixtureIssues,
       };
     });
@@ -218,7 +214,6 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
       metadataId,
       metadataObj,
       parentTreeObj,
-      xrefErrors,
     } = pdfInspection;
 
     // Verify Page Count
@@ -230,10 +225,8 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     // ==========================================
     expect(rawPdfString.startsWith('%PDF-1.7')).toBe(true);
 
-    // ==========================================
-    // Strict Object Syntax & XRef Table Integrity
-    // ==========================================
-    expect(xrefErrors).toEqual([]);
+    // XRef table integrity is asserted by Slice 19D, not here -- see the note
+    // in the evaluate above. This test covers tagged structure only.
 
     // ==========================================
     // Category 1: Document Checks
