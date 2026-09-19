@@ -15,7 +15,8 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
-import { planB4PagesToKeep, pruneB4RegisterPages } from '../../core/excel/b4-register-pages.js';
+import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber } from '../../core/excel/b4-register-pages.js';
+import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
@@ -48,6 +49,39 @@ export const SCH_B4_ACCOUNT_BLOCKS = Object.freeze([
   Object.freeze({ account: 3, pages: Object.freeze([12, 13, 14, 15]), capacity: 111 }),
   Object.freeze({ account: 4, pages: Object.freeze([16, 17, 18, 19]), capacity: 112 }),
 ]);
+
+// Continuation pages of the other schedules. Sheet names are exact, including
+// the fact that some carry a trailing space in the court's file -- they are
+// looked up by name, so a tidied-up spelling silently matches nothing.
+//
+// Every one of these is a page the writer NEVER targets: the schedule writers
+// all address their p1 only. The single exception is SCH A INCOME p2, which
+// takes income rows 21-50, so it is prunable exactly when income has not
+// overflowed p1's twenty rows. Derived from the writer's own getWorksheet()
+// calls rather than from the template's page count, so a schedule that later
+// learns to spill onto p2 must be removed from this list or it will be pruned
+// out from under its own data -- which is why the e2e coverage asserts the
+// written rows survive, not just that pages disappeared.
+const ANNUAL_NEVER_WRITTEN_CONTINUATION_SHEETS = Object.freeze([
+  'SCH C CAPITAL ADJ p2', 'SCH C CAPITAL ADJ p3', 'SCH C CAPITAL ADJ p4',
+  'SCH D-1 CASH p2', 'SCH D-1 CASH p3', 'SCH D-1 CASH p4',
+  'SCH D-2 REAL ESTATE p2',
+  'SCH D-3 PERSONAL PROP p2',
+  'SCH D-4 INTANGIBLE p2',
+  'SCH D-5 MORTGAGES p2',
+  'SCH E BANK TRANS p2', 'SCH E BANK TRANS p3', 'SCH E BANK TRANS p4',
+  'SCH F-1 SALES REAL PROP p2',
+  'SCH F-2 SALES PERSONAL PROP p2',
+]);
+
+/** Schedule A spills onto p2 from its twenty-first income row. */
+export const SCH_A_PAGE_1_ROWS = 20;
+
+export function unusedAnnualContinuationSheets(inv) {
+  const out = ANNUAL_NEVER_WRITTEN_CONTINUATION_SHEETS.slice();
+  if (((inv?.schA || []).length) <= SCH_A_PAGE_1_ROWS) out.push('SCH A INCOME p2');
+  return out;
+}
 
 export const ANNUAL_EXCEL_CAPS={
   schA:{cap:50,label:'Schedule A — Income',route:'/scha'}, // 20 on p1 + 30 on p2 (SCH A INCOME p2)
@@ -400,15 +434,22 @@ export async function doSaveExcel(){
       });
     }
 
-    // Schedule B-4 ships one register page per printed page of the court's
-    // form. Without this, a filing with three disbursements still carries
-    // every unused page into the exported workbook -- the court's own
-    // instructions say "Remove any blank pages", so do it for the filer.
-    // pruneB4RegisterPages() rebuilds the summary's eighteen category totals
-    // in the same operation, because those name every register page
-    // explicitly and would otherwise resolve to #REF!.
-    const b4UsedPages = (inv.schB4 || []).length ? [SCH_B4_ACCOUNT_BLOCKS[0].pages[0]] : [];
-    pruneB4RegisterPages(workbook, planB4PagesToKeep(b4UsedPages, SCH_B4_ACCOUNT_BLOCKS));
+    // The court's workbook ships every printed page of every schedule, and the
+    // writer fills only the ones a filing needs. Without this a guardian with
+    // one income row and three disbursements files a workbook carrying about
+    // thirty blank pages; the form's own instructions say "Remove any blank
+    // pages". pruneSheets() rebuilds, in the same operation, every formula
+    // that named a removed page -- each schedule's p1 total reaches into its
+    // own continuation pages, so removing one on its own leaves #REF! in a
+    // filed financial document. Anything it cannot rebuild safely is kept.
+    const b4Keep = new Set(planB4PagesToKeep(
+      (inv.schB4 || []).length ? [SCH_B4_ACCOUNT_BLOCKS[0].pages[0]] : [],
+      SCH_B4_ACCOUNT_BLOCKS,
+    ));
+    const b4Doomed = workbook.worksheets
+      .map(ws => ws.name)
+      .filter(n => isB4RegisterSheetName(n) && !b4Keep.has(b4PageNumber(n)));
+    pruneSheets(workbook, [...b4Doomed, ...unusedAnnualContinuationSheets(inv)]);
 
     const wardFile=(inv.wardName||'Accounting').replace(/[^a-z0-9]/gi,'_');
     const formSlug=formDisplayName(inv.inventoryType).replace(/[^a-z0-9]/gi,'');

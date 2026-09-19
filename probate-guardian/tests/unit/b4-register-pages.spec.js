@@ -2,21 +2,18 @@ import { describe, expect, test } from 'vitest';
 import {
   isB4RegisterSheetName,
   b4PageNumber,
-  parseB4SummaryFormula,
-  rebuildB4SummaryFormula,
   planB4PagesToKeep,
-  pruneB4RegisterPages,
   B4_SUMMARY_SHEET,
-  B4_CATEGORY_ROWS,
 } from '../../src/core/excel/b4-register-pages.js';
 
-const P = 'SCH B-4 OTHER DISB p';
+// This module owns only what is specific to Schedule B-4: how its register
+// pages group into per-account blocks, and which of them a filing needs. The
+// removal itself, and the formula rebuilding it requires, live in
+// sheet-pruning.js and are covered by sheet-pruning.spec.js -- nine other
+// schedules have the same problem with a different formula shape, so there is
+// one mechanism rather than two.
 
-// The real shape, taken verbatim from the shipped template's I10 (truncated to
-// the first block for readability). Note the per-page column differences --
-// p2 uses AK8 where its continuation pages use AM8 -- which is exactly why the
-// references are read from the formula instead of being reconstructed.
-const REAL_I10 = `SUM('${P}2'!AK8+'${P}3'!AM8+'${P}4'!AM8+'${P}5'!AM8+'${P}6'!AM8+'${P}7'!AM8+'${P}8'!AP7)`;
+const P = 'SCH B-4 OTHER DISB p';
 
 describe('B-4 register sheet naming', () => {
   test.each([
@@ -38,51 +35,9 @@ describe('B-4 register sheet naming', () => {
   test('the summary page is not a register page', () => {
     expect(isB4RegisterSheetName(B4_SUMMARY_SHEET)).toBe(false);
   });
-});
 
-describe('parsing the summary category formula', () => {
-  test('splits the real formula into per-page references', () => {
-    const refs = parseB4SummaryFormula(REAL_I10);
-    expect(refs).toHaveLength(7);
-    expect(refs[0]).toEqual({ sheet: `${P}2`, ref: 'AK8' });
-    expect(refs[1]).toEqual({ sheet: `${P}3`, ref: 'AM8' });
-    expect(refs[6]).toEqual({ sheet: `${P}8`, ref: 'AP7' });
-  });
-
-  // Anything that is not a plain SUM of sheet-qualified references is a shape
-  // this module does not understand, and rewriting it could silently change a
-  // court filing's arithmetic.
-  test.each([
-    ['', 'empty'],
-    [null, 'null'],
-    ["SUM('X'!A1+5)", 'a literal operand'],
-    ["SUM('X'!A1+A2)", 'an unqualified local reference'],
-    ["SUM('X'!A1)+SUM('Y'!A1)", 'two SUMs'],
-    ["SUMIF('X'!A1,1)", 'a different function'],
-    ["SUM('X'!A1-'Y'!A1)", 'subtraction rather than addition'],
-  ])('refuses to parse %s (%s)', (formula) => {
-    expect(parseB4SummaryFormula(formula)).toEqual([]);
-  });
-});
-
-describe('rebuilding the summary formula', () => {
-  test('keeps only the surviving pages, preserving each page\'s own cell', () => {
-    const out = rebuildB4SummaryFormula(REAL_I10, [`${P}2`, `${P}8`]);
-    expect(out).toBe(`SUM('${P}2'!AK8+'${P}8'!AP7)`);
-  });
-
-  test('returns null when nothing was dropped, so the cell is left alone', () => {
-    const all = [2, 3, 4, 5, 6, 7, 8].map(n => `${P}${n}`);
-    expect(rebuildB4SummaryFormula(REAL_I10, all)).toBeNull();
-  });
-
-  test('returns null rather than producing an empty SUM()', () => {
-    expect(rebuildB4SummaryFormula(REAL_I10, [])).toBeNull();
-    expect(rebuildB4SummaryFormula(REAL_I10, ['SCH A INCOME p1'])).toBeNull();
-  });
-
-  test('returns null for a formula shape it does not understand', () => {
-    expect(rebuildB4SummaryFormula("SUM('X'!A1+2)", ['X'])).toBeNull();
+  test.each([null, undefined, 42, {}])('non-strings are not register sheets: %s', (v) => {
+    expect(isB4RegisterSheetName(v)).toBe(false);
   });
 });
 
@@ -119,89 +74,23 @@ describe('planning which pages to keep', () => {
   test('unused blocks are dropped entirely', () => {
     expect(planB4PagesToKeep([2, 12], blocks)).toEqual([2, 12]);
   });
-});
 
-/** Minimal ExcelJS stand-in: only what pruneB4RegisterPages actually touches. */
-function fakeWorkbook(registerPages, { formulaFor } = {}) {
-  const made = (name, id) => ({
-    name,
-    id,
-    _cells: {},
-    getCell(addr) {
-      if (!this._cells[addr]) this._cells[addr] = { formula: undefined, value: undefined };
-      return this._cells[addr];
-    },
-  });
-  const summary = made(B4_SUMMARY_SHEET, 1);
-  for (const row of B4_CATEGORY_ROWS) {
-    const f = formulaFor
-      ? formulaFor(row)
-      : `SUM(${registerPages.map(n => `'${P}${n}'!AM${row}`).join('+')})`;
-    summary._cells[`I${row}`] = { formula: f, value: undefined };
-  }
-  const sheets = [summary, ...registerPages.map((n, i) => made(`${P}${n}`, i + 2))];
-  return {
-    worksheets: sheets,
-    getWorksheet(name) { return sheets.find(s => s.name === name); },
-    removeWorksheet(id) {
-      const i = sheets.findIndex(s => s.id === id);
-      if (i >= 0) sheets.splice(i, 1);
-    },
-  };
-}
-
-describe('pruning a workbook', () => {
-  test('removes unused pages and rewrites all 18 category totals', () => {
-    const wb = fakeWorkbook([2, 3, 4, 5]);
-    const res = pruneB4RegisterPages(wb, [2, 3]);
-    expect(res.removed).toEqual([`${P}4`, `${P}5`]);
-    expect(res.rewritten).toEqual(B4_CATEGORY_ROWS);
-    expect(res.skipped).toBeNull();
-    expect(wb.worksheets.map(w => w.name)).toEqual([B4_SUMMARY_SHEET, `${P}2`, `${P}3`]);
-    const rebuilt = wb.getWorksheet(B4_SUMMARY_SHEET)._cells.I10.value.formula;
-    expect(rebuilt).toBe(`SUM('${P}2'!AM10+'${P}3'!AM10)`);
-    expect(rebuilt).not.toContain(`${P}4`);
+  // The extended workbook adds blocks 5-12 on the same four-page shape.
+  test('scales to the extended twelve-account block map', () => {
+    const extended = [
+      ...blocks,
+      ...Array.from({ length: 8 }, (_, i) => ({
+        pages: [20 + i * 4, 21 + i * 4, 22 + i * 4, 23 + i * 4],
+      })),
+    ];
+    expect(planB4PagesToKeep([48, 49], extended)).toEqual([2, 48, 49]);
+    expect(planB4PagesToKeep([51], extended)).toEqual([2, 48, 51]);
   });
 
-  test('does nothing when every page is in use', () => {
-    const wb = fakeWorkbook([2, 3]);
-    const res = pruneB4RegisterPages(wb, [2, 3]);
-    expect(res.removed).toEqual([]);
-    expect(res.rewritten).toEqual([]);
-    expect(wb.worksheets).toHaveLength(3);
-  });
-
-  // The two halves are not independently valid: removing pages while leaving a
-  // formula that still names them produces #REF! in a filed document.
-  test('removes nothing when a category formula cannot be rebuilt safely', () => {
-    const wb = fakeWorkbook([2, 3, 4], {
-      formulaFor: (row) => (row === 17 ? "SUM('X'!A1+99)" : `SUM('${P}2'!AM${row}+'${P}3'!AM${row}+'${P}4'!AM${row})`),
-    });
-    const res = pruneB4RegisterPages(wb, [2]);
-    expect(res.skipped).toMatch(/unexpected shape/);
-    expect(res.removed).toEqual([]);
-    expect(wb.worksheets).toHaveLength(4);
-    expect(wb.getWorksheet(B4_SUMMARY_SHEET)._cells.I10.value).toBeUndefined();
-  });
-
-  test('refuses to remove every register page', () => {
-    const wb = fakeWorkbook([2, 3]);
-    const res = pruneB4RegisterPages(wb, []);
-    expect(res.skipped).toMatch(/every register page/);
-    expect(wb.worksheets).toHaveLength(3);
-  });
-
-  test('is a no-op when the summary page is absent', () => {
-    const wb = fakeWorkbook([2, 3]);
-    wb.removeWorksheet(1);
-    const res = pruneB4RegisterPages(wb, [2]);
-    expect(res.skipped).toMatch(/summary page not found/);
-    expect(wb.worksheets.map(w => w.name)).toEqual([`${P}2`, `${P}3`]);
-  });
-
-  test('never removes the summary page itself', () => {
-    const wb = fakeWorkbook([2, 3, 4]);
-    pruneB4RegisterPages(wb, [2]);
-    expect(wb.getWorksheet(B4_SUMMARY_SHEET)).toBeTruthy();
+  test('tolerates junk input without inventing pages', () => {
+    expect(planB4PagesToKeep(null, blocks)).toEqual([2]);
+    expect(planB4PagesToKeep([NaN, undefined], blocks)).toEqual([2]);
+    expect(planB4PagesToKeep([2], null)).toEqual([2]);
+    expect(planB4PagesToKeep([], [])).toEqual([]);
   });
 });
