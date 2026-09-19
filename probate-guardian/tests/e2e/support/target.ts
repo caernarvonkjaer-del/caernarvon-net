@@ -4,6 +4,10 @@ import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { currentTarget } from './target-profile';
+import { installFixtureSupport } from './fixture-completeness';
+import {
+  MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_SIMPLIFIED, MINIMAL_VALID_PLAN_ANNUAL,
+} from './fixtures';
 
 // package.json has "type": "module", so this file runs as ESM under
 // Playwright's loader -- no __dirname available, derive it the ESM way.
@@ -96,51 +100,39 @@ export async function createWard(page: Page, name: string, type = 'guardian'): P
  * since validate() accepts either.
  */
 export async function fillMinimalValidGuardianWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const d = (window as any).D;
-    Object.assign(d, {
-      wardName: d.wardName || 'Export Test Ward',
-      caseNumber: '2026-CP-000123',
-      gid: '2026-01-01',
-      county: 'Pinellas',
-      guardianName: 'Sample Guardian',
-      attorneyForGuardian: 'Sample Attorney',
-      typeOfGuardianship: 'Plenary',
-      hasSafeDepositBox: false,
-      safeDepositBoxFiled: false,
-      bondAmount: '1000',
-      bondPeriodFrom: '2026-01-01',
-      bondPeriodTo: '2027-01-01',
-      bondingCompany: 'Sample Bonding Co',
-      // Milestone 57A added a required Yes/No for the bond waiver. A ward
-      // this helper builds is meant to be export-ready, so it has to answer
-      // it; 'No' needs no order date.
-      bondWaived: 'No',
-      serviceDate: '2026-01-02',
-    });
-    d.scheduleNoItems = Object.fromEntries(
-      ['a1', 'a2', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'c5'].map((k) => [k, true])
-    );
-    d.guardians = [{
-      name: 'Sample Guardian', ssnEin: '123-45-6789', phone: '555-555-5555',
-      streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-02',
-    }];
-    d.preparer = {
-      name: 'Sample Preparer', ssnEin: '987-65-4321', phone: '555-555-5556',
-      streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-02',
-    };
-    d.attorney = {
-      name: 'Sample Attorney', barNumber: '123456', phone: '555-555-5557',
-      streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755',
-      signatureDate: '2026-01-02', filingDate: '2026-01-02',
-    };
-    d.serviceRecipients = [{ name: 'Sample Recipient', address: '123 Main St', cityStateZip: 'Clearwater, FL 33755' }];
-    d.serviceAttorney = {
-      name: 'Sample Attorney', barNumber: '123456', phone: '555-555-5557',
-      streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-02',
-    };
-    (window as any).autoSave();
-  });
+  await applyMinimalValid(page, MINIMAL_VALID_GUARDIAN);
+}
+
+/**
+ * Writes one of fixtures.ts's MINIMAL_VALID_* overlays onto the open ward.
+ *
+ * The fields themselves live in fixtures.ts, not here, because the PDF specs
+ * need the same answer to "what does a complete filing contain" and cannot
+ * reach a helper that mutates window.D -- they never create a ward. Keeping
+ * the list in one place is what stops the two from drifting apart, which is
+ * exactly what happened when Milestone 57A added the bond-waiver question.
+ *
+ * An existing ward name is preserved: callers create the ward with a name
+ * that identifies the test, and the overlay's own name is only a fallback.
+ */
+async function applyMinimalValid(
+  page: Page,
+  overlay: Record<string, unknown>,
+  { planDefaults = false }: { planDefaults?: boolean } = {},
+): Promise<void> {
+  await installFixtureSupport(page);
+  await page.evaluate(([o, withPlanDefaults]) => {
+    const w = window as any;
+    const d = w.D;
+    const existingName = d.wardName;
+    // The plan types' per-right and per-ADL answers are derived from the app's
+    // own lists rather than copied into fixtures.ts, so that adding a right
+    // cannot leave a fixture silently unanswered.
+    if (withPlanDefaults) Object.assign(d, w.__pgMergeFixture(d, w.__pgPlanDefaults()));
+    Object.assign(d, w.__pgMergeFixture(d, o));
+    if (existingName) d.wardName = existingName;
+    w.autoSave();
+  }, [overlay, planDefaults] as [Record<string, unknown>, boolean]);
   await page.evaluate(() => (window as any).flushPendingSave());
 }
 
@@ -169,50 +161,7 @@ export async function createSimplifiedWard(page: Page, name: string): Promise<vo
  * on window.D via evaluate -- same reasoning as fillMinimalValidGuardianWard.
  */
 export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const d = (window as any).D;
-    Object.assign(d, {
-      wardName: d.wardName || 'Simplified Export Test Ward',
-      caseNumber: '2026-CP-000456',
-      ssn: '123-45-6789',
-      gid: '2026-01-01',
-      periodFrom: '2026-01-01',
-      periodTo: '2026-12-31',
-      guardian: 'Sample Guardian',
-      attorney: 'Sample Attorney',
-      typeOfGuardianship: 'Plenary',
-      county: 'Pinellas',
-      amendedForm: 'No',
-      eligDepository: 'Yes',
-      eligOnlyTransactions: 'Yes',
-      startingBalance: '1000',
-      interestIncome: '10',
-      depositsSettlement: '0',
-      serviceCharges: '5',
-      federalIncomeTax: '0',
-      attorney_barNumber: '123456',
-      attorney_phone: '555-555-5557',
-      attorney_email: 'attorney@example.com', // Milestone 55D: now required
-      attorney_street: '123 Main St',
-      attorney_cityStateZip: 'Clearwater, FL 33755',
-      certServiceDate: '2027-01-05',
-      certIndicator: 'Mailed',
-    });
-    d.guardians = [{
-      name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com',
-      mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755',
-      residenceStreet: '123 Main St', residenceCityStateZip: 'Clearwater, FL 33755',
-      signatureDate: '2027-01-05',
-    }];
-    d.certRecipients = [
-      { name: 'Recipient One', line2: '', line3: '' },
-      { name: '', line2: '', line3: '' },
-      { name: 'Recipient Three', line2: '', line3: '' },
-      { name: '', line2: '', line3: '' },
-    ];
-    (window as any).autoSave();
-  });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await applyMinimalValid(page, MINIMAL_VALID_SIMPLIFIED);
 }
 
 /**
@@ -270,49 +219,7 @@ export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<vo
  * actually exercised, not just flat fields.
  */
 export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const d = (window as any).D;
-    const rights: Record<string, string> = {};
-    for (const [k] of (window as any).PLAN_RIGHTS) rights[k] = 'Not removed';
-    const adls: Record<string, string> = {};
-    for (const [k] of (window as any).PLAN_ADLS) adls[k] = 'Ward needs no help';
-    Object.assign(d, {
-      wardName: d.wardName || 'Plan Annual Export Test Ward',
-      caseNumber: '2026-CP-000321',
-      county: 'Pinellas',
-      gid: '2025-01-01',
-      periodFrom: '2026-01-01',
-      periodTo: '2026-12-31',
-      guardian: 'Sample Guardian',
-      wardLiving: 'In a facility (skilled nursing, assisted living, etc.)',
-      residenceAddress: '123 Main St',
-      residenceCityStateZip: 'Clearwater, FL 33755',
-      q1Residences: [{ name: 'Sample Facility', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', phone: '555-555-5555', facilityType: 'Assisted Living', from: '2026-01-01', to: '' }],
-      q2NoMove: true,
-      q3SettingALF: true,
-      q4Providers: [{ name: 'Dr. Sample Provider', street: '', cityStateZip: '', phone: '', providerType: 'Primary Care Physician', visits: '4' }],
-      q5SocialSkills: 'Communicates well and enjoys group activities.',
-      q5Activities: 'Weekly physical therapy; effective at maintaining mobility.',
-      rights,
-      adls,
-      q9MentalNone: true,
-      q9PhysNone: true,
-      q10NoDirectives: false,
-      q10Executed: true,
-      q10ExecDNR: true,
-      q10Directives: [{ title: 'Do Not Resuscitate Order', dateSigned: '2025-06-01', signedBy: 'Sample Guardian', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: 'No', orderDate: '', orderCounty: '' }],
-      q11NoRemuneration: true,
-      q11NoRemunerationName: 'Sample Guardian',
-      certPhysicianAttached: true,
-    });
-    d.planGuardians = [
-      { name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', signatureDate: '2027-01-05', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', officeStreet: '', officeCityStateZip: '', relationship: 'Professional Guardian' },
-      { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
-      { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
-    ];
-    (window as any).autoSave();
-  });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await applyMinimalValid(page, MINIMAL_VALID_PLAN_ANNUAL, { planDefaults: true });
 }
 
 export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
@@ -411,62 +318,7 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
  * (Simplified Accounting).
  */
 export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const d = (window as any).D;
-    Object.assign(d, {
-      wardName: d.wardName || 'Annual Export Test Ward',
-      caseNumber: '2026-CP-000789',
-      guardian: 'Sample Guardian',
-      periodFrom: '2026-01-01',
-      periodTo: '2026-12-31',
-      gid: '2025-01-01',
-      county: 'Pinellas',
-      filingType: d.filingType || 'Annual',
-      amendedForm: 'No',
-      startingBalance: '10000',
-      bondAmount: '5000',
-      bondingCompany: 'Sample Bonding Co.',
-      // Milestone 57A added a required Yes/No for the restricted depository.
-      // This helper builds an export-ready filing, so it answers it; 'No'
-      // needs no receipt date.
-      restrictedDepository: 'No',
-      certDate: '2026-12-31',
-      schA: [{ payer: 'Social Security', description: 'Monthly benefit', bank: 'Sample Bank', accountNo: '1234', amount: '500' }],
-      // Line 20 (starting balance + income - disbursements) won't equal
-      // Line 30 (sum of Schedule D listings) unless the D schedules are
-      // populated to match -- simpler to provide the required written
-      // explanation for the (realistic) discrepancy than to hand-balance
-      // every schedule.
-      reconcileExplanation: 'Test fixture: Schedule D listings intentionally left blank.',
-    });
-    d.trusts = (d.trusts || []).map((trust: Record<string, unknown>, index: number) => ({
-      ...trust,
-      hasTrust: index === 0 ? 'No' : '',
-      createdAfterGID: '',
-    }));
-    d.guardians[0] = { ...d.guardians[0], name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
-    d.preparer = { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' };
-    Object.assign(d, {
-      // Milestone 39-C: d.attorney (the attorney's own printed name) was
-      // never set here before -- harmless while attorney_signatureDate had
-      // no completeness check of its own, but validateAnnual()'s new
-      // checkSignatureState() call infers this legacy signatureDate as
-      // signatureState 'typed' and then correctly requires a printed name
-      // to go with it (d.attorney has no independent requirement elsewhere
-      // in validateAnnual(), confirmed directly) -- a real, if narrow,
-      // pre-existing gap this fixture happened not to exercise before.
-      attorney: 'Sample Attorney',
-      attorney_bar: '123456',
-      attorney_phone: '555-555-5555',
-      attorney_email: 'attorney@example.com', // Milestone 55D: now required
-      attorney_street: '123 Main St',
-      attorney_cityStateZip: 'Clearwater, FL 33755',
-      attorney_signatureDate: '2027-01-05',
-    });
-    d.certRecipients[0] = { ...d.certRecipients[0], name: 'Sample Recipient' };
-    (window as any).autoSave();
-  });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await applyMinimalValid(page, MINIMAL_VALID_ANNUAL);
 }
 
 /**

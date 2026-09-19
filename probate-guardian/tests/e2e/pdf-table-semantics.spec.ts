@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
+import { installFixtureSupport, expectFileableFixture } from './support/fixture-completeness';
+import { MINIMAL_VALID_ANNUAL, MINIMAL_VALID_GUARDIAN } from './support/fixtures';
 
 test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continuation', () => {
   // Milestone 43F, Decision 2: this whole file exercised only
@@ -12,8 +14,9 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
   // recommendation, rather than all nine filing types.
   test('Milestone 43F: Annual Accounting Schedule D-1 regularity with /ColSpan, /Summary, and multi-page table continuation', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const inspection = await page.evaluate(async () => {
+    const inspection = await page.evaluate(async (base) => {
       const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
 
       const schD1 = [];
@@ -28,7 +31,14 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         });
       }
 
-      const d = {
+      // A complete Annual filing, with only what this test is about written
+      // over it: 25 Schedule D-1 rows to force multi-page continuation, and
+      // every other schedule emptied so the pagination under test comes from
+      // D-1 alone. Without the base, this literal was a filing the court
+      // would have rejected -- 24 required answers missing -- and the PDF
+      // whose table semantics are asserted here was a document no filer
+      // could have submitted.
+      const d = (window as any).__pgBuildFixture('annual', base, {
         wardName: 'Annual Table Semantics Ward',
         caseNumber: '26-004400-GD',
         county: 'Pinellas',
@@ -43,7 +53,10 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         schD2: [], schD3: [], schD4: [], schD5: [],
         schE: [], schF1: [], schF2: [],
         trusts: [{ hasTrust: 'No' }],
-      };
+        // The base's reconcile explanation describes blank D schedules; this
+        // fixture fills D-1 with 25 accounts, so it says so instead.
+        reconcileExplanation: 'Test fixture: Schedule D-1 lists 25 cash accounts; no other schedules populated.',
+      });
 
       const model = buildAnnualAccountingModel(d);
       const doc = await generateCourtFormPdf(model);
@@ -64,8 +77,11 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         colSpanMatches,
         columnScopeCount: columnScopeMatches.length,
         rawPdfString,
+        fixtureIssues: await (window as any).__pgFixtureIssues(d),
       };
-    });
+    }, MINIMAL_VALID_ANNUAL);
+
+    expectFileableFixture(inspection.fixtureIssues, 'the Annual table-semantics fixture');
 
     // 25 rows in a single schedule table forces multi-page continuation.
     expect(inspection.numPages).toBeGreaterThanOrEqual(2);
@@ -86,8 +102,9 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
 
   test('Slice 19B: Table semantics, regularity with /ColSpan, /Summary, and multi-page table continuation', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const inspection = await page.evaluate(async () => {
+    const inspection = await page.evaluate(async (base) => {
       const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
 
       // Create model with:
@@ -105,7 +122,7 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         });
       }
 
-      const model = buildVerifiedInventoryModel({
+      const d = (window as any).__pgBuildFixture('guardian', base, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -127,8 +144,13 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         scheduleC3: [],
         scheduleC4: [],
         scheduleC5: [],
+        // A-1 now carries 25 entries, so its "no items" box must come off or
+        // the filing both lists property and swears there is none.
+        scheduleNoItems: { a1: false },
         serviceRecipients: [], // verifies fallback row for empty service recipients
       });
+
+      const model = buildVerifiedInventoryModel(d);
 
       const doc = await generateVerifiedInventoryPdf(model);
       const rawPdfString = doc.output();
@@ -160,8 +182,16 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         colSpanMatches,
         columnScopeCount: columnScopeMatches.length,
         rowScopeCount: rowScopeMatches.length,
+        fixtureIssues: await (window as any).__pgFixtureIssues(d),
       };
-    });
+    }, MINIMAL_VALID_GUARDIAN);
+
+    // No exemption needed even though this fixture empties the service-recipient
+    // list on purpose: validateGuardian() requires a recipient's details only
+    // once a recipient row exists, so an empty D-5 is a fileable state and the
+    // "None listed." fallback asserted below is a real document, not a
+    // test-only one.
+    expectFileableFixture(inspection.fixtureIssues, 'the Initial Inventory table-semantics fixture');
 
     const {
       numPages,

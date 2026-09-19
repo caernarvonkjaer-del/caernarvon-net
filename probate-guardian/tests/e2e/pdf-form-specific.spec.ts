@@ -1,26 +1,31 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
 import { extractPdfText, extractPdfTextItems } from './support/pdf-extract';
+import { installFixtureSupport, expectFileableFixture } from './support/fixture-completeness';
+import {
+  MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_SIMPLIFIED, MINIMAL_VALID_PLAN_ANNUAL,
+} from './support/fixtures';
 
 test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverage', () => {
   test('Slice 19C: Shared accessible PDF generator produces tagged, non-raster PDF 1.7 for Simplified Accounting', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const inspection = await page.evaluate(async () => {
+    const inspection = await page.evaluate(async (base) => {
       const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
 
-      const sampleData = {
+      const sampleData = (window as any).__pgBuildFixture('simplified', base, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
         ssn: '***-**-1234',
+        // Accounts for 2025, so the guardianship began before it.
+        gid: '2024-06-01',
         periodFrom: '2025-01-01',
         periodTo: '2025-12-31',
         guardian: 'Eleanor Vance Bennett',
         attorney: 'Marcus Sterling, Esq.',
         typeOfGuardianship: 'Plenary',
-        eligDepository: 'Raymond James Bank',
-        eligOnlyTransactions: 'Interest & Service Charges',
         startingBalance: 250000,
         interestIncome: 4250.50,
         depositsSettlement: 15000,
@@ -65,7 +70,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
             description: 'Statutory guardian fee approved per court order dated 06/15/2025',
           },
         ],
-      };
+      });
 
       const model = buildSimplifiedAccountingModel(sampleData, {
         signatureStyle: 'typed',
@@ -100,8 +105,11 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         h1Count: h1Matches.length,
         sigPartCount: sigPartMatches.length,
         sectionTitles: model.sections.map(s => s.title),
+        fixtureIssues: await (window as any).__pgFixtureIssues(sampleData),
       };
-    });
+    }, MINIMAL_VALID_SIMPLIFIED);
+
+    expectFileableFixture(inspection.fixtureIssues, "19C's Simplified Accounting fixture");
 
     const {
       rawPdfString,
@@ -164,11 +172,12 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
 
   test('Slice 19E: Shared accessible PDF generator produces tagged PDF 1.7 for Annual Guardianship Accounting', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const inspection = await page.evaluate(async () => {
+    const inspection = await page.evaluate(async (base) => {
       const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
 
-      const sampleAnnualData = {
+      const sampleAnnualData = (window as any).__pgBuildFixture('annual', base, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -178,7 +187,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         attorney: 'Robert Vance, Esq.',
         typeOfGuardianship: 'Plenary',
         filingType: 'Annual Accounting',
-        amendedForm: false,
+        amendedForm: 'No', // the form's answer is Yes/No; `false` reads as unanswered
         startingBalance: 125000,
         guardians: [
           { name: 'Rachel M. Alvarez', signatureDate: '2026-03-01', phone: '727-555-0144', ssn: '***-**-1234', mailingStreet: '1420 5th Ave N', mailingCityStateZip: 'St. Petersburg, FL 33705' }
@@ -234,6 +243,10 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           { hasTrust: 'Yes', name: 'Bennett Family Revocable Trust', trustee: 'Rachel M. Alvarez', accountNo: '***7777', createdAfterGID: 'No', wardPct: 100, wardAmount: 50000 }
         ],
         guardianRelationship: 'Daughter',
+        // This filing carries a depository receipt date, so the Part IX
+        // question it answers is 'Yes' -- the base answers 'No', which would
+        // have the filing deny a depository and then produce its receipt.
+        restrictedDepository: 'Yes',
         restrictedDepositoryReceiptDate: '2025-02-01',
         reconcileExplanation: 'Discrepancy due to late bank adjustment on vehicle proceeds.',
         attorney_bar: '0184920',
@@ -250,7 +263,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         remuneration: [
           { guardian: 'Rachel M. Alvarez', type: 'Guardian Fee', description: 'Statutory care compensation', amount: 2400 }
         ],
-      };
+      });
 
       const model = buildAnnualAccountingModel(sampleAnnualData, {
         signatureStyle: 'typed',
@@ -362,8 +375,11 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         validOffsets,
         totalTextOperators,
         untaggedTextOperators,
+        fixtureIssues: await (window as any).__pgFixtureIssues(sampleAnnualData),
       };
-    });
+    }, MINIMAL_VALID_ANNUAL);
+
+    expectFileableFixture(inspection.fixtureIssues, "19E's Annual Accounting fixture");
 
     // Assertions
     expect(inspection.rawPdfString.startsWith('%PDF-1.7')).toBe(true);
@@ -421,8 +437,9 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
 
   test('Slice 19E: Architectural single source of truth for statutory math and preview-to-PDF drift guard', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const driftGuardResults = await page.evaluate(async () => {
+    const driftGuardResults = await page.evaluate(async (base) => {
       // 1. Verify single source of truth: window.calcTotalsAnnual must exist BEFORE loadAnnualPdf
       const fnBefore = (window as any).calcTotalsAnnual;
       const fnBeforeStr = typeof fnBefore === 'function' ? fnBefore.toString() : '';
@@ -436,8 +453,14 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
       // Check whether global was swapped or remained identical
       const globalSwapped = fnBeforeStr !== fnAfterStr;
 
-      // 3. Distinct Sentinel Data for Preview/PDF Drift Guard
-      const sentinelData = {
+      // 3. Distinct Sentinel Data for Preview/PDF Drift Guard.
+      //
+      // Sentinel here means distinctive, not incomplete: every DRIFT_GUARD_*
+      // value is content chosen so it cannot be confused with anything the
+      // renderer might supply itself. So this is a complete filing too, built
+      // on the shared base like the rest -- a drift guard whose own document
+      // could not be filed would be guarding the wrong thing.
+      const sentinelData = (window as any).__pgBuildFixture('annual', base, {
         wardName: 'Arthur Pendragon',
         caseNumber: '52-2026-GD-009988',
         county: 'Pinellas',
@@ -447,7 +470,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         attorney: 'Merlin Ambrosius, Esq.',
         typeOfGuardianship: 'Plenary',
         filingType: 'Annual Accounting',
-        amendedForm: false,
+        amendedForm: 'No', // the form's answer is Yes/No; `false` reads as unanswered
         startingBalance: 100000,
         reconcileExplanation: 'DRIFT_GUARD_RECONCILE_EXPLANATION_VERBATIM',
         attorney_bar: 'BAR-SENTINEL-998877',
@@ -487,7 +510,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         schF1: [],
         schF2: [],
         trusts: [{ hasTrust: 'No' }],
-      };
+      });
 
       // Set global D for preview module
       (window as any).D = sentinelData;
@@ -510,8 +533,11 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         hasCalcTotalsAfter: typeof fnAfter === 'function',
         globalSwapped,
         isOutOfBalance: computedReconcile.outOfBalance,
+        fixtureIssues: await (window as any).__pgFixtureIssues(sentinelData),
       };
-    });
+    }, MINIMAL_VALID_ANNUAL);
+
+    expectFileableFixture(driftGuardResults.fixtureIssues, "the drift guard's sentinel filing");
 
     // Architecture: Single source of truth was eager, never swapped
     expect(driftGuardResults.hasCalcTotalsBefore).toBe(true);
@@ -537,11 +563,12 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
 
   test('Milestone 20 / axesCheck: Harold Thomas Bennett Initial Inventory PDF/UA-1 and WCAG 2.1 AA verification', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const inspection = await page.evaluate(async () => {
+    const inspection = await page.evaluate(async (base) => {
       const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
 
-      const d = {
+      const d = (window as any).__pgBuildFixture('guardian', base, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -614,21 +641,22 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         scheduleB3: [],
         scheduleB4: [],
         scheduleC1: [
-          { payerName: 'Social Security Administration', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
+          { payerName: 'Social Security Administration', payerAddress: '1 Lemon St, Clearwater, FL 33756', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
         ],
         scheduleC2: [],
         scheduleC3: [],
         scheduleC4: [],
         scheduleC5: [],
+        // The populated schedules' "no items" boxes come off; the rest stay
+        // ticked, as the base has them.
         scheduleNoItems: {
-          b3: true,
-          b4: true,
-          c2: true,
-          c3: true,
-          c4: true,
-          c5: true,
+          a1: false,
+          a2: false,
+          b1: false,
+          b2: false,
+          c1: false,
         },
-      };
+      });
 
       const model = buildVerifiedInventoryModel(d, {
         signatureStyle: 'typed',
@@ -675,8 +703,11 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         redundantColSpansCount: redundantColSpans.length,
         redundantRowSpansCount: redundantRowSpans.length,
         headingLevels,
+        fixtureIssues: await (window as any).__pgFixtureIssues(d),
       };
-    });
+    }, MINIMAL_VALID_GUARDIAN);
+
+    expectFileableFixture(inspection.fixtureIssues, "the Milestone 20 Initial Inventory fixture");
 
     // Assertions
     // 1. All pages are present in ParentTree /Nums
@@ -710,14 +741,16 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
 
   test('Milestone 21: Court Pleading Header (Page 1), Dynamic Circuit Lookup, 1-Inch Margins, /s/ Format Sliders & Rule 2.515 Attorney Emails', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const result = await page.evaluate(async () => {
+    const result = await page.evaluate(async ([guardianBase, planBase]) => {
       const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
       const { generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
       const { buildPlanAnnualModel } = await (window as any).loadPlanAnnualPdf();
+      const build = (window as any).__pgBuildFixture;
 
       // Test 1: Verified Initial Inventory with Electronic /s/ signature (default) in Miami-Dade County (11th Circuit)
-      const d1 = {
+      const d1 = build('guardian', guardianBase, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Miami-Dade',
@@ -736,14 +769,14 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           secondaryEmail: 'service@vancelaw.com',
           phone: '305-555-0199',
         },
-      };
+      });
 
       const m1 = buildVerifiedInventoryModel(d1, { printDate: '2026-09-05' });
       const doc1 = await generateVerifiedInventoryPdf(m1);
       const rawPdf1 = doc1.output();
 
       // Test 2: Verified Initial Inventory with Wet-ink signature (useSlashS: false) in Pinellas County (6th Circuit)
-      const d2 = {
+      const d2 = build('guardian', guardianBase, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -759,14 +792,14 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           email: 'robert@vancelaw.com',
           phone: '727-555-0199',
         },
-      };
+      });
 
       const m2 = buildVerifiedInventoryModel(d2, { printDate: '2026-09-05' });
       const doc2 = await generateVerifiedInventoryPdf(m2);
       const rawPdf2 = doc2.output();
 
       // Test 3: Annual Plan with Minor variant
-      const d3 = {
+      const d3 = build('planAnnual', planBase, (window as any).__pgPlanDefaults(), {
         wardName: 'Tommy Pickles',
         caseNumber: '26-001122-GD',
         county: 'Hillsborough',
@@ -776,8 +809,10 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         attorney_email: 'dil@law.com',
         attorney_secondary_email: 'filings@law.com',
         attorney_useSlashS: true,
-        planGuardians: [{ name: 'Didi Pickles', signatureDate: '2026-09-01', useSlashS: true }],
-      };
+        // The plan is signed after the period it reports on closes; the base's
+        // period runs to the end of 2026, so this signature follows it.
+        planGuardians: [{ name: 'Didi Pickles', signatureDate: '2027-01-05', useSlashS: true }],
+      });
       const m3 = buildPlanAnnualModel(d3);
       m3.metadata.wardType = 'minor';
       const doc3 = await generateCourtFormPdf(m3);
@@ -790,8 +825,15 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         numPages1: doc1.internal.getNumberOfPages(),
         numPages2: doc2.internal.getNumberOfPages(),
         numPages3: doc3.internal.getNumberOfPages(),
+        issues1: await (window as any).__pgFixtureIssues(d1),
+        issues2: await (window as any).__pgFixtureIssues(d2),
+        issues3: await (window as any).__pgFixtureIssues(d3),
       };
-    });
+    }, [MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_PLAN_ANNUAL]);
+
+    expectFileableFixture(result.issues1, "the /s/ electronic-signature Initial Inventory");
+    expectFileableFixture(result.issues2, "the wet-ink Initial Inventory");
+    expectFileableFixture(result.issues3, "the minor-ward Annual Plan");
 
     const { rawPdf1, rawPdf2, rawPdf3, numPages1, numPages2, numPages3 } = result;
 
@@ -861,36 +903,52 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
       line4: 'St. Petersburg, FL 33701',
     };
 
-    const output = await page.evaluate(async (recipient) => {
+    await installFixtureSupport(page);
+    const output = await page.evaluate(async ([recipient, annualBase, simplifiedBase]) => {
       const annual = await (window as any).loadAnnualPdf();
       const simplified = await (window as any).loadSimplifiedPdf();
+      const build = (window as any).__pgBuildFixture;
 
-      const annualModel = annual.buildAnnualAccountingModel({
+      const period = {
+        // Accounts for 2025, so the guardianship began before it.
+        gid: '2024-06-01',
+        periodFrom: '2025-01-01',
+        periodTo: '2025-12-31',
+      };
+
+      const annualData = build('annual', annualBase, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
-        inventoryType: 'annual',
-        periodFrom: '2025-01-01',
-        periodTo: '2025-12-31',
+        ...period,
         certRecipients: [recipient],
         certDate: '2026-03-01',
-      }, { signatureStyle: 'typed', printDate: '2026-09-12' });
+      });
 
-      const simplifiedModel = simplified.buildSimplifiedAccountingModel({
+      const simplifiedData = build('simplified', simplifiedBase, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
-        inventoryType: 'simplified',
-        periodFrom: '2025-01-01',
-        periodTo: '2025-12-31',
+        ...period,
         certRecipients: [recipient],
         certServiceDate: '2026-03-01',
-      }, { signatureStyle: 'typed', printDate: '2026-09-12' });
+      });
+
+      const annualModel = annual.buildAnnualAccountingModel(annualData, { signatureStyle: 'typed', printDate: '2026-09-12' });
+      const simplifiedModel = simplified.buildSimplifiedAccountingModel(simplifiedData, { signatureStyle: 'typed', printDate: '2026-09-12' });
 
       const annualDoc = await annual.generateCourtFormPdf(annualModel);
       const simplifiedDoc = await simplified.generateCourtFormPdf(simplifiedModel);
-      return { annual: annualDoc.output(), simplified: simplifiedDoc.output() };
-    }, RECIPIENT);
+      return {
+        annual: annualDoc.output(),
+        simplified: simplifiedDoc.output(),
+        annualIssues: await (window as any).__pgFixtureIssues(annualData),
+        simplifiedIssues: await (window as any).__pgFixtureIssues(simplifiedData),
+      };
+    }, [RECIPIENT, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_SIMPLIFIED] as const);
+
+    expectFileableFixture(output.annualIssues, "40E's Annual certificate-of-service filing");
+    expectFileableFixture(output.simplifiedIssues, "40E's Simplified certificate-of-service filing");
 
     for (const [form, raw] of [['Annual', output.annual], ['Simplified', output.simplified]] as const) {
       const runs = (await extractPdfTextItems(raw)).flat().map((s) => s.trim());
@@ -923,26 +981,34 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
   test('Milestone 40E: Simplified Accounting no longer drops the fourth address line', async ({ page }) => {
     await freshStartNoPassword(page);
 
-    const raw = await page.evaluate(async () => {
+    await installFixtureSupport(page);
+    const output = await page.evaluate(async (base) => {
       const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
-      const model = buildSimplifiedAccountingModel({
+      const d = (window as any).__pgBuildFixture('simplified', base, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
-        inventoryType: 'simplified',
         certRecipients: [
           { name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756', line4: 'Room 100' },
           // A recipient carrying nothing but line4 used to be filtered out
           // entirely, producing no row at all.
-          { line4: 'Care of the Probate Division' },
+          { name: '', line2: '', line3: '', line4: 'Care of the Probate Division' },
         ],
-        certServiceDate: '2026-03-01',
-      }, { signatureStyle: 'typed', printDate: '2026-09-12' });
+        // Service date comes from the base: it has to fall on or after the
+        // period it certifies service for, which the base's own period sets.
+      });
+      const model = buildSimplifiedAccountingModel(d, { signatureStyle: 'typed', printDate: '2026-09-12' });
       const doc = await generateCourtFormPdf(model);
-      return doc.output();
-    });
+      return { raw: doc.output(), issues: await (window as any).__pgFixtureIssues(d) };
+    }, MINIMAL_VALID_SIMPLIFIED);
 
-    const runs = (await extractPdfTextItems(raw)).flat().map((s) => s.trim());
+    // No exemption needed for the nameless recipient: validateSimplified()
+    // does not require a name on every certificate-of-service row, so a
+    // recipient carrying only a fourth address line is a fileable state --
+    // which is exactly why silently dropping it from the document mattered.
+    expectFileableFixture(output.issues, "40E's fourth-address-line filing");
+
+    const runs = (await extractPdfTextItems(output.raw)).flat().map((s) => s.trim());
     expect(runs).toContain('Room 100');
     expect(runs).toContain('Care of the Probate Division');
   });

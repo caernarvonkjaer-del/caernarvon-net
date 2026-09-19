@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, fillMinimalValidGuardianWard } from './support/target';
+import { installFixtureSupport, expectFileableFixture } from './support/fixture-completeness';
+import { MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_SIMPLIFIED } from './support/fixtures';
 import { extractPdfText } from './support/pdf-extract';
 import { expectedPdfMetadataTitle } from './support/filing-matrix';
 
@@ -102,7 +104,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         scheduleB3: [],
         scheduleB4: [],
         scheduleC1: [
-          { payerName: 'Social Security Administration', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
+          { payerName: 'Social Security Administration', payerAddress: '1 Lemon St, Clearwater, FL 33756', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
         ],
         scheduleC2: [],
         scheduleC3: [],
@@ -124,6 +126,8 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     // 3. Generate native vector PDF in browser memory and inspect raw stream
     const pdfInspection = await page.evaluate(async () => {
       const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+
+      const fixtureIssues = await (window as any).__pgFixtureIssues((window as any).D);
 
       const model = buildVerifiedInventoryModel((window as any).D, {
         signatureStyle: 'script',
@@ -195,8 +199,14 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         metadataObj,
         parentTreeObj,
         xrefErrors,
+        fixtureIssues,
       };
     });
+
+    // The state above is only "full Verified Initial Inventory mock state" if
+    // the court would actually accept it. This is what makes that claim
+    // checkable instead of a comment.
+    expectFileableFixture(pdfInspection.fixtureIssues, "this test's Initial Inventory state");
 
     const {
       rawPdfString,
@@ -334,12 +344,17 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
 
   test('Slice 19D: Complete xref table byte offset integrity and zero untagged text operators across all filing outputs', async ({ page }) => {
     await freshStartNoPassword(page);
+    await installFixtureSupport(page);
 
-    const auditResults = await page.evaluate(async () => {
+    const auditResults = await page.evaluate(async ([invBase, simpBase]) => {
       const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
       const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
 
-      const mockInventoryData = {
+      // Both filings are complete ones with this test's own details written
+      // over them. Before, each was a bare literal carrying only the fields
+      // this test reads, so the two documents whose xref tables and tagging
+      // are audited here were filings the court would have rejected.
+      const mockInventoryData = (window as any).__pgBuildFixture('guardian', invBase, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -357,13 +372,20 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         scheduleA2: [{ lenderName: 'Wells Fargo', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA', relatedProperty: '1420 5th Ave N', fullDebtBalance: 45000 }],
         scheduleB1: [{ institutionName: 'Raymond James', accountType: 'Checking', accountNumber: '***4821', streetAddress: '880 Carillon', cityStateZip: 'St. Pete', fullAssetAmount: 38250 }],
         scheduleB2: [{ description: '2021 Toyota Camry', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Pete', valuationMethod: 'KBB', fullAssetValue: 18500, wardPercent: 100 }],
-        scheduleC1: [{ payerName: 'SSA', typeOfIncome: 'Retirement', paymentBasis: 'Monthly', annualIncomeAmount: 22200 }],
-      };
+        scheduleC1: [{ payerName: 'SSA', payerAddress: '1 Lemon St, Clearwater, FL 33756', typeOfIncome: 'Retirement', paymentBasis: 'Monthly', annualIncomeAmount: 22200 }],
+        // The base ticks every "no items" box; this filing lists real property,
+        // debts, accounts, a vehicle and an income source, so those boxes come off.
+        scheduleNoItems: { a1: false, a2: false, b1: false, b2: false, c1: false },
+      });
 
-      const mockSimplifiedData = {
+      const mockSimplifiedData = (window as any).__pgBuildFixture('simplified', simpBase, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
+        // This filing accounts for 2025, so the guardianship has to have begun
+        // on or before it -- the base's GID is 2026 and would put the period
+        // before the guardianship existed.
+        gid: '2024-06-01',
         periodFrom: '2025-01-01',
         periodTo: '2025-12-31',
         guardian: 'Eleanor Vance Bennett',
@@ -381,7 +403,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         serviceCharges: 95,
         federalIncomeTax: 1200,
         remuneration: [{ guardian: 'Eleanor Vance Bennett', type: 'Guardian Fee', description: 'Statutory fee per court order' }],
-      };
+      });
 
       const invModel = buildVerifiedInventoryModel(mockInventoryData, { signatureStyle: 'typed', printDate: '2026-09-03' });
       const simpModel = buildSimplifiedAccountingModel(mockSimplifiedData, { signatureStyle: 'script', printDate: '2026-09-03' });
@@ -461,8 +483,13 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
       return {
         inventory: auditPdf(invDoc.output()),
         simplified: auditPdf(simpDoc.output()),
+        inventoryIssues: await (window as any).__pgFixtureIssues(mockInventoryData),
+        simplifiedIssues: await (window as any).__pgFixtureIssues(mockSimplifiedData),
       };
-    });
+    }, [MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_SIMPLIFIED]);
+
+    expectFileableFixture(auditResults.inventoryIssues, "19D's Initial Inventory fixture");
+    expectFileableFixture(auditResults.simplifiedIssues, "19D's Simplified Accounting fixture");
 
     const { inventory, simplified } = auditResults;
 
