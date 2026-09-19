@@ -2,10 +2,18 @@
 
 ## Status
 
-**Draft — but no longer blocked on decisions.** All five design questions are
-settled (Decision 1 below, and Decisions 2–5 near the end), so **57C-R is
-execution-ready and needs only approval by name.** Per `AGENTS.md` §2 nothing
-here is authorized until Alan gives it. This document does not replace
+**57C-R landed 2026-09-18.** Approved by name by Alan and shipped in
+`aacbd56` / `460a228` / `ff1f97d`, with `8d5b5f6` updating the 18 fixtures the
+prompt interrupts. Full suite green at the time: 607 passed, 6 skipped, 0
+failed. See the dated note on the 57C-R section below for what actually
+shipped and how it differs from the design here.
+
+**The rest of Milestone 57 is still unscoped and unauthorized.** All five of
+this document's design questions were settled before 57C-R was built
+(Decision 1 below, and Decisions 2–5 near the end), but those decisions were
+about 57C-R only. Every remaining item in "The rest of Milestone 57" needs its
+own decision first. Per `AGENTS.md` §2 nothing there is authorized until Alan
+gives it by name. This document does not replace
 `MILESTONE-57-PROPOSAL.md` — that one records what was originally asked for,
 and `MILESTONE-57-REVIEW-HANDOFF.md` records the review verdict and the B-4
 template research. Both are still current inputs. This is the third document:
@@ -98,6 +106,35 @@ becomes real, and leaves export gating and the sidebar untouched.
 ---
 
 ## 57C-R — Supplemental-Documentation Acknowledgement
+
+> **LANDED 2026-09-18.** `aacbd56` (module + unit contract), `460a228`
+> (persistence and legacy `.sav` migration), `ff1f97d` (modal, mount hooks,
+> browser contract), `8d5b5f6` (the 18 fixtures the prompt interrupts). Suite
+> green: 607 passed, 6 skipped, 0 failed.
+>
+> Shipped as designed below — `src/core/filing/schedule-doc-ack.js`, one mount
+> hook per family, acknowledgement stored per period under
+> `D.scheduleDocsAck`, participating in neither validation nor navigation.
+> Coverage: 34 unit tests, 7 browser tests, plus `dismissScheduleDocPrompt()`
+> in `tests/e2e/support/target.ts`.
+>
+> **Three things the design did not anticipate, worth knowing before building
+> anything shaped like this again:**
+>
+> 1. **The prompt must not be awaited.** `mount()` calls it as a floating
+>    `void promptScheduleAckIfNeeded(...).catch(() => {})`. Awaiting it wedges
+>    `navigate()` — three tests timed out and the suite went from 17s to 3.2
+>    minutes on that path before this was understood.
+> 2. **It needs a re-entrancy guard.** Two mounts in quick succession stacked
+>    two dialogs and tripped a Playwright strict-mode violation. A
+>    module-level `promptInFlight` flag, cleared in a `finally`, fixes it;
+>    `__resetScheduleAckPrompt()` exists so tests can clear it between cases.
+> 3. **The fixture cost of Decision 1 was 18 fixtures, not zero.** The
+>    data-entry trigger point interrupts any fixture that mounts a schedule
+>    page with data already in it. That is still far cheaper than the
+>    export-time alternative, which would have hit roughly 46 — but the
+>    decision was not free, and this document's Decision 1 should be read with
+>    that number attached.
 
 **Risk: Medium.** Touches the data model and two feature dispatch points.
 Low blast radius by construction — nothing it adds participates in validation
