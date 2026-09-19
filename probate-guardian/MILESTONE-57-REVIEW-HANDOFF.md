@@ -139,6 +139,25 @@ accounts. p2 is the outlier: its column header sits at row 15 rather than row
 7, because pages 2 carries an instructions block, which is why its first page
 holds 25 rows where p8/p12/p16 hold 30/30/31.
 
+**Corroboration from a different sheet.** `SCH B-4 OTHER DISB SUMMARY p1` —
+the summary page, not one of the registers the capacities were derived from —
+carries this heading at B8:
+
+> **SUMMARY OF PAGES 1 TO 18 FOR ALL ACCOUNTS BY CATEGORY**
+
+Its 18 category rows (B10-B27, "Accounting" through "Other") each sum the `AK`
+column across every register page, e.g.
+`=SUM('SCH B-4 OTHER DISB p2'!AK8 + 'SCH B-4 OTHER DISB p3'!AK8 + ...)`, and
+B28 totals those into `=SUM(I10:I27)`. So the court's own workbook states in
+its own words that the 18 register pages exist to hold **more than one
+account**, which is independent of the block structure derived above and
+reached from a different direction.
+
+Two consequences for whoever builds this. The multi-account layout is the
+template's intent, not an interpretation of it. And the category summary
+**recalculates itself** from the register pages — the app writes the registers
+and must not write the summary, which is formula-driven.
+
 **One correction to the research above.** It records the account header as
 "`BANK:` / `ACCOUNT NUMBER #:` at C6/H6". The labels are actually at **J5**
 (`BANK:`, shared string 280) and **B6:C6** merged (`ACCOUNT NUMBER #:`, shared

@@ -177,12 +177,40 @@ Introduce a multi-account organization system for Annual Accounting Schedule B-4
 
 ## 57E — Trust Accounting and Audit Fee Inputs
 
-### Status: REVERTED (57E-1); 57E-2 still deferred
+### Status: REVERTED (57E-1). 57E-2 CLOSED 2026-09-19 — premise incorrect
 
-57E-1 was reverted and is unscoped. 57E-2 remains blocked on exactly the three
-unknowns its own deferral clause names below — the fee basis (principal vs.
-distributions), the tier thresholds, and the rounding rule — none of which is
-documented anywhere in this repo.
+57E-1 was reverted and is unscoped.
+
+**57E-2 is closed, not deferred.** An earlier version of this note said it was
+blocked on three undocumented unknowns — the fee basis, the tier thresholds,
+and the rounding rule. That was wrong on all three counts. The audit fee
+schedules are defined in the court's own workbooks, and the app already
+implements them exactly:
+
+| Filing type | Tiers | Template location | Implemented at |
+| --- | --- | --- | --- |
+| Annual / Final / Trust Accounting (shared `engineId: 'annual'`) | ≤ $25,000 → $20; $25,000.01–$100,000 → $85; $100,000.01–$500,000 → $170; over $500,000 → $250 | `PART II, III` rows 13–17, amounts in column G | `src/features/annual-accounting/totals.js:45-49` |
+| Verified Initial Inventory | over $25,000 → $85; below → $0 | `PART V` rows 7–9, amounts in column G | `src/legacy-app.js:6341` |
+| Simplified Accounting | none — its workbook has no audit fee schedule | — | — |
+| The four plan types | none — not accountings | — | — |
+
+Both are rendered in the app and printed in the PDF; the Annual PDF prints the
+tier table alongside the applicable fee. There is no rounding rule to document
+because the tiers are flat dollar amounts, not a rate.
+
+**There is no separate trust-asset audit fee**, which is why no one could find
+its formula. Neither workbook has such a row; the tiers key on estate or
+inventory value. That was 57E-2's premise and it does not hold.
+
+**The one real question this surfaced is also answered: no.** Schedule C does
+not belong in the Verified Initial Inventory's audit-fee base, so a ward with
+trusts is not being under-charged. The court's own workslips settle it —
+`SUMMARY I` B39, labelled "VERIFIED INITIAL INVENTORY OF GUARDIAN", computes
+`H39 = H32 + H38`, i.e. Schedule A plus Schedule B and nothing else, while
+`SUMMARY II` presents Schedule C under the heading "SCHEDULE C: Other
+Financial Information" with a per-schedule total, no grand total, and no
+formula rolling any of it back into H39. `calc.total() = calc.netA() +
+calc.netB()` matches the workbook exactly.
 
 ### Scope Split
 
