@@ -96,7 +96,7 @@ E2E spec files, and the named helper modules. At `e1228fd`:
 | Single-filing audit filtering | Ward B creation and its audit event are inside `if (wardB)`; if Ward B does not exist, the exclusion assertion passes without establishing anything to exclude. | 59A |
 | Type contracts | `expect(Types).toBeDefined()` is redundant with module import, while the local `CaseFile` object test asserts values it assigned itself. `tests/unit/` is outside `tsconfig.json`'s include set, so that JSDoc annotation is not a compile-time contract. | 59A |
 | Accounting-period note | `content-corrections.spec.js` copies the production ternary and tests the copy. Production-driven coverage already exists in `schedule-docs-period-key.spec.ts`; the copied tests add false confidence. | 59A |
-| PDF xref audit | Found 2026-09-19, after 59A closed. `pdf-structure-tags.spec.ts` locates the xref table with `lastIndexOf('xref')`, which matches the `xref` inside `startxref` — positioned after the trailer, so the slice runs backwards and is empty. The validation loop never executes and the assertion passes unconditionally. Measured: `sectionLen: 0`. | 59C-0 |
+| PDF xref audit | Found 2026-09-19, after 59A closed. `pdf-structure-tags.spec.ts` Slice 19A located the xref table with `lastIndexOf('xref')`, which matches the `xref` inside `startxref` — positioned after the trailer, so the slice ran backwards and was empty. The validation loop never executed and the assertion passed unconditionally. Measured: `sectionLen: 0`, and it passed against a deliberately corrupted offset. **Coverage was never lost** — Slice 19D in the same file does the audit correctly and failed on that same input. Deleted, not repaired. | 59C-0 — landed `60ce947` |
 
 ### Confirmed organization and runtime opportunities
 
@@ -320,7 +320,7 @@ no reason. Each sub-delivery below is approved and executed on its own.
 
 | Sub-delivery | Scope | Risk | File surface | Depends on |
 | --- | --- | --- | --- | --- |
-| **59C-0** | Repair the vacuous xref audit | Low | `tests/e2e/pdf-structure-tags.spec.ts` | — |
+| **59C-0** | Remove the vacuous xref audit — **LANDED `60ce947`** | Low | `tests/e2e/pdf-structure-tags.spec.ts` | — |
 | **59C-1** | Baseline measurement + trace policy (C1, C6) | Low | `playwright.config.ts`; one committed measurements file | — |
 | **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 |
 | **59C-3** | Replace observable fixed waits (C5) | Medium | signature + annotation specs | — |
@@ -336,10 +336,23 @@ belongs to. Two consequences: 59C-1 appears twice (C1 and C6) and 59C-2 three
 times (C2, C3, C4), and the sub-delivery numbers therefore do not read in order
 down the page. The table above is the authoritative grouping.
 
-### 59C-0. Repair the xref audit before consolidating anything onto it
+### 59C-0. Remove the vacuous xref audit — LANDED `60ce947`
 
-**This is a false-confidence repair of the kind 59A was created for, found
-after 59A closed. It is a prerequisite for 59C-2, not part of it.**
+**Correction to this section as first written.** It claimed the consequence
+was that "a corrupt xref table in a filed court PDF would not be caught by the
+test whose stated job is to catch it." **That was wrong.** Slice 19D, 200
+lines below the dead block in the same file, audits xref integrity correctly
+for both Guardian Inventory and Simplified output, and `pdf-form-specific.spec.ts`
+covers Annual. Verified by corrupting one offset: 19D **failed**, reporting
+`validOffsets` 345 of 346. No court PDF was ever unverified. The defect was a
+dead assertion, not a gap in coverage.
+
+The block was therefore **deleted rather than repaired**: repairing it would
+have created a third copy of this logic, two of them in one file, which is
+exactly what 59C-2 exists to remove. 59C-2 still unifies 19D's implementation
+with `pdf-form-specific`'s.
+
+The original description of the defect follows, and is accurate.
 
 `tests/e2e/pdf-structure-tags.spec.ts` claims to verify that "every xref offset
 must point to exact object header." It verifies nothing. It locates the table
@@ -368,19 +381,20 @@ PDF would not be caught by the test whose stated job is to catch it.
 `startxref` pointer and asserts that the pointer lands on `xref`. That is the
 implementation to keep.
 
-**Why it must land before 59C-2:** C3 proposes replacing both copies with one
+**Why it landed before 59C-2:** C3 proposes replacing the copies with one
 shared PDF structural-audit helper. Do that first and one of two things
-happens — the broken copy is silently repaired by a refactor scoped as
-cleanup, leaving no record that xref integrity went unverified, or the dead
-implementation is chosen as the shared base and its vacuity is propagated to
-every caller behind a helper that looks authoritative. Repair it first, with
-its own red-first evidence, so the consolidation is a genuine no-op.
+happens — the dead copy is silently removed by a refactor scoped as cleanup,
+leaving no record that an assertion had been passing unconditionally, or the
+dead implementation is chosen as the shared base and its vacuity is propagated
+to every caller behind a helper that looks authoritative. Clearing it first,
+with its own evidence, makes the consolidation a genuine no-op.
 
-**Red-first proof:** corrupt one xref offset in the generated PDF (or assert
-against a fixture with a known-bad offset). The repaired check must fail
-naming the object whose offset is wrong. The current check cannot fail at all,
-so confirm it passes against that same corrupted input *before* the repair —
-that is the evidence the test was vacuous rather than merely untested.
+**Red-first proof, as executed:** the first in-use xref offset in the
+generated PDF was replaced with a wrong value, length-preserving so no other
+object offset moved. Slice 19A **passed** — the evidence that its assertion
+was vacuous rather than merely untested. Slice 19D **failed** on the same
+input (`validOffsets` 345 of 346), the evidence that deleting 19A's copy lost
+nothing. Both reverted; `pdf-structure-tags.spec.ts` 3 passed after removal.
 
 ### 59C-1 / C1. Measure before changing
 
@@ -536,13 +550,15 @@ is still complete.
 Each list below is the acceptance bar for that sub-delivery alone. None of
 them waits on the others.
 
-#### 59C-0
+#### 59C-0 — met, `60ce947`
 
-- The xref check fails against a PDF with a deliberately corrupted offset, and
-  names the object whose offset is wrong.
-- The same corrupted input is shown to PASS before the repair, proving the
-  check was vacuous rather than merely untested.
-- `pdf-structure-tags.spec.ts` still passes against a well-formed PDF.
+- ~~The xref check fails against a corrupted offset~~ — superseded: 19A's copy
+  was deleted, and **19D** is the check that must fail. It does: `validOffsets`
+  345 of 346.
+- The corrupted input was shown to PASS against 19A before removal, proving
+  the check was vacuous rather than merely untested. ✔
+- `pdf-structure-tags.spec.ts` still passes against a well-formed PDF —
+  3 passed. ✔
 
 #### 59C-1
 
