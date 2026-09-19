@@ -88,7 +88,8 @@ const SCHEDULES: Record<string, { cap: number; row: (i: number) => Record<string
     }),
   },
   scheduleC5: {
-    cap: 15,
+    // 23 since D10 extended the page map to the form's third page; 15 before.
+    cap: 23,
     row: (i) => ({
       assetDescription: `C5 Asset ${i}`, ownerAddress: `${i} C5 Sq`, ownerName: `C5 Owner ${i}`, ownerCityStateZip: `C5City, FL ${80000 + i}`,
       relationshipToWard: 'Sibling', totalAssetValue: 11000 + i, jointOwnerPercent: 0.5,

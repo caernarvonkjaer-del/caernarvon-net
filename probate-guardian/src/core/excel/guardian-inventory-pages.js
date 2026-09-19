@@ -71,9 +71,16 @@ export const SCHEDULE_C4_PAGES = Object.freeze([
   page('C-4 TRUSTS pg 1', [23, 28, 33, 38, 43, 48, 53]),
   page('C-4 TRUSTS pg 2', [7, 12, 17, 22, 27, 32, 37, 42, 47]),
 ]);
+// Page 3 was missing from this map until 2026-09-19, so the app reached 15 of
+// the form's 23 joint-owner slots and refused an Excel export it could have
+// given. The page is structurally identical to page 2 -- eight slots at the
+// same rows, pre-printed Line # 16-23, its own page total at H47 -- and the
+// schedule total on page 1 already summed it. Extending to it was authorized
+// by Alan (D10).
 export const SCHEDULE_C5_PAGES = Object.freeze([
   page('C-5 JOINT OWNERS pg 1 ', [19, 24, 29, 34, 39, 44, 49]),
   page('C-5 JOINT OWNERS pg 2', [7, 12, 17, 22, 27, 32, 37, 42]),
+  page('C-5 JOINT OWNERS pg 3', [7, 12, 17, 22, 27, 32, 37, 42]),
 ]);
 
 /** Every paged schedule, keyed by the inventory field that fills it. */
@@ -93,27 +100,18 @@ export const GUARDIAN_PAGED_SCHEDULES = Object.freeze([
 
 /**
  * Pages the workbook ships that no schedule's page map covers, so the exporter
- * can never write to them and the importer never reads them.
+ * can never write to them and the importer never reads them. Such a page is
+ * blank in every filing and is always pruned.
  *
- * There is exactly one. The court's C-5 runs to three pages; SCHEDULE_C5_PAGES
- * stops at two, and has since the map was written, which is why
- * GUARDIAN_EXCEL_CAPS.scheduleC5 is 15 (7 + 8) rather than the 23 the workbook
- * actually holds. So 'C-5 JOINT OWNERS pg 3' ships blank in every filing
- * regardless of how much the filer enters, and is always prunable.
- *
- * Pruning it is not the same as reaching it. A filing with 16 joint-owned
- * assets is still refused an Excel export it could in principle be given --
- * that is a capacity question for the Clerk, not something to change quietly
- * here (AGENTS.md section 2), and it is recorded in MILESTONE-57-RESCOPE.md.
- *
- * Kept as its own list rather than folded into the maps precisely so that
- * adding page 3 to SCHEDULE_C5_PAGES later is one edit in one place, and the
- * drift guard in tests/unit/guardian-page-map.spec.js catches any other page
- * that falls out of the maps the same way.
+ * Empty, deliberately. It held 'C-5 JOINT OWNERS pg 3' until D10 extended
+ * SCHEDULE_C5_PAGES to reach it; the right answer to an unreachable page is
+ * usually to reach it, not to prune it forever. The escape hatch stays because
+ * the drift guard in tests/unit/guardian-page-map.spec.js requires every
+ * schedule page in the workbook to be either mapped or listed here -- so a
+ * page the court adds that genuinely has no data behind it has somewhere to be
+ * declared, in one place, rather than being silently dropped.
  */
-export const GUARDIAN_NEVER_WRITTEN_SHEETS = Object.freeze([
-  'C-5 JOINT OWNERS pg 3',
-]);
+export const GUARDIAN_NEVER_WRITTEN_SHEETS = Object.freeze([]);
 
 /**
  * How many of a schedule's pages a given number of entries actually reaches.

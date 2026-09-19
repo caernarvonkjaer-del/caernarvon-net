@@ -70,10 +70,7 @@ describe('unusedGuardianContinuationSheets', () => {
     'C-2 LAWSUIT AGAINST pg 2',
     'C-3 LAWSUIT BY WARD pg 2',
     'C-4 TRUSTS pg 2',
-    'C-5 JOINT OWNERS pg 2',
-    // Not a continuation page the exporter can reach: SCHEDULE_C5_PAGES stops
-    // at page 2, so page 3 ships blank in every filing and always goes.
-    'C-5 JOINT OWNERS pg 3',
+    'C-5 JOINT OWNERS pg 2', 'C-5 JOINT OWNERS pg 3',
   ];
 
   test('an empty inventory gives up every continuation page and no first page', () => {
@@ -114,13 +111,20 @@ describe('unusedGuardianContinuationSheets', () => {
     expect(unused).toHaveLength(20);
   });
 
-  // C-5 page 3 exists in the workbook but in no page map, so nothing can ever
-  // write to it. It goes even from a filing large enough to fill everything
-  // else -- which is also the signal that its rows are unreachable.
-  test('always drops the C-5 page the exporter cannot reach', () => {
-    const full = {};
-    for (const { key } of [{ key: 'scheduleC5' }]) full[key] = Array.from({ length: 500 }, () => ({}));
-    expect(unusedGuardianContinuationSheets(full)).toContain('C-5 JOINT OWNERS pg 3');
+  // C-5 page 3 used to be in no page map at all, so nothing could write to it
+  // and it was pruned from every filing however much the filer entered. D10
+  // extended the map to reach it, which is what makes the form's 16th to 23rd
+  // joint-owner slots usable. 15 entries stop at page 2; 16 reach page 3.
+  test('C-5 reaches the form\'s third page once it passes fifteen entries', () => {
+    const at15 = unusedGuardianContinuationSheets({ scheduleC5: Array.from({ length: 15 }, () => ({})) });
+    expect(at15, 'fifteen fit on pages 1 and 2').toContain('C-5 JOINT OWNERS pg 3');
+    expect(at15).not.toContain('C-5 JOINT OWNERS pg 2');
+
+    const at16 = unusedGuardianContinuationSheets({ scheduleC5: Array.from({ length: 16 }, () => ({})) });
+    expect(at16, 'the sixteenth needs page 3').not.toContain('C-5 JOINT OWNERS pg 3');
+
+    const at23 = unusedGuardianContinuationSheets({ scheduleC5: Array.from({ length: 23 }, () => ({})) });
+    expect(at23, 'the form holds 23').not.toContain('C-5 JOINT OWNERS pg 3');
   });
 
   test('the boundary is exact -- six cash accounts fit page 1, seven do not', () => {
@@ -136,7 +140,7 @@ describe('unusedGuardianContinuationSheets', () => {
       'scheduleB4', 'scheduleC1', 'scheduleC2', 'scheduleC3', 'scheduleC4', 'scheduleC5']) {
       full[key] = Array.from({ length: 200 }, () => ({}));
     }
-    expect(unusedGuardianContinuationSheets(full)).toEqual(['C-5 JOINT OWNERS pg 3']);
+    expect(unusedGuardianContinuationSheets(full)).toEqual([]);
   });
 
   test('each schedule is decided on its own entries, not on the others', () => {

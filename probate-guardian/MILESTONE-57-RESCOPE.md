@@ -418,8 +418,23 @@ actually expects for a ward with five or more accounts — a supplemental
 register, combined accounts, or whether the PDF alone is an acceptable filing.
 Worth asking, but it does not block the work.
 
-**D10 — OPEN. Initial Inventory blank-page pruning landed; the C-5 capacity
-question it turned up did not.**
+**D10 — SETTLED 2026-09-19, authorized by Alan: extend C-5 to the form's real
+third page. Initial Inventory blank-page pruning landed alongside it.**
+
+> **LANDED.** `SCHEDULE_C5_PAGES` now reaches `C-5 JOINT OWNERS pg 3` and
+> `GUARDIAN_EXCEL_CAPS.scheduleC5` is **23**, matching the form's own
+> pre-printed Line # 1-23 (7 slots on page 1, 8 each on pages 2 and 3). The
+> page is structurally identical to page 2 and the schedule total on page 1
+> already summed it, so nothing else had to change. `GUARDIAN_NEVER_WRITTEN_SHEETS`
+> is now empty — C-5 page 3 was its only entry — and a new drift-guard case
+> asserts that **no** schedule page in the workbook is unreachable, so the
+> situation cannot recur silently.
+>
+> Verified by the existing full-capacity round trip
+> (`guardian-inventory-excel-schedule-layout.spec.ts`), which now writes and
+> reads back 23 joint-owner rows including the last row of page 3.
+
+The finding, for the record:
 
 Landed 2026-09-19, same standard as Annual Accounting: the Initial Inventory
 export now drops the continuation pages a filing never reaches. The court's
@@ -436,7 +451,7 @@ a cover, and two hidden sheets; there are no continuation pages and all four
 filing pages are written on every export. `tests/unit/simplified-no-blank-pages.spec.js`
 pins that so a future template change cannot quietly reintroduce the problem.
 
-**The open question.** The workbook's Schedule C-5 (jointly owned assets) runs
+**The question, now answered.** The workbook's Schedule C-5 (jointly owned assets) runs
 to three pages. The exporter's page map stops at two, and always has, so
 `GUARDIAN_EXCEL_CAPS.scheduleC5` is **15** where the form actually holds **23**.
 Consequence today: a filer with 16 jointly owned assets is refused an Excel
@@ -444,11 +459,7 @@ export the court's own form could have carried, and is told the form is full
 when it is not. The blank third page is now pruned either way, so nothing is
 mis-stated in a filing — this is a capacity limit, not a correctness defect.
 
-Fixing it is one line (add page 3 to `SCHEDULE_C5_PAGES`, raise the cap to 23)
-plus its round-trip test. It is not done, because raising what the app will
-accept into a court form is the Clerk's call, not a quiet side effect of a
-pruning change (AGENTS.md §2). **Decision needed: extend C-5 to the form's
-real third page, or leave the cap at 15?**
+Alan authorized the extension on 2026-09-19; see the LANDED note above.
 
 Two related items for the same decision, both verified rather than assumed:
 

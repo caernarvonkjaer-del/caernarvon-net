@@ -58,6 +58,12 @@ describe('Initial Inventory page maps against the shipped workbook', () => {
     expect(orphans, 'schedule pages in neither a page map nor the never-written list').toEqual([]);
   });
 
+  // The list is empty today: D10 extended C-5's map to its third page, which
+  // was its only entry. It stays as the declared home for a page the court
+  // adds that genuinely has no data behind it -- the test above requires every
+  // schedule page to be in one place or the other, so a new page cannot be
+  // silently dropped, but it must not be used to paper over a page the app
+  // should be reaching.
   test('the never-written list names real sheets that no page map reaches', async () => {
     const sheets = new Set(await templateSheetNames());
     const mapped = new Set(mappedPages());
@@ -65,6 +71,17 @@ describe('Initial Inventory page maps against the shipped workbook', () => {
       expect(sheets.has(name), `${name} is not in the workbook`).toBe(true);
       expect(mapped.has(name), `${name} is reachable, so it must not be force-pruned`).toBe(false);
     }
+  });
+
+  // Every printed slot the court's form provides is reachable. This is what
+  // D10 bought: before it, C-5's third page held eight joint-owner slots the
+  // app could not use, and a 16-asset filing was refused an Excel export the
+  // form could have carried.
+  test('no schedule page in the workbook is unreachable', async () => {
+    const mapped = new Set(mappedPages());
+    const unreachable = (await templateSheetNames())
+      .filter((n) => SCHEDULE_PAGE.test(n) && !mapped.has(n));
+    expect(unreachable, 'schedule pages the exporter can never write to').toEqual([]);
   });
 
   test('no page is claimed by two schedules', () => {

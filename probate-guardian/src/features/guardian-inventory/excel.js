@@ -47,7 +47,10 @@ export const GUARDIAN_EXCEL_CAPS={
   scheduleC2:{cap:13,label:'Schedule C-2 — Lawsuits Against Ward',route:'/c2'},
   scheduleC3:{cap:14,label:'Schedule C-3 — Lawsuits By Ward',route:'/c3'},
   scheduleC4:{cap:16,label:'Schedule C-4 — Trusts',route:'/c4'},
-  scheduleC5:{cap:15,label:'Schedule C-5 — Joint Owners',route:'/c5'},
+  // 23 = page 1's 7 slots + 8 each on pages 2 and 3, matching the form's own
+  // pre-printed Line # 1-23. Was 15 until D10, because the page map stopped at
+  // page 2 (see core/excel/guardian-inventory-pages.js).
+  scheduleC5:{cap:23,label:'Schedule C-5 — Joint Owners',route:'/c5'},
 };
 
 // Milestone 52K: each schedule's page/sheet-name + row-number layout used to
