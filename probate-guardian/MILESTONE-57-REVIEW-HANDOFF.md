@@ -59,6 +59,21 @@ ward id + timestamp, nothing else).
   (956 tests) and governance checks (`window-bridge`, `verify-data-model`)
   are green.
 
+  **Correction (2026-09-19, different session):** "Playwright Chromium isn't
+  installed locally" was a fact about the environment that wrote this
+  document, not a standing fact about this repo. Verified directly in a
+  later session: `npx playwright --version` reports 1.62.1, the Chromium
+  binary exists on disk
+  (`~/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe`),
+  and `PG_BROWSER=chromium npx playwright test` runs real browser suites
+  successfully (a full-repo run the same day passed 598, skipped 6, 0
+  failed). The three e2e specs this caveat covers
+  (`recovery-cache.spec.ts`, `case-file-core-fields-roundtrip.spec.ts`,
+  `persistence-recovery.contract.spec.ts`) were still only hand-edited, not
+  run, as of this note — the environment gap that excused that is what's
+  corrected here, not the specs' pass/fail status, which still needs an
+  actual run to confirm.
+
 ### 2. Guardian Inventory date round-trip bug (part of 57F's regression)
 `src/features/guardian-inventory/excel.js`'s `dt()` import reader only
 handled a `Date` object or an Excel serial number; a string (what re-opening
