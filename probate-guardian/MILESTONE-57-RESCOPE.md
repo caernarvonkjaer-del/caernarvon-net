@@ -462,9 +462,33 @@ Two related items for the same decision, both verified rather than assumed:
   regex that mis-attributed a formula to the wrong cell (now forbidden by
   `AGENTS.md` §14). The template is correct; the app's writer is not.
 
-**D11 — OPEN, and the most serious thing on this page. Simplified Annual
-Accounting writes its entire Part I identity block one row too low, so every
-field prints under the wrong label on a filed court form.**
+**D11 — FIXED 2026-09-19, authorized by Alan by name. Simplified Annual
+Accounting wrote its entire Part I identity block one row too low, so every
+field printed under the wrong label on a filed court form.**
+
+> **LANDED.** Writer and importer both moved to the cells the court's labels
+> point at: period dates to `E13`/`H13`, attorney/guardian/type to
+> `D15`/`D16`/`D17`. The duplicate case-number write to `D15` is gone — the
+> case number already reaches Part I through the workbook's own `D14 = =H4`,
+> which the app now leaves alone. The ward's SSN is no longer written at all:
+> the court's Simplified workbook has no ward-SSN field (its only SSN cells
+> are the guardians' SSN/EIN on PARTS III, IV), so a required and sensitive
+> value was both destroying the printed `From` label and appearing **unmasked**
+> on a form that never asked for it, while the PDF prints it through
+> `maskSSN()`.
+>
+> One deliberate behaviour change: `D.ssn` no longer round-trips through Excel.
+> An import leaves whatever the filing already holds rather than blanking a
+> required field the workbook has nothing to say about. The `.sav` file remains
+> the full-fidelity round trip.
+>
+> Coverage: `tests/e2e/simplified-part1-identity-cells.spec.ts`, which asserts
+> against the **exported file**, never the re-import — agreeing with a broken
+> exporter is exactly how this survived. Fault-injected: restoring the original
+> writer fails all six cases. `tests/e2e/excel-import-cell-shapes.spec.ts`
+> moved its fixtures to the corrected addresses.
+
+The defect as found:
 
 Found 2026-09-19 while confirming an unrelated claim. **Pre-existing** —
 `src/features/simplified-accounting/excel.js` has not changed since Milestone
@@ -501,15 +525,11 @@ form — precisely the failure mode `AGENTS.md` §13 exists for. It also means t
 period dates do not survive a round trip at all: both are read back from inside
 the same merge, so `periodFrom` and `periodTo` return the same value.
 
-**Decision needed: authorize the row correction?** The fix is to move each
-write up one row (`D13`→ the period cells on r13, `D14` for the case number,
-`D15`/`D16`/`D17` for attorney/guardian/type), drop the writes that clobber
-`D14`'s formula, and move the importer to match. It is not ambiguous — the
-template's own `=H4` at `D14` settles where the case number belongs — but it
-changes what appears in a filed court document and both halves of a round trip,
-so it is Alan's call by name (§2), not a quiet fix. **Verification must assert
-against the exported file, per §14, not against the app's own re-import**,
-which is the thing that has been agreeing with the bug.
+**Filers who already submitted a Simplified workbook.** Anything exported
+before this fix carries the shifted block. Whether Pinellas wants those
+re-filed is the Clerk's call; the app cannot detect an affected file after the
+fact, because a corrected export and a stale one differ only in which cells
+hold which values.
 
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a

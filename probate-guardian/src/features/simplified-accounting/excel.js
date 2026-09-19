@@ -79,15 +79,41 @@ export async function doSaveExcel(){
 
     const p1=workbook.getWorksheet('PARTS I, II ');
     if(p1){
+      // Part I's identity block. Every label sits in column B and its value in
+      // the merged D<row>:I<row> beside it. These addresses were read back out
+      // of the shipped workbook with an XML parser (AGENTS.md section 14);
+      // every one of them used to be written one row too low, so the ward's
+      // SSN printed over the "From" label, the case number under "Attorney for
+      // Guardian", the attorney under "Guardian", the guardian under "Type of
+      // Guardianship", and the type of guardianship over the "Part II" heading.
+      //
+      // Nothing caught it because importExcel() below read the same wrong
+      // cells, so the app round-tripped its own output perfectly while
+      // disagreeing with the court's form on every field (AGENTS.md
+      // section 13).
       setCell(p1,'C4',inv.wardName||'');
       setCell(p1,'H4',inv.caseNumber||'');
-      setCell(p1,'D13',inv.ssn||'');
-      setCell(p1,'E14',fmtD(inv.periodFrom));
-      setCell(p1,'H14',fmtD(inv.periodTo));
-      setCell(p1,'D15',inv.caseNumber||'');
-      setCell(p1,'D16',inv.attorney||'');
-      setCell(p1,'D17',inv.guardian||'');
-      setCell(p1,'D18',inv.typeOfGuardianship||'');
+      // The period cells are r13's own merges, NOT r14's. Writing them to
+      // E14/H14 put them inside the D14:I14 merge, and ExcelJS redirects a
+      // write on a merged member to the merge master -- so both landed on D14
+      // and destroyed the =H4 formula the workbook fills the Case Number box
+      // with, leaving the period end date in its place there and on the COVER
+      // page, which reads D14. The period boxes themselves printed blank.
+      setCell(p1,'E13',fmtD(inv.periodFrom));
+      setCell(p1,'H13',fmtD(inv.periodTo));
+      // D12 (=C4) and D14 (=H4) are the workbook's own formulas: the ward name
+      // and case number reach Part I from the header cells written above. The
+      // app writes the inputs and leaves the formulas alone -- AGENTS.md
+      // section 13, "never write into a formula cell".
+      setCell(p1,'D15',inv.attorney||'');
+      setCell(p1,'D16',inv.guardian||'');
+      setCell(p1,'D17',inv.typeOfGuardianship||'');
+      // The ward's SSN is deliberately not written. The court's Simplified
+      // workbook has no ward-SSN field -- its only SSN cells are the
+      // guardians' SSN/EIN on PARTS III, IV, which are written below. It used
+      // to go to D13, which is the printed "From" label, so a required and
+      // sensitive field was both destroying a label and appearing unmasked on
+      // a form that never asked for it (the PDF prints it through maskSSN).
       setCell(p1,'F4',fmtD(inv.gid));
       setCell(p1,'G2',inv.county||'');
       setCell(p1,'I5',inv.amendedForm||'');
@@ -232,14 +258,21 @@ export async function importExcel(input){
       const p1=workbook.getWorksheet('PARTS I, II ');
       if(p1){
         const gc=addr=>readCellText(p1.getCell(addr));
+        // The same addresses doSaveExcel() writes -- see the note there. Both
+        // sides used to be one row low together, which is exactly why the
+        // round trip looked clean.
         window.D.wardName=gc('C4');
         window.D.caseNumber=gc('H4');
-        window.D.ssn=gc('D13');
-        window.D.periodFrom=gc('E14').substring(0,10);
-        window.D.periodTo=gc('H14').substring(0,10);
-        window.D.attorney=gc('D16');
-        window.D.guardian=gc('D17');
-        window.D.typeOfGuardianship=gc('D18');
+        window.D.periodFrom=gc('E13').substring(0,10);
+        window.D.periodTo=gc('H13').substring(0,10);
+        window.D.attorney=gc('D15');
+        window.D.guardian=gc('D16');
+        window.D.typeOfGuardianship=gc('D17');
+        // No ward SSN: the workbook has no field for it, so an import leaves
+        // whatever the filing already holds rather than blanking a required
+        // field the file simply has nothing to say about. Reading E14/H14 for
+        // the period used to return the same value twice -- both sit inside
+        // the D14:I14 merge, so both resolved to that one master cell.
         window.D.gid=gc('F4').substring(0,10);
         // Milestone 40C-A item 5: see annual-accounting/excel.js -- an imported
         // workbook with no county leaves the filing blank.

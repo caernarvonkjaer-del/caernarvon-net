@@ -63,15 +63,17 @@ test.describe('Excel import: cell shapes the app never exports (Milestone 53B)',
       ws.getCell('C4').value = { richText: [{ text: 'Eleanor ' }, { text: 'Whitfield', font: { bold: true } }] };
       // H4 -> caseNumber: a formula cell with a cached result.
       ws.getCell('H4').value = { formula: '"26-"&"001234"', result: '26-001234' };
-      // D16 -> attorney: a hyperlink; the display text is what must import.
-      ws.getCell('D16').value = { text: 'Daniel R. Okafor, Esq.', hyperlink: 'mailto:okafor@example.test' };
+      // D15 -> attorney: a hyperlink; the display text is what must import.
+      // (D15/D16 are the court form's real Attorney/Guardian value cells; the
+      // importer used to read D16/D17, one row low -- see D11.)
+      ws.getCell('D15').value = { text: 'Daniel R. Okafor, Esq.', hyperlink: 'mailto:okafor@example.test' };
       // F4 -> gid: a native Date. The importer then applies .substring(0,10),
       // which only yields a correct date if readCellText normalized through
       // fmtDate(toISOString()) rather than Date#toString().
       ws.getCell('F4').value = new Date(Date.UTC(2026, 2, 15));
-      // D17 -> guardian: an error cell. Must import blank, never "[object
+      // D16 -> guardian: an error cell. Must import blank, never "[object
       // Object]" or "#REF!" into a filed document's guardian field.
-      ws.getCell('D17').value = { error: '#REF!' };
+      ws.getCell('D16').value = { error: '#REF!' };
       // G2 -> county: a plain string with surrounding whitespace.
       ws.getCell('G2').value = '   Pinellas   ';
 
