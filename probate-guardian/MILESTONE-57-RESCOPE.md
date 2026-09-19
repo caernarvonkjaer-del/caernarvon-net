@@ -1428,12 +1428,49 @@ refusal.
 
 **Scope, corrected:** add `simplified` to the guard, then fix the two
 behavioural rules - `s-p5` and `s-p6` must evaluate signature completeness
-through the shared helper rather than field presence. **Do not satisfy the
+through the shared rule rather than field presence.
+
+**That helper is not reachable from `computeNavChecks()` today, and saying
+"use the shared helper" without saying so reproduces the lazy-loading defect
+this document warns about in item 4.** `checkSignatureState()` and
+`inferLegacySignatureState()` are imported only by `core/filing/readiness-config.js`
+and the seven feature modules; **there is no `window.*` bridge for either**,
+and `computeNavChecks()` lives in `legacy-app.js`, a classic script that
+cannot `import`. Dashboard progress is computed synchronously for filings that
+have never been opened, so a rule reached through a lazily-loaded feature
+module is exactly the wrong shape.
+
+So this fix must also deliver an **eagerly available pure signature-completeness
+primitive**, plus the plumbing that makes it usable from legacy code: a
+`window.*` bridge established at load rather than at feature mount, a
+declaration in `src/core/types/window-bridge.d.ts`, and the corresponding
+`window-bridge.spec.js` allow-list entry (that guard fails the build on an
+undeclared global - confirmed by hitting it during Milestone 57's D14 work).
+`signature-state.js` is already pure and dependency-light, so this is a
+wiring change rather than a rewrite - but it is not optional, and it is the
+first place the derived-readiness architecture in item 4 should be prototyped
+in miniature. **Do not satisfy the
 guard by naming the five fields**, and do not add bare `req()` checks for the
 date or image: that would make an unsigned filing incomplete and collide
-directly with the pro se / Ch. 393 protection in AGENTS.md section 4. Required
-test cases, both Parts: unsigned; typed with and without a date; stamp with
-and without an image.
+directly with the pro se / Ch. 393 protection in AGENTS.md section 4. Required test
+cases, both Parts - and note that **blank is not equivalent to explicit
+`none`**, because `inferLegacySignatureState()`
+(`core/validation/signature-state.js:70`) reads a blank state as `typed` when
+a date is present and `none` when it is not:
+
+| Case | Expected |
+| --- | --- |
+| explicit `none` | complete |
+| blank state, no date (legacy) | complete - infers `none` |
+| blank state, with date (legacy) | infers `typed`; complete, and must not demand a re-selection |
+| `typed`, date present | complete |
+| `typed`, no date | **incomplete** - the live defect |
+| `stamp`, image present | complete |
+| `stamp`, no image | **incomplete** - the live defect |
+| unrecognized value | **incomplete** - `checkSignatureState()` has an explicit invalid branch and must never silently pass |
+
+Eight cases per role, two roles per filing - the finite domain item 3 argues
+should be tested as a truth table rather than sampled.
 
 **2. The reverse-direction scan is a search heuristic, not an enumeration.**
 
@@ -1458,15 +1495,30 @@ Reading the survivors, the substantive reverse-direction families are three:
 
 | Family | Where |
 | --- | --- |
-| Annual `scheduleNoItems` / remuneration | **Already scoped as MS 58D** - see below. Do not write a second fix |
+| Annual `scheduleNoItems`, **Part XI remuneration only** | Owned by MS 58D - do not duplicate that instance |
+| Annual `scheduleNoItems`, **the other twelve schedules** | Same mechanism, NOT owned by 58D. Unadjudicated - see below |
 | Initial Plan Question 7 benefit selection | `q7*` identifiers in `planInitial` |
 | Annual Plan Part 4 insurance/benefit selection | `q3BenefitsNone`, `q3BenefitsOther` and neighbours in `planAnnual` |
 
-**Coordinate with MS 58D.** Its own text already states the Annual case
-precisely: *"Current sidebar logic requires either the explicit no-items
+**Coordinate with MS 58D - but only on Part XI.** 58D states the mechanism
+exactly: *"Current sidebar logic requires either the explicit no-items
 declaration or complete rows, while `validateAnnual()` does not require
-either."* That is this reverse-direction defect, already scoped, with the
-files and tests listed. It is not available for this work to duplicate.
+either."* Its scope, however, is Part XI remuneration and nothing else.
+
+**The same mechanism affects twelve other schedules, and those are not owned
+by anyone.** `rowsComplete(rows, fields, noItemsKey)`
+(`legacy-app.js:6694`) is `verifiedEmpty(noItemsKey) || (at least one row, all
+complete)`, and it backs `a-scha`, `a-schb1` through `a-schb4`, `a-schd1`
+through `a-schd5`, `a-schf1` and `a-schf2`. Meanwhile `validateAnnual()`'s
+`checkRows()` (`features/annual-accounting/index.js:1609-1617`) returns early
+for any row with no data, so **an entirely empty schedule with no "none"
+declaration produces no validator error at all.**
+
+What a filer sees: twelve schedules can show a red dash in the sidebar while
+Print Preview reports nothing wrong with them. An earlier version of this
+section said "already scoped as MS 58D - do not write a second fix." That was
+too broad and is withdrawn: it would have left twelve schedules unadjudicated
+on the belief another milestone had them.
 
 **3. Rule equivalence needs review, but "no mechanical way" was too absolute.**
 
