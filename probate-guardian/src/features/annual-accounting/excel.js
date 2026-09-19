@@ -12,11 +12,13 @@
 import { validateAnnual } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
+import { createIssue } from '../../core/validation/issue-registry.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
-import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
+import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
+import { planSchB4Export, createBankAccountId } from '../../core/excel/b4-export-plan.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
@@ -63,6 +65,9 @@ const ANNUAL_NEVER_WRITTEN_CONTINUATION_SHEETS = Object.freeze([
   'SCH F-2 SALES PERSONAL PROP p2',
 ]);
 
+/** 'SCH B-4 OTHER DISB p8' for page 8. */
+export const b4SheetName = (page) => `${B4_REGISTER_PREFIX}${page}`;
+
 /** Schedule A spills onto p2 from its twenty-first income row. */
 export const SCH_A_PAGE_1_ROWS = 20;
 
@@ -77,7 +82,10 @@ export const ANNUAL_EXCEL_CAPS={
   schB1:{cap:24,label:'Schedule B-1 — Attorney Fees',route:'/schb1'},
   schB2:{cap:24,label:'Schedule B-2 — Guardian Fees',route:'/schb2'},
   schB3:{cap:24,label:'Schedule B-3 — Other Court-Ordered Disbursements',route:'/schb3'},
-  schB4:{cap:25,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
+  // Backstop only. Schedule B-4's real limit is per bank account and is
+  // decided by planSchB4Export(); 1382 is the workbook's total across all
+  // twelve account blocks, so this catches only an absurd row count.
+  schB4:{cap:1382,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
   schC:{cap:6,label:'Schedule C — Capital Adjustments',route:'/schc'},
   schD1:{cap:11,label:'Schedule D-1 — Cash Assets',route:'/schd1'},
   schD2:{cap:8,label:'Schedule D-2 — Real Estate',route:'/schd2'},
@@ -92,7 +100,30 @@ export const ANNUAL_EXCEL_CAPS={
 export async function doSaveExcel(){
   const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';
-  const capacityIssues = getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS);
+  // Schedule B-4's own limits are not a simple row cap: they depend on how
+  // many bank accounts a filing has and how its disbursements divide between
+  // them, so ANNUAL_EXCEL_CAPS cannot express them. planSchB4Export() works
+  // that out and each refusal becomes a blocking issue here, phrased for the
+  // filer. The PDF is unaffected and carries every row regardless, which is
+  // what makes withholding the workbook the safe answer rather than a dead end.
+  //
+  // The code shape is load bearing. issue-registry.js recognises
+  // `excel.capacity.<filingType>.<suffix>` and only then marks it
+  // `bypassable: false`; anything else falls through to
+  // validation.legacy-unmapped, which IS bypassable -- so a mis-shaped code
+  // here would quietly offer the filer a "continue anyway" button that
+  // produces a workbook attributing money to the wrong bank account.
+  const b4Issues = planSchB4Export(window.D?.schB4, window.D?.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS)
+    .problems.map(p => createIssue(`excel.capacity.${type}.schB4-${p.code}`, {
+      message: p.message,
+      label: 'Schedule B-4 — All Other Disbursements',
+      section: 'Schedule B-4 — All Other Disbursements',
+      route: '/schb4',
+    }));
+  const capacityIssues = [
+    ...getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS),
+    ...b4Issues,
+  ];
   const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
@@ -130,6 +161,10 @@ export async function doSaveExcel(){
     // setCell writes a numeric cell) is why this is not merged with
     // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
     const fD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
+
+    // One plan for Schedule B-4, built before anything is written: the writer
+    // and the pruner must agree on exactly which pages are in use.
+    const b4Plan = planSchB4Export(inv.schB4, inv.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS);
 
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
@@ -261,12 +296,38 @@ export async function doSaveExcel(){
       });
     }
 
-    // Schedule B-4 — other disbursements (write to pages p2-p3 only)
-    const sb4p2=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
-    if(sb4p2){
-      inv.schB4.forEach((r,i)=>{
-        if(i<25){const row=20+i; setCell(sb4p2,`C${row}`,r.checkNo||''); setCell(sb4p2,`D${row}`,fD(r.datePaid)); setCell(sb4p2,`E${row}`,r.category||''); setCell(sb4p2,`G${row}`,r.payee||''); setCell(sb4p2,`I${row}`,nv(r.amount));}
-      });
+    // Schedule B-4 — other disbursements, one bank account per block.
+    //
+    // The court's workbook prints a bank name and account number at the top of
+    // each block, so an account's disbursements must land inside its own block
+    // or the filing says money left an account it did not leave.
+    // planSchB4Export() decides that and refuses rather than guesses; its
+    // refusals were already turned into blocking issues before this point, so
+    // reaching here means the plan is sound.
+    //
+    // Header cells, re-read from the sheet XML: B6 is the "BANK:" label with
+    // its value in the merged D6:F6, and G6 is "ACCOUNT NUMBER #:" with its
+    // value in H6:I6. Writing to any other cell of a merged range puts the
+    // value where the printed form does not show it.
+    for (const group of b4Plan.groups) {
+      const headerPage = group.block.pages[0].page;
+      const headerSheet = workbook.getWorksheet(b4SheetName(headerPage));
+      if (headerSheet && group.account) {
+        setCell(headerSheet, 'D6', group.account.bankName || '');
+        setCell(headerSheet, 'H6', group.account.accountNumber || '');
+      }
+      for (const pageRows of group.pages) {
+        const ws = workbook.getWorksheet(b4SheetName(pageRows.page));
+        if (!ws) continue;
+        pageRows.rows.forEach((r, i) => {
+          const row = pageRows.firstRow + i;
+          setCell(ws, `C${row}`, r.checkNo || '');
+          setCell(ws, `D${row}`, fD(r.datePaid));
+          setCell(ws, `E${row}`, r.category || '');
+          setCell(ws, `G${row}`, r.payee || '');
+          setCell(ws, `I${row}`, nv(r.amount));
+        });
+      }
     }
 
     // Schedule C — capital adjustments
@@ -431,10 +492,7 @@ export async function doSaveExcel(){
     // that named a removed page -- each schedule's p1 total reaches into its
     // own continuation pages, so removing one on its own leaves #REF! in a
     // filed financial document. Anything it cannot rebuild safely is kept.
-    const b4Keep = new Set(planB4PagesToKeep(
-      (inv.schB4 || []).length ? [SCH_B4_ACCOUNT_BLOCKS[0].pages[0]] : [],
-      SCH_B4_ACCOUNT_BLOCKS,
-    ));
+    const b4Keep = new Set(planB4PagesToKeep(b4Plan.usedPages, SCH_B4_ACCOUNT_BLOCKS));
     const b4Doomed = workbook.worksheets
       .map(ws => ws.name)
       .filter(n => isB4RegisterSheetName(n) && !b4Keep.has(b4PageNumber(n)));
@@ -601,14 +659,35 @@ export async function importExcel(input){
         if(rowHasData(bankAcct,checkNo,payee,amt))D.schB3.push({bankAcct,checkNo,datePaid:gcDate(sb3,`F${row}`),payee,courtOrderDate:gcDate(sb3,`H${row}`),amount:amt});
       }
 
-      // Schedule B-4 — the check-register page (p2) is this app's only
-      // input surface for it; pages 3+ exist in the real template for
-      // overflow beyond 25 entries, matching ANNUAL_EXCEL_CAPS.schB4.
-      const sb4=workbook.getWorksheet('SCH B-4 OTHER DISB p2');
+      // Schedule B-4 — the inverse of the writer: one bank account per block,
+      // read across every page of that block in order.
+      //
+      // Blocks whose pages were pruned out of the file simply are not there,
+      // so each lookup is guarded. A block is only turned into an account when
+      // its header actually names one (D6 bank / H6 account number) -- a
+      // single-account filing exported before accounts existed has no header,
+      // and its rows come back unassigned exactly as they went out.
       D.schB4=[];
-      if(sb4)for(let row=20;row<=44;row++){
-        const checkNo=gcStr(sb4,`C${row}`),payee=gcStr(sb4,`G${row}`),amt=gcNum(sb4,`I${row}`);
-        if(rowHasData(checkNo,payee,amt))D.schB4.push({checkNo,datePaid:gcDate(sb4,`D${row}`),category:gcStr(sb4,`E${row}`),payee,amount:amt});
+      D.schB4Accounts=[];
+      for(const block of SCH_B4_ACCOUNT_BLOCKS){
+        const headerSheet=workbook.getWorksheet(b4SheetName(block.pages[0].page));
+        if(!headerSheet)continue;
+        const bankName=gcStr(headerSheet,'D6'),accountNumber=gcStr(headerSheet,'H6');
+        let bankAccountId='';
+        if(bankName||accountNumber){
+          bankAccountId=createBankAccountId();
+          D.schB4Accounts.push({id:bankAccountId,bankName,accountNumber});
+        }
+        for(const page of block.pages){
+          const ws=workbook.getWorksheet(b4SheetName(page.page));
+          if(!ws)continue;
+          for(let row=page.firstRow;row<page.firstRow+page.rows;row++){
+            const checkNo=gcStr(ws,`C${row}`),payee=gcStr(ws,`G${row}`),amt=gcNum(ws,`I${row}`);
+            if(rowHasData(checkNo,payee,amt)){
+              D.schB4.push({bankAccountId,checkNo,datePaid:gcDate(ws,`D${row}`),category:gcStr(ws,`E${row}`),payee,amount:amt});
+            }
+          }
+        }
       }
 
       // Schedule C — capital adjustments

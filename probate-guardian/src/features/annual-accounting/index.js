@@ -23,7 +23,13 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/fo
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
-import { confirmModal } from '../../core/ui/dialogs.js';
+import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
+import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
+
+// The court's workbook has one Schedule B-4 register block per bank account.
+// Read from the block map rather than written as a literal so the form and
+// the app cannot disagree about how many accounts a filing can hold.
+const SCH_B4_MAX_ACCOUNTS = SCH_B4_ACCOUNT_BLOCKS.length;
 import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js';
 // Milestone 41-3: same structural story as its sibling Simplified
 // Accounting, confirmed by reading the real markup. Only
@@ -271,6 +277,8 @@ function bindEvents(container) {
       case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-row': await removeAnnualRow(collection, index, control.dataset.route); break;
+      case 'add-b4-account': addB4Account(control.dataset.route); break;
+      case 'remove-b4-account': await removeB4Account(index, control.dataset.route); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
@@ -289,6 +297,41 @@ function duplicateAnnualRow(arrName, idx, route) {
   }
 }
 window.duplicateAnnualRow = duplicateAnnualRow;
+
+// Schedule B-4's bank accounts. The court's workbook prints each account's
+// disbursements in that account's own block of register pages, so an account
+// is a real thing a filer creates, not a free-text label on a row.
+async function addB4Account(route) {
+  const d = window.D;
+  if (!Array.isArray(d.schB4Accounts)) d.schB4Accounts = [];
+  if (d.schB4Accounts.length >= SCH_B4_MAX_ACCOUNTS) {
+    await alertModal(`The court's Excel workbook has ${SCH_B4_MAX_ACCOUNTS} Schedule B-4 account sections, so ${SCH_B4_MAX_ACCOUNTS} is the most this filing can hold. The PDF is not limited.`);
+    return;
+  }
+  const { createBankAccountId } = await import('../../core/excel/b4-export-plan.js');
+  d.schB4Accounts.push({ id: createBankAccountId(), bankName: '', accountNumber: '' });
+  autoSave();
+  navigate(route);
+}
+
+// Deleting an account never deletes money. Its disbursements are unassigned
+// and stay in the schedule for the filer to re-attribute -- silently dropping
+// financial rows because a label was removed would be the worse failure, and
+// an unassigned row is caught at export rather than filed under a wrong bank.
+async function removeB4Account(index, route) {
+  const d = window.D;
+  const account = (d.schB4Accounts || [])[index];
+  if (!account) return;
+  const orphans = (d.schB4 || []).filter(r => r && r.bankAccountId === account.id);
+  const name = account.bankName || account.accountNumber || `Account ${index + 1}`;
+  if (orphans.length && !(await confirmModal(
+    `Remove ${name}? Its ${orphans.length} disbursement${orphans.length === 1 ? '' : 's'} will stay in Schedule B-4 but will no longer be assigned to a bank account, and Excel export is blocked until they are reassigned.`
+  ))) return;
+  for (const row of orphans) row.bankAccountId = '';
+  d.schB4Accounts.splice(index, 1);
+  autoSave();
+  navigate(route);
+}
 
 function addAnnualRow(collection, route) {
   if (addCollectionRow(collection, window.D)) {
@@ -848,6 +891,32 @@ function pageSchB3Annual(){
 // ── Schedule B-4 — Other Disbursements ───────────────────
 function pageSchB4Annual(){
   const d=window.D; const t=calcTotalsAnnual();
+  const accounts=Array.isArray(d.schB4Accounts)?d.schB4Accounts:[];
+  // The account picker only appears once accounts exist: a single-account
+  // filing has nothing to choose between, and showing an empty dropdown on
+  // every row would imply an assignment is missing when none is required.
+  const accountPicker=(r,i)=>{
+    if(!accounts.length)return '';
+    const opts=accounts.map(a=>({value:a.id,label:a.bankName||a.accountNumber||'Untitled account'}));
+    const known=opts.some(o=>o.value===r.bankAccountId);
+    const warn=!known?'<div class="form-text text-danger">Assign a bank account — Excel export is blocked until every disbursement has one.</div>':'';
+    return `<div class="col-md-4">${selD('Bank Account',known?r.bankAccountId:'',`D.schB4[${i}].bankAccountId=this.value`,opts,true)}${warn}</div>`;
+  };
+  const accountCards=accounts.map((a,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
+    <div class="entry-card-header"><span>Bank Account ${i+1}</span>
+      <button class="btn btn-link btn-sm text-danger p-0" data-annual-action="remove-b4-account" data-index="${i}" data-route="/schb4">Remove</button>
+    </div>
+    <div class="entry-card-body"><div class="row g-2">
+      <div class="col-md-7">${inpD('Bank Name',a.bankName,`D.schB4Accounts[${i}].bankName=this.value`,true)}</div>
+      <div class="col-md-5">${inpD('Account Number',a.accountNumber,`D.schB4Accounts[${i}].accountNumber=this.value`,true)}</div>
+    </div></div>
+  </div></div>`).join('');
+  const accountsSection=`<div class="summary-box mb-3">
+    <h2 class="subsection-heading">Bank Accounts</h2>
+    <div class="schedule-instructions">The court's workbook prints each bank account's disbursements in its own section, under that account's name and number. Add an account for each one the ward's money was paid from, then assign every disbursement below. Filings paid from a single account can leave this empty. The workbook holds ${SCH_B4_MAX_ACCOUNTS}; the PDF is not limited.</div>
+    ${accounts.length?`<div class="row g-3 schedule-entry-grid">${accountCards}</div>`:''}
+    <button class="btn btn-outline-primary btn-sm mt-2" data-annual-action="add-b4-account" data-route="/schb4">+ Add Bank Account</button>
+  </div>`;
   // Category summary
   const cats={};
   DISB_CATS.forEach(c=>cats[c]=0);
@@ -862,6 +931,7 @@ function pageSchB4Annual(){
         <div class="col-md-3">${selD('Category',r.category,`D.schB4[${i}].category=this.value`,DISB_CATS,true)}</div>
         <div class="col-md-3">${inpD('Payee',r.payee,`D.schB4[${i}].payee=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Amount',r.amount,`D.schB4[${i}].amount=this.value`,true,'number')}</div>
+        ${accountPicker(r,i)}
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -874,6 +944,7 @@ function pageSchB4Annual(){
   return `<div class="schedule-page">
   <h1>Schedule B-4 — All Other Disbursements</h1>
   <div class="schedule-instructions">Receipts, checks, and substantiating papers need not be filed with the court but shall be made available for inspection. List disbursements in check number order. If category is "Other," provide details in payee field.</div>
+  ${accountsSection}
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB4" data-route="/schb4">+ Add Entry</button>
   <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td" data-annual-total="schB4">${fmtAnnual(t.schB4)}</div></div></div></div>

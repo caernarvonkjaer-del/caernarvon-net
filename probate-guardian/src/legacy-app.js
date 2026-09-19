@@ -4009,7 +4009,7 @@ function emptyRowAnnual(type){
     case 'schB1': return {bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
     case 'schB2': return {bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
     case 'schB3': return {bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
-    case 'schB4': return {checkNo:'',datePaid:'',category:'',payee:'',amount:''};
+    case 'schB4': return {bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''};
     case 'schC':  return {description:'',date:'',gain:'',loss:''};
     case 'schD1': return {description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''};
     case 'schD2': return {description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''};
@@ -6249,7 +6249,7 @@ const BLANK_SCHEDULE_ENTRY = {
   schB1:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
   schB2:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
   schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB4:()=>({checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
+  schB4:()=>({bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
   schC:()=>({description:'',date:'',gain:'',loss:''}),
   schD1:()=>({description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
   schD2:()=>({description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),

@@ -147,3 +147,17 @@ export function planSchB4Export(schB4, accounts, blocks) {
 
   return { ok: problems.length === 0, groups, usedPages: [...new Set(usedPages)].sort((a, b) => a - b), problems };
 }
+
+/**
+ * A permanent, opaque id for a bank account.
+ *
+ * Never the array index, the bank name or the account number: a disbursement
+ * points at this id, so deriving it from anything the filer can edit would
+ * orphan that account's disbursements the moment they corrected a typo.
+ * Mirrors createSupplementalFileId()'s shape and its fallback for browsers
+ * without crypto.randomUUID().
+ */
+export function createBankAccountId() {
+  if (globalThis.crypto?.randomUUID) return `bank-${crypto.randomUUID()}`;
+  return `bank-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}

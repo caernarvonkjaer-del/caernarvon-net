@@ -432,6 +432,15 @@ export function emptyDataAnnual() {
     attorney_signatureState:'', attorney_signatureImage:'',
     // Schedules
     schA:[], schB1:[], schB2:[], schB3:[], schB4:[],
+    // Schedule B-4's bank accounts. The court's workbook gives each one its
+    // own block of check-register pages with the bank name and account
+    // number printed on the block's first page, so a disbursement has to be
+    // attributable to an account before it can be written. Each entry is
+    // { id, bankName, accountNumber }; schB4[].bankAccountId points at one.
+    // Ids are opaque and permanent -- never the array index, the bank name
+    // or the account number, so renaming an account cannot orphan its
+    // disbursements.
+    schB4Accounts:[],
     schC:[], schD1:[], schD2:[], schD3:[], schD4:[], schD5:[],
     schE:[], schF1:[], schF2:[],
     // Parts VI & VII – reconciliation. Line 20 (net assets computed from the
