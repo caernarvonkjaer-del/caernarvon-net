@@ -2,13 +2,35 @@
 
 ## Status and authorization
 
-**Staged baseline — not authorization to implement.** Milestone 59A landed on
-`master` as `224f8b4`; its prerequisite is satisfied. Approval of 59A does not
-authorize 59B.
+**Executed. 59B landed 2026-09-19 as `afb5069`**, on top of 59A at `224f8b4`.
+This document is now a record of what was planned and carried out, not a
+pending work order. Everything below is left as written at planning time; the
+corrections that verification produced are listed here rather than edited into
+the plan, so the difference between what was expected and what was found stays
+readable.
+
+Three follow-up commits belong to this delivery:
+
+| Commit | Correction |
+| --- | --- |
+| `af031c6` | A stalled capture run now ends and reports what was held. The `process.exit(0)` this plan's runner section produced was recorded in `walkthrough.md` as the fix for such a stall; it is not one, and the `reuseExistingServer` diagnosis offered with it was falsified by recreating that state. |
+| `8d87482` | Tracks this plan and `MILESTONE-59-PROPOSAL.md`, which the delivery left untracked, and corrects the `walkthrough.md` note in place. |
+| `cb63898` | Fixes a defect in this plan's own design decision 3 — see below. |
+
+**Design decision 3 was wrong as written.** It states that "because the runner
+sets the target before the config process starts, the inherited `baseURL` and
+web server will point at `dist/web`." That holds only when the harness is
+invoked through `npm run capture:guide`. Invoked the way this plan's own
+verification sequence does it —
+`npx playwright test --config=playwright.capture.config.ts` — `PG_TARGET` is
+unset, `playwright.config.ts` falls back to `source`, and the harness captured
+raw source served off disk while reporting three passing tests and writing
+seven correctly named files. `tests/capture/pin-web-target.ts` now pins the
+target in the config itself, so the pinned capture table holds however the
+harness is invoked.
 
 This plan was refreshed on 2026-09-19 against `master` at `224f8b4`. Counts and
-line numbers remain evidence for planning, not values to hard-code. Recompute
-the baseline immediately before execution in case concurrent work has landed.
+line numbers throughout remain evidence from planning time, not current values.
 
 ## Outcome
 

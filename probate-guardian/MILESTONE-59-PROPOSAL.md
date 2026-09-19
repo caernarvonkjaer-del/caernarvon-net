@@ -2,15 +2,42 @@
 
 ## Status
 
-**Draft — not authorization to implement.** Per `AGENTS.md` §2, nothing in
-this proposal may be implemented until the requester explicitly approves the
-named delivery. Approval of one delivery authorizes only that delivery.
+**59A and 59B landed 2026-09-19. 59C and 59D are not authorized and have not
+been started.** Each was approved by name in the session that executed it;
+this block records what landed, not the approval exchange.
+
+| Delivery | Commit | Verification |
+| --- | --- | --- |
+| 59A | `224f8b4` | red-first fault injection on every repaired assertion; `check:types` 0 errors; unit 99 files / 1151 tests; targeted e2e 49 passed |
+| 59B | `afb5069` | ordinary discovery 678 tests in 93 files with no capture/probe titles; capture discovery 3 in 1 file; unit guards 3 passed; `check:types` 0; dashboard-visual 17 passed writing 0 PNGs; capture smoke 3 passed with the 7 expected outputs |
+
+Three follow-up commits correct defects found while verifying 59B, and are
+part of its delivery rather than separate work:
+
+| Commit | What it corrects |
+| --- | --- |
+| `af031c6` | A capture run that stalls now ends and reports what was held. The `process.exit(0)` recorded in `walkthrough.md` as the fix for that stall is not one, and the `reuseExistingServer` diagnosis offered with it was falsified by experiment. |
+| `8d87482` | Tracks this document and the 59B plan, which were left untracked, and corrects the `walkthrough.md` note above in place. |
+| `cb63898` | `playwright.capture.config.ts` did not pin its own target: run directly rather than through `npm run capture:guide`, it captured the `source` target while reporting three passing tests and writing seven correctly named files. |
+
+**59A carried one production line.** `src/legacy-app.js`'s `planQ()` emits its
+question title as `h2` instead of `h3`, closing the heading-level jump A2's
+landmark contract tests for. The inline styling is unchanged, so nothing on
+the Plan pages looks different — a filer sees the same question title at the
+same size; only the heading level a screen reader announces changed. It is
+recorded here because this milestone's own Purpose forbids changing
+application behavior to make a test pass, and a production edit inside a
+test-integrity milestone should be visible rather than buried in a diff.
+
+**59C and 59D remain subject to the original gate:** per `AGENTS.md` §3,
+neither may be implemented until the requester explicitly approves that named
+delivery, and approval of one delivery authorizes only that delivery. Before
+either starts, sync with `master`, inspect the live diff, and revalidate every
+count cited below — the baseline in the next section was measured at `e1228fd`
+and 59A/59B have since changed it.
 
 This proposal was scoped on **2026-09-19** against `master` at `e1228fd` while
-other Milestone 57 work and a full Playwright run were active. Before any
-delivery starts, sync with `master`, inspect the live diff, and revalidate every
-cited test and count. The proposal itself is the only file Milestone 59
-scoping adds.
+other Milestone 57 work and a full Playwright run were active.
 
 ---
 
@@ -89,6 +116,10 @@ E2E spec files, and the named helper modules. At `e1228fd`:
 | **59B** | Move non-regression tooling/audits and remove successful-run screenshot noise | Low | After 59A because both touch `dashboard-visual.spec.ts` and test-index descriptions |
 | **59C** | Consolidate artifact generation/parsers; remove avoidable waits; tune trace policy; benchmark parallelism | Medium–high — broad test-infrastructure surface | After 59A/59B |
 | **59D** | Add non-overlapping command tiers and document their semantics | Medium — CI/developer workflow contract | Last; consumes the measured suite partition from 59C |
+
+59A and 59B have landed; see **Status** above for their commits. 59C and 59D
+are unauthorized, so the "Relation" column below describes the remaining
+sequence, not work in progress.
 
 The deliveries are sequential by default. Sub-parts of 59C may be split only
 after checking actual file overlap; parser consolidation and artifact caching
