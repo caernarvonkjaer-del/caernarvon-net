@@ -34,6 +34,25 @@ false-confidence case was found during that review — `pdf-structure-tags.spec.
 xref audit, which has never validated an offset. It is 59C-0 and is a
 prerequisite for 59C-2. See the 59C section.
 
+**59C-0 through 59C-3 landed 2026-09-19. 59C-4 is deferred by requester
+decision**, with `workers: 1` unchanged and its evidence recorded in place.
+
+| Sub-delivery | Commit | Runtime effect |
+| --- | --- | --- |
+| 59C-0 | `60ce947` | — (removed a vacuous assertion) |
+| 59C-1 | `a23853c` | — (trace policy + baseline) |
+| 59C-3 | `bb9e28f` | none: 93.7s → 92s, inside noise |
+| 59C-2 | `2c9cd3e`, `dce39c2`, `252bcd9` | **106.8s summed → 52.4s wall** across four specs |
+| 59C-4 | none | deferred; probe showed 49% available, see below |
+
+**The milestone's runtime premise held in exactly one place.** Of the five
+runtime items, only C2's artifact reuse moved the needle. Parser
+consolidation and the doubled PDF load were maintenance and correctness work
+that happened to be filed under performance; the waits were never what made
+the slow file slow. What actually costs time is driving the browser through a
+filing and an export — so removing redundant round-trips paid, and everything
+else did not.
+
 **59C and 59D remain subject to the original gate:** per `AGENTS.md` §3,
 neither may be implemented until the requester explicitly approves that named
 delivery, and approval of one delivery authorizes only that delivery. Before
@@ -324,7 +343,7 @@ no reason. Each sub-delivery below is approved and executed on its own.
 | **59C-1** | Baseline measurement + trace policy (C1, C6) — **LANDED** | Low | `playwright.config.ts`; `tests/baseline/milestone-59-runtime.json` | — |
 | **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) — **LANDED** | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 ✔ |
 | **59C-3** | Replace observable fixed waits (C5) — **LANDED** | Medium | signature + annotation specs | — |
-| **59C-4** | Parallelism experiment (C7) | Medium | `playwright.config.ts`, possibly a project partition | 59C-1 |
+| **59C-4** | Parallelism experiment (C7) — **DEFERRED, evidence recorded** | Medium | `playwright.config.ts`, possibly a project partition | 59C-1 ✔ |
 
 59C-0, 59C-1 and 59C-3 have no file overlap with each other and may run in any
 order, or concurrently across agents. 59C-2 must not start before 59C-0 — see
@@ -647,13 +666,59 @@ filing. **The value delivered here is correctness, not speed** — the seven
 converted waits previously gave the export gate a fixed 200 ms to notice a
 model change, and now assert that it did.
 
-#### 59C-4
+#### 59C-4 — DEFERRED. `workers: 1` retained; nothing changed in config
 
-- 59C-1's baseline exists.
-- A higher worker count becomes the default only if the three-run gate passes
-  in full; otherwise `workers: 1` is retained and the measured result recorded.
-- Either outcome closes the sub-delivery. "Stay serial, and here is the
-  evidence" is a completed 59C-4, not an abandoned one.
+Not run to completion, and not claimed as met. The requester chose to stop
+here and observe behaviour on the next run that needs one, rather than spend
+machine time on a committed answer now. What follows is the evidence gathered
+before stopping, so this does not have to be re-derived.
+
+**The three-run gate was never the cheapest way to learn this.** Two steps
+answered most of the question for about 12 minutes of machine time against
+the gate's ~1.7 hours:
+
+**1. Ceiling, computed free from 59C-1's baseline.** With the proven-heavy
+specs serial and the rest parallel, the wall floor is `heavy + light/N`:
+
+| Workers | Best-case wall | Saving vs 25.7 min |
+| --- | --- | --- |
+| 2 | 17.7 min | 31% |
+| 3 | 15.0 min | 42% |
+| 4 | 13.6 min | 47% |
+
+Split measured at 523s heavy across 31 files, 965s light across 60, with 54s
+(3%) unattributed overhead. These are floors assuming perfect packing and zero
+contention. Had this come back near 5%, 59C-4 could have closed on arithmetic
+alone without touching a browser.
+
+**2. Probe, ~12 minutes.** Four light contract specs (139 tests):
+
+| Condition | Wall | Result |
+| --- | --- | --- |
+| `--workers=1` | 273s | 139 passed |
+| `--workers=4`, run 1 | 139s | 139 passed |
+| `--workers=4`, run 2 | 140s | 139 passed |
+| `--workers=4`, run 3 | 140s | 139 passed |
+
+**49% faster, zero failures, zero flakes across three consecutive runs** — and
+within a point of the predicted 47% ceiling, so the model above is sound.
+
+**The stated reason for `workers: 1` did not reproduce.** `playwright.config.ts`
+says the suite is serial because "concurrent contexts overloaded the shared
+Vite server." Four concurrent workers did not overload it. That constraint is
+either stale or narrower than the comment implies.
+
+**Also: no project partition is needed.** The config already has the right
+shape — `fullyParallel: false` keeps tests within a file serial and
+distributes whole files across workers, so raising `workers` parallelises by
+file without interleaving tests inside one.
+
+**What is still unknown, and is the next step whenever this resumes:** the
+probe used only *light* specs. The heavy ones — PDF, Excel, downloads,
+service-worker, cross-tab — carry the real contention risk and were not
+tested at concurrency. That is a ~10-minute probe, not a full run. If it comes
+back clean, one full-suite run at `workers: 4` confirms end-to-end, and only
+then is the three-run gate worth paying for a committed default.
 
 ---
 

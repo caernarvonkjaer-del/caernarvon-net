@@ -70,6 +70,6 @@
   "findings_for_later_sub_deliveries": {
     "59C-3": "signature-capture.contract.spec.ts is the 2nd slowest file (93.7s / 36 tests) and holds 19 of the suite's 27 waitForTimeout calls. The baseline independently confirms it as the right starting point.",
     "59C-2": "The Excel export specs 59C-2 targets are well represented in the slowest tests: excel-b4-multi-account, excel-pruned-roundtrip (x2), annual-mount, guardian-inventory-mount and guardian-blank-page-pruning are 6 of the slowest 10, at 6.5-8.1s each. Those are the redundant workbook generations C2 removes.",
-    "59C-4": "Three consecutive source runs at 25.7 min each is ~77 min, plus this baseline. That is roughly 1.7 hours, NOT the ~4 hours the proposal estimated from an earlier mis-measured 72-minute figure."
+    "59C-4": "DEFERRED, workers:1 retained. Probed cheaply instead of running the gate: four light contract specs (139 tests) went 273s serial -> 139s/140s/140s at --workers=4, three consecutive runs, zero failures and zero flakes. The config comment's claim that concurrent contexts overload the shared Vite server did NOT reproduce. Predicted ceiling from the file timings below (heavy 523s/31 files serial, light 965s/60 files parallel, 54s overhead): 17.7 min at 2 workers, 15.0 at 3, 13.6 at 4 -- the 4-worker probe landed within a point of that, so the model is sound. Still untested: the heavy specs (PDF, Excel, downloads, service-worker, cross-tab) at concurrency, which is the real risk and a ~10-minute probe."
   }
 }
