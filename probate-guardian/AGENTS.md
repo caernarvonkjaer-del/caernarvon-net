@@ -24,6 +24,30 @@ covers deviations.
 | Portable-build e2e (packaging changes, §9) | `npm run test:e2e:portable` |
 | **Full regression — ask first (§2)** | `npm test` |
 
+### Verification tiers (Milestone 59D)
+
+Four non-overlapping tiers. Each stops at the first failed step and exits
+non-zero, so a later stage never runs against a broken prerequisite.
+
+| Tier | Runs | Target / browser | Cost | Gate? |
+| --- | --- | --- | --- | --- |
+| `npm run test:quick` | all unit specs + 4 browser smoke specs (startup, form-entry.contract, routes, readiness-card.contract) | source / chromium | ~2.2 min | **No** — convenience only |
+| `npm test` | all unit specs + the complete source E2E suite | source / chromium | ~25.7 min | Full regression — **ask first (§2)** |
+| `npm run test:verify` | `check:types` → `verify:data-model` → `npm test` | source / chromium | ~26 min | Full regression — **ask first (§2)** |
+| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable / chromium + firefox, webkit, edge | longest | **Yes** — release gate |
+
+- **`npm test` is unchanged and stays unchanged.** It is the full regression
+  §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
+  it runs 60 of the suite's 678 browser tests.
+- **`test:release` deliberately does not compose `test:verify` or `npm test`.**
+  `test:e2e:all-profiles` already runs the complete source profile, so
+  composing either would run the entire source suite twice. It also builds web
+  and portable inside their own profile steps — do not prepend `npm run build`.
+- Both full-regression tiers (`npm test`, `npm run test:verify`) need explicit
+  go-ahead per §2. `test:quick` does not.
+- Timings are from `tests/baseline/milestone-59-runtime.json`, measured
+  2026-09-19 on one workstation; re-measure rather than trusting them.
+
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
 Vanilla ES Modules + classic script hybrid (`legacy-app.js` + `src/main.js`
 and feature modules) · Bootstrap 5 CSS, no framework (**no React/Vue/Svelte/

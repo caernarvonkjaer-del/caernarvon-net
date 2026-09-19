@@ -140,7 +140,7 @@ E2E spec files, and the named helper modules. At `e1228fd`:
 | **59A** | Repair six false-confidence tests | Medium — test failures may reveal real product defects | First |
 | **59B** | Move non-regression tooling/audits and remove successful-run screenshot noise | Low | After 59A because both touch `dashboard-visual.spec.ts` and test-index descriptions |
 | **59C** | Split into 59C-0 … 59C-4; see the 59C section for the per-sub-delivery table | Low to Medium–high, per sub-delivery | After 59A/59B; the sub-deliveries are otherwise independent of each other except 59C-2 (needs 59C-0) and 59C-4 (needs 59C-1) |
-| **59D** | Add non-overlapping command tiers and document their semantics | Medium — CI/developer workflow contract | Last; consumes the measured suite partition from **59C-4** specifically, not all of 59C |
+| **59D** | Add non-overlapping command tiers and document their semantics — **LANDED** | Medium — CI/developer workflow contract | Last. Was to consume 59C-4's measured partition; 59C-4 deferred, so the tiers use the 59C-1 baseline's per-file timings instead, which is what the quick-run budget actually needed |
 
 59A and 59B have landed; see **Status** above for their commits. 59C and 59D
 are unauthorized, so the "Relation" column below describes the remaining
@@ -765,14 +765,37 @@ the runner is first changed so those builds are no longer duplicated.
 - Document which target/browser each tier runs and which tiers are release
   gates.
 
-### 59D acceptance
+### 59D acceptance — met
 
-- Each command's observed test/profile count matches its documented scope.
-- Source Chromium runs exactly once in `test:release`.
-- Web and portable builds run exactly once in `test:release` unless an
-  explicitly documented cache makes a repeat harmless and necessary.
-- `npm test` remains backward-compatible.
-- `AGENTS.md`, `package.json`, and the profile runner agree.
+- **Each command's observed count matches its documented scope.** ✔
+  `test:quick` ran 1152 unit tests + **60** browser tests in 131s — exactly
+  the 7 + 8 + 24 + 21 those four specs contain.
+- **Source Chromium runs exactly once in `test:release`.** ✔ Asserted
+  programmatically: `test:release` composes neither `npm test` nor
+  `test:verify`, and the profile runner declares the full `source` profile
+  exactly once.
+- **Web and portable builds run exactly once.** ✔ Only the `web` and
+  `portable` profiles carry a build (`build:web`, `build:portable`), each once,
+  inside their own profile step. `test:release` prepends no unconditional
+  `npm run build`.
+- **`npm test` remains backward-compatible.** ✔ Its definition is untouched.
+- **`AGENTS.md`, `package.json` and the profile runner agree.** ✔ §1 now
+  carries a tier table naming each tier's target/browser, cost and gate status.
+
+**Fail-fast was verified by breaking it, not by reading it.** A deliberate
+type error under `tests/e2e/support/` made `npm run test:verify` exit 1 in
+**one second**, at `check:types`, without reaching vitest or Playwright. That
+is the property worth proving: the risk in a composed tier is that a failed
+prerequisite is ignored and a 26-minute suite runs anyway.
+
+**Budget note.** 59D defers `test:quick`'s membership to "the measured
+quick-run budget established during 59C", which 59C never set. The four
+candidates were measured against the 59C-1 baseline (startup 8.1s,
+form-entry.contract 14.4s, routes 40.7s, readiness-card.contract 62.7s) and
+all four were kept by requester decision: ~2.2 min, roughly 10× faster than
+the full run, with `readiness-card.contract` retained specifically because it
+exercises the sidebar/export-gate agreement that produced real defects during
+Milestone 57.
 
 ---
 
