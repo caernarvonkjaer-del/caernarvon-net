@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard } from './support/target';
 import { readAll } from './support/stream';
@@ -97,10 +97,38 @@ async function exportGuardian(page: import('@playwright/test').Page) {
   return readAll(await (await dl).createReadStream());
 }
 
+// Milestone 59C-2 (C2). Four of the five tests below inspect the SAME Annual
+// workbook, and each used to generate its own: fresh start, create ward, fill
+// it, navigate to print, click export, wait for the download. That is the
+// expensive part of this file by a wide margin -- the unzip-and-read that
+// follows is milliseconds.
+//
+// A worker-scoped fixture generates it once and hands the same immutable
+// bytes to each test. test.step() would not do: it shares nothing between
+// separate test() declarations. The fixture owns its own page and closes it.
+//
+// The bytes are READ ONLY. If a future test needs to mutate the workbook or
+// round-trip it through the app, it must export its own copy rather than
+// mutating this one -- see excel-pruned-roundtrip.spec.ts, which is left
+// per-test for exactly that reason.
+//
+// Accepted trade (recorded in MILESTONE-59-PROPOSAL.md): a failure during
+// this one export now fails all four tests together instead of one, and the
+// per-test independence that makes a failure easy to localise is reduced.
+const test = base.extend<Record<string, never>, { annualWorkbook: Buffer }>({
+  annualWorkbook: [async ({ browser }, use) => {
+    const page = await browser.newPage();
+    try {
+      await use(await exportAnnual(page));
+    } finally {
+      await page.close();
+    }
+  }, { scope: 'worker', timeout: 180_000 }],
+});
+
 test.describe('the exported workbook keeps the names its formulas depend on', () => {
-  test('Annual keeps every header-propagation name', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { defined } = await workbookMeta(await exportAnnual(page));
+  test('Annual keeps every header-propagation name', async ({ annualWorkbook }) => {
+    const { defined } = await workbookMeta(annualWorkbook);
     for (const name of NS_ANNUAL) {
       expect([...defined.keys()], `${name} was stripped; ~270 formulas resolve to #NAME? without it`)
         .toContain(name);
@@ -109,10 +137,8 @@ test.describe('the exported workbook keeps the names its formulas depend on', ()
     expect(defined.get('Case_Number')?.target).toContain('PART I');
   });
 
-  test('the formulas that use those names are still there to use them', async ({ page }) => {
-    test.setTimeout(180_000);
-    const bytes = await exportAnnual(page);
-    const { zip, defined } = await workbookMeta(bytes);
+  test('the formulas that use those names are still there to use them', async ({ annualWorkbook }) => {
+    const { zip, defined } = await workbookMeta(annualWorkbook);
     const f = await formulasOn(zip, 'SCH A INCOME p1');
     // D2 is the ward-name header on the schedule page.
     expect(f.get('D2'), 'the header formula is gone').toBe('Name_of_Ward');
@@ -132,9 +158,8 @@ test.describe('the exported workbook keeps the names its formulas depend on', ()
   // Custom-view leftovers are per-user Excel metadata, meaningless in a filed
   // form, and three of them point at #REF! in the template. ExcelJS drops the
   // .wvu.Cols ones on load; this pins that none of the rest is written back.
-  test('per-user custom-view names are not carried into the filing', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { defined } = await workbookMeta(await exportAnnual(page));
+  test('per-user custom-view names are not carried into the filing', async ({ annualWorkbook }) => {
+    const { defined } = await workbookMeta(annualWorkbook);
     const wvu = [...defined.keys()].filter((n) => n.includes('.wvu.'));
     expect(wvu, 'custom-view metadata should not reach a filed workbook').toEqual([]);
     for (const [name, entry] of defined) {
@@ -151,9 +176,8 @@ test.describe('the exported workbook keeps the names its formulas depend on', ()
   // sheet it sits on -- even when it is sitting on the wrong sheet. The
   // template itself is guarded in tests/unit/template-print-areas.spec.js,
   // where the misalignment is actually visible.
-  test('PART XI specifically, the one the extension displaced', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { sheets, defined } = await workbookMeta(await exportAnnual(page));
+  test('PART XI specifically, the one the extension displaced', async ({ annualWorkbook }) => {
+    const { sheets, defined } = await workbookMeta(annualWorkbook);
     const partXi = [...defined.entries()].find(([n, e]) => n.startsWith('_xlnm.Print_Area') && e.target.includes('PART XI'));
     expect(partXi, 'PART XI lost its print area').toBeTruthy();
     expect(sheets[Number(partXi![1].localSheetId)]).toBe('PART XI');

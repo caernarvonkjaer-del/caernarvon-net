@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
@@ -104,10 +104,23 @@ async function exportAnnualXlsx(
   return readAll(await (await download).createReadStream());
 }
 
+// Milestone 59C-2 (C2). Three of these four tests inspect the same default
+// export; only the "about to receive data" case seeds different data and so
+// must still build its own. Generated once per worker, read-only.
+const test = base.extend<Record<string, never>, { prunedAnnual: Buffer }>({
+  prunedAnnual: [async ({ browser }, use) => {
+    const page = await browser.newPage();
+    try {
+      await use(await exportAnnualXlsx(page));
+    } finally {
+      await page.close();
+    }
+  }, { scope: 'worker', timeout: 180_000 }],
+});
+
 test.describe('blank schedule pages are pruned from the Excel export', () => {
-  test('unused continuation pages are removed across every schedule', async ({ page }) => {
-    test.setTimeout(180_000);
-    const bytes = await exportAnnualXlsx(page);
+  test('unused continuation pages are removed across every schedule', async ({ prunedAnnual }) => {
+    const bytes = prunedAnnual;
     const info = await extractXlsx(bytes);
 
     for (const name of SHOULD_BE_PRUNED) {
@@ -123,9 +136,8 @@ test.describe('blank schedule pages are pruned from the Excel export', () => {
     expect(info.sheetNames.length, `sheet count: ${info.sheetNames.length}`).toBeLessThanOrEqual(26);
   });
 
-  test('every schedule total survives the removal without #REF!', async ({ page }) => {
-    test.setTimeout(180_000);
-    const bytes = await exportAnnualXlsx(page);
+  test('every schedule total survives the removal without #REF!', async ({ prunedAnnual }) => {
+    const bytes = prunedAnnual;
 
     // Each schedule's p1 total previously reached into the pages just removed.
     for (const [sheet, cell] of [
@@ -179,9 +191,8 @@ test.describe('blank schedule pages are pruned from the Excel export', () => {
     expect(f, 'Schedule A total dropped its surviving p2').toContain("'SCH A INCOME p2'!");
   });
 
-  test('the disbursements themselves still reach the surviving page', async ({ page }) => {
-    test.setTimeout(180_000);
-    const bytes = await exportAnnualXlsx(page);
+  test('the disbursements themselves still reach the surviving page', async ({ prunedAnnual }) => {
+    const bytes = prunedAnnual;
     const info = await extractXlsx(bytes);
 
     // Pruning must not disturb what was written. p2's register starts at row

@@ -322,7 +322,7 @@ no reason. Each sub-delivery below is approved and executed on its own.
 | --- | --- | --- | --- | --- |
 | **59C-0** | Remove the vacuous xref audit — **LANDED `60ce947`** | Low | `tests/e2e/pdf-structure-tags.spec.ts` | — |
 | **59C-1** | Baseline measurement + trace policy (C1, C6) — **LANDED** | Low | `playwright.config.ts`; `tests/baseline/milestone-59-runtime.json` | — |
-| **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 |
+| **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) — **LANDED** | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 ✔ |
 | **59C-3** | Replace observable fixed waits (C5) — **LANDED** | Medium | signature + annotation specs | — |
 | **59C-4** | Parallelism experiment (C7) | Medium | `playwright.config.ts`, possibly a project partition | 59C-1 |
 
@@ -586,15 +586,38 @@ them waits on the others.
   the peak is only observable mid-run because Playwright discards passing
   tests' traces at the end.
 
-#### 59C-2
+#### 59C-2 — met, in three commits
 
-- 59C-0 has landed.
+- 59C-0 has landed. ✔
 - Identical court artifacts are not regenerated for sibling read-only
-  inspections.
-- Shared parsers have direct tests and no filing-specific assertion is lost.
-- `inspectPdf()` performs one PDF.js load for combined text/metadata work.
-- The shared PDF structural helper is built on the implementation that follows
-  `startxref`, and each migrated caller's assertions are unchanged.
+  inspections. ✔ Worker-scoped fixtures in four specs; 15 redundant export
+  round-trips removed.
+- Shared parsers: `readAll()` consolidated from nine byte-identical private
+  copies into `tests/e2e/support/stream.ts`. ✔ No filing-specific assertion
+  changed — the helper is a stream drain, not a parser of filing content.
+- `inspectPdf()` performs one PDF.js load for combined text/metadata work. ✔
+  It previously ran two, in parallel, each decoding the bytes separately.
+- ~~The shared PDF structural helper is built on the implementation that
+  follows `startxref`~~ — **not done, and no longer needed in this form.**
+  59C-0 deleted the vacuous copy, which leaves *one* working xref audit in
+  `pdf-structure-tags` (19D) and one in `pdf-form-specific`. Those two are in
+  different files with different fixtures and are not duplicated logic in the
+  way `readAll()` was; extracting them would be a new shared helper for two
+  callers, not a de-duplication. Deliberately left.
+
+**Runtime: this is where the milestone's premise held, and only here.**
+
+| Sub-part | Effect |
+| --- | --- |
+| C3 (`readAll`) | none — maintenance only, as expected |
+| C4 (single PDF load) | none measurable: 24.5s → 24.3s on the `inspectPdf` spec, inside noise |
+| **C2 (artifact reuse)** | **106.8s of summed test time → 52.4s total wall** across the four converted specs, including all setup |
+
+C2 is the whole runtime story. Parsing and decoding were never the cost; the
+cost is driving the browser through a filing and an export, and that is what
+removing 15 redundant round-trips avoids. Measured twice (52.4s / 52.5s,
+21 passed each) because a shared artifact is exactly the change that creates
+order-dependence between tests.
 
 #### 59C-3 — met
 

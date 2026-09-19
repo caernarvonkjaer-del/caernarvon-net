@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
@@ -184,10 +184,24 @@ async function exportGuardianXlsx(
   return { bytes: await readAll(await (await download).createReadStream()), download: await download };
 }
 
+// Milestone 59C-2 (C2). Four of these six inspect the same SMALL_INVENTORY
+// export. The two that do not are left per-test on purpose: one seeds a
+// different inventory, and the round-trip case needs the live Download object
+// to feed back into the app, not just the bytes.
+const test = base.extend<Record<string, never>, { prunedInventory: Buffer }>({
+  prunedInventory: [async ({ browser }, use) => {
+    const page = await browser.newPage();
+    try {
+      await use((await exportGuardianXlsx(page)).bytes);
+    } finally {
+      await page.close();
+    }
+  }, { scope: 'worker', timeout: 180_000 }],
+});
+
 test.describe('blank Initial Inventory pages are pruned from the Excel export', () => {
-  test('every unreached continuation page is removed, every first page kept', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { bytes } = await exportGuardianXlsx(page);
+  test('every unreached continuation page is removed, every first page kept', async ({ prunedInventory }) => {
+    const bytes = prunedInventory;
     const info = await extractXlsx(bytes);
 
     for (const name of SHOULD_BE_PRUNED) {
@@ -200,9 +214,8 @@ test.describe('blank Initial Inventory pages are pruned from the Excel export', 
     expect(info.sheetNames.length, `sheet count: ${info.sheetNames.length}`).toBe(19);
   });
 
-  test('every schedule total survives the removal without #REF!', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { bytes } = await exportGuardianXlsx(page);
+  test('every schedule total survives the removal without #REF!', async ({ prunedInventory }) => {
+    const bytes = prunedInventory;
 
     for (const [sheet, cell] of SCHEDULE_TOTALS) {
       const f = (await formulasOn(bytes, sheet)).get(cell);
@@ -217,9 +230,8 @@ test.describe('blank Initial Inventory pages are pruned from the Excel export', 
   // A schedule total that survives on its own page is not enough: the
   // summaries and PART V's bond figure read those totals, and that is what the
   // court's reviewer actually looks at.
-  test('the summaries still carry every schedule total forward', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { bytes } = await exportGuardianXlsx(page);
+  test('the summaries still carry every schedule total forward', async ({ prunedInventory }) => {
+    const bytes = prunedInventory;
     const cache = new Map<string, Map<string, string>>();
     for (const [sheet, cell, expected] of CARRIED_FORWARD) {
       if (!cache.has(sheet)) cache.set(sheet, await formulasOn(bytes, sheet));
@@ -255,9 +267,8 @@ test.describe('blank Initial Inventory pages are pruned from the Excel export', 
     expect(f, 'the cash total still names removed page 3').not.toContain("'B-1 CASH pg 3'!");
   });
 
-  test('the assets themselves still reach the surviving pages', async ({ page }) => {
-    test.setTimeout(180_000);
-    const { bytes } = await exportGuardianXlsx(page);
+  test('the assets themselves still reach the surviving pages', async ({ prunedInventory }) => {
+    const bytes = prunedInventory;
     const info = await extractXlsx(bytes);
 
     expect(Object.values(info.getSheetCells('A-1-REAL ESTATE pg 1')).join(''))

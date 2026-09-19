@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
@@ -102,10 +102,23 @@ async function exportSimplified(page: import('@playwright/test').Page) {
   return { bytes: await readAll(await download.createReadStream()), download };
 }
 
+// Milestone 59C-2 (C2). Five of these six inspect the same Simplified export.
+// The sixth round-trips the file back through the app's importer and needs the
+// live Download object, so it still builds its own.
+const test = base.extend<Record<string, never>, { simplifiedWorkbook: Buffer }>({
+  simplifiedWorkbook: [async ({ browser }, use) => {
+    const page = await browser.newPage();
+    try {
+      await use((await exportSimplified(page)).bytes);
+    } finally {
+      await page.close();
+    }
+  }, { scope: 'worker', timeout: 180_000 }],
+});
+
 test.describe('Simplified Part I writes each value beside its own label', () => {
-  test('every identity field lands in the cell its label points at', async ({ page }) => {
-    test.setTimeout(180_000);
-    const cells = await sheetCells((await exportSimplified(page)).bytes, SHEET);
+  test('every identity field lands in the cell its label points at', async ({ simplifiedWorkbook }) => {
+    const cells = await sheetCells(simplifiedWorkbook, SHEET);
 
     // The header cells the rest of the workbook propagates from.
     expect(cells.get('C4')?.text, 'C4 is the Name of Ward box').toBe(WARD);
@@ -124,9 +137,8 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
   // The regression that started this: writes aimed at E14/H14 fall inside the
   // D14:I14 merge, and ExcelJS redirects a merged-member write to the master.
   // The Case Number formula was the casualty.
-  test('the workbook\'s own propagation formulas are left intact', async ({ page }) => {
-    test.setTimeout(180_000);
-    const cells = await sheetCells((await exportSimplified(page)).bytes, SHEET);
+  test('the workbook\'s own propagation formulas are left intact', async ({ simplifiedWorkbook }) => {
+    const cells = await sheetCells(simplifiedWorkbook, SHEET);
 
     expect(cells.get('D12')?.formula, 'D12 must still pull the ward name from C4').toBe('C4');
     expect(cells.get('D14')?.formula, 'D14 must still pull the case number from H4').toBe('H4');
@@ -134,9 +146,8 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
     expect(cells.get('D14')?.text, 'D14 must not hold a written-in date').not.toBe(TO);
   });
 
-  test('the COVER page still reads the Case Number cell, not a clobbered one', async ({ page }) => {
-    test.setTimeout(180_000);
-    const bytes = (await exportSimplified(page)).bytes;
+  test('the COVER page still reads the Case Number cell, not a clobbered one', async ({ simplifiedWorkbook }) => {
+    const bytes = simplifiedWorkbook;
     const cover = await sheetCells(bytes, 'COVER');
     expect(cover.get('D7')?.formula, 'the cover reads Part I\'s case-number cell')
       .toBe("'PARTS I, II '!D14:I14");
@@ -151,9 +162,8 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
   // are the guardians' SSN/EIN on PARTS III, IV. The ward's used to go to D13,
   // the printed "From" label, so a required and sensitive value both destroyed
   // a label and appeared unmasked on a form that never asked for it.
-  test('the ward\'s SSN is not written anywhere on Part I', async ({ page }) => {
-    test.setTimeout(180_000);
-    const cells = await sheetCells((await exportSimplified(page)).bytes, SHEET);
+  test('the ward\'s SSN is not written anywhere on Part I', async ({ simplifiedWorkbook }) => {
+    const cells = await sheetCells(simplifiedWorkbook, SHEET);
 
     expect(cells.get('D13')?.text, 'D13 is the printed "From" label').toBe('From');
     expect(cells.get('G13')?.text, 'G13 is the printed "To" label').toBe('To');
@@ -163,9 +173,8 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
     }
   });
 
-  test('the Part II section heading is not overwritten', async ({ page }) => {
-    test.setTimeout(180_000);
-    const cells = await sheetCells((await exportSimplified(page)).bytes, SHEET);
+  test('the Part II section heading is not overwritten', async ({ simplifiedWorkbook }) => {
+    const cells = await sheetCells(simplifiedWorkbook, SHEET);
     expect(cells.get('B18')?.text).toBe('Part II');
     expect(cells.get('D18')?.text, 'D18 is the Part II heading, not a data cell')
       .toContain('ACCOUNTING SUMMARY');
