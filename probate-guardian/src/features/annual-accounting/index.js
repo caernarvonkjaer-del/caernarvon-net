@@ -25,6 +25,7 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
+import { b4AccountHeading, createBankAccountId } from '../../core/accounting/bank-accounts.js';
 
 // The court's workbook has one Schedule B-4 register block per bank account.
 // Read from the block map rather than written as a literal so the form and
@@ -308,7 +309,6 @@ async function addB4Account(route) {
     await alertModal(`The court's Excel workbook has ${SCH_B4_MAX_ACCOUNTS} Schedule B-4 account sections, so ${SCH_B4_MAX_ACCOUNTS} is the most this filing can hold. The PDF is not limited.`);
     return;
   }
-  const { createBankAccountId } = await import('../../core/excel/b4-export-plan.js');
   d.schB4Accounts.push({ id: createBankAccountId(), bankName: '', accountNumber: '' });
   autoSave();
   navigate(route);
@@ -323,7 +323,7 @@ async function removeB4Account(index, route) {
   const account = (d.schB4Accounts || [])[index];
   if (!account) return;
   const orphans = (d.schB4 || []).filter(r => r && r.bankAccountId === account.id);
-  const name = account.bankName || account.accountNumber || `Account ${index + 1}`;
+  const name = b4AccountHeading(account, index);
   if (orphans.length && !(await confirmModal(
     `Remove ${name}? Its ${orphans.length} disbursement${orphans.length === 1 ? '' : 's'} will stay in Schedule B-4 but will no longer be assigned to a bank account, and Excel export is blocked until they are reassigned.`
   ))) return;
@@ -897,7 +897,11 @@ function pageSchB4Annual(){
   // every row would imply an assignment is missing when none is required.
   const accountPicker=(r,i)=>{
     if(!accounts.length)return '';
-    const opts=accounts.map(a=>({value:a.id,label:a.bankName||a.accountNumber||'Untitled account'}));
+    // Named by bank AND number: two accounts at the same bank are a normal
+    // guardianship (an operating account and a reserve), and a picker showing
+    // only the bank name would make them indistinguishable at the one moment
+    // the filer is deciding which one the money left.
+    const opts=accounts.map((a,ai)=>({value:a.id,label:b4AccountHeading(a,ai)}));
     const known=opts.some(o=>o.value===r.bankAccountId);
     const warn=!known?'<div class="form-text text-danger">Assign a bank account — Excel export is blocked until every disbursement has one.</div>':'';
     return `<div class="col-md-4">${selD('Bank Account',known?r.bankAccountId:'',`D.schB4[${i}].bankAccountId=this.value`,opts,true)}${warn}</div>`;

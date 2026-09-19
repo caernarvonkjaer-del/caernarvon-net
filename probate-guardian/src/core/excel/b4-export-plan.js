@@ -25,23 +25,14 @@
 // no such constraint and carries every row regardless, so nothing is lost by
 // withholding the workbook.
 
+import { b4AccountLabel } from '../accounting/bank-accounts.js';
+
 /** @typedef {{page:number, firstRow:number, rows:number}} B4Page */
 /** @typedef {{account:number, pages:B4Page[], capacity:number}} B4Block */
 
 export const B4_PLAN_TOO_MANY_ACCOUNTS = 'too-many-accounts';
 export const B4_PLAN_ACCOUNT_OVER_CAPACITY = 'account-over-capacity';
 export const B4_PLAN_UNASSIGNED_ROWS = 'unassigned-rows';
-
-/** A stable, human-meaningful name for an account, for messages. */
-export function b4AccountLabel(account, index) {
-  const bank = String(account?.bankName || '').trim();
-  const number = String(account?.accountNumber || '').trim();
-  const tail = number ? `…${number.slice(-4)}` : '';
-  if (bank && tail) return `${bank} ${tail}`;
-  if (bank) return bank;
-  if (number) return `Account ${tail}`;
-  return `Account ${index + 1}`;
-}
 
 /**
  * Spread one account's rows across its block's pages, respecting each page's
@@ -146,18 +137,4 @@ export function planSchB4Export(schB4, accounts, blocks) {
   }
 
   return { ok: problems.length === 0, groups, usedPages: [...new Set(usedPages)].sort((a, b) => a - b), problems };
-}
-
-/**
- * A permanent, opaque id for a bank account.
- *
- * Never the array index, the bank name or the account number: a disbursement
- * points at this id, so deriving it from anything the filer can edit would
- * orphan that account's disbursements the moment they corrected a typo.
- * Mirrors createSupplementalFileId()'s shape and its fallback for browsers
- * without crypto.randomUUID().
- */
-export function createBankAccountId() {
-  if (globalThis.crypto?.randomUUID) return `bank-${crypto.randomUUID()}`;
-  return `bank-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }

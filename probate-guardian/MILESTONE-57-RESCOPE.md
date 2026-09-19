@@ -418,6 +418,51 @@ actually expects for a ward with five or more accounts — a supplemental
 register, combined accounts, or whether the PDF alone is an acceptable filing.
 Worth asking, but it does not block the work.
 
+**D10 — OPEN. Initial Inventory blank-page pruning landed; the C-5 capacity
+question it turned up did not.**
+
+Landed 2026-09-19, same standard as Annual Accounting: the Initial Inventory
+export now drops the continuation pages a filing never reaches. The court's
+workbook ships 21 of them across eleven schedules, so an inventory listing a
+house, two bank accounts and a car went to the clerk carrying 21 pages of
+empty pre-printed grid. It now ships 19 sheets instead of 40. Each schedule's
+page-1 total is rebuilt in the same operation, because every continuation page
+is named by one — removing a page and leaving the formula alone would put
+`#REF!` in a filed court inventory. Re-import is unaffected and proven:
+`parseInitialInventoryWorkbook()` skips a page that is not in the file.
+
+Simplified Annual Accounting needed nothing. Its workbook is four filing pages,
+a cover, and two hidden sheets; there are no continuation pages and all four
+filing pages are written on every export. `tests/unit/simplified-no-blank-pages.spec.js`
+pins that so a future template change cannot quietly reintroduce the problem.
+
+**The open question.** The workbook's Schedule C-5 (jointly owned assets) runs
+to three pages. The exporter's page map stops at two, and always has, so
+`GUARDIAN_EXCEL_CAPS.scheduleC5` is **15** where the form actually holds **23**.
+Consequence today: a filer with 16 jointly owned assets is refused an Excel
+export the court's own form could have carried, and is told the form is full
+when it is not. The blank third page is now pruned either way, so nothing is
+mis-stated in a filing — this is a capacity limit, not a correctness defect.
+
+Fixing it is one line (add page 3 to `SCHEDULE_C5_PAGES`, raise the cap to 23)
+plus its round-trip test. It is not done, because raising what the app will
+accept into a court form is the Clerk's call, not a quiet side effect of a
+pruning change (AGENTS.md §2). **Decision needed: extend C-5 to the form's
+real third page, or leave the cap at 15?**
+
+Two related items for the same decision, both verified rather than assumed:
+
+- `Acerno_Cache_XXXXX`, flagged earlier as a stray sheet in the Annual and
+  Guardian workbooks, is `veryHidden` in all three templates. It has no cells,
+  never appears as a tab and never prints. **No action needed** — retiring that
+  flag.
+- Simplified's `COVER!D7` reads `='PARTS I, II '!D14:I14`, the merged value
+  cell beside the `Case Number` label, but the template puts its own
+  `=H4` case-number formula in `C14`, which is inside the `B14:C14` label
+  merge. That points at a blank cell, so the cover page's Case Number may print
+  empty on every Simplified filing. **Not verified by rendering** and outside
+  this work — recorded so it is not lost.
+
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
 clearable acknowledgement at output rather than hard-blocking. Chosen for
@@ -428,6 +473,45 @@ consistency with 57A rather than on its own merits — two adjacent
 ---
 
 ## 57D — Schedule B-4 Multi-Account Export (scope, 2026-09-19)
+
+> **LANDED 2026-09-19.** `ab14300` (B-4 register pruning), `26ea82d` (pruning
+> across every schedule), `6c434af` (the workbook extended to twelve accounts
+> and the layout planned), `f7477ef` (multi-account filing end to end), and
+> this commit (scope item 8, the PDF's account attribution).
+>
+> Shipped beyond the scope below in one respect the Clerk authorized on
+> 2026-09-19: the workbook was extended from the court's four account blocks
+> to **twelve**, following the form's own pattern, because four is not enough
+> for real guardianships. Capacity is now 1382 rows. A thirteenth account still
+> withholds the workbook and names the accounts that will not fit.
+>
+> **Scope item 8 — PDF account attribution — landed last and is what made the
+> rest safe to rely on.** The PDF register is now grouped: one register per
+> account in filer (= workbook block) order, headed by that account's bank name
+> and number, subtotalled, followed by a recap reconciling the subtotals to the
+> schedule total. Disbursements not assigned to an account, and rows naming a
+> deleted account, print under a heading saying so rather than being dropped or
+> folded into a real account — the workbook refuses to write them, the PDF must
+> still carry them. A filing with no accounts keeps the single unlabelled
+> register unchanged. The `#` column stays the row's position in Schedule B-4
+> as a whole rather than restarting per block, so it still matches the editor's
+> "Line N" card.
+>
+> The naming rules moved to `src/core/accounting/bank-accounts.js` and are
+> shared by the workbook header, the PDF heading, the row picker and the
+> removal confirmation. There were three different rules before, one of which
+> showed only the bank name in the picker — two accounts at the same bank were
+> indistinguishable at the one moment the filer chooses which one the money
+> left.
+>
+> Coverage: `tests/unit/annual-pdf-schb4-attribution.spec.js` (18),
+> `tests/unit/b4-export-plan.spec.js` (23), `tests/unit/b4-block-map.spec.js`,
+> `tests/e2e/excel-b4-multi-account.spec.ts`,
+> `tests/e2e/schb4-bank-accounts-ui.spec.ts`.
+>
+> **One gap remains open and is not part of 57D**: the PDF now attributes
+> disbursements, but see **D10** below for the Initial Inventory capacity
+> question the same work turned up.
 
 **Not authorized.** Implements **D8**. Full template research and the verified
 block map are in `MILESTONE-57-REVIEW-HANDOFF.md` §3/§3b — read those first;

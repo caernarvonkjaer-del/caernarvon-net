@@ -1,11 +1,12 @@
 // Structured intermediate representation for Annual Guardianship Accounting PDF generation.
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
-import { calcTotalsAnnual, annualReconcileState } from './totals.js';
+import { calcTotalsAnnual, annualReconcileState, n as toAmount } from './totals.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -496,24 +497,122 @@ export function buildAnnualAccountingModel(D, options = {}) {
     },
   ];
 
-  if ((d.schB4 || []).length > 0) {
-    const regRows = d.schB4.map((r, i) => [
-      String(i + 1),
-      r.checkNo || '',
-      fmtD(r.datePaid),
-      r.category || '',
-      r.payee || '',
-      fmtS(r.amount),
+  // The check register, attributed to the bank account each payment left.
+  //
+  // The court's workbook prints each account's disbursements in that account's
+  // own block of register pages, under that account's name and number. The PDF
+  // has to say the same thing, and it matters more here than in the workbook:
+  // the PDF is the filing the court reads when the workbook is withheld -- a
+  // filing with more accounts than the workbook holds, or with disbursements
+  // not yet assigned -- so a flat, unattributed register would leave the court
+  // with no way to tell which account any payment came out of in exactly the
+  // cases where the workbook could not answer either.
+  //
+  // The '#' column stays the row's position in Schedule B-4 as a whole rather
+  // than restarting inside each account's block. It is the number the editor
+  // shows on that entry's card ("Line 7"), so a court query about line 7 leads
+  // the filer to the right row. The workbook's own Line # restarts per block
+  // because it is pre-printed stationery, not data.
+  const b4Rows = d.schB4 || [];
+  const b4Accounts = Array.isArray(d.schB4Accounts) ? d.schB4Accounts.filter(Boolean) : [];
+  const b4RegisterHeaders = ['#', 'Check #', 'Date Paid', 'Category', 'Payee', 'Amount'];
+  const b4RegisterWidths = [6, 14, 14, 26, 26, 14];
+  const b4RegisterAlign = ['center', 'left', 'left', 'left', 'left', 'right'];
+  // The same n() calcTotalsAnnual() sums with, so the per-account subtotals
+  // and the recap cannot drift from the schedule total they add up to.
+  const b4Amount = (r) => toAmount(r.amount);
+  const b4RegisterRow = (r, i) => [
+    String(i + 1),
+    r.checkNo || '',
+    fmtD(r.datePaid),
+    r.category || '',
+    r.payee || '',
+    fmtS(r.amount),
+  ];
+  const b4RegisterBlock = (title, entries, totalLabel) => ({
+    type: 'table',
+    tag: 'Table',
+    title,
+    headers: b4RegisterHeaders,
+    rows: entries.length
+      ? entries.map(({ row, index }) => b4RegisterRow(row, index))
+      : [['—', '—', '—', '—', 'No entries', '$0.00']],
+    totals: {
+      label: totalLabel,
+      value: fmtS(entries.reduce((sum, e) => sum + b4Amount(e.row), 0)),
+    },
+    colWidths: b4RegisterWidths,
+    colAlign: b4RegisterAlign,
+  });
+
+  if (b4Accounts.length === 0) {
+    // No accounts defined: one unlabelled register, which is what a filing
+    // paid from a single account has always looked like and still should.
+    if (b4Rows.length > 0) {
+      schB4Blocks.push({
+        type: 'table',
+        tag: 'Table',
+        title: 'Schedule B-4: All Other Disbursements — Check Register',
+        headers: b4RegisterHeaders,
+        rows: b4Rows.map((r, i) => b4RegisterRow(r, i)),
+        totals: { label: 'Schedule B-4 Detail Total', value: fmtS(t.schB4) },
+        colWidths: b4RegisterWidths,
+        colAlign: b4RegisterAlign,
+      });
+    }
+  } else {
+    const byAccount = new Map(b4Accounts.map((a) => [String(a.id ?? ''), []]));
+    const unassigned = [];
+    b4Rows.forEach((row, index) => {
+      const bucket = byAccount.get(String(row?.bankAccountId ?? ''));
+      (bucket || unassigned).push({ row, index });
+    });
+
+    // Accounts in filer order, which is the order the workbook assigns blocks
+    // in, so the two documents can be read side by side.
+    b4Accounts.forEach((account, ai) => {
+      const heading = b4AccountHeading(account, ai);
+      schB4Blocks.push(b4RegisterBlock(
+        `Schedule B-4: Check Register — ${heading}`,
+        byAccount.get(String(account.id ?? '')) || [],
+        `Subtotal — ${heading}`,
+      ));
+    });
+
+    // Unassigned rows are printed, never dropped. The workbook refuses to
+    // write them rather than attribute them to the wrong bank; the PDF has no
+    // such constraint, and a disbursement missing from the filing entirely
+    // would be the worse error. Naming the group tells the court the
+    // attribution is outstanding rather than implying there is none.
+    if (unassigned.length) {
+      schB4Blocks.push(b4RegisterBlock(
+        'Schedule B-4: Check Register — Not Assigned to a Bank Account',
+        unassigned,
+        'Subtotal — Not Assigned to a Bank Account',
+      ));
+    }
+
+    // A recap tying the per-account subtotals back to the schedule total, so
+    // the grouped register still reconciles on its face.
+    const recapRows = b4Accounts.map((account, ai) => [
+      b4AccountHeading(account, ai),
+      fmtS((byAccount.get(String(account.id ?? '')) || []).reduce((sum, e) => sum + b4Amount(e.row), 0)),
     ]);
+    if (unassigned.length) {
+      recapRows.push([
+        'Not Assigned to a Bank Account',
+        fmtS(unassigned.reduce((sum, e) => sum + b4Amount(e.row), 0)),
+      ]);
+    }
     schB4Blocks.push({
       type: 'table',
       tag: 'Table',
-      title: 'Schedule B-4: All Other Disbursements — Check Register',
-      headers: ['#', 'Check #', 'Date Paid', 'Category', 'Payee', 'Amount'],
-      rows: regRows,
+      title: 'Schedule B-4: All Other Disbursements — Total by Bank Account',
+      headers: ['Bank Account', 'Amount'],
+      rows: recapRows,
       totals: { label: 'Schedule B-4 Detail Total', value: fmtS(t.schB4) },
-      colWidths: [6, 14, 14, 26, 26, 14],
-      colAlign: ['center', 'left', 'left', 'left', 'left', 'right'],
+      colWidths: [75, 25],
+      colAlign: ['left', 'right'],
     });
   }
 

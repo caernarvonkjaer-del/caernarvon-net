@@ -12,6 +12,13 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
+import { pruneSheets } from '../../core/excel/sheet-pruning.js';
+import {
+  SCHEDULE_A1_PAGES, SCHEDULE_A2_PAGES, SCHEDULE_B1_PAGES, SCHEDULE_B2_PAGES,
+  SCHEDULE_B3_PAGES, SCHEDULE_B4_PAGES, SCHEDULE_C1_PAGES, SCHEDULE_C2_PAGES,
+  SCHEDULE_C3_PAGES, SCHEDULE_C4_PAGES, SCHEDULE_C5_PAGES,
+  unusedGuardianContinuationSheets,
+} from '../../core/excel/guardian-inventory-pages.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {
@@ -53,21 +60,15 @@ export const GUARDIAN_EXCEL_CAPS={
 // object per schedule and read the same `name` key. A template sheet
 // renumbered on one side and not the other used to silently desync export
 // and import for that schedule; now there is only one side to edit. The
-// sheet-name strings below are copied verbatim from the court's Excel
-// template, trailing spaces/punctuation quirks included (e.g. 'A-2-REAL
-// ESTATE MTG pg 1 ', 'B-3 INTANGIBLE pg 1;') -- these are real worksheet
-// names, not typos to fix.
-const SCHEDULE_A1_PAGES=[{name:'A-1-REAL ESTATE pg 1',rows:[27,32,37,42]},{name:'A-1-REAL ESTATE pg 2',rows:[7,12,17,22,27,32,37,42]},{name:'A-1-REAL ESTATE pg 3',rows:[7,12,17,22,27,32,37,42]}];
-const SCHEDULE_A2_PAGES=[{name:'A-2-REAL ESTATE MTG pg 1 ',rows:[30,35,40,45,50]},{name:'A-2-REAL ESTATE MTG pg 2',rows:[7,12,17,22,27,32,37,42,47]},{name:'A-2-REAL ESTATE MTG pg 3',rows:[7,12,17,22,27,32,37,42,47,52]}];
-const SCHEDULE_B1_PAGES=[{name:'B-1 CASH pg 1',rows:[25,30,35,40,45,50]},{name:'B-1 CASH pg 2',rows:[7,12,17,22,27,32,37,42,47,52]},{name:'B-1 CASH pg 3',rows:[7,12,17,22,27,32,37,42,47,52]},{name:'B-1 CASH pg 4',rows:[7,12,17,22,27,32,37,42,47,52]}];
-const SCHEDULE_B2_PAGES=[{name:'B-2 PER PROP pg 1',rows:[33,38,43,48,53,58]},{name:'B-2 PER PROP pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]},{name:'B-2 PER PROP pg 3',rows:[7,12,17,22,27,32,37,42,47,52,57]},{name:'B-2 PER PROP pg 4',rows:[7,12,17,22,27,32,37,42,47,52,57]}];
-const SCHEDULE_B3_PAGES=[{name:'B-3 INTANGIBLE pg 1;',rows:[22,27,32,37,42,47,52,57,62]},{name:'B-3 INTANGIBLE pg 2',rows:[7,12,17,22,27,32,37,42,47,52,57]}];
-const SCHEDULE_B4_PAGES=[{name:'B-4 PERS PROP LIAB pg 1',rows:[23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 2',rows:[8,13,18,23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 3',rows:[8,13,18,23,28,33,38,43,48]},{name:'B-4 PERS PROP LIAB pg 4',rows:[8,13,18,23,28,33,38,43,48]}];
-const SCHEDULE_C1_PAGES=[{name:'C-1 INCOME pg 1',rows:[29,34,39,44,49]},{name:'C-1 INCOME pg 2',rows:[7,12,17,22,27,32,37,42,47]},{name:'C-1 INCOME pg 3',rows:[7,12,17,22,27,32,37,42,47]}];
-const SCHEDULE_C2_PAGES=[{name:'C-2 LAWSUIT AGAINST 1',rows:[19,24,29,34,39,44]},{name:'C-2 LAWSUIT AGAINST pg 2',rows:[7,12,17,22,27,32,37]}];
-const SCHEDULE_C3_PAGES=[{name:'C-3 LAWSUIT BY WARD pg 1',rows:[20,25,30,35,40,45]},{name:'C-3 LAWSUIT BY WARD pg 2',rows:[7,12,17,22,27,32,37,42]}];
-const SCHEDULE_C4_PAGES=[{name:'C-4 TRUSTS pg 1',rows:[23,28,33,38,43,48,53]},{name:'C-4 TRUSTS pg 2',rows:[7,12,17,22,27,32,37,42,47]}];
-const SCHEDULE_C5_PAGES=[{name:'C-5 JOINT OWNERS pg 1 ',rows:[19,24,29,34,39,44,49]},{name:'C-5 JOINT OWNERS pg 2',rows:[7,12,17,22,27,32,37,42]}];
+// sheet-name strings are copied verbatim from the court's Excel template,
+// trailing spaces/punctuation quirks included (e.g. 'A-2-REAL ESTATE MTG
+// pg 1 ', 'B-3 INTANGIBLE pg 1;') -- these are real worksheet names, not
+// typos to fix.
+//
+// Those shared page objects now live in core/excel/guardian-inventory-pages.js
+// alongside the paging rules that read them, so the rules can be unit-tested
+// without a browser -- this module reaches for window.* at its top level and
+// cannot be imported under Node.
 
 export async function doSaveExcel(){
   const capacityIssues = getExcelCapacityIssues('guardian', window.D, GUARDIAN_EXCEL_CAPS);
@@ -438,6 +439,20 @@ export async function doSaveExcel(){
       setCell(p6,'B30',inv.serviceAttorney.phone||'');
       setCell(p6,'J30',inv.serviceAttorney.cityStateZip||'');
     }
+
+    // The court's workbook ships every printed page of every schedule, and the
+    // writer fills only the ones a filing reaches. Without this an inventory
+    // listing a house, two bank accounts and a car is filed with 21 blank
+    // pages of pre-printed grid; the form's own instructions say to remove
+    // them. pruneSheets() rebuilds, in the same operation, every formula that
+    // named a removed page -- each schedule's page-1 total reaches into its own
+    // continuation pages, so removing one on its own leaves #REF! in a filed
+    // financial document. Anything it cannot rebuild safely is kept.
+    //
+    // Re-import is unaffected: parseInitialInventoryWorkbook()'s readRows()
+    // skips a page that is not in the file, so a pruned workbook reads back
+    // exactly the entries it was written with.
+    pruneSheets(workbook, unusedGuardianContinuationSheets(inv));
 
     if(stat)stat.textContent='Writing file…';
     const stem=(inv.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');

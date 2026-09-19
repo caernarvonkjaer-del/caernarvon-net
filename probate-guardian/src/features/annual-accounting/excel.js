@@ -18,7 +18,8 @@ import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '.
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
-import { planSchB4Export, createBankAccountId } from '../../core/excel/b4-export-plan.js';
+import { planSchB4Export } from '../../core/excel/b4-export-plan.js';
+import { createBankAccountId } from '../../core/accounting/bank-accounts.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
 const {

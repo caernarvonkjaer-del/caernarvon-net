@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
   planSchB4Export,
-  b4AccountLabel,
   B4_PLAN_TOO_MANY_ACCOUNTS,
   B4_PLAN_ACCOUNT_OVER_CAPACITY,
   B4_PLAN_UNASSIGNED_ROWS,
 } from '../../src/core/excel/b4-export-plan.js';
+import { b4AccountLabel } from '../../src/core/accounting/bank-accounts.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../src/core/excel/b4-register-pages.js';
 
 const BLOCKS = SCH_B4_ACCOUNT_BLOCKS;
