@@ -1,3 +1,10 @@
+// @ts-nocheck -- pulled into tsconfig.json's checked program only
+// transitively (case-file.js, an included file, imports alertModal/
+// confirmModal/promptModal from here). This file itself was never written
+// with JSDoc types and isn't part of the deliberate check:types surface
+// (AGENTS.md §1) -- opting out documents that honestly instead of inventing
+// types nobody asked for.
+//
 // Milestone 50G: awaitable replacements for the browser's native confirm()/
 // alert()/prompt(), built on this app's existing modal visual system
 // (.modal-overlay/.modal-box, fragments/common-modals.html) rather than a

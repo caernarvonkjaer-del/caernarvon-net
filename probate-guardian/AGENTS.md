@@ -22,7 +22,7 @@ This organization organizes projects across three standardized archetypes:
 - **Runtime & Architecture**: Client-side transitional hybrid (classic script `legacy-app.js` + ES Modules in `src/main.js` and feature modules), native browser APIs.
 - **UI & Layout**: Vanilla JS + Bootstrap 5 CSS + custom styles. **No React, Vue, Svelte, or JSX.**
 - **Build & Dev Tooling**: Vite (dev server & bundle preview), Node.js (scripts & tooling).
-- **Testing Engine**: Vitest (unit testing) + Playwright (browser e2e specs).
+- **Testing Engine**: Vitest (unit testing) + Playwright (browser e2e specs). TypeScript (`tsc --noEmit`) checks a deliberately narrow slice — see **Type Check** below.
 - **Security & Crypto**: Web Crypto API (`SubtleCrypto` AES-GCM / PBKDF2), zero unencrypted cloud transmission.
 - **Document Generation**: `pdf-lib` / `pdfjs` client-side PDF compilation, `exceljs` spreadsheets.
 - **Persistence**: Local `.sav` JSON blobs (user-selectable AES-GCM encryption with password, or optional plaintext), single-source-of-truth CSV data dictionary.
@@ -32,6 +32,7 @@ This organization organizes projects across three standardized archetypes:
 - **Build / Dev Server**: `npm run dev`
 - **Lite Unit Test**: `npx vitest run tests/unit/<spec>.spec.js`
 - **Targeted E2E**: `npx playwright test tests/e2e/<spec>.spec.ts`
+- **Type Check**: `npm run check:types` — see Section 1 for when this applies.
 - **Data Model Verification**: `npm run verify:data-model`
 - **Full Regression (Ask First)**: `npm test`
 
@@ -45,14 +46,16 @@ This organization organizes projects across three standardized archetypes:
   - Check `git status`/`git log` before editing — don't assume a change you didn't make is stale or safe to overwrite.
   - Commit only your own task's files; don't sweep in unrelated concurrent work unless asked.
   - On a rejected push, pull/merge and resolve — never force-push over someone else's work.
-  - **Sub-delivery dependencies block parallelization, not just approval.** When a milestone proposal splits work across concurrent agents, check each sub-delivery's own **Relation** field before starting it alongside another agent's in-flight work — a stated prerequisite (e.g. "38D Phase 1 is the only implementation prerequisite" for 38B) usually means real file-level overlap, not just doc-ordering. Concrete precedent: Milestone 44 split 44A/44D/44B to Antigravity and 44C to Claude; 44C was confirmed blocked on 44B landing first because both touch the same four `plan-*/print.js` files in close proximity (44B converts `prepareFilingOutput()` calls, 44C removes the adjacent `planReadinessChecks*()` functions in the same render path) and 44C's design consumes 44B's typed issue categories directly. Verify the actual file lists overlap (or don't) before assuming a "wait" or "safe to parallelize" call — don't guess from the proposal text alone.
-  - After another agent's sub-delivery lands, re-verify it directly (read the real diff, re-run its tests, check red/green discipline) before building on top of it or marking it done — a "Landed" status line in a proposal doc is a claim, not proof.
+  - **Sub-delivery dependencies block parallelization, not just approval.** Before starting one sub-delivery of a split proposal alongside another agent's in-flight work, check its own **Relation** field — a stated prerequisite usually means real file-level overlap, not just doc-ordering. Precedent: Milestone 44 split 44A/44D/44B to one agent and 44C to another; 44C was blocked on 44B landing first because both touched the same four `plan-*/print.js` files and 44C's design consumed 44B's typed issue categories directly. Verify the actual file lists overlap before assuming a "wait" or "safe to parallelize" call.
+  - After another agent's sub-delivery lands, re-verify it directly (read the diff, re-run its tests) before building on it — a "Landed" status line in a proposal doc is a claim, not proof.
 - **Test Execution Gate**:
   - **Lite by default**: run targeted specs selected from `TEST-INDEX.md` for what changed (e.g. `npx vitest run tests/unit/x.spec.js`, `npx playwright test tests/e2e/x.spec.ts`).
-  - **Recommend, then ask, for complex changes**: before commit/push, recommend a full regression run (`npm test`) with reasons if the change is broad, cross-cutting, or touches shared/core modules — never run it without explicit go-ahead.
+  - **Type Check when in scope**: run `npm run check:types` whenever a change touches `src/core/types/`, `src/core/persistence/`, `src/core/navigation/`, or any `tests/e2e/support/*.ts` file — that's `tsconfig.json`'s actual `include` list, not the whole codebase. A file outside it can still get pulled into the checked program transitively (an included file importing it); if that happens and the file was never written with types in mind, add `// @ts-nocheck` with a one-line reason rather than retrofitting JSDoc nobody asked for.
+  - **Red-First Verification**: for a bug fix, `git stash push -- <the changed source file(s)>`, rerun the new/target test and confirm it fails for the *stated* reason (not just "fails"), `git stash pop`, rerun and confirm green. A test that passed without ever being seen to fail for the right reason hasn't been verified — it can't distinguish a real fix from a vacuously-true assertion.
+  - **Recommend, then ask, for complex changes**: before commit/push, recommend a full regression run (`npm test`) with reasons if the change is broad, cross-cutting, or touches shared/core modules — never run it without explicit go-ahead. A change relevant to Section 11's packaging (anything affecting what ships in `dist/portable`) should specifically recommend `npm run test:e2e:portable`, since the default targeted-spec pass never exercises that build.
   - **Skip tests** for documentation-only changes.
 - **Portable Paths**: Prefer repo-relative paths over absolute ones — contributors use different machines/OSes. On Windows, use forward slashes in tool/search arguments; backslashes can be misread as escapes.
-- **Python Invocation on Windows**: Invoke Python as `python` (or `py`), never `python3`. On this org's Windows dev machines, `python3` resolves to a Microsoft Store "App Execution Alias" stub, not the real interpreter — it exits with `Python was not found; run without arguments to install from the Microsoft Store...` even though Python is genuinely installed and on PATH as `python`. This applies to any Archetype 2 (Python Data & Document Pipeline) work and to any tool/skill that shells out to Python from this machine; it does not apply to Linux/macOS end-user instructions (e.g. `HOW-TO-RUN.txt`'s Linux section), where `python3` is the correct, standard command.
+- **Python Invocation on Windows**: Invoke Python as `python` (or `py`), never `python3`. On this org's Windows dev machines, `python3` resolves to a Microsoft Store "App Execution Alias" stub — a real file on `PATH`, so naive detection (`shutil.which`, `where`) reports it as found, but running it just prints an install nag and exits non-zero. `python` is the genuine interpreter. This applies to Archetype 2 work and any tool/skill that shells out to Python from this machine; it does not apply to Linux/macOS end-user instructions (`HOW-TO-RUN.txt`'s Linux section), where `python3` is correct and standard. The general lesson — a `PATH` hit is not proof an executable actually runs — applies to any future interpreter-detection logic, not just this one case.
 - **Verify Commit Citations**: Never cite a commit SHA or reference without directly checking it via `git log`/`git rev-parse` in tool output first.
 
 ---
@@ -60,17 +63,17 @@ This organization organizes projects across three standardized archetypes:
 ## 2. Choice-Driven Prompts & Case-by-Case Overrides
 
 - **Choice-Driven Prompts**: For trade-offs, scope ambiguities, test-suite runs, schema migrations, or other deviations from baseline, present clear choice-driven options (numbered, with a recommended one) and each option's concrete implications.
-- **Ask at the moment the decision is identified — not later, and not bundled.** The instant a decision surfaces that is the requester's to make, put it as a choice. Do not carry it forward to the end of the task, fold it into a summary, bury it in prose, or answer it yourself and mention the assumption afterwards. A decision surfaced late has usually already been silently made by the work built on top of it, and unwinding that costs more than the question ever would have.
+- **Ask at the moment the decision is identified — not later, and not bundled.** The instant a decision surfaces that is the requester's to make, put it as a choice. Don't carry it forward to the end of the task, fold it into a summary, bury it in prose, or answer it yourself and mention the assumption afterwards. A decision surfaced late has usually already been silently made by the work built on top of it, and unwinding that costs more than the question ever would have.
   - This applies to decisions found **mid-execution**, not just at scoping. Finding one is a reason to stop and ask, not a reason to pick the plausible option and keep going.
-  - It applies to a decision the requester **already answered** when new information changes what that answer costs. If an option was chosen on a stated trade-off and the trade-off turns out to be different, re-present it — the earlier answer was given against facts that no longer hold.
-  - Where a choice is genuinely blocking, say so and stop. Where it is not, the other work can continue while the question stands, but the question still goes out immediately.
-  - Prose paragraphs describing options are not choices. Use the same numbered, recommended, consequence-labelled form as any other choice-driven prompt, so answering is one selection rather than an essay.
-- **Explaining the options**: every option's implication is stated as what the requester or a filer would observe, not as a mechanism — see Section 12.
+  - It applies to a decision the requester **already answered** when new information changes what that answer costs. If an option was chosen on a stated trade-off and the trade-off turns out to be different, re-present it.
+  - Where a choice is genuinely blocking, say so and stop. Where it is not, other work can continue while the question stands, but the question still goes out immediately.
+  - Prose paragraphs describing options are not choices. Use the same numbered, recommended, consequence-labelled form as any other choice-driven prompt.
+- **Explaining the options**: state each implication as what the requester or a filer would observe, not as a mechanism — see Section 12.
 - **User-Approved Overrides**: An explicit user selection overrides baseline rules for that task/session only — baseline resumes immediately after.
 - **Proposal & Milestone Gating**:
   - A `MILESTONE-*-PROPOSAL.md` marked **Draft**, or stating it authorizes no change, is a proposal, not a work order.
   - Don't implement any part of it until the requester explicitly approves that specific delivery by name.
-  - Approval of one sub-delivery in a split proposal (e.g. 38A/38B/38C/38D) does not authorize the others.
+  - Approval of one sub-delivery in a split proposal does not authorize the others.
   - If approval status is unclear — including from another session or agent — ask before implementing.
 
 ---
@@ -114,9 +117,10 @@ This organization organizes projects across three standardized archetypes:
 - **Form Event Binding (`data-form-path`)**:
   - Text/date/select inputs read `event.target.value`; checkboxes read boolean `event.target.checked` (or tri-state string).
   - Binary radio pairs write string `'Yes'`/`'No'` and must be wrapped in semantic `<fieldset>`/`<legend>`.
+- **`data-form-action` controls should be `<button>`, not `<a href="#">`.** A real incident: `summary-renderer.js` rendered Summary-page navigation links as `<a href="#" data-form-action="navigate">`. The shared dispatcher called `window.navigate()` on click but never `event.preventDefault()`, so the anchor's own default action for `href="#"` also fired right behind it, resetting the URL hash and silently bouncing every click back to the Cover page a moment later. It shipped because the one existing test called `window.navigate()` directly instead of clicking the link. Two rules follow: a control that doesn't need to be an openable/copyable link should be a `<button type="button">` (the sidebar nav already does this correctly); any exception that must render as a real anchor needs `event.preventDefault()` handled in the shared dispatcher. An e2e test asserting a UI affordance's behavior should drive the actual interaction (click), not call the underlying `window.*` function directly — that's the only way this class of bug gets caught.
 - **Dynamic Array Re-indexing**: Deleting an item requires a full DOM re-render of the card container to prevent stale `data-form-path` index bindings (e.g. `guardians.2.name` shifting to `guardians.1.name`). Deleting a guardian must cleanly unlink its `partyId`.
 - **Case Resolution Fallback**: Centralize case identification through `src/core/case-resolver.js`. For Plan Minor, always fall back across `ward.ucn || ward.ref || ''`.
-- **Vocabulary — `ward` means filing**: in code, `caseFile.wards[]`, `wardId`, `activeWardId`, `activateWard`, `switchWard`, `unloadWard` and the like refer to **one filing instance**, for historical reasons predating the Party model. The person is a `Party` (`src/core/party-resolver.js`; the ward's canonical county lives on that Party per Milestone 40C-1). New code should prefer `filing` terminology where practical (a new `filingId` parameter over a new `wardId` one; a Tier 2 "Ward Demographics Card" describes the Party) without renaming existing identifiers at sites not otherwise being touched.
+- **Vocabulary — `ward` means filing**: in code, `caseFile.wards[]`, `wardId`, `activeWardId`, `activateWard`, `switchWard`, `unloadWard` and the like refer to **one filing instance**, for historical reasons predating the Party model. The person is a `Party` (`src/core/party-resolver.js`; the ward's canonical county lives on that Party per Milestone 40C-1). New code should prefer `filing` terminology where practical (a new `filingId` parameter over a new `wardId` one) without renaming existing identifiers at sites not otherwise being touched.
 
 ---
 
@@ -135,6 +139,7 @@ implementation or review to discover.
 
 - **Data Model**: Does this add, rename, or reshape persisted data? Name the exact `probate-guardian-data-model.csv` rows needed (Section 3), and check whether the collection they belong to is already fully expanded — one summary row does not mean it is.
 - **Legacy Data Migration**: Does this touch data that could already exist in a `.sav` file? State the migration/inference rule explicitly — a missing new field must never silently resolve to a value less complete than what already existed under today's rules.
+- **Fixture & Factory Audit**: A new required/blocking rule needs the same treatment as legacy migration above, aimed at tests instead of saved files: grep every `fillMinimalValid*Ward()`, `BASELINE`, and fixture factory for the filing type(s) touched, and add the new field wherever a sibling required field already appears. Milestone 55D added one new required field across four filing types and it took three separate rounds of discovery — two e2e ward fixtures, two unit-test fixtures, then two more e2e cases only found by running the full suite — because nothing prompted a systematic check up front. Doing the grep during scoping is one pass instead of three.
 - **Test Coverage & Index**: Name the actual new or changed test files the plan implies, not just "add coverage," and track the resulting `TEST-INDEX.md` update (Section 7) as part of the plan itself.
 - **Export/Import/Portability**: Does this interact with any existing export, import, or backup path (single-ward export, full case export, PDF/Excel export)? Check that path's actual code rather than assuming it carries new data along for free.
 - **Security & Sensitivity**: New stored data needs an explicit sensitivity classification and a stated threat model — what it actually protects against, and what it doesn't — never implying a stronger guarantee than the mechanism provides.
@@ -165,13 +170,15 @@ Tier 3: Declarative Form Composition (pages assemble sequences of cards)
 
 ## 10. UI Styling & Design System Governance
 
-- **Authoritative Styles**: `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is the authoritative source of truth for this repository's design system. (The `templates/ui-starter/` greenfield-starter kit this line used to point to was removed in Milestone 42H -- it had no runtime reference and was shipping in every build for no reason. Reach for another portfolio project's starter kit directly if one is needed again.)
+- **Authoritative Styles**: `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is the authoritative source of truth for this repository's design system.
 - **Design Tokens**: Standardize UI colors on semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`). Avoid arbitrary hardcoded hex values in component stylesheets.
   - *Allowed Exceptions*: Token definitions themselves, vendor styles, print/court-document output styles (which remain intentionally hardcoded for print fidelity), embedded SVG assets, and high-contrast accessibility overrides.
 - **Dark/Light Theme Engine**: Support both Light and Dark modes using `tokens.css`. Use a synchronous `<head>` pre-paint script (`src/prepaint.js`) to avoid theme flash (FOUC) on startup.
-- **UI Preference Persistence**: Theme and other pure UI-only display preferences (not case/filing data) belong in `localStorage`, never in `.sav`/case state — they carry nothing sensitive and must be readable synchronously before first paint, which an encrypted or async-loaded case file cannot guarantee. Theme follows this since Milestone 40D (`src/core/theme-preference.js`, key `pg-theme-v1`, read by `src/prepaint.js`).
+- **UI Preference Persistence**: Theme and other pure UI-only display preferences (not case/filing data) belong in `localStorage`, never in `.sav`/case state — they carry nothing sensitive and must be readable synchronously before first paint, which an encrypted or async-loaded case file cannot guarantee. Theme follows this via `src/core/theme-preference.js` (key `pg-theme-v1`, read by `src/prepaint.js`).
 - **Iconography**: Use the lightweight SVG icon system (`icons.js` / `ic(name, size)`). When using icons inside interactive controls (`<button>`, `<a>`), always supply an accessible name via `aria-label`, `title`, or visible text.
 - **Card & Summary Anatomy**: Use standardized `.entry-card` and `.summary-box` classes with scoped container queries (`cards.css`) for consistent multi-column responsive layout across screens.
+
+---
 
 ## 11. Packaging for External Hosting (DNN & Similar)
 
@@ -185,17 +192,14 @@ own domain root), use the **portable** build, not the web build:
    `dist/web` is unsuitable for this purpose — `vite.config.js` hardcodes its
    `base` to `/probate-guardian/`, so it only works mounted at exactly that
    path. `dist/portable` uses a relative `base: './'`, so it works from any
-   folder a host puts it in. See `vite.config.js`'s top-of-file comment for
-   the full web-vs-portable rationale; treat that file as authoritative if
-   this section and the code ever disagree.
+   folder a host puts it in. Treat `vite.config.js`'s top-of-file comment as
+   authoritative if this section and the code ever disagree.
 2. **Don't hand-pick files.** `dist/portable`'s contents are not fixed — Vite
    content-hashes several filenames (`icon-192-<hash>.png`,
    `manifest-<hash>.json`, the inlined bundle, etc.) and `vite.config.js`'s
-   `STATIC_COPY_TARGETS` list (what gets copied verbatim: `lib/`, `icons/`,
-   `fragments/`, `help/`, `src/legacy-app.js`, `src/prepaint.js`, manifest,
-   service worker) can gain or lose entries as the app evolves. Always zip
-   whatever `dist/portable` actually contains after a fresh build — never
-   reuse a file list or hashed filename from a previous package.
+   `STATIC_COPY_TARGETS` list can gain or lose entries as the app evolves.
+   Always zip whatever `dist/portable` actually contains after a fresh build
+   — never reuse a file list or hashed filename from a previous package.
 3. **Zip the folder's *contents*, not the folder itself** — DNN (and most
    static hosts) expect `index.html` at the root of the uploaded package, not
    nested inside a `portable/` subfolder. On Windows, PowerShell's
@@ -203,17 +207,20 @@ own domain root), use the **portable** build, not the web build:
    happens to be on `PATH` (this machine's `zip` is a broken legacy build —
    verify any zip tool actually recursed into subdirectories before trusting
    it):
+
    ```powershell
    Compress-Archive -Path "dist\portable\*" -DestinationPath "<output>.zip" -Force
    ```
+
 4. **Verify before delivering.** Smoke-test the freshly built
    `dist/portable/index.html` (it's designed to run via `file://`, matching
-   how a static host serves it) for console/page errors before zipping —
-   a throwaway Playwright script opening the file and checking
+   how a static host serves it) for console/page errors before zipping — a
+   throwaway Playwright script opening the file and checking
    `page.on('pageerror'/'console')` for errors is enough; delete it after.
    Confirm the zip actually contains the subdirectories (`lib/`, `icons/`,
    `fragments/`, `help/`, `src/`), not just top-level files, before treating
-   the package as done.
+   the package as done. See Section 1's Test Execution Gate for when a full
+   `test:e2e:portable` pass is also warranted.
 
 ---
 
@@ -285,7 +292,7 @@ defined names are right there. Several hours of Milestone 57 were spent
 holding items open for authority that was sitting in the spreadsheet the whole
 time:
 
-- **57E-2** was deferred indefinitely "pending a documented fee formula". The
+- **57E-2** was deferred indefinitely "pending a documented fee formula." The
   audit fee schedules are printed in the workbooks (annual `PART II, III` rows
   13-17; guardian `PART V` rows 7-9) and were already implemented exactly.
   There is no trust-asset fee to formulate — that premise was invented, not
@@ -344,7 +351,7 @@ for all of them before touching an export:
 it.** The importer reads cells by address and never evaluates anything, so it
 agrees with a broken exporter perfectly — that is exactly why the Simplified
 Part I row shift and the defined-name strip both survived a full suite for
-their entire lives. See §14.
+their entire lives. See Section 14.
 
 **When a proposal and the template disagree, the template wins and the
 proposal is the thing that gets corrected.** Say so plainly and amend the

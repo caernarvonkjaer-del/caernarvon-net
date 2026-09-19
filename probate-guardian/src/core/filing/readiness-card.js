@@ -1,3 +1,9 @@
+// @ts-nocheck -- pulled into tsconfig.json's checked program only
+// transitively (router.js, an included file, imports resetReadinessCardState
+// from here). This file itself was never written with JSDoc types and isn't
+// part of the deliberate check:types surface (AGENTS.md §1) -- opting out
+// documents that honestly instead of inventing types nobody asked for.
+//
 // Milestone 38B / 44C: the one readiness card every Preview & Export page
 // renders. Configuration comes from readiness-config.js; the title from
 // county-guidance.js. Escapes all text, renders no inline handlers, and is

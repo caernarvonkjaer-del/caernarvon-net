@@ -1,3 +1,9 @@
+// @ts-nocheck -- pulled into tsconfig.json's checked program only
+// transitively (readiness-config.js -> readiness-card.js -> router.js, an
+// included file). This file itself was never written with JSDoc types and
+// isn't part of the deliberate check:types surface (AGENTS.md §1) -- opting
+// out documents that honestly instead of inventing types nobody asked for.
+
 // Milestone 24: Structured Validation Error Adapter & Resilient Jump Link Handler
 
 const LEGACY_ROUTE_MAP = {

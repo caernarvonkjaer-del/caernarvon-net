@@ -31,7 +31,16 @@ export async function buildSupplementalAttachmentFixture(
   overrides: Partial<SupplementalFileFixture> = {},
 ): Promise<SupplementalFileFixture> {
   const { dataUrl, digest } = await page.evaluate(async (attachmentText) => {
+    // These two imports run inside the browser page (Section 11's web build
+    // base), not resolved by tsc/Node -- the absolute URL is only valid at
+    // runtime, once the dev/preview server serves it. tsc structurally cannot
+    // resolve it, so this is a real, permanent, non-fixable false positive.
+    // Using the "expect" form of the suppression (rather than "ignore") means
+    // a future refactor that makes this resolvable statically re-surfaces as
+    // an error here instead of staying silently suppressed.
+    // @ts-expect-error -- runtime-only browser URL, see comment above.
     const { createJsPdfInstance } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
+    // @ts-expect-error -- runtime-only browser URL, see comment above.
     const { digestDataUrl } = await import('/probate-guardian/src/core/pdf/supplemental-pdf.js');
     const doc = await createJsPdfInstance();
     doc.setFontSize(16);
