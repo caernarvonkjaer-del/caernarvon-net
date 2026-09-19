@@ -326,3 +326,56 @@ simply wrong from then on.
 **When a proposal and the template disagree, the template wins and the
 proposal is the thing that gets corrected.** Say so plainly and amend the
 document; do not build to a spec the court's own form contradicts.
+
+---
+
+## 14. Parse Structured Formats With a Parser, Not a Regex
+
+When you inspect, verify or assert against XML — the `.xlsx` parts in
+`templates/*.js`, `.docx`, SVG, anything with a real grammar — **use a real
+parser**. Python's `xml.etree.ElementTree`, `JSZip` plus a DOM in a browser
+test, ExcelJS's own object model. Not a regex over the raw markup.
+
+This is a correctness rule, not a style preference, because the failure mode
+is silent and produces confident wrong answers rather than errors.
+
+**The concrete trap, which has now cost this repo twice in one session.**
+A spreadsheet cell may be self-closing. Given
+
+```xml
+<c r="C14" s="5"/><c r="D14"><f>H4</f><v>0</v></c>
+```
+
+the natural-looking pattern `<c[^>]*r="([A-Z]+\d+)"[^>]*>(.*?)</c>` matches
+`r="C14"`, swallows the rest of that self-closing tag as if it were an opening
+tag, then scans forward to the *next* `</c>` — and reports D14's formula as
+living in C14. Every subsequent conclusion is drawn about the wrong cell.
+
+That error produced two wrong findings here:
+
+- a set of Schedule B-4 total addresses that were off by a column, caught only
+  because an e2e assertion failed against the real file;
+- a reported defect in the Simplified workbook's cover page that did not
+  exist — the template was correct all along, and the real defect was
+  somewhere else entirely and would have been missed.
+
+**What this means in practice.**
+
+- Offline analysis of a template (scripts, scratch investigation) parses with
+  `xml.etree` or equivalent. If a throwaway script is worth trusting enough to
+  base a claim on, it is worth ten more lines to parse properly.
+- A finding derived from a regex over markup is **provisional** until
+  re-derived with a parser or confirmed against the real exported artifact.
+  Say so when reporting it, and do not write it into a milestone document as
+  established.
+- Prefer confirming against the **generated file** over the template where the
+  question is what a filer receives. The template says what the form intends;
+  only the export says what the app actually produces, and the two diverge —
+  that divergence is where the defects live.
+- Regex is fine for coarse, non-load-bearing work: counting sheets, finding
+  whether a name appears at all, locating a part to then parse. It is not fine
+  for anything that resolves to a cell address, a formula, or a value that
+  ends up in a filed document.
+
+The same reasoning applies to any format with a grammar: if the answer depends
+on structure, let something that understands the structure produce it.

@@ -456,12 +456,60 @@ Two related items for the same decision, both verified rather than assumed:
   Guardian workbooks, is `veryHidden` in all three templates. It has no cells,
   never appears as a tab and never prints. **No action needed** — retiring that
   flag.
-- Simplified's `COVER!D7` reads `='PARTS I, II '!D14:I14`, the merged value
-  cell beside the `Case Number` label, but the template puts its own
-  `=H4` case-number formula in `C14`, which is inside the `B14:C14` label
-  merge. That points at a blank cell, so the cover page's Case Number may print
-  empty on every Simplified filing. **Not verified by rendering** and outside
-  this work — recorded so it is not lost.
+- **Simplified's Part I identity block is written one row low. Confirmed
+  against a real exported file, 2026-09-19.** See **D11** below. An earlier
+  note here blamed the template's `COVER!D7`; that was wrong, produced by a
+  regex that mis-attributed a formula to the wrong cell (now forbidden by
+  `AGENTS.md` §14). The template is correct; the app's writer is not.
+
+**D11 — OPEN, and the most serious thing on this page. Simplified Annual
+Accounting writes its entire Part I identity block one row too low, so every
+field prints under the wrong label on a filed court form.**
+
+Found 2026-09-19 while confirming an unrelated claim. **Pre-existing** —
+`src/features/simplified-accounting/excel.js` has not changed since Milestone
+53B. Confirmed against a real exported `.xlsx`, not inferred from the template.
+
+The court's form puts each label in column B and its value in the merged
+`D<row>:I<row>` beside it. `doSaveExcel()` writes each value to the row *below*
+its label:
+
+| Form label | Should receive | Actually receives |
+| --- | --- | --- |
+| r13 `For the Period` (From/To) | period dates | nothing — and `D13`'s own `From` label is **overwritten with the ward's SSN** |
+| r14 `Case Number` | case number | the period **end date** |
+| r15 `Attorney for Guardian` | attorney | the **case number** |
+| r16 `Guardian` | guardian | the **attorney's name** |
+| r17 `Type of Guardianship` | type | the **guardian's name** |
+| r18 `Part II` (a section heading) | nothing | the **type of guardianship** |
+
+Two further consequences:
+
+- The template ships `D14 = =H4`, which is how the case number reaches the
+  form and, through `COVER!D7`, the cover page. `setCell(p1,'E14',…)` and
+  `setCell(p1,'H14',…)` both land inside the `D14:I14` merge, and ExcelJS
+  redirects a write on a merged member to the merge master — so those two
+  writes **destroy that formula** and leave the period end date in its place.
+  This is an instance of the "never write into a formula cell" rule in
+  `AGENTS.md` §13, reached accidentally through a merge.
+- The cover page's Case Number therefore prints the period end date.
+
+**Why no test caught it.** `importExcel()` reads the same shifted cells
+(`D13` ssn, `D16` attorney, `D17` guardian, `D18` type), so the app round-trips
+its own output perfectly. It is self-consistent and wrong against the court's
+form — precisely the failure mode `AGENTS.md` §13 exists for. It also means the
+period dates do not survive a round trip at all: both are read back from inside
+the same merge, so `periodFrom` and `periodTo` return the same value.
+
+**Decision needed: authorize the row correction?** The fix is to move each
+write up one row (`D13`→ the period cells on r13, `D14` for the case number,
+`D15`/`D16`/`D17` for attorney/guardian/type), drop the writes that clobber
+`D14`'s formula, and move the importer to match. It is not ambiguous — the
+template's own `=H4` at `D14` settles where the case number belongs — but it
+changes what appears in a filed court document and both halves of a round trip,
+so it is Alan's call by name (§2), not a quiet fix. **Verification must assert
+against the exported file, per §14, not against the app's own re-import**,
+which is the thing that has been agreeing with the bug.
 
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
