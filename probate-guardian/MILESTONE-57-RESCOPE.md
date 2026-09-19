@@ -8,6 +8,12 @@ prompt interrupts. Full suite green at the time: 607 passed, 6 skipped, 0
 failed. See the dated note on the 57C-R section below for what actually
 shipped and how it differs from the design here.
 
+**No further 57 work is authorized as of 2026-09-19.** Alan's instruction that
+day was to close what was closeable and start nothing new. 57G and the
+trust-question item are closed (see the table below); D6 and D7 settle the
+design questions for 57A and 57B so those are not re-litigated later, but
+neither is approved to build.
+
 **The rest of Milestone 57 is still unscoped and unauthorized.** All five of
 this document's design questions were settled before 57C-R was built
 (Decision 1 below, and Decisions 2–5 near the end), but those decisions were
@@ -319,13 +325,53 @@ fits the app's existing mechanisms:
 
 | Item | Review verdict | Note |
 | --- | --- | --- |
-| 57A | Defective validation | Bond-waived / restricted-depository tri-states. `bondWaived` and `restrictedDepository` already exist pre-57 (Guardian and Annual respectively) and are now documented in the data model |
-| 57B | Incomplete / unsafe conversion | Certificate of Service recipient rules |
+| 57A | Defective validation | Bond-waived / restricted-depository tri-states. `bondWaived` and `restrictedDepository` already exist pre-57 (Guardian and Annual respectively) and are now documented in the data model. **Design decision settled — see D6 below.** Still needs a design and approval by name before any work starts |
+| 57B | Incomplete / unsafe conversion | Certificate of Service recipient rules. **Design decision settled — see D7 below.** Still needs a design and approval by name before any work starts |
 | 57D | Critical Excel regression, since fixed then reverted | **The template research survives and is the valuable part**: the B-4 workbook has 18 register pages in 4 account blocks with verified row capacities — see `MILESTONE-57-REVIEW-HANDOFF.md` |
 | 57E-1 | Poorly integrated | Trust-accounting capture. 57E-2 (audit-fee formula) remains deferred pending an approved formula |
 | 57F | Round-trip defect fixed; PDF claim unverified | The PDF period-date fix was never render-tested. The Guardian date round-trip fix survives the revert as defensive robustness |
-| 57G | No defect found | Annual Plan terminology |
+| 57G | **CLOSED 2026-09-19 — no defect, verified** | Annual Plan terminology. Not closed on the review's word: re-audited against master. `filing-descriptor.js`'s `planAnnual` entry carries `displayName: 'Annual Guardianship Plan'`, `documentTitle: 'ANNUAL GUARDIANSHIP PLAN'` and `filenameStem: 'Annual-Guardianship-Plan'`, and every one of the nine audited surfaces derives from those three strings through `resolveDescriptorForInventoryType()`. The word "Accounting" does not appear anywhere in `src/features/plan-annual/`, and nowhere in `src/` is the string "Annual Accounting" bound to `planAnnual`. Surface 6 (Excel worksheet titles) does not exist for this filing type at all — `capabilities.excel` is `false`. Reopen only against a specific sighting |
+| Trust-question consistency | **CLOSED 2026-09-19 — unspecified** | Named once, in one line of `MILESTONE-57-REVIEW-HANDOFF.md`'s "Not started" paragraph, and specified nowhere in any of the three 57 documents. Nobody can act on it as written. Reopen if whoever raised it can say which question, in which filing type, was inconsistent with what |
 | 57H | Privacy / product-design regression | Reverted. Its replacement — the `pg-last-position` marker — is live and documented in the user guide |
+
+---
+
+## Decisions 6–7 — settled 2026-09-19, ahead of any authorization
+
+These two were asked and answered before either item was scoped, so that
+whoever builds them is not also deciding them. **Neither item is authorized.**
+Alan's standing instruction on 2026-09-19 was to close what was closeable and
+start no new 57 work.
+
+**D6 — 57A: an unanswered bond / restricted-depository question warns, it does
+not block.** A filer who has answered neither question can still export, but
+only through an acknowledgement they have to clear, and the acknowledgement is
+recorded.
+
+Rejected: a hard blocker (correct for the court record, but it forces every
+filer to answer two questions that are frequently not applicable, on every
+filing); and allowing silence entirely (which lets a filing reach the clerk
+saying nothing about bond at all). The middle option exists here only because
+the app already has the mechanism for it — `output-authorization.js`'s
+`authorizeFilingOutput()` returns `acknowledgement-required`, and
+`markFilingRevisionChanged()` re-arms it when the filing changes. **Whoever
+builds this should use that path, not invent a second one.** A half-finished
+affirmative — `'Yes'` with the depository name missing — stays a hard blocker
+either way; that is an incomplete entry, not an unanswered question.
+
+**D7 — 57B: a service attestation does NOT survive a filing conversion.**
+Converting an Initial Inventory to an Annual or Simplified Accounting resets
+`certNoRecipients` / `serviceNoRecipients` to unanswered (`''`) and raises a
+review notice on the new filing. Recipient address cards still migrate, so
+nothing is retyped.
+
+The reasoning is legal rather than technical: "no recipients are required for
+this certificate" is the filer's own assertion about one accounting period,
+and a new period is a new set of facts. Carrying it forward would have the app
+asserting a legal conclusion on the filer's behalf, which is exactly the line
+the 57B attestation wording was written to stay on the right side of. A
+review flag was rejected as the weaker form of the same thing — easy to click
+past, and the app has still pre-filled the answer.
 
 ---
 
