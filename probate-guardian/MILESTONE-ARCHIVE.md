@@ -15724,7 +15724,7 @@ classic-vs-module ordering defect, different location and cause. See
 1. **DECISION (recommended default): `case-file.js` becomes the sole
    canonical implementation**, since it already wins the shadow race at
    runtime and matches this repo's stated direction of moving persistence
-   logic into ES modules (`AGENTS.md` Section 0). `legacy-app.js` keeps
+   logic into ES modules (`AGENTS.md` Section 1). `legacy-app.js` keeps
    only what genuinely has no ES-module counterpart today: `autoSave()`'s
    1s debounce orchestration, `flushPendingSave()`, `getActiveWard()`,
    `autosaveWardToFile()` (Tauri-only backup), the session-restore-cache
@@ -16424,7 +16424,7 @@ Setting the parent (`hasSafeDepositBox`) to `Yes`, then the child
 (`safeDepositBoxFiled`) to `Yes`, then the parent back to `No` wipes the
 child to `null` — and setting the parent back to `Yes` does **not** restore
 it; the child radios render blank. This is exactly the anti-pattern
-`AGENTS.md` Section 3 names explicitly: "Hiding a section or unchecking a
+`AGENTS.md` Section 4 names explicitly: "Hiding a section or unchecking a
 toggle... must never delete entered data — re-checking must restore it.
 Deletions require an explicit user action." No explicit user action deletes
 the child here — a plain parent-toggle round trip does.
@@ -17504,7 +17504,7 @@ Accounting's remuneration row, `:597-598` — both "Guardian Name" and
 each other), and `col-12` fields that are alone on their own line (no
 adjacent sibling to misalign against). These don't exhibit the bug — they
 just don't use the shared primitive, which is a separate, lower-priority
-`AGENTS.md` Section 9 convention gap, not a visual defect, and is not in
+`AGENTS.md` Section 6 convention gap, not a visual defect, and is not in
 scope here.
 
 Several Plan-family collection rows (`q9Providers`, `planGuardians` across
@@ -17554,7 +17554,7 @@ the list above is exhaustive.
    delivery.** Once the CSS no longer discriminates between wrapped and
    unwrapped labels, every confirmed site in the blast-radius list above
    is fixed by the one CSS change alone. Migrating those hand-rolled
-   fields onto `inpD()`/`selD()` (per `AGENTS.md` Section 9) is a
+   fields onto `inpD()`/`selD()` (per `AGENTS.md` Section 6) is a
    legitimate follow-up but a different, lower-stakes piece of work — do
    not bundle it here.
 
@@ -17671,7 +17671,7 @@ asks for.
 This proposal outlines an architectural refactoring to unify form
 construction across the codebase into a 3-tier hierarchical system:
 **Field Primitives → Card Templates → Form Composition**, the same target
-`AGENTS.md` §9 already names.
+`AGENTS.md` §6 already names.
 
 **Revision (2026-09-13):** every claim below was re-verified directly against
 current `master` (after Milestone 42's full A–H series landed) rather than
@@ -17824,7 +17824,7 @@ flowchart TD
         C2[Ward Demographics & Inception]
         C3[Guardian & Attorney Details]
         C4[Residence & Facility Profile]
-        C5[Form-Specific Row Factories — stay per-form, AGENTS.md section 3]
+        C5[Form-Specific Row Factories — stay per-form, AGENTS.md section 4]
     end
 
     subgraph Tier3 [Tier 3: Declarative Composition — src/features/*/index.js]
@@ -17893,7 +17893,7 @@ checkbox.
   se detection).
 - Residence & Facility Profile (living arrangement radios, address, phone,
   facility type).
-- **Collection Grid Boundary** (`AGENTS.md` §3, unchanged): Schedule A
+- **Collection Grid Boundary** (`AGENTS.md` §4, unchanged): Schedule A
   assets, Plan Q1 residences, and every other collection grid stay on
   form-specific row factories. Cards compose Tier 1 primitives for
   identity/demographic fields only.
@@ -18383,7 +18383,7 @@ fields and no guardian block shaped like the Plan types'.
 **Its remaining hand-rolled fields were checked and are correctly out of
 scope:** `certRecipients` and `remuneration` rows are collection grids,
 which the milestone's own Collection Grid Boundary (§1 Tier 2,
-`AGENTS.md` §3) explicitly keeps on per-form row factories rather than
+`AGENTS.md` §4) explicitly keeps on per-form row factories rather than
 cards. Nothing was forced.
 
 **Verification:** both pages byte-identical via `git stash` before/after.
@@ -18988,7 +18988,7 @@ Confirmed by reading the current code (not assumed):
 recorded 2026-09-14.** See "Full-milestone verification, once all eight
 sub-deliveries have landed" below for the closing note. This document's
 original text (below) is left as the historical proposal; approvals per
-`AGENTS.md` §2 are recorded by the commits cited in the closing note, not
+`AGENTS.md` §3 are recorded by the commits cited in the closing note, not
 by editing the original per-sub-delivery text in place.
 
 **Source:** `docs/app-review-2026-09-13.md`, a read-only, directly-measured
@@ -20102,7 +20102,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 
 **Index of independently approvable sub-deliveries.** Approving or landing
 one does not authorize another — each still requires its own explicit
-approval by name, per `AGENTS.md` §2, before implementation. All eight are
+approval by name, per `AGENTS.md` §3, before implementation. All eight are
 marked **Independent**: none blocks another, and none blocks Milestone 41
 or anything else in flight.
 
@@ -21327,7 +21327,7 @@ sub-delivery.
 2026-09-14 (see closing note below). 44E is superseded — see its own
 section — and fully closed as of 2026-09-15.** Approving or landing one
 sub-delivery never authorized another — each required its own explicit
-approval by name, per `AGENTS.md` §2, before implementation.
+approval by name, per `AGENTS.md` §3, before implementation.
 
 **Source:** a 2026-09-13 cross-milestone review (a "Milestones 39-43 sweep"
 run by Codex, at the user's direction) found that Milestones 36, 37, and 39
@@ -23257,7 +23257,7 @@ behavior rather than treated as a defect.
 
 ### Cross-cutting notes (`AGENTS.md` §8)
 
-**Data Model:** ten new CSV rows, in the same commit, per §3. **Legacy Data
+**Data Model:** ten new CSV rows, in the same commit, per §4. **Legacy Data
 Migration:** explicitly handled — a tombstone predating merge tracking has no
 `mergeRecord` and stays un-unmergeable rather than being synthesized, and is
 never listed as a sub. **Legal/Compliance:** the suffix rule is the one with
@@ -23357,7 +23357,7 @@ overwriting a value or touching a closed filing**.
 
 ### Cross-cutting notes (`AGENTS.md` §8)
 
-**Data Model:** two new CSV rows in the same commit (§3). **Legacy Data
+**Data Model:** two new CSV rows in the same commit (§4). **Legacy Data
 Migration:** the load-time backfill is the migration, and its rule is
 non-destructive by construction — it fills blanks only, never overwrites, and
 never touches a closed filing, so no existing `.sav` resolves to a *less*
@@ -23366,11 +23366,11 @@ Sensitivity:** ward SSN and residence now live on a shared `Party` record
 rather than only on individual filings, and `mailingAddress.*` is classified
 `personal` in the CSV. The threat model is unchanged — everything still
 lives in the same local `.sav` blob under the same optional AES-GCM
-encryption (`AGENTS.md` §0), so this widens what a single decrypted case file
+encryption (`AGENTS.md` §1), so this widens what a single decrypted case file
 exposes about a ward internally, without changing what any attacker outside
-the file can reach. **Non-Destructive Toggling (§3):** Mark Closed / Mark
+the file can reach. **Non-Destructive Toggling (§4):** Mark Closed / Mark
 Open never deletes data in either direction; closing freezes and reopening
-resumes, which is the same principle as §3's toggle rule applied to a filing
+resumes, which is the same principle as §4's toggle rule applied to a filing
 rather than a section. **Legal/Compliance:** "frozen as filed" is the point —
 a closed filing is a historical record of what was submitted to the court,
 and letting later party edits rewrite it would misrepresent the filing. The
@@ -23384,7 +23384,7 @@ any particular clerk's expectations; it records what the code does.
 
 Per the caveat this repository applies to reconstructed documents:
 
-- **No pre-authorization.** `AGENTS.md` §2 requires a named approval per
+- **No pre-authorization.** `AGENTS.md` §3 requires a named approval per
   sub-delivery before implementation. That gate was not exercised for 49 or
   49B. This document does not retroactively supply it; it records what
   landed.
@@ -23397,8 +23397,8 @@ Per the caveat this repository applies to reconstructed documents:
   alongside the change, so they demonstrate the feature works as built; they
   are not an independent check that the design is right. Neither spec was
   re-run for this backfill — this was a documentation-only pass
-  (`AGENTS.md` §1 skips tests for those) — so the "Verification" sections
+  (`AGENTS.md` §2 skips tests for those) — so the "Verification" sections
   above describe what the commits assert, not a fresh green run. Anyone
   building on 49B should re-run `closed-filing-sync.spec.ts` and
-  `party-resolver.spec.ts` first, per §1's rule that a "Landed" status line
+  `party-resolver.spec.ts` first, per §2's rule that a "Landed" status line
   is a claim rather than proof.

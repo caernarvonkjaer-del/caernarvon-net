@@ -41,7 +41,7 @@ list to carry the defects found during execution.
   which is also dead — the rule is reimplemented inline in three places. Worth
   recording that the dead version treated an *unanswered* field as ineligible
   where the live banner only warns on an explicit `'No'`; the live code is the
-  one that respects `AGENTS.md` §3.
+  one that respects `AGENTS.md` §4.
 - **51D's `setCell` was duplicated three times, not once**, and adopting core's
   left `sanitizeForExcel` unused in all three files, so that went too.
 - **51E's verification improved on the plan.** This document asked for a manual
@@ -57,13 +57,13 @@ list to carry the defects found during execution.
   produced a real diff. A gate that cannot fail is not evidence.
 
 **The original Draft text is left below as the historical proposal.** Per
-`AGENTS.md` §2 it authorized nothing on its own; approvals are recorded by the
+`AGENTS.md` §3 it authorized nothing on its own; approvals are recorded by the
 commits above.
 
 ---
 
 **Original status (historical):** Draft — not an authorization to implement
-anything below. Per `AGENTS.md` §2, this is a proposal only; nothing here
+anything below. Per `AGENTS.md` §3, this is a proposal only; nothing here
 should be started until Alan explicitly approves a specific sub-delivery by
 name. Approval of one sub-delivery does not authorize the others.
 
@@ -181,7 +181,7 @@ sub-deliveries here that change behavior a user can see.
 
 These were put to Alan as choices before this document was written, and are
 recorded here as settled. They are decisions about *what the plan is*; the
-`AGENTS.md` §2 gate on *executing* it still applies.
+`AGENTS.md` §3 gate on *executing* it still applies.
 
 **Decision 1 — Excel helpers: consolidate only the true duplicates.**
 Replace the local copies of `setCell`, `numValue`/`nv` and
@@ -314,7 +314,7 @@ gate for A1–A4.
   `localStorage` key `pg-dashboard-preferences-v1` in the browsers of anyone
   who used the app before Milestone 36-1. Nothing reads it today, so deleting
   the module changes no behavior — but the key is not cleaned up either. The
-  recommendation is to **leave it**: per `AGENTS.md` §10 this is a pure UI
+  recommendation is to **leave it**: per `AGENTS.md` §6 this is a pure UI
   preference carrying nothing sensitive, it is a few dozen bytes, and adding
   removal code means shipping a migration whose only purpose is to delete
   something already inert. State this in the commit message so it is a
@@ -356,7 +356,7 @@ the module is heavily used, so this is a single-function deletion with no
 spec change. Its `data-field-kind="date"` / `data-field-format-policy`
 markup belongs to the Tier 1 field-primitive design that `form-fields.js`
 actually implements (`form-fields.js:25`, `:116`), so it is superseded, not
-merely unused — say so in the commit message per `AGENTS.md` §9.
+merely unused — say so in the commit message per `AGENTS.md` §6.
 
 **B2. `GUARDIAN_CLASSIFICATION_OPTIONS` — `guardianship-options.js:19`.**
 Unreferenced, and — unlike the original list's framing — not referenced by
@@ -566,7 +566,7 @@ after the deletion proves nothing.
 - **Data Model:** N/A.
 - **Legacy Data Migration:** N/A — C2 changes how a `setter` argument is
   parsed, not how any value is stored. The tri-state contract (`AGENTS.md`
-  §3) is enforced downstream in `yesNoRadioHTML`, which is untouched.
+  §4) is enforced downstream in `yesNoRadioHTML`, which is untouched.
 - **Test Coverage & Index:** two new guard assertions (C1, C2) added to
   existing specs; no new spec files, so no `TEST-INDEX.md` row is added,
   though C1's and C2's host-spec descriptions should be updated if the new
@@ -635,7 +635,7 @@ delete `readCellNumber` and `readCellDate` as unused, keeping the comment.
 
 **D4. Delete `yesNo`, and say why in the commit message.** It is not merely
 unused — `yesNo(bool)` returns `'No'` for `''`, `null` and `undefined`, which
-is precisely what `AGENTS.md` §3 forbids: "Never default or coerce an
+is precisely what `AGENTS.md` §4 forbids: "Never default or coerce an
 unanswered field to `'No'`, at any stage." Anyone "consolidating"
 `guardian-inventory/excel.js:73`'s local `yesNo` onto this export would
 silently convert every unanswered binary in the Initial Inventory workbook
@@ -645,7 +645,7 @@ name-collision trap, not just a dead function.
 **D5. Decide `yesNoTristate` explicitly rather than by omission.** Core's
 version handles only boolean `true`/`false`; `guardian-inventory/excel.js:73`
 accepts `'Yes'`/`'No'` strings as well, which is what this app's tri-state
-fields actually store (`AGENTS.md` §3). The local one is the correct
+fields actually store (`AGENTS.md` §4). The local one is the correct
 superset. **Recommendation: delete core's and leave the local one**, with a
 comment on the local one noting it is the canonical tri-state Excel writer.
 Promoting it to `excel-engine.js` is defensible but is a move, not a
@@ -1112,7 +1112,7 @@ Nothing selects the label by `for` — `src/terms-acceptance.js` uses
 `tests/unit/window-bridge.spec.js`, and a merge conflict in a generated file
 has no obviously correct resolution — the right fix is always "regenerate
 from the merged source," which means the second agent's work is blocked on
-the first landing anyway. Per `AGENTS.md` §1's sub-delivery rule, verify the
+the first landing anyway. Per `AGENTS.md` §2's sub-delivery rule, verify the
 actual file overlap before assuming any two of these can run in parallel; the
 answer here is that they cannot.
 
@@ -1159,7 +1159,7 @@ caught only because the full suite ran after a pull that looked unrelated.
 ## Verification plan
 
 Per sub-delivery, the targeted specs named in each **Verification** block are
-the lite gate (`AGENTS.md` §1). Two sub-deliveries warrant more:
+the lite gate (`AGENTS.md` §2). Two sub-deliveries warrant more:
 
 - **51D** — recommend a full `npm test` to Alan before committing, and do not
   run it without the go-ahead. The byte-comparison of generated workbooks is

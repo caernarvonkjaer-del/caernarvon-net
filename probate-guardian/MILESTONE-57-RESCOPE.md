@@ -18,7 +18,7 @@ Two of the remaining items shrank to almost nothing once the court's own
 workbooks were read rather than the proposal: **57E-1 is already built** and
 closer to the form than it proposed, and **57F's Excel half would have
 destroyed the template's own header propagation.** That pattern is now
-`AGENTS.md` §13.
+`AGENTS.md` §5.
 
 Decisions 1–5 were settled before 57C-R was built and are about 57C-R only;
 **D6–D9, near the end, are the ones that govern what is left.** This document
@@ -391,7 +391,7 @@ The four is the court's, not ours — the workbook has exactly four
 account-header blocks (Line # restarts at 1 on p2, p8, p12, p16, each with its
 own `BANK:` / `ACCOUNT NUMBER #:`). We cannot invent a fifth without modifying
 the Clerk's form or writing one account's disbursements under another's
-header, and `AGENTS.md` §13 forbids both.
+header, and `AGENTS.md` §5 forbids both.
 
 **But only the Excel writer is bounded.** The data model, the assignment UI
 and the PDF have no such limit, and **the PDF register is already uncapped
@@ -471,7 +471,7 @@ Two related items for the same decision, both verified rather than assumed:
   against a real exported file, 2026-09-19.** See **D11** below. An earlier
   note here blamed the template's `COVER!D7`; that was wrong, produced by a
   regex that mis-attributed a formula to the wrong cell (now forbidden by
-  `AGENTS.md` §14). The template is correct; the app's writer is not.
+  `AGENTS.md` §10). The template is correct; the app's writer is not.
 
 **D11 — FIXED 2026-09-19, authorized by Alan by name. Simplified Annual
 Accounting wrote its entire Part I identity block one row too low, so every
@@ -526,13 +526,13 @@ Two further consequences:
   redirects a write on a merged member to the merge master — so those two
   writes **destroy that formula** and leave the period end date in its place.
   This is an instance of the "never write into a formula cell" rule in
-  `AGENTS.md` §13, reached accidentally through a merge.
+  `AGENTS.md` §5, reached accidentally through a merge.
 - The cover page's Case Number therefore prints the period end date.
 
 **Why no test caught it.** `importExcel()` reads the same shifted cells
 (`D13` ssn, `D16` attorney, `D17` guardian, `D18` type), so the app round-trips
 its own output perfectly. It is self-consistent and wrong against the court's
-form — precisely the failure mode `AGENTS.md` §13 exists for. It also means the
+form — precisely the failure mode `AGENTS.md` §5 exists for. It also means the
 period dates do not survive a round trip at all: both are read back from inside
 the same merge, so `periodFrom` and `periodTo` return the same value.
 
@@ -619,7 +619,7 @@ replaced live propagation with a snapshot.
 
 **Why the suites never caught any of it.** Every importer read the same wrong
 cell as its exporter. The round trips confirmed the app agreed with itself.
-This is the concrete case behind `AGENTS.md` §14's rule that a formula or a
+This is the concrete case behind `AGENTS.md` §10's rule that a formula or a
 placement is verified by reading the **exported file**, never by re-importing.
 
 Guarded two ways: `tests/unit/excel-write-targets.spec.js` classifies every
@@ -760,7 +760,7 @@ must be pinned before anything writes to it.**
 `SCH B-4 OTHER DISB SUMMARY p1` is **formula-driven**: its 18 category rows
 sum the `AK` column across every register page and B28 totals them. The app
 writes the registers and **must not write the summary** — it recalculates
-itself. See `AGENTS.md` §13.
+itself. See `AGENTS.md` §5.
 
 ### Cross-cutting ramifications (`AGENTS.md` §8)
 

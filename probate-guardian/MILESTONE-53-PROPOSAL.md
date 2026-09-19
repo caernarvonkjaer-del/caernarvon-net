@@ -69,11 +69,11 @@ rather than only in commit messages, per this repository's convention:
    purpose, obtained in the only direction that works given the landing order).
 
 The original Draft text is kept below as the historical proposal. Per
-`AGENTS.md` §2 it was a proposal only until the approval above; nothing in it
+`AGENTS.md` §3 it was a proposal only until the approval above; nothing in it
 should be read as authorizing anything further.
 
 **Original status (historical):** Draft — not an authorization to implement
-anything below. Per `AGENTS.md` §2, this is a proposal only; nothing here
+anything below. Per `AGENTS.md` §3, this is a proposal only; nothing here
 should be started until Alan explicitly approves a specific sub-delivery by
 name. Approval of one sub-delivery does not authorize the others. 53A is a
 prerequisite for 53B; 53C and 53D are optional and independently approvable.
@@ -222,7 +222,7 @@ lines changed in each of three feature files, ~40 lines deleted from
 `legacy-app.js`, one header comment rewritten, one generated file
 regenerated. What earns it a milestone document is the same thing that
 earned 51D one — it changes which code runs on a path that produces a
-document filed with a Florida probate court, and `AGENTS.md` §1 says that
+document filed with a Florida probate court, and `AGENTS.md` §2 says that
 kind of change gets recommended for a full regression run and gated by
 evidence rather than by "tests pass." The gate here is the mirror of 51D's:
 51D proved the **export** direction unchanged cell-by-cell; 53B must prove
@@ -508,9 +508,9 @@ git diff
 Three files, nothing else. The `legacy-app.js` hunk is fourteen `-` lines
 and zero `+` lines. If `git status` lists anything else — a regenerated
 `window-bridge.d.ts`, a stray probe, a concurrent agent's file — it does
-not go in this commit (`AGENTS.md` §1: commit only your own task's files).
+not go in this commit (`AGENTS.md` §2: commit only your own task's files).
 
-**A7. Commit and push** (direct to `master`, per `AGENTS.md` §1):
+**A7. Commit and push** (direct to `master`, per `AGENTS.md` §2):
 
 ```
 git add src/legacy-app.js TEST-INDEX.md tests/unit/cell-reader.spec.js
@@ -545,7 +545,7 @@ On a rejected push: `git pull --rebase`, re-run A4, push again — never force.
 
 **A8. Record the landing.** Amend this document's Status and the "How this
 index is organized" table with the commit SHA (read it from `git log -1
---format=%h`, never from memory — `AGENTS.md` §1 "Verify Commit
+--format=%h`, never from memory — `AGENTS.md` §2 "Verify Commit
 Citations"), and push that as a `docs:` commit. 53B's A0-equivalent step
 starts from that SHA.
 
@@ -813,7 +813,7 @@ fail. Revert. Record both in the commit message. A gate that cannot fail is
 not evidence.
 
 **B13. Recommend a full regression to Alan** (`npm test`) before commit,
-per `AGENTS.md` §1's "touches shared/core modules on a court-output path"
+per `AGENTS.md` §2's "touches shared/core modules on a court-output path"
 clause, with the reasons: three feature import paths change implementation
 mechanism; 51D got one for the mirror-image change. Do not run it without
 the go-ahead.
@@ -1162,7 +1162,7 @@ step for the resulting change to that step's expected diff.
   refreshed concurrency note. Confirmed no overlap with any file 53A–D
   touch. `TEST-INDEX.md` is the one file both milestones edited; that has
   already resolved as a normal sequence of row additions, not a conflict.
-  Per `AGENTS.md` §1, still re-check `git log`/`git status` immediately
+  Per `AGENTS.md` §2, still re-check `git log`/`git status` immediately
   before 53 actually starts — this document may not be the last thing to
   land on `master` before then either.
 - **Milestone 51's generated-file rule applies:** a conflict in
@@ -1195,7 +1195,7 @@ step for the resulting change to that step's expected diff.
 ## Verification plan
 
 Per sub-delivery, the **Verification** block is the lite gate (`AGENTS.md`
-§1). One sub-delivery warrants more:
+§2). One sub-delivery warrants more:
 
 - **53B** — recommend a full `npm test` to Alan before committing. It is a
   change to a shared core module on the import path of three court-filed

@@ -3,7 +3,7 @@
 ## Status
 
 **Landed in full, 2026-09-16–17.** Alan approved each sub-delivery
-individually, per `AGENTS.md` §2's per-sub-delivery gating — this was never
+individually, per `AGENTS.md` §3's per-sub-delivery gating — this was never
 approved or executed as one unit. All four are on `master`:
 
 | Sub-delivery | Commit(s) | Verification |
@@ -24,11 +24,11 @@ output through `tail`, discarding its exit code; corrected before the number
 above was accepted.)
 
 The original Draft text is kept below as the historical proposal. Per
-`AGENTS.md` §2 it was a proposal only until the approvals above; nothing in
+`AGENTS.md` §3 it was a proposal only until the approvals above; nothing in
 it should be read as authorizing anything further.
 
 **Original status (historical):** Draft — not an authorization to implement.
-Per `AGENTS.md` §2, this document is a proposal only. Nothing below should be
+Per `AGENTS.md` §3, this document is a proposal only. Nothing below should be
 started until Alan explicitly approves a named sub-delivery by name. Approval
 of one sub-delivery authorizes only that one; every other sub-delivery,
 including ones listed after it here, requires its own explicit approval.
@@ -402,7 +402,7 @@ npm run build
 This is a localized preview-layer correction, so a full `npm test` run is not
 required by default. If implementation expands beyond the four files listed
 above or changes shared PDF rendering, recommend the full regression and ask
-before running it, per `AGENTS.md` §1.
+before running it, per `AGENTS.md` §2.
 
 ### Acceptance criteria
 
@@ -785,7 +785,7 @@ npx vitest run tests/unit/checklist-export-parity.spec.js tests/unit/plan-annual
 
 `computeNavChecks()` is shared, hand-maintained, load-bearing logic touched by
 5 of 9 filing-type branches in one file — recommend a full `npm test` before
-commit per `AGENTS.md` §1's "broad, cross-cutting, touches shared/core
+commit per `AGENTS.md` §2's "broad, cross-cutting, touches shared/core
 modules" criterion, and ask before running it.
 
 ### Acceptance criteria
@@ -849,7 +849,7 @@ priority ordering**: both this sub-delivery and 55D touch
 Option A there proceeds) adds its own nav-check keys to some of the same
 filing-type branches this sub-delivery edits. Land one fully before starting
 the other, or coordinate at the branch level within `computeNavChecks()` if
-both are approved close together — per `AGENTS.md` §1, check `git log`/`git
+both are approved close together — per `AGENTS.md` §2, check `git log`/`git
 diff` for real overlap at the time work starts rather than assuming this
 document's snapshot still holds. `legacy-app.js` is also a large,
 frequently-edited shared file independent of 55D — sync with `master` and
@@ -1002,7 +1002,7 @@ npm run build
 ```
 
 This is a contained, single-file removal with no data or validator change;
-a full `npm test` is not required by default per `AGENTS.md` §1.
+a full `npm test` is not required by default per `AGENTS.md` §2.
 
 ### Acceptance criteria
 
@@ -1060,7 +1060,7 @@ test-index row.
 No dependency on 55A, 55B, or 55D. Touches
 `src/core/signature/signature-pad.js`, `tests/e2e/signature-capture.contract.spec.ts`,
 and `TEST-INDEX.md` — sync and check for concurrent edits to those files
-before starting, per `AGENTS.md` §1.
+before starting, per `AGENTS.md` §2.
 
 ---
 
@@ -1091,7 +1091,7 @@ is documented for exactly **two** filing types —
 `guardian_inventory` (CSV row 287, `attorney.email`) and `plan_minor` (row
 554, `attorney_email`). It has **no row at all** for `annual_accounting`,
 `simplified_accounting`, `plan_annual`, or `plan_initial` — the four engines
-this sub-delivery proposed changing. Per `AGENTS.md` §3 (Data Model & Schema
+this sub-delivery proposed changing. Per `AGENTS.md` §4 (Data Model & Schema
 Governance), the
 CSV is the canonical source of truth; adding requiredness to a field
 necessarily changes its documented contract and requires a corresponding CSV
@@ -1287,7 +1287,7 @@ gate below — all already written for Option A.
 ### Files in scope
 
 **Correction (code review, round 3, 2026-09-16): the four CSV rows were named
-by scope only, not specified.** `AGENTS.md` §3 requires the actual row
+by scope only, not specified.** `AGENTS.md` §4 requires the actual row
 contents, not just which engines get one. Exact rows to add (20-column
 format per the CSV's own header; columns not listed here are blank, matching
 the existing `guardian_inventory`/`plan_minor` rows for the same field):
@@ -1384,7 +1384,7 @@ it along with any Annual/Simplified-specific test at all.
 
 Recommend a full `npm test` before commit, given this changes real export
 behavior for four different engines in four different ways (a filing that
-exports cleanly today may not once this lands) — per `AGENTS.md` §1, ask
+exports cleanly today may not once this lands) — per `AGENTS.md` §2, ask
 before running it.
 
 ### Acceptance criteria
@@ -1412,7 +1412,7 @@ before running it.
 Risk is **medium**, raised from the original "low–medium" now that the real
 scope is known: this sub-delivery changes real export-blocking behavior for
 existing filings across four different engines with four different gating
-shapes, touches the data-model CSV (governance-gated per `AGENTS.md` §3),
+shapes, touches the data-model CSV (governance-gated per `AGENTS.md` §4),
 and touches four blank-data factories. State the behavior change plainly in
 the commit message, per this repo's convention for changes buried in what
 could look like a pure bugfix.
@@ -1428,7 +1428,7 @@ sub-delivery.
 1. **Data Model:** **Not N/A — directly implicated**, corrected from the
    original "None." `attorney_email` needs a new CSV row in four filing
    types it is not currently documented for at all; `npm run verify:data-model`
-   must pass clean before this lands, per `AGENTS.md` §3.
+   must pass clean before this lands, per `AGENTS.md` §4.
 2. **Legacy Data Migration:** Two real, distinct concerns, not one: (a) an
    existing `.sav` file with a named attorney and no email, valid under
    today's rules, becomes an incomplete filing under Option A — no data
@@ -1437,7 +1437,7 @@ sub-delivery.
    `attorney_email === undefined` rather than `''` — confirm this reads
    identically to an empty string everywhere the new `req()`/nav-check calls
    touch it (JavaScript's own looseness likely makes this a non-issue, but
-   it must be checked, not assumed, given `AGENTS.md` §3's explicit-tristate
+   it must be checked, not assumed, given `AGENTS.md` §4's explicit-tristate
    discipline for this exact class of field).
 3. **Test Coverage & Index:** New per-engine fixtures per Verification
    above — the original version's single shared fixture undertested this;

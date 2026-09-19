@@ -3,7 +3,7 @@
 ## Status
 
 **Draft — not an authorization to implement anything below.** Per
-`AGENTS.md` §2, this is a proposal only; nothing here should be started
+`AGENTS.md` §3, this is a proposal only; nothing here should be started
 until Alan explicitly approves a specific sub-delivery by name.
 
 **Verification pass completed 2026-09-14** (see "Verification pass" below).
@@ -88,7 +88,7 @@ larger than its write-up implies. One (50H) is half already-fixed. The
 remaining three (50B, 50E, 50I) are real and actionable close to as
 described.
 
-**Sequencing and file-overlap note (`AGENTS.md` §1, multi-agent).**
+**Sequencing and file-overlap note (`AGENTS.md` §2, multi-agent).**
 Three sub-deliveries touch `src/legacy-app.js` in different regions —
 50B (`doConfirmSimplifiedEligibility`, ~4593-4640), 50H
 (`countyAutocompleteHTML`/`filterCityDropdown`, ~1563-1600), and 50I
@@ -857,7 +857,7 @@ layout, tracked by `schedule-card-layout.spec.ts:177` and touching
 same defect 40I was already scoped to fix, observed from a different form.
 **Before scoping any new work here, confirm whether Milestone 40I has
 landed and whether its fix already resolves this specific page** — per
-`AGENTS.md` §10, `src/styles/cards.css` is the authoritative home for
+`AGENTS.md` §6, `src/styles/cards.css` is the authoritative home for
 `.entry-card`/`.summary-box` sizing generally, so also check whether this
 page's benefits rows use those standard classes or a bespoke layout that
 40I's fix wouldn't have touched.
@@ -874,7 +874,7 @@ page's benefits rows use those standard classes or a bespoke layout that
    forcing `min-height` upward) rather than a systemic `cards.css` bug —
    scope narrowly to this page's specific fields. If bespoke: consider
    whether migrating to the standard card pattern is in scope here or a
-   separate, larger decision (per `AGENTS.md` §9's Tier 2 card-template
+   separate, larger decision (per `AGENTS.md` §6's Tier 2 card-template
    guidance) — flag rather than deciding unilaterally.
 3. **Fix and verify visually** against at least one comparable, correctly-sized
    schedule page in the same form to confirm consistency, not just that the

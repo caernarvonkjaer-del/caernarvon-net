@@ -2,7 +2,7 @@
 
 ## Status
 
-**Landed 2026-09-16, approved by Alan.** Approval was given as "act on all of the remaining work" after direct review of the working-tree implementation (already fixed and fully green at that point — see this document's own "Appendix: change record" below for the code review that preceded it), confirmed explicitly for this milestone's code specifically before committing, per `AGENTS.md` §2. Landed as two commits rather than four sub-deliveries — 54D was never a real sub-delivery (its "test index & full suite" content is just §7's normal same-commit requirement) and 54B/54C share one commit since neither's diff is meaningfully separable from the other (the circuit engine and its UI wiring were authored and reviewed together).
+**Landed 2026-09-16, approved by Alan.** Approval was given as "act on all of the remaining work" after direct review of the working-tree implementation (already fixed and fully green at that point — see this document's own "Appendix: change record" below for the code review that preceded it), confirmed explicitly for this milestone's code specifically before committing, per `AGENTS.md` §3. Landed as two commits rather than four sub-deliveries — 54D was never a real sub-delivery (its "test index & full suite" content is just §7's normal same-commit requirement) and 54B/54C share one commit since neither's diff is meaningfully separable from the other (the circuit engine and its UI wiring were authored and reviewed together).
 
 **Moved here 2026-09-16** from `MILESTONE-53-PROPOSAL.md`, which had carried this milestone's change record as an appendix (recorded there originally only because Alan asked for it there specifically, while Milestone 53 was mid-draft on the same tree). A review of Milestone 53 flagged that arrangement as a scope-boundary hazard — a reader approving 53's sub-deliveries could mistake this unrelated content for part of 53's own approval surface — so it now lives in its proper home. Nothing about the content changed in the move; cross-references in `resources.js`, `content-corrections.spec.js`, and `dashboard-resources.spec.js` were updated to point here.
 
@@ -515,7 +515,7 @@ session; none of these numbers are asserted from memory.
 fix and decision above was applied directly to the same uncommitted
 working-tree files Milestone 54's implementation already occupied — nothing
 here has been committed, and the whole tree remains gated on Alan's
-approval per `AGENTS.md` §2, same as before this appendix. One file ended up net-unchanged from `origin/master` despite being edited
+approval per `AGENTS.md` §3, same as before this appendix. One file ended up net-unchanged from `origin/master` despite being edited
 along the way: `probate-guardian-data-model.csv` (54A added the
 `selectedCircuit` row, decision 8 removed it again once the field moved to
 the `appState` blob). `git status` reflects only files that still differ

@@ -51,7 +51,7 @@ per-sub-delivery Landed markers.
 ---
 
 **Original status (superseded):** Draft — not an authorization to implement
-anything below. Per `AGENTS.md` §2, this was a proposal only; nothing was to be
+anything below. Per `AGENTS.md` §3, this was a proposal only; nothing was to be
 started until Alan explicitly approved a specific sub-delivery by name.
 Approval of one sub-delivery did not authorize the others. Every sub-delivery
 here is independently approvable and independently revertible.
@@ -1290,7 +1290,7 @@ appears to.
   of them concurrently from different sessions will conflict. They are line-
   scoped and far apart, so a conflict is resolvable, but the cheaper rule is to
   land them one at a time.
-- Per `AGENTS.md` §1, sync and re-check `git log`/`git status` immediately
+- Per `AGENTS.md` §2, sync and re-check `git log`/`git status` immediately
   before each sub-delivery: this repository takes concurrent pushes, and line
   numbers in an 11.8 MB single-file document are exactly the kind of citation
   that goes stale. **Re-derive every line number at execution time.**
@@ -1321,7 +1321,7 @@ appears to.
 ## Verification plan
 
 Per sub-delivery, the **Verification** block is the lite gate (`AGENTS.md`
-§1). No sub-delivery here warrants a full regression on its own: 56A is an
+§2). No sub-delivery here warrants a full regression on its own: 56A is an
 isolated deletion with a detector, and 56B–56G do not touch `src/` at all.
 
 **What to actually run, per sub-delivery.** An earlier draft's acceptance

@@ -45,7 +45,7 @@ npm run build        # dist/web (hosted, chunked, PWA) and dist/portable (file:/
 
 ## Test
 
-Lite by default (see `AGENTS.md` §1):
+Lite by default (see `AGENTS.md` §2):
 
 ```sh
 npx vitest run tests/unit/<spec>.spec.js

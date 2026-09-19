@@ -328,7 +328,7 @@ Resolve the product expectation mismatch between local browser session recovery 
 
 Every newly introduced machine-verifiable `auto` condition (in 57A, 57B, 57C, 57D, 57E) must map **1:1** between readiness indicators and export validation errors. Manual legal/procedural reminders must never block navigation or export. Purely presentational deliveries (57F, 57G) are exempt.
 
-### 2. Data Model Governance (`AGENTS.md` §3)
+### 2. Data Model Governance (`AGENTS.md` §4)
 
 Any change to persisted fields, collections, defaults, or cardinalities (57A, 57B, 57D, 57E) must be updated in `probate-guardian-data-model.csv` in the same commit and pass `npm run verify:data-model`.
 
@@ -347,7 +347,7 @@ Any change to persisted fields, collections, defaults, or cardinalities (57A, 57
 | **57G**      | 9-surface identity audit                     | `tests/e2e/plan-annual-mount.spec.ts`, `tests/e2e/filing-identity.contract.spec.ts`                                                  |
 | **57H**      | Cryptographic restore & session lifecycle    | `tests/e2e/unlock.spec.ts`, `tests/e2e/backup-restore-sav.spec.ts`, `tests/e2e/persistence-recovery.contract.spec.ts`                |
 
-_Execution Rule:_ Per requester instruction, browser tests are currently deferred. All verification commands must follow `AGENTS.md` §1 (lite targeted runs during development; full `npm test` only with explicit requester approval).
+_Execution Rule:_ Per requester instruction, browser tests are currently deferred. All verification commands must follow `AGENTS.md` §2 (lite targeted runs during development; full `npm test` only with explicit requester approval).
 
 ---
 

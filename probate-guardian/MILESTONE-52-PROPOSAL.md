@@ -30,8 +30,8 @@ confirming the agent that authored this document had stopped (clean tree,
 in sync with `origin/master`, no commit for six hours; its last was
 `e59a9bc`, 2026-09-15 22:24).
 
-**Approval basis, stated plainly because `AGENTS.md` §2 matters here.**
-This document is still marked **Draft**, and §2 says a Draft proposal is
+**Approval basis, stated plainly because `AGENTS.md` §3 matters here.**
+This document is still marked **Draft**, and §3 says a Draft proposal is
 not a work order and needs approval of a specific delivery *by name*.
 Alan's instruction was "evaluate ms 52 for unfinished work and continue
 with it" — which names the milestone, not its twelve sub-deliveries. That
@@ -652,7 +652,7 @@ a user can do, not just how the code is organized.
 (`:99-326`, `:456-494` as of this writing) do not overlap the lines
 Milestone 51D is currently editing in the same file (`:10-90`, confirmed by
 diff), so there is no literal merge conflict today. But 51D's edit is
-uncommitted, and per `AGENTS.md` §1, sub-delivery dependencies are about
+uncommitted, and per `AGENTS.md` §2, sub-delivery dependencies are about
 real file-level proximity, not just current line numbers — an uncommitted
 diff can still move. 52K should not start until 51D lands (see
 "Sequencing"). **Update: 51D landed as `5328954`; 52K is unblocked.**
@@ -1678,7 +1678,7 @@ uncommitted pending a full regression run, 51F not yet started (touches
 `legacy-app.js` plus the three feature `index.js` files). That agent has
 confirmed it will not touch source while its regression is in flight and
 will sync before each remaining step. Before starting **any** sub-delivery
-below, sync with `master` and re-check `git log` — per `AGENTS.md` §1, a
+below, sync with `master` and re-check `git log` — per `AGENTS.md` §2, a
 proposal's "safe to parallelize" call must be verified against actual file
 overlap at the time work starts, not assumed from this document's snapshot
 of the tree.
@@ -1760,7 +1760,7 @@ blocked:**
 ## Verification plan
 
 Per sub-delivery, the targeted specs named in each **Verification** block
-are the lite gate (`AGENTS.md` §1). Three sub-deliveries warrant more:
+are the lite gate (`AGENTS.md` §2). Three sub-deliveries warrant more:
 
 - **52B** — recommend a full `npm test` to Alan before committing: it
   changes the case-load and session-restore paths, which is exactly the

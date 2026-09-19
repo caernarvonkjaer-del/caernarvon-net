@@ -2,7 +2,7 @@
 
 ## Status
 
-**Draft — not authorization to implement.** Per `AGENTS.md` §2, nothing in
+**Draft — not authorization to implement.** Per `AGENTS.md` §3, nothing in
 this proposal may be implemented until the requester explicitly approves the
 named sub-delivery. Approval of one sub-delivery authorizes only that delivery.
 
@@ -546,7 +546,7 @@ Use targeted tests per sub-delivery, selected from `TEST-INDEX.md`:
 
 Because 58A changes shared identity propagation and 58D changes both validation
 and two export paths, recommend a full `npm test` after all approved deliveries
-land. Per `AGENTS.md` §1, obtain the requester’s approval immediately before
+land. Per `AGENTS.md` §2, obtain the requester’s approval immediately before
 running that full regression; targeted tests do not require a separate gate.
 
 ---
@@ -562,7 +562,7 @@ running that full regression; targeted tests do not require a separate gate.
   print area without a replacement court template that actually defines one.
 - Treating manual Clerk’s Review reminders as automatic export blockers.
 - Reworking the four Plan forms into a new rendering architecture; these are
-  localized maintenance fixes under `AGENTS.md` §9.
+  localized maintenance fixes under `AGENTS.md` §6.
 - Committing the requester-supplied baseline PDFs or shipping them in the
   application bundle.
 - Correcting unrelated Milestone 57 work or committing another contributor's
