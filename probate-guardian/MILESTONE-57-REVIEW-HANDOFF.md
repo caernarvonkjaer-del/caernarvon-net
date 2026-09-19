@@ -114,6 +114,49 @@ Full unit suite: **963/963 passing**. `verify:data-model` clean. No e2e spec
 currently asserts the old blocking behavior (checked), so nothing there
 needed updating.
 
+### 3b. 57D scoping pass — template re-verified 2026-09-19
+
+The research above was re-derived from scratch against the embedded workbook
+(`templates/annual-template.js` base64-decoded and read as a zip) rather than
+taken on trust. **Every capacity number above is confirmed exactly.**
+
+Method: decode to `.xlsx`, read `xl/workbook.xml` for sheet names, then for
+each register page find the row where column C reads `Check #` and count the
+pre-printed numeric Line # values in column B below it. Block boundaries are
+where that Line # sequence restarts at 1.
+
+| Block | Pages (row ranges) | Capacity |
+| --: | --- | --: |
+| 1 | p2 (20-44), p3-p7 (8-34 each) | 160 |
+| 2 | p8 (8-37), p9-p11 (8-34 each) | 111 |
+| 3 | p12 (8-37), p13-p15 (8-34 each) | 111 |
+| 4 | p16 (8-38), p17-p19 (8-34 each) | 112 |
+| | **Total** | **494** |
+
+58 sheets in the workbook; 19 are B-4 (`SUMMARY p1` plus registers p2-p19).
+Line # restarts at 1 on p2, p8, p12 and p16 — four blocks, so four bank
+accounts. p2 is the outlier: its column header sits at row 15 rather than row
+7, because pages 2 carries an instructions block, which is why its first page
+holds 25 rows where p8/p12/p16 hold 30/30/31.
+
+**One correction to the research above.** It records the account header as
+"`BANK:` / `ACCOUNT NUMBER #:` at C6/H6". The labels are actually at **J5**
+(`BANK:`, shared string 280) and **B6:C6** merged (`ACCOUNT NUMBER #:`, shared
+string 535). `H6` is `INSTRUCTIONS` on p2 and `Line #` on p3-p19 — not an
+account field. The account-number **value** cell is the merged, empty
+**`D6:F6`** immediately right of its label, present on every register page.
+The bank-name value cell sits right of `J5` and is **not** merged; its exact
+coordinate is the one thing still unconfirmed and must be pinned before
+writing to it.
+
+**State on master.** `src/features/annual-accounting/excel.js` writes B-4 to
+`SCH B-4 OTHER DISB p2` only, rows 20-44, hard-capped at 25 entries
+(`if(i<25)`), columns C/D/E/G/I; `importExcel()` reads the same range.
+`ANNUAL_EXCEL_CAPS.schB4.cap` is 25. So the app currently reaches **25 of the
+template's 494 rows — 5%** — and a filing with two bank accounts has nowhere
+to put the second. The comment at the write site says "write to pages p2-p3
+only" but the code only ever writes p2; that comment is stale.
+
 ## Not started
 57A (defective validation), 57B (unsafe conversion), 57C (blank-period
 override bug), 57E-1 (poor integration), 57F's PDF period-date claim

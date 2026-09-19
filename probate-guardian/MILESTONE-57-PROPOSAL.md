@@ -46,7 +46,14 @@ This milestone does **not** decide what Florida law or a judicial circuit requir
 
 ## 57A — Bond and Restricted Depository Choices
 
-### Status: Implemented in working tree
+### Status: REVERTED. Design settled, not authorized (2026-09-19)
+
+The "Implemented in working tree" state this section described was reverted
+with the rest of Milestone 57. **Neither `bondWaived` nor `restrictedDepository`
+exists in `src/` today** — though both are still documented in
+`probate-guardian-data-model.csv`, which the revert left ahead of the code.
+Decision **D6** and the executable design are in `MILESTONE-57-RESCOPE.md`;
+the scope below records what was originally asked for.
 
 ### Implemented Scope
 
@@ -67,7 +74,13 @@ This milestone does **not** decide what Florida law or a judicial circuit requir
 
 ## 57B — Certificate of Service Recipient Rules & Portability
 
-### Status: Implemented in working tree
+### Status: REVERTED. Design settled, not authorized (2026-09-19)
+
+Reverted with the rest of Milestone 57. `certNoRecipients` and
+`serviceNoRecipients` exist nowhere in `src/` or in the data model. Decision
+**D7** (a service attestation does not survive a filing conversion) and the
+executable design are in `MILESTONE-57-RESCOPE.md`. The filer-attestation
+wording below is load bearing and should be carried across verbatim.
 
 ### Scope and Filer-Attestation Policy
 
@@ -124,7 +137,12 @@ Before implementation, every schedule must be classified into one of four policy
 
 ## 57D — Annual Accounting Schedule B-4 Bank Accounts & Disbursements
 
-### Status: Implemented in working tree
+### Status: REVERTED. Template scoping pass complete, scope not yet decided (2026-09-19)
+
+Reverted. Master writes Schedule B-4 to `SCH B-4 OTHER DISB p2` only, rows
+20-44, capped at 25 entries. The template's real capacity was re-verified
+against the embedded workbook on 2026-09-19 — see the scoping results in
+`MILESTONE-57-REVIEW-HANDOFF.md`. Scope is Alan's to set from those numbers.
 
 ### Scope & Data Contract
 
@@ -159,7 +177,12 @@ Introduce a multi-account organization system for Annual Accounting Schedule B-4
 
 ## 57E — Trust Accounting and Audit Fee Inputs
 
-### Status: 57E-1 Implemented in working tree; 57E-2 Deferred
+### Status: REVERTED (57E-1); 57E-2 still deferred
+
+57E-1 was reverted and is unscoped. 57E-2 remains blocked on exactly the three
+unknowns its own deferral clause names below — the fee basis (principal vs.
+distributions), the tier thresholds, and the rounding rule — none of which is
+documented anywhere in this repo.
 
 ### Scope Split
 
@@ -186,7 +209,14 @@ Because statutory and circuit-level authority on trust-asset audit fees varies u
 
 ## 57F — Export Fidelity Repairs
 
-### Status: Implemented in working tree
+### Status: REVERTED. Two unrelated pieces, neither authorized (2026-09-19)
+
+Reverted. This section bundles two independent jobs: the **PDF period-end
+clipping** claim, which was never render-tested (source-read only) and so is
+not known to be a real defect on master; and **Excel header propagation** —
+ward name and case number onto every schedule sheet rather than `PART I`
+alone — which is substantive work needing its own design. The Guardian date
+round-trip fix from this item survived the revert as defensive robustness.
 
 ### Scope & Fixture-Level Targets
 
@@ -213,7 +243,7 @@ Address confirmed Excel and PDF formatting defects against exact reproduction fi
 
 ## 57G — Annual Plan Terminology
 
-### Status: Implemented in working tree
+### Status: CLOSED 2026-09-19 — no defect, re-verified against master
 
 ### Scope & Identity Audit
 

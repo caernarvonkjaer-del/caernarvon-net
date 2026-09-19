@@ -375,6 +375,152 @@ past, and the app has still pre-filled the answer.
 
 ---
 
+## 57A — Bond Waived / Restricted Depository (design, 2026-09-19)
+
+**Not authorized.** Design written so that whoever builds it is not also
+deciding it. Implements **D6**.
+
+### The thing to check before writing a line of code
+
+**The revert left the data dictionary ahead of the code.** Both tri-states are
+documented in `probate-guardian-data-model.csv` but **exist nowhere in
+`src/`**:
+
+| CSV row | Field | Documented source | Actually in code? |
+| --: | --- | --- | --- |
+| 133 | `annual_accounting.restrictedDepository` | `src/core/state.js` `emptyDataAnnual()` | **No** — only `restrictedDepositoryReceiptDate` (state.js:451) |
+| 861 | `guardian_inventory.bondWaived` | `src/legacy-app.js` `emptyDataGuardian()` | **No** — only `bondWaivedDate` (legacy-app.js:5624) |
+
+Row 861's own note reads *"Milestone 57A tri-state"*, so these rows were added
+by the reverted attempt and survived it. `npm run verify:data-model` passes
+regardless — it validates the CSV's structure, not whether a documented field
+exists in code. So the rescope table's claim that these fields "already exist
+pre-57" is **wrong**: the documentation exists, the fields do not.
+
+Two consequences. First, 57A creates these fields rather than fixing their
+validation. Second, master currently ships a data dictionary that describes
+two fields it does not have — **that is a defect today, independent of 57A**,
+and should either be fixed by deleting the two rows or accepted knowingly as a
+forward reference.
+
+### Scope
+
+1. Add `bondWaived` and `restrictedDepository` as real tri-states (`''`
+   unanswered, `'Yes'`, `'No'`) to **both** filing types that print them, not
+   one each as the CSV currently implies.
+2. Reveal dependent detail inputs only on `'Yes'`, and **never delete** data on
+   toggle away — the established non-destructive pattern.
+3. Gate output per **D6**: unanswered produces an acknowledgement, a
+   half-finished `'Yes'` stays a hard blocker.
+4. Infer `'Yes'` from a legacy non-empty `bondWaivedDate` on load; an absent
+   date stays unanswered, never `'No'`.
+5. Correct the CSV so documentation and code agree.
+
+57A will **not**: change bond amount, bonding company, or period fields;
+introduce a depository-name field in Annual unless the court form has one
+(verify against the template first — the CSV does not document one); or alter
+any other acknowledgement's wording or arming behaviour.
+
+### Implementation design
+
+**Do not build a second acknowledgement mechanism.** `output-authorization.js`
+already has this shape: `authorizeFilingOutput()` returns `allowed` /
+`acknowledgement-required` / `blocked`, `markFilingRevisionChanged()` re-arms
+it when the filing changes, and `issue-registry.js` entries carry
+`bypassable`. 57A adds registry entries only:
+
+- unanswered `bondWaived` / `restrictedDepository` → `bypassable: true`
+- `'Yes'` with a missing dependent detail → `bypassable: false`
+
+The acknowledgement text must state the consequence, not the field name — the
+filing will reach the clerk without stating whether bond was waived.
+
+Readiness and export validation must stay **1:1**, which is the discipline the
+first attempt broke. A bypassable issue still appears in the sidebar; it
+simply does not hard-block.
+
+### Verification
+
+Red-first per item. Unanswered → acknowledgement offered, export proceeds once
+cleared, and the acknowledgement re-arms after a filing change. `'Yes'` with a
+blank dependent → blocked, not bypassable. Toggle `'Yes'`→`'No'`→`'Yes'` →
+dependent data still present. Legacy `.sav` with a `bondWaivedDate` and no
+`bondWaived` → loads as `'Yes'`; one with neither → loads unanswered, **not**
+`'No'`. Sidebar and export agree in every one of those states.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+Data model (four rows, two corrected and two added); `.sav` round trip and the
+legacy inference above; Excel import/export in both filing types (Guardian
+writes `bondWaivedDate` at `PART V` `G15`, Annual reads/writes
+`restrictedDepositoryReceiptDate` at `p9` `G9` — the tri-state needs its own
+verified cells or a documented decision not to write it); PDF models in both;
+`TEST-INDEX.md`; and the filing-type enumeration guard if any new branch
+enumerates types by hand.
+
+---
+
+## 57B — Certificate of Service Recipient Rules (design, 2026-09-19)
+
+**Not authorized.** Implements **D7**.
+
+### State on master
+
+`certNoRecipients` and `serviceNoRecipients` **do not exist** anywhere in
+`src/` or in the data model — unlike 57A's fields, not even as documentation.
+Both attestations are new. The two conversion functions they must hook into do
+exist and are untouched by the revert: `convertGuardianExtrasToAnnual()`
+(`src/legacy-app.js:4940`) and `convertToSimplified()` (`:4966`), both called
+from `:5077`/`:5079`.
+
+### Scope
+
+1. Add the two attestation fields as tri-states with the filer-attestation
+   wording from `MILESTONE-57-PROPOSAL.md` §57B — the app records the filer's
+   assertion and does not determine legal necessity. **That wording is load
+   bearing and should not be paraphrased.**
+2. Recipient rules: selecting the attestation hides recipient cards without
+   deleting data; otherwise exactly one complete recipient satisfies
+   validation, and a partially-filled card 2+ blocks until completed or
+   cleared.
+3. Excel import asymmetry: a blank recipient section imports as unanswered
+   (`''`) and must **never** be inferred as "no recipients required".
+4. Per **D7**, conversion resets the attestation to `''` and raises a review
+   notice; recipient address cards migrate.
+
+57B will **not** determine whether service is legally required, print a
+recipient list when the attestation is selected, or carry the attestation
+across conversion in any form — including as a pre-filled value with a flag.
+
+### Implementation design
+
+The reset belongs **inside** the two conversion functions, not in a caller. A
+caller-side reset is the shape that produced the review's "incomplete /
+unsafe" verdict: a second conversion path added later inherits nothing.
+
+The review notice should use the mechanism the app already has for
+"something needs your attention on this new filing" rather than a bespoke
+banner — check what the conversion path currently raises before adding one.
+
+### Verification
+
+Convert Inventory → Annual with `serviceNoRecipients: 'Yes'` → new filing has
+`certNoRecipients: ''`, a review notice, and migrated addresses. Same for
+Inventory → Simplified. One complete recipient passes; a half-filled second
+card blocks; the attestation clears the blocker and suppresses recipient
+printing in both PDF and Excel. A blank imported recipient section stays `''`.
+Readiness and export stay 1:1 throughout.
+
+### Cross-cutting ramifications (`AGENTS.md` §8)
+
+Data model (new fields, both filing families); `.sav` round trip; **both**
+conversion paths plus the Simplified→Annual mirror at `:5018`, which must be
+checked for the same leak in reverse; Excel import/export; PDF recipient
+rendering; `TEST-INDEX.md`. Legal framing is directly implicated — this is a
+sworn attestation, and the wording is the filer's, not the app's.
+
+---
+
 ## One process note worth carrying into the next attempt
 
 The first attempt's e2e specs were, in the review's own words, *"edited by hand
