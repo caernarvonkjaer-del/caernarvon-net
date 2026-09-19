@@ -34,6 +34,93 @@ AES-GCM/PBKDF2), zero unencrypted cloud transmission · `pdf-lib`/`pdfjs` and
 password encryption), `probate-guardian-data-model.csv` as schema
 single-source-of-truth.
 
+### Verified executable paths
+
+Windows workstation, verified **2026-09-19**. Every path below was confirmed
+to exist on disk, not inferred from configuration. Browser resolution was
+confirmed by evaluating `playwright.config.ts` itself
+(`node --input-type=module -e "(await import('./playwright.config.ts')).default"`)
+and cross-checked against `npx playwright install --dry-run`, which reports
+Playwright's own expected install locations.
+
+**Toolchain:**
+
+| Tool | Path | Version |
+| --- | --- | --- |
+| node | `E:\Program Files\nodejs\node.exe` | 24.16.0 |
+| npm / npx | `E:\Program Files\nodejs\npm.ps1`, `npx.ps1` | 11.13.0 |
+| git | `D:\Program Files\Git\cmd\git.exe` | 2.55.0.windows.3 |
+| playwright | `node_modules\.bin\playwright.cmd` | 1.62.1 |
+| vite | `node_modules\.bin\vite.cmd` | 8.2.2 |
+| vitest | `node_modules\.bin\vitest.cmd` | 4.1.11 |
+| tsc | `node_modules\.bin\tsc.cmd` | 7.0.2 |
+
+`vite`, `vitest` and `tsc` are **project-local only** — none is on `PATH`, so
+they are reachable through `npx`/`npm run`, never as a bare command.
+
+**Browsers** — bundled ones all under
+`C:\Users\No Name\AppData\Local\ms-playwright\` (`PLAYWRIGHT_BROWSERS_PATH` is
+unset, so this is the `%LOCALAPPDATA%` default):
+
+| Project | Executable | Version |
+| --- | --- | --- |
+| `chromium` (default) | `chromium_headless_shell-1234\chrome-headless-shell-win64\chrome-headless-shell.exe` | 151.0.7922.34 |
+| — full Chromium | `chromium-1234\chrome-win64\chrome.exe` | 151.0.7922.34 |
+| `firefox` | `firefox-1538\firefox\firefox.exe` | 153.0 |
+| `webkit` | `webkit-2336\Playwright.exe` | 26.5 |
+| `edge` (`channel: 'msedge'`) | `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` | 153.0.4234.32 |
+| system Chrome (no project uses it by default) | `C:\Program Files\Google\Chrome\Application\chrome.exe` | 151.0.7922.176 |
+
+The default `chromium` project resolves to the **headless shell**, not
+`chrome.exe` — `defaultChromiumExecutablePath()` lists the headless shell
+first and returns the first candidate that exists. A stack trace or crash
+naming `chrome-headless-shell.exe` is therefore the normal e2e browser, not a
+misconfiguration. The `edge` project carries no `executablePath`; `channel:
+'msedge'` means Playwright launches the **system** Edge above, so an Edge
+upgrade changes the browser under test without any repo change.
+
+Both system browsers are confirmed **launchable**, not merely present:
+Playwright drove system Chrome through the 41 targeted Milestone 59A browser
+tests, and launched system Edge in a headless smoke check.
+
+**Corrections — three earlier claims in this section were wrong and were
+removed. Do not reinstate them:**
+
+- *"None of the bundled Chromium/Firefox/WebKit files exists."* They all
+  exist, and have since **2026-08-30** (install-directory creation and write
+  times) — three weeks before the claim was written, so this was never a
+  case of the tree changing underneath it.
+- *"An unqualified `npx playwright test` fails with `ENOENT`, so
+  `PG_CHROMIUM_EXECUTABLE_PATH` must be set."* It does not. The 2026-09-19
+  full `npm test` (665 e2e passed, 6 skipped, 25.6m) ran with no `PG_*`
+  variable set at all. The override still exists in `playwright.config.ts` and
+  still works — it is an escape hatch for pinning a different browser, not a
+  prerequisite.
+- *"PowerShell execution policy blocks the `npm.ps1`/`npx.ps1` shims."* It
+  does not. Verified under the machine's own policy
+  (`pwsh -NoProfile -ExecutionPolicy RemoteSigned`); `CurrentUser` and
+  `LocalMachine` are both `RemoteSigned`. `npm.cmd`/`npx.cmd` remain harmless
+  as a fallback but are not required.
+
+General lesson, and the reason each correction above cites its evidence: a
+path printed by a resolver is a *prediction* of where a file would be, not
+proof that it is there. `chromium.executablePath()` returns its path whether
+or not the binary was ever downloaded. Confirm with an existence check.
+
+**Test-time network:** none. Every browser library is vendored in `lib/`
+(`exceljs.min.js`, `html2pdf.bundle.min.js`, `pdf-lib.esm.js`, `jszip.min.js`,
+`bootstrap.bundle.min.js`), and the e2e web server is local
+(`npx vite preview --outDir . --port 4321 --strictPort` → `http://localhost:4321/index.html`).
+
+**Python** (§2's rule, with its reason confirmed): `py` → `C:\Windows\py.exe`
+and `python` → `C:\Program Files\Python314\python.exe`, both Python 3.14.5.
+`python3` resolves to `...\WindowsApps\python3.exe`, a **0-byte Microsoft
+Store alias stub** — exactly why `python3` must never be used on this machine.
+
+These paths and versions are machine-specific evidence, not portable
+repository defaults; re-verify them after any browser, Node, or Playwright
+upgrade, and confirm each path on disk rather than trusting this table.
+
 This org also runs Archetype 2 (Python 3.11+/Streamlit/PyMuPDF data
 pipelines) and Archetype 3 (React/FastAPI full-stack) projects elsewhere —
 irrelevant to this repo's code, but relevant to §2's Python note if you ever
