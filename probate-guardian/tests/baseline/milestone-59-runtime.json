@@ -1,0 +1,75 @@
+{
+  "_comment": "Milestone 59C-1 runtime baseline. Written so 59C-2 (artifact reuse, shared parsers) and 59C-3 (observable waits) have a before-figure to claim against, and so 59C-4 has something to compare a multi-worker run to. Measured on one Windows workstation; these are not portable constants.",
+  "milestone": "59C-1",
+  "measured_utc": "2026-09-19",
+  "commit": "4c8e7d4",
+  "conditions": {
+    "command": "npm test",
+    "target": "source",
+    "browser": "chromium",
+    "workers": 1,
+    "retries": 0,
+    "trace": "retain-on-failure (local policy, 59C-1)",
+    "note": "Measured AFTER 59C-0 landed. Not comparable to the 671-test figure in MILESTONE-59-PROPOSAL.md's scoping section, which was taken at e1228fd before 59A/59B."
+  },
+  "unit": {
+    "files": 100,
+    "tests": 1152,
+    "passed": 1152,
+    "failed": 0,
+    "skipped": 0,
+    "wall_seconds": 3,
+    "wall_note": "Measured by a separate `npm run test:unit` invocation. The combined `npm test` run cannot separate it: Playwright's own 25.7m covers nearly the whole wall time."
+  },
+  "e2e": {
+    "tests_discovered": 678,
+    "passed": 672,
+    "skipped": 6,
+    "failed": 0,
+    "flaky": 0,
+    "retried": 0,
+    "wall_seconds": 1542,
+    "wall_minutes": 25.7,
+    "flaky_note": "Zero. The two 'retry' matches in the run log are test TITLES (offline.spec.ts 'can retry', vendor-loader-retry.spec.ts), not retry events."
+  },
+  "total_wall_seconds": 1544,
+  "total_wall_minutes": 25.7,
+  "artifacts": {
+    "peak_kib": 1846082,
+    "peak_gib": 1.76,
+    "peak_file_count": 41472,
+    "sampled_every_seconds": 60,
+    "samples": 23,
+    "measurement_note": "Lower bound, not a true peak. Sampling ran every 60s and its last sample landed 50s before the run ended, with the series still rising. Peak must be observed DURING the run: Playwright discards traces for passing tests at the end, so measuring afterward reports near-zero. Larger than the 1.38 GiB / 32,299 files quoted in the proposal's scoping section, which was itself a point-in-time observation of a different run.",
+    "retained_by_policy": "This size is a deliberate cost. 59C-1 kept trace: 'retain-on-failure' locally rather than C6's proposed 'off', because local work dominates this repo and an undiagnosable local failure costs more than disk. CI uses on-first-retry."
+  },
+  "slowest_files": [
+    { "file": "navigation-status.contract.spec.ts", "seconds": 129.8, "tests": 77 },
+    { "file": "signature-capture.contract.spec.ts", "seconds": 93.7, "tests": 36 },
+    { "file": "readiness-card.contract.spec.ts", "seconds": 62.7, "tests": 21 },
+    { "file": "pdf-preview-viewer.spec.ts", "seconds": 54.1, "tests": 20 },
+    { "file": "pdf-annotate.spec.ts", "seconds": 47.8, "tests": 19 },
+    { "file": "guided-tour-navigation.spec.ts", "seconds": 43.9, "tests": 8 },
+    { "file": "output-semantics.artifact.spec.ts", "seconds": 40.8, "tests": 10 },
+    { "file": "routes.spec.ts", "seconds": 40.7, "tests": 24 },
+    { "file": "plan-readiness.contract.spec.ts", "seconds": 37.8, "tests": 17 },
+    { "file": "guardian-blank-page-pruning.spec.ts", "seconds": 35.3, "tests": 6 }
+  ],
+  "slowest_tests": [
+    { "seconds": 9.6, "file": "guided-tour-navigation.spec.ts", "line": 10 },
+    { "seconds": 9.3, "file": "routes.spec.ts", "line": 536 },
+    { "seconds": 8.2, "file": "guardian-inventory-excel-schedule-layout.spec.ts", "line": 101 },
+    { "seconds": 8.1, "file": "excel-b4-multi-account.spec.ts", "line": 105 },
+    { "seconds": 8.0, "file": "excel-pruned-roundtrip.spec.ts", "line": 92 },
+    { "seconds": 8.0, "file": "excel-pruned-roundtrip.spec.ts", "line": 108 },
+    { "seconds": 6.9, "file": "annual-mount.spec.ts", "line": 73 },
+    { "seconds": 6.6, "file": "guardian-inventory-mount.spec.ts", "line": 219 },
+    { "seconds": 6.5, "file": "guardian-blank-page-pruning.spec.ts", "line": 280 },
+    { "seconds": 6.4, "file": "output-semantics.artifact.spec.ts", "line": 123 }
+  ],
+  "findings_for_later_sub_deliveries": {
+    "59C-3": "signature-capture.contract.spec.ts is the 2nd slowest file (93.7s / 36 tests) and holds 19 of the suite's 27 waitForTimeout calls. The baseline independently confirms it as the right starting point.",
+    "59C-2": "The Excel export specs 59C-2 targets are well represented in the slowest tests: excel-b4-multi-account, excel-pruned-roundtrip (x2), annual-mount, guardian-inventory-mount and guardian-blank-page-pruning are 6 of the slowest 10, at 6.5-8.1s each. Those are the redundant workbook generations C2 removes.",
+    "59C-4": "Three consecutive source runs at 25.7 min each is ~77 min, plus this baseline. That is roughly 1.7 hours, NOT the ~4 hours the proposal estimated from an earlier mis-measured 72-minute figure."
+  }
+}

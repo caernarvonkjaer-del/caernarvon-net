@@ -110,7 +110,18 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     baseURL: TARGETS[target]?.baseURL,
-    trace: 'retain-on-failure',
+    // Milestone 59C-1. CI keeps one retry, so 'on-first-retry' there records a
+    // trace for exactly the runs that need one and nothing for the green
+    // majority.
+    //
+    // Local stays 'retain-on-failure' deliberately, against C6's original
+    // proposal of 'off'. Almost all work on this repo happens locally, and a
+    // local failure with no trace costs a full reproduce-and-rerun cycle --
+    // which is worse than the disk. The gigabyte artifact trees C1 measured
+    // are the price of that choice, knowingly paid; they are transient
+    // (Playwright discards traces for passing tests at the end of a run) and
+    // `test-results/` is ignored.
+    trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
   },
   webServer,
   projects: [BROWSERS[browser as keyof typeof BROWSERS]],

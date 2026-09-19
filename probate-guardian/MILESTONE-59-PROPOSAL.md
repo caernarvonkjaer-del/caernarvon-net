@@ -321,7 +321,7 @@ no reason. Each sub-delivery below is approved and executed on its own.
 | Sub-delivery | Scope | Risk | File surface | Depends on |
 | --- | --- | --- | --- | --- |
 | **59C-0** | Remove the vacuous xref audit — **LANDED `60ce947`** | Low | `tests/e2e/pdf-structure-tags.spec.ts` | — |
-| **59C-1** | Baseline measurement + trace policy (C1, C6) | Low | `playwright.config.ts`; one committed measurements file | — |
+| **59C-1** | Baseline measurement + trace policy (C1, C6) — **LANDED** | Low | `playwright.config.ts`; `tests/baseline/milestone-59-runtime.json` | — |
 | **59C-2** | Artifact reuse, shared parsers, single PDF load (C2, C3, C4) | Medium–high | `tests/e2e/support/*`, the Excel/PDF specs consuming them | 59C-0 |
 | **59C-3** | Replace observable fixed waits (C5) | Medium | signature + annotation specs | — |
 | **59C-4** | Parallelism experiment (C7) | Medium | `playwright.config.ts`, possibly a project partition | 59C-1 |
@@ -517,14 +517,24 @@ currently configured. Measure the disk effect after the policy change.
 
 ### 59C-4 / C7. Parallelism experiment, not assumed outcome
 
-**Know the price before authorizing this.** The three-run stability gate below
-is the right bar, and it is expensive. Measured 2026-09-19: the E2E half alone
-is 25.6 minutes and a full `npm test` is roughly 72 minutes wall. Three
-consecutive complete source runs, plus 59C-1's baseline run, is on the order of
-four hours of machine time — spent on a question whose honest answer may well
-be "stay at `workers: 1`." That outcome is a valid result, not a failure, but
-it should be a priced decision rather than a surprise. This is the single most
-expensive item in Milestone 59 and the easiest to defer.
+**Know the price before authorizing this — corrected 2026-09-19.** An earlier
+draft of this section priced the gate at "roughly four hours," from a claimed
+72-minute full `npm test`. **That 72-minute figure was wrong.** It came from
+inferring a run's start time from a node process's creation timestamp, and the
+process picked was not the test run. 59C-1 measured it directly, wrapping the
+invocation itself:
+
+| | |
+| --- | --- |
+| `npm run test:unit` | **3 s** |
+| E2E (source, chromium, 1 worker) | **25.7 min** |
+| Full `npm test`, wall | **25.7 min** |
+
+So the three-run gate plus 59C-1's baseline is **roughly 1.7 hours**, not four.
+Still the most expensive item in Milestone 59, and still spent on a question
+whose honest answer may be "stay at `workers: 1`" — but under half the cost
+this section previously claimed. Figures in
+`tests/baseline/milestone-59-runtime.json`.
 
 The suite is currently **678 tests in 93 files**, all through one worker. (The
 "671" figure in the baseline section above was measured at `e1228fd`, before
@@ -560,12 +570,21 @@ them waits on the others.
 - `pdf-structure-tags.spec.ts` still passes against a well-formed PDF —
   3 passed. ✔
 
-#### 59C-1
+#### 59C-1 — met
 
 - `tests/baseline/milestone-59-runtime.json` exists and holds the measurements
-  C1 lists, in a form 59C-4 can read back.
-- Passing local runs no longer build gigabyte-scale trace trees by default.
-- The disk effect of the trace-policy change is measured, not asserted.
+  C1 lists, in a form 59C-4 can read back. ✔
+- ~~Passing local runs no longer build gigabyte-scale trace trees by default.~~
+  **Deliberately not met.** The requester chose to keep
+  `trace: 'retain-on-failure'` locally rather than C6's proposed `'off'`,
+  because nearly all work on this repo is local and a failure with no trace
+  costs a full reproduce-and-rerun cycle. CI moved to `on-first-retry`. The
+  1.76 GiB peak is therefore a priced cost, not an open defect.
+- The disk effect is measured, not asserted: peak **1.76 GiB across 41,472
+  files**, sampled every 60 s during the run. ✔ Recorded as a lower bound —
+  sampling ended 50 s before the run did with the series still climbing, and
+  the peak is only observable mid-run because Playwright discards passing
+  tests' traces at the end.
 
 #### 59C-2
 
@@ -708,7 +727,7 @@ smallest relevant green set. Suggested minimums:
 | 59C-1 | one measured source run for the baseline; targeted reruns to confirm the trace policy took effect |
 | 59C-2 | direct parser/helper specs; every migrated Excel/PDF consumer |
 | 59C-3 | the signature and annotation specs whose waits changed |
-| 59C-4 | three consecutive complete source runs (≈4 hours with the baseline; see 59C-4) |
+| 59C-4 | three consecutive complete source runs (≈1.7 hours with the baseline, measured; see 59C-4) |
 | 59D | invoke each new command tier and record counts; verify the release runner's profile/build sequence without duplicated source execution |
 
 Because 59C and 59D are broad and cross-cutting, recommend a complete
