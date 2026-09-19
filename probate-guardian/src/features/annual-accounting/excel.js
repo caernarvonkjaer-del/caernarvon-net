@@ -15,7 +15,7 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
-import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber } from '../../core/excel/b4-register-pages.js';
+import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 
@@ -37,18 +37,7 @@ const ANNUAL_P67_CELLS = {
   explanation: null  // cell for the written explanation of a difference
 };
 
-// Schedule B-4's account blocks, verified against the embedded template on
-// 2026-09-19 by reading where the pre-printed Line # restarts at 1. Each block
-// is one bank account; its first page carries the BANK: / ACCOUNT NUMBER #:
-// header. Capacities are the count of pre-printed register rows, which is why
-// they are uneven -- p2 holds 25 rather than 30 because an instructions block
-// pushes its column header from row 7 down to row 15.
-export const SCH_B4_ACCOUNT_BLOCKS = Object.freeze([
-  Object.freeze({ account: 1, pages: Object.freeze([2, 3, 4, 5, 6, 7]), capacity: 160 }),
-  Object.freeze({ account: 2, pages: Object.freeze([8, 9, 10, 11]), capacity: 111 }),
-  Object.freeze({ account: 3, pages: Object.freeze([12, 13, 14, 15]), capacity: 111 }),
-  Object.freeze({ account: 4, pages: Object.freeze([16, 17, 18, 19]), capacity: 112 }),
-]);
+
 
 // Continuation pages of the other schedules. Sheet names are exact, including
 // the fact that some carry a trailing space in the court's file -- they are

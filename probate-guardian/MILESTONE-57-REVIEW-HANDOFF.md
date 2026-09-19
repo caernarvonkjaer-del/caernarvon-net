@@ -158,15 +158,21 @@ template's intent, not an interpretation of it. And the category summary
 **recalculates itself** from the register pages — the app writes the registers
 and must not write the summary, which is formula-driven.
 
-**One correction to the research above.** It records the account header as
-"`BANK:` / `ACCOUNT NUMBER #:` at C6/H6". The labels are actually at **J5**
-(`BANK:`, shared string 280) and **B6:C6** merged (`ACCOUNT NUMBER #:`, shared
-string 535). `H6` is `INSTRUCTIONS` on p2 and `Line #` on p3-p19 — not an
-account field. The account-number **value** cell is the merged, empty
-**`D6:F6`** immediately right of its label, present on every register page.
-The bank-name value cell sits right of `J5` and is **not** merged; its exact
-coordinate is the one thing still unconfirmed and must be pinned before
-writing to it.
+**Two corrections to the research above.** It records the account header as
+"`BANK:` / `ACCOUNT NUMBER #:` at C6/H6". Re-read from the sheet XML with a
+parser that handles self-closing cells (an earlier pass did not, and mis-read
+the row):
+
+| Cell | Contents |
+| --- | --- |
+| `B6` (merged `B6:C6`) | label `BANK:` |
+| **`D6` (merged `D6:F6`)** | **bank name value** |
+| `G6` | label `ACCOUNT NUMBER #:` |
+| **`H6` (merged `H6:I6`)** | **account number value** |
+
+`I5` carries the page label ("Page 8"), not `C5`. Both corrections matter
+because writing to the wrong cell of a merged range puts the value somewhere
+the printed form does not show it -- silently.
 
 **State on master.** `src/features/annual-accounting/excel.js` writes B-4 to
 `SCH B-4 OTHER DISB p2` only, rows 20-44, hard-capped at 25 entries
