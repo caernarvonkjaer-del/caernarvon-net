@@ -1378,3 +1378,73 @@ first attempt at Milestone 57 was reverted largely because a scoped item reached
 into `computeNavChecks()` and broke nine navigation-status tests; folding an
 architectural change into a field addition is the same move. Scope it on its
 own, after the validators it depends on.
+
+### What "validators first" actually means — the enumerated work
+
+Audited 2026-09-19, so this is a list rather than a principle. Three of the
+four items below are independent of unification and worth doing anyway.
+
+**1. The parity guard does not cover Simplified Accounting at all — and there
+is a live gap behind the omission.**
+
+`checklist-export-parity.spec.js` lists `simplified` in `BRANCH_MARKERS` but
+not in `VALIDATORS`, so the assertion never runs for that filing type. Adding
+it reveals five fields `validateSimplified()` requires that the sidebar never
+consults:
+
+`attorney_signatureImage`, `attorney_signatureState`, `certAttySignDate`,
+`certAttySignatureImage`, `certAttySignatureState`
+
+These are real blockers — `validateSimplified()` calls `checkSignatureState()`
+for both the Part V attorney and the Part VI certificate attorney
+(`features/simplified-accounting/index.js:726`, `:745`) — while `s-p5` checks
+only bar/phone/email/street/city and `s-p6` only service date, indicator and
+Recipient 1's name (`legacy-app.js:6665-6668`).
+
+**What a filer sees:** they complete Part VI, every sidebar marker turns green,
+and Print Preview refuses the export because the certificate attorney's
+signature date or state is missing — with nothing on the page naming the
+section. That is precisely the bug class this guard's own header describes,
+on the one filing type it forgot. Annual carries the identical fields as
+recorded `KNOWN_GAPS` entries; Simplified's went unrecorded because the
+assertion never ran. Milestone 39-C introduced the requirement (see the
+comment at `:739`); the guard was not extended with it.
+
+**2. The guard only measures one direction.** It computes
+*validator fields − sidebar fields* and compares that to `KNOWN_GAPS`. The
+reverse — sidebar stricter than validator — is never computed, and that is
+exactly the direction unification resolves by deleting the sidebar's rule.
+Running the mirror today gives 24 candidates:
+
+| Filing type | Fields the sidebar reads that its validator never does |
+| --- | --- |
+| annual | `scheduleNoItems` |
+| planInitial | `mentalNone`, `physNone`, `q11Directives`, `q7Hmo`, `q7InstitutionalCare`, `q7Medicaid`, `q7Medicare`, `q7Pension`, `q7SocialSecurity`, `q7Ssdi`, `q7Ssi`, `q7StateSupplement`, `q7SupplementalIns`, `q7Va` |
+| planAnnual | `benefits`, `q3BenefitsNone`, `q3BenefitsOther`, `q3MedPrimary`, `q3MentalPsych`, `q3PersonalFacility`, `q3SocialFacility`, `q9NeedsGlasses`, `q9UsesGlasses` |
+| simplified, planSimplified, planMinor | none |
+
+**Candidates, not defects.** Several are probably legitimate — a checkbox
+group the sidebar aggregates while the validator tests a derived value, or a
+"no items" affirmation with no validator equivalent. Each needs adjudicating
+before its filing type is converted: either the validator gains the rule, or
+the rule is consciously dropped and that is written down. What matters is that
+none of them can be converted *silently*.
+
+**3. Name presence is not rule equivalence, and the known live case is
+invisible to both directions.** `a-p8` requires a trust *name*;
+`validateAnnual()` requires none. Both sides reference `d.trusts`, so no
+field-name method — the shipped guard's or the mirror above — can see it. It
+was found by hand. There is no way to enumerate this class mechanically; it
+needs each sidebar rule read against its validator. 57E-1 resolves this one.
+Assume others exist.
+
+**4. The 14 recorded `KNOWN_GAPS` entries close for free.** Under the derived
+model a field the validator requires necessarily reaches the sidebar, so
+`planAnnual` (2), `planMinor` (4), `planInitial` (1) and `annual` (7) resolve
+by construction. These are the win; items 1-3 are the price of collecting it.
+
+**Suggested order**, smallest risk first: add Simplified to the guard and close
+its five gaps (independent, live, cheap) → 57E-1 (closes the one known
+rule-level divergence) → adjudicate the 24 candidates per filing type →
+convert one filing type to the derived model and prove it against
+`navigation-status.contract.spec.ts` → convert the rest.
