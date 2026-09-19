@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard } from './support/target';
+import { readAll } from './support/stream';
 
 // The court's workbooks propagate their headers by DEFINED NAME, not by cell
 // reference. 'SCH A INCOME p1'!D2 is literally `=Name_of_Ward`. In the Annual
@@ -27,12 +28,6 @@ import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, fillMinim
 
 const NS_ANNUAL = ['Name_of_Ward', 'Case_Number', 'Filing_Type', 'From_Date', 'To_Date', 'Guardian', 'Attorney'];
 const NS_GUARDIAN = ['countyname', 'yesORno'];
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
-}
 
 const dec = (s: string) => s.replace(/&apos;/g, "'").replace(/&quot;/g, '"')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');

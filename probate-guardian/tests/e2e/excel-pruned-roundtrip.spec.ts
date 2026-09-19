@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { readAll } from './support/stream';
 
 // Pruning blank pages out of the exported workbook is only half a contract.
 // The app must also be able to read its own export back: a guardian who saves
@@ -35,12 +36,6 @@ const DISBURSEMENTS: Row[] = [
   { checkNo: '1002', datePaid: '2026-04-11', category: 'Rent', payee: 'Bayview Apartments', amount: '1250.00' },
   { checkNo: '1003', datePaid: '2026-05-09', category: 'Medical / Pharmacy', payee: 'Walgreens', amount: '42.60' },
 ];
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
-}
 
 async function exportWith(page: import('@playwright/test').Page, incomeRows: number) {
   await freshStartNoPassword(page);

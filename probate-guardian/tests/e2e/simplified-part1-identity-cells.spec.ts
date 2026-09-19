@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
 import { freshStartNoPassword, createSimplifiedWard, fillMinimalValidSimplifiedWard } from './support/target';
+import { readAll } from './support/stream';
 
 // Simplified Annual Accounting's Part I identity block, checked against the
 // exported workbook rather than against the app's own re-import.
@@ -37,12 +38,6 @@ const TO = '2026-12-31';
 
 const dec = (s: string) => s.replace(/&apos;/g, "'").replace(/&quot;/g, '"')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
-}
 
 type Cell = { formula: string | null; text: string };
 

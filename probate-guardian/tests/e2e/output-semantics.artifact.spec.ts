@@ -11,6 +11,7 @@ import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-f
 import {
   filingCapabilities, expectedPdfMetadataTitle, expectedLegalCopy, type FilingType,
 } from './support/filing-matrix';
+import { readAll } from './support/stream';
 
 // Milestone 33, Phase 3: Semantic Artifact Assertions (*.artifact.spec.ts per Phase 4.2).
 // Proves generated outputs (PDF, XLSX) across all 9 filing types satisfy
@@ -99,12 +100,6 @@ const CONFIGS: ArtifactConfig[] = [
     filenameStem: 'SimplifiedAnnualPlan', expectedCaseNumber: '2026-CP-000789',
   },
 ];
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks);
-}
 
 function isZipMagic(bytes: Buffer): boolean {
   return bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;

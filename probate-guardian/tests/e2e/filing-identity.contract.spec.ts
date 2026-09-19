@@ -7,6 +7,7 @@ import {
 } from './support/target';
 import { extractPdfText, getPdfMetadata } from './support/pdf-extract';
 import { filingCapabilities, type FilingType } from './support/filing-matrix';
+import { readAll } from './support/stream';
 
 // Milestone 33, Phase 2.1. Landed in two passes per the proposal's own
 // Migration Sequence ("begin with Annual/Final/Trust... do not combine all
@@ -141,12 +142,6 @@ const CONFIGS: IdentityConfig[] = [
     filenameStem: 'SimplifiedAnnualPlan',
   },
 ];
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks);
-}
 
 test.describe('Filing identity contract', () => {
   for (const config of CONFIGS) {

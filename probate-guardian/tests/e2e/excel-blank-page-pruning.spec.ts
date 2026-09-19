@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
+import { readAll } from './support/stream';
 
 // The court's Annual Accounting workbook ships every printed page of every
 // schedule, and the app writes only the pages a filing needs. Without pruning,
@@ -46,12 +47,6 @@ function decodeXml(text: string): string {
   return text
     .replace(/&apos;/g, "'").replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-}
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
 }
 
 /** Every formula on one sheet, keyed by cell address. */

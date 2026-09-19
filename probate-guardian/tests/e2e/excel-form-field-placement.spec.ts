@@ -7,6 +7,7 @@ import {
   freshStartNoPassword, createWard, createSimplifiedWard,
   fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard,
 } from './support/target';
+import { readAll } from './support/stream';
 
 // Values land in the court's input boxes, checked against the exported file.
 //
@@ -28,12 +29,6 @@ import {
 
 const dec = (s: string) => s.replace(/&apos;/g, "'").replace(/&quot;/g, '"')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
-}
 
 type Cell = { formula: string | null; text: string };
 

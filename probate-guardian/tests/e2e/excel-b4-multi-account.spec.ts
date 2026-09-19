@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
+import { readAll } from './support/stream';
 
 // Schedule B-4 gives every bank account its own block of check-register pages,
 // with the bank name and account number printed at the top of the block. The
@@ -42,12 +43,6 @@ const DISBURSEMENTS = ACCOUNTS.flatMap((a, i) => [0, 1].map((n) => ({
   payee: `${a.bankName} payee ${n + 1}`,
   amount: String(100 + i * 10 + n),
 })));
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
-}
 
 async function exportWithAccounts(page: import('@playwright/test').Page, accounts: unknown[], rows: unknown[]) {
   await freshStartNoPassword(page);

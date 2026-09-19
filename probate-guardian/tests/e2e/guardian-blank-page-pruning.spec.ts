@@ -4,6 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
+import { readAll } from './support/stream';
 
 // The court's Initial Inventory workbook ships every printed page of all
 // eleven schedules -- 21 continuation pages beyond each schedule's first. The
@@ -97,12 +98,6 @@ function decodeXml(text: string): string {
   return text
     .replace(/&apos;/g, "'").replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-}
-
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
 }
 
 /** Every formula on one sheet, keyed by cell address. */
