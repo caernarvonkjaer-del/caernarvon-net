@@ -384,14 +384,42 @@ past, and the app has still pre-filled the answer.
 
 ## Decisions 8–9 — settled 2026-09-19
 
-**D8 — 57D exports the full multi-account layout: 4 accounts, 494 rows.** The
-template is built for it and says so on its own summary sheet ("SUMMARY OF
-PAGES 1 TO 18 FOR ALL ACCOUNTS BY CATEGORY"). Anything less leaves a filing
-with two bank accounts unrepresentable, which is the actual reported problem;
-the 160-row single-account option would have raised the ceiling without fixing
-that. This is the largest and highest-risk item left in Milestone 57 and is
-the shape the reverted attempt broke — see the scope below, and `AGENTS.md`
-§13 on not writing into formula cells.
+**D8 — 57D supports UNLIMITED accounts. The four-block limit binds the Excel
+artifact only.** Amended the same day it was taken, after Alan pushed back:
+*"in real world use, they will need more than four account support."* He is
+right, and the first version of this decision let a template constraint bind
+the whole feature.
+
+The four is the court's, not ours — the workbook has exactly four
+account-header blocks (Line # restarts at 1 on p2, p8, p12, p16, each with its
+own `BANK:` / `ACCOUNT NUMBER #:`). We cannot invent a fifth without modifying
+the Clerk's form or writing one account's disbursements under another's
+header, and `AGENTS.md` §13 forbids both.
+
+**But only the Excel writer is bounded.** The data model, the assignment UI
+and the PDF have no such limit, and **the PDF register is already uncapped
+today** — `pdf-model.js`'s `d.schB4.map(...)` renders every row and paginates
+naturally, because the PDF is app-generated rather than template-bound. It
+simply has no account column yet, which is ours to add.
+
+The original 57D proposal said this and the first version of D8 failed to
+carry it forward: *"If the official template does not accommodate multiple
+accounts on a single page, multi-account attribution remains an internal entry
+convenience in the app/model. The app must never mislabel transactions by
+placing an arbitrary 'primary account' in the court header."*
+
+**At five or more accounts the Excel download is withheld, named, and the PDF
+carries everything.** Not a partial workbook — a Schedule B-4 that silently
+omits real disbursements does not reconcile against its own summary or against
+Part II, and the clerk reading it has no way to know. The filer sees which
+accounts will not fit; the PDF exports complete. This is the pattern
+`excel-capacity.js` already uses for over-capacity schedules, so it is a
+surface the app and its users already understand.
+
+Still open, and a question for Pinellas rather than for us: what the Clerk
+actually expects for a ward with five or more accounts — a supplemental
+register, combined accounts, or whether the PDF alone is an acceptable filing.
+Worth asking, but it does not block the work.
 
 **D9 — 57E-1's one surviving gap is an acknowledgement, matching D6.**
 `hasTrust: 'Yes'` with blank trust fields shows in the sidebar and offers a
@@ -432,10 +460,19 @@ only ever writes p2.
    writing each group across its block's pages and the account header once on
    the block's first page. Import: the inverse, one account per block, created
    only where that block's header has content.
-6. Capacity: block only when there are **more than 4 accounts**, or when one
-   account's rows exceed **its own block's** capacity — and name the account
-   in the message. A filing that fits must never be blocked.
-7. No-accounts filings fall back to a single unlabelled group on block 1,
+6. **`schB4Accounts[]` is not capped at 4.** The model, the assignment UI and
+   the PDF take any number; only the Excel writer is bounded by the template.
+7. Excel capacity, per **D8**: the download is withheld — never partial — when
+   there are more than 4 accounts, or when one account's rows exceed **its own
+   block's** capacity. The message names the accounts that will not fit. A
+   filing that fits must never be withheld.
+8. **The PDF is the overflow path, so it has to carry account attribution.**
+   Its register is already uncapped (`d.schB4.map(...)`, paginating naturally);
+   it gains an account column or per-account grouping so that a filing the
+   Excel cannot represent is still complete somewhere. This is load bearing,
+   not a nicety — without it, a ward with five accounts has no complete output
+   at all.
+9. No-accounts filings fall back to a single unlabelled group on block 1,
    which is today's behaviour with 160 rows instead of 25.
 
 ### The block map (verified)
@@ -468,10 +505,15 @@ itself. See `AGENTS.md` §13.
 
 Data model (new collection plus a per-row field); `.sav` round trip and the
 legacy `bankAcct` migration; Excel export **and** import; `ANNUAL_EXCEL_CAPS`;
-the capacity-issue surface shared with other schedules; PDF (decide explicitly
-whether the PDF gains account attribution or stays as-is — do not let it
-diverge silently); `TEST-INDEX.md`. Applies to all three filing types sharing
-`engineId: 'annual'`, not just Annual Accounting.
+the capacity-issue surface shared with other schedules — note that surface now
+has to express "this filing cannot be written to the workbook at all" and not
+just "this schedule is over its row cap"; the PDF, which gains account
+attribution per scope item 8; `TEST-INDEX.md`. Applies to all three filing
+types sharing `engineId: 'annual'`, not just Annual Accounting.
+
+**Verification must include the asymmetry**: a five-account filing produces a
+complete PDF and no Excel, with both halves asserted. A four-account filing
+that fits produces both. Neither should be reachable by accident.
 
 ---
 
