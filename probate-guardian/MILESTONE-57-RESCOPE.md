@@ -1440,16 +1440,23 @@ cannot `import`. Dashboard progress is computed synchronously for filings that
 have never been opened, so a rule reached through a lazily-loaded feature
 module is exactly the wrong shape.
 
-So this fix must also deliver an **eagerly available pure signature-completeness
-primitive**, plus the plumbing that makes it usable from legacy code: a
-`window.*` bridge established at load rather than at feature mount, a
-declaration in `src/core/types/window-bridge.d.ts`, and the corresponding
-`window-bridge.spec.js` allow-list entry (that guard fails the build on an
-undeclared global - confirmed by hitting it during Milestone 57's D14 work).
-`signature-state.js` is already pure and dependency-light, so this is a
-wiring change rather than a rewrite - but it is not optional, and it is the
-first place the derived-readiness architecture in item 4 should be prototyped
-in miniature. **Do not satisfy the
+So this fix must also deliver an **eagerly available pure
+signature-completeness primitive**, plus the plumbing that makes it usable
+from legacy code. The concrete files, verified rather than assumed:
+
+| What | Where |
+| --- | --- |
+| The rule | `src/core/validation/signature-state.js` - already pure and dependency-light; gains a `window.*` assignment the way `core/filing/output-preflight.js` already does for `window.prepareFilingOutput` |
+| Eager load point | `src/main.js` - loaded as a module from `index.html:286` and already imported purely for its bridge side effects (`core/state.js`, `core/form/form-fields.js`, and others). Add the import there, **not** to a feature module |
+| Type declaration | `src/core/types/window-bridge.d.ts` |
+| Allow-list | `tests/unit/fixtures/window-bridge-allowlist.json` - a real fixture file, not a list inside the spec |
+| Behavioural tests | `tests/e2e/navigation-status.contract.spec.ts` - already carries a `simplified` entry with `triggerBlockedExport`, so the eight-case matrix extends existing structure rather than adding a file |
+
+That guard fails the build on an undeclared global - confirmed by tripping it
+during this milestone's own D14 work, which is why D14 dropped its global
+instead of declaring one. This is a wiring change rather than a rewrite, but
+it is not optional, and it is where the derived-readiness architecture in item
+4 should be prototyped in miniature before anything larger is attempted. **Do not satisfy the
 guard by naming the five fields**, and do not add bare `req()` checks for the
 date or image: that would make an unsigned filing incomplete and collide
 directly with the pro se / Ch. 393 protection in AGENTS.md section 4. Required test
@@ -1496,7 +1503,7 @@ Reading the survivors, the substantive reverse-direction families are three:
 | Family | Where |
 | --- | --- |
 | Annual `scheduleNoItems`, **Part XI remuneration only** | Owned by MS 58D - do not duplicate that instance |
-| Annual `scheduleNoItems`, **the other twelve schedules** | Same mechanism, NOT owned by 58D. Unadjudicated - see below |
+| Annual `scheduleNoItems`, **the other fourteen schedules** | Same mechanism, NOT owned by 58D. Unadjudicated - see below |
 | Initial Plan Question 7 benefit selection | `q7*` identifiers in `planInitial` |
 | Annual Plan Part 4 insurance/benefit selection | `q3BenefitsNone`, `q3BenefitsOther` and neighbours in `planAnnual` |
 
@@ -1505,20 +1512,36 @@ exactly: *"Current sidebar logic requires either the explicit no-items
 declaration or complete rows, while `validateAnnual()` does not require
 either."* Its scope, however, is Part XI remuneration and nothing else.
 
-**The same mechanism affects twelve other schedules, and those are not owned
-by anyone.** `rowsComplete(rows, fields, noItemsKey)`
-(`legacy-app.js:6694`) is `verifiedEmpty(noItemsKey) || (at least one row, all
-complete)`, and it backs `a-scha`, `a-schb1` through `a-schb4`, `a-schd1`
-through `a-schd5`, `a-schf1` and `a-schf2`. Meanwhile `validateAnnual()`'s
-`checkRows()` (`features/annual-accounting/index.js:1609-1617`) returns early
-for any row with no data, so **an entirely empty schedule with no "none"
-declaration produces no validator error at all.**
+**The same mechanism affects fourteen other schedules, and those are not
+owned by anyone.** The sidebar rule is `verifiedEmpty(key) || (at least one
+row, and every row complete)`. Twelve schedules reach it through the shared
+`rowsComplete()` helper (`legacy-app.js:6694`); **Schedule C and Schedule E
+write the identical expression inline** (`a-schc`, `:6729`; `a-sche`, `:6735`)
+and are easy to miss precisely because they do not call the helper.
 
-What a filer sees: twelve schedules can show a red dash in the sidebar while
-Print Preview reports nothing wrong with them. An earlier version of this
-section said "already scoped as MS 58D - do not write a second fix." That was
-too broad and is withdrawn: it would have left twelve schedules unadjudicated
-on the belief another milestone had them.
+| | Schedules |
+| --- | --- |
+| via `rowsComplete()` | A, B-1, B-2, B-3, B-4, D-1, D-2, D-3, D-4, D-5, F-1, F-2 (12) |
+| hand-written, same rule | C, E (2) |
+| **total outside Part XI** | **14** |
+
+Meanwhile `validateAnnual()`'s `checkRows()`
+(`features/annual-accounting/index.js:1609-1617`) returns early for any row
+with no data, and so does Schedule C's own extra gain/loss loop (`:1625`), so
+**an entirely empty schedule with no "none" declaration produces no validator
+error at all.**
+
+What a filer sees: fourteen schedules can show a red dash in the sidebar while
+Print Preview reports nothing wrong with them.
+
+Two withdrawn claims, recorded because both were committed. First: "already
+scoped as MS 58D - do not write a second fix" was too broad and would have
+left the whole set unadjudicated on the belief another milestone had it.
+Second: the correction to that said *twelve* schedules, because it was derived
+by grepping `rowsComplete(` and reporting its call sites - the same
+scan-as-finding mistake this section warns about, committed inside the
+paragraph warning about it. C and E impose the rule without calling the
+helper. **Read the rules; do not grep the helper.**
 
 **3. Rule equivalence needs review, but "no mechanical way" was too absolute.**
 
@@ -1532,8 +1555,9 @@ But the first version's "there is no way to enumerate this class mechanically"
 overstates it. Where a rule's inputs form a **finite domain**, differential
 truth-table tests over generated fixtures can compare sidebar and validator
 across every combination mechanically. The signature-state machine in item 1
-is exactly such a domain - three states times date-present times image-present
-is twelve cases per role. That cannot prove equivalence of arbitrary
+is exactly such a domain - eight semantically distinct cases per role once
+legacy blank-state inference and the invalid-value branch are included, as
+tabulated in item 1. That cannot prove equivalence of arbitrary
 JavaScript, but it is materially stronger than a manual read and should be the
 default wherever the inputs enumerate.
 
