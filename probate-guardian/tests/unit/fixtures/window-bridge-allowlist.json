@@ -22,6 +22,10 @@
       "name": "getOrCreateCaseForWard"
     },
     {
+      "file": "src/core/validation/attorney-block.js",
+      "name": "isPlanInitialAttorneyStarted"
+    },
+    {
       "file": "src/core/case-resolver.js",
       "name": "resolveCase"
     },

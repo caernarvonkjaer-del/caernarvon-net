@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summ
 import { renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { isPlanInitialAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
@@ -75,6 +76,50 @@ const {
 // Milestone 39-C: see plan-annual/index.js's identical comment.
 const signatureHandles = new WeakMap();
 
+// Milestone 58C: /p10's live required-marker subscription, one per mounted
+// container, ended by the same dispose() that tears down the signature pads.
+const attorneyMarkerAborts = new WeakMap();
+
+/**
+ * Milestone 58C. Primary Email is required only once an attorney has been
+ * started, and "started" changes while the filer types -- entering a phone
+ * number alone is enough. So the marker cannot be decided once at render.
+ *
+ * Attributes are toggled on the existing nodes rather than re-rendering the
+ * page: /p10 is where the filer is typing, and rebuilding the field under
+ * them would move the caret and drop focus mid-word.
+ */
+function syncAttorneyEmailRequired(container) {
+  const d = window.D;
+  if (!container || !d) return;
+  const required = isPlanInitialAttorneyStarted(d);
+  // `input[...]`, not a bare attribute match: once this section reports
+  // incomplete, the local-guidance panel renders a "jump to field" BUTTON
+  // carrying the same data-field-path, and it appears above the card in DOM
+  // order. Matching it would toggle aria-required on a link.
+  const input = container.querySelector('input[data-field-path="attorney_email"]');
+  if (input) {
+    if (required) {
+      input.setAttribute('data-field-required', 'true');
+      input.setAttribute('aria-required', 'true');
+    } else {
+      input.removeAttribute('data-field-required');
+      input.removeAttribute('aria-required');
+    }
+  }
+  const label = container.querySelector('label[for="attorney_email"]');
+  if (!label) return;
+  const mark = label.querySelector('.req');
+  if (required && !mark) {
+    const span = document.createElement('span');
+    span.className = 'req';
+    span.textContent = '*';
+    label.appendChild(span);
+  } else if (!required && mark) {
+    mark.remove();
+  }
+}
+
 let _printModule = null;
 let _printModulePromise = null;
 function ensurePrintModule() {
@@ -126,12 +171,28 @@ export async function mount(container, page) {
       route: page,
     }));
   }
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  if (page === '/p10') {
+    // Milestone 58C: keep Primary Email's required marker in step with the
+    // attorney block as it is filled in. The AbortController ends with the
+    // page, so nothing dangles after dispose() -- the 40F/40H-A/43G bug class.
+    const controller = new AbortController();
+    attorneyMarkerAborts.set(container, controller);
+    window.addEventListener('pg:field-written', (event) => {
+      const path = event?.detail?.path;
+      if (typeof path === 'string' && path.startsWith('attorney_')) syncAttorneyEmailRequired(container);
+    }, { signal: controller.signal });
+    syncAttorneyEmailRequired(container);
+  }
   if (isPrint) await _printModule.mountPreview();
 }
 
 export function dispose(container) {
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
   container.replaceChildren();
 }
 
@@ -569,7 +630,7 @@ function pagePlanIAttorney(){
             <div class="row g-2">
               <div class="col-md-7">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
               <div class="col-md-5">${inpS('attorney_bar','Attorney Bar Number',d.attorney_bar)}</div>
-              <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+              <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,isPlanInitialAttorneyStarted(d),'email')}</div>
               <div class="col-12">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
               <div class="col-12">${inpS('attorney_street','Attorney Address',d.attorney_street)}</div>
               <div class="col-12">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
@@ -682,7 +743,14 @@ export function validatePlanInitial(){
   // even with every other attorney field still blank); an explicit or
   // default Unsigned choice does not, by itself, count as "started" --
   // preserving the pro se exemption.
-  if(d.attorney_name||d.attorney_bar||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
+  //
+  // Milestone 58C: the condition moved to core/validation/attorney-block.js
+  // and widened. It used to list only name, bar, signature date and a
+  // non-Unsigned signature choice, so entering just the attorney's phone,
+  // address, or email started nothing -- while Primary Email still showed a
+  // required asterisk. The sidebar carried an identical copy of the same
+  // narrow list; both now call the one predicate.
+  if(isPlanInitialAttorneyStarted(d)){
     req(d.attorney_name,'Attorney Certification — Attorney name is required','attorney_name');
     // Milestone 55D: attorney_email already rendered a required asterisk
     // (inpS(...,true,'email')) with no matching rule anywhere -- confirmed

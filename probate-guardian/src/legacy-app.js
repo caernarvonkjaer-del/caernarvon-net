@@ -6957,7 +6957,12 @@ function computeNavChecks(){
       // signature completeness every other nav-check key in this file
       // uses (full tri-state completeness is the validator's job via
       // checkSignatureState(), not this sidebar's).
-      'pi-p10':!(D.attorney_name||D.attorney_bar||D.attorney_signatureDate||(D.attorney_signatureState&&D.attorney_signatureState!=='none'))
+      // Milestone 58C: "has an attorney been started?" is one shared rule now
+      // (core/validation/attorney-block.js), not a copy of the validator's
+      // four-field list. If the bridge is somehow absent the expression falls
+      // back to "not started", which is the pro se-safe answer: no attorney
+      // requirement is asserted against a filing that may not have one.
+      'pi-p10':!(typeof window.isPlanInitialAttorneyStarted==='function'&&window.isPlanInitialAttorneyStarted(D))
         ||(filled(D.attorney_name)&&filled(D.attorney_email)&&filled(D.attorney_signatureDate)),
     };
     const incomplete={
@@ -6971,7 +6976,8 @@ function computeNavChecks(){
       'pi-p7':!checks['pi-p7']&&anyOf(D.mentalAlzheimers,D.physMobility,D.usesGlasses,D.mentalNone,D.physNone),
       'pi-p8':!checks['pi-p8']&&anyOf(D.q11NoDirectives,D.q11Executed,D.committeeIncorporated,D.needsGlasses,D.needsNone),
       'pi-p9':!checks['pi-p9']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.ssn),
-      'pi-p10':!checks['pi-p10']&&hasAny(D.attorney_name,D.attorney_signatureDate,D.attorney_bar,D.attorney_email),
+      // Milestone 58C: same predicate as the check above, not a third list.
+      'pi-p10':!checks['pi-p10']&&typeof window.isPlanInitialAttorneyStarted==='function'&&window.isPlanInitialAttorneyStarted(D),
     };
     return {checks,incomplete};
   } else if(activeInventoryType==='planMinor'){

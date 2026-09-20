@@ -1268,6 +1268,54 @@ test.describe('Milestone 55D: attorney email is required exactly where the UI al
     expect(state.navComplete).toBe(false);
   });
 
+  // Milestone 58C. "Started" used to mean only name, bar number, signature
+  // date, or a non-Unsigned signature choice -- four of the block's eight
+  // entry fields. Type the attorney's phone, address, or either email and both
+  // the validator and the sidebar held that nothing had been started: no
+  // export issue, sidebar green, while Primary Email displayed a required
+  // asterisk with no rule behind it. A half-entered attorney could reach the
+  // court: a certification naming someone with no way to serve them.
+  const NEWLY_STARTING_FIELDS: Array<[string, string]> = [
+    ['attorney_phone', '727-555-0143'],
+    ['attorney_street', '100 2nd Ave S, Suite 400'],
+    ['attorney_cityStateZip', 'St. Petersburg, FL 33701'],
+    ['attorney_email', 'atty@firm.example'],
+    ['attorney_secondaryEmail', 'assistant@firm.example'],
+  ];
+
+  for (const [field, value] of NEWLY_STARTING_FIELDS) {
+    test(`Plan Initial: ${field} alone starts the attorney block, and the sidebar agrees`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, `Attorney Start ${field} Ward`, 'planInitial');
+      await fillMinimalValidPlanInitialWard(page);
+
+      const state = await page.evaluate(([f, v]) => {
+        const w = window as any;
+        for (const k of ['attorney_name', 'attorney_bar', 'attorney_email', 'attorney_secondaryEmail',
+          'attorney_street', 'attorney_cityStateZip', 'attorney_phone',
+          'attorney_signatureDate', 'attorney_signatureState']) w.D[k] = '';
+        w.D[f] = v;
+        return {
+          // Deliberately not called bare: if the bridge is missing this must
+          // report that, not throw, so the assertions below stay the ones that
+          // fail. A red run that only says "not a function" would not have
+          // demonstrated the defect this test exists for.
+          started: typeof w.isPlanInitialAttorneyStarted === 'function'
+            ? w.isPlanInitialAttorneyStarted(w.D)
+            : 'predicate not bridged',
+          navComplete: w.computeNavChecks().checks['pi-p10'],
+          blocked: w.validatePlanInitial().some((m: ValidatorIssue) => m.message.includes('Attorney Certification')),
+        };
+      }, [field, value] as [string, string]);
+
+      // Behaviour first: these are what a filer experiences, and what failed
+      // before Milestone 58C widened the predicate.
+      expect(state.blocked, 'a started attorney block must be completed before export').toBe(true);
+      expect(state.navComplete, 'the sidebar must agree with the export gate').toBe(false);
+      expect(state.started, `${field} is attorney entry`).toBe(true);
+    });
+  }
+
   test('Plan Initial: pro se/Guardian Advocate exemption -- attorney card entirely blank still exports cleanly, and pi-p10 agrees (Error 4, red-first)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Attorney Email PI Exempt Ward', 'planInitial');

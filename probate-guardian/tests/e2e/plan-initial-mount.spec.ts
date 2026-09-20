@@ -52,3 +52,53 @@ test('Signatures page renders the expected visible text and control values throu
   const snapshot = await extractFormContentSnapshot(page);
   expect(snapshot).toBe("Certification and Signature of Guardian(s)\nAll Filings\n?\nIf the Ward's ability to exercise rights has changed since the Order Determining Capacity and Appointing Guardian, the guardian must file a Petition to Remove or Petition to Restore Rights, as appropriate.\nCheck all that apply:\nThe Ward was declared totally incapacitated and has not been given a copy of this plan\nThe Ward is a minor under the age of 14 and has not been given a copy of this plan\nThe guardian has consulted with the Ward, to the extent reasonable, has honored the Ward's wishes, and to the maximum extent possible the plan is in accordance with the Ward's wishes or consistent with the rights retained by the Ward\nIn exercising his or her powers, the guardian shall recognize any rights retained by the ward (F.S. 744.363(6))\nThe plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease\nThe plan provides for the Ward's medical care and mental health treatment\nPreparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.\n\nUnder penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.\n\nGuardian\nLink Person\nName\n*\nRelationship to Ward\nSSN/EIN\nPhone Number\nDate Signed\nUse MM/DD/YYYY\nSignature\nUnsigned\n\"/s/\" Signed\nSignature Stamp\nStreet Address\nCity/State/Zip\n+ Add Co-Guardian\nAll guardians of the person must sign and provide their most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.\nSupporting Documents — set the accounting period on the Cover page to file these by year\n\nUpload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.\n\n+ Upload PDF(s)\nNo supporting documents uploaded for this period.\nComments\n← Back\nNext →\n---CONTROL VALUES---\n[checkbox:certIncapacitatedNoCopy=unchecked]\n[checkbox:certMinorNoCopy=unchecked]\n[checkbox:certConsulted=checked]\n[checkbox:certRecognizeRights=unchecked]\n[checkbox:certNoRestriction=unchecked]\n[checkbox:certProvidesCare=unchecked]\n[input:Sample Guardian]\n[input:Parent]\n[input:123-45-6789]\n[input:(555) 555-5555]\n[input:01/11/2026]\n[radio:sigstate_planGuardians_0=unchecked]\n[radio:sigstate_planGuardians_0=checked]\n[radio:sigstate_planGuardians_0=unchecked]\n[input:123 Main St]\n[input:Clearwater, FL 33755]\n[input:]\n[textarea:]");
 });
+
+// Milestone 58C. Primary Email carries a required asterisk only once an
+// attorney has been started, and "started" changes while the filer types --
+// so the marker has to move with them, not be decided once at render.
+//
+// The pro se half matters most: a filer with no attorney must never see a
+// required field in a block they are entitled to leave empty (Fla. Prob. R.
+// 5.030 / Ch. 393 Guardian Advocate).
+test('Milestone 58C: Primary Email\'s required marker follows the attorney block, live and in place', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Attorney Marker Ward', 'planInitial');
+  await fillMinimalValidPlanInitialWard(page);
+  await page.evaluate(() => {
+    const w = window as any;
+    for (const k of ['attorney_name', 'attorney_bar', 'attorney_email', 'attorney_secondaryEmail',
+      'attorney_street', 'attorney_cityStateZip', 'attorney_phone',
+      'attorney_signatureDate', 'attorney_signatureState']) w.D[k] = '';
+    w.navigate('/p10');
+  });
+
+  // input[...] specifically: the local-guidance panel renders a jump-to-field
+  // button with the same data-field-path once the section reports incomplete.
+  const email = page.locator('input[data-field-path="attorney_email"]');
+  const asterisk = page.locator('label[for="attorney_email"] .req');
+  await expect(email).toBeVisible();
+
+  // Nothing entered: no marker, nothing announced as required.
+  await expect(asterisk).toHaveCount(0);
+  await expect(email).not.toHaveAttribute('aria-required', 'true');
+
+  // Typing a phone number -- and nothing else -- starts the attorney block.
+  const phone = page.locator('input[data-field-path="attorney_phone"]');
+  await phone.click();
+  await phone.fill('727-555-0143');
+  await phone.dispatchEvent('change');
+
+  await expect(asterisk, 'the marker appears as soon as the block is started').toHaveCount(1);
+  await expect(email).toHaveAttribute('aria-required', 'true');
+
+  // In place: the field the filer is typing in still holds focus, because the
+  // marker is an attribute toggle rather than a re-render.
+  expect(await page.evaluate(() => (document.activeElement as HTMLElement)?.getAttribute('data-field-path')))
+    .toBe('attorney_phone');
+
+  // Clearing the block returns it to the pro se state.
+  await phone.fill('');
+  await phone.dispatchEvent('change');
+  await expect(asterisk, 'clearing the last attorney field restores the pro se state').toHaveCount(0);
+  await expect(email).not.toHaveAttribute('aria-required', 'true');
+});

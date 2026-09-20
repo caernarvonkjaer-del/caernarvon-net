@@ -20,6 +20,11 @@ import './core/status/section-status.js';
 // so it cannot come from a lazily-loaded feature module -- every other
 // importer of signature-state.js is one.
 import './core/validation/signature-state.js';
+// Milestone 58C, same reasoning: computeNavChecks()'s pi-p10 rule needs
+// window.isPlanInitialAttorneyStarted while rendering dashboard progress for
+// Initial Plan filings that have never been opened, so it cannot arrive with
+// a lazily-loaded feature module.
+import './core/validation/attorney-block.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

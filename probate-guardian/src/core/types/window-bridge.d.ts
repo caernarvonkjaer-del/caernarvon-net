@@ -247,6 +247,7 @@ interface Window {
   isHelpPanelOpen: any;
   isOutputAcknowledgedFor: any;
   isPartyPairDismissed: any;
+  isPlanInitialAttorneyStarted: any;
   isScheduleIncomplete: any;
   isSignatureComplete: any;
   issueMessage: any;

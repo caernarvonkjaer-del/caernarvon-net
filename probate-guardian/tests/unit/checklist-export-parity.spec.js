@@ -161,7 +161,27 @@ describe('checklist and export validator field parity', () => {
     // to carry: the rewritten pi-p10 now references `D.attorney_signatureState`
     // directly in its "started" predicate (mirroring the validator's own
     // gate), so it is no longer invisible to computeNavChecks().
-    planInitial: ['attorney_signatureImage'],
+    //
+    // Milestone 58C put `attorney_signatureState` back on this list, and it is
+    // the one entry here that is NOT a real gap. 58C replaced both copies of
+    // the "has an attorney been started?" test -- the validator's and
+    // pi-p10's -- with one shared predicate in
+    // src/core/validation/attorney-block.js. The sidebar consults the field
+    // through that predicate, so the two sides agree more tightly than before,
+    // not less. What changed is only that the field name no longer appears as
+    // literal text inside computeNavChecks()'s planInitial branch, which is
+    // the one thing this static scan can see.
+    //
+    // That limit is inherent and already documented above: this assertion
+    // proves a field NAME is visible to the sidebar branch, never that the
+    // rule applied to it matches the validator's. The real regression for 58C
+    // is behavioural, in navigation-status.contract.spec.ts, which drives both
+    // the sidebar and the export gate over every attorney entry field.
+    //
+    // The consequence to watch: centralising a rule will always look like a
+    // new gap here. Do not "fix" that by re-inlining a field reference into
+    // the sidebar for the scan's benefit.
+    planInitial: ['attorney_signatureImage', 'attorney_signatureState'],
     // Milestone 39-C: `attorney`/`attorney_signatureState`/`attorney_signatureImage`
     // are new here for the same reason as planAnnual's own `attorney` entry
     // above -- d.attorney is never independently required anywhere in
