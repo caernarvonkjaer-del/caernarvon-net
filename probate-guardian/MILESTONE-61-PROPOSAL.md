@@ -2,35 +2,41 @@
 
 ## Status
 
-**DRAFT — decided, not yet authorized. No implementation may begin until the
-requester says so by name (`AGENTS.md` §3).**
+**AUTHORIZED 2026-09-20 by the requester. In progress.** The authorization,
+verbatim: *"Execute on Phases 0–2 (61A schema, 61B/61C started-row) and
+Phase 5 (61G notice titles), plus Phase 3's other three items — Annual's
+Note 1, Simplified's Help content, and removing Simplified's
+preparer/attorney pages."*
+
+That authorizes Phases 0, 1, 2, 5 and three of Phase 3's four items. Phase
+3 item 2 (the Disaster Plan note) is closed with no code change and is not
+part of this run. Phases 4 and 6 are likewise closed. The full `npm test`
+regression at completion was authorized separately the same day.
+
+Progress Log is at the end of this document.
 
 The requester answered every open content question on 2026-09-20; the
-decisions are recorded inline at each finding and consolidated here. **One
-of those answers then turned out to be unimplementable as given** — the
-Disaster Plan item below — because this document had described a
-deliberate, test-enforced prior decision as an open gap. That item is back
-open; the rest stand. Phases 0–2 and 5 are unaffected and could be
-authorized independently of it.
+decisions are recorded inline at each finding and consolidated here. One
+answer — the Disaster Plan item — was given, found to conflict with a
+deliberate prior decision this document had misdescribed as an open gap,
+put back to the requester with the conflict explained, and re-decided the
+same day. It is now closed with no code change. **Nothing in this document
+is awaiting a decision.** What remains is the authorization itself.
 
 **Decisions recorded 2026-09-20:**
 
 - **61D, Annual's "Note 1" (rights-consistency):** add to the filed PDF, as
   a standalone note matching the source form's own placement.
-- **61D, Annual's and Initial's Disaster Plan note: BLOCKED, awaiting
-  re-decision.** The requester answered "add to the filed PDF, citing AO
-  2024-025." A conflict found afterwards makes that unimplementable as
-  stated: a unit-test guard (`tests/unit/content-corrections.spec.js:43`)
-  forbids `2024-025` anywhere in `src/` outside one allow-listed file,
-  because Milestone 36-5 removed exactly this content from printed
-  documents as a defect, and `AGENTS.md:300` requires circuit-specific
-  rules to gate through `county-guidance.js`. The guidance is already
-  shipped, county-gated, in Help. Full detail at 61D. Three ways forward:
-  **(a)** close the item — the content is already delivered where policy
-  says it belongs (recommended); **(b)** add it to the PDF *county-gated*
-  through `county-guidance.js`, which needs the guard's allow-list widened
-  and a qualified-person review per `AGENTS.md` §8; **(c)** add it ungated
-  as first answered, which knowingly reinstates the Milestone 36-5 defect.
+- **61D, Annual's and Initial's Disaster Plan note: CLOSED, no code
+  change** (re-decided 2026-09-20, after the first answer was found to
+  conflict with Milestone 36-5). The content is already delivered where
+  this app's own policy says it belongs: county-gated in Help
+  (`help-content.js:113-123`, `help/index.html:516`) with the AO's
+  substance and effective date in `county-guidance.js:10-12`. It stays out
+  of generated PDFs, and the guard at
+  `tests/unit/content-corrections.spec.js:43` stays as it is. This is not
+  an accepted gap — it is a requirement already met by a different, and
+  deliberate, delivery mechanism.
 - **61D, Simplified's county-specific filing/procedural-assistance
   content:** **not** filed-PDF content. Write it into in-app Help instead,
   pointing filers at the clerk's own current contact information.
@@ -297,13 +303,17 @@ policy/legal call, not a code question.**
   still substantively right but their *citation* has gone stale since
   whichever printing was used to prepare them.
 
-  **DECISION BLOCKED — this item conflicts with an existing, tested policy
-  decision, and the conflict was found only after the requester had already
-  answered (2026-09-20). Re-decision required; nothing here is settled.**
+  **CLOSED — no code change (re-decided 2026-09-20).** This item is not a
+  gap. The requirement is already delivered, county-gated, in Help; the
+  filed PDFs deliberately do not carry it; and this document was wrong to
+  list it as missing. Recorded in full below because the reasoning matters
+  more than the outcome — a future reviewer running the same grep will
+  reach the same wrong conclusion unless they find this.
 
-  The requester's answer was "add to the filed PDF for both Annual and
+  The requester's first answer, given while this document still described
+  the item as an open gap, was "add to the filed PDF for both Annual and
   Initial, citing AO 2024-025 with its minor-parent-guardian exemption."
-  That cannot be implemented as stated:
+  That could not be implemented as stated:
 
   - **It would break a test that exists to prevent exactly this.**
     `tests/unit/content-corrections.spec.js:43` scans every `.js`/`.html`/
@@ -341,19 +351,30 @@ policy/legal call, not a code question.**
   that the PDF model does not contain it. It does not, and this document
   claimed it did, establish that the content is *missing from the app* —
   it was deliberately relocated to Help by Milestone 36-5 and fenced off by
-  a test. I presented an open gap where there was a closed decision, and
+  a test. An open gap was presented where there was a closed decision, and
   the requester answered a question that should never have been asked in
-  that form. Options are restated in the Status section; this item stays
-  open until re-decided.
+  that form.
 
-  If it is ever added to a generated PDF, the shape question below still
-  holds: a standalone note, not a numbered question — the 6th Circuit's own
-  Initial form deleted its numbered disaster-preparedness question (leaving
-  the orphaned Q7→Q9 gap that Citrus County's form still fills with a
-  numbered "8. Disaster Preparedness") and moved the content to a
-  free-standing note. Do not renumber to close that gap; it is the source
-  form's, and closing it would make this app's output disagree with the
-  court's.
+  **Re-decided the same day, with the conflict on the table: close it.** No
+  change to `plan-annual/pdf-model.js`, `plan-initial/pdf-model.js`,
+  `county-guidance.js`, the Help content, or the guard test. The
+  requirement is met by the existing county-gated Help delivery, which
+  reaches only the filers it applies to — something a note printed on every
+  Annual and Initial PDF could not do.
+
+  **For anyone who finds this again:** absence of disaster-plan text from
+  the plan PDF models is the intended state, not a defect. Before
+  proposing to add circuit-specific content to any generated document,
+  read `AGENTS.md`'s authority hierarchy (`:300`) and
+  `tests/unit/content-corrections.spec.js`'s guard comment first — the
+  design question was settled in Milestone 36-5 and re-confirmed here. If
+  a future milestone ever does revisit it, the shape question is already
+  answered too: a standalone note, not a numbered question — the 6th
+  Circuit's own Initial form deleted its numbered disaster-preparedness
+  question (leaving the orphaned Q7→Q9 gap that Citrus County's form still
+  fills with a numbered "8. Disaster Preparedness"). Do not renumber to
+  close that gap; it is the source form's, and closing it would make this
+  app's output disagree with the court's.
 - **Simplified** omits county-specific filing addresses, phone numbers,
   emails, and procedural-assistance contacts for both counties this form
   names — Pinellas (Clerk of the Circuit Court, 315 Court Street Room 106,
@@ -672,14 +693,11 @@ answers; it does not reopen them. Four separate changes:
    `plan-annual/pdf-model.js` as a standalone `notice` on the cover
    section, positioned ahead of Q1 as the source form has it. Text follows
    `plan-annual-original.txt:46-49`.
-2. **Annual and Initial — the Disaster Plan note: ON HOLD.** Blocked on
-   re-decision (see 61D and Status). Do not implement this item under the
-   current authorization, whatever the rest of the phase authorizes. If
-   option (b) is later chosen, it is a county-gated change routed through
-   `src/core/filing/county-guidance.js` plus a widened allow-list in
-   `tests/unit/content-corrections.spec.js` — not a `notice` block dropped
-   into two pdf-models, and not something to implement without the
-   qualified-person review `AGENTS.md` §8 calls for.
+2. **Annual and Initial — the Disaster Plan note: nothing to do.** Closed
+   2026-09-20 with no code change (see 61D). The requirement is already
+   met by county-gated Help content. Do not add disaster-plan text to any
+   pdf-model, do not touch `county-guidance.js`, and do not widen the
+   allow-list in `tests/unit/content-corrections.spec.js`.
 3. **Simplified — move filing/procedural guidance to Help.** Add the
    clerk-contact and procedural-assistance guidance to
    `src/features/help/help-content.js`, pointing at the clerk's current
@@ -752,10 +770,11 @@ Expected test surface:
   PDF model, the validator, **and `computeNavChecks()`** for the same
   fixture — not just the first two.
 - PDF-model tests for secondary-only rows and optional co-guardians.
-- Extracted-text assertions that Annual's Note 1 and Annual's/Initial's
-  Disaster Plan note appear in the filed PDF (Phase 3 items 1–2), including
-  an assertion that the text cites AO **2024-025** and that the string
-  "2019-005" appears nowhere in any generated plan PDF.
+- Extracted-text assertion that Annual's Note 1 appears in the filed PDF
+  (Phase 3 item 1).
+- No test for disaster-plan content in any PDF — the item is closed with no
+  code change (61D). `tests/unit/content-corrections.spec.js`'s existing
+  guard already covers the invariant that matters here, and stays as it is.
 - Extracted-text assertion that Simplified's output no longer contains the
   preparer or attorney certification headings or signature blocks (Phase 3
   item 4), paired with a save/reload test proving those same
@@ -812,11 +831,10 @@ MS 61 is complete only when:
    intentional, authorized product decision — including the three this
    document closes with no code change (61E's Minor half, 61F, 61H).
 5. Legacy saves preserve existing data and initialize new fields safely.
-6. Annual carries Note 1; Annual and Initial carry the Disaster Plan note
-   citing AO 2024-025 with its minor-parent-guardian exemption; no
-   generated plan PDF anywhere references the rescinded AO 2019-005.
-   (The Disaster Plan half of this criterion applies only if that item is
-   re-decided in favour of PDF output; see 61D.)
+6. Annual carries Note 1 in its filed PDF. No generated plan PDF references
+   any Administrative Order — neither the rescinded 2019-005 nor the
+   current 2024-025 — and `tests/unit/content-corrections.spec.js` still
+   passes unmodified.
 7. Simplified's filed PDF contains no preparer or attorney certification
    content, while the same values still survive a save/reload round trip.
 8. Every `notice` block's `title` prints wherever a PDF model sets one
@@ -841,3 +859,9 @@ with no action. A complete authorization is therefore as short as: *start
 MS 61, phases 0–3 and 5, per the decisions recorded in the Status
 section.* Anything narrower — a subset of phases, or a phase held back —
 authorizes only what it names (`AGENTS.md` §3).
+
+## Progress Log
+
+- **2026-09-20 — Phase 0.** Authorization recorded (see Status). Baseline
+  commit and clean-tree state captured below; field inventory and red tests
+  precede every later phase.
