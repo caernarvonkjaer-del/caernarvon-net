@@ -161,7 +161,11 @@ function readAddressBlock(page: Page, street: string, cityStateZip: string) {
         runs.push({ text, mid: ((r.top + r.bottom) / 2 - hr.top) / k, left: (r.left - hr.left) / k });
       }
     }
-    const label = runs.find((run) => run.text.startsWith('Residence Address:')) || null;
+    // Milestone 60F: Simplified's signature blocks render through `fields`,
+    // which draws a label without the trailing colon the legacy `details`
+    // stack appended. Matching the bare label keeps this test pinned to the
+    // layout property it is about rather than to a punctuation mark.
+    const label = runs.find((run) => run.text.startsWith('Residence Address')) || null;
     // Take the lines belonging to THIS label, not the mailing block above it.
     const after = label ? runs.filter((run) => run.mid > label.mid) : runs;
     return {
@@ -210,7 +214,7 @@ test.describe('signature-block addresses stay inside the margin (reported 2026-0
     await openSimplifiedPreview(page);
 
     const block = await readAddressBlock(page, LONG_STREET, LONG_CITY_STATE_ZIP);
-    expect(block.label, 'no "Residence Address:" label found').toBeTruthy();
+    expect(block.label, 'no "Residence Address" label found').toBeTruthy();
     expect(block.street, 'street line missing from the filing').toBeTruthy();
     expect(block.city, 'city/state/zip line missing from the filing').toBeTruthy();
 
@@ -219,9 +223,11 @@ test.describe('signature-block addresses stay inside the margin (reported 2026-0
     expect(block.street!.mid, 'the delivery line is not under its label').toBeGreaterThan(block.label!.mid + 2);
     expect(block.city!.mid, 'city/state/ZIP is not under the delivery line').toBeGreaterThan(block.street!.mid + 2);
 
-    // Indented under the label rather than hanging off in the old value
-    // column, so the block reads as one address.
-    expect(block.street!.left).toBeGreaterThan(block.label!.left);
+    // Under the label rather than hanging off in the old value column, so the
+    // block reads as one address. `fields` sets the label and its value lines
+    // at the same left edge (the legacy stack indented the value 6pt), so the
+    // bound is a small tolerance either way rather than a strict indent.
+    expect(block.street!.left - block.label!.left, 'the delivery line is left of its own label').toBeGreaterThan(-1);
     expect(block.street!.left - block.label!.left, 'the block is indented too far to read as a unit').toBeLessThan(20);
     expect(Math.abs(block.city!.left - block.street!.left), 'block lines are not flush with each other').toBeLessThan(1);
   });
@@ -243,5 +249,60 @@ test.describe('signature-block addresses stay inside the margin (reported 2026-0
     const rows = await measureInkOnRowsContaining(page, LONG_STREET);
     const overflowing = rows.filter((r) => r.rightPt > RIGHT_EDGE_PT + EDGE_TOLERANCE_PT);
     expect(overflowing, `real ink past the right margin: ${JSON.stringify(overflowing, null, 1)}`).toEqual([]);
+  });
+
+  // Milestone 60F. The `fields` grid reserved a flat 28pt per row, which holds
+  // a label and two value lines; a row whose value wraps further was drawn
+  // into the space the block had already handed to whatever follows it.
+  //
+  // This is deliberately an ENGINE-level case with a hostile input, not a
+  // filing-shaped one, and the distinction is the point. At the full content
+  // width these blocks use, no realistic address wraps past two lines -- an
+  // attempt to provoke this through the UI with a long street and a
+  // co-guardian produced no wrap at all, so it proved nothing and was
+  // deleted rather than kept as decoration. Three columns of a genuinely long
+  // value is a condition the renderer must survive, but not one this form's
+  // own data reaches today. Verified red by reinstating the fixed row height.
+  test('a field row taller than 28pt reserves its real height instead of running into the next block', async ({ page }) => {
+    test.setTimeout(150_000);
+    await openSimplifiedPreview(page);
+
+    const probe = await page.evaluate(async () => {
+      const w = window as any;
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.loadSimplifiedPdf();
+      const model = buildSimplifiedAccountingModel(w.D, { printDate: '2026-09-20' });
+      const part4 = model.sections.find((s: any) => s.id === 'part4');
+      const block = part4.blocks.find((b: any) => b.type === 'signature-block');
+      // One row of three narrow columns, each holding a long structured value:
+      // 9 wrapped lines where the fixed height reserved room for 2.
+      const long = Array.from({ length: 9 }, (_, i) => `Line ${i + 1} of a deliberately long structured value`);
+      block.fields = [[
+        { label: 'Probe A', value: long },
+        { label: 'Probe B', value: long },
+        { label: 'Probe C', value: long },
+      ]];
+      // A marker block immediately after it, so there is something to overrun.
+      part4.blocks.splice(part4.blocks.indexOf(block) + 1, 0, {
+        type: 'notice', tag: 'P', text: 'ZZMARKERZZ follows the signature block.',
+      });
+      const doc = await generateCourtFormPdf(model);
+      return doc.output();
+    });
+
+    const { extractPdfTextRuns } = await import('./support/pdf-extract');
+    const runs = await extractPdfTextRuns(probe);
+    const marker = runs.find((r) => r.text.includes('ZZMARKERZZ'));
+    const lastLine = runs.find((r) => r.text.includes('Line 9 of a deliberately long'));
+    expect(marker, 'the marker block is missing from the PDF').toBeTruthy();
+    expect(lastLine, 'the row\'s last wrapped line is missing from the PDF').toBeTruthy();
+
+    // Positions, not reading order: the generator emits the marker after the
+    // row either way, so only geometry can tell whether it was drawn clear of
+    // it. PDF y runs up the page, so "below" means a SMALLER y.
+    expect(marker!.page, 'the marker landed on a different page from the row').toBe(lastLine!.page);
+    expect(
+      lastLine!.y - marker!.y,
+      `the following block was drawn on top of the row it should follow (row last line y=${lastLine!.y.toFixed(1)}, marker y=${marker!.y.toFixed(1)})`,
+    ).toBeGreaterThan(0);
   });
 });

@@ -172,13 +172,14 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       // Milestone 39-C
       signatureState: g.signatureState || '',
       signatureImage: g.signatureImage || '',
-      details: {
-        'Phone': g.phone || '',
-        'SSN/EIN': maskSSN(g.ssn || ''),
-        'Email': g.email || '',
-        'Mailing Address': composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip),
-        'Residence Address': composePdfAddressLines(g.residenceStreet, g.residenceCityStateZip),
-      },
+      // Milestone 60F: `fields`, not the legacy `details` stack -- see the
+      // matching block in annual-accounting/pdf-model.js for the grouping rule.
+      fields: [
+        [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: maskSSN(g.ssn || '') }],
+        [{ label: 'Email', value: g.email || '' }],
+        [{ label: 'Mailing Address', value: composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip) }],
+        [{ label: 'Residence Address', value: composePdfAddressLines(g.residenceStreet, g.residenceCityStateZip) }],
+      ],
     };
   });
 
@@ -224,13 +225,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         // Milestone 39-C
         signatureState: d.attorney_signatureState || '',
         signatureImage: d.attorney_signatureImage || '',
-        details: {
-          'Florida Bar #': d.attorney_barNumber || '',
-          'Phone': d.attorney_phone || '',
-          'Primary Email': d.attorney_email || '',
-          ...(d.attorney_secondaryEmail ? { 'Secondary Email': d.attorney_secondaryEmail } : {}),
-          'Address': composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip),
-        },
+        fields: [
+          [{ label: 'Florida Bar #', value: d.attorney_barNumber || '' }, { label: 'Phone', value: d.attorney_phone || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondaryEmail || '' }],
+          [{ label: 'Address', value: composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip) }],
+        ],
       },
     ],
   });
@@ -297,12 +296,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         // Milestone 39-C
         signatureState: d.certAttySignatureState || '',
         signatureImage: d.certAttySignatureImage || '',
-        details: {
-          'Florida Bar #': d.certAttyBarNumber || d.attorney_barNumber || '',
-          'Phone': d.certAttyPhone || d.attorney_phone || '',
-          'Primary Email': d.attorney_email || '',
-          'Address': composePdfAddressLines(d.certAttyStreet || d.attorney_street, d.certAttyCityStateZip || d.attorney_cityStateZip),
-        },
+        fields: [
+          [{ label: 'Florida Bar #', value: d.certAttyBarNumber || d.attorney_barNumber || '' }, { label: 'Phone', value: d.certAttyPhone || d.attorney_phone || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }],
+          [{ label: 'Address', value: composePdfAddressLines(d.certAttyStreet || d.attorney_street, d.certAttyCityStateZip || d.attorney_cityStateZip) }],
+        ],
       },
     ],
   });

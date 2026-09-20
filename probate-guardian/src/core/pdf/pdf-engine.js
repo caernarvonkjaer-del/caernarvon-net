@@ -476,50 +476,49 @@ export async function generateCourtFormPdf(model, options = {}) {
   // ink, against doc.getTextWidth()'s 74.2pt for the same string plus its
   // trailing space. jsPDF's own metrics are the trustworthy ones and are
   // what this layout uses directly.
-  const DETAIL_LABEL_X = margin + 280;
-  const DETAIL_VALUE_X = margin + 340; // the column this stack has always used
-  const DETAIL_LINE_H = 11;
-  const DETAIL_WRAP_LINE_H = 10;
-  const DETAIL_VALUE_DROP = 9;
-  const DETAIL_INDENT = 6;
-  const DETAIL_GUTTER_PAD = 6; // clear space between a label and its value
-  const DETAIL_EDGE_SLACK = 2; // never commit ink to the last 2pt of the box
-  const planDetailStack = (details) => {
-    const rows = Object.keys(details)
-      .map((label) => ({ label, value: sanitizeDisplayValue(label, details[label]) }))
-      .filter((row) => row.value);
-    if (!rows.length) return { entries: [], height: 0 };
-    const rightEdge = pageWidth - margin - DETAIL_EDGE_SLACK;
-    doc.setFont('PGSans', 'bold');
-    doc.setFontSize(7.5);
-    const widestLabel = rows.reduce((w, row) => Math.max(w, doc.getTextWidth(`${row.label}: `)), 0);
-    // One column for the whole block, not one per row: a court form's details
-    // read as a column, and per-row placement would leave them ragged.
-    const valueX = Math.max(DETAIL_VALUE_X, DETAIL_LABEL_X + widestLabel + DETAIL_GUTTER_PAD);
-    const besideW = rightEdge - valueX;
-    const belowX = DETAIL_LABEL_X + DETAIL_INDENT;
-    const belowW = rightEdge - belowX;
-    doc.setFont('PGSans', 'normal');
-    doc.setFontSize(7.5);
-    const entries = rows.map(({ label, value }) => {
-      // A structured value keeps the line breaks its caller chose; a plain
-      // string is one run that may still need wrapping.
-      const structured = Array.isArray(value);
-      const desired = structured ? value : [String(value)];
-      if (!structured && desired.every((line) => doc.getTextWidth(line) <= besideW)) {
-        return { label, valueX, lines: desired, below: false, height: Math.max(1, desired.length) * DETAIL_LINE_H };
-      }
-      const lines = desired.flatMap((line) => doc.splitTextToSize(line, belowW));
-      return {
-        label,
-        valueX: belowX,
-        lines,
-        below: true,
-        height: DETAIL_VALUE_DROP + (Math.max(1, lines.length) * DETAIL_WRAP_LINE_H) + 2,
-      };
+  // Milestone 60F. The `fields` grid reserved a flat 28pt per row, which holds
+  // a label plus two value lines and no more. That was survivable while only
+  // Guardian Inventory used it; migrating Annual's and Simplified's signature
+  // blocks onto it brings four- and five-line postal addresses into the same
+  // layout, and a fixed row height would have drawn the overflow straight
+  // through whatever follows.
+  //
+  // So rows are planned before the block is drawn: each row is as tall as its
+  // tallest wrapped cell, never shorter than
+  // the 28pt it used to be, and the block reserves the real total. Every field
+  // column keeps the width it had (contentWidth / cols), so nothing about the
+  // existing Guardian Inventory blocks moves.
+  const FIELD_ROW_H = 28;
+  const FIELD_LABEL_SIZE = 7;
+  const FIELD_VALUE_SIZE = 7.5;
+  const FIELD_VALUE_DROP = 9;   // label baseline to first value baseline
+  const FIELD_ROW_PAD = 6;      // clear space under the last value line
+  const planFieldRows = (fieldRows) => {
+    const planned = fieldRows.map((row) => {
+      const cols = row.length || 1;
+      const colW = contentWidth / cols;
+      const cells = row.map((field, fIdx) => {
+        if (!field || !field.value) return null;
+        const value = sanitizeDisplayValue(field.label, field.value);
+        doc.setFont('PGSans', 'normal');
+        doc.setFontSize(FIELD_VALUE_SIZE);
+        const maxW = colW - 4;
+        // A structured value (composePdfAddressLines()) keeps the line breaks
+        // its caller chose; each is still wrapped to the column.
+        const lines = Array.isArray(value)
+          ? value.flatMap((line) => doc.splitTextToSize(String(line), maxW))
+          : doc.splitTextToSize(String(value), maxW);
+        return { label: String(field.label || ''), lines, x: margin + (fIdx * colW) + 2 };
+      });
+      doc.setFont('PGSans', 'normal');
+      doc.setFontSize(FIELD_VALUE_SIZE);
+      const lineH = doc.getLineHeight ? doc.getLineHeight() : FIELD_VALUE_SIZE * 1.15;
+      const tallest = cells.reduce((n, cell) => Math.max(n, cell ? cell.lines.length : 0), 1);
+      return { cells, lineH, height: Math.max(FIELD_ROW_H, FIELD_VALUE_DROP + (tallest * lineH) + FIELD_ROW_PAD) };
     });
-    return { entries, height: entries.reduce((h, entry) => h + entry.height, 0) };
+    return { rows: planned, height: planned.reduce((sum, row) => sum + row.height, 0) };
   };
+
 
   const loadImageSize = (dataUrl) => new Promise((resolve, reject) => {
     const image = new Image();
@@ -1458,9 +1457,14 @@ export async function generateCourtFormPdf(model, options = {}) {
         // electronic /s/ attestations -- the previous renderer had no
         // mode for this and always drew electronic-signature text/notice).
         // fields: an array of rows of [{label, value}, ...], laid out as
-        // full-width deliberate column groups (replacing the old flat
-        // `details` vertical stack, which lost the source HTML's grouping
-        // and ordering by rendering Object.keys() in a single column).
+        // full-width deliberate column groups. This replaced a flat `details`
+        // vertical stack that rendered Object.keys() in one column, losing the
+        // source form's grouping and ordering; Milestone 60F migrated the last
+        // seven blocks (Annual's four, Simplified's three) off it and deleted
+        // it, so there is one signature layout to keep correct rather than two
+        // with a known-bad one. tests/unit/signature-block-fields.spec.js
+        // holds both halves of that: each block's chosen grouping, and that
+        // nothing sets `details` any more.
         const isWetSignature = block.wetSignatureExplicit === true;
         // Milestone 39-B: a Signature Stamp takes priority over both the
         // wet-ink and electronic "/s/" renderings -- signatureState is only
@@ -1469,16 +1473,14 @@ export async function generateCourtFormPdf(model, options = {}) {
         // so this never silently overrides a typed signature that's
         // actually in effect.
         const hasStampImage = block.signatureState === 'stamp' && !!block.signatureImage;
-        const fieldRows = Array.isArray(block.fields) ? block.fields : null;
-        const FIELD_ROW_H = 28;
+        // Rows are planned before anything is drawn, so the block reserves
+        // real height for a wrapped address -- see planFieldRows(). A block
+        // with no fields at all is a signature and date alone, which is a
+        // legitimate shape (the plan-* forms' wet-signature blocks).
+        const fieldRows = Array.isArray(block.fields) ? block.fields : [];
         const baseSigHeight = isWetSignature ? 58 : 64;
-        // The legacy `details` stack is laid out up front so this block can
-        // reserve height for a wrapped address -- see planDetailStack().
-        const detailLayout = (!fieldRows && block.details) ? planDetailStack(block.details) : null;
-        const detailHeight = detailLayout ? 28 + detailLayout.height + 4 : 0;
-        const sigHeight = fieldRows
-          ? baseSigHeight + 4 + (fieldRows.length * FIELD_ROW_H)
-          : Math.max(baseSigHeight, detailHeight);
+        const fieldLayout = fieldRows.length ? planFieldRows(fieldRows) : null;
+        const sigHeight = fieldLayout ? baseSigHeight + 4 + fieldLayout.height : baseSigHeight;
         checkPageSpace(sigHeight + 10, sec.title);
 
         const sigPartNode = structureTree.addStructureElement({
@@ -1587,19 +1589,16 @@ export async function generateCourtFormPdf(model, options = {}) {
           writeMarkedContentEnd(doc);
         }
 
-        if (fieldRows) {
-          // Field grid (preferred): full-width rows of {label, value}
-          // pairs in deliberate column groups matching the source HTML's
-          // grid ordering (e.g. SSN/EIN | Phone | Street Address on one
-          // row, City/State/Zip on the next).
+        if (fieldLayout) {
+          // Field grid: full-width rows of {label, value} pairs in deliberate
+          // column groups matching the source form's own grouping (e.g. Phone
+          // | SSN/EIN on one row, the address on its own). Positions, wrapping
+          // and per-row heights were all resolved by planFieldRows() above, so
+          // what is drawn here is exactly what the block reserved space for.
           let rowY = curY + baseSigHeight + 2;
-          for (const row of fieldRows) {
-            const cols = row.length || 1;
-            const colW = contentWidth / cols;
-            for (let fIdx = 0; fIdx < row.length; fIdx++) {
-              const field = row[fIdx];
-              if (!field || !field.value) continue;
-              const fx = margin + (fIdx * colW) + 2;
+          for (const row of fieldLayout.rows) {
+            for (const cell of row.cells) {
+              if (!cell) continue;
               const fieldNode = structureTree.addStructureElement({
                 tag: 'P',
                 pageNumber: pageNum,
@@ -1608,61 +1607,16 @@ export async function generateCourtFormPdf(model, options = {}) {
               });
               writeMarkedContentStart(doc, 'P', fieldNode.mcid);
               doc.setFont('PGSans', 'bold');
-              doc.setFontSize(7);
+              doc.setFontSize(FIELD_LABEL_SIZE);
               doc.setTextColor(70, 80, 95);
-              doc.text(String(field.label || ''), fx, rowY);
+              doc.text(cell.label, cell.x, rowY);
               doc.setFont('PGSans', 'normal');
-              doc.setFontSize(7.5);
+              doc.setFontSize(FIELD_VALUE_SIZE);
               doc.setTextColor(30, 35, 45);
-              // Wrap value text within the column so long addresses (e.g.
-              // "418 Orange Blossom Lane, New Port Richey, FL 34652") don't
-              // overflow into the right margin. Each field column is
-              // contentWidth/cols wide; subtract 4pt for left padding.
-              const fieldMaxW = colW - 4;
-              const fVal = sanitizeDisplayValue(field.label, field.value);
-              // A structured value (composePdfAddressLines()) keeps the line
-              // breaks its caller chose and each is still wrapped to the
-              // column. This path used to infer an address's breaks from its
-              // commas instead, which silently gave up on any address whose
-              // filer omitted one.
-              const fieldLines = Array.isArray(fVal)
-                ? fVal.flatMap((line) => doc.splitTextToSize(line, fieldMaxW))
-                : doc.splitTextToSize(String(fVal), fieldMaxW);
-              doc.text(fieldLines, fx, rowY + 9);
+              doc.text(cell.lines, cell.x, rowY + FIELD_VALUE_DROP);
               writeMarkedContentEnd(doc);
             }
-            rowY += FIELD_ROW_H;
-          }
-        } else if (detailLayout) {
-          // Legacy flat details stack (right column) -- kept for backward
-          // compatibility with any caller not yet migrated to `fields`.
-          // Column positions and line wrapping were resolved by
-          // planDetailStack() above; see its comment for the reported
-          // margin-overflow/label-collision defect this shape fixes.
-          let detailY = curY + 28;
-          for (const entry of detailLayout.entries) {
-            const detailNode = structureTree.addStructureElement({
-              tag: 'P',
-              pageNumber: pageNum,
-              isLeaf: true,
-              parent: sigPartNode,
-            });
-            writeMarkedContentStart(doc, 'P', detailNode.mcid);
-            doc.setFont('PGSans', 'bold');
-            doc.setFontSize(7.5);
-            doc.setTextColor(70, 80, 95);
-            doc.text(`${entry.label}: `, DETAIL_LABEL_X, detailY);
-            doc.setFont('PGSans', 'normal');
-            // Drawn line by line rather than handing jsPDF the array, so the
-            // spacing between lines is exactly what the height reservation
-            // above was computed from.
-            const firstLineY = detailY + (entry.below ? DETAIL_VALUE_DROP : 0);
-            const lineStep = entry.below ? DETAIL_WRAP_LINE_H : DETAIL_LINE_H;
-            entry.lines.forEach((line, lineIdx) => {
-              doc.text(line, entry.valueX, firstLineY + (lineIdx * lineStep));
-            });
-            writeMarkedContentEnd(doc);
-            detailY += entry.height;
+            rowY += row.height;
           }
         }
 

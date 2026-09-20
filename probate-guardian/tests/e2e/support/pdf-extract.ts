@@ -53,6 +53,35 @@ async function pageTextItems(pdf: any): Promise<string[][]> {
   return pages;
 }
 
+export type PdfTextRun = { page: number; text: string; x: number; y: number };
+
+/**
+ * Every text run with its position on the page, taken from the generated PDF
+ * itself rather than from a rendered preview's DOM.
+ *
+ * extractPdfText() and extractPdfTextItems() give content and reading order,
+ * which is the order the generator emitted -- so neither can tell whether two
+ * runs were drawn on top of each other. A pdf.js text item carries its own
+ * transform matrix, whose last two entries are the run's x and y in PDF user
+ * space (y measured from the bottom of the page, so a LARGER y is higher up).
+ * That is the only way to assert a layout fact -- "this block reserved enough
+ * height that what follows it starts below" -- against the filed artifact.
+ */
+export async function extractPdfTextRuns(pdfData: Uint8Array | string): Promise<PdfTextRun[]> {
+  return withPdfDocument(pdfData, async (pdf) => {
+    const runs: PdfTextRun[] = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      for (const item of content.items as any[]) {
+        const t = item.transform || [];
+        runs.push({ page: p, text: String(item.str), x: Number(t[4]) || 0, y: Number(t[5]) || 0 });
+      }
+    }
+    return runs;
+  });
+}
+
 function readInfoDictionary(info: unknown): PdfInfoMetadata {
   const i = (info ?? {}) as Record<string, unknown>;
   return {

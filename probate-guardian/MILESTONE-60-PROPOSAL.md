@@ -1084,4 +1084,49 @@ rendered PDF text changes; the full regression once, in Phase 6.
   `git diff --check`; `verify:data-model` OK 928 rows; e2e
   `simplified-remuneration` (4, new), `simplified-mount`, `annual-mount`,
   `navigation-status.contract`, `pdf-form-specific`, `pdf-table-semantics`,
-  `pdf-structure-tags` — 130 passed then 5 passed on re-run.
+  `pdf-structure-tags` — 130 passed then 5 passed on re-run. Commit `7a10b19`.
+- **2026-09-20 — Phase 5, 60F. Landed.** Annual's four signature blocks and
+  Simplified's three moved from the legacy `details` stack to `fields`, and
+  the legacy layout was deleted from `pdf-engine.js` (44 lines of
+  `planDetailStack()` plus its draw branch). There is now one signature
+  layout to keep correct instead of two, one of which was the known-bad one:
+  `details` is where the 2026-09-18 defect lived, printing a guardian's
+  address past the right margin and over its own label on every annual,
+  final, trust and simplified accounting.
+  **Grouping is a decision, and is asserted as one.** `details` rendered
+  `Object.keys()` down a single column, so "convert it" has no single right
+  answer. Each block's rows were chosen (short identifiers pair; each address
+  takes its own row; the attorney's two emails share one) following Guardian
+  Inventory's blocks, which have used `fields` since 43F, and
+  `signature-block-fields.spec.js` pins the exact row shape of all seven
+  rather than merely checking something rendered. It also holds both halves
+  of the removal: no signature block in any of the nine filing models sets
+  `details` at runtime, and the engine no longer contains the branch.
+  **Engine row heights.** `fields` reserved a flat 28pt per row — a label and
+  two value lines — so a row wrapping further was drawn into space the block
+  had already given to what follows. Rows are now planned before the block is
+  drawn and each is as tall as its tallest wrapped cell, never below 28pt,
+  with the block reserving the real total.
+  **An honest note on proving that, because two attempts failed first.** At
+  these blocks' full content width no realistic address wraps past two lines.
+  A UI-driven attempt with a long street and a co-guardian produced no wrap
+  at all and passed with the fix reinstated *and* removed; a second attempt
+  measuring the gap to the next element caught only a 15.0pt → 10.8pt
+  compression, under a threshold loose enough to pass either way. Both were
+  deleted rather than kept as decoration. What proves it is an **engine-level
+  case with a hostile input** — one row of three narrow columns holding nine
+  wrapped lines, with a marker block behind it — asserted on **positions read
+  from the generated PDF**, via a new `extractPdfTextRuns()` helper, because
+  the generator emits the marker after the row in reading order either way.
+  Fault-injected: reinstating the fixed height draws the marker **28pt on top
+  of** the row's last line. So the change is defensive for this app's own
+  data today, and that is recorded rather than dressed up.
+  **Also updated:** the address-margin regression test for `fields`'
+  colon-less labels and flush-left block (its four original margin and
+  collision assertions pass unchanged against the new layout).
+  **Green:** full unit suite 106 files / 1269 tests; `check:types`;
+  `git diff --check`; e2e `signature-block-address-margin`,
+  `pdf-accessibility-and-signatures`, `simplified-remuneration`,
+  `simplified-mount`, `annual-mount`, `pdf-structure-tags`,
+  `pdf-table-semantics`, `print-preview-signature-jump`,
+  `signature-capture.contract` — 79 passed.

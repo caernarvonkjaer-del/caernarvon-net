@@ -244,13 +244,16 @@ export function buildAnnualAccountingModel(D, options = {}) {
       // Milestone 39-C
       signatureState: g.signatureState || '',
       signatureImage: g.signatureImage || '',
-      details: {
-        'Phone': g.phone || '',
-        'SSN / EIN': maskSSN(g.ssn || ''),
-        'Email': g.email || '',
-        'Mailing Address': composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip),
-        'Residence / Office': composePdfAddressLines(g.officeStreet, g.officeCityStateZip),
-      },
+      // Milestone 60F: `fields`, not the legacy `details` stack. Grouping is
+      // stated per row rather than inherited from key order -- short
+      // identifiers pair up, each address takes a full row, following
+      // Guardian Inventory's blocks, which have used this layout since 43F.
+      fields: [
+        [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN / EIN', value: maskSSN(g.ssn || '') }],
+        [{ label: 'Email', value: g.email || '' }],
+        [{ label: 'Mailing Address', value: composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip) }],
+        [{ label: 'Residence / Office', value: composePdfAddressLines(g.officeStreet, g.officeCityStateZip) }],
+      ],
     };
   });
 
@@ -297,11 +300,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
         // Milestone 39-C
         signatureState: p.signatureState || '',
         signatureImage: p.signatureImage || '',
-        details: {
-          'Phone': p.phone || '',
-          'SSN / EIN': maskSSN(p.ssn || ''),
-          'Address': composePdfAddressLines(p.street, p.cityStateZip),
-        },
+        fields: [
+          [{ label: 'Phone', value: p.phone || '' }, { label: 'SSN / EIN', value: maskSSN(p.ssn || '') }],
+          [{ label: 'Address', value: composePdfAddressLines(p.street, p.cityStateZip) }],
+        ],
       },
     ],
   });
@@ -331,13 +333,13 @@ export function buildAnnualAccountingModel(D, options = {}) {
         // Milestone 39-C
         signatureState: d.attorney_signatureState || '',
         signatureImage: d.attorney_signatureImage || '',
-        details: {
-          'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
-          'Phone': d.attorney_phone || '',
-          'Primary Email': d.attorney_email || '',
-          ...(d.attorney_secondaryEmail ? { 'Secondary Email': d.attorney_secondaryEmail } : {}),
-          'Address': composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip),
-        },
+        // A secondary email shares the email row when there is one, rather
+        // than adding a row of its own -- the two read as a pair.
+        fields: [
+          [{ label: 'Florida Bar #', value: d.attorney_bar || d.attorney_barNumber || '' }, { label: 'Phone', value: d.attorney_phone || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondaryEmail || '' }],
+          [{ label: 'Address', value: composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip) }],
+        ],
       },
     ],
   });
@@ -1103,12 +1105,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
     // Milestone 39-C
     signatureState: d.certAttySignatureState || '',
     signatureImage: d.certAttySignatureImage || '',
-    details: {
-      'Florida Bar #': d.attorney_bar || d.attorney_barNumber || '',
-      'Phone': d.attorney_phone || '',
-      'Primary Email': d.attorney_email || '',
-      'Address': composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip),
-    },
+    fields: [
+      [{ label: 'Florida Bar #', value: d.attorney_bar || d.attorney_barNumber || '' }, { label: 'Phone', value: d.attorney_phone || '' }],
+      [{ label: 'Primary Email', value: d.attorney_email || '' }],
+      [{ label: 'Address', value: composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip) }],
+    ],
   });
 
   sections.push({
