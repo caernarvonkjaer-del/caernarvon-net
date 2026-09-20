@@ -23,19 +23,23 @@ court source/template → UI field → state/schema → validator → PDF model 
 The supplied original PDFs were independently text-extracted. Findings below
 are separated into confirmed defects and policy/template decisions.
 
-**Evidence-trail gap, noted 2026-09-20 (Claude), unresolved.** Unlike the
-three Milestone 60 forms, none of the four plan types has an embedded
-court `.xlsx` in this repo — they are wet-signed narrative PDFs authored
-from scratch (Milestone 19-2), so there is no template artifact a later
-reviewer can decode to re-derive 61D's/61E's authority. Whatever "original
-PDFs" were used for those two findings, and whatever text was extracted
-from them, exist outside this repo and outside this document. Before 61D
-or 61E is authorized, either the source PDFs or their extracted text should
-be committed as citable evidence — the way MS 60 kept its decode scripts
-and exact cell citations — so a reviewer can check the claim without
-re-obtaining the same PDFs from whoever originally supplied them. 61A, 61B,
-61C, 61F, and 61G do not have this problem: every citation in those
-sections resolves to a line in this repo.
+**Evidence-trail gap, closed 2026-09-20.** The requester supplied five
+original PDFs (two of them byte-identical copies of the Initial
+Guardianship Plan) covering all four plan types. They are committed at
+`reference/plan-forms/plan-{annual,initial,minor,simplified}-original.pdf`,
+with `pdftotext -layout` extracts alongside as `.txt` files for citable
+plain-text evidence — the same role MS 60's decode scripts played for the
+accounting forms' embedded templates. This document was re-reviewed from
+those four files rather than from memory of an earlier, uncommitted
+verification pass. Two findings changed materially once checked against
+the actual originals (61E, 61F below no longer say what they said before
+the source existed in this repo) and one new defect surfaced (61H) that no
+reading of this app's own code, however careful, could have found without
+the original to compare against. Unlike the three Milestone 60 forms, none
+of the four plan types has an embedded court `.xlsx` in this repo — they
+are wet-signed narrative PDFs authored from scratch (Milestone 19-2) — but
+the committed PDFs and text extracts now serve the same evidentiary
+purpose the embedded templates served there.
 
 ## Verified findings
 
@@ -97,6 +101,14 @@ fields can pass validation and be omitted from the PDF.
 - **Initial Q11 directives:** UI captures agents, alternates, relationship,
   contact, order date, and county, while PDF inclusion checks only title,
   signed date, or signer (`plan-initial/pdf-model.js:407-408`).
+- **Annual Q10 directives — not in the original evidence table (2026-09-20,
+  Claude):** the same eight-field detail grid as Initial Q11, gated by the
+  identical narrow predicate one line apart from Initial's:
+  `plan-annual/pdf-model.js:411` (`d.q10Executed ? (d.q10Directives ||
+  []).filter(r => r && (r.title || r.dateSigned || r.signedBy)) : []`).
+  Missed in the first pass because the evidence table covered Q1/Q4 for
+  Annual but not its Q10 directives collection, even though Initial's
+  analogous Q11 was caught.
 - **Minor Q2:** UI captures state, ZIP, and phone, while PDF inclusion checks
   only name, street, or city (`plan-minor/pdf-model.js:104`).
 - **Minor Q3:** UI captures visits, address, and phone, while PDF inclusion
@@ -132,31 +144,86 @@ name explicitly why it is choosing not to.
 
 ### 61C — Optional co-guardian rows use incomplete inclusion predicates
 
-**Confidence: Confirmed edge case.** Annual, Initial, and Minor emit an
-additional guardian only when name or signature date is present. A partially
-completed optional guardian containing only SSN/EIN, phone, address, or
-relationship can therefore disappear instead of producing a validation issue.
+**Confidence: Confirmed for Annual's and Initial's "extras" (third-plus
+guardian) pages. The Minor citation in the original draft pointed at the
+wrong code and is corrected below (2026-09-20, Claude, verified directly
+against source).**
 
-Evidence: `plan-annual/pdf-model.js:539-550`,
-`plan-initial/pdf-model.js:484-500`, and
-`plan-minor/pdf-model.js:245-253`.
+Annual and Initial emit a third-or-later guardian only when name or
+signature date is present. A partially completed extra guardian containing
+only SSN/EIN, phone, address, or relationship disappears instead of
+producing a validation issue.
 
-The implementation must decide whether such a row is “started” and then use
-that decision consistently in UI status, validation, and PDF output.
+Evidence: `plan-annual/pdf-model.js:539` (`extras = (g ||
+[]).slice(1).filter(p => p && (p.name || p.signatureDate))`) and
+`plan-initial/pdf-model.js:484` (`extras = (g ||
+[]).slice(2).filter(p => p && (p.name || p.signatureDate))`).
+
+**Correction: Plan Minor does not have this defect.** The original draft
+cited `plan-minor/pdf-model.js:245-253` for the same "name or signature
+date only" claim. Read directly, those lines are not an "extras" predicate
+at all — Plan Minor supports only one co-guardian slot (`g[1]`, no
+third-plus page), and its inclusion check is `[g1.name, g1.signatureDate,
+g1.tin, g1.phone, g1.mailingStreet, g1.mailingCityStateZip].some(Boolean)`
+(`plan-minor/pdf-model.js:245`) — six of the seven fields `guardianFields()`
+renders, missing only `relationship` and `email`. A co-guardian row
+containing only a relationship or only an email address would still
+vanish, but that is a materially narrower edge case than "only when name
+or signature date," and not what the original citation described. Plan
+Initial's own second-guardian slot (`g[1]`, `plan-initial/pdf-model.js:477`)
+uses the same wide six-field pattern, missing only `relationship` — likely
+where Minor's predicate was copied from. Neither wide check is a confirmed
+defect at the severity of the Annual/Initial "extras" predicates above;
+they are noted here only because the original citation for Minor pointed
+at the wrong kind of code, and a reviewer relying on it would look in the
+wrong place.
+
+The implementation must decide whether a relationship-only or email-only
+second guardian counts as "started" (Initial, Minor) and whether an
+SSN/phone/address-only third-plus guardian counts as "started" (Annual,
+Initial) — and use that decision consistently in UI status, validation, and
+PDF output.
 
 ### 61D — Original-form instructional content is absent from generated PDFs
 
-**Confidence: Confirmed content divergences; policy placement requires a
-ruling.** Comparison with the supplied originals found:
+**Confidence: Confirmed content divergences, verified against the committed
+originals (`reference/plan-forms/*-original.pdf`); whether to add each is a
+policy/legal call, not a code question.**
 
-- Annual’s original includes the rights-consistency note and the
-  Administrative Order/disaster-plan note. The model includes the physician
-  report notice but not those notes (`plan-annual/pdf-model.js:45-95`).
-- Initial’s original includes the disaster-plan instruction on page 8; the
-  model has no corresponding output (`plan-initial/pdf-model.js:395-430`).
-- Simplified’s original includes Pinellas/Pasco filing addresses, phone
-  numbers, emails, and procedural assistance. The model emits only a generic
-  filing notice (`plan-simplified/pdf-model.js:188-192`).
+- **Annual** omits two notes entirely: "Note 1" (the physician-report
+  rights must match the Order Determining Incapacity/Appointing Guardian,
+  or the guardian must petition to remove/restore rights or explain why
+  not) and "Note 2" (Administrative Order 2019-005's requirement to file an
+  updated Disaster Plan when the ward has changed residence or a new
+  guardian was appointed) — `plan-annual-original.txt:46-49` and `:54-55`;
+  confirmed absent by grep against `plan-annual/pdf-model.js` (no match for
+  "Note", "petition to remove", "Administrative Order", or "Disaster
+  Plan"). The model does include the physician's-report notice (`:96`) and
+  the `certPhysicianAttached`/`certRecognizeRights` certification checkboxes
+  (`:525-526`), which do have source counterparts — only the two standalone
+  notes are missing.
+- **Initial** omits a disaster-plan instruction on page 8
+  (`plan-initial-original.txt:346-350`, the same Administrative Order
+  2019-005): "you must file a separate Disaster Plan when filing an initial
+  guardianship plan... An updated Disaster Plan will be required if the
+  ward is moved to a new residence." Confirmed absent from
+  `plan-initial/pdf-model.js` by the same grep.
+- **Simplified** omits county-specific filing addresses, phone numbers,
+  emails, and procedural-assistance contacts for both counties this form
+  names — Pinellas (Clerk of the Circuit Court, 315 Court Street Room 106,
+  Clearwater, (727) 464-3321, `Probate@mypinellasclerk.gov`) and Pasco (Clerk
+  & Comptroller Nikki Alvarez Sowles, P.O. Box 338, New Port Richey, (727)
+  847-8031) — `plan-simplified-original.txt:120-135`. The model emits one
+  generic sentence instead (`plan-simplified/pdf-model.js:191-193`). Note
+  also that this form's own caption names only Pinellas/Pasco County
+  (`plan-simplified-original.txt:1-2`), unlike Annual/Initial, where the
+  county reads as a fillable field (the garbled "Select County" /
+  "PSineelllaesct County" text at `plan-initial-original.txt:7` is a
+  flattened dropdown control, not free text). Any fix that reproduces
+  county-specific instructions must branch on `d.county` rather than print
+  Pinellas/Pasco detail unconditionally — or the requester should confirm
+  this filing type really is restricted to those two counties before the
+  fix is written as a static block.
 
 The proposal must not assume that every source-form instruction belongs in the
 filed PDF. Each item needs a product/legal decision: filed-document content,
@@ -164,91 +231,104 @@ in-app guidance, or intentionally omitted current practice.
 
 ### 61E — Supplemental certification pages differ from the originals
 
-**Confidence: Plausible-but-needs-a-ruling.** The Simplified and Minor source
-forms contain guardian signature blocks, while the app additionally emits
-preparer and attorney certification blocks:
+**Confidence: Confirmed for Plan Simplified only — the original draft's
+inclusion of Plan Minor here was wrong and is corrected below (2026-09-20,
+Claude, verified directly against the committed original).**
 
-- Simplified: `plan-simplified/pdf-model.js:166-187`
-- Minor: `plan-minor/pdf-model.js:255-287`
+Plan Simplified's source form ends after two side-by-side guardian /
+guardian-advocate signature blocks (Signature, Printed Name, Email, Phone,
+Mailing Address — no SSN/TIN field) followed by Filing Instructions and
+Procedural Assistance (`plan-simplified-original.txt:97-137`). The app
+additionally emits conditional Preparer and Attorney certification blocks
+whenever `d.preparer_name`/`d.attorney_name` are populated
+(`plan-simplified/pdf-model.js:180-189`). This is not a missing-field
+defect — it is content with no counterpart anywhere in this form's own
+original. The product must not describe Plan Simplified's output as an
+exact source-form reproduction unless this addition is explicitly accepted
+as a supplemental extension.
 
-These are not missing-field defects. They may be an approved application
-extension, but the product must not describe the output as an exact source-form
-reproduction unless the additions are explicitly accepted as supplemental.
+**Correction: Plan Minor's preparer and attorney certification blocks are
+not an extension — they mirror the original form exactly.** The Minor
+original contains all three certification sections, in this order:
+"CERTIFICATION AND SIGNATURE OF GUARDIAN(S)" (`plan-minor-original.txt:213`),
+"CERTIFICATION AND SIGNATURE OF PREPARER" (`:276`), and "CERTIFICATION AND
+SIGNATURE OF GUARDIAN'S ATTORNEY" (`:304`) — the same three sections, in
+the same order, that `plan-minor/pdf-model.js:220-281` emits. There is no
+61E finding for Plan Minor; it is struck from this item's scope. (The
+original draft's claim here rested on an assumption about the Minor
+original's structure, made before any original was available to check —
+exactly the gap the evidence-trail note above flagged as unresolved.)
 
-### 61F — Plan Minor's attorney certification names the wrong form
+### 61F — Plan Minor's attorney certification: a source-form defect the app already half-corrected
 
-**Confidence: Confirmed content defect, independent of any source-PDF
-comparison.** Added 2026-09-20 by Claude, following an attempted live
-verification pass by Antigravity whose specific quotes for this item did
-not survive independent re-checking against source (see the note at the end
-of this section) — the underlying claim was right, so it is restated here
-against text read directly from the four files, character for character.
+**Confidence: Confirmed as a defect in the source form itself, and as a
+pre-existing app deviation that already addresses it. Not a code defect
+requiring a fix in the sense the rest of this document uses that word.**
+Substantially rewritten 2026-09-20 (Claude) once the committed original made
+the actual cause visible. The prior version of this section — written
+before any original PDF existed in this repo, and restated once more after
+Antigravity's live-verification attempt — called this "Plan Minor's
+attorney certification names the wrong form" and implied the app had
+introduced the error. Reading the committed original shows the opposite:
+the error originates in the state's own form template, and the app already
+deviates from it, in the direction of fixing it.
 
-Plan Minor's attorney-certification notice
-(`src/features/plan-minor/pdf-model.js:273`) reads:
+**What the original Minor form actually says.** Its attorney-certification
+paragraph (`plan-minor-original.txt:307-311`) reads: "The undersigned
+hereby notifies the Court of the filing of **the initial guardianship
+plan** of the guardian of the person. **This initial plan** is the
+representation of the guardian. I have not audited **the accompanying
+initial guardianship plan**. The undersigned attorney represents that
+he/she has examined the contents of this plan and that it conforms to the
+requirements of the Florida Guardianship Law." This is the Minor form —
+titled "ANNUAL GUARDIANSHIP PLAN ... FOR THE MINOR" at the top of the same
+document (`:19,22-23`) — calling itself "the initial guardianship plan"
+three times in its own attorney certification. That sentence is otherwise
+identical in shape to the Initial Guardianship Plan's own attorney
+paragraph (`plan-initial-original.txt:412-416`), which strongly suggests
+the Minor template was cloned from the Initial template and this one
+clause was never updated to match.
 
-> "The undersigned hereby notifies the Court of the filing of this **Annual
-> Guardianship Plan**. This plan is the representation of the guardian. I
-> have not audited the accompanying plan. The undersigned attorney
-> represents that he/she has examined the contents of this plan and that it
-> conforms to the requirements of the Florida Guardianship Law."
+**What the app already does about it.** `plan-minor/pdf-model.js:273` does
+not reproduce that text. It reads: "The undersigned hereby notifies the
+Court of the filing of this **Annual Guardianship Plan**. This plan is the
+representation of the guardian. I have not audited the accompanying plan.
+The undersigned attorney represents that he/she has examined the contents
+of this plan and that it conforms to the requirements of the Florida
+Guardianship Law." — the source's erroneous "initial guardianship plan" has
+already been replaced with a correct name, by whoever wrote this file,
+independent of and prior to this review. It also drops "of the guardian of
+the person" and softens "the accompanying initial guardianship plan" to
+"the accompanying plan." Unlike what the prior version of this section
+assumed, there is no missing period-date or county parameterization to add
+here to match Plan Annual's/Initial's longer version of the same paragraph
+(`plan-annual-original.txt:528-535`, `plan-initial-original.txt:409-416`)
+— Plan Minor's own source sentence has no period-date or county clause
+either; it really is this short in the original.
 
-This document is Plan Minor. Its own corrected display name (Milestone 33,
-`src/core/filing/filing-descriptor.js:66`) is "Annual Plan — Minors," and
-that correction is already applied everywhere the PDF's *metadata* is set
-(`plan-minor/pdf-model.js:52-57` overrides `title`/`subject`/`formName`
-from the descriptor). The certification sentence above is body text in a
-`text:` field, which nothing overrides — whatever is in source prints
-verbatim.
+**What is actually left to decide, if anything.** The only open question is
+whether "this Annual Guardianship Plan" is the best available wording,
+given the form's corrected display name is "Annual Plan — Minors"
+(Milestone 33, `src/core/filing/filing-descriptor.js:66`) — a wording
+preference, not a code defect, and not something this document should
+resolve by inference. Do not carry forward the prior framing of Plan Minor
+as "the only one of the four with this defect" into any implementation —
+the defect is the state's, and the app already addressed it before this
+review began.
 
-**This is not a guess at a shared template default.** The other three plan
-types were read at the same three call sites and do not share this pattern:
+**Caution retained from the prior draft, still accurate:** Antigravity's
+live-verification pass reported the same underlying observation but
+supported it with fabricated quotes attributed to Plan Annual and Plan
+Simplified (verbatim copies of Plan Minor's own sentence, mislabeled) and
+unrelated `legacy-app.js` citations. Every quote in this section is
+transcribed directly from the four committed PDFs' extracted text, not
+from that report.
 
-- Plan Annual (`plan-annual/pdf-model.js:566`) — a long, correctly
-  parameterized paragraph: "...the filing of **the annual guardianship
-  plan** for the period `${periodFrom}` through `${periodTo}`. **This
-  annual guardianship plan** is the representation of the guardian. I have
-  not audited **the accompanying annual plan**. ...examined the contents of
-  **the annual guardianship plan**... and the standards for plans in
-  `${county}` County." Correctly named throughout; no defect.
-- Plan Initial (`plan-initial/pdf-model.js:511`) — the identical template
-  shape, correctly substituted to "**the initial guardianship plan**" /
-  "**this initial guardianship plan**" / "**the accompanying initial
-  plan**" / "**the initial guardianship plan**" throughout, plus its own
-  `${county}` clause. Correctly named; no defect. **This is the fix
-  pattern**: Plan Initial already proves the long paragraph can name itself
-  correctly with the plan type as a substitution, not a hardcoded word.
-- Plan Simplified (`plan-simplified/pdf-model.js:187`) — a short, generic
-  sentence with no plan-type name at all: "The undersigned notifies the
-  Court of the filing of this plan and represents that it conforms to the
-  requirements of Florida Guardianship Law." No naming defect is possible
-  here; this form simply never names itself in this sentence.
-
-So Plan Minor is the only one of the four with this defect, and it is not
-because the other three share some acceptable generic wording it deviated
-from — Annual and Initial both correctly name themselves via the long
-paragraph's own established substitution pattern, and Simplified avoids the
-question entirely. Plan Minor's shorter paragraph reads as a trimmed copy of
-Annual's/Simplified's sentence shape that never had its own plan name
-substituted in.
-
-**Caution for whoever authorizes and implements this:** a first attempt at
-verifying this finding live (Antigravity, tasked with generating real PDFs
-and extracting text) reported the *same* corrected conclusion but supported
-it with quotes attributed to Plan Annual and Plan Simplified that were, on
-inspection, verbatim copies of Plan Minor's own sentence — not those two
-forms' actual text — plus several `legacy-app.js` line citations elsewhere
-in its report that pointed at unrelated code. The quotes and line numbers
-in this section were re-derived directly from the four source files rather
-than taken from that report. Do not reuse figures from a live-verification
-pass without checking them against source first, even when the tool's
-underlying conclusion turns out to be right.
-
-**Proposed fix:** parameterize Plan Minor's certification sentence the way
-Plan Initial already does — substitute this form's own name in place of
-"Annual Guardianship Plan." What exact name to substitute (the corrected
-descriptor's "Annual Plan — Minors," or wording specific to a minor ward)
-is a product/content decision like 61D's, not something to infer.
+**Proposed action:** none required. If the requester wants Plan Minor's
+wording to name itself with the same precision Annual's/Initial's
+paragraphs do, or to match the corrected display name, that is a one-line
+content change with a simple extracted-text check — but it is optional
+polish, not a fidelity fix.
 
 ### 61G — The PDF engine drops every notice block's title
 
@@ -301,6 +381,53 @@ text, matching how `key-value-grid` and `table` blocks already render
 theirs, with red-first proof — for at least one certification title and one
 empty-state title — that the heading is present in extracted PDF text where
 it was previously absent.
+
+### 61H — Plan Initial cites the wrong filing-deadline statute, in five places
+
+**Confidence: Confirmed textual mismatch between this app and the committed
+original; which citation is legally correct is a question this document
+does not resolve.** Found 2026-09-20 (Claude) — only possible once the
+original PDF was available for direct comparison; no reading of this app's
+own source code could have surfaced it.
+
+The committed Initial Guardianship Plan original cites its 60-day filing
+deadline to **F.S. 744.632** (`plan-initial-original.txt:3`: "Pursuant to
+F.S. 744.632, this Report with Original Signatures is due within 60 days
+after the Letters of Guardianship are signed"). This app cites that same
+60-day deadline to **F.S. 744.362(1)** instead, consistently, in five
+separate places:
+
+- `src/features/plan-initial/pdf-model.js:62` — the filed PDF's own cover
+  notice.
+- `src/features/help/help-content.js:121` — in-app Help content.
+- `src/features/dashboard/view-model.js:103` — the dashboard's deadline
+  display.
+- `src/core/filing/readiness-config.js:234` — the readiness checklist item.
+- `src/features/simplified-accounting/pdf-model.js:257` and
+  `src/features/simplified-accounting/index.js:588` also cite `744.362(1)`,
+  but for an unrelated certification ("furnished to interested persons") on
+  a different filing type. Not part of this mismatch — named here only so
+  it is not confused with it.
+
+Because the citation is consistent across independent, unrelated parts of
+the app rather than appearing once, this reads as a deliberate choice by
+whoever built these five features, not a copy-paste slip — which makes it
+more likely to be a considered (if possibly outdated) citation than a
+random error, and correspondingly less safe for an implementer to
+"correct" toward the source PDF's number without checking which one is
+actually current law. The source PDF carries no revision date near this
+citation (unlike Plan Initial's own body pages, several of which are
+stamped "Rev. 11/17/2022" or "Last updated 11/9/2020" —
+`plan-initial-original.txt:47,99`), so this review cannot determine from
+the document alone whether 744.632 is current, superseded, or simply a
+different (also valid) citation for the same requirement.
+
+**Proposed action:** the requester (or counsel) confirms which statute
+currently governs the Initial Guardianship Plan's 60-day deadline. Then
+that citation is applied consistently across all five locations above in
+one pass — a fix that corrects only the PDF model, or only the Help/
+dashboard/readiness copy, reintroduces the exact inconsistency this finding
+describes.
 
 ## Proposed execution plan
 
@@ -361,18 +488,18 @@ filed PDF models or move them into Help/guidance content. Document whether
 preparer/attorney pages are approved supplemental output. Do not resolve legal
 sufficiency in code or in this proposal.
 
-### Phase 4 — 61F Plan Minor certification wording
+### Phase 4 — 61F Plan Minor certification wording (optional; likely no action)
 
-Parameterize Plan Minor's attorney-certification sentence
-(`plan-minor/pdf-model.js:273`) the way Plan Initial's equivalent sentence
-already does, substituting this form's own name rather than the literal
-"Annual Guardianship Plan." The exact replacement wording is a
-product/content decision, made by the requester, not inferred by whoever
-implements this — record the decision and its reasoning here before
-touching the file. Red-first proof: extract the generated Plan Minor PDF's
-certification text before and after, confirming the literal string "Annual
-Guardianship Plan" is gone and the replacement matches the decision
-recorded above verbatim.
+61F is not a fidelity defect this app introduced — the source form's own
+attorney-certification paragraph misnames itself, and the app already
+corrected the name before this review found the issue. No action is
+proposed unless the requester specifically wants Plan Minor's wording
+brought into line with the corrected display name ("Annual Plan —
+Minors") or with the level of detail Annual's/Initial's equivalent
+paragraphs carry. If so: change the literal text at
+`plan-minor/pdf-model.js:273`, and add a red-first extracted-text check for
+whatever exact string is chosen — there is no wrong string to detect this
+against, only the requester's preferred one.
 
 ### Phase 5 — 61G notice-block titles
 
@@ -388,6 +515,17 @@ Red-first proof: pick one certification title and one empty-state title,
 confirm both are absent from extracted PDF text before the fix and present
 after, for the exact strings 61G cites.
 
+### Phase 6 — 61H statute-citation correction (blocked on a legal ruling, not a code question)
+
+Only after the requester or counsel names the correct statute for the
+Initial Guardianship Plan's 60-day deadline, update all five locations 61H
+lists to agree with it and with each other. Red-first proof: confirm the
+extracted PDF text and the three UI-text locations all carry the old,
+incorrect citation before the change and the confirmed one after, in a
+single commit — a fix that corrects the PDF model but not Help/dashboard/
+readiness (or vice versa) reintroduces the same inconsistency 61H
+documents.
+
 ## Required tests and index updates
 
 Expected test surface:
@@ -398,10 +536,14 @@ Expected test surface:
   fixture — not just the first two.
 - PDF-model tests for secondary-only rows and optional co-guardians.
 - Extracted-text assertions for any approved instructional content.
-- Extracted-text assertion that Plan Minor's certification no longer
-  contains the literal string "Annual Guardianship Plan" (61F).
+- Extracted-text assertion for Plan Minor's certification wording (61F),
+  matching whatever wording the requester chooses — only if 61F is
+  authorized at all; the current text is not a defect requiring a test to
+  fail against.
 - Extracted-text assertions that a `notice` block's `title` prints, covering
   at least one certification heading and one empty-state heading (61G).
+- Extracted-text / UI-text assertion that all five 61H locations cite the
+  same, requester-confirmed statute, once that statute is named.
 - Existing plan PDF/e2e specs for all four filing types.
 - `TEST-INDEX.md` updates for every added, moved, or repurposed spec.
 - `npm run verify:data-model` and `npm run check:types`.
@@ -412,15 +554,20 @@ A full `npm test` regression requires explicit authorization under `AGENTS.md`.
 
 Included: plan-form UI-to-state-to-validator-to-PDF fidelity, schema coverage,
 row omission, optional co-guardian handling, explicitly approved source
-instructions/supplemental blocks, Plan Minor's certification wording (61F),
-and the PDF engine's dropped notice-block titles (61G).
+instructions/supplemental blocks, the PDF engine's dropped notice-block
+titles (61G), and the Initial Plan's statute-citation consistency (61H).
+Plan Minor's certification wording (61F) is included only if the requester
+separately asks for the optional wording change described in Phase 4 — the
+default outcome of 61F is no code change.
 
 Excluded unless separately authorized:
 
 - redesign of the plan forms;
-- changes to court wording based on interpretation rather than source evidence
-  (61F's specific replacement wording still needs that ruling, even though
-  the defect itself is confirmed);
+- any change to Plan Minor's certification wording without the requester
+  explicitly choosing the replacement (61F is optional to begin with);
+- resolving which Florida Statute currently governs the Initial Plan's
+  60-day deadline (61H) — a legal question this document does not answer,
+  not something to infer from the source PDF alone;
 - changes to accounting/inventory forms already addressed by MS 60;
 - unrelated readiness or legacy-app refactors;
 - a full regression run without explicit approval.
@@ -437,12 +584,16 @@ MS 61 is complete only when:
 4. Every source-form content divergence is either corrected or recorded as an
    intentional, authorized product decision.
 5. Legacy saves preserve existing data and initialize new fields safely.
-6. Plan Minor's certification no longer misnames the document, using
-   wording the requester has approved (61F).
+6. Plan Minor's certification wording is either left as-is (it already
+   corrects a defect in its own source form, per 61F) or changed to
+   wording the requester has explicitly chosen — never inferred.
 7. Every `notice` block's `title` prints wherever a PDF model sets one
    (61G), with no other filing type found to share the gap at
    implementation time.
-8. Targeted tests, data-model verification, type checks, and documentation
+8. The Initial Guardianship Plan's 60-day-deadline statute citation is
+   consistent across all five locations 61H lists, using whichever
+   citation the requester or counsel confirms is correct.
+9. Targeted tests, data-model verification, type checks, and documentation
    pass; the full regression is run only if authorized.
 
 ## Authorization
