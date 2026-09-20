@@ -6289,11 +6289,13 @@ const mk = {
   a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',fullAssetValue:0,wardPercent:100}),
   a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
   b1:()=>({institutionName:'',restricted:'',accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
-  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0,isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
-  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',amountInSDB:0}),
+  // Milestone 60K: no stored amountInSDB -- the workbook derives it from the
+  // Yes/No answer and the ward share, and so does guardian-inventory/totals.js.
+  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
+  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:''}),
   b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
   c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
-  c2:()=>({claimantName:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
+  c2:()=>({claimantName:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',claimantCityStateZip:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
   c3:()=>({defendantName:'',actionDescription:'',status:'',courtJurisdiction:'',caseNumber:'',actionDate:null,estimatedSettlement:0,wardPercent:100}),
   c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'Pooled',trustAmount:0,wardPercent:100}),
   c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),
@@ -6388,8 +6390,8 @@ const BLANK_CARD_COLLECTIONS = {
 // Method list is fixed by name rather than proxied so a typo at a call site
 // still throws "calc.foo is not a function" instead of returning a function
 // that silently computes nothing.
-const GUARDIAN_CALC_METHODS=['wardVal','wardDebt','wardAmt','wardB2','wardB3','wardB4','wardC1','wardC2','wardC3','wardC4','wardC5',
-  'totalA1','totalA2','netA','totalB1','totalB2','totalB3','totalB4','netB','total','totalC1','totalC2','totalC3','totalC4','totalC5',
+const GUARDIAN_CALC_METHODS=['wardVal','wardDebt','wardAmt','wardB2','wardB3','wardB4','wardC1','wardC2','wardC3','wardC4','wardC5','sdbB2','sdbB3',
+  'totalA1','totalA2','netA','totalB1','totalB2','totalB3','totalB4','netB','total','totalC1','totalC2','totalC3','totalC4','totalC5','totalSdbB2','totalSdbB3',
   'restrictedCash','unrestrictedCash','restrictedIntang','unrestrictedIntang','bondRequired','auditFee'];
 const calc={};
 for(const name of GUARDIAN_CALC_METHODS){
@@ -6445,10 +6447,15 @@ function normalizeWardData(d){
     migrateBoolean(r,'income','isIncomeProperty');
   });
   (d.scheduleB1||[]).forEach(r=>migrateBoolean(r,'restricted','isRestricted'));
-  (d.scheduleB2||[]).forEach(r=>migrateBoolean(r,'inSafeDepositBox'));
+  // Milestone 60K: a .sav written before 60K carries amountInSDB on B-2/B-3
+  // rows -- a stored copy of a figure the workbook derives, always 0 from the
+  // importer and never maintained by the UI. Drop it so nothing can ever read
+  // a stale value; the PDF and totals derive it from inSafeDepositBox.
+  (d.scheduleB2||[]).forEach(r=>{migrateBoolean(r,'inSafeDepositBox');if(r&&typeof r==='object')delete r.amountInSDB;});
   (d.scheduleB3||[]).forEach(r=>{
     migrateBoolean(r,'restricted','isRestricted');
     migrateBoolean(r,'inSafeDepositBox');
+    if(r&&typeof r==='object')delete r.amountInSDB;
   });
   migrateBoolean(d,'hasSafeDepositBox');
   migrateBoolean(d,'safeDepositBoxFiled');

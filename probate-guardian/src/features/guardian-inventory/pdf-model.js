@@ -7,7 +7,7 @@ import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
-import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, AUDIT_FEE_THRESHOLD } from './totals.js';
+import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD } from './totals.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -333,13 +333,17 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'b2',
     'Schedule B-2: Personal Property Assets',
     'Schedule B-2: Personal Property',
-    ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'In Safe Deposit Box?'],
-    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardB2(r)), triText(r.inSafeDepositBox)]),
+    // Milestone 60K: "Amount In Safe Deposit Box" is the form's own column
+    // ('B-2 PER PROP pg 1'!I, =IF(H="Yes",G,0), totalled at I63/I64) -- derived
+    // from the answer and the ward share by the calculator, never stored.
+    ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", 'In Safe Deposit Box?', "Ward's Value", 'Amount in Safe Deposit Box'],
+    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), triText(r.inSafeDepositBox), fmt(gc.wardB2(r)), isInSafeDepositBox(r) ? fmt(gc.sdbB2(r)) : '—']),
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
-    [19, 19, 13, 13, 9, 13, 14],
-    ['left', 'left', 'left', 'right', 'right', 'right', 'center']
+    [17, 16, 12, 12, 9, 8, 13, 13],
+    ['left', 'left', 'left', 'right', 'right', 'center', 'right', 'right'],
+    [t.totalSdbB2]
   );
 
   // Schedule B-3
@@ -347,13 +351,17 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'b3',
     'Schedule B-3: Intangible & Other Personal Property',
     'Schedule B-3: Intangible & Other Personal Property',
-    ['Description', 'Custodian / Address', 'Full Value', "Ward's %", "Ward's Value", 'Restricted?', 'In Safe Deposit Box?'],
-    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardB3(r)), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox)]),
+    // Milestone 60K: the form's "Restricted" (column I, =IF(E="Yes",H,0)) and
+    // "Amount In Safe Deposit Box" (column K) figures, each totalled at rows
+    // 67/68; both derived, as in the workbook. Three totals, last three columns.
+    ['Description', 'Custodian / Address', 'Full Value', "Ward's %", 'Restricted?', 'In Safe Deposit Box?', "Ward's Value", 'Restricted Amount', 'Amount in Safe Deposit Box'],
+    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), fmtPct(r.wardPercent), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox), fmt(gc.wardB3(r)), isRestrictedAnswer(r) ? fmt(gc.wardB3(r)) : '—', isInSafeDepositBox(r) ? fmt(gc.sdbB3(r)) : '—']),
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
     'intangible personal property assets',
-    [26, 20, 14, 9, 15, 8, 8],
-    ['left', 'left', 'right', 'right', 'right', 'center', 'center']
+    [15, 12, 12, 8, 8, 8, 12, 12, 13],
+    ['left', 'left', 'right', 'right', 'center', 'center', 'right', 'right', 'right'],
+    [t.restrictedIntang, t.totalSdbB3]
   );
 
   // Schedule B-4. 60B: Ward's % / Ward's Liability Balance; 60C: Type and
@@ -400,7 +408,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     // r.claimantAddress was previously silently dropped -- present in the
     // HTML preview as a sub-line under the claimant name but never read
     // here; rendered as a mixed-style cell sub-line now.
-    (d.scheduleC2 || []).map(r => [nameWithSubLines(r.claimantName, r.claimantAddress ? { text: r.claimantAddress } : null), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim), fmtPct(r.wardPercent), fmt(gc.wardC2(r))]),
+    // 60K: the claimant's city/state/ZIP is its own stored line now (the form's
+    // fifth C-2 line); a save made before 60K holds the whole address in
+    // claimantAddress and prints exactly as it did.
+    (d.scheduleC2 || []).map(r => [nameWithSubLines(r.claimantName, r.claimantAddress ? { text: r.claimantAddress } : null, r.claimantCityStateZip ? { text: r.claimantCityStateZip } : null), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim), fmtPct(r.wardPercent), fmt(gc.wardC2(r))]),
     "Schedule C-2 Total (Ward's Share of Claims)",
     totalC2,
     'claims or lawsuits against the ward',

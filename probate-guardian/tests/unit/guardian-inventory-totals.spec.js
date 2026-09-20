@@ -176,6 +176,35 @@ describe('schedule totals, summaries and bond lines against the workbook formula
     expect(t.unrestrictedIntang + t.restrictedIntang).toBe(t.totalB3);
   });
 
+  // Milestone 60K. 'B-2 PER PROP pg 1'!I18 =IF(H18="Yes",G18,0) and
+  // 'B-3 INTANGIBLE pg 1;'!K62 =IF(J62="Yes",(IF(E62="Yes",I62,H62)),0) --
+  // both resolve to the ward share when the box answer is Yes, else 0. Derived
+  // from the answer every time; nothing is stored.
+  test('safe-deposit amounts derive from the Yes/No answer and the ward share, and total per schedule', () => {
+    const c = makeGuardianCalc({
+      ...empty(),
+      scheduleB2: [
+        { fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'Yes' },
+        { fullAssetValue: '2000', wardPercent: '100', inSafeDepositBox: 'No' },
+        { fullAssetValue: '400', wardPercent: '100', inSafeDepositBox: '' },
+        { fullAssetValue: '300', wardPercent: '100', inSafeDepositBox: true },   // legacy boolean, pre-normalization
+      ],
+      scheduleB3: [
+        { fullAssetValue: '1000', wardPercent: '50', restricted: 'Yes', inSafeDepositBox: 'Yes' },
+        { fullAssetValue: '2000', wardPercent: '100', restricted: 'No', inSafeDepositBox: 'No' },
+      ],
+    });
+    expect(c.sdbB2({ fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'Yes' })).toBe(500);
+    expect(c.sdbB2({ fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'No' })).toBe(0);
+    expect(c.sdbB2({ fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'No', amountInSDB: 999 })).toBe(0);
+    expect(c.totalSdbB2()).toBe(800);
+    expect(c.sdbB3({ fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'Yes' })).toBe(500);
+    expect(c.totalSdbB3()).toBe(500);
+    const t = calcTotalsGuardian({ ...empty(), scheduleB2: [{ fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'Yes' }] });
+    expect(t.totalSdbB2).toBe(500);
+    expect(t.totalSdbB3).toBe(0);
+  });
+
   test('a missing schedule array is an empty schedule, not a crash', () => {
     const t = calcTotalsGuardian({});
     expect(t.total).toBe(0);
@@ -186,7 +215,9 @@ describe('schedule totals, summaries and bond lines against the workbook formula
 
   test('calcTotalsGuardian() exposes every schedule-level method and nothing per-row', () => {
     const keys = Object.keys(calcTotalsGuardian(D)).sort();
-    const scheduleLevel = GUARDIAN_CALC_METHODS.filter((m) => !/^ward/.test(m)).sort();
+    // Per-row helpers take an entry: the ward shares and the derived
+    // safe-deposit amounts (60K). Everything else is a schedule-level figure.
+    const scheduleLevel = GUARDIAN_CALC_METHODS.filter((m) => !/^(ward|sdb)/.test(m)).sort();
     expect(keys).toEqual(scheduleLevel);
   });
 });

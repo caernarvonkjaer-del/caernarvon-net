@@ -29,6 +29,39 @@ const {
   sanitizeObjectData, mk,
 } = window;
 
+// Milestone 60K: the Excel boundary conversion for percentages, both ways.
+//
+// The app's model holds a Ward's % / Joint Owner's % as the 0-100 number the
+// form's "Ward's % (0-100)" input collects. The court workbook's Ward's %
+// cells are formatted 0.00% (styles.xml numFmtId 10) and hold FRACTIONS --
+// the template's own worked examples are 0.5, 1 and 0.8 -- and every Ward's
+// Value cell multiplies by them (=G17*H17). Until 60K the exporter wrote the
+// model's number as-is, so a 50% row landed as 50: the filed workbook showed
+// 5000.00% and computed 1000 x 50 = 50,000 where the form intends 1000 x 0.5
+// = 500 -- every apportioned value 100 times too large. The PDF path was
+// never affected (guardian-inventory/totals.js keeps the 0-100 model
+// convention); this is strictly a write/read conversion at the file edge.
+//
+//   writer: blank stays blank (an empty Ward's % cell reads as 0 in the
+//           workbook, same as a blank percentage in the app); otherwise
+//           model 0-100 -> fraction 0-1.
+//   reader: a cell value <= 1 is a fraction -> 0-100; a value above 1 is a
+//           0-100 number a pre-60K export of this app wrote, kept as-is so
+//           those files still import. (A genuine fraction of exactly 1 is
+//           100%; a legacy "1" meaning 1% would read as 100% -- accepted, and
+//           the only ambiguity this rule has.)
+const pctCell=(v)=>{
+  if(v==null||v==='')return '';
+  const num=parseFloat(v);
+  return Number.isFinite(num)?num/100:'';
+};
+export function percentFromWorkbook(raw){
+  const num=parseFloat(raw);
+  if(!Number.isFinite(num))return 0;
+  const scaled=num>1?num:num*100;
+  return Math.round(scaled*1e6)/1e6;
+}
+
 // Each cap is the total row count across that schedule's template pages
 // (e.g. A-1 spans 3 pages holding 4 + 8 + 8). Initial Inventory overflows
 // differently from the other two types: its fillScheduleXX() helpers walk
@@ -165,7 +198,7 @@ export async function doSaveExcel(){
         setCell(pg,`E${r}`,yesNo(e.residence!=null&&e.residence!==''?e.residence:e.isPersonalResidence));
         setCell(pg,`F${r}`,yesNo(e.income!=null&&e.income!==''?e.income:e.isIncomeProperty));
         setCell(pg,`G${r}`,e.fullAssetValue||'');
-        setCell(pg,`H${r}`,e.wardPercent||'');
+        setCell(pg,`H${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -185,7 +218,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+3}`,e.accountNumber||'');
         setCell(pg,`E${r}`,e.liabilityType||'Mortgage');
         setCell(pg,`F${r}`,e.fullDebtBalance||'');
-        setCell(pg,`G${r}`,e.wardPercent||'');
+        setCell(pg,`G${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -206,7 +239,7 @@ export async function doSaveExcel(){
         setCell(pg,`E${r}`,yesNo(e.restricted!=null&&e.restricted!==''?e.restricted:e.isRestricted));
         setCell(pg,`F${r}`,e.accountType||'');
         setCell(pg,`G${r}`,e.fullAssetAmount||'');
-        setCell(pg,`H${r}`,e.wardPercent||'');
+        setCell(pg,`H${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -225,7 +258,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+2}`,e.cityStateZip||'');
         setCell(pg,`C${r+3}`,e.valuationMethod||'');
         setCell(pg,`E${r}`,e.fullAssetValue||'');
-        setCell(pg,`F${r}`,e.wardPercent||'');
+        setCell(pg,`F${r}`,pctCell(e.wardPercent));
         setCell(pg,`H${r}`,yesNo(e.inSafeDepositBox));
         idx++;
       }
@@ -245,7 +278,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+2}`,e.cityStateZip||'');
         setCell(pg,`E${r}`,yesNo(e.restricted!=null&&e.restricted!==''?e.restricted:e.isRestricted));
         setCell(pg,`F${r}`,e.fullAssetValue||'');
-        setCell(pg,`G${r}`,e.wardPercent||'');
+        setCell(pg,`G${r}`,pctCell(e.wardPercent));
         setCell(pg,`J${r}`,yesNo(e.inSafeDepositBox));
         idx++;
       }
@@ -263,10 +296,21 @@ export async function doSaveExcel(){
         setCell(pg,`C${r}`,e.lenderName||'');
         setCell(pg,`C${r+1}`,e.lenderAddress||'');
         setCell(pg,`C${r+2}`,e.relatedProperty||'');
-        setCell(pg,`C${r+3}`,e.accountNumber||'');
+        // Milestone 60K: the account number goes on the FIFTH line of the block,
+        // where the form's worked example puts it ("Acct #112358132134" on row
+        // 22 of an 18-22 block). It used to land on the fourth. The form's
+        // written instructions say "Third line: Account Number" and never
+        // describe the address/asset lines the example actually shows, so the
+        // template contradicts itself; the example is what a clerk visually
+        // matches, and it is what the requester authorized (MS 60K). Line four
+        // is left blank on purpose (B-4 has no free-text note field). The
+        // importer reads the fifth line and falls back to the fourth for
+        // workbooks exported before 60K.
+        setCell(pg,`C${r+3}`,'');
+        setCell(pg,`C${r+4}`,e.accountNumber||'');
         setCell(pg,`E${r}`,e.liabilityType||'Loan');
         setCell(pg,`F${r}`,e.fullLiabilityBalance||'');
-        setCell(pg,`G${r}`,e.wardPercent||'');
+        setCell(pg,`G${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -287,7 +331,7 @@ export async function doSaveExcel(){
         setCell(pg,`G${r}`,e.frequencyOfPayment||'Monthly');
         setCell(pg,`E${r+2}`,e.paymentBasis||'');
         setCell(pg,`H${r}`,e.annualIncomeAmount||'');
-        setCell(pg,`I${r}`,e.wardPercent||'');
+        setCell(pg,`I${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -306,9 +350,11 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+1}`,e.courtJurisdiction||'');
         setCell(pg,`C${r+2}`,e.claimantName||'');
         setCell(pg,`C${r+3}`,e.claimantAddress||'');
+        // Milestone 60K: the form's fifth C-2 line (worked example row 18: "St Petersburg, FL 33710").
+        setCell(pg,`C${r+4}`,e.claimantCityStateZip||'');
         setCell(pg,`E${r}`,fmtD(e.dateFiled));
         setCell(pg,`F${r}`,e.amountOfClaim||'');
-        setCell(pg,`G${r}`,e.wardPercent||'');
+        setCell(pg,`G${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -329,7 +375,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+2}`,e.courtJurisdiction||'');
         setCell(pg,`E${r}`,fmtD(e.actionDate));
         setCell(pg,`F${r}`,e.estimatedSettlement||'');
-        setCell(pg,`G${r}`,e.wardPercent||'');
+        setCell(pg,`G${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -351,7 +397,7 @@ export async function doSaveExcel(){
         setCell(pg,`F${r}`,e.accountNumber||'');
         setCell(pg,`H${r}`,e.trustType||'Pooled');
         setCell(pg,`I${r}`,e.trustAmount||'');
-        setCell(pg,`J${r}`,e.wardPercent||'');
+        setCell(pg,`J${r}`,pctCell(e.wardPercent));
         idx++;
       }
     };
@@ -371,7 +417,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+3}`,e.ownerCityStateZip||'');
         setCell(pg,`E${r}`,e.relationshipToWard||'');
         setCell(pg,`F${r}`,e.totalAssetValue||'');
-        setCell(pg,`G${r}`,e.jointOwnerPercent||'');
+        setCell(pg,`G${r}`,pctCell(e.jointOwnerPercent));
         idx++;
       }
     };
@@ -555,7 +601,8 @@ function parseInitialInventoryWorkbook(wb){
   };
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
   const triState=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return 'Yes';if(t==='no')return 'No';return '';};
-  const pct=(s,a)=>Math.round(num(s,a)*100*1e6)/1e6;
+  // Milestone 60K: fraction -> 0-100, with pre-60K 0-100 files still read (see percentFromWorkbook).
+  const pct=(s,a)=>percentFromWorkbook(rawv(s,a));
   const readRows=(pages,reader)=>{const out=[];for(const{name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
   const si=ws('SUMMARY I ');
   const inv={
@@ -565,11 +612,11 @@ function parseInitialInventoryWorkbook(wb){
     scheduleA1:readRows(SCHEDULE_A1_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),residence:triState(s,`E${r}`),income:triState(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
     scheduleA2:readRows(SCHEDULE_A2_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`F${r}`);if(!name&&!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),lenderCityStateZip:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),notes:'',liabilityType:txt(s,`E${r}`)||'Mortgage',fullDebtBalance:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleB1:readRows(SCHEDULE_B1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),restricted:triState(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
-    scheduleB2:readRows(SCHEDULE_B2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`),amountInSDB:0}}),
-    scheduleB3:readRows(SCHEDULE_B3_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`),amountInSDB:0}}),
-    scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleB2:readRows(SCHEDULE_B2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`)}}),
+    scheduleB3:readRows(SCHEDULE_B3_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`)}}),
+    scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+4}`)||txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleC1:readRows(SCHEDULE_C1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
-    scheduleC2:readRows(SCHEDULE_C2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleC2:readRows(SCHEDULE_C2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),claimantCityStateZip:txt(s,`C${r+4}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleC3:readRows(SCHEDULE_C3_PAGES,(s,r)=>{const defendantName=txt(s,`B${r}`),desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc)return null;const parts=desc.split(' / ');return{defendantName,actionDescription:parts[0]||desc,caseNumber:parts[1]||'',status:txt(s,`C${r+1}`),courtJurisdiction:txt(s,`C${r+2}`),actionDate:dt(s,`E${r}`),estimatedSettlement:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleC4:readRows(SCHEDULE_C4_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`I${r}`);if(!name&&!val)return null;return{trustName:name,trusteeName:txt(s,`C${r+1}`),trusteeAddress:txt(s,`C${r+2}`),trusteeCityStateZip:txt(s,`C${r+3}`),dateCreated:dt(s,`E${r}`),accountNumber:txt(s,`F${r}`),trustType:txt(s,`H${r}`)||'Pooled',trustAmount:val,wardPercent:pct(s,`J${r}`)}}),
     scheduleC5:readRows(SCHEDULE_C5_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerAddress:txt(s,`C${r+1}`),ownerName:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),

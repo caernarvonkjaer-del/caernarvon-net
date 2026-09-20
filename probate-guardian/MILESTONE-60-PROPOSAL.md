@@ -927,4 +927,81 @@ rendered PDF text changes; the full regression once, in Phase 6.
   `tests/unit/guardian-inventory-pdf-model.spec.js`, new
   `tests/e2e/guardian-inventory-schedule-layout.spec.ts`), no generated PDFs
   or test artifacts, nothing from 60K or Phase 3; the temporary boundary-trace
-  spec was deleted before staging.
+  spec was deleted before staging. Commit `fd769e2`.
+- **2026-09-20 — Phase 2B, 60K. Landed.** Four items, the fourth found
+  during this phase and folded in under the session override because it
+  sits in the exact writer functions 60K edits.
+  1. **Derived safe-deposit amounts.** `totals.js` gains `isInSafeDepositBox`,
+     per-row `sdbB2`/`sdbB3` (`'B-2 PER PROP pg 1'`!I18 `=IF(H18="Yes",G18,0)`;
+     `'B-3 INTANGIBLE pg 1;'`!K62), and `totalSdbB2`/`totalSdbB3` (the
+     workbook's I63/I64 and K67/K68); the adapter list in `legacy-app.js`
+     matches. The PDF's B-2 table gains "Amount in Safe Deposit Box" with a
+     second total; B-3 gains "Restricted Amount" (the form's column I) and
+     "Amount in Safe Deposit Box" (column K) with three totals; answer
+     columns precede the derived amounts so every total lands in the last
+     columns. The persisted `amountInSDB` is gone from
+     `probate-guardian-data-model.csv` (two rows), from `mk.b2()`/`mk.b3()`,
+     and from the importer; `normalizeWardData()` deletes it from B-2/B-3
+     rows of a pre-60K save. `npm run verify:data-model` → OK, 927 rows.
+  2. **C-2 claimant city/state/ZIP.** New `scheduleC2[].claimantCityStateZip`
+     (CSV row, `mk.c2()`, UI input beside the street, Excel write/read on the
+     block's fifth line — the form's worked example row 18 — PDF sub-line).
+     **Migration rule:** optional in validation; a save made before 60K holds
+     the whole address in `claimantAddress` and prints and exports exactly as
+     before (unit-tested). Requiring it would have blocked every such filing
+     until the filer split a line the app had only ever offered as one.
+  3. **B-4 account number on the fifth line.** Writer moves it from the
+     fourth line to the fifth (the form's worked example: "Acct #112358132134"
+     on row 22 of an 18-22 block) and blanks the fourth; reader takes the
+     fifth and falls back to the fourth so pre-60K exports still import.
+     Recorded conflict: the form's written instructions say "Third line:
+     Account Number" and never mention the address/asset lines the example
+     shows, so the template contradicts itself; the example is what the
+     requester authorized (2026-09-20). `excel-write-targets.spec.js`
+     confirms the new fifth-line cells are plain input cells.
+  4. **Folded in — Ward's % written as a 0-100 number into fraction cells
+     (filed Excel figures 100× too large).** Found from the Excel layout
+     spec's own comment and confirmed against the template with a parser:
+     the Ward's % cells are formatted `0.00%` (`styles.xml` numFmtId 10) and
+     the worked examples hold `0.5`, `1`, `0.8`; the Ward's Value formulas
+     multiply by them. The exporter wrote the model's number as-is, so a 50%
+     row landed as `50`: the filed workbook showed `5000.00%` and computed
+     `1000 × 50 = 50,000` where the form intends `1000 × 0.5 = 500`. Fix is
+     strictly the file edge (`pctCell` writer: blank stays blank, else
+     `/100`; `percentFromWorkbook` reader: `≤ 1` → `×100`, `> 1` kept as a
+     pre-60K 0-100 value, the one ambiguity being a legacy `1` meaning 1%
+     reading as 100%, accepted and recorded). The PDF calculator's 0-100
+     semantics are untouched. The 52K round-trip test had been written to
+     send `0.5` and expect `50` back to accommodate this; it now sends 50.
+  **Observed, not fixed (report to requester):** only Schedule A-1's
+  validator rejects `Ward's % must be > 0`; B-2, B-3, B-4, C-1..C-5 accept a
+  0% row. Whether 0% is ever a legitimate entry is a product question, so
+  the inconsistency is recorded here rather than resolved.
+  **Red-first mapping:** unit — `sdbB2 is not a function` (totals);
+  C-2 sub-lines `['1000 Bayshore Dr NE']` lacking the city line; B-2 headers
+  lacking `'Amount in Safe Deposit Box'`; B-3 headers lacking the two
+  derived columns; a stale `amountInSDB` row printing `'No'` where the
+  derived cell belongs — five failures, five defects. E2E — the artifact test
+  first failed for the wrong reason (my fixture had wiped the minimal
+  fixture's "no items" answers, so the export gate closed; the helper now
+  reports the gate's messages instead of timing out), then, with the fixture
+  export-ready and the writer change stashed, failed for the stated reason
+  (see the pre-commit record). Nothing in the export gate was weakened.
+  **Pre-commit record:** `npx vitest run` → 104 files, 1244 tests passed;
+  `npm run verify:data-model` → OK, 927 rows; `npm run check:types` → clean;
+  `git diff --check` → exit 0; `npx playwright test` over
+  `guardian-inventory-excel-schedule-layout` (3: round trip at capacity,
+  exported-file cells/format/formulas, pre-60K file import),
+  `guardian-inventory-schedule-layout` (5), `pdf-accessibility-and-signatures`,
+  `guardian-inventory-mount`, `excel-import-cell-shapes` → 27 passed;
+  `excel-write-targets` + `guardian-page-map` → 11 passed. Fault injection:
+  `src/features/guardian-inventory/excel.js` stashed → the exported-file test
+  failed on `A-1-REAL ESTATE pg 1!H27` = `25` where `0.25` is required;
+  restored → green; `git stash list` empty. `git diff --stat` → 11 files,
+  all Phase 2B (`MILESTONE-60-PROPOSAL.md`, `TEST-INDEX.md`,
+  `probate-guardian-data-model.csv`, `src/legacy-app.js`,
+  `src/features/guardian-inventory/{excel,index,pdf-model,totals}.js`,
+  `tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts`,
+  `tests/unit/guardian-inventory-{pdf-model,totals}.spec.js`); `excel.js`
+  shows 14 hunks, not a whole-file line-ending rewrite (the working copy is
+  CRLF; edits preserved it). No generated workbooks or PDFs in the diff.

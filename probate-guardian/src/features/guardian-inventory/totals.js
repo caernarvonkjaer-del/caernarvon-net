@@ -69,6 +69,16 @@ export function isRestrictedAnswer(entry) {
   return entry?.restricted === 'Yes' || (entry?.restricted !== 'No' && entry?.isRestricted === true);
 }
 
+/**
+ * Whether a B-2 / B-3 row's asset sits in a safe deposit box. Tri-state string
+ * after normalization; the boolean is honoured only for a not-yet-normalized
+ * older save. Blank/unanswered is "not in the box", exactly as the workbook's
+ * =IF(H18="Yes",...) reads an empty answer.
+ */
+export function isInSafeDepositBox(entry) {
+  return entry?.inSafeDepositBox === 'Yes' || entry?.inSafeDepositBox === true;
+}
+
 export const AUDIT_FEE_THRESHOLD = 25000;
 export const AUDIT_FEE_OVER_THRESHOLD = 85;
 
@@ -111,6 +121,14 @@ export function makeGuardianCalc(source) {
     wardC3: (e) => wardShare(e?.estimatedSettlement, e?.wardPercent),      // C-3
     wardC4: (e) => wardShare(e?.trustAmount, e?.wardPercent),              // C-4
     wardC5: (e) => wardShare(e?.totalAssetValue, e?.jointOwnerPercent),    // C-5
+    // Milestone 60K: the workbook's derived safe-deposit amounts --
+    // 'B-2 PER PROP pg 1'!I18 =IF(H18="Yes",G18,0) and
+    // 'B-3 INTANGIBLE pg 1;'!K62 =IF(J62="Yes",(IF(E62="Yes",I62,H62)),0),
+    // both of which resolve to the ward share when the answer is Yes. Derived
+    // from the answer every time; the persisted `amountInSDB` the app used to
+    // carry (and always hardcoded to 0 on import) is gone.
+    sdbB2: (e) => (isInSafeDepositBox(e) ? calc.wardB2(e) : 0),
+    sdbB3: (e) => (isInSafeDepositBox(e) ? calc.wardB3(e) : 0),
 
     // Schedule totals (unrounded sums of the unrounded rows).
     totalA1: () => sum('scheduleA1', calc.wardVal),
@@ -127,6 +145,8 @@ export function makeGuardianCalc(source) {
     totalC3: () => sum('scheduleC3', calc.wardC3),
     totalC4: () => sum('scheduleC4', calc.wardC4),
     totalC5: () => sum('scheduleC5', calc.wardC5),
+    totalSdbB2: () => sum('scheduleB2', calc.sdbB2),                        // B-2 I63/I64
+    totalSdbB3: () => sum('scheduleB3', calc.sdbB3),                        // B-3 K67/K68
 
     // Bond requirement, 'PART V' rows 18-23.
     restrictedCash: () => rows('scheduleB1').filter(isRestrictedAnswer).reduce((s, e) => s + calc.wardAmt(e), 0),
@@ -157,6 +177,7 @@ export function calcTotalsGuardian(customD) {
     totalB1: c.totalB1(), totalB2: c.totalB2(), totalB3: c.totalB3(), totalB4: c.totalB4(), netB: c.netB(),
     total: c.total(),
     totalC1: c.totalC1(), totalC2: c.totalC2(), totalC3: c.totalC3(), totalC4: c.totalC4(), totalC5: c.totalC5(),
+    totalSdbB2: c.totalSdbB2(), totalSdbB3: c.totalSdbB3(),
     restrictedCash: c.restrictedCash(), unrestrictedCash: c.unrestrictedCash(),
     restrictedIntang: c.restrictedIntang(), unrestrictedIntang: c.unrestrictedIntang(),
     bondRequired: c.bondRequired(),

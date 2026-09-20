@@ -118,8 +118,10 @@ describe('guardian inventory PDF model', () => {
     const row = id => model.sections.find(section => section.id === id).blocks[0].rows[0];
     expect(row('a1').slice(5)).toEqual(['No', 'Yes']); // 60E removed A-1's phantom column
     expect(row('b1')[2]).toBe('—'); // 60B: Restricted? is column 3 (form order)
-    expect(row('b2')[6]).toBe('No');
-    expect(row('b3').slice(5)).toEqual(['Yes', 'No']);
+    // 60K moved the answer columns ahead of the derived amount columns, so
+    // both totals rows land in the table's last columns (form order).
+    expect(row('b2')[5]).toBe('No');
+    expect(row('b3').slice(4, 6)).toEqual(['Yes', 'No']);
   });
 
   test('adds uploaded supporting documents to the matching schedule section', () => {
@@ -382,5 +384,70 @@ describe('Milestones 60B-60E: every UI-captured schedule field reaches the PDF',
       scheduleC5: [{ assetDescription: 'Residence', ownerName: 'Jane E. Miller', ownerAddress: '123 Main St.', ownerCityStateZip: 'Clearwater, FL 33762', totalAssetValue: '1000', jointOwnerPercent: '50' }],
     }));
     expect(flat(row(model, 'c5'))).toContain('Clearwater, FL 33762');
+  });
+
+  test('60K: Schedule C-2 prints the claimant\'s city/state/ZIP under the street, and an old save with only the street prints as before', () => {
+    const withCity = buildVerifiedInventoryModel(base({
+      scheduleC2: [{ claimantName: 'Bob Jones', claimantAddress: '1000 Bayshore Dr NE', claimantCityStateZip: 'St Petersburg, FL 33710', amountOfClaim: '1000', wardPercent: '100' }],
+    }));
+    expect(row(withCity, 'c2')[0].sub.map(s => s.text)).toEqual(['1000 Bayshore Dr NE', 'St Petersburg, FL 33710']);
+    const legacy = buildVerifiedInventoryModel(base({
+      scheduleC2: [{ claimantName: 'Bob Jones', claimantAddress: '1000 Bayshore Dr NE, St Petersburg, FL 33710', amountOfClaim: '1000', wardPercent: '100' }],
+    }));
+    expect(row(legacy, 'c2')[0].sub.map(s => s.text)).toEqual(['1000 Bayshore Dr NE, St Petersburg, FL 33710']);
+  });
+});
+
+// Milestone 60K: the workbook derives two figures the PDF never printed --
+// B-2's "Amount In Safe Deposit Box" ('B-2 PER PROP pg 1'!I18
+// =IF(H18="Yes",G18,0), totalled at I63/I64) and B-3's "Restricted" (I) and
+// safe-deposit (K) amounts, likewise totalled. They come from the answers and
+// the ward share, never from a stored field: the persisted `amountInSDB` the
+// importer used to hardcode to 0 is gone.
+describe('Milestone 60K: derived safe-deposit and restricted amounts on B-2 and B-3', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+  const table = (model, id) => model.sections.find(s => s.id === id).blocks[0];
+
+  test('B-2 prints the amount in the safe deposit box per row (the ward share when Yes) and totals it beside the schedule total', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB2: [
+        { description: 'Ring', fullAssetValue: '1000', wardPercent: '50', inSafeDepositBox: 'Yes' },
+        { description: 'Car', fullAssetValue: '2000', wardPercent: '100', inSafeDepositBox: 'No' },
+        { description: 'Unanswered', fullAssetValue: '400', wardPercent: '100', inSafeDepositBox: '' },
+      ],
+    }));
+    const b2 = table(model, 'b2');
+    expect(b2.headers.slice(-2)).toEqual(["Ward's Value", 'Amount in Safe Deposit Box']);
+    expect(b2.rows.map(r => r.at(-1))).toEqual(['$500.00', '—', '—']);
+    expect(b2.totals.values.map(v => v.value)).toEqual(['$2,900.00', '$500.00']);
+    b2.rows.forEach((r) => expect(r).toHaveLength(b2.headers.length));
+  });
+
+  test('B-3 prints the restricted amount and the amount in the safe deposit box per row and totals all three figures', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB3: [
+        { description: 'Brokerage', fullAssetValue: '1000', wardPercent: '50', restricted: 'Yes', inSafeDepositBox: 'Yes' },
+        { description: 'Bonds', fullAssetValue: '2000', wardPercent: '100', restricted: 'No', inSafeDepositBox: 'No' },
+      ],
+    }));
+    const b3 = table(model, 'b3');
+    expect(b3.headers.slice(-3)).toEqual(["Ward's Value", 'Restricted Amount', 'Amount in Safe Deposit Box']);
+    expect(b3.rows[0].slice(-3)).toEqual(['$500.00', '$500.00', '$500.00']);
+    expect(b3.rows[1].slice(-3)).toEqual(['$2,000.00', '—', '—']);
+    expect(b3.totals.values.map(v => v.value)).toEqual(['$2,500.00', '$500.00', '$500.00']);
+  });
+
+  test('a stale stored amountInSDB on an old save is ignored: the figure is derived from the answer', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB2: [{ description: 'Ring', fullAssetValue: '1000', wardPercent: '100', inSafeDepositBox: 'No', amountInSDB: 999 }],
+    }));
+    const b2 = table(model, 'b2');
+    expect(b2.rows[0].at(-1)).toBe('—');
+    expect(b2.totals.values[1].value).toBe('$0.00');
   });
 });
