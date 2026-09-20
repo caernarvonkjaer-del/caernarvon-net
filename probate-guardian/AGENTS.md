@@ -256,8 +256,28 @@ contain no "no items to report" declaration for any schedule, checked with a
 parser. The statutory half is **not** established and cannot be settled from
 this repository — it holds citations (§744.3678 for the annual accounting,
 §744.3679 for Simplified eligibility, §744.367(3)(a) for remuneration), never
-statutory text. No one has read §744.3678 against the question of whether any
-schedule requires an affirmative declaration of emptiness.
+statutory text. No one has read §744.3678 against the question below.
+
+**The open question, stated exactly, so it can be answered rather than
+re-derived:** *does §744.3678 require an annual accounting to affirmatively
+state that a schedule has nothing to report, or does it only require that
+whatever receipts, disbursements, assets and transfers exist be shown?*
+
+That is the same distinction §744.367(3)(a) already settles for Part XI: it
+says the report **must include** a declaration of remuneration — an inclusion
+requirement, which a silent filing fails. The question is whether §744.3678
+imposes that shape on the schedules, or only specifies what must be itemised
+when items exist.
+
+- **Declaration required** → a blank Schedule A is an incomplete filing;
+  58D's rule extends to all 14 and the sidebar was right all along.
+- **Only itemisation required** → a blank schedule correctly represents
+  "none"; current behaviour stands.
+
+One argument may settle it without the statute: per §5 the Clerk's workbook is
+authoritative, and it collects no such declaration on any schedule. Whether
+that reflects how the requirement is administered or is a gap in the form is a
+question for the requester, not one derivable from this repository.
 
 So the rule above is deliberately framed as a burden of proof rather than a
 finding: it does not assert that no such requirement exists, only that nobody
