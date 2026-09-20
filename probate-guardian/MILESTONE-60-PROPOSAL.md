@@ -270,18 +270,30 @@ actually involves:
 
 ## Delivery index
 
-| Delivery | Scope | Risk | Depends on |
-| --- | --- | --- | --- |
-| **60A** | Connect Guardian Inventory's PDF to its existing correct calculator; fix the audit-fee tiers and the unadjusted `restrictedCash` subtotal along the way | Medium — changes printed dollar totals | — |
-| **60B** | Display Ward's %/Share (+ the newly found C-1 address, C-3 date, C-4/C-5 city-state-zip) on the PDF | Low | 60A (for the % values) |
-| **60C** | Add Type and Account Number columns to A-2 and B-4 | Low | — |
-| **60D** | A-2: replace the phantom `relatedProperty` column with the real `notes` field | Low | — |
-| **60E** | A-1: remove the phantom, always-blank "Valuation Method" column | Low | — |
-| **60F** | Migrate Annual's and Simplified's PDF signature blocks from `details` to `fields`, with explicit per-block row grouping and a wrapping check; update the colon-dependent regression test; retire `details` from `pdf-engine.js` | Medium | — |
-| **60G** | Reconcile Simplified's remuneration `amount`: already in the schema and shared factory, missing from Simplified's own factory and UI | Low–Medium (schema-adjacent) | — |
-| **60H** | Guardian Part V: render the bond-waiver answer/date and the bond-requirement breakdown table | Low | 60A (for the breakdown figures) |
-| **60I** | Annual: restore the full two-sentence remuneration statutory paragraph | Low | — |
-| **60J** | Simplified: always render the Part VII remuneration declaration (with a "none reported" fallback), matching Annual's Milestone 58D fix | Low | — |
+| Delivery | Scope | Risk | Depends on | Shares a file/region with |
+| --- | --- | --- | --- | --- |
+| **60A** | Connect Guardian Inventory's PDF to its existing correct calculator; fix the audit-fee tiers and the unadjusted `restrictedCash` subtotal along the way | Medium — changes printed dollar totals | — | `guardian-inventory/pdf-model.js` (broadly) |
+| **60B** | Display Ward's %/Share (+ the newly found C-1 address, C-3 date, C-4/C-5 city-state-zip) on the PDF | Low | **60A**, hard (needs `calcTotalsGuardian()` for the values) | 60C, 60D on A-2's row; 60C on B-4's row |
+| **60C** | Add Type and Account Number columns to A-2 and B-4 | Low | — | 60B, 60D on A-2's row; 60B on B-4's row |
+| **60D** | A-2: replace the phantom `relatedProperty` column with the real `notes` field | Low | — | 60B, 60C on A-2's row |
+| **60E** | A-1: remove the phantom, always-blank "Valuation Method" column | Low | — | none (A-1's row is untouched by any other delivery) |
+| **60F** | Migrate Annual's and Simplified's PDF signature blocks from `details` to `fields`, with explicit per-block row grouping and a wrapping check; update the colon-dependent regression test; retire `details` from `pdf-engine.js` | Medium | — | 60I (same file, different section, `annual-accounting/pdf-model.js`); 60G, 60J (same file, different section, `simplified-accounting/pdf-model.js`) |
+| **60G** | Reconcile Simplified's remuneration `amount`: already in the schema and shared factory, missing from Simplified's own factory and UI | Low–Medium (schema-adjacent) | — | 60J, directly — both edit Simplified's Part VII block |
+| **60H** | Guardian Part V: render the bond-waiver answer/date and the bond-requirement breakdown table | Low | **60A**, hard, for the breakdown table only — the bond-waiver half is independent | none beyond the shared file |
+| **60I** | Annual: restore the full two-sentence remuneration statutory paragraph | Low | — | 60F (same file, different section) |
+| **60J** | Simplified: always render the Part VII remuneration declaration (with a "none reported" fallback), matching Annual's Milestone 58D fix | Low | — | 60G, directly — both edit Simplified's Part VII block; 60F (same file, different section) |
+
+**Reading the table:** "Depends on" is a real logical dependency — implementing
+out of that order produces something that has to be redone. "Shares a
+file/region with" is not a dependency — either order works — but is a real
+merge-conflict/rework risk if the two are picked up separately (`AGENTS.md`
+§2: a shared file is worth checking before assuming safe to parallelize,
+independent of whether either document calls the other a prerequisite).
+The concentration point is **A-2's row-mapping array**, touched by three
+separate deliveries (60B, 60C, 60D) — if more than one of those three is
+approved, doing them together avoids diffing the same handful of lines three
+times. **Simplified's Part VII block** (60G, 60J) is the other tight pairing.
+60E stands alone: nothing else in this document touches A-1.
 
 **B-2/B-3's `amountInSDB` is deliberately not a delivery here.** It's a
 missing input, not a missing render — scoping the UI/Excel/PDF work it
