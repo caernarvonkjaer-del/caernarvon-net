@@ -914,3 +914,32 @@ authorizes only what it names (`AGENTS.md` §3).
   6 failures for their stated reasons (no rights-consistency note, preparer
   and attorney blocks still present, no "Where to File" section) — and
   10/10 green restored. Full unit suite 1297/1297.
+- **2026-09-20 — Phase 5 (61G). Landed.** `pdf-engine.js`'s `notice`
+  renderer now draws `block.title` as a bold sub-heading, tagged for the
+  structure tree, matching `key-value-grid`/`table`. Two corrections to 61G's
+  own text, both found by re-running the grep as Phase 5 instructed rather
+  than trusting the recorded count:
+  - **The three Milestone 60 forms were never clean.** 61G said the gap was
+    "confined to the four plan types". It is not: `annual-accounting`
+    ('Declaration of Remuneration'), `guardian-inventory` ('Bond
+    Calculation') and `simplified-accounting` ('Declaration of
+    Remuneration') each lose a heading too. The original grep used a
+    one-line window (`-A1`) and missed every notice with a `tag:` key
+    between `type:` and `title:` — the same window error this document had
+    already caught once in an earlier 61G draft. The count is 15 titled
+    notices across seven models, not 13 across four.
+  - **Two defects in the first implementation, caught by the e2e proof.** A
+    title with no body (`plan-annual:571`, 'Additional Guardian Signatures')
+    drew a heading over an empty bordered box; and checking page space for
+    the heading alone orphaned it — measured on a real Inventory PDF, the
+    heading landed at the bottom of page 3 with its paragraph on page 4.
+    Both fixed: an empty-bodied notice renders as a heading alone, and one
+    page-space check now covers heading plus box.
+  Red-first: `tests/e2e/pdf-notice-title.spec.ts` (generate-and-extract, both
+  form families) failed with the engine stashed and passes restored;
+  `tests/unit/pdf-engine-notice-title.spec.js` failed 4/5 against the old
+  renderer. The Inventory assertion was deliberately strengthened after the
+  first version passed *without* the fix — that notice's body text opens with
+  the words "Bond Calculation", so a substring search proved nothing; it now
+  checks the heading as its own text run positioned above the body. Full unit
+  suite 1304/1304, `check:types` clean, 20 PDF e2e specs green.

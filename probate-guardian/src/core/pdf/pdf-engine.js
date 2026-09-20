@@ -801,14 +801,61 @@ export async function generateCourtFormPdf(model, options = {}) {
     // Render Blocks in this Section
     for (const block of (sec.blocks || sec.renderBlocks || [])) {
       if (block.type === 'notice') {
+        // Milestone 61G: a notice's `title` used to be read by nothing. Models
+        // across both form families set one -- certification headings, the
+        // heading over an empty question's "none listed" line, 'Bond
+        // Calculation', 'Declaration of Remuneration' -- and every one of them
+        // was dropped, leaving an unlabelled paragraph. Rendered here, once,
+        // the same way key-value-grid and table render theirs: a bold
+        // sub-heading above the block, tagged as a heading for the structure
+        // tree. Untitled notices (explanations, filing lines) are unaffected.
+        const noticeTitle = block.title && String(block.title).trim();
+        const noticeBody = String(block.text || '');
+        const hasNoticeBody = !!noticeBody.trim();
+
+        // Measure the body before drawing the heading, with the body's own
+        // font active so splitTextToSize() wraps against the right metrics.
+        // The single page-space check below then covers heading and box
+        // together: checking them separately let the heading take the last
+        // line of a page and the paragraph it introduces start the next one.
         doc.setFont('PGSans', block.fontStyle || 'italic');
         const fs = block.fontSize || 9.5;
         doc.setFontSize(fs);
-        doc.setTextColor(60, 70, 85);
         const lineHeight = fs * 1.35;
-        const lines = doc.splitTextToSize(block.text, contentWidth - 16);
-        const boxHeight = (lines.length * lineHeight) + 12;
-        checkPageSpace(boxHeight, sec.title);
+        const lines = hasNoticeBody ? doc.splitTextToSize(noticeBody, contentWidth - 16) : [];
+        const boxHeight = hasNoticeBody ? (lines.length * lineHeight) + 12 : 0;
+        const titleHeight = noticeTitle ? 16 : 0;
+        checkPageSpace(titleHeight + boxHeight, sec.title);
+
+        if (noticeTitle) {
+          const noticeHNode = structureTree.addStructureElement({
+            tag: subHTag,
+            title: noticeTitle,
+            pageNumber: pageNum,
+            isLeaf: true,
+            parent: partNode,
+          });
+          writeMarkedContentStart(doc, subHTag, noticeHNode.mcid);
+          doc.setFont('PGSans', 'bold');
+          doc.setFontSize(9.5);
+          doc.setTextColor(26, 45, 74);
+          doc.text(noticeTitle, margin, curY + 10);
+          writeMarkedContentEnd(doc);
+          curY += titleHeight;
+        }
+
+        // A title with no text is a heading, not a notice -- plan-annual's
+        // 'Additional Guardian Signatures' introduces the co-guardian page
+        // and carries no body. Drawing the empty bordered box under it would
+        // put a blank grey rectangle on the filed page.
+        if (!hasNoticeBody) {
+          curY += 4;
+          continue;
+        }
+
+        doc.setFont('PGSans', block.fontStyle || 'italic');
+        doc.setFontSize(fs);
+        doc.setTextColor(60, 70, 85);
 
         writeArtifactStart(doc, 'Layout');
         doc.setFillColor(248, 249, 251);
