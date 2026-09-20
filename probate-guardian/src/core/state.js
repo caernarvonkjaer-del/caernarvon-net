@@ -157,6 +157,12 @@ export function emptyDataSimplified() {
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',
     certAttyBarNumber:'', certAttyPhone:'', certAttyStreet:'', certAttyCityStateZip:'',
+    // Milestone 57B: filer attestation that no one requires service.
+    // Tri-state, never coerced (section 4): '' is unanswered, and an
+    // empty recipient list must never infer 'Yes'. Asked only when no
+    // recipient is listed (D16), and reset to '' by every filing
+    // conversion (D7) -- it is this filer's assertion about this filing.
+    certNoRecipients:'',
     certRecipients:[
       {name:'',line2:'',line3:''},
       {name:'',line2:'',line3:''},
@@ -468,6 +474,12 @@ export function emptyDataAnnual() {
     certAttySignDate:'',
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',
+    // Milestone 57B: filer attestation that no one requires service.
+    // Tri-state, never coerced (section 4): '' is unanswered, and an
+    // empty recipient list must never infer 'Yes'. Asked only when no
+    // recipient is listed (D16), and reset to '' by every filing
+    // conversion (D7) -- it is this filer's assertion about this filing.
+    certNoRecipients:'',
     certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
     // Part XI – Remuneration.
     //

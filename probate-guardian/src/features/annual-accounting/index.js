@@ -19,6 +19,12 @@ import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
+import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+// Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
+// The wording is load bearing -- it keeps the app on the right side of
+// asserting a legal conclusion for the filer (section 8 #8). Do not
+// paraphrase, shorten, or re-voice it.
+const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -1423,13 +1429,16 @@ function pagePart10Annual(){
   <div class="row g-2 mb-3">
     <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
     <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
-    <div class="col-12"><div style="color:var(--danger-text);font-size:.75rem;font-weight:600;margin-top:.25rem;">* Recipient 1 name is required</div></div>
+    <div class="col-12"><div style="color:var(--danger-text);font-size:.75rem;font-weight:600;margin-top:.25rem;">* Recipient 1 name is required unless you attest below that none are required</div></div>
   </div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  <div class="row g-3 card-grid-2col mb-3">
-    ${cards}
+  <div class="row g-3 mb-3">
+    <div class="col-12">${yesNoCheckboxD(ATTESTATION_57B,d.certNoRecipients,'certNoRecipients','/p10')}</div>
   </div>
-  <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>
+  ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
+    ${cards}
+  </div>`}
+  ${d.certNoRecipients==='Yes'?'':`<button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>`}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
@@ -1598,7 +1607,25 @@ export function validateAnnual(){
     sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Certificate of Service Date',allowSameDay:true,
     filingType:T,laterPath:'certDate',
   }));
-  req(d.certRecipients?.[0]?.name,'Part X — Recipient 1 Name','certRecipients.0.name');
+  // Milestone 57B (D16/D17). One rule across all three families: Recipient 1
+  // complete, cards 2+ optional but finished-or-cleared, and the attestation
+  // asked only when nobody is listed. This used to check certRecipients[0].name
+  // alone and never look at rows 2-4, so a second recipient with a name and no
+  // address exported silently.
+  {
+    const rec=serviceRecipientIssues({
+      rows:d.certRecipients,
+      attestation:d.certNoRecipients,
+      startedFields:['name','line2','line3','line4'],
+      // Family-owned: the accountings' address lines are optional in
+      // probate-guardian-data-model.csv, so a name is what completes a card.
+      missingFields:(r)=>((r.name||'').trim()?[]:['Name']),
+    });
+    if(rec.needsAttestation)req('',`Part X — ${ATTESTATION_57B}`,'certNoRecipients');
+    rec.firstRowMissing.forEach(f=>req('',`Part X — Recipient 1 ${f}`,'certRecipients.0.name'));
+    rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
+      req('',`Part X — Recipient ${index+1} ${f}`,`certRecipients.${index}.name`)));
+  }
   // Milestone 39-C: certAttySignDate had no requiredness of any kind before
   // this -- not even order-check-only (confirmed during the 39-C inventory
   // audit). name is passed for the same reason as Part V above -- this

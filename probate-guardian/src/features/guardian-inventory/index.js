@@ -14,6 +14,10 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+// Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
+// The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
+const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -1158,7 +1162,8 @@ function pageD5(){
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  <div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}
+  <div class="row g-3 mb-3"><div class="col-12">${window.yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5')}</div></div>
+  ${D.serviceNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}`}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">
     <div class="entry-card-body">
@@ -1283,7 +1288,28 @@ export function validateGuardian(){
     laterLabel:'Bond Period To',
     filingType:T,laterPath:'bondPeriodTo',
   }));
-  d.serviceRecipients.forEach((r,i)=>{const p=`D-5 Recipient ${i+1}`,k=`serviceRecipients.${i}`;req(r.name,`${p} — Name`,`${k}.name`);req(r.address,`${p} — Address`,`${k}.address`);req(r.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  // Milestone 57B (D16/D17). This used to require name + address +
+  // cityStateZip on EVERY row, so clicking "+ Add Recipient" by accident
+  // blocked export until the empty card was filled in or removed. Cards 2+ are
+  // now optional -- untouched ones are ignored, started ones must be finished
+  // or cleared -- and a filer with nobody to serve can say so.
+  //
+  // No nav edit is needed here: the Inventory derives its nav state from
+  // validate() through errorRoute(), and a section beginning "D-5" buckets onto
+  // /d5 automatically.
+  {
+    const RECIPIENT_FIELDS=[['name','Name'],['address','Address'],['cityStateZip','City/State/Zip']];
+    const rec=serviceRecipientIssues({
+      rows:d.serviceRecipients,
+      attestation:d.serviceNoRecipients,
+      startedFields:['name','address','cityStateZip'],
+      missingFields:(r)=>RECIPIENT_FIELDS.filter(([k])=>!String(r[k]||'').trim()).map(([,label])=>label),
+    });
+    if(rec.needsAttestation)req('',`D-5 — ${ATTESTATION_57B}`,'serviceNoRecipients');
+    rec.firstRowMissing.forEach(f=>req('',`D-5 Recipient 1 — ${f}`,`serviceRecipients.0.${f==='Name'?'name':f==='Address'?'address':'cityStateZip'}`));
+    rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
+      req('',`D-5 Recipient ${index+1} — ${f}`,`serviceRecipients.${index}.${f==='Name'?'name':f==='Address'?'address':'cityStateZip'}`)));
+  }
   if(!d.serviceDate)push('D-5 — Service Date is required.','serviceDate');
   req(d.serviceAttorney.name,'D-5 Attorney — Name','serviceAttorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number','serviceAttorney.barNumber');req(d.serviceAttorney.phone,'D-5 Attorney — Phone','serviceAttorney.phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address','serviceAttorney.streetAddress');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip','serviceAttorney.cityStateZip');
   return errors;

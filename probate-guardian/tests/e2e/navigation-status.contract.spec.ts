@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog,
   fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard,
-  fillMinimalValidPlanInitialWard, dismissScheduleDocPrompt,
+  fillMinimalValidPlanInitialWard, dismissScheduleDocPrompt, fillMinimalValidGuardianWard,
 } from './support/target';
 import type { ValidatorIssue } from './support/window-api';
 
@@ -468,7 +468,13 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian D-5 Ward', 'guardian');
     await page.evaluate(() => {
-      (window as any).D.serviceRecipients = [{ name: '', address: '', cityStateZip: '' }];
+      // Milestone 57B: a STARTED recipient row, not a blank one. Under D16 a
+      // wholly blank recipient list means the filer has listed nobody, which
+      // now raises the attestation ("no recipients are required...") instead
+      // of demanding Recipient 1's fields — so a blank row no longer produces
+      // a "D-5 Recipient 1 — Name" issue for this test to resolve. Starting
+      // the row is what makes it owed, which is the shape being tested here.
+      (window as any).D.serviceRecipients = [{ name: '', address: '100 2nd Ave S', cityStateZip: '' }];
     });
     await page.evaluate(() => (window as any).navigate('/d5'));
 
@@ -1397,6 +1403,107 @@ test.describe('Milestone 55D: attorney email is required exactly where the UI al
 // the loop body never runs, so the affirmative produced no issue at all. The
 // sidebar disagreed the whole time: a-p8 requires a trust NAME, so Part VIII
 // showed incomplete while the export gate found nothing wrong.
+// Milestone 57B. One recipient rule across all three families, and the D7
+// conversion reset. Two opposite defects closed: the Inventory blocked export
+// on an accidentally-added empty card, and both accountings let a recipient
+// with a name and no address reach the clerk unremarked.
+test.describe('Milestone 57B: service recipients, one rule and no carry-over', () => {
+  test('a started second recipient now blocks the Annual family, and the sidebar agrees', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Recip Annual Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    const out = await page.evaluate(() => {
+      const w = window as any;
+      w.D.certNoRecipients = '';
+      w.D.certRecipients = [{ name: 'A Person', line2: '1 Main St' }, { name: '', line2: 'orphan line' }];
+      return {
+        blocked: w.validateAnnual().some((m: any) => /Recipient 2/.test(String(m.message))),
+        navComplete: w.computeNavChecks().checks['a-p10'],
+      };
+    });
+    expect(out.blocked, 'a half-addressed recipient must not reach the clerk').toBe(true);
+    expect(out.navComplete).toBe(false);
+  });
+
+  test('an untouched extra card no longer blocks the Initial Inventory', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Recip Inventory Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    const out = await page.evaluate(() => {
+      const w = window as any;
+      const first = { ...(w.D.serviceRecipients?.[0] || {}) };
+      // A complete Recipient 1, then an empty card added by a stray click.
+      w.D.serviceRecipients = [
+        { name: first.name || 'A Person', address: first.address || '1 Main St', cityStateZip: first.cityStateZip || 'Clearwater, FL 33755' },
+        { name: '', address: '', cityStateZip: '' },
+      ];
+      return w.validateGuardian().filter((m: any) => /Recipient 2/.test(String(m.message))).map((m: any) => String(m.message));
+    });
+    expect(out, 'an empty extra card used to block export until filled or removed').toEqual([]);
+  });
+
+  test('a filer with nobody to serve can say so, and it clears the block', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Recip None Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    const out = await page.evaluate(() => {
+      const w = window as any;
+      w.D.certRecipients = [{ name: '', line2: '', line3: '', line4: '' }];
+      w.D.certNoRecipients = '';
+      const unanswered = w.validateAnnual().filter((m: any) => /filer attestation/.test(String(m.message))).length;
+      w.D.certNoRecipients = 'Yes';
+      const attested = w.validateAnnual().filter((m: any) => /Part X —/.test(String(m.message))).length;
+      return { unanswered, attested, nav: w.computeNavChecks().checks['a-p10'] };
+    });
+    expect(out.unanswered, 'listing nobody must ask the question').toBe(1);
+    expect(out.attested, 'answering it clears Part X').toBe(0);
+    expect(out.nav).toBe(true);
+  });
+
+  // D7. The attestation is this filer's assertion about THIS filing. A new
+  // filing has its own recipients and must answer for itself.
+  test('no conversion path carries the attestation forward, and addresses still migrate', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Convert Source Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    const out = await page.evaluate(() => {
+      const w = window as any;
+      const results: Record<string, unknown> = {};
+      const src = {
+        ...w.D,
+        inventoryType: 'guardian',
+        serviceNoRecipients: 'Yes',
+        certNoRecipients: 'Yes',
+        serviceRecipients: [{ name: 'Kept Person', address: '1 Main St', cityStateZip: 'Clearwater, FL 33755' }],
+        certRecipients: [{ name: 'Kept Person', line2: '1 Main St' }],
+      };
+      // A destination shaped the way the real callers build it (from the
+      // emptyData* factories), not a bare object -- the mappers write recipient
+      // cards positionally into an existing array.
+      const freshDest = () => ({
+        certNoRecipients: 'Yes', serviceNoRecipients: 'Yes',
+        certRecipients: [{ name: '', line2: '', line3: '', line4: '' }],
+        serviceRecipients: [{ name: '', address: '', cityStateZip: '' }],
+      });
+      for (const fn of ['convertGuardianSchedulesToAnnual', 'convertGuardianExtrasToAnnual', 'convertSimplifiedToAnnual']) {
+        const dest: any = freshDest();
+        w[fn]?.(src, dest);
+        results[fn] = { cert: dest.certNoRecipients, service: dest.serviceNoRecipients };
+      }
+      const destS: any = freshDest();
+      w.convertToSimplified?.(src, 'guardian', destS);
+      results.convertToSimplified = { cert: destS.certNoRecipients, service: destS.serviceNoRecipients,
+        recipients: (destS.certRecipients || []).length };
+      return results;
+    });
+
+    for (const [path, value] of Object.entries(out)) {
+      expect(value, `${path} must reset both attestations to unanswered`)
+        .toMatchObject({ cert: '', service: '' });
+    }
+  });
+});
+
 test.describe('Milestone 57E-1: an affirmative trust answer must name a trust', () => {
   async function trustState(page: import('@playwright/test').Page, trusts: unknown[]) {
     return page.evaluate((rows) => {

@@ -256,7 +256,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         tag: 'P',
         text: 'Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to:',
       },
-      ...(certRecipients.length > 0 ? [
+      ...(certRecipients.length > 0 && d.certNoRecipients !== 'Yes' ? [
         {
           type: 'table',
           tag: 'Table',

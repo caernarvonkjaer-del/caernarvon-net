@@ -29,6 +29,10 @@ import './core/validation/attorney-block.js';
 // returning filer sees, so the confirmation builder cannot arrive with a
 // lazily-loaded feature module.
 import './core/filing/delete-confirmation.js';
+// Milestone 57B, same reason again: computeNavChecks()'s a-p10 and s-p6 rules
+// reach the shared recipient rule through the bridge, and they run for
+// dashboard filings that have never been opened.
+import './core/validation/service-recipients.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

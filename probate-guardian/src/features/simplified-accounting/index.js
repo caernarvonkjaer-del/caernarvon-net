@@ -29,6 +29,10 @@ import { confirmModal } from '../../core/ui/dialogs.js';
 // which the milestone's own Collection Grid Boundary (AGENTS.md section 3)
 // explicitly keeps on per-form row factories, not cards.
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+// Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
+// The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
+const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -572,10 +576,13 @@ function pagePart6(){
       <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
     </div>
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-    <div class="row g-3 card-grid-2col mb-3">
+    <div class="row g-3 mb-3">
+      <div class="col-12">${yesNoCheckboxS('certNoRecipients',ATTESTATION_57B,d.certNoRecipients,false,'/p6')}</div>
+    </div>
+    ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
       ${cards}
     </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-simplified-action="add-recipient">+ Add Recipient</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-simplified-action="add-recipient">+ Add Recipient</button>`}
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
     <div class="row g-3 card-grid-2col">
@@ -735,7 +742,19 @@ export function validateSimplified(){
     filingType:T,laterPath:'certServiceDate',
   }));
   req(d.certIndicator,'Part VI — "Indicate if"','certIndicator');
-  req(d.certRecipients?.[0]?.name,'Part VI — Recipient 1 — Name and Address','certRecipients.0.name');
+  // Milestone 57B (D16/D17): same rule as the Annual family and the Inventory.
+  {
+    const rec=serviceRecipientIssues({
+      rows:d.certRecipients,
+      attestation:d.certNoRecipients,
+      startedFields:['name','line2','line3','line4'],
+      missingFields:(r)=>((r.name||'').trim()?[]:['Name and Address']),
+    });
+    if(rec.needsAttestation)req('',`Part VI — ${ATTESTATION_57B}`,'certNoRecipients');
+    rec.firstRowMissing.forEach(f=>req('',`Part VI — Recipient 1 — ${f}`,'certRecipients.0.name'));
+    rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
+      req('',`Part VI — Recipient ${index+1} — ${f}`,`certRecipients.${index}.name`)));
+  }
   // Milestone 39-C: certAttySignDate had no requiredness of any kind before
   // this -- not even order-check-only (confirmed during the 39-C inventory
   // audit). The attorney name here is the same shared `d.attorney` field

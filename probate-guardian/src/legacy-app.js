@@ -4907,6 +4907,19 @@ function mapConvertedHeaderFields(src,srcType,dest,destType){
 // year's actual income/activity is left for the user to confirm rather than
 // silently assumed from the inventory's projected figures.
 function convertGuardianSchedulesToAnnual(src,dest){
+  // Milestone 57B (D7): the attestation never survives a conversion. It is
+  // THIS filer's assertion about THIS filing -- that nobody required service
+  // on it -- and a new filing has its own recipients and its own answer. It
+  // is reset to '' (unanswered, never 'No'), and serviceNoRecipients never
+  // maps to certNoRecipients or the reverse.
+  //
+  // Inside each mapper on purpose, not in the dispatcher: a caller-side
+  // reset is the shape that earned the first attempt's "incomplete/unsafe"
+  // verdict, because a fifth conversion path added later would inherit
+  // nothing. Recipient address cards keep migrating exactly as before -- it
+  // is the assertion that is dropped, never the data.
+  dest.certNoRecipients='';
+  dest.serviceNoRecipients='';
   // Canonical tri-state fields are preferred, with a fallback for callers
   // holding pre-normalization legacy booleans. Normal setD() loading migrates
   // those aliases to canonical values and clears the old keys first.
@@ -4945,6 +4958,19 @@ function convertGuardianSchedulesToAnnual(src,dest){
 // service. Signature dates are never carried — the new filing is signed and
 // served on its own date.
 function convertGuardianExtrasToAnnual(src,dest){
+  // Milestone 57B (D7): the attestation never survives a conversion. It is
+  // THIS filer's assertion about THIS filing -- that nobody required service
+  // on it -- and a new filing has its own recipients and its own answer. It
+  // is reset to '' (unanswered, never 'No'), and serviceNoRecipients never
+  // maps to certNoRecipients or the reverse.
+  //
+  // Inside each mapper on purpose, not in the dispatcher: a caller-side
+  // reset is the shape that earned the first attempt's "incomplete/unsafe"
+  // verdict, because a fifth conversion path added later would inherit
+  // nothing. Recipient address cards keep migrating exactly as before -- it
+  // is the assertion that is dropped, never the data.
+  dest.certNoRecipients='';
+  dest.serviceNoRecipients='';
   const a=src.attorney||{}, sa=src.serviceAttorney||{};
   dest.attorney_bar=a.barNumber||'';
   dest.attorney_phone=a.phone||'';
@@ -4971,6 +4997,19 @@ function convertGuardianExtrasToAnnual(src,dest){
 // attorney block, the certificate of service, the reporting period, and any
 // remuneration disclosure.
 function convertToSimplified(src,srcType,dest){
+  // Milestone 57B (D7): the attestation never survives a conversion. It is
+  // THIS filer's assertion about THIS filing -- that nobody required service
+  // on it -- and a new filing has its own recipients and its own answer. It
+  // is reset to '' (unanswered, never 'No'), and serviceNoRecipients never
+  // maps to certNoRecipients or the reverse.
+  //
+  // Inside each mapper on purpose, not in the dispatcher: a caller-side
+  // reset is the shape that earned the first attempt's "incomplete/unsafe"
+  // verdict, because a fifth conversion path added later would inherit
+  // nothing. Recipient address cards keep migrating exactly as before -- it
+  // is the assertion that is dropped, never the data.
+  dest.certNoRecipients='';
+  dest.serviceNoRecipients='';
   const total=getWardHeadlineTotal(src);
   dest.startingBalance=total!=null?String(total):'';
 
@@ -5026,6 +5065,19 @@ function convertToSimplified(src,srcType,dest){
 // half. The Simplified form has no schedules to expand, so its ending
 // balance becomes the new Starting Balance and the schedules start blank.
 function convertSimplifiedToAnnual(src,dest){
+  // Milestone 57B (D7): the attestation never survives a conversion. It is
+  // THIS filer's assertion about THIS filing -- that nobody required service
+  // on it -- and a new filing has its own recipients and its own answer. It
+  // is reset to '' (unanswered, never 'No'), and serviceNoRecipients never
+  // maps to certNoRecipients or the reverse.
+  //
+  // Inside each mapper on purpose, not in the dispatcher: a caller-side
+  // reset is the shape that earned the first attempt's "incomplete/unsafe"
+  // verdict, because a fifth conversion path added later would inherit
+  // nothing. Recipient address cards keep migrating exactly as before -- it
+  // is the assertion that is dropped, never the data.
+  dest.certNoRecipients='';
+  dest.serviceNoRecipients='';
   const total=getWardHeadlineTotal(src);
   dest.startingBalance=total!=null?String(total):'';
   dest.periodFrom=src.periodFrom||'';
@@ -5632,6 +5684,12 @@ function emptyDataGuardian(){
     // A blank date alone could not distinguish "waived, date not entered"
     // from "not waived" -- see core/validation/dependent-question.js.
     bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaived:'',bondWaivedDate:'',
+    // Milestone 57B: filer attestation that no one requires service.
+    // Tri-state, never coerced (section 4): '' is unanswered, and an
+    // empty recipient list must never infer 'Yes'. Asked only when no
+    // recipient is listed (D16), and reset to '' by every filing
+    // conversion (D7) -- it is this filer's assertion about this filing.
+    serviceNoRecipients:'',
     serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
     serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureState:'',signatureImage:''},
     // Witnesses present during the physical inventory of the ward's personal
@@ -6624,6 +6682,19 @@ function bindForms(){
 // The split exists so the dashboard can compute a ward's filing progress
 // WITHOUT that ward being the active one — see getWardProgress().
 function computeNavChecks(){
+    // Milestone 57B: the same rule the validators use, reached through the
+    // bridge rather than restated here. A second reading of the same data is
+    // exactly how Milestone 57's Simplified signature gap and 58C's attorney
+    // predicate drifted from their validators.
+    const recipientsSettled=(rows,attestation)=>{
+      if(typeof window.serviceRecipientIssues!=='function')return filled(rows?.[0]?.name);
+      const rec=window.serviceRecipientIssues({
+        rows,attestation,
+        startedFields:['name','line2','line3','line4'],
+        missingFields:(r)=>((r.name||'').trim()?[]:['Name']),
+      });
+      return !rec.needsAttestation&&rec.firstRowMissing.length===0&&rec.extraRows.length===0;
+    };
   // Milestone 55B: mirrors checkDateOrder()'s own tolerance (src/core/
   // validation/date-rules.js) -- a blank date on either side is the
   // presence check's problem, not this one's, so it reports "in order"
@@ -6704,7 +6775,7 @@ function computeNavChecks(){
       's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
         &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)
         &&sigComplete(D.attorney_signatureState,D.attorney_signatureDate,D.attorney_signatureImage),
-      's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&filled(D.certRecipients?.[0]?.name)
+      's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
         &&datesOrdered(D.periodTo,D.certServiceDate,true)
         &&sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage),
       's-p7':(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type))),
@@ -6759,7 +6830,7 @@ function computeNavChecks(){
       'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany)
         &&(D.restrictedDepository==='Yes'||D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate))
         &&(D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate)),
-      'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name)
+      'a-p10':filled(D.certDate)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
         &&datesOrdered(D.periodTo,D.certDate,true),
       // Milestone 58D: Part XI is complete once it is ANSWERED -- either the
       // no-items declaration is ticked, or there is at least one populated row

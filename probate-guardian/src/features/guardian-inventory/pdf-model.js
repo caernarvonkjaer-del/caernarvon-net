@@ -580,7 +580,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'P',
         text: `I certify that a copy of this Verified Initial Inventory was served on ${fmtDate(d.serviceDate) || 'the date indicated below'} to the following persons:`,
       },
-      ...(d.serviceRecipients && d.serviceRecipients.length ? [
+      ...(d.serviceRecipients && d.serviceRecipients.length && d.serviceNoRecipients !== 'Yes' ? [
         {
           type: 'table',
           tag: 'Table',

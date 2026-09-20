@@ -344,6 +344,7 @@ interface Window {
   readRememberedFile: any;
   readRoleFields: any;
   readStoredTheme: any;
+  recipientRowStarted: any;
   reconcileSlotWithParty: any;
   recordScheduleAck: any;
   referenceCountForParty: any;
@@ -401,6 +402,7 @@ interface Window {
   seedStoredThemeFromLegacy: any;
   selectCountyOption: any;
   selectSecurityMode: any;
+  serviceRecipientIssues: any;
   setAccountingFilingType: any;
   setPartyIdForSlot: any;
   setPath: any;

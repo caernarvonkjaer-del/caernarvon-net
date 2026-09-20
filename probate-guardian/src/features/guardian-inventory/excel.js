@@ -583,6 +583,11 @@ function parseInitialInventoryWorkbook(wb){
     attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G26'),filingDate:dt(p4,'C21'),name:txt(si,'D24'),barNumber:txt(p4,'B28'),streetAddress:txt(p4,'I28'),phone:txt(p4,'B30'),cityStateZip:txt(p4,'I30')};})(),
     bondAmount:txt(ws('PART V'),'G26'),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:txt(ws('PART V'),'G15'),
     serviceRecipients:(()=>{const p6=ws('PART VI');const all=[{name:txt(p6,'B13'),address:txt(p6,'B14'),cityStateZip:txt(p6,'B15')},{name:txt(p6,'H13'),address:txt(p6,'H14'),cityStateZip:txt(p6,'H15')},{name:txt(p6,'B19'),address:txt(p6,'B20'),cityStateZip:txt(p6,'B21')},{name:txt(p6,'H19'),address:txt(p6,'H20'),cityStateZip:txt(p6,'H21')}];const filtered=all.filter(r=>r.name||r.address||r.cityStateZip);return filtered.length>0?filtered:[mk.recipient()];})(),
+    // Milestone 57B: imported as unanswered, never inferred. A blank PART VI
+    // means the workbook carries no recipients; it does NOT mean the filer
+    // attested that none are required. That is the section 4 tri-state rule,
+    // and the same one-way reasoning dependent-question.js enforces for 57A.
+    serviceNoRecipients:'',
     serviceDate:dt(ws('PART VI'),'G25'),
     serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G27'),name:txt(si,'D24'),barNumber:txt(p6,'B29'),streetAddress:txt(p6,'J29'),phone:txt(p6,'B31'),cityStateZip:txt(p6,'J31')};})()
   };

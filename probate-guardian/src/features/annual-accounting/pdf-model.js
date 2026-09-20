@@ -1054,7 +1054,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
     },
   ];
 
-  if (certRecipients.length > 0) {
+  // Milestone 57B: a selected attestation suppresses the recipient block
+  // rather than printing an empty one. The cards keep their data (section 4
+  // non-destructive toggling), so a filer who typed recipients and then
+  // attested that none are required must not have those names printed on
+  // the filed certificate -- the attestation is what they are swearing to.
+  if (certRecipients.length > 0 && d.certNoRecipients !== 'Yes') {
     certBlocks.push({
       type: 'table',
       tag: 'Table',
