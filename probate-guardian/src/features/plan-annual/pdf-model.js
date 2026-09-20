@@ -6,6 +6,7 @@
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { startedRows } from '../../core/validation/row-started.js';
 
 export function buildPlanAnnualModel(D) {
   const d = D || {};
@@ -99,7 +100,10 @@ export function buildPlanAnnualModel(D) {
   });
 
   // Page 2: Q1 residences
-  const resRows = (d.q1Residences || []).filter(r => r && (r.name || r.street || r.cityStateZip));
+  // Milestone 61B: any entered field puts the row on the filed plan. The old
+  // name/street/cityStateZip test dropped a residence the filer had given a
+  // phone number or dates but not yet named.
+  const resRows = startedRows(d.q1Residences);
   sections.push({
     id: 'q1',
     title: 'Question 1',
@@ -264,7 +268,9 @@ export function buildPlanAnnualModel(D) {
   });
 
   // Page 6: Q4 providers
-  const provRows = (d.q4Providers || []).filter(r => r && (r.name || r.providerType || r.visits));
+  // Milestone 61B: see the Q1 note above -- an address- or phone-only
+  // provider row is entered data and prints.
+  const provRows = startedRows(d.q4Providers);
   sections.push({
     id: 'q4',
     title: 'Question 4',
@@ -408,7 +414,10 @@ export function buildPlanAnnualModel(D) {
 
   // Page 10: Q10 directives. Milestone 37-4: gated on q10Executed, not just
   // on populated rows -- see plan-initial/pdf-model.js's identical note.
-  const dirs = d.q10Executed ? (d.q10Directives || []).filter(r => r && (r.title || r.dateSigned || r.signedBy)) : [];
+  // Milestone 61B: the gate on q10Executed stays (37-4); only the
+  // row test widens -- agents, alternates, relationship and contact are
+  // entered data too, and the old title/date/signer test dropped them.
+  const dirs = d.q10Executed ? startedRows(d.q10Directives) : [];
   sections.push({
     id: 'q10',
     title: 'Question 10',
@@ -536,7 +545,9 @@ export function buildPlanAnnualModel(D) {
   });
 
   // Page 13: Additional co-guardian signatures (conditional)
-  const extras = (g || []).slice(1).filter(p => p && (p.name || p.signatureDate));
+  // Milestone 61C: a co-guardian given an SSN, phone or address but not
+  // yet a name is a started signer, not an empty placeholder.
+  const extras = startedRows((g || []).slice(1));
   if (extras.length) {
     sections.push({
       id: 'certification-extra',

@@ -6914,8 +6914,12 @@ function computeNavChecks(){
     const hasAny=(...vals)=>vals.some(v=>filled(v));
     const anyOf=(...vals)=>vals.some(v=>!!v);
     const g0=(D.planGuardians||[])[0]||{};
-    const res=(D.q1Residences||[]).filter(r=>r&&(r.name||r.street||r.cityStateZip));
-    const provs=(D.q4Providers||[]).filter(r=>r&&(r.name||r.providerType||r.visits));
+    // Milestone 61B: the same started-row rule the PDF model and the export
+    // validator use (core/validation/row-started.js, bridged by main.js).
+    // These three lists used to be a fourth hand-written copy that disagreed
+    // with both, so a phone-only residence was invisible on every surface.
+    const res=window.startedRows(D.q1Residences);
+    const provs=window.startedRows(D.q4Providers);
     const rights=D.rights||{}, adls=D.adls||{};
     const b=D.benefits||{};
     const anyBenefit=PLAN_BENEFITS.some(([k])=>(b[k]||{}).eligible||(b[k]||{}).appliedFor);
@@ -6998,9 +7002,10 @@ function computeNavChecks(){
     // the sidebar and the export blocker disagree about the same question.
     const isYes=v=>v===true||String(v??'').trim().toLowerCase()==='yes';
     const g0=(D.planGuardians||[])[0]||{};
-    const provs=(D.q9Providers||[]).filter(r=>r&&(r.name||r.providerType||r.examDate));
+    // Milestone 61B: shared started-row rule -- see the Plan Annual note.
+    const provs=window.startedRows(D.q9Providers);
     const adls=D.adls||{};
-    const directives=(D.q11Directives||[]).filter(r=>r&&(r.title||r.dateSigned||r.signedBy));
+    const directives=window.startedRows(D.q11Directives);
     const checks={
       'pi-cover':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.county)&&filled(D.inceptionDate)
         &&filled(D.lettersSignedDate)&&filled(D.guardianNames)&&filled(D.wardLiving)
@@ -7095,7 +7100,8 @@ function computeNavChecks(){
       return s==='yes'||s==='no';
     };
     const g0=(D.planGuardians||[])[0]||{};
-    const provs=(D.q3Providers||[]).filter(r=>r&&(r.first||r.last||r.providerType));
+    // Milestone 61B: shared started-row rule -- see the Plan Annual note.
+    const provs=window.startedRows(D.q3Providers);
     const checks={
       // Milestone 40C-E: two of validatePlanMinor()'s own Cover requirements
       // were missing here, so the sidebar could call the Cover complete while

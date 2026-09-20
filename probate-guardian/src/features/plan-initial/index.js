@@ -4,6 +4,7 @@ import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../co
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { isPlanInitialAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Milestone 41-3: Cover page's "Ward & Case Information" box has the exact
@@ -689,7 +690,11 @@ export function validatePlanInitial(){
   const q9provs=(d.q9Providers||[]).filter(r=>r&&r.name);
   if(!q9provs.length)errs.push(issue('9. Examining Providers — At least one provider must be listed','q9Providers.0.name'));
   (d.q9Providers||[]).forEach((r,i)=>{
-    if(r&&(r.providerType||r.examDate||r.street||r.cityStateZip||r.phone)&&!r.name)
+    // Milestone 61B: was a hand-written field list that the next field
+    // added to this row would not have been added to. The q9provs check
+    // above still asks for one *named* provider; this asks whether the
+    // filer started a row at all.
+    if(rowStarted(r)&&!r.name)
       errs.push(issue(`9. Examining Providers — Row ${i+1}: Provider name is required`,`q9Providers.${i}.name`));
   });
 

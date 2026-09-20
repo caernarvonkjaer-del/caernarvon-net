@@ -381,6 +381,7 @@ interface Window {
   resolvePaintTheme: any;
   resolveParty: any;
   restoreBackupSavFile: any;
+  rowStarted: any;
   runFieldWriteSideEffects: any;
   runRememberedHandleOperation: any;
   sanitizeDecimal: any;
@@ -428,6 +429,7 @@ interface Window {
   silentAutoExport: any;
   skipWalkthrough: any;
   slotsReferencing: any;
+  startedRows: any;
   startNewCaseAtLaunch: any;
   startNewWardAtLaunch: any;
   startWalkthrough: any;

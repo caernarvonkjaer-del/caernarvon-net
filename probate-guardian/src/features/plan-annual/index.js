@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summ
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
+import { startedRows } from '../../core/validation/row-started.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Milestone 41-3: Tier 2 cards. This page's periodFrom/periodTo labels are
 // renderReportingPeriodFields()'s own defaults, so it reuses with zero
@@ -681,7 +682,11 @@ export function validatePlanAnnual(){
   // Row numbers index the filtered (non-blank) rows, as they always have --
   // a pre-existing modeling gap noted in the adapter; the path uses the
   // same index so the two stay consistent with each other.
-  const res=(d.q1Residences||[]).filter(r=>r&&(r.name||r.street||r.cityStateZip));
+  // Milestone 61B: same started-row rule as the PDF model, so a residence
+  // that prints is a residence this validator can see. The old
+  // name/street/cityStateZip list let a phone-only row through silently --
+  // no error, and nothing on the filed plan either.
+  const res=startedRows(d.q1Residences);
   if(!res.length)errs.push(issue('1. Residences — at least one residence must be listed','q1Residences.0.name'));
   res.forEach((r,i)=>{if(!r.name)errs.push(issue(`1. Residences — row ${i+1} needs a facility or owner name`,`q1Residences.${i}.name`));});
 
@@ -695,7 +700,8 @@ export function validatePlanAnnual(){
   if(d.q3SettingOther)req(d.q3SettingExplain,'2–3. Residence & Care — explain the "Other" residential setting','q3SettingExplain');
   if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Residence & Care — area of specialty is required','q3MedSpecialistArea');
 
-  const provs=(d.q4Providers||[]).filter(r=>r&&(r.name||r.providerType||r.visits));
+  // Milestone 61B: see the Q1 note above.
+  const provs=startedRows(d.q4Providers);
   if(!provs.length)errs.push(issue('4. Medical Treatment — at least one provider must be listed','q4Providers.0.name'));
   provs.forEach((r,i)=>{if(!r.name)errs.push(issue(`4. Medical Treatment — row ${i+1} needs a provider name`,`q4Providers.${i}.name`));});
 

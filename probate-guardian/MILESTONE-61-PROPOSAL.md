@@ -875,3 +875,20 @@ authorizes only what it names (`AGENTS.md` §3).
   factory change, passes after. `npm run verify:data-model` OK (942 rows).
   Related specs re-run green: plan-simplified-parity, plan-tristate,
   simplified-no-blank-pages, b4-export-plan, content-corrections (71 tests).
+- **2026-09-20 — Phase 2 (61B/61C). Landed.** New shared predicate
+  `src/core/validation/row-started.js` (`rowStarted`/`startedRows`), modelled
+  on Milestone 57B's service-recipients module: it decides *which rows* are in
+  play, never which fields a complete row needs. Replaces four divergent
+  hand-written field lists across three surfaces — seven collection filters in
+  the three PDF models, four filters in the validators, and five in
+  `computeNavChecks()` (bridged to `legacy-app.js` through `main.js`, the
+  attorney-block.js pattern). 61C's co-guardian predicates go the same way,
+  including the two six-field checks that omitted `relationship`/`email`.
+  Blank seeded rows and an unsigned (`'none'`) signature control still do not
+  count as started, so no empty rows appear in output. Red-first:
+  `tests/unit/plan-started-row.spec.js` — 10 behavioural assertions failed
+  before the model changes, all 15 pass after; `tests/e2e/plan-started-row.spec.ts`
+  failed with the Annual validator reverted (no "row 1 needs a facility or
+  owner name" error for a phone-only residence), passes restored. Full unit
+  suite 1287/1287, `npm run check:types` clean, `window-bridge.d.ts`
+  regenerated and its allow-list updated.

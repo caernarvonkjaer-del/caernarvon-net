@@ -18,20 +18,8 @@
       "name": "createCase"
     },
     {
-      "file": "src/core/filing/delete-confirmation.js",
-      "name": "deleteFilingConfirmation"
-    },
-    {
       "file": "src/core/case-resolver.js",
       "name": "getOrCreateCaseForWard"
-    },
-    {
-      "file": "src/core/validation/attorney-block.js",
-      "name": "isPlanInitialAttorneyStarted"
-    },
-    {
-      "file": "src/core/validation/service-recipients.js",
-      "name": "recipientRowStarted"
     },
     {
       "file": "src/core/case-resolver.js",
@@ -44,6 +32,10 @@
     {
       "file": "src/core/feature-bridge.js",
       "name": "disposeActiveFeature"
+    },
+    {
+      "file": "src/core/filing/delete-confirmation.js",
+      "name": "deleteFilingConfirmation"
     },
     {
       "file": "src/core/filing/filing-descriptor.js",
@@ -112,10 +104,6 @@
     {
       "file": "src/core/form/form-contract.js",
       "name": "sanitizeStoredText"
-    },
-    {
-      "file": "src/core/validation/service-recipients.js",
-      "name": "serviceRecipientIssues"
     },
     {
       "file": "src/core/form/form-contract.js",
@@ -826,6 +814,26 @@
       "name": "promptModal"
     },
     {
+      "file": "src/core/validation/attorney-block.js",
+      "name": "isPlanInitialAttorneyStarted"
+    },
+    {
+      "file": "src/core/validation/row-started.js",
+      "name": "rowStarted"
+    },
+    {
+      "file": "src/core/validation/row-started.js",
+      "name": "startedRows"
+    },
+    {
+      "file": "src/core/validation/service-recipients.js",
+      "name": "recipientRowStarted"
+    },
+    {
+      "file": "src/core/validation/service-recipients.js",
+      "name": "serviceRecipientIssues"
+    },
+    {
       "file": "src/core/validation/signature-state.js",
       "name": "isSignatureComplete"
     },
@@ -938,14 +946,6 @@
       "name": "calcTotalsAnnual"
     },
     {
-      "file": "src/features/guardian-inventory/totals.js",
-      "name": "calcTotalsGuardian"
-    },
-    {
-      "file": "src/features/guardian-inventory/totals.js",
-      "name": "makeGuardianCalc"
-    },
-    {
       "file": "src/features/guardian-inventory/index.js",
       "name": "addEntry"
     },
@@ -960,6 +960,14 @@
     {
       "file": "src/features/guardian-inventory/print.js",
       "name": "printCurrentFilingPdf"
+    },
+    {
+      "file": "src/features/guardian-inventory/totals.js",
+      "name": "calcTotalsGuardian"
+    },
+    {
+      "file": "src/features/guardian-inventory/totals.js",
+      "name": "makeGuardianCalc"
     },
     {
       "file": "src/features/help/help-content.js",

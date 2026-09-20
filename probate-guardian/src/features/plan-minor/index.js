@@ -3,6 +3,7 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { isTriStateAnswer } from '../../core/form/form-contract.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 // Milestone 41-3: Tier 2/1 adoption for Plan Minor. renderReportingPeriodFields()
 // already supports overridable from/to labels (built for exactly this kind
@@ -456,7 +457,9 @@ export function validatePlanMinor(){
   const q3provs=(d.q3Providers||[]).filter(r=>r&&r.last);
   if(!q3provs.length)errs.push(issue('3. Treatment Providers — At least one provider must be listed','q3Providers.0.last'));
   (d.q3Providers||[]).forEach((r,i)=>{
-    if(r&&(r.first||r.providerType||r.street||r.city||r.phone)&&!r.last)
+    // Milestone 61B: see plan-initial's equivalent -- the old list omitted
+    // state, ZIP and visits, so a row carrying only those raised nothing.
+    if(rowStarted(r)&&!r.last)
       errs.push(issue(`3. Treatment Providers — Row ${i+1}: Provider last name is required`,`q3Providers.${i}.last`));
   });
 

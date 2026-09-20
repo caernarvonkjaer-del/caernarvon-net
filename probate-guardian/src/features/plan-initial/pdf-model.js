@@ -7,6 +7,7 @@
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 
 export function buildPlanInitialModel(D, options) {
   const d = D || {};
@@ -219,7 +220,8 @@ export function buildPlanInitialModel(D, options) {
   });
 
   // Page 4: Q9 examining providers
-  const provRows = (d.q9Providers || []).filter(r => r && (r.name || r.providerType || r.examDate));
+  // Milestone 61B: an address- or phone-only provider row prints.
+  const provRows = startedRows(d.q9Providers);
   sections.push({
     id: 'q9',
     title: 'Question 9',
@@ -404,7 +406,8 @@ export function buildPlanInitialModel(D, options) {
   // not just on populated rows -- legacy/imported data can carry directive
   // records while execution is unchecked (hidden in the UI), and the output
   // must agree with what the filer currently sees, not with leftover data.
-  const dirs = d.q11Executed ? (d.q11Directives || []).filter(r => r && (r.title || r.dateSigned || r.signedBy)) : [];
+  // Milestone 61B: gate on q11Executed unchanged (37-4); row test widened.
+  const dirs = d.q11Executed ? startedRows(d.q11Directives) : [];
   sections.push({
     id: 'directive-detail',
     title: 'Advance Directive Detail',
@@ -474,14 +477,16 @@ export function buildPlanInitialModel(D, options) {
       makeSigBlock('Guardian', g[0] || {}),
       // Optional co-guardian placeholders are editor affordances, not signed
       // filing content. Render only a meaningfully populated second signer.
-      ...(g[1] && [g[1].name, g[1].signatureDate, g[1].ssn, g[1].phone, g[1].street, g[1].cityStateZip].some(Boolean)
-        ? [makeSigBlock('Co-Guardian', g[1])]
-        : []),
+      // Milestone 61C: was a six-field list that omitted `relationship`,
+      // so a co-guardian identified only by their relationship to the
+      // ward disappeared. Asks the row instead of naming fields.
+      ...(rowStarted(g[1]) ? [makeSigBlock('Co-Guardian', g[1])] : []),
     ],
   });
 
   // Page 10: Additional co-guardian signatures (conditional)
-  const extras = (g || []).slice(2).filter(p => p && (p.name || p.signatureDate));
+  // Milestone 61C: see the Co-Guardian note above.
+  const extras = startedRows((g || []).slice(2));
   if (extras.length) {
     sections.push({
       id: 'certification-extra',

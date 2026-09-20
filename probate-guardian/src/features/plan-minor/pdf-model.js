@@ -8,6 +8,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { caseNumberOf } from '../../core/case-resolver.js';
 import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 
 export function buildPlanMinorModel(D) {
   const d = D || {};
@@ -101,8 +102,11 @@ export function buildPlanMinorModel(D) {
   });
 
   // Page 2: Q2 residences + Q3 providers
-  const resRows = (d.q2Residences || []).filter(r => r && (r.name || r.street || r.city));
-  const provRows = (d.q3Providers || []).filter(r => r && (r.first || r.last || r.providerType));
+  // Milestone 61B: state, ZIP and phone are entered data. The old
+  // name/street/city and first/last/type tests dropped rows that had
+  // them and nothing else.
+  const resRows = startedRows(d.q2Residences);
+  const provRows = startedRows(d.q3Providers);
   sections.push({
     id: 'q2-q3',
     title: 'Questions 2–3',
@@ -242,9 +246,10 @@ export function buildPlanMinorModel(D) {
         text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
       },
       makeSigBlock('Guardian', g[0] || {}, guardianFields(g[0] || {})),
-      ...(g[1] && [g[1].name, g[1].signatureDate, g[1].tin, g[1].phone, g[1].mailingStreet, g[1].mailingCityStateZip].some(Boolean)
-        ? [makeSigBlock('Co-Guardian', g[1], guardianFields(g[1]))]
-        : []),
+      // Milestone 61C: was a six-field list that omitted `relationship`
+      // and `email`, so a co-guardian identified only by one of those
+      // disappeared. Asks the row instead of naming fields.
+      ...(rowStarted(g[1]) ? [makeSigBlock('Co-Guardian', g[1], guardianFields(g[1]))] : []),
     ],
   });
 
