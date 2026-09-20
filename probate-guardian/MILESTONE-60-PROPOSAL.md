@@ -2,7 +2,16 @@
 
 ## Status
 
-**AUTHORIZED 2026-09-20 by the requester ("Start MS 60"). In progress.**
+**AUTHORIZED 2026-09-20 by the requester ("Start MS 60"). All eleven
+deliveries implemented, verified and pushed (`42fe2c7`…`809778f`).**
+
+**Not marked Landed.** The closing full regression came back 704 passed, 6
+skipped, 1 failed. The failure is a pre-existing, load-dependent race in the
+annotation save path — a filing type and two files this milestone never
+touches — diagnosed in the Progress Log's Phase 6 entry and reported rather
+than fixed, per the standing bound that unrelated failures go back to the
+requester instead of widening a milestone's scope. Whether that blocks the
+status line is the requester's call.
 The authorization names every choice this document had left open, after two
 rounds of independent critique of the execution plan (Codex, 2026-09-20):
 
@@ -1129,4 +1138,70 @@ rendered PDF text changes; the full regression once, in Phase 6.
   `pdf-accessibility-and-signatures`, `simplified-remuneration`,
   `simplified-mount`, `annual-mount`, `pdf-structure-tags`,
   `pdf-table-semantics`, `print-preview-signature-jump`,
-  `signature-capture.contract` — 79 passed.
+  `signature-capture.contract` — 79 passed. Commit `809778f`.
+- **2026-09-20 — Phase 6, full regression.** `npm test`: unit 106 files /
+  1269 tests passed; browser suite **704 passed, 6 skipped, 1 failed** in
+  26.6 minutes. All eleven deliveries are implemented, verified and pushed.
+  The single failure is **not caused by this milestone**, so under the
+  standing bound it is diagnosed and reported rather than fixed here.
+
+  **`pdf-annotate.spec.ts` — "Save Annotated PDF downloads a PDF and persists
+  printAnnotations": a pre-existing race, reported for a separate decision.**
+  - *What fails:* `window.D.printAnnotations` is `undefined` at the assertion.
+  - *Why:* `pdf-preview.js`'s save handler awaits `saveAnnotatedBytes()`, then
+    `saveFinalizedPdf()` — **which is what fires the download event the test
+    waits on** — and only afterwards awaits `encodeAnnotationBytes()` (gzip +
+    base64) before assigning `D.printAnnotations`. The test resumes on the
+    download and reads the field while the encode is still running. Under a
+    711-test run the machine is loaded, the encode is slower, and the read
+    wins the race.
+  - *Not this milestone:* `git diff 2e65ef2..HEAD` touches neither
+    `src/core/pdf/pdf-preview.js` nor `tests/e2e/pdf-annotate.spec.ts`; the
+    save handler last changed 2026-09-16 (`fd5d9bc`, Milestone 52I), four days
+    before this work; and the failing filing type is **Plan Simplified**,
+    which this milestone never touches.
+  - *Reproduction:* passes 3 of 3 in isolation and 19 of 19 running the whole
+    spec file in order; fails only under full-suite load. A load-dependent
+    flake, not a deterministic break.
+  - *Recommended fix, for the requester to authorize separately:* persist
+    `D.printAnnotations` **before** handing the bytes to `saveFinalizedPdf()`,
+    so the download event cannot precede the state the filing keeps. That is
+    a change to the annotation save path and belongs to whoever owns 39-A/45A,
+    not to a PDF-fidelity milestone.
+
+---
+
+## Completion criteria — evidence
+
+| # | Criterion | Evidence |
+| --- | --- | --- |
+| 1 | A red-first test per delivery | Each phase's log entry names the failures and their stated reasons: 60A six, 60B–60E seventeen (one per defect), 60K five unit plus one exported-file, 60H four, 60G/60I/60J eleven, 60F one plus a fault-injected engine case. |
+| 2 | Dollar figures hand-computed, not merely run | `guardian-inventory-totals.spec.js` computes Summary I/II and `PART V` rows 18-23 by hand from the fixture; 60H's table repeats that computation independently against the workbook's formulas rather than against the UI. |
+| 3 | 60A: UI and PDF agree by sharing, not coincidence | `legacy-app.js`'s `calc` adapter is sliced from shipped source and evaluated against the module — identical figures on a mixed-percentage filing, live `window.D` reads, and a throw rather than `$0.00` if the module never loads. |
+| 4 | 60F: nothing still sets `details` | Both halves checked: no signature block in any of the nine filing models sets it at runtime, and the engine no longer contains `planDetailStack` or a `details` branch. |
+| 5 | CSV updated for changed persisted fields | Added `scheduleC2[].claimantCityStateZip` and `simplified_accounting scheduleNoItems`; removed `scheduleB2/B3[].amountInSDB`. `verify:data-model` OK, 928 rows. |
+| 6 | `TEST-INDEX.md` reflects every change | Five new specs rowed, five existing rows extended; `test-index-guard` green. |
+| 7 | Nothing outside the authorized scope | Each phase's pre-commit record lists its staged files. |
+| 8 | Phase verification before each commit; regression before Landed | Recorded per phase. The regression ran with one failure, unrelated and pre-existing (above) — **the requester's call on whether that blocks the status change.** |
+
+## Findings reported, not fixed
+
+Surfaced during the work, outside what was authorized (`AGENTS.md` §3).
+
+1. **Only Schedule A-1 rejects a 0% Ward's %.** B-2, B-3, B-4 and C-1 through
+   C-5 accept a 0% row; A-1's validator requires `> 0`. Whether 0% is ever a
+   legitimate entry is a product question, not a defect to settle here.
+2. **Exactly $25,000 of inventory value.** `PART V`!G8/G9 name "in excess of
+   $25,000" and "below $25,000" and nothing for the boundary. Today's rule
+   prints `$0`; this milestone pinned that without certifying it. Resolving it
+   needs the Clerk or a qualified person (§8.8).
+3. **The clerk workbooks' statutory transcriptions differ from the statute.**
+   Annual's `PART XI`!A5 and Simplified's `PART VII`!A5 both drop the
+   "guardian of the property … guardian of the person … must both" clause, and
+   Simplified's carries the typos "poperty" and "in case or in kind". The app
+   now prints the statute; the workbooks are the Clerk's to correct.
+4. **60F's row-height fix is defensive for this app's data.** At these blocks'
+   full content width no realistic address wraps past two lines, so the
+   condition it guards is reachable only with a hostile input. Recorded so
+   nobody later mistakes it for a fix to an observed defect.
+5. **The annotation save race** described under Phase 6.
