@@ -2,9 +2,33 @@
 
 ## Status
 
-**PROPOSAL. Not started. Not authorized.** Per `AGENTS.md` §3, no item below may
-be implemented until the requester approves that item by name; approval of one
-item authorizes only that item.
+**AUTHORIZED 2026-09-20 by the requester ("Start MS 60"). In progress.**
+The authorization names every choice this document had left open, after two
+rounds of independent critique of the execution plan (Codex, 2026-09-20):
+
+- All ten deliveries 60A–60J, plus a new **60K** collecting three items the
+  earlier passes had listed as out of scope: B-2/B-3's derived safe-deposit
+  amount, Schedule C-2's missing city/state/ZIP capture, and B-4's Excel
+  account-number line placement. Annual's B-3/B-4 field-naming drift stays
+  out (no filed output changes).
+- **60G: option 1** — finish wiring the existing remuneration `amount`.
+- **60J: full Milestone 58D parity** — an explicit "none received"
+  attestation with matching sidebar and export rules, not render-always.
+- **Rounding: workbook-style raw aggregation** under the contract stated in
+  60A (compute each ward-adjusted value at full precision; sum the unrounded
+  values; round the aggregate to cents only when producing a monetary figure
+  for display or output; never sum displayed row values).
+- **Statutory text sourced from current §744.367(3)(a) itself**, not from a
+  corrected transcription of either workbook.
+- **Exactly $25,000 total inventory keeps today's `$0` audit fee**, recorded
+  below as an unresolved authority gap — not as validated.
+- **The final full `npm test` regression is authorized** (`AGENTS.md` §2).
+- Session override per `AGENTS.md` §3: defects hit inside the surfaces this
+  milestone already touches are fixed within it rather than deferred.
+  Pre-existing or concurrent failures unrelated to this milestone are
+  diagnosed, recorded in the Progress Log, and brought back to the requester.
+
+The execution plan and Progress Log are at the end of this document.
 
 **This is the third pass on this document, and each pass changed the
 recommended fix, not just the finding list — that pattern is itself part of
@@ -56,8 +80,10 @@ unnoticed, rather than only patching each symptom.
 
 `src/legacy-app.js` (lines 6378-6409) defines `window.calc`, consumed
 throughout the live UI (sidebar totals, live-updating calculated fields —
-[legacy-app.js:7396-7403](src/legacy-app.js#L7396-L7403)). It is already
-correct:
+[legacy-app.js:7396-7403](src/legacy-app.js#L7396-L7403)). It applies the
+ward percentage everywhere the PDF does not, and its audit-fee rule matches
+the template — but it is **not** fully correct, see the rounding note after
+the code:
 
 ```js
 const calc={
@@ -75,6 +101,19 @@ const calc={
   auditFee:()=>calc.total()>25000?85:0,
 };
 ```
+
+**Rounding — verified against the template 2026-09-20, and the legacy
+calculator is wrong here.** Every Ward's Value cell in the workbook is a
+bare product (`A-1-REAL ESTATE pg 1`!I17 `=G17*H17`, `B-2 PER PROP pg 1`!G18
+`=E18*F18`, and so on — no `ROUND()`), and each schedule total sums those
+raw products. `calc` rounds every row to cents (`r2(...)`) *before* summing.
+With fractional percentages the two disagree by a cent. Adversarial fixture,
+computed 2026-09-20: rows `$1,000.05 × 33.33%`, `$2,500.55 × 66.67%`,
+`$333.33 × 12.5%` — raw products `333.316665 + 1667.116685 + 41.66625`;
+workbook method (sum raw, round the aggregate) **`$2,042.10`**; legacy
+method (sum rounded rows) **`$2,042.11`**. The template wins (`AGENTS.md`
+§5), so the totals module follows the workbook and the UI adopts it by
+delegation. That fixture is 60A's rounding-contract proof.
 
 This directly contradicts two things the prior version of this document
 assumed:
@@ -119,22 +158,24 @@ implementation that already works.
 | C-2 | `wardPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:370](src/features/guardian-inventory/pdf-model.js#L370) |
 | C-3 | `wardPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:388](src/features/guardian-inventory/pdf-model.js#L388) |
 | C-3 | `actionDate` (required, validated at [index.js:1243](src/features/guardian-inventory/index.js#L1243)) | **Missing** | same row mapping has no date column at all |
-| C-4 | `accountNumber`, `trustType` (required select), `wardPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:406](src/features/guardian-inventory/pdf-model.js#L406) |
+| C-4 | `accountNumber`, `trustType` (required select), `wardPercent` (required) / computed `wardC` | **Missing** — Type and Account Number are 60C's scope, the percentage 60B's (the earlier pass listed them here and then assigned them to no delivery) | [pdf-model.js:406](src/features/guardian-inventory/pdf-model.js#L406) |
 | C-4 | `trusteeCityStateZip` | **Missing** — `composePdfAddressLines(r.trusteeName, r.trusteeAddress)` is called with 2 args, dropping the third | same |
 | C-5 | `jointOwnerPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:422](src/features/guardian-inventory/pdf-model.js#L422) |
 | C-5 | `ownerCityStateZip` | **Missing** — same 2-arg `composePdfAddressLines` pattern as C-4 | same |
 
-**B-2/B-3's `amountInSDB` is a cross-path gap, not a PDF-only one.** The
-workbook computes it as a formula (value in the safe-deposit box, derived
-from the asset's ward-adjusted value and the Yes/No safe-deposit-box
-answer); `probate-guardian-data-model.csv` declares `amountInSDB` for both
-schedules (lines 210, 224); but no UI input ever sets it, and
-`parseInitialInventoryWorkbook()` hardcodes it to `0` on import
-([excel.js:568](src/features/guardian-inventory/excel.js#L568)). There is
-nothing correct to render on the PDF yet — this needs the same UI/Excel
-attention as a genuine input before a PDF column means anything, unlike the
-other rows in this table where the value already exists and only the PDF
-is missing it.
+**B-2/B-3's `amountInSDB` is a derived figure, not a missing input —
+corrected 2026-09-20 from the template.** `B-2 PER PROP pg 1`!I18 is
+`=IF(H18="Yes",G18,0)`: the ward-adjusted value when the safe-deposit-box
+answer is Yes, else zero; B-3 has the same shape. The UI already captures
+that Yes/No answer (`inSafeDepositBox`). So nothing is missing upstream —
+the amount is computable from data the app already holds, exactly like
+`restrictedCash`. What is wrong today: `probate-guardian-data-model.csv`
+declares `amountInSDB` as a *persisted* field for both schedules (lines 210,
+224) and `parseInitialInventoryWorkbook()` writes a literal `0` into it on
+import ([excel.js:568](src/features/guardian-inventory/excel.js#L568)) — a
+stored copy that can only ever be stale. **60K** computes it in the totals
+module, renders it on the PDF, removes the persisted rows, and stops the
+importer emitting it.
 
 **Checked and found genuinely correct — do not touch:** A-1's Ward's
 %/Value; B-2's and B-3's own Ward's %/Value (their omission above is
@@ -154,12 +195,18 @@ the distinction matters for anyone searching for it later).
   them at `PART V!B15`/`G15`; [pdf-model.js:534-566](src/features/guardian-inventory/pdf-model.js#L534-L566)'s
   Part V section has no key-value item for either.
 - **The bond-requirement breakdown is calculated but never printed.** The
-  workbook's `PART V` rows 18-23 itemize restricted/unrestricted cash and
-  intangible assets and the calculated bond requirement; the live UI already
-  computes exactly this via `calc.restrictedCash()`/`unrestrictedCash()`/
-  `restrictedIntang()`/`unrestrictedIntang()`/`bondRequired()`; the PDF's
-  Part V section shows only the final Bond Amount/Period/Company the filer
-  typed, not the court's own supporting breakdown.
+  workbook's `PART V` rows 18-23 (re-read 2026-09-20) are five lines and a
+  total: row 18 Schedule B-1 cash in a RESTRICTED depository
+  (`='B-1 CASH pg 1'!J56`); row 19 Schedule B-3 intangibles RESTRICTED
+  (`='B-3 INTANGIBLE pg 1;'!I68`); row 20 Schedule B-1 cash NOT restricted
+  (`='SUMMARY I '!G34-H18`); row 21 **Schedule B-2 personal property assets**
+  (`='SUMMARY I '!G35`); row 22 Schedule B-3 intangibles NOT restricted
+  (`='SUMMARY I '!G36-H19`); row 23 Total for BOND REQUIREMENT `=G20+G21+G22`.
+  The live UI already computes each via `calc.restrictedCash()`/
+  `unrestrictedCash()`/`totalB2()`/`restrictedIntang()`/`unrestrictedIntang()`/
+  `bondRequired()`; the PDF's Part V section shows only the final Bond
+  Amount/Period/Company the filer typed, not the court's own supporting
+  breakdown.
 
 ### Cross-form finding: Simplified Accounting's remuneration `amount` is a disconnected field, not an absent one
 
@@ -205,6 +252,24 @@ paragraph. They don't:
 
 **Annual is the one missing text**, not Simplified — the opposite of what
 the prior draft implied by calling them identical.
+
+**Neither app's text is the workbook's, either — re-read 2026-09-20.**
+Simplified's `PART VII`!A5 actually reads: "Per 744.367(3)(a), the annual
+guardianship report of a guardian of the poperty and the annual guardianship
+report of a guardian of the person must both include a declaration of all
+remuneration received by the guardian from any source for services rendered
+to or on behalf of the ward. As used in this paragraph, the term
+'remuneration' means any payment or other benefit made directly or
+indirectly, overtly or covertly, or in case or in kind to the guardian."
+Both apps drop the "guardian of the property … guardian of the person …
+both" clause, and the clerk's transcription carries two typos ("poperty",
+"in case"). Decision (requester, 2026-09-20): the paragraph both forms print
+is sourced from the **current text of §744.367(3)(a) itself**, which
+outranks the clerk's instrument (`AGENTS.md` §5), held in one shared
+constant that names the statute as its source; the workbooks establish only
+*where* the paragraph belongs. If the statute cannot be retrieved and
+verified at execution time, work stops and the requester is told — an
+editorially repaired transcription is not substituted silently.
 
 ### Cross-form finding: Simplified Accounting omits its remuneration declaration entirely when empty — the same defect Milestone 58D already fixed for Annual
 
@@ -273,15 +338,16 @@ actually involves:
 | Delivery | Scope | Risk | Depends on | Shares a file/region with |
 | --- | --- | --- | --- | --- |
 | **60A** | Connect Guardian Inventory's PDF to its existing correct calculator; fix the audit-fee tiers and the unadjusted `restrictedCash` subtotal along the way | Medium — changes printed dollar totals | — | `guardian-inventory/pdf-model.js` (broadly) |
-| **60B** | Display Ward's %/Share (+ the newly found C-1 address, C-3 date, C-4/C-5 city-state-zip) on the PDF | Low | **60A**, hard (needs `calcTotalsGuardian()` for the values) | 60C, 60D on A-2's row; 60C on B-4's row |
-| **60C** | Add Type and Account Number columns to A-2 and B-4 | Low | — | 60B, 60D on A-2's row; 60B on B-4's row |
+| **60B** | Display Ward's %/Share (+ the newly found C-1 address, C-3 date, C-4/C-5 city-state-zip) on the PDF | Low | **60A**, hard (needs `calcTotalsGuardian()` for the values) | 60C, 60D on A-2's row; 60C on B-4's and C-4's rows |
+| **60C** | Add Type and Account Number to A-2, B-4 **and C-4** (trust type / trust account number — omitted from every earlier draft's delivery list despite being in the evidence table) | Low | — | 60B, 60D on A-2's row; 60B on B-4's and C-4's rows |
 | **60D** | A-2: replace the phantom `relatedProperty` column with the real `notes` field | Low | — | 60B, 60C on A-2's row |
 | **60E** | A-1: remove the phantom, always-blank "Valuation Method" column | Low | — | none (A-1's row is untouched by any other delivery) |
 | **60F** | Migrate Annual's and Simplified's PDF signature blocks from `details` to `fields`, with explicit per-block row grouping and a wrapping check; update the colon-dependent regression test; retire `details` from `pdf-engine.js` | Medium | — | 60I (same file, different section, `annual-accounting/pdf-model.js`); 60G, 60J (same file, different section, `simplified-accounting/pdf-model.js`) |
 | **60G** | Reconcile Simplified's remuneration `amount`: already in the schema and shared factory, missing from Simplified's own factory and UI | Low–Medium (schema-adjacent) | — | 60J, directly — both edit Simplified's Part VII block |
 | **60H** | Guardian Part V: render the bond-waiver answer/date and the bond-requirement breakdown table | Low | **60A**, hard, for the breakdown table only — the bond-waiver half is independent | none beyond the shared file |
 | **60I** | Annual: restore the full two-sentence remuneration statutory paragraph | Low | — | 60F (same file, different section) |
-| **60J** | Simplified: always render the Part VII remuneration declaration (with a "none reported" fallback), matching Annual's Milestone 58D fix | Low | — | 60G, directly — both edit Simplified's Part VII block; 60F (same file, different section) |
+| **60J** | Simplified: full Milestone 58D parity — explicit "none received" attestation, sidebar and export rules, and the Part VII declaration printed on every filing | Medium (new export rule, fixture sweep) | — | 60G, directly — both edit Simplified's Part VII block; 60F (same file, different section) |
+| **60K** | Newly authorized cross-path items: derived B-2/B-3 safe-deposit amounts; C-2 city/state/ZIP capture; B-4 Excel account-number line | Medium (schema + Excel path) | **60A** for the derived amounts | 60B–60E on B-2/B-3/C-2 rows in `pdf-model.js`; `guardian-inventory/excel.js` alone otherwise |
 
 **Reading the table:** "Depends on" is a real logical dependency — implementing
 out of that order produces something that has to be redone. "Shares a
@@ -295,20 +361,11 @@ approved, doing them together avoids diffing the same handful of lines three
 times. **Simplified's Part VII block** (60G, 60J) is the other tight pairing.
 60E stands alone: nothing else in this document touches A-1.
 
-**B-2/B-3's `amountInSDB` is deliberately not a delivery here.** It's a
-missing input, not a missing render — scoping the UI/Excel/PDF work it
-actually needs is a separate decision from this document's PDF-fidelity
-focus, flagged in the evidence above so it isn't lost.
-
-**Guardian Schedule C-2's missing city/state/zip capture is deliberately not
-repeated here either** — it was already identified as a data-model gap in
-this document's first version (Excel-path audit, preserved at commit
-`3a001f1`) and remains tracked there rather than duplicated.
-
-**B-4's Excel account-number placement (written one line early, per the
-first version of this document) is related context for 60C** — both are
-about B-4's Account Number — **but is an Excel-path defect, out of scope for
-this PDF-focused version.**
+**The three items earlier passes set aside — B-2/B-3's safe-deposit amount,
+Schedule C-2's city/state/ZIP capture, and B-4's Excel account-number line
+(first found in the Excel-path audit at commit `3a001f1`) — were pulled into
+scope by the requester on 2026-09-20 as delivery 60K**, so that they are
+authorized, logged and tested under a name rather than "folded in."
 
 ---
 
@@ -317,25 +374,42 @@ this PDF-focused version.**
 1. Extract `legacy-app.js`'s `calc` object into
    `src/features/guardian-inventory/totals.js` as an exported
    `calcTotalsGuardian(customD)`, following `annual-accounting/totals.js`'s
-   established shape (`const d = customD || window.D || {}`) — reproducing
-   its existing formulas exactly (including the bare `/100`, not Annual's
-   defensive fraction-or-percent `pct()` — Guardian's UI only ever produces
-   0-100 values today, and adopting Annual's convention without checking
-   what a *blank* `wardPercent` currently means in each caller is a
-   semantic change, not a free defensive improvement; leave that alone
-   unless a specific case demonstrates it's needed).
-2. Refactor `legacy-app.js`'s `calc` to delegate to the new module (e.g.
-   `const calc = makeGuardianCalcAdapter(() => window.D)` or equivalent),
-   so the live UI and the PDF consume the *same* implementation rather than
-   two that happen to agree today. Every existing `calc.xxx()` call site in
-   `legacy-app.js` keeps its current call shape — this is an internal
-   refactor of `calc`'s definition, not a rename of its call sites.
+   established shape (`const d = customD || window.D || {}`) — keeping its
+   per-schedule field mapping and the bare `/100` (not Annual's
+   fraction-or-percent `pct()`; Guardian's UI only ever produces 0-100
+   values, and a blank `wardPercent` keeps meaning 0), but **replacing its
+   per-row rounding with the workbook's rule**. **Rounding contract
+   (approved by the requester 2026-09-20):** compute each ward-adjusted
+   value at full precision; sum those unrounded values; round the aggregate
+   to cents only when producing a monetary figure for display or output;
+   never sum already-rounded row displays. The per-row helpers
+   (`wardVal(e)` etc.) return the full-precision product; callers round for
+   display.
+2. Refactor `legacy-app.js`'s `calc` to a thin adapter over the module, so
+   the live UI and the PDF consume the *same* implementation. Every existing
+   `calc.xxx()` call site in `legacy-app.js` and
+   `guardian-inventory/index.js` keeps its current call shape.
 3. Update `pdf-model.js` to import `calcTotalsGuardian()` and use its
-   `totalA1`…`totalC5`, `netA`, `netB`, `total`, `restrictedCash`,
-   `unrestrictedCash`, `restrictedIntang`, `unrestrictedIntang`,
-   `bondRequired`, and `auditFee` outputs in place of its own local `sum`/
-   `sumWard`/`calcWard` and the four-tier audit-fee ladder at
+   outputs in place of its own local `sum`/`sumWard`/`calcWard` and the
+   four-tier audit-fee ladder at
    [pdf-model.js:552](src/features/guardian-inventory/pdf-model.js#L552).
+4. **Bridge files the earlier draft omitted:** eager-load the module from
+   `src/features-loader.js` (the Annual totals precedent at line 26) and
+   publish `window.calcTotalsGuardian`; regenerate
+   `src/core/types/window-bridge.d.ts` and
+   `tests/unit/fixtures/window-bridge-allowlist.json` with
+   `node scripts/audit-window-bridge.mjs --declare` so
+   `tests/unit/window-bridge.spec.js` stays green by a deliberate edit, not
+   an accident.
+
+**Exactly $25,000 is an unresolved authority gap, preserved as-is.** The
+template's own labels are "in excess of $25,000" → `$85` (`PART V`!G8) and
+"below $25,000" → `$0` (G9); a total of exactly `$25,000` matches neither
+label. `calc.auditFee` uses `> 25000`, so exactly `$25,000` prints `$0`.
+This milestone keeps that behavior unchanged and does **not** treat it as
+validated; a boundary test pins the current behavior so a future change is
+deliberate. Resolving it needs the Clerk or a qualified person (`AGENTS.md`
+§8.8).
 
 **Confirm before implementing, not after:** re-verify `calc.auditFee`'s
 `$85`-over-`$25,000` rule against the live decoded template's `PART V!G8`/`G9`
@@ -344,28 +418,37 @@ evidence is strong (an existing, UI-trusted implementation agrees with the
 template) but `AGENTS.md` §5 still asks for a direct check before any
 calculation change ships.
 
-**Red-first proof:** for each of the schedules whose total changes, create
-one entry with a percentage below 100 and a nonzero full value; confirm the
-pre-fix PDF total equals the full value; confirm the post-fix PDF total
-equals `calcTotalsGuardian()`'s figure exactly (not just "different from
-before").
+**Red-first proofs — four independent tests, because one fixture can turn
+`$170` into `$85` through either bug:**
 
-**Audit-fee tier proof — corrected 2026-09-20 after a live run reproduced
-the wrong bracket.** A filing whose `total()` lands in `($25,000, $100,000]`
-does **not** expose this bug: Annual's borrowed four-tier ladder and
-Guardian's real two-tier rule happen to agree there (`$85` either way). The
-tiers only diverge above `$100,000`. Use a filing whose `total()` is between
-`$100,000` and `$500,000` (e.g. `$120,000`) — confirm the pre-fix PDF prints
-`$170.00 ($100k-$500k)` (Annual's third tier, wrong for this form) and the
-post-fix PDF prints `$85.00` (Guardian's actual rule, per `PART V!G8`: `$85`
-flat for any total over `$25,000`, no upper bound). A total above `$500,000`
-also exposes it (pre-fix `$250`, correct `$85`) and is worth a second
-fixture for the same reason.
+1. **Fee rule alone:** a filing totalling `$120,000` at **100%** ownership.
+   Pre-fix PDF prints `$170.00 ($100k-$500k)` (Annual's third tier, wrong
+   for this form); post-fix prints `$85.00`. A filing in `($25,000, $100,000]`
+   does **not** expose this — both ladders say `$85` there (a live run on
+   2026-09-20 confirmed it). Above `$500,000` also exposes it (`$250` vs
+   `$85`) and is a second fixture.
+2. **Apportionment alone:** one row per changed schedule with a percentage
+   below 100 and a nonzero full value; pre-fix PDF total equals the full
+   value; post-fix equals the hand-computed ward value exactly.
+3. **Boundaries:** exactly `$25,000` → `$0` (the preserved gap), `$25,000.01`
+   → `$85`, `$100,000` → `$85`, `$500,000.01` → `$85`.
+4. **Rounding contract:** the three-row fixture from the evidence section —
+   displayed rows `$333.32 + $1,667.12 + $41.67 = $2,042.11`, displayed
+   aggregate **`$2,042.10`**; the module must produce the latter.
+
+**Parity proof (completion criterion 3):** one fixture with mixed
+percentages run through `calcTotalsGuardian()`, `window.calc` (via the
+adapter), and `buildVerifiedInventoryModel()`; every schedule total, both
+summaries, every bond line and the audit fee must be identical. A source
+scan that the formulas no longer live in `legacy-app.js` is secondary
+evidence only.
 
 **Expected file surface:** `src/features/guardian-inventory/totals.js` (new);
 `src/legacy-app.js` (the `calc` definition only); `src/features/guardian-inventory/pdf-model.js`;
-`tests/unit/guardian-inventory-pdf-model.spec.js`; a new or extended unit
-spec for `totals.js` itself; `TEST-INDEX.md`.
+`src/features-loader.js`; `src/core/types/window-bridge.d.ts`;
+`tests/unit/fixtures/window-bridge-allowlist.json`;
+`tests/unit/guardian-inventory-pdf-model.spec.js`;
+`tests/unit/guardian-inventory-totals.spec.js` (new); `TEST-INDEX.md`.
 
 ---
 
@@ -388,22 +471,38 @@ Add, per schedule:
 generated PDF before the change and present with the correct value after,
 using the same fixtures as 60A's proof for the percentage/share columns.
 
+**Layout proof (60B–60E together, per the 2026-09-20 plan review):** adding
+two or three columns to already-wide schedules can render every value and
+still be unreadable. Three layers, because extracted PDF text widths are not
+reliable physical ink widths (an existing test documents this): (a) unit
+assertions on the model for column count, width reconciliation and field
+mapping (`pdf-model-column-integrity.spec.js` plus targeted cases);
+(b) extracted-text e2e assertions for content and reading order only;
+(c) rendered-canvas inspection — the technique
+`tests/e2e/signature-block-address-margin.spec.ts` already uses — for the
+real concerns on A-2, C-1, C-3 and C-4 with long realistic values: no ink
+past the content box, rows growing with wrapped content, no row split
+across a page break.
+
 **Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
 `tests/unit/guardian-inventory-pdf-model.spec.js`;
-`tests/e2e/pdf-form-specific.spec.ts` or the relevant PDF content-assertion
-spec; `TEST-INDEX.md`.
+`tests/e2e/pdf-accessibility-and-signatures.spec.ts` (its fixture seeds the
+phantom `relatedProperty`/A-1 `valuationMethod` fields and must seed real
+ones); a new e2e layout spec for the widened schedules; `TEST-INDEX.md`.
 
 ---
 
-## 60C — A-2 and B-4: add Type and Account Number
+## 60C — A-2, B-4 and C-4: add Type and Account Number
 
-Add `liabilityType` (header "Type") to both schedules' PDF tables. Add
-`accountNumber` as well, rendered as a sub-line under the lender name/address
-(matching 60D's pattern below) rather than as an independent table header —
-the workbook itself carries the account number on a stacked detail line, not
-a distinct column, so a literal new header would be less faithful to the
-original form than the sub-line rendering already used elsewhere in this
-model.
+Add `liabilityType` (header "Type") to A-2's and B-4's PDF tables, and
+`trustType` (header "Type") to C-4's. Add `accountNumber` to all three,
+rendered as a sub-line under the lender/trustee name (matching 60D's pattern
+below) rather than as an independent table header — the workbook itself
+carries the account number on a stacked detail line, not a distinct column,
+so a literal new header would be less faithful to the original form than
+the sub-line rendering already used elsewhere in this model. C-4 was in
+every earlier draft's evidence table and in none of their deliveries; the
+2026-09-20 plan review caught it.
 
 **Related but out of scope:** the first version of this document (Excel
 path, commit `3a001f1`) found B-4's Account Number is written to the wrong
@@ -471,13 +570,19 @@ correctly, after.
 3. Update `tests/e2e/signature-block-address-margin.spec.ts`'s label lookup
    (currently `'Residence Address:'` with a colon) to match `fields`'
    colon-less label rendering.
-4. Test the longest realistic wrapped value in each converted block (a long
-   address or a long combined name) against `fields`' fixed 28pt row height,
-   not only the ordinary one- or two-line case — `details`' height came from
-   measuring the actual content in advance; `fields`' does not.
-5. Once nothing sets `details` on a `signature-block` object anywhere in the
-   repo (grep to confirm), remove the `details`/`planDetailStack()` branch
-   from `src/core/pdf/pdf-engine.js`.
+4. **Engine first (decided in the 2026-09-20 plan):** rather than testing
+   around `fields`' fixed 28pt row height, make each `fields` row as tall as
+   its tallest wrapped label or value across every column (minimum 28pt),
+   and include that height in the block's page-space reservation. This
+   changes the shared renderer for Guardian Inventory's existing `fields`
+   blocks too, so it carries regression coverage for those, plus a
+   three-or-more-line value case, canvas margin/overlap checks, and
+   text-order/tag assertions.
+5. Remove the `details`/`planDetailStack()` branch from
+   `src/core/pdf/pdf-engine.js` only after **both** a static search finds no
+   `details:` on any `signature-block` and a runtime pass building all nine
+   PDF models (the `pdf-model-column-integrity.spec.js` builder list)
+   confirms no block carries one.
 
 **Red-first proof:** before conversion, confirm the existing address-margin
 test passes (establishing the current-format baseline). After conversion,
@@ -511,13 +616,17 @@ Simplified's own initial-data factory and UI that never adopted it. Options:
    and shared factory instead, so the schema stops asserting a field
    Simplified never actually uses, and record why here.
 
-**Expected file surface, if option 1:** `src/core/state.js`;
+**Decided 2026-09-20 by the requester: option 1.** Implementation note from
+the plan review: `emptyDataSimplified()` gains `amount: ''` directly rather
+than importing `schedule-definitions.js` into `core/state.js` for one row
+literal — that import direction is an initialization coupling nobody asked
+for. A drift-guard unit test asserts the hand-rolled row's keys equal
+`SCHEDULE_SCHEMAS.remuneration.factory()`'s keys instead.
+
+**Expected file surface:** `src/core/state.js`;
 `src/features/simplified-accounting/{index.js,pdf-model.js}`;
 `tests/unit/*` and `tests/e2e/*` fixtures touching Simplified's
 remuneration; `TEST-INDEX.md`.
-**Expected file surface, if option 2:** `probate-guardian-data-model.csv`;
-`src/core/form/schedule-definitions.js`; any test asserting the removed
-field.
 
 ---
 
@@ -526,17 +635,21 @@ field.
 1. Add a key-value item for the bond-waiver answer (`d.bondWaived`) and,
    when affirmative, its date (`d.bondWaivedDate`), to the existing "Schedule
    D-4: Guardian Bond" block.
-2. Add a table itemizing restricted/unrestricted cash and intangible assets
-   and the calculated bond requirement, sourced from 60A's
-   `calcTotalsGuardian()` (`restrictedCash`, `unrestrictedCash`,
-   `restrictedIntang`, `unrestrictedIntang`, `bondRequired`), matching the
-   workbook's `PART V` rows 18-23.
+2. Add a table with exactly the workbook's `PART V` rows 18-23, in order:
+   B-1 cash in a restricted depository; B-3 intangibles restricted; B-1 cash
+   not restricted; **B-2 personal property assets**; B-3 intangibles not
+   restricted; Total for Bond Requirement (the sum of the last three).
+   Sourced from 60A's `calcTotalsGuardian()` (`restrictedCash`,
+   `restrictedIntang`, `unrestrictedCash`, `totalB2`, `unrestrictedIntang`,
+   `bondRequired`).
 
 **Depends on 60A** for the breakdown figures; the bond-waiver item does not.
 
 **Red-first proof:** confirm both are absent from the current PDF; confirm
-both appear, with figures matching the live UI's own sidebar/calculated
-display for the same fixture, after.
+both appear after. Verify each printed line **by recomputing it by hand from
+the fixture against the workbook's formulas** (rows 18-23 above), not
+against the live UI — the shared module means the UI and the PDF could agree
+on the same mistake.
 
 **Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
 `tests/unit/guardian-inventory-pdf-model.spec.js`; `TEST-INDEX.md`.
@@ -546,56 +659,108 @@ display for the same fixture, after.
 ## 60I — Annual: restore the full remuneration statutory paragraph
 
 [pdf-model.js:1145](src/features/annual-accounting/pdf-model.js#L1145) prints
-only the first sentence of `PART XI!A5`'s statutory text. Add the workbook's
-second sentence ("As used in this paragraph, the term 'remuneration' means
-any payment or other benefit made directly or indirectly, overtly or
-covertly, or in cash or in kind to the guardian.") — Simplified's equivalent
-text is the reference for the exact wording already in use elsewhere in this
-app.
+only the first sentence of `PART XI!A5`'s statutory text, and (see the
+evidence section) even that sentence is not the paragraph the court form
+carries. Replace it with a shared constant in `src/core/` holding the
+current text of **§744.367(3)(a)** itself, retrieved and verified at
+execution time and cited as its source in a comment; Simplified (60J) prints
+the same constant. If the statute cannot be retrieved, stop and report.
 
 **Red-first proof:** confirm the generated PDF's Part XI text is missing the
-second sentence before the fix and matches the workbook's full paragraph
-after.
+second sentence before the fix and equals the shared constant after.
 
-**Expected file surface:** `src/features/annual-accounting/pdf-model.js`;
-`tests/unit/*` covering Annual's PDF text content if one exists, or a new
-targeted assertion; `TEST-INDEX.md`.
+**Expected file surface:** `src/core/filing/statutory-text.js` (new, or the
+nearest existing home for shared court copy);
+`src/features/annual-accounting/pdf-model.js`;
+`tests/unit/annual-accounting-pdf-model.spec.js`; `TEST-INDEX.md`.
 
 ---
 
-## 60J — Simplified: always render the Part VII remuneration declaration
+## 60J — Simplified: full Milestone 58D parity for the Part VII declaration
 
-Mirror Annual's Milestone 58D fix: change
-[pdf-model.js:310-311](src/features/simplified-accounting/pdf-model.js#L310-L311)'s
-guard so the section renders whenever there are entries *or* whenever the
-filer has otherwise reached export (i.e., always, unless this form has no
-equivalent of Annual's `scheduleNoItems.remuneration` attestation — confirm
-whether Simplified has an analogous "I verify nothing to report" flag before
-choosing the empty-state condition; if it does not, render unconditionally
-with a "No remuneration reported for this period." fallback, matching
-Annual's text).
+Simplified has no "I verify nothing to report" flag today (confirmed: zero
+`scheduleNoItems` references under `src/features/simplified-accounting/`).
+The requester chose full parity over render-always on 2026-09-20, because
+render-always would let a filer who never opened Part VII file a PDF that
+affirmatively declares no remuneration was received. Full surface, mirroring
+Annual's 58D:
 
-**Red-first proof:** generate a Simplified PDF for a filing with no
-remuneration entries; confirm Part VII is entirely absent before the fix and
-present with the statutory paragraph (and appropriate empty-state or table)
-after.
+1. **Persisted state:** `scheduleNoItems.remuneration` (boolean) for the
+   `simplified` filing type, with a `probate-guardian-data-model.csv` row.
+2. **UI:** an "I verify there is no remuneration to report" checkbox on
+   Part VII, using the same control Annual's Part XI uses.
+3. **Normalization:** `normalizeWardData()` clears the flag when any
+   remuneration row is populated (Annual's rule at
+   [legacy-app.js:6442](src/legacy-app.js#L6442) extended to `simplified`);
+   the two blank placeholder rows `emptyDataSimplified()` seeds are never
+   treated as entries.
+4. **Sidebar rule:** `s-p7` is complete when a complete row exists *or* the
+   flag is set (Annual's `a-p11`/`verifiedEmpty('remuneration')` shape).
+5. **Export rule:** `validateSimplified()` blocks export until Part VII is
+   answered, with Annual's issue text
+   ([annual-accounting/index.js:1668-1670](src/features/annual-accounting/index.js#L1668-L1670)).
+   `checklist-export-parity.spec.js` must stay green with no new
+   `KNOWN_GAPS` entry.
+6. **PDF:** Part VII prints on every filing — the statutory paragraph (60I's
+   shared constant) plus either the entries table (with 60G's Amount column)
+   or "No remuneration reported for this period."
+7. **Fixture sweep (`AGENTS.md` §8.3):** every `fillMinimalValid*` /
+   baseline fixture for Simplified gains the attestation or an entry.
+8. **Portability:** a `.sav` saved before this change loads with the flag
+   unanswered (never coerced), so an old filing is prompted, not blocked
+   silently or passed silently.
 
-**Expected file surface:** `src/features/simplified-accounting/pdf-model.js`;
-`tests/unit/*` or `tests/e2e/*` covering Simplified's PDF section presence;
-`TEST-INDEX.md`.
+**Red-first proof:** (a) a Simplified PDF with no remuneration entries has
+no Part VII before and has it after, with the "none reported" text when the
+flag is set; (b) a nav/export truth table — no rows + no flag → sidebar
+incomplete and export blocked; flag set → both satisfied; a populated row →
+both satisfied and the flag cleared.
+
+**Expected file surface:** `src/features/simplified-accounting/{index.js,pdf-model.js}`;
+`src/legacy-app.js` (`normalizeWardData`, `computeNavChecks` `s-p7`);
+`probate-guardian-data-model.csv`; `tests/unit/*` and `tests/e2e/*`
+Simplified fixtures; a new truth-table spec; `TEST-INDEX.md`.
+
+---
+
+## 60K — Newly authorized cross-path items (added 2026-09-20)
+
+Three items earlier passes set aside, pulled in by the requester so they are
+fixed under a name. Each has its own red-first test.
+
+1. **B-2/B-3 safe-deposit amount, derived — never stored.** The totals
+   module computes per row `inSafeDepositBox === 'Yes' ? wardValue : 0`
+   (the workbook's `=IF(H18="Yes",G18,0)`) and a per-schedule total; the
+   PDF's B-2 and B-3 tables gain an "Amount in Safe Deposit Box" column and
+   total. The persisted `amountInSDB` rows come out of
+   `probate-guardian-data-model.csv` (lines 210, 224), the importer stops
+   emitting the field (`excel.js:568-569`), and normalization ignores it on
+   old saves. Cached workbook formula results are never read for it.
+   Depends on 60A.
+2. **Schedule C-2 city/state/ZIP capture.** New `scheduleC2[].claimantCityStateZip`
+   (data-model row, `mk.c2()` factory, UI input beside the existing address
+   line, Excel write to the form's own city/state/ZIP line and matching
+   read, PDF sub-line via `composePdfAddressLines`'s third argument). Legacy
+   fallback: a save holding only the single `claimantAddress` line prints and
+   exports exactly as it does today.
+3. **B-4 Excel account-number line.** The exporter writes the account number
+   to the line the form labels for it (one line later than today, per the
+   `3a001f1` audit); the importer reads the correct line first and falls
+   back to the old wrong line so workbooks exported before this fix still
+   round-trip. Verified by reading the exported file, never by re-import
+   alone (`AGENTS.md` §5).
+
+**Expected file surface:** `src/features/guardian-inventory/{totals.js,pdf-model.js,excel.js,index.js}`;
+`src/legacy-app.js` (`mk.c2` factory, normalization);
+`probate-guardian-data-model.csv`; `tests/unit/guardian-inventory-*.spec.js`;
+`tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts`; `TEST-INDEX.md`.
 
 ---
 
 ## Out of scope
 
-- Any change to the Excel export/import path for any of the three forms,
-  including B-4's account-number line placement referenced under 60C
-  (preserved at commit `3a001f1`).
-- B-2/B-3's `amountInSDB` UI/Excel wiring — flagged in the evidence above,
-  not scoped as a delivery here; it needs its own UI/data-capture decision
-  before a PDF column would mean anything.
-- Guardian Schedule C-2's missing city/state/zip capture — tracked from the
-  first version of this document, not duplicated here.
+- Any change to the Excel export/import path for any of the three forms
+  **other than 60K's two named Guardian items**.
 - Annual's Schedule B-3 period fields and B-4 description-field naming
   drift relative to the court workbook, checked during this audit and found
   to be schema cleanup candidates, not missing filed output.
@@ -627,3 +792,38 @@ individually authorized:
 6. `TEST-INDEX.md` reflects every added or materially changed test.
 7. No item outside the requester's explicit approval is touched in the same
    change, per `AGENTS.md` §3.
+8. Every phase's verification ran and passed **before** that phase's commit
+   and Progress Log entry; the full `npm test` regression passed **before**
+   the status line above changed to Landed.
+
+---
+
+## Execution plan (approved 2026-09-20 after two rounds of independent critique)
+
+One commit per phase, direct to master, each carrying its Progress Log entry
+below. The full unit suite runs after every phase; targeted e2e wherever
+rendered PDF text changes; the full regression once, in Phase 6.
+
+| Phase | Deliveries | Why this order |
+| --- | --- | --- |
+| 0 | Authorization, choices, rounding fixture, baseline specs | Settles the summation rule before any calculation code exists |
+| 1 | 60A | Everything downstream reads the totals module |
+| 2A | 60B, 60C, 60D, 60E | All edit the same schedule row arrays — one pass, one diff |
+| 2B | 60K | Cross-path (schema/Excel) work kept separate from the pure-PDF pass |
+| 3 | 60H | Needs 60A's bond lines |
+| 4 | 60G, 60I, 60J | The remuneration cluster; 60G and 60J share Simplified's Part VII block; lands before 60F so 60F's diff is signature blocks only |
+| 5 | 60F | Broadest engine change, last, so anything it disturbs is isolated from the fidelity fixes already landed |
+| 6 | Full regression → Landed | Regressions caused by this milestone are fixed before landing; unrelated failures are diagnosed, logged, and brought back to the requester |
+
+## Progress Log
+
+- **2026-09-20 — Phase 0.** Authorization recorded (see Status). Rounding
+  fixture computed three ways (evidence section) — workbook `$2,042.10` vs
+  legacy `$2,042.11`; module follows the workbook. Baseline specs green
+  before any change: `guardian-inventory-pdf-model`,
+  `pdf-model-column-integrity`, `annual-accounting-pdf-model`,
+  `simplified-no-blank-pages`, `boot-ordering`, `test-index-guard`,
+  `checklist-export-parity`, `plan-simplified-parity` — 8 files, 59 tests.
+  Template re-read for `PART V` rows 7-9 and 18-23, `A-1`/`B-2` value
+  formulas, and Simplified `PART VII`!A5 (all quoted above). No code
+  changed in this phase.
