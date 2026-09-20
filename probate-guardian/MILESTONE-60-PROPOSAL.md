@@ -336,9 +336,19 @@ calculation change ships.
 one entry with a percentage below 100 and a nonzero full value; confirm the
 pre-fix PDF total equals the full value; confirm the post-fix PDF total
 equals `calcTotalsGuardian()`'s figure exactly (not just "different from
-before"). Separately: create a filing whose `total()` is between `$25,000`
-and `$100,000`; confirm the pre-fix PDF prints `$170` (Annual's second
-tier) and the post-fix PDF prints `$85` (Guardian's actual rule).
+before").
+
+**Audit-fee tier proof — corrected 2026-09-20 after a live run reproduced
+the wrong bracket.** A filing whose `total()` lands in `($25,000, $100,000]`
+does **not** expose this bug: Annual's borrowed four-tier ladder and
+Guardian's real two-tier rule happen to agree there (`$85` either way). The
+tiers only diverge above `$100,000`. Use a filing whose `total()` is between
+`$100,000` and `$500,000` (e.g. `$120,000`) — confirm the pre-fix PDF prints
+`$170.00 ($100k-$500k)` (Annual's third tier, wrong for this form) and the
+post-fix PDF prints `$85.00` (Guardian's actual rule, per `PART V!G8`: `$85`
+flat for any total over `$25,000`, no upper bound). A total above `$500,000`
+also exposes it (pre-fix `$250`, correct `$85`) and is worth a second
+fixture for the same reason.
 
 **Expected file surface:** `src/features/guardian-inventory/totals.js` (new);
 `src/legacy-app.js` (the `calc` definition only); `src/features/guardian-inventory/pdf-model.js`;
