@@ -1,302 +1,290 @@
-# Milestone 60: Court-Template Field-Coverage Audit — Cross-Form Fix List
+# Milestone 60: Guardian Inventory PDF Fidelity — Ward's-Percentage and Missing-Column Fixes
 
 ## Status
 
 **PROPOSAL. Not started. Not authorized.** Per `AGENTS.md` §3, no item below may
 be implemented until the requester approves that item by name; approval of one
-item authorizes only that item. This document records findings and proposed
-fixes, not an execution log.
+item authorizes only that item.
 
-This proposal was scoped on **2026-09-20** against `master` at `f517df9` by
-decoding all three embedded court templates directly from their base64 payload
-in `templates/*.js`, unzipping them, and reading `xl/workbook.xml`,
-`xl/sharedStrings.xml`, and each worksheet's raw XML (cell values, `<f>`
-formulas, and `<mergeCell>` ranges) with a purpose-built parser, rather than
-trusting either the template's own prose instructions or either side's
-existing code. Findings below cite the confirming evidence — a literal cell
-value, a formula, or a merge range — not just a written instruction, because
-this audit's own experience (see 60C-5, 60C-7 below) is that this workbook
-family's written instructions sometimes disagree with its own worked examples.
+This proposal was scoped on **2026-09-20** against `master` at `3a001f1`, by
+reading `src/features/guardian-inventory/pdf-model.js` in full and
+cross-checking every schedule's rendered PDF columns against (a) the fields
+the UI actually captures (`src/features/guardian-inventory/index.js`) and (b)
+the columns the original clerk-of-court `.xlsx` requires (established in this
+session's earlier decode of the embedded template). This is a **PDF-path**
+audit — a different code path from the Excel export/import audit that
+produced this document's previous contents (that work is preserved in git
+history at commit `3a001f1` if it's needed again; it is not part of this
+version of the proposal).
 
-## Methodology
+## Purpose
 
-For each of the three embedded workbooks —
+Verify and fix that the PDF this app generates — the document a filer
+actually reviews and files with the court — faithfully renders every field
+the original court form requires, at the value the filer actually entered.
+This audit found that it currently does not, in one respect serious enough to
+change the total dollar figures printed on the document.
 
-| Template | Filing(s) | Sheets | Prior audit depth (inline comments found in its `excel.js`) |
+## Verified baseline and evidence
+
+### The headline defect: 8 of 11 schedules' PDF totals ignore Ward's percentage entirely
+
+Every asset/liability/income/claim/trust schedule after A-1 asks the filer for
+a required "Ward's %" (or, on C-5, "Joint Owner's %") and the original xlsx
+prints a "Ward's Value" / "Ward's Share" column computed from it — the whole
+point of the field is that not every listed item is 100% attributable to the
+ward (jointly held accounts, shared trusts, partial settlements). In
+`pdf-model.js` lines 44-60:
+
+```js
+const totalA1 = sumWard(d.scheduleA1, 'fullAssetValue', 'wardPercent');   // ward-adjusted
+const totalA2 = sum(d.scheduleA2, 'fullDebtBalance');                     // NOT adjusted
+const netA = Math.max(0, totalA1 - totalA2);
+
+const totalB1 = sum(d.scheduleB1, 'fullAssetAmount');                     // NOT adjusted
+const totalB2 = sumWard(d.scheduleB2, 'fullAssetValue', 'wardPercent');   // ward-adjusted
+const totalB3 = sumWard(d.scheduleB3, 'fullAssetValue', 'wardPercent');   // ward-adjusted
+const totalB4 = sum(d.scheduleB4, 'fullLiabilityBalance');                // NOT adjusted
+const netB = Math.max(0, totalB1 + totalB2 + totalB3 - totalB4);
+
+const totalC1 = sum(d.scheduleC1, 'annualIncomeAmount');                  // NOT adjusted
+const totalC2 = sum(d.scheduleC2, 'amountOfClaim');                       // NOT adjusted
+const totalC3 = sum(d.scheduleC3, 'estimatedSettlement');                 // NOT adjusted
+const totalC4 = sum(d.scheduleC4, 'trustAmount');                         // NOT adjusted
+const totalC5 = sum(d.scheduleC5, 'totalAssetValue');                     // NOT adjusted
+```
+
+Only A-1, B-2, and B-3 use `sumWard()`. The other eight schedules use the
+plain, un-adjusted `sum()` — and, confirmed separately below, never display
+the Ward's %/Share column on the page either, so nothing on the printed PDF
+shows a reader that a percentage was supposed to apply at all.
+
+**Why this is more than cosmetic.** `totalRealPersonal = netA + netB` feeds
+the very first table in the PDF ("Summary I") and directly selects the
+printed **Audit Fee** tier at [pdf-model.js:552](src/features/guardian-inventory/pdf-model.js#L552)
+(`$0 / $85 / $170 / $250` at the `$25k` / `$100k` / `$500k` thresholds). A
+filing with any jointly-owned account, shared trust, or partial claim can
+have its estate value overstated on the face of the filed document, and in
+principle push the printed audit fee to the wrong tier.
+
+### Verified per-schedule: which UI-captured fields never reach the PDF
+
+| Schedule | UI field (captured, several required) | PDF column? | Evidence |
 | --- | --- | --- | --- |
-| `templates/guardian-template.js` | Initial Inventory | 40 | Partial — several schedules corrected (Milestones 52K, 57D/F, D10); several never re-verified |
-| `templates/annual-template.js` | Annual / Final / Trust Accounting | 90 | Extensive — nearly every writer carries a comment naming the exact prior miswrite and its confirming merge/formula evidence |
-| `templates/simplified-template.js` | Simplified Accounting | 7 | Most extensive — every cell in every writer/reader pair carries a forensic comment from a full-form row-shift correction |
+| A-2 | `liabilityType` (required select) | **Missing** | [pdf-model.js:274-281](src/features/guardian-inventory/pdf-model.js#L274-L281) — 4 columns only |
+| A-2 | `accountNumber` | **Missing** | same |
+| A-2 | `wardPercent` (required) / computed `wardDebt` | **Missing** | same |
+| A-2 | `notes` ("Notes (related property, etc.)") | **Missing** — column instead reads `r.relatedProperty`, a field that does not exist on `scheduleA2` (it belongs to B-4); always renders blank | [pdf-model.js:275](src/features/guardian-inventory/pdf-model.js#L275); confirmed absent from `index.js`'s `scheduleA2` fields and from `probate-guardian-data-model.csv` |
+| B-1 | `wardPercent` (required) / computed `wardAmt` | **Missing** | [pdf-model.js:297-298](src/features/guardian-inventory/pdf-model.js#L297-L298) — 6 columns, no Ward's %/Amount |
+| B-4 | `liabilityType` (required select) | **Missing** | [pdf-model.js:340-347](src/features/guardian-inventory/pdf-model.js#L340-L347) — 4 columns only |
+| B-4 | `accountNumber` | **Missing** | same |
+| B-4 | `wardPercent` (required) / computed `wardB4` | **Missing** | same |
+| C-1 | `payerAddress` / `payerCityStateZip` | **Missing** | [pdf-model.js:356-357](src/features/guardian-inventory/pdf-model.js#L356-L357) — payer address not rendered at all |
+| C-1 | `wardPercent` (required) / computed `wardC` | **Missing** | same |
+| C-2 | `wardPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:370](src/features/guardian-inventory/pdf-model.js#L370) |
+| C-3 | `wardPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:387](src/features/guardian-inventory/pdf-model.js#L387) |
+| C-4 | `accountNumber`, `trustType` (required select), `wardPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:401](src/features/guardian-inventory/pdf-model.js#L401) — 4 columns only |
+| C-5 | `jointOwnerPercent` (required) / computed `wardC` | **Missing** | [pdf-model.js:419](src/features/guardian-inventory/pdf-model.js#L419) — 4 columns only |
 
-— the same four checks were applied to every schedule/part with a
-`fillScheduleXX`-style writer:
+**Checked and found correct — do not touch:** A-1 (Ward's %/Value both shown
+and used in totals), B-2, B-3 (same). A-1's `notes` field is deliberately
+rendered as an italic sub-line under the description rather than its own
+column ([pdf-model.js:259](src/features/guardian-inventory/pdf-model.js#L259)) — that is a
+reasonable, faithful design choice, not a defect, and 60D below follows the
+same pattern for A-2.
 
-1. **Does the writer target a cell the template shows is a formula?** (violates
-   `AGENTS.md` §5 — a computed cell must never be overwritten).
-2. **Does the writer target a cell that is not the anchor of its own merge
-   range?** (ExcelJS silently redirects such a write to the merge's master
-   cell, which is usually a printed caption, not a blank box).
-3. **Does the writer address every row/line a real entry's merge structure
-   provides**, or does the worked example populate lines the writer never
-   touches?
-4. **Does a literal, non-formula value in the un-filled template (a pre-printed
-   line number, a static list entry) sit in a cell the writer targets?**
+### A cosmetic defect found in the same pass
 
-Guardian Inventory's schedules were audited to this depth in full during this
-session (see the prior review, reconciled below). Annual Accounting and
-Simplified Accounting were audited the same way; because both already carry
-extensive in-line forensic documentation from prior corrections, the audit
-concentrated on schedules **without** an existing correction comment, since
-those are the ones nobody has re-verified against the raw template.
-
----
-
-## A. Global issues (all three forms)
-
-### 60A. Schedule/part "layout" tests prove writer/reader agreement, not agreement with the court's template
-
-**Finding.** Each form has (or, for Guardian Inventory, should have) a
-round-trip test that fills every schedule to capacity, exports to Excel,
-re-imports, and asserts the re-imported data equals what was written
-(`tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts` is the Guardian
-Inventory instance). This class of test is valuable and should stay, but it
-structurally **cannot** catch a bug where the writer and reader agree with each
-other while disagreeing with the printed form — which is exactly the shape of
-60C-1 and 60C-2/60C-3 below: `parseInitialInventoryWorkbook()` reads back the
-same cell `fillScheduleC3()` corrupts, so the round trip is clean and the
-defect is invisible to it. This is not hypothetical for this codebase — it is
-the exact mechanism the Simplified Accounting header comments describe for
-the row-shift bug that shipped there previously ("Nothing caught it because
-`importExcel()` below read the same wrong cells, so the app round-tripped its
-own output perfectly while disagreeing with the court's form on every field").
-
-**Verified evidence.** `tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts`
-line 79 seeds `scheduleC3` fixture data including `defendantName`, and the test
-only asserts the re-imported row equals the seeded row — it does not assert
-against a fixed cell address or against the template's own pre-printed Line #
-values. The same shape was confirmed present in Annual Accounting's analogous
-tests (`excel-defined-names.spec.ts`, `excel-blank-page-pruning.spec.ts`,
-`guardian-blank-page-pruning.spec.ts` per Milestone 59's audit) and Simplified
-Accounting's (`simplified-part1-identity-cells.spec.ts`) — all assert
-round-trip equality, not template-semantic placement.
-
-**Proposed fix.** Add one template-semantic assertion per schedule/part to each
-form's existing layout test, alongside the round-trip assertion already there:
-after export, open the generated workbook directly (not through the app's own
-reader) and assert specific values landed at the cell address the template's
-own header/merge structure says they should, and that any pre-printed literal
-(a Line #, a static label) the writer must not touch is still present
-unchanged. This is additive — it does not replace the existing round-trip
-coverage — and should be written using the same raw-XML-or-ExcelJS-direct
-technique this audit used, not through the app's own `parseXxxWorkbook()`
-functions, since using the app's own reader to check the app's own writer is
-the blind spot being closed.
-
-**Risk:** Low — test-only, no production code path changes.
-
-**Expected file surface:** `tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts`;
-`tests/e2e/excel-defined-names.spec.ts`; `tests/e2e/simplified-part1-identity-cells.spec.ts`;
-`tests/e2e/excel-form-field-placement.spec.ts` if template-anchor assertions
-belong there instead; `TEST-INDEX.md`.
+A-1's PDF table renders a "Valuation Method" column
+([pdf-model.js:258](src/features/guardian-inventory/pdf-model.js#L258), reading
+`r.valuationMethod`) that is always blank: `scheduleA1` entries have no such
+field (it belongs to B-2/B-3), and the original xlsx's Schedule A-1 has no
+such column either. Lower severity than the items above — it does not hide
+required information, it just prints an empty column on every Schedule A-1
+table.
 
 ---
 
-## B. Partial issues (more than one form, fewer than all)
+## Delivery index
 
-### 60B. Multi-line entry schedules: the app captures only the first printed line, never the continuation lines the template provides and the court's own worked examples use
+| Delivery | Scope | Risk |
+| --- | --- | --- |
+| **60A** | Apply ward-percentage math to the 8 affected schedules' totals and net calculations | Medium — changes printed dollar totals |
+| **60B** | Add the Ward's %/Ward's Share (or Joint Owner's %) column to those same 8 schedules' PDF row tables | Low — additive column, no calculation change beyond 60A |
+| **60C** | Add Type and Account Number columns to A-2 and B-4 | Low — additive columns |
+| **60D** | A-2: replace the phantom `relatedProperty` column with the real, captured `notes` field | Low |
+| **60E** | A-1: remove the phantom, always-blank "Valuation Method" column | Low |
 
-**Forms affected: Guardian Inventory and Annual Accounting. Not Simplified
-Accounting**, which has no itemized asset/income/disbursement schedules at all
-(its 7 sheets are cover, financial summary, guardian/attorney/service-of-process
-signature blocks, and a single-free-text-cell remuneration list — see 60F).
-
-**Pattern.** A schedule's entry occupies several pre-printed rows (confirmed
-via `<mergeCell>` ranges: each row is its own separate 1-row `C:D`-style merge,
-not one tall merged cell), and the court's own worked example fills more than
-one of those rows with real, distinct content — a street address, a
-cross-reference to another schedule, a buyer/agent name, a prior year's
-carrying value. Each affected schedule's data model and UI expose only a
-single-line `description` field, and its writer/reader touch only the entry's
-first row. The remaining printed lines are always blank on export and are
-never read back on import.
-
-**Verified per schedule:**
-
-| Form | Schedule | Extra lines the example populates (row offset from entry start) | App's only field | Evidence |
-| --- | --- | --- | --- | --- |
-| Guardian Inventory | Schedule C-2 (Lawsuits Against Ward) | Claimant City/State/Zip (r+4) | `claimantAddress` (single field, written to r+3 only) | Worked example: "St Petersburg, FL 33710" at the row directly below the claimant's street address; no `claimantCityStateZip` in the UI, `excel.js`, or `probate-guardian-data-model.csv` line 240 |
-| Annual Accounting | Schedule C (Capital Adjustments) | Item detail, cross-reference to originating schedule, prior accounting value (r+1, r+2, r+3) | `description` (single-line `<input type="text">`, [index.js:984](src/features/annual-accounting/index.js#L984)) | Example: "1,000 shares Publix stock" / "Schedule D-4, item 1" / "Previous accounting value; $13,500.00" on three separate confirmed 1-row merges below the description row; writer only sets row `r` ([excel.js:350](src/features/annual-accounting/excel.js#L350)) |
-| Annual Accounting | Schedule D-2 (Real Estate) | Street address, city/state/zip (r+1, r+2) | `description`, UI label "Description / Address / Owners" ([index.js:1055](src/features/annual-accounting/index.js#L1055)) | Example: "1 Longleaf Lane" / "Palm Harbor FL 34634"; writer only sets row `r` ([excel.js:369](src/features/annual-accounting/excel.js#L369)) |
-| Annual Accounting | Schedule D-3 (Personal Property) | VIN/serial number, joint-ownership note (r+1, r+2) | `description`, UI label "Description / Location / Owners" ([index.js:1092](src/features/annual-accounting/index.js#L1092)) | Example: "VIN 123456789" / "Jointly owned with Spouse, Jane Doe"; writer only sets row `r` ([excel.js:377](src/features/annual-accounting/excel.js#L377)) |
-| Annual Accounting | Schedule D-5 (Mortgages/Loans/Liabilities) | Cross-reference to the related asset schedule (r+1) | `description`, UI label "Description / Lender / Related Asset" ([index.js:1164](src/features/annual-accounting/index.js#L1164)) | Example: "Home listed on Schedule D-2, item 1"; writer only sets row `r` ([excel.js:394](src/features/annual-accounting/excel.js#L394)) |
-| Annual Accounting | Schedule F-1 (Sales of Real Property) | Property address, buyer name, agent contact, prior accounting value (r+1 … r+4 — four lines) | `description`, UI label "Description of Sale / Address / Parties" ([index.js:1227](src/features/annual-accounting/index.js#L1227)) | Example: "123 Pine Cone Way, Ocala Florida 32789" / "Sold to : Bob Smith" / "Agent: Jane Doe 727-123-4567" / "Previous accounting value: $125,000.00"; writer only sets row `r` ([excel.js:416](src/features/annual-accounting/excel.js#L416)) |
-| Annual Accounting | Schedule F-2 (Sales of Personal Property) | Property address, buyer/agent, prior accounting value (r+1, r+2, r+3) | `description`, UI label "Description of Sale / Purchaser / Agent" ([index.js:1256](src/features/annual-accounting/index.js#L1256)) | Example: "123 Pine Cone Way Ocala, FL 32765" / "Sold to: Bill Jones, Agent: None" / "Previous accounting value: $22,500.00"; writer only sets row `r` ([excel.js:424](src/features/annual-accounting/excel.js#L424)) |
-
-**Checked and found clean (same row-block shape, no extra populated lines in
-the example — do not touch):** Annual's Schedule D-1 (Cash), D-4 (Intangibles),
-and Schedule E (Bank Transfers); Guardian Inventory's Schedule C-4 (Trusts) and
-A-1/A-2 (which already have a dedicated `notes` field — see Out of scope).
-
-**Why this is a schema decision, not a pure cell-mapping fix.** Unlike a wrong
-cell address (Section C below), there is currently no persisted field to write
-even if the cell address is known. Two fix shapes are available and the choice
-affects `probate-guardian-data-model.csv`, so it needs a decision before
-implementation, not just a code change:
-
-- **(a) One structured field per printed line** (e.g. `streetAddress`,
-  `cityStateZip`, `notes` as separate persisted fields, matching how Guardian
-  Inventory's A-1/A-2 already do it), written to their own row; or
-- **(b) One multi-line field** (`<textarea>` instead of `<input type="text">`)
-  whose value is split on newlines and distributed one line per row at export,
-  and rejoined on import — closer to the "Description / Address / Owners"
-  UI labels already in place, but requires the split/rejoin logic to handle a
-  user typing more lines than the schedule has boxes for.
-
-**Proposed fix (pending the (a)/(b) decision above):** add the missing
-field(s) to the data model, the UI, `fillScheduleXX()`, and
-`parseXxxWorkbook()` for each schedule in the table, following whichever
-shape is chosen. Guardian Inventory's C-2 (a single missing line) is the
-smallest instance and the reasonable first delivery if this is split.
-
-**Risk:** Medium — touches the persisted schema (`probate-guardian-data-model.csv`)
-for every schedule involved, per `AGENTS.md` §4.
-
-**Expected file surface:** `probate-guardian-data-model.csv`;
-`src/features/annual-accounting/{index.js,excel.js}`;
-`src/features/guardian-inventory/{index.js,excel.js}`;
-`tests/unit/*` and `tests/e2e/*` fixtures for each touched schedule;
-`TEST-INDEX.md`.
+60A and 60B should land together — a total that is now correctly
+ward-adjusted but still has no visible percentage column on the page would
+leave a filer unable to see why the number changed. 60C, 60D, and 60E are
+independent of 60A/60B and of each other.
 
 ---
 
-## C. Unique to one form (per-form contradictions)
+## 60A — Ward-percentage-adjusted totals
 
-### Guardian Inventory
+Change `totalA2`, `totalB1`, `totalB4`, `totalC1`, `totalC2`, `totalC3`,
+`totalC4`, `totalC5` in `pdf-model.js` (lines 45, 48, 51, 56-60) from
+`sum(arr, fullKey)` to `sumWard(arr, fullKey, pctKey)`, using each schedule's
+existing percentage field:
 
-*(Carried forward from this session's prior review of this form, reconciled
-against a second independent review; see that review's confidence labels,
-reproduced here.)*
+| Total | Full-value key | Percentage key |
+| --- | --- | --- |
+| `totalA2` | `fullDebtBalance` | `wardPercent` |
+| `totalB1` | `fullAssetAmount` | `wardPercent` |
+| `totalB4` | `fullLiabilityBalance` | `wardPercent` |
+| `totalC1` | `annualIncomeAmount` | `wardPercent` |
+| `totalC2` | `amountOfClaim` | `wardPercent` |
+| `totalC3` | `estimatedSettlement` | `wardPercent` |
+| `totalC4` | `trustAmount` | `wardPercent` |
+| `totalC5` | `totalAssetValue` | `jointOwnerPercent` |
 
-**60C-1. Schedule C-3 — Defendant Name overwrites the form's own pre-printed
-Line #.** [excel.js:326](src/features/guardian-inventory/excel.js#L326) writes
-`e.defendantName` to column B, which the template's un-filled state shows
-holds a literal, non-formula sequential number (`1`, `2`, `3…`) inside a
-5-row merge (e.g. `B20:B24`). This is the only schedule writer in the feature
-that targets column B. **Confirmed.**
+`netA` and `netB` need no separate change — they are simple sums/differences
+of the totals above, so correcting `totalA2` and `totalB4` (the liability
+sides) automatically corrects `netA` and `netB`. `totalRealPersonal`,
+"Summary I"/"Summary II", and the Audit Fee determination all consume these
+totals downstream and need no direct edit.
 
-**60C-2. Schedule C-3 — Case Number has its own printed line that is never
-used.** [excel.js:325](src/features/guardian-inventory/excel.js#L325) builds
-`desc = actionDescription + ' / ' + caseNumber` and writes it to the entry's
-first line; the template's fourth line is dedicated to the case number
-(confirmed by the worked example: "Case # 12-3456CI-24" on its own line) and
-is never written or read. **Confirmed.**
+**Confirm before implementing, not after:** verify each schedule's original
+xlsx column is genuinely "Ward's Value/Share of the full figure" and not some
+other relationship — this audit read the header label on each schedule
+(`"Ward's Debt Balance"`, `"Ward's Asset Amount"`, `"Ward's Annual Income
+Amount"`, `"Ward's Share of Claim"`, `"Ward's Share of the Estimated
+Settlement Amount"`, `"Ward's Share of Trust Amount"`, `"Joint Owner's
+Value"`) and confirmed each is `full × percent`, matching `sumWard()`'s
+existing formula and the pattern already proven correct for A-1/B-2/B-3 — but
+re-confirm against the live template before changing the math, per
+`AGENTS.md` §5.
 
-**60C-3. Schedule C-2 — the same case-number folding bug as C-3.**
-[excel.js:304](src/features/guardian-inventory/excel.js#L304) builds
-`desc = lawsuitDescription + ' / ' + caseNumber` for the same reason; the
-template's third line is dedicated to the case number and `claimantName` is
-written there instead ([excel.js:307](src/features/guardian-inventory/excel.js#L307)).
-**Confirmed** — found during reconciliation with a second review; missed in
-the first pass of this schedule.
+**Red-first proof:** for each of the 8 schedules, create one entry with
+`wardPercent` (or `jointOwnerPercent`) set below 100 and a nonzero full
+value; generate the PDF before the fix and confirm the relevant total in
+Summary I/II equals the *full* value (proving the defect); apply the fix;
+regenerate and confirm the total equals `full × percent / 100`. Repeat with a
+mix of schedules populated together to confirm `netA`/`netB`/`totalRealPersonal`
+and the Audit Fee tier respond correctly at a boundary (e.g., an estate that
+only crosses $100,000 when counted at full value, not at the ward-adjusted
+value).
 
-**60C-4. PART V's second safe-deposit-box question is answered but never
-printed.** The UI already asks the FS 744.365(4) joint/other-person
-safe-deposit-box question once and stores it as `hasSafeDepositBox`, which
-[excel.js:145](src/features/guardian-inventory/excel.js#L145) writes to
-Summary I `D26`. The same question is asked a second time on PART V, whose
-input box is `H12` (confirmed blank with a Yes/No data-validation list in the
-un-filled template); [excel.js:442](src/features/guardian-inventory/excel.js#L442)'s
-PART V block never writes it. **Confirmed.**
+**Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
+`tests/unit/guardian-inventory-pdf-model.spec.js`;
+`tests/unit/pdf-model-column-integrity.spec.js`; `TEST-INDEX.md`.
 
-**60C-5. Schedule B-4 — Account Number lands one line early, and the
-template's instructions conflict with its own worked example.** The worked
-example's five lines read: lender name, address, related property, a
-free-text note ("Jointly owned with spouse"), then the account number ("Acct
-#112358132134") on the fifth line.
-[excel.js:266](src/features/guardian-inventory/excel.js#L266) writes
-`accountNumber` to the fourth line and never touches the fifth. **However**,
-the template's own written instructions say "Third line: Account Number" and
-do not describe either the lender-address or notes lines the example actually
-uses — the instructions and the worked example disagree with each other, not
-just with the code. The worked example is the stronger evidence (it is what a
-real filer sees and the instructions have already been shown, in 60C-1/2/3
-above, to be an unreliable narrator for this workbook), but this should be
-recorded as an explicit interpretation decision before the cell address is
-changed, not asserted as a simple typo fix.
+---
 
-**60C-6. Schedule C-2 — no `claimantCityStateZip` field.** Documented under
-60B above as part of the cross-form partial pattern; Guardian Inventory's
-instance of it.
+## 60B — Display the Ward's %/Share column on the 8 affected schedules
 
-**60C-7. Schedule C-5 — Owner Name/Address order is genuinely ambiguous;
-do not change without a ruling.** The template's instructions say "Second
-line: Joint Owner's Name, Third line: Street Address, Fourth line:
-City/State/Zip," but [excel.js:369-371](src/features/guardian-inventory/excel.js#L369-L371)
-write address on the second line and name on the third — reversed from the
-instructions. The worked example itself is loose, narrative prose ("Jointly
-owned by spouse, Mrs. Jane E. Miller" on the fourth line; "Schedule A-1, item
-1" — a cross-reference, not a name — on the third), so unlike 60C-1 through
-60C-4 there is no clean structural evidence to prefer one convention over the
-other. **Provisional — leave as-is until someone rules on which convention
-governs**, ideally by checking a real clerk-filled example of this schedule
-outside this app.
+Add a Ward's % (or Joint Owner's %) column and a Ward's Value/Share column to
+each affected schedule's PDF table, in the same style already used by A-1
+(`` `${r.wardPercent || 100}%` ``) and its computed value
+(`fmt(calcWard(r.fullAssetValue, r.wardPercent))`), substituting each
+schedule's own full-value key per the table in 60A. Column headers should
+match the original form's own labels where practical (e.g., "Ward's Debt
+Balance" for A-2, "Ward's Annual Income Amount" for C-1, "Joint Owner's
+Value" for C-5) so the printed document reads as the same concept the court's
+own workbook names.
 
-### Annual Accounting
+This delivery also closes C-1's separate address gap: add the payer's address
+(`composePdfAddressLines(r.payerAddress, r.payerCityStateZip)`) as its own
+column, matching how every other schedule's address is rendered.
 
-No live defect was found beyond this form's contribution to 60B. Every
-previously-identified wrong-cell/wrong-merge-member defect this audit checked
-in Schedule A, B-1 (and by declared construction B-2/B-3), the Schedule B-4
-multi-account block, D-1, D-2 (address writer aside — see 60B), Schedule E,
-and F-1 already carries an in-line comment naming the prior defect and the
-merge/formula evidence that fixed it, and this audit's independent re-decode
-of the template confirmed each of those cells against the raw XML rather than
-taking the comment on trust. Part XI's remuneration grid is correctly
-recognized as not existing in the template (Milestone 58D) rather than guessed
-at. No further action proposed for this form beyond 60A and 60B.
+**Depends on 60A only for the *value* shown; the column can be added and
+tested independently with the pre-60A full-value math if sequencing requires
+it** — but land them together per the Delivery index note above.
 
-### Simplified Accounting
+**Red-first proof:** for each schedule, confirm the new column is absent
+before the change and present with the correct computed value after, using
+the same fixture data as 60A's proof.
 
-No live defect was found. This is the most thoroughly pre-audited of the three
-templates — every writer and reader cell pair in
-`src/features/simplified-accounting/excel.js` carries a comment naming the
-specific row-shift corruption a prior full-form audit found and fixed (every
-Part I/II/III/IV/V/VI field was one row low, confirmed by this audit's
-independent re-decode of `PARTS I, II ` and `PARTS III, IV`), and this form
-has no itemized asset/income/disbursement schedules, so the entire 60B defect
-class does not apply to it (its only list-shaped section, Part VII
-remuneration, was independently confirmed to use one genuine full-width
-merged cell per row, matching the code's "single free-text column" design
-exactly — not a bug). No further action proposed for this form beyond 60A.
+**Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
+`tests/unit/guardian-inventory-pdf-model.spec.js`;
+`tests/e2e/pdf-form-specific.spec.ts` or the relevant PDF content-assertion
+spec; `TEST-INDEX.md`.
+
+---
+
+## 60C — A-2 and B-4: add Type and Account Number columns
+
+Add two columns to each of A-2's and B-4's PDF tables: `liabilityType`
+(header "Type") and `accountNumber` (header "Account Number"), matching the
+original form's own column set for these two liability schedules. Both
+fields are already captured by the UI (`scheduleA2.${i}.liabilityType` /
+`.accountNumber`; `scheduleB4.${i}.liabilityType` / `.accountNumber`) and
+already written to the Excel export path — only the PDF path is missing them.
+
+**Red-first proof:** populate an entry with a non-default `liabilityType`
+(e.g., "Other Debt") and an `accountNumber`; confirm neither appears on the
+generated PDF before the fix and both appear after.
+
+**Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
+`tests/unit/guardian-inventory-pdf-model.spec.js`; `TEST-INDEX.md`.
+
+---
+
+## 60D — A-2: replace the phantom `relatedProperty` column with the real `notes` field
+
+[pdf-model.js:275](src/features/guardian-inventory/pdf-model.js#L275) reads
+`r.relatedProperty`, which does not exist on `scheduleA2` entries (confirmed
+absent from `index.js` and `probate-guardian-data-model.csv`) — the column
+is always blank. `scheduleA2` does have a real, UI-captured `notes` field
+("Notes (related property, etc.)", [index.js:785](src/features/guardian-inventory/index.js#L785))
+that is currently never rendered anywhere in the PDF. Render it the same way
+A-1 already renders its own `notes` field — as an italic sub-line under the
+lender name/description — rather than as its own always-mostly-empty column,
+for consistency with the one schedule that already does this correctly.
+
+**Red-first proof:** populate `scheduleA2.notes` with text and confirm it is
+absent from the generated PDF before the fix and appears as a sub-line after.
+
+**Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
+`tests/unit/guardian-inventory-pdf-model.spec.js`; `TEST-INDEX.md`.
+
+---
+
+## 60E — A-1: remove the phantom "Valuation Method" column
+
+[pdf-model.js:258](src/features/guardian-inventory/pdf-model.js#L258) renders a
+"Valuation Method" column reading `r.valuationMethod`, a field `scheduleA1`
+entries do not have and the original xlsx's Schedule A-1 does not ask for.
+Remove the column and its header, and adjust `colWidths`/`colAlign` for the
+remaining columns accordingly.
+
+**Red-first proof:** confirm the column renders empty for every A-1 row
+before the fix (proving it is dead, not merely untested) and that the table
+has one fewer column, with widths re-summing to the same total, after.
+
+**Expected file surface:** `src/features/guardian-inventory/pdf-model.js`;
+`tests/unit/guardian-inventory-pdf-model.spec.js`;
+`tests/unit/pdf-model-column-integrity.spec.js`; `TEST-INDEX.md`.
 
 ---
 
 ## Out of scope
 
-- Guardian Inventory's Schedule A-1/A-2, which already have a dedicated
-  `notes` field distinct from `description` — cited above only as a
-  contrast, not a defect.
-- Any change to Annual Accounting's Part XI remuneration handling
-  (Milestone 58D's decision to block Excel export there is correct per this
-  audit's independent read of that sheet, and is unrelated to 60B).
-- Re-deriving Annual Accounting's Schedule B-4 multi-account block layout,
-  which Milestone 57D already verified cell-exact against the decoded
-  template on 2026-09-19 (see `MILESTONE-57-REVIEW-HANDOFF.md` §3b).
-- Deciding 60B's (a)-vs-(b) schema shape, 60C-5's cell-address ruling, or
-  60C-7's ordering ruling — those decisions are prerequisites this proposal
-  surfaces, not something this document resolves.
+- Annual Accounting's and Simplified Accounting's PDF paths — the requester
+  chose to pilot this audit method on Guardian Inventory first; extending it
+  is a separate, later decision.
+- Any change to `src/features/guardian-inventory/excel.js` or the Excel
+  export/import path. That audit's findings are preserved in this file's git
+  history at commit `3a001f1` and are not reproduced here.
+- Any change to what counts as "Ward's %" versus "Joint Owner's %" as a
+  concept, or to the underlying `calcWard()` formula (`full × percent / 100`)
+  — 60A only asks that the already-correct formula be applied consistently.
+- Re-litigating A-1/B-2/B-3, which this audit confirmed are already correct.
 
 ## Completion criteria
 
 Milestone 60 is complete only when, for each item the requester has
 individually authorized:
 
-1. The fix is verified against the raw decoded template (this audit's
-   method), not only against the app's own re-import.
-2. A red-first test demonstrates the defect against the pre-fix code and
-   passes after the fix, using the template-semantic assertion style 60A
-   adds — not a round-trip-only assertion.
-3. `probate-guardian-data-model.csv` is updated for any new or changed
-   persisted field (60B, 60C-6).
-4. `TEST-INDEX.md` reflects every added or materially changed test.
-5. No item outside the requester's explicit approval is touched in the same
+1. A red-first test demonstrates the defect against the pre-fix code (wrong
+   total, missing column, or phantom column, as applicable) and passes after
+   the fix.
+2. Every dollar total on the generated PDF (per-schedule totals, Summary I,
+   Summary II, Audit Fee Determination) is verified by hand-computing the
+   expected ward-adjusted figure from the same fixture data, not merely by
+   confirming the code runs without error.
+3. `TEST-INDEX.md` reflects every added or materially changed test.
+4. No item outside the requester's explicit approval is touched in the same
    change, per `AGENTS.md` §3.
