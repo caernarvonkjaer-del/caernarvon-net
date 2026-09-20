@@ -1387,6 +1387,79 @@ test.describe('Milestone 55D: attorney email is required exactly where the UI al
 // having never answered it -- neither "here is what I received" nor "I
 // received none". This is a NEW requirement rather than a parity repair: on
 // Part XI the sidebar and the validator already agreed.
+// Milestone 57E-1. "#1. Does the Ward have one or more Trusts?" answered Yes,
+// every trust card left blank, and the accounting exports clean. The filed
+// document tells the Clerk the ward has trusts and names none -- no trustee,
+// no account number, no value.
+//
+// validateAnnual() filtered trust rows to those carrying content and required
+// createdAfterGID on each. With every row blank the filter yields nothing and
+// the loop body never runs, so the affirmative produced no issue at all. The
+// sidebar disagreed the whole time: a-p8 requires a trust NAME, so Part VIII
+// showed incomplete while the export gate found nothing wrong.
+test.describe('Milestone 57E-1: an affirmative trust answer must name a trust', () => {
+  async function trustState(page: import('@playwright/test').Page, trusts: unknown[]) {
+    return page.evaluate((rows) => {
+      const w = window as any;
+      w.D.trusts = rows;
+      const issues = w.validateAnnual();
+      const partVIII = issues.filter((m: any) => /Part VIII/i.test(String(m.message)));
+      return {
+        navComplete: w.computeNavChecks().checks['a-p8'],
+        messages: partVIII.map((m: any) => String(m.message)),
+        // D9: this offers a clearable acknowledgement at output, never a hard
+        // block. A literal issue-registry key would make it unbypassable.
+        bypassable: partVIII.map((m: any) => w.getIssueDefinition?.(m.code)?.bypassable),
+        codes: partVIII.map((m: any) => m.code),
+      };
+    }, trusts);
+  }
+
+  test('Yes with every trust card blank raises an issue, and the sidebar agrees', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Trust Blank Yes Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    const state = await trustState(page, [{ hasTrust: 'Yes' }, {}, {}]);
+    expect(state.messages, 'an affirmative that names no trust must not export clean')
+      .toContain('Part VIII — Trust 1 — Name');
+    expect(state.navComplete, 'the sidebar already said incomplete; the export gate now agrees').toBe(false);
+  });
+
+  test('the issue is bypassable, per D9 -- an acknowledgement, not a hard block', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Trust Bypass Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    const state = await trustState(page, [{ hasTrust: 'Yes' }, {}, {}]);
+    // Asserted non-vacuously: .every() on an empty array is true, so without
+    // this the test would pass while the issue did not exist at all.
+    expect(state.codes.length, 'there must be an issue before its bypassability means anything').toBeGreaterThan(0);
+    expect(state.bypassable.every((b: unknown) => b !== false), `codes: ${state.codes.join(', ')}`).toBe(true);
+  });
+
+  test('one described trust satisfies it', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Trust Named Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    const state = await trustState(page, [{ hasTrust: 'Yes', name: 'Ashford Family Trust', createdAfterGID: 'No' }, {}, {}]);
+    expect(state.messages).not.toContain('Part VIII — Trust 1 — Name');
+    expect(state.navComplete).toBe(true);
+  });
+
+  test('No does not raise it, and neither does the unanswered state raise it twice', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Trust No Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+
+    const no = await trustState(page, [{ hasTrust: 'No' }, {}, {}]);
+    expect(no.messages).not.toContain('Part VIII — Trust 1 — Name');
+
+    // Unanswered keeps whatever the existing rule says about it; this delivery
+    // must not add a second issue for the same blank question.
+    const blank = await trustState(page, [{ hasTrust: '' }, {}, {}]);
+    expect(blank.messages).not.toContain('Part VIII — Trust 1 — Name');
+  });
+});
+
 test.describe('Milestone 58D: Part XI must be answered before export', () => {
   const partXiIssue = (m: ValidatorIssue) => /Part XI/i.test(String(m.message));
 

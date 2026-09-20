@@ -1665,7 +1665,27 @@ export function validateAnnual(){
   checkRows(d.schF2,[['description','Description'],['bank','Bank'],['accountNo','Account #'],['courtOrderDate','Court Order Date'],['salePrice','Sale Price']],'Schedule F-2','schF2');
   req(d.trusts?.[0]?.hasTrust,'Part VIII — Does the Ward have one or more Trusts?','trusts.0.hasTrust');
   if(d.trusts?.[0]?.hasTrust==='Yes'){
-    (d.trusts||[]).filter(t=>Object.entries(t||{}).some(([key,value])=>key!=='hasTrust'&&value!==''&&value!=null)).forEach((t,i)=>{
+    const describesATrust=t=>Object.entries(t||{}).some(([key,value])=>key!=='hasTrust'&&value!==''&&value!=null);
+    const described=(d.trusts||[]).filter(describesATrust);
+    // Milestone 57E-1. Answering "#1. Does the Ward have one or more Trusts?"
+    // with Yes and leaving every card blank used to export clean: the filter
+    // above yields nothing, the loop never runs, and the filing tells the
+    // Clerk the ward has trusts while naming none -- no trustee, no account
+    // number, no value.
+    //
+    // The sidebar had been saying so all along. a-p8 requires a trust NAME, so
+    // Part VIII showed incomplete while this validator found nothing wrong --
+    // the readiness/export disagreement checklist-export-parity.spec.js exists
+    // to catch, running in the direction that spec cannot see.
+    //
+    // Routed through the ordinary req() path on purpose. It becomes
+    // annual.trusts.0.name.required, falls through to
+    // validation.legacy-unmapped, and is therefore BYPASSABLE: per D9 this
+    // offers a clearable acknowledgement at output rather than a hard block.
+    // Adding a literal issue-registry.js key would make it unbypassable, which
+    // is what 57A's other half needed and this one must not have.
+    if(described.length===0)req(d.trusts?.[0]?.name,'Part VIII — Trust 1 — Name','trusts.0.name');
+    described.forEach((t,i)=>{
       req(t.createdAfterGID,`Part VIII — Trust ${i+1} — Was created after the GID?`,`trusts.${i}.createdAfterGID`);
     });
   }
