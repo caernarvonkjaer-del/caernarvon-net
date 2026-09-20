@@ -208,6 +208,27 @@ policy/legal call, not a code question.**
   guardianship plan... An updated Disaster Plan will be required if the
   ward is moved to a new residence." Confirmed absent from
   `plan-initial/pdf-model.js` by the same grep.
+
+  **The AO both of these cite has since been rescinded — verified from a
+  copy the requester supplied, 2026-09-20.** Administrative Order No.
+  PA/PI-CIR 2024-025 (6th Judicial Circuit, signed August 1, 2024;
+  committed at `reference/administrative-orders/
+  AO-2024-025-guardianship-procedures.pdf`) states at its close: "Administrative
+  Order No. PA/PI-CIR 2019-005 is hereby rescinded" (`:267`). The
+  requirement itself survives under the new order's Section E ("DISASTER
+  PLAN", `:203-214`) with the same substance the source PDFs describe — but
+  with one addition neither source PDF's text carries: "If the ward is a
+  minor child residing with their parent or other relative who is serving
+  as guardian, that guardian is exempt from the requirement of filing a
+  disaster plan" (`:212-214`). If 61D's Annual/Initial disaster-plan content
+  is authorized, it must cite the current order (2024-025) and include this
+  exemption, not reproduce the source PDFs' now-superseded "AO 2019-005"
+  citation verbatim — copying the source text as written would file a
+  citation to a rescinded order and omit an exemption the ward may actually
+  be entitled to. This is the reverse risk from 61H: there, the source PDF
+  looks wrong and the app looks right; here, the source PDFs' *content* is
+  still substantively right but their *citation* has gone stale since
+  whichever printing was used to prepare them.
 - **Simplified** omits county-specific filing addresses, phone numbers,
   emails, and procedural-assistance contacts for both counties this form
   names — Pinellas (Clerk of the Circuit Court, 315 Court Street Room 106,
@@ -382,52 +403,64 @@ theirs, with red-first proof — for at least one certification title and one
 empty-state title — that the heading is present in extracted PDF text where
 it was previously absent.
 
-### 61H — Plan Initial cites the wrong filing-deadline statute, in five places
+### 61H — The supplied Plan Initial original appears to have a typo in its own statute citation; this app is likely already correct
 
-**Confidence: Confirmed textual mismatch between this app and the committed
-original; which citation is legally correct is a question this document
-does not resolve.** Found 2026-09-20 (Claude) — only possible once the
-original PDF was available for direct comparison; no reading of this app's
-own source code could have surfaced it.
+**Confidence: Textual mismatch confirmed; likely resolved in the app's
+favor by outside corroboration, not by this repo alone — treat as
+strong-but-not-legal-certainty pending the requester's own confirmation.**
+Found 2026-09-20 (Claude) by comparing the committed original to this
+app's code; the resolution below was added the same day after a web check,
+prompted by the requester asking what to recommend authorizing next — this
+finding was the one open item without a clear recommendation.
 
-The committed Initial Guardianship Plan original cites its 60-day filing
-deadline to **F.S. 744.632** (`plan-initial-original.txt:3`: "Pursuant to
-F.S. 744.632, this Report with Original Signatures is due within 60 days
-after the Letters of Guardianship are signed"). This app cites that same
-60-day deadline to **F.S. 744.362(1)** instead, consistently, in five
-separate places:
+The committed Initial Guardianship Plan original (6th Judicial Circuit,
+Pinellas/Pasco) cites its 60-day filing deadline to **F.S. 744.632**
+(`plan-initial-original.txt:3`: "Pursuant to F.S. 744.632, this Report with
+Original Signatures is due within 60 days after the Letters of Guardianship
+are signed"). This app cites that same deadline to **F.S. 744.362(1)**
+instead, consistently, in five places: `plan-initial/pdf-model.js:62` (the
+filed PDF's own cover notice), `help-content.js:121`, `dashboard/
+view-model.js:103`, and `readiness-config.js:234`.
+(`simplified-accounting/pdf-model.js:257` and `simplified-accounting/
+index.js:588` also say `744.362(1)`, but for an unrelated certification on
+a different filing type — not part of this mismatch, named only so it is
+not confused with it.)
 
-- `src/features/plan-initial/pdf-model.js:62` — the filed PDF's own cover
-  notice.
-- `src/features/help/help-content.js:121` — in-app Help content.
-- `src/features/dashboard/view-model.js:103` — the dashboard's deadline
-  display.
-- `src/core/filing/readiness-config.js:234` — the readiness checklist item.
-- `src/features/simplified-accounting/pdf-model.js:257` and
-  `src/features/simplified-accounting/index.js:588` also cite `744.362(1)`,
-  but for an unrelated certification ("furnished to interested persons") on
-  a different filing type. Not part of this mismatch — named here only so
-  it is not confused with it.
+**Outside corroboration, not just this repo's two documents:** F.S. 744.362
+is titled "Initial guardianship report" in the current Florida Statutes and
+its text matches this exact requirement — a report due 60 days after
+letters of guardianship are signed, for a guardian of the person consisting
+of an initial guardianship plan (Justia's 2019 Florida Statutes mirror,
+`law.justia.com/codes/florida/2019/title-xliii/chapter-744/part-vi/
+section-744-362/`; Florida Senate's statute pages confirm 744.362 exists
+and is titled correctly in every year checked, 2011–2024). No search or
+direct page request for **744.632** turned up a real, current statute
+section under that number at all — not on the Florida Senate's site, not
+on Justia, nowhere; a neighboring real section (744.634) exists and
+resolves fine, but 744.632 does not. More directly: Citrus County's own
+Initial Guardianship Plan form (5th Judicial Circuit — a different county,
+different circuit, same form type, fetched and text-extracted directly,
+`citrusclerk.org/DocumentCenter/View/1935/Initial-Guardianship-Plan-PDF`)
+carries the nearly identical parenthetical — "Pursuant to F.S. 744.362 the
+Report with Original Signatures is due within 60 days after his or her
+Letters of Guardianship were signed" — citing **744.362**, not 744.632.
 
-Because the citation is consistent across independent, unrelated parts of
-the app rather than appearing once, this reads as a deliberate choice by
-whoever built these five features, not a copy-paste slip — which makes it
-more likely to be a considered (if possibly outdated) citation than a
-random error, and correspondingly less safe for an implementer to
-"correct" toward the source PDF's number without checking which one is
-actually current law. The source PDF carries no revision date near this
-citation (unlike Plan Initial's own body pages, several of which are
-stamped "Rev. 11/17/2022" or "Last updated 11/9/2020" —
-`plan-initial-original.txt:47,99`), so this review cannot determine from
-the document alone whether 744.632 is current, superseded, or simply a
-different (also valid) citation for the same requirement.
+Put together: two independent circuits' versions of the same state form
+agree on 744.362, an independent statute database confirms 744.362 is a
+real, correctly-titled, currently-in-force section covering exactly this
+requirement, and no evidence anywhere supports 744.632 existing at all.
+The most likely explanation is a simple digit transposition (362 → 632) in
+whichever copy of the 6th Circuit's template was used to produce the PDF
+supplied for this review — a defect in that one document, not in this app.
 
-**Proposed action:** the requester (or counsel) confirms which statute
-currently governs the Initial Guardianship Plan's 60-day deadline. Then
-that citation is applied consistently across all five locations above in
-one pass — a fix that corrects only the PDF model, or only the Help/
-dashboard/readiness copy, reintroduces the exact inconsistency this finding
-describes.
+**Proposed action:** no code change to this app's five locations is
+recommended. This is now the mirror image of 61F: a source-document defect
+this app does not share. The one action worth taking is confirming with
+the 6th Circuit clerk's office (or counsel) that their live form has since
+been corrected, or flagging the typo to them if not — outside this
+document's scope. If the requester's own review of the statute disagrees
+with this conclusion, say so and this finding reopens; absent that, treat
+744.632 as the error and close this item without a fix.
 
 ## Proposed execution plan
 
@@ -485,8 +518,12 @@ same state** — it must never silently omit the row from any of the three.
 
 Only after requester/legal review, add approved source instructions to the
 filed PDF models or move them into Help/guidance content. Document whether
-preparer/attorney pages are approved supplemental output. Do not resolve legal
-sufficiency in code or in this proposal.
+Plan Simplified's preparer/attorney pages are approved supplemental output
+(61E is now Simplified-only). If Annual's/Initial's disaster-plan content is
+approved, cite Administrative Order 2024-025, not the source PDFs' "AO
+2019-005" — that order is rescinded — and include the minor-parent-guardian
+exemption 2024-025 added that the source PDFs' own text does not carry (see
+61D). Do not resolve legal sufficiency in code or in this proposal.
 
 ### Phase 4 — 61F Plan Minor certification wording (optional; likely no action)
 
