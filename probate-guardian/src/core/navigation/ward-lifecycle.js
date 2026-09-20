@@ -213,6 +213,12 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       county: '',
+      // Milestone 58B-2: the facility or home the minor lives in. It rarely
+      // changes year to year and was the one cover field the carry dropped,
+      // so each new year reopened with it blank. `|| ''` deliberately: a
+      // source without the field yields a blank for the filer to complete,
+      // never an invented facility name carried in from somewhere else.
+      q1ResidenceName: src.q1ResidenceName || '',
       ucn: caseNum,
       ref: src.ref || '',
       guardianName: gName,

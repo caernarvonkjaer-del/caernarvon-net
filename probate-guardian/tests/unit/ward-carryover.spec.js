@@ -201,6 +201,22 @@ describe('ward-carryover', () => {
     });
   });
 
+  // Milestone 58B-2. A Minor Plan's Residence Name is the facility or home the
+  // minor actually lives in. It rarely changes year to year, but it was the one
+  // cover field the carry dropped, so every new year reopened with it blank and
+  // the filer retyped it -- or, worse, filed the year without noticing.
+  describe('58B-2: Plan Minor carries the Residence Name', () => {
+    it('carries q1ResidenceName from a Plan Minor source', () => {
+      const src = { inventoryType: 'planMinor', wardName: 'Minor Doe', q1ResidenceName: 'Bayview Care Center' };
+      expect(carryOverFieldsForPlan(src, 'planMinor').q1ResidenceName).toBe('Bayview Care Center');
+    });
+
+    it('produces a blank, never an invented facility, when the source has none', () => {
+      const src = { inventoryType: 'guardian', wardName: 'Minor Doe' };
+      expect(carryOverFieldsForPlan(src, 'planMinor').q1ResidenceName).toBe('');
+    });
+  });
+
   describe('carryOverFieldsForAccounting', () => {
     it('populates caseNumber, guardian, and attorney from a planMinor source', () => {
       const src = {

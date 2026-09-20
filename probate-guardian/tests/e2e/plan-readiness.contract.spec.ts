@@ -57,7 +57,7 @@ const CONFIGS: ReadinessConfig[] = [
     blankPromotedField: (page) => page.evaluate(() => {
       (window as any).D.planGuardians[0].mailingStreet = '';
     }),
-    readinessRowLabel: 'Guardian address, phone and taxpayer ID provided',
+    readinessRowLabel: 'Guardian address, phone and SSN/EIN provided',
     saveButtonSelector: '[data-form-action="save-pdf-plan-minor"]',
   },
   {

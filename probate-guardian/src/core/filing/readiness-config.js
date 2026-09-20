@@ -264,7 +264,7 @@ function planMinorAutomatic(d) {
       image: g0.signatureImage,
       sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
     }) },
-    { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and taxpayer ID provided', ok: has(g0.mailingStreet) && has(g0.phone) && has(g0.tin) },
+    { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.mailingStreet) && has(g0.phone) && has(g0.tin) },
     { id: 'signatures.certifications', label: 'At least one certification statement is checked', ok: !!(d.certIncapacitated || d.certMinor || d.certConsulted || d.certNoRestriction || d.certProvidesCare || d.certPhysicianAttached) },
     { id: 'plan.q4', label: 'Question 4 — provision of medical services selected', ok: !!(d.q4Primary || d.q4Dentist || d.q4Specialist || d.q4PT || d.q4ST || d.q4OT || d.q4MinorDecides || d.q4Other) },
     { id: 'plan.q5', label: "Question 5 — school progress, social development, communication, and interpersonal statements completed", ok: has(d.q5SchoolProgress) && has(d.q5SocialDevelopment) && has(d.q5Communicates) && has(d.q5Interpersonal) },

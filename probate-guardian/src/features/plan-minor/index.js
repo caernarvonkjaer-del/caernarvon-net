@@ -351,7 +351,7 @@ function pagePlanMSignatures(){
         <div class="row g-2">
           ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: gd.name, required: i===0, label: 'Name' })}
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: gd.relationship })}</div>
-          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.tin`, label: 'Taxpayer ID #', value: gd.tin })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.tin`, label: 'SSN/EIN #', value: gd.tin })}</div>
           <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Telephone #', value: gd.phone })}</div>
           <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(gd.signatureState, gd.signatureDate), route: '/p6', signatureImage: gd.signatureImage })}</div>
@@ -395,7 +395,7 @@ function pagePlanMPreparerAttorney(){
             <div class="schedule-instructions mb-3">The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification. The preparer has not audited or reviewed the guardianship plan or supporting documents.</div>
             <div class="row g-2">
               <div class="col-12">${inpS('preparer_name','Preparer Name',d.preparer_name,true)}</div>
-              <div class="col-md-6">${inpS('preparer_tin','Taxpayer ID #',d.preparer_tin)}</div>
+              <div class="col-md-6">${inpS('preparer_tin','SSN/EIN #',d.preparer_tin)}</div>
               <div class="col-md-6">${inpS('preparer_phone','Telephone #',d.preparer_phone)}</div>
               <div class="col-12">${inpS('preparer_signatureDate','Date Signed',d.preparer_signatureDate,false,'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate), route: '/p7', signatureImage: d.preparer_signatureImage, statePath: 'preparer_signatureState', imagePath: 'preparer_signatureImage' })}</div>
@@ -489,7 +489,7 @@ export function validatePlanMinor(){
   }));
   req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required','planGuardians.0.mailingStreet');
   req(g0.phone,'Guardian Signatures — Guardian phone is required','planGuardians.0.phone');
-  req(g0.tin,'Guardian Signatures — Guardian taxpayer ID is required','planGuardians.0.tin');
+  req(g0.tin,'Guardian Signatures — Guardian SSN/EIN is required','planGuardians.0.tin');
   errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
     sectionLabel:'Guardian Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian signature date',allowSameDay:true,
     filingType:T,laterPath:'planGuardians.0.signatureDate',

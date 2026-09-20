@@ -5,13 +5,24 @@
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { caseNumberOf } from '../../core/case-resolver.js';
 import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 
 export function buildPlanMinorModel(D) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
-  const caseNumber = `${d.ucn || ''} ${d.ref || ''}`.trim();
+  // Milestone 58B-1: the app's one rule for this filing type's case number,
+  // `ucn || ref || ''`, not a local copy. This used to glue both cover fields
+  // together, so a Minor Plan with UCN and Case # both filled printed a header
+  // naming neither -- "2024-MN-042 REF-77" is nothing the clerk can match.
+  //
+  // inventoryType is forced rather than read: caseNumberOf() keys the ucn/ref
+  // precedence off it, and this model is built directly from narrow fixtures
+  // in unit tests that carry only the fields under test. This builder is only
+  // ever the Minor Plan's, so asserting that here is safe and keeps the
+  // precedence in one place.
+  const caseNumber = caseNumberOf({ ...d, inventoryType: 'planMinor' });
   // Milestone 40C-A item 6: output must never invent a county. A blank one
   // yields no court caption at all (see core/pdf/circuit-lookup.js); export is
   // already blocked by this form's County validation.
@@ -69,14 +80,12 @@ export function buildPlanMinorModel(D) {
           { label: 'Public Guardian?', value: triStateText(d.publicGuardian) },
         ],
       },
-      {
-        type: 'checklist',
-        items: [
-          { checked: d.amendedForm === 'Yes', label: 'Amended Form' },
-          { checked: d.professionalGuardian === 'Yes', label: 'Professional Guardian' },
-          { checked: d.publicGuardian === 'Yes', label: 'Public Guardian' },
-        ],
-      },
+      // Milestone 58B-3: the Yes-only checkbox repeat of the three questions
+      // above is gone. It tested `=== 'Yes'`, so an unanswered question and an
+      // explicit No printed as the same unchecked box -- the filed cover said
+      // "Amended Form? Not answered" beside an unchecked "Amended Form", and
+      // the checkbox half asserted No on the filer's behalf. The grid above
+      // already states each fact once, keeping the three states distinct.
       ...(d.amendedForm === 'Yes' && d.amendedVersion ? [{ type: 'notice', text: `Amended version: ${d.amendedVersion}` }] : []),
       {
         type: 'key-value-grid',
@@ -204,7 +213,7 @@ export function buildPlanMinorModel(D) {
   // Page 5: Certification + guardian signatures
   const g = d.planGuardians || [];
   const guardianFields = (p) => [
-    [{ label: 'Printed Name', value: p.name || '' }, { label: 'Taxpayer ID #', value: maskSSN(p.tin || '') }, { label: 'Telephone #', value: p.phone || '' }],
+    [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN/EIN #', value: maskSSN(p.tin || '') }, { label: 'Telephone #', value: p.phone || '' }],
     [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Email Address', value: p.email || '' }],
     [{ label: 'Mailing Address', value: p.mailingStreet || '' }, { label: 'City / State / Zip', value: p.mailingCityStateZip || '' }],
   ];
@@ -254,7 +263,7 @@ export function buildPlanMinorModel(D) {
         text: 'The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification of the information contained herein. I have not audited or reviewed the guardianship plan or documents supporting its preparation, and accordingly do not express an opinion or any other form of assurance as to the accuracy of the information contained in the plan.',
       },
       makeSigBlock('Preparer', { name: d.preparer_name, signatureDate: d.preparer_signatureDate, signatureState: d.preparer_signatureState, signatureImage: d.preparer_signatureImage }, [
-        [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Taxpayer ID #', value: maskSSN(d.preparer_tin || '') }, { label: 'Telephone #', value: d.preparer_phone || '' }],
+        [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'SSN/EIN #', value: maskSSN(d.preparer_tin || '') }, { label: 'Telephone #', value: d.preparer_phone || '' }],
         [{ label: 'Email Address', value: d.preparer_email || '' }],
         [{ label: 'Mailing Address', value: d.preparer_mailingStreet || '' }, { label: 'City / State / Zip', value: d.preparer_cityStateZip || '' }],
       ]),

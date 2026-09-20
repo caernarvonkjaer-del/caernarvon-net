@@ -70,12 +70,12 @@ describe('PDF Models SSN/EIN/TIN masking integration', () => {
 
     const certSection = model.sections.find(s => s.id === 'certification');
     const gSigBlock = certSection.blocks.find(b => b.type === 'signature-block');
-    const gTinField = gSigBlock.fields.flat().find(f => f.label === 'Taxpayer ID #');
+    const gTinField = gSigBlock.fields.flat().find(f => f.label === 'SSN/EIN #');
     expect(gTinField.value).toBe('***-**-6789');
 
     const prepSection = model.sections.find(s => s.id === 'preparer-attorney');
     const prepSigBlock = prepSection.blocks.find(b => b.type === 'signature-block');
-    const prepTinField = prepSigBlock.fields.flat().find(f => f.label === 'Taxpayer ID #');
+    const prepTinField = prepSigBlock.fields.flat().find(f => f.label === 'SSN/EIN #');
     expect(prepTinField.value).toBe('***-**-4321');
   });
 });

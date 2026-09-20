@@ -122,3 +122,83 @@ describe('Plan tri-state PDF output', () => {
     }
   });
 });
+
+// Milestone 58B-3. The Minor Plan cover printed each of these three questions
+// TWICE: once as a labelled Yes/No/unanswered value, and again as a checkbox
+// list whose only test was `=== 'Yes'`. On paper an unanswered question and an
+// explicit No were the same unchecked box, so the filed document contradicted
+// itself -- "Amended Form? Not answered" beside an unchecked "Amended Form" --
+// and the checkbox half silently asserted No on the filer's behalf.
+describe('58B-3: Minor Plan cover states each Yes/No fact once', () => {
+  const COVER_FACTS = ['Amended Form', 'Professional Guardian', 'Public Guardian'];
+
+  function coverChecklistLabels(model) {
+    return model.sections.flatMap((section) => section.blocks || [])
+      .filter((block) => block.type === 'checklist')
+      .flatMap((block) => block.items || [])
+      .map((item) => item.label);
+  }
+
+  test('no Yes-only checkbox repeats a fact the grid already states', () => {
+    const model = buildPlanMinorModel({
+      inventoryType: 'planMinor', wardName: 'Minor Ward',
+      amendedForm: '', professionalGuardian: 'No', publicGuardian: 'Yes',
+    });
+    const repeated = coverChecklistLabels(model).filter((label) => COVER_FACTS.includes(label));
+    expect(repeated, 'these three are stated in the key-value grid, and must not be repeated as checkboxes').toEqual([]);
+  });
+
+  test('each fact still appears exactly once, keeping Yes / No / unanswered distinct', () => {
+    const model = buildPlanMinorModel({
+      inventoryType: 'planMinor', wardName: 'Minor Ward',
+      amendedForm: '', professionalGuardian: 'No', publicGuardian: 'Yes',
+    });
+    const items = gridValues(model);
+    const byLabel = (needle) => items.filter((i) => String(i.label).startsWith(needle));
+    for (const fact of COVER_FACTS) {
+      expect(byLabel(fact), `${fact} must be stated once`).toHaveLength(1);
+    }
+    expect(byLabel('Amended Form')[0].value, 'unanswered must not read as No').not.toBe('No');
+    expect(byLabel('Professional Guardian')[0].value).toBe('No');
+    expect(byLabel('Public Guardian')[0].value).toBe('Yes');
+  });
+
+  test('the amended-version notice survives', () => {
+    const model = buildPlanMinorModel({
+      inventoryType: 'planMinor', wardName: 'Minor Ward',
+      amendedForm: 'Yes', amendedVersion: 'Second Amended',
+    });
+    const notices = model.sections.flatMap((s) => s.blocks || []).filter((b) => b.type === 'notice');
+    expect(notices.some((n) => String(n.text).includes('Second Amended'))).toBe(true);
+  });
+});
+
+// Milestone 58B-1. The Minor Plan PDF built its own case number by gluing the
+// two cover fields together: `${ucn} ${ref}`. The court form treats UCN and
+// Case # as two distinct, independently-editable references, so a filing with
+// both filled printed a header naming neither -- "2024-MN-042 REF-77" is not a
+// case number the clerk can match. caseNumberOf() is the app's single rule for
+// that precedence, and the PDF now uses it instead of a local copy.
+describe('58B-1: Minor Plan PDF uses the canonical case number', () => {
+  const caseNumberOfModel = (d) => {
+    const grid = gridValues(buildPlanMinorModel({ inventoryType: 'planMinor', wardName: 'W', ...d }));
+    return grid;
+  };
+
+  test('both populated: the canonical value wins, and the two cover fields stay separate', () => {
+    const model = buildPlanMinorModel({ inventoryType: 'planMinor', wardName: 'W', ucn: '2024-MN-042', ref: 'REF-77' });
+    // The cover still shows each field under its own label -- only the
+    // synthetic combined value changes.
+    const items = gridValues(model);
+    expect(items.find((i) => i.label === 'UCN').value).toBe('2024-MN-042');
+    expect(items.find((i) => i.label === 'Case #').value).toBe('REF-77');
+    // Nothing anywhere in the document glues them together.
+    expect(JSON.stringify(model)).not.toContain('2024-MN-042 REF-77');
+  });
+
+  test('ucn blank falls back to ref, with no leading space', () => {
+    const model = buildPlanMinorModel({ inventoryType: 'planMinor', wardName: 'W', ucn: '', ref: 'REF-77' });
+    expect(JSON.stringify(model)).not.toContain('" REF-77"');
+    expect(caseNumberOfModel({ ucn: '', ref: 'REF-77' }).length).toBeGreaterThan(0);
+  });
+});

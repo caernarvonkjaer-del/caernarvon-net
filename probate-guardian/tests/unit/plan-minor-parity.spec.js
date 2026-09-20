@@ -96,7 +96,7 @@ const CASES = [
   },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.mailingStreet': '' }, message: 'Guardian Signatures — Guardian mailing street address is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.phone': '' }, message: 'Guardian Signatures — Guardian phone is required' },
-  { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.tin': '' }, message: 'Guardian Signatures — Guardian taxpayer ID is required' },
+  { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.tin': '' }, message: 'Guardian Signatures — Guardian SSN/EIN is required' },
   { autoId: 'signatures.certifications', override: { certIncapacitated: false }, message: 'Guardian Signatures — At least one certification statement must be checked' },
   { autoId: 'plan.q4', override: { q4Primary: false }, message: '4. Medical Services — At least one medical service option is required' },
   { autoId: 'plan.q5', override: { q5SchoolProgress: '' }, message: '5. Education & Social Development — School progress summary is required' },
