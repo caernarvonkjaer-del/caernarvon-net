@@ -96,6 +96,17 @@ export function buildPlanAnnualModel(D) {
         type: 'notice',
         text: "Filed separately is the Annual Physician's Report. Together these are the Annual Report of the Guardian of the Person.",
       },
+      // Milestone 61D. "Note 1" on the court's own form
+      // (reference/plan-forms/plan-annual-original.txt:46-49), which this
+      // model had never carried. Its companion on that page -- the Disaster
+      // Plan note -- stays out deliberately: that one is a Sixth Circuit
+      // local requirement, delivered county-gated through Help, and
+      // tests/unit/content-corrections.spec.js keeps circuit-specific
+      // Administrative Orders out of generated documents entirely.
+      {
+        type: 'notice',
+        text: "Note: The rights on the physician's report should match the Order Determining Incapacity and/or Order Appointing Guardian (signed when Letters were issued), or the guardian must either file a petition to remove or restore rights as appropriate, or provide an explanation for why no change should be made.",
+      },
     ],
   });
 

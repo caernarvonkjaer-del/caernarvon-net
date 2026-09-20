@@ -80,7 +80,11 @@ export const HELP_CONTENT = Object.freeze({
   },
   'plan-simplified': {
     title: 'Simplified Annual Plan Guide',
-    content: `<div class="help-section-title">Plan vs. Accounting</div>
+    // Milestone 61D: content is a function (not the plain string most entries
+    // use) for the same reason plan-initial's is -- the "Where to File"
+    // paragraph names Sixth Circuit (Pinellas/Pasco) clerks, so it is gated on
+    // the active filing's county and evaluated at render time.
+    content: () => `<div class="help-section-title">Plan vs. Accounting</div>
     <p>A <strong>Plan</strong> reports on the ward as a person — where they live, the care they receive, how they are doing. An <strong>Accounting</strong> reports on their money and property. These are two separate court filings.</p>
     <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each filing and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">What This Form Covers</div>
@@ -89,7 +93,10 @@ export const HELP_CONTENT = Object.freeze({
     <p>Write plainly and specifically. "Saw Dr. Alvarez for a check-up in March and a follow-up in September" is far more useful to the court than "routine care."</p>
     <div class="help-section-title">Before You File</div>
     <p>Print Preview includes a <strong>readiness check</strong> that mirrors what the Clerk of Court looks for when reviewing a plan — plus reminders for the steps the app can't verify, like serving copies on interested persons.</p>
-    <p>Export as PDF when you're done. This form has no Excel version.</p>`
+    <p>Export as PDF when you're done. This form has no Excel version.</p>
+    ${hasSixthCircuitLocalGuidance(typeof window !== 'undefined' ? window.D?.county : undefined) ? `<div class="help-section-title">Where to File</div>
+    <p>This form is signed by hand, so the <strong>original</strong> — with original signatures — goes to the Clerk of the Circuit Court for the county your guardianship is in: Pinellas and Pasco each take their own filings, at their own office. The clerk's website lists the current address, phone number and email for probate filings; check there rather than relying on a figure printed inside an app, which can go out of date without anyone noticing.</p>
+    <p>General instructions for e-filing Florida court documents are at <strong>myflcourtaccess.com</strong>. For questions about <em>procedure</em> rather than filing mechanics — what the court expects, how a hearing is set — the circuit's guardianship division is the right place to ask, and the clerk's office will point you to it.</p>` : ''}`
   },
   'plan-annual': {
     title: 'Annual Guardianship Plan Guide',

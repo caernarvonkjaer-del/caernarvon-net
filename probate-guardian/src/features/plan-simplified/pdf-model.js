@@ -134,33 +134,17 @@ export function buildPlanSimplifiedModel(D) {
   });
   const g = d.planGuardians || [];
 
-  // Preparer block
-  const prep = d.preparer_name ? {
-    type: 'signature-block',
-    role: 'Preparer Signature',
-    signerName: d.preparer_name || '',
-    signatureDate: fmtDate(d.preparer_signatureDate),
-    fields: [
-      [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'Telephone', value: d.preparer_phone || '' }],
-      [{ label: 'Email Address', value: d.preparer_email || '' }],
-      [{ label: 'Mailing Address', value: [d.preparer_mailingStreet, d.preparer_cityStateZip].filter(Boolean).join(', ') }],
-    ],
-  } : null;
-
-  // Attorney block
-  const atty = d.attorney_name ? {
-    type: 'signature-block',
-    role: 'Attorney Signature',
-    signerName: d.attorney_name || '',
-    signatureDate: fmtDate(d.attorney_signatureDate),
-    fields: [
-      [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar No.', value: d.attorney_bar || '' }],
-      [{ label: 'Telephone', value: d.attorney_phone || '' }],
-      [{ label: 'Address', value: [d.attorney_street, d.attorney_cityStateZip].filter(Boolean).join(', ') }],
-      [{ label: 'Primary Email', value: d.attorney_email || '' },
-        ...(d.attorney_secondary_email ? [{ label: 'Secondary Email', value: d.attorney_secondary_email }] : [])],
-    ],
-  } : null;
+  // Milestone 61E: this form's court original ends after the guardian /
+  // guardian-advocate signatures and the filing instructions -- it has no
+  // preparer or attorney certification at all (see reference/plan-forms/
+  // plan-simplified-original.txt:97-137). The blocks that used to be built
+  // here were an addition of this app's own, and are gone.
+  //
+  // The UI still collects preparer_* and attorney_* (index.js) and
+  // emptyDataPlanSimplified() still persists them (Milestone 61A), so the
+  // app records who prepared and reviewed the filing; that record simply
+  // does not appear on the document filed with the court. Captured, not
+  // filed -- probate-guardian-data-model.csv says so on each of those rows.
 
   sections.push({
     id: 'signatures',
@@ -177,16 +161,6 @@ export function buildPlanSimplifiedModel(D) {
       },
       ...(hasSigData(g[0]) ? [makeSigBlock('Guardian / Guardian Advocate', g[0])] : [{ type: 'notice', text: 'No signature entered.' }]),
       ...(hasSigData(g[1]) ? [makeSigBlock('Guardian / Guardian Advocate', g[1])] : []),
-      ...(prep ? [{
-        type: 'notice',
-        title: 'CERTIFICATION AND SIGNATURE OF PREPARER',
-        text: 'The preparation of this form is based upon information provided by the guardian(s). The preparer has not audited or reviewed the plan or supporting documents.',
-      }, prep] : []),
-      ...(atty ? [{
-        type: 'notice',
-        title: 'CERTIFICATION AND SIGNATURE OF GUARDIAN\'S ATTORNEY',
-        text: 'The undersigned notifies the Court of the filing of this plan and represents that it conforms to the requirements of Florida Guardianship Law.',
-      }, atty] : []),
       {
         type: 'notice',
         text: 'Filing: File the original with the Clerk of the Circuit Court in the county of jurisdiction. E-filing instructions are at myflcourtaccess.com.',

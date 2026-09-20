@@ -892,3 +892,25 @@ authorizes only what it names (`AGENTS.md` §3).
   owner name" error for a phone-only residence), passes restored. Full unit
   suite 1287/1287, `npm run check:types` clean, `window-bridge.d.ts`
   regenerated and its allow-list updated.
+- **2026-09-20 — Phase 3 (61D/61E), three of four items. Landed.** Item 2
+  (the Disaster Plan note) was closed with no code change before this run
+  began and is not part of it.
+  - *Item 1, Annual's Note 1.* Added to the cover section ahead of Q1, the
+    position the court's own form uses — `plan-annual/pdf-model.js`. Its
+    companion note on the same source page stays out; the spec asserts no
+    Administrative Order reaches the generated plan.
+  - *Item 3, Simplified's filing guidance.* Now in Help
+    (`help-content.js`), county-gated to the Sixth Circuit the same way
+    plan-initial's Disaster Plan paragraph is, and pointing at the clerk's
+    published details rather than transcribing addresses and phone numbers
+    that would go stale silently. The entry's `content` became a function
+    for this, which `showContextualHelp()` already supported. The PDF's
+    generic filing line is unchanged.
+  - *Item 4, Simplified's preparer/attorney certification pages.* Removed
+    from `plan-simplified/pdf-model.js`, so the filed output matches a court
+    form that has neither. The UI capture and Phase 1's schema rows stay —
+    captured, not filed.
+  Red-first: all three specs re-run with the three source files stashed —
+  6 failures for their stated reasons (no rights-consistency note, preparer
+  and attorney blocks still present, no "Where to File" section) — and
+  10/10 green restored. Full unit suite 1297/1297.
