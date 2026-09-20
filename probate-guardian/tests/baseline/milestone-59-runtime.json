@@ -67,6 +67,17 @@
     { "seconds": 6.5, "file": "guardian-blank-page-pruning.spec.ts", "line": 280 },
     { "seconds": 6.4, "file": "output-semantics.artifact.spec.ts", "line": 123 }
   ],
+  "after_59c_and_59d": {
+    "_comment": "Closing measurement, same workstation, taken via `npm run test:verify` at commit 7438d32 once every 59C/59D sub-delivery had landed. Recorded so the milestone's runtime claim can be checked rather than taken on trust.",
+    "commit": "7438d32",
+    "command": "npm run test:verify",
+    "unit": { "files": 100, "tests": 1152, "passed": 1152 },
+    "e2e": { "passed": 672, "skipped": 6, "failed": 0, "flaky": 0, "wall_minutes": 24.5 },
+    "total_wall_seconds": 1473,
+    "e2e_delta_vs_baseline": "1542s -> 1470s, 72s faster (4.7%)",
+    "interpretation": "Consistent with C2's artifact reuse (measured at ~54s saved across four specs in isolation), not proof of it: this is a single full-run sample at each configuration, and 4.7% is close to the run-to-run variation a suite of this length can produce. Subset runs were highly repeatable (92/92/92s, 139/140/140s, 52.4/52.5s), which supports the direction. Note the total is not like-for-like with the baseline's 1544s: test:verify additionally runs check:types and verify:data-model, which npm test does not, so the e2e figure is the comparable one.",
+    "counts_unchanged": "678 discovered / 672 passed / 6 skipped, identical to the baseline. 59C-0 deleted an assertion, not a test; no test was added or lost anywhere in 59C or 59D."
+  },
   "findings_for_later_sub_deliveries": {
     "59C-3": "signature-capture.contract.spec.ts is the 2nd slowest file (93.7s / 36 tests) and holds 19 of the suite's 27 waitForTimeout calls. The baseline independently confirms it as the right starting point.",
     "59C-2": "The Excel export specs 59C-2 targets are well represented in the slowest tests: excel-b4-multi-account, excel-pruned-roundtrip (x2), annual-mount, guardian-inventory-mount and guardian-blank-page-pruning are 6 of the slowest 10, at 6.5-8.1s each. Those are the redundant workbook generations C2 removes.",
