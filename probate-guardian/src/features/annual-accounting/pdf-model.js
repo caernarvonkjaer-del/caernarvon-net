@@ -2,6 +2,7 @@
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
 import { calcTotalsAnnual, annualReconcileState, n as toAmount } from './totals.js';
+import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
@@ -1142,7 +1143,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
         {
           type: 'notice',
           tag: 'P',
-          text: 'Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.',
+          // Milestone 60I: quoted from s. 744.367(3)(a) itself, shared with
+          // Simplified's Part VII. This used to print only a paraphrase of the
+          // first half and dropped the definition sentence entirely.
+          text: `Per s. 744.367(3)(a), Florida Statutes: ${REMUNERATION_DECLARATION}`,
         },
         remList.length > 0 ? {
           type: 'table',
@@ -1162,7 +1166,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           type: 'notice',
           tag: 'P',
           title: 'Declaration of Remuneration',
-          text: 'No remuneration reported for this period.',
+          text: REMUNERATION_NONE_REPORTED,
         },
       ],
     });

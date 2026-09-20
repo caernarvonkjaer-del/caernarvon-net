@@ -29,6 +29,10 @@ import { confirmModal } from '../../core/ui/dialogs.js';
 // which the milestone's own Collection Grid Boundary (AGENTS.md section 3)
 // explicitly keeps on per-form row factories, not cards.
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+// Milestone 60I/60J: the Part VII instruction is the statute's own text, the
+// same constant the PDF prints, so the page a filer reads and the document
+// they sign cannot drift apart.
+import { REMUNERATION_DECLARATION } from '../../core/filing/statutory-text.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
@@ -117,6 +121,10 @@ function bindEvents(container) {
         break;
       }
       case 'add-remuneration': {
+        // Milestone 60J (Annual's 58D rule): adding an entry answers Part VII
+        // by itself, so a previously ticked "none to report" declaration is
+        // withdrawn rather than left to contradict the row being added.
+        if (window.D?.scheduleNoItems?.remuneration) window.D.scheduleNoItems.remuneration = false;
         if (addCollectionRow('remuneration', window.D)) {
           autoSave();
           navigate('/p7');
@@ -145,6 +153,13 @@ function bindEvents(container) {
   }, options);
   container.addEventListener('change', (event) => {
     const input = event.target;
+    if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'schedule-no-items') {
+      if (!window.D.scheduleNoItems) window.D.scheduleNoItems = {};
+      window.D.scheduleNoItems[input.dataset.schedule] = input.checked;
+      autoSave();
+      updateNavDots();
+      return;
+    }
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'import-excel') _excelModule.importExcel(input);
   }, options);
   container.addEventListener('input', (event) => {
@@ -624,16 +639,27 @@ function pagePart7(){
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" data-form-path="remuneration.${i}.guardian" data-form-format="name"></div>
           <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" data-form-path="remuneration.${i}.type" data-form-format="name"></div>
-          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(r.description||'')}" data-form-path="remuneration.${i}.description"></div>
+          <div class="col-md-8"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(r.description||'')}" data-form-path="remuneration.${i}.description"></div>
+          <div class="col-md-4"><label class="form-label">Amount</label><input type="text" class="form-control" inputmode="decimal" value="${esc(r.amount||'')}" data-form-path="remuneration.${i}.amount" data-form-format="currency"></div>
         </div>
       </div>
     </div></div>`).join('')+'</div>';
   } else {
-    rows=`<div class="schedule-empty"><p class="text-muted mb-0">No remuneration entries added yet.</p></div>`;
+    // Milestone 60J: the declaration itself, the same control Annual's Part XI
+    // uses. 744.367(3)(a) requires the report to include a declaration of
+    // remuneration, so "I received none" has to be sayable -- until now this
+    // page offered no way to say it and export never asked.
+    const declaredNone = !!(d.scheduleNoItems && d.scheduleNoItems.remuneration);
+    rows=`<div class="schedule-empty">
+      <label class="schedule-empty-check">
+        <input type="checkbox" ${declaredNone?'checked':''} data-simplified-change="schedule-no-items" data-schedule="remuneration">
+        <span>I verify there is no remuneration to report for this period.</span>
+      </label>
+    </div>`;
   }
   return `<div class="schedule-page">
     <h1>Part VII — Guardian(s) Declaration of Remuneration</h1>
-    <div class="schedule-instructions">Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.</div>
+    <div class="schedule-instructions">Per s. 744.367(3)(a), Florida Statutes: ${esc(REMUNERATION_DECLARATION)}</div>
     ${rows}
     <button class="btn btn-outline-primary btn-sm mb-3 mt-3" data-simplified-action="add-remuneration">+ Add Entry</button>
     ${renderScheduleDocsSection('p7')}
@@ -772,6 +798,22 @@ export function validateSimplified(){
     req(r.guardian, `Part VII — Line ${i + 1} — Guardian Name`, `remuneration.${i}.guardian`);
     req(r.type, `Part VII — Line ${i + 1} — Type`, `remuneration.${i}.type`);
   });
+  // Milestone 60J, mirroring Annual's Milestone 58D. Part VII must be answered
+  // one way or the other before this filing leaves: 744.367(3)(a) requires the
+  // report to "include a declaration of all remuneration received", so a
+  // filing that says neither "here is what I received" nor "I received none"
+  // is missing something the statute requires -- and it used to export
+  // silently, because the sidebar and this validator both ignored a schedule
+  // with no populated rows.
+  //
+  // AGENTS.md section 4 note: this is NOT the "no items to report" affordance
+  // the sidebar asks about for other schedules, which export must never
+  // demand. Part VII is the one place a statute names the declaration itself,
+  // which is exactly why 58D gated Annual's Part XI and why this matches it.
+  if (!(d.scheduleNoItems && d.scheduleNoItems.remuneration === true)
+    && !(d.remuneration || []).some(r => r && (r.guardian || r.type || r.amount || r.description))) {
+    errs.push(issue('Part VII — Remuneration — declare the remuneration received, or verify there is none to report', 'scheduleNoItems.remuneration'));
+  }
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

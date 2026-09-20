@@ -132,7 +132,15 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         bondAmount: 100000,
         bondPeriodFrom: '2026-01-15',
         bondPeriodTo: '2027-01-15',
-        bondingCompany: 'Travelers Casualty', // produces odd 3 items in Schedule D-4
+        bondingCompany: 'Travelers Casualty',
+        // Schedule D-4's grid must hold an ODD number of items, which is what
+        // makes the engine pad the leftover pair with /ColSpan 3 -- the
+        // behaviour this test exists for. Amount + Period + Company was three
+        // until Milestone 60H added the bond-waiver answer (four, even);
+        // answering Yes adds its order date, restoring five. Asserting the
+        // padding without a grid that needs padding would prove nothing.
+        bondWaived: 'Yes',
+        bondWaivedDate: '2026-01-20',
         scheduleA1: mockItems,
         scheduleA2: [],
         scheduleB1: [],
@@ -236,7 +244,10 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
     // 1 = 7, not the 5 this test asserted for years -- confirmed a stale
     // assertion, not a regression, by reading pdf-model.js's own current
     // 8-entry header array and pdf-engine.js's labelColSpan computation.
-    expect(colSpanMatches).toContain(7); // from Schedule A-1 totals (7 + 1 = 8 cols)
+    // Milestone 60E then removed A-1's "Valuation Method" column, which read
+    // a field scheduleA1 rows never had and printed blank on every filing, so
+    // the same totals row now spans 6 of 7. Same check, one column narrower.
+    expect(colSpanMatches).toContain(6); // from Schedule A-1 totals (6 + 1 = 7 cols)
     expect(rawPdfString).not.toContain('/ColSpan /');
 
     // Verify Section Titles include Part VI

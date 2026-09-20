@@ -1031,8 +1031,57 @@ rendered PDF text changes; the full regression once, in Phase 6.
   `npm run check:types` → clean; `git diff --check` → exit 0;
   `npx playwright test` over `pdf-accessibility-and-signatures`,
   `guardian-inventory-schedule-layout`, `guardian-inventory-mount` → 22
-  passed; `git status --short` → four files
+  passed (one MS-60 consequence surfaced and fixed in Phase 4, below);
+  `git status --short` → four files
   (`MILESTONE-60-PROPOSAL.md`, `TEST-INDEX.md`,
   `src/features/guardian-inventory/pdf-model.js`,
   `tests/unit/guardian-inventory-pdf-model.spec.js`), nothing from Phase 4
-  or 5, no generated artifacts.
+  or 5, no generated artifacts. Commit `03a1f35`.
+- **2026-09-20 — Phase 4, 60G + 60I + 60J. Landed.**
+  **The statutory paragraph now comes from the statute** (new
+  `src/core/filing/statutory-text.js`, one constant both forms import, cited
+  and dated). Retrieved and verified as the plan required: three independent
+  sources (flhouse.gov, codes.findlaw.com, flsenate.gov) agreed, and the
+  requester then supplied the full text of s. 744.367, which matched. Both
+  clerk transcriptions differ from it — each drops the "guardian of the
+  property … guardian of the person … must both" clause, and Simplified's
+  carries the typos "poperty" and "in case or in kind" — and Annual's app
+  text had in turn dropped the entire definition sentence. **The one
+  typographic question was settled empirically, not by assumption:** the
+  statute sets the defined term in curly quotation marks, nothing in this
+  app's PDF strings had ever used one, so the constant uses them and
+  `simplified-remuneration.spec.ts` asserts the curly-quoted term survives
+  into the extracted PDF text. It does.
+  **60G** — `emptyDataSimplified()` gains `amount` (written out rather than
+  importing `schedule-definitions.js` into core state for one row literal,
+  with a drift guard asserting its keys equal the shared factory's); an
+  Amount input on Part VII; the Amount column on the PDF table, matching
+  Annual's headers and widths. The row filter now admits an amount-only row —
+  a payment with no type typed beside it is still a disclosable benefit.
+  **60J, full 58D parity** — persisted `scheduleNoItems.remuneration` for
+  `simplified` with a CSV row; the "I verify there is no remuneration to
+  report" control (Annual's markup, Simplified's dispatcher); `addCollectionRow`
+  withdraws that declaration when an entry is added; `emptyDataSimplified()`
+  starts empty so the control is reachable (the two seeded blank rows hid it,
+  exactly as 58D found for Annual); `normalizeWardData()` already collapsed
+  all-blank remuneration arrays for every type, so old saves need no new rule;
+  sidebar `s-p7` and `validateSimplified()` both require Part VII to be
+  answered; the PDF prints Part VII on every filing. **AGENTS.md §4 boundary
+  respected and recorded in the code:** this is not the "no items to report"
+  affordance export must never demand — Part VII is the one place a statute
+  names the declaration itself, which is why 58D gated Annual's Part XI.
+  **Red-first:** the new unit spec's 11 tests failed at import (the shared
+  constant did not exist), then on each specific defect. **Regression found
+  and fixed, caused by this milestone:** `pdf-table-semantics.spec.ts`'s
+  "Slice 19B" failed — `/ColSpan` came back `[4, 6, 2]` where it expects `3`.
+  Both causes are MS 60's: 60H's bond-waiver item made Schedule D-4's
+  key-value grid even, so the engine no longer had a leftover pair to pad
+  with `ColSpan 3` (the behaviour that test exists for), and 60E's removal of
+  A-1's phantom column moved its totals span from 7 to 6. Fixed by answering
+  the waiver Yes in that fixture — restoring an odd grid, so the padding is
+  proven rather than assumed absent — and correcting the A-1 span with its
+  reason. **Green:** full unit suite 105 files / 1259 tests; `check:types`;
+  `git diff --check`; `verify:data-model` OK 928 rows; e2e
+  `simplified-remuneration` (4, new), `simplified-mount`, `annual-mount`,
+  `navigation-status.contract`, `pdf-form-specific`, `pdf-table-semantics`,
+  `pdf-structure-tags` — 130 passed then 5 passed on re-run.

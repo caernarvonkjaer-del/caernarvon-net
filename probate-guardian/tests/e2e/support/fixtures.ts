@@ -163,6 +163,11 @@ export const MINIMAL_VALID_SIMPLIFIED = {
     { name: 'Recipient Three', line2: '', line3: '' },
     { name: '', line2: '', line3: '' },
   ],
+  // Milestone 60J: Part VII must be answered before a Simplified filing can
+  // leave, exactly as Annual's Part XI has been since 58D. This fixture
+  // declares none received; a test about entries overlays its own rows, which
+  // also clears this flag through the same rule the UI uses.
+  scheduleNoItems: { remuneration: true },
 } as const;
 
 /**

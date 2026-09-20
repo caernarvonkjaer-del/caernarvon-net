@@ -170,10 +170,23 @@ export function emptyDataSimplified() {
       {name:'',line2:'',line3:''}
     ],
     certIndicator:'',
-    remuneration:[
-      {guardian:'',type:'',description:''},
-      {guardian:'',type:'',description:''}
-    ]
+    // Part VII — Remuneration.
+    //
+    // Milestone 60J: starts EMPTY, not with two blank placeholder rows, for
+    // the reason emptyDataAnnual() starts empty (Milestone 58D) -- the "I
+    // verify there is no remuneration to report" declaration only renders
+    // while this array is empty, so seeding placeholders hid the one control
+    // that answers Part VII behind deleting two meaningless rows.
+    //
+    // Milestone 60G: rows carry `amount`, which the data model, the shared
+    // SCHEDULE_SCHEMAS.remuneration factory and this form's own Excel
+    // export/import always had -- only this factory and the UI never adopted
+    // it, so nothing upstream ever set it. Written out rather than imported
+    // from schedule-definitions.js: pulling that module into core state for
+    // one row literal is an initialization coupling nobody needs, and
+    // tests/unit/remuneration-declaration.spec.js guards the two against
+    // drifting apart again.
+    remuneration:[]
   };
 }
 

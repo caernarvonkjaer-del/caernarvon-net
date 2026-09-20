@@ -6771,7 +6771,11 @@ function computeNavChecks(){
       's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
         &&datesOrdered(D.periodTo,D.certServiceDate,true)
         &&sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage),
-      's-p7':(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type))),
+      // Milestone 60J: Part VII is complete when every populated row is
+      // complete AND the part has been answered -- entries, or the "none to
+      // report" declaration. Matches Annual's 'a-p11' and validateSimplified().
+      's-p7':(!!(D.scheduleNoItems&&D.scheduleNoItems.remuneration)||(D.remuneration||[]).some(r=>hasAny(r.guardian,r.type,r.amount,r.description)))
+        &&(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type))),
     };
     const incomplete={
       's-cover':!checks['s-cover']&&hasAny(D.wardName,D.caseNumber,D.ssn,D.gid,D.periodFrom,D.periodTo,D.guardian,D.attorney,D.typeOfGuardianship,D.county),

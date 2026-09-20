@@ -5,6 +5,7 @@ import { yesNoText } from '../../core/form/form-contract.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -306,9 +307,25 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     ],
   });
 
-  // 7. Part VII: Remuneration (if present)
-  const remList = (d.remuneration || []).filter(r => r && (r.guardian || r.type || r.description));
-  if (remList.length > 0) {
+  // 7. Part VII: Remuneration.
+  //
+  // Milestone 60J: this prints on EVERY Simplified filing, not only when there
+  // are entries -- the same fix Milestone 58D made for Annual's Part XI, which
+  // nobody had checked applied here too. 744.367(3)(a) requires the report to
+  // INCLUDE a declaration of remuneration, and a part that silently vanishes
+  // is not a declaration: a reader cannot tell a guardian who received nothing
+  // from a form that never asked. With no entries it carries the statutory
+  // paragraph and an explicit statement that none was received, which is what
+  // the filer affirmed to get here (export is blocked until Part VII is
+  // answered -- see validateSimplified()).
+  //
+  // Milestone 60G: `amount` reaches the filed document. The filter includes it
+  // for the same reason the Annual filter does -- a payment with no type typed
+  // beside it is still a disclosable benefit, and dropping the row would file
+  // a declaration that omits it.
+  const remList = (d.remuneration || []).filter(r => r && (r.guardian || r.type || r.description || r.amount));
+  const remDeclaredNone = !!(d.scheduleNoItems && d.scheduleNoItems.remuneration);
+  if (remList.length > 0 || remDeclaredNone) {
     sections.push({
       id: 'part7',
       title: 'Part VII — GUARDIAN(S) DECLARATION OF REMUNERATION',
@@ -320,20 +337,27 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         {
           type: 'notice',
           tag: 'P',
-          text: 'Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward. As used in this paragraph, the term "remuneration" means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian.',
+          text: `Per s. 744.367(3)(a), Florida Statutes: ${REMUNERATION_DECLARATION}`,
         },
-        {
+        remList.length > 0 ? {
           type: 'table',
           tag: 'Table',
           title: 'Declaration of Remuneration',
-          headers: ['#', 'Guardian Name', 'Type', 'Description'],
+          headers: ['#', 'Guardian Name', 'Type', 'Description', 'Amount'],
           rows: remList.map((r, i) => [
             String(i + 1),
             r.guardian || '',
             r.type || '',
             r.description || '',
+            fmtS(r.amount),
           ]),
-          colWidths: [10, 30, 25, 35],
+          colWidths: [6, 22, 18, 38, 16],
+          colAlign: ['center', 'left', 'left', 'left', 'right'],
+        } : {
+          type: 'notice',
+          tag: 'P',
+          title: 'Declaration of Remuneration',
+          text: REMUNERATION_NONE_REPORTED,
         },
       ],
     });
