@@ -18,6 +18,10 @@
       "name": "createCase"
     },
     {
+      "file": "src/core/filing/delete-confirmation.js",
+      "name": "deleteFilingConfirmation"
+    },
+    {
       "file": "src/core/case-resolver.js",
       "name": "getOrCreateCaseForWard"
     },

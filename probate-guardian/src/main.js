@@ -25,6 +25,10 @@ import './core/validation/signature-state.js';
 // Initial Plan filings that have never been opened, so it cannot arrive with
 // a lazily-loaded feature module.
 import './core/validation/attorney-block.js';
+// Milestone 58E: Delete is available on the dashboard, the first screen a
+// returning filer sees, so the confirmation builder cannot arrive with a
+// lazily-loaded feature module.
+import './core/filing/delete-confirmation.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

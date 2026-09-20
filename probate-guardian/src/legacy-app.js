@@ -4487,8 +4487,15 @@ async function confirmDeleteWard(wardId){
   if(!ward)return;
   await ensureFragment('common-modals');
   _pendingDeleteWardId=ward.wardId;
-  const yearNote=(ward.years&&ward.years.length)?` This will also permanently delete ${ward.years.length} prior year${ward.years.length===1?'':'s'} of saved accounting for this form.`:'';
-  document.getElementById('delete-ward-msg').textContent=`Are you sure you want to delete "${ward.wardName}"?${yearNote} This action cannot be undone.`;
+  // Milestone 58E: the message names the FILING, not just the ward. A ward
+  // commonly has several open at once, and every Delete button used to raise
+  // the same sentence. The fallback keeps the old wording if the bridge is
+  // somehow missing -- a vaguer prompt is survivable, a missing one is not,
+  // and this must never change WHICH filing _pendingDeleteWardId points at.
+  const msg=typeof window.deleteFilingConfirmation==='function'
+    ? window.deleteFilingConfirmation(ward)
+    : `Are you sure you want to delete "${ward.wardName}"? This action cannot be undone.`;
+  document.getElementById('delete-ward-msg').textContent=msg;
   showModal('deleteWardModal');
 }
 

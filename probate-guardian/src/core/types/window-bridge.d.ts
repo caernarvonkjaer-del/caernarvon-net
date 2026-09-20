@@ -101,6 +101,7 @@ interface Window {
   decryptJSON: any;
   decryptJSONWithKey: any;
   dehydrateIntoParty: any;
+  deleteFilingConfirmation: any;
   deleteWard: any;
   deleteWardFromState: any;
   deriveAndVerifyKey: any;

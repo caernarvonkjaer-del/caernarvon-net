@@ -505,6 +505,55 @@ test.describe('routes', () => {
     await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.length)).toBe(0);
   });
 
+  // Milestone 58E. The confirmation must say WHICH filing is about to be
+  // permanently deleted. Two filings for the same ward previously produced
+  // byte-identical prompts, so the only thing distinguishing an Initial
+  // Inventory from this year's Annual Accounting was which button the filer
+  // had pressed a moment earlier.
+  test('delete confirmation names the individual filing, and deletes exactly that one', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(async () => {
+      const w = window as any;
+      await w.addWard('Dorothy Jean Ashford', 'guardian');
+      await w.addWard('Dorothy Jean Ashford', 'annual');
+      const wards = w.caseFile.wards;
+      wards[0].caseNumber = '26-001203-GD';
+      wards[1].caseNumber = '26-001203-GD';
+      wards[1].periodFrom = '2025-01-01';
+      wards[1].periodTo = '2025-12-31';
+    });
+
+    const ids = await page.evaluate(() => (window as any).caseFile.wards.map((x: any) => x.wardId));
+
+    const messageFor = async (wardId: string) => {
+      await page.evaluate((id) => (window as any).confirmDeleteWard(id), wardId);
+      const text = await page.locator('#delete-ward-msg').textContent();
+      await page.locator('#deleteWardModal [data-modal-action="close"]').click();
+      await expect(page.locator('#deleteWardModal')).toBeHidden();
+      return text || '';
+    };
+
+    const inventoryMsg = await messageFor(ids[0]);
+    const annualMsg = await messageFor(ids[1]);
+
+    expect(inventoryMsg).toContain('Initial Inventory');
+    expect(inventoryMsg).toContain('Dorothy Jean Ashford');
+    expect(inventoryMsg, 'an Initial Inventory has no reporting period').not.toContain('through');
+    expect(annualMsg).toContain('Annual Accounting');
+    expect(annualMsg).toContain('01/01/2025 through 12/31/2025');
+    expect(annualMsg, 'two filings on one ward must not read identically').not.toBe(inventoryMsg);
+
+    // Cancelling deleted nothing.
+    expect(await page.evaluate(() => (window as any).caseFile.wards.length)).toBe(2);
+
+    // Confirming deletes exactly the filing the prompt named.
+    await page.evaluate((id) => (window as any).confirmDeleteWard(id), ids[1]);
+    await page.locator('#deleteWardModal [data-modal-action="delete-ward"]').click();
+    await expect(page.locator('#deleteWardModal')).toBeHidden();
+    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.map((x: any) => x.inventoryType)))
+      .toEqual(['guardian']);
+  });
+
   test('shared plan controls persist through delegated form events', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).addWard('Shared Form Ward', 'planSimplified'));
