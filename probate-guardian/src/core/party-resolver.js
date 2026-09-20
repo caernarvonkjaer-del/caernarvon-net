@@ -235,7 +235,12 @@ function escapeRegExp(s) {
  */
 export function identitySlotForPath(filing, path) {
   if (!filing || !path) return null;
-  if (path === 'wardName') return { role: 'ward', index: 0 };
+  // The ward's name is the one path that resolves before the table below,
+  // because a filing type with no ward mapping still syncs it (readRoleFields
+  // falls back to `{ name: filing.wardName }`). It must still declare its flat
+  // key, or editing a ward name would fall back to a whole-block dehydrate --
+  // exactly what 58A removes everywhere else.
+  if (path === 'wardName') return { role: 'ward', index: 0, fieldKeys: ['name'] };
   const engine = engineTypeFor(filing);
   const forType = ROLE_FIELD_MAPS[engine];
   if (!forType) return null;
@@ -246,14 +251,28 @@ export function identitySlotForPath(filing, path) {
     const fieldNames = new Set(Object.values(keys));
     if (joinedAddress) fieldNames.add(joinedAddress);
     if (splitCityStateZip) Object.values(splitCityStateZip).forEach(f => fieldNames.add(f));
+    // Milestone 58A: which canonical Party key(s) this filing field feeds.
+    // Reversing `keys` rather than adding a second table keeps one source of
+    // truth -- a new role field is mapped once, above, and resolves here for
+    // free. Address shapes are the only one-to-many cases: a joined address
+    // field carries both halves, and city/state/zip are three filing fields
+    // behind one canonical value.
+    const flatKeysFor = (fieldName) => {
+      for (const flatKey of Object.keys(keys)) if (keys[flatKey] === fieldName) return [flatKey];
+      if (joinedAddress && fieldName === joinedAddress) return ['street', 'cityStateZip'];
+      if (splitCityStateZip && Object.values(splitCityStateZip).includes(fieldName)) return ['cityStateZip'];
+      return [];
+    };
+
     if (container.type === 'array') {
       const m = path.match(new RegExp('^' + escapeRegExp(container.field) + '\\.(\\d+)\\.(.+)$'));
-      if (m && fieldNames.has(m[2])) return { role, index: Number(m[1]) };
+      if (m && fieldNames.has(m[2])) return { role, index: Number(m[1]), fieldKeys: flatKeysFor(m[2]) };
     } else if (container.type === 'object') {
       const prefix = container.field + '.';
-      if (path.startsWith(prefix) && fieldNames.has(path.slice(prefix.length))) return { role, index: 0 };
+      const field = path.slice(prefix.length);
+      if (path.startsWith(prefix) && fieldNames.has(field)) return { role, index: 0, fieldKeys: flatKeysFor(field) };
     } else if (fieldNames.has(path)) { // 'flat'
-      return { role, index: 0 };
+      return { role, index: 0, fieldKeys: flatKeysFor(path) };
     }
   }
   return null;
@@ -330,7 +349,10 @@ export function writeRoleFields(filing, role, index, fields) {
       sub[keys[flatKey]] = fields[flatKey];
     }
   }
-  if (joinedAddress) {
+  // Guarded since Milestone 58A: a partial write (hydrating everything EXCEPT
+  // the field being edited) can arrive with neither half present, and an
+  // unconditional join would blank the stored address.
+  if (joinedAddress && (fields.street !== undefined || fields.cityStateZip !== undefined)) {
     sub[joinedAddress] = [fields.street, fields.cityStateZip].filter(Boolean).join(', ');
   }
   if (splitCityStateZip && fields.cityStateZip !== undefined) {
@@ -506,14 +528,51 @@ export function syncFilingSlotWithParty(filing, role, index = 0) {
   return true;
 }
 
-/** Hydrate direction: party -> filing. Overwrites this role's fields on the filing with the party's current values. */
-export function hydrateFromParty(party, filing, role, index = 0) {
-  writeRoleFields(filing, role, index, partyToFlatFields(party));
+/**
+ * Hydrate direction: party -> filing. Overwrites this role's fields on the
+ * filing with the party's current values.
+ *
+ * `except` (Milestone 58A) holds back the flat keys the user is editing right
+ * now, so refreshing the rest of their block does not rewrite the field under
+ * their cursor -- see syncIdentityField().
+ */
+export function hydrateFromParty(party, filing, role, index = 0, { except = null } = {}) {
+  const fields = partyToFlatFields(party);
+  const held = normalizeFieldKeys(except);
+  if (held) for (const key of held) delete fields[key];
+  writeRoleFields(filing, role, index, fields);
 }
 
-/** Dehydrate direction: filing -> party. Reads this role's current fields off the filing and merges them onto the party. */
-export function dehydrateIntoParty(filing, role, index, party) {
-  mergeFlatFieldsIntoParty(party, readRoleFields(filing, role, index));
+/**
+ * One flat key, a list of them, or null for "the whole block". Accepting a
+ * bare string matters because these functions are published on `window` for
+ * legacy-app.js, where a single-key call reads naturally and an accidental
+ * string would otherwise silently fall back to whole-block behaviour -- the
+ * exact defect 58A exists to remove.
+ */
+function normalizeFieldKeys(fieldKeys) {
+  if (fieldKeys == null) return null;
+  const list = Array.isArray(fieldKeys) ? fieldKeys : [fieldKeys];
+  return list.filter((k) => typeof k === 'string' && k);
+}
+
+/**
+ * Dehydrate direction: filing -> party. Reads this role's current fields off
+ * the filing and merges them onto the party.
+ *
+ * `fieldKeys` (Milestone 58A) narrows that to the keys actually edited. Passing
+ * null keeps the whole-block behaviour, which is what seeding a brand-new Party
+ * from a slot still wants.
+ */
+export function dehydrateIntoParty(filing, role, index, party, fieldKeys = null) {
+  let fields = readRoleFields(filing, role, index);
+  const only = normalizeFieldKeys(fieldKeys);
+  if (only) {
+    const narrowed = {};
+    for (const key of only) if (fields[key] !== undefined) narrowed[key] = fields[key];
+    fields = narrowed;
+  }
+  mergeFlatFieldsIntoParty(party, fields);
   party.updatedAt = new Date().toISOString();
 }
 
@@ -594,21 +653,26 @@ export function slotsReferencing(filing, partyId) {
  * still called directly so the flag is set even if some future caller
  * doesn't happen to go through that path.
  */
-export function syncIdentityField(filing, role, index = 0) {
+export function syncIdentityField(filing, role, index = 0, fieldKeys = null) {
   if (isFilingClosed(filing)) return; // cut off in both directions -- see closedFilingDrift()
   const partyId = getPartyIdForSlot(filing, role, index);
   if (!partyId) return;
   const party = resolveParty(partyId);
   if (!party) return;
-  dehydrateIntoParty(filing, role, index, party);
+  dehydrateIntoParty(filing, role, index, party, fieldKeys);
 
   const caseFile = window.caseFile;
   if (caseFile && Array.isArray(caseFile.wards)) {
     for (const other of caseFile.wards) {
       if (isFilingClosed(other)) continue;
       for (const slot of slotsReferencing(other, partyId)) {
-        if (other === filing && slot.role === role && slot.index === index) continue; // already current
-        hydrateFromParty(party, other, slot.role, slot.index);
+        // Milestone 58A: the edited slot is refreshed too, not skipped. It can
+        // be the stalest block in the case -- a filing reopened after the
+        // party moved on elsewhere -- and leaving it alone was what kept a
+        // mixed block in front of the filer. Only the key being typed is held
+        // back, so the refresh cannot fight the edit that triggered it.
+        const isEdited = other === filing && slot.role === role && slot.index === index;
+        hydrateFromParty(party, other, slot.role, slot.index, isEdited ? { except: fieldKeys } : undefined);
       }
     }
   }

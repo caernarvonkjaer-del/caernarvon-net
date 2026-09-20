@@ -20,7 +20,9 @@ function freshWindow() {
     D: { wardName: 'W', county: 'Orange' },
     calls,
     maybeCommitCoverCounty: rec('county'),
-    identitySlotForPath: rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0 } : null)),
+    // Milestone 58A: the slot now carries fieldKeys -- the canonical Party
+    // key(s) this path feeds -- and the tail must hand them on.
+    identitySlotForPath: rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null)),
     syncIdentityField: rec('identity'),
     autoSave: rec('autoSave'),
     updateNavDots: rec('navDots'),
@@ -62,6 +64,14 @@ describe('runFieldWriteSideEffects()', () => {
     run('periodFrom', { dataset: {} });
     expect(w.syncIdentityField).not.toHaveBeenCalled();
     expect(w.autoSave).toHaveBeenCalledTimes(1);
+  });
+
+  // Milestone 58A. Without the fourth argument the write-through falls back to
+  // copying the slot's ENTIRE block into the shared Party, which is how one
+  // corrected field used to drag its stale neighbours along with it.
+  it('hands the resolved fieldKeys to the Party write-through', () => {
+    run('guardians.0.name');
+    expect(w.syncIdentityField).toHaveBeenCalledWith(w.D, 'guardian', 0, ['name']);
   });
 
   it('syncs the sidebar names by data-sync-* flag (primitive-built fields) or by path (legacy data-bind)', () => {

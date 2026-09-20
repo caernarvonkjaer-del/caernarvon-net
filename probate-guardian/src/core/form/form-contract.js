@@ -328,7 +328,9 @@ export function runFieldWriteSideEffects(path, control = null) {
   window.markFilingRevisionChanged?.('field-write');
   window.maybeCommitCoverCounty?.(path);
   const identitySlot = window.identitySlotForPath?.(window.D, path);
-  if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index);
+  // Milestone 58A: the fourth argument is what stops one edit from promoting
+  // its stale neighbours into the shared Party record.
+  if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
   window.autoSave?.();
   window.updateNavDots?.();
   window.refreshWardInfoCard?.();

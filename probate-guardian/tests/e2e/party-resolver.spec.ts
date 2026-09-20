@@ -54,10 +54,13 @@ test.describe('party-resolver (unwired hydration/dehydration core)', () => {
       };
     });
 
-    expect(result.wardName).toEqual({ role: 'ward', index: 0 });
-    expect(result.arrayPath).toEqual({ role: 'guardian', index: 1 });
-    expect(result.objectPath).toEqual({ role: 'attorney', index: 0 });
-    expect(result.flatPath).toEqual({ role: 'attorney', index: 0 });
+    // Milestone 58A added fieldKeys: the canonical Party key(s) a path feeds,
+    // so one edit can be merged without its neighbours. Asserted here rather
+    // than loosened to objectContaining, because the mapping is the contract.
+    expect(result.wardName).toEqual({ role: 'ward', index: 0, fieldKeys: ['name'] });
+    expect(result.arrayPath).toEqual({ role: 'guardian', index: 1, fieldKeys: ['taxId'] });
+    expect(result.objectPath).toEqual({ role: 'attorney', index: 0, fieldKeys: ['phone'] });
+    expect(result.flatPath).toEqual({ role: 'attorney', index: 0, fieldKeys: ['barNumber'] });
     expect(result.nonIdentitySchedulePath).toBeNull();
     expect(result.nonIdentityTopLevelPath).toBeNull();
     expect(result.wrongTypeForThisPath).toBeNull();
@@ -80,14 +83,16 @@ test.describe('party-resolver (unwired hydration/dehydration core)', () => {
       };
     });
 
-    expect(result.simplifiedGuardian).toEqual({ role: 'guardian', index: 0 });
-    expect(result.simplifiedAttorney).toEqual({ role: 'attorney', index: 0 });
-    expect(result.planSimplifiedGuardian).toEqual({ role: 'guardian', index: 0 });
-    expect(result.planSimplifiedPreparer).toEqual({ role: 'preparer', index: 0 });
-    expect(result.planAnnualGuardian).toEqual({ role: 'guardian', index: 1 });
-    expect(result.planAnnualAttorney).toEqual({ role: 'attorney', index: 0 });
-    expect(result.planMinorGuardian).toEqual({ role: 'guardian', index: 0 });
-    expect(result.planMinorPreparer).toEqual({ role: 'preparer', index: 0 });
+    expect(result.simplifiedGuardian).toEqual({ role: 'guardian', index: 0, fieldKeys: ['taxId'] });
+    expect(result.simplifiedAttorney).toEqual({ role: 'attorney', index: 0, fieldKeys: ['barNumber'] });
+    // A joined address field carries both halves, so it maps to both keys --
+    // the one place a path is legitimately one-to-many.
+    expect(result.planSimplifiedGuardian).toEqual({ role: 'guardian', index: 0, fieldKeys: ['street', 'cityStateZip'] });
+    expect(result.planSimplifiedPreparer).toEqual({ role: 'preparer', index: 0, fieldKeys: ['street'] });
+    expect(result.planAnnualGuardian).toEqual({ role: 'guardian', index: 1, fieldKeys: ['officeCityStateZip'] });
+    expect(result.planAnnualAttorney).toEqual({ role: 'attorney', index: 0, fieldKeys: ['secondaryEmail'] });
+    expect(result.planMinorGuardian).toEqual({ role: 'guardian', index: 0, fieldKeys: ['taxId'] });
+    expect(result.planMinorPreparer).toEqual({ role: 'preparer', index: 0, fieldKeys: ['taxId'] });
   });
 
   test('guardian (Initial Inventory): guardian row, nested attorney object, and nested preparer object all round-trip', async ({ page }) => {
@@ -876,10 +881,12 @@ test.describe('ward identity role & closed-filing cut-off (Milestone 49B)', () =
     expect(result.inventory.keys).toEqual(['inventoryType', 'wardName']); // nothing invented on a type with no slot for it
     expect(result.readInventory).toEqual({ name: 'Eleanor Whitfield' });
     expect(result.party2).toEqual({ address: { street: '12 Oak St', cityStateZip: 'St. Petersburg, FL 33701' }, phone: '(727) 555-0202', taxId: null });
-    expect(result.slots.annualSsn).toEqual({ role: 'ward', index: 0 });
-    expect(result.slots.minorCity).toEqual({ role: 'ward', index: 0 });
-    expect(result.slots.initialMailing).toEqual({ role: 'ward', index: 0 });
-    expect(result.slots.simplifiedGuardianSsn).toEqual({ role: 'guardian', index: 0 }); // the nested guardian SSN is still the guardian's
+    expect(result.slots.annualSsn).toEqual({ role: 'ward', index: 0, fieldKeys: ['taxId'] });
+    // Milestone 58A: city/state/zip are three filing fields behind one
+    // canonical key, so editing any of them resolves to cityStateZip alone.
+    expect(result.slots.minorCity).toEqual({ role: 'ward', index: 0, fieldKeys: ['cityStateZip'] });
+    expect(result.slots.initialMailing).toEqual({ role: 'ward', index: 0, fieldKeys: ['mailingCityStateZip'] });
+    expect(result.slots.simplifiedGuardianSsn).toEqual({ role: 'guardian', index: 0, fieldKeys: ['taxId'] }); // the nested guardian SSN is still the guardian's
     expect(result.slots.inventorySsn).toBeNull(); // Guardian Inventory has no ward SSN field
   });
 
@@ -987,5 +994,79 @@ test.describe('ward identity role & closed-filing cut-off (Milestone 49B)', () =
 
     expect(result.afterMerge).toEqual({ link: result.primaryId, phone: '555-0200', drift: [['phone']] });
     expect(result.afterUnmerge).toEqual({ link: result.subId, phone: '555-0200', drift: 0 });
+  });
+
+  // Milestone 58A. Editing one field of a linked identity block must promote
+  // only that field into the shared Party.
+  //
+  // What a filer hit: reopen a filing that was Closed while the attorney's
+  // record moved on elsewhere -- new firm address, new phone -- and its own
+  // attorney block is now stale. Correct one thing, the email, and the whole
+  // stale block was copied into the canonical Party and pushed out to every
+  // other open filing linked to that attorney. One correction silently
+  // reverted the attorney's address and phone across the case.
+  test('editing one identity field promotes only that field, and corrects the stale block it came from', async ({ page }) => {
+    await freshStartNoPassword(page);
+
+    const result = await page.evaluate(() => {
+      const w = window as any;
+
+      // The canonical record: current, and correct.
+      const party = w.createParty('attorney');
+      party.name = 'Robert Vance';
+      party.email = 'old@firm.example';
+      party.phone = '727-555-0100';
+      party.identifiers = { barNumber: '111111' };
+      party.address = { street: '100 Canonical St', cityStateZip: 'St. Petersburg, FL 33701' };
+
+      // A filing whose attorney block drifted while it was closed.
+      const stale = {
+        inventoryType: 'planInitial', wardName: 'Stale Ward', attorneyPartyId: party.id,
+        attorney_name: 'Robert Vance', attorney_email: 'old@firm.example',
+        attorney_phone: '000-000-0000', attorney_bar: '999999',
+        attorney_street: '1 Old Office Rd', attorney_cityStateZip: 'Tampa, FL 33601',
+      };
+      // A second open filing sitting on the same party, currently correct.
+      const other = {
+        inventoryType: 'planInitial', wardName: 'Other Ward', attorneyPartyId: party.id,
+        attorney_name: 'Robert Vance', attorney_email: 'old@firm.example',
+        attorney_phone: '727-555-0100', attorney_bar: '111111',
+        attorney_street: '100 Canonical St', attorney_cityStateZip: 'St. Petersburg, FL 33701',
+      };
+      w.caseFile.wards.push(stale, other);
+
+      // The filer corrects exactly one field on the stale filing.
+      stale.attorney_email = 'new@firm.example';
+      w.syncIdentityField(stale, 'attorney', 0, 'email');
+
+      return {
+        party: {
+          email: party.email, name: party.name, phone: party.phone,
+          bar: party.identifiers.barNumber, street: party.address.street,
+        },
+        stale: { email: stale.attorney_email, phone: stale.attorney_phone, bar: stale.attorney_bar, street: stale.attorney_street },
+        other: { email: other.attorney_email, phone: other.attorney_phone, street: other.attorney_street },
+      };
+    });
+
+    // The edit itself reaches the canonical record.
+    expect(result.party.email, 'the edited field must reach the party').toBe('new@firm.example');
+
+    // ...and nothing else does. These are the assertions that fail today.
+    expect(result.party.phone, 'a stale neighbour must not be promoted').toBe('727-555-0100');
+    expect(result.party.bar, 'a stale neighbour must not be promoted').toBe('111111');
+    expect(result.party.street, 'a stale neighbour must not be promoted').toBe('100 Canonical St');
+
+    // The block the edit came from is corrected from canonical rather than
+    // left mixed -- otherwise the filer keeps looking at the stale values.
+    expect(result.stale.phone, 'the edited slot must be refreshed from the party').toBe('727-555-0100');
+    expect(result.stale.bar).toBe('111111');
+    expect(result.stale.street).toBe('100 Canonical St');
+    expect(result.stale.email).toBe('new@firm.example');
+
+    // The other open filing sees the edit and keeps its correct values.
+    expect(result.other.email).toBe('new@firm.example');
+    expect(result.other.phone).toBe('727-555-0100');
+    expect(result.other.street).toBe('100 Canonical St');
   });
 });
