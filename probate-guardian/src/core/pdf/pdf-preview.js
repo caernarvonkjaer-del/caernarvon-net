@@ -156,16 +156,45 @@ function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
     try {
       const bytes = await session.saveAnnotatedBytes();
       const ward = (D.wardName || 'Preview').replace(/[^a-z0-9]/gi, '_');
-      await saveFinalizedPdf(bytes, `${ward}_Annotated.pdf`);
+
+      // RECORD FIRST, HAND OVER SECOND. This order is the whole point, and it
+      // used to be the other way round.
+      //
+      // saveFinalizedPdf() clicks an <a download>, so the moment it runs the
+      // filer has the file. Encoding the bytes for storage (gzip + base64) is
+      // slower than that click, so persisting afterwards left a window where
+      // the annotated PDF existed in the filer's downloads folder while the
+      // filing had no record of it. Reloading, switching wards or closing the
+      // app inside that window lost the annotations silently -- with the
+      // downloaded file standing as evidence that the save had worked. A busy
+      // machine widens the window; that is all the "flaky" full-suite failure
+      // this was found by ever was (Milestone 60's closing regression).
+      //
       // Persisted per 39-A's "Persistence design": the filing's own
       // regenerated (unannotated) content fingerprint at capture time, not
       // the annotated bytes' own content -- drift is measured against the
       // underlying form data, which is what can silently change later.
-      const { pdfBytes, encoding } = await encodeAnnotationBytes(bytes);
-      D.printAnnotations = { pdfBytes, encoding, contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
-      window.markDirtySinceExport?.();
-      window.autoSave?.();
-      if (statusEl) statusEl.textContent = 'Annotations saved with this filing.';
+      let persisted = true;
+      try {
+        const { pdfBytes, encoding } = await encodeAnnotationBytes(bytes);
+        D.printAnnotations = { pdfBytes, encoding, contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
+        window.markDirtySinceExport?.();
+        window.autoSave?.();
+      } catch (persistError) {
+        // Storing failed. The filer still gets the file they asked for --
+        // withholding it would turn a storage problem into a lost document --
+        // but they are told plainly that this filing did not keep a copy,
+        // rather than being left to assume it did.
+        persisted = false;
+        console.error('Storing annotations with the filing failed', persistError);
+      }
+
+      await saveFinalizedPdf(bytes, `${ward}_Annotated.pdf`);
+      if (statusEl) {
+        statusEl.textContent = persisted
+          ? 'Annotations saved with this filing.'
+          : 'Annotated PDF downloaded, but this filing could not keep a copy — re-open the preview and save again.';
+      }
     } catch (e) {
       console.error('Save Annotated PDF failed', e);
       if (statusEl) statusEl.textContent = `Save Annotated PDF failed: ${e.message || e}`;

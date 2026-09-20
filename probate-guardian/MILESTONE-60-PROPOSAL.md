@@ -1163,11 +1163,42 @@ rendered PDF text changes; the full regression once, in Phase 6.
   - *Reproduction:* passes 3 of 3 in isolation and 19 of 19 running the whole
     spec file in order; fails only under full-suite load. A load-dependent
     flake, not a deterministic break.
-  - *Recommended fix, for the requester to authorize separately:* persist
-    `D.printAnnotations` **before** handing the bytes to `saveFinalizedPdf()`,
-    so the download event cannot precede the state the filing keeps. That is
-    a change to the annotation save path and belongs to whoever owns 39-A/45A,
-    not to a PDF-fidelity milestone.
+  - *Recommended fix:* persist `D.printAnnotations` **before** handing the
+    bytes to `saveFinalizedPdf()`, so the download cannot precede the state
+    the filing keeps.
+  - **Authorized and fixed 2026-09-20** on the requester's instruction to fix
+    it globally. See the Phase 7 entry.
+- **2026-09-20 — Phase 7, annotation save ordering. Landed (authorized
+  separately from 60A-60K).**
+  **It is one central place, not a per-form defect.** The annotate toolbar is
+  mounted by `mountPdfPreview()` for every filing type, so the save handler in
+  `src/core/pdf/pdf-preview.js` is the single implementation all nine share.
+  Checked before assuming: of the eleven call sites that hand a file to the
+  browser (`saveFinalizedPdf` in seven `print.js` modules and this handler,
+  `saveWorkbookFile` in three `excel.js` modules), **only this one writes
+  filing state afterwards** — the rest set status text or handle errors. So
+  fixing it centrally fixes it everywhere, and there was nothing to sweep.
+  **What a filer would have lost.** `saveFinalizedPdf()` clicks an
+  `<a download>`, so the file exists the moment it runs. The handler then
+  awaited the gzip/base64 encode before writing `D.printAnnotations`. In that
+  window the annotated PDF sat in the filer's downloads folder while the
+  filing had no record of it — a reload, ward switch or close inside it lost
+  the annotations silently, with the downloaded file standing as evidence the
+  save had worked. A loaded machine widens the window, which is the whole of
+  the "flake".
+  **Fix:** encode and persist first, hand the file over second. If storing
+  fails the download still happens — withholding it would turn a storage
+  problem into a lost document — and the status line says plainly that the
+  filing kept no copy, instead of leaving the filer to assume it did.
+  **Red-first, as an order assertion rather than a race**, so it cannot go
+  quiet again: a patched `HTMLAnchorElement.click` and an accessor on
+  `D.printAnnotations` record the two events as they happen, and the persist
+  must precede the download. Pre-fix it reports `download -> persist`;
+  confirmed again by stashing the fix and re-running.
+  **Green:** unit 106 files / 1269 tests; `check:types`; `git diff --check`;
+  e2e `pdf-annotate` (20, including the new case), `pdf-preview-viewer`,
+  `print-preview-signature-jump`, `annotation-toolbar-containment`,
+  `pdf-accessibility-and-signatures` — 49 passed.
 
 ---
 

@@ -425,6 +425,70 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     expect(hasFieldLeak).toBe(false);
   });
 
+  // Found by Milestone 60's closing full-suite run, where it surfaced as a
+  // load-dependent flake: "Save Annotated PDF ... persists printAnnotations"
+  // read D.printAnnotations straight after the download event and got
+  // undefined, roughly once per full run and never in isolation.
+  //
+  // The cause is an ordering one, not a timing one. The save handler handed
+  // the bytes to the browser FIRST (saveFinalizedPdf -> <a download>.click(),
+  // which is what fires the download event) and only then awaited the
+  // gzip/base64 encode that precedes writing D.printAnnotations. So there is
+  // a window in which the filer has the file and the filing has not recorded
+  // it; a reload inside that window loses the annotations they just saved,
+  // silently, with the PDF sitting in their downloads folder as evidence that
+  // it worked. A busy machine widens the window -- which is all the full-suite
+  // "flake" ever was.
+  //
+  // This asserts the ORDER rather than racing it, so it cannot go quiet again:
+  // the persist must be recorded before the anchor click. Verified red on the
+  // pre-fix handler, where the two arrive the other way round.
+  test('the filing records the annotations BEFORE the file is handed to the browser', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Annotate Order Ward', 'planSimplified');
+    await fillMinimalValidPlanSimplifiedWard(page);
+    await page.evaluate(() => (window as any).navigate('/print'));
+    const pdfPage = page.locator('#print-doc-container .pdf-page').first();
+    await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+
+    // Record the two events as they happen, in the page, with no timing
+    // assumptions: a download-bearing anchor click, and the assignment of
+    // D.printAnnotations.
+    await page.evaluate(() => {
+      const w = window as any;
+      w.__saveOrder = [];
+      const originalClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function patched(this: HTMLAnchorElement, ...args: unknown[]) {
+        if (this.download) w.__saveOrder.push('download');
+        return originalClick.apply(this, args as []);
+      };
+      let stored = w.D.printAnnotations;
+      Object.defineProperty(w.D, 'printAnnotations', {
+        configurable: true,
+        get() { return stored; },
+        set(value) { w.__saveOrder.push('persist'); stored = value; },
+      });
+    });
+
+    await page.locator('[data-annotate-action="toggle"]').click();
+    await page.locator('[data-annotate-action="note"]').click();
+    await pdfPage.click({ position: { x: 60, y: 60 } });
+    await page.keyboard.type('Ask the judge about X');
+    await pdfPage.click({ position: { x: 300, y: 300 } });
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    await page.locator('[data-annotate-action="save"]').click();
+    await downloadPromise;
+
+    const order = await page.evaluate(() => (window as any).__saveOrder as string[]);
+    expect(order, 'neither the persist nor the download was observed').toContain('persist');
+    expect(order).toContain('download');
+    expect(
+      order.indexOf('persist'),
+      `the file reached the filer before the filing recorded it (order: ${order.join(' -> ')})`,
+    ).toBeLessThan(order.indexOf('download'));
+  });
+
   test('Save Annotated PDF downloads a PDF and persists printAnnotations on the filing; reopening the preview reapplies it', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Persist Ward', 'planSimplified');
