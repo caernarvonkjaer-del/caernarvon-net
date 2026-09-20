@@ -148,6 +148,10 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         // the filing both lists property and swears there is none.
         scheduleNoItems: { a1: false },
         serviceRecipients: [], // verifies fallback row for empty service recipients
+        // Milestone 57B: an empty D-5 is only fileable once the filer says so.
+        // 'Yes' leaves the list empty, so the "None listed." fallback below is
+        // still the branch under test.
+        serviceNoRecipients: 'Yes',
       });
 
       const model = buildVerifiedInventoryModel(d);
@@ -188,9 +192,10 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
 
     // No exemption needed even though this fixture empties the service-recipient
     // list on purpose: validateGuardian() requires a recipient's details only
-    // once a recipient row exists, so an empty D-5 is a fileable state and the
-    // "None listed." fallback asserted below is a real document, not a
-    // test-only one.
+    // once a recipient row exists, and since Milestone 57B an empty D-5 is a
+    // fileable state as soon as the filer attests to it, which the fixture
+    // above does. The "None listed." fallback asserted below is a real
+    // document, not a test-only one.
     expectFileableFixture(inspection.fixtureIssues, 'the Initial Inventory table-semantics fixture');
 
     const {

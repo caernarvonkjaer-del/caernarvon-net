@@ -1002,11 +1002,20 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
       return { raw: doc.output(), issues: await (window as any).__pgFixtureIssues(d) };
     }, MINIMAL_VALID_SIMPLIFIED);
 
-    // No exemption needed for the nameless recipient: validateSimplified()
-    // does not require a name on every certificate-of-service row, so a
-    // recipient carrying only a fourth address line is a fileable state --
-    // which is exactly why silently dropping it from the document mattered.
-    expectFileableFixture(output.issues, "40E's fourth-address-line filing");
+    // Milestone 57B made a name mandatory on every started certificate-of-
+    // service row, so the nameless recipient below is no longer a state the
+    // export gate passes. The exemption stays rather than the row being
+    // completed, because a row whose only populated field is line4 is the one
+    // shape that exercises the pdf-model filter's line4 term -- give it a name
+    // and it survives the filter on the name alone, and 40E's data loss goes
+    // untested. The state is still reachable in a filed document: this issue is
+    // bypassable, so a filer who overrides the gate files exactly this row.
+    expectFileableFixture(output.issues, "40E's fourth-address-line filing", {
+      'simplified.certRecipients[].name.required':
+        '57B requires a name on a started recipient row; a line4-only row is '
+        + 'deliberately kept here because completing it would stop testing the '
+        + 'filter branch 40E fixed.',
+    });
 
     const runs = (await extractPdfTextItems(output.raw)).flat().map((s) => s.trim());
     expect(runs).toContain('Room 100');
