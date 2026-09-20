@@ -245,10 +245,23 @@ block filings that are complete and valid under the court's own form.
 **Part XI is the one exception, and only because a statute names it.**
 §744.367(3)(a) requires the annual report to *include* a declaration of
 remuneration, so Milestone 58D made both the sidebar and the export gate
-require Part XI to be answered. That reasoning does not transfer: nothing
-names Schedules A–F the same way. Before extending 58D's rule to any other
-schedule, find the statute or the workbook field that demands it — and if
-there is none, the answer is no.
+require Part XI to be answered.
+
+Before extending 58D's rule to any other schedule, find the statute or the
+workbook field that demands it — and if there is none, the answer is no.
+
+**What was and was not verified here, because the difference matters.** The
+workbook half is established: `templates/annual-template.js`'s shared strings
+contain no "no items to report" declaration for any schedule, checked with a
+parser. The statutory half is **not** established and cannot be settled from
+this repository — it holds citations (§744.3678 for the annual accounting,
+§744.3679 for Simplified eligibility, §744.367(3)(a) for remuneration), never
+statutory text. No one has read §744.3678 against the question of whether any
+schedule requires an affirmative declaration of emptiness.
+
+So the rule above is deliberately framed as a burden of proof rather than a
+finding: it does not assert that no such requirement exists, only that nobody
+may act as though one does until they produce it.
 
 In short: the sidebar asks "have you finished with this schedule?", the export
 gate asks "does this satisfy the court?". Those are allowed to differ, and
