@@ -426,6 +426,14 @@ permissive of the two, because `verifiedEmpty` short-circuits it.
    rule is now recorded in `AGENTS.md` §4 so the gap is not "closed" later by
    tightening export instead. No code change; nothing further is scoped.
 
+   **The statutory half was settled separately, on 2026-09-20, and on practice
+   rather than statute.** The Clerk of the Circuit Court, Pinellas County: the
+   statute is ambiguous on whether a schedule must affirmatively declare
+   itself empty, and the office accepts blank schedules. That closes the item
+   — but it is an operational answer, not a legal reading, and it is
+   county-specific. See `AGENTS.md` §4, which records why those distinctions
+   must not be collapsed into "the statute permits blank schedules".
+
 The section's other two corrections were re-verified and hold: the blank
 placeholder row exists (`src/core/state.js`, `remuneration:[emptyRowAnnual(...)]`)
 and hides the no-items control, which renders only when the array is empty; and

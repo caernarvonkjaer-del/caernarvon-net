@@ -250,34 +250,40 @@ require Part XI to be answered.
 Before extending 58D's rule to any other schedule, find the statute or the
 workbook field that demands it — and if there is none, the answer is no.
 
-**What was and was not verified here, because the difference matters.** The
-workbook half is established: `templates/annual-template.js`'s shared strings
-contain no "no items to report" declaration for any schedule, checked with a
-parser. The statutory half is **not** established and cannot be settled from
-this repository — it holds citations (§744.3678 for the annual accounting,
-§744.3679 for Simplified eligibility, §744.367(3)(a) for remuneration), never
-statutory text. No one has read §744.3678 against the question below.
+**Settled 2026-09-20 by the requester, and settled on practice rather than on
+statute. The distinction is the point — do not collapse it.**
 
-**The open question, stated exactly, so it can be answered rather than
-re-derived:** *does §744.3678 require an annual accounting to affirmatively
-state that a schedule has nothing to report, or does it only require that
-whatever receipts, disbursements, assets and transfers exist be shown?*
+The question was whether §744.3678 requires an annual accounting to
+affirmatively state that a schedule has nothing to report, or only requires
+that whatever receipts, disbursements, assets and transfers exist be shown —
+the same distinction §744.367(3)(a) settles for Part XI by saying the report
+**must include** a declaration of remuneration.
 
-That is the same distinction §744.367(3)(a) already settles for Part XI: it
-says the report **must include** a declaration of remuneration — an inclusion
-requirement, which a silent filing fails. The question is whether §744.3678
-imposes that shape on the schedules, or only specifies what must be itemised
-when items exist.
+The answer from the Clerk of the Circuit Court, Pinellas County: **the statute
+is ambiguous on the point, and the office accepts blank schedules.**
 
-- **Declaration required** → a blank Schedule A is an incomplete filing;
-  58D's rule extends to all 14 and the sidebar was right all along.
-- **Only itemisation required** → a blank schedule correctly represents
-  "none"; current behaviour stands.
+So export must not demand a declaration, and the sidebar's prompt stays as a
+prompt. But record why, accurately:
 
-One argument may settle it without the statute: per §5 the Clerk's workbook is
-authoritative, and it collects no such declaration on any schedule. Whether
-that reflects how the requirement is administered or is a gap in the form is a
-question for the requester, not one derivable from this repository.
+- **This is not "the statute permits blank schedules."** Nobody has established
+  that, and this repository cannot — it holds statute *citations* (§744.3678,
+  §744.3679, §744.367(3)(a)), never statutory text. Writing the permissive
+  reading into a commit or comment would manufacture a legal conclusion out of
+  an operational one.
+- **It is county practice, and practice is county-specific.** §5 already
+  forbids presenting Pinellas/Pasco circuit rules as mandatory statewide; the
+  mirror applies here. A county that reads §744.3678 the other way would need
+  this revisited, so do not generalise it into "blank schedules are fine" for
+  every filer everywhere.
+- **The ambiguity is the durable fact.** If this is ever challenged, what the
+  app relies on is an accepting clerk, not a settled reading. That is worth
+  knowing before anyone builds further on it.
+
+The workbook half was independently verified and still stands on its own:
+`templates/annual-template.js`'s shared strings contain no "no items to
+report" declaration for any schedule, checked with a parser. The Clerk's own
+instrument does not collect the thing, which is consistent with the practice
+above.
 
 So the rule above is deliberately framed as a burden of proof rather than a
 finding: it does not assert that no such requirement exists, only that nobody
