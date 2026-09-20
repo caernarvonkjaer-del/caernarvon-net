@@ -14,6 +14,33 @@ tests. In particular, **58D must wait for Milestone 57's Annual Accounting
 work to land, then revalidate `src/features/annual-accounting/excel.js` and its
 tests against that landed state before implementation begins.**
 
+### Re-verification, 2026-09-19 (33 commits after scoping)
+
+Every file and symbol this proposal cites was checked against `master` at
+`ceab46d`, after Milestone 57's authorized work and all of Milestone 59.
+
+- **All 32 cited files still exist.** Ten changed in the interval; only
+  `src/features/annual-accounting/index.js` bears on a stated claim.
+- **58A, 58B, 58C and 58E verified accurate.** `syncIdentityField()` still
+  resolves to `{role, index}` and still calls `dehydrateIntoParty()`; the Plan
+  Minor carry mapping still omits `q1ResidenceName`; the Plan Minor PDF model
+  still concatenates `ucn`/`ref` and still renders the three cover Yes/No facts
+  twice; "Taxpayer ID #" is still the editor label; 58E's symbols are all
+  present. These four are executable as written after the routine
+  re-derivation above.
+- **58D's parity diagnosis is wrong** — see the correction inside that section.
+  It is not stale: it was wrong at `196e951` too. The delivery is still
+  coherent, but item 2 must be approved as a new product requirement rather
+  than as repairing a mismatch, and the mismatch it describes turns out to sit
+  on **14 other Annual schedules that no milestone currently covers**.
+- **58C note.** Milestone 57 landed `isSignatureComplete` on the `window`
+  bridge (`677cec6`), so 58C's bridge step now has a working precedent to copy.
+  More importantly, 58C's "any signature state other than `none`/blank" is
+  exactly `inferLegacySignatureState()` in
+  `src/core/validation/signature-state.js`. Reuse it. A second implementation
+  of blank-versus-none is precisely how the Simplified sidebar and export gate
+  drifted apart in Milestone 57.
+
 ---
 
 ## Purpose
@@ -332,6 +359,69 @@ Extend `tests/e2e/navigation-status.contract.spec.ts`,
   complete rows, while `validateAnnual()` does not require either. The browser
   report’s claimed direction was wrong, but a real parity defect exists in the
   opposite direction.
+
+#### Correction to the bullet above — re-verified 2026-09-19
+
+**That bullet is wrong, and was wrong when written rather than overtaken by
+later work.** `checkRows(d.remuneration, ...)` was present at `196e951`, the
+commit this proposal was scoped against, and is unchanged today.
+
+On Part XI the two rules agree. `checkRows()`
+(`src/features/annual-accounting/index.js`) skips any row with no data and
+requires Guardian/Type/Amount only on populated rows. The sidebar's `a-p11` is
+the same rule with an extra escape:
+
+```js
+// sidebar, a-p11 -- lenient: a blank placeholder row passes
+verifiedEmpty('remuneration') || (D.remuneration||[]).every(r =>
+  !rowHasAnyData(r) || (filled(r.guardian) && filled(r.type) && filled(r.amount)))
+
+// validator, checkRows -- same: rows with no data are skipped entirely
+(rows||[]).forEach(r => { if (!rowHasAnyData(r)) return; /* require fields */ })
+```
+
+Neither requires affirmative resolution. Both pass a filing whose only
+remuneration row is the blank placeholder. The sidebar is if anything the more
+permissive of the two, because `verifiedEmpty` short-circuits it.
+
+**Consequences for this delivery, neither of which invalidates it:**
+
+1. **Implementation item 2 is a new product requirement, not a parity repair.**
+   Requiring Part XI to be affirmatively resolved — declaration or a populated
+   row — is a defensible rule and arguably what §744.367(3)(a) implies. But it
+   makes *both* sides stricter than they are today. It should be approved on
+   its own merits, not as "fixing a mismatch", because there is no mismatch
+   here to fix.
+
+2. **The mismatch this bullet describes is real — on 14 other schedules.**
+   They use a different, genuinely stricter sidebar formula:
+
+   ```js
+   rowsComplete = verifiedEmpty(k) || ((rows||[]).length > 0
+                   && (rows||[]).every(r => rowHasAnyData(r) && fields.every(f => filled(r[f]))))
+   ```
+
+   `length > 0` plus `rowHasAnyData` on every row means an all-blank schedule
+   **fails** the sidebar while `checkRows` passes it — the sidebar-strict /
+   validator-lax direction this bullet claims. It applies to 12 schedules
+   through `rowsComplete` (`a-scha`, `a-schb1`–`b4`, `a-schd1`–`d5`, `a-schf1`,
+   `a-schf2`) plus `a-schc` and `a-sche`, which inline the identical pattern
+   and so do not appear in a search for `rowsComplete(`. **Fourteen in total,
+   and Part XI is the one Annual schedule that does not have the defect.**
+
+   Those 14 are **out of scope for 58D** and are not scoped anywhere else.
+   Deciding whether 58D covers Part XI alone or the pattern is a prerequisite
+   to building it, because the answer changes the delivery substantially rather
+   than merely enlarging it.
+
+The section's other two corrections were re-verified and hold: the blank
+placeholder row exists (`src/core/state.js`, `remuneration:[emptyRowAnnual(...)]`)
+and hides the no-items control, which renders only when the array is empty; and
+Description carries a required marker in the editor (`inpD('Description', …,
+true)`) while the data model records it optional and neither validator nor
+sidebar requires it. Implementation item 4's `amount` change is also correct
+and necessary: the CSV records `remuneration[].amount` as optional while both
+the validator and the sidebar require it on a populated row.
 
 ### Implementation
 
