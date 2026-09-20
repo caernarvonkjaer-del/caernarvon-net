@@ -5,19 +5,32 @@
 **DRAFT — decided, not yet authorized. No implementation may begin until the
 requester says so by name (`AGENTS.md` §3).**
 
-Every open content question in this document was answered by the requester
-on 2026-09-20; the decisions are recorded inline at each finding and
-consolidated here. What remains is the authorization itself, not further
-analysis.
+The requester answered every open content question on 2026-09-20; the
+decisions are recorded inline at each finding and consolidated here. **One
+of those answers then turned out to be unimplementable as given** — the
+Disaster Plan item below — because this document had described a
+deliberate, test-enforced prior decision as an open gap. That item is back
+open; the rest stand. Phases 0–2 and 5 are unaffected and could be
+authorized independently of it.
 
 **Decisions recorded 2026-09-20:**
 
 - **61D, Annual's "Note 1" (rights-consistency):** add to the filed PDF, as
   a standalone note matching the source form's own placement.
-- **61D, Annual's and Initial's Disaster Plan note:** add to the filed PDF,
-  citing **Administrative Order 2024-025** and including its
-  minor-parent-guardian exemption — *not* the source PDFs' rescinded "AO
-  2019-005" wording.
+- **61D, Annual's and Initial's Disaster Plan note: BLOCKED, awaiting
+  re-decision.** The requester answered "add to the filed PDF, citing AO
+  2024-025." A conflict found afterwards makes that unimplementable as
+  stated: a unit-test guard (`tests/unit/content-corrections.spec.js:43`)
+  forbids `2024-025` anywhere in `src/` outside one allow-listed file,
+  because Milestone 36-5 removed exactly this content from printed
+  documents as a defect, and `AGENTS.md:300` requires circuit-specific
+  rules to gate through `county-guidance.js`. The guidance is already
+  shipped, county-gated, in Help. Full detail at 61D. Three ways forward:
+  **(a)** close the item — the content is already delivered where policy
+  says it belongs (recommended); **(b)** add it to the PDF *county-gated*
+  through `county-guidance.js`, which needs the guard's allow-list widened
+  and a qualified-person review per `AGENTS.md` §8; **(c)** add it ungated
+  as first answered, which knowingly reinstates the Milestone 36-5 defect.
 - **61D, Simplified's county-specific filing/procedural-assistance
   content:** **not** filed-PDF content. Write it into in-app Help instead,
   pointing filers at the clerk's own current contact information.
@@ -260,11 +273,14 @@ policy/legal call, not a code question.**
   ward is moved to a new residence." Confirmed absent from
   `plan-initial/pdf-model.js` by the same grep.
 
-  **The AO both of these cite has since been rescinded — verified from a
-  copy the requester supplied, 2026-09-20.** Administrative Order No.
-  PA/PI-CIR 2024-025 (6th Judicial Circuit, signed August 1, 2024;
-  committed at `reference/administrative-orders/
-  AO-2024-025-guardianship-procedures.pdf`) states at its close: "Administrative
+  **The AO both of these cite has since been rescinded.** Administrative
+  Order No. PA/PI-CIR 2024-025 (6th Judicial Circuit, signed August 1,
+  2024) has been in this repo at `AO-2024-025-guardianship-procedures.pdf`
+  since Milestone 37 (`10d90dd`) — it was not newly supplied for this
+  review, and an earlier draft of this section wrongly implied it was. A
+  text extract is committed alongside at
+  `reference/administrative-orders/AO-2024-025-guardianship-procedures.txt`.
+  The order states at its close: "Administrative
   Order No. PA/PI-CIR 2019-005 is hereby rescinded" (`:267`). The
   requirement itself survives under the new order's Section E ("DISASTER
   PLAN", `:203-214`) with the same substance the source PDFs describe — but
@@ -281,16 +297,63 @@ policy/legal call, not a code question.**
   still substantively right but their *citation* has gone stale since
   whichever printing was used to prepare them.
 
-  **Decided 2026-09-20 — add to the filed PDF for both Annual and Initial,
-  citing AO 2024-025 and carrying its minor-parent-guardian exemption.**
-  Shape it as a standalone note, not a numbered question: the 6th Circuit's
-  own Initial form deleted its numbered disaster-preparedness question
-  (leaving the orphaned gap between Q7 and Q9 that Citrus County's form
-  still fills with a numbered "8. Disaster Preparedness" section) and moved
-  this content to a free-standing note instead. Follow the circuit's own
-  choice. Do not reintroduce a numbered question, and do not renumber
-  anything to close the Q7→Q9 gap — that gap is the source form's, and
-  closing it would make this app's output disagree with the court's.
+  **DECISION BLOCKED — this item conflicts with an existing, tested policy
+  decision, and the conflict was found only after the requester had already
+  answered (2026-09-20). Re-decision required; nothing here is settled.**
+
+  The requester's answer was "add to the filed PDF for both Annual and
+  Initial, citing AO 2024-025 with its minor-parent-guardian exemption."
+  That cannot be implemented as stated:
+
+  - **It would break a test that exists to prevent exactly this.**
+    `tests/unit/content-corrections.spec.js:43` scans every `.js`/`.html`/
+    `.css` file under `src/` for the strings `2024-025` or `Administrative
+    Order 2024` and fails if either appears outside one allow-listed file
+    (`features/dashboard/resources.js`). Adding the note to
+    `plan-annual/pdf-model.js` and `plan-initial/pdf-model.js` puts the
+    string in two more.
+  - **The guard is not incidental — it is the fix from a prior milestone.**
+    Its own comment (`:10-20`) describes the Milestone 36-5 defect it
+    catches: the AO "stated unconditionally, as a filing requirement,
+    on-screen and in printed documents, regardless of the filer's actual
+    county." Printing this note on every Annual and Initial PDF is that
+    defect, restored.
+  - **It conflicts with `AGENTS.md`'s authority hierarchy** (`:300`):
+    circuit-specific rules "gate through `src/core/filing/
+    county-guidance.js` (Pinellas/Pasco only) — never presented as
+    mandatory statewide for other counties." The app serves all twenty
+    Florida circuits (Milestone 54's circuit selector); these plan forms
+    are the 6th Circuit's, but nothing stops a filer elsewhere generating
+    one.
+  - **The content is already shipped, county-gated.**
+    `src/features/help/help-content.js:113-123` renders a "Don't Forget the
+    Disaster Plan" section behind `hasSixthCircuitLocalGuidance(county)`,
+    stating the requirement, that the app does not produce that document,
+    and the minor-ward exemption. `help/index.html:516` carries a fuller
+    version naming AO 2024-025, linking the circuit's orders index, and
+    warning that a local order can be superseded.
+    `src/core/filing/county-guidance.js:10-12` already encodes the order's
+    substance and effective date, deliberately without the AO number so the
+    guard passes.
+
+  So 61D's framing of this item was wrong, and the error is mine: the grep
+  behind "confirmed absent from `plan-initial/pdf-model.js`" proved only
+  that the PDF model does not contain it. It does not, and this document
+  claimed it did, establish that the content is *missing from the app* —
+  it was deliberately relocated to Help by Milestone 36-5 and fenced off by
+  a test. I presented an open gap where there was a closed decision, and
+  the requester answered a question that should never have been asked in
+  that form. Options are restated in the Status section; this item stays
+  open until re-decided.
+
+  If it is ever added to a generated PDF, the shape question below still
+  holds: a standalone note, not a numbered question — the 6th Circuit's own
+  Initial form deleted its numbered disaster-preparedness question (leaving
+  the orphaned Q7→Q9 gap that Citrus County's form still fills with a
+  numbered "8. Disaster Preparedness") and moved the content to a
+  free-standing note. Do not renumber to close that gap; it is the source
+  form's, and closing it would make this app's output disagree with the
+  court's.
 - **Simplified** omits county-specific filing addresses, phone numbers,
   emails, and procedural-assistance contacts for both counties this form
   names — Pinellas (Clerk of the Circuit Court, 315 Court Street Room 106,
@@ -609,13 +672,14 @@ answers; it does not reopen them. Four separate changes:
    `plan-annual/pdf-model.js` as a standalone `notice` on the cover
    section, positioned ahead of Q1 as the source form has it. Text follows
    `plan-annual-original.txt:46-49`.
-2. **Annual and Initial — add the Disaster Plan note**, as a standalone
-   `notice` in each model, citing **Administrative Order 2024-025** and
-   including its minor-parent-guardian exemption
-   (`reference/administrative-orders/AO-2024-025-guardianship-procedures.txt:203-214`).
-   Do not copy the source PDFs' "AO 2019-005" sentences — that order is
-   rescinded (`:267`). Do not add a numbered question or renumber anything;
-   the Q7→Q9 gap in Initial's source stays as the court has it.
+2. **Annual and Initial — the Disaster Plan note: ON HOLD.** Blocked on
+   re-decision (see 61D and Status). Do not implement this item under the
+   current authorization, whatever the rest of the phase authorizes. If
+   option (b) is later chosen, it is a county-gated change routed through
+   `src/core/filing/county-guidance.js` plus a widened allow-list in
+   `tests/unit/content-corrections.spec.js` — not a `notice` block dropped
+   into two pdf-models, and not something to implement without the
+   qualified-person review `AGENTS.md` §8 calls for.
 3. **Simplified — move filing/procedural guidance to Help.** Add the
    clerk-contact and procedural-assistance guidance to
    `src/features/help/help-content.js`, pointing at the clerk's current
@@ -751,6 +815,8 @@ MS 61 is complete only when:
 6. Annual carries Note 1; Annual and Initial carry the Disaster Plan note
    citing AO 2024-025 with its minor-parent-guardian exemption; no
    generated plan PDF anywhere references the rescinded AO 2019-005.
+   (The Disaster Plan half of this criterion applies only if that item is
+   re-decided in favour of PDF output; see 61D.)
 7. Simplified's filed PDF contains no preparer or attorney certification
    content, while the same values still survive a save/reload round trip.
 8. Every `notice` block's `title` prints wherever a PDF model sets one
