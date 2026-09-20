@@ -409,10 +409,22 @@ permissive of the two, because `verifiedEmpty` short-circuits it.
    and so do not appear in a search for `rowsComplete(`. **Fourteen in total,
    and Part XI is the one Annual schedule that does not have the defect.**
 
-   Those 14 are **out of scope for 58D** and are not scoped anywhere else.
-   Deciding whether 58D covers Part XI alone or the pattern is a prerequisite
-   to building it, because the answer changes the delivery substantially rather
-   than merely enlarging it.
+   Those 14 were **out of scope for 58D**, which the requester confirmed:
+   58D landed as Part XI only (`b1aafcf`).
+
+   **Resolved 2026-09-20 — the divergence is intentional, and export is the
+   side that is correct.** The deciding evidence is the court's own workbook:
+   `templates/annual-template.js`'s shared strings contain **no** "no items to
+   report" declaration, anywhere, for any schedule. `scheduleNoItems` is an
+   affordance this app invented to separate "genuinely empty" from "not got to
+   it yet". Prompting for that is useful, so the sidebar asks; the court does
+   not require it, so export must not. Demanding it to file would block
+   filings that are complete and valid under the court's own form.
+
+   Part XI is the exception only because §744.367(3)(a) names that
+   declaration. That reasoning does not transfer to Schedules A-F, and the
+   rule is now recorded in `AGENTS.md` §4 so the gap is not "closed" later by
+   tightening export instead. No code change; nothing further is scoped.
 
 The section's other two corrections were re-verified and hold: the blank
 placeholder row exists (`src/core/state.js`, `remuneration:[emptyRowAnnual(...)]`)

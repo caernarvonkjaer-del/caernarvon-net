@@ -217,6 +217,43 @@ In practice: open with one sentence a non-engineer could act on (*what breaks, f
 - **Pro se / Ch. 393 Guardian Advocate protection**: never make attorney-certification fields mandatory blockers on an unrepresented filing — skip attorney validation entirely if no attorney is entered.
 - **Bypassable output acknowledgement**: after an affirmative override, court output still generates faithfully (no watermark/filename/formatting degradation); issues stay visible in the UI. Non-bypassable issues (data-integrity conflicts, format-capacity overflow, generation failures) are never overridable.
 
+**The sidebar is not the export gate, and on 14 Annual schedules it is
+deliberately stricter. Do not "fix" that by tightening export.**
+
+The invariant above governs the **readiness panel** (`readiness-config.js`).
+The **sidebar nav dots** (`computeNavChecks()` in `legacy-app.js`) are a
+different surface with a different job, and the two must not be conflated —
+`readiness-config.js` has no per-schedule Annual items at all.
+
+On Schedules A, B-1–B-4, C, D-1–D-5, E, F-1 and F-2, `computeNavChecks()`
+marks a schedule incomplete until the filer either enters a complete row or
+ticks "I verify there are no items to report". `validateAnnual()`'s
+`checkRows()` requires neither: it skips rows with no data and validates only
+populated ones. Twelve of those schedules go through `rowsComplete()`; `a-schc`
+and `a-sche` inline the identical `length > 0 && every(...)` test, so a search
+for `rowsComplete(` finds only twelve of the fourteen.
+
+**This divergence is intentional and export is the side that is correct.** The
+court's own Annual workbook contains no "no items to report" declaration
+anywhere — verified by reading `templates/annual-template.js`'s shared strings,
+zero matches. `scheduleNoItems` is an affordance this app invented to
+distinguish "genuinely empty" from "not got to it yet". That distinction is
+worth prompting for, which is why the sidebar asks; it is not something the
+court requires, so export must never demand it. Requiring it to file would
+block filings that are complete and valid under the court's own form.
+
+**Part XI is the one exception, and only because a statute names it.**
+§744.367(3)(a) requires the annual report to *include* a declaration of
+remuneration, so Milestone 58D made both the sidebar and the export gate
+require Part XI to be answered. That reasoning does not transfer: nothing
+names Schedules A–F the same way. Before extending 58D's rule to any other
+schedule, find the statute or the workbook field that demands it — and if
+there is none, the answer is no.
+
+In short: the sidebar asks "have you finished with this schedule?", the export
+gate asks "does this satisfy the court?". Those are allowed to differ, and
+here they should.
+
 ---
 
 ## 5. Court Form Authority & Calculation Rules
