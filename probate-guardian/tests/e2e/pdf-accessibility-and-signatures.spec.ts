@@ -109,14 +109,17 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         serviceRecipients: [
           { name: 'Sarah Bennett', address: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', method: 'E-Portal' },
         ],
+        // Milestone 60: real schedule fields only. A-1 has no valuationMethod
+        // (that is B-2's), A-2's related property is its `notes` field, and
+        // every apportioned row carries its Ward's % -- a blank one is 0%.
         scheduleA1: [
-          { propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', valuationMethod: 'Appraisal', fullAssetValue: 250000, wardPercent: 100 },
+          { propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', fullAssetValue: 250000, wardPercent: 100 },
         ],
         scheduleA2: [
-          { lenderName: 'Wells Fargo Home Mortgage', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA 50306', relatedProperty: '1420 5th Ave N', fullDebtBalance: 45000 },
+          { lenderName: 'Wells Fargo Home Mortgage', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA 50306', liabilityType: 'Mortgage', accountNumber: '0011223344', notes: 'For property at 1420 5th Ave N', fullDebtBalance: 45000, wardPercent: 100 },
         ],
         scheduleB1: [
-          { institutionName: 'Raymond James Bank', accountType: 'Checking', accountNumber: '***4821', streetAddress: '880 Carillon Pkwy', cityStateZip: 'St. Petersburg, FL 33716', fullAssetAmount: 38250 },
+          { institutionName: 'Raymond James Bank', accountType: 'Checking', accountNumber: '***4821', streetAddress: '880 Carillon Pkwy', cityStateZip: 'St. Petersburg, FL 33716', fullAssetAmount: 38250, wardPercent: 100, restricted: 'No' },
         ],
         scheduleB2: [
           { description: '2021 Toyota Camry', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', valuationMethod: 'KBB Private Party', fullAssetValue: 18500, wardPercent: 100 },
@@ -124,7 +127,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         scheduleB3: [],
         scheduleB4: [],
         scheduleC1: [
-          { payerName: 'Social Security Administration', payerAddress: '6401 Security Boulevard, Baltimore, MD 21235', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200 },
+          { payerName: 'Social Security Administration', payerAddress: '6401 Security Boulevard', payerCityStateZip: 'Baltimore, MD 21235', typeOfIncome: 'Retirement', frequencyOfPayment: 'Monthly', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200, wardPercent: 100 },
         ],
         scheduleC2: [],
         scheduleC3: [],

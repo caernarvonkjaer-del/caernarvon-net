@@ -250,34 +250,49 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     blocks: [],
   });
 
-  // Schedule A-1
+  // Milestones 60B-60E (2026-09-20): every schedule table below carries every
+  // field the UI captures for it, with the court form's own column labels
+  // (templates/guardian-template.js) where the form has a column. The form
+  // stacks a liability's account number on a detail line under the lender
+  // rather than giving it a column, so A-2/B-4 print it as a sub-line; C-4's
+  // form has a literal "Account Number" column, so C-4 gets one.
+  const acctLine = (r) => (r.accountNumber ? { text: `Acct # ${r.accountNumber}` } : null);
+  const nameWithSubLines = (name, ...subs) => {
+    const sub = subs.filter(Boolean);
+    return sub.length ? { main: name || '', sub } : (name || '');
+  };
+
+  // Schedule A-1. 60E: no "Valuation Method" column -- scheduleA1 has no such
+  // field (it is B-2's), so the column was blank on every filing.
   addScheduleSection(
     'a1',
     'Schedule A-1: Real Property Assets',
     'Schedule A-1: Real Property',
-    ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?'],
-    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardVal(r)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
+    ['Property Description', 'Location Address', 'Full Value', "Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?'],
+    (d.scheduleA1 || []).map(r => [nameWithSubLines(r.propertyDescription, r.notes ? { text: r.notes, italic: true } : null), composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardVal(r)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
-    [17, 17, 12, 11, 8, 8, 13, 14],
-    ['left', 'left', 'left', 'right', 'right', 'right', 'center', 'center'],
+    [21, 22, 13, 9, 13, 11, 11],
+    ['left', 'left', 'right', 'right', 'right', 'center', 'center'],
     null,
     false
   );
 
-  // Schedule A-2
+  // Schedule A-2. 60B: Ward's % / Ward's Debt Balance (the form's column);
+  // 60C: Type, account number as a sub-line; 60D: the real `notes` field
+  // replaces a `relatedProperty` column that read a field A-2 rows never had.
   addScheduleSection(
     'a2',
     'Schedule A-2: Debts on Real Property',
     'Schedule A-2: Debts on Real Property',
-    ['Lender Name', 'Lender Address', 'Related Property Description', 'Full Debt Balance'],
-    (d.scheduleA2 || []).map(r => [r.lenderName || '', composePdfAddressLines(r.lenderAddress, r.lenderCityStateZip), r.relatedProperty || '', fmt(r.fullDebtBalance)]),
-    'Schedule A-2 Total (Full Debt Balance)',
+    ['Lender / Liability Description', 'Lender Address', 'Type', 'Full Debt Balance', "Ward's %", "Ward's Debt Balance"],
+    (d.scheduleA2 || []).map(r => [nameWithSubLines(r.lenderName, acctLine(r), r.notes ? { text: r.notes, italic: true } : null), composePdfAddressLines(r.lenderAddress, r.lenderCityStateZip), r.liabilityType || '', fmt(r.fullDebtBalance), fmtPct(r.wardPercent), fmt(gc.wardDebt(r))]),
+    "Schedule A-2 Total (Ward's Debt Balance)",
     totalA2,
     'debts on real property',
-    [22, 28, 33, 17],
-    ['left', 'left', 'left', 'right']
+    [25, 23, 9, 14, 9, 20],
+    ['left', 'left', 'left', 'right', 'right', 'right']
   );
 
   // Schedule B-1. Restricted/restricted-amount were previously dropped
@@ -292,17 +307,24 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // the calculator so the row, the subtotal and Part V's bond table agree.
   // The restricted amount is the WARD'S share (Milestone 60A); it used to be
   // the full account balance even when the subtotal beside it was adjusted.
+  //
+  // 60B: Ward's % and Ward's Asset Amount added. Column order is the court
+  // form's ('B-1 CASH pg 1' row 17): the institution's stacked description
+  // block (name / account number / street / city-state-ZIP), then Restricted?,
+  // Type?, Full Asset Amount, Ward's %, Ward's Asset Amount, Restricted Asset
+  // Amount. That order also puts the two totals in the last two columns, where
+  // the engine places multi-value totals.
   addScheduleSection(
     'b1',
     'Schedule B-1: Cash & Financial Accounts',
     'Schedule B-1: Cash & Financial Accounts',
-    ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount', 'Restricted?', 'Restricted Amt'],
-    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), triText(r.restricted, r.isRestricted), isRestrictedAnswer(r) ? fmt(gc.wardAmt(r)) : '—']),
-    'Schedule B-1 Total',
+    ['Institution Name', 'Address', 'Restricted?', 'Account Type & Number', 'Full Asset Amount', "Ward's %", "Ward's Asset Amount", 'Restricted Asset Amount'],
+    (d.scheduleB1 || []).map(r => [r.institutionName || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), triText(r.restricted, r.isRestricted), `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`.trim(), fmt(r.fullAssetAmount), fmtPct(r.wardPercent), fmt(gc.wardAmt(r)), isRestrictedAnswer(r) ? fmt(gc.wardAmt(r)) : '—']),
+    "Schedule B-1 Total (Ward's Asset Amount)",
     totalB1,
     'cash and financial accounts',
-    [18, 22, 24, 15, 9, 12],
-    ['left', 'left', 'left', 'right', 'center', 'right'],
+    [14, 16, 8, 14, 13, 9, 13, 13],
+    ['left', 'left', 'center', 'left', 'right', 'right', 'right', 'right'],
     [restrictedCash]
   );
 
@@ -316,7 +338,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
-    [21, 21, 15, 12, 8, 8, 15],
+    [19, 19, 13, 13, 9, 13, 14],
     ['left', 'left', 'left', 'right', 'right', 'right', 'center']
   );
 
@@ -334,99 +356,109 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ['left', 'left', 'right', 'right', 'right', 'center', 'center']
   );
 
-  // Schedule B-4
+  // Schedule B-4. 60B: Ward's % / Ward's Liability Balance; 60C: Type and
+  // account number (sub-line). Unlike A-2, B-4's relatedProperty is a real,
+  // required UI field, so its column stays.
   addScheduleSection(
     'b4',
     'Schedule B-4: Debts on Personal Property',
     'Schedule B-4: Debts on Personal Property',
-    ['Lender Name', 'Lender Address', 'Related Property Description', 'Full Debt Balance'],
-    (d.scheduleB4 || []).map(r => [r.lenderName || '', r.lenderAddress || '', r.relatedProperty || '', fmt(r.fullLiabilityBalance)]),
-    'Schedule B-4 Total',
+    ['Lender / Creditor', 'Lender Address', 'Related Personal Property', 'Type', 'Full Liability Balance', "Ward's %", "Ward's Liability Balance"],
+    (d.scheduleB4 || []).map(r => [nameWithSubLines(r.lenderName, acctLine(r)), r.lenderAddress || '', r.relatedProperty || '', r.liabilityType || '', fmt(r.fullLiabilityBalance), fmtPct(r.wardPercent), fmt(gc.wardB4(r))]),
+    "Schedule B-4 Total (Ward's Liability Balance)",
     totalB4,
     'debts on personal property',
-    [22, 28, 33, 17],
-    ['left', 'left', 'left', 'right']
+    [18, 18, 17, 8, 14, 9, 16],
+    ['left', 'left', 'left', 'left', 'right', 'right', 'right']
   );
 
-  // Schedule C-1
+  // Schedule C-1. 60B: the payer's street address and city/state/ZIP (the
+  // form's "Payer Information" block is name / street / city-state-ZIP on
+  // three lines), Ward's % and Ward's Annual Income Amount.
   addScheduleSection(
     'c1',
     'Schedule C-1: Periodic Income',
     'Schedule C-1: Periodic Income',
     // r.frequencyOfPayment was previously silently dropped -- present in
     // the HTML preview's "Frequency" column but never read here.
-    ['Payer Name', 'Type of Income', 'Frequency', 'Basis for Payment', 'Annual Income Amount'],
-    (d.scheduleC1 || []).map(r => [r.payerName || '', r.typeOfIncome || '', r.frequencyOfPayment || '', r.paymentBasis || '', fmt(r.annualIncomeAmount)]),
-    'Schedule C-1 Total (Annual Income)',
+    ['Payer Name & Address', 'Type of Income', 'Frequency', 'Basis for Payment', 'Annual Income Amount', "Ward's %", "Ward's Annual Income"],
+    (d.scheduleC1 || []).map(r => [composePdfAddressLines(r.payerName, r.payerAddress, r.payerCityStateZip), r.typeOfIncome || '', r.frequencyOfPayment || '', r.paymentBasis || '', fmt(r.annualIncomeAmount), fmtPct(r.wardPercent), fmt(gc.wardC1(r))]),
+    "Schedule C-1 Total (Ward's Annual Income)",
     totalC1,
     'periodic income sources',
-    [22, 18, 16, 22, 22],
-    ['left', 'left', 'left', 'left', 'right']
+    [23, 12, 10, 15, 14, 9, 17],
+    ['left', 'left', 'left', 'left', 'right', 'right', 'right']
   );
 
-  // Schedule C-2: Claims and Lawsuits Against the Ward (Corrected Sequence)
+  // Schedule C-2: Claims and Lawsuits Against the Ward (Corrected Sequence).
+  // 60B: Ward's % and Ward's Share of Claim (the form's column label).
   addScheduleSection(
     'c2',
     'Schedule C-2: Claims and Lawsuits Against the Ward',
     'Schedule C-2: Lawsuits & Claims Against Ward',
-    ['Claimant Name', 'Lawsuit / Claim Description', 'Court / Case #', 'Date Filed', 'Amount of Claim'],
+    ['Claimant Name & Address', 'Lawsuit / Claim Description', 'Court / Case #', 'Date Filed', 'Amount of Claim', "Ward's %", "Ward's Share of Claim"],
     // r.claimantAddress was previously silently dropped -- present in the
     // HTML preview as a sub-line under the claimant name but never read
     // here; rendered as a mixed-style cell sub-line now.
-    (d.scheduleC2 || []).map(r => [r.claimantAddress ? { main: r.claimantName || '', sub: [{ text: r.claimantAddress }] } : (r.claimantName || ''), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim)]),
-    'Schedule C-2 Total',
+    (d.scheduleC2 || []).map(r => [nameWithSubLines(r.claimantName, r.claimantAddress ? { text: r.claimantAddress } : null), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim), fmtPct(r.wardPercent), fmt(gc.wardC2(r))]),
+    "Schedule C-2 Total (Ward's Share of Claims)",
     totalC2,
     'claims or lawsuits against the ward',
-    [25, 30, 20, 10, 15],
-    ['left', 'left', 'left', 'center', 'right']
+    [21, 18, 14, 11, 13, 9, 14],
+    ['left', 'left', 'left', 'center', 'right', 'right', 'right']
   );
 
-  // Schedule C-3: Claims and Lawsuits by the Ward (Corrected Sequence)
+  // Schedule C-3: Claims and Lawsuits by the Ward (Corrected Sequence).
+  // 60B: Action Date (required by this form's own validation, never printed),
+  // Ward's % and Ward's Share.
   addScheduleSection(
     'c3',
     'Schedule C-3: Claims and Lawsuits by the Ward',
     'Schedule C-3: Lawsuits & Claims by Ward',
-    ['Defendant Name', 'Action Description', 'Court / Case #', 'Status', 'Estimated Settlement'],
-    (d.scheduleC3 || []).map(r => [r.defendantName || '', r.actionDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), r.status || '', fmt(r.estimatedSettlement)]),
-    'Schedule C-3 Total',
+    ['Defendant Name', 'Action Description', 'Court / Case #', 'Status', 'Action Date', 'Estimated Settlement', "Ward's %", "Ward's Share"],
+    (d.scheduleC3 || []).map(r => [r.defendantName || '', r.actionDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), r.status || '', fmtDate(r.actionDate), fmt(r.estimatedSettlement), fmtPct(r.wardPercent), fmt(gc.wardC3(r))]),
+    "Schedule C-3 Total (Ward's Share of Estimated Settlements)",
     totalC3,
     'claims or lawsuits by the ward',
-    [25, 30, 20, 10, 15],
-    ['left', 'left', 'left', 'left', 'right']
+    [14, 15, 12, 12, 11, 14, 9, 13],
+    ['left', 'left', 'left', 'left', 'center', 'right', 'right', 'right']
   );
 
-  // Schedule C-4
+  // Schedule C-4. 60B: trustee city/state/ZIP as the address block's third
+  // line (it was dropped by a two-argument call), Ward's % and Ward's Share;
+  // 60C: Account Number and Type -- the form has a column for each.
   addScheduleSection(
     'c4',
     'Schedule C-4: Trusts',
     'Schedule C-4: Trusts',
-    ['Trust Name', 'Trustee Name & Address', 'Date Created', 'Trust Amount / Value'],
+    ['Trust Name', 'Trustee Name & Address', 'Date Created', 'Account Number', 'Type', 'Trust Amount', "Ward's %", "Ward's Share"],
     // The trustee's NAME is deliberately passed as the first line, not as part
     // of an address: this column is headed "Trustee Name & Address", so the
     // name belongs on its own line above the address block rather than run
     // into it with a comma. Confirmed by Alan, 2026-09-19. Same shape in C-5.
-    (d.scheduleC4 || []).map(r => [r.trustName || '', composePdfAddressLines(r.trusteeName, r.trusteeAddress), fmtDate(r.dateCreated), fmt(r.trustAmount)]),
-    'Schedule C-4 Total',
+    (d.scheduleC4 || []).map(r => [r.trustName || '', composePdfAddressLines(r.trusteeName, r.trusteeAddress, r.trusteeCityStateZip), fmtDate(r.dateCreated), r.accountNumber || '', r.trustType || '', fmt(r.trustAmount), fmtPct(r.wardPercent), fmt(gc.wardC4(r))]),
+    "Schedule C-4 Total (Ward's Share of Trusts)",
     totalC4,
     'trusts',
-    [30, 35, 15, 20],
-    ['left', 'left', 'center', 'right']
+    [15, 20, 11, 11, 9, 13, 9, 12],
+    ['left', 'left', 'center', 'left', 'left', 'right', 'right', 'right']
   );
 
-  // Schedule C-5
+  // Schedule C-5. 60B: owner city/state/ZIP as the third address line, and
+  // the form's own "Joint Owner's %" / "Joint Owner's Value" columns.
   addScheduleSection(
     'c5',
     'Schedule C-5: Joint / Other Property',
     'Schedule C-5: Joint / Other Property',
-    ['Asset Description', 'Owner Name & Address', 'Relationship to Ward', 'Total Asset Value'],
+    ['Asset Description', "Joint Owner's Name & Address", 'Relationship to Ward', 'Total Asset Value', "Joint Owner's %", "Joint Owner's Value"],
     // Owner's NAME on its own line above the address block -- see C-4 above;
-    // this column is likewise headed "Owner Name & Address".
-    (d.scheduleC5 || []).map(r => [r.assetDescription || '', composePdfAddressLines(r.ownerName, r.ownerAddress), r.relationshipToWard || '', fmt(r.totalAssetValue)]),
-    'Schedule C-5 Total',
+    // this column is likewise headed "... Name & Address".
+    (d.scheduleC5 || []).map(r => [r.assetDescription || '', composePdfAddressLines(r.ownerName, r.ownerAddress, r.ownerCityStateZip), r.relationshipToWard || '', fmt(r.totalAssetValue), fmtPct(r.jointOwnerPercent), fmt(gc.wardC5(r))]),
+    "Schedule C-5 Total (Joint Owners' Value)",
     totalC5,
     'joint or other property assets',
-    [30, 30, 20, 20],
-    ['left', 'left', 'left', 'right']
+    [22, 26, 13, 13, 9, 17],
+    ['left', 'left', 'left', 'right', 'right', 'right']
   );
 
   // Helper for /s/ signature format

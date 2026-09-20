@@ -87,12 +87,19 @@ describe('guardian inventory PDF model', () => {
       scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
     });
 
+    // Column positions follow the court form's own order since Milestone 60B
+    // ('B-1 CASH pg 1' row 17: description block, Restricted?, Type?, Full
+    // Asset Amount, Ward's %, Ward's Asset Amount, Restricted Asset Amount),
+    // which is why these indices moved -- the authority changed, not the
+    // implementation's convenience.
     const b1Table = model.sections.find(section => section.id === 'b1').blocks[0];
-    expect(b1Table.rows[0][4]).toBe('Yes');
-    expect(b1Table.rows[0][5]).toBe('$1,000.00');
-    expect(b1Table.rows[1][4]).toBe('No');
-    expect(b1Table.rows[1][5]).toBe('—');
-    expect(b1Table.totals.values[1].value).toBe('$1,000.00');
+    expect(b1Table.headers).toEqual(['Institution Name', 'Address', 'Restricted?', 'Account Type & Number', 'Full Asset Amount', "Ward's %", "Ward's Asset Amount", 'Restricted Asset Amount']);
+    expect(b1Table.rows[0][2]).toBe('Yes');
+    expect(b1Table.rows[0].at(-1)).toBe('$1,000.00');
+    expect(b1Table.rows[1][2]).toBe('No');
+    expect(b1Table.rows[1].at(-1)).toBe('—');
+    // Two totals, in the last two columns: Ward's Asset Amount, then Restricted.
+    expect(b1Table.totals.values.map(v => v.value)).toEqual(['$3,000.00', '$1,000.00']);
   });
 
   test('Schedules A-1, B-2, and B-3 print explicit answers and preserve unanswered status', () => {
@@ -109,8 +116,8 @@ describe('guardian inventory PDF model', () => {
     });
 
     const row = id => model.sections.find(section => section.id === id).blocks[0].rows[0];
-    expect(row('a1').slice(6)).toEqual(['No', 'Yes']);
-    expect(row('b1')[4]).toBe('—');
+    expect(row('a1').slice(5)).toEqual(['No', 'Yes']); // 60E removed A-1's phantom column
+    expect(row('b1')[2]).toBe('—'); // 60B: Restricted? is column 3 (form order)
     expect(row('b2')[6]).toBe('No');
     expect(row('b3').slice(5)).toEqual(['Yes', 'No']);
   });
@@ -246,12 +253,134 @@ describe('Milestone 60A: PDF totals come from the shared Guardian calculator', (
     expect(scheduleTotals(model, 'a1').value).toBe('$0.00');
   });
 
-  test('Summary I nets are not clamped at zero: debts above assets print as a negative figure', () => {
+  test('Summary I nets are not clamped at zero: debts above assets print as a negative figure (60A)', () => {
     const model = buildVerifiedInventoryModel(base({
       scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '1000', wardPercent: '100' }],
       scheduleA2: [{ lenderName: 'Lender', fullDebtBalance: '5000', wardPercent: '100' }],
     }));
     expect(summaryI(model).rows[0][4]).toBe('-$4,000.00');
     expect(summaryI(model).totals.value).toBe('-$4,000.00');
+  });
+});
+
+// Milestones 60B-60E. Fields the UI captures -- several of them required by
+// the form's own validation -- that never reached the PDF, one schedule at a
+// time, with the court form's column labels (templates/guardian-template.js,
+// read 2026-09-20) as the reference for what the filer should see.
+describe('Milestones 60B-60E: every UI-captured schedule field reaches the PDF', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+  const table = (model, id) => model.sections.find(s => s.id === id).blocks[0];
+  const headers = (model, id) => table(model, id).headers;
+  const row = (model, id, i = 0) => table(model, id).rows[i];
+  /** Every string anywhere in a row, including inside array and mixed cells. */
+  const flat = (cells) => JSON.stringify(cells);
+
+  test('60E: Schedule A-1 has no "Valuation Method" column -- that field belongs to B-2 only', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '1000', wardPercent: '100' }],
+    }));
+    expect(headers(model, 'a1')).not.toContain('Valuation Method');
+    expect(row(model, 'a1')).toHaveLength(headers(model, 'a1').length);
+    expect(headers(model, 'a1')).toEqual(expect.arrayContaining(["Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?']));
+  });
+
+  test('60D: Schedule A-2 prints the real notes field, not the nonexistent relatedProperty', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA2: [{ lenderName: 'MegaBank Mortgage', notes: 'For property at 123 Main St.', fullDebtBalance: '1000', wardPercent: '100' }],
+    }));
+    expect(headers(model, 'a2')).not.toContain('Related Property Description');
+    const first = row(model, 'a2')[0];
+    expect(first.main).toBe('MegaBank Mortgage');
+    expect(first.sub).toEqual(expect.arrayContaining([expect.objectContaining({ text: 'For property at 123 Main St.', italic: true })]));
+  });
+
+  test('60C: Schedule A-2 prints Type and, as a sub-line under the lender, the account number', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA2: [{ lenderName: 'MegaBank Mortgage', liabilityType: 'Note', accountNumber: '123456', fullDebtBalance: '1000', wardPercent: '100' }],
+    }));
+    expect(headers(model, 'a2')).toContain('Type');
+    expect(row(model, 'a2')).toContain('Note');
+    expect(flat(row(model, 'a2'))).toContain('123456');
+  });
+
+  test('60C: Schedule B-4 prints Type and the account number, and keeps its real Related Property column', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB4: [{ lenderName: 'Cars R Us Lenders', liabilityType: 'Loan', accountNumber: '112358132134', relatedProperty: '1992 Toyota Corolla', lenderAddress: '10272 Ulmerton Road, Largo FL 33777', fullLiabilityBalance: '3000', wardPercent: '100' }],
+    }));
+    expect(headers(model, 'b4')).toContain('Type');
+    expect(row(model, 'b4')).toContain('Loan');
+    expect(flat(row(model, 'b4'))).toContain('112358132134');
+    expect(flat(row(model, 'b4'))).toContain('1992 Toyota Corolla');
+  });
+
+  test('60C: Schedule C-4 prints the trust type and the trustee account number -- the form has a column for each', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC4: [{ trustName: 'Deependofthe Pooled Trust', trusteeName: 'Chas Addams, Trustee', trustType: 'Pooled', accountNumber: '34567890', trustAmount: '2000', wardPercent: '100' }],
+    }));
+    expect(headers(model, 'c4')).toEqual(expect.arrayContaining(['Type', 'Account Number']));
+    expect(row(model, 'c4')).toContain('Pooled');
+    expect(row(model, 'c4')).toContain('34567890');
+  });
+
+  test.each([
+    ['a2', 'scheduleA2', { lenderName: 'L', fullDebtBalance: '1000', wardPercent: '50' }, "Ward's Debt Balance"],
+    ['b1', 'scheduleB1', { institutionName: 'B', fullAssetAmount: '1000', wardPercent: '50', restricted: 'No' }, "Ward's Asset Amount"],
+    ['b4', 'scheduleB4', { lenderName: 'L', fullLiabilityBalance: '1000', wardPercent: '50' }, "Ward's Liability Balance"],
+    ['c1', 'scheduleC1', { payerName: 'P', annualIncomeAmount: '1000', wardPercent: '50' }, "Ward's Annual Income"],
+    ['c2', 'scheduleC2', { claimantName: 'C', amountOfClaim: '1000', wardPercent: '50' }, "Ward's Share of Claim"],
+    ['c3', 'scheduleC3', { defendantName: 'D', estimatedSettlement: '1000', wardPercent: '50' }, "Ward's Share"],
+    ['c4', 'scheduleC4', { trustName: 'T', trustAmount: '1000', wardPercent: '50' }, "Ward's Share"],
+  ])('60B: Schedule %s prints the ward\'s percentage and the ward\'s share on every row', (id, key, entry, shareHeader) => {
+    const model = buildVerifiedInventoryModel(base({ [key]: [entry] }));
+    expect(headers(model, id)).toContain("Ward's %");
+    expect(headers(model, id)).toContain(shareHeader);
+    expect(row(model, id)).toContain('50%');
+    expect(row(model, id)).toContain('$500.00');
+    expect(row(model, id)).toHaveLength(headers(model, id).length);
+  });
+
+  test('60B: Schedule C-5 prints the Joint Owner\'s % and the joint owner\'s value, in the form\'s own words', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC5: [{ assetDescription: 'Residence', ownerName: 'Jane E. Miller', totalAssetValue: '1000', jointOwnerPercent: '50' }],
+    }));
+    expect(headers(model, 'c5')).toEqual(expect.arrayContaining(["Joint Owner's %", "Joint Owner's Value"]));
+    expect(row(model, 'c5')).toContain('50%');
+    expect(row(model, 'c5')).toContain('$500.00');
+  });
+
+  test('60B: Schedule C-1 prints the payer\'s street address and city/state/ZIP under the payer name', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC1: [{ payerName: 'Social Security Administration', payerAddress: '6401 Security Boulevard', payerCityStateZip: 'Baltimore, MD 21235', annualIncomeAmount: '7200', wardPercent: '100' }],
+    }));
+    const cells = flat(row(model, 'c1'));
+    expect(cells).toContain('6401 Security Boulevard');
+    expect(cells).toContain('Baltimore, MD 21235');
+  });
+
+  test('60B: Schedule C-3 prints the required Action Date', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC3: [{ defendantName: 'Big Chain Store', actionDate: '2026-03-04', estimatedSettlement: '30000', wardPercent: '100' }],
+    }));
+    expect(headers(model, 'c3')).toContain('Action Date');
+    expect(row(model, 'c3')).toContain('03/04/2026');
+  });
+
+  test('60B: Schedule C-4 prints the trustee\'s city/state/ZIP, not just name and street', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC4: [{ trustName: 'T', trusteeName: 'Chas Addams, Trustee', trusteeAddress: '5000 Dale Mayberry Avenue', trusteeCityStateZip: 'Tampa FL 32012', trustAmount: '2000', wardPercent: '100' }],
+    }));
+    expect(flat(row(model, 'c4'))).toContain('Tampa FL 32012');
+  });
+
+  test('60B: Schedule C-5 prints the joint owner\'s city/state/ZIP, not just name and street', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC5: [{ assetDescription: 'Residence', ownerName: 'Jane E. Miller', ownerAddress: '123 Main St.', ownerCityStateZip: 'Clearwater, FL 33762', totalAssetValue: '1000', jointOwnerPercent: '50' }],
+    }));
+    expect(flat(row(model, 'c5'))).toContain('Clearwater, FL 33762');
   });
 });

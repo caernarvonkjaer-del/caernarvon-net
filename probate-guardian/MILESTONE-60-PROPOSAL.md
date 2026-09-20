@@ -856,4 +856,75 @@ rendered PDF text changes; the full regression once, in Phase 6.
   the negative figure. **Printed-number changes a filer will see:** every
   ward-apportioned schedule total, both summaries, the audit fee above
   `$100,000`, the B-1 restricted amounts, negative nets, and cent-level
-  rounding on fractional percentages — all now match the workbook.
+  rounding on fractional percentages — all now match the workbook. Commit
+  `d8b4f74`.
+- **2026-09-20 — Phase 2A, 60B + 60C + 60D + 60E. Landed.** One pass over the
+  schedule arrays in `guardian-inventory/pdf-model.js`, with the court form's
+  column labels. **Red-first — 17 new PDF-model tests failed on the unfixed
+  model, each for one intended defect (no fixture cascade; the 14
+  pre-existing tests stayed green):**
+  - 60E ×1: A-1 headers contained `'Valuation Method'`.
+  - 60D ×1: A-2 headers contained `'Related Property Description'` (the
+    phantom `relatedProperty` column) and no notes sub-line.
+  - 60C ×3: A-2 and B-4 headers lacked `'Type'`; C-4 headers lacked
+    `'Type'`/`'Account Number'`.
+  - 60B ×7 (one per schedule A-2, B-1, B-4, C-1, C-2, C-3, C-4): headers
+    lacked `"Ward's %"` and the share column.
+  - 60B ×1: C-5 headers lacked `"Joint Owner's %"`/`"Joint Owner's Value"`.
+  - 60B ×4: C-1 row lacked the payer's street/city-state-ZIP; C-3 headers
+    lacked `'Action Date'`; C-4 row lacked `trusteeCityStateZip`; C-5 row
+    lacked `ownerCityStateZip` (the two-argument `composePdfAddressLines`
+    calls — its real signature is variadic, one line per argument, so the
+    three-argument calls are within contract).
+  **B-1's column order is now the form's** (`'B-1 CASH pg 1'` row 17:
+  description block, Restricted?, Type?, Full Asset Amount, Ward's %, Ward's
+  Asset Amount, Restricted Asset Amount), which also puts both totals in the
+  last two columns where the engine places multi-value totals; the two
+  pre-existing B-1 tests were re-pointed and now assert the exact header
+  sequence, so the change is grounded in the authority, not in the output.
+  **C-4 gets literal Type and Account Number columns** (its form has them);
+  A-2/B-4 get the account number as a sub-line (their form stacks it).
+  **Layout defect found while writing the new e2e spec, and fixed in the
+  same pass (session override):** the first cut gave dates 9% columns
+  (42pt); a date is ~45pt at 8pt, and with no space to break on the engine's
+  word-wrapper split `02/14/2026` character-wise onto two lines — the
+  filed PDF read `02/14/20` over `26`. The boundary trace (fixture → `window.D`
+  after autosave/flush → preflight date-draft commit → `normalizeWardData`
+  → `buildVerifiedInventoryModel` → engine) showed the value intact at every
+  boundary through the model; the engine's `measureCell` was the point of
+  loss. B-2's pre-existing 8% Ward's Value column (37pt) did the same to any
+  seven-figure amount. Two fixes: every date/percent/currency column is
+  sized for its widest realistic token (dates ≥ 11%, percentages ≥ 9%,
+  currency ≥ 13%, B-2 re-proportioned), and `pdf-engine.js`'s `measureCell`
+  now shrinks a single whitespace-free token that exceeds its column to fit
+  (6pt floor) instead of splitting it — scoped to plain table cells, so prose,
+  addresses and mixed cells wrap exactly as before.
+  **Fault-injection record (each: inject → red → restore → green):**
+  (1) A-2 `colWidths` inflated to sum 130 → the margin test failed with ink
+  42pt past the right edge; restored → green. Neither engine version
+  overflows on its own, so this proves the assertion detects a violation,
+  not that a production overflow was fixed. (2) `pdf-engine.js`'s change
+  stashed → the intact-token test on the live fixture **still passed**,
+  because the widened columns alone hold the fixture's tokens; so the engine
+  change has its own proof: an engine-level case that starves C-3's date
+  column to 5% and reads the generated PDF's text items back — red with the
+  engine change stashed (`02/14/20` + `26`), green with it.
+  **Green:** `guardian-inventory-pdf-model` 31 tests + `pdf-model-column-integrity`
+  3; new `tests/e2e/guardian-inventory-schedule-layout.spec.ts` 5/5 (canvas
+  ink for the margin, span positions for row growth / page membership /
+  header-value association / reading order, PDF text items for the engine
+  case); the e2e fixture in `pdf-accessibility-and-signatures.spec.ts` now
+  seeds real fields (no A-1 `valuationMethod`, A-2 `notes` not
+  `relatedProperty`, `wardPercent` on every apportioned row).
+  **Pre-commit record:** `npx vitest run` → 104 files, 1239 tests passed;
+  `npm run check:types` → clean; `git diff --check` → exit 0;
+  `npx playwright test tests/e2e/pdf-accessibility-and-signatures.spec.ts tests/e2e/guardian-inventory-mount.spec.ts tests/e2e/guardian-inventory-schedule-layout.spec.ts`
+  → 22 passed; `git stash list` → empty (both injections restored, confirmed
+  by re-reading the restored lines); `git status --short` → exactly the seven
+  Phase 2A files (`MILESTONE-60-PROPOSAL.md`, `TEST-INDEX.md`,
+  `src/core/pdf/pdf-engine.js`, `src/features/guardian-inventory/pdf-model.js`,
+  `tests/e2e/pdf-accessibility-and-signatures.spec.ts`,
+  `tests/unit/guardian-inventory-pdf-model.spec.js`, new
+  `tests/e2e/guardian-inventory-schedule-layout.spec.ts`), no generated PDFs
+  or test artifacts, nothing from 60K or Phase 3; the temporary boundary-trace
+  spec was deleted before staging.

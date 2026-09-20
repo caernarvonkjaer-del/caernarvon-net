@@ -1258,16 +1258,31 @@ export async function generateCourtFormPdf(model, options = {}) {
               .flatMap((line) => doc.splitTextToSize(String(line), usableW));
             return { isMixed: false, lines: arrLines, heightPt: Math.max(1, arrLines.length) * 10 };
           }
-          const lines = doc.splitTextToSize(String(cellData || ''), usableW);
+          const text = String(cellData || '');
+          const lines = doc.splitTextToSize(text, usableW);
+          // Milestone 60 (2026-09-20): a single unbreakable token wider than
+          // its column -- a date, a currency figure, a percentage, an account
+          // number -- must never be split character-wise across two lines.
+          // splitTextToSize does exactly that when there is no whitespace to
+          // break on, and a filer would read "02/14/20" over "26" as two
+          // different facts. Shrink the token to fit instead, down to a 6pt
+          // floor; below that it is a column-width bug to fix in the model,
+          // and pdf-model-column-integrity / the layout e2e specs will show it.
+          if (lines.length > 1 && !/\s/.test(text.trim())) {
+            const naturalW = doc.getTextWidth(text);
+            const fontSize = Math.max(6, Math.floor((8 * usableW / naturalW) * 10) / 10);
+            return { isMixed: false, lines: [text], heightPt: 10, fontSize };
+          }
           return { isMixed: false, lines, heightPt: lines.length * 10 };
         };
 
         const drawCell = (measured, textX, yTop, align) => {
           if (!measured.isMixed) {
             doc.setFont('PGSans', 'normal');
-            doc.setFontSize(8);
+            doc.setFontSize(measured.fontSize || 8);
             doc.setTextColor(17, 24, 39);
             doc.text(measured.lines, textX, yTop + 11, { align });
+            doc.setFontSize(8);
             return;
           }
           doc.setFont('PGSans', 'normal');
