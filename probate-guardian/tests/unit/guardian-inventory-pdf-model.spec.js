@@ -76,9 +76,12 @@ describe('guardian inventory PDF model', () => {
       caseNumber: '26-002487-GD',
       county: 'Pasco',
       scheduleA1: [], scheduleA2: [],
+      // Milestone 60A: every schedule is ward-apportioned now, so a fixture
+      // that wants the full figure must say 100% -- a blank percentage is 0%,
+      // the same thing a blank Ward's % cell means in the court workbook.
       scheduleB1: [
-        { institutionName: 'Fifth Third Bank', fullAssetAmount: '1000', restricted: 'Yes' },
-        { institutionName: 'Regions Bank', fullAssetAmount: '2000', restricted: 'No' },
+        { institutionName: 'Fifth Third Bank', fullAssetAmount: '1000', restricted: 'Yes', wardPercent: '100' },
+        { institutionName: 'Regions Bank', fullAssetAmount: '2000', restricted: 'No', wardPercent: '100' },
       ],
       scheduleB2: [], scheduleB3: [], scheduleB4: [],
       scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
@@ -99,7 +102,7 @@ describe('guardian inventory PDF model', () => {
       county: 'Pasco',
       scheduleA1: [{ propertyDescription: 'Home', residence: 'No', income: 'Yes', fullAssetValue: '100000', wardPercent: '100' }],
       scheduleA2: [],
-      scheduleB1: [{ institutionName: 'Bank', fullAssetAmount: '1000', restricted: '' }],
+      scheduleB1: [{ institutionName: 'Bank', fullAssetAmount: '1000', restricted: '', wardPercent: '100' }],
       scheduleB2: [{ description: 'Furniture', inSafeDepositBox: 'No', fullAssetValue: '1200', wardPercent: '100' }],
       scheduleB3: [{ description: 'Brokerage', restricted: 'Yes', inSafeDepositBox: 'No', fullAssetValue: '500', wardPercent: '100' }],
       scheduleB4: [], scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
@@ -150,5 +153,105 @@ describe('guardian inventory PDF model', () => {
         pageCount: 1,
       }],
     });
+  });
+});
+
+// Milestone 60A. The PDF used to carry its own arithmetic: eight of eleven
+// schedules summed the FULL value and ignored the Ward's %, the audit fee ran
+// Annual Accounting's four-tier ladder instead of this form's two-tier rule
+// (PART V!G8/G9: $85 above $25,000, else $0), and Summary I clamped a net
+// figure at zero where the workbook (SUMMARY I!H32 = G30+G31) does not. The
+// figures now come from the shared Guardian calculator in totals.js. Each
+// test below isolates ONE of those defects, because a single fixture can turn
+// $170 into $85 through either the fee rule or the percentage.
+describe('Milestone 60A: PDF totals come from the shared Guardian calculator', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+  const auditFee = (model) => model.sections.find(s => s.id === 'd3_d4').blocks[0].items
+    .find(i => i.label === 'Audit Fee Determination').value;
+  const scheduleTotals = (model, id) => model.sections.find(s => s.id === id).blocks[0].totals;
+  const summaryI = (model) => model.sections.find(s => s.id === 'summary').blocks[0];
+  const summaryII = (model) => model.sections.find(s => s.id === 'summary').blocks[1];
+
+  test('fee rule alone: $120,000 at 100% ownership is $85, not Annual\'s $170 tier', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '120000', wardPercent: '100' }],
+    }));
+    expect(auditFee(model)).toMatch(/^\$85\.00\b/);
+    expect(auditFee(model)).not.toContain('170');
+  });
+
+  test('fee rule alone: above $500,000 is still $85, not Annual\'s $250 tier', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '750000', wardPercent: '100' }],
+    }));
+    expect(auditFee(model)).toMatch(/^\$85\.00\b/);
+  });
+
+  // Exactly $25,000 is an unresolved authority gap (MILESTONE-60-PROPOSAL.md,
+  // 60A): the form says "in excess of $25,000" -> $85 and "below $25,000" ->
+  // $0 and names neither for the boundary. Today's rule is `> 25000`, so the
+  // boundary prints $0. This pins that behavior so a change to it is made on
+  // purpose, not as a side effect; it does not certify $0 as correct.
+  test.each([
+    ['25000', /^\$0\.00\b/],
+    ['25000.01', /^\$85\.00\b/],
+    ['100000', /^\$85\.00\b/],
+    ['500000.01', /^\$85\.00\b/],
+  ])('fee boundary: a total of $%s prints %s', (total, expected) => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB1: [{ institutionName: 'Bank', fullAssetAmount: total, wardPercent: '100', restricted: 'No' }],
+    }));
+    expect(auditFee(model)).toMatch(expected);
+  });
+
+  test('apportionment alone: every schedule total is the ward\'s share, not the full figure', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA2: [{ lenderName: 'Lender', fullDebtBalance: '1000', wardPercent: '50' }],
+      scheduleB1: [{ institutionName: 'Bank', fullAssetAmount: '1000', wardPercent: '50', restricted: 'Yes' }],
+      scheduleB4: [{ lenderName: 'Lender', fullLiabilityBalance: '1000', wardPercent: '50' }],
+      scheduleC1: [{ payerName: 'SSA', annualIncomeAmount: '1000', wardPercent: '50' }],
+      scheduleC2: [{ claimantName: 'Claimant', amountOfClaim: '1000', wardPercent: '50' }],
+      scheduleC3: [{ defendantName: 'Defendant', estimatedSettlement: '1000', wardPercent: '50' }],
+      scheduleC4: [{ trustName: 'Trust', trustAmount: '1000', wardPercent: '50' }],
+      scheduleC5: [{ assetDescription: 'Joint account', totalAssetValue: '1000', jointOwnerPercent: '50' }],
+    }));
+    expect(scheduleTotals(model, 'a2').value).toBe('$500.00');
+    // B-1 carries two totals: the schedule total and the restricted subtotal,
+    // and the restricted subtotal was unadjusted even where the main one was not.
+    expect(scheduleTotals(model, 'b1').values.map(v => v.value)).toEqual(['$500.00', '$500.00']);
+    expect(scheduleTotals(model, 'b4').value).toBe('$500.00');
+    for (const id of ['c1', 'c2', 'c3', 'c4', 'c5']) {
+      expect(scheduleTotals(model, id).value, id).toBe('$500.00');
+    }
+    // The per-row restricted amount in B-1 is the ward's share too.
+    expect(model.sections.find(s => s.id === 'b1').blocks[0].rows[0].at(-1)).toBe('$500.00');
+    // And the summaries read the same figures.
+    expect(summaryI(model).rows[0][3]).toBe('$500.00'); // Schedule A debts
+    expect(summaryI(model).rows[1][3]).toBe('$500.00'); // Schedule B debts
+    expect(summaryII(model).rows.map(r => r[2])).toEqual(['$500.00', '$500.00', '$500.00', '$500.00', '$500.00']);
+  });
+
+  test('a blank Ward\'s % is 0%, as in the workbook, and is printed as unanswered rather than as 100%', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '1000' }],
+    }));
+    const row = model.sections.find(s => s.id === 'a1').blocks[0].rows[0];
+    expect(row).toContain('—');
+    expect(row).not.toContain('100%');
+    expect(scheduleTotals(model, 'a1').value).toBe('$0.00');
+  });
+
+  test('Summary I nets are not clamped at zero: debts above assets print as a negative figure', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '1000', wardPercent: '100' }],
+      scheduleA2: [{ lenderName: 'Lender', fullDebtBalance: '5000', wardPercent: '100' }],
+    }));
+    expect(summaryI(model).rows[0][4]).toBe('-$4,000.00');
+    expect(summaryI(model).totals.value).toBe('-$4,000.00');
   });
 });

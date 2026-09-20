@@ -826,4 +826,34 @@ rendered PDF text changes; the full regression once, in Phase 6.
   `checklist-export-parity`, `plan-simplified-parity` — 8 files, 59 tests.
   Template re-read for `PART V` rows 7-9 and 18-23, `A-1`/`B-2` value
   formulas, and Simplified `PART VII`!A5 (all quoted above). No code
-  changed in this phase.
+  changed in this phase. Commit `42fe2c7`.
+- **2026-09-20 — Phase 1, 60A. Landed.** New
+  `src/features/guardian-inventory/totals.js` (`makeGuardianCalc`,
+  `calcTotalsGuardian`, `wardShare`, `isRestrictedAnswer`, `auditFeeFor`;
+  unrounded throughout, per the rounding contract); eager import in
+  `features-loader.js`; `window.calcTotalsGuardian`/`window.makeGuardianCalc`
+  added to the allow-list and `window-bridge.d.ts` regenerated with the audit
+  script; `legacy-app.js`'s `calc` is now a fixed-name adapter forwarding to
+  the module (its private `isRestrictedAnswer` moved into the module); the
+  PDF model imports the module for every figure, prints the two-tier fee with
+  its base, formats a negative net as `-$4,000.00`, and prints a blank Ward's
+  % as `—` rather than `100%`. **Red-first:** six new PDF-model tests failed
+  on the unfixed model for the stated reasons — `$170.00 ($100k-$500k)`,
+  `$250.00 (> $500k)`, `$1,000.00` where the 50% share is `$500.00`, `100%`
+  printed for a blank percentage, `$0.00` where the clamped net is
+  `-$4,000.00`; the legacy `calc` source, evaluated as shipped, gave
+  `2042.11` on the rounding fixture. **Green:** targeted 6 files / 72 tests;
+  full unit suite 104 files / 1222 tests; live e2e
+  `pdf-accessibility-and-signatures` + `guardian-inventory-mount`, 17
+  passed (proves the adapter finds the module at runtime, which unit tests
+  cannot). **Fixture correction (§8.3):** two pre-existing PDF-model
+  fixtures had B-1 rows with no `wardPercent` and expected the full figure;
+  they now say `100`, because a blank percentage is 0% (as in the workbook)
+  and the old expectation only held while the PDF ignored the percentage.
+  **Folded in (session override):** Summary I's `Math.max(0, …)` clamp on
+  both nets — the workbook's `SUMMARY I`!H32/H38 do not clamp, so a filing
+  whose debts exceed its assets printed `$0.00` where the court form shows
+  the negative figure. **Printed-number changes a filer will see:** every
+  ward-apportioned schedule total, both summaries, the audit fee above
+  `$100,000`, the B-1 restricted amounts, negative nets, and cent-level
+  rounding on fractional percentages — all now match the workbook.

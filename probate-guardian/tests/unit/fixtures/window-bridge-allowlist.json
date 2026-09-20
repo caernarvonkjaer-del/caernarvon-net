@@ -938,6 +938,14 @@
       "name": "calcTotalsAnnual"
     },
     {
+      "file": "src/features/guardian-inventory/totals.js",
+      "name": "calcTotalsGuardian"
+    },
+    {
+      "file": "src/features/guardian-inventory/totals.js",
+      "name": "makeGuardianCalc"
+    },
+    {
       "file": "src/features/guardian-inventory/index.js",
       "name": "addEntry"
     },

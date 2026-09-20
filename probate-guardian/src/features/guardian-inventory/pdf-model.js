@@ -7,6 +7,7 @@ import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
+import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, AUDIT_FEE_THRESHOLD } from './totals.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -21,10 +22,20 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';
   const descriptor = resolveDescriptorForInventoryType('guardian');
 
-  // Format currency
+  // Format currency. This is the ONE place a figure is rounded to cents
+  // (totals.js's rounding contract: sums are unrounded until display). A
+  // negative net -- debts above assets in Summary I, which the workbook prints
+  // rather than clamping -- reads "-$4,000.00", sign first.
   const fmt = (v) => {
-    const n = parseFloat(v) || 0;
-    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const cents = Math.round((parseFloat(v) || 0) * 100) / 100;
+    const body = Math.abs(cents).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (cents < 0 ? '-$' : '$') + body;
+  };
+  // A blank Ward's % is 0% in the calculation (as in the workbook) and prints
+  // as unanswered, never as "100%" -- the two must not disagree on the page.
+  const fmtPct = (p) => {
+    const num = parseFloat(p);
+    return Number.isFinite(num) ? `${num}%` : '—';
   };
   const triText = (value, legacyValue) => triStateText(value) || triStateText(legacyValue) || '—';
   const triIsYes = (value, legacyValue) => triText(value, legacyValue) === 'Yes';
@@ -36,28 +47,17 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     return `${m}/${day}/${y}`;
   };
 
-  // Calculations
-  const sum = (arr, key) => (arr || []).reduce((s, x) => s + (parseFloat(x[key]) || 0), 0);
-  const calcWard = (full, pct) => ((parseFloat(full) || 0) * (parseFloat(pct) || 0)) / 100;
-  const sumWard = (arr, fullKey, pctKey) => (arr || []).reduce((s, x) => s + calcWard(x[fullKey], x[pctKey]), 0);
-
-  const totalA1 = sumWard(d.scheduleA1, 'fullAssetValue', 'wardPercent');
-  const totalA2 = sum(d.scheduleA2, 'fullDebtBalance');
-  const netA = Math.max(0, totalA1 - totalA2);
-
-  const totalB1 = sum(d.scheduleB1, 'fullAssetAmount');
-  const totalB2 = sumWard(d.scheduleB2, 'fullAssetValue', 'wardPercent');
-  const totalB3 = sumWard(d.scheduleB3, 'fullAssetValue', 'wardPercent');
-  const totalB4 = sum(d.scheduleB4, 'fullLiabilityBalance');
-  const netB = Math.max(0, totalB1 + totalB2 + totalB3 - totalB4);
-
-  const totalRealPersonal = netA + netB;
-
-  const totalC1 = sum(d.scheduleC1, 'annualIncomeAmount');
-  const totalC2 = sum(d.scheduleC2, 'amountOfClaim');
-  const totalC3 = sum(d.scheduleC3, 'estimatedSettlement');
-  const totalC4 = sum(d.scheduleC4, 'trustAmount');
-  const totalC5 = sum(d.scheduleC5, 'totalAssetValue');
+  // Calculations -- Milestone 60A: all from the shared Guardian calculator,
+  // the same implementation the live UI's sidebar and calculated fields use.
+  // This model used to carry its own copy that ignored the Ward's % on eight
+  // schedules, ran Annual's four-tier audit fee, and clamped nets at zero.
+  const gc = makeGuardianCalc(d);
+  const t = calcTotalsGuardian(d);
+  const {
+    totalA1, totalA2, netA, totalB1, totalB2, totalB3, totalB4, netB,
+    totalC1, totalC2, totalC3, totalC4, totalC5, restrictedCash,
+  } = t;
+  const totalRealPersonal = t.total;
 
   const metadata = {
     title: `${wardName} - ${caseNumber} - Printed ${printDate}`,
@@ -256,7 +256,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule A-1: Real Property Assets',
     'Schedule A-1: Real Property',
     ['Property Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?'],
-    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
+    (d.scheduleA1 || []).map(r => [r.notes ? { main: r.propertyDescription || '', sub: [{ text: r.notes, italic: true }] } : (r.propertyDescription || ''), composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardVal(r)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
     'real property assets',
@@ -288,14 +288,16 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   //
   // Read the canonical tri-state field written by the current radio control,
   // falling back to the legacy boolean only for direct callers that bypass
-  // setD() normalization.
-  const restrictedCash = (d.scheduleB1 || []).filter(r => triIsYes(r.restricted, r.isRestricted)).reduce((s, r) => s + (parseFloat(r.fullAssetAmount) || 0), 0);
+  // setD() normalization -- isRestrictedAnswer() is that rule, shared with
+  // the calculator so the row, the subtotal and Part V's bond table agree.
+  // The restricted amount is the WARD'S share (Milestone 60A); it used to be
+  // the full account balance even when the subtotal beside it was adjusted.
   addScheduleSection(
     'b1',
     'Schedule B-1: Cash & Financial Accounts',
     'Schedule B-1: Cash & Financial Accounts',
     ['Institution Name', 'Account Type & Number', 'Address', 'Full Asset Amount', 'Restricted?', 'Restricted Amt'],
-    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), triText(r.restricted, r.isRestricted), triIsYes(r.restricted, r.isRestricted) ? fmt(r.fullAssetAmount) : '—']),
+    (d.scheduleB1 || []).map(r => [r.institutionName || '', `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`, composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetAmount), triText(r.restricted, r.isRestricted), isRestrictedAnswer(r) ? fmt(gc.wardAmt(r)) : '—']),
     'Schedule B-1 Total',
     totalB1,
     'cash and financial accounts',
@@ -310,7 +312,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-2: Personal Property Assets',
     'Schedule B-2: Personal Property',
     ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", "Ward's Value", 'In Safe Deposit Box?'],
-    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.inSafeDepositBox)]),
+    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardB2(r)), triText(r.inSafeDepositBox)]),
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',
@@ -324,7 +326,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-3: Intangible & Other Personal Property',
     'Schedule B-3: Intangible & Other Personal Property',
     ['Description', 'Custodian / Address', 'Full Value', "Ward's %", "Ward's Value", 'Restricted?', 'In Safe Deposit Box?'],
-    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), `${r.wardPercent || 100}%`, fmt(calcWard(r.fullAssetValue, r.wardPercent)), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox)]),
+    (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardB3(r)), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox)]),
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
     'intangible personal property assets',
@@ -549,7 +551,17 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           ...(triIsYes(d.hasSafeDepositBox) ? [
             { label: 'Initial inventory of safe deposit box filed?', value: triText(d.safeDepositBoxFiled) },
           ] : []),
-          { label: 'Audit Fee Determination', value: totalRealPersonal <= 25000 ? '$0.00 (Estate <= $25k)' : totalRealPersonal <= 100000 ? '$85.00 ($25k-$100k)' : totalRealPersonal <= 500000 ? '$170.00 ($100k-$500k)' : '$250.00 (> $500k)' },
+          // PART V!G8/G9: $85 when the inventory value is in excess of
+          // $25,000, else $0 -- no upper tiers (those were Annual's, printed
+          // here by mistake until Milestone 60A). The base is shown too, as
+          // the live UI does, so the reader can check the determination.
+          { label: 'Total Inventory Value (audit-fee base)', value: fmt(totalRealPersonal) },
+          {
+            label: 'Audit Fee Determination',
+            value: t.auditFee > 0
+              ? `${fmt(t.auditFee)} (inventory value in excess of ${fmt(AUDIT_FEE_THRESHOLD)})`
+              : `${fmt(0)} (inventory value not in excess of ${fmt(AUDIT_FEE_THRESHOLD)})`,
+          },
         ],
       },
       {

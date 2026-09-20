@@ -6375,46 +6375,32 @@ const BLANK_CARD_COLLECTIONS = {
 // ═══════════════════════════════════════════════════════
 // CALCULATIONS
 // ═══════════════════════════════════════════════════════
-const calc={
-  wardVal:(e)=>r2((e.fullAssetValue||0)*((e.wardPercent||0)/100)),
-  wardDebt:(e)=>r2((e.fullDebtBalance||0)*((e.wardPercent||0)/100)),
-  wardAmt:(e)=>r2((e.fullAssetAmount||0)*((e.wardPercent||0)/100)),
-  wardB2:(e)=>r2((e.fullAssetValue||0)*((e.wardPercent||0)/100)),
-  wardB3:(e)=>r2((e.fullAssetValue||0)*((e.wardPercent||0)/100)),
-  wardB4:(e)=>r2((e.fullLiabilityBalance||0)*((e.wardPercent||0)/100)),
-  wardC1:(e)=>r2((e.annualIncomeAmount||0)*((e.wardPercent||0)/100)),
-  wardC2:(e)=>r2((e.amountOfClaim||0)*((e.wardPercent||0)/100)),
-  wardC3:(e)=>r2((e.estimatedSettlement||0)*((e.wardPercent||0)/100)),
-  wardC4:(e)=>r2((e.trustAmount||0)*((e.wardPercent||0)/100)),
-  wardC5:(e)=>r2((e.totalAssetValue||0)*((e.jointOwnerPercent||0)/100)),
-  totalA1:()=>r2(D.scheduleA1.reduce((s,e)=>s+calc.wardVal(e),0)),
-  totalA2:()=>r2(D.scheduleA2.reduce((s,e)=>s+calc.wardDebt(e),0)),
-  netA:()=>calc.totalA1()-calc.totalA2(),
-  totalB1:()=>r2(D.scheduleB1.reduce((s,e)=>s+calc.wardAmt(e),0)),
-  totalB2:()=>r2(D.scheduleB2.reduce((s,e)=>s+calc.wardB2(e),0)),
-  totalB3:()=>r2(D.scheduleB3.reduce((s,e)=>s+calc.wardB3(e),0)),
-  totalB4:()=>r2(D.scheduleB4.reduce((s,e)=>s+calc.wardB4(e),0)),
-  netB:()=>calc.totalB1()+calc.totalB2()+calc.totalB3()-calc.totalB4(),
-  total:()=>calc.netA()+calc.netB(),
-  totalC1:()=>r2(D.scheduleC1.reduce((s,e)=>s+calc.wardC1(e),0)),
-  totalC2:()=>r2(D.scheduleC2.reduce((s,e)=>s+calc.wardC2(e),0)),
-  totalC3:()=>r2(D.scheduleC3.reduce((s,e)=>s+calc.wardC3(e),0)),
-  totalC4:()=>r2(D.scheduleC4.reduce((s,e)=>s+calc.wardC4(e),0)),
-  totalC5:()=>r2(D.scheduleC5.reduce((s,e)=>s+calc.wardC5(e),0)),
-  restrictedCash:()=>r2(D.scheduleB1.filter(e=>isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardAmt(e),0)),
-  unrestrictedCash:()=>r2(D.scheduleB1.filter(e=>!isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardAmt(e),0)),
-  restrictedIntang:()=>r2(D.scheduleB3.filter(e=>isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardB3(e),0)),
-  unrestrictedIntang:()=>r2(D.scheduleB3.filter(e=>!isRestrictedAnswer(e)).reduce((s,e)=>s+calc.wardB3(e),0)),
-  bondRequired:()=>calc.unrestrictedCash()+calc.totalB2()+calc.unrestrictedIntang(),
-  auditFee:()=>calc.total()>25000?85:0,
-};
-window.calc=calc;
-
-function isRestrictedAnswer(entry){
-  // A current explicit string always wins; use the boolean alias only while
-  // loading an older save that has not yet passed through normalization.
-  return entry?.restricted==='Yes'||(entry?.restricted!=='No'&&entry?.isRestricted===true);
+// Milestone 60A: the Guardian Inventory arithmetic lives in
+// src/features/guardian-inventory/totals.js (eagerly imported by
+// features-loader.js, like Annual's calcTotalsAnnual). This object keeps the
+// classic-script call shape the live UI uses -- calc.totalA1(),
+// calc.wardVal(entry), ... -- and forwards every call to the module bound to
+// the CURRENT window.D, so the sidebar, the calculated fields, the summary
+// page and the court-filed PDF all read one implementation. The formulas
+// that used to sit here rounded every row before summing, which the court
+// workbook does not do; see totals.js's header for the rounding contract.
+//
+// Method list is fixed by name rather than proxied so a typo at a call site
+// still throws "calc.foo is not a function" instead of returning a function
+// that silently computes nothing.
+const GUARDIAN_CALC_METHODS=['wardVal','wardDebt','wardAmt','wardB2','wardB3','wardB4','wardC1','wardC2','wardC3','wardC4','wardC5',
+  'totalA1','totalA2','netA','totalB1','totalB2','totalB3','totalB4','netB','total','totalC1','totalC2','totalC3','totalC4','totalC5',
+  'restrictedCash','unrestrictedCash','restrictedIntang','unrestrictedIntang','bondRequired','auditFee'];
+const calc={};
+for(const name of GUARDIAN_CALC_METHODS){
+  calc[name]=(...args)=>{
+    // Not optional-chained on purpose: a missing bridge here would print
+    // $0.00 everywhere and should fail loudly instead.
+    if(typeof window.makeGuardianCalc!=='function')throw new Error('Guardian calculator not loaded -- features-loader.js must import guardian-inventory/totals.js');
+    return window.makeGuardianCalc(()=>D)[name](...args);
+  };
 }
+window.calc=calc;
 
 function normalizeWardData(d){
   if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;

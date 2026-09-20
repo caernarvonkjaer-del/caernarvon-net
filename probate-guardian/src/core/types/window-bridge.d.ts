@@ -56,6 +56,7 @@ interface Window {
   calc: any;
   calcTotals: any;
   calcTotalsAnnual: any;
+  calcTotalsGuardian: any;
   capitalizeImportedFields: any;
   carryOverFieldsForAccounting: any;
   carryOverFieldsForPlan: any;
@@ -278,6 +279,7 @@ interface Window {
   loadSimplifiedFeature: any;
   loadSimplifiedPdf: any;
   lockApp: any;
+  makeGuardianCalc: any;
   markCaseOpenedBefore: any;
   markContinuePromptShown: any;
   markDirtySinceExport: any;
