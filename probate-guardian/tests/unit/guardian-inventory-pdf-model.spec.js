@@ -398,6 +398,96 @@ describe('Milestones 60B-60E: every UI-captured schedule field reaches the PDF',
   });
 });
 
+// Milestone 60H. Two things Part V captured or computed and never printed:
+// the bond-waiver answer/date (index.js requires bondWaived and, when Yes,
+// bondWaivedDate; the workbook records the date at PART V!G15) and the
+// bond-requirement breakdown the workbook itemizes at PART V rows 18-23 and
+// the live UI already shows on its Part V page.
+describe('Milestone 60H: Part V prints the bond-waiver answer and the bond-requirement breakdown', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+  const partV = (model) => model.sections.find(s => s.id === 'd3_d4');
+  const bondGrid = (model) => partV(model).blocks.find(b => b.title === 'Schedule D-4: Guardian Bond');
+  const item = (grid, label) => grid.items.find(i => i.label === label);
+  const WAIVED = 'Surety bond waived by court order?';
+  const WAIVED_DATE = 'Date of the order waiving the bond';
+
+  test('a waived bond prints Yes and the order date', () => {
+    const grid = bondGrid(buildVerifiedInventoryModel(base({ bondWaived: 'Yes', bondWaivedDate: '2026-03-04' })));
+    expect(item(grid, WAIVED).value).toBe('Yes');
+    expect(item(grid, WAIVED_DATE).value).toBe('03/04/2026');
+  });
+
+  test('a bond not waived prints No and no date line', () => {
+    const grid = bondGrid(buildVerifiedInventoryModel(base({ bondWaived: 'No', bondWaivedDate: '' })));
+    expect(item(grid, WAIVED).value).toBe('No');
+    expect(item(grid, WAIVED_DATE)).toBeUndefined();
+  });
+
+  // AGENTS.md section 4: unanswered is never coerced to No. And Milestone 57A's
+  // legacy rule: a filing saved before the question existed has the date and
+  // no answer, and a date can only have been entered because the bond WAS
+  // waived -- so it reads Yes; an absent date stays unanswered.
+  test('unanswered stays unanswered ("—"), and a legacy save with only the date reads as Yes', () => {
+    const blank = bondGrid(buildVerifiedInventoryModel(base({ bondWaived: '', bondWaivedDate: '' })));
+    expect(item(blank, WAIVED).value).toBe('—');
+    expect(item(blank, WAIVED_DATE)).toBeUndefined();
+    const legacy = bondGrid(buildVerifiedInventoryModel(base({ bondWaivedDate: '2026-03-04' })));
+    expect(item(legacy, WAIVED).value).toBe('Yes');
+    expect(item(legacy, WAIVED_DATE).value).toBe('03/04/2026');
+  });
+
+  // Hand-computed against PART V rows 18-23 (the same fixture as
+  // guardian-inventory-totals.spec.js, so the two proofs share their numbers):
+  //   row 18  B-1 restricted            = 5000 + 2000        = 7,000
+  //   row 19  B-3 restricted            = 10000              = 10,000
+  //   row 20  B-1 not restricted        = 10000 - 7000       = 3,000
+  //   row 21  B-2 personal property     = 4000               = 4,000
+  //   row 22  B-3 not restricted        = 11000 - 10000      = 1,000
+  //   row 23  Total for BOND REQUIREMENT = row 20 + 21 + 22  = 8,000
+  test('the bond-requirement table itemizes PART V rows 18-23 in order and totals only the liquid lines', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB1: [
+        { institutionName: 'A', fullAssetAmount: '10000', wardPercent: '50', restricted: 'Yes' },
+        { institutionName: 'B', fullAssetAmount: '6000', wardPercent: '50', restricted: 'No' },
+        { institutionName: 'C', fullAssetAmount: '4000', wardPercent: '50', isRestricted: true },
+      ],
+      scheduleB2: [{ description: 'D', fullAssetValue: '8000', wardPercent: '50' }],
+      scheduleB3: [
+        { description: 'E', fullAssetValue: '20000', wardPercent: '50', restricted: 'Yes' },
+        { description: 'F', fullAssetValue: '2000', wardPercent: '50', restricted: '' },
+      ],
+    }));
+    const table = partV(model).blocks.find(b => b.type === 'table' && /Bond/i.test(b.title));
+    expect(table, 'no bond-requirement table in Part V').toBeTruthy();
+    expect(table.headers).toEqual(['Schedule', 'Bond Calculation', 'Restricted (not bonded)', 'Liquid (bonded)']);
+    expect(table.rows.map(r => [r[0], r[2], r[3]])).toEqual([
+      ['Schedule B-1', '$7,000.00', '—'],
+      ['Schedule B-3', '$10,000.00', '—'],
+      ['Schedule B-1', '—', '$3,000.00'],
+      ['Schedule B-2', '—', '$4,000.00'],
+      ['Schedule B-3', '—', '$1,000.00'],
+    ]);
+    expect(table.rows.map(r => r[1])).toEqual([
+      'Cash Assets in RESTRICTED Depository',
+      'Other Liquid Assets - Intangible Assets RESTRICTED',
+      'Cash Assets NOT in a Restricted Depository',
+      'Other Liquid Assets - Personal Property Assets',
+      'Other Liquid Assets - Intangible Assets NOT RESTRICTED',
+    ]);
+    expect(table.totals.values.map(v => v.value)).toEqual(['', '$8,000.00']);
+    // The table sits where the form puts it: after the audit fee / safe deposit
+    // box block and before the bond amount / period / company block.
+    const blocks = partV(model).blocks;
+    expect(blocks.indexOf(table)).toBeGreaterThan(blocks.findIndex(b => b.title === 'Schedule D-3: Safe Deposit Box & Audit Fee'));
+    expect(blocks.indexOf(table)).toBeLessThan(blocks.indexOf(bondGrid(model)));
+  });
+});
+
 // Milestone 60K: the workbook derives two figures the PDF never printed --
 // B-2's "Amount In Safe Deposit Box" ('B-2 PER PROP pg 1'!I18
 // =IF(H18="Yes",G18,0), totalled at I63/I64) and B-3's "Restricted" (I) and

@@ -8,6 +8,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD } from './totals.js';
+import { effectiveAnswer } from '../../core/validation/dependent-question.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -607,6 +608,33 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           },
         ],
       },
+      // Milestone 60H: the workbook's own bond calculation, PART V rows 16-23,
+      // itemized as the form does -- the two RESTRICTED lines are shown for
+      // context in their own column and are NOT summed; the bond requirement
+      // (row 23, =G20+G21+G22) is the three liquid lines. Figures come from
+      // the shared calculator, the same ones the live Part V page shows.
+      {
+        type: 'notice',
+        tag: 'P',
+        title: 'Bond Calculation',
+        text: 'Bond Calculation consists of liquid assets: all cash, personal property or intangible assets. Only real property is not considered liquid. Guardianship bond amount should be the amount of all liquid assets less those in a restricted depository or frozen account.',
+      },
+      {
+        type: 'table',
+        tag: 'Table',
+        title: 'Surety Bond Requirement (calculated)',
+        headers: ['Schedule', 'Bond Calculation', 'Restricted (not bonded)', 'Liquid (bonded)'],
+        rows: [
+          ['Schedule B-1', 'Cash Assets in RESTRICTED Depository', fmt(t.restrictedCash), '—'],
+          ['Schedule B-3', 'Other Liquid Assets - Intangible Assets RESTRICTED', fmt(t.restrictedIntang), '—'],
+          ['Schedule B-1', 'Cash Assets NOT in a Restricted Depository', '—', fmt(t.unrestrictedCash)],
+          ['Schedule B-2', 'Other Liquid Assets - Personal Property Assets', '—', fmt(totalB2)],
+          ['Schedule B-3', 'Other Liquid Assets - Intangible Assets NOT RESTRICTED', '—', fmt(t.unrestrictedIntang)],
+        ],
+        totals: { label: 'Total for BOND REQUIREMENT (liquid assets)', values: [{ value: '' }, { value: fmt(t.bondRequired) }] },
+        colWidths: [16, 46, 19, 19],
+        colAlign: ['left', 'left', 'right', 'right'],
+      },
       {
         type: 'key-value-grid',
         tag: 'Table',
@@ -615,6 +643,19 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           { label: 'Bond Amount', value: fmt(d.bondAmount) },
           { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },
           { label: 'Bonding Company', value: d.bondingCompany || '' },
+          // Milestone 60H: the bond-waiver answer (Milestone 57A's app-side
+          // question; PART V row 15 records only the order date) and, when
+          // waived, that date. effectiveAnswer() is the same predicate the UI
+          // and validator use: an explicit answer wins, a legacy save with the
+          // date and no answer reads Yes, and an absent date is UNANSWERED --
+          // never coerced to No (AGENTS.md section 4).
+          ...(() => {
+            const waived = effectiveAnswer(d.bondWaived, d.bondWaivedDate);
+            return [
+              { label: 'Surety bond waived by court order?', value: waived || '—' },
+              ...(waived === 'Yes' ? [{ label: 'Date of the order waiving the bond', value: fmtDate(d.bondWaivedDate) }] : []),
+            ];
+          })(),
         ],
       },
     ],

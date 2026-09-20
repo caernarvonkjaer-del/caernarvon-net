@@ -1005,3 +1005,34 @@ rendered PDF text changes; the full regression once, in Phase 6.
   `tests/unit/guardian-inventory-{pdf-model,totals}.spec.js`); `excel.js`
   shows 14 hunks, not a whole-file line-ending rewrite (the working copy is
   CRLF; edits preserved it). No generated workbooks or PDFs in the diff.
+  Commit `86dcd01`.
+- **2026-09-20 — Phase 3, 60H. Landed.** Part V of the Guardian PDF gains
+  (a) the bond-waiver answer and, when waived, the order date, read through
+  `effectiveAnswer()` — the predicate the UI and validator already use, so an
+  explicit answer wins, a pre-57A save with only the date reads Yes, and an
+  absent answer prints `—` and is never coerced to No (`AGENTS.md` §4); and
+  (b) a "Surety Bond Requirement (calculated)" table itemizing `PART V` rows
+  18-23 in the form's order — B-1 restricted, B-3 restricted, B-1 not
+  restricted, **B-2 personal property**, B-3 not restricted — with the two
+  restricted lines in their own "not bonded" column and the total summing
+  only the three liquid lines (row 23 `=G20+G21+G22`), preceded by the
+  form's own rows 17/25 sentences, and placed between the audit-fee/safe-
+  deposit block and the bond amount block as on the form. Figures come from
+  the shared calculator. **Verification against the workbook formulas, not
+  the UI:** the test fixture is hand-computed — row 18 `5000+2000=7,000`,
+  row 19 `10,000`, row 20 `10,000-7,000=3,000`, row 21 `4,000`, row 22
+  `11,000-10,000=1,000`, row 23 `3,000+4,000+1,000=8,000` — the same fixture
+  `guardian-inventory-totals.spec.js` checks the module against, so a shared
+  mistake would have to be wrong in both hand computations. **Red-first:**
+  four tests failed on the unfixed model — three `Cannot read properties of
+  undefined (reading 'value')` because no bond-waiver item existed, one "no
+  bond-requirement table in Part V".
+  **Pre-commit record:** `npx vitest run` → 104 files, 1248 tests passed;
+  `npm run check:types` → clean; `git diff --check` → exit 0;
+  `npx playwright test` over `pdf-accessibility-and-signatures`,
+  `guardian-inventory-schedule-layout`, `guardian-inventory-mount` → 22
+  passed; `git status --short` → four files
+  (`MILESTONE-60-PROPOSAL.md`, `TEST-INDEX.md`,
+  `src/features/guardian-inventory/pdf-model.js`,
+  `tests/unit/guardian-inventory-pdf-model.spec.js`), nothing from Phase 4
+  or 5, no generated artifacts.
