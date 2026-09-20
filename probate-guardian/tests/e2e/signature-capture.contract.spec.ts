@@ -495,11 +495,24 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
   test('Attorney card left entirely blank does not block (pro se / Guardian Advocate exemption)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'PI Sig Attorney Blank Ward', 'planInitial');
-    await fillMinimalValidPlanInitialWard(page); // sets attorney_name/signatureDate by default
+    await fillMinimalValidPlanInitialWard(page);
     await page.evaluate(() => {
       const d = (window as any).D;
-      d.attorney_name = '';
-      d.attorney_signatureDate = '';
+      // Milestone 58C: clear the WHOLE block, which is what this test's title
+      // has always claimed. It used to clear only attorney_name and
+      // attorney_signatureDate, leaving the fixture's
+      // attorney_email: 'attorney@example.com' behind -- so the "entirely
+      // blank" card still carried an attorney's email address. That passed
+      // only because the old "started" predicate did not count email as
+      // attorney entry, which was the defect 58C fixed: an email with no name
+      // is a half-entered attorney, and the court would receive a
+      // certification naming someone with no way to serve them.
+      //
+      // The pro se / Guardian Advocate exemption this test guards is
+      // unchanged and still proven here -- a genuinely blank card exports.
+      for (const key of ['attorney_name', 'attorney_bar', 'attorney_email', 'attorney_secondaryEmail',
+        'attorney_street', 'attorney_cityStateZip', 'attorney_phone',
+        'attorney_signatureDate', 'attorney_signatureState']) d[key] = '';
     });
     await page.evaluate(() => (window as any).navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
