@@ -2,16 +2,25 @@
 
 ## Status
 
-**AUTHORIZED 2026-09-20 by the requester. In progress.** The authorization,
-verbatim: *"Execute on Phases 0–2 (61A schema, 61B/61C started-row) and
-Phase 5 (61G notice titles), plus Phase 3's other three items — Annual's
-Note 1, Simplified's Help content, and removing Simplified's
-preparer/attorney pages."*
+**LANDED 2026-09-20.** Authorized by the requester ("Execute on Phases 0–2
+(61A schema, 61B/61C started-row) and Phase 5 (61G notice titles), plus
+Phase 3's other three items — Annual's Note 1, Simplified's Help content,
+and removing Simplified's preparer/attorney pages"). Everything that
+authorization named is implemented, verified and pushed — `12c2914`…`5b89594`.
 
-That authorizes Phases 0, 1, 2, 5 and three of Phase 3's four items. Phase
-3 item 2 (the Disaster Plan note) is closed with no code change and is not
-part of this run. Phases 4 and 6 are likewise closed. The full `npm test`
-regression at completion was authorized separately the same day.
+**Closing evidence.** The authorized full `npm test` regression ran against
+the final tree and is green: **1304 unit tests, 710 e2e passed, 6 skipped,
+zero failures, 26.6m** (exit status read from the run log itself, not from a
+wrapper). `npm run check:types` clean. Every phase also carries its own
+red-first record in the Progress Log below — each new test was seen failing
+for its stated reason before the fix, and two of those failures were
+implementation defects this milestone found in its own first attempt
+(61G: a heading over an empty box, and a heading orphaned from its
+paragraph across a page break).
+
+**Not in this run, closed with no code change:** Phase 3 item 2 (the
+Disaster Plan note, 61D), Phase 4 (61F) and Phase 6 (61H). Each is closed
+in its own section with the reasoning, not merely deferred.
 
 Progress Log is at the end of this document.
 
@@ -943,3 +952,7 @@ authorizes only what it names (`AGENTS.md` §3).
   the words "Bond Calculation", so a substring search proved nothing; it now
   checks the heading as its own text run positioned above the body. Full unit
   suite 1304/1304, `check:types` clean, 20 PDF e2e specs green.
+- **2026-09-20 — Closing regression. Green.** Full `npm test` against the
+  final tree: 1304 unit tests, 710 e2e passed, 6 skipped, zero failures,
+  26.6m. `npm run check:types` clean. Authorized in advance by the requester,
+  so no separate approval was needed at the end.
