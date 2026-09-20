@@ -2,16 +2,29 @@
 
 ## Status
 
-**AUTHORIZED 2026-09-20 by the requester ("Start MS 60"). All eleven
-deliveries implemented, verified and pushed (`42fe2c7`…`809778f`).**
+**LANDED 2026-09-20.** Authorized by the requester ("Start MS 60"); all
+eleven deliveries (60A–60K) plus the separately authorized annotation
+ordering fix are implemented, verified and pushed — `42fe2c7`…`b923cbf`.
 
-**Not marked Landed.** The closing full regression came back 704 passed, 6
-skipped, 1 failed. The failure is a pre-existing, load-dependent race in the
-annotation save path — a filing type and two files this milestone never
-touches — diagnosed in the Progress Log's Phase 6 entry and reported rather
-than fixed, per the standing bound that unrelated failures go back to the
-requester instead of widening a milestone's scope. Whether that blocks the
-status line is the requester's call.
+**What the closing evidence does and does not cover — read this before
+relying on it.** The one full `npm test` that ran (Phase 6) came back 704
+passed, 6 skipped, 1 failed, and that single failure was the annotation save
+race, since fixed under a separate authorization (Phase 7). The requester
+then directed that **unit testing is sufficient** and stopped the
+confirming re-run, so completion criterion 8 is satisfied **by that decision
+rather than by a green full-suite run against the final tree**. Recorded
+plainly because it matters to anyone building on this:
+
+- Every phase was verified with targeted e2e *at the time it landed*, and
+  each phase's Progress Log entry lists exactly what was run.
+- The unit suite (106 files, 1269 tests) passes on the final tree.
+- What no longer exists is one end-to-end run of the whole suite against
+  that final tree. Several of this milestone's proofs are inherently
+  browser-level — canvas ink measurement for margins, PDF text extraction
+  and text-run positions, exported-workbook cell reads — and the unit suite
+  does not reach them. Anyone who wants that assurance should run
+  `npm test` (~26 min) rather than infer it from this document.
+
 The authorization names every choice this document had left open, after two
 rounds of independent critique of the execution plan (Codex, 2026-09-20):
 
@@ -1213,7 +1226,7 @@ rendered PDF text changes; the full regression once, in Phase 6.
 | 5 | CSV updated for changed persisted fields | Added `scheduleC2[].claimantCityStateZip` and `simplified_accounting scheduleNoItems`; removed `scheduleB2/B3[].amountInSDB`. `verify:data-model` OK, 928 rows. |
 | 6 | `TEST-INDEX.md` reflects every change | Five new specs rowed, five existing rows extended; `test-index-guard` green. |
 | 7 | Nothing outside the authorized scope | Each phase's pre-commit record lists its staged files. |
-| 8 | Phase verification before each commit; regression before Landed | Recorded per phase. The regression ran with one failure, unrelated and pre-existing (above) — **the requester's call on whether that blocks the status change.** |
+| 8 | Phase verification before each commit; regression before Landed | Per-phase verification recorded in each Progress Log entry. The one full regression that ran (Phase 6) had a single failure, the annotation race, fixed in Phase 7. The confirming re-run was **stopped by the requester, who directed that unit testing is sufficient**, so this criterion is met by that decision, not by a green full suite on the final tree — see the caveat in Status. |
 
 ## Findings reported, not fixed
 
