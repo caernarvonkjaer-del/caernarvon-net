@@ -469,8 +469,15 @@ export function emptyDataAnnual() {
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',
     certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
-    // Part XI – Remuneration
-    remuneration:[window.emptyRowAnnual ? window.emptyRowAnnual('remun') : {guardian:'',type:'',amount:'',description:''}]
+    // Part XI – Remuneration.
+    //
+    // Milestone 58D: starts EMPTY, not with one blank placeholder row. The
+    // "I verify there are no remuneration entries to report" declaration only
+    // renders while this array is empty, so seeding a placeholder hid the one
+    // control that answers Part XI -- the filer had to delete a meaningless
+    // empty row to reach it. Per 744.367(3)(a) the declaration is required, so
+    // it cannot be the hardest thing on the page to find.
+    remuneration:[]
   };
 }
 

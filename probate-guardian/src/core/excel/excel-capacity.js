@@ -24,6 +24,9 @@ export function checkExcelCapacity(caps, sourceData) {
         route: info.route || '',
         cap: info.cap,
         count,
+        // Milestone 58D: present only for a schedule the workbook cannot
+        // represent at all, as opposed to one that ran out of rows.
+        unsupported: info.unsupported || '',
       });
     }
   }
@@ -36,7 +39,14 @@ export function getExcelCapacityIssues(inventoryType, data, caps) {
   return over.map(o => {
     const code = `excel.capacity.${type}.${o.key}`;
     const issue = createIssue(code, {
-      message: `${o.label}: ${o.count} entries (template holds ${o.cap})`,
+      // Milestone 58D: a schedule the workbook cannot represent AT ALL reads
+      // differently from one that simply ran out of rows. "Part XI —
+      // Remuneration: 3 entries (template holds 0)" is accurate but tells the
+      // filer nothing they can act on, and implies a bigger template would
+      // help. `unsupported` supplies wording that names the way forward.
+      message: o.unsupported
+        ? `${o.label}: ${o.unsupported}`
+        : `${o.label}: ${o.count} entries (template holds ${o.cap})`,
       label: o.label,
       section: o.label,
       path: o.key,

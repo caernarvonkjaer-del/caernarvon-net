@@ -1381,6 +1381,108 @@ test.describe('Milestone 55D: attorney email is required exactly where the UI al
 // agreement: whatever the export gate says, the sidebar must say too.
 // tests/unit/signature-completeness.spec.js pins the rule itself; this pins
 // that the sidebar is actually wired to it.
+// Milestone 58D. Part XI is the guardian's declaration of remuneration, which
+// 744.367(3)(a) requires the annual report to include. An untouched Part XI
+// used to count as complete on both sides, so a filing could be exported
+// having never answered it -- neither "here is what I received" nor "I
+// received none". This is a NEW requirement rather than a parity repair: on
+// Part XI the sidebar and the validator already agreed.
+test.describe('Milestone 58D: Part XI must be answered before export', () => {
+  const partXiIssue = (m: ValidatorIssue) => /Part XI/i.test(String(m.message));
+
+  async function partXiState(page: import('@playwright/test').Page) {
+    return page.evaluate(() => {
+      const w = window as any;
+      return {
+        navComplete: w.computeNavChecks().checks['a-p11'],
+        blocked: w.validateAnnual().some((m: any) => /Part XI/i.test(String(m.message))),
+      };
+    });
+  }
+
+  test('unanswered: the sidebar and the export gate both say incomplete', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Part XI Unanswered Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.remuneration = [];
+      if (w.D.scheduleNoItems) w.D.scheduleNoItems.remuneration = false;
+    });
+    const state = await partXiState(page);
+    expect(state.blocked, 'an unanswered Part XI must block export').toBe(true);
+    expect(state.navComplete, 'the sidebar must agree').toBe(false);
+  });
+
+  test('declaring none answers it', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Part XI None Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    await page.evaluate(() => {
+      const w = window as any;
+      w.D.remuneration = [];
+      w.D.scheduleNoItems = { ...(w.D.scheduleNoItems || {}), remuneration: true };
+    });
+    const state = await partXiState(page);
+    expect(state.blocked).toBe(false);
+    expect(state.navComplete).toBe(true);
+  });
+
+  test('a complete entry answers it; an incomplete one does not', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Part XI Rows Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+
+    const complete = await page.evaluate(async () => {
+      const w = window as any;
+      w.D.scheduleNoItems = { ...(w.D.scheduleNoItems || {}), remuneration: false };
+      w.D.remuneration = [{ guardian: 'Rachel Alvarez', type: 'Guardian Fee', amount: '1200', description: '' }];
+      return { navComplete: w.computeNavChecks().checks['a-p11'],
+        blocked: w.validateAnnual().some((m: any) => /Part XI/i.test(String(m.message))) };
+    });
+    expect(complete.blocked, 'a complete entry answers Part XI').toBe(false);
+    expect(complete.navComplete).toBe(true);
+
+    // Description stays optional -- the data model records it so, and the
+    // editor asterisk claiming otherwise was the actual error.
+    const partial = await page.evaluate(() => {
+      const w = window as any;
+      w.D.remuneration = [{ guardian: 'Rachel Alvarez', type: '', amount: '', description: '' }];
+      return { navComplete: w.computeNavChecks().checks['a-p11'],
+        blocked: w.validateAnnual().some((m: any) => /Part XI/i.test(String(m.message))) };
+    });
+    expect(partial.blocked, 'a half-entered row is not a declaration').toBe(true);
+    expect(partial.navComplete).toBe(false);
+  });
+
+  test('entered rows win over a stale no-items flag, and the rows are kept', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Part XI Stale Flag Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    const out = await page.evaluate(() => {
+      const w = window as any;
+      const d = { ...w.D, scheduleNoItems: { ...(w.D.scheduleNoItems || {}), remuneration: true },
+        remuneration: [{ guardian: 'G', type: 'Fee', amount: '50', description: '' }] };
+      w.normalizeWardData(d);
+      return { flag: d.scheduleNoItems.remuneration, rows: d.remuneration.length };
+    });
+    expect(out.flag, 'the contradicted declaration is withdrawn').toBe(false);
+    expect(out.rows, 'entered data is never discarded to resolve the contradiction').toBe(1);
+  });
+
+  test('a legacy filing of only blank rows normalizes so the declaration is reachable', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Part XI Legacy Ward', 'annual');
+    const out = await page.evaluate(() => {
+      const w = window as any;
+      const d = { wardName: 'x', remuneration: [{ guardian: '', type: '', amount: '', description: '' }] };
+      w.normalizeWardData(d);
+      return d.remuneration.length;
+    });
+    expect(out, 'the blank placeholder that hid the checkbox is cleared').toBe(0);
+  });
+});
+
 test.describe('Milestone 57: Simplified attorney signature parity, Parts V and VI', () => {
   type SigCase = { label: string; state: string; date: string; image: string; complete: boolean };
 

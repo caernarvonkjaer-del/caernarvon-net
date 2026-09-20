@@ -6365,6 +6365,25 @@ function normalizeWardData(d){
   // read as "already acknowledged", since that would silently retire a prompt
   // the filer never saw.
   try{ window.normalizeScheduleDocsAck?.(d); }catch(e){}
+  // Milestone 58D: reconcile Part XI's two ways of saying "nothing to report".
+  //
+  // A .sav written before 58D carries the seeded blank placeholder row, which
+  // hides the no-items declaration behind deleting it. Normalising an array
+  // whose rows are ALL blank to [] exposes that control without touching a
+  // filing that has real entries. Nothing is ever deleted here: a row with any
+  // content survives untouched.
+  //
+  // And if a stale `no items` flag sits beside real rows -- ticked, then rows
+  // added later by another path -- the rows win and the flag is cleared. The
+  // entered data is the stronger statement of intent, and leaving both set
+  // would file a declaration contradicting the schedule printed beside it.
+  try{
+    if(Array.isArray(d.remuneration)){
+      const populated=d.remuneration.filter(r=>r&&(r.guardian||r.type||r.amount||r.description));
+      if(populated.length===0&&d.remuneration.length>0)d.remuneration=[];
+      if(populated.length>0&&d.scheduleNoItems&&d.scheduleNoItems.remuneration)d.scheduleNoItems.remuneration=false;
+    }
+  }catch(e){}
   const migrateBoolean=(obj,field,legacyField=null)=>{
     if(!obj||typeof obj!=='object')return;
     const current=obj[field];
@@ -6742,7 +6761,15 @@ function computeNavChecks(){
         &&(D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate)),
       'a-p10':filled(D.certDate)&&filled(D.certRecipients?.[0]?.name)
         &&datesOrdered(D.periodTo,D.certDate,true),
-      'a-p11':verifiedEmpty('remuneration')||(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type)&&filled(r.amount))),
+      // Milestone 58D: Part XI is complete once it is ANSWERED -- either the
+      // no-items declaration is ticked, or there is at least one populated row
+      // and every populated row is complete. Previously an untouched Part XI
+      // counted as complete, so the sidebar reported a filing ready that the
+      // statute says is missing its remuneration declaration. Matches
+      // validateAnnual()'s rule exactly; both changed together.
+      'a-p11':verifiedEmpty('remuneration')
+        ||((D.remuneration||[]).some(r=>rowHasAnyData(r))
+           &&(D.remuneration||[]).every(r=>!rowHasAnyData(r)||(filled(r.guardian)&&filled(r.type)&&filled(r.amount)))),
       'a-scha':rowsComplete(D.schA,['payer','description','bank','accountNo','amount'],'scha'),
       'a-schb1':rowsComplete(D.schB1,['bankAcct','checkNo','datePaid','payee','amount'],'schb1'),
       'a-schb2':rowsComplete(D.schB2,['bankAcct','checkNo','datePaid','payee','amount'],'schb2'),

@@ -97,7 +97,13 @@ export const ANNUAL_EXCEL_CAPS={
   schE:{cap:27,label:'Schedule E — Bank Transfers',route:'/sche'},
   schF1:{cap:8,label:'Schedule F-1 — Sales of Real Property',route:'/schf1'},
   schF2:{cap:11,label:'Schedule F-2 — Sales of Personal Property',route:'/schf2'},
-  remuneration:{cap:25,label:'Part XI — Remuneration',route:'/p11'},
+  // Milestone 58D: cap 0, not 25. The court's PART XI sheet has no entry grid
+  // at all -- one statutory paragraph in a merged A:G band, and nothing to
+  // fill in -- so the workbook cannot carry a single remuneration entry, let
+  // alone 25. `unsupported` replaces the generic "template holds N" wording
+  // with one that tells the filer what to do instead.
+  remuneration:{cap:0,label:'Part XI — Remuneration',route:'/p11',
+    unsupported:"the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full."},
 };
 export async function doSaveExcel(){
   const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
@@ -478,19 +484,25 @@ export async function doSaveExcel(){
       setCell(p10,'G25',fD(inv.certAttySignDate));
     }
 
-    // Part XI — remuneration
-    const p11=workbook.getWorksheet('PART XI');
-    if(p11){
-      const entries=(inv.remuneration||[]).filter(r=>r.guardian||r.type||r.amount||r.description);
-      entries.forEach((r,i)=>{
-        const row=16+i;
-        if(row>40)return;
-        setCell(p11,`B${row}`,r.guardian||'');
-        setCell(p11,`D${row}`,r.type||'');
-        setCell(p11,`F${row}`,r.description||'');
-        setCell(p11,`I${row}`,nv(r.amount));
-      });
-    }
+    // Part XI — remuneration is NOT written to the workbook. Milestone 58D.
+    //
+    // This used to write each entry to B/D/F/I on rows 16-40. Read against the
+    // court's own PART XI sheet, every one of those targets is wrong: rows
+    // 6-32 are merged full-width A:G bands carrying the 744.367(3)(a)
+    // paragraph, column I falls outside the print area ('PART XI'!$A$1:$G$32),
+    // and rows 33-40 are past the end of the sheet. There is no entry grid --
+    // no column headers, no table, no data validation, no named range.
+    //
+    // The effect on a real filing: a guardian who entered remuneration and
+    // filed the Excel workbook filed a Part XI containing only the statutory
+    // paragraph. The declaration the statute requires was silently absent, and
+    // nothing told them. Inventing a grid where the court published none is
+    // exactly what AGENTS.md section 5 forbids.
+    //
+    // Populated entries now stop the Excel export instead, through the
+    // existing non-bypassable Excel-only capacity gate (see EXCEL_LIMITS
+    // above, cap 0), which leaves PDF -- where Part XI prints in full --
+    // untouched.
 
     // The court's workbook ships every printed page of every schedule, and the
     // writer fills only the ones a filing needs. Without this a guardian with

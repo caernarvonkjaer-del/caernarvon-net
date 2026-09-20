@@ -336,6 +336,13 @@ async function removeB4Account(index, route) {
 }
 
 function addAnnualRow(collection, route) {
+  // Milestone 58D: adding an entry answers Part XI by itself, so a previously
+  // ticked "no items to report" declaration is withdrawn rather than left to
+  // contradict the row being added. Keyed on the collection name, which is the
+  // scheduleNoItems key for remuneration; the schedules whose flag is keyed
+  // differently (`scha` against collection `schA`) are outside 58D's scope and
+  // are unaffected either way.
+  if (window.D?.scheduleNoItems?.[collection]) window.D.scheduleNoItems[collection] = false;
   if (addCollectionRow(collection, window.D)) {
     autoSave();
     navigate(route);
@@ -1462,7 +1469,7 @@ function pagePart11Annual(){
         <div class="col-md-4">${inpD('Guardian Name',r.guardian,`D.remuneration[${i}].guardian=this.value`,true)}</div>
         <div class="col-md-4">${inpD('Type',r.type,`D.remuneration[${i}].type=this.value`,true)}</div>
         <div class="col-md-4">${inpD('Amount',r.amount,`D.remuneration[${i}].amount=this.value`,true,'number')}</div>
-        <div class="col-12">${inpD('Description',r.description,`D.remuneration[${i}].description=this.value`,true)}</div>
+        <div class="col-12">${inpD('Description',r.description,`D.remuneration[${i}].description=this.value`,false)}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -1621,6 +1628,20 @@ export function validateAnnual(){
   checkRows(d.schB3,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-3','schB3');
   checkRows(d.schB4,[['checkNo','Check #'],['datePaid','Date Paid'],['category','Category'],['payee','Payee'],['amount','Amount']],'Schedule B-4','schB4');
   checkRows(d.remuneration,[['guardian','Guardian Name'],['type','Type'],['amount','Amount']],'Part XI — Remuneration','remuneration');
+  // Milestone 58D: Part XI must be answered one way or the other before this
+  // filing leaves. Per 744.367(3)(a) the annual report "must include a
+  // declaration of all remuneration received by the guardian from any source",
+  // so a filing that never says either "here is what I received" or "I
+  // received none" is missing something the statute requires -- and until now
+  // it exported silently, because both the sidebar and this validator ignored
+  // a schedule with no populated rows.
+  //
+  // This is a NEW requirement, not a parity repair: on Part XI the two sides
+  // already agreed. See MILESTONE-58-PROPOSAL.md's correction in that section.
+  if(!(d.scheduleNoItems&&d.scheduleNoItems.remuneration===true)
+     &&!(d.remuneration||[]).some(r=>r&&(r.guardian||r.type||r.amount||r.description))){
+    errs.push(issue('Part XI — Remuneration — declare the remuneration received, or verify there is none to report','scheduleNoItems.remuneration'));
+  }
   checkRows(d.schC,[['description','Description'],['date','Date of Adjustment']],'Schedule C','schC');
   (d.schC||[]).forEach((r,i)=>{
     if(!rowHasAnyData(r))return;

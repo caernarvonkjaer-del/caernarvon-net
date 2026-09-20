@@ -1117,7 +1117,15 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Part XI: Remuneration ──────────────────────────────────────────────────
   const remList = (d.remuneration || []).filter(r => r && (r.amount || r.guardian || r.type || r.description));
-  if (remList.length > 0) {
+  // Milestone 58D: Part XI prints on every Annual filing, not only when there
+  // are entries. 744.367(3)(a) requires the report to INCLUDE a declaration of
+  // remuneration, and "no section at all" is not a declaration -- a reader
+  // cannot tell a guardian who received nothing from a form that omitted the
+  // question. With no entries the section now carries the statutory paragraph
+  // and an explicit statement that none was received, which is what the filer
+  // affirmed to get here (export is blocked until Part XI is answered).
+  const remDeclaredNone = !!(d.scheduleNoItems && d.scheduleNoItems.remuneration);
+  if (remList.length > 0 || remDeclaredNone) {
     sections.push({
       id: 'part11',
       title: 'Part XI — GUARDIAN(S) DECLARATION OF REMUNERATION',
@@ -1131,7 +1139,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           tag: 'P',
           text: 'Per 744.367(3)(a), the annual guardianship report must include a declaration of all remuneration received by the guardian from any source for services rendered to or on behalf of the ward.',
         },
-        {
+        remList.length > 0 ? {
           type: 'table',
           tag: 'Table',
           title: 'Declaration of Remuneration',
@@ -1145,6 +1153,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
           ]),
           colWidths: [6, 22, 18, 38, 16],
           colAlign: ['center', 'left', 'left', 'left', 'right'],
+        } : {
+          type: 'notice',
+          tag: 'P',
+          title: 'Declaration of Remuneration',
+          text: 'No remuneration reported for this period.',
         },
       ],
     });

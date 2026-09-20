@@ -116,6 +116,12 @@ export const MINIMAL_VALID_ANNUAL = {
   attorney_cityStateZip: 'Clearwater, FL 33755',
   attorney_signatureDate: '2027-01-05',
   certRecipients: [{ name: 'Sample Recipient' }],
+  // Milestone 58D made Part XI answerable and required: 744.367(3)(a) says the
+  // annual report must include a declaration of remuneration, so a filing this
+  // fixture calls export-ready has to make one. This fixture declares none, the
+  // same shape as the bond waiver 57A added above. A test needing real entries
+  // sets `remuneration` itself, which clears this flag on load.
+  scheduleNoItems: { remuneration: true },
 } as const;
 
 /** Applied over initializeEmptyData('simplified'). Mirrors validateSimplified(). */
