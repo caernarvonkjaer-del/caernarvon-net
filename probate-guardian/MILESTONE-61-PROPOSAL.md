@@ -2,7 +2,38 @@
 
 ## Status
 
-**DRAFT — findings and proposed fixes only. No implementation is authorized.**
+**DRAFT — decided, not yet authorized. No implementation may begin until the
+requester says so by name (`AGENTS.md` §3).**
+
+Every open content question in this document was answered by the requester
+on 2026-09-20; the decisions are recorded inline at each finding and
+consolidated here. What remains is the authorization itself, not further
+analysis.
+
+**Decisions recorded 2026-09-20:**
+
+- **61D, Annual's "Note 1" (rights-consistency):** add to the filed PDF, as
+  a standalone note matching the source form's own placement.
+- **61D, Annual's and Initial's Disaster Plan note:** add to the filed PDF,
+  citing **Administrative Order 2024-025** and including its
+  minor-parent-guardian exemption — *not* the source PDFs' rescinded "AO
+  2019-005" wording.
+- **61D, Simplified's county-specific filing/procedural-assistance
+  content:** **not** filed-PDF content. Write it into in-app Help instead,
+  pointing filers at the clerk's own current contact information.
+- **61E, Simplified's preparer/attorney certification pages:** **remove**
+  them from the filed PDF, so Simplified's output matches its own source
+  form exactly.
+- **61E follow-on, Simplified's preparer/attorney UI capture:** **keep** the
+  UI fields. Only the PDF rendering comes out. 61A's schema/factory fix is
+  therefore still required — for internal data integrity, not for filed
+  output (see the note added to 61A).
+- **61F (Plan Minor's certification wording):** no action — the app already
+  corrects a defect in its own source form. Recorded as accepted, not as an
+  open gap.
+- **61H (Initial's statute citation):** no code change — the evidence points
+  to a typo in the supplied source PDF, not in this app.
+- **Full `npm test` regression at completion: authorized** (`AGENTS.md` §2).
 
 Baseline: MS 60 completion tree, including the four plan features:
 
@@ -82,6 +113,19 @@ write: `preparer_name`, `preparer_phone`, `preparer_email`,
 `attorney_cityStateZip` — no TIN field, no signature-stamp state for either
 role. Adding fields nothing reads would itself be an unrequested schema
 change.
+
+**Still required after 61E's removal decision (2026-09-20).** The requester
+decided that Simplified's preparer/attorney certification *pages* come out
+of the filed PDF (61E) while the *UI capture* stays. That makes these
+fields app-internal rather than filed content, which changes their purpose
+but not the fix: the factory must still initialize them, or values a filer
+enters this session still vanish from the saved case file on reload. Record
+them in `probate-guardian-data-model.csv` as captured-but-not-filed for
+`plan_simplified`, so the next reviewer does not read their absence from
+the PDF as the schema bug being back. Note that after 61E, the pdf-model
+citations above (`plan-simplified/pdf-model.js:137-163`) describe code that
+will no longer exist — the field list itself is derived from
+`index.js:298-326`, which is unaffected.
 
 ### 61B — Partial collection rows can disappear from output
 
@@ -202,6 +246,13 @@ policy/legal call, not a code question.**
   the `certPhysicianAttached`/`certRecognizeRights` certification checkboxes
   (`:525-526`), which do have source counterparts — only the two standalone
   notes are missing.
+
+  **Decided 2026-09-20 — Note 1: add to the filed PDF**, as a standalone
+  notice in the position the source form uses (near the top, ahead of Q1),
+  not folded into the certification page. Citrus County's version of the
+  same form places the identical sentence as a lead-in above its
+  certification checklist instead; that is a different circuit's layout
+  choice, and this app follows its own circuit's source.
 - **Initial** omits a disaster-plan instruction on page 8
   (`plan-initial-original.txt:346-350`, the same Administrative Order
   2019-005): "you must file a separate Disaster Plan when filing an initial
@@ -229,6 +280,17 @@ policy/legal call, not a code question.**
   looks wrong and the app looks right; here, the source PDFs' *content* is
   still substantively right but their *citation* has gone stale since
   whichever printing was used to prepare them.
+
+  **Decided 2026-09-20 — add to the filed PDF for both Annual and Initial,
+  citing AO 2024-025 and carrying its minor-parent-guardian exemption.**
+  Shape it as a standalone note, not a numbered question: the 6th Circuit's
+  own Initial form deleted its numbered disaster-preparedness question
+  (leaving the orphaned gap between Q7 and Q9 that Citrus County's form
+  still fills with a numbered "8. Disaster Preparedness" section) and moved
+  this content to a free-standing note instead. Follow the circuit's own
+  choice. Do not reintroduce a numbered question, and do not renumber
+  anything to close the Q7→Q9 gap — that gap is the source form's, and
+  closing it would make this app's output disagree with the court's.
 - **Simplified** omits county-specific filing addresses, phone numbers,
   emails, and procedural-assistance contacts for both counties this form
   names — Pinellas (Clerk of the Circuit Court, 315 Court Street Room 106,
@@ -245,6 +307,17 @@ policy/legal call, not a code question.**
   Pinellas/Pasco detail unconditionally — or the requester should confirm
   this filing type really is restricted to those two counties before the
   fix is written as a static block.
+
+  **Decided 2026-09-20 — this is not filed-PDF content.** Put the filing and
+  procedural-assistance guidance into in-app Help
+  (`src/features/help/help-content.js`, where this app already keeps
+  filing-deadline and procedure guidance), pointing filers at the clerk's
+  own current contact information rather than hardcoding street addresses,
+  phone numbers and email addresses into a generated court document where
+  they would silently go stale. The PDF keeps its existing generic filing
+  sentence (`plan-simplified/pdf-model.js:191-193`); no county branching is
+  needed in the PDF path, and the open question about whether this filing
+  type is restricted to Pinellas/Pasco no longer blocks anything.
 
 The proposal must not assume that every source-form instruction belongs in the
 filed PDF. Each item needs a product/legal decision: filed-document content,
@@ -267,6 +340,19 @@ defect — it is content with no counterpart anywhere in this form's own
 original. The product must not describe Plan Simplified's output as an
 exact source-form reproduction unless this addition is explicitly accepted
 as a supplemental extension.
+
+**Decided 2026-09-20 — remove them.** Plan Simplified's filed PDF will
+match its own source form: guardian / guardian-advocate signature blocks,
+then the filing notice, and nothing else. Delete the two `notice` +
+`signature-block` pairs at `plan-simplified/pdf-model.js:180-189` (the
+`prep` and `atty` blocks built at `:138-163` become unreferenced and go
+with them). **The UI capture stays** — `plan-simplified/index.js:298-326`
+is unchanged, and 61A's schema/factory fix still lands, because the app
+continues to record who prepared and reviewed the filing even though that
+no longer prints on the filed document. Anyone reading the two files
+together afterwards will see fields captured and persisted but never
+rendered; that is the intended end state, recorded here so it is not
+"fixed" back later by someone who finds it surprising.
 
 **Correction: Plan Minor's preparer and attorney certification blocks are
 not an extension — they mirror the original form exactly.** The Minor
@@ -514,29 +600,51 @@ either renders them or blocks with a field-specific error, **and that the
 sidebar's own "complete" check does not disagree with the validator for the
 same state** — it must never silently omit the row from any of the three.
 
-### Phase 3 — 61D/61E content decisions and implementation
+### Phase 3 — 61D/61E content, as decided 2026-09-20
 
-Only after requester/legal review, add approved source instructions to the
-filed PDF models or move them into Help/guidance content. Document whether
-Plan Simplified's preparer/attorney pages are approved supplemental output
-(61E is now Simplified-only). If Annual's/Initial's disaster-plan content is
-approved, cite Administrative Order 2024-025, not the source PDFs' "AO
-2019-005" — that order is rescinded — and include the minor-parent-guardian
-exemption 2024-025 added that the source PDFs' own text does not carry (see
-61D). Do not resolve legal sufficiency in code or in this proposal.
+The content questions are settled (see Status). This phase implements those
+answers; it does not reopen them. Four separate changes:
 
-### Phase 4 — 61F Plan Minor certification wording (optional; likely no action)
+1. **Annual — add "Note 1"** (rights-consistency) to
+   `plan-annual/pdf-model.js` as a standalone `notice` on the cover
+   section, positioned ahead of Q1 as the source form has it. Text follows
+   `plan-annual-original.txt:46-49`.
+2. **Annual and Initial — add the Disaster Plan note**, as a standalone
+   `notice` in each model, citing **Administrative Order 2024-025** and
+   including its minor-parent-guardian exemption
+   (`reference/administrative-orders/AO-2024-025-guardianship-procedures.txt:203-214`).
+   Do not copy the source PDFs' "AO 2019-005" sentences — that order is
+   rescinded (`:267`). Do not add a numbered question or renumber anything;
+   the Q7→Q9 gap in Initial's source stays as the court has it.
+3. **Simplified — move filing/procedural guidance to Help.** Add the
+   clerk-contact and procedural-assistance guidance to
+   `src/features/help/help-content.js`, pointing at the clerk's current
+   published contact information rather than transcribing addresses and
+   phone numbers. The PDF's existing generic filing sentence is unchanged.
+4. **Simplified — remove the preparer/attorney certification pages** from
+   `plan-simplified/pdf-model.js` (`:180-189`, plus the now-unreferenced
+   `prep`/`atty` builders at `:138-163`). Leave
+   `plan-simplified/index.js:298-326` alone: the UI keeps capturing this
+   data, and Phase 1's schema fix still applies to it.
 
-61F is not a fidelity defect this app introduced — the source form's own
-attorney-certification paragraph misnames itself, and the app already
-corrected the name before this review found the issue. No action is
-proposed unless the requester specifically wants Plan Minor's wording
-brought into line with the corrected display name ("Annual Plan —
-Minors") or with the level of detail Annual's/Initial's equivalent
-paragraphs carry. If so: change the literal text at
-`plan-minor/pdf-model.js:273`, and add a red-first extracted-text check for
-whatever exact string is chosen — there is no wrong string to detect this
-against, only the requester's preferred one.
+Red-first proof for each: extracted PDF text asserts the new notes are
+present where they were absent (items 1–2), that the preparer/attorney
+certification headings and signature blocks are *gone* from Simplified's
+output where they were present (item 4), and that Simplified's
+preparer/attorney values still round-trip through save/reload with nothing
+rendered in the PDF (items 3–4 together with Phase 1).
+
+Legal sufficiency of the wording is not resolved in code; the text is
+transcribed from the source form and the current Administrative Order,
+both committed under `reference/`.
+
+### Phase 4 — 61F Plan Minor certification wording: closed, no action
+
+**Decided 2026-09-20: no change.** The source form's own
+attorney-certification paragraph misnames itself; this app already
+corrects it. Nothing to implement. This phase exists only so the numbering
+matches the findings, and so a future reviewer who rediscovers the wording
+difference finds the decision rather than re-litigating it.
 
 ### Phase 5 — 61G notice-block titles
 
@@ -552,16 +660,24 @@ Red-first proof: pick one certification title and one empty-state title,
 confirm both are absent from extracted PDF text before the fix and present
 after, for the exact strings 61G cites.
 
-### Phase 6 — 61H statute-citation correction (blocked on a legal ruling, not a code question)
+**Interaction with Phase 3 — the count of thirteen is about to change.**
+Phase 3 item 4 deletes Simplified's preparer and attorney certification
+blocks, which carry two of the thirteen titled notices 61G enumerates
+(`plan-simplified/pdf-model.js:182` and `:187`). If Phase 3 lands first,
+61G reaches **eleven** call sites, not thirteen — and Phase 3 items 1–2 add
+new notices of their own, which may or may not carry titles depending on
+how they are written. Do not hardcode "thirteen" in a test or a commit
+message; re-run the grep against the tree as it stands when this phase
+starts, and take the count from that.
 
-Only after the requester or counsel names the correct statute for the
-Initial Guardianship Plan's 60-day deadline, update all five locations 61H
-lists to agree with it and with each other. Red-first proof: confirm the
-extracted PDF text and the three UI-text locations all carry the old,
-incorrect citation before the change and the confirmed one after, in a
-single commit — a fix that corrects the PDF model but not Help/dashboard/
-readiness (or vice versa) reintroduces the same inconsistency 61H
-documents.
+### Phase 6 — 61H statute citation: closed, no action
+
+**Decided 2026-09-20: no code change.** The evidence in 61H points to a
+digit transposition in the supplied source PDF (744.632 for 744.362), not
+to an error in this app's five citations. Nothing to implement. If the
+requester's own review of the statute ever contradicts this, 61H says what
+reopening it would involve — all five locations changed together, in one
+commit.
 
 ## Required tests and index updates
 
@@ -572,69 +688,90 @@ Expected test surface:
   PDF model, the validator, **and `computeNavChecks()`** for the same
   fixture — not just the first two.
 - PDF-model tests for secondary-only rows and optional co-guardians.
-- Extracted-text assertions for any approved instructional content.
-- Extracted-text assertion for Plan Minor's certification wording (61F),
-  matching whatever wording the requester chooses — only if 61F is
-  authorized at all; the current text is not a defect requiring a test to
-  fail against.
+- Extracted-text assertions that Annual's Note 1 and Annual's/Initial's
+  Disaster Plan note appear in the filed PDF (Phase 3 items 1–2), including
+  an assertion that the text cites AO **2024-025** and that the string
+  "2019-005" appears nowhere in any generated plan PDF.
+- Extracted-text assertion that Simplified's output no longer contains the
+  preparer or attorney certification headings or signature blocks (Phase 3
+  item 4), paired with a save/reload test proving those same
+  `preparer_*`/`attorney_*` values still persist in state (Phase 1) — the
+  two together are the whole point of the "capture but do not file"
+  decision, and a test for either alone would miss a regression in the
+  other.
 - Extracted-text assertions that a `notice` block's `title` prints, covering
   at least one certification heading and one empty-state heading (61G).
-- Extracted-text / UI-text assertion that all five 61H locations cite the
-  same, requester-confirmed statute, once that statute is named.
+  Take the affected-call-site count from a fresh grep, not from this
+  document — Phase 3 changes it (see Phase 5).
 - Existing plan PDF/e2e specs for all four filing types.
 - `TEST-INDEX.md` updates for every added, moved, or repurposed spec.
 - `npm run verify:data-model` and `npm run check:types`.
 
-A full `npm test` regression requires explicit authorization under `AGENTS.md`.
+No tests are needed for 61F or 61H: both are closed with no code change.
+
+**A full `npm test` regression at completion is authorized** (requester,
+2026-09-20), as MS 60 had.
 
 ## Scope boundaries
 
-Included: plan-form UI-to-state-to-validator-to-PDF fidelity, schema coverage,
-row omission, optional co-guardian handling, explicitly approved source
-instructions/supplemental blocks, the PDF engine's dropped notice-block
-titles (61G), and the Initial Plan's statute-citation consistency (61H).
-Plan Minor's certification wording (61F) is included only if the requester
-separately asks for the optional wording change described in Phase 4 — the
-default outcome of 61F is no code change.
+Included: plan-form UI-to-state-to-validator-to-PDF fidelity (61A), schema
+coverage (61A), row omission (61B), optional co-guardian handling (61C),
+the four decided content changes in Phase 3 (61D/61E), and the PDF engine's
+dropped notice-block titles (61G).
 
-Excluded unless separately authorized:
+Excluded:
 
+- **61F and 61H** — both closed with no code change (Phases 4 and 6);
 - redesign of the plan forms;
-- any change to Plan Minor's certification wording without the requester
-  explicitly choosing the replacement (61F is optional to begin with);
-- resolving which Florida Statute currently governs the Initial Plan's
-  60-day deadline (61H) — a legal question this document does not answer,
-  not something to infer from the source PDF alone;
+- removing Simplified's preparer/attorney **UI** fields — the decision was
+  to drop the PDF pages only, and the capture stays;
+- renumbering Initial's questions to close the Q7→Q9 gap, or adding a
+  numbered disaster-preparedness question in the style of another
+  circuit's form;
+- transcribing clerk street addresses, phone numbers or email addresses
+  into any generated PDF — that content goes to Help;
 - changes to accounting/inventory forms already addressed by MS 60;
-- unrelated readiness or legacy-app refactors;
-- a full regression run without explicit approval.
+- unrelated readiness or legacy-app refactors.
 
 ## Acceptance criteria
 
 MS 61 is complete only when:
 
 1. Every UI-captured plan field is either represented in the canonical schema
-   and PDF output, or explicitly documented as UI-only.
+   and PDF output, or explicitly documented as captured-but-not-filed —
+   Simplified's `preparer_*`/`attorney_*` fields being the deliberate case
+   of the latter.
 2. Secondary-only collection data cannot silently disappear.
 3. Optional guardian rows have one documented started-row rule across
    validation and PDF output.
 4. Every source-form content divergence is either corrected or recorded as an
-   intentional, authorized product decision.
+   intentional, authorized product decision — including the three this
+   document closes with no code change (61E's Minor half, 61F, 61H).
 5. Legacy saves preserve existing data and initialize new fields safely.
-6. Plan Minor's certification wording is either left as-is (it already
-   corrects a defect in its own source form, per 61F) or changed to
-   wording the requester has explicitly chosen — never inferred.
-7. Every `notice` block's `title` prints wherever a PDF model sets one
+6. Annual carries Note 1; Annual and Initial carry the Disaster Plan note
+   citing AO 2024-025 with its minor-parent-guardian exemption; no
+   generated plan PDF anywhere references the rescinded AO 2019-005.
+7. Simplified's filed PDF contains no preparer or attorney certification
+   content, while the same values still survive a save/reload round trip.
+8. Every `notice` block's `title` prints wherever a PDF model sets one
    (61G), with no other filing type found to share the gap at
    implementation time.
-8. The Initial Guardianship Plan's 60-day-deadline statute citation is
-   consistent across all five locations 61H lists, using whichever
-   citation the requester or counsel confirms is correct.
 9. Targeted tests, data-model verification, type checks, and documentation
-   pass; the full regression is run only if authorized.
+   pass, and the authorized full `npm test` regression is green.
 
 ## Authorization
 
 No delivery in this document is authorized by its creation. Approval must name
 the specific phases/deliveries, any source-content decisions, and whether a
 full `npm test` regression is authorized.
+
+**As of 2026-09-20 the content decisions and the regression question are
+answered** (see Status) — every one of them by the requester, none inferred
+here. What is still missing is the instruction to begin. Nothing in
+`src/` may be touched until that arrives.
+
+Phases 0, 1, 2, 3 and 5 are the executable set. Phases 4 and 6 are closed
+with no action. A complete authorization is therefore as short as: *start
+MS 61, phases 0–3 and 5, per the decisions recorded in the Status
+section.* Anything narrower — a subset of phases, or a phase held back —
+authorizes only what it names (`AGENTS.md` §3).
