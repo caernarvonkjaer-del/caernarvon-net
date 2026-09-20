@@ -21,7 +21,7 @@ answer — the Disaster Plan item — was given, found to conflict with a
 deliberate prior decision this document had misdescribed as an open gap,
 put back to the requester with the conflict explained, and re-decided the
 same day. It is now closed with no code change. **Nothing in this document
-is awaiting a decision.** What remains is the authorization itself.
+is awaiting a decision.**
 
 **Decisions recorded 2026-09-20:**
 
@@ -865,3 +865,13 @@ authorizes only what it names (`AGENTS.md` §3).
 - **2026-09-20 — Phase 0.** Authorization recorded (see Status). Baseline
   commit and clean-tree state captured below; field inventory and red tests
   precede every later phase.
+- **2026-09-20 — Phase 1 (61A). Landed.** `emptyDataPlanSimplified()` now
+  initializes the six `preparer_*` and eight `attorney_*` fields this form's
+  own UI writes to, with 14 matching `probate-guardian-data-model.csv` rows
+  marking them captured-but-not-filed. No TIN, no per-role signature-stamp
+  state — a third test in the new spec guards against copying those from
+  plan-minor. Red-first: `tests/unit/plan-simplified-certification-schema.spec.js`
+  failed with "missing preparer_name" / "missing attorney_name" before the
+  factory change, passes after. `npm run verify:data-model` OK (942 rows).
+  Related specs re-run green: plan-simplified-parity, plan-tristate,
+  simplified-no-blank-pages, b4-export-plan, content-corrections (71 tests).

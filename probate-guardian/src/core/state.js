@@ -205,7 +205,19 @@ export function emptyDataPlanSimplified() {
     q8DNR:false, q8LivingWill:false, q8Surrogate:false, q8POA:false,
     q8Other:false, q8OtherText:'', q8None:false,
     q9Remuneration:'', q9RemunerationExplain:'',
-    planGuardians:[{name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}]
+    planGuardians:[{name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}],
+    // Milestone 61A. Captured by this form's UI (features/plan-simplified/
+    // index.js) but deliberately absent from its filed PDF -- the Simplified
+    // Annual Plan's court original ends at the guardian signatures, with no
+    // preparer or attorney certification page (61E). Without these keys a
+    // value typed into a new filing was dropped on reload. Deliberately NOT
+    // mirroring emptyDataPlanMinor()'s preparer_tin or per-role
+    // signature-stamp state: nothing in this form reads them.
+    preparer_name:'', preparer_phone:'', preparer_email:'',
+    preparer_mailingStreet:'', preparer_cityStateZip:'', preparer_signatureDate:'',
+    attorney_name:'', attorney_bar:'', attorney_phone:'', attorney_signatureDate:'',
+    attorney_email:'', attorney_secondary_email:'', attorney_street:'',
+    attorney_cityStateZip:''
   };
 }
 
