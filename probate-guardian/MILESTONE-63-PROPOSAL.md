@@ -11,7 +11,7 @@ further items will be appended as they are raised.
 | **63A** | Guardian Inventory marks six pages incomplete but never says why | Proposed — **D1, D2, D11 decided** (explain, don't block; all filing types; fix R5 routing in 63A); **authorized 2026-09-21** (execution order below) |
 | **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | **IMPLEMENTED 2026-09-21** (D3: shown only while it applies; D4: 57B recorded as landed without a recorded authorization) — unit 1353/1353; 151 affected e2e passed, 0 failed; see the implementation record under 63B |
 | **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | **IMPLEMENTED 2026-09-21** (D5 + D12: panel, no auto-reload, with Amendment A) — unit 1340/1340; hosted-build profile 34 passed, 0 failed; see the implementation record under 63C |
-| **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | Proposed — **D6 decided** (option 1); **authorized 2026-09-21** (execution order below) |
+| **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | **IMPLEMENTED 2026-09-21** (D6: the note on all 16 signing pages, none elsewhere; Simplified Part III's copy moved to Part IV) — unit 1587/1587; 80 affected e2e passed, 0 failed; see the implementation record under 63D |
 | **63E** | UCN on the printed filing, on the Case # line of the header, all forms | Proposed — **D7–D10 decided** (option 1 each; Excel does not carry UCN); **authorized 2026-09-21** (execution order below) |
 
 ---
@@ -1032,6 +1032,48 @@ in a browser on a blank filing; the note's presence, whether it is the first
 element after the `<h1>`, and the signature-control count matched the table on
 all 16 pages (Simplified Part III: note present, zero signature controls).
 
+### 63D — implementation record (2026-09-21)
+
+**Changed.** New `src/core/signature/preparer-note.js` — the one text
+(`PREPARER_NOTE_TEXT`) and `preparerNoteHTML()`. *Deviation from the write-up:* it
+proposed the helper inside `signature-state-control.js`; that module imports the
+party resolver and the dialogs, which a plain unit test cannot load, so the helper
+is a separate dependency-free module. All seven feature modules now render
+`${preparerNoteHTML()}` as the first element under the `<h1>` of **all 16** pages
+that render a signature control, and the seven hand-typed copies are gone:
+Initial Inventory D-1, D-2, D-5; Annual Part III, IV, V, X; Simplified Part IV, V,
+VI; Plan-Simplified Signatures; Plan-Initial guardians and attorney; Plan-Annual
+Signatures; Plan-Minor guardians and preparer/attorney. **D6:** Simplified Part III
+(a declaration with no signature control) loses the note; Part IV, where the
+guardians sign, gains it. The three Plan pages that had it below the checkboxes
+now have it at the top. The PDF still never carries it.
+
+**Tests (red first).**
+- `tests/unit/preparer-note.spec.js` **rewritten**: the page set is *derived* from
+  source (every top-level page function in `src/features/*/index.js` that calls
+  `renderSignatureStateControl()`), not listed. Against the untouched pages all 16
+  signing pages failed and all seven files failed the no-hand-typed-copy check.
+  249 cases now (parametrized over the derived pages).
+- New `tests/e2e/preparer-note-placement.spec.ts` (7 cases, one per filing type; the
+  page list comes from the sidebar). Against the pre-63D pages, **six of seven
+  failed** — Plan-Simplified passed because its single signing page already had
+  the note first — naming exactly the diagnosed pages: D-2, Annual Part IV,
+  Simplified Part III (stray), and Plan-Initial /p9, Plan-Annual /p11 and
+  Plan-Minor /p6 (below the fold). After: all seven pass. This is the accepted
+  verification boundary for placement.
+- Four byte-identical text snapshots updated, expected strings only:
+  `plan-initial-mount`, `plan-annual-mount`, `plan-minor-mount` (the note moves to
+  directly under the heading) and `simplified-mount` (Part III loses it).
+  `plan-simplified-mount` was already correct.
+- `TEST-INDEX.md`: the `preparer-note.spec.js` row rewritten; new row for the placement spec.
+
+**Verification.** Full unit suite **1587/1587**; `npm run check:types` clean;
+window-bridge and index guards pass (no new `window` name). Source-target e2e —
+the four snapshot specs, `plan-simplified-mount`, `annual-mount`,
+`guardian-inventory-mount`, `guided-tour-navigation` and the new placement spec:
+**80 passed, 0 failed**. The full `npm test` regression was **not** run here (it
+runs once, after 63E, as instructed).
+
 ---
 
 ## 63E — UCN on the printed filing, beside Case # in the header
@@ -1262,7 +1304,7 @@ not begin until the previous one is committed and green.
 | 63A | **AUTHORIZED** | 2026-09-21, Alan (requester) — all five, in the order below | includes the bounded R5 investigation (stop-and-split rule) |
 | 63B | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | D4's 57-doc edits made in the same commit; committed locally, not pushed |
 | 63C | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | includes Amendment A; committed locally, not pushed |
-| 63D | **AUTHORIZED** | 2026-09-21, Alan (requester) | |
+| 63D | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | committed locally; pushed with the rest of MS 63 after the final e2e |
 | 63E | **AUTHORIZED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included |
 
 **Recommended execution order** (from the second review; adopted here as a

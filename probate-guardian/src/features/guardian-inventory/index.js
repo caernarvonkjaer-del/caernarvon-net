@@ -14,6 +14,7 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
@@ -1041,7 +1042,7 @@ function pageD1(){
   const addCoBtn=D.guardians.length<3?`<button class="btn btn-outline-secondary btn-sm mb-3 no-print" data-inventory-action="add-guardian">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
   <h1>Part III: Guardian(s) Attestation</h1>
-  <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
+  ${preparerNoteHTML()}
   <div class="schedule-instructions">
     UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.
   </div>
@@ -1052,6 +1053,7 @@ function pageD1(){
 function pageD2(){
   return `<div class="schedule-page">
   <h1>Part IV: Preparer &amp; Guardian Attorney Attestations</h1>
+  ${preparerNoteHTML()}
   <div class="row g-3 card-grid-2col">
   <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Preparer Signature</h2>
@@ -1166,6 +1168,7 @@ function pageD5(){
   const addBtn2=D.serviceRecipients.length<4?`<button class="btn btn-outline-secondary btn-sm mb-4 no-print" data-inventory-action="add-recipient">+ Add Recipient</button>`:'';
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
+  ${preparerNoteHTML()}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
   ${renderServiceAttestationRow({html:window.yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
   ${D.serviceNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}`}

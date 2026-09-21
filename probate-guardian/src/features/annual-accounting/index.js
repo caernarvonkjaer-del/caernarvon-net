@@ -34,6 +34,7 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/fo
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
 import { b4AccountHeading, createBankAccountId } from '../../core/accounting/bank-accounts.js';
@@ -690,7 +691,7 @@ function pagePart3Annual(){
   const addCoBtn=d.guardians.length<3?`<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-annual-action="add-row" data-collection="guardians" data-route="/p3">+ Add Co-Guardian</button>`:'';
   return `<div class="schedule-page">
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
-  <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
+  ${preparerNoteHTML()}
   <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
   ${addCoBtn}
@@ -704,6 +705,7 @@ function pagePart4Annual(){
   const copy=filingCopy(annualDescriptor(d));
   return `<div class="schedule-page">
   <h1>Part IV — Preparer Attestation</h1>
+  ${preparerNoteHTML()}
   <div class="attestation-text">${esc(copy.preparerStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo))).replace(/\n/g,'<br>')}</div>
   <div style="color:var(--brand-text);font-size:.8rem;font-weight:700;margin-bottom:.75rem;">*** If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE. ***</div>
   <div class="row g-3 card-grid-2col">
@@ -737,6 +739,7 @@ function pagePart5Annual(){
   const copy=filingCopy(annualDescriptor(d));
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
+  ${preparerNoteHTML()}
   <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo),d.attorney_county||d.county||'[county]'))}</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
@@ -1430,6 +1433,7 @@ function pagePart10Annual(){
   }).join('');
   return `<div class="schedule-page">
   <h1>Part X — Guardian Attorney Certificate of Service</h1>
+  ${preparerNoteHTML()}
   <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
   <div class="row g-2 mb-3">
     <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>

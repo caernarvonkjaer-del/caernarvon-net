@@ -13,6 +13,7 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { confirmModal } from '../../core/ui/dialogs.js';
 // Milestone 41-3: only renderReportingPeriodFields() fits this filing type,
 // and it fits twice (the Cover page's "Accounting Period" pair and the Part
@@ -495,7 +496,6 @@ function pagePart3(){
   const d=window.D;
   return `<div class="schedule-page">
     <h1>Part III — Guardian(s) Declaration</h1>
-    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.</div>
     <div class="schedule-instructions">These dates should match the accounting period on the Cover page. They will appear in the printed Part III declaration.</div>
     <div class="row g-3">
@@ -534,6 +534,7 @@ function pagePart4(){
   const addCoBtn=(d.guardians||[]).length<3?`<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-simplified-action="add-guardian">+ Add Co-Guardian</button>`:'';
   const conflictControls=conflicts.map(conflict=>`<div class="validation-panel mb-3"><div class="validation-title">Guardian address needs your decision</div><div class="validation-sub">Guardian #${conflict.rowIndex+1}: the saved residence value and recovered legacy value differ.</div><div class="d-flex gap-2 mt-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-simplified-action="resolve-guardian-address-conflict" data-index="${conflict.rowIndex}" data-field="${conflict.field}" data-choice="canonical">Keep residence value</button><button type="button" class="btn btn-outline-primary btn-sm" data-simplified-action="resolve-guardian-address-conflict" data-index="${conflict.rowIndex}" data-field="${conflict.field}" data-choice="legacy">Use recovered legacy value</button></div></div>`).join('');
   return `<div class="schedule-page"><h1>Part IV — Guardian(s) Information</h1>
+  ${preparerNoteHTML()}
   <div class="schedule-instructions">All guardians of the property must sign and provide the most current address, telephone number, and social security number. Only reports with original signatures will be audited by the Clerk of the Court.</div>
   ${conflictControls}
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
@@ -546,6 +547,7 @@ function pagePart5(){
   const d=window.D;
   return `<div class="schedule-page">
     <h1>Part V — Guardian Attorney Signature</h1>
+  ${preparerNoteHTML()}
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3 card-grid-2col">
       <div class="col-12 col-lg-6">
@@ -590,6 +592,7 @@ function pagePart6(){
   }).join('');
   return `<div class="schedule-page">
     <h1>Part VI (Part X) — Guardian Attorney Certificate of Service</h1>
+  ${preparerNoteHTML()}
     <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
     <div class="row g-3 mb-3">
       <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>

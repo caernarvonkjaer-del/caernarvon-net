@@ -4,6 +4,7 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { startedRows } from '../../core/validation/row-started.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Tier 2 cards. This page's periodFrom/periodTo labels are
 // renderReportingPeriodFields()'s own defaults, so it reuses with zero
 // overrides. ssn and gid stay on inpS() (already Tier 1): this type's
@@ -608,6 +609,7 @@ function pagePlanASignatures(){
   };
   return `<div class="schedule-page">
     <h1>Signatures</h1>
+  ${preparerNoteHTML()}
     <h2 class="subsection-heading">Certification of Guardian(s)</h2>
     <div class="schedule-instructions">Check each statement that applies. If the ward's ability to exercise rights has changed since the order appointing you, you must either file a petition to remove or restore rights, or explain below why no change should be made.</div>
     <div class="plan-check-grid mb-3">
@@ -620,7 +622,6 @@ function pagePlanASignatures(){
       ${cb('certRecognizeRights','In exercising their powers, the guardian recognizes any rights retained by the ward (F.S. 744.363(6))')}
     </div>
     ${txtP('certRightsChangedExplain','If rights have changed and no petition is being filed, explain why',d.certRightsChangedExplain,3)}
-    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <div class="attestation-text mb-3">Under penalties of perjury, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.</div>
     <div class="row g-3 card-grid-2col mb-4">
       ${g.map((_,i)=>block(i,i?'Co-Guardian':'Guardian')).join('')}

@@ -7,6 +7,7 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Cover page's "Ward & Case Information" box has the exact
 // same field order as Plan Simplified's (wardName, caseNumber, county) --
 // both cards reuse unchanged, no card-level changes needed, confirming
@@ -597,6 +598,7 @@ function pagePlanISignatures(){
   };
   return `<div class="schedule-page">
     <h1>Certification and Signature of Guardian(s)</h1>
+  ${preparerNoteHTML()}
     <div class="schedule-instructions">If the Ward's ability to exercise rights has changed since the Order Determining Capacity and Appointing Guardian, the guardian must file a Petition to Remove or Petition to Restore Rights, as appropriate.</div>
     ${planCheckGroup('Check all that apply:',
       cb('certIncapacitatedNoCopy','The Ward was declared totally incapacitated and has not been given a copy of this plan')
@@ -606,7 +608,6 @@ function pagePlanISignatures(){
       +cb('certNoRestriction','The plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease')
       +cb('certProvidesCare',"The plan provides for the Ward's medical care and mental health treatment"),
       null,null,false)}
-    <div class="preparer-note">Preparer's note: Before attaching any signature on this page, confirm you have that party's actual legal authorization to sign on their behalf. Do not sign for a party you have not been authorized to sign for.</div>
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     <div class="row g-3 card-grid-2col mb-4">
       ${window.normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
@@ -622,6 +623,7 @@ function pagePlanIAttorney(){
   const d=window.D;
   return `<div class="schedule-page">
     <h1>Certification and Signature of Guardian's Attorney</h1>
+  ${preparerNoteHTML()}
     <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-lg-6">
