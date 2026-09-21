@@ -260,7 +260,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     expect(metadataObj).toContain('<dc:title>');
     expect(metadataObj).toContain(expectedTitle);
     expect(metadataObj).toContain('<dc:creator>');
-    expect(metadataObj).toContain('Probate Guardian');
+    expect(metadataObj).toContain('Guardian Forms');
 
     // 5. StructTreeRoot Object Validity: MUST resolve to /Type /StructTreeRoot (NOT /StructElem)
     expect(structTreeRootObj).toContain('/Type /StructTreeRoot');

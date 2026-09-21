@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { chooseNoPassword, createWard, gotoApp, startNewCase, dismissDynDialog } from './support/target';
 import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
-const warningText = 'Probate Guardian is already open in another tab. Save or close that tab before continuing here.';
+const warningText = 'Guardian Forms is already open in another tab. Save or close that tab before continuing here.';
 const target = currentTarget;
 
 test('detects a clean second tab and lets the notice be dismissed', { tag: '@origin-state' }, async ({ browser }) => {
@@ -106,7 +106,7 @@ test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', { tag:
   await installServiceWorkerMock(page);
   await gotoApp(page);
 
-  await expect(page.locator('#pwa-status-notice')).toContainText('A new version of Probate Guardian is available. Save or export your work, then reload.');
+  await expect(page.locator('#pwa-status-notice')).toContainText('A new version of Guardian Forms is available. Save or export your work, then reload.');
   await page.getByRole('button', { name: 'Reload now' }).click();
   await expect.poll(() => page.evaluate(() => (window as any).__swMessages)).toContainEqual({ type: 'ACTIVATE_UPDATE' });
 });

@@ -212,7 +212,8 @@ session's e2e pass needs to update:
 `pdf-accessibility-and-signatures.spec.ts`, `pdf-structure-tags.spec.ts`,
 `plan-initial-mount.spec.ts`, `plan-minor-mount.spec.ts`, `offline.spec.ts`,
 `plan-annual-mount.spec.ts`, `plan-simplified-mount.spec.ts`,
-`simplified-mount.spec.ts`, `tab-and-update.spec.ts`.
+`simplified-mount.spec.ts`, `tab-and-update.spec.ts`. (Done in the
+Verification follow-up pass below.)
 
 Verification: full-repo re-scan for `Probate Guardian` after the change
 matches only the excluded comment/doc files above (and gitignored `dist/`
@@ -360,13 +361,68 @@ their own tests add or on manual exports.
 ## Verification
 
 - `npm run test:unit`: full suite green, 1324/1324.
-- e2e specs touched by hand for items 1-8 (`routes.spec.ts`,
-  `guided-tour-navigation.spec.ts`); items 9-10's e2e specs were
-  **deliberately left unupdated and unrun, on the requester's explicit
-  authority** ("skip e2e, document on my authority" — any resulting
-  failures are expected to surface and be fixed the next time a full suite
-  runs for other work, not treated as a gap in this milestone). See each
-  item's own section above for exactly which files are affected. Nothing
-  was run against a real browser this session — see note in
-  `MILESTONE-57-REVIEW-HANDOFF.md`
-  about this environment's Playwright availability varying by session.
+- **Full regression (`npm test`, run on the requester's go-ahead): unit
+  1324/1324; e2e 696 passed, 6 skipped, 14 failed (1.0 h).** All 14 failures
+  are stale expectations of the old app name; the app is emitting "Guardian
+  Forms" as item 9 intends. Each was read, not assumed: the nine snapshot
+  failures (`plan-annual`/`plan-initial`/`plan-minor`/`plan-simplified`-mount
+  x2 each, `simplified-mount` x1) differ from the expected text by exactly one
+  line — the supporting-documents hint — and only in the app name, so the
+  byte-for-byte snapshots hid no unintended change. The rest: two PDF-metadata
+  specs (`pdf-accessibility-and-signatures` expects Author "Probate Guardian";
+  `pdf-structure-tags` expects it in the XMP) and three `tab-and-update`
+  assertions (multi-tab warning x2, update-ready notice). Fixed in the
+  follow-up pass below.
+- **No other e2e failure**, so nothing else in items 1-12 broke a browser test.
+  The specs covering the dashboard surfaces items 3-5 and 10 changed
+  (`routes.spec.ts`, `guided-tour-navigation.spec.ts`, `dashboard-visual.spec.ts`,
+  incl. its overflow check at the new six-card layout) and the backup/restore
+  specs that read the Activity Log (item 12) all passed. Items 1, 8 and 12's
+  *new behavior* is covered by unit tests only — no e2e asserts the Comment
+  Card is hidden, the circuit preference persists, or that automatic saves
+  aren't logged. Item 11's once-per-device flag is likewise unit-only; the
+  notice itself is exercised by the web profile below.
+- `offline.spec.ts` (5 tests) and `feature-load-failure.spec.ts`'s hashed-build
+  case run only on the built hosted target, so `npm test` (source target)
+  skipped them — the 6 skips.
+
+### Follow-up pass (same session, on the requester's go-ahead)
+
+- **The 14 stale assertions updated to "Guardian Forms"** — only the expected
+  strings changed — across nine specs: the eight above plus `offline.spec.ts`'s
+  page title (`toHaveTitle('Guardian Forms App')`). The eight source-target
+  specs re-run together: 49/49 green.
+- **`npm run test:e2e:web`: 27 passed, 1 skipped, 3 failed, 4 did not run**
+  (first web-profile run since at least 2026-09-11, see below). The profile
+  covers item 11's notice and the built-output side of item 9 (manifest name,
+  `sw.js` recovery page, page title). The three failures:
+  - `offline.spec.ts` "first load installs the atomic critical shell" (whose
+    failure left the other four un-run) and `pwa-registration.spec.ts` —
+    **a broken wait in the tests, not an app failure.** Both waited with
+    `page.waitForFunction(async () => …?.active)`. Playwright (1.62) does not
+    await an async predicate: the returned Promise is truthy, so the wait
+    resolved on the first poll, and the tests passed until now only because
+    the worker happened to be active by `networkidle`. Verified against the
+    pre-MS 62 baseline (f60265d, built in a scratch worktree): there the worker
+    is active at `networkidle` in 12/12 loads; on this build it is still
+    installing in 11/12. The difference is real (ports swapped, same result):
+    registration starts ~130 ms later and the install runs ~150 ms longer, with
+    the same 30 critical entries and the same byte count. The cause was not
+    isolated — the worker still activates in ~1.3 s and nothing is filer-
+    visible — so it is noted here, not chased. Fix: both waits now use
+    `navigator.serviceWorker.ready` (`offline.spec.ts` `waitForActiveWorker`,
+    `pwa-registration.spec.ts` line 11). Re-run with the fix: `offline.spec.ts`
+    5/5 and `pwa-registration.spec.ts` 1/1 green, which also proves item 11's
+    notice and the rename in the built output.
+  - `feature-load-failure.spec.ts` "(web, hashed build)" — **pre-existing;
+    fails identically on the f60265d baseline.** The test expects a failed
+    dashboard chunk to show "This section could not be loaded." with a Reload
+    button. Since 60b0133 (2026-09-11) `src/features-loader.js` listens for
+    `vite:preloadError` and reloads the page instead; reproduced in a probe
+    against this build (one aborted chunk request → the loader's "Reloading
+    page..." warning → full reload → "Loading…"). The test was written two days
+    earlier (390e165) and this profile has evidently not been run since. Which
+    behavior is wanted — reload, or the error view the test describes — is a
+    decision not made here; the test is left as is.
+- The web-profile fixes and the pre-existing failure are outside the twelve
+  items; they are recorded here because this is where the run happened.

@@ -190,7 +190,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     const expectedTitle = expectedPdfMetadataTitle('guardian', 'Harold Thomas Bennett', '26-002487-GD', '2026-09-03');
     expect(title).toBe(expectedTitle);
     expect(subject).toBe('Verified Initial Inventory');
-    expect(author).toBe('Probate Guardian');
+    expect(author).toBe('Guardian Forms');
     expect(lang).toBe('en-US');
     expect(rawPdfString).toContain(expectedTitle);
     expect(rawPdfString).toContain('Verified Initial Inventory');
