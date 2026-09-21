@@ -3,12 +3,16 @@
 ## Status
 
 **Draft — a proposal, not a work order. Authorizes no change** (`AGENTS.md` §3).
-Nothing in this document has been implemented. Item 63A is written up; further
-items will be appended as they are raised.
+Nothing in this document has been implemented. Items 63A–63E are written up;
+further items will be appended as they are raised.
 
 | Item | Summary | Status |
 | :-- | :-- | :-- |
-| **63A** | Guardian Inventory marks six pages incomplete but never says why | Proposed — one decision needed (D1) |
+| **63A** | Guardian Inventory marks six pages incomplete but never says why | Proposed — **D1, D2, D11 decided** (explain, don't block; all filing types; fix R5 routing in 63A); **authorized 2026-09-21** (execution order below) |
+| **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | Proposed — **D3 decided** (show only when Recipient 1 is blank); **D4 decided** (57B recorded as landed without a recorded authorization); **authorized 2026-09-21** (execution order below) |
+| **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | Proposed — **D5 and D12 decided** (show the panel, no auto-reload; **with Amendment A**); **authorized 2026-09-21** (execution order below) |
+| **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | Proposed — **D6 decided** (option 1); **authorized 2026-09-21** (execution order below) |
+| **63E** | UCN on the printed filing, on the Case # line of the header, all forms | Proposed — **D7–D10 decided** (option 1 each; Excel does not carry UCN); **authorized 2026-09-21** (execution order below) |
 
 ---
 
@@ -102,7 +106,7 @@ silently folded in):
 | :-- | :-- | :-- | :-- | :-- |
 | R1 | **`isScheduleIncomplete()` exists twice** — `legacy-app.js:7165` (used on every edit, to live-patch the Next button and box) and `guardian-inventory/index.js:288` (used when the page first renders). | A fix applied to only one would make the box appear on page load and vanish on the first keystroke, or the reverse. | Read both | **In scope for 63A** — must be one implementation. |
 | R2 | The live patch **clears** the explanation box whenever the page is not blocked (`legacy-app.js:7223`, `...:''`). | Same as R1: any explanation rendered on load is wiped by the next edit unless this changes too. | Read | **In scope for 63A.** |
-| R3 | The disabled-Next tooltip and the fallback banner use schedule-only wording — *"Add at least one item, or check the box verifying there are none, before continuing."* — on **every** page of **every** type (`legacy-app.js:7209, 7223`; `guardian-inventory/index.js:301, 306`). | On a signature or bond page, hovering a disabled Next says to add an item or tick "none" — wrong advice. Today reachable on the non-schedule pages of the other types (e.g. Annual Part III). The list of real missing fields beneath is correct; only the tooltip/fallback text is wrong. | Read; not exercised in a browser | **In scope for 63A only as far as the six pages** (so D-4 doesn't inherit schedule wording). Wider fix — decision D2. |
+| R3 | The disabled-Next tooltip and the fallback banner use schedule-only wording — *"Add at least one item, or check the box verifying there are none, before continuing."* — on **every** page of **every** type (`legacy-app.js:7209, 7223`; `guardian-inventory/index.js:301, 306`). | On a signature or bond page, hovering a disabled Next says to add an item or tick "none" — wrong advice. Today reachable on the non-schedule pages of the other types (e.g. Annual Part III). The list of real missing fields beneath is correct; only the tooltip/fallback text is wrong. | Read; **since reproduced in a browser on all six non-Guardian engines** (readiness review, below) | Originally scoped to the six Guardian pages; **widened to all filing types by D2 (decided 2026-09-21).** |
 | R4 | `computeSectionStatus()` (`core/status/section-status.js`) looks up an unprefixed key, but non-Guardian completeness keys are prefixed (`a-p3`, `pi-p2` …). | None today — nothing in production calls it (only its own unit test). Would misreport every non-Guardian page as incomplete if wired up. | Read; grep for callers | **Out of scope** — dormant; noted so it isn't wired up unaware. |
 
 ### Correcting the diagnosis that prompted this
@@ -163,7 +167,7 @@ Retire `SCHEDULE_NAV_KEYS` as a *gate* list (it stays where it genuinely means
 "the 11 schedule pages": the schedule-empty validation at
 `guardian-inventory/index.js:1219`).
 
-### Decision needed — D1: should Next also be blocked on Cover and D-1..D-5?
+### Decision needed — D1: should Next also be blocked on Cover and D-1..D-5? — **DECIDED 2026-09-21: option 1** (explain, don't block)
 
 Per `AGENTS.md` §3: numbered options, one recommended, each stated by what the
 filer observes.
@@ -190,13 +194,25 @@ filer observes.
 wanted, do it as a follow-up 63B** — with the predicate split, that is a
 one-line policy change, and it can be decided on its own.
 
-### Decision needed — D2: wider tooltip/fallback wording (R3)
+### Decision needed — D2: wider tooltip/fallback wording (R3) — **DECIDED 2026-09-21: option 2** (all pages, all filing types)
 
 1. **Six Guardian pages only (recommended)** — ships with 63A; D-4 doesn't get
    schedule advice.
 2. **All pages, all filing types** — fixes the wrong tooltip on the other
    types' non-schedule pages too. Touches every filing type's disabled-Next
    text; small, but a broader change than the reported problem.
+
+**Consequence of the D2 decision (option 2) for scope:** 63A now also rewrites the
+disabled-Next tooltip and fallback banner for **all seven engines** — the two
+sites in `legacy-app.js` (`:7209`, `:7223`, shared by six of them) and the two
+in `guardian-inventory/index.js` (`:301`, `:306`). Wording rule: a **schedule**
+page keeps *"Add at least one item, or check the box verifying there are
+none, before continuing."*; every **other** page says *"Complete the required
+items on this page before continuing."* (working text — to be confirmed at
+implementation, not a decision). The wrong-tooltip finding (R3) was not
+exercised in a browser for the other types, so the implementation starts by
+reproducing it on one non-schedule page per type, and the invariant walk
+gains an assertion that no non-schedule page shows schedule wording.
 
 ### Milestone checklist (`AGENTS.md` §8)
 
@@ -247,8 +263,9 @@ current code before the fix.
 `src/legacy-app.js` (`isScheduleIncomplete`, `updateCurrentScheduleNextButton`),
 `src/features/guardian-inventory/index.js` (`isScheduleIncomplete`, `pageNav`),
 one new small module for the shared predicates (pure, unit-testable), the two
-new unit specs, `TEST-INDEX.md`, and — for D1 option 2 only —
-`window-bridge` allow-list if a bridge name is added.
+new unit specs, `TEST-INDEX.md`. (D1 is decided as explain-only, so no
+`window-bridge` allow-list change is expected.) Per D2 (all filing types),
+the tooltip/fallback text sites listed above change in all seven engines.
 
 ### Verification of this write-up — what was and wasn't checked
 
@@ -281,8 +298,38 @@ Checked, by me:
   turns the mark green. So the extension's remedy for the *mark* is right; the
   missing piece is only that the box is never asked to render.
 
-Not checked: R3 (wrong tooltip wording on the other types' non-schedule
-pages) is from reading the code, not from exercising those pages.
+**Readiness review, 2026-09-21 — R3 reproduced; one new finding (R5).** A
+blank filing of each type was driven in a browser (source build). On every
+non-schedule page of Annual (Cover/Part I, II, III, IV, V, IX, X), Simplified
+(Cover, II–VI), Plan-Simplified, Plan-Initial (Cover, /p9), Plan-Annual
+(Cover, Signatures) and Plan-Minor (Cover, /p6, /p7) the disabled Next's
+tooltip reads *"Add at least one item, or check the box verifying there are
+none, before continuing."* — R3 is real on all six non-Guardian engines, not
+only from reading. Guardian is unaffected today because its D pages never
+disable Next.
+
+**R5 (new).** On a blank **Simplified Part III** and a blank **Plan-Minor
+Preparer & Attorney** page the yellow box shows *only* the fallback sentence —
+"Required to continue: Add at least one item, or check the box verifying there
+are none…" — and lists no items. The filer is given advice that does not apply
+and is not told what is missing: the same symptom as 63A's headline bug, on
+two more pages, from a different cause (the validators' messages for those
+pages are not routed to them; cause not isolated). Also observed:
+Plan-Initial's attorney page is blank-complete (Next enabled, no box) —
+consistent, not a defect. Disposition of R5: **in scope for 63A (D11, decided
+2026-09-21).** The implementation starts by isolating why those two validators'
+messages do not route to their pages, and fixes it there; the invariant walk
+then asserts "lists ≥ 1 linked item" on every marked page, as in the pinned test
+mapping.
+
+**Bound on R5 (added after a second review).** Authorizing 63A authorizes a
+time-boxed investigation of those two pages and the correction of their routing
+**only if the cause is confined to those two validators' messages or their route
+mapping.** If it needs a change to shared code beyond what D1/D2 already touch
+(`adaptValidationErrors`, `errorRoute`, `renderLocalSectionGuidance`), or reaches
+a third page, **stop and split it to 63F**: 63A then ships with those two pages
+named as an explicit, commented exemption in the invariant walk ("box present"
+only), and 63F is written up before anything further is built.
 
 ### What the existing tests say about this — effectiveness review
 
@@ -344,5 +391,808 @@ Red-first for each; the first two would have been red before this milestone.
 6. `TEST-INDEX.md` rows for every new spec (same commit, `AGENTS.md` §7); the
    `navigation-status.contract.spec.ts` header and comments rewritten.
 
+**Pinned test mapping** (added by the readiness review; supersedes the loose
+names above). `tests/unit/test-index-guard.spec.js` fails the commit if an
+index row is missing.
+
+| # | Test | File | Kind | `TEST-INDEX.md` |
+| :-- | :-- | :-- | :-- | :-- |
+| 1 | Invariant walk: one test per filing type (7). Routes come from each type's sidebar `[data-nav]` links, not a hand list. Asserts, per page: mark incomplete ⇒ box present and lists ≥ 1 linked item (not the fallback sentence — R5); and no non-schedule page shows the schedule sentence (R3/D2). | **new** `tests/e2e/section-guidance-invariant.spec.ts` | e2e, source target | new row |
+| 2 | Reporter's case: D-4 with only the bond question blank → box lists it, jump link focuses the radios, answering clears box and turns the mark green | `tests/e2e/dependent-question-gate.spec.ts` (11 → 13 cases with #3) | e2e | row updated |
+| 3 | Live-patch persistence: on a D page, edit an unrelated field; the box stays (R1/R2) | same file | e2e | (same row) |
+| 4 | Predicates and wording: "is incomplete" / "blocks Next" split; schedule vs non-schedule tooltip text | **new** `tests/unit/section-guidance-predicates.spec.js` | unit | new row |
+| 5 | Comment rewrite only (they state the box "never renders" for these pages) | `tests/e2e/navigation-status.contract.spec.ts` header and the comment blocks at lines 15–16, 263–270, 363–371 | none | row note updated |
+
+Tests 1–3 are red today (six Guardian pages; the D-4 case; the two-copy
+problem); test 4 is red because the split does not exist. Run: `npx playwright
+test tests/e2e/section-guidance-invariant.spec.ts tests/e2e/dependent-question-gate.spec.ts`
+and `npx vitest run tests/unit/section-guidance-predicates.spec.js`.
+
 Cost note: tests 1-3 are e2e, so they carry the ~25-minute full-regression
 cost only when run as a suite; each new test is seconds.
+
+---
+
+## 63B — Certificate of Service: the "no recipients" question is shown to every filer
+
+Raised 2026-09-21 from a screenshot of Simplified Part VI: *"I don't recall
+requiring a yes/no check for signatures."*
+
+### What a filer sees
+
+On the Certificate of Service page of all three forms that have one — Initial
+Inventory **D-5** ("Part VI"), Annual **Part X**, Simplified **Part VI** — a
+Yes/No sits at the top of the Recipients section:
+
+> No recipients are required for this certificate (filer attestation - app
+> does not determine legal necessity)
+
+It is there on every filing, whether or not recipients are listed. A filer who
+has already listed someone sees a question they never need to answer, placed
+where a required control would be. Only the Annual page carries a hint ("*
+Recipient 1 name is required unless you attest below that none are required",
+`annual-accounting/index.js:1432`); the other two have none.
+
+What it does: **Yes** = "I have no one to serve" — the recipient cards hide
+(their data is kept). **No** = "someone must be served" — Recipient 1 becomes
+required. Validation asks for an answer **only** when Recipient 1 is blank; a
+filer who lists a recipient is never asked.
+
+### How it got here
+
+Milestone 57B, commit `f517df9` (2026-09-20 03:57), fixture follow-up
+`b16c931` (04:32). It implements decisions D7, D16 and D17 of
+`MILESTONE-57-RESCOPE.md`. **D16 says: "A filer who lists at least one
+recipient never sees the question; listing someone already answers it."** The
+build honours that for *validation* — `serviceRecipientIssues()`
+(`src/core/validation/service-recipients.js:66`) asks only when Recipient 1 is
+not started — but not for *visibility*: all three render sites emit the control
+unconditionally (`guardian-inventory/index.js:1165`,
+`annual-accounting/index.js:1436`, `simplified-accounting/index.js:595`). The
+rule is right; the page diverged from its own decision.
+
+Separately, the milestone docs never recorded it landing: `MILESTONE-57-RESCOPE.md:16`
+and `:1136` still say "Execution-ready. **Not authorized**";
+`MILESTONE-57-PROPOSAL.md:77` still says "REVERTED … not authorized" and `:79`
+says the fields "exist nowhere in `src/`". The commit touched no milestone doc.
+Every other item landed that night (57A, D10, D11, D13–D15) carries
+"authorized by Alan by name"; 57B carries nothing. Whether it was cleared
+verbally is not recoverable from the repo — see D4.
+
+### What 57B does that should stay, whatever D3 decides
+
+- **D17, one recipient rule for three families**: Recipient 1 complete
+  satisfies; cards 2+ optional; a started card must be finished or cleared.
+  This closed two real defects — a second recipient with a name and no address
+  exported silently on both accountings, and an accidental empty card blocked
+  the Inventory.
+- A filer with genuinely nobody to serve can say so (the reason the control
+  exists).
+- D7 conversion resets (four mappers, `legacy-app.js:4922`–`5081`), PDF
+  suppression of the recipient block on Yes (three `pdf-model.js`), the Excel
+  import asymmetry, tri-state discipline (§4).
+- Its tests: `tests/unit/service-recipients.spec.js`; four e2e tests at
+  `navigation-status.contract.spec.ts:1410–1503`; fixtures in
+  `pdf-table-semantics.spec.ts:162` and `pdf-form-specific.spec.ts:1005` that
+  rely on the rule.
+
+### Proposed change
+
+Show the question only when it applies — exactly D16 — and change nothing else.
+
+**One relevance predicate**, defined in `service-recipients.js` next to the rule
+it mirrors, so the page and the validator never read the data two ways (the
+drift 57B's own comment warns about):
+
+```
+attestationRelevant({ rows, attestation, startedFields })
+  = attestation === 'Yes' || !recipientRowStarted(rows[0], startedFields)
+```
+
+- Recipient 1 blank → **shown** (the only state that needs an answer).
+- Recipient 1 started, answer `''` or `'No'` → **hidden**. A stale `'No'` stays
+  in the data: it is consistent ("recipients are required", and one is listed)
+  and the validator already ignores it.
+- Answer `'Yes'` → **always shown**, even if a recipient was typed before
+  attesting, because the cards are hidden and the control is the only way back
+  (§4 non-destructive toggling). Unchanged from today.
+
+**On the page**: the three feature modules import the predicate directly (they
+are ES modules; no bridge name, no allow-list change). On render, the fieldset
+gets `d-none` when not relevant — the same dependent-row pattern D-4 already
+uses for `#bond-waived-row` (`guardian-inventory/index.js:1140`). On `change`
+of any Recipient 1 field, toggle the class in place — no re-render, no lost
+focus; clearing Recipient 1 brings the question back. The Yes/No itself keeps
+its `data-form-route` re-render (`src/form-events.js:117`), which is what
+shows/hides the cards today.
+
+**Hints**: the Annual-only hint at `:1432` is dropped (recommended) or copied to
+all three. Dropped, because when the question is visible it *is* the hint, and
+when Recipient 1 is blank the sidebar and readiness panel name it through the
+validator message.
+
+**Wording**: untouched, verbatim (§8 #8; 57B's "load bearing" note).
+
+### Decision needed — D3: what to do with the control — **DECIDED 2026-09-21: option 1** (show only when it applies)
+
+Per `AGENTS.md` §3: numbered options, one recommended, each by what the filer
+observes.
+
+1. **Show it only when it applies (recommended).** A filer with a recipient
+   listed no longer sees the question at all. A filer with Recipient 1 blank
+   sees it, answers Yes, and the cards go away; answers No, and Recipient 1 is
+   required. No data-model, validation, export or conversion change. Cost: a
+   `change` listener per family; Annual's inline-setter cards need one on the
+   recipients container.
+2. **Keep it always visible, but move it below the cards** with a lead-in
+   heading ("If there is no one to serve:") — the attestation sentence itself
+   stays verbatim under it. Every filer still sees it; it stops reading as a
+   required question at the top. Cheapest. It is the shape D16 explicitly
+   rejected ("a mandatory Yes/No in front of the majority of filers").
+3. **Remove the attestation entirely** — the two fields, the control, the CSV
+   rows, the conversion resets, the PDF suppression, and its tests — keeping
+   only D17's row rule. A filer with nobody to serve is blocked again, which is
+   the defect 57B set out to fix. Not recommended.
+
+### Decision needed — D4: what the Milestone 57 documents should say — **DECIDED 2026-09-21: (b)** — it was not cleared; keep it, record it as landed without a recorded authorization
+
+The 57B status lines are wrong under every D3 option. Only you can say which
+of these is true:
+
+- **(a)** It was cleared verbally on 2026-09-20 → record *"LANDED 2026-09-20
+  in `f517df9`, authorized by Alan; visibility corrected in 63B"*.
+- **(b)** It was not → record *"LANDED 2026-09-20 in `f517df9` without a
+  recorded authorization; kept on review 2026-09-21, corrected in 63B"* (or
+  reverted, if D3 is option 3).
+
+Edits either way: `MILESTONE-57-RESCOPE.md:16` and `:1134–1136`,
+`MILESTONE-57-PROPOSAL.md:77–80`. Made as part of the 63B delivery, once it is
+authorized — **neither 57 document has been edited yet.**
+
+### Milestone checklist (`AGENTS.md` §8)
+
+1. **Data model** — none. Both fields stay; `probate-guardian-data-model.csv`
+   untouched.
+2. **Legacy data migration** — none. A `.sav` with `''` and a listed recipient
+   simply renders with the question hidden.
+3. **Fixture & factory audit** — no change needed: `MINIMAL_VALID_GUARDIAN` /
+   `_ANNUAL` / `_SIMPLIFIED` each list a complete Recipient 1, so the question
+   hides for them; fixtures that set `serviceNoRecipients: 'Yes'`
+   (`pdf-table-semantics.spec.ts:162`) still show it. `expectFileableFixture()`
+   re-run as the check.
+4. **Test coverage & index** — below.
+5. **Export / import / portability** — none. PDF suppression, Excel import,
+   the four conversion resets are untouched; readiness (`recipientsSettled`,
+   `legacy-app.js:6683`) and the export validators keep reading the same rule.
+6. **Security & sensitivity** — none.
+7. **UI/UX consistency** — reuses the `d-none` dependent-row pattern; no new
+   component. All three pages change identically, and the Annual-only hint
+   stops being the odd one out.
+8. **Legal / compliance** — the attestation wording is verbatim and the app
+   still neither makes nor checks the assertion. Hiding the question when a
+   recipient is listed changes nothing about what the filer is asked to swear
+   to; it removes a question that had no bearing on them.
+9. **Cross-form consistency** — the three families with a certificate of
+   service change together; the four Plans have none (verified:
+   `certRecipients` / `serviceRecipients` occur only under those three
+   features). Classification: **defective** — the build diverged from its own
+   recorded decision.
+
+### Test plan
+
+Red-first (`AGENTS.md` §7).
+
+1. **Unit — `tests/unit/service-recipients.spec.js`**: `attestationRelevant`
+   — blank Recipient 1 → true; started + `''` → false; started + `'No'` →
+   false; started + `'Yes'` → true; empty/missing rows → true. Red today (no
+   such function).
+2. **e2e — new `tests/e2e/service-attestation-visibility.spec.ts`**, one test
+   per family (`/d5`, `/p10`, `/p6`): blank → fieldset visible; type Recipient
+   1's name and blur → hidden, same DOM element (no reload); clear the name →
+   visible; select Yes → cards hidden, fieldset visible; select No → cards
+   back. Red today on "hidden after typing".
+3. The four 57B e2e tests and the two PDF fixtures stay green untouched — they
+   set data directly and have no visibility dependency.
+4. `TEST-INDEX.md`: new row; `service-recipients.spec.js` row extended. Same
+   commit.
+
+### Files expected to change
+
+`src/core/validation/service-recipients.js`; `src/features/guardian-inventory/index.js`,
+`src/features/annual-accounting/index.js`, `src/features/simplified-accounting/index.js`
+(render + `change` delegate); `tests/unit/service-recipients.spec.js`; the new
+e2e spec; `TEST-INDEX.md`; `MILESTONE-57-RESCOPE.md` and
+`MILESTONE-57-PROPOSAL.md` per D4. No `window-bridge` change.
+
+### Verification of this write-up
+
+Checked: the three render sites; the three validators
+(`guardian-inventory/index.js:1300–1312`, `annual-accounting/index.js:1618–1624`,
+`simplified-accounting/index.js:775–783`); the nav rules (`s-p6` :6772,
+`a-p10` :6831, Inventory via `errorRoute()`); the PDF suppression in all three
+`pdf-model.js`; the four conversion resets; `git log -S ATTESTATION_57B`; the
+docs' status lines. The screenshot's "Part VI: Certificate of Service" heading
+matches Simplified (`:587`) and the Inventory's D-5 (`:1163`). **Browser check (readiness
+review, 2026-09-21):** on all three pages — Guardian D-5, Annual Part X,
+Simplified Part VI — typing in Recipient 1 updates `D` **without re-rendering
+the page** (same `#main-content`, same attestation fieldset element before and
+after), so the in-place `d-none` toggle the design depends on is feasible.
+**Accepted verification boundary:** the toggle itself is a design; it is proved
+by the new e2e (Test plan #2) after implementation, not before.
+
+---
+
+## 63C — Hosted build: a failed feature chunk reloads the page instead of explaining
+
+Found 2026-09-21 by the first `npm run test:e2e:web` run since 2026-09-11 (see
+`MILESTONE-62-PROPOSAL.md`, Verification follow-up).
+
+### What a filer sees
+
+On the hosted (web) build only, when a feature's code chunk fails to load — the
+filer is offline before the offline pack is downloaded, the connection drops,
+or their tab is from before a new deployment — **the page reloads itself**,
+with no message. Console: *"Vite asset chunk preload error detected (stale
+deployment). Reloading page..."*. Then:
+
+- With unsaved edits, the browser's native "Leave site?" prompt appears
+  (`warnBeforeUnloadIfDirty`, `legacy-app.js:7939`). *Leave* discards the
+  edits; *Cancel* leaves them on the page, where the red panel below is by then
+  showing.
+- Without a remembered file handle — every Firefox/Safari session, and any
+  Chrome session where the `.sav` came in through the fallback picker — the
+  reload **closes the case**: the startup screen comes back and they must
+  reopen the file.
+- If the chunk keeps failing (offline, no pack) *and* Chrome silently reopens
+  the remembered file at the last position (`initApp`, `legacy-app.js:8037`,
+  MS 57 review's `pg-last-position`), the same chunk fails again → another
+  reload. **Loop not verified in a browser**; stated as a risk from reading the
+  code. Nothing in the loader bounds it.
+
+The panel built for exactly this — *"This section could not be loaded. Check
+your connection or finish downloading offline access, then reload this page.
+[Reload]"* (`src/core/feature-bridge.js:27–44`) — cannot stay on screen on the
+hosted build. And the app's own update flow already asks the filer to save
+first (`pwa-ui.js:128`: *"A new version of Guardian Forms is available. Save or
+export your work, then reload."*); the loader's reload bypasses that.
+
+On the source target (unbundled modules) the panel shows as designed, which is
+why `npm test` is green and only the web profile catches this.
+
+### Why it happens
+
+`60b0133` (2026-09-11, "resolve stale asset chunk loading…") added two
+listeners to `src/features-loader.js:159–170`: `vite:preloadError` → reload;
+`unhandledrejection` whose message matches "Failed to fetch dynamically
+imported module" → reload. Vite's preload helper dispatches `vite:preloadError`
+for the failed chunk itself and then rethrows, so the reload is already
+scheduled by the time the bridge's `catch` renders the panel. There is no
+once-guard, no unsaved-work check, and no distinction between a 404 (stale
+deployment — a reload helps) and a network failure (offline — it does not).
+
+`tests/e2e/feature-load-failure.spec.ts:62` (hashed build) asserts the panel.
+It was written 2026-09-09 (`390e165`), two days before the listeners, runs only
+on the web profile, and fails identically on the pre-MS 62 baseline
+(`f60265d`). The profile was not run between the two dates.
+
+### Decision needed — D5: which behaviour is wanted — **DECIDED 2026-09-21: option 1** (show the panel; no auto-reload)
+
+1. **Explain, and let the filer reload (recommended).** Remove the two
+   automatic-reload listeners (60b0133's loader hunk only; its XLSX
+   header-validation in `legacy-app.js` is unrelated and stays). The bridge's
+   panel shows; its copy gains one sentence for the deployment case: *"This can
+   also happen after Guardian Forms has been updated."* Filer-observable:
+   after a deployment, a filer mid-session sees the panel and clicks Reload —
+   one click, with the unsaved-work prompt protecting them; offline without
+   the pack, they are told to finish downloading it; nothing reloads on its
+   own. Consistent with the update notice's "save first". Cost: the deployment
+   case is no longer hands-free. (Its stale-deployment prerequisite is now
+   done — see the readiness findings below; **it also needs the amendment
+   there to be safe.**)
+2. **Reload once, then explain.** Keep the automatic reload for the stale
+   deployment case but bound it: at most once per failing chunk per session
+   (`sessionStorage` marker keyed by chunk URL, cleared on success), and never
+   when `isDirtySinceExport()` — otherwise fall through to the panel.
+   Filer-observable: deployments still self-heal when nothing is at risk;
+   offline shows the panel on the second failure; the app never discards
+   unsaved edits on its own. Cost: more code, two states to test. Take this if
+   hands-free deployment recovery matters more than the extra reload.
+3. **Keep the reload; rewrite the test to assert it.** Cheapest. Leaves the
+   case-closing reload and the unbounded-loop risk in place. Not recommended.
+
+#### Readiness review, 2026-09-21 — what was checked, and an amendment to option 1
+
+1. **Stale deployment, reproduced.** A copy of the hosted build was served by a
+   plain static server returning real 404s; with a tab open, the dashboard
+   chunk was "redeployed" under a new hash (every referrer and `index.html`
+   updated). *Today:* 404 → the listener reloads within ~130 ms → the new build
+   loads. *Option 1 (listeners neutralised in the probe):* the "This section
+   could not be loaded" panel appears; one click on Reload → the same end state.
+   Both recover; option 1 costs one click.
+   **Service-worker interplay, checked in a second probe** (workers allowed; the
+   tab reloaded once so the active worker controlled it; then the same
+   "deployment"): with **no offline pack**, today's auto-reload recovers and,
+   with the listeners removed, the panel appears and one Reload click recovers —
+   the same end state. With the **offline pack downloaded**, the old tab keeps
+   working: the dashboard opens from the worker's cache, so no failure, no panel,
+   no reload. This matches the worker's code (`sw.js`): navigations are
+   network-first (the cached shell is only the fallback when the network fails),
+   and URLs missing from the old worker's manifest pass through to the network.
+   **Not exercised, and accepted as out of scope:** the *new* worker's own install
+   and activation after a redeploy (the probe left `sw.js`'s manifest
+   inconsistent, so it could not install) and the offline navigation fallback —
+   both belong to the update flow (`pwa-ui.js`), which 63C does not change.
+2. **The panel does not cover every chunk — this changes option 1.**
+   `feature-bridge.js` catches only a failure to load the *feature's own
+   module*. Chunks imported *while the page mounts* are outside it, and every
+   feature does that: the accounting families load their print and Excel
+   modules at the start of `mount()` (`ensureLazyModules()`), and the Plans
+   load theirs when the Print page opens. Probed with the print module blocked
+   on the source build: *today* the rejection is unhandled and the
+   `unhandledrejection` listener reloads; **with both listeners removed, as
+   option 1 is written, the result is an uncaught `TypeError`, the page stays
+   where it was showing no message, and every later navigation rejects the same
+   way.** So option 1 *as drafted* trades a silent reload for a silent dead end
+   for these chunks.
+   **Amendment A (needed to make option 1 safe):** `mountPage` also catches
+   chunk-load errors thrown by `mod.mount()` — the same test PDF preview
+   already uses, `/dynamically imported module|Failed to fetch/i` — and shows
+   the same panel; then the two listeners are removed. Same panel, same Reload.
+   **D12 (decided 2026-09-21): Amendment A is part of 63C.**
+3. **Export callers, read.** Because of (2), a print/Excel chunk failure
+   surfaces at page mount (Amendment A covers it), not mid-export. The export
+   handlers wrap generation in try/catch with an alert ("PDF export failed:
+   …"). PDF preview already has its own chunk-error panel with a Reload button
+   (`pdf-preview.js:412–434`), which today races the auto-reload. The
+   `window.load*Pdf()` helpers have **no production callers** (tests only).
+   The earlier claim that the `unhandledrejection` reload "fires when a PDF
+   loader import fails mid-export" was overstated and is corrected in the
+   checklist below.
+
+### Milestone checklist (`AGENTS.md` §8)
+
+1–3. **Data model, migration, fixtures** — none.
+4. **Test coverage & index** — below.
+5. **Export / import / portability** — checked (finding 3 above): export
+   handlers already catch and message failures; print/Excel chunks load at
+   mount, where Amendment A puts them under the panel; PDF preview has its own
+   panel. Offline pack and service worker untouched.
+6. **Security & sensitivity** — none.
+7. **UI/UX** — the panel exists; one sentence of copy.
+8. **Legal / compliance** — none.
+9. **Cross-form consistency** — applies to every feature chunk equally.
+
+### Test plan
+
+- `feature-load-failure.spec.ts:62` (web): red today, green as written under
+  option 1; under option 2 it splits into a clean first failure (one `load`
+  event, then the panel if the failure persists) and a dirty session (panel,
+  no reload).
+- Both the source and web tests gain a `page.on('load')` counter asserting
+  **zero unprompted reloads** before the filer clicks Reload — the assertion
+  that would have caught 60b0133 on the source target too.
+- Option 2 only: the once-guard as a pure function, unit-tested.
+- **Amendment A:** a new case in `tests/e2e/feature-load-failure.spec.ts` (source
+  target): block `**/src/features/guardian-inventory/print.js`, add a Guardian
+  ward → the panel shows, zero `load` events, and after `unroute` the Reload
+  button recovers. Red today (it reloads instead of showing the panel).
+- `TEST-INDEX.md`: `feature-load-failure.spec.ts` row updated (2 → 3 cases).
+- **Process, not code**: this went unseen for ten days because only `npm test`
+  (source profile) was being run. `test:release` already runs
+  `test:e2e:all-profiles`; the gap is that no intermediate milestone ran the
+  web profile. Worth a line in `AGENTS.md`'s verification tiers if the
+  requester agrees.
+
+### Files expected to change
+
+`src/features-loader.js`; `src/core/feature-bridge.js` (copy, and — with
+Amendment A — the `mod.mount()` catch); `tests/e2e/feature-load-failure.spec.ts`; `TEST-INDEX.md`; option 2 also a
+small guard module and its unit spec.
+
+### Verification of this write-up
+
+Checked: reproduced on this build with a one-off probe (one aborted chunk
+request → the loader's warning → full page reload → "Loading…"); the `f60265d`
+web build fails the test identically; read the loader, the bridge, the
+`beforeunload` guard, `initApp`'s last-position use, and 60b0133's diff; and,
+in the readiness review, the stale-deployment recovery, the sub-chunk failure
+with and without the listeners, and the export callers (findings above). Not
+checked: the reload loop with a remembered handle (needs the File System Access
+API, unavailable to a headless probe); 60b0133's original production symptom;
+the new worker's install/activation after a redeploy and the offline navigation
+fallback (accepted out of scope — unchanged by 63C).
+
+---
+
+## 63D — The preparer's signature-authorization note is missing from most signing pages
+
+Raised 2026-09-21: *"This should be at the top of any page where a signature
+can be applied, all forms. It seems to be only on some."*
+
+### What a filer sees
+
+The note reads: *"Preparer's note: Before attaching any signature on this
+page, confirm you have that party's actual legal authorization to sign on
+their behalf. Do not sign for a party you have not been authorized to sign
+for."* It is meant for the person operating the app, who may not be the
+signer. Today, across the seven feature modules (nine filing types):
+
+| Form | Page (signatures captured) | Note | Where |
+| :-- | :-- | :-- | :-- |
+| Initial Inventory | D-1 Part III Guardian(s) Attestation | yes | top |
+| Initial Inventory | D-2 Part IV Preparer & Guardian Attorney | **no** | — |
+| Initial Inventory | D-5 Part VI Certificate of Service (attorney) | **no** | — |
+| Annual / Final / Trust | Part III Guardian(s) Signature & Declaration | yes | top |
+| Annual / Final / Trust | Part IV Preparer Attestation | **no** | — |
+| Annual / Final / Trust | Part V Guardian Attorney Signature | **no** | — |
+| Annual / Final / Trust | Part X Certificate of Service (attorney) | **no** | — |
+| Simplified | Part IV Guardian(s) Information | **no** | — |
+| Simplified | Part V Guardian Attorney Signature | **no** | — |
+| Simplified | Part VI Certificate of Service (attorney) | **no** | — |
+| Plan — Simplified | Signatures | yes | top |
+| Plan — Initial | Certification and Signature of Guardian(s) | yes | **mid-page**, below the certification checkboxes |
+| Plan — Initial | Certification and Signature of Guardian's Attorney | **no** | — |
+| Plan — Annual | Signatures (guardians and attorney) | yes | **mid-page**, below the checkboxes and the explanation box |
+| Plan — Minor | Certification and Signature of Guardian(s) | yes | **mid-page**, below the checkboxes |
+| Plan — Minor | Certification of Preparer & Attorney | **no** | — |
+
+**16 pages capture a signature; 6 carry the note, 3 of those below the fold;
+10 have none.** And one page carries it that captures no signature at all:
+**Simplified Part III — Guardian(s) Declaration** (`simplified-accounting/index.js:493`)
+has the sworn statement and the period dates, while the guardians actually
+sign on Part IV. There the note's "on this page" is untrue.
+
+### Why it happens
+
+Milestone 40H-E (`fd279d4`, 2026-09-13) added the note *"immediately above
+the existing sworn statement"* — one hand-placed copy per module, seven in
+all, and a source-scan test (`tests/unit/preparer-note.spec.js`) that pins
+exactly that: one note per file, adjacent to one named perjury sentence. So
+the rule that was built is "next to the oath", not "where a signature is
+attached". The two differ on every attorney, preparer and certificate page
+(which have no oath), on the Plan pages (where checkboxes sit between the
+heading and the oath), and on Simplified (where the oath and the signatures
+are on different pages). The test cannot see any of this: it never looks at
+where `renderSignatureStateControl()` is called.
+
+### Proposed change
+
+**Rule: every page that renders a signature control shows the note as the
+first thing under its `<h1>`. No other page shows it.**
+
+- One shared `preparerNoteHTML()` in `src/core/signature/signature-state-control.js`
+  — the module every signing page already imports for the control itself —
+  replaces the seven copied strings. One string, one place.
+- The 10 pages without it get it; the 3 mid-page copies move to the top; the
+  Simplified Part III copy moves to Part IV (D6). The sworn statements stay
+  where they are.
+- The PDF never carries it (unchanged; the existing negative test stays).
+
+### Decision needed — D6 — **DECIDED 2026-09-21: option 1** (the rule in full; the Simplified Part III copy moves to Part IV)
+
+1. **The rule above, in full (recommended).** Filer-observable: the note is
+   the first line on all 16 signing pages and nowhere else. Cost: five
+   byte-identical text snapshots change (below). Nothing else.
+2. **Add it to the 10 missing pages only.** Leaves three notes below the
+   fold on the Plan pages and the stray one on Simplified Part III, whose
+   "on this page" stays wrong. Cheapest, and three fewer snapshot edits.
+3. **Option 1, but also keep the Simplified Part III copy** beside its oath.
+   Only if you want the note to follow the oath as well as the signature; the
+   text would need a second wording for that page ("on Part IV").
+
+### Milestone checklist (`AGENTS.md` §8)
+
+1–3. **Data model, migration, fixtures** — none; nothing stored.
+4. **Test coverage & index** — below.
+5. **Export / import / portability** — none. The note is on-screen only;
+   `preparer-note.spec.js` already asserts no `pdf-model.js` emits it.
+6. **Security & sensitivity** — none.
+7. **UI/UX consistency** — one placement rule for all nine filing types;
+   one helper; `.preparer-note` in `cards.css` unchanged.
+8. **Legal / compliance** — the note asserts nothing about the filing; it
+   warns the operator. Putting it where the signature is attached is the
+   whole point of 40H-E, finished.
+9. **Cross-form consistency** — this *is* the cross-form fix. Classification:
+   **defective** — 40H-E's own rationale ("attaching a signature on someone
+   else's behalf") names the signature, not the oath, as the trigger.
+
+### Test plan
+
+Red-first (`AGENTS.md` §7).
+
+1. **Rewrite `tests/unit/preparer-note.spec.js`** so the page set is derived,
+   not listed: for each feature `index.js`, split into page functions; every
+   function that contains `renderSignatureStateControl(` must have the note
+   (via the helper) as the first rendered element after its `<h1>`; no other
+   function may contain it. Red today on 10 missing, 3 misplaced, 1 stray —
+   14 failures, which is the proof the old test could not fail. The seven
+   hand-listed oath needles go; the CSS-once and PDF-never tests stay.
+2. **Snapshots to update** (expected-text changes only, after the fix):
+   `plan-initial-mount.spec.ts:53`, `plan-annual-mount.spec.ts:53`,
+   `plan-minor-mount.spec.ts:56` (note moves to the top),
+   `simplified-mount.spec.ts:205` (Part III loses it);
+   `plan-simplified-mount.spec.ts:66` unchanged. Guardian D-1 and Annual
+   Part III have no text snapshot.
+3. **Rendered placement (e2e) — new `tests/e2e/preparer-note-placement.spec.ts`**,
+   one test per filing type (7): on every page that renders a
+   `.signature-state-control`, `.preparer-note` is the first element after the
+   `<h1>`; on every page that does not, there is none. This is the browser
+   proof the source-scan test cannot give (the two agree today only by accident
+   of where the strings sit); it is the check run by hand above, made permanent.
+   Red today on the same 14 pages. The source-scan rewrite (#1) stays as the
+   fast tripwire; this is the **accepted verification boundary** for placement.
+4. **`TEST-INDEX.md`**: `preparer-note.spec.js` row rewritten to state the
+   derived rule; new row for `preparer-note-placement.spec.ts`.
+
+### Files expected to change
+
+`src/core/signature/signature-state-control.js` (helper); the seven feature
+`index.js` files (16 call sites, seven strings removed);
+`tests/unit/preparer-note.spec.js`; the new `tests/e2e/preparer-note-placement.spec.ts`;
+the four snapshot specs; `TEST-INDEX.md`.
+No `window-bridge` change (all seven modules are ES modules importing the
+helper directly).
+
+### Verification of this write-up
+
+Checked on `master`: every `renderSignatureStateControl(` call site (20, on
+16 page functions) and every `preparer-note` string (7), mapped to their page
+functions by a one-off script; the note's position read in each of the six
+pages that have it; Simplified Part III and Part IV read in full;
+`preparer-note.spec.js` read; `fd279d4` located. **Rendered check (readiness
+review, 2026-09-21):** all 16 signing pages and each type's Cover were loaded
+in a browser on a blank filing; the note's presence, whether it is the first
+element after the `<h1>`, and the signature-control count matched the table on
+all 16 pages (Simplified Part III: note present, zero signature controls).
+
+---
+
+## 63E — UCN on the printed filing, beside Case # in the header
+
+Raised 2026-09-21: *"add UCN field to final print — same line and formatting
+as Case # in the header."*
+
+### What a filer sees today
+
+Every exported PDF prints the case number twice: in the pleading block on
+page 1 — **`CASE #: 26-002487-GD`**, bold 10 pt, centred under the division
+line (`src/core/pdf/pdf-engine.js:318`) — and in the right cell of the
+continuation header on every later page — **`Case #: 26-002487-GD`**, 8 pt,
+right-aligned (`:381`). No Uniform Case Number appears anywhere on any
+printed form.
+
+Only one filing type can even hold one: **Plan — Minors** has `ucn` ("UCN")
+and `ref` ("Case #") on its cover (`plan-minor/index.js:196–197`), and its
+PDF prints `ucn || ref` in the *Case #* slot (`plan-minor/pdf-model.js:26`,
+via `caseNumberOf()`), so a Minor plan with both filled shows its UCN
+labelled as the case number. The other six types have `caseNumber` only
+(`probate-guardian-data-model.csv` row 45 `common`; `ucn` is row 538,
+`plan_minor`).
+
+### Proposed change
+
+1. **One optional `ucn` field on every filing type**, entered on the Cover
+   beside Case Number, label "UCN" (Plan Minor's existing label). Guardian,
+   Annual and Simplified covers have their own Case Number input
+   (`guardian-inventory/index.js:658`, `annual-accounting/index.js:598`,
+   `simplified-accounting/index.js:372`); the three Plans share
+   `renderCaseCaptionFields()` (`core/form/cards/case-caption-card.js:26`), so
+   the input lands in four places, not six. Minor keeps its own.
+2. **Each PDF model passes `ucn` in its metadata** next to `caseNumber` —
+   there is no shared metadata builder; all seven set `caseNumber` themselves
+   (e.g. `guardian-inventory/pdf-model.js:74`, `annual-accounting/pdf-model.js:78`).
+3. **The engine prints it in both header sites, same font, size, weight and
+   colour as Case #** — layout per D7. When `ucn` is blank the UCN label is
+   omitted (D8), so every existing filing prints exactly as it does now.
+4. **Conversion carry-over**: `extractCarryIdentity()` (`ward-lifecycle.js:119`)
+   today folds `caseNumber || ucn || ref` into one value, and the Minor
+   branch writes that into `ucn` (`:222`) — i.e. a Case # carried into a
+   Minor plan becomes its UCN. With a real UCN everywhere, `ucn` carries to
+   `ucn` and Case # to Case # (`ref` on Minor) on every path.
+   `caseNumberOf()` and the dashboard's `caseNumber || ucn || ref` identity
+   rule are unchanged (`AGENTS.md` §"Case resolution").
+
+**Fit — measured** (readiness review, 2026-09-21), with the app's embedded
+Liberation Sans through the engine's own jsPDF instance, not estimated:
+
+| String | Style | Width | Room |
+| :-- | :-- | --: | :-- |
+| `CASE #: 26-002487-GD` (today, page 1) | bold 10 pt | 108.4 pt | 468 pt |
+| `UCN: 50-2026-CP-001234-XXXX-MB   CASE #: 26-002487-GD` | bold 10 pt | 284.0 pt | 468 pt — fits |
+| same with a 20-character UCN, no hyphens | bold 10 pt | 267–268 pt | fits |
+| `UCN: 50-2026-CP-001234-XXXX-MB` (continuation, own line) | 8 pt | 132.9 pt | 146 pt cell text width — fits, 13 pt spare |
+| `Case #: 26-002487-GD` / `Case #: 2026-CP-000789-AAAA` | 8 pt | 82.7 / 114.7 pt | fits |
+| both on **one** continuation line | 8 pt | 209–222 pt | 146 pt — **does not fit** |
+
+The header bar is 24 pt high; two 8 pt lines (baselines at +10 and +18 pt) fit.
+So D7 option 1 (UCN over Case #, page 1 on one line) fits with margin, and the
+"same line everywhere" alternative would have needed the cell widened by
+about 76 pt. A UCN longer than 146 pt at 8 pt falls to the existing
+wrap-then-ellipsize rule (`:367–376`).
+
+### Decision needed — D7: where the UCN sits in the two headers — **DECIDED 2026-09-21: option 1**
+
+1. **Page 1: same line as CASE #. Continuation pages: same cell, UCN on the
+   first line, Case # on the second, same 8 pt formatting (recommended).**
+   Filer sees `UCN: … CASE #: …` centred under the division on page 1, and
+   the running header's right cell reads UCN over Case # on every later
+   page. Uses the cell's existing two-line design; nothing else on the page
+   moves.
+2. **Same line everywhere.** Widen the right cell (shrinking the centred
+   section-title cell) so both fit at 8 pt on one line. Long section titles
+   then wrap or ellipsize sooner on every filing type.
+3. **Page 1 only.** Continuation pages keep Case # alone.
+
+### Decision needed — D8: required, or optional and silent when blank — **DECIDED 2026-09-21: option 1**
+
+1. **Optional; omitted from the print when blank (recommended).** No
+   "Pending" placeholder — Case # is the form's required identity, UCN is
+   additional. A filing without a UCN prints byte-identically to today, and
+   no existing `.sav` or fixture becomes incomplete.
+2. **Required on every Cover, like Case Number.** Blocks export until
+   entered; every guardian/annual/simplified/plan fixture and
+   `MINIMAL_VALID_*` gains it; readiness rows added.
+3. **Optional, prints `UCN: Pending` when blank**, mirroring Case #.
+
+### Decision needed — D9: Plan Minor's header — **DECIDED 2026-09-21: option 1**
+
+1. **UCN slot = `ucn`, Case # slot = `ref` (recommended).** Matches the
+   Minor cover's own labels. Filer-visible change: a Minor plan with both
+   filled stops printing its UCN as the Case #; one with only a UCN prints
+   `UCN: …` and `Case #: Pending`.
+2. **Leave Minor as is** (`ucn || ref` in the Case # slot, and the UCN slot
+   shows `ucn` too — the same number twice when only `ucn` is filled).
+
+### Milestone checklist (`AGENTS.md` §8)
+
+1. **Data model** — `ucn` becomes a `common` optional string (CSV row 538
+   moves from `plan_minor` to `common`); `emptyData*()` factories in
+   `src/core/state.js` gain `ucn: ''`; `npm run verify:data-model`.
+2. **Legacy data migration** — none to run, but stated precisely: a `.sav`
+   written before this has **no `ucn` key** on Guardian, Annual and Simplified
+   wards (it reads `undefined`, not `''`; on Plan Minor the key exists). Every
+   reader uses `d.ucn || ''`, so it prints as today (D8 option 1). Proved by a
+   named test, not assumed: new `tests/unit/ucn-header.spec.js` builds each of
+   the seven PDF models from a ward object *with no `ucn` key* and asserts
+   `metadata.ucn === ''` and no `UCN` text in the header lines.
+3. **Fixture & factory audit** — none under D8 option 1; full audit under
+   option 2.
+4. **Test coverage & index** — below.
+5. **Export / import / portability** — PDF: both header sites. **Excel —
+   audited 2026-09-21: none of the three bundled workbooks has a UCN cell.**
+   Every shared string in each was searched for "UCN" / "Uniform Case": no hits
+   in the Guardian workbook (40 sheets), the Annual workbook or the Simplified
+   workbook. Each has exactly one case-number input — Guardian SUMMARY I!H7
+   (`guardian-inventory/excel.js:172`), Annual PART I!I5
+   (`annual-accounting/excel.js:187`), Simplified H4
+   (`simplified-accounting/excel.js:96`) — which fills every page header. The
+   four Plans have no Excel path at all. So **an Excel export cannot carry the
+   UCN and an Excel import cannot restore it**; the field is on-screen, PDF and
+   `.sav` only. **D10 (decided 2026-09-21): leave it there** — the help guide
+   (`help-content.js` and `help/index.html`, in the section describing Excel
+   export) and the release note state that an Excel round-trip does not carry the
+   UCN, and the export status text is unchanged. Conversions: `ucn`
+   carries to `ucn` on all paths (item 4).
+6. **Security & sensitivity** — none; a public court identifier.
+7. **UI/UX consistency** — one input beside Case Number on every Cover; one
+   label; the header formatting rule is "identical to Case #".
+8. **Legal / compliance** — none asserted; the UCN is printed as entered.
+9. **Cross-form consistency** — all seven engines; Minor already has the
+   field, so this is the other six catching up plus the header.
+
+### Test plan
+
+Red-first.
+
+0. **New pure helper, unit-tested:** `headerIdentityLines({ caseNumber, ucn })` in
+   a new `src/core/pdf/header-identity.js`, used by both engine draw sites, so
+   the label text, the omit-when-blank rule (D8) and the line order are defined
+   once. Test: new `tests/unit/ucn-header.spec.js` (also the legacy-`.sav` test
+   in checklist item 2).
+1. **e2e, `pdf-form-specific.spec.ts`** (already extracts page text and pins
+   `CASE #: 26-002487-GD` at `:845`): with a UCN set, page 1's text contains
+   `UCN: <value>` and `CASE #: <value>` on one line; a later page's header
+   contains both; with UCN blank, no `UCN:` text anywhere. Red today.
+2. **Unit, `ward-carryover.spec.js`**: `ucn` carries to `ucn` and is never
+   written from `caseNumber`, on every conversion path (today the Minor path
+   does exactly that — red).
+3. **Minor**: `plan-pdf-wcag-compliance.spec.ts` and `plan-minor-parity.spec.js`
+   updated for D9.
+4. **Unit, data model**: `verify:data-model` passes with the row moved.
+5. `TEST-INDEX.md` rows updated in the same commit.
+
+### Files expected to change
+
+`src/core/pdf/pdf-engine.js` (two draw sites); new `src/core/pdf/header-identity.js`
+and `tests/unit/ucn-header.spec.js`; the seven `pdf-model.js`
+metadata blocks; `src/core/state.js`; `probate-guardian-data-model.csv`;
+`src/core/form/cards/case-caption-card.js`, `guardian-inventory/index.js`,
+`annual-accounting/index.js`, `simplified-accounting/index.js` (inputs);
+`src/core/navigation/ward-lifecycle.js`; the specs above; `TEST-INDEX.md`;
+no `excel.js` change (no workbook has a UCN cell — D10); the help guide's Excel
+section gains one sentence.
+
+### Verification of this write-up
+
+Checked on `master`: both engine draw sites and their geometry; all seven
+metadata sites; the four cover-input sites; Minor's `ucn`/`ref` labels and
+`caseNumberOf()`; the carry-over function; the CSV rows; which tests
+reference the header or `ucn`. **Readiness review (2026-09-21):** the three
+Excel templates decoded and searched (no UCN cell); the header widths measured
+with the embedded font (table above). Not checked: a generated PDF with a UCN
+(the field does not exist yet — the measured strings stand in for it).
+
+---
+
+## Readiness review, 2026-09-21 — decisions opened by it
+
+A second-reader review of this document found it not yet execution-ready.
+Everything it named that could be checked without implementing was checked
+(above). The three points that needed a decision were **decided 2026-09-21**,
+each as the recommended option. A second review then agreed 63A–63E can move to
+authorization review, and asked that the remaining risks be stated rather than
+implied. What remains is **the authorization itself, plus three accepted,
+stated risks**: (1) R5's cause is not yet isolated — bounded by the
+stop-and-split rule under R5 in 63A; (2) 63C's new-worker install/activation and
+the offline navigation fallback are untested and unchanged by it; (3) 63E's PDF
+is not generated until it is implemented, which is where that test belongs.
+
+- **D10 — UCN and Excel (63E). DECIDED: option 1.** No workbook has a UCN cell.
+  1. Leave UCN out of Excel; say so in the help guide and release note
+     (recommended). 2. Write it into the single Case Number cell as
+     "UCN / Case #" (changes what the court's form receives). 3. Add a UCN cell
+     to each workbook (edits the court's templates).
+- **D11 — R5 (63A). DECIDED: option 1.** Two pages show only the schedule sentence and no item
+  list. 1. Fix the routing in 63A, so the invariant walk can assert "lists ≥ 1
+  item" (recommended). 2. Split to 63F; 63A's walk asserts only "box present".
+  3. Leave; D2's new wording still stops the wrong advice.
+- **D12 — Amendment A (63C). DECIDED: option 1.** 1. Adopt it: the bridge also catches
+  `mod.mount()` chunk errors, then remove the listeners (recommended). 2. Keep
+  option 1 as drafted (silent dead end for print/Excel chunks). 3. Take D5
+  option 2 instead (bounded reload).
+
+Working tree (checked 2026-09-21 with `git status`): **modified** — this file;
+**new** — `MILESTONE-64-PROPOSAL.md`; **deleted** —
+`Harold_Thomas_Bennett_TrustAccounting.pdf` (deleted by you); **untracked and not
+part of this work, ownership unconfirmed, leave alone** —
+`../probate-guardian-test-server.zip`, `WCAG_2.1_AA_regex-structural.md`,
+`help.md`. Commit **only** `MILESTONE-63-PROPOSAL.md` and
+`MILESTONE-64-PROPOSAL.md`, by explicit path — never `git add -A`. Implementation
+starts from that commit.
+
+---
+
+## Authorization record and execution order
+
+**"Ready for authorization" is not approval** (`AGENTS.md` §3). Approval is
+recorded here with the requester's name and the date. On 2026-09-21 the
+requester authorized all five items, to be executed **in the order below, one at
+a time, each with its own commit and test run**; execution of the next item does
+not begin until the previous one is committed and green.
+
+| Item | Authorized? | When / by | Notes |
+| :-- | :-- | :-- | :-- |
+| 63A | **AUTHORIZED** | 2026-09-21, Alan (requester) — all five, in the order below | includes the bounded R5 investigation (stop-and-split rule) |
+| 63B | **AUTHORIZED** | 2026-09-21, Alan (requester) | D4's 57-doc edits are part of this delivery |
+| 63C | **AUTHORIZED** | 2026-09-21, Alan (requester); **execution started 2026-09-21** | includes Amendment A |
+| 63D | **AUTHORIZED** | 2026-09-21, Alan (requester) | |
+| 63E | **AUTHORIZED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included |
+
+**Recommended execution order** (from the second review; adopted here as a
+recommendation, not a decision):
+
+1. **63C** — removes the silent reload; contained to the hosted build's loader
+   and bridge.
+2. **63B** — a localized visibility predicate and its certificate-of-service tests.
+3. **63D** — one shared signature-note helper and placement coverage.
+4. **63A** — the broadest navigation/guidance change, including the bounded R5
+   investigation.
+5. **63E** — last: it changes the common data model, the conversions, seven PDF
+   models, PDF geometry and the help guide.
+
+**Sequencing against Milestone 64.** 63E (header identity in all seven
+`pdf-model.js` and the engine header) and 64A-2 / 64B-2 (large edits to the
+Guardian and Annual `pdf-model.js`) touch the same files and the same PDF text
+assertions. Do not run them in parallel; land one, re-run the PDF specs, then
+start the next. 63E after 64B-2 and 64A-2 would avoid re-touching the same
+expected strings twice, but that ordering is yours to set.
