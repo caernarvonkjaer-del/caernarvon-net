@@ -68,8 +68,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - ${descriptor.displayName} - Printed ${printDate}`,
     subject: copy.subject,
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: descriptor.documentTitle,
     formSubtitle: descriptor.displayName,
     keywords: copy.keywords,

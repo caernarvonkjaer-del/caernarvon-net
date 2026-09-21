@@ -2,8 +2,8 @@ import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.
 
 export const HELP_CONTENT = Object.freeze({
   'default': {
-    title: 'Welcome to Probate Guardian',
-    content: `<p><strong>Probate Guardian</strong> helps you prepare court-required guardianship documents for Florida probate court.</p>
+    title: 'Welcome to Guardian Forms',
+    content: `<p><strong>Guardian Forms</strong> helps you prepare court-required guardianship documents for Florida probate court.</p>
     <div class="help-section-title">Getting Started</div>
     <p>1. Create a new form using the <strong>+ New Form</strong> button</p>
     <p>2. Choose your inventory type (Initial, Simplified, or Annual)</p>

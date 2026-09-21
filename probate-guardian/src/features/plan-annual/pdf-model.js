@@ -29,8 +29,8 @@ export function buildPlanAnnualModel(D) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - Annual Guardianship Plan`,
     subject: 'Annual Guardianship Plan',
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: 'ANNUAL GUARDIANSHIP PLAN',
     formSubtitle: 'Annual Guardianship Plan',
     keywords: 'Florida, Probate, Guardianship, Annual Guardianship Plan',

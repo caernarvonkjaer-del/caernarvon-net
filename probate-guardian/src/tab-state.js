@@ -1,5 +1,5 @@
 export const TAB_HEARTBEAT_TTL_MS = 15000;
-export const TAB_WARNING_TEXT = 'Probate Guardian is already open in another tab. Save or close that tab before continuing here.';
+export const TAB_WARNING_TEXT = 'Guardian Forms is already open in another tab. Save or close that tab before continuing here.';
 
 function cleanString(value, maxLength = 120) {
   if (typeof value !== 'string') return '';

@@ -63,8 +63,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - Printed ${printDate}`,
     subject: 'Verified Initial Inventory',
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: 'VERIFIED INITIAL INVENTORY',
     formSubtitle: 'Verified Initial Inventory',
     keywords: 'Florida, Probate, Guardianship, Verified Initial Inventory',

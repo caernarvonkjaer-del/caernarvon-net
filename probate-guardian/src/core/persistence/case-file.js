@@ -80,7 +80,7 @@ export async function saveBlobAs(blob, suggestedName, preWriteValidator) {
     try {
       const handle = await window.showSaveFilePicker({
         suggestedName,
-        types: [{ description: 'Probate Guardian data file', accept: { 'application/octet-stream': ['.sav'] } }],
+        types: [{ description: 'Guardian Forms data file', accept: { 'application/octet-stream': ['.sav'] } }],
       });
       if (typeof preWriteValidator === 'function') {
         const proceed = await preWriteValidator(handle);
@@ -639,7 +639,7 @@ export async function triggerImportZip() {
   if (typeof window !== 'undefined' && window.showOpenFilePicker) {
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Probate Guardian case file (.sav)', accept: { 'application/octet-stream': ['.sav', '.zip'] } }],
+        types: [{ description: 'Guardian Forms case file (.sav)', accept: { 'application/octet-stream': ['.sav', '.zip'] } }],
       });
       const file = await handle.getFile();
       await importSavArchiveOrWard(file, { handle, isBackupFlow: false });
@@ -756,9 +756,9 @@ export async function importSavArchiveOrWard(file, options = {}) {
     }
     const zip = await JSZip.loadAsync(file);
     const manifestEntry = zip.file('manifest.json');
-    if (!manifestEntry) throw new Error('Not a Probate Guardian data file (no manifest.json inside).');
+    if (!manifestEntry) throw new Error('Not a Guardian Forms data file (no manifest.json inside).');
     const manifest = JSON.parse(await manifestEntry.async('string'));
-    if (manifest.format !== 'probate-guardian-case') throw new Error('Not a Probate Guardian data file.');
+    if (manifest.format !== 'probate-guardian-case') throw new Error('Not a Guardian Forms data file.');
 
     const currentSalt = await loadAppState('cryptoSalt');
     let key = cryptoKey;
@@ -946,7 +946,7 @@ export async function triggerOpenBackupSav() {
   if (typeof window !== 'undefined' && window.showOpenFilePicker) {
     try {
       const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Probate Guardian backup file (.sav)', accept: { 'application/octet-stream': ['.sav', '.zip'] } }],
+        types: [{ description: 'Guardian Forms backup file (.sav)', accept: { 'application/octet-stream': ['.sav', '.zip'] } }],
       });
       const file = await handle.getFile();
       await restoreBackupSavFile(file, handle);

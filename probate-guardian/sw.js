@@ -43,7 +43,7 @@ async function fetchVerified(entry,request=requestFor(entry)){
 }
 
 function recoveryResponse(message,status=502){
-  return new Response(`<!doctype html><html><head><meta charset="utf-8"><title>Probate Guardian loading problem</title></head><body><h1>Probate Guardian could not load this page</h1><p>${message}</p><p>Save any downloaded work, check that you are using the current Probate Guardian address, and reload when your connection is stable.</p></body></html>`,{
+  return new Response(`<!doctype html><html><head><meta charset="utf-8"><title>Guardian Forms loading problem</title></head><body><h1>Guardian Forms could not load this page</h1><p>${message}</p><p>Save any downloaded work, check that you are using the current Guardian Forms address, and reload when your connection is stable.</p></body></html>`,{
     status,
     headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'},
   });

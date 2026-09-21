@@ -107,7 +107,7 @@ if (typeof window !== 'undefined') {
   bindReadinessCard(document);
 }
 
-console.log('Probate Guardian ESM bootstrap initialized.');
+console.log('Guardian Forms ESM bootstrap initialized.');
 
 // Milestone 40G: start the app HERE, not at the end of legacy-app.js.
 //

@@ -411,7 +411,7 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
     console.error('PDF preview render failed', e);
     const isChunkError = /dynamically imported module|Failed to fetch|central directory/i.test(e?.message || '');
     const userMsg = isChunkError
-      ? 'A new version of Probate Guardian was deployed. Please reload the page to load updated assets.'
+      ? 'A new version of Guardian Forms was deployed. Please reload the page to load updated assets.'
       : `Preview failed to render: ${e.message}`;
     announceStatus(userMsg, { priority: 'assertive', containerId: 'print-preview-status' });
     // Built as nodes, not an innerHTML string: index.html's CSP is

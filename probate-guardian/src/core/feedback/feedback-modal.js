@@ -36,7 +36,7 @@ function reset(kind) {
   activeKind = kind;
   const root = modal();
   root.querySelector('#feedback-modal-title').textContent = kind === 'bug' ? 'Report a Bug' : 'Comment Card';
-  root.querySelector('#feedback-modal-intro').textContent = kind === 'bug' ? 'Tell us what happened so we can improve this beta release.' : 'Tell us how Probate Guardian is working for you.';
+  root.querySelector('#feedback-modal-intro').textContent = kind === 'bug' ? 'Tell us what happened so we can improve this beta release.' : 'Tell us how Guardian Forms is working for you.';
   root.querySelector('#feedback-bug-fields').hidden = kind !== 'bug';
   root.querySelector('#feedback-comment-fields').hidden = kind !== 'comment';
   root.querySelectorAll('textarea').forEach((input) => { input.value = ''; });

@@ -227,7 +227,7 @@ function escapeXml(str) {
 // (unless metadata.embedFonts === false).
 export function buildXmpPacket(metadata = {}) {
   const title = escapeXml(metadata.title || 'Verified Initial Inventory');
-  const author = escapeXml(metadata.author || 'Probate Guardian');
+  const author = escapeXml(metadata.author || 'Guardian Forms');
   const subject = escapeXml(metadata.subject || 'Verified Initial Inventory');
   const dateIso = new Date().toISOString();
 
@@ -262,7 +262,7 @@ export function buildXmpPacket(metadata = {}) {
           <rdf:li xml:lang="x-default">${subject}</rdf:li>
         </rdf:Alt>
       </dc:description>
-      <pdf:Producer>Probate Guardian</pdf:Producer>${pdfUaTag}
+      <pdf:Producer>Guardian Forms</pdf:Producer>${pdfUaTag}
       <xmp:CreateDate>${dateIso}</xmp:CreateDate>
       <xmp:ModifyDate>${dateIso}</xmp:ModifyDate>
     </rdf:Description>

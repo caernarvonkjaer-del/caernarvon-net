@@ -52,8 +52,8 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - Simplified Accounting - Printed ${printDate}`,
     subject: 'Simplified Annual Accounting of Guardian of the Property (§ 744.3679)',
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: 'SIMPLIFIED ANNUAL ACCOUNTING',
     formSubtitle: 'Simplified Annual Accounting',
     keywords: 'Florida, Probate, Guardianship, Simplified Annual Accounting',

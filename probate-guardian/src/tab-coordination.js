@@ -138,7 +138,7 @@ function showCleanPeerNotice() {
   const notice = getNotice();
   noticeMode = 'clean';
   notice.querySelector('.app-toast-title').textContent = 'Another tab is open';
-  notice.querySelector('.app-toast-desc').textContent = 'Probate Guardian is open in another tab. No active case or unsaved changes have been reported there.';
+  notice.querySelector('.app-toast-desc').textContent = 'Guardian Forms is open in another tab. No active case or unsaved changes have been reported there.';
   const actions = notice.querySelector('.app-toast-actions');
   actions.replaceChildren();
   addButton(actions, 'Dismiss', 'btn btn-outline-secondary btn-sm', () => {

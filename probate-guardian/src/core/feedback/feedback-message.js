@@ -9,9 +9,9 @@ function joinLines(values) {
 export function buildFeedbackMessage({ kind, fields = {}, diagnostics = '' }) {
   if (kind === 'comment') {
     return {
-      subject: `[Probate Guardian Beta] Comment card (v${APP_VERSION})`,
+      subject: `[Guardian Forms Beta] Comment card (v${APP_VERSION})`,
       body: joinLines([
-        'Probate Guardian comment card',
+        'Guardian Forms comment card',
         '',
         `Rating: ${fields.rating ? `${fields.rating} of 5` : 'Not provided'}`,
         fields.working && `\r\nWhat is working well:\r\n${fields.working}`,
@@ -21,9 +21,9 @@ export function buildFeedbackMessage({ kind, fields = {}, diagnostics = '' }) {
     };
   }
   return {
-    subject: `[Probate Guardian Beta] Bug report (v${APP_VERSION})`,
+    subject: `[Guardian Forms Beta] Bug report (v${APP_VERSION})`,
     body: joinLines([
-      'Probate Guardian bug report',
+      'Guardian Forms bug report',
       '',
       `What happened:\r\n${fields.description || ''}`,
       fields.steps && `\r\nSteps to reproduce:\r\n${fields.steps}`,

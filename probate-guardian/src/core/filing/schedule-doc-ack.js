@@ -179,7 +179,7 @@ export async function promptScheduleAckIfNeeded(data, inventoryType, route, conf
       title: 'Supporting documentation',
       message: `You have entered items on Schedule ${label}.\n\n`
         + 'The court expects supporting documentation for these entries — statements, receipts, '
-        + 'invoices or similar records. Probate Guardian does not collect or file that for you.\n\n'
+        + 'invoices or similar records. Guardian Forms does not collect or file that for you.\n\n'
         + "You can attach PDFs in this schedule's Supporting Documents section, or keep them and "
         + 'file them separately, whichever your circuit requires.',
       confirmLabel: 'I understand',

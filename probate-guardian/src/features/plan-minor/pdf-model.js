@@ -40,8 +40,8 @@ export function buildPlanMinorModel(D) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - Annual Plan (Minor)`,
     subject: 'Annual Guardianship Plan — Minor',
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: 'ANNUAL GUARDIANSHIP PLAN — MINOR',
     formSubtitle: 'Annual Guardianship Plan — Minor',
     keywords: 'Florida, Probate, Guardianship, Annual Plan, Minor',

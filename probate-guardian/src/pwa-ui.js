@@ -124,7 +124,7 @@ if (isHostedPwaBuild && location.protocol !== 'file:' && 'serviceWorker' in navi
     if (!worker) return;
     if (updateNoticeShownFor === worker) return;
     updateNoticeShownFor = worker;
-    showPwaNotice('Update ready', 'A new version of Probate Guardian is available. Save or export your work, then reload.', [
+    showPwaNotice('Update ready', 'A new version of Guardian Forms is available. Save or export your work, then reload.', [
       { label: 'Reload now', action: () => requestUpdateActivation(registration) },
       { label: 'Later', className: 'btn btn-outline-secondary btn-sm', action: hidePwaNotice },
     ]);

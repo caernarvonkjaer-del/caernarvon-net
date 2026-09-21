@@ -30,8 +30,8 @@ export function buildPlanInitialModel(D, options) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - Initial Guardianship Plan`,
     subject: 'Initial Guardianship Plan',
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: 'INITIAL GUARDIANSHIP PLAN',
     formSubtitle: 'Initial Guardianship Plan',
     keywords: 'Florida, Probate, Guardianship, Initial Guardianship Plan',

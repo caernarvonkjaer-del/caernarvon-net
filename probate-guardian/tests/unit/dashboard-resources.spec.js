@@ -400,7 +400,7 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
       expect(html).toContain('aria-labelledby="sidebar-resources-title"');
       expect(html).toContain('id="sidebar-resources-title"');
       expect(html).toContain(
-      "These are independent government and third-party sites. Probate Guardian is not affiliated with them and does not control their content."
+      "These are independent government and third-party sites. Guardian Forms is not affiliated with them and does not control their content."
     );
       expect(html).toContain(
       "This application is tuned for local requirements for the 6th Judicial Circuit. Please review requirements for other Florida Judicial Circuits before using."

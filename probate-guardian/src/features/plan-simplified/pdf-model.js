@@ -28,8 +28,8 @@ export function buildPlanSimplifiedModel(D) {
   const metadata = {
     title: `${wardName} - ${caseNumber} - Simplified Annual Plan`,
     subject: 'Simplified Annual Plan',
-    author: 'Probate Guardian',
-    creator: 'Probate Guardian',
+    author: 'Guardian Forms',
+    creator: 'Guardian Forms',
     formName: 'SIMPLIFIED ANNUAL PLAN',
     formSubtitle: 'Simplified Annual Plan',
     keywords: 'Florida, Probate, Guardianship, Simplified Annual Plan',

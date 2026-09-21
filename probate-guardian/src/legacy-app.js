@@ -1850,7 +1850,7 @@ async function promptUnlock(saltB64,verifierPacked){
     _unlockMode='unlock';
     _unlockResolve=resolve;
     const overlay=document.getElementById('unlock-overlay');
-    document.getElementById('unlock-title').textContent='Unlock Probate Guardian';
+    document.getElementById('unlock-title').textContent='Unlock Guardian Forms';
     document.getElementById('unlock-subtitle').textContent='Enter your master password to decrypt your case data.';
     document.getElementById('unlock-confirm-row').style.display='none';
     document.getElementById('unlock-password').value='';
@@ -2296,7 +2296,7 @@ async function exportActivityLog(){
   if(type!=='all')filterParts.push('event='+type);
   if(q)filterParts.push('search="'+q+'"');
   const lines=[
-    'Probate Guardian — Activity Log',
+    'Guardian Forms — Activity Log',
     'Exported: '+new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'}),
     'Filter: '+(filterParts.length?filterParts.join(', '):'none (all events)'),
     'Events: '+filtered.length,
@@ -3073,7 +3073,7 @@ async function openWardFileAtLaunch(){
   if(window.showOpenFilePicker){
     try{
       const [handle]=await window.showOpenFilePicker({
-        types:[{description:'Probate Guardian data file',accept:{'application/octet-stream':['.sav']}}]
+        types:[{description:'Guardian Forms data file',accept:{'application/octet-stream':['.sav']}}]
       });
       const file=await handle.getFile();
       const res=await loadCaseFileAtLaunch(file);
@@ -3126,9 +3126,9 @@ async function loadCaseFileAtLaunch(file){
     if(typeof JSZip==='undefined'){await window.alertModal('ZIP library failed to load — cannot open this file.');return false;}
     const zip=await JSZip.loadAsync(file);
     const manifestEntry=zip.file('manifest.json');
-    if(!manifestEntry){await window.alertModal('Not a Probate Guardian data file (no manifest.json inside).');return false;}
+    if(!manifestEntry){await window.alertModal('Not a Guardian Forms data file (no manifest.json inside).');return false;}
     const manifest=JSON.parse(await manifestEntry.async('string'));
-    if(manifest.format!=='probate-guardian-case'){await window.alertModal('Not a Probate Guardian data file.');return false;}
+    if(manifest.format!=='probate-guardian-case'){await window.alertModal('Not a Guardian Forms data file.');return false;}
     _securityMode=manifest.securityMode||(manifest.salt?'encrypted':'none');
     if(_securityMode==='encrypted'){
       await promptPasswordForFile(manifest,zip); // sets _cryptoKey; only resolves on a verified password
@@ -3346,7 +3346,7 @@ function setupDragAndDropImport(){
     const files=Array.from(e.dataTransfer.files||[]);
     const zipFile=files.find(f=>{const n=f.name.toLowerCase();return n.endsWith('.sav')||n.endsWith('.zip');});
     if(!zipFile){
-      if(files.length)await window.alertModal('Please drop a Probate Guardian .sav case data file.');
+      if(files.length)await window.alertModal('Please drop a Guardian Forms .sav case data file.');
       return;
     }
     await importGuardianDataZip(zipFile);
@@ -5619,8 +5619,8 @@ function pageInventorySelector(){
   </div>
 
   <div class="summary-box mt-4">
-    <h2 class="subsection-heading">About Probate Guardian</h2>
-    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Probate Guardian helps guardians — and the attorneys who assist them — prepare the court-required filings for Florida guardianship cases. It walks you through each required field, calculates totals automatically, and produces a filing-ready PDF or the official Clerk of Court Excel template.</p>
+    <h2 class="subsection-heading">About Guardian Forms</h2>
+    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardian Forms helps guardians — and the attorneys who assist them — prepare the court-required filings for Florida guardianship cases. It walks you through each required field, calculates totals automatically, and produces a filing-ready PDF or the official Clerk of Court Excel template.</p>
 
     <h2 class="subsection-heading mt-3">Who Should Use This</h2>
     <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardians of the <strong>property</strong>, who file an <strong>Initial Inventory</strong>, a <strong>Simplified Annual Accounting</strong>, or a full <strong>Annual Accounting</strong> — and guardians of the <strong>person</strong>, who file a <strong>Plan</strong> reporting on the ward's residence, care, and wellbeing. If you are guardian of both, you file one of each; create a separate form for each filing and give them the same case number, and the dashboard will keep them together.</p>
@@ -7711,7 +7711,7 @@ function renderScheduleDocsSection(scheduleKey){
   const inputId=`sched-doc-input-${scheduleKey}`;
   return `<div class="schedule-docs-section no-print">
     <h2>Supporting Documents${periodNote}</h2>
-    <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Probate Guardian does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.</p>
+    <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.</p>
     <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for ${esc(scheduleKey)}" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload PDF(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
