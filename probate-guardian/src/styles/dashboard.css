@@ -3,7 +3,11 @@
    answer to -- the sidebar takes a fixed slice of the window, so the two are
    never the same number. Everything below queries this. */
 [data-dashboard-root]{container-type:inline-size;container-name:dashboard-page;}
-.dashboard-summary-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(110px,.55fr);gap:.65rem;margin-bottom:.45rem;}
+/* Milestone 62: six even tiles (Action Items, Approaching Deadlines, Active
+   Filings, Total Filings, Total Open Filings, Total Closed Filings) instead
+   of the old three-wide-plus-one-narrow layout -- see the breakpoints below
+   for how this degrades as the dashboard's own container narrows. */
+.dashboard-summary-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.65rem;margin-bottom:.45rem;}
 .dashboard-stat{position:relative;min-width:0;overflow:hidden;text-align:left;padding:.85rem .9rem .8rem 1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-1);}
 .dashboard-stat:before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:var(--accent);}
 .dashboard-stat-action:before{background:var(--danger-text);}
@@ -132,6 +136,7 @@
 .dashboard-page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1.25rem;margin-bottom:1rem;}
 .dashboard-page-title{min-width:0;}
 .dashboard-page-title h1{margin:0;color:var(--ink);}
+.dashboard-test-system-label{color:#820024;}
 .dashboard-page-title p{margin:.3rem 0 0;color:var(--ink-3);font-size:.86rem;}
 .dashboard-page-kicker{margin-bottom:.2rem;color:var(--brand-text);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
 .dashboard-header-actions{display:flex;align-items:flex-end;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;}
@@ -347,7 +352,14 @@
   .dashboard-toolbar-actions{margin-left:0;}
 }
 
-/* Four tiles want roughly 140px each before the labels start wrapping. */
+/* Milestone 62: six tiles want roughly 130px each before labels start
+   wrapping -- more than the four this container-width scale was originally
+   tuned for, so it now steps down twice before the pre-existing 520px
+   tightening. */
+@container dashboard-page (max-width:900px){
+  .dashboard-summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+
 @container dashboard-page (max-width:780px){
   .dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
@@ -359,6 +371,6 @@
      controls and a 31px-tall auto-width button is an awkward tap target. */
   .dashboard-header-actions{display:grid;grid-template-columns:1fr;gap:.4rem;}
   .dashboard-header-actions>.btn{width:100%;}
-  .dashboard-summary-strip{gap:.45rem;}
+  .dashboard-summary-strip{gap:.45rem;grid-template-columns:repeat(2,minmax(0,1fr));}
   .dashboard-stat-label{font-size:.62rem;}
 }

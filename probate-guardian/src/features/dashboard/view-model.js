@@ -218,8 +218,15 @@ export function compareDashboardColumn(left, right, sortKey = 'priority', direct
   return compareDashboardPriority(left, right);
 }
 
+// Milestone 62: takes every projected ward now, not just the active ones --
+// harmless for the pre-existing three fields (each already re-derives
+// `active` by excluding isArchived internally, so an archived ward passed
+// in was always going to be filtered right back out of them), and is what
+// lets totalFilings/totalOpenFilings/totalClosedFilings below see the
+// closed side at all.
 export function getDashboardMetrics(projectedWards) {
   const active = projectedWards.filter(ward => !ward.isArchived);
+  const closed = projectedWards.filter(ward => ward.isArchived);
   return {
     actionItems: active.filter(ward => (
       ward.workflowStatus === 'disapproved-needs-correction'
@@ -231,5 +238,8 @@ export function getDashboardMetrics(projectedWards) {
       && (ward.deadlineBucket === 'today' || ward.deadlineBucket === 'due-soon')
     )).length,
     pendingCourtReview: active.filter(ward => ward.workflowStatus === 'pending-court-review').length,
+    totalFilings: projectedWards.length,
+    totalOpenFilings: active.length,
+    totalClosedFilings: closed.length,
   };
 }

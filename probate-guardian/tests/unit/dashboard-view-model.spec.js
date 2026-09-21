@@ -134,7 +134,34 @@ describe('dashboard view model', () => {
       project('approved-overdue', 'approved', '2026-01-01'),
     ]);
 
-    expect(metrics).toEqual({ actionItems: 2, approachingDeadlines: 1, pendingCourtReview: 1 });
+    expect(metrics).toEqual({
+      actionItems: 2, approachingDeadlines: 1, pendingCourtReview: 1,
+      totalFilings: 5, totalOpenFilings: 5, totalClosedFilings: 0,
+    });
+  });
+
+  // Milestone 62: the dashboard's three new "Total Filings"/"Total Open
+  // Filings"/"Total Closed Filings" cards. isArchived === closed, matching
+  // dashboardPriority()'s own 'archived' branch and the Mark Closed/Mark
+  // Open toggle's label in dashboard/index.js.
+  test('total/open/closed counts include archived wards without letting them affect the other three metrics', () => {
+    const project = (wardId, status, periodTo, archived) => projectDashboardWard({
+      wardId, inventoryType: 'annual', periodTo, archived, dashboardWorkflow: { status },
+    }, { progress: { pct: 50 }, today: TODAY });
+    const metrics = getDashboardMetrics([
+      project('overdue-open', 'draft', '2026-01-01', false),
+      project('overdue-but-closed', 'draft', '2026-01-01', true),
+      project('pending-closed', 'pending-court-review', '2026-01-01', true),
+    ]);
+
+    expect(metrics.totalFilings).toBe(3);
+    expect(metrics.totalOpenFilings).toBe(1);
+    expect(metrics.totalClosedFilings).toBe(2);
+    // The one OPEN overdue filing still counts; the closed one, otherwise
+    // identical, must not -- proving the archived gate, not just a zero
+    // count that would pass for the wrong reason.
+    expect(metrics.actionItems).toBe(1);
+    expect(metrics.pendingCourtReview).toBe(0);
   });
 
   test('sorts columns direction-aware and breaks ties with priority', () => {

@@ -94,7 +94,7 @@ function dashboardHeaderHTML() {
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
       <div class="dashboard-page-kicker">Status - overview</div>
-      <h1>All Filings — Dashboard #820024 TEST SYSTEM</h1>
+      <h1>All Filings — Dashboard <span class="dashboard-test-system-label">TEST SYSTEM</span></h1>
       <p>Review exceptions, deadlines, and court status across active filings.</p>
     </div>
     <div class="dashboard-header-actions">
@@ -150,12 +150,14 @@ function priorityBadgeHTML(row, includeWorkflowStates = false) {
 function renderDashboardSummary() {
   const container = document.getElementById('dashboard-summary-strip-container');
   if (!container) return;
-  const activeWards = projectWards(getCaseFile().wards).filter(w => !w.isArchived);
-  const metrics = getDashboardMetrics(activeWards);
+  const metrics = getDashboardMetrics(projectWards(getCaseFile().wards));
   container.innerHTML = `<div class="dashboard-summary-strip dashboard-triage-summary">
     <div class="dashboard-stat dashboard-stat-action"><div class="dashboard-stat-num dashboard-metric-alert">${metrics.actionItems}</div><div class="dashboard-stat-label">Action Items / Exceptions</div></div>
     <div class="dashboard-stat dashboard-stat-deadline"><div class="dashboard-stat-num dashboard-metric-warn">${metrics.approachingDeadlines}</div><div class="dashboard-stat-label">Approaching Deadlines</div></div>
-    <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${activeWards.length}</div><div class="dashboard-stat-label">Active Filings</div></div>
+    <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${metrics.totalOpenFilings}</div><div class="dashboard-stat-label">Active Filings</div></div>
+    <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${metrics.totalFilings}</div><div class="dashboard-stat-label">Total Filings</div></div>
+    <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${metrics.totalOpenFilings}</div><div class="dashboard-stat-label">Total Open Filings</div></div>
+    <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${metrics.totalClosedFilings}</div><div class="dashboard-stat-label">Total Closed Filings</div></div>
   </div>`;
 }
 
