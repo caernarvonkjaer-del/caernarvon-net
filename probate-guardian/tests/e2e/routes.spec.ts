@@ -261,10 +261,11 @@ test.describe('routes', () => {
     await main.locator('[data-dashboard-bound="true"]').waitFor();
     const expectPrimaryMetricStrip = async () => {
       const primaryMetrics = main.locator('.dashboard-triage-summary .dashboard-stat:not(.dashboard-stat-secondary)');
-      await expect(primaryMetrics).toHaveCount(3);
+      // Milestone 62 hid the "Pending Court Review" card (requester's
+      // pre-test checklist); 3 primary stats -> 2.
+      await expect(primaryMetrics).toHaveCount(2);
       await expect(primaryMetrics.filter({ hasText: 'Action Items / Exceptions' })).toContainText('1');
       await expect(primaryMetrics.filter({ hasText: 'Approaching Deadlines' })).toContainText('1');
-      await expect(primaryMetrics.filter({ hasText: 'Pending Court Review' })).toContainText('1');
       await expect(main.locator('.dashboard-triage-summary')).not.toContainText('Combined total');
       await expect(main.locator('.dashboard-summary-secondary')).toHaveCount(0);
     };

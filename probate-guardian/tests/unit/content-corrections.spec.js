@@ -76,7 +76,7 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
       expect(content).toMatch(/RESOURCE_GROUPS\.find\(g\s*=>\s*g\.scope\s*===\s*`circuit-\$\{cNum\}`\)/);
 
       // ...and the panel carries its own third-party disclaimer.
-      expect(content).toContain("isn't affiliated with them");
+      expect(content).toContain("is not affiliated with them");
     });
   });
 

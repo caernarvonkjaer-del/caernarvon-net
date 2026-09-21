@@ -2668,8 +2668,8 @@ function defaultIc(name, size) {
  * @param {{ selectedCircuit?: number, esc?: (s: string) => string, ic?: (name: string, size?: number) => string }} [options]
  * @returns {string}
  */
-export function resourcesPanelHTML(groups, { selectedCircuit = 6, esc = defaultEsc, ic = defaultIc } = {}) {
-  const activeCircuit = selectedCircuit >= 1 && selectedCircuit <= 20 ? Number(selectedCircuit) : 6;
+export function resourcesPanelHTML(groups, { selectedCircuit = getDefaultCircuitPreference(), esc = defaultEsc, ic = defaultIc } = {}) {
+  const activeCircuit = selectedCircuit >= 1 && selectedCircuit <= 20 ? Number(selectedCircuit) : getDefaultCircuitPreference();
   const displayGroups = groups === undefined ? groupsForCircuit(activeCircuit) : (Array.isArray(groups) ? groups : []);
 
   if (!displayGroups || displayGroups.length === 0) return '';
@@ -2703,7 +2703,37 @@ export function resourcesPanelHTML(groups, { selectedCircuit = 6, esc = defaultE
     </div>
     ${groupsHTML}
     <div class="sidebar-resource-disclaimer">
-      These are independent government and third-party sites. Probate Guardian isn't affiliated with them and doesn't control their content.
+      <p>These are independent government and third-party sites. Probate Guardian is not affiliated with them and does not control their content.</p>
+      <p>This application is tuned for local requirements for the 6th Judicial Circuit. Please review requirements for other Florida Judicial Circuits before using.</p>
     </div>
   </section>`;
+}
+
+// Milestone 62: a device-level "which circuit shows by default" preference,
+// separate from caseFile.selectedCircuit (which is per-case and lives in the
+// .sav's appState blob). Deliberately localStorage, not the IndexedDB
+// pg-launch-pref store other launch preferences use -- this is a plain,
+// non-sensitive UI default, not case data. Falls back to 6 (Sixth Judicial
+// Circuit) with no preference stored yet, out of range, or if localStorage
+// is unavailable/throws.
+export const DEFAULT_CIRCUIT_PREFERENCE_KEY = 'pg-default-circuit';
+
+export function getDefaultCircuitPreference() {
+  try {
+    if (typeof localStorage === 'undefined') return 6;
+    const n = Number(localStorage.getItem(DEFAULT_CIRCUIT_PREFERENCE_KEY));
+    return n >= 1 && n <= 20 ? n : 6;
+  } catch (e) {
+    return 6;
+  }
+}
+
+export function setDefaultCircuitPreference(circuit) {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const n = Number(circuit);
+    if (n >= 1 && n <= 20) localStorage.setItem(DEFAULT_CIRCUIT_PREFERENCE_KEY, String(n));
+  } catch (e) {
+    /* non-critical */
+  }
 }

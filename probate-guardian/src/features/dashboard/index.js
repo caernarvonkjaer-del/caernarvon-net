@@ -6,7 +6,7 @@
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
-import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML } from './resources.js';
+import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML, getDefaultCircuitPreference, setDefaultCircuitPreference } from './resources.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 
 const {
@@ -57,12 +57,21 @@ function option(value, label, selectedValue) {
   return `<option value="${esc(value)}"${value === selectedValue ? ' selected' : ''}>${esc(label)}</option>`;
 }
 
+// Milestone 62: hidden for the initial test rollout (#820024), requester
+// intends to reinstate it afterward. Flip this back to true to bring the
+// link back — the markup (and the GovQA URL user-guide-drift-guard.spec.js
+// scans for) stays in source either way.
+const SHOW_COMMENT_CARD_LINK = false;
+
 function dashboardToolbarActionsHTML() {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
+  const commentCardLink = SHOW_COMMENT_CARD_LINK
+    ? `<a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message', 16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>`
+    : '';
   return `<div class="dashboard-toolbar-actions">
     <button type="button" class="topnav-btn" data-feedback-open="bug">${ic('bug', 16)} Report a Bug</button>
-    <a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message', 16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>
+    ${commentCardLink}
     <button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${ic(isDark ? 'sun' : 'moon', 16)}</button>
     <button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>
   </div>`;
@@ -84,13 +93,13 @@ function dashboardHeaderHTML() {
 
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
-      <div class="dashboard-page-kicker">Compliance overview</div>
-      <h1>All Filings — Dashboard</h1>
+      <div class="dashboard-page-kicker">Status - overview</div>
+      <h1>All Filings — Dashboard #820024 TEST SYSTEM</h1>
       <p>Review exceptions, deadlines, and court status across active filings.</p>
     </div>
     <div class="dashboard-header-actions">
-      ${newFormBtn}
       ${exportAllBtn}
+      ${newFormBtn}
       ${newExistingBtn}
     </div>
   </header>`;
@@ -146,7 +155,6 @@ function renderDashboardSummary() {
   container.innerHTML = `<div class="dashboard-summary-strip dashboard-triage-summary">
     <div class="dashboard-stat dashboard-stat-action"><div class="dashboard-stat-num dashboard-metric-alert">${metrics.actionItems}</div><div class="dashboard-stat-label">Action Items / Exceptions</div></div>
     <div class="dashboard-stat dashboard-stat-deadline"><div class="dashboard-stat-num dashboard-metric-warn">${metrics.approachingDeadlines}</div><div class="dashboard-stat-label">Approaching Deadlines</div></div>
-    <div class="dashboard-stat dashboard-stat-pending"><div class="dashboard-stat-num dashboard-metric-pending">${metrics.pendingCourtReview}</div><div class="dashboard-stat-label">Pending Court Review</div></div>
     <div class="dashboard-stat dashboard-stat-secondary"><div class="dashboard-stat-num">${activeWards.length}</div><div class="dashboard-stat-label">Active Filings</div></div>
   </div>`;
 }
@@ -618,7 +626,7 @@ function renderSidebarResources() {
   // (add a ward in another circuit, the default follows) until the user
   // picks one explicitly via the selector below.
   const counties = (cf?.wards || []).map(w => normalizeCountyName(countyOf(w)));
-  const selectedCircuit = cf?.selectedCircuit ?? deriveDefaultCircuit(counties) ?? 6;
+  const selectedCircuit = cf?.selectedCircuit ?? deriveDefaultCircuit(counties) ?? getDefaultCircuitPreference();
   const groups = groupsForCircuit(selectedCircuit);
   sidebarResources.innerHTML = resourcesPanelHTML(groups, { selectedCircuit, esc, ic });
   sidebarResources.hidden = false;
@@ -632,6 +640,9 @@ function renderSidebarResources() {
       if (currentCaseFile) {
         currentCaseFile.selectedCircuit = newCircuit;
       }
+      // Milestone 62: an explicit pick also becomes this device's default
+      // for future cases/sessions with nothing case-specific to derive from.
+      setDefaultCircuitPreference(newCircuit);
       if (typeof markDirtySinceExport === 'function') {
         markDirtySinceExport();
       }

@@ -8,6 +8,9 @@ const {
   groupsForCircuit,
   deriveDefaultCircuit,
   resourcesPanelHTML,
+  DEFAULT_CIRCUIT_PREFERENCE_KEY,
+  getDefaultCircuitPreference,
+  setDefaultCircuitPreference,
 } = await import('../../src/features/dashboard/resources.js');
 
 describe('Milestone 47B: dashboard resources directory & policy', () => {
@@ -397,7 +400,10 @@ describe('Milestone 47B: dashboard resources directory & policy', () => {
       expect(html).toContain('aria-labelledby="sidebar-resources-title"');
       expect(html).toContain('id="sidebar-resources-title"');
       expect(html).toContain(
-      "These are independent government and third-party sites. Probate Guardian isn't affiliated with them and doesn't control their content."
+      "These are independent government and third-party sites. Probate Guardian is not affiliated with them and does not control their content."
+    );
+      expect(html).toContain(
+      "This application is tuned for local requirements for the 6th Judicial Circuit. Please review requirements for other Florida Judicial Circuits before using."
     );
   });
 
@@ -500,5 +506,47 @@ describe('Milestone 54: Judicial Circuit selector and per-county accordions', ()
     const html = resourcesPanelHTML(undefined, { selectedCircuit: 1, esc: s => s, ic: () => '' });
     expect(html).toContain('Escambia County');
     expect(html).toContain('<option value="1" selected>First Judicial Circuit</option>');
+  });
+});
+
+// Milestone 62: the device-level "first use" default-circuit preference.
+// Separate from caseFile.selectedCircuit -- see resources.js's own comment.
+describe('default circuit preference (localStorage, Milestone 62)', () => {
+  function fakeLocalStorage() {
+    const store = new Map();
+    return {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k),
+    };
+  }
+
+  test('defaults to 6 (Sixth Judicial Circuit) with nothing stored yet', () => {
+    globalThis.localStorage = fakeLocalStorage();
+    expect(getDefaultCircuitPreference()).toBe(6);
+  });
+
+  test('setDefaultCircuitPreference() persists a valid circuit, getDefaultCircuitPreference() reads it back', () => {
+    globalThis.localStorage = fakeLocalStorage();
+    setDefaultCircuitPreference(13);
+    expect(getDefaultCircuitPreference()).toBe(13);
+    expect(localStorage.getItem(DEFAULT_CIRCUIT_PREFERENCE_KEY)).toBe('13');
+  });
+
+  test('ignores an out-of-range value on write and on read', () => {
+    globalThis.localStorage = fakeLocalStorage();
+    setDefaultCircuitPreference(21);
+    setDefaultCircuitPreference(0);
+    expect(getDefaultCircuitPreference()).toBe(6);
+
+    localStorage.setItem(DEFAULT_CIRCUIT_PREFERENCE_KEY, '99');
+    expect(getDefaultCircuitPreference()).toBe(6);
+  });
+
+  test('resourcesPanelHTML falls back to the stored preference when selectedCircuit is omitted', () => {
+    globalThis.localStorage = fakeLocalStorage();
+    setDefaultCircuitPreference(12);
+    const html = resourcesPanelHTML(undefined, { esc: s => s, ic: () => '' });
+    expect(html).toContain('<option value="12" selected>Twelfth Judicial Circuit</option>');
   });
 });

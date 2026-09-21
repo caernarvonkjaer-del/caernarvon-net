@@ -509,7 +509,7 @@ const WALKTHROUGH_PLAN_MINOR=[
 const WALKTHROUGH_DASHBOARD=[
   {element:'#help-toggle-btn',title:'1. Help & Guidance',text:'Click "?" anytime for in-app help, the standalone User Guide, an Activity Log of unlocks and backups, and shared party records.',position:'left'},
   {element:'#new-ward-btn, [data-dashboard-action="add-ward"]',title:'2. Create New Filing',text:'Start here to add a new ward or filing. Choose between Initial Inventory, Annual Accounting, Simplified Accounting, or one of four Guardianship Plans.',position:'bottom'},
-  {element:'.dashboard-summary-strip',title:'3. Compliance Overview',text:'Tracks urgent action items, approaching deadlines, and filings pending court review across all active wards.',position:'bottom'},
+  {element:'.dashboard-summary-strip',title:'3. Status Overview',text:'Tracks urgent action items and approaching deadlines across all active wards.',position:'bottom'},
   {element:'#dashboard-search',title:'4. Search & Filter',text:'Quickly locate any filing by ward name, case number, or contact details.',position:'bottom'},
   {element:'#theme-toggle-btn',title:'5. Light & Dark Appearance',text:'Switch between light and dark mode here. Your preference is remembered across sessions on this device.',position:'left'},
   {element:'.dashboard-triage-queue, .dashboard-empty',title:'6. All Filings Queue',text:'Manage all active and closed guardianship cases. Click "Continue" or "Edit" to resume working on a filing, or "+ Add Your First Ward" to begin.',position:'top'},

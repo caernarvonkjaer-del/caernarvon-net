@@ -78,7 +78,7 @@ test('guided-tour dashboard sequence covers all dashboard steps from help panel'
   const expectedSteps = [
     { title: 'Help & Guidance', selector: '#help-toggle-btn' },
     { title: 'Create New Filing', selector: '#new-ward-btn' },
-    { title: 'Compliance Overview', selector: '.dashboard-summary-strip' },
+    { title: 'Status Overview', selector: '.dashboard-summary-strip' },
     { title: 'Search & Filter', selector: '#dashboard-search' },
     { title: 'Light & Dark Appearance', selector: '#theme-toggle-btn' },
     { title: 'All Filings Queue', selector: '.dashboard-triage-queue, .dashboard-empty' },
