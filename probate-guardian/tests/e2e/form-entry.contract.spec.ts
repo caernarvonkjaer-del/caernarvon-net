@@ -215,7 +215,7 @@ test.describe('Form entry contract', () => {
     await createWard(page, 'Live Block Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/'));
 
-    const gidInput = page.locator('[data-field-path="gid"]');
+    const gidInput = page.locator('input[data-field-path="gid"]');
     await gidInput.fill('02/14/26'); // 2-digit year, rejected
     await gidInput.blur();
     await expect(gidInput).toHaveAttribute('aria-invalid', 'true');

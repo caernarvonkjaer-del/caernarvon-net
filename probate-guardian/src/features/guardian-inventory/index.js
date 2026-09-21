@@ -2,6 +2,7 @@ import { confirmModal } from '../../core/ui/dialogs.js';
 import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js';
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
+import { sectionCheckKey, isSectionIncomplete, blocksNext, guidanceAdvice } from '../../core/status/section-guidance-policy.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValuePairs } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
@@ -287,29 +288,31 @@ function buildNavGuardian(container){
   `;
 }
 
-// A schedule's own "Next" button is disabled until computeNavChecks()
-// says that schedule is complete (a real row, or the "no items" checkbox
-// -- see scheduleComplete() there). Only gates the 11 schedule pages;
-// Cover, Summary, D-1..D-5, and Print are never gated this way.
-function isScheduleIncomplete(route){
-  const key=route.startsWith('/')?route.slice(1):route;
-  if(!SCHEDULE_NAV_KEYS.includes(key))return false;
-  const r=computeNavChecks();
-  return !!(r&&!r.checks[key]);
-}
+// Milestone 63A. This module used to keep its own copy of the "is this page gating Next"
+// rule, beside the one in legacy-app.js that live-patches the button after every edit. Two
+// copies meant a fix to one would show the explanation on page load and wipe it on the first
+// keystroke. Both now read src/core/status/section-guidance-policy.js:
+//   - the Guardian pages that GATE Next are the 11 schedules only (SCHEDULE_NAV_KEYS);
+//   - Cover and D-1..D-5 are explained when incomplete but never block Next (D1);
+//   - the 11 schedule pages are exactly the Guardian pages carrying a "verify there are
+//     none" checkbox, so they alone get the "add an item or tick the box" advice.
 export function pageNav(current){
   const PAGES=PAGES_GUARDIAN;
   const idx=PAGES.findIndex(p=>p.id===current);
   const prev=idx>0?PAGES[idx-1]:null;
   const next=idx<PAGES.length-1?PAGES[idx+1]:null;
-  const nextDisabled=isScheduleIncomplete(current);
-  const rawErrors=typeof validateGuardian==='function'?validateGuardian(window.D):[];
-  const guidanceHtml=nextDisabled?renderLocalSectionGuidance(current,rawErrors,Infinity,{message:'Add at least one item, or check the box verifying there are none, before continuing.'}):'';
+  const checkKey=sectionCheckKey('guardian',current);
+  const checks=computeNavChecks();
+  const incomplete=isSectionIncomplete(checks&&checks.checks,checkKey);
+  const nextDisabled=blocksNext({type:'guardian',checkKey,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
+  const advice=guidanceAdvice({hasVerifyNoneBox:SCHEDULE_NAV_KEYS.includes(checkKey)});
+  const rawErrors=incomplete&&typeof validateGuardian==='function'?validateGuardian(window.D):[];
+  const guidanceHtml=incomplete?renderLocalSectionGuidance(current,rawErrors,Infinity,{message:advice}):'';
   return `<div class="page-nav-wrap no-print">
     <div class="page-nav d-flex justify-content-between align-items-center">
       <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev.id}">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>
       <small style="color:var(--ink-3);">Page ${idx+1} of ${PAGES.length}</small>
-      <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?'disabled title="Add at least one item, or check the box verifying there are none, before continuing."':''} data-form-action="navigate" data-route="${next.id}">Next: ${next.label} →</button>`:'&nbsp;'}</div>
+      <div>${next?`<button id="page-next-btn" class="btn btn-primary btn-sm" ${nextDisabled?`disabled title="${advice}"`:''} data-form-action="navigate" data-route="${next.id}">Next: ${next.label} →</button>`:'&nbsp;'}</div>
     </div>
     <div id="page-local-guidance">${guidanceHtml}</div>
   </div>`;

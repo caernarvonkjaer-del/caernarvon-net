@@ -774,6 +774,10 @@
       "name": "announceStatus"
     },
     {
+      "file": "src/core/status/section-guidance-policy.js",
+      "name": "sectionGuidancePolicy"
+    },
+    {
       "file": "src/core/status/section-status.js",
       "name": "computeSectionStatus"
     },

@@ -402,6 +402,7 @@ interface Window {
   saveWardToState: any;
   SCHEDULE_NAV_KEYS: any;
   SCHEDULE_SCHEMAS: any;
+  sectionGuidancePolicy: any;
   seedStoredThemeFromLegacy: any;
   selectCountyOption: any;
   selectSecurityMode: any;

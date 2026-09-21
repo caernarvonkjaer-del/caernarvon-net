@@ -8,11 +8,12 @@ further items will be appended as they are raised.
 
 | Item | Summary | Status |
 | :-- | :-- | :-- |
-| **63A** | Guardian Inventory marks six pages incomplete but never says why | Proposed — **D1, D2, D11 decided** (explain, don't block; all filing types; fix R5 routing in 63A); **authorized 2026-09-21** (execution order below) |
+| **63A** | Guardian Inventory marks six pages incomplete but never says why | **IMPLEMENTED 2026-09-21** (D1: explain, don't block; D2: wording for all filing types; D11's R5 bound **triggered — split to 63F**) — unit 1614/1614; 199 affected e2e passed, 0 failed; see the implementation record under 63A |
 | **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | **IMPLEMENTED 2026-09-21** (D3: shown only while it applies; D4: 57B recorded as landed without a recorded authorization) — unit 1353/1353; 151 affected e2e passed, 0 failed; see the implementation record under 63B |
 | **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | **IMPLEMENTED 2026-09-21** (D5 + D12: panel, no auto-reload, with Amendment A) — unit 1340/1340; hosted-build profile 34 passed, 0 failed; see the implementation record under 63C |
 | **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | **IMPLEMENTED 2026-09-21** (D6: the note on all 16 signing pages, none elsewhere; Simplified Part III's copy moved to Part IV) — unit 1587/1587; 80 affected e2e passed, 0 failed; see the implementation record under 63D |
 | **63E** | UCN on the printed filing, on the Case # line of the header, all forms | Proposed — **D7–D10 decided** (option 1 each; Excel does not carry UCN); **authorized 2026-09-21** (execution order below) |
+| **63F** | Three pages the sidebar marks incomplete that the validators cannot list (Simplified Part III, Plan-Annual 3G, Plan-Minor Preparer & Attorney) — split from 63A's R5 | Proposed — **not authorized**; nothing implemented |
 
 ---
 
@@ -410,6 +411,79 @@ and `npx vitest run tests/unit/section-guidance-predicates.spec.js`.
 
 Cost note: tests 1-3 are e2e, so they carry the ~25-minute full-regression
 cost only when run as a suite; each new test is seconds.
+
+### 63A — implementation record (2026-09-21)
+
+**Changed.**
+- New `src/core/status/section-guidance-policy.js` — the three questions, pure:
+  `sectionCheckKey()` (route → `computeNavChecks()` key, every filing type; Annual's
+  Cover stays `a-p1`), `isSectionIncomplete()` (the sidebar's own map),
+  `blocksNext()` (per-type: the 11 Guardian schedule pages gate; Guardian Cover and
+  D-1..D-5 explain but **never block Next** — D1; every other type gates every page it
+  marks, unchanged) and `guidanceAdvice()`. Bridged as `window.sectionGuidancePolicy`
+  (one new name, added to the window-bridge allow-list deliberately) and imported by
+  `main.js`.
+- `legacy-app.js`: `isScheduleIncomplete()` and `updateCurrentScheduleNextButton()`
+  rewritten over the policy. The box is shown whenever the section is **incomplete**,
+  not only when Next is blocked — clearing it whenever Next was unblocked is what would
+  have wiped the explanation on the first edit (R2). `isScheduleIncomplete` keeps its
+  name and meaning ("does incompleteness block Next on this route"); `SCHEDULE_NAV_KEYS`
+  stays where it is and is passed in, so there is still exactly one list of the 11.
+- `guardian-inventory/index.js`: the module's own copy of the gate is **deleted** (R1);
+  `pageNav()` reads the same policy for the first render.
+- **D2 wording**: the "Add at least one item, or check the box verifying there are none…"
+  sentence is now shown only on a page that has that checkbox (the 11 Guardian schedules,
+  Annual's schedules, Part VIII and Part XI, Simplified Part VII). Every other page says
+  **"Complete the required items on this page before continuing."** Decided by the
+  presence of the checkbox on the page, not by a list of page names.
+
+**The bounded R5 investigation ran and triggered the stop-and-split rule.** Probed in a
+browser on a blank filing, three pages (not two) show only the generic sentence:
+
+| Page | Sidebar rule | Why the box has nothing to list |
+| :-- | :-- | :-- |
+| Simplified Part III (`/p3`) | period from and to filled, in order | the validator files those two fields under the **Cover** (`/`); the same fields are rendered on Part III, so a route mapping would need an alias in shared code |
+| Plan-Annual 3G Insurance & Benefits (`/p4`) | a benefit chosen, or "none", or "other" (`legacy-app.js`) | **no validator rule exists** — nothing to list |
+| Plan-Minor Preparer & Attorney (`/p7`) | preparer name, attorney name, attorney signature date | **no validator rule exists** for them |
+
+That is not "confined to those two validators' messages or their route mapping": two of
+the three need a new "what this page still wants" mechanism, one needs an alias in shared
+code, and it reaches a third page. So per the bound recorded under R5, **63A did not
+expand**: those three pages are named, commented exemptions from the invariant walk's
+"lists an item" clause *only* (the box must still be present and its advice must still fit;
+the exemption fails the test once a page starts listing items). Written up as **63F** below;
+not authorized, nothing built.
+
+**Tests (red first).** New `tests/unit/section-guidance-policy.spec.js` (27 cases; the
+module did not exist). New `tests/e2e/section-guidance-invariant.spec.ts` (7, one per type):
+before the change, Guardian failed on exactly Cover and D-1..D-5, Annual on every
+non-schedule page (wrong tooltip, "tick a box that is not there"), and the others on
+their non-schedule pages. Two cases added to `dependent-question-gate.spec.ts`: the
+reporter's D-4 case (mark, box, jump link focuses the Yes/No, Next enabled, answering
+clears the box and turns the mark green) and the live-patch case (the box survives an
+unrelated edit) — both red before. One refinement made while writing the walk: on a blank
+schedule the generic sentence *is* the right and only advice (there is nothing to jump
+to), so the "lists an item" clause applies only where the page has no "none" checkbox.
+`navigation-status.contract.spec.ts`: the header and two comment blocks that said the D
+pages are "never gated / never render a jump link" rewritten; no assertion changed.
+`TEST-INDEX.md` updated.
+
+**One existing test broke because of this change, and was fixed.** `form-entry-ux.spec.ts`
+("forgiving date normalization") located the Guardian Cover's date field by the bare
+selector `[data-field-path="gid"]`. A blank Guardian Cover now shows its explanation box,
+and the box's jump link to that field carries the same attribute, so the selector matched
+two elements (Playwright strict-mode violation). Expectation-only fix: the selector is
+scoped to `input[data-field-path="gid"]`, in that spec and in the three other places that
+used the same bare form on the Guardian Cover (`form-entry.contract`, and two in
+`persistence-recovery.contract` — which were not in the first run but would have failed
+identically). Searched every e2e spec for other bare `data-field-path` selectors; the
+remaining ones are on schedule pages that already had the box before 63A.
+
+**Verification.** Full unit suite **1614/1614**; `npm run check:types` clean; window-bridge
+and index guards pass. Source-target e2e — the invariant walk, `dependent-question-gate`,
+`form-entry-ux`, `navigation-status.contract`, `print-preview-signature-jump` and the
+seven per-type mount specs: **199 passed, 0 failed**. The full `npm test`
+regression was **not** run here (once, after 63E).
 
 ---
 
@@ -1253,6 +1327,61 @@ with the embedded font (table above). Not checked: a generated PDF with a UCN
 
 ---
 
+## 63F — Pages the sidebar marks incomplete that the validators cannot list
+
+Raised 2026-09-21 by 63A's bounded R5 investigation, under the stop-and-split rule
+recorded there. **Proposed — not authorized. Nothing in this item is implemented.**
+
+### What a filer sees
+
+On three pages the sidebar shows a red mark, the page shows the yellow box, and the box
+can say only *"Complete the required items on this page before continuing."* — no list,
+no links, so the filer is told the page is unfinished and not what is missing:
+
+| Page | What the sidebar wants | Why the box has nothing to list |
+| :-- | :-- | :-- |
+| Simplified Part III | the two period dates | the validator files them under the **Cover**; the same fields are on Part III |
+| Plan-Annual 3G Insurance & Benefits | one benefit chosen, or "none", or "other" | no validator rule |
+| Plan-Minor Preparer & Attorney | preparer name, attorney name, attorney signature date | no validator rule |
+
+### Why it happens — two different causes
+
+1. **Route ownership.** A field rendered on two pages (Simplified's period dates: Cover and
+   Part III) has one validator message with one route. The page that does not own the route
+   cannot explain a mark that depends on that field.
+2. **Sidebar-only rules.** The sidebar asks "have you finished with this page?"; the export
+   gate asks "does this satisfy the court?" — and `AGENTS.md` §4 deliberately lets them
+   differ, so that a filer is prompted for things the court's form does not require. Where
+   the sidebar has a rule the validator lacks, there is no message anywhere to list.
+
+### Decision needed — D13
+
+1. **A small "what this page still wants" descriptor (recommended).** For a sidebar rule
+   with no validator counterpart, a table entry (key → the items, each a label and a field
+   path) that the box uses when the validator yields nothing for the route; plus a way for a
+   page to claim an error for a field it renders (Simplified Part III). Filer-observable:
+   the three pages list what is missing, each item a link. Cost: a table to keep in step with
+   the sidebar rules — guarded by a parity unit test (every sidebar-only key has an entry;
+   there is precedent in `tests/unit/support/plan-readiness-parity.js`) — and a change to
+   `adaptValidationErrors()` / `renderLocalSectionGuidance()`.
+2. **Turn the sidebar-only rules into validators.** Not recommended: it makes the *export*
+   demand what the court's form does not (`AGENTS.md` §4).
+3. **Leave the generic sentence.** Honest, and now correctly worded, but says nothing specific.
+
+**Related, not part of D13:** under the non-Guardian policy Next is *blocked* on these pages
+even though the export does not require the items. That is existing behaviour, unchanged by
+63A; whether those pages should block at all is the same cross-form question D1 answered for
+the Guardian pages, and is noted here so it is decided deliberately, not by accident.
+
+### If authorized
+
+Files: `src/core/status/section-guidance-policy.js` or a sibling for the descriptor;
+`src/core/status/section-status.js` / `adaptValidationErrors()`; the three validators or the
+descriptor table; the invariant walk (**delete** `NO_LISTABLE_ITEMS_YET`, so the walk becomes
+strict); `TEST-INDEX.md`. Red-first: the walk's exemptions are the failing tests.
+
+---
+
 ## Readiness review, 2026-09-21 — decisions opened by it
 
 A second-reader review of this document found it not yet execution-ready.
@@ -1301,11 +1430,12 @@ not begin until the previous one is committed and green.
 
 | Item | Authorized? | When / by | Notes |
 | :-- | :-- | :-- | :-- |
-| 63A | **AUTHORIZED** | 2026-09-21, Alan (requester) — all five, in the order below | includes the bounded R5 investigation (stop-and-split rule) |
+| 63A | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) — all five, in the order below | the bounded R5 investigation ran and triggered the stop-and-split rule → 63F; committed locally |
 | 63B | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | D4's 57-doc edits made in the same commit; committed locally, not pushed |
 | 63C | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | includes Amendment A; committed locally, not pushed |
 | 63D | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | committed locally; pushed with the rest of MS 63 after the final e2e |
 | 63E | **AUTHORIZED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included |
+| 63F | **not authorized** | — | written up 2026-09-21 by 63A's stop-and-split rule; nothing built |
 
 **Recommended execution order** (from the second review; adopted here as a
 recommendation, not a decision):

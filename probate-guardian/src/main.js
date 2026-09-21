@@ -34,6 +34,7 @@ import './core/filing/delete-confirmation.js';
 // reach the shared recipient rule through the bridge, and they run for
 // dashboard filings that have never been opened.
 import './core/validation/service-recipients.js';
+import './core/status/section-guidance-policy.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

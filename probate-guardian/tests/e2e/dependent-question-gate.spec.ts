@@ -164,3 +164,54 @@ test.describe('Annual: does a restricted depository apply?', () => {
     expect(await partIxMark(), 'answering No completes it').toBe('nav-check complete');
   });
 });
+
+// Milestone 63A. The reporter's case. On a Guardian Inventory D-4 with every
+// visible field filled in and only "Has the surety bond been waived?" blank, the
+// sidebar showed a red mark and the progress card said "16 of 17 sections
+// complete", and the page said nothing at all: the yellow "Complete these items"
+// box was drawn only for pages whose Next button was gated, and D-1..D-5 were
+// never gated. D1: the page now explains, and Next is deliberately NOT blocked.
+test.describe('Milestone 63A: the page says what the red mark is waiting for', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'D-4 Explains Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await setField(page, { bondWaived: '', bondWaivedDate: '' });
+    await page.evaluate(() => (window as any).navigate('/d4'));
+  });
+
+  const box = (page: Page) => page.locator('#page-local-guidance .section-local-guidance');
+  const bondQuestion = (page: Page) => page.locator('[data-yes-no-group="bondWaived"]');
+
+  test('D-4 with only the bond question blank: the box names it, links to it, and Next stays enabled', async ({ page }) => {
+    await expect(page.locator('[data-nav="d4"] .nav-check'), 'the sidebar marks D-4 incomplete').toHaveClass(/incomplete/);
+
+    await expect(box(page), 'the page must say why').toBeVisible();
+    await expect(box(page)).toContainText(/surety bond has been waived/i);
+    await expect(page.locator('#page-next-btn'), 'D1: explain, do not block').toBeEnabled();
+
+    // The jump link lands on the question itself.
+    await box(page).getByRole('button', { name: /waived/i }).click();
+    await expect(bondQuestion(page).locator('input[type="radio"]:focus')).toHaveCount(1);
+
+    // Answering clears the box and turns the mark green.
+    await bondQuestion(page).getByLabel('No', { exact: true }).check();
+    await expect(box(page)).toHaveCount(0);
+    await expect(page.locator('[data-nav="d4"] .nav-check')).toHaveClass(/complete/);
+  });
+
+  test('the explanation survives an unrelated edit on the same page (the live patch must not wipe it)', async ({ page }) => {
+    // updateCurrentScheduleNextButton() rewrites the box after every edit. A fix
+    // that only made the page-load render explain would pass the test above and
+    // then lose the box on the first keystroke -- the two copies of the old gate.
+    await expect(box(page)).toBeVisible();
+
+    const unrelated = page.locator('#main-content input[type="text"]').first();
+    await unrelated.fill('Acme Surety Company');
+    await unrelated.blur();
+
+    await expect(box(page), 'still explained after editing a different field').toBeVisible();
+    await expect(box(page)).toContainText(/surety bond has been waived/i);
+    await expect(page.locator('#page-next-btn')).toBeEnabled();
+  });
+});

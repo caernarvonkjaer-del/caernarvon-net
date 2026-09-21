@@ -12,9 +12,11 @@ import type { ValidatorIssue } from './support/window-api';
 // Simplified, and Annual's finalAccounting/trustAccounting formEngine()
 // aliases now share the same config-driven test loop (their architecture
 // matches the Plan types closely enough to reuse it verbatim).
-// Guardian does NOT reuse this loop -- its Next-button gate only ever covers
-// the 11 numbered schedule pages (Cover/D1-D5/Print are never gated, by
-// design), a brand-new schedule has 0 rows so no per-field jump link exists
+// Guardian does NOT reuse this loop -- its Next-button gate covers only the
+// 11 numbered schedule pages. Cover and D1-D5 are marked, counted and (since
+// Milestone 63A) EXPLAINED when incomplete, but never block Next (decision D1);
+// Print is unmarked. A page-level walk of that rule lives in
+// section-guidance-invariant.spec.ts. A brand-new schedule has 0 rows so no per-field jump link exists
 // until one is added, its fields use data-field-path (never data-form-path),
 // and its Print Preview issue count lives in a different element entirely
 // (.validation-panel .validation-title, not .print-preview-banner). Per this
@@ -260,9 +262,9 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await createWard(page, 'Guardian Nav Guidance Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/a1'));
 
-    // isScheduleIncomplete()'s SCHEDULE_NAV_KEYS whitelist gates only the 11
-    // numbered schedule pages -- Cover/D1-D5/Print are never gated this way,
-    // by design. A brand-new schedule has 0 rows, so validateGuardian()'s
+    // blocksNext() (core/status/section-guidance-policy.js) gates only the 11
+    // numbered schedule pages -- Cover/D1-D5 are explained but never block Next
+    // (Milestone 63A, D1), and Print is unmarked. A brand-new schedule has 0 rows, so validateGuardian()'s
     // only possible error here is the schedule-empty message (whose jump
     // link has no real field target -- the "none apply" checkbox itself
     // carries no data-bind/id). A row must exist before any per-field jump
@@ -360,15 +362,16 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await expect(page.locator(`#${yearPath}`)).toBeFocused();
   });
 
-  // D-1 through D-5 are never gated by isScheduleIncomplete() for Guardian
-  // (see the file-header comment), so #page-local-guidance never actually
-  // renders a jump link for them in the live product -- there is no on-page
-  // UI surface to click through here. These sections' path derivation is
-  // still worth proving directly, though: adaptValidationErrors() and
-  // focusFieldByPath() are the same two functions a real jump link would use
-  // if one were ever wired up for these routes, and today's bugs (D-1's
-  // hardcoded guardian-#1 fallback; D-2's Preparer/Attorney fields resolving
-  // to nothing) live entirely inside them.
+  // Until Milestone 63A the Guardian D-1..D-5 pages were never explained
+  // (#page-local-guidance was drawn only for gated pages), so there was no
+  // on-page UI surface to click through here and these tests drove the two
+  // functions directly. Since 63A the box renders on those pages -- the
+  // page-level behaviour is proved in dependent-question-gate.spec.ts (D-4's
+  // reporter case) and section-guidance-invariant.spec.ts -- but the path
+  // derivation is still worth proving in isolation: adaptValidationErrors() and
+  // focusFieldByPath() are the two functions a jump link uses, and the bugs
+  // recorded here (D-1's hardcoded guardian-#1 fallback; D-2's Preparer/Attorney
+  // fields resolving to nothing) live entirely inside them.
   test('D-1 Guardian #2 signature-date jump link targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian D-1 Co-Guardian Ward', 'guardian');

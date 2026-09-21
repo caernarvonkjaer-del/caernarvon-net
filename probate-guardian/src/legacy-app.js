@@ -7162,41 +7162,28 @@ function updateNavDots(){
 // go through afterChange()->updateNavDots() rather than renderPage(), so
 // the button rendered at page-load time would otherwise go stale until
 // the next full navigation.
-function isScheduleIncomplete(route){
-  if(!route)return false;
-  const key=route.startsWith('/')?route.slice(1):route;
+// Milestone 63A. Three separate questions -- see src/core/status/section-guidance-policy.js --
+// that this function used to answer as one, and that the Guardian module answered again
+// with a copy of its own (so a fix to one would have shown the explanation on page load
+// and wiped it on the first keystroke). All three now come from the shared policy, bridged
+// on window.sectionGuidancePolicy:
+//   isSectionIncomplete  whether to EXPLAIN what is missing: the sidebar's own map, every type
+//   blocksNext           whether to disable Next: a per-type policy (Guardian: schedule pages only)
+//   guidanceAdvice       what to say: "tick the none box" only where the page has that box
+function pageCompleteness(route){
+  const policy=window.sectionGuidancePolicy;
+  if(!policy||!route)return {key:null,incomplete:false,blocked:false};
+  const type=activeInventoryType;
   const r=computeNavChecks();
-  if(!r||!r.checks)return false;
-  if(activeInventoryType==='guardian'){
-    if(!SCHEDULE_NAV_KEYS.includes(key))return false;
-    return !r.checks[key];
-  }
-  const prefixMap={
-    simplified:'s-',
-    annual:'a-',
-    finalAccounting:'a-',
-    trustAccounting:'a-',
-    planInitial:'pi-',
-    planAnnual:'pa-',
-    planMinor:'pm-',
-    planSimplified:'ps-',
-  };
-  const prefix=prefixMap[activeInventoryType];
-  if(!prefix)return false;
-  // Every prefixed type stores its Cover-page completeness under
-  // '<prefix>cover' except Annual (and its finalAccounting/trustAccounting
-  // formEngine() aliases, same computeNavChecks() branch, same 'a-p1' key),
-  // whose Cover page is labeled "Part I" (not "Cover") -- computeNavChecks()
-  // stores it as 'a-p1'. Without this override the lookup below always
-  // misses for these three types' Cover route, silently reporting it
-  // complete regardless of how many required fields are blank.
-  const coverKeyOverride={annual:'p1',finalAccounting:'p1',trustAccounting:'p1'};
-  const navKey=key===''?(coverKeyOverride[activeInventoryType]||'cover'):key;
-  const fullKey=`${prefix}${navKey}`;
-  if(fullKey in r.checks){
-    return !r.checks[fullKey];
-  }
-  return false;
+  const key=policy.sectionCheckKey(type,route);
+  const incomplete=policy.isSectionIncomplete(r&&r.checks,key);
+  const blocked=policy.blocksNext({type,checkKey:key,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
+  return {key,incomplete,blocked};
+}
+// Keeps its name and its meaning -- "does incompleteness block Next on this route" --
+// because it is published on window.
+function isScheduleIncomplete(route){
+  return pageCompleteness(route).blocked;
 }
 window.isScheduleIncomplete=isScheduleIncomplete;
 
@@ -7204,9 +7191,13 @@ function updateCurrentScheduleNextButton(){
   const btn=document.getElementById('page-next-btn');
   if(!btn)return;
   const route=(typeof currentPage==='string'?currentPage:'').split('?')[0];
-  const disabled=isScheduleIncomplete(route);
-  btn.disabled=disabled;
-  btn.title=disabled?'Add at least one item, or check the box verifying there are none, before continuing.':'';
+  const {incomplete,blocked}=pageCompleteness(route);
+  const policy=window.sectionGuidancePolicy;
+  // The advice must fit the page: "add an item, or check the box verifying there are none"
+  // is right only where such a checkbox exists.
+  const advice=policy?policy.guidanceAdvice({hasVerifyNoneBox:!!document.querySelector('#main-content .schedule-empty-check')}):'';
+  btn.disabled=blocked;
+  btn.title=blocked?advice:'';
   const guidanceContainer=document.getElementById('page-local-guidance');
   if(guidanceContainer&&typeof window.renderLocalSectionGuidance==='function'){
     let rawErrors=[];
@@ -7220,7 +7211,11 @@ function updateCurrentScheduleNextButton(){
       else if(type==='planMinor'&&typeof window.validatePlanMinor==='function')rawErrors=window.validatePlanMinor(window.D);
       else if(type==='planSimplified'&&typeof window.validatePlanSimplified==='function')rawErrors=window.validatePlanSimplified(window.D);
     } catch(e) {}
-    guidanceContainer.innerHTML=disabled?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:'Add at least one item, or check the box verifying there are none, before continuing.'},type):'';
+    // Explain whenever the section is incomplete -- not only when Next is blocked. On the
+    // Guardian Cover and D-1..D-5 the page explains but Next stays enabled (D1); clearing the
+    // box here whenever Next was not blocked is what would have wiped the explanation on the
+    // first edit.
+    guidanceContainer.innerHTML=incomplete?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:advice},type):'';
   }
 }
 

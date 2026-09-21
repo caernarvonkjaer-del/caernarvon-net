@@ -51,7 +51,7 @@ test.describe('Persistence and recovery contract', () => {
       // draft (still invalid, so commitStoredDateDrafts() leaves it in
       // place) -> saveData() persists window.D, __fieldDrafts included.
       await page.evaluate(() => (window as any).navigate('/'));
-      const gidInput = page.locator('[data-field-path="gid"]');
+      const gidInput = page.locator('input[data-field-path="gid"]');
       await gidInput.fill('02/14/26');
       await forceCacheWrite(page);
 
@@ -105,7 +105,7 @@ test.describe('Persistence and recovery contract', () => {
     await createWard(page, 'Pending Valid Draft Ward', 'guardian');
     await page.evaluate(() => (window as any).navigate('/'));
 
-    const gidInput = page.locator('[data-field-path="gid"]');
+    const gidInput = page.locator('input[data-field-path="gid"]');
     await gidInput.fill('Feb 14, 2026'); // valid but unparsed -- no blur
     await forceCacheWrite(page);
 

@@ -7,8 +7,10 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await freshStartNoPassword(page);
     await createWard(page, 'Harold Test Ward', 'guardian');
 
-    // Find GID date field on cover page
-    const gidInput = page.locator('[data-field-path="gid"]');
+    // Find GID date field on cover page. Scoped to the input: since Milestone 63A a
+    // blank Guardian Cover also shows its explanation box, whose jump link to this
+    // field carries the same data-field-path.
+    const gidInput = page.locator('input[data-field-path="gid"]');
     await expect(gidInput).toBeVisible();
 
     // 1. Enter flexible date: Feb 14, 2026
