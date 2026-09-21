@@ -1520,3 +1520,30 @@ Guardian and Annual `pdf-model.js`) touch the same files and the same PDF text
 assertions. Do not run them in parallel; land one, re-run the PDF specs, then
 start the next. 63E after 64B-2 and 64A-2 would avoid re-touching the same
 expected strings twice, but that ordering is yours to set.
+
+### Final regression, and the push (2026-09-21)
+
+Run once, after 63E, as instructed. Nothing failed, so nothing was fixed or left alone.
+
+| Gate | Result |
+| :-- | :-- |
+| `npm test` — unit | **1631 / 1631** |
+| `npm test` — full source e2e | **744 passed, 6 skipped, 0 failed** (58 min). The 6 skips are the cases that run only on the hosted target (`offline.spec.ts` and the hashed-chunk case). |
+| `npm run test:e2e:web` — hosted profile | **34 passed, 2 skipped, 0 failed** (5.2 min). The 2 skips are the source-only cases. Includes the hashed-build chunk-failure test that was red before 63C. |
+| `npm run check:types`, `verify:data-model`, window-bridge and `TEST-INDEX.md` guards | clean / OK (942 data-model rows) |
+
+**For your attention** (none of these blocked the push):
+- **63F is written up and not authorized.** Three pages (Simplified Part III, Plan-Annual 3G,
+  Plan-Minor Preparer & Attorney) still show a correctly worded but generic explanation with no
+  items to list; the invariant walk names them as commented exemptions and fails if that goes
+  stale. Decision D13 is yours.
+- **Filer-observable changes worth a release note:** the Guardian Cover and D-1..D-5 now explain
+  what is missing (Next still works); non-schedule pages no longer tell the filer to "check the box
+  verifying there are none"; the "no recipients" question is hidden once Recipient 1 is listed; a
+  failed feature chunk shows the "could not be loaded" panel instead of reloading the page; the
+  preparer note is on all 16 signing pages; every Cover has an optional UCN which prints in the
+  page header; a Plan - Minors filing with only a UCN now prints `CASE #: Pending`; converting a
+  Minor plan whose only number was its "UCN" pre-fills the new filing's UCN, not its Case Number.
+- **Not run:** Milestone 64 (nothing in it is authorized) and the Firefox/WebKit/Edge/portable profiles.
+- Files left alone: `probate-guardian-test-server.zip`, `WCAG_2.1_AA_regex-structural.md`, `help.md`
+  (untracked, ownership unconfirmed) and the deleted `Harold_Thomas_Bennett_TrustAccounting.pdf`.
