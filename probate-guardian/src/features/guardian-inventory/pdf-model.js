@@ -72,6 +72,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     creationDate: printDate,
     wardName,
     caseNumber,
+    ucn: (d.ucn || '').trim(),
     county,
     gid,
     signatureStyle,

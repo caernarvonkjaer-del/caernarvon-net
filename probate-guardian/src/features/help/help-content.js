@@ -9,7 +9,7 @@ export const HELP_CONTENT = Object.freeze({
     <p>2. Choose your inventory type (Initial, Simplified, or Annual)</p>
     <p>3. Fill out each section using the sidebar navigation</p>
     <p>4. Look for the <strong>green checkmarks</strong> — they indicate completed sections</p>
-    <p>5. Export to PDF or Excel when ready to file</p>
+    <p>5. Export to PDF or Excel when ready to file. (The optional UCN prints on the PDF but is not carried in Excel — none of the court's workbooks has a place for it.)</p>
     <div class="help-section-title">Along the Way</div>
     <p><strong>Filing progress:</strong> The bar near the top of the sidebar tracks how much of the current ward's filing is complete, with a "Jump to…" link straight to the next incomplete section.</p>
     <p><strong>Light &amp; dark mode:</strong> Use the sun/moon button in the sidebar to switch appearance. It's remembered per device.</p>
@@ -155,6 +155,7 @@ export const HELP_CONTENT = Object.freeze({
     <ul>
     <li><strong>Ward Name:</strong> Full legal name</li>
     <li><strong>Case Number:</strong> From the court order appointing you guardian</li>
+    <li><strong>UCN (optional):</strong> The Uniform Case Number, if the court has assigned one. It prints in the page header beside Case #.</li>
     <li><strong>Guardianship Inception Date:</strong> When the guardianship was established</li>
     <li><strong>County:</strong> Where the court case is filed</li>
     </ul>

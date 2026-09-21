@@ -3424,6 +3424,8 @@ function carryOverAccountingToAccounting(src,targetType){
   const base={
     wardName:src.wardName||'',
     caseNumber:src.caseNumber||'',
+    // Milestone 63E: the UCN is its own number and carries as the UCN (never into the Case #).
+    ucn:src.ucn||'',
     // Milestone 40C-A item 3: blank here; carryOverFields() below supplies it
     // from the canonical ward Party. Unlike the two builders above this one,
     // THIS function is live (the others are shadowed by
@@ -4887,6 +4889,8 @@ function describeConversion(srcType,destType){
 function mapConvertedHeaderFields(src,srcType,dest,destType){
   dest.wardName=src.wardName?`${src.wardName} (Converted)`:dest.wardName;
   dest.caseNumber=src.caseNumber||dest.caseNumber;
+  // Milestone 63E: the UCN carries as the UCN on every conversion path.
+  if('ucn' in dest)dest.ucn=src.ucn||dest.ucn;
   if('gid' in dest)dest.gid=src.gid||dest.gid;
   dest.county=src.county||dest.county;
   dest.typeOfGuardianship=src.typeOfGuardianship||dest.typeOfGuardianship;
@@ -5668,7 +5672,7 @@ async function showAddWardModalForType(type){
 
 function emptyDataGuardian(){
   return {
-    wardName:'',caseNumber:'',gid:null,county:'',guardianName:'',
+    wardName:'',caseNumber:'',ucn:'',gid:null,county:'',guardianName:'',
     attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:'',
     safeDepositBoxFiled:'',amendedForm:'',
     scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],

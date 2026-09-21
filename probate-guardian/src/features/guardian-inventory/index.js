@@ -665,6 +665,7 @@ function pageHome(){
         <h2 class="subsection-heading">Required Information</h2>
         ${formRow(col(12,reqLabel('Name of Ward')+textInput('wardName','Full legal name of ward','name')))}
         ${formRow(col(12,reqLabel('Case Number')+textInput('caseNumber','','caseNumber')))}
+        ${formRow(col(12,optLabel('UCN')+textInput('ucn','')))}
         ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid')))}
         ${formRow(col(6,reqLabel('County')+countyInputBind('county')))}
       </div>

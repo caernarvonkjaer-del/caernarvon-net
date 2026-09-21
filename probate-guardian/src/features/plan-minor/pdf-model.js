@@ -23,7 +23,15 @@ export function buildPlanMinorModel(D) {
   // in unit tests that carry only the fields under test. This builder is only
   // ever the Minor Plan's, so asserting that here is safe and keeps the
   // precedence in one place.
-  const caseNumber = caseNumberOf({ ...d, inventoryType: 'planMinor' });
+  const identityNumber = caseNumberOf({ ...d, inventoryType: 'planMinor' });
+  // Milestone 63E, D9. This form has both a UCN and a Case #, so the header no
+  // longer prints the UCN in the Case # slot: the Case # slot is the Case # (`ref`,
+  // the cover's "Case #" field) and the UCN slot is the UCN. A Minor plan with only
+  // a UCN prints "UCN: ..." and "CASE #: Pending". The document TITLE keeps using
+  // identityNumber (ucn || ref, the app's one rule for what identifies this filing)
+  // so file names and the metadata title are unchanged.
+  const caseNumber = (d.ref || '').trim();
+  const ucn = (d.ucn || '').trim();
   // Milestone 40C-A item 6: output must never invent a county. A blank one
   // yields no court caption at all (see core/pdf/circuit-lookup.js); export is
   // already blocked by this form's County validation.
@@ -38,7 +46,7 @@ export function buildPlanMinorModel(D) {
   };
 
   const metadata = {
-    title: `${wardName} - ${caseNumber} - Annual Plan (Minor)`,
+    title: `${wardName} - ${identityNumber} - Annual Plan (Minor)`,
     subject: 'Annual Guardianship Plan — Minor',
     author: 'Guardian Forms',
     creator: 'Guardian Forms',
@@ -48,9 +56,10 @@ export function buildPlanMinorModel(D) {
     lang: 'en-US',
     wardName,
     caseNumber,
+    ucn,
     county,
   };
-  metadata.title = `${wardName} - ${caseNumber} - ${descriptor.displayName}`;
+  metadata.title = `${wardName} - ${identityNumber} - ${descriptor.displayName}`;
   metadata.subject = descriptor.displayName;
   metadata.formName = descriptor.documentTitle;
   metadata.formSubtitle = descriptor.displayName;

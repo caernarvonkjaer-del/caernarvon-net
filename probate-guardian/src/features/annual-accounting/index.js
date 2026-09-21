@@ -605,6 +605,9 @@ function pagePart1Annual(){
           <div class="col-md-6">${inpD('Guardianship Inception Date (GID)',d.gid,"D.gid=this.value",true,'date')}</div>
         </div>
         <div class="row g-2">
+          <div class="col-md-6">${inpD('UCN',d.ucn,"D.ucn=this.value")}</div>
+        </div>
+        <div class="row g-2">
           ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Period From', toLabel: 'Period To' })}
         </div>
         <div class="row g-2">

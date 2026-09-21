@@ -21,6 +21,7 @@ import {
   getCaseCaptionTitle,
 } from './circuit-lookup.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
+import { headerIdentityLines } from './header-identity.js';
 import {
   assertFilingEligibleSupplement,
   dataUrlToBytes,
@@ -177,7 +178,10 @@ export async function generateCourtFormPdf(model, options = {}) {
   const { metadata, sections } = model;
   const sourceData = options.sourceData || (typeof window !== 'undefined' ? window.D : null);
   const wardName = metadata.wardName || 'Ward';
-  const caseNumber = metadata.caseNumber || '';
+  // Milestone 63E: what the two header draw sites say about the case -- the Case #
+  // that has always been there, plus the UCN when the filing has one. Decided once,
+  // in header-identity.js; both sites below draw it in the existing Case # style.
+  const headerIdentity = headerIdentityLines({ caseNumber: metadata.caseNumber, ucn: metadata.ucn });
   // Milestone 40C-A item 6: no Pinellas substitution. A filing with no county
   // gets no county here, and the caption helper returns null for it (item 7).
   const county = (metadata.county || '').toUpperCase();
@@ -315,7 +319,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
     doc.setFontSize(10);
     doc.text(caption ? caption.division : 'PROBATE DIVISION', pageWidth / 2, 108, { align: 'center' });
-    doc.text(`CASE #: ${caseNumber || 'Pending'}`, pageWidth / 2, 122, { align: 'center' });
+    doc.text(headerIdentity.firstPage, pageWidth / 2, 122, { align: 'center' });
 
     const caseCaption = getCaseCaptionTitle(wardName, metadata.wardType);
     doc.setFontSize(11);
@@ -378,8 +382,19 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.text(headerLines(wardLabel), margin + 6, barTop + 10, { lineHeightFactor: 1 });
     const midLabel = sectionTitle || '';
     doc.text(headerLines(midLabel), margin + 234, barTop + 10, { align: 'center', lineHeightFactor: 1 });
-    const caseLabel = `Case #: ${caseNumber || 'Pending'}`;
-    doc.text(headerLines(caseLabel), pageWidth - margin - 6, barTop + 10, { align: 'right', lineHeightFactor: 1 });
+    // Milestone 63E. With no UCN this is the one "Case #: ..." label it always was,
+    // wrapped by headerLines() as before. With a UCN the cell carries two lines --
+    // "UCN: ..." over "Case #: ..." -- which is what its 24 pt bar has room for; the two
+    // on one line measure 209-222 pt at 8 pt against this 146 pt cell and do not fit.
+    // Each of the two must stay on its own line, so an over-long value is cut with an
+    // ellipsis rather than wrapped into a third line.
+    const oneLine = (text) => {
+      const lines = doc.splitTextToSize(String(text || ''), COL_W - COL_PAD);
+      return lines.length <= 1 ? (lines[0] || '') : `${lines[0].replace(/\.+$/, '')}...`;
+    };
+    const identity = headerIdentity.continuation;
+    const caseLines = identity.length === 1 ? headerLines(identity[0]) : identity.map(oneLine);
+    doc.text(caseLines, pageWidth - margin - 6, barTop + 10, { align: 'right', lineHeightFactor: 1 });
     writeArtifactEnd(doc);
   };
 

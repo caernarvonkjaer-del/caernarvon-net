@@ -279,7 +279,7 @@ function pagePlanICover(){
           <h2 class="subsection-heading">Ward &amp; Case Information</h2>
           <div class="row g-2">
             ${renderWardIdentityFields({ wardName: d.wardName, wardNameRequired: true })}
-            ${renderCaseCaptionFields({ caseNumber: d.caseNumber, county: d.county })}
+            ${renderCaseCaptionFields({ caseNumber: d.caseNumber, county: d.county, ucn: d.ucn ?? '' })}
             <div class="col-12">${renderSelectField({path:'successorGuardianship',label:'Successor Guardianship? (if applicable)',value:d.successorGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_LIFECYCLE_OPTIONS,d.successorGuardianship)})}</div>
             <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
             <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>

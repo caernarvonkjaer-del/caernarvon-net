@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
-import { extractPdfText, extractPdfTextItems } from './support/pdf-extract';
+import { extractPdfText, extractPdfTextItems, extractPdfTextRuns } from './support/pdf-extract';
 import { installFixtureSupport, expectFileableFixture } from './support/fixture-completeness';
 import {
   MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_SIMPLIFIED, MINIMAL_VALID_PLAN_ANNUAL,
@@ -1020,5 +1020,79 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     const runs = (await extractPdfTextItems(output.raw)).flat().map((s) => s.trim());
     expect(runs).toContain('Room 100');
     expect(runs).toContain('Care of the Probate Division');
+  });
+
+  // Milestone 63E. The Uniform Case Number prints beside Case # in the page header on every filing type.
+  // D7: page 1 carries "UCN: ...   CASE #: ..." as ONE line in the existing Case # style; the running header's
+  // right cell carries UCN on its first line and Case # on its second (both together are wider than that
+  // 146 pt cell). D8: optional and silent when blank -- no "Pending" placeholder. D9: Plan - Minors prints
+  // its UCN and its Case # separately instead of printing the UCN as the Case #.
+  test('Milestone 63E: the UCN prints beside Case # -- one line on page 1, above it in the running header, absent when blank', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await installFixtureSupport(page);
+    const UCN = '50-2026-GA-000123-XXXX-XX';
+
+    const raw = await page.evaluate(async ([guardianBase, ucn]) => {
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildPlanMinorModel } = await (window as any).loadPlanMinorPdf();
+      const { generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const build = (window as any).__pgBuildFixture;
+      const inventory = async (extra: Record<string, unknown>) => {
+        const d = build('guardian', guardianBase, { wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pinellas', ...extra });
+        return (await generateVerifiedInventoryPdf(buildVerifiedInventoryModel(d))).output();
+      };
+      const minor = async (extra: Record<string, unknown>) => (await generateCourtFormPdf(buildPlanMinorModel({
+        inventoryType: 'planMinor', wardName: 'Minor Doe', county: 'Pinellas', periodFrom: '2026-01-01', periodTo: '2026-12-31', ...extra,
+      }))).output();
+      return {
+        withUcn: await inventory({ ucn }),
+        withoutUcn: await inventory({}),
+        minorBoth: await minor({ ucn: '2024-MN-042', ref: 'REF-77' }),
+        minorUcnOnly: await minor({ ucn: '2024-MN-042' }),
+      };
+    }, [MINIMAL_VALID_GUARDIAN, UCN]);
+
+    // ---- with a UCN
+    const runs = await extractPdfTextRuns(raw.withUcn);
+    const pageCount = Math.max(...runs.map((r) => r.page));
+    expect(pageCount, 'the inventory should run to more than one page so the running header is exercised').toBeGreaterThan(1);
+
+    // pdf.js reports the one drawn line as adjacent text items (the gap between the two labels is wide), so
+    // "one line" is asserted geometrically: same baseline, UCN to the left of CASE #.
+    const ucnFirst = runs.find((r) => r.page === 1 && r.text.includes(`UCN: ${UCN}`));
+    const caseFirst = runs.find((r) => r.page === 1 && /CASE #: 26-002487-GD/.test(r.text));
+    expect(ucnFirst, 'page 1 shows the UCN').toBeTruthy();
+    expect(caseFirst, 'page 1 still shows CASE #').toBeTruthy();
+    if (ucnFirst !== caseFirst) {
+      expect(Math.abs(ucnFirst!.y - caseFirst!.y), 'page 1: UCN and CASE # share one baseline').toBeLessThan(1);
+      expect(ucnFirst!.x, 'page 1: UCN comes before CASE # on the line').toBeLessThan(caseFirst!.x);
+    }
+
+    for (let p = 2; p <= pageCount; p++) {
+      const ucnRun = runs.find((r) => r.page === p && r.text.trim() === `UCN: ${UCN}`);
+      const caseRun = runs.find((r) => r.page === p && r.text.trim() === 'Case #: 26-002487-GD');
+      expect(ucnRun, `page ${p}: the running header shows the UCN`).toBeTruthy();
+      expect(caseRun, `page ${p}: the running header still shows Case #`).toBeTruthy();
+      // Two lines in the same cell: UCN directly above Case # (PDF y grows upward), one 8 pt line apart.
+      const gap = (ucnRun!.y - caseRun!.y);
+      expect(gap, `page ${p}: UCN sits one line above Case #`).toBeGreaterThan(6);
+      expect(gap, `page ${p}: UCN sits one line above Case #`).toBeLessThan(11);
+      // Right-aligned in the same cell: both lines end at the same right edge (within a point).
+      expect(Math.abs((ucnRun!.x + 0) - (caseRun!.x + 0)), `page ${p}: both lines stay inside the header cell`).toBeLessThan(150);
+    }
+
+    // ---- without a UCN: nothing about it, and Case # exactly as before
+    const plainText = await extractPdfText(raw.withoutUcn);
+    expect(plainText).not.toMatch(/UCN/);
+    expect(plainText).toContain('CASE #: 26-002487-GD');
+    const plainRuns = await extractPdfTextRuns(raw.withoutUcn);
+    expect(plainRuns.filter((r) => r.page === 2 && /^Case #:/.test(r.text.trim())).map((r) => r.text.trim()))
+      .toEqual(['Case #: 26-002487-GD']);
+
+    // ---- Plan - Minors (D9): the UCN slot is the UCN and the Case # slot is the Case #
+    const both = (await extractPdfText(raw.minorBoth)).replace(/\s+/g, ' ');
+    expect(both).toContain('UCN: 2024-MN-042 CASE #: REF-77');
+    const ucnOnly = (await extractPdfText(raw.minorUcnOnly)).replace(/\s+/g, ' ');
+    expect(ucnOnly, 'a Minor plan with only a UCN no longer prints it as the Case #').toContain('UCN: 2024-MN-042 CASE #: Pending');
   });
 });

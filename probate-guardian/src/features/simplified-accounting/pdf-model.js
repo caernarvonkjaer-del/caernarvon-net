@@ -59,6 +59,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     keywords: 'Florida, Probate, Guardianship, Simplified Annual Accounting',
     wardName,
     caseNumber,
+    ucn: (d.ucn || '').trim(),
     county,
     signatureStyle,
   };

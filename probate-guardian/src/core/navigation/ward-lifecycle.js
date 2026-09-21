@@ -116,7 +116,16 @@ export function carryWardsFor(type, excludeWardId) {
 // exactly between the two functions -- nothing to resolve there.
 export function extractCarryIdentity(sourceWard) {
   const src = sourceWard || {};
-  const caseNum = src.caseNumber || src.ucn || src.ref || '';
+  // Milestone 63E. The Uniform Case Number is its own number, so the two are carried
+  // separately: `caseNum` is the Case # (caseNumber on every type; `ref` on a Minor plan,
+  // whose cover has both a UCN and a Case #), and `ucn` is the UCN. This used to fold
+  // caseNumber || ucn || ref into one value, and the Minor branch wrote it into `ucn` --
+  // so a Case # carried into a Minor plan became its UCN, and a Minor plan's UCN carried
+  // out as its Case #. Neither is ever written into the other now. (A source saved before
+  // 63E has no `ucn` key on any type but Plan Minor; it reads as blank.) The dashboard's
+  // identity rule, caseNumberOf() = ucn || ref for Minor, is separate and unchanged.
+  const caseNum = src.caseNumber || src.ref || '';
+  const ucn = src.ucn || '';
   const gName = src.guardianName || src.guardianNames || src.guardian
     || (src.guardians && src.guardians[0]?.name) || (src.planGuardians && src.planGuardians[0]?.name) || '';
   const atty = (src.attorney && typeof src.attorney === 'object') ? src.attorney : {};
@@ -127,12 +136,12 @@ export function extractCarryIdentity(sourceWard) {
   const attyEmail = src.attorneyEmail || src.attorney_email || atty.email || '';
   const attyStreet = src.attorneyAddress || src.attorney_street || atty.streetAddress || '';
   const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || atty.cityStateZip || '';
-  return { caseNum, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip };
+  return { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip };
 }
 
 export function carryOverFieldsForPlan(sourceWard, planType) {
   const src = sourceWard || {};
-  const { caseNum, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
+  const { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
   const gs = (src.guardians && src.guardians.length ? src.guardians : src.planGuardians) || [];
 
   if (planType === 'planInitial') {
@@ -140,6 +149,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
+      ucn,
       county: '',
       inceptionDate: src.gid || src.inceptionDate || '',
       guardianNames: gName,
@@ -171,6 +181,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
+      ucn,
       county: '',
       planGuardians: [0, 1].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
@@ -188,6 +199,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
+      ucn,
       county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
@@ -219,8 +231,8 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       // source without the field yields a blank for the filer to complete,
       // never an invented facility name carried in from somewhere else.
       q1ResidenceName: src.q1ResidenceName || '',
-      ucn: caseNum,
-      ref: src.ref || '',
+      ucn,
+      ref: caseNum,
       guardianName: gName,
       attorney_name: attyName,
       attorney_bar: attyBar,
@@ -248,7 +260,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
 
 export function carryOverFieldsForAccounting(sourceWard, accountingType) {
   const src = sourceWard || {};
-  const { caseNum, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
+  const { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
   const gs = src.planGuardians || src.guardians || [];
 
   if (accountingType === 'guardian') {
@@ -256,6 +268,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
+      ucn,
       county: '',
       gid: src.inceptionDate || src.gid || '',
       guardianName: gName,
@@ -304,6 +317,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
+      ucn,
       county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
@@ -329,6 +343,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
     return {
       wardName: src.wardName || '',
       caseNumber: caseNum,
+      ucn,
       county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,

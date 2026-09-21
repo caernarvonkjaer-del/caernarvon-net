@@ -290,6 +290,7 @@
 <h3>Automatic formatting</h3>
 <ul>
   <li><span class="ui">Case Number</span> is normalised to the court's format as you type (for example <code>26-GA-001234</code> becomes <code>26-001234-GD</code>).</li>
+  <li><span class="ui">UCN</span> (Uniform Case Number) is optional and is kept exactly as you type it — it is not reformatted like the Case Number. When you enter one, it prints in the page header beside <span class="ui">Case #</span>: on the same line on the first page, and above <span class="ui">Case #</span> in the running header on the pages after it.</li>
   <li><span class="ui">Phone Number</span> fields become <code>(727) 555-0142</code>.</li>
   <li><span class="ui">SSN / EIN</span> fields are masked with dots once entered. Click the lock icon (<span class="ui">Show SSN/EIN</span>) beside the field to reveal the number temporarily; click again to hide it. Only the last four digits ever appear on printed or exported documents.</li>
   <li>Dates accept <code>MM/DD/YYYY</code> (the hint under each date field says so) and are checked for validity; out-of-order dates are flagged in the readiness check.</li>
@@ -642,6 +643,7 @@
   <li>It is not restorable. Nothing in the app rebuilds a case from an <code>.xlsx</code>. Importing one fills in a filing's fields, which is a different thing.</li>
   <li><strong>Not every filing has one.</strong> Excel export exists for the <span class="ui">Initial Inventory</span>, <span class="ui">Simplified Accounting</span>, and the <span class="ui">Annual</span> / <span class="ui">Final</span> / <span class="ui">Trust Accounting</span> filings. <strong>None of the four Guardianship Plan filings — Initial, Annual, Minors, or Simplified — has an Excel export at all.</strong></li>
 </ul>
+<p><strong>The UCN is not carried in Excel.</strong> None of the court's workbooks has a cell for the Uniform Case Number, so it is left out when you save as Excel and is not read back when you import one. It still prints in the PDF's page header, and it is kept in your <code>.sav</code> file.</p>
 <p>Your <code>.sav</code> file is the backup. Save it often, and if the case is encrypted, keep the master password somewhere safe.</p>
 
 <h2 id="dashboard">All Filings dashboard</h2>

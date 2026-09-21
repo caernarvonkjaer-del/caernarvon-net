@@ -12,7 +12,7 @@ further items will be appended as they are raised.
 | **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | **IMPLEMENTED 2026-09-21** (D3: shown only while it applies; D4: 57B recorded as landed without a recorded authorization) — unit 1353/1353; 151 affected e2e passed, 0 failed; see the implementation record under 63B |
 | **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | **IMPLEMENTED 2026-09-21** (D5 + D12: panel, no auto-reload, with Amendment A) — unit 1340/1340; hosted-build profile 34 passed, 0 failed; see the implementation record under 63C |
 | **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | **IMPLEMENTED 2026-09-21** (D6: the note on all 16 signing pages, none elsewhere; Simplified Part III's copy moved to Part IV) — unit 1587/1587; 80 affected e2e passed, 0 failed; see the implementation record under 63D |
-| **63E** | UCN on the printed filing, on the Case # line of the header, all forms | Proposed — **D7–D10 decided** (option 1 each; Excel does not carry UCN); **authorized 2026-09-21** (execution order below) |
+| **63E** | UCN on the printed filing, on the Case # line of the header, all forms | **IMPLEMENTED 2026-09-21** (D7: page 1 one line, running header UCN over Case #; D8: optional, omitted when blank; D9: Plan - Minors prints UCN and Case # separately; D10: Excel does not carry it) — unit 1631/1631; 245 affected e2e passed, 0 failed; see the implementation record under 63E |
 | **63F** | Three pages the sidebar marks incomplete that the validators cannot list (Simplified Part III, Plan-Annual 3G, Plan-Minor Preparer & Attorney) — split from 63A's R5 | Proposed — **not authorized**; nothing implemented |
 
 ---
@@ -1325,6 +1325,71 @@ Excel templates decoded and searched (no UCN cell); the header widths measured
 with the embedded font (table above). Not checked: a generated PDF with a UCN
 (the field does not exist yet — the measured strings stand in for it).
 
+### 63E — implementation record (2026-09-21)
+
+**Changed.**
+- **Header.** New `src/core/pdf/header-identity.js` — `headerIdentityLines()` decides the
+  text once for both draw sites in `pdf-engine.js`, which keep drawing it in the existing
+  Case # style. No UCN: exactly what printed before (`CASE #: …` / `Case #: …`, "Pending" kept
+  for a blank Case #). With one: page 1 is `UCN: …   CASE #: …` on one line; the running
+  header's right cell is two lines, UCN over Case #, each cut with an ellipsis rather than
+  wrapped into a third line.
+- **Models.** All seven `pdf-model.js` pass `ucn` (trimmed) next to `caseNumber`. **Plan -
+  Minors (D9):** the Case # slot is `ref` and the UCN slot is `ucn`; the document *title* keeps
+  the app's one identity rule (`ucn || ref`), so file names are unchanged.
+- **Data model.** `ucn:''` added to the Guardian, Annual, Simplified and three Plan factories
+  (Plan Minor already had it). `probate-guardian-data-model.csv`: the row moved from
+  `plan_minor` to `common` (`verify:data-model` OK, 942 rows). No migration: a `.sav` saved
+  before this has no `ucn` key on any type but Plan Minor, every reader uses `d.ucn || ''`,
+  and it prints as before.
+- **Covers.** An optional **UCN** input beside Case Number on the Initial Inventory, Annual
+  (and Final/Trust, which share the page) and Simplified covers, and on the three Plan covers
+  through `renderCaseCaptionFields({ ucn })` — an opt-in, so a caller that does not pass it is
+  unchanged. Kept exactly as typed: the Initial Inventory uses the `text` field kind, not the
+  Case Number formatter, which would reshape a UCN.
+- **Conversions.** `extractCarryIdentity()` no longer folds `caseNumber || ucn || ref` into one
+  value that the Minor branch wrote into `ucn`. The Case # (`caseNumber`, or `ref` on a Minor
+  plan) and the UCN carry separately on every path — the six plan/accounting targets, the
+  Minor target, and the two live sites in `legacy-app.js`. **Filer-observable:** converting a
+  Minor plan whose only number was its "UCN" now pre-fills the new filing's UCN, not its Case
+  Number (which is required, so the filer is asked for it).
+- **Help (D10).** The in-app Help panel lists the UCN with the cover fields and says it is not
+  carried in Excel; the standalone guide says the same in its Excel section and describes the
+  field under automatic formatting. No workbook has a UCN cell, so `excel.js` is untouched.
+
+**Filer-observable changes, stated plainly.** (1) A Plan - Minors filing that has only a UCN
+now prints `UCN: …` and `CASE #: Pending` — it no longer prints the UCN as the Case # (D9,
+decided). (2) Every cover has one more optional field. (3) The conversion change above.
+
+**Tests (red first).**
+- `tests/unit/ucn-header.spec.js` (12): the helper, and every model including a ward with *no*
+  `ucn` key. Red until the helper existed.
+- `tests/unit/ward-carryover.spec.js`: two expectations updated (they pinned the old
+  Case #→UCN behaviour) and five cases added; 7 red before the change.
+- `tests/e2e/pdf-form-specific.spec.ts` +1: in a real PDF, page 1 shows `UCN` and `CASE #` on
+  one baseline in that order; every later page shows UCN directly above Case # in the running
+  header; no UCN prints no "UCN" anywhere; Plan - Minors per D9. **Failed against the pre-63E
+  source** (stashed to prove it), passes after.
+- New `tests/e2e/ucn-cover-field.spec.ts` (7, one per type): the field is there, blank by
+  default and never reported missing, kept exactly as typed (lower-case, hyphens), and persists
+  across navigation. **Six of seven failed before** (Plan - Minors already had the field).
+- Five byte-identical cover text snapshots updated (`annual-mount`, `simplified-mount`,
+  `plan-annual-mount`, `plan-initial-mount`, `plan-simplified-mount`): each gained exactly a
+  `UCN` label and one empty input — a consequence of the new field, not a regression.
+- `TEST-INDEX.md`: two new rows, three extended.
+
+**The write-up's open caveat is now closed.** It said the header widths were measured but "a
+generated PDF with a UCN" was not. A real PDF with a 25-character UCN was rendered to images
+and looked at (pages 1 and 2): page 1 carries `UCN: …   CASE #: …` centred on one line in the
+same bold style as before; the running header's right cell shows UCN over Case # cleanly inside
+the cell, with no clipping or overlap.
+
+**Verification.** Full unit suite **1631/1631**; `npm run check:types` clean;
+`verify:data-model`, window-bridge and index guards pass. Source-target e2e — the cover, convert,
+PDF and navigation specs plus the two new ones: **245 passed, 0 failed** (after the five
+snapshot updates). The full `npm test` regression and the hosted profile run next, once, as
+instructed.
+
 ---
 
 ## 63F — Pages the sidebar marks incomplete that the validators cannot list
@@ -1434,7 +1499,7 @@ not begin until the previous one is committed and green.
 | 63B | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | D4's 57-doc edits made in the same commit; committed locally, not pushed |
 | 63C | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | includes Amendment A; committed locally, not pushed |
 | 63D | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | committed locally; pushed with the rest of MS 63 after the final e2e |
-| 63E | **AUTHORIZED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included |
+| 63E | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included; committed locally |
 | 63F | **not authorized** | — | written up 2026-09-21 by 63A's stop-and-split rule; nothing built |
 
 **Recommended execution order** (from the second review; adopted here as a

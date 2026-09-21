@@ -37,6 +37,7 @@ export function buildPlanAnnualModel(D) {
     lang: 'en-US',
     wardName,
     caseNumber,
+    ucn: (d.ucn || '').trim(),
     county,
   };
   metadata.title = `${wardName} - ${caseNumber} - ${descriptor.displayName}`;

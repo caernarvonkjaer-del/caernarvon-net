@@ -71,7 +71,9 @@ describe('ward-carryover', () => {
       expect(result.planGuardians[0].ssn).toBe('12-3456789');
     });
 
-    it('populates ucn, guardianName, and attorney_name on planMinor from an accounting source', () => {
+    // Milestone 63E: a Minor plan's Case # is `ref`, its UCN is `ucn` -- an accounting's caseNumber is a
+    // Case #, so it lands in `ref`. It used to land in `ucn`, which is what made a Case # print as a UCN.
+    it('populates ref (Case #), guardianName, and attorney_name on planMinor from an accounting source', () => {
       const src = {
         wardName: 'Minor Doe',
         caseNumber: '2023-GD-999',
@@ -93,7 +95,8 @@ describe('ward-carryover', () => {
 
       const result = carryOverFieldsForPlan(src, 'planMinor');
       expect(result.wardName).toBe('Minor Doe');
-      expect(result.ucn).toBe('2023-GD-999');
+      expect(result.ref).toBe('2023-GD-999');
+      expect(result.ucn, 'a Case # is never written into the UCN').toBe('');
       expect(result.guardianName).toBe('Mary Guardian');
       expect(result.attorney_name).toBe('Bob Attorney');
       expect(result.attorney_bar).toBe('7654321');
@@ -218,7 +221,7 @@ describe('ward-carryover', () => {
   });
 
   describe('carryOverFieldsForAccounting', () => {
-    it('populates caseNumber, guardian, and attorney from a planMinor source', () => {
+    it('populates guardian and attorney from a planMinor source; a UCN carries as the UCN, not as the Case #', () => {
       const src = {
         wardName: 'Minor Ward',
         ucn: '2024-MN-042',
@@ -241,7 +244,10 @@ describe('ward-carryover', () => {
 
       const result = carryOverFieldsForAccounting(src, 'annual');
       expect(result.wardName).toBe('Minor Ward');
-      expect(result.caseNumber).toBe('2024-MN-042');
+      // Milestone 63E: the source's only number is its UCN. It carries to the new filing's UCN and is NOT
+      // also written into the Case Number -- the Case # is `ref`, blank here, so the filer is asked for it.
+      expect(result.ucn).toBe('2024-MN-042');
+      expect(result.caseNumber).toBe('');
       expect(result.guardian).toBe('Guardian Parent');
       expect(result.attorney).toBe('Counselor Minor');
       expect(result.attorneyBar).toBe('1122334');
@@ -292,6 +298,65 @@ describe('ward-carryover', () => {
       // attorneyForGuardian (the flat name) is a real field on
       // emptyDataGuardian() and must still carry.
       expect(result.attorneyForGuardian).toBe('Nina Nested, Esq.');
+    });
+  });
+
+  // Milestone 63E. The Uniform Case Number is a separate number from the Case #. Before it existed on every
+  // filing type, extractCarryIdentity() folded caseNumber || ucn || ref into one value, and the Minor branch
+  // wrote that value into `ucn` -- so a Case # carried into a Minor plan became its UCN. Now: ucn carries to
+  // ucn, Case # carries to Case # (`ref` on a Minor plan), on every path.
+  describe('Milestone 63E: the UCN carries as the UCN on every path', () => {
+    const PLAN_TARGETS = ['planInitial', 'planAnnual', 'planSimplified', 'planMinor'];
+    const ACCOUNTING_TARGETS = ['annual', 'simplified'];
+    const sourceWith = (extra) => ({ wardName: 'Ward', county: 'Pinellas', guardian: 'G', ...extra });
+
+    it('every plan target carries ucn to ucn and caseNumber to its Case # slot', () => {
+      for (const type of PLAN_TARGETS) {
+        const out = carryOverFieldsForPlan(sourceWith({ caseNumber: '26-001-GD', ucn: '50-2026-GD-000001-XXXX-XX' }), type);
+        expect(out.ucn, type).toBe('50-2026-GD-000001-XXXX-XX');
+        expect(type === 'planMinor' ? out.ref : out.caseNumber, type).toBe('26-001-GD');
+      }
+    });
+
+    it('every accounting target carries ucn to ucn and caseNumber to caseNumber', () => {
+      for (const type of ACCOUNTING_TARGETS) {
+        const out = carryOverFieldsForAccounting(sourceWith({ caseNumber: '26-001-GD', ucn: '50-2026-GD-000001-XXXX-XX' }), type);
+        expect(out.ucn, type).toBe('50-2026-GD-000001-XXXX-XX');
+        expect(out.caseNumber, type).toBe('26-001-GD');
+      }
+    });
+
+    it('a source with no ucn key — every .sav saved before 63E, bar Plan Minor — yields a blank UCN, never undefined', () => {
+      const src = sourceWith({ caseNumber: '26-001-GD' });
+      expect('ucn' in src).toBe(false);
+      for (const type of PLAN_TARGETS) expect(carryOverFieldsForPlan(src, type).ucn, type).toBe('');
+      for (const type of ACCOUNTING_TARGETS) expect(carryOverFieldsForAccounting(src, type).ucn, type).toBe('');
+    });
+
+    it('a Case # is never written into a UCN, and a UCN is never written into a Case #, on any path', () => {
+      for (const type of PLAN_TARGETS) {
+        const onlyCase = carryOverFieldsForPlan(sourceWith({ caseNumber: 'CASE-ONLY' }), type);
+        expect(onlyCase.ucn, type).toBe('');
+        const onlyUcn = carryOverFieldsForPlan(sourceWith({ ucn: 'UCN-ONLY' }), type);
+        expect(onlyUcn.ucn, type).toBe('UCN-ONLY');
+        expect(type === 'planMinor' ? onlyUcn.ref : onlyUcn.caseNumber, type).toBe('');
+      }
+      for (const type of ACCOUNTING_TARGETS) {
+        expect(carryOverFieldsForAccounting(sourceWith({ caseNumber: 'CASE-ONLY' }), type).ucn, type).toBe('');
+        const onlyUcn = carryOverFieldsForAccounting(sourceWith({ ucn: 'UCN-ONLY' }), type);
+        expect(onlyUcn.ucn, type).toBe('UCN-ONLY');
+        expect(onlyUcn.caseNumber, type).toBe('');
+      }
+    });
+
+    it('a Minor plan source: its Case # (ref) carries as the Case #, its UCN as the UCN', () => {
+      const src = sourceWith({ ucn: 'UCN-1', ref: 'REF-1', guardianName: 'G' });
+      const toAnnual = carryOverFieldsForAccounting(src, 'annual');
+      expect(toAnnual.ucn).toBe('UCN-1');
+      expect(toAnnual.caseNumber).toBe('REF-1');
+      const toMinor = carryOverFieldsForPlan(src, 'planMinor');
+      expect(toMinor.ucn).toBe('UCN-1');
+      expect(toMinor.ref).toBe('REF-1');
     });
   });
 });

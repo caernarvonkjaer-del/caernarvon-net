@@ -138,7 +138,7 @@ export function getActiveWard() {
 // Milestone 2 plan's "Problem 1").
 export function emptyDataSimplified() {
   return {
-    wardName:'', ssn:'', caseNumber:'', periodFrom:'', periodTo:'',
+    wardName:'', ssn:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'',
     attorney:'', guardian:'', typeOfGuardianship:'', county:'',
     amendedForm:'', gid:'',
     eligDepository:'', eligOnlyTransactions:'',
@@ -198,7 +198,7 @@ export function emptyDataSimplified() {
 export function emptyDataPlanSimplified() {
   return {
     planTriStateSchemaVersion:2,
-    wardName:'', caseNumber:'', periodFrom:'', periodTo:'', county:'',
+    wardName:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'', county:'',
     q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
     q5SocialServices:'', q6Interaction:'',
     q7RestoreRights:'', q7RestoreExplain:'',
@@ -240,7 +240,7 @@ export function emptyDataPlanAnnual() {
   return {
     planTriStateSchemaVersion:2,
     // Cover
-    wardName:'', caseNumber:'', ssn:'', county:'',
+    wardName:'', caseNumber:'', ucn:'', ssn:'', county:'',
     periodFrom:'', periodTo:'', gid:'', guardian:'', attorney:'',
     wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
     mailingAddress:'', mailingCityStateZip:'',
@@ -326,7 +326,7 @@ export function emptyDataPlanInitial() {
   return {
     planTriStateSchemaVersion:2,
     // Cover
-    wardName:'', caseNumber:'', county:'', periodFrom:'', periodTo:'',
+    wardName:'', caseNumber:'', ucn:'', county:'', periodFrom:'', periodTo:'',
     inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
     guardianNames:'', attorneyName:'',
     wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
@@ -447,7 +447,7 @@ export function emptyDataPlanMinor() {
 export function emptyDataAnnual() {
   return {
     // Part I
-    wardName:'', caseNumber:'', gid:'', periodFrom:'', periodTo:'',
+    wardName:'', caseNumber:'', ucn:'', gid:'', periodFrom:'', periodTo:'',
     guardian:'', attorney:'', typeOfGuardianship:'', county:'',
     amendedForm:'', filingType:'Annual', relatedCaseNumbers:'',
     // Part II

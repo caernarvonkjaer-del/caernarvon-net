@@ -19,10 +19,14 @@ import { renderFormField } from '../form-fields.js';
 export function renderCaseCaptionFields({
   caseNumber = '',
   county = '',
+  // Milestone 63E: pass the ward's UCN (even '') to show the optional UCN field beneath
+  // Case Number and County. Left undefined, the card renders exactly as it always did.
+  ucn,
   caseNumberRequired = true,
   countyRequired = true,
 } = {}) {
   const countyInputS = typeof window !== 'undefined' ? window.countyInputS : null;
   return `<div class="col-md-6">${renderFormField({ path: 'caseNumber', label: 'Case Number', value: caseNumber, required: caseNumberRequired, id: 'caseNumber' })}</div>
-    <div class="col-md-6">${countyInputS('county', 'County', county, countyRequired)}</div>`;
+    <div class="col-md-6">${countyInputS('county', 'County', county, countyRequired)}</div>${ucn === undefined ? '' : `
+    <div class="col-md-6">${renderFormField({ path: 'ucn', label: 'UCN', value: ucn, required: false, id: 'ucn' })}</div>`}`;
 }

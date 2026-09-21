@@ -76,6 +76,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     filingId: descriptor.id,
     wardName,
     caseNumber,
+    ucn: (d.ucn || '').trim(),
     county,
     signatureStyle,
   };
