@@ -1,13 +1,29 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
 import { currentTarget, skipEnvironmentLimitation } from './support/target-profile';
 
 const sourceTarget = currentTarget === 'source';
 const webTarget = currentTarget === 'web';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+
+/**
+ * Milestone 63C. Counts full page loads from now on, so a test can prove that
+ * nothing reloaded the page before the filer clicked Reload. Call stop() before
+ * the filer's own click, which is meant to load.
+ */
+function countLoads(page: Page) {
+  let count = 0;
+  const onLoad = () => { count += 1; };
+  page.on('load', onLoad);
+  return { get count() { return count; }, stop: () => { page.off('load', onLoad); } };
+}
+
+// A negative ("nothing happened") assertion needs a window to observe. The
+// reload this milestone removed fired within ~130 ms of the failure.
+const NO_RELOAD_WINDOW_MS = 1500;
 
 test('failed feature chunk shows a reload action instead of a blank view', async ({ page }) => {
   skipEnvironmentLimitation(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
@@ -20,12 +36,16 @@ test('failed feature chunk shows a reload action instead of a blank view', async
     failedOnce = true;
     await route.abort('failed');
   });
+  const loads = countLoads(page);
   await page.evaluate(() => (window as any).navigate('/dashboard'));
 
   const main = page.locator('#main-content');
   await expect(main).toContainText('This section could not be loaded.');
   await expect(main.getByRole('button', { name: 'Reload' })).toBeVisible();
   expect(failedOnce).toBe(true);
+  await page.waitForTimeout(NO_RELOAD_WINDOW_MS);
+  expect(loads.count, 'nothing may reload the page before the filer clicks Reload').toBe(0);
+  loads.stop();
 
   await page.unroute('**/src/features/dashboard/index.js');
   await Promise.all([
@@ -33,6 +53,46 @@ test('failed feature chunk shows a reload action instead of a blank view', async
     main.getByRole('button', { name: 'Reload' }).click(),
   ]);
   await expect(page).toHaveURL(/#\/dashboard/);
+  await expect(main).not.toContainText('This section could not be loaded.');
+});
+
+/**
+ * Milestone 63C, Amendment A. The panel above covers a failure to load the
+ * feature's own module. Every feature also imports its print and Excel modules
+ * while it mounts, and that import fails inside mod.mount(), outside that
+ * catch. Probed before this change: the rejection went unhandled, the loader's
+ * reload listener replaced the page, and with that listener gone the page
+ * stayed put showing nothing and every later navigation rejected the same way.
+ * The bridge now shows the same panel for a chunk-load failure raised by mount().
+ */
+test('a chunk that fails while a feature mounts shows the panel instead of reloading', async ({ page }) => {
+  skipEnvironmentLimitation(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
+
+  await freshStartNoPassword(page);
+
+  let blocked = 0;
+  await page.route('**/src/features/guardian-inventory/print.js', async route => {
+    blocked += 1;
+    await route.abort('failed');
+  });
+  const loads = countLoads(page);
+  // The Guardian feature's own module loads; its print module, imported at the
+  // start of mount(), does not.
+  await page.evaluate(() => (window as any).addWard('Mount Chunk Ward', 'guardian'));
+
+  const main = page.locator('#main-content');
+  await expect(main).toContainText('This section could not be loaded.');
+  await expect(main.getByRole('button', { name: 'Reload' })).toBeVisible();
+  expect(blocked).toBeGreaterThan(0);
+  await page.waitForTimeout(NO_RELOAD_WINDOW_MS);
+  expect(loads.count, 'nothing may reload the page before the filer clicks Reload').toBe(0);
+  loads.stop();
+
+  await page.unroute('**/src/features/guardian-inventory/print.js');
+  await Promise.all([
+    page.waitForEvent('load'),
+    main.getByRole('button', { name: 'Reload' }).click(),
+  ]);
   await expect(main).not.toContainText('This section could not be loaded.');
 });
 
@@ -91,12 +151,16 @@ test('failed feature chunk shows a reload action instead of a blank view (web, h
     failedOnce = true;
     await route.abort('failed');
   });
+  const loads = countLoads(page);
   await page.evaluate(() => (window as any).navigate('/dashboard'));
 
   const main = page.locator('#main-content');
   await expect(main).toContainText('This section could not be loaded.');
   await expect(main.getByRole('button', { name: 'Reload' })).toBeVisible();
   expect(failedOnce).toBe(true);
+  await page.waitForTimeout(NO_RELOAD_WINDOW_MS);
+  expect(loads.count, 'nothing may reload the page before the filer clicks Reload').toBe(0);
+  loads.stop();
 
   await page.unroute(`**/${chunkPath}`);
   await Promise.all([

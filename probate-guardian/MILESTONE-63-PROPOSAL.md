@@ -10,7 +10,7 @@ further items will be appended as they are raised.
 | :-- | :-- | :-- |
 | **63A** | Guardian Inventory marks six pages incomplete but never says why | Proposed — **D1, D2, D11 decided** (explain, don't block; all filing types; fix R5 routing in 63A); **authorized 2026-09-21** (execution order below) |
 | **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | Proposed — **D3 decided** (show only when Recipient 1 is blank); **D4 decided** (57B recorded as landed without a recorded authorization); **authorized 2026-09-21** (execution order below) |
-| **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | Proposed — **D5 and D12 decided** (show the panel, no auto-reload; **with Amendment A**); **authorized 2026-09-21** (execution order below) |
+| **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | **IMPLEMENTED 2026-09-21** (D5 + D12: panel, no auto-reload, with Amendment A) — unit 1340/1340; hosted-build profile 34 passed, 0 failed; see the implementation record under 63C |
 | **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | Proposed — **D6 decided** (option 1); **authorized 2026-09-21** (execution order below) |
 | **63E** | UCN on the printed filing, on the Case # line of the header, all forms | Proposed — **D7–D10 decided** (option 1 each; Excel does not carry UCN); **authorized 2026-09-21** (execution order below) |
 
@@ -802,6 +802,45 @@ API, unavailable to a headless probe); 60b0133's original production symptom;
 the new worker's install/activation after a redeploy and the offline navigation
 fallback (accepted out of scope — unchanged by 63C).
 
+### 63C — implementation record (2026-09-21)
+
+**Changed.** `src/features-loader.js`: the two automatic-reload listeners
+(`vite:preloadError`, and the `unhandledrejection` match) are gone; a comment
+records why. `src/core/feature-bridge.js`: new exported `isChunkLoadError()`
+(Chrome, Firefox, Safari and Vite-CSS wordings; a bare "Failed to fetch" is
+deliberately **not** matched, so an application `fetch()` failing is not
+mistaken for a missing chunk); `mountPage()` now also catches a chunk-load
+error thrown by `mod.mount()` and shows the same panel — any other error
+still propagates; the panel gains "This can also happen after Guardian Forms
+has been updated." Not touched: `pdf-preview.js`'s own chunk-error panel, the
+service worker, `pwa-ui.js`, and 60b0133's unrelated XLSX validation.
+
+**Tests (red first).** New `tests/unit/feature-bridge.spec.js` (16 cases): run
+before the change, 13 failed — the missing `isChunkLoadError`, the mount-time
+chunk failure that rejected instead of showing the panel, the missing copy, and
+the reload listeners. New e2e case in `feature-load-failure.spec.ts` (blocks
+the Guardian print module, then adds a Guardian ward): failed before the change
+with the same `Failed to fetch dynamically imported module` rejection.
+`countLoads()` and a 1.5 s observation window now also assert, in both existing
+cases, that nothing reloads the page before the filer clicks Reload.
+`TEST-INDEX.md`: new unit row; the e2e row updated (3 cases).
+
+**Verification.** `npx vitest run` on the new spec and the guards it could
+affect (index, window-bridge, boot-ordering): 43/43. Full unit suite: **1340/1340**
+(1,324 + 16). `npm run check:types`: clean. Source-target e2e for
+`feature-load-failure`, `startup` and `plan-simplified-mount`: 16 passed, 1
+skipped (the web-only case). **Hosted-build profile (`npm run test:e2e:web`):
+34 passed, 2 skipped, 0 failed** — including the hashed-build case that failed
+identically on the pre-MS 62 baseline and on `master` before this change.
+The full `npm test` regression was **not** run.
+
+**Observed, not changed (out of 63C's scope).** Each feature caches its
+lazy-module promise (e.g. `ensureLazyModules()` in `guardian-inventory/index.js`),
+and a rejected promise is never cleared. After the panel appears, navigating
+elsewhere *without* pressing Reload keeps failing the same way until the page is
+reloaded. The panel's Reload is therefore the recovery, as designed; making a
+failed import retryable in place would be a separate change.
+
 ---
 
 ## 63D — The preparer's signature-authorization note is missing from most signing pages
@@ -1174,7 +1213,7 @@ not begin until the previous one is committed and green.
 | :-- | :-- | :-- | :-- |
 | 63A | **AUTHORIZED** | 2026-09-21, Alan (requester) — all five, in the order below | includes the bounded R5 investigation (stop-and-split rule) |
 | 63B | **AUTHORIZED** | 2026-09-21, Alan (requester) | D4's 57-doc edits are part of this delivery |
-| 63C | **AUTHORIZED** | 2026-09-21, Alan (requester); **execution started 2026-09-21** | includes Amendment A |
+| 63C | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | includes Amendment A; committed locally, not pushed |
 | 63D | **AUTHORIZED** | 2026-09-21, Alan (requester) | |
 | 63E | **AUTHORIZED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included |
 

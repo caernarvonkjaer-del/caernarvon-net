@@ -19,6 +19,20 @@ export function disposeActiveFeature(container, nextModule = null) {
   activeFeatureByContainer.delete(container);
 }
 
+// Milestone 63C. A chunk that will not load is worded differently by each
+// browser -- "Failed to fetch dynamically imported module" (Chrome),
+// "error loading dynamically imported module" (Firefox), "Importing a module
+// script failed" (Safari) -- and Vite adds "Unable to preload CSS for ...". A bare
+// "Failed to fetch" is deliberately NOT matched: that is what any application
+// fetch() says when the network drops, and treating it as a missing chunk would
+// hide a real failure behind a panel that blames the connection.
+const CHUNK_LOAD_ERROR = /dynamically imported module|Importing a module script failed|Unable to preload/i;
+
+export function isChunkLoadError(error) {
+  const message = typeof error === 'string' ? error : error && error.message;
+  return typeof message === 'string' && CHUNK_LOAD_ERROR.test(message);
+}
+
 export function createFeatureBridge(loader) {
   let modulePromise = null;
   function load() {
@@ -33,7 +47,7 @@ export function createFeatureBridge(loader) {
     title.textContent = 'This section could not be loaded.';
     const detail = document.createElement('p');
     detail.className = 'mb-2';
-    detail.textContent = 'Check your connection or finish downloading offline access, then reload this page.';
+    detail.textContent = 'Check your connection or finish downloading offline access, then reload this page. This can also happen after Guardian Forms has been updated.';
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-sm btn-outline-danger';
@@ -53,7 +67,19 @@ export function createFeatureBridge(loader) {
       return;
     }
     disposeActiveFeature(container, mod);
-    await mod.mount(container, page);
+    // Every feature also imports its print and Excel modules while it mounts,
+    // so a chunk can fail here as well as in load() above. Milestone 63C removed
+    // the loader's automatic reload; without this catch that failure would leave
+    // the page as it was, saying nothing. Only a chunk-load failure is shown as
+    // the panel -- any other error is a real bug and must still surface.
+    try {
+      await mod.mount(container, page);
+    } catch (error) {
+      if (!isChunkLoadError(error)) throw error;
+      console.warn('Feature chunk failed while mounting', error);
+      showLoadFailure(container);
+      return;
+    }
     activeFeatureByContainer.set(container, mod);
     if (typeof window !== 'undefined' && typeof window.attachFormHeaderActions === 'function') {
       window.attachFormHeaderActions(container);

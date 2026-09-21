@@ -156,17 +156,15 @@ window.loadPlanInitialPdf = loadPlanInitialPdf;
 window.loadPlanAnnualPdf = loadPlanAnnualPdf;
 window.loadPlanMinorPdf = loadPlanMinorPdf;
 window.loadPlanSimplifiedPdf = loadPlanSimplifiedPdf;
-if (typeof window !== 'undefined') {
-  window.addEventListener('vite:preloadError', (event) => {
-    console.warn('Vite asset chunk preload error detected (stale deployment). Reloading page...', event);
-    window.location.reload();
-  });
-  window.addEventListener('unhandledrejection', (event) => {
-    if (event.reason && /Failed to fetch dynamically imported module/i.test(event.reason.message || '')) {
-      console.warn('Stale dynamic module import failure detected. Reloading page...');
-      window.location.reload();
-    }
-  });
-}
+// Milestone 63C. This file used to end with two listeners (added in 60b0133) that
+// reloaded the page by themselves when a chunk failed to load -- on Vite's
+// `vite:preloadError`, and on any unhandled "Failed to fetch dynamically imported
+// module" rejection. That replaced the "This section could not be loaded" panel
+// before anyone could read it, closed the open case for a filer with no remembered
+// file handle, and left the browser's unsaved-changes prompt as the only guard. A
+// failed chunk is now reported by the feature bridge (core/feature-bridge.js), for
+// the feature's own module and for anything it imports while mounting, with a
+// Reload button the filer chooses to press. Do not reintroduce an automatic reload
+// here; MILESTONE-63-PROPOSAL.md, 63C, records why.
 
 
