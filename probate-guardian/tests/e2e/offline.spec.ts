@@ -20,7 +20,11 @@ type OfflineStatus = {
 };
 
 async function waitForActiveWorker(page: Page): Promise<void> {
-  await page.waitForFunction(async () => Boolean((await navigator.serviceWorker?.getRegistration())?.active));
+  // page.waitForFunction does not await an async predicate: the Promise it
+  // returns is truthy, so the earlier poll resolved at once, and these tests
+  // only passed while the worker happened to be active by networkidle.
+  // serviceWorker.ready settles once the registration has an active worker.
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
 }
 
 async function sendWorkerMessage(page: Page, type: string): Promise<OfflineStatus> {
@@ -71,7 +75,7 @@ test.describe('hosted offline cache', { tag: '@origin-state' }, () => {
 
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle('Probate Guardian App');
+    await expect(page).toHaveTitle('Guardian Forms App');
     await context.setOffline(false);
   });
 

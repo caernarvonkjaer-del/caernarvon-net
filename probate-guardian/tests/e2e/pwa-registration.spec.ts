@@ -8,7 +8,9 @@ test('service worker registration is limited to the hosted web build', { tag: '@
   await gotoApp(page);
 
   if (target === 'web') {
-    await page.waitForFunction(async () => Boolean((await navigator.serviceWorker?.getRegistration())?.active));
+    // page.waitForFunction does not await an async predicate (the Promise is
+    // truthy, so it resolved at once); serviceWorker.ready does the waiting.
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
     const hasActiveWorker = await page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration())?.active));
     expect(hasActiveWorker).toBe(true);
     return;
